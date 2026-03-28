@@ -1,0 +1,5 @@
+*.o
+parse
+typecheck
+interp
+.claude/

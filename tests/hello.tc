@@ -1,0 +1,19 @@
+fn main() -> i32 {
+    var buf: U8Array = newU8Array(13);
+    set(buf, 0, 72u8);   // H
+    set(buf, 1, 101u8);  // e
+    set(buf, 2, 108u8);  // l
+    set(buf, 3, 108u8);  // l
+    set(buf, 4, 111u8);  // o
+    set(buf, 5, 44u8);   // ,
+    set(buf, 6, 32u8);   //
+    set(buf, 7, 87u8);   // W
+    set(buf, 8, 111u8);  // o
+    set(buf, 9, 114u8);  // r
+    set(buf, 10, 108u8); // l
+    set(buf, 11, 100u8); // d
+    set(buf, 12, 10u8);  // \n
+    sys_write(1, buf, 13);
+    delete(buf);
+    return 0;
+}
