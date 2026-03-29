@@ -1,0 +1,910 @@
+// codegen.tc — bytecode code generator (Phase 2)
+// Reads text AST from stdin, outputs bytecode to stdout.
+
+// ===== AST node kind constants =====
+var NK_PROGRAM: i32 = 0;
+var NK_FN: i32 = 1;
+var NK_STRUCT: i32 = 2;
+var NK_PARAMS: i32 = 3;
+var NK_PARAM: i32 = 4;
+var NK_RET: i32 = 5;
+var NK_TYPE: i32 = 6;
+var NK_BLOCK: i32 = 7;
+var NK_VAR_DECL: i32 = 8;
+var NK_ASSIGN: i32 = 9;
+var NK_CALL_STMT: i32 = 10;
+var NK_CALL: i32 = 11;
+var NK_IF: i32 = 12;
+var NK_WHILE: i32 = 13;
+var NK_RETURN: i32 = 14;
+var NK_BINOP: i32 = 15;
+var NK_UNARY: i32 = 16;
+var NK_INT: i32 = 17;
+var NK_STR: i32 = 18;
+var NK_BOOL: i32 = 19;
+var NK_VAR: i32 = 20;
+var NK_CAST: i32 = 21;
+var NK_IMPORT: i32 = 22;
+var NK_FIELD: i32 = 23;
+var NK_UNKNOWN: i32 = 99;
+
+// ===== Global state =====
+var g_in_pos: i32 = 0;
+var g_in_len: i32 = 0;
+var g_nc: i32 = 0;        // node count
+var g_sp: i32 = 0;        // strtab position
+var g_lc: i32 = 0;        // label counter
+var g_ob_pos: i32 = 0;
+var g_slc: i32 = 0;       // string literal count
+var g_locc: i32 = 0;      // locals count
+
+// ===== Output buffer =====
+fn ob_flush(ob: U8Array) -> void {
+    if g_ob_pos > 0 {
+        sys_write(1, ob, g_ob_pos as u32);
+        g_ob_pos = 0;
+    }
+    return;
+}
+
+fn ob_char(c: u8, ob: U8Array) -> void {
+    set(ob, g_ob_pos as u32, c);
+    g_ob_pos = g_ob_pos + 1;
+    if g_ob_pos >= 8192 { ob_flush(ob); }
+    return;
+}
+
+fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
+    var i: i32 = 0;
+    while i < n {
+        ob_char(get(src, (start + i) as u32), ob);
+        i = i + 1;
+    }
+    return;
+}
+
+fn ob_int(n: i32, ob: U8Array) -> void {
+    if n == 0 { ob_char(48u8, ob); return; }
+    if n < 0 { ob_char(45u8, ob); n = 0 - n; }
+    var tmp: U8Array = newU8Array(12);
+    var len: i32 = 0;
+    var v: i32 = n;
+    while v > 0 {
+        set(tmp, len as u32, (48 + v % 10) as u8);
+        len = len + 1;
+        v = v / 10;
+    }
+    var i: i32 = len - 1;
+    while i >= 0 { ob_char(get(tmp, i as u32), ob); i = i - 1; }
+    delete(tmp);
+    return;
+}
+
+// Write a string from strtab to output, escaping for bytecode strings
+fn ob_st_escaped(strtab: U8Array, start: i32, len: i32, ob: U8Array) -> void {
+    var i: i32 = 0;
+    while i < len {
+        var c: u8 = get(strtab, (start + i) as u32);
+        if c == 34u8  { ob_char(92u8, ob); ob_char(34u8, ob); }
+        else { if c == 92u8 { ob_char(92u8, ob); ob_char(92u8, ob); }
+        else { if c == 10u8 { ob_char(92u8, ob); ob_char(110u8, ob); }
+        else { if c == 13u8 { ob_char(92u8, ob); ob_char(114u8, ob); }
+        else { if c == 9u8  { ob_char(92u8, ob); ob_char(116u8, ob); }
+        else { ob_char(c, ob); }}}}}
+        i = i + 1;
+    }
+    return;
+}
+
+// ===== Input reading =====
+fn peek_in(in: U8Array) -> u8 {
+    if g_in_pos >= g_in_len { return 0u8; }
+    return get(in, g_in_pos as u32);
+}
+
+fn is_atom_end(c: u8) -> bool {
+    return c == 32u8 || c == 9u8 || c == 10u8 || c == 13u8 ||
+           c == 40u8 || c == 41u8 || c == 0u8;
+}
+
+fn skip_ws_in(in: U8Array) -> void {
+    var c: u8 = peek_in(in);
+    while (c == 32u8 || c == 9u8 || c == 10u8 || c == 13u8) && g_in_pos < g_in_len {
+        g_in_pos = g_in_pos + 1;
+        c = peek_in(in);
+    }
+    return;
+}
+
+fn read_atom_in(in: U8Array, atom: U8Array) -> i32 {
+    var len: i32 = 0;
+    var c: u8 = peek_in(in);
+    while !is_atom_end(c) {
+        set(atom, len as u32, c);
+        len = len + 1;
+        g_in_pos = g_in_pos + 1;
+        c = peek_in(in);
+    }
+    return len;
+}
+
+// ===== Node pool (6 ints per node) =====
+// Layout: [kind, sstart, slen, ival, first_child, next_sibling]
+fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6) as u32); }
+fn n_sk(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6) as u32, v); }
+fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+1) as u32); }
+fn n_set_ss(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+1) as u32, v); }
+fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+2) as u32); }
+fn n_set_sl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+2) as u32, v); }
+fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+3) as u32); }
+fn n_set_ival(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+3) as u32, v); }
+fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+4) as u32); }
+fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+4) as u32, v); }
+fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+5) as u32); }
+fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+5) as u32, v); }
+
+fn alloc_node(nodes: I32Array, kind: i32) -> i32 {
+    var n: i32 = g_nc;
+    g_nc = g_nc + 1;
+    var b: i32 = n * 6;
+    set(nodes, b as u32, kind);
+    set(nodes, (b+1) as u32, -1);
+    set(nodes, (b+2) as u32, 0);
+    set(nodes, (b+3) as u32, 0);
+    set(nodes, (b+4) as u32, -1);
+    set(nodes, (b+5) as u32, -1);
+    return n;
+}
+
+fn n_nchildren(nodes: I32Array, n: i32) -> i32 {
+    var c: i32 = n_child(nodes, n);
+    var count: i32 = 0;
+    while c >= 0 { count = count + 1; c = n_sib(nodes, c); }
+    return count;
+}
+
+fn n_nth_child(nodes: I32Array, n: i32, idx: i32) -> i32 {
+    var c: i32 = n_child(nodes, n);
+    var i: i32 = 0;
+    while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }
+    return c;
+}
+
+fn add_child(nodes: I32Array, parent: i32, child: i32) -> void {
+    var c: i32 = n_child(nodes, parent);
+    if c < 0 {
+        n_set_child(nodes, parent, child);
+    } else {
+        while n_sib(nodes, c) >= 0 { c = n_sib(nodes, c); }
+        n_set_sib(nodes, c, child);
+    }
+    return;
+}
+
+// ===== Kind classification =====
+fn cmp2(a: U8Array, st: i32, b0: u8, b1: u8) -> bool {
+    return get(a, st as u32)==b0 && get(a, (st+1) as u32)==b1;
+}
+fn cmp3(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8) -> bool {
+    return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2;
+}
+fn cmp4(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8) -> bool {
+    return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 &&
+           get(a,(st+2) as u32)==b2 && get(a,(st+3) as u32)==b3;
+}
+fn cmp5(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8) -> bool {
+    return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2 &&
+           get(a,(st+3) as u32)==b3 && get(a,(st+4) as u32)==b4;
+}
+fn cmp6(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8, b5: u8) -> bool {
+    return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2 &&
+           get(a,(st+3) as u32)==b3 && get(a,(st+4) as u32)==b4 && get(a,(st+5) as u32)==b5;
+}
+
+fn classify_kind(atom: U8Array, len: i32) -> i32 {
+    if len == 2 {
+        if cmp2(atom,0, 102u8,110u8)  { return NK_FN; }     // fn
+        if cmp2(atom,0, 105u8,102u8)  { return NK_IF; }     // if
+    }
+    if len == 3 {
+        if cmp3(atom,0, 114u8,101u8,116u8) { return NK_RET; }   // ret
+        if cmp3(atom,0, 105u8,110u8,116u8) { return NK_INT; }   // int
+        if cmp3(atom,0, 115u8,116u8,114u8) { return NK_STR; }   // str
+        if cmp3(atom,0, 118u8,97u8,114u8)  { return NK_VAR; }   // var
+    }
+    if len == 4 {
+        if cmp4(atom,0, 98u8,111u8,111u8,108u8) { return NK_BOOL; }   // bool
+        if cmp4(atom,0, 116u8,121u8,112u8,101u8) { return NK_TYPE; }  // type
+        if cmp4(atom,0, 99u8,97u8,115u8,116u8)   { return NK_CAST; }  // cast
+        if cmp4(atom,0, 99u8,97u8,108u8,108u8)   { return NK_CALL; }  // call
+    }
+    if len == 5 {
+        if cmp5(atom,0, 98u8,108u8,111u8,99u8,107u8)   { return NK_BLOCK; }  // block
+        if cmp5(atom,0, 112u8,97u8,114u8,97u8,109u8)   { return NK_PARAM; }  // param
+        if cmp5(atom,0, 119u8,104u8,105u8,108u8,101u8) { return NK_WHILE; }  // while
+        if cmp5(atom,0, 98u8,105u8,110u8,111u8,112u8)  { return NK_BINOP; }  // binop
+        if cmp5(atom,0, 117u8,110u8,97u8,114u8,121u8)  { return NK_UNARY; }  // unary
+        if cmp5(atom,0, 102u8,105u8,101u8,108u8,100u8) { return NK_FIELD; }  // field
+    }
+    if len == 6 {
+        if cmp6(atom,0, 112u8,97u8,114u8,97u8,109u8,115u8)  { return NK_PARAMS; }  // params
+        if cmp6(atom,0, 114u8,101u8,116u8,117u8,114u8,110u8){ return NK_RETURN; }  // return
+        if cmp6(atom,0, 115u8,116u8,114u8,117u8,99u8,116u8) { return NK_STRUCT; }  // struct
+        if cmp6(atom,0, 97u8,115u8,115u8,105u8,103u8,110u8) { return NK_ASSIGN; }  // assign
+        if cmp6(atom,0, 105u8,109u8,112u8,111u8,114u8,116u8){ return NK_IMPORT; }  // import
+    }
+    // var_decl (8), call_stmt (9), program (7)
+    if len == 7 {
+        // program
+        if cmp4(atom,0, 112u8,114u8,111u8,103u8) && cmp3(atom,4, 114u8,97u8,109u8) {
+            return NK_PROGRAM;
+        }
+    }
+    if len == 8 {
+        // var_decl
+        if cmp4(atom,0, 118u8,97u8,114u8,95u8) && cmp4(atom,4, 100u8,101u8,99u8,108u8) {
+            return NK_VAR_DECL;
+        }
+    }
+    if len == 9 {
+        // call_stmt
+        if cmp4(atom,0, 99u8,97u8,108u8,108u8) && cmp5(atom,4, 95u8,115u8,116u8,109u8,116u8) {
+            return NK_CALL_STMT;
+        }
+    }
+    return NK_UNKNOWN;
+}
+
+// ===== S-expression reader =====
+fn is_digit_c(c: u8) -> bool { return c >= 48u8 && c <= 57u8; }
+
+fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
+    skip_ws_in(in);
+    if g_in_pos >= g_in_len { return -1; }
+    if peek_in(in) != 40u8 { return -1; }  // not '('
+    g_in_pos = g_in_pos + 1;
+    skip_ws_in(in);
+
+    // Read kind (strip :type_annot if present)
+    var klen: i32 = read_atom_in(in, atom);
+    var actual_klen: i32 = 0;
+    while actual_klen < klen && get(atom, actual_klen as u32) != 58u8 {
+        actual_klen = actual_klen + 1;
+    }
+    var kind_code: i32 = classify_kind(atom, actual_klen);
+
+    var n: i32 = alloc_node(nodes, kind_code);
+    var base: i32 = n * 6;
+
+    skip_ws_in(in);
+
+    // Check for sval/ival atom
+    var c: u8 = peek_in(in);
+    if c != 40u8 && c != 41u8 && c != 0u8 {
+        var vlen: i32 = read_atom_in(in, atom);
+        if kind_code == NK_INT && vlen > 0 && is_digit_c(get(atom, 0u32)) {
+            var ival: i32 = 0;
+            var ii: i32 = 0;
+            while ii < vlen {
+                ival = ival * 10 + (get(atom, ii as u32) as i32 - 48);
+                ii = ii + 1;
+            }
+            set(nodes, (base+3) as u32, ival);
+        } else {
+            var ss: i32 = g_sp;
+            var ii: i32 = 0;
+            while ii < vlen {
+                set(strtab, g_sp as u32, get(atom, ii as u32));
+                g_sp = g_sp + 1;
+                ii = ii + 1;
+            }
+            set(nodes, (base+1) as u32, ss);
+            set(nodes, (base+2) as u32, vlen);
+        }
+        skip_ws_in(in);
+    }
+
+    // Read children
+    c = peek_in(in);
+    var last_child: i32 = -1;
+    while c == 40u8 {
+        var child: i32 = read_node(in, atom, nodes, strtab);
+        if child >= 0 {
+            if last_child < 0 {
+                set(nodes, (base+4) as u32, child);
+            } else {
+                n_set_sib(nodes, last_child, child);
+            }
+            last_child = child;
+        }
+        skip_ws_in(in);
+        c = peek_in(in);
+    }
+
+    // Consume ')'
+    if peek_in(in) == 41u8 { g_in_pos = g_in_pos + 1; }
+
+    return n;
+}
+
+// ===== String comparison helpers =====
+fn sval_eq(strtab: U8Array, ss: i32, sl: i32, b: U8Array, bl: i32) -> bool {
+    if sl != bl { return false; }
+    var i: i32 = 0;
+    while i < sl {
+        if get(strtab, (ss+i) as u32) != get(b, i as u32) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Compare node sval with a 1/2/3/... char sequence
+fn sv1(strtab: U8Array, ss: i32, sl: i32, c0: u8) -> bool {
+    if sl != 1 { return false; }
+    return get(strtab, ss as u32) == c0;
+}
+fn sv2(strtab: U8Array, ss: i32, sl: i32, c0: u8, c1: u8) -> bool {
+    if sl != 2 { return false; }
+    return get(strtab,ss as u32)==c0 && get(strtab,(ss+1) as u32)==c1;
+}
+
+// ===== String literal collection =====
+fn slit_find(strtab: U8Array, slits: I32Array, ss: i32, sl: i32) -> i32 {
+    var i: i32 = 0;
+    while i < g_slc {
+        var base: i32 = i * 2;
+        var es: i32 = get(slits, base as u32);
+        var el: i32 = get(slits, (base+1) as u32);
+        if el == sl {
+            var match: i32 = 1;
+            var j: i32 = 0;
+            while j < sl && match == 1 {
+                if get(strtab,(ss+j) as u32) != get(strtab,(es+j) as u32) { match = 0; }
+                j = j + 1;
+            }
+            if match == 1 { return i; }
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn slit_add(strtab: U8Array, slits: I32Array, ss: i32, sl: i32) -> i32 {
+    var idx: i32 = slit_find(strtab, slits, ss, sl);
+    if idx >= 0 { return idx; }
+    var base: i32 = g_slc * 2;
+    set(slits, base as u32, ss);
+    set(slits, (base+1) as u32, sl);
+    idx = g_slc;
+    g_slc = g_slc + 1;
+    return idx;
+}
+
+fn collect_strings(nodes: I32Array, strtab: U8Array, slits: I32Array, n: i32) -> void {
+    if n < 0 { return; }
+    if n_kind(nodes, n) == NK_STR {
+        slit_add(strtab, slits, n_ss(nodes, n), n_sl(nodes, n));
+        return;
+    }
+    var c: i32 = n_child(nodes, n);
+    while c >= 0 {
+        collect_strings(nodes, strtab, slits, c);
+        c = n_sib(nodes, c);
+    }
+    return;
+}
+
+// ===== Local variable collection =====
+// locals: 4 ints per entry (name_ss, name_sl, type_ss, type_sl)
+fn locals_find(strtab: U8Array, locals: I32Array, nss: i32, nsl: i32) -> i32 {
+    var i: i32 = 0;
+    while i < g_locc {
+        var b: i32 = i * 4;
+        var es: i32 = get(locals, b as u32);
+        var el: i32 = get(locals, (b+1) as u32);
+        if el == nsl {
+            var match: i32 = 1;
+            var j: i32 = 0;
+            while j < nsl && match == 1 {
+                if get(strtab,(nss+j) as u32) != get(strtab,(es+j) as u32) { match = 0; }
+                j = j + 1;
+            }
+            if match == 1 { return i; }
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn locals_add_entry(strtab: U8Array, locals: I32Array, nss: i32, nsl: i32, tss: i32, tsl: i32) -> void {
+    if locals_find(strtab, locals, nss, nsl) >= 0 { return; }
+    var b: i32 = g_locc * 4;
+    set(locals, b as u32, nss);
+    set(locals, (b+1) as u32, nsl);
+    set(locals, (b+2) as u32, tss);
+    set(locals, (b+3) as u32, tsl);
+    g_locc = g_locc + 1;
+    return;
+}
+
+fn collect_locals_stmt(nodes: I32Array, strtab: U8Array, locals: I32Array, n: i32) -> void {
+    var k: i32 = n_kind(nodes, n);
+    if k == NK_VAR_DECL {
+        var type_n: i32 = n_child(nodes, n);
+        if type_n >= 0 {
+            locals_add_entry(strtab, locals,
+                n_ss(nodes, n), n_sl(nodes, n),
+                n_ss(nodes, type_n), n_sl(nodes, type_n));
+        }
+        return;
+    }
+    if k == NK_IF {
+        collect_locals_block(nodes, strtab, locals, n_nth_child(nodes, n, 1));
+        var ec: i32 = n_nth_child(nodes, n, 2);
+        if ec >= 0 { collect_locals_block(nodes, strtab, locals, ec); }
+        return;
+    }
+    if k == NK_WHILE {
+        collect_locals_block(nodes, strtab, locals, n_nth_child(nodes, n, 1));
+        return;
+    }
+    return;
+}
+
+fn collect_locals_block(nodes: I32Array, strtab: U8Array, locals: I32Array, blk: i32) -> void {
+    var c: i32 = n_child(nodes, blk);
+    while c >= 0 {
+        collect_locals_stmt(nodes, strtab, locals, c);
+        c = n_sib(nodes, c);
+    }
+    return;
+}
+
+// ===== Code generation =====
+
+fn cg_block(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, blk: i32) -> void {
+    var c: i32 = n_child(nodes, blk);
+    while c >= 0 {
+        cg_stmt(nodes, strtab, slits, ob, c);
+        c = n_sib(nodes, c);
+    }
+    return;
+}
+
+fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i32) -> void {
+    var k: i32 = n_kind(nodes, n);
+
+    if k == NK_VAR_DECL {
+        var init: i32 = n_nth_child(nodes, n, 1);
+        if init >= 0 {
+            cg_expr(nodes, strtab, slits, ob, init);
+        } else {
+            // "  push_int 0\n"
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+        }
+        // "  store NAME\n"
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(115u8,ob);ob_char(116u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(32u8,ob);
+        ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_ASSIGN {
+        cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(115u8,ob);ob_char(116u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(32u8,ob);
+        ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_CALL_STMT {
+        var c: i32 = n_child(nodes, n);
+        var nargs: i32 = 0;
+        while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+        // "  call NAME nargs\n"
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+        ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob);
+        ob_char(32u8,ob); ob_int(nargs, ob); ob_char(10u8,ob);
+        // "  pop\n"
+        ob_char(32u8,ob);ob_char(32u8,ob);ob_char(112u8,ob);ob_char(111u8,ob);ob_char(112u8,ob);ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_IF {
+        var nc: i32 = n_nchildren(nodes, n);
+        if nc > 2 {
+            var lelse: i32 = g_lc; g_lc = g_lc + 1;
+            var lend: i32 = g_lc; g_lc = g_lc + 1;
+            cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
+            // "  jump_ifnot __Lx\n"
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lelse,ob);ob_char(10u8,ob);
+            cg_block(nodes, strtab, slits, ob, n_nth_child(nodes, n, 1));
+            // "  jump __Lend\n"
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
+            // "__Lelse:\n"
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lelse,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            cg_block(nodes, strtab, slits, ob, n_nth_child(nodes, n, 2));
+            // "__Lend:\n"
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+        } else {
+            var lend: i32 = g_lc; g_lc = g_lc + 1;
+            cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
+            cg_block(nodes, strtab, slits, ob, n_nth_child(nodes, n, 1));
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+        }
+        return;
+    }
+
+    if k == NK_WHILE {
+        var lloop: i32 = g_lc; g_lc = g_lc + 1;
+        var lend: i32 = g_lc; g_lc = g_lc + 1;
+        // "__Lloop:\n"
+        ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lloop,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+        cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
+        ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
+        ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
+        cg_block(nodes, strtab, slits, ob, n_nth_child(nodes, n, 1));
+        // "  jump __Lloop\n"
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
+        ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lloop,ob);ob_char(10u8,ob);
+        ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_RETURN {
+        var v: i32 = n_child(nodes, n);
+        if v >= 0 {
+            cg_expr(nodes, strtab, slits, ob, v);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(114u8,ob);ob_char(101u8,ob);ob_char(116u8,ob);ob_char(117u8,ob);ob_char(114u8,ob);ob_char(110u8,ob);ob_char(10u8,ob);
+        } else {
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(114u8,ob);ob_char(101u8,ob);ob_char(116u8,ob);ob_char(117u8,ob);ob_char(114u8,ob);ob_char(110u8,ob);
+            ob_char(95u8,ob);ob_char(118u8,ob);ob_char(111u8,ob);ob_char(105u8,ob);ob_char(100u8,ob);ob_char(10u8,ob);
+        }
+        return;
+    }
+
+    return;
+}
+
+fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: U8Array) -> void {
+    ob_char(32u8,ob); ob_char(32u8,ob);
+    // Map operator to instruction
+    if sv1(strtab,ss,sl, 43u8) { ob_char(97u8,ob);ob_char(100u8,ob);ob_char(100u8,ob);ob_char(10u8,ob); return; }  // add
+    if sv1(strtab,ss,sl, 45u8) { ob_char(115u8,ob);ob_char(117u8,ob);ob_char(98u8,ob);ob_char(10u8,ob); return; }  // sub
+    if sv1(strtab,ss,sl, 42u8) { ob_char(109u8,ob);ob_char(117u8,ob);ob_char(108u8,ob);ob_char(10u8,ob); return; }  // mul
+    if sv1(strtab,ss,sl, 47u8) { ob_char(100u8,ob);ob_char(105u8,ob);ob_char(118u8,ob);ob_char(10u8,ob); return; }  // div
+    if sv1(strtab,ss,sl, 37u8) { ob_char(109u8,ob);ob_char(111u8,ob);ob_char(100u8,ob);ob_char(10u8,ob); return; }  // mod
+    if sv1(strtab,ss,sl, 38u8) { ob_char(97u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);ob_char(10u8,ob); return; }  // and
+    if sv1(strtab,ss,sl, 124u8){ ob_char(111u8,ob);ob_char(114u8,ob);ob_char(10u8,ob); return; }  // or
+    if sv1(strtab,ss,sl, 94u8) { ob_char(120u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(10u8,ob); return; }  // xor
+    if sv1(strtab,ss,sl, 60u8) { ob_char(108u8,ob);ob_char(116u8,ob);ob_char(10u8,ob); return; }  // lt
+    if sv1(strtab,ss,sl, 62u8) { ob_char(103u8,ob);ob_char(116u8,ob);ob_char(10u8,ob); return; }  // gt
+    if sv2(strtab,ss,sl, 60u8,60u8) { ob_char(115u8,ob);ob_char(104u8,ob);ob_char(108u8,ob);ob_char(10u8,ob); return; }  // shl
+    if sv2(strtab,ss,sl, 62u8,62u8) { ob_char(115u8,ob);ob_char(104u8,ob);ob_char(114u8,ob);ob_char(10u8,ob); return; }  // shr
+    if sv2(strtab,ss,sl, 61u8,61u8) { ob_char(101u8,ob);ob_char(113u8,ob);ob_char(10u8,ob); return; }  // eq
+    if sv2(strtab,ss,sl, 33u8,61u8) { ob_char(110u8,ob);ob_char(101u8,ob);ob_char(10u8,ob); return; }  // ne
+    if sv2(strtab,ss,sl, 60u8,61u8) { ob_char(108u8,ob);ob_char(101u8,ob);ob_char(10u8,ob); return; }  // le
+    if sv2(strtab,ss,sl, 62u8,61u8) { ob_char(103u8,ob);ob_char(101u8,ob);ob_char(10u8,ob); return; }  // ge
+    // Unknown op - just add newline
+    ob_char(10u8,ob);
+    return;
+}
+
+fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i32) -> void {
+    var k: i32 = n_kind(nodes, n);
+
+    if k == NK_INT {
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
+        ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);
+        ob_int(n_ival(nodes,n), ob); ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_BOOL {
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
+        ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);
+        // check sval: "true" → 1, else → 0
+        var is_true: i32 = 0;
+        if n_sl(nodes,n) == 4 {
+            var ss: i32 = n_ss(nodes,n);
+            if get(strtab,ss as u32)==116u8 && get(strtab,(ss+1) as u32)==114u8 &&
+               get(strtab,(ss+2) as u32)==117u8 && get(strtab,(ss+3) as u32)==101u8 {
+                is_true = 1;
+            }
+        }
+        ob_int(is_true, ob); ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_STR {
+        var idx: i32 = slit_find(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
+        ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(32u8,ob);
+        ob_int(idx, ob); ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_VAR {
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(108u8,ob);ob_char(111u8,ob);ob_char(97u8,ob);ob_char(100u8,ob);ob_char(32u8,ob);
+        ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_CALL {
+        var c: i32 = n_child(nodes, n);
+        var nargs: i32 = 0;
+        while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+        ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob);
+        ob_char(32u8,ob); ob_int(nargs, ob); ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_UNARY {
+        cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        var ss: i32 = n_ss(nodes,n);
+        var sl: i32 = n_sl(nodes,n);
+        if sv1(strtab,ss,sl, 45u8) {
+            ob_char(110u8,ob);ob_char(101u8,ob);ob_char(103u8,ob);ob_char(10u8,ob);  // neg
+        } else {
+            ob_char(108u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);ob_char(10u8,ob);  // lnot
+        }
+        return;
+    }
+
+    if k == NK_BINOP {
+        var ss: i32 = n_ss(nodes,n);
+        var sl: i32 = n_sl(nodes,n);
+        var child0: i32 = n_nth_child(nodes,n,0);
+        var child1: i32 = n_nth_child(nodes,n,1);
+
+        // Short-circuit &&
+        if sv2(strtab,ss,sl, 38u8,38u8) {
+            var lf: i32 = g_lc; g_lc = g_lc + 1;
+            var le: i32 = g_lc; g_lc = g_lc + 1;
+            cg_expr(nodes, strtab, slits, ob, child0);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lf,ob);ob_char(10u8,ob);
+            cg_expr(nodes, strtab, slits, ob, child1);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lf,ob);ob_char(10u8,ob);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(le,ob);ob_char(10u8,ob);
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lf,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(le,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            return;
+        }
+
+        // Short-circuit ||
+        if sv2(strtab,ss,sl, 124u8,124u8) {
+            var lt: i32 = g_lc; g_lc = g_lc + 1;
+            var le: i32 = g_lc; g_lc = g_lc + 1;
+            cg_expr(nodes, strtab, slits, ob, child0);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(102u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lt,ob);ob_char(10u8,ob);
+            cg_expr(nodes, strtab, slits, ob, child1);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(102u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lt,ob);ob_char(10u8,ob);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
+            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(le,ob);ob_char(10u8,ob);
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lt,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
+            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(le,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            return;
+        }
+
+        // Regular binop
+        cg_expr(nodes, strtab, slits, ob, child0);
+        cg_expr(nodes, strtab, slits, ob, child1);
+        cg_binop_inst(strtab, ss, sl, ob);
+        return;
+    }
+
+    if k == NK_CAST {
+        cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes,n,0));
+        var type_n: i32 = n_nth_child(nodes,n,1);
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(99u8,ob);ob_char(97u8,ob);ob_char(115u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);
+        ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob); ob_char(10u8,ob);
+        return;
+    }
+
+    return;
+}
+
+fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob: U8Array, fn_node: i32) -> void {
+    var params_n: i32 = n_nth_child(nodes, fn_node, 0);
+    var ret_n: i32 = n_nth_child(nodes, fn_node, 1);
+    var body_n: i32 = n_nth_child(nodes, fn_node, 2);
+
+    // Determine return type from (ret (type T))
+    var ret_type_n: i32 = n_child(nodes, ret_n);
+    var ret_ss: i32 = 0;
+    var ret_sl: i32 = 4;  // default "void"
+    if ret_type_n >= 0 {
+        ret_ss = n_ss(nodes, ret_type_n);
+        ret_sl = n_sl(nodes, ret_type_n);
+    }
+
+    // ".fn NAME nparams RET\n"
+    ob_char(46u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(32u8,ob);
+    ob_n(strtab, n_ss(nodes,fn_node), n_sl(nodes,fn_node), ob);
+    ob_char(32u8,ob); ob_int(n_nchildren(nodes, params_n), ob);
+    ob_char(32u8,ob);
+    if ret_sl == 0 {
+        ob_char(118u8,ob);ob_char(111u8,ob);ob_char(105u8,ob);ob_char(100u8,ob);
+    } else {
+        ob_n(strtab, ret_ss, ret_sl, ob);
+    }
+    ob_char(10u8,ob);
+
+    // ".param NAME TYPE\n" for each param
+    var p: i32 = n_child(nodes, params_n);
+    while p >= 0 {
+        var type_n: i32 = n_child(nodes, p);
+        ob_char(46u8,ob);ob_char(112u8,ob);ob_char(97u8,ob);ob_char(114u8,ob);ob_char(97u8,ob);ob_char(109u8,ob);ob_char(32u8,ob);
+        ob_n(strtab, n_ss(nodes,p), n_sl(nodes,p), ob);
+        ob_char(32u8,ob);
+        ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob);
+        ob_char(10u8,ob);
+        p = n_sib(nodes, p);
+    }
+
+    // Collect locals
+    g_locc = 0;
+    collect_locals_block(nodes, strtab, locals, body_n);
+    var i: i32 = 0;
+    while i < g_locc {
+        var b: i32 = i * 4;
+        var nss: i32 = get(locals, b as u32);
+        var nsl: i32 = get(locals, (b+1) as u32);
+        var tss: i32 = get(locals, (b+2) as u32);
+        var tsl: i32 = get(locals, (b+3) as u32);
+        ob_char(46u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+        ob_n(strtab, nss, nsl, ob);
+        ob_char(32u8,ob);
+        ob_n(strtab, tss, tsl, ob);
+        ob_char(10u8,ob);
+        i = i + 1;
+    }
+
+    cg_block(nodes, strtab, slits, ob, body_n);
+
+    // "  return_void\n.endfn\n\n"
+    ob_char(32u8,ob);ob_char(32u8,ob);
+    ob_char(114u8,ob);ob_char(101u8,ob);ob_char(116u8,ob);ob_char(117u8,ob);ob_char(114u8,ob);ob_char(110u8,ob);
+    ob_char(95u8,ob);ob_char(118u8,ob);ob_char(111u8,ob);ob_char(105u8,ob);ob_char(100u8,ob);ob_char(10u8,ob);
+    ob_char(46u8,ob);ob_char(101u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(10u8,ob);
+    ob_char(10u8,ob);
+    return;
+}
+
+fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob: U8Array, root: i32) -> void {
+    // Collect string literals
+    g_slc = 0;
+    collect_strings(nodes, strtab, slits, root);
+
+    // Emit string table
+    if g_slc > 0 {
+        // "; string table\n"
+        ob_char(59u8,ob);ob_char(32u8,ob);ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);ob_char(110u8,ob);ob_char(103u8,ob);ob_char(32u8,ob);ob_char(116u8,ob);ob_char(97u8,ob);ob_char(98u8,ob);ob_char(108u8,ob);ob_char(101u8,ob);ob_char(10u8,ob);
+        var i: i32 = 0;
+        while i < g_slc {
+            var b: i32 = i * 2;
+            var ss: i32 = get(slits, b as u32);
+            var sl: i32 = get(slits, (b+1) as u32);
+            // ".string i \"...\"\n"
+            ob_char(46u8,ob);ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);ob_char(110u8,ob);ob_char(103u8,ob);ob_char(32u8,ob);
+            ob_int(i, ob);
+            ob_char(32u8,ob);ob_char(34u8,ob);
+            ob_st_escaped(strtab, ss, sl, ob);
+            ob_char(34u8,ob);ob_char(10u8,ob);
+            i = i + 1;
+        }
+        ob_char(10u8,ob);
+    }
+
+    // Emit global var_decls
+    var has_global: i32 = 0;
+    var c: i32 = n_child(nodes, root);
+    while c >= 0 {
+        if n_kind(nodes, c) == NK_VAR_DECL {
+            if has_global == 0 {
+                ob_char(59u8,ob);ob_char(32u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(115u8,ob);ob_char(10u8,ob);
+                has_global = 1;
+            }
+            var type_n: i32 = n_child(nodes, c);
+            // ".global NAME TYPE\n"
+            ob_char(46u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+            ob_n(strtab, n_ss(nodes,c), n_sl(nodes,c), ob);
+            ob_char(32u8,ob);
+            ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob);
+            ob_char(10u8,ob);
+        }
+        c = n_sib(nodes, c);
+    }
+    if has_global == 1 { ob_char(10u8,ob); }
+
+    // Emit functions
+    c = n_child(nodes, root);
+    while c >= 0 {
+        if n_kind(nodes, c) == NK_FN {
+            cg_fn(nodes, strtab, slits, locals, ob, c);
+        }
+        c = n_sib(nodes, c);
+    }
+    return;
+}
+
+fn main() -> i32 {
+    var in_buf: U8Array = newU8Array(131072);   // 128KB input
+    var atom_buf: U8Array = newU8Array(1024);   // atom scratch buffer
+    var out_buf: U8Array = newU8Array(16384);   // 16KB output buffer
+    var nodes: I32Array = newI32Array(24576);   // 4096 nodes × 6 ints
+    var strtab: U8Array = newU8Array(65536);    // string table
+    var slits: I32Array = newI32Array(512);     // 256 string literals × 2
+    var locals: I32Array = newI32Array(2048);   // 512 locals × 4
+
+    g_in_len = sys_read(0, in_buf, 131072u32);
+    g_in_pos = 0;
+    g_nc = 0;
+    g_sp = 0;
+    g_lc = 0;
+    g_ob_pos = 0;
+    g_slc = 0;
+    g_locc = 0;
+
+    var root: i32 = read_node(in_buf, atom_buf, nodes, strtab);
+    if root < 0 { sys_exit(1); }
+
+    cg_program(nodes, strtab, slits, locals, out_buf, root);
+    ob_flush(out_buf);
+
+    delete(in_buf); delete(atom_buf); delete(out_buf);
+    delete(nodes); delete(strtab); delete(slits); delete(locals);
+    return 0;
+}
