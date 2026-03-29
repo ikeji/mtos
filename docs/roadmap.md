@@ -38,15 +38,22 @@
 - [ ] QEMUでHello World（ベアメタル、virt machine）
 - [ ] RP2350実機でもHello World（UART）
 
-## フェーズ1: インタプリタ（ホストPC上）
+## フェーズ1: ツールチェーン基盤（ホストPC上、C実装）
 
 目的: 独自言語のコンパイラを独自言語で書くための足場を作る。
+C言語でフルパイプラインを実装し、動作を検証する。
 
-- [ ] `parse`: レキサ＋LL(1)パーサ、AST テキストを出力（C実装）
-- [ ] `typecheck`: 意味解析・型検査、型付きAST テキストを出力（C実装）
-- [ ] `interp`: 型付きASTをツリーウォーキングで実行（C実装）
-- [ ] 標準関数のバインディング（printf, malloc等をホスト側で提供）
-- [ ] FizzBuzz等の動作確認
+- [x] `parse`: レキサ＋LL(1)パーサ、AST テキストを出力（C実装）
+- [x] `typecheck`: 意味解析・型検査、型付きAST テキストを出力（C実装）
+- [x] `interp`: 型付きASTをツリーウォーキングで実行（C実装）
+- [x] 標準関数のバインディング（print_i32/u32/bool/str, sys_write/read/exit, 配列・文字列操作）
+- [x] FizzBuzz等の動作確認
+- [x] `codegen`: 型付きAST → スタック機械バイトコード（.bc）生成（C実装）
+- [x] `bcrun`: .bcバイトコードインタプリタ（C実装、検証用）
+- [x] `bc2asm`: バイトコード → RISC-V 32bit アセンブリ生成（C実装、GAS構文）
+- [x] `runtime_syscall.c`: bc2asm出力を動かすC言語ランタイム（ecall直接、libc不要）
+- [x] `crt0.s`: ベアメタル起動スタブ
+- [x] FizzBuzz を `codegen | bc2asm | riscv64-elf-gcc | qemu-riscv32` で動作確認
 
 ## フェーズ2: コンパイラ（独自言語で実装、インタプリタ上で動作）
 

@@ -1,0 +1,541 @@
+/*
+ * bc2asm — RISC-V 32-bit assembly generator from .bc bytecode.
+ *
+ * Target: RV32IM, GAS syntax.
+ * Calling convention: standard RISC-V ABI (a0-a7 for args, a0 for return).
+ *
+ * Frame layout (fp = s0, grows downward):
+ *   fp - 4:              saved ra
+ *   fp - 8:              saved s0 (old fp)
+ *   fp - 12 - 4*k:       var[k]  (params first, then locals)
+ *   [padding to 16-byte alignment]
+ *   sp (after prologue): bottom of fixed frame
+ *
+ * Expression stack: hardware stack below sp, grows downward during
+ * expression evaluation, fully consumed by each statement.
+ *
+ * Built-in functions: emitted as calls to __tc_<name> (see runtime.c).
+ * Exception: sys_exit is inlined as an ecall.
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+/* ===== .bc parser (same format as bcrun) ===== */
+
+typedef enum {
+    OP_PUSH_INT, OP_PUSH_STR,
+    OP_LOAD, OP_STORE,
+    OP_CALL, OP_RETURN, OP_RETURN_VOID, OP_POP,
+    OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
+    OP_AND, OP_OR,  OP_XOR, OP_SHL, OP_SHR,
+    OP_EQ,  OP_NE,  OP_LT,  OP_LE,  OP_GT,  OP_GE,
+    OP_NEG, OP_LNOT,
+    OP_CAST,
+    OP_JUMP, OP_JUMP_IF, OP_JUMP_IFNOT,
+} OpCode;
+
+typedef struct {
+    OpCode op;
+    long   ival;
+    char  *sarg;
+} Instr;
+
+typedef struct {
+    char  *name;
+    char  *ret_type;
+    char **param_names; char **param_types; int nparams;
+    char **local_names; char **local_types; int nlocals;
+    Instr *instrs; int ninstrs, instrs_cap;
+} BcFunc;
+
+typedef struct {
+    char  **strings;      int nstrings, strings_cap;
+    char  **global_names; char **global_types; int nglobals, globals_cap;
+    BcFunc *funcs;        int nfuncs,  funcs_cap;
+} BcProg;
+
+typedef struct { char *name; int pc; } LabelEnt;
+typedef struct { LabelEnt *e; int n, cap; } LabelTab;
+
+static char *skip_ws(char *s) { while(*s&&isspace((unsigned char)*s))s++; return s; }
+
+static char *next_tok(char *s, char *out, int max) {
+    int i=0;
+    while(*s&&!isspace((unsigned char)*s)&&i<max-1) out[i++]=*s++;
+    out[i]='\0'; return s;
+}
+
+static char *parse_strlit(char *s, char *buf, int blen) {
+    int i=0;
+    while(*s&&*s!='"'&&i<blen-1){
+        if(*s=='\\'){s++;switch(*s){
+            case 'n': buf[i++]='\n';break; case 'r': buf[i++]='\r';break;
+            case 't': buf[i++]='\t';break; case '"': buf[i++]='"'; break;
+            case '\\':buf[i++]='\\';break;
+            case 'x':{s++;char h[3]={s[0],s[1],'\0'};buf[i++]=(char)strtol(h,NULL,16);s++;break;}
+            default:buf[i++]=*s;}}
+        else { buf[i++]=*s; } s++;}
+    buf[i]='\0'; if(*s=='"')s++; return s;
+}
+
+static void lt_add(LabelTab *lt,const char*n,int pc){
+    if(lt->n>=lt->cap){lt->cap=lt->cap?lt->cap*2:16;lt->e=realloc(lt->e,lt->cap*sizeof(LabelEnt));}
+    lt->e[lt->n].name=strdup(n); lt->e[lt->n].pc=pc; lt->n++;
+}
+static int lt_find(LabelTab *lt,const char*n){
+    for(int i=0;i<lt->n;i++) if(!strcmp(lt->e[i].name,n)) return lt->e[i].pc;
+    fprintf(stderr,"bc2asm: unresolved label '%s'\n",n); exit(1);
+}
+static void lt_free(LabelTab *lt){
+    for(int i=0;i<lt->n;i++)free(lt->e[i].name);
+    free(lt->e); lt->n=lt->cap=0; lt->e=NULL;
+}
+
+static void prog_set_str(BcProg*p,int idx,const char*s){
+    while(p->nstrings<=idx){
+        if(p->nstrings>=p->strings_cap){p->strings_cap=p->strings_cap?p->strings_cap*2:16;p->strings=realloc(p->strings,p->strings_cap*sizeof(char*));}
+        p->strings[p->nstrings++]=NULL;}
+    free(p->strings[idx]); p->strings[idx]=strdup(s);
+}
+static void prog_add_global(BcProg*p,const char*nm,const char*ty){
+    if(p->nglobals>=p->globals_cap){p->globals_cap=p->globals_cap?p->globals_cap*2:8;
+        p->global_names=realloc(p->global_names,p->globals_cap*sizeof(char*));
+        p->global_types=realloc(p->global_types,p->globals_cap*sizeof(char*));}
+    p->global_names[p->nglobals]=strdup(nm); p->global_types[p->nglobals]=strdup(ty); p->nglobals++;
+}
+static BcFunc *prog_new_fn(BcProg*p){
+    if(p->nfuncs>=p->funcs_cap){p->funcs_cap=p->funcs_cap?p->funcs_cap*2:8;p->funcs=realloc(p->funcs,p->funcs_cap*sizeof(BcFunc));}
+    BcFunc*f=&p->funcs[p->nfuncs++]; memset(f,0,sizeof(BcFunc)); return f;
+}
+static void fn_param(BcFunc*f,const char*n,const char*t){
+    f->param_names=realloc(f->param_names,(f->nparams+1)*sizeof(char*));
+    f->param_types=realloc(f->param_types,(f->nparams+1)*sizeof(char*));
+    f->param_names[f->nparams]=strdup(n); f->param_types[f->nparams]=strdup(t); f->nparams++;
+}
+static void fn_local(BcFunc*f,const char*n,const char*t){
+    f->local_names=realloc(f->local_names,(f->nlocals+1)*sizeof(char*));
+    f->local_types=realloc(f->local_types,(f->nlocals+1)*sizeof(char*));
+    f->local_names[f->nlocals]=strdup(n); f->local_types[f->nlocals]=strdup(t); f->nlocals++;
+}
+static void fn_emit(BcFunc*f,Instr ins){
+    if(f->ninstrs>=f->instrs_cap){f->instrs_cap=f->instrs_cap?f->instrs_cap*2:32;f->instrs=realloc(f->instrs,f->instrs_cap*sizeof(Instr));}
+    f->instrs[f->ninstrs++]=ins;
+}
+static void fn_resolve(BcFunc*f,LabelTab*lt){
+    for(int i=0;i<f->ninstrs;i++){Instr*ins=&f->instrs[i];
+        if((ins->op==OP_JUMP||ins->op==OP_JUMP_IF||ins->op==OP_JUMP_IFNOT)&&ins->sarg){
+            ins->ival=lt_find(lt,ins->sarg); free(ins->sarg); ins->sarg=NULL;}}
+}
+
+static BcProg *bc_parse(FILE *in) {
+    BcProg *p=calloc(1,sizeof(BcProg)); BcFunc *cur=NULL; LabelTab lt={0};
+    char line[4096];
+    while(fgets(line,sizeof(line),in)){
+        int len=strlen(line);
+        while(len>0&&(line[len-1]=='\n'||line[len-1]=='\r'))line[--len]='\0';
+        char *s=skip_ws(line); if(!*s||*s==';') continue;
+        if(*s=='.'){
+            char dir[64]; s=skip_ws(next_tok(s+1,dir,sizeof(dir)));
+            if(!strcmp(dir,"string")){char is[16];s=skip_ws(next_tok(s,is,sizeof(is)));if(*s=='"'){char b[4096];parse_strlit(s+1,b,sizeof(b));prog_set_str(p,atoi(is),b);}}
+            else if(!strcmp(dir,"global")){char nm[128],ty[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,ty,sizeof(ty));prog_add_global(p,nm,ty);}
+            else if(!strcmp(dir,"fn")){char nm[128],np[16],rt[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));s=skip_ws(next_tok(s,np,sizeof(np)));next_tok(s,rt,sizeof(rt));cur=prog_new_fn(p);cur->name=strdup(nm);cur->ret_type=strdup(rt);lt_free(&lt);}
+            else if(!strcmp(dir,"param")){char nm[128],ty[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,ty,sizeof(ty));if(cur)fn_param(cur,nm,ty);}
+            else if(!strcmp(dir,"local")){char nm[128],ty[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,ty,sizeof(ty));if(cur)fn_local(cur,nm,ty);}
+            else if(!strcmp(dir,"endfn")){if(cur){fn_resolve(cur,&lt);lt_free(&lt);}cur=NULL;}
+            continue;
+        }
+        if(s[0]=='_'&&s[1]=='_'&&s[2]=='L'&&cur){
+            const char*e=s; while(*e&&*e!=':')e++;
+            if(*e==':'){int nl=(int)(e-s);char*ln=malloc(nl+1);memcpy(ln,s,nl);ln[nl]='\0';lt_add(&lt,ln,cur->ninstrs);free(ln);}
+            continue;
+        }
+        if(!cur) continue;
+        char op[32]; s=skip_ws(next_tok(s,op,sizeof(op)));
+        Instr ins; memset(&ins,0,sizeof(ins));
+        if(!strcmp(op,"push_int"))  {ins.op=OP_PUSH_INT;ins.ival=atol(skip_ws(s));}
+        else if(!strcmp(op,"push_str"))  {ins.op=OP_PUSH_STR;ins.ival=atol(skip_ws(s));}
+        else if(!strcmp(op,"load"))      {ins.op=OP_LOAD;char n[128];next_tok(s,n,sizeof(n));ins.sarg=strdup(n);}
+        else if(!strcmp(op,"store"))     {ins.op=OP_STORE;char n[128];next_tok(s,n,sizeof(n));ins.sarg=strdup(n);}
+        else if(!strcmp(op,"call"))      {ins.op=OP_CALL;char nm[128],na[16];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,na,sizeof(na));ins.sarg=strdup(nm);ins.ival=atol(na);}
+        else if(!strcmp(op,"return"))    {ins.op=OP_RETURN;}
+        else if(!strcmp(op,"return_void")){ins.op=OP_RETURN_VOID;}
+        else if(!strcmp(op,"pop"))       {ins.op=OP_POP;}
+        else if(!strcmp(op,"add"))       {ins.op=OP_ADD;}
+        else if(!strcmp(op,"sub"))       {ins.op=OP_SUB;}
+        else if(!strcmp(op,"mul"))       {ins.op=OP_MUL;}
+        else if(!strcmp(op,"div"))       {ins.op=OP_DIV;}
+        else if(!strcmp(op,"mod"))       {ins.op=OP_MOD;}
+        else if(!strcmp(op,"and"))       {ins.op=OP_AND;}
+        else if(!strcmp(op,"or"))        {ins.op=OP_OR;}
+        else if(!strcmp(op,"xor"))       {ins.op=OP_XOR;}
+        else if(!strcmp(op,"shl"))       {ins.op=OP_SHL;}
+        else if(!strcmp(op,"shr"))       {ins.op=OP_SHR;}
+        else if(!strcmp(op,"eq"))        {ins.op=OP_EQ;}
+        else if(!strcmp(op,"ne"))        {ins.op=OP_NE;}
+        else if(!strcmp(op,"lt"))        {ins.op=OP_LT;}
+        else if(!strcmp(op,"le"))        {ins.op=OP_LE;}
+        else if(!strcmp(op,"gt"))        {ins.op=OP_GT;}
+        else if(!strcmp(op,"ge"))        {ins.op=OP_GE;}
+        else if(!strcmp(op,"neg"))       {ins.op=OP_NEG;}
+        else if(!strcmp(op,"lnot"))      {ins.op=OP_LNOT;}
+        else if(!strcmp(op,"cast"))      {ins.op=OP_CAST;char t[64];next_tok(s,t,sizeof(t));ins.sarg=strdup(t);}
+        else if(!strcmp(op,"jump"))      {ins.op=OP_JUMP;char l[64];next_tok(s,l,sizeof(l));ins.sarg=strdup(l);}
+        else if(!strcmp(op,"jump_if"))   {ins.op=OP_JUMP_IF;char l[64];next_tok(s,l,sizeof(l));ins.sarg=strdup(l);}
+        else if(!strcmp(op,"jump_ifnot")){ins.op=OP_JUMP_IFNOT;char l[64];next_tok(s,l,sizeof(l));ins.sarg=strdup(l);}
+        else{fprintf(stderr,"bc2asm: unknown op '%s'\n",op);exit(1);}
+        fn_emit(cur,ins);
+    }
+    lt_free(&lt);
+    return p;
+}
+
+/* ===== Variable lookup ===== */
+
+/* Returns fp-relative offset (negative) for variable name in fn. */
+static int var_offset(BcFunc *fn, const char *name) {
+    for (int i = 0; i < fn->nparams; i++)
+        if (!strcmp(fn->param_names[i], name)) return -12 - 4*i;
+    for (int i = 0; i < fn->nlocals; i++)
+        if (!strcmp(fn->local_names[i], name)) return -12 - 4*fn->nparams - 4*i;
+    return 0; /* not found — global */
+}
+
+static int is_local(BcFunc *fn, const char *name) {
+    for (int i = 0; i < fn->nparams; i++)
+        if (!strcmp(fn->param_names[i], name)) return 1;
+    for (int i = 0; i < fn->nlocals; i++)
+        if (!strcmp(fn->local_names[i], name)) return 1;
+    return 0;
+}
+
+/* ===== Builtin detection ===== */
+
+static int is_builtin(const char *name) {
+    static const char *B[] = {
+        "peek8","peek16","peek32","poke8","poke16","poke32",
+        "sys_write","sys_read","sys_exit",
+        "print_i32","print_u32","print_bool","print_str",
+        "len","get","set","delete","getChar","append","equals",
+        NULL
+    };
+    for (int i = 0; B[i]; i++)
+        if (!strcmp(name, B[i])) return 1;
+    if (!strncmp(name, "new", 3)) return 1;
+    return 0;
+}
+
+/* ===== Code generation ===== */
+
+static FILE *out;
+
+/* Macro-like helpers to emit common idioms */
+#define E(...) fprintf(out, __VA_ARGS__)
+
+/* Push t0 onto expression stack */
+static void push_t0(void) {
+    E("    addi sp, sp, -4\n");
+    E("    sw   t0, 0(sp)\n");
+}
+
+/* Pop top of expression stack into t0 */
+static void pop_t0(void) {
+    E("    lw   t0, 0(sp)\n");
+    E("    addi sp, sp, 4\n");
+}
+
+/* Pop top into t1, next into t0 (t0=left, t1=right) */
+static void pop_t1_t0(void) {
+    E("    lw   t1, 0(sp)\n");   /* right */
+    E("    lw   t0, 4(sp)\n");   /* left */
+    E("    addi sp, sp, 8\n");
+}
+
+/* Returns 1 if instruction i is a jump target in fn */
+static int is_jump_target(BcFunc *fn, int i) {
+    for (int j = 0; j < fn->ninstrs; j++) {
+        Instr *ins = &fn->instrs[j];
+        if ((ins->op == OP_JUMP || ins->op == OP_JUMP_IF || ins->op == OP_JUMP_IFNOT)
+            && (int)ins->ival == i)
+            return 1;
+    }
+    return 0;
+}
+
+static void emit_fn(BcProg *prog, BcFunc *fn) {
+    int nvars      = fn->nparams + fn->nlocals;
+    int frame_size = 8 + 4 * nvars;
+    /* round up to 16-byte boundary */
+    frame_size = (frame_size + 15) & ~15;
+
+    /* --- function header --- */
+    E("    .globl %s\n", fn->name);
+    E("    .type  %s, @function\n", fn->name);
+    E("%s:\n", fn->name);
+
+    /* --- prologue --- */
+    E("    # prologue: frame_size=%d, params=%d, locals=%d\n",
+      frame_size, fn->nparams, fn->nlocals);
+    E("    addi sp, sp, -%d\n", frame_size);
+    E("    sw   ra, %d(sp)\n",  frame_size - 4);
+    E("    sw   s0, %d(sp)\n",  frame_size - 8);
+    E("    addi s0, sp, %d\n",  frame_size);
+
+    /* save incoming args (a0-a7) to param slots */
+    static const char *areg[] = {"a0","a1","a2","a3","a4","a5","a6","a7"};
+    for (int i = 0; i < fn->nparams && i < 8; i++)
+        E("    sw   %s, %d(s0)\n", areg[i], -12 - 4*i);
+
+    /* zero-initialize locals */
+    for (int i = 0; i < fn->nlocals; i++)
+        E("    sw   zero, %d(s0)\n", -12 - 4*fn->nparams - 4*i);
+
+    /* --- instruction loop --- */
+    for (int pc = 0; pc < fn->ninstrs; pc++) {
+        /* emit label if this pc is a jump target */
+        if (is_jump_target(fn, pc))
+            E("  .L_pc%d:\n", pc);
+
+        Instr *ins = &fn->instrs[pc];
+
+        switch (ins->op) {
+
+        case OP_PUSH_INT:
+            E("    li   t0, %ld\n", ins->ival);
+            push_t0();
+            break;
+
+        case OP_PUSH_STR: {
+            /* Push pointer to __tc_str_N object (initialized by runtime) */
+            int idx = (int)ins->ival;
+            E("    la   a0, __tc_strdata%d\n", idx);
+            E("    li   a1, %d\n",
+              idx < prog->nstrings && prog->strings[idx]
+              ? (int)strlen(prog->strings[idx]) : 0);
+            E("    call __tc_make_string\n");
+            /* result (HeapObj*) is in a0 — push it */
+            E("    addi sp, sp, -4\n");
+            E("    sw   a0, 0(sp)\n");
+            break;
+        }
+
+        case OP_LOAD:
+            if (is_local(fn, ins->sarg)) {
+                int off = var_offset(fn, ins->sarg);
+                E("    lw   t0, %d(s0)\n", off);
+            } else {
+                E("    lw   t0, %s\n", ins->sarg);  /* global */
+            }
+            push_t0();
+            break;
+
+        case OP_STORE:
+            pop_t0();
+            if (is_local(fn, ins->sarg)) {
+                int off = var_offset(fn, ins->sarg);
+                E("    sw   t0, %d(s0)\n", off);
+            } else {
+                E("    sw   t0, %s\n", ins->sarg);  /* global */
+            }
+            break;
+
+        case OP_CALL: {
+            int nargs = (int)ins->ival;
+            /* Load args from expression stack into a0-a7.
+               Stack: [arg0, arg1, ..., argn-1]  (argn-1 at top = 0(sp)) */
+            /* arg[0] pushed first → at 4*(nargs-1)(sp), arg[nargs-1] at 0(sp) */
+            for (int i = 0; i < nargs && i < 8; i++)
+                E("    lw   %s, %d(sp)\n", areg[i], 4*(nargs-1-i));
+            if (nargs > 0)
+                E("    addi sp, sp, %d\n", 4*nargs);
+
+            if (is_builtin(ins->sarg)) {
+                /* Inline sys_exit */
+                if (!strcmp(ins->sarg, "sys_exit")) {
+                    E("    li   a7, 93\n");   /* __NR_exit (Linux riscv) */
+                    E("    ecall\n");
+                } else {
+                    E("    call __tc_%s\n", ins->sarg);
+                }
+            } else {
+                E("    call %s\n", ins->sarg);
+            }
+
+            /* push return value (a0) — callers of void fns will pop it */
+            E("    addi sp, sp, -4\n");
+            E("    sw   a0, 0(sp)\n");
+            break;
+        }
+
+        case OP_RETURN:
+            pop_t0();
+            E("    mv   a0, t0\n");
+            /* epilogue */
+            E("    mv   t0, s0\n");
+            E("    lw   ra, -4(t0)\n");
+            E("    lw   s0, -8(t0)\n");
+            E("    addi sp, t0, 0\n");
+            E("    ret\n");
+            break;
+
+        case OP_RETURN_VOID:
+            /* epilogue */
+            E("    mv   t0, s0\n");
+            E("    lw   ra, -4(t0)\n");
+            E("    lw   s0, -8(t0)\n");
+            E("    addi sp, t0, 0\n");
+            E("    ret\n");
+            break;
+
+        case OP_POP:
+            E("    addi sp, sp, 4\n");
+            break;
+
+        /* --- arithmetic --- */
+        case OP_ADD: pop_t1_t0(); E("    add  t0, t0, t1\n"); push_t0(); break;
+        case OP_SUB: pop_t1_t0(); E("    sub  t0, t0, t1\n"); push_t0(); break;
+        case OP_MUL: pop_t1_t0(); E("    mul  t0, t0, t1\n"); push_t0(); break;
+        case OP_DIV: pop_t1_t0(); E("    div  t0, t0, t1\n"); push_t0(); break;
+        case OP_MOD: pop_t1_t0(); E("    rem  t0, t0, t1\n"); push_t0(); break;
+        case OP_AND: pop_t1_t0(); E("    and  t0, t0, t1\n"); push_t0(); break;
+        case OP_OR:  pop_t1_t0(); E("    or   t0, t0, t1\n"); push_t0(); break;
+        case OP_XOR: pop_t1_t0(); E("    xor  t0, t0, t1\n"); push_t0(); break;
+        case OP_SHL: pop_t1_t0(); E("    sll  t0, t0, t1\n"); push_t0(); break;
+        case OP_SHR: pop_t1_t0(); E("    sra  t0, t0, t1\n"); push_t0(); break;
+
+        /* --- comparisons (result: 1 or 0) --- */
+        case OP_EQ:
+            pop_t1_t0();
+            E("    sub  t0, t0, t1\n");
+            E("    seqz t0, t0\n");
+            push_t0(); break;
+        case OP_NE:
+            pop_t1_t0();
+            E("    sub  t0, t0, t1\n");
+            E("    snez t0, t0\n");
+            push_t0(); break;
+        case OP_LT:
+            pop_t1_t0();
+            E("    slt  t0, t0, t1\n");
+            push_t0(); break;
+        case OP_LE:
+            /* a <= b  ≡  NOT (b < a) */
+            pop_t1_t0();
+            E("    slt  t0, t1, t0\n");
+            E("    xori t0, t0, 1\n");
+            push_t0(); break;
+        case OP_GT:
+            pop_t1_t0();
+            E("    slt  t0, t1, t0\n");
+            push_t0(); break;
+        case OP_GE:
+            /* a >= b  ≡  NOT (a < b) */
+            pop_t1_t0();
+            E("    slt  t0, t0, t1\n");
+            E("    xori t0, t0, 1\n");
+            push_t0(); break;
+
+        case OP_NEG:
+            pop_t0();
+            E("    neg  t0, t0\n");
+            push_t0(); break;
+        case OP_LNOT:
+            pop_t0();
+            E("    seqz t0, t0\n");
+            push_t0(); break;
+
+        case OP_CAST: {
+            pop_t0();
+            const char *ty = ins->sarg;
+            if      (!strcmp(ty,"u8"))   E("    andi t0, t0, 0xff\n");
+            else if (!strcmp(ty,"u16"))  E("    slli t0, t0, 16\n    srli t0, t0, 16\n");
+            else if (!strcmp(ty,"i8"))   E("    slli t0, t0, 24\n    srai t0, t0, 24\n");
+            else if (!strcmp(ty,"i16"))  E("    slli t0, t0, 16\n    srai t0, t0, 16\n");
+            else if (!strcmp(ty,"bool")) E("    snez t0, t0\n");
+            /* u32, i32: no-op (already 32-bit) */
+            push_t0();
+            break;
+        }
+
+        case OP_JUMP:
+            E("    j    .L_pc%ld\n", ins->ival);
+            break;
+        case OP_JUMP_IF:
+            pop_t0();
+            E("    bnez t0, .L_pc%ld\n", ins->ival);
+            break;
+        case OP_JUMP_IFNOT:
+            pop_t0();
+            E("    beqz t0, .L_pc%ld\n", ins->ival);
+            break;
+
+        } /* switch */
+    }
+
+    /* ensure function always ends with a ret */
+    E("    # end of %s\n", fn->name);
+    E("\n");
+}
+
+/* Escape a C string for .string directive */
+static void emit_strdata(FILE *f, const char *s) {
+    fputc('"', f);
+    for (; *s; s++) {
+        unsigned char c = (unsigned char)*s;
+        if      (c == '"')  fputs("\\\"", f);
+        else if (c == '\\') fputs("\\\\", f);
+        else if (c == '\n') fputs("\\n",  f);
+        else if (c == '\r') fputs("\\r",  f);
+        else if (c == '\t') fputs("\\t",  f);
+        else if (c < 0x20 || c == 0x7f) fprintf(f, "\\%03o", c);
+        else fputc(c, f);
+    }
+    fputc('"', f);
+}
+
+static void emit_program(BcProg *prog) {
+    out = stdout;
+
+    /* --- .rodata: string literal data --- */
+    if (prog->nstrings > 0) {
+        E("    .section .rodata\n");
+        for (int i = 0; i < prog->nstrings; i++) {
+            const char *s = prog->strings[i] ? prog->strings[i] : "";
+            E("__tc_strdata%d:\n", i);
+            E("    .string "); emit_strdata(out, s); E("\n");
+        }
+        E("\n");
+    }
+
+    /* --- .data: global variables --- */
+    if (prog->nglobals > 0) {
+        E("    .data\n");
+        for (int i = 0; i < prog->nglobals; i++) {
+            E("    .globl %s\n", prog->global_names[i]);
+            E("%s:\n    .word 0\n", prog->global_names[i]);
+        }
+        E("\n");
+    }
+
+    /* --- .text: functions --- */
+    E("    .text\n\n");
+    for (int i = 0; i < prog->nfuncs; i++)
+        emit_fn(prog, &prog->funcs[i]);
+}
+
+int main(int argc, char *argv[]) {
+    FILE *in;
+    if (argc > 1) {
+        in = fopen(argv[1], "r");
+        if (!in) { perror(argv[1]); return 1; }
+    } else {
+        in = stdin;
+    }
+
+    BcProg *prog = bc_parse(in);
+    if (argc > 1) fclose(in);
+
+    emit_program(prog);
+    return 0;
+}
