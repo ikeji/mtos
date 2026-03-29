@@ -1,0 +1,83 @@
+// Simple expression calculator: supports +, -, *, / with correct precedence
+// Input: expression like "12 + 34 * 56" from stdin
+// Output: result (e.g. 1916)
+
+var g_pos: i32 = 0;
+var g_len: i32 = 0;
+
+fn is_digit(c: u8) -> bool {
+    return c >= 48u8 && c <= 57u8;
+}
+
+fn is_space(c: u8) -> bool {
+    return c == 32u8 || c == 9u8;
+}
+
+fn cur_char(buf: U8Array) -> u8 {
+    if g_pos >= g_len {
+        return 0u8;
+    }
+    return get(buf, g_pos as u32);
+}
+
+fn skip_spaces(buf: U8Array) -> void {
+    while g_pos < g_len && is_space(cur_char(buf)) {
+        g_pos = g_pos + 1;
+    }
+    return;
+}
+
+fn parse_num(buf: U8Array) -> i32 {
+    skip_spaces(buf);
+    var result: i32 = 0;
+    while g_pos < g_len && is_digit(cur_char(buf)) {
+        result = result * 10 + (cur_char(buf) as i32 - 48);
+        g_pos = g_pos + 1;
+    }
+    return result;
+}
+
+// mul = num (('*' | '/') num)*
+fn parse_mul(buf: U8Array) -> i32 {
+    var left: i32 = parse_num(buf);
+    skip_spaces(buf);
+    while g_pos < g_len && (cur_char(buf) == 42u8 || cur_char(buf) == 47u8) {
+        var op: u8 = cur_char(buf);
+        g_pos = g_pos + 1;
+        var right: i32 = parse_num(buf);
+        if op == 42u8 {
+            left = left * right;
+        } else {
+            left = left / right;
+        }
+        skip_spaces(buf);
+    }
+    return left;
+}
+
+// add = mul (('+' | '-') mul)*
+fn parse_add(buf: U8Array) -> i32 {
+    var left: i32 = parse_mul(buf);
+    skip_spaces(buf);
+    while g_pos < g_len && (cur_char(buf) == 43u8 || cur_char(buf) == 45u8) {
+        var op: u8 = cur_char(buf);
+        g_pos = g_pos + 1;
+        var right: i32 = parse_mul(buf);
+        if op == 43u8 {
+            left = left + right;
+        } else {
+            left = left - right;
+        }
+        skip_spaces(buf);
+    }
+    return left;
+}
+
+fn main() -> i32 {
+    var buf: U8Array = newU8Array(256);
+    g_len = sys_read(0, buf, 256u32);
+    var result: i32 = parse_add(buf);
+    print_i32(result);
+    delete(buf);
+    return 0;
+}

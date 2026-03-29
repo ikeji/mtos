@@ -2,4 +2,7 @@
 parse
 typecheck
 interp
+codegen
+bcrun
+bc2asm
 .claude/
