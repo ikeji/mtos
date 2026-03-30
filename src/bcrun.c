@@ -39,6 +39,11 @@ static Value val_void(void)       { Value r; r.kind=VAL_VOID; r.ival=0; r.ref=NU
 
 static HeapObj *g_heap = NULL;
 
+/* Program stdin buffer (populated from bytes after .endbc in stdin) */
+static uint8_t *g_prog_stdin     = NULL;
+static int      g_prog_stdin_len = 0;
+static int      g_prog_stdin_pos = 0;
+
 static HeapObj *heap_alloc(ObjKind kind, const char *type_name) {
     HeapObj *o = calloc(1, sizeof(HeapObj));
     if (!o) { fprintf(stderr, "bcrun: out of memory\n"); exit(1); }
@@ -87,13 +92,14 @@ typedef struct {
 /* ===== Program ===== */
 
 typedef struct {
-    char  **strings;
-    int     nstrings, strings_cap;
-    char  **global_names;
-    char  **global_types;
-    int     nglobals,  globals_cap;
-    BcFunc *funcs;
-    int     nfuncs,    funcs_cap;
+    char    **strings;
+    int       nstrings, strings_cap;
+    char    **global_names;
+    char    **global_types;
+    int32_t  *global_inits;
+    int       nglobals,  globals_cap;
+    BcFunc   *funcs;
+    int       nfuncs,    funcs_cap;
 } BcProg;
 
 /* ===== Parser helpers ===== */
@@ -190,14 +196,16 @@ static void prog_set_string(BcProg *p, int idx, const char *s) {
     p->strings[idx] = strdup(s);
 }
 
-static void prog_add_global(BcProg *p, const char *name, const char *type) {
+static void prog_add_global(BcProg *p, const char *name, const char *type, int32_t initval) {
     if (p->nglobals >= p->globals_cap) {
         p->globals_cap = p->globals_cap ? p->globals_cap * 2 : 8;
-        p->global_names = realloc(p->global_names, p->globals_cap * sizeof(char*));
-        p->global_types = realloc(p->global_types, p->globals_cap * sizeof(char*));
+        p->global_names  = realloc(p->global_names,  p->globals_cap * sizeof(char*));
+        p->global_types  = realloc(p->global_types,  p->globals_cap * sizeof(char*));
+        p->global_inits  = realloc(p->global_inits,  p->globals_cap * sizeof(int32_t));
     }
-    p->global_names[p->nglobals] = strdup(name);
-    p->global_types[p->nglobals] = strdup(type);
+    p->global_names[p->nglobals]  = strdup(name);
+    p->global_types[p->nglobals]  = strdup(type);
+    p->global_inits[p->nglobals]  = initval;
     p->nglobals++;
 }
 
@@ -277,10 +285,11 @@ static BcProg *bc_parse(FILE *in) {
                     prog_set_string(p, atoi(idx_s), buf);
                 }
             } else if (strcmp(dir, "global") == 0) {
-                char nm[128], ty[64];
+                char nm[128], ty[64], iv[32] = "0";
                 s = skip_ws(next_tok(s, nm, sizeof(nm)));
-                next_tok(s, ty, sizeof(ty));
-                prog_add_global(p, nm, ty);
+                s = skip_ws(next_tok(s, ty, sizeof(ty)));
+                next_tok(s, iv, sizeof(iv));
+                prog_add_global(p, nm, ty, (int32_t)atol(iv));
             } else if (strcmp(dir, "fn") == 0) {
                 char nm[128], np[16], rt[64];
                 s = skip_ws(next_tok(s, nm,  sizeof(nm)));
@@ -501,7 +510,16 @@ static Value call_builtin(const char *name, Value *args, int nargs) {
     if (!strcmp(name,"sys_read") && nargs==3) {
         int fd=args[0].ival; HeapObj *buf=args[1].ref; int len=args[2].ival;
         if (buf && buf->kind==OBJ_ARRAY) {
-            int n=len<buf->size?len:buf->size; uint8_t *tmp=malloc(n);
+            int n=len<buf->size?len:buf->size;
+            if (fd==0 && g_prog_stdin!=NULL) {
+                /* serve from prog_stdin buffer */
+                int avail=g_prog_stdin_len-g_prog_stdin_pos;
+                int r=avail<n?avail:n;
+                for(int i=0;i<r;i++) buf->fields[i]=val_int(g_prog_stdin[g_prog_stdin_pos+i]);
+                g_prog_stdin_pos+=r;
+                return val_int(r);
+            }
+            uint8_t *tmp=malloc(n);
             int r=(int)read(fd,tmp,n);
             if(r>0) for(int i=0;i<r;i++) buf->fields[i].ival=tmp[i];
             free(tmp); return val_int(r);
@@ -710,6 +728,44 @@ static Value vm_exec(VM *vm, BcFunc *fn, Value *args, int nargs) {
     return val_void();
 }
 
+/* Read all of fd 0 into a heap buffer; return pointer and length. */
+static char *read_all_stdin(size_t *out_len) {
+    char   *buf  = NULL;
+    size_t  len  = 0, cap = 0;
+    char    tmp[65536];
+    ssize_t r;
+    while ((r = read(0, tmp, sizeof(tmp))) > 0) {
+        if (len + (size_t)r + 1 > cap) {
+            cap = (len + (size_t)r + 65536) & ~(size_t)65535;
+            buf = realloc(buf, cap);
+            if (!buf) { fprintf(stderr, "bcrun: out of memory\n"); exit(1); }
+        }
+        memcpy(buf + len, tmp, r);
+        len += r;
+    }
+    if (buf) buf[len] = '\0';
+    *out_len = len;
+    return buf;
+}
+
+/* Find ".endbc" at the start of a line; return offset of char after its newline,
+   or all_len if not found. */
+static size_t find_endbc(const char *buf, size_t all_len) {
+    for (size_t i = 0; i < all_len; ) {
+        /* check if this line starts with ".endbc" */
+        if (all_len - i >= 6 && memcmp(buf + i, ".endbc", 6) == 0) {
+            size_t j = i + 6;
+            while (j < all_len && buf[j] != '\n') j++;
+            if (j < all_len) j++; /* skip newline */
+            return j;
+        }
+        /* advance to next line */
+        while (i < all_len && buf[i] != '\n') i++;
+        if (i < all_len) i++; /* skip newline */
+    }
+    return all_len;
+}
+
 /* ===== main ===== */
 
 int main(int argc, char *argv[]) {
@@ -718,11 +774,21 @@ int main(int argc, char *argv[]) {
         in = fopen(argv[1], "r");
         if (!in) { perror(argv[1]); return 1; }
     } else {
-        in = stdin;
+        /* Read all stdin, split at .endbc, expose remainder as prog_stdin */
+        size_t all_len = 0;
+        char  *all_buf = read_all_stdin(&all_len);
+        size_t bc_end  = find_endbc(all_buf, all_len);
+        /* Set up prog_stdin for bytes after .endbc */
+        g_prog_stdin     = (uint8_t *)(all_buf + bc_end);
+        g_prog_stdin_len = (int)(all_len - bc_end);
+        g_prog_stdin_pos = 0;
+        /* Parse bytecode from the bytecode portion */
+        in = fmemopen(all_buf, bc_end, "r");
+        if (!in) { perror("fmemopen"); return 1; }
     }
 
     BcProg *prog = bc_parse(in);
-    if (argc > 1) fclose(in);
+    fclose(in);
 
     VM vm; memset(&vm, 0, sizeof(vm));
     vm.prog = prog;
@@ -732,7 +798,7 @@ int main(int argc, char *argv[]) {
     vm.frame        = vm.global_frame;
 
     for (int i = 0; i < prog->nglobals; i++)
-        frame_set(vm.global_frame, prog->global_names[i], val_int(0));
+        frame_set(vm.global_frame, prog->global_names[i], val_int(prog->global_inits[i]));
 
     /* find main */
     BcFunc *main_fn = NULL;

@@ -858,11 +858,16 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
                 has_global = 1;
             }
             var type_n: i32 = n_child(nodes, c);
-            // ".global NAME TYPE\n"
+            var init_n: i32 = n_sib(nodes, type_n);
+            var initval: i32 = 0;
+            if init_n >= 0 { initval = n_ival(nodes, init_n); }
+            // ".global NAME TYPE INITVAL\n"
             ob_char(46u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
             ob_n(strtab, n_ss(nodes,c), n_sl(nodes,c), ob);
             ob_char(32u8,ob);
             ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob);
+            ob_char(32u8,ob);
+            ob_int(initval, ob);
             ob_char(10u8,ob);
         }
         c = n_sib(nodes, c);

@@ -333,7 +333,7 @@ fn parse_lnum(src: U8Array, from: i32, to: i32) -> i32 {
 
 // ===== BC parser =====
 fn parse_bc(src: U8Array, strtab: U8Array,
-            string_lits: I32Array, global_vars: I32Array,
+            string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
             fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
             instrs: I32Array, label_pcs: I32Array) -> void {
     var cur_fn: i32 = -1;
@@ -375,11 +375,16 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     var nm_sl: i32 = tok_len(nm_ss);
                     var ty_ss: i32 = next_tok(src, strtab);
                     var ty_sl: i32 = tok_len(ty_ss);
+                    var iv_ss: i32 = next_tok(src, strtab);
+                    var iv_sl: i32 = tok_len(iv_ss);
+                    var iv: i32 = int_from_stab(strtab, iv_ss, iv_sl);
+                    discard_tok(iv_ss);
                     var gi: i32 = g_nglobals;
                     set(global_vars, (gi*4+0) as u32, nm_ss);
                     set(global_vars, (gi*4+1) as u32, nm_sl);
                     set(global_vars, (gi*4+2) as u32, ty_ss);
                     set(global_vars, (gi*4+3) as u32, ty_sl);
+                    set(global_inits, gi as u32, iv);
                     g_nglobals = g_nglobals + 1;
                     skip_line(src);
                 }
@@ -609,7 +614,7 @@ fn cs_pop(cs: I32Array) -> void {
 }
 
 // ===== Main VM =====
-fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array,
+fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
           fns: I32Array, params_pool: I32Array, locals_pool: I32Array, instrs: I32Array,
           hm: I32Array, hb: U8Array, hi: I32Array,
           stk_i: I32Array, stk_t: I32Array, var_i: I32Array, var_t: I32Array,
@@ -625,10 +630,12 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array,
     g_stab_pos = main_ss;
     if main_fi < 0 { return 1; }
 
-    // Init globals to 0
+    // Init globals from global_inits
     var gi: i32 = 0;
     while gi < g_nglobals {
-        set(gv_i,(gi*2+0) as u32,0); set(gv_t,(gi*2+1) as u32,0); gi=gi+1;
+        set(gv_i,(gi*2+0) as u32, get(global_inits, gi as u32));
+        set(gv_t,(gi*2+1) as u32, 0);
+        gi = gi + 1;
     }
 
     // Set up main's frame
@@ -997,7 +1004,8 @@ fn main() -> i32 {
     var src:         U8Array  = newU8Array(524288);
     var strtab:      U8Array  = newU8Array(262144);
     var string_lits: I32Array = newI32Array(2048);
-    var global_vars: I32Array = newI32Array(1024);
+    var global_vars:  I32Array = newI32Array(1024);
+    var global_inits: I32Array = newI32Array(256);
     var fns:         I32Array = newI32Array(2560);
     var params_pool: I32Array = newI32Array(4096);
     var locals_pool: I32Array = newI32Array(4096);
@@ -1035,7 +1043,7 @@ fn main() -> i32 {
     delete(chunk_buf);
     if g_in_len <= 0 { return 1; }
 
-    parse_bc(src, strtab, string_lits, global_vars, fns, params_pool, locals_pool, instrs, label_pcs);
+    parse_bc(src, strtab, string_lits, global_vars, global_inits, fns, params_pool, locals_pool, instrs, label_pcs);
 
     // Bytes remaining after bytecode become the program's stdin
     var prog_stdin_len: i32 = g_in_len - g_in_pos;
@@ -1048,7 +1056,7 @@ fn main() -> i32 {
     g_prog_stdin_pos = 0;
     g_prog_stdin_len = prog_stdin_len;
 
-    var result: i32 = vm_run(strtab, string_lits, global_vars, fns, params_pool, locals_pool,
+    var result: i32 = vm_run(strtab, string_lits, global_vars, global_inits, fns, params_pool, locals_pool,
                               instrs, hm, hb, hi, stk_i, stk_t, var_i, var_t, gv_i, gv_t,
                               cs, arg_i, arg_t, prog_stdin);
     return result;

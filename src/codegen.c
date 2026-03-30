@@ -353,7 +353,11 @@ void codegen(AstNode *program) {
         AstNode *d = program->children[i];
         if (strcmp(d->kind, "var_decl") == 0) {
             if (!has_global) { fprintf(cg.out, "; globals\n"); has_global = 1; }
-            fprintf(cg.out, ".global %s %s\n", d->sval, d->children[0]->sval);
+            /* emit initial value if it's a simple integer literal */
+            long initval = 0;
+            if (d->nchildren > 1 && strcmp(d->children[1]->kind, "int") == 0)
+                initval = d->children[1]->ival;
+            fprintf(cg.out, ".global %s %s %ld\n", d->sval, d->children[0]->sval, initval);
         }
     }
     if (has_global) fprintf(cg.out, "\n");
