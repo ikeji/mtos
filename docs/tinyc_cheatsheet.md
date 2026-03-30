@@ -178,22 +178,30 @@ if x == 2 && handled == 0 {
 }
 ```
 
-### 2. `break` / `continue` は使えない
-
-ループを途中で抜けるには `done` フラグを使う。
+### 2. `break` / `continue` は使える
 
 ```tinyc
-// NG
+// break: ループを抜ける
 while i < n {
-    if arr[i] == target { break; }
+    if get(arr, i as u32) == target { break; }
     i = i + 1;
 }
 
-// OK
-var done: i32 = 0;
-while done == 0 && i < n {
-    if get(arr, i as u32) == target { done = 1; }
-    if done == 0 { i = i + 1; }
+// continue: 次のイテレーションへ
+while i < n {
+    i = i + 1;
+    if i % 2 == 0 { continue; }
+    sum = sum + i;
+}
+
+// ネスト: break/continue は最内ループにのみ作用
+while i < rows {
+    var j: i32 = 0;
+    while j < cols {
+        if get(arr, j as u32) == 0 { break; }  // 内側だけ抜ける
+        j = j + 1;
+    }
+    i = i + 1;
 }
 ```
 
