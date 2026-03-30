@@ -71,7 +71,12 @@ static void collect_locals_stmt(LocalList *ll, AstNode *stmt) {
         local_add(ll, stmt->sval, stmt->children[0]->sval);
     } else if (strcmp(k, "if") == 0) {
         collect_locals_block(ll, stmt->children[1]);
-        if (stmt->nchildren > 2) collect_locals_block(ll, stmt->children[2]);
+        if (stmt->nchildren > 2) {
+            if (strcmp(stmt->children[2]->kind, "if") == 0)
+                collect_locals_stmt(ll, stmt->children[2]);
+            else
+                collect_locals_block(ll, stmt->children[2]);
+        }
     } else if (strcmp(k, "while") == 0) {
         collect_locals_block(ll, stmt->children[1]);
     }
@@ -254,7 +259,10 @@ static void cg_stmt(CG *cg, AstNode *node) {
             cg_block(cg, node->children[1]);
             fprintf(cg->out, "  jump __L%d\n", lend);
             fprintf(cg->out, "__L%d:\n", lelse);
-            cg_block(cg, node->children[2]);
+            if (strcmp(node->children[2]->kind, "if") == 0)
+                cg_stmt(cg, node->children[2]);
+            else
+                cg_block(cg, node->children[2]);
             fprintf(cg->out, "__L%d:\n", lend);
         } else {
             int lend = cg_new_label(cg);

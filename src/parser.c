@@ -354,8 +354,13 @@ static AstNode *parse_if_stmt(Parser *p) {
     ast_add_child(n, cond);
     ast_add_child(n, then_blk);
     if (match(p, TK_ELSE)) {
-        AstNode *else_blk = parse_block(p);
-        ast_add_child(n, else_blk);
+        if (check(p, TK_IF)) {
+            AstNode *elif = parse_if_stmt(p);
+            ast_add_child(n, elif);
+        } else {
+            AstNode *else_blk = parse_block(p);
+            ast_add_child(n, else_blk);
+        }
     }
     return n;
 }

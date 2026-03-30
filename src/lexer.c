@@ -141,6 +141,26 @@ void lexer_tokenize(Lexer *l) {
             continue;
         }
 
+        /* character literal: 'X' → u8 integer */
+        if (cur(l) == '\'') {
+            advance(l);  /* skip opening ' */
+            long val = 0;
+            if (cur(l) == '\\') {
+                advance(l);
+                val = (unsigned char)unescape_char(cur(l));
+                advance(l);
+            } else {
+                val = (unsigned char)cur(l);
+                advance(l);
+            }
+            if (cur(l) == '\'') advance(l);  /* skip closing ' */
+            Token t = make_token(TK_INT_LIT, line);
+            t.ival = val;
+            t.int_suffix = strdup("u8");
+            lexer_push(l, t);
+            continue;
+        }
+
         /* integer literal */
         if (isdigit((unsigned char)cur(l))) {
             long val = 0;

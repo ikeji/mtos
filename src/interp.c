@@ -614,9 +614,13 @@ static void exec_stmt(Interp *ip, AstNode *node) {
             exec_block(ip, node->children[1]);
             frame_pop(ip);
         } else if (node->nchildren > 2) {
-            frame_push(ip);
-            exec_block(ip, node->children[2]);
-            frame_pop(ip);
+            if (strcmp(node->children[2]->kind, "if") == 0) {
+                exec_stmt(ip, node->children[2]);
+            } else {
+                frame_push(ip);
+                exec_block(ip, node->children[2]);
+                frame_pop(ip);
+            }
         }
         return;
     }

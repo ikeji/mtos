@@ -507,9 +507,13 @@ static void check_stmt(TypeEnv *e, AstNode *node) {
         check_block(e, node->children[1]);
         pop_scope(e);
         if (node->nchildren > 2) {
-            push_scope(e);
-            check_block(e, node->children[2]);
-            pop_scope(e);
+            if (strcmp(node->children[2]->kind, "if") == 0) {
+                check_stmt(e, node->children[2]);
+            } else {
+                push_scope(e);
+                check_block(e, node->children[2]);
+                pop_scope(e);
+            }
         }
         return;
     }

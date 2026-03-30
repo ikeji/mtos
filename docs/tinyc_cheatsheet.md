@@ -113,6 +113,12 @@ var a: i32 = 42;       // デフォルトは i32
 var b: u8  = 65u8;     // u8 リテラル
 var c: u32 = 1024u32;
 
+// 文字リテラル（型は u8）
+var ch: u8 = 'A';      // 65u8 と同じ
+var nl: u8 = '\n';     // 10u8
+var tb: u8 = '\t';     // 9u8
+var sq: u8 = '\'';     // 39u8
+
 // キャスト（明示的のみ、暗黙変換なし）
 var d: i32 = b as i32;
 var e: u8  = (a & 255) as u8;
@@ -153,28 +159,17 @@ while i < n {
 
 ## ハマりポイント（制約一覧）
 
-### 1. `else if` は使えない
+### 1. `else if` は使える
 
-パーサが `else if` をサポートしていない。
-**代替パターン**: `handled` フラグを使って複数の `if` を順に書く。
+`else if` チェーンは通常通り書ける。
 
 ```tinyc
-// NG
 if x == 1 {
     ...
 } else if x == 2 {
     ...
-}
-
-// OK: handled フラグパターン
-var handled: i32 = 0;
-if x == 1 && handled == 0 {
+} else {
     ...
-    handled = 1;
-}
-if x == 2 && handled == 0 {
-    ...
-    handled = 1;
 }
 ```
 

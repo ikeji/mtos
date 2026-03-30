@@ -412,6 +412,35 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
         return;
     }
 
+    // Character literal: 'X' -> u8 integer
+    if c == 39u8 {   // '\''
+        var cval: i32 = 0;
+        var ch2: u8 = get(src, g_pos as u32);
+        if ch2 == 92u8 && g_pos + 1 < g_len {  // backslash escape
+            g_pos = g_pos + 1;
+            var esc: u8 = get(src, g_pos as u32);
+            var handled: i32 = 0;
+            if esc == 110u8 { cval = 10; handled = 1; }    // \n
+            if esc == 116u8 { cval = 9; handled = 1; }     // \t
+            if esc == 114u8 { cval = 13; handled = 1; }    // \r
+            if esc == 92u8  { cval = 92; handled = 1; }    // \\
+            if esc == 39u8  { cval = 39; handled = 1; }    // \'
+            if esc == 48u8  { cval = 0; handled = 1; }     // \0
+            if handled == 0 { cval = esc as i32; }
+            g_pos = g_pos + 1;
+        } else {
+            cval = ch2 as i32;
+            g_pos = g_pos + 1;
+        }
+        if g_pos < g_len && get(src, g_pos as u32) == 39u8 { g_pos = g_pos + 1; }  // closing '
+        // Store "u8" suffix in tok buffer: 117='u', 56='8'
+        set(tok, 0u32, 117u8); set(tok, 1u32, 56u8);
+        g_tok_slen = 2;
+        g_tok_ival = cval;
+        g_tok = TK_INT_LIT;
+        return;
+    }
+
     g_pos = g_pos + 1;  // consume the character
 
     // Single and multi-character operators
@@ -996,7 +1025,11 @@ fn pars_if_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
         lex_tok(src, tok);
         ob_char(10u8, ob);
         ob_indent(indent + 1, ob);
-        pars_block(src, tok, ob, indent + 1);
+        if g_tok == TK_IF {
+            pars_if_stmt(src, tok, ob, indent + 1);
+        } else {
+            pars_block(src, tok, ob, indent + 1);
+        }
     }
     ob_char(10u8, ob);
     ob_indent(indent, ob);

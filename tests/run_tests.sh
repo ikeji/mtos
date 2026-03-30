@@ -178,6 +178,40 @@ Fizz
 FizzBuzz"
 
 
+# ===== else if tests =====
+
+run_test "interp else if chain (classify)" \
+    "$INTERP $SCRIPT_DIR/elseif_test.tc" \
+    "0
+1
+2
+3"
+
+run_test "bcrun else if chain (classify)" \
+    "$CODEGEN $SCRIPT_DIR/elseif_test.tc | $BCRUN" \
+    "0
+1
+2
+3"
+
+# ===== character literal tests =====
+
+run_test "interp character literals (A=65 Z=90 \\n=10 \\t=9 '=39)" \
+    "$INTERP $SCRIPT_DIR/charliteral_test.tc" \
+    "65
+90
+10
+9
+39"
+
+run_test "bcrun character literals (A=65 Z=90 \\n=10 \\t=9 '=39)" \
+    "$CODEGEN $SCRIPT_DIR/charliteral_test.tc | $BCRUN" \
+    "65
+90
+10
+9
+39"
+
 # ===== break / continue テスト =====
 
 run_test_exit "interp break exits loop at i==5" \

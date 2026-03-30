@@ -449,7 +449,13 @@ fn collect_locals_stmt(nodes: I32Array, strtab: U8Array, locals: I32Array, n: i3
     if k == NK_IF {
         collect_locals_block(nodes, strtab, locals, n_nth_child(nodes, n, 1));
         var ec: i32 = n_nth_child(nodes, n, 2);
-        if ec >= 0 { collect_locals_block(nodes, strtab, locals, ec); }
+        if ec >= 0 {
+            if n_kind(nodes, ec) == NK_IF {
+                collect_locals_stmt(nodes, strtab, locals, ec);
+            } else {
+                collect_locals_block(nodes, strtab, locals, ec);
+            }
+        }
         return;
     }
     if k == NK_WHILE {
@@ -539,7 +545,12 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
             ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
             // "__Lelse:\n"
             ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lelse,ob);ob_char(58u8,ob);ob_char(10u8,ob);
-            cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 2));
+            var else_n: i32 = n_nth_child(nodes, n, 2);
+            if n_kind(nodes, else_n) == NK_IF {
+                cg_stmt(nodes, strtab, slits, ob, loop_stk, else_n);
+            } else {
+                cg_block(nodes, strtab, slits, ob, loop_stk, else_n);
+            }
             // "__Lend:\n"
             ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
         } else {
