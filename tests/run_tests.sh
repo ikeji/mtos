@@ -177,6 +177,68 @@ Fizz
 14
 FizzBuzz"
 
+
+# ===== tinyc パイプラインテスト (parse.tc + codegen.tc を bcrun 上で動かす) =====
+echo "=== Pipeline Tests ==="
+echo ""
+
+SRC_DIR="$ROOT_DIR/src"
+
+# パイプライン用チェックヘルパー
+check_output() {
+    local name="$1" expected="$2" actual="$3"
+    if [ "$actual" = "$expected" ]; then
+        echo "PASS: $name"; PASS=$((PASS+1))
+    else
+        echo "FAIL: $name"
+        printf "  expected: %s\n" "$(echo "$expected" | head -3)"
+        printf "  actual:   %s\n" "$(echo "$actual" | head -3)"
+        FAIL=$((FAIL+1))
+    fi
+}
+
+check_contains() {
+    local name="$1" needle="$2" actual="$3"
+    if echo "$actual" | grep -qF "$needle"; then
+        echo "PASS: $name"; PASS=$((PASS+1))
+    else
+        echo "FAIL: $name"
+        echo "  expected to contain: $needle"
+        printf "  actual: %s\n" "$(echo "$actual" | head -3)"
+        FAIL=$((FAIL+1))
+    fi
+}
+
+# parse.tc のバイトコードを一度生成（後続テストで再利用）
+PARSE_TC_BC=$({ "$PARSE" "$SRC_DIR/parse.tc" | "$CODEGEN"; } 2>/dev/null)
+CODEGEN_TC_BC=$({ "$PARSE" "$SRC_DIR/codegen.tc" | "$CODEGEN"; } 2>/dev/null)
+
+# parse.tc を bcrun 上で動かして fib.tc を構文解析する
+actual=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/fib.tc"; } | "$BCRUN" 2>&1)
+check_contains "pipeline[1]: parse.tc parses fib.tc → (program" "(program" "$actual"
+check_contains "pipeline[1]: parse.tc parses fib.tc → (fn fib" "(fn fib" "$actual"
+
+# parse.tc を bcrun 上で動かして calc.tc を構文解析する
+actual=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/calc.tc"; } | "$BCRUN" 2>&1)
+check_contains "pipeline[1]: parse.tc parses calc.tc → (fn main" "(fn main" "$actual"
+
+# codegen.tc を bcrun 上で動かして fib.tc の AST からバイトコードを生成する
+FIB_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/fib.tc"; } | "$BCRUN" 2>/dev/null)
+actual=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$FIB_AST"; } | "$BCRUN" 2>&1)
+check_contains "pipeline[2]: codegen.tc generates .fn fib" ".fn fib 1 i32" "$actual"
+check_contains "pipeline[2]: codegen.tc generates .endbc" ".endbc" "$actual"
+
+# フルパイプライン: parse.tc → codegen.tc → bcrun で fib.tc をコンパイル・実行
+FIB_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$FIB_AST"; } | "$BCRUN" 2>/dev/null)
+actual=$(printf '%s\n' "$FIB_BC" | "$BCRUN" 2>&1)
+check_output "pipeline[3]: tinyc compile+run fib(10) = 55" "55" "$actual"
+
+# フルパイプライン: calc.tc をコンパイルして stdin 付きで実行
+CALC_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/calc.tc"; } | "$BCRUN" 2>/dev/null)
+CALC_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$CALC_AST"; } | "$BCRUN" 2>/dev/null)
+actual=$({ printf '%s\n' "$CALC_BC"; printf '12 + 34 * 56'; } | "$BCRUN" 2>&1)
+check_output "pipeline[3]: tinyc compile+run calc.tc (12+34*56=1916)" "1916" "$actual"
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [ $FAIL -eq 0 ] && exit 0 || exit 1
