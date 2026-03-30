@@ -23,7 +23,10 @@ typedef enum {
     /* identifier */
     TK_IDENT,
     /* end of file */
-    TK_EOF
+    TK_EOF,
+    /* loop control */
+    TK_BREAK,    /* 51 */
+    TK_CONTINUE  /* 52 */
 } TokenKind;
 
 typedef struct {

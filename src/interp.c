@@ -95,6 +95,8 @@ typedef struct {
     AstNode *program;
     /* for control flow */
     int returning;
+    int breaking;
+    int continuing;
     Value ret_val;
 } Interp;
 
@@ -574,7 +576,7 @@ static Value eval_expr(Interp *ip, AstNode *node) {
 /* ---- execute statements ---- */
 
 static void exec_stmt(Interp *ip, AstNode *node) {
-    if (ip->returning) return;
+    if (ip->returning || ip->breaking || ip->continuing) return;
     const char *k = node->kind;
 
     if (strcmp(k, "var_decl") == 0) {
@@ -627,9 +629,14 @@ static void exec_stmt(Interp *ip, AstNode *node) {
             exec_block(ip, node->children[1]);
             frame_pop(ip);
             if (ip->returning) break;
+            if (ip->breaking)  { ip->breaking = 0; break; }
+            if (ip->continuing){ ip->continuing = 0; }
         }
         return;
     }
+
+    if (strcmp(k, "break") == 0)    { ip->breaking   = 1; return; }
+    if (strcmp(k, "continue") == 0) { ip->continuing  = 1; return; }
 
     if (strcmp(k, "return") == 0) {
         if (node->nchildren > 0) {
@@ -647,7 +654,7 @@ static void exec_stmt(Interp *ip, AstNode *node) {
 
 static void exec_block(Interp *ip, AstNode *block) {
     for (int i = 0; i < block->nchildren; i++) {
-        if (ip->returning) return;
+        if (ip->returning || ip->breaking || ip->continuing) return;
         exec_stmt(ip, block->children[i]);
     }
 }

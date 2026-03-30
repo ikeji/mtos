@@ -178,6 +178,26 @@ Fizz
 FizzBuzz"
 
 
+# ===== break / continue テスト =====
+
+run_test_exit "interp break exits loop at i==5" \
+    "$INTERP $SCRIPT_DIR/break_test.tc" 5
+
+run_test_exit "interp continue sums odd 1-9 = 25" \
+    "$INTERP $SCRIPT_DIR/continue_test.tc" 25
+
+run_test_exit "interp nested break only exits inner loop (result=6)" \
+    "$INTERP $SCRIPT_DIR/nested_break_test.tc" 6
+
+run_test_exit "bcrun break exits loop at i==5" \
+    "$CODEGEN $SCRIPT_DIR/break_test.tc | $BCRUN" 5
+
+run_test_exit "bcrun continue sums odd 1-9 = 25" \
+    "$CODEGEN $SCRIPT_DIR/continue_test.tc | $BCRUN" 25
+
+run_test_exit "bcrun nested break only exits inner loop (result=6)" \
+    "$CODEGEN $SCRIPT_DIR/nested_break_test.tc | $BCRUN" 6
+
 # ===== tinyc パイプラインテスト (parse.tc + codegen.tc を bcrun 上で動かす) =====
 echo "=== Pipeline Tests ==="
 echo ""
@@ -238,6 +258,18 @@ CALC_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/calc.tc"; } | "$BCRU
 CALC_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$CALC_AST"; } | "$BCRUN" 2>/dev/null)
 actual=$({ printf '%s\n' "$CALC_BC"; printf '12 + 34 * 56'; } | "$BCRUN" 2>&1)
 check_output "pipeline[3]: tinyc compile+run calc.tc (12+34*56=1916)" "1916" "$actual"
+
+# フルパイプライン: break_test.tc
+BREAK_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/break_test.tc"; } | "$BCRUN" 2>/dev/null)
+BREAK_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$BREAK_AST"; } | "$BCRUN" 2>/dev/null)
+printf '%s\n' "$BREAK_BC" | "$BCRUN" > /dev/null 2>&1
+check_output "pipeline[3]: break exits loop at i==5" "5" "$?"
+
+# フルパイプライン: continue_test.tc
+CONT_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/continue_test.tc"; } | "$BCRUN" 2>/dev/null)
+CONT_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$CONT_AST"; } | "$BCRUN" 2>/dev/null)
+printf '%s\n' "$CONT_BC" | "$BCRUN" > /dev/null 2>&1
+check_output "pipeline[3]: continue sums odd 1-9 = 25" "25" "$?"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

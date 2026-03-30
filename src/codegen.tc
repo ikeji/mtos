@@ -26,6 +26,8 @@ var NK_VAR: i32 = 20;
 var NK_CAST: i32 = 21;
 var NK_IMPORT: i32 = 22;
 var NK_FIELD: i32 = 23;
+var NK_BREAK: i32 = 24;
+var NK_CONTINUE: i32 = 25;
 var NK_UNKNOWN: i32 = 99;
 
 // ===== Global state =====
@@ -37,6 +39,7 @@ var g_lc: i32 = 0;        // label counter
 var g_ob_pos: i32 = 0;
 var g_slc: i32 = 0;       // string literal count
 var g_locc: i32 = 0;      // locals count
+var g_loop_depth: i32 = 0; // nesting depth of while loops (for break/continue)
 
 // ===== Output buffer =====
 fn ob_flush(ob: U8Array) -> void {
@@ -225,6 +228,7 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
         if cmp5(atom,0, 98u8,105u8,110u8,111u8,112u8)  { return NK_BINOP; }  // binop
         if cmp5(atom,0, 117u8,110u8,97u8,114u8,121u8)  { return NK_UNARY; }  // unary
         if cmp5(atom,0, 102u8,105u8,101u8,108u8,100u8) { return NK_FIELD; }  // field
+        if cmp5(atom,0, 98u8,114u8,101u8,97u8,107u8)   { return NK_BREAK; }  // break
     }
     if len == 6 {
         if cmp6(atom,0, 112u8,97u8,114u8,97u8,109u8,115u8)  { return NK_PARAMS; }  // params
@@ -241,9 +245,13 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
         }
     }
     if len == 8 {
-        // var_decl
+        // var_decl: v(118) a(97) r(114) _(95) d(100) e(101) c(99) l(108)
         if cmp4(atom,0, 118u8,97u8,114u8,95u8) && cmp4(atom,4, 100u8,101u8,99u8,108u8) {
             return NK_VAR_DECL;
+        }
+        // continue: c(99) o(111) n(110) t(116) i(105) n(110) u(117) e(101)
+        if cmp4(atom,0, 99u8,111u8,110u8,116u8) && cmp4(atom,4, 105u8,110u8,117u8,101u8) {
+            return NK_CONTINUE;
         }
     }
     if len == 9 {
@@ -462,16 +470,16 @@ fn collect_locals_block(nodes: I32Array, strtab: U8Array, locals: I32Array, blk:
 
 // ===== Code generation =====
 
-fn cg_block(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, blk: i32) -> void {
+fn cg_block(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_stk: I32Array, blk: i32) -> void {
     var c: i32 = n_child(nodes, blk);
     while c >= 0 {
-        cg_stmt(nodes, strtab, slits, ob, c);
+        cg_stmt(nodes, strtab, slits, ob, loop_stk, c);
         c = n_sib(nodes, c);
     }
     return;
 }
 
-fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i32) -> void {
+fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_stk: I32Array, n: i32) -> void {
     var k: i32 = n_kind(nodes, n);
 
     if k == NK_VAR_DECL {
@@ -524,14 +532,14 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
             ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
             ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
             ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lelse,ob);ob_char(10u8,ob);
-            cg_block(nodes, strtab, slits, ob, n_nth_child(nodes, n, 1));
+            cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
             // "  jump __Lend\n"
             ob_char(32u8,ob);ob_char(32u8,ob);
             ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
             ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
             // "__Lelse:\n"
             ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lelse,ob);ob_char(58u8,ob);ob_char(10u8,ob);
-            cg_block(nodes, strtab, slits, ob, n_nth_child(nodes, n, 2));
+            cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 2));
             // "__Lend:\n"
             ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
         } else {
@@ -541,7 +549,7 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
             ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
             ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
             ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
-            cg_block(nodes, strtab, slits, ob, n_nth_child(nodes, n, 1));
+            cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
             ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
         }
         return;
@@ -550,6 +558,9 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
     if k == NK_WHILE {
         var lloop: i32 = g_lc; g_lc = g_lc + 1;
         var lend: i32 = g_lc; g_lc = g_lc + 1;
+        set(loop_stk, (g_loop_depth*2) as u32, lloop);
+        set(loop_stk, (g_loop_depth*2+1) as u32, lend);
+        g_loop_depth = g_loop_depth + 1;
         // "__Lloop:\n"
         ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lloop,ob);ob_char(58u8,ob);ob_char(10u8,ob);
         cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
@@ -557,12 +568,31 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
         ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
         ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
         ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
-        cg_block(nodes, strtab, slits, ob, n_nth_child(nodes, n, 1));
+        cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
         // "  jump __Lloop\n"
         ob_char(32u8,ob);ob_char(32u8,ob);
         ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
         ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lloop,ob);ob_char(10u8,ob);
         ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+        g_loop_depth = g_loop_depth - 1;
+        return;
+    }
+
+    if k == NK_BREAK {
+        // "  jump __Lend\n"
+        var lend: i32 = get(loop_stk, (g_loop_depth*2-1) as u32);
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
+        ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
+        return;
+    }
+
+    if k == NK_CONTINUE {
+        // "  jump __Lloop\n"
+        var lloop: i32 = get(loop_stk, (g_loop_depth*2-2) as u32);
+        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
+        ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lloop,ob);ob_char(10u8,ob);
         return;
     }
 
@@ -812,7 +842,10 @@ fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob
         i = i + 1;
     }
 
-    cg_block(nodes, strtab, slits, ob, body_n);
+    g_loop_depth = 0;
+    var loop_stk: I32Array = newI32Array(32); // up to 16 nested while loops
+    cg_block(nodes, strtab, slits, ob, loop_stk, body_n);
+    delete(loop_stk);
 
     // "  return_void\n.endfn\n\n"
     ob_char(32u8,ob);ob_char(32u8,ob);

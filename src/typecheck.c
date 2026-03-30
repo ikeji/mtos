@@ -522,6 +522,8 @@ static void check_stmt(TypeEnv *e, AstNode *node) {
         return;
     }
 
+    if (strcmp(k, "break") == 0 || strcmp(k, "continue") == 0) return;
+
     if (strcmp(k, "return") == 0) {
         if (node->nchildren > 0) {
             const char *ty = check_expr(e, node->children[0]);

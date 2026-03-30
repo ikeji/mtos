@@ -425,6 +425,14 @@ static AstNode *parse_stmt(Parser *p) {
     if (t->kind == TK_IF) return parse_if_stmt(p);
     if (t->kind == TK_WHILE) return parse_while_stmt(p);
     if (t->kind == TK_RETURN) return parse_return_stmt(p);
+    if (t->kind == TK_BREAK) {
+        int line = t->line; advance_p(p); expect(p, TK_SEMI);
+        return ast_node("break", line);
+    }
+    if (t->kind == TK_CONTINUE) {
+        int line = t->line; advance_p(p); expect(p, TK_SEMI);
+        return ast_node("continue", line);
+    }
     if (t->kind == TK_IDENT) return parse_ident_stmt(p);
     fprintf(stderr, "%s:%d: unexpected token '%s' in statement\n",
             p->filename, t->line, token_kind_name(t->kind));

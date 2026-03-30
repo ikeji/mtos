@@ -54,6 +54,8 @@ var TK_INT_LIT: i32 = 47;
 var TK_STR_LIT: i32 = 48;
 var TK_IDENT: i32 = 49;
 var TK_EOF: i32 = 50;
+var TK_BREAK: i32 = 51;
+var TK_CONTINUE: i32 = 52;
 
 // ===== Lexer state =====
 var g_pos: i32 = 0;
@@ -213,6 +215,11 @@ fn tok_cmp6(tok: U8Array, tlen: i32, a: u8, b: u8, c: u8, d: u8, e: u8, f: u8) -
     return get(tok,0u32)==a && get(tok,1u32)==b && get(tok,2u32)==c &&
            get(tok,3u32)==d && get(tok,4u32)==e && get(tok,5u32)==f;
 }
+fn tok_cmp8(tok: U8Array, tlen: i32, a: u8, b: u8, c: u8, d: u8, e: u8, f: u8, g: u8, h: u8) -> bool {
+    if tlen != 8 { return false; }
+    return get(tok,0u32)==a && get(tok,1u32)==b && get(tok,2u32)==c && get(tok,3u32)==d &&
+           get(tok,4u32)==e && get(tok,5u32)==f && get(tok,6u32)==g && get(tok,7u32)==h;
+}
 
 // Classify identifier: returns keyword TK_xxx or TK_IDENT
 fn classify_ident(tok: U8Array, tlen: i32) -> i32 {
@@ -239,11 +246,16 @@ fn classify_ident(tok: U8Array, tlen: i32) -> i32 {
     if tlen == 5 {
         if tok_cmp5(tok,tlen,119u8,104u8,105u8,108u8,101u8)  { return TK_WHILE; }  // while
         if tok_cmp5(tok,tlen,102u8,97u8,108u8,115u8,101u8)   { return TK_FALSE; }  // false
+        if tok_cmp5(tok,tlen,98u8,114u8,101u8,97u8,107u8)    { return TK_BREAK; }  // break
     }
     if tlen == 6 {
         if tok_cmp6(tok,tlen,114u8,101u8,116u8,117u8,114u8,110u8) { return TK_RETURN; } // return
         if tok_cmp6(tok,tlen,115u8,116u8,114u8,117u8,99u8,116u8)  { return TK_STRUCT; } // struct
         if tok_cmp6(tok,tlen,105u8,109u8,112u8,111u8,114u8,116u8) { return TK_IMPORT; } // import
+    }
+    if tlen == 8 {
+        // continue: c(99) o(111) n(110) t(116) i(105) n(110) u(117) e(101)
+        if tok_cmp8(tok,tlen,99u8,111u8,110u8,116u8,105u8,110u8,117u8,101u8) { return TK_CONTINUE; }
     }
     return TK_IDENT;
 }
@@ -940,6 +952,22 @@ fn pars_var_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     return;
 }
 
+fn pars_break_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
+    expect_tok(TK_BREAK, src, tok);
+    expect_tok(TK_SEMI, src, tok);
+    // (break)
+    ob_char(40u8,ob);ob_char(98u8,ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(97u8,ob);ob_char(107u8,ob);ob_char(41u8,ob);
+    return;
+}
+
+fn pars_continue_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
+    expect_tok(TK_CONTINUE, src, tok);
+    expect_tok(TK_SEMI, src, tok);
+    // (continue)
+    ob_char(40u8,ob);ob_char(99u8,ob);ob_char(111u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(105u8,ob);ob_char(110u8,ob);ob_char(117u8,ob);ob_char(101u8,ob);ob_char(41u8,ob);
+    return;
+}
+
 fn pars_return_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_RETURN, src, tok);
     ob_char(40u8,ob); ob_char(114u8,ob); ob_char(101u8,ob); ob_char(116u8,ob); ob_char(117u8,ob); ob_char(114u8,ob); ob_char(110u8,ob);  // (return
@@ -1050,9 +1078,11 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void
 fn pars_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     if g_tok == TK_VAR    { pars_var_decl(src, tok, ob, indent); return; }
     if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }
-    if g_tok == TK_WHILE  { pars_while_stmt(src, tok, ob, indent); return; }
-    if g_tok == TK_RETURN { pars_return_stmt(src, tok, ob, indent); return; }
-    if g_tok == TK_IDENT  { pars_ident_stmt(src, tok, ob, indent); return; }
+    if g_tok == TK_WHILE    { pars_while_stmt(src, tok, ob, indent); return; }
+    if g_tok == TK_RETURN   { pars_return_stmt(src, tok, ob, indent); return; }
+    if g_tok == TK_BREAK    { pars_break_stmt(src, tok, ob, indent); return; }
+    if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, ob, indent); return; }
+    if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, ob, indent); return; }
     sys_exit(1);
     return;
 }

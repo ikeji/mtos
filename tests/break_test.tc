@@ -1,0 +1,9 @@
+// break: loop exits when i==5, returns i
+fn main() -> i32 {
+    var i: i32 = 0;
+    while i < 10 {
+        if i == 5 { break; }
+        i = i + 1;
+    }
+    return i;
+}

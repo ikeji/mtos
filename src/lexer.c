@@ -53,6 +53,7 @@ static struct Keyword keywords[] = {
     {"if", TK_IF}, {"else", TK_ELSE}, {"while", TK_WHILE},
     {"return", TK_RETURN}, {"import", TK_IMPORT}, {"as", TK_AS},
     {"true", TK_TRUE}, {"false", TK_FALSE},
+    {"break", TK_BREAK}, {"continue", TK_CONTINUE},
     {"u8", TK_U8}, {"u16", TK_U16}, {"u32", TK_U32},
     {"i8", TK_I8}, {"i16", TK_I16}, {"i32", TK_I32},
     {"bool", TK_BOOL}, {"void", TK_VOID},

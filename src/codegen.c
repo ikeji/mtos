@@ -12,6 +12,9 @@ typedef struct {
     char **strings;
     int nstrings;
     int strings_cap;
+    /* loop label stack for break/continue (pairs: lloop, lend) */
+    int loop_stack[64];
+    int loop_depth;
 } CG;
 
 static int cg_add_string(CG *cg, const char *s) {
@@ -265,12 +268,26 @@ static void cg_stmt(CG *cg, AstNode *node) {
 
     if (strcmp(k, "while") == 0) {
         int lloop = cg_new_label(cg), lend = cg_new_label(cg);
+        cg->loop_stack[cg->loop_depth * 2]     = lloop;
+        cg->loop_stack[cg->loop_depth * 2 + 1] = lend;
+        cg->loop_depth++;
         fprintf(cg->out, "__L%d:\n", lloop);
         cg_expr(cg, node->children[0]);
         fprintf(cg->out, "  jump_ifnot __L%d\n", lend);
         cg_block(cg, node->children[1]);
         fprintf(cg->out, "  jump __L%d\n", lloop);
         fprintf(cg->out, "__L%d:\n", lend);
+        cg->loop_depth--;
+        return;
+    }
+
+    if (strcmp(k, "break") == 0) {
+        fprintf(cg->out, "  jump __L%d\n", cg->loop_stack[(cg->loop_depth-1)*2+1]);
+        return;
+    }
+
+    if (strcmp(k, "continue") == 0) {
+        fprintf(cg->out, "  jump __L%d\n", cg->loop_stack[(cg->loop_depth-1)*2]);
         return;
     }
 
