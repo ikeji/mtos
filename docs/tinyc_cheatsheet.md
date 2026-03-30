@@ -197,25 +197,29 @@ while done == 0 && i < n {
 }
 ```
 
-### 3. グローバル変数に参照型は置けない
+### 3. グローバル参照型の初期化は関数内で行う
 
-`I32Array`, `U8Array` などの参照型はグローバルに宣言できない。
-グローバルに必要な場合は値型（`i32` 等）でインデックスやサイズを管理し、
-実際の配列はローカル変数から関数に引数として渡す。
+`I32Array`, `U8Array` などの参照型はグローバルに宣言できる（初期値は null）。
+ただし **初期化子に関数呼び出しは書けない**。codegen が整数定数しかバイトコードに出力しないため、
+`newU8Array(...)` などの呼び出しが実行されず null のままになる。
 
 ```tinyc
-// NG
-var g_buf: U8Array = newU8Array(256);  // コンパイルエラー
+// NG: 初期化子の関数呼び出しが無視され、null のまま実行時エラー
+var g_buf: U8Array = newU8Array(256);
 
-// OK: 配列は main で確保して引数で渡す
-var g_buf_len: i32 = 0;               // サイズや位置は i32 でグローバル管理
+// OK: 宣言だけして main で確保する
+var g_buf: U8Array;          // null で初期化される
+var g_buf_len: i32 = 0;
 
-fn process(buf: U8Array) -> void { ... }
+fn process() -> void {
+    set(g_buf, 0u32, 72u8);  // main で代入済みであれば使える
+}
 
 fn main() -> i32 {
-    var buf: U8Array = newU8Array(256);
-    process(buf);
-    delete(buf);
+    g_buf = newU8Array(256); // ← ここで確保・代入
+    g_buf_len = 256;
+    process();
+    delete(g_buf);
     return 0;
 }
 ```
