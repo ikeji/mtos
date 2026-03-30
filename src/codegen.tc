@@ -67,8 +67,8 @@ fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
 }
 
 fn ob_int(n: i32, ob: U8Array) -> void {
-    if n == 0 { ob_char(48u8, ob); return; }
-    if n < 0 { ob_char(45u8, ob); n = 0 - n; }
+    if n == 0 { ob_char('0', ob); return; }
+    if n < 0 { ob_char('-', ob); n = 0 - n; }
     var tmp: U8Array = newU8Array(12);
     var len: i32 = 0;
     var v: i32 = n;
@@ -88,11 +88,11 @@ fn ob_st_escaped(strtab: U8Array, start: i32, len: i32, ob: U8Array) -> void {
     var i: i32 = 0;
     while i < len {
         var c: u8 = get(strtab, (start + i) as u32);
-        if c == 34u8  { ob_char(92u8, ob); ob_char(34u8, ob); }
-        else { if c == 92u8 { ob_char(92u8, ob); ob_char(92u8, ob); }
-        else { if c == 10u8 { ob_char(92u8, ob); ob_char(110u8, ob); }
-        else { if c == 13u8 { ob_char(92u8, ob); ob_char(114u8, ob); }
-        else { if c == 9u8  { ob_char(92u8, ob); ob_char(116u8, ob); }
+        if c == '"'  { ob_char('\\', ob); ob_char('"', ob); }
+        else { if c == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+        else { if c == 10u8 { ob_char('\\', ob); ob_char('n', ob); }
+        else { if c == 13u8 { ob_char('\\', ob); ob_char('r', ob); }
+        else { if c == 9u8  { ob_char('\\', ob); ob_char('t', ob); }
         else { ob_char(c, ob); }}}}}
         i = i + 1;
     }
@@ -106,13 +106,13 @@ fn peek_in(in: U8Array) -> u8 {
 }
 
 fn is_atom_end(c: u8) -> bool {
-    return c == 32u8 || c == 9u8 || c == 10u8 || c == 13u8 ||
-           c == 40u8 || c == 41u8 || c == 0u8;
+    return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 ||
+           c == '(' || c == ')' || c == 0u8;
 }
 
 fn skip_ws_in(in: U8Array) -> void {
     var c: u8 = peek_in(in);
-    while (c == 32u8 || c == 9u8 || c == 10u8 || c == 13u8) && g_in_pos < g_in_len {
+    while (c == ' ' || c == 9u8 || c == 10u8 || c == 13u8) && g_in_pos < g_in_len {
         g_in_pos = g_in_pos + 1;
         c = peek_in(in);
     }
@@ -206,57 +206,57 @@ fn cmp6(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8, b5: u8) -> 
 
 fn classify_kind(atom: U8Array, len: i32) -> i32 {
     if len == 2 {
-        if cmp2(atom,0, 102u8,110u8)  { return NK_FN; }     // fn
-        if cmp2(atom,0, 105u8,102u8)  { return NK_IF; }     // if
+        if cmp2(atom,0, 'f','n')  { return NK_FN; }     // fn
+        if cmp2(atom,0, 'i','f')  { return NK_IF; }     // if
     }
     if len == 3 {
-        if cmp3(atom,0, 114u8,101u8,116u8) { return NK_RET; }   // ret
-        if cmp3(atom,0, 105u8,110u8,116u8) { return NK_INT; }   // int
-        if cmp3(atom,0, 115u8,116u8,114u8) { return NK_STR; }   // str
-        if cmp3(atom,0, 118u8,97u8,114u8)  { return NK_VAR; }   // var
+        if cmp3(atom,0, 'r','e','t') { return NK_RET; }   // ret
+        if cmp3(atom,0, 'i','n','t') { return NK_INT; }   // int
+        if cmp3(atom,0, 's','t','r') { return NK_STR; }   // str
+        if cmp3(atom,0, 'v','a','r')  { return NK_VAR; }   // var
     }
     if len == 4 {
-        if cmp4(atom,0, 98u8,111u8,111u8,108u8) { return NK_BOOL; }   // bool
-        if cmp4(atom,0, 116u8,121u8,112u8,101u8) { return NK_TYPE; }  // type
-        if cmp4(atom,0, 99u8,97u8,115u8,116u8)   { return NK_CAST; }  // cast
-        if cmp4(atom,0, 99u8,97u8,108u8,108u8)   { return NK_CALL; }  // call
+        if cmp4(atom,0, 'b','o','o','l') { return NK_BOOL; }   // bool
+        if cmp4(atom,0, 't','y','p','e') { return NK_TYPE; }  // type
+        if cmp4(atom,0, 'c','a','s','t')   { return NK_CAST; }  // cast
+        if cmp4(atom,0, 'c','a','l','l')   { return NK_CALL; }  // call
     }
     if len == 5 {
-        if cmp5(atom,0, 98u8,108u8,111u8,99u8,107u8)   { return NK_BLOCK; }  // block
-        if cmp5(atom,0, 112u8,97u8,114u8,97u8,109u8)   { return NK_PARAM; }  // param
-        if cmp5(atom,0, 119u8,104u8,105u8,108u8,101u8) { return NK_WHILE; }  // while
-        if cmp5(atom,0, 98u8,105u8,110u8,111u8,112u8)  { return NK_BINOP; }  // binop
-        if cmp5(atom,0, 117u8,110u8,97u8,114u8,121u8)  { return NK_UNARY; }  // unary
-        if cmp5(atom,0, 102u8,105u8,101u8,108u8,100u8) { return NK_FIELD; }  // field
-        if cmp5(atom,0, 98u8,114u8,101u8,97u8,107u8)   { return NK_BREAK; }  // break
+        if cmp5(atom,0, 'b','l','o','c','k')   { return NK_BLOCK; }  // block
+        if cmp5(atom,0, 'p','a','r','a','m')   { return NK_PARAM; }  // param
+        if cmp5(atom,0, 'w','h','i','l','e') { return NK_WHILE; }  // while
+        if cmp5(atom,0, 'b','i','n','o','p')  { return NK_BINOP; }  // binop
+        if cmp5(atom,0, 'u','n','a','r','y')  { return NK_UNARY; }  // unary
+        if cmp5(atom,0, 'f','i','e','l','d') { return NK_FIELD; }  // field
+        if cmp5(atom,0, 'b','r','e','a','k')   { return NK_BREAK; }  // break
     }
     if len == 6 {
-        if cmp6(atom,0, 112u8,97u8,114u8,97u8,109u8,115u8)  { return NK_PARAMS; }  // params
-        if cmp6(atom,0, 114u8,101u8,116u8,117u8,114u8,110u8){ return NK_RETURN; }  // return
-        if cmp6(atom,0, 115u8,116u8,114u8,117u8,99u8,116u8) { return NK_STRUCT; }  // struct
-        if cmp6(atom,0, 97u8,115u8,115u8,105u8,103u8,110u8) { return NK_ASSIGN; }  // assign
-        if cmp6(atom,0, 105u8,109u8,112u8,111u8,114u8,116u8){ return NK_IMPORT; }  // import
+        if cmp6(atom,0, 'p','a','r','a','m','s')  { return NK_PARAMS; }  // params
+        if cmp6(atom,0, 'r','e','t','u','r','n'){ return NK_RETURN; }  // return
+        if cmp6(atom,0, 's','t','r','u','c','t') { return NK_STRUCT; }  // struct
+        if cmp6(atom,0, 'a','s','s','i','g','n') { return NK_ASSIGN; }  // assign
+        if cmp6(atom,0, 'i','m','p','o','r','t'){ return NK_IMPORT; }  // import
     }
     // var_decl (8), call_stmt (9), program (7)
     if len == 7 {
         // program
-        if cmp4(atom,0, 112u8,114u8,111u8,103u8) && cmp3(atom,4, 114u8,97u8,109u8) {
+        if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {
             return NK_PROGRAM;
         }
     }
     if len == 8 {
         // var_decl: v(118) a(97) r(114) _(95) d(100) e(101) c(99) l(108)
-        if cmp4(atom,0, 118u8,97u8,114u8,95u8) && cmp4(atom,4, 100u8,101u8,99u8,108u8) {
+        if cmp4(atom,0, 'v','a','r','_') && cmp4(atom,4, 'd','e','c','l') {
             return NK_VAR_DECL;
         }
         // continue: c(99) o(111) n(110) t(116) i(105) n(110) u(117) e(101)
-        if cmp4(atom,0, 99u8,111u8,110u8,116u8) && cmp4(atom,4, 105u8,110u8,117u8,101u8) {
+        if cmp4(atom,0, 'c','o','n','t') && cmp4(atom,4, 'i','n','u','e') {
             return NK_CONTINUE;
         }
     }
     if len == 9 {
         // call_stmt
-        if cmp4(atom,0, 99u8,97u8,108u8,108u8) && cmp5(atom,4, 95u8,115u8,116u8,109u8,116u8) {
+        if cmp4(atom,0, 'c','a','l','l') && cmp5(atom,4, '_','s','t','m','t') {
             return NK_CALL_STMT;
         }
     }
@@ -264,19 +264,19 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
 }
 
 // ===== S-expression reader =====
-fn is_digit_c(c: u8) -> bool { return c >= 48u8 && c <= 57u8; }
+fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
 
 fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
     skip_ws_in(in);
     if g_in_pos >= g_in_len { return -1; }
-    if peek_in(in) != 40u8 { return -1; }  // not '('
+    if peek_in(in) != '(' { return -1; }  // not '('
     g_in_pos = g_in_pos + 1;
     skip_ws_in(in);
 
     // Read kind (strip :type_annot if present)
     var klen: i32 = read_atom_in(in, atom);
     var actual_klen: i32 = 0;
-    while actual_klen < klen && get(atom, actual_klen as u32) != 58u8 {
+    while actual_klen < klen && get(atom, actual_klen as u32) != ':' {
         actual_klen = actual_klen + 1;
     }
     var kind_code: i32 = classify_kind(atom, actual_klen);
@@ -288,7 +288,7 @@ fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i3
 
     // Check for sval/ival atom
     var c: u8 = peek_in(in);
-    if c != 40u8 && c != 41u8 && c != 0u8 {
+    if c != '(' && c != ')' && c != 0u8 {
         var vlen: i32 = read_atom_in(in, atom);
         if kind_code == NK_INT && vlen > 0 && is_digit_c(get(atom, 0u32)) {
             var ival: i32 = 0;
@@ -315,7 +315,7 @@ fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i3
     // Read children
     c = peek_in(in);
     var last_child: i32 = -1;
-    while c == 40u8 {
+    while c == '(' {
         var child: i32 = read_node(in, atom, nodes, strtab);
         if child >= 0 {
             if last_child < 0 {
@@ -330,7 +330,7 @@ fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i3
     }
 
     // Consume ')'
-    if peek_in(in) == 41u8 { g_in_pos = g_in_pos + 1; }
+    if peek_in(in) == ')' { g_in_pos = g_in_pos + 1; }
 
     return n;
 }
@@ -494,21 +494,21 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
             cg_expr(nodes, strtab, slits, ob, init);
         } else {
             // "  push_int 0\n"
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
         }
         // "  store NAME\n"
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(115u8,ob);ob_char(116u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
         ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
         return;
     }
 
     if k == NK_ASSIGN {
         cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(115u8,ob);ob_char(116u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
         ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
         return;
     }
@@ -518,12 +518,12 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
         var nargs: i32 = 0;
         while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
         // "  call NAME nargs\n"
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
         ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob);
-        ob_char(32u8,ob); ob_int(nargs, ob); ob_char(10u8,ob);
+        ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);
         // "  pop\n"
-        ob_char(32u8,ob);ob_char(32u8,ob);ob_char(112u8,ob);ob_char(111u8,ob);ob_char(112u8,ob);ob_char(10u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);ob_char('p',ob);ob_char('o',ob);ob_char('p',ob);ob_char(10u8,ob);
         return;
     }
 
@@ -534,17 +534,17 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
             var lend: i32 = g_lc; g_lc = g_lc + 1;
             cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
             // "  jump_ifnot __Lx\n"
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lelse,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(10u8,ob);
             cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
             // "  jump __Lend\n"
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
             // "__Lelse:\n"
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lelse,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(':',ob);ob_char(10u8,ob);
             var else_n: i32 = n_nth_child(nodes, n, 2);
             if n_kind(nodes, else_n) == NK_IF {
                 cg_stmt(nodes, strtab, slits, ob, loop_stk, else_n);
@@ -552,16 +552,16 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
                 cg_block(nodes, strtab, slits, ob, loop_stk, else_n);
             }
             // "__Lend:\n"
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
         } else {
             var lend: i32 = g_lc; g_lc = g_lc + 1;
             cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
             cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
         }
         return;
     }
@@ -573,18 +573,18 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
         set(loop_stk, (g_loop_depth*2+1) as u32, lend);
         g_loop_depth = g_loop_depth + 1;
         // "__Lloop:\n"
-        ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lloop,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+        ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(':',ob);ob_char(10u8,ob);
         cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
-        ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
-        ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+        ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+        ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
         cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
         // "  jump __Lloop\n"
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
-        ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lloop,ob);ob_char(10u8,ob);
-        ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+        ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+        ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
         g_loop_depth = g_loop_depth - 1;
         return;
     }
@@ -592,18 +592,18 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
     if k == NK_BREAK {
         // "  jump __Lend\n"
         var lend: i32 = get(loop_stk, (g_loop_depth*2-1) as u32);
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
-        ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lend,ob);ob_char(10u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+        ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
         return;
     }
 
     if k == NK_CONTINUE {
         // "  jump __Lloop\n"
         var lloop: i32 = get(loop_stk, (g_loop_depth*2-2) as u32);
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
-        ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lloop,ob);ob_char(10u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+        ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
         return;
     }
 
@@ -611,12 +611,12 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
         var v: i32 = n_child(nodes, n);
         if v >= 0 {
             cg_expr(nodes, strtab, slits, ob, v);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(114u8,ob);ob_char(101u8,ob);ob_char(116u8,ob);ob_char(117u8,ob);ob_char(114u8,ob);ob_char(110u8,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);ob_char(10u8,ob);
         } else {
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(114u8,ob);ob_char(101u8,ob);ob_char(116u8,ob);ob_char(117u8,ob);ob_char(114u8,ob);ob_char(110u8,ob);
-            ob_char(95u8,ob);ob_char(118u8,ob);ob_char(111u8,ob);ob_char(105u8,ob);ob_char(100u8,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+            ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
         }
         return;
     }
@@ -625,24 +625,24 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
 }
 
 fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: U8Array) -> void {
-    ob_char(32u8,ob); ob_char(32u8,ob);
+    ob_char(' ',ob); ob_char(' ',ob);
     // Map operator to instruction
-    if sv1(strtab,ss,sl, 43u8) { ob_char(97u8,ob);ob_char(100u8,ob);ob_char(100u8,ob);ob_char(10u8,ob); return; }  // add
-    if sv1(strtab,ss,sl, 45u8) { ob_char(115u8,ob);ob_char(117u8,ob);ob_char(98u8,ob);ob_char(10u8,ob); return; }  // sub
-    if sv1(strtab,ss,sl, 42u8) { ob_char(109u8,ob);ob_char(117u8,ob);ob_char(108u8,ob);ob_char(10u8,ob); return; }  // mul
-    if sv1(strtab,ss,sl, 47u8) { ob_char(100u8,ob);ob_char(105u8,ob);ob_char(118u8,ob);ob_char(10u8,ob); return; }  // div
-    if sv1(strtab,ss,sl, 37u8) { ob_char(109u8,ob);ob_char(111u8,ob);ob_char(100u8,ob);ob_char(10u8,ob); return; }  // mod
-    if sv1(strtab,ss,sl, 38u8) { ob_char(97u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);ob_char(10u8,ob); return; }  // and
-    if sv1(strtab,ss,sl, 124u8){ ob_char(111u8,ob);ob_char(114u8,ob);ob_char(10u8,ob); return; }  // or
-    if sv1(strtab,ss,sl, 94u8) { ob_char(120u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(10u8,ob); return; }  // xor
-    if sv1(strtab,ss,sl, 60u8) { ob_char(108u8,ob);ob_char(116u8,ob);ob_char(10u8,ob); return; }  // lt
-    if sv1(strtab,ss,sl, 62u8) { ob_char(103u8,ob);ob_char(116u8,ob);ob_char(10u8,ob); return; }  // gt
-    if sv2(strtab,ss,sl, 60u8,60u8) { ob_char(115u8,ob);ob_char(104u8,ob);ob_char(108u8,ob);ob_char(10u8,ob); return; }  // shl
-    if sv2(strtab,ss,sl, 62u8,62u8) { ob_char(115u8,ob);ob_char(104u8,ob);ob_char(114u8,ob);ob_char(10u8,ob); return; }  // shr
-    if sv2(strtab,ss,sl, 61u8,61u8) { ob_char(101u8,ob);ob_char(113u8,ob);ob_char(10u8,ob); return; }  // eq
-    if sv2(strtab,ss,sl, 33u8,61u8) { ob_char(110u8,ob);ob_char(101u8,ob);ob_char(10u8,ob); return; }  // ne
-    if sv2(strtab,ss,sl, 60u8,61u8) { ob_char(108u8,ob);ob_char(101u8,ob);ob_char(10u8,ob); return; }  // le
-    if sv2(strtab,ss,sl, 62u8,61u8) { ob_char(103u8,ob);ob_char(101u8,ob);ob_char(10u8,ob); return; }  // ge
+    if sv1(strtab,ss,sl, '+') { ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // add
+    if sv1(strtab,ss,sl, '-') { ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(10u8,ob); return; }  // sub
+    if sv1(strtab,ss,sl, '*') { ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // mul
+    if sv1(strtab,ss,sl, '/') { ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(10u8,ob); return; }  // div
+    if sv1(strtab,ss,sl, '%') { ob_char('m',ob);ob_char('o',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // mod
+    if sv1(strtab,ss,sl, '&') { ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // and
+    if sv1(strtab,ss,sl, '|'){ ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // or
+    if sv1(strtab,ss,sl, '^') { ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // xor
+    if sv1(strtab,ss,sl, '<') { ob_char('l',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // lt
+    if sv1(strtab,ss,sl, '>') { ob_char('g',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // gt
+    if sv2(strtab,ss,sl, '<','<') { ob_char('s',ob);ob_char('h',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // shl
+    if sv2(strtab,ss,sl, '>','>') { ob_char('s',ob);ob_char('h',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // shr
+    if sv2(strtab,ss,sl, '=','=') { ob_char('e',ob);ob_char('q',ob);ob_char(10u8,ob); return; }  // eq
+    if sv2(strtab,ss,sl, '!','=') { ob_char('n',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ne
+    if sv2(strtab,ss,sl, '<','=') { ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // le
+    if sv2(strtab,ss,sl, '>','=') { ob_char('g',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ge
     // Unknown op - just add newline
     ob_char(10u8,ob);
     return;
@@ -652,23 +652,23 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
     var k: i32 = n_kind(nodes, n);
 
     if k == NK_INT {
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
-        ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+        ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
         ob_int(n_ival(nodes,n), ob); ob_char(10u8,ob);
         return;
     }
 
     if k == NK_BOOL {
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
-        ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+        ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
         // check sval: "true" → 1, else → 0
         var is_true: i32 = 0;
         if n_sl(nodes,n) == 4 {
             var ss: i32 = n_ss(nodes,n);
-            if get(strtab,ss as u32)==116u8 && get(strtab,(ss+1) as u32)==114u8 &&
-               get(strtab,(ss+2) as u32)==117u8 && get(strtab,(ss+3) as u32)==101u8 {
+            if get(strtab,ss as u32)=='t' && get(strtab,(ss+1) as u32)=='r' &&
+               get(strtab,(ss+2) as u32)=='u' && get(strtab,(ss+3) as u32)=='e' {
                 is_true = 1;
             }
         }
@@ -678,16 +678,16 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
 
     if k == NK_STR {
         var idx: i32 = slit_find(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
-        ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+        ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char(' ',ob);
         ob_int(idx, ob); ob_char(10u8,ob);
         return;
     }
 
     if k == NK_VAR {
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(108u8,ob);ob_char(111u8,ob);ob_char(97u8,ob);ob_char(100u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('l',ob);ob_char('o',ob);ob_char('a',ob);ob_char('d',ob);ob_char(' ',ob);
         ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
         return;
     }
@@ -696,22 +696,22 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
         var c: i32 = n_child(nodes, n);
         var nargs: i32 = 0;
         while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
         ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob);
-        ob_char(32u8,ob); ob_int(nargs, ob); ob_char(10u8,ob);
+        ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);
         return;
     }
 
     if k == NK_UNARY {
         cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
-        ob_char(32u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
         var ss: i32 = n_ss(nodes,n);
         var sl: i32 = n_sl(nodes,n);
-        if sv1(strtab,ss,sl, 45u8) {
-            ob_char(110u8,ob);ob_char(101u8,ob);ob_char(103u8,ob);ob_char(10u8,ob);  // neg
+        if sv1(strtab,ss,sl, '-') {
+            ob_char('n',ob);ob_char('e',ob);ob_char('g',ob);ob_char(10u8,ob);  // neg
         } else {
-            ob_char(108u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);ob_char(10u8,ob);  // lnot
+            ob_char('l',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);ob_char(10u8,ob);  // lnot
         }
         return;
     }
@@ -723,58 +723,58 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
         var child1: i32 = n_nth_child(nodes,n,1);
 
         // Short-circuit &&
-        if sv2(strtab,ss,sl, 38u8,38u8) {
+        if sv2(strtab,ss,sl, '&','&') {
             var lf: i32 = g_lc; g_lc = g_lc + 1;
             var le: i32 = g_lc; g_lc = g_lc + 1;
             cg_expr(nodes, strtab, slits, ob, child0);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lf,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
             cg_expr(nodes, strtab, slits, ob, child1);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(111u8,ob);ob_char(116u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lf,ob);ob_char(10u8,ob);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(le,ob);ob_char(10u8,ob);
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lf,ob);ob_char(58u8,ob);ob_char(10u8,ob);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(le,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(':',ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
             return;
         }
 
         // Short-circuit ||
-        if sv2(strtab,ss,sl, 124u8,124u8) {
+        if sv2(strtab,ss,sl, '|','|') {
             var lt: i32 = g_lc; g_lc = g_lc + 1;
             var le: i32 = g_lc; g_lc = g_lc + 1;
             cg_expr(nodes, strtab, slits, ob, child0);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(102u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lt,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('f',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
             cg_expr(nodes, strtab, slits, ob, child1);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(102u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lt,ob);ob_char(10u8,ob);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(106u8,ob);ob_char(117u8,ob);ob_char(109u8,ob);ob_char(112u8,ob);
-            ob_char(32u8,ob);ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(le,ob);ob_char(10u8,ob);
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(lt,ob);ob_char(58u8,ob);ob_char(10u8,ob);
-            ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(112u8,ob);ob_char(117u8,ob);ob_char(115u8,ob);ob_char(104u8,ob);ob_char(95u8,ob);
-            ob_char(105u8,ob);ob_char(110u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(76u8,ob);ob_int(le,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('f',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+            ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(':',ob);ob_char(10u8,ob);
+            ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+            ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
             return;
         }
 
@@ -788,8 +788,8 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
     if k == NK_CAST {
         cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes,n,0));
         var type_n: i32 = n_nth_child(nodes,n,1);
-        ob_char(32u8,ob);ob_char(32u8,ob);
-        ob_char(99u8,ob);ob_char(97u8,ob);ob_char(115u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);
+        ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);
         ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob); ob_char(10u8,ob);
         return;
     }
@@ -812,12 +812,12 @@ fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob
     }
 
     // ".fn NAME nparams RET\n"
-    ob_char(46u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(32u8,ob);
+    ob_char('.',ob);ob_char('f',ob);ob_char('n',ob);ob_char(' ',ob);
     ob_n(strtab, n_ss(nodes,fn_node), n_sl(nodes,fn_node), ob);
-    ob_char(32u8,ob); ob_int(n_nchildren(nodes, params_n), ob);
-    ob_char(32u8,ob);
+    ob_char(' ',ob); ob_int(n_nchildren(nodes, params_n), ob);
+    ob_char(' ',ob);
     if ret_sl == 0 {
-        ob_char(118u8,ob);ob_char(111u8,ob);ob_char(105u8,ob);ob_char(100u8,ob);
+        ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);
     } else {
         ob_n(strtab, ret_ss, ret_sl, ob);
     }
@@ -827,9 +827,9 @@ fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob
     var p: i32 = n_child(nodes, params_n);
     while p >= 0 {
         var type_n: i32 = n_child(nodes, p);
-        ob_char(46u8,ob);ob_char(112u8,ob);ob_char(97u8,ob);ob_char(114u8,ob);ob_char(97u8,ob);ob_char(109u8,ob);ob_char(32u8,ob);
+        ob_char('.',ob);ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char(' ',ob);
         ob_n(strtab, n_ss(nodes,p), n_sl(nodes,p), ob);
-        ob_char(32u8,ob);
+        ob_char(' ',ob);
         ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob);
         ob_char(10u8,ob);
         p = n_sib(nodes, p);
@@ -845,9 +845,9 @@ fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob
         var nsl: i32 = get(locals, (b+1) as u32);
         var tss: i32 = get(locals, (b+2) as u32);
         var tsl: i32 = get(locals, (b+3) as u32);
-        ob_char(46u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+        ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
         ob_n(strtab, nss, nsl, ob);
-        ob_char(32u8,ob);
+        ob_char(' ',ob);
         ob_n(strtab, tss, tsl, ob);
         ob_char(10u8,ob);
         i = i + 1;
@@ -859,10 +859,10 @@ fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob
     delete(loop_stk);
 
     // "  return_void\n.endfn\n\n"
-    ob_char(32u8,ob);ob_char(32u8,ob);
-    ob_char(114u8,ob);ob_char(101u8,ob);ob_char(116u8,ob);ob_char(117u8,ob);ob_char(114u8,ob);ob_char(110u8,ob);
-    ob_char(95u8,ob);ob_char(118u8,ob);ob_char(111u8,ob);ob_char(105u8,ob);ob_char(100u8,ob);ob_char(10u8,ob);
-    ob_char(46u8,ob);ob_char(101u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);ob_char(102u8,ob);ob_char(110u8,ob);ob_char(10u8,ob);
+    ob_char(' ',ob);ob_char(' ',ob);
+    ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+    ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+    ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char('f',ob);ob_char('n',ob);ob_char(10u8,ob);
     ob_char(10u8,ob);
     return;
 }
@@ -875,18 +875,18 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
     // Emit string table
     if g_slc > 0 {
         // "; string table\n"
-        ob_char(59u8,ob);ob_char(32u8,ob);ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);ob_char(110u8,ob);ob_char(103u8,ob);ob_char(32u8,ob);ob_char(116u8,ob);ob_char(97u8,ob);ob_char(98u8,ob);ob_char(108u8,ob);ob_char(101u8,ob);ob_char(10u8,ob);
+        ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
         var i: i32 = 0;
         while i < g_slc {
             var b: i32 = i * 2;
             var ss: i32 = get(slits, b as u32);
             var sl: i32 = get(slits, (b+1) as u32);
             // ".string i \"...\"\n"
-            ob_char(46u8,ob);ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);ob_char(110u8,ob);ob_char(103u8,ob);ob_char(32u8,ob);
+            ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
             ob_int(i, ob);
-            ob_char(32u8,ob);ob_char(34u8,ob);
+            ob_char(' ',ob);ob_char('"',ob);
             ob_st_escaped(strtab, ss, sl, ob);
-            ob_char(34u8,ob);ob_char(10u8,ob);
+            ob_char('"',ob);ob_char(10u8,ob);
             i = i + 1;
         }
         ob_char(10u8,ob);
@@ -898,7 +898,7 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
     while c >= 0 {
         if n_kind(nodes, c) == NK_VAR_DECL {
             if has_global == 0 {
-                ob_char(59u8,ob);ob_char(32u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(115u8,ob);ob_char(10u8,ob);
+                ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
                 has_global = 1;
             }
             var type_n: i32 = n_child(nodes, c);
@@ -906,11 +906,11 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
             var initval: i32 = 0;
             if init_n >= 0 { initval = n_ival(nodes, init_n); }
             // ".global NAME TYPE INITVAL\n"
-            ob_char(46u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+            ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
             ob_n(strtab, n_ss(nodes,c), n_sl(nodes,c), ob);
-            ob_char(32u8,ob);
+            ob_char(' ',ob);
             ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob);
-            ob_char(32u8,ob);
+            ob_char(' ',ob);
             ob_int(initval, ob);
             ob_char(10u8,ob);
         }
@@ -927,8 +927,8 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
         c = n_sib(nodes, c);
     }
     // ".endbc\n" - marks end of bytecode so bcrun knows where program stdin starts
-    ob_char(46u8,ob);ob_char(101u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);
-    ob_char(98u8,ob);ob_char(99u8,ob);ob_char(10u8,ob);
+    ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);
+    ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
     return;
 }
 

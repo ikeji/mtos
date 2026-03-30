@@ -62,8 +62,8 @@ fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
     return;
 }
 fn ob_int(n: i32, ob: U8Array) -> void {
-    if n == 0 { ob_char(48u8, ob); return; }
-    if n < 0 { ob_char(45u8, ob); n = 0 - n; }
+    if n == 0 { ob_char('0', ob); return; }
+    if n < 0 { ob_char('-', ob); n = 0 - n; }
     var tmp: U8Array = newU8Array(12);
     var len: i32 = 0; var v: i32 = n;
     while v > 0 { set(tmp,len as u32,(48+v%10) as u8); len=len+1; v=v/10; }
@@ -75,54 +75,54 @@ fn ob_int(n: i32, ob: U8Array) -> void {
 
 // ===== Common emit helpers =====
 fn e4(ob: U8Array) -> void {
-    ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+    ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
 }
-fn ecomma(ob: U8Array) -> void { ob_char(44u8,ob);ob_char(32u8,ob); return; }
+fn ecomma(ob: U8Array) -> void { ob_char(',',ob);ob_char(' ',ob); return; }
 // "N(sp)\n"
 fn eNspnl(n: i32, ob: U8Array) -> void {
-    ob_int(n,ob);ob_char(40u8,ob);ob_char(115u8,ob);ob_char(112u8,ob);ob_char(41u8,ob);ob_char(10u8,ob);
+    ob_int(n,ob);ob_char('(',ob);ob_char('s',ob);ob_char('p',ob);ob_char(')',ob);ob_char(10u8,ob);
     return;
 }
 // "N(s0)\n"
 fn eNs0nl(n: i32, ob: U8Array) -> void {
-    ob_int(n,ob);ob_char(40u8,ob);ob_char(115u8,ob);ob_char(48u8,ob);ob_char(41u8,ob);ob_char(10u8,ob);
+    ob_int(n,ob);ob_char('(',ob);ob_char('s',ob);ob_char('0',ob);ob_char(')',ob);ob_char(10u8,ob);
     return;
 }
 // "N(t0)\n"
 fn eNt0nl(n: i32, ob: U8Array) -> void {
-    ob_int(n,ob);ob_char(40u8,ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(41u8,ob);ob_char(10u8,ob);
+    ob_int(n,ob);ob_char('(',ob);ob_char('t',ob);ob_char('0',ob);ob_char(')',ob);ob_char(10u8,ob);
     return;
 }
 // register name + ", " shorthands
-fn eregsp(ob: U8Array) -> void { ob_char(115u8,ob);ob_char(112u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
-fn eregs0(ob: U8Array) -> void { ob_char(115u8,ob);ob_char(48u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
-fn eregt0(ob: U8Array) -> void { ob_char(116u8,ob);ob_char(48u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
-fn eregt1(ob: U8Array) -> void { ob_char(116u8,ob);ob_char(49u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
-fn eregra(ob: U8Array) -> void { ob_char(114u8,ob);ob_char(97u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
+fn eregsp(ob: U8Array) -> void { ob_char('s',ob);ob_char('p',ob);ob_char(',',ob);ob_char(' ',ob); return; }
+fn eregs0(ob: U8Array) -> void { ob_char('s',ob);ob_char('0',ob);ob_char(',',ob);ob_char(' ',ob); return; }
+fn eregt0(ob: U8Array) -> void { ob_char('t',ob);ob_char('0',ob);ob_char(',',ob);ob_char(' ',ob); return; }
+fn eregt1(ob: U8Array) -> void { ob_char('t',ob);ob_char('1',ob);ob_char(',',ob);ob_char(' ',ob); return; }
+fn eregra(ob: U8Array) -> void { ob_char('r',ob);ob_char('a',ob);ob_char(',',ob);ob_char(' ',ob); return; }
 // "    addi "
 fn e_addi(ob: U8Array) -> void {
-    e4(ob);ob_char(97u8,ob);ob_char(100u8,ob);ob_char(100u8,ob);ob_char(105u8,ob);ob_char(32u8,ob); return;
+    e4(ob);ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char('i',ob);ob_char(' ',ob); return;
 }
 // "    sw   "
 fn e_sw(ob: U8Array) -> void {
-    e4(ob);ob_char(115u8,ob);ob_char(119u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+    e4(ob);ob_char('s',ob);ob_char('w',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
 }
 // "    lw   "
 fn e_lw(ob: U8Array) -> void {
-    e4(ob);ob_char(108u8,ob);ob_char(119u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+    e4(ob);ob_char('l',ob);ob_char('w',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
 }
 // "    li   "
 fn e_li(ob: U8Array) -> void {
-    e4(ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+    e4(ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
 }
 // "    la   "
 fn e_la(ob: U8Array) -> void {
-    e4(ob);ob_char(108u8,ob);ob_char(97u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+    e4(ob);ob_char('l',ob);ob_char('a',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
 }
 // push_t0 / pop_t0 / pop_t1_t0
 fn asm_push_t0(ob: U8Array) -> void {
     // addi sp, sp, -4
-    e_addi(ob); eregsp(ob); eregsp(ob); ob_char(45u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+    e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
     // sw t0, 0(sp)
     e_sw(ob); eregt0(ob); eNspnl(0,ob);
     return;
@@ -131,7 +131,7 @@ fn asm_pop_t0(ob: U8Array) -> void {
     // lw t0, 0(sp)
     e_lw(ob); eregt0(ob); eNspnl(0,ob);
     // addi sp, sp, 4
-    e_addi(ob); eregsp(ob); eregsp(ob); ob_char(52u8,ob);ob_char(10u8,ob);
+    e_addi(ob); eregsp(ob); eregsp(ob); ob_char('4',ob);ob_char(10u8,ob);
     return;
 }
 fn asm_pop_t1_t0(ob: U8Array) -> void {
@@ -140,42 +140,42 @@ fn asm_pop_t1_t0(ob: U8Array) -> void {
     // lw t0, 4(sp)   — t0 = left operand
     e_lw(ob); eregt0(ob); eNspnl(4,ob);
     // addi sp, sp, 8
-    e_addi(ob); eregsp(ob); eregsp(ob); ob_char(56u8,ob);ob_char(10u8,ob);
+    e_addi(ob); eregsp(ob); eregsp(ob); ob_char('8',ob);ob_char(10u8,ob);
     return;
 }
 // Epilogue: mv t0,s0; lw ra,-4(t0); lw s0,-8(t0); addi sp,t0,0; ret
 fn asm_epilogue(ob: U8Array) -> void {
     // mv t0, s0
-    e4(ob);ob_char(109u8,ob);ob_char(118u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-    eregt0(ob);ob_char(115u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+    e4(ob);ob_char('m',ob);ob_char('v',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
+    eregt0(ob);ob_char('s',ob);ob_char('0',ob);ob_char(10u8,ob);
     // lw ra, -4(t0)
     e_lw(ob); eregra(ob); eNt0nl(0-4,ob);
     // lw s0, -8(t0)
     e_lw(ob); eregs0(ob); eNt0nl(0-8,ob);
     // addi sp, t0, 0
     e_addi(ob); eregsp(ob);
-    ob_char(116u8,ob);ob_char(48u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); // "t0, "
-    ob_char(48u8,ob);ob_char(10u8,ob);
+    ob_char('t',ob);ob_char('0',ob);ob_char(',',ob);ob_char(' ',ob); // "t0, "
+    ob_char('0',ob);ob_char(10u8,ob);
     // ret
-    e4(ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(116u8,ob);ob_char(10u8,ob);
+    e4(ob);ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char(10u8,ob);
     return;
 }
 // "  .L_pcN:\n"
 fn asm_pc_label(pc: i32, ob: U8Array) -> void {
-    ob_char(32u8,ob);ob_char(32u8,ob);
-    ob_char(46u8,ob);ob_char(76u8,ob);ob_char(95u8,ob);ob_char(112u8,ob);ob_char(99u8,ob);
-    ob_int(pc,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+    ob_char(' ',ob);ob_char(' ',ob);
+    ob_char('.',ob);ob_char('L',ob);ob_char('_',ob);ob_char('p',ob);ob_char('c',ob);
+    ob_int(pc,ob);ob_char(':',ob);ob_char(10u8,ob);
     return;
 }
 // ".L_pcN" (without newline, used in jump targets)
 fn e_pcref(pc: i32, ob: U8Array) -> void {
-    ob_char(46u8,ob);ob_char(76u8,ob);ob_char(95u8,ob);ob_char(112u8,ob);ob_char(99u8,ob);
+    ob_char('.',ob);ob_char('L',ob);ob_char('_',ob);ob_char('p',ob);ob_char('c',ob);
     ob_int(pc,ob);
     return;
 }
 // "    j    .L_pcN\n"
 fn asm_jump(target: i32, ob: U8Array) -> void {
-    e4(ob);ob_char(106u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+    e4(ob);ob_char('j',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
     e_pcref(target,ob);ob_char(10u8,ob);
     return;
 }
@@ -183,55 +183,55 @@ fn asm_jump(target: i32, ob: U8Array) -> void {
 fn asm_branch(cond_ne: i32, target: i32, ob: U8Array) -> void {
     e4(ob);
     if cond_ne == 1 {
-        ob_char(98u8,ob);ob_char(110u8,ob);ob_char(101u8,ob);ob_char(122u8,ob);ob_char(32u8,ob);
+        ob_char('b',ob);ob_char('n',ob);ob_char('e',ob);ob_char('z',ob);ob_char(' ',ob);
     } else {
-        ob_char(98u8,ob);ob_char(101u8,ob);ob_char(113u8,ob);ob_char(122u8,ob);ob_char(32u8,ob);
+        ob_char('b',ob);ob_char('e',ob);ob_char('q',ob);ob_char('z',ob);ob_char(' ',ob);
     }
-    ob_char(116u8,ob);ob_char(48u8,ob);ecomma(ob);
+    ob_char('t',ob);ob_char('0',ob);ecomma(ob);
     e_pcref(target,ob);ob_char(10u8,ob);
     return;
 }
 // "    call [__tc_]NAME\n"
 fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, is_tc: i32, ob: U8Array) -> void {
-    e4(ob);ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+    e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
     if is_tc == 1 {
-        ob_char(95u8,ob);ob_char(95u8,ob);ob_char(116u8,ob);ob_char(99u8,ob);ob_char(95u8,ob);
+        ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
     }
     ob_n(strtab, nm_ss, nm_sl, ob); ob_char(10u8,ob);
     return;
 }
 // "    seqz t0, t0\n"
 fn asm_seqz_t0(ob: U8Array) -> void {
-    e4(ob);ob_char(115u8,ob);ob_char(101u8,ob);ob_char(113u8,ob);ob_char(122u8,ob);ob_char(32u8,ob);
-    eregt0(ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+    e4(ob);ob_char('s',ob);ob_char('e',ob);ob_char('q',ob);ob_char('z',ob);ob_char(' ',ob);
+    eregt0(ob);ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob);
     return;
 }
 // "    snez t0, t0\n"
 fn asm_snez_t0(ob: U8Array) -> void {
-    e4(ob);ob_char(115u8,ob);ob_char(110u8,ob);ob_char(101u8,ob);ob_char(122u8,ob);ob_char(32u8,ob);
-    eregt0(ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+    e4(ob);ob_char('s',ob);ob_char('n',ob);ob_char('e',ob);ob_char('z',ob);ob_char(' ',ob);
+    eregt0(ob);ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob);
     return;
 }
 // "    xori t0, t0, 1\n"
 fn asm_xori_t0_1(ob: U8Array) -> void {
-    e4(ob);ob_char(120u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
-    eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(10u8,ob);
+    e4(ob);ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char('i',ob);ob_char(' ',ob);
+    eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char(10u8,ob);
     return;
 }
 // "    sub  t0, t0, t1\n"
 fn asm_sub_t0_t0_t1(ob: U8Array) -> void {
-    e4(ob);ob_char(115u8,ob);ob_char(117u8,ob);ob_char(98u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-    eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+    e4(ob);ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(' ',ob);ob_char(' ',ob);
+    eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
     return;
 }
 // "    slt  t0, A, B\n" (A and B are 't0' or 't1')
 fn asm_slt(swap: i32, ob: U8Array) -> void {
     // swap=0: slt t0, t0, t1   (t0 < t1)
     // swap=1: slt t0, t1, t0   (t1 < t0 i.e. t0 > t1)
-    e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+    e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('t',ob);ob_char(' ',ob);ob_char(' ',ob);
     eregt0(ob);
-    if swap == 0 { eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob); }
-    else         { eregt1(ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob); }
+    if swap == 0 { eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob); }
+    else         { eregt1(ob);ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob); }
     return;
 }
 
@@ -251,9 +251,9 @@ fn in_cur(src: U8Array) -> u8 {
     if g_in_pos >= g_in_len { return 0u8; }
     return get(src, g_in_pos as u32);
 }
-fn is_ws(c: u8) -> bool { return c==32u8||c==9u8||c==13u8||c==10u8; }
+fn is_ws(c: u8) -> bool { return c==' '||c==9u8||c==13u8||c==10u8; }
 fn skip_spaces(src: U8Array) -> void {
-    while g_in_pos < g_in_len && (in_cur(src)==32u8||in_cur(src)==9u8) { g_in_pos=g_in_pos+1; }
+    while g_in_pos < g_in_len && (in_cur(src)==' '||in_cur(src)==9u8) { g_in_pos=g_in_pos+1; }
     return;
 }
 fn skip_line(src: U8Array) -> void {
@@ -274,11 +274,11 @@ fn tok_len(start: i32) -> i32 { return g_stab_pos - start; }
 fn discard_tok(start: i32) -> void { g_stab_pos = start; return; }
 fn int_from_stab(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     var neg: i32=0; var i: i32=0;
-    if sl>0&&get(strtab,ss as u32)==45u8 { neg=1; i=1; }
+    if sl>0&&get(strtab,ss as u32)=='-' { neg=1; i=1; }
     var r: i32=0;
     while i<sl {
         var c: u8=get(strtab,(ss+i) as u32);
-        if c>=48u8&&c<=57u8 { r=r*10+(c as i32-48); }
+        if c>='0'&&c<='9' { r=r*10+(c as i32-48); }
         i=i+1;
     }
     if neg==1 { return 0-r; }
@@ -286,28 +286,28 @@ fn int_from_stab(strtab: U8Array, ss: i32, sl: i32) -> i32 {
 }
 fn read_strlit(src: U8Array, strtab: U8Array) -> i32 {
     var start: i32=g_stab_pos;
-    if g_in_pos<g_in_len&&in_cur(src)==34u8 { g_in_pos=g_in_pos+1; }
+    if g_in_pos<g_in_len&&in_cur(src)=='"' { g_in_pos=g_in_pos+1; }
     var done: i32=0;
     while done==0&&g_in_pos<g_in_len {
         var c: u8=in_cur(src); g_in_pos=g_in_pos+1;
         var handled: i32=0;
-        if c==34u8 { done=1; handled=1; }
-        if handled==0&&c==92u8 {
+        if c=='"' { done=1; handled=1; }
+        if handled==0&&c=='\\' {
             var e: u8=in_cur(src); g_in_pos=g_in_pos+1;
             var out: u8=e;
-            if e==110u8 { out=10u8; }
-            if e==114u8 { out=13u8; }
-            if e==116u8 { out=9u8; }
-            if e==120u8 {
+            if e=='n' { out=10u8; }
+            if e=='r' { out=13u8; }
+            if e=='t' { out=9u8; }
+            if e=='x' {
                 var h1: u8=in_cur(src); g_in_pos=g_in_pos+1;
                 var h2: u8=in_cur(src); g_in_pos=g_in_pos+1;
                 var v1: i32=0; var v2: i32=0;
-                if h1>=48u8&&h1<=57u8 { v1=h1 as i32-48; }
-                if h1>=65u8&&h1<=70u8 { v1=h1 as i32-55; }
-                if h1>=97u8&&h1<=102u8 { v1=h1 as i32-87; }
-                if h2>=48u8&&h2<=57u8 { v2=h2 as i32-48; }
-                if h2>=65u8&&h2<=70u8 { v2=h2 as i32-55; }
-                if h2>=97u8&&h2<=102u8 { v2=h2 as i32-87; }
+                if h1>='0'&&h1<='9' { v1=h1 as i32-48; }
+                if h1>='A'&&h1<='F' { v1=h1 as i32-55; }
+                if h1>='a'&&h1<='f' { v1=h1 as i32-87; }
+                if h2>='0'&&h2<='9' { v2=h2 as i32-48; }
+                if h2>='A'&&h2<='F' { v2=h2 as i32-55; }
+                if h2>='a'&&h2<='f' { v2=h2 as i32-87; }
                 out=(v1*16+v2) as u8;
             }
             set(strtab,g_stab_pos as u32,out); g_stab_pos=g_stab_pos+1; handled=1;
@@ -326,51 +326,51 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     if sl>3 { d=get(strtab,(ss+3) as u32); }
     if sl>4 { e=get(strtab,(ss+4) as u32); }
     if sl==2 {
-        if a==111u8&&b==114u8 { return OP_OR; }
-        if a==101u8&&b==113u8 { return OP_EQ; }
-        if a==110u8&&b==101u8 { return OP_NE; }
-        if a==108u8&&b==116u8 { return OP_LT; }
-        if a==108u8&&b==101u8 { return OP_LE; }
-        if a==103u8&&b==116u8 { return OP_GT; }
-        if a==103u8&&b==101u8 { return OP_GE; }
+        if a=='o'&&b=='r' { return OP_OR; }
+        if a=='e'&&b=='q' { return OP_EQ; }
+        if a=='n'&&b=='e' { return OP_NE; }
+        if a=='l'&&b=='t' { return OP_LT; }
+        if a=='l'&&b=='e' { return OP_LE; }
+        if a=='g'&&b=='t' { return OP_GT; }
+        if a=='g'&&b=='e' { return OP_GE; }
     }
     if sl==3 {
-        if a==97u8&&b==100u8&&c==100u8  { return OP_ADD; }
-        if a==115u8&&b==117u8&&c==98u8  { return OP_SUB; }
-        if a==109u8&&b==117u8&&c==108u8 { return OP_MUL; }
-        if a==100u8&&b==105u8&&c==118u8 { return OP_DIV; }
-        if a==109u8&&b==111u8&&c==100u8 { return OP_MOD; }
-        if a==97u8&&b==110u8&&c==100u8  { return OP_AND; }
-        if a==120u8&&b==111u8&&c==114u8 { return OP_XOR; }
-        if a==115u8&&b==104u8&&c==108u8 { return OP_SHL; }
-        if a==115u8&&b==104u8&&c==114u8 { return OP_SHR; }
-        if a==112u8&&b==111u8&&c==112u8 { return OP_POP; }
-        if a==110u8&&b==101u8&&c==103u8 { return OP_NEG; }
+        if a=='a'&&b=='d'&&c=='d'  { return OP_ADD; }
+        if a=='s'&&b=='u'&&c=='b'  { return OP_SUB; }
+        if a=='m'&&b=='u'&&c=='l' { return OP_MUL; }
+        if a=='d'&&b=='i'&&c=='v' { return OP_DIV; }
+        if a=='m'&&b=='o'&&c=='d' { return OP_MOD; }
+        if a=='a'&&b=='n'&&c=='d'  { return OP_AND; }
+        if a=='x'&&b=='o'&&c=='r' { return OP_XOR; }
+        if a=='s'&&b=='h'&&c=='l' { return OP_SHL; }
+        if a=='s'&&b=='h'&&c=='r' { return OP_SHR; }
+        if a=='p'&&b=='o'&&c=='p' { return OP_POP; }
+        if a=='n'&&b=='e'&&c=='g' { return OP_NEG; }
     }
     if sl==4 {
-        if a==108u8&&b==110u8&&c==111u8&&d==116u8 { return OP_LNOT; }
-        if a==99u8&&b==97u8&&c==115u8&&d==116u8   { return OP_CAST; }
-        if a==108u8&&b==111u8&&c==97u8&&d==100u8  { return OP_LOAD; }
-        if a==106u8&&b==117u8&&c==109u8&&d==112u8 { return OP_JUMP; }
-        if a==99u8&&b==97u8&&c==108u8&&d==108u8   { return OP_CALL; }
+        if a=='l'&&b=='n'&&c=='o'&&d=='t' { return OP_LNOT; }
+        if a=='c'&&b=='a'&&c=='s'&&d=='t'   { return OP_CAST; }
+        if a=='l'&&b=='o'&&c=='a'&&d=='d'  { return OP_LOAD; }
+        if a=='j'&&b=='u'&&c=='m'&&d=='p' { return OP_JUMP; }
+        if a=='c'&&b=='a'&&c=='l'&&d=='l'   { return OP_CALL; }
     }
-    if sl==5 { if a==115u8&&b==116u8&&c==111u8&&d==114u8&&e==101u8 { return OP_STORE; } }
-    if sl==6 { if a==114u8&&b==101u8&&c==116u8 { return OP_RETURN; } }
+    if sl==5 { if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; } }
+    if sl==6 { if a=='r'&&b=='e'&&c=='t' { return OP_RETURN; } }
     if sl==7 {
-        if a==106u8&&b==117u8&&c==109u8&&d==112u8&&e==95u8 {
+        if a=='j'&&b=='u'&&c=='m'&&d=='p'&&e=='_' {
             var f: u8=get(strtab,(ss+5) as u32);
-            if f==105u8 { return OP_JUMP_IF; }
+            if f=='i' { return OP_JUMP_IF; }
         }
     }
     if sl==8 {
-        if a==112u8&&b==117u8&&c==115u8&&d==104u8&&e==95u8 {
+        if a=='p'&&b=='u'&&c=='s'&&d=='h'&&e=='_' {
             var f: u8=get(strtab,(ss+5) as u32);
-            if f==105u8 { return OP_PUSH_INT; }
-            if f==115u8 { return OP_PUSH_STR; }
+            if f=='i' { return OP_PUSH_INT; }
+            if f=='s' { return OP_PUSH_STR; }
         }
     }
-    if sl==10 { if a==106u8 { return OP_JUMP_IFNOT; } }
-    if sl==11 { if a==114u8&&b==101u8 { return OP_RETURN_VOID; } }
+    if sl==10 { if a=='j' { return OP_JUMP_IFNOT; } }
+    if sl==11 { if a=='r'&&b=='e' { return OP_RETURN_VOID; } }
     return -1;
 }
 
@@ -398,7 +398,7 @@ fn ins_set(instrs: I32Array, base: i32, pc: i32, f: i32, v: i32) -> void {
 // ===== Label number =====
 fn parse_lnum(src: U8Array, from: i32, to: i32) -> i32 {
     var r: i32=0; var i: i32=from+3;
-    while i<to { var c: u8=get(src,i as u32); if c>=48u8&&c<=57u8 { r=r*10+(c as i32-48); } i=i+1; }
+    while i<to { var c: u8=get(src,i as u32); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }
     return r;
 }
 
@@ -414,15 +414,15 @@ fn parse_bc(src: U8Array, strtab: U8Array,
         if done==0 {
             var c: u8=in_cur(src);
             if c==10u8||c==13u8 { g_in_pos=g_in_pos+1; }
-            if c!=10u8&&c!=13u8&&c==59u8 { skip_line(src); }
-            if c!=10u8&&c!=13u8&&c!=59u8&&c==46u8 {
+            if c!=10u8&&c!=13u8&&c==';' { skip_line(src); }
+            if c!=10u8&&c!=13u8&&c!=';'&&c=='.' {
                 g_in_pos=g_in_pos+1;
                 var dir_ss: i32=next_tok(src,strtab);
                 var dir_sl: i32=tok_len(dir_ss);
                 var d0: u8=0u8; var d1: u8=0u8;
                 if dir_sl>0 { d0=get(strtab,dir_ss as u32); }
                 if dir_sl>1 { d1=get(strtab,(dir_ss+1) as u32); }
-                if d0==115u8&&d1==116u8 { // string
+                if d0=='s'&&d1=='t' { // string
                     discard_tok(dir_ss);
                     var idx_ss: i32=next_tok(src,strtab);
                     var idx: i32=int_from_stab(strtab,idx_ss,tok_len(idx_ss));
@@ -434,7 +434,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     if idx+1>g_nstrings { g_nstrings=idx+1; }
                     skip_line(src);
                 }
-                if d0==103u8&&d1==108u8 { // global
+                if d0=='g'&&d1=='l' { // global
                     discard_tok(dir_ss);
                     var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
                     var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
@@ -446,7 +446,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     set(global_inits,gi as u32,iv);
                     g_nglobals=g_nglobals+1; skip_line(src);
                 }
-                if d0==102u8&&d1==110u8 { // fn
+                if d0=='f'&&d1=='n' { // fn
                     discard_tok(dir_ss);
                     var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
                     var np_ss: i32=next_tok(src,strtab);
@@ -460,7 +460,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     fn_set(fns,cur_fn,8,g_ninstrs); fn_set(fns,cur_fn,9,0);
                     g_nfuncs=g_nfuncs+1; skip_line(src);
                 }
-                if d0==112u8&&d1==97u8 { // param
+                if d0=='p'&&d1=='a' { // param
                     discard_tok(dir_ss);
                     var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
                     var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
@@ -469,7 +469,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     if cur_fn>=0 { fn_set(fns,cur_fn,5,fn_nparam(fns,cur_fn)+1); }
                     skip_line(src);
                 }
-                if d0==108u8&&d1==111u8 { // local
+                if d0=='l'&&d1=='o' { // local
                     discard_tok(dir_ss);
                     var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
                     var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
@@ -480,10 +480,10 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 }
                 var d3b: u8=0u8;
                 if dir_sl>3 { d3b=get(strtab,(dir_ss+3) as u32); }
-                if d0==101u8&&d3b==98u8 { // endbc
+                if d0=='e'&&d3b=='b' { // endbc
                     discard_tok(dir_ss); done=1;
                 }
-                if d0==101u8&&d3b!=98u8 { // endfn
+                if d0=='e'&&d3b!='b' { // endfn
                     discard_tok(dir_ss);
                     if cur_fn>=0 {
                         var ib: i32=fn_instr_base(fns,cur_fn);
@@ -500,21 +500,21 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     }
                     cur_fn=-1; skip_line(src);
                 }
-                if d0!=115u8&&d0!=103u8&&d0!=102u8&&d0!=112u8&&d0!=108u8&&d0!=101u8 {
+                if d0!='s'&&d0!='g'&&d0!='f'&&d0!='p'&&d0!='l'&&d0!='e' {
                     discard_tok(dir_ss); skip_line(src);
                 }
             }
-            if c!=10u8&&c!=13u8&&c!=59u8&&c!=46u8&&c==95u8 { // label
+            if c!=10u8&&c!=13u8&&c!=';'&&c!='.'&&c=='_' { // label
                 var lbl_start: i32=g_in_pos;
-                while g_in_pos<g_in_len&&in_cur(src)!=58u8&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
-                if g_in_pos<g_in_len&&in_cur(src)==58u8 {
+                while g_in_pos<g_in_len&&in_cur(src)!=':'&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
+                if g_in_pos<g_in_len&&in_cur(src)==':' {
                     var lnum3: i32=parse_lnum(src,lbl_start,g_in_pos);
                     g_in_pos=g_in_pos+1;
                     if cur_fn>=0 { set(label_pcs,lnum3 as u32,g_ninstrs-fn_instr_base(fns,cur_fn)); }
                 }
                 skip_line(src);
             }
-            if c!=10u8&&c!=13u8&&c!=59u8&&c!=46u8&&c!=95u8 { // instruction
+            if c!=10u8&&c!=13u8&&c!=';'&&c!='.'&&c!='_' { // instruction
                 var op_ss: i32=next_tok(src,strtab);
                 var op_sl: i32=tok_len(op_ss);
                 var op3: i32=classify_op(strtab,op_ss,op_sl);
@@ -612,25 +612,25 @@ fn is_builtin(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     var a: u8=get(strtab,ss as u32);
     var b: u8=0u8; if sl>1 { b=get(strtab,(ss+1) as u32); }
     var c: u8=0u8; if sl>2 { c=get(strtab,(ss+2) as u32); }
-    if a==110u8&&b==101u8&&c==119u8 { return 1; }               // new*
-    if sl>=4&&a==115u8&&b==121u8&&c==115u8 { return 1; }        // sys_*
-    if sl>=6&&a==112u8&&b==114u8&&c==105u8 { return 1; }        // print_*
-    if sl>=4&&a==112u8&&b==101u8&&c==101u8 { return 1; }        // peek*
-    if sl>=4&&a==112u8&&b==111u8&&c==107u8 { return 1; }        // poke*
-    if sl==3&&a==108u8&&b==101u8&&c==110u8 { return 1; }        // len
-    if a==103u8&&b==101u8&&c==116u8 { return 1; }               // get/getChar
-    if sl==3&&a==115u8&&b==101u8&&c==116u8 { return 1; }        // set
-    if sl>=6&&a==100u8&&b==101u8&&c==108u8 { return 1; }        // delete
-    if sl>=6&&a==97u8&&b==112u8&&c==112u8 { return 1; }         // append
-    if sl>=6&&a==101u8&&b==113u8&&c==117u8 { return 1; }        // equals
+    if a=='n'&&b=='e'&&c=='w' { return 1; }               // new*
+    if sl>=4&&a=='s'&&b=='y'&&c=='s' { return 1; }        // sys_*
+    if sl>=6&&a=='p'&&b=='r'&&c=='i' { return 1; }        // print_*
+    if sl>=4&&a=='p'&&b=='e'&&c=='e' { return 1; }        // peek*
+    if sl>=4&&a=='p'&&b=='o'&&c=='k' { return 1; }        // poke*
+    if sl==3&&a=='l'&&b=='e'&&c=='n' { return 1; }        // len
+    if a=='g'&&b=='e'&&c=='t' { return 1; }               // get/getChar
+    if sl==3&&a=='s'&&b=='e'&&c=='t' { return 1; }        // set
+    if sl>=6&&a=='d'&&b=='e'&&c=='l' { return 1; }        // delete
+    if sl>=6&&a=='a'&&b=='p'&&c=='p' { return 1; }         // append
+    if sl>=6&&a=='e'&&b=='q'&&c=='u' { return 1; }        // equals
     return 0;
 }
 fn is_sys_exit(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     // "sys_exit" = 115,121,115,95,101,120,105,116
     if sl!=8 { return 0; }
-    if get(strtab,ss as u32)!=115u8 { return 0; }
-    if get(strtab,(ss+4) as u32)!=101u8 { return 0; }
-    if get(strtab,(ss+5) as u32)!=120u8 { return 0; }
+    if get(strtab,ss as u32)!='s' { return 0; }
+    if get(strtab,(ss+4) as u32)!='e' { return 0; }
+    if get(strtab,(ss+5) as u32)!='x' { return 0; }
     return 1;
 }
 
@@ -649,18 +649,18 @@ fn is_jump_target(instrs: I32Array, ibase: i32, ni: i32, pc: i32) -> i32 {
 
 // ===== Emit string literal content (GAS .string escaping) =====
 fn emit_strdata(strtab: U8Array, ss: i32, sl: i32, ob: U8Array) -> void {
-    ob_char(34u8,ob);
+    ob_char('"',ob);
     var i: i32=0;
     while i<sl {
         var c: u8=get(strtab,(ss+i) as u32);
         var handled: i32=0;
-        if c==34u8  { ob_char(92u8,ob);ob_char(34u8,ob); handled=1; }
-        if handled==0&&c==92u8  { ob_char(92u8,ob);ob_char(92u8,ob); handled=1; }
-        if handled==0&&c==10u8  { ob_char(92u8,ob);ob_char(110u8,ob); handled=1; }
-        if handled==0&&c==13u8  { ob_char(92u8,ob);ob_char(114u8,ob); handled=1; }
-        if handled==0&&c==9u8   { ob_char(92u8,ob);ob_char(116u8,ob); handled=1; }
-        if handled==0&&(c<32u8||c==127u8) {
-            ob_char(92u8,ob);
+        if c=='"'  { ob_char('\\',ob);ob_char('"',ob); handled=1; }
+        if handled==0&&c=='\\'  { ob_char('\\',ob);ob_char('\\',ob); handled=1; }
+        if handled==0&&c==10u8  { ob_char('\\',ob);ob_char('n',ob); handled=1; }
+        if handled==0&&c==13u8  { ob_char('\\',ob);ob_char('r',ob); handled=1; }
+        if handled==0&&c==9u8   { ob_char('\\',ob);ob_char('t',ob); handled=1; }
+        if handled==0&&(c<' '||c==127u8) {
+            ob_char('\\',ob);
             ob_char((48+(c as i32>>6&7)) as u8,ob);
             ob_char((48+(c as i32>>3&7)) as u8,ob);
             ob_char((48+(c as i32&7)) as u8,ob);
@@ -669,7 +669,7 @@ fn emit_strdata(strtab: U8Array, ss: i32, sl: i32, ob: U8Array) -> void {
         if handled==0 { ob_char(c,ob); }
         i=i+1;
     }
-    ob_char(34u8,ob);
+    ob_char('"',ob);
     return;
 }
 
@@ -689,22 +689,22 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
 
     // "    .globl NAME\n"
     e4(ob);
-    ob_char(46u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(108u8,ob);
-    ob_char(32u8,ob); ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
+    ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('l',ob);
+    ob_char(' ',ob); ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
     // "    .type  NAME, @function\n"
     e4(ob);
-    ob_char(46u8,ob);ob_char(116u8,ob);ob_char(121u8,ob);ob_char(112u8,ob);ob_char(101u8,ob);
-    ob_char(32u8,ob);ob_char(32u8,ob);
+    ob_char('.',ob);ob_char('t',ob);ob_char('y',ob);ob_char('p',ob);ob_char('e',ob);
+    ob_char(' ',ob);ob_char(' ',ob);
     ob_n(strtab,nm_ss,nm_sl,ob);
-    ob_char(44u8,ob);ob_char(32u8,ob);ob_char(64u8,ob);ob_char(102u8,ob);ob_char(117u8,ob);
-    ob_char(110u8,ob);ob_char(99u8,ob);ob_char(116u8,ob);ob_char(105u8,ob);ob_char(111u8,ob);
-    ob_char(110u8,ob);ob_char(10u8,ob);
+    ob_char(',',ob);ob_char(' ',ob);ob_char('@',ob);ob_char('f',ob);ob_char('u',ob);
+    ob_char('n',ob);ob_char('c',ob);ob_char('t',ob);ob_char('i',ob);ob_char('o',ob);
+    ob_char('n',ob);ob_char(10u8,ob);
     // "NAME:\n"
-    ob_n(strtab,nm_ss,nm_sl,ob); ob_char(58u8,ob);ob_char(10u8,ob);
+    ob_n(strtab,nm_ss,nm_sl,ob); ob_char(':',ob);ob_char(10u8,ob);
 
     // Prologue
     // "    addi sp, sp, -FRAME_SIZE\n"
-    e_addi(ob); eregsp(ob); eregsp(ob); ob_char(45u8,ob); ob_int(frame_size,ob); ob_char(10u8,ob);
+    e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob); ob_int(frame_size,ob); ob_char(10u8,ob);
     // "    sw   ra, (frame_size-4)(sp)\n"
     e_sw(ob); eregra(ob); eNspnl(frame_size-4,ob);
     // "    sw   s0, (frame_size-8)(sp)\n"
@@ -716,7 +716,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
     while pi<np && pi<8 {
         // "    sw   aI, (-12-4*pi)(s0)\n"
         e_sw(ob);
-        ob_char(97u8,ob); ob_char((48+pi) as u8,ob); ecomma(ob);
+        ob_char('a',ob); ob_char((48+pi) as u8,ob); ecomma(ob);
         eNs0nl(0-12-4*pi,ob);
         pi=pi+1;
     }
@@ -725,7 +725,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
     while li<nl {
         // "    sw   zero, (-12-4*np-4*li)(s0)\n"
         e_sw(ob);
-        ob_char(122u8,ob);ob_char(101u8,ob);ob_char(114u8,ob);ob_char(111u8,ob); // "zero"
+        ob_char('z',ob);ob_char('e',ob);ob_char('r',ob);ob_char('o',ob); // "zero"
         ecomma(ob);
         eNs0nl(0-12-4*np-4*li,ob);
         li=li+1;
@@ -748,26 +748,26 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
         if op==OP_PUSH_STR {
             // la a0, __tc_strdataN
             e_la(ob);
-            ob_char(97u8,ob);ob_char(48u8,ob); ecomma(ob);
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(116u8,ob);ob_char(99u8,ob);ob_char(95u8,ob);
-            ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(100u8,ob);ob_char(97u8,ob);
-            ob_char(116u8,ob);ob_char(97u8,ob);
+            ob_char('a',ob);ob_char('0',ob); ecomma(ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+            ob_char('t',ob);ob_char('a',ob);
             ob_int(ival,ob); ob_char(10u8,ob);
             // li a1, LEN
             var str_len: i32=get(string_lits,(ival*2+1) as u32);
             e_li(ob);
-            ob_char(97u8,ob);ob_char(49u8,ob); ecomma(ob);
+            ob_char('a',ob);ob_char('1',ob); ecomma(ob);
             ob_int(str_len,ob); ob_char(10u8,ob);
             // call __tc_make_string
-            e4(ob);ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(116u8,ob);ob_char(99u8,ob);ob_char(95u8,ob);
-            ob_char(109u8,ob);ob_char(97u8,ob);ob_char(107u8,ob);ob_char(101u8,ob);ob_char(95u8,ob);
-            ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);ob_char(110u8,ob);
-            ob_char(103u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+            ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);
+            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);
+            ob_char('g',ob);ob_char(10u8,ob);
             // push a0 onto expression stack
-            e_addi(ob); eregsp(ob); eregsp(ob); ob_char(45u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+            e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
             e_sw(ob);
-            ob_char(97u8,ob);ob_char(48u8,ob); ecomma(ob); eNspnl(0,ob);
+            ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);
         }
         if op==OP_LOAD {
             if is_local(strtab,fns,params_pool,locals_pool,fi,sss,ssl)==1 {
@@ -788,7 +788,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
                 // "    sw   t0, NAME, t1\n"  (t1 used as address temp by GAS)
                 e_sw(ob); eregt0(ob);
                 ob_n(strtab,sss,ssl,ob); ecomma(ob);
-                ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+                ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             }
         }
         if op==OP_CALL {
@@ -797,7 +797,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             var ai: i32=0;
             while ai<nargs && ai<8 {
                 e_lw(ob);
-                ob_char(97u8,ob); ob_char((48+ai) as u8,ob); ecomma(ob);
+                ob_char('a',ob); ob_char((48+ai) as u8,ob); ecomma(ob);
                 eNspnl(4*(nargs-1-ai),ob);
                 ai=ai+1;
             }
@@ -807,72 +807,72 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             if is_sys_exit(strtab,sss,ssl)==1 {
                 // inline: li a7, 93; ecall
                 e_li(ob);
-                ob_char(97u8,ob);ob_char(55u8,ob); ecomma(ob); // "a7, "
-                ob_char(57u8,ob);ob_char(51u8,ob);ob_char(10u8,ob); // "93\n"
-                e4(ob);ob_char(101u8,ob);ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);
-                ob_char(108u8,ob);ob_char(10u8,ob);
+                ob_char('a',ob);ob_char('7',ob); ecomma(ob); // "a7, "
+                ob_char('9',ob);ob_char('3',ob);ob_char(10u8,ob); // "93\n"
+                e4(ob);ob_char('e',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);
+                ob_char('l',ob);ob_char(10u8,ob);
             } else {
                 asm_call_fn(strtab,sss,ssl,is_builtin(strtab,sss,ssl),ob);
             }
             // push return value (a0) onto expression stack
-            e_addi(ob); eregsp(ob); eregsp(ob); ob_char(45u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+            e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
             e_sw(ob);
-            ob_char(97u8,ob);ob_char(48u8,ob); ecomma(ob); eNspnl(0,ob);
+            ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);
         }
         if op==OP_RETURN {
             asm_pop_t0(ob);
             // mv a0, t0
-            e4(ob);ob_char(109u8,ob);ob_char(118u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            ob_char(97u8,ob);ob_char(48u8,ob); ecomma(ob);
-            ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('m',ob);ob_char('v',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
+            ob_char('a',ob);ob_char('0',ob); ecomma(ob);
+            ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob);
             asm_epilogue(ob);
         }
         if op==OP_RETURN_VOID {
             asm_epilogue(ob);
         }
         if op==OP_POP {
-            e_addi(ob); eregsp(ob); eregsp(ob); ob_char(52u8,ob);ob_char(10u8,ob);
+            e_addi(ob); eregsp(ob); eregsp(ob); ob_char('4',ob);ob_char(10u8,ob);
         }
         // Binary arithmetic/bitwise ops
         if op==OP_ADD { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(97u8,ob);ob_char(100u8,ob);ob_char(100u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_SUB { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(115u8,ob);ob_char(117u8,ob);ob_char(98u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_MUL { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(109u8,ob);ob_char(117u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_DIV { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(100u8,ob);ob_char(105u8,ob);ob_char(118u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_MOD { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(109u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('r',ob);ob_char('e',ob);ob_char('m',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_AND { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(97u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_OR { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('o',ob);ob_char('r',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_XOR { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(120u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_SHL { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         if op==OP_SHR { asm_pop_t1_t0(ob);
-            e4(ob);ob_char(115u8,ob);ob_char(114u8,ob);ob_char(97u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('s',ob);ob_char('r',ob);ob_char('a',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
             asm_push_t0(ob); }
         // Comparisons
         if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
@@ -883,8 +883,8 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
         if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
         if op==OP_NEG {
             asm_pop_t0(ob);
-            e4(ob);ob_char(110u8,ob);ob_char(101u8,ob);ob_char(103u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
-            eregt0(ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+            e4(ob);ob_char('n',ob);ob_char('e',ob);ob_char('g',ob);ob_char(' ',ob);ob_char(' ',ob);
+            eregt0(ob);ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob);
             asm_push_t0(ob);
         }
         if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
@@ -893,30 +893,30 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             var ta: u8=0u8; var tb: u8=0u8;
             if ssl>0 { ta=get(strtab,sss as u32); }
             if ssl>1 { tb=get(strtab,(sss+1) as u32); }
-            if ta==117u8&&tb==56u8 { // u8: andi t0,t0,0xff
-                e4(ob);ob_char(97u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+            if ta=='u'&&tb=='8' { // u8: andi t0,t0,0xff
+                e4(ob);ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char('i',ob);ob_char(' ',ob);
                 eregt0(ob);eregt0(ob);
-                ob_char(48u8,ob);ob_char(120u8,ob);ob_char(102u8,ob);ob_char(102u8,ob);ob_char(10u8,ob);
+                ob_char('0',ob);ob_char('x',ob);ob_char('f',ob);ob_char('f',ob);ob_char(10u8,ob);
             }
-            if ta==117u8&&tb==49u8 { // u16: slli 16; srli 16
-                e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
-                eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(54u8,ob);ob_char(10u8,ob);
-                e4(ob);ob_char(115u8,ob);ob_char(114u8,ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
-                eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(54u8,ob);ob_char(10u8,ob);
+            if ta=='u'&&tb=='1' { // u16: slli 16; srli 16
+                e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);
+                eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char('6',ob);ob_char(10u8,ob);
+                e4(ob);ob_char('s',ob);ob_char('r',ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);
+                eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char('6',ob);ob_char(10u8,ob);
             }
-            if ta==105u8&&tb==56u8 { // i8: slli 24; srai 24
-                e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
-                eregt0(ob);eregt0(ob);ob_char(50u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
-                e4(ob);ob_char(115u8,ob);ob_char(114u8,ob);ob_char(97u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
-                eregt0(ob);eregt0(ob);ob_char(50u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+            if ta=='i'&&tb=='8' { // i8: slli 24; srai 24
+                e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);
+                eregt0(ob);eregt0(ob);ob_char('2',ob);ob_char('4',ob);ob_char(10u8,ob);
+                e4(ob);ob_char('s',ob);ob_char('r',ob);ob_char('a',ob);ob_char('i',ob);ob_char(' ',ob);
+                eregt0(ob);eregt0(ob);ob_char('2',ob);ob_char('4',ob);ob_char(10u8,ob);
             }
-            if ta==105u8&&tb==49u8 { // i16: slli 16; srai 16
-                e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
-                eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(54u8,ob);ob_char(10u8,ob);
-                e4(ob);ob_char(115u8,ob);ob_char(114u8,ob);ob_char(97u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
-                eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(54u8,ob);ob_char(10u8,ob);
+            if ta=='i'&&tb=='1' { // i16: slli 16; srai 16
+                e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);
+                eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char('6',ob);ob_char(10u8,ob);
+                e4(ob);ob_char('s',ob);ob_char('r',ob);ob_char('a',ob);ob_char('i',ob);ob_char(' ',ob);
+                eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char('6',ob);ob_char(10u8,ob);
             }
-            if ta==98u8 { // bool: snez t0,t0
+            if ta=='b' { // bool: snez t0,t0
                 asm_snez_t0(ob);
             }
             // u32, i32: no-op
@@ -942,23 +942,23 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
     // .rodata: string literals
     if g_nstrings > 0 {
         e4(ob);
-        ob_char(46u8,ob);ob_char(115u8,ob);ob_char(101u8,ob);ob_char(99u8,ob);ob_char(116u8,ob);
-        ob_char(105u8,ob);ob_char(111u8,ob);ob_char(110u8,ob);ob_char(32u8,ob);
-        ob_char(46u8,ob);ob_char(114u8,ob);ob_char(111u8,ob);ob_char(100u8,ob);ob_char(97u8,ob);
-        ob_char(116u8,ob);ob_char(97u8,ob);ob_char(10u8,ob);
+        ob_char('.',ob);ob_char('s',ob);ob_char('e',ob);ob_char('c',ob);ob_char('t',ob);
+        ob_char('i',ob);ob_char('o',ob);ob_char('n',ob);ob_char(' ',ob);
+        ob_char('.',ob);ob_char('r',ob);ob_char('o',ob);ob_char('d',ob);ob_char('a',ob);
+        ob_char('t',ob);ob_char('a',ob);ob_char(10u8,ob);
         var si: i32=0;
         while si<g_nstrings {
             var ss: i32=get(string_lits,(si*2+0) as u32);
             var sl: i32=get(string_lits,(si*2+1) as u32);
             // "__tc_strdataN:\n"
-            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(116u8,ob);ob_char(99u8,ob);ob_char(95u8,ob);
-            ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(100u8,ob);ob_char(97u8,ob);
-            ob_char(116u8,ob);ob_char(97u8,ob);
-            ob_int(si,ob); ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+            ob_char('t',ob);ob_char('a',ob);
+            ob_int(si,ob); ob_char(':',ob);ob_char(10u8,ob);
             // "    .string \"...\"\n"
             e4(ob);
-            ob_char(46u8,ob);ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);
-            ob_char(110u8,ob);ob_char(103u8,ob);ob_char(32u8,ob);
+            ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);
+            ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
             emit_strdata(strtab,ss,sl,ob); ob_char(10u8,ob);
             si=si+1;
         }
@@ -967,7 +967,7 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
     // .data: globals
     if g_nglobals > 0 {
         e4(ob);
-        ob_char(46u8,ob);ob_char(100u8,ob);ob_char(97u8,ob);ob_char(116u8,ob);ob_char(97u8,ob);ob_char(10u8,ob);
+        ob_char('.',ob);ob_char('d',ob);ob_char('a',ob);ob_char('t',ob);ob_char('a',ob);ob_char(10u8,ob);
         var gi: i32=0;
         while gi<g_nglobals {
             var nm_ss: i32=get(global_vars,(gi*4+0) as u32);
@@ -975,20 +975,20 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
             var initval: i32=get(global_inits,gi as u32);
             // "    .globl NAME\n"
             e4(ob);
-            ob_char(46u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(108u8,ob);
-            ob_char(32u8,ob); ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
+            ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('l',ob);
+            ob_char(' ',ob); ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
             // "NAME:\n    .word INITVAL\n"
-            ob_n(strtab,nm_ss,nm_sl,ob); ob_char(58u8,ob);ob_char(10u8,ob);
+            ob_n(strtab,nm_ss,nm_sl,ob); ob_char(':',ob);ob_char(10u8,ob);
             e4(ob);
-            ob_char(46u8,ob);ob_char(119u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(100u8,ob);
-            ob_char(32u8,ob); ob_int(initval,ob); ob_char(10u8,ob);
+            ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+            ob_char(' ',ob); ob_int(initval,ob); ob_char(10u8,ob);
             gi=gi+1;
         }
         ob_char(10u8,ob);
     }
     // .text: functions
     e4(ob);
-    ob_char(46u8,ob);ob_char(116u8,ob);ob_char(101u8,ob);ob_char(120u8,ob);ob_char(116u8,ob);ob_char(10u8,ob);
+    ob_char('.',ob);ob_char('t',ob);ob_char('e',ob);ob_char('x',ob);ob_char('t',ob);ob_char(10u8,ob);
     ob_char(10u8,ob);
     var fi: i32=0;
     while fi<g_nfuncs {
