@@ -877,6 +877,9 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
         }
         c = n_sib(nodes, c);
     }
+    // ".endbc\n" - marks end of bytecode so bcrun knows where program stdin starts
+    ob_char(46u8,ob);ob_char(101u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);
+    ob_char(98u8,ob);ob_char(99u8,ob);ob_char(10u8,ob);
     return;
 }
 

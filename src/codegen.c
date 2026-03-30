@@ -365,6 +365,9 @@ void codegen(AstNode *program) {
             cg_fn(&cg, d);
     }
 
+    /* mark end of bytecode so bcrun can detect where program stdin begins */
+    fprintf(cg.out, ".endbc\n");
+
     /* cleanup */
     for (int i = 0; i < cg.nstrings; i++) free(cg.strings[i]);
     free(cg.strings);
