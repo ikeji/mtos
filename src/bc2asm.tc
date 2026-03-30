@@ -1,0 +1,1040 @@
+// bc2asm.tc — RISC-V 32-bit assembly generator from .bc bytecode
+// Target: RV32IM, GAS syntax
+
+// ===== Opcodes =====
+var OP_PUSH_INT: i32 = 1;
+var OP_PUSH_STR: i32 = 2;
+var OP_LOAD: i32 = 3;
+var OP_STORE: i32 = 4;
+var OP_CALL: i32 = 5;
+var OP_RETURN: i32 = 6;
+var OP_RETURN_VOID: i32 = 7;
+var OP_POP: i32 = 8;
+var OP_ADD: i32 = 9;
+var OP_SUB: i32 = 10;
+var OP_MUL: i32 = 11;
+var OP_DIV: i32 = 12;
+var OP_MOD: i32 = 13;
+var OP_AND: i32 = 14;
+var OP_OR: i32 = 15;
+var OP_XOR: i32 = 16;
+var OP_SHL: i32 = 17;
+var OP_SHR: i32 = 18;
+var OP_EQ: i32 = 19;
+var OP_NE: i32 = 20;
+var OP_LT: i32 = 21;
+var OP_LE: i32 = 22;
+var OP_GT: i32 = 23;
+var OP_GE: i32 = 24;
+var OP_NEG: i32 = 25;
+var OP_LNOT: i32 = 26;
+var OP_CAST: i32 = 27;
+var OP_JUMP: i32 = 28;
+var OP_JUMP_IF: i32 = 29;
+var OP_JUMP_IFNOT: i32 = 30;
+
+// ===== Global state =====
+var g_in_pos: i32 = 0;
+var g_in_len: i32 = 0;
+var g_stab_pos: i32 = 0;
+var g_nfuncs: i32 = 0;
+var g_nparams: i32 = 0;
+var g_nlocals: i32 = 0;
+var g_ninstrs: i32 = 0;
+var g_nglobals: i32 = 0;
+var g_nstrings: i32 = 0;
+var g_ob_pos: i32 = 0;
+
+// ===== Output buffer =====
+fn ob_flush(ob: U8Array) -> void {
+    if g_ob_pos > 0 { sys_write(1, ob, g_ob_pos as u32); g_ob_pos = 0; }
+    return;
+}
+fn ob_char(c: u8, ob: U8Array) -> void {
+    set(ob, g_ob_pos as u32, c);
+    g_ob_pos = g_ob_pos + 1;
+    if g_ob_pos >= 8192 { ob_flush(ob); }
+    return;
+}
+fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
+    var i: i32 = 0;
+    while i < n { ob_char(get(src,(start+i) as u32), ob); i = i + 1; }
+    return;
+}
+fn ob_int(n: i32, ob: U8Array) -> void {
+    if n == 0 { ob_char(48u8, ob); return; }
+    if n < 0 { ob_char(45u8, ob); n = 0 - n; }
+    var tmp: U8Array = newU8Array(12);
+    var len: i32 = 0; var v: i32 = n;
+    while v > 0 { set(tmp,len as u32,(48+v%10) as u8); len=len+1; v=v/10; }
+    var i: i32 = len - 1;
+    while i >= 0 { ob_char(get(tmp,i as u32),ob); i=i-1; }
+    delete(tmp);
+    return;
+}
+
+// ===== Common emit helpers =====
+fn e4(ob: U8Array) -> void {
+    ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+}
+fn ecomma(ob: U8Array) -> void { ob_char(44u8,ob);ob_char(32u8,ob); return; }
+// "N(sp)\n"
+fn eNspnl(n: i32, ob: U8Array) -> void {
+    ob_int(n,ob);ob_char(40u8,ob);ob_char(115u8,ob);ob_char(112u8,ob);ob_char(41u8,ob);ob_char(10u8,ob);
+    return;
+}
+// "N(s0)\n"
+fn eNs0nl(n: i32, ob: U8Array) -> void {
+    ob_int(n,ob);ob_char(40u8,ob);ob_char(115u8,ob);ob_char(48u8,ob);ob_char(41u8,ob);ob_char(10u8,ob);
+    return;
+}
+// "N(t0)\n"
+fn eNt0nl(n: i32, ob: U8Array) -> void {
+    ob_int(n,ob);ob_char(40u8,ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(41u8,ob);ob_char(10u8,ob);
+    return;
+}
+// register name + ", " shorthands
+fn eregsp(ob: U8Array) -> void { ob_char(115u8,ob);ob_char(112u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
+fn eregs0(ob: U8Array) -> void { ob_char(115u8,ob);ob_char(48u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
+fn eregt0(ob: U8Array) -> void { ob_char(116u8,ob);ob_char(48u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
+fn eregt1(ob: U8Array) -> void { ob_char(116u8,ob);ob_char(49u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
+fn eregra(ob: U8Array) -> void { ob_char(114u8,ob);ob_char(97u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); return; }
+// "    addi "
+fn e_addi(ob: U8Array) -> void {
+    e4(ob);ob_char(97u8,ob);ob_char(100u8,ob);ob_char(100u8,ob);ob_char(105u8,ob);ob_char(32u8,ob); return;
+}
+// "    sw   "
+fn e_sw(ob: U8Array) -> void {
+    e4(ob);ob_char(115u8,ob);ob_char(119u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+}
+// "    lw   "
+fn e_lw(ob: U8Array) -> void {
+    e4(ob);ob_char(108u8,ob);ob_char(119u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+}
+// "    li   "
+fn e_li(ob: U8Array) -> void {
+    e4(ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+}
+// "    la   "
+fn e_la(ob: U8Array) -> void {
+    e4(ob);ob_char(108u8,ob);ob_char(97u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob); return;
+}
+// push_t0 / pop_t0 / pop_t1_t0
+fn asm_push_t0(ob: U8Array) -> void {
+    // addi sp, sp, -4
+    e_addi(ob); eregsp(ob); eregsp(ob); ob_char(45u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+    // sw t0, 0(sp)
+    e_sw(ob); eregt0(ob); eNspnl(0,ob);
+    return;
+}
+fn asm_pop_t0(ob: U8Array) -> void {
+    // lw t0, 0(sp)
+    e_lw(ob); eregt0(ob); eNspnl(0,ob);
+    // addi sp, sp, 4
+    e_addi(ob); eregsp(ob); eregsp(ob); ob_char(52u8,ob);ob_char(10u8,ob);
+    return;
+}
+fn asm_pop_t1_t0(ob: U8Array) -> void {
+    // lw t1, 0(sp)   — t1 = right operand
+    e_lw(ob); eregt1(ob); eNspnl(0,ob);
+    // lw t0, 4(sp)   — t0 = left operand
+    e_lw(ob); eregt0(ob); eNspnl(4,ob);
+    // addi sp, sp, 8
+    e_addi(ob); eregsp(ob); eregsp(ob); ob_char(56u8,ob);ob_char(10u8,ob);
+    return;
+}
+// Epilogue: mv t0,s0; lw ra,-4(t0); lw s0,-8(t0); addi sp,t0,0; ret
+fn asm_epilogue(ob: U8Array) -> void {
+    // mv t0, s0
+    e4(ob);ob_char(109u8,ob);ob_char(118u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+    eregt0(ob);ob_char(115u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+    // lw ra, -4(t0)
+    e_lw(ob); eregra(ob); eNt0nl(0-4,ob);
+    // lw s0, -8(t0)
+    e_lw(ob); eregs0(ob); eNt0nl(0-8,ob);
+    // addi sp, t0, 0
+    e_addi(ob); eregsp(ob);
+    ob_char(116u8,ob);ob_char(48u8,ob);ob_char(44u8,ob);ob_char(32u8,ob); // "t0, "
+    ob_char(48u8,ob);ob_char(10u8,ob);
+    // ret
+    e4(ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(116u8,ob);ob_char(10u8,ob);
+    return;
+}
+// "  .L_pcN:\n"
+fn asm_pc_label(pc: i32, ob: U8Array) -> void {
+    ob_char(32u8,ob);ob_char(32u8,ob);
+    ob_char(46u8,ob);ob_char(76u8,ob);ob_char(95u8,ob);ob_char(112u8,ob);ob_char(99u8,ob);
+    ob_int(pc,ob);ob_char(58u8,ob);ob_char(10u8,ob);
+    return;
+}
+// ".L_pcN" (without newline, used in jump targets)
+fn e_pcref(pc: i32, ob: U8Array) -> void {
+    ob_char(46u8,ob);ob_char(76u8,ob);ob_char(95u8,ob);ob_char(112u8,ob);ob_char(99u8,ob);
+    ob_int(pc,ob);
+    return;
+}
+// "    j    .L_pcN\n"
+fn asm_jump(target: i32, ob: U8Array) -> void {
+    e4(ob);ob_char(106u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+    e_pcref(target,ob);ob_char(10u8,ob);
+    return;
+}
+// "    bnez t0, .L_pcN\n" or "    beqz t0, .L_pcN\n"
+fn asm_branch(cond_ne: i32, target: i32, ob: U8Array) -> void {
+    e4(ob);
+    if cond_ne == 1 {
+        ob_char(98u8,ob);ob_char(110u8,ob);ob_char(101u8,ob);ob_char(122u8,ob);ob_char(32u8,ob);
+    } else {
+        ob_char(98u8,ob);ob_char(101u8,ob);ob_char(113u8,ob);ob_char(122u8,ob);ob_char(32u8,ob);
+    }
+    ob_char(116u8,ob);ob_char(48u8,ob);ecomma(ob);
+    e_pcref(target,ob);ob_char(10u8,ob);
+    return;
+}
+// "    call [__tc_]NAME\n"
+fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, is_tc: i32, ob: U8Array) -> void {
+    e4(ob);ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+    if is_tc == 1 {
+        ob_char(95u8,ob);ob_char(95u8,ob);ob_char(116u8,ob);ob_char(99u8,ob);ob_char(95u8,ob);
+    }
+    ob_n(strtab, nm_ss, nm_sl, ob); ob_char(10u8,ob);
+    return;
+}
+// "    seqz t0, t0\n"
+fn asm_seqz_t0(ob: U8Array) -> void {
+    e4(ob);ob_char(115u8,ob);ob_char(101u8,ob);ob_char(113u8,ob);ob_char(122u8,ob);ob_char(32u8,ob);
+    eregt0(ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+    return;
+}
+// "    snez t0, t0\n"
+fn asm_snez_t0(ob: U8Array) -> void {
+    e4(ob);ob_char(115u8,ob);ob_char(110u8,ob);ob_char(101u8,ob);ob_char(122u8,ob);ob_char(32u8,ob);
+    eregt0(ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+    return;
+}
+// "    xori t0, t0, 1\n"
+fn asm_xori_t0_1(ob: U8Array) -> void {
+    e4(ob);ob_char(120u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+    eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(10u8,ob);
+    return;
+}
+// "    sub  t0, t0, t1\n"
+fn asm_sub_t0_t0_t1(ob: U8Array) -> void {
+    e4(ob);ob_char(115u8,ob);ob_char(117u8,ob);ob_char(98u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+    eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+    return;
+}
+// "    slt  t0, A, B\n" (A and B are 't0' or 't1')
+fn asm_slt(swap: i32, ob: U8Array) -> void {
+    // swap=0: slt t0, t0, t1   (t0 < t1)
+    // swap=1: slt t0, t1, t0   (t1 < t0 i.e. t0 > t1)
+    e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(116u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+    eregt0(ob);
+    if swap == 0 { eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob); }
+    else         { eregt1(ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob); }
+    return;
+}
+
+// ===== String table =====
+fn stab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
+    if sl1 != sl2 { return false; }
+    var i: i32 = 0;
+    while i < sl1 {
+        if get(strtab,(ss1+i) as u32)!=get(strtab,(ss2+i) as u32) { return false; }
+        i=i+1;
+    }
+    return true;
+}
+
+// ===== Input utilities =====
+fn in_cur(src: U8Array) -> u8 {
+    if g_in_pos >= g_in_len { return 0u8; }
+    return get(src, g_in_pos as u32);
+}
+fn is_ws(c: u8) -> bool { return c==32u8||c==9u8||c==13u8||c==10u8; }
+fn skip_spaces(src: U8Array) -> void {
+    while g_in_pos < g_in_len && (in_cur(src)==32u8||in_cur(src)==9u8) { g_in_pos=g_in_pos+1; }
+    return;
+}
+fn skip_line(src: U8Array) -> void {
+    while g_in_pos < g_in_len && in_cur(src)!=10u8 { g_in_pos=g_in_pos+1; }
+    if g_in_pos < g_in_len { g_in_pos=g_in_pos+1; }
+    return;
+}
+fn next_tok(src: U8Array, strtab: U8Array) -> i32 {
+    skip_spaces(src);
+    var start: i32 = g_stab_pos;
+    while g_in_pos < g_in_len && !is_ws(in_cur(src)) {
+        set(strtab,g_stab_pos as u32,in_cur(src));
+        g_stab_pos=g_stab_pos+1; g_in_pos=g_in_pos+1;
+    }
+    return start;
+}
+fn tok_len(start: i32) -> i32 { return g_stab_pos - start; }
+fn discard_tok(start: i32) -> void { g_stab_pos = start; return; }
+fn int_from_stab(strtab: U8Array, ss: i32, sl: i32) -> i32 {
+    var neg: i32=0; var i: i32=0;
+    if sl>0&&get(strtab,ss as u32)==45u8 { neg=1; i=1; }
+    var r: i32=0;
+    while i<sl {
+        var c: u8=get(strtab,(ss+i) as u32);
+        if c>=48u8&&c<=57u8 { r=r*10+(c as i32-48); }
+        i=i+1;
+    }
+    if neg==1 { return 0-r; }
+    return r;
+}
+fn read_strlit(src: U8Array, strtab: U8Array) -> i32 {
+    var start: i32=g_stab_pos;
+    if g_in_pos<g_in_len&&in_cur(src)==34u8 { g_in_pos=g_in_pos+1; }
+    var done: i32=0;
+    while done==0&&g_in_pos<g_in_len {
+        var c: u8=in_cur(src); g_in_pos=g_in_pos+1;
+        var handled: i32=0;
+        if c==34u8 { done=1; handled=1; }
+        if handled==0&&c==92u8 {
+            var e: u8=in_cur(src); g_in_pos=g_in_pos+1;
+            var out: u8=e;
+            if e==110u8 { out=10u8; }
+            if e==114u8 { out=13u8; }
+            if e==116u8 { out=9u8; }
+            if e==120u8 {
+                var h1: u8=in_cur(src); g_in_pos=g_in_pos+1;
+                var h2: u8=in_cur(src); g_in_pos=g_in_pos+1;
+                var v1: i32=0; var v2: i32=0;
+                if h1>=48u8&&h1<=57u8 { v1=h1 as i32-48; }
+                if h1>=65u8&&h1<=70u8 { v1=h1 as i32-55; }
+                if h1>=97u8&&h1<=102u8 { v1=h1 as i32-87; }
+                if h2>=48u8&&h2<=57u8 { v2=h2 as i32-48; }
+                if h2>=65u8&&h2<=70u8 { v2=h2 as i32-55; }
+                if h2>=97u8&&h2<=102u8 { v2=h2 as i32-87; }
+                out=(v1*16+v2) as u8;
+            }
+            set(strtab,g_stab_pos as u32,out); g_stab_pos=g_stab_pos+1; handled=1;
+        }
+        if handled==0 { set(strtab,g_stab_pos as u32,c); g_stab_pos=g_stab_pos+1; }
+    }
+    return start;
+}
+
+// ===== Opcode classifier =====
+fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
+    var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
+    if sl>0 { a=get(strtab,ss as u32); }
+    if sl>1 { b=get(strtab,(ss+1) as u32); }
+    if sl>2 { c=get(strtab,(ss+2) as u32); }
+    if sl>3 { d=get(strtab,(ss+3) as u32); }
+    if sl>4 { e=get(strtab,(ss+4) as u32); }
+    if sl==2 {
+        if a==111u8&&b==114u8 { return OP_OR; }
+        if a==101u8&&b==113u8 { return OP_EQ; }
+        if a==110u8&&b==101u8 { return OP_NE; }
+        if a==108u8&&b==116u8 { return OP_LT; }
+        if a==108u8&&b==101u8 { return OP_LE; }
+        if a==103u8&&b==116u8 { return OP_GT; }
+        if a==103u8&&b==101u8 { return OP_GE; }
+    }
+    if sl==3 {
+        if a==97u8&&b==100u8&&c==100u8  { return OP_ADD; }
+        if a==115u8&&b==117u8&&c==98u8  { return OP_SUB; }
+        if a==109u8&&b==117u8&&c==108u8 { return OP_MUL; }
+        if a==100u8&&b==105u8&&c==118u8 { return OP_DIV; }
+        if a==109u8&&b==111u8&&c==100u8 { return OP_MOD; }
+        if a==97u8&&b==110u8&&c==100u8  { return OP_AND; }
+        if a==120u8&&b==111u8&&c==114u8 { return OP_XOR; }
+        if a==115u8&&b==104u8&&c==108u8 { return OP_SHL; }
+        if a==115u8&&b==104u8&&c==114u8 { return OP_SHR; }
+        if a==112u8&&b==111u8&&c==112u8 { return OP_POP; }
+        if a==110u8&&b==101u8&&c==103u8 { return OP_NEG; }
+    }
+    if sl==4 {
+        if a==108u8&&b==110u8&&c==111u8&&d==116u8 { return OP_LNOT; }
+        if a==99u8&&b==97u8&&c==115u8&&d==116u8   { return OP_CAST; }
+        if a==108u8&&b==111u8&&c==97u8&&d==100u8  { return OP_LOAD; }
+        if a==106u8&&b==117u8&&c==109u8&&d==112u8 { return OP_JUMP; }
+        if a==99u8&&b==97u8&&c==108u8&&d==108u8   { return OP_CALL; }
+    }
+    if sl==5 { if a==115u8&&b==116u8&&c==111u8&&d==114u8&&e==101u8 { return OP_STORE; } }
+    if sl==6 { if a==114u8&&b==101u8&&c==116u8 { return OP_RETURN; } }
+    if sl==7 {
+        if a==106u8&&b==117u8&&c==109u8&&d==112u8&&e==95u8 {
+            var f: u8=get(strtab,(ss+5) as u32);
+            if f==105u8 { return OP_JUMP_IF; }
+        }
+    }
+    if sl==8 {
+        if a==112u8&&b==117u8&&c==115u8&&d==104u8&&e==95u8 {
+            var f: u8=get(strtab,(ss+5) as u32);
+            if f==105u8 { return OP_PUSH_INT; }
+            if f==115u8 { return OP_PUSH_STR; }
+        }
+    }
+    if sl==10 { if a==106u8 { return OP_JUMP_IFNOT; } }
+    if sl==11 { if a==114u8&&b==101u8 { return OP_RETURN_VOID; } }
+    return -1;
+}
+
+// ===== Table accessors =====
+fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+0) as u32); }
+fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+1) as u32); }
+fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+4) as u32); }
+fn fn_nparam(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+5) as u32); }
+fn fn_local_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+6) as u32); }
+fn fn_nlocal(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+7) as u32); }
+fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+8) as u32); }
+fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+9) as u32); }
+fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns,(fi*10+f) as u32,v); return; }
+fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+0) as u32); }
+fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+1) as u32); }
+fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool,(i*4+f) as u32,v); return; }
+fn ins_op(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+0) as u32); }
+fn ins_ival(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+1) as u32); }
+fn ins_ss(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+2) as u32); }
+fn ins_sl(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+3) as u32); }
+fn ins_set(instrs: I32Array, base: i32, pc: i32, f: i32, v: i32) -> void {
+    set(instrs,((base+pc)*4+f) as u32,v); return;
+}
+
+// ===== Label number =====
+fn parse_lnum(src: U8Array, from: i32, to: i32) -> i32 {
+    var r: i32=0; var i: i32=from+3;
+    while i<to { var c: u8=get(src,i as u32); if c>=48u8&&c<=57u8 { r=r*10+(c as i32-48); } i=i+1; }
+    return r;
+}
+
+// ===== Parse bytecode =====
+fn parse_bc(src: U8Array, strtab: U8Array,
+            string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
+            fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+            instrs: I32Array, label_pcs: I32Array) -> void {
+    var cur_fn: i32=-1; var done: i32=0;
+    while done==0&&g_in_pos<g_in_len {
+        skip_spaces(src);
+        if g_in_pos>=g_in_len { done=1; }
+        if done==0 {
+            var c: u8=in_cur(src);
+            if c==10u8||c==13u8 { g_in_pos=g_in_pos+1; }
+            if c!=10u8&&c!=13u8&&c==59u8 { skip_line(src); }
+            if c!=10u8&&c!=13u8&&c!=59u8&&c==46u8 {
+                g_in_pos=g_in_pos+1;
+                var dir_ss: i32=next_tok(src,strtab);
+                var dir_sl: i32=tok_len(dir_ss);
+                var d0: u8=0u8; var d1: u8=0u8;
+                if dir_sl>0 { d0=get(strtab,dir_ss as u32); }
+                if dir_sl>1 { d1=get(strtab,(dir_ss+1) as u32); }
+                if d0==115u8&&d1==116u8 { // string
+                    discard_tok(dir_ss);
+                    var idx_ss: i32=next_tok(src,strtab);
+                    var idx: i32=int_from_stab(strtab,idx_ss,tok_len(idx_ss));
+                    discard_tok(idx_ss); skip_spaces(src);
+                    var slit_ss: i32=read_strlit(src,strtab);
+                    var slit_sl: i32=g_stab_pos-slit_ss;
+                    set(string_lits,(idx*2+0) as u32,slit_ss);
+                    set(string_lits,(idx*2+1) as u32,slit_sl);
+                    if idx+1>g_nstrings { g_nstrings=idx+1; }
+                    skip_line(src);
+                }
+                if d0==103u8&&d1==108u8 { // global
+                    discard_tok(dir_ss);
+                    var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
+                    var iv_ss: i32=next_tok(src,strtab); var iv_sl: i32=tok_len(iv_ss);
+                    var iv: i32=int_from_stab(strtab,iv_ss,iv_sl); discard_tok(iv_ss);
+                    var gi: i32=g_nglobals;
+                    set(global_vars,(gi*4+0) as u32,nm_ss);
+                    set(global_vars,(gi*4+1) as u32,nm_sl);
+                    set(global_inits,gi as u32,iv);
+                    g_nglobals=g_nglobals+1; skip_line(src);
+                }
+                if d0==102u8&&d1==110u8 { // fn
+                    discard_tok(dir_ss);
+                    var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var np_ss: i32=next_tok(src,strtab);
+                    var np: i32=int_from_stab(strtab,np_ss,tok_len(np_ss));
+                    discard_tok(np_ss);
+                    var rt_ss: i32=next_tok(src,strtab); discard_tok(rt_ss);
+                    cur_fn=g_nfuncs;
+                    fn_set(fns,cur_fn,0,nm_ss); fn_set(fns,cur_fn,1,nm_sl);
+                    fn_set(fns,cur_fn,4,g_nparams); fn_set(fns,cur_fn,5,0);
+                    fn_set(fns,cur_fn,6,g_nlocals); fn_set(fns,cur_fn,7,0);
+                    fn_set(fns,cur_fn,8,g_ninstrs); fn_set(fns,cur_fn,9,0);
+                    g_nfuncs=g_nfuncs+1; skip_line(src);
+                }
+                if d0==112u8&&d1==97u8 { // param
+                    discard_tok(dir_ss);
+                    var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
+                    pl_set(params_pool,g_nparams,0,nm_ss); pl_set(params_pool,g_nparams,1,nm_sl);
+                    g_nparams=g_nparams+1;
+                    if cur_fn>=0 { fn_set(fns,cur_fn,5,fn_nparam(fns,cur_fn)+1); }
+                    skip_line(src);
+                }
+                if d0==108u8&&d1==111u8 { // local
+                    discard_tok(dir_ss);
+                    var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
+                    pl_set(locals_pool,g_nlocals,0,nm_ss); pl_set(locals_pool,g_nlocals,1,nm_sl);
+                    g_nlocals=g_nlocals+1;
+                    if cur_fn>=0 { fn_set(fns,cur_fn,7,fn_nlocal(fns,cur_fn)+1); }
+                    skip_line(src);
+                }
+                var d3b: u8=0u8;
+                if dir_sl>3 { d3b=get(strtab,(dir_ss+3) as u32); }
+                if d0==101u8&&d3b==98u8 { // endbc
+                    discard_tok(dir_ss); done=1;
+                }
+                if d0==101u8&&d3b!=98u8 { // endfn
+                    discard_tok(dir_ss);
+                    if cur_fn>=0 {
+                        var ib: i32=fn_instr_base(fns,cur_fn);
+                        var ni: i32=fn_ninstr(fns,cur_fn);
+                        var ii: i32=0;
+                        while ii<ni {
+                            var op2: i32=ins_op(instrs,ib,ii);
+                            if op2==OP_JUMP||op2==OP_JUMP_IF||op2==OP_JUMP_IFNOT {
+                                var lnum2: i32=ins_ival(instrs,ib,ii);
+                                ins_set(instrs,ib,ii,1,get(label_pcs,lnum2 as u32));
+                            }
+                            ii=ii+1;
+                        }
+                    }
+                    cur_fn=-1; skip_line(src);
+                }
+                if d0!=115u8&&d0!=103u8&&d0!=102u8&&d0!=112u8&&d0!=108u8&&d0!=101u8 {
+                    discard_tok(dir_ss); skip_line(src);
+                }
+            }
+            if c!=10u8&&c!=13u8&&c!=59u8&&c!=46u8&&c==95u8 { // label
+                var lbl_start: i32=g_in_pos;
+                while g_in_pos<g_in_len&&in_cur(src)!=58u8&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
+                if g_in_pos<g_in_len&&in_cur(src)==58u8 {
+                    var lnum3: i32=parse_lnum(src,lbl_start,g_in_pos);
+                    g_in_pos=g_in_pos+1;
+                    if cur_fn>=0 { set(label_pcs,lnum3 as u32,g_ninstrs-fn_instr_base(fns,cur_fn)); }
+                }
+                skip_line(src);
+            }
+            if c!=10u8&&c!=13u8&&c!=59u8&&c!=46u8&&c!=95u8 { // instruction
+                var op_ss: i32=next_tok(src,strtab);
+                var op_sl: i32=tok_len(op_ss);
+                var op3: i32=classify_op(strtab,op_ss,op_sl);
+                discard_tok(op_ss);
+                if op3>=0&&cur_fn>=0 {
+                    var ib3: i32=fn_instr_base(fns,cur_fn);
+                    var iidx: i32=fn_ninstr(fns,cur_fn);
+                    ins_set(instrs,ib3,iidx,0,op3);
+                    ins_set(instrs,ib3,iidx,1,0);
+                    ins_set(instrs,ib3,iidx,2,0);
+                    ins_set(instrs,ib3,iidx,3,0);
+                    if op3==OP_PUSH_INT {
+                        var v_ss: i32=next_tok(src,strtab);
+                        ins_set(instrs,ib3,iidx,1,int_from_stab(strtab,v_ss,tok_len(v_ss)));
+                        discard_tok(v_ss);
+                    }
+                    if op3==OP_PUSH_STR {
+                        var v_ss: i32=next_tok(src,strtab);
+                        ins_set(instrs,ib3,iidx,1,int_from_stab(strtab,v_ss,tok_len(v_ss)));
+                        discard_tok(v_ss);
+                    }
+                    if op3==OP_LOAD||op3==OP_STORE {
+                        var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
+                        ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
+                    }
+                    if op3==OP_CALL {
+                        var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
+                        var na_ss: i32=next_tok(src,strtab);
+                        var na: i32=int_from_stab(strtab,na_ss,tok_len(na_ss));
+                        discard_tok(na_ss);
+                        ins_set(instrs,ib3,iidx,1,na);
+                        ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
+                    }
+                    if op3==OP_CAST {
+                        var ty_ss: i32=next_tok(src,strtab); var ty_sl: i32=tok_len(ty_ss);
+                        ins_set(instrs,ib3,iidx,2,ty_ss); ins_set(instrs,ib3,iidx,3,ty_sl);
+                    }
+                    if op3==OP_JUMP||op3==OP_JUMP_IF||op3==OP_JUMP_IFNOT {
+                        skip_spaces(src);
+                        var lbl_in: i32=g_in_pos;
+                        while g_in_pos<g_in_len&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
+                        ins_set(instrs,ib3,iidx,1,parse_lnum(src,lbl_in,g_in_pos));
+                    }
+                    fn_set(fns,cur_fn,9,iidx+1);
+                    g_ninstrs=g_ninstrs+1;
+                }
+                skip_line(src);
+            }
+        }
+    }
+    return;
+}
+
+// ===== Variable lookup =====
+fn is_local(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+            fi: i32, nm_ss: i32, nm_sl: i32) -> i32 {
+    var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);
+    var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);
+    var i: i32=0;
+    while i<np {
+        if stab_eq(strtab,pl_name_ss(params_pool,pb+i),pl_name_sl(params_pool,pb+i),nm_ss,nm_sl) { return 1; }
+        i=i+1;
+    }
+    i=0;
+    while i<nl {
+        if stab_eq(strtab,pl_name_ss(locals_pool,lb+i),pl_name_sl(locals_pool,lb+i),nm_ss,nm_sl) { return 1; }
+        i=i+1;
+    }
+    return 0;
+}
+fn var_offset(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+              fi: i32, nm_ss: i32, nm_sl: i32) -> i32 {
+    var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);
+    var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);
+    var i: i32=0;
+    while i<np {
+        if stab_eq(strtab,pl_name_ss(params_pool,pb+i),pl_name_sl(params_pool,pb+i),nm_ss,nm_sl) {
+            return 0-12-4*i;
+        }
+        i=i+1;
+    }
+    i=0;
+    while i<nl {
+        if stab_eq(strtab,pl_name_ss(locals_pool,lb+i),pl_name_sl(locals_pool,lb+i),nm_ss,nm_sl) {
+            return 0-12-4*np-4*i;
+        }
+        i=i+1;
+    }
+    return 0;
+}
+
+// ===== Builtin detection =====
+fn is_builtin(strtab: U8Array, ss: i32, sl: i32) -> i32 {
+    if sl<=0 { return 0; }
+    var a: u8=get(strtab,ss as u32);
+    var b: u8=0u8; if sl>1 { b=get(strtab,(ss+1) as u32); }
+    var c: u8=0u8; if sl>2 { c=get(strtab,(ss+2) as u32); }
+    if a==110u8&&b==101u8&&c==119u8 { return 1; }               // new*
+    if sl>=4&&a==115u8&&b==121u8&&c==115u8 { return 1; }        // sys_*
+    if sl>=6&&a==112u8&&b==114u8&&c==105u8 { return 1; }        // print_*
+    if sl>=4&&a==112u8&&b==101u8&&c==101u8 { return 1; }        // peek*
+    if sl>=4&&a==112u8&&b==111u8&&c==107u8 { return 1; }        // poke*
+    if sl==3&&a==108u8&&b==101u8&&c==110u8 { return 1; }        // len
+    if a==103u8&&b==101u8&&c==116u8 { return 1; }               // get/getChar
+    if sl==3&&a==115u8&&b==101u8&&c==116u8 { return 1; }        // set
+    if sl>=6&&a==100u8&&b==101u8&&c==108u8 { return 1; }        // delete
+    if sl>=6&&a==97u8&&b==112u8&&c==112u8 { return 1; }         // append
+    if sl>=6&&a==101u8&&b==113u8&&c==117u8 { return 1; }        // equals
+    return 0;
+}
+fn is_sys_exit(strtab: U8Array, ss: i32, sl: i32) -> i32 {
+    // "sys_exit" = 115,121,115,95,101,120,105,116
+    if sl!=8 { return 0; }
+    if get(strtab,ss as u32)!=115u8 { return 0; }
+    if get(strtab,(ss+4) as u32)!=101u8 { return 0; }
+    if get(strtab,(ss+5) as u32)!=120u8 { return 0; }
+    return 1;
+}
+
+// ===== is_jump_target =====
+fn is_jump_target(instrs: I32Array, ibase: i32, ni: i32, pc: i32) -> i32 {
+    var j: i32=0;
+    while j<ni {
+        var op: i32=ins_op(instrs,ibase,j);
+        if op==OP_JUMP||op==OP_JUMP_IF||op==OP_JUMP_IFNOT {
+            if ins_ival(instrs,ibase,j)==pc { return 1; }
+        }
+        j=j+1;
+    }
+    return 0;
+}
+
+// ===== Emit string literal content (GAS .string escaping) =====
+fn emit_strdata(strtab: U8Array, ss: i32, sl: i32, ob: U8Array) -> void {
+    ob_char(34u8,ob);
+    var i: i32=0;
+    while i<sl {
+        var c: u8=get(strtab,(ss+i) as u32);
+        var handled: i32=0;
+        if c==34u8  { ob_char(92u8,ob);ob_char(34u8,ob); handled=1; }
+        if handled==0&&c==92u8  { ob_char(92u8,ob);ob_char(92u8,ob); handled=1; }
+        if handled==0&&c==10u8  { ob_char(92u8,ob);ob_char(110u8,ob); handled=1; }
+        if handled==0&&c==13u8  { ob_char(92u8,ob);ob_char(114u8,ob); handled=1; }
+        if handled==0&&c==9u8   { ob_char(92u8,ob);ob_char(116u8,ob); handled=1; }
+        if handled==0&&(c<32u8||c==127u8) {
+            ob_char(92u8,ob);
+            ob_char((48+(c as i32>>6&7)) as u8,ob);
+            ob_char((48+(c as i32>>3&7)) as u8,ob);
+            ob_char((48+(c as i32&7)) as u8,ob);
+            handled=1;
+        }
+        if handled==0 { ob_char(c,ob); }
+        i=i+1;
+    }
+    ob_char(34u8,ob);
+    return;
+}
+
+// ===== Emit one function =====
+fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+           instrs: I32Array, string_lits: I32Array, fi: i32, ob: U8Array) -> void {
+    var nm_ss: i32=fn_name_ss(fns,fi);
+    var nm_sl: i32=fn_name_sl(fns,fi);
+    var np: i32=fn_nparam(fns,fi);
+    var nl: i32=fn_nlocal(fns,fi);
+    var ibase: i32=fn_instr_base(fns,fi);
+    var ni: i32=fn_ninstr(fns,fi);
+    var nvars: i32=np+nl;
+    var frame_size: i32=8+4*nvars;
+    var pad: i32=frame_size%16;
+    if pad!=0 { frame_size=frame_size+(16-pad); }
+
+    // "    .globl NAME\n"
+    e4(ob);
+    ob_char(46u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(108u8,ob);
+    ob_char(32u8,ob); ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
+    // "    .type  NAME, @function\n"
+    e4(ob);
+    ob_char(46u8,ob);ob_char(116u8,ob);ob_char(121u8,ob);ob_char(112u8,ob);ob_char(101u8,ob);
+    ob_char(32u8,ob);ob_char(32u8,ob);
+    ob_n(strtab,nm_ss,nm_sl,ob);
+    ob_char(44u8,ob);ob_char(32u8,ob);ob_char(64u8,ob);ob_char(102u8,ob);ob_char(117u8,ob);
+    ob_char(110u8,ob);ob_char(99u8,ob);ob_char(116u8,ob);ob_char(105u8,ob);ob_char(111u8,ob);
+    ob_char(110u8,ob);ob_char(10u8,ob);
+    // "NAME:\n"
+    ob_n(strtab,nm_ss,nm_sl,ob); ob_char(58u8,ob);ob_char(10u8,ob);
+
+    // Prologue
+    // "    addi sp, sp, -FRAME_SIZE\n"
+    e_addi(ob); eregsp(ob); eregsp(ob); ob_char(45u8,ob); ob_int(frame_size,ob); ob_char(10u8,ob);
+    // "    sw   ra, (frame_size-4)(sp)\n"
+    e_sw(ob); eregra(ob); eNspnl(frame_size-4,ob);
+    // "    sw   s0, (frame_size-8)(sp)\n"
+    e_sw(ob); eregs0(ob); eNspnl(frame_size-8,ob);
+    // "    addi s0, sp, frame_size\n"
+    e_addi(ob); eregs0(ob); eregsp(ob); ob_int(frame_size,ob); ob_char(10u8,ob);
+    // Save params from a0-a7 to frame slots
+    var pi: i32=0;
+    while pi<np && pi<8 {
+        // "    sw   aI, (-12-4*pi)(s0)\n"
+        e_sw(ob);
+        ob_char(97u8,ob); ob_char((48+pi) as u8,ob); ecomma(ob);
+        eNs0nl(0-12-4*pi,ob);
+        pi=pi+1;
+    }
+    // Zero-initialize locals
+    var li: i32=0;
+    while li<nl {
+        // "    sw   zero, (-12-4*np-4*li)(s0)\n"
+        e_sw(ob);
+        ob_char(122u8,ob);ob_char(101u8,ob);ob_char(114u8,ob);ob_char(111u8,ob); // "zero"
+        ecomma(ob);
+        eNs0nl(0-12-4*np-4*li,ob);
+        li=li+1;
+    }
+
+    // Instruction loop
+    var pc: i32=0;
+    while pc<ni {
+        if is_jump_target(instrs,ibase,ni,pc)==1 { asm_pc_label(pc,ob); }
+        var op: i32=ins_op(instrs,ibase,pc);
+        var ival: i32=ins_ival(instrs,ibase,pc);
+        var sss: i32=ins_ss(instrs,ibase,pc);
+        var ssl: i32=ins_sl(instrs,ibase,pc);
+
+        if op==OP_PUSH_INT {
+            // "    li   t0, N\n"
+            e_li(ob); eregt0(ob); ob_int(ival,ob); ob_char(10u8,ob);
+            asm_push_t0(ob);
+        }
+        if op==OP_PUSH_STR {
+            // la a0, __tc_strdataN
+            e_la(ob);
+            ob_char(97u8,ob);ob_char(48u8,ob); ecomma(ob);
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(116u8,ob);ob_char(99u8,ob);ob_char(95u8,ob);
+            ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(100u8,ob);ob_char(97u8,ob);
+            ob_char(116u8,ob);ob_char(97u8,ob);
+            ob_int(ival,ob); ob_char(10u8,ob);
+            // li a1, LEN
+            var str_len: i32=get(string_lits,(ival*2+1) as u32);
+            e_li(ob);
+            ob_char(97u8,ob);ob_char(49u8,ob); ecomma(ob);
+            ob_int(str_len,ob); ob_char(10u8,ob);
+            // call __tc_make_string
+            e4(ob);ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(116u8,ob);ob_char(99u8,ob);ob_char(95u8,ob);
+            ob_char(109u8,ob);ob_char(97u8,ob);ob_char(107u8,ob);ob_char(101u8,ob);ob_char(95u8,ob);
+            ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);ob_char(110u8,ob);
+            ob_char(103u8,ob);ob_char(10u8,ob);
+            // push a0 onto expression stack
+            e_addi(ob); eregsp(ob); eregsp(ob); ob_char(45u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+            e_sw(ob);
+            ob_char(97u8,ob);ob_char(48u8,ob); ecomma(ob); eNspnl(0,ob);
+        }
+        if op==OP_LOAD {
+            if is_local(strtab,fns,params_pool,locals_pool,fi,sss,ssl)==1 {
+                var off: i32=var_offset(strtab,fns,params_pool,locals_pool,fi,sss,ssl);
+                e_lw(ob); eregt0(ob); eNs0nl(off,ob);
+            } else {
+                // "    lw   t0, NAME\n"  (GAS expands to auipc+lw)
+                e_lw(ob); eregt0(ob); ob_n(strtab,sss,ssl,ob); ob_char(10u8,ob);
+            }
+            asm_push_t0(ob);
+        }
+        if op==OP_STORE {
+            asm_pop_t0(ob);
+            if is_local(strtab,fns,params_pool,locals_pool,fi,sss,ssl)==1 {
+                var off: i32=var_offset(strtab,fns,params_pool,locals_pool,fi,sss,ssl);
+                e_sw(ob); eregt0(ob); eNs0nl(off,ob);
+            } else {
+                // "    sw   t0, NAME, t1\n"  (t1 used as address temp by GAS)
+                e_sw(ob); eregt0(ob);
+                ob_n(strtab,sss,ssl,ob); ecomma(ob);
+                ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            }
+        }
+        if op==OP_CALL {
+            var nargs: i32=ival;
+            // Load args from expression stack: arg0 at 4*(nargs-1)(sp), etc.
+            var ai: i32=0;
+            while ai<nargs && ai<8 {
+                e_lw(ob);
+                ob_char(97u8,ob); ob_char((48+ai) as u8,ob); ecomma(ob);
+                eNspnl(4*(nargs-1-ai),ob);
+                ai=ai+1;
+            }
+            if nargs>0 {
+                e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);
+            }
+            if is_sys_exit(strtab,sss,ssl)==1 {
+                // inline: li a7, 93; ecall
+                e_li(ob);
+                ob_char(97u8,ob);ob_char(55u8,ob); ecomma(ob); // "a7, "
+                ob_char(57u8,ob);ob_char(51u8,ob);ob_char(10u8,ob); // "93\n"
+                e4(ob);ob_char(101u8,ob);ob_char(99u8,ob);ob_char(97u8,ob);ob_char(108u8,ob);
+                ob_char(108u8,ob);ob_char(10u8,ob);
+            } else {
+                asm_call_fn(strtab,sss,ssl,is_builtin(strtab,sss,ssl),ob);
+            }
+            // push return value (a0) onto expression stack
+            e_addi(ob); eregsp(ob); eregsp(ob); ob_char(45u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+            e_sw(ob);
+            ob_char(97u8,ob);ob_char(48u8,ob); ecomma(ob); eNspnl(0,ob);
+        }
+        if op==OP_RETURN {
+            asm_pop_t0(ob);
+            // mv a0, t0
+            e4(ob);ob_char(109u8,ob);ob_char(118u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            ob_char(97u8,ob);ob_char(48u8,ob); ecomma(ob);
+            ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+            asm_epilogue(ob);
+        }
+        if op==OP_RETURN_VOID {
+            asm_epilogue(ob);
+        }
+        if op==OP_POP {
+            e_addi(ob); eregsp(ob); eregsp(ob); ob_char(52u8,ob);ob_char(10u8,ob);
+        }
+        // Binary arithmetic/bitwise ops
+        if op==OP_ADD { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(97u8,ob);ob_char(100u8,ob);ob_char(100u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_SUB { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(115u8,ob);ob_char(117u8,ob);ob_char(98u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_MUL { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(109u8,ob);ob_char(117u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_DIV { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(100u8,ob);ob_char(105u8,ob);ob_char(118u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_MOD { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(114u8,ob);ob_char(101u8,ob);ob_char(109u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_AND { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(97u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_OR { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_XOR { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(120u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_SHL { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        if op==OP_SHR { asm_pop_t1_t0(ob);
+            e4(ob);ob_char(115u8,ob);ob_char(114u8,ob);ob_char(97u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);eregt0(ob);ob_char(116u8,ob);ob_char(49u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob); }
+        // Comparisons
+        if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
+        if op==OP_NE { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_snez_t0(ob); asm_push_t0(ob); }
+        if op==OP_LT { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_push_t0(ob); }           // slt t0,t0,t1
+        if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
+        if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
+        if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
+        if op==OP_NEG {
+            asm_pop_t0(ob);
+            e4(ob);ob_char(110u8,ob);ob_char(101u8,ob);ob_char(103u8,ob);ob_char(32u8,ob);ob_char(32u8,ob);
+            eregt0(ob);ob_char(116u8,ob);ob_char(48u8,ob);ob_char(10u8,ob);
+            asm_push_t0(ob);
+        }
+        if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
+        if op==OP_CAST {
+            asm_pop_t0(ob);
+            var ta: u8=0u8; var tb: u8=0u8;
+            if ssl>0 { ta=get(strtab,sss as u32); }
+            if ssl>1 { tb=get(strtab,(sss+1) as u32); }
+            if ta==117u8&&tb==56u8 { // u8: andi t0,t0,0xff
+                e4(ob);ob_char(97u8,ob);ob_char(110u8,ob);ob_char(100u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+                eregt0(ob);eregt0(ob);
+                ob_char(48u8,ob);ob_char(120u8,ob);ob_char(102u8,ob);ob_char(102u8,ob);ob_char(10u8,ob);
+            }
+            if ta==117u8&&tb==49u8 { // u16: slli 16; srli 16
+                e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+                eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(54u8,ob);ob_char(10u8,ob);
+                e4(ob);ob_char(115u8,ob);ob_char(114u8,ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+                eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(54u8,ob);ob_char(10u8,ob);
+            }
+            if ta==105u8&&tb==56u8 { // i8: slli 24; srai 24
+                e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+                eregt0(ob);eregt0(ob);ob_char(50u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+                e4(ob);ob_char(115u8,ob);ob_char(114u8,ob);ob_char(97u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+                eregt0(ob);eregt0(ob);ob_char(50u8,ob);ob_char(52u8,ob);ob_char(10u8,ob);
+            }
+            if ta==105u8&&tb==49u8 { // i16: slli 16; srai 16
+                e4(ob);ob_char(115u8,ob);ob_char(108u8,ob);ob_char(108u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+                eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(54u8,ob);ob_char(10u8,ob);
+                e4(ob);ob_char(115u8,ob);ob_char(114u8,ob);ob_char(97u8,ob);ob_char(105u8,ob);ob_char(32u8,ob);
+                eregt0(ob);eregt0(ob);ob_char(49u8,ob);ob_char(54u8,ob);ob_char(10u8,ob);
+            }
+            if ta==98u8 { // bool: snez t0,t0
+                asm_snez_t0(ob);
+            }
+            // u32, i32: no-op
+            asm_push_t0(ob);
+        }
+        if op==OP_JUMP { asm_jump(ival,ob); }
+        if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(1,ival,ob); }
+        if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(0,ival,ob); }
+
+        pc=pc+1;
+    }
+
+    // end of function
+    ob_char(10u8,ob);
+    return;
+}
+
+// ===== Emit full program =====
+fn emit_program(strtab: U8Array, string_lits: I32Array,
+                global_vars: I32Array, global_inits: I32Array,
+                fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+                instrs: I32Array, ob: U8Array) -> void {
+    // .rodata: string literals
+    if g_nstrings > 0 {
+        e4(ob);
+        ob_char(46u8,ob);ob_char(115u8,ob);ob_char(101u8,ob);ob_char(99u8,ob);ob_char(116u8,ob);
+        ob_char(105u8,ob);ob_char(111u8,ob);ob_char(110u8,ob);ob_char(32u8,ob);
+        ob_char(46u8,ob);ob_char(114u8,ob);ob_char(111u8,ob);ob_char(100u8,ob);ob_char(97u8,ob);
+        ob_char(116u8,ob);ob_char(97u8,ob);ob_char(10u8,ob);
+        var si: i32=0;
+        while si<g_nstrings {
+            var ss: i32=get(string_lits,(si*2+0) as u32);
+            var sl: i32=get(string_lits,(si*2+1) as u32);
+            // "__tc_strdataN:\n"
+            ob_char(95u8,ob);ob_char(95u8,ob);ob_char(116u8,ob);ob_char(99u8,ob);ob_char(95u8,ob);
+            ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(100u8,ob);ob_char(97u8,ob);
+            ob_char(116u8,ob);ob_char(97u8,ob);
+            ob_int(si,ob); ob_char(58u8,ob);ob_char(10u8,ob);
+            // "    .string \"...\"\n"
+            e4(ob);
+            ob_char(46u8,ob);ob_char(115u8,ob);ob_char(116u8,ob);ob_char(114u8,ob);ob_char(105u8,ob);
+            ob_char(110u8,ob);ob_char(103u8,ob);ob_char(32u8,ob);
+            emit_strdata(strtab,ss,sl,ob); ob_char(10u8,ob);
+            si=si+1;
+        }
+        ob_char(10u8,ob);
+    }
+    // .data: globals
+    if g_nglobals > 0 {
+        e4(ob);
+        ob_char(46u8,ob);ob_char(100u8,ob);ob_char(97u8,ob);ob_char(116u8,ob);ob_char(97u8,ob);ob_char(10u8,ob);
+        var gi: i32=0;
+        while gi<g_nglobals {
+            var nm_ss: i32=get(global_vars,(gi*4+0) as u32);
+            var nm_sl: i32=get(global_vars,(gi*4+1) as u32);
+            var initval: i32=get(global_inits,gi as u32);
+            // "    .globl NAME\n"
+            e4(ob);
+            ob_char(46u8,ob);ob_char(103u8,ob);ob_char(108u8,ob);ob_char(111u8,ob);ob_char(98u8,ob);ob_char(108u8,ob);
+            ob_char(32u8,ob); ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
+            // "NAME:\n    .word INITVAL\n"
+            ob_n(strtab,nm_ss,nm_sl,ob); ob_char(58u8,ob);ob_char(10u8,ob);
+            e4(ob);
+            ob_char(46u8,ob);ob_char(119u8,ob);ob_char(111u8,ob);ob_char(114u8,ob);ob_char(100u8,ob);
+            ob_char(32u8,ob); ob_int(initval,ob); ob_char(10u8,ob);
+            gi=gi+1;
+        }
+        ob_char(10u8,ob);
+    }
+    // .text: functions
+    e4(ob);
+    ob_char(46u8,ob);ob_char(116u8,ob);ob_char(101u8,ob);ob_char(120u8,ob);ob_char(116u8,ob);ob_char(10u8,ob);
+    ob_char(10u8,ob);
+    var fi: i32=0;
+    while fi<g_nfuncs {
+        emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);
+        fi=fi+1;
+    }
+    return;
+}
+
+fn main() -> i32 {
+    var src:          U8Array  = newU8Array(524288);
+    var strtab:       U8Array  = newU8Array(262144);
+    var ob:           U8Array  = newU8Array(16384);
+    var string_lits:  I32Array = newI32Array(512);
+    var global_vars:  I32Array = newI32Array(1024);
+    var global_inits: I32Array = newI32Array(256);
+    var fns:          I32Array = newI32Array(2560);
+    var params_pool:  I32Array = newI32Array(4096);
+    var locals_pool:  I32Array = newI32Array(4096);
+    var instrs:       I32Array = newI32Array(262144);
+    var label_pcs:    I32Array = newI32Array(16384);
+
+    // Read all stdin
+    g_in_len=0;
+    var chunk_buf: U8Array=newU8Array(65536);
+    var rdone: i32=0;
+    while rdone==0&&g_in_len<524000 {
+        var chunk: i32=sys_read(0,chunk_buf,65536u32);
+        if chunk<=0 { rdone=1; }
+        if chunk>0 {
+            var ci: i32=0;
+            while ci<chunk {
+                set(src,(g_in_len+ci) as u32,get(chunk_buf,ci as u32));
+                ci=ci+1;
+            }
+            g_in_len=g_in_len+chunk;
+        }
+    }
+    delete(chunk_buf);
+    if g_in_len<=0 { return 1; }
+
+    parse_bc(src,strtab,string_lits,global_vars,global_inits,
+             fns,params_pool,locals_pool,instrs,label_pcs);
+
+    emit_program(strtab,string_lits,global_vars,global_inits,
+                 fns,params_pool,locals_pool,instrs,ob);
+    ob_flush(ob);
+    return 0;
+}

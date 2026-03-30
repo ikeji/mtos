@@ -271,6 +271,61 @@ CONT_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$CONT_AST"; } | "$BCR
 printf '%s\n' "$CONT_BC" | "$BCRUN" > /dev/null 2>&1
 check_output "pipeline[3]: continue sums odd 1-9 = 25" "25" "$?"
 
+# ===== bc2asm.tc パイプラインテスト =====
+echo "=== bc2asm.tc Pipeline Tests ==="
+echo ""
+
+BC2ASM_TC_BC=$({ "$CODEGEN" "$SRC_DIR/bc2asm.tc"; } 2>/dev/null)
+
+# bc2asm.tc で fib.tc バイトコードを RISC-V アセンブリに変換して実行
+FIB_ASM_S=$( { printf '%s\n' "$BC2ASM_TC_BC"; "$CODEGEN" "$SCRIPT_DIR/fib.tc"; } | "$BCRUN" 2>/dev/null )
+if [ -n "$FIB_ASM_S" ]; then
+    asm_file="/tmp/tc_bc2asm_fib_$$.s"
+    elf_file="/tmp/tc_bc2asm_fib_$$"
+    printf '%s\n' "$FIB_ASM_S" > "$asm_file"
+    if $RISCV_CC $RISCV_FLAGS "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
+        actual=$($QEMU "$elf_file" 2>/dev/null)
+        rm -f "$asm_file" "$elf_file"
+        check_output "bc2asm.tc: fib(10) = 55 via rv32" "55" "$actual"
+    else
+        echo "FAIL: bc2asm.tc: fib(10) rv32 (compile error)"; FAIL=$((FAIL+1)); rm -f "$asm_file"
+    fi
+else
+    echo "FAIL: bc2asm.tc: fib(10) rv32 (no asm output)"; FAIL=$((FAIL+1))
+fi
+
+# bc2asm.tc で fizzbuzz.tc バイトコードを変換して実行
+FIZZ_ASM_S=$( { printf '%s\n' "$BC2ASM_TC_BC"; "$CODEGEN" "$SCRIPT_DIR/fizzbuzz.tc"; } | "$BCRUN" 2>/dev/null )
+if [ -n "$FIZZ_ASM_S" ]; then
+    asm_file="/tmp/tc_bc2asm_fizz_$$.s"
+    elf_file="/tmp/tc_bc2asm_fizz_$$"
+    printf '%s\n' "$FIZZ_ASM_S" > "$asm_file"
+    if $RISCV_CC $RISCV_FLAGS "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
+        actual=$($QEMU "$elf_file" 2>/dev/null)
+        rm -f "$asm_file" "$elf_file"
+        expected="1
+2
+Fizz
+4
+Buzz
+Fizz
+7
+8
+Fizz
+Buzz
+11
+Fizz
+13
+14
+FizzBuzz"
+        check_output "bc2asm.tc: FizzBuzz(15) via rv32" "$expected" "$actual"
+    else
+        echo "FAIL: bc2asm.tc: FizzBuzz rv32 (compile error)"; FAIL=$((FAIL+1)); rm -f "$asm_file"
+    fi
+else
+    echo "FAIL: bc2asm.tc: FizzBuzz rv32 (no asm output)"; FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [ $FAIL -eq 0 ] && exit 0 || exit 1
