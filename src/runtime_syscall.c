@@ -22,6 +22,7 @@ static long __syscall3(long n, long a0, long a1, long a2) {
     return r0;
 }
 
+#define SYS_read   63
 #define SYS_write  64
 #define SYS_exit   93
 
@@ -217,7 +218,19 @@ int32_t __tc_sys_write(int32_t fd, HeapObj *buf, int32_t len) {
 }
 
 int32_t __tc_sys_read(int32_t fd, HeapObj *buf, int32_t len) {
-    (void)fd; (void)buf; (void)len; return -1; /* not implemented */
+    if (!buf || buf->kind != OBJ_ARRAY) return -1;
+    int n = len < buf->size ? len : buf->size;
+    char tmp[256];
+    int total = 0;
+    while (total < n) {
+        int chunk = (n - total) < 256 ? (n - total) : 256;
+        long r = __syscall3(SYS_read, fd, (long)tmp, chunk);
+        if (r <= 0) break;
+        for (int i = 0; i < (int)r; i++)
+            buf->fields[total + i] = (uint8_t)tmp[i];
+        total += (int)r;
+    }
+    return total;
 }
 
 void __tc_sys_exit(int32_t code) { __syscall1(SYS_exit, code); }

@@ -120,6 +120,26 @@ fn ob_indent(level: i32, ob: U8Array) -> void {
     return;
 }
 
+fn tok_cmp(tok: U8Array, tlen: i32, target: String) -> bool {
+    if tlen != len(target) as i32 { return false; }
+    var i: i32 = 0;
+    while i < tlen {
+        if get(tok, i as u32) != getChar(target, i as u32) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn ob_string(str: String, ob: U8Array) -> void {
+    var i: u32 = 0u32;
+    var n: u32 = len(str);
+    while i < n {
+        ob_char(getChar(str, i), ob);
+        i = i + 1u32;
+    }
+    return;
+}
+
 fn ob_int(n: i32, ob: U8Array) -> void {
     if n < 0 {
         ob_char('-', ob);  // '-'
@@ -158,30 +178,30 @@ fn ob_op(kind: i32, ob: U8Array) -> void {
     if kind == TK_AMP      { ob_char('&', ob); return; }
     if kind == TK_PIPE     { ob_char('|', ob); return; }
     if kind == TK_CARET    { ob_char('^', ob); return; }
-    if kind == TK_LSHIFT   { ob_char('<', ob); ob_char('<', ob); return; }
-    if kind == TK_RSHIFT   { ob_char('>', ob); ob_char('>', ob); return; }
-    if kind == TK_AMPAMP   { ob_char('&', ob); ob_char('&', ob); return; }
-    if kind == TK_PIPEPIPE { ob_char('|', ob); ob_char('|', ob); return; }
+    if kind == TK_LSHIFT   { ob_string("<<", ob); return; }
+    if kind == TK_RSHIFT   { ob_string(">>", ob); return; }
+    if kind == TK_AMPAMP   { ob_string("&&", ob); return; }
+    if kind == TK_PIPEPIPE { ob_string("||", ob); return; }
     if kind == TK_BANG     { ob_char('!', ob); return; }
-    if kind == TK_EQEQ     { ob_char('=', ob); ob_char('=', ob); return; }
-    if kind == TK_BANGEQ   { ob_char('!', ob); ob_char('=', ob); return; }
+    if kind == TK_EQEQ     { ob_string("==", ob); return; }
+    if kind == TK_BANGEQ   { ob_string("!=", ob); return; }
     if kind == TK_LT       { ob_char('<', ob); return; }
-    if kind == TK_LTEQ     { ob_char('<', ob); ob_char('=', ob); return; }
+    if kind == TK_LTEQ     { ob_string("<=", ob); return; }
     if kind == TK_GT       { ob_char('>', ob); return; }
-    if kind == TK_GTEQ     { ob_char('>', ob); ob_char('=', ob); return; }
+    if kind == TK_GTEQ     { ob_string(">=", ob); return; }
     return;
 }
 
 // Write type keyword string for type tokens
 fn ob_type_kw(kind: i32, ob: U8Array) -> void {
-    if kind == TK_U8   { ob_char('u',ob);ob_char('8',ob); return; }
-    if kind == TK_U16  { ob_char('u',ob);ob_char('1',ob);ob_char('6',ob); return; }
-    if kind == TK_U32  { ob_char('u',ob);ob_char('3',ob);ob_char('2',ob); return; }
-    if kind == TK_I8   { ob_char('i',ob);ob_char('8',ob); return; }
-    if kind == TK_I16  { ob_char('i',ob);ob_char('1',ob);ob_char('6',ob); return; }
-    if kind == TK_I32  { ob_char('i',ob);ob_char('3',ob);ob_char('2',ob); return; }
-    if kind == TK_BOOL { ob_char('b',ob);ob_char('o',ob);ob_char('o',ob);ob_char('l',ob); return; }
-    if kind == TK_VOID { ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob); return; }
+    if kind == TK_U8   { ob_string("u8", ob); return; }
+    if kind == TK_U16  { ob_string("u16", ob); return; }
+    if kind == TK_U32  { ob_string("u32", ob); return; }
+    if kind == TK_I8   { ob_string("i8", ob); return; }
+    if kind == TK_I16  { ob_string("i16", ob); return; }
+    if kind == TK_I32  { ob_string("i32", ob); return; }
+    if kind == TK_BOOL { ob_string("bool", ob); return; }
+    if kind == TK_VOID { ob_string("void", ob); return; }
     return;
 }
 
@@ -193,69 +213,40 @@ fn is_type_tok(kind: i32) -> bool {
 
 // ===== Lexer =====
 
-// Compare src[start..start+len] with keyword (given as individual chars)
-fn tok_cmp2(tok: U8Array, tlen: i32, a: u8, b: u8) -> bool {
-    if tlen != 2 { return false; }
-    return get(tok, 0u32) == a && get(tok, 1u32) == b;
-}
-fn tok_cmp3(tok: U8Array, tlen: i32, a: u8, b: u8, c: u8) -> bool {
-    if tlen != 3 { return false; }
-    return get(tok, 0u32) == a && get(tok, 1u32) == b && get(tok, 2u32) == c;
-}
-fn tok_cmp4(tok: U8Array, tlen: i32, a: u8, b: u8, c: u8, d: u8) -> bool {
-    if tlen != 4 { return false; }
-    return get(tok, 0u32)==a && get(tok, 1u32)==b && get(tok, 2u32)==c && get(tok, 3u32)==d;
-}
-fn tok_cmp5(tok: U8Array, tlen: i32, a: u8, b: u8, c: u8, d: u8, e: u8) -> bool {
-    if tlen != 5 { return false; }
-    return get(tok,0u32)==a && get(tok,1u32)==b && get(tok,2u32)==c && get(tok,3u32)==d && get(tok,4u32)==e;
-}
-fn tok_cmp6(tok: U8Array, tlen: i32, a: u8, b: u8, c: u8, d: u8, e: u8, f: u8) -> bool {
-    if tlen != 6 { return false; }
-    return get(tok,0u32)==a && get(tok,1u32)==b && get(tok,2u32)==c &&
-           get(tok,3u32)==d && get(tok,4u32)==e && get(tok,5u32)==f;
-}
-fn tok_cmp8(tok: U8Array, tlen: i32, a: u8, b: u8, c: u8, d: u8, e: u8, f: u8, g: u8, h: u8) -> bool {
-    if tlen != 8 { return false; }
-    return get(tok,0u32)==a && get(tok,1u32)==b && get(tok,2u32)==c && get(tok,3u32)==d &&
-           get(tok,4u32)==e && get(tok,5u32)==f && get(tok,6u32)==g && get(tok,7u32)==h;
-}
-
 // Classify identifier: returns keyword TK_xxx or TK_IDENT
 fn classify_ident(tok: U8Array, tlen: i32) -> i32 {
     if tlen == 2 {
-        if tok_cmp2(tok, tlen, 'f', 'n') { return TK_FN; }     // fn
-        if tok_cmp2(tok, tlen, 'a', 's')  { return TK_AS; }     // as
-        if tok_cmp2(tok, tlen, 'i', 'f') { return TK_IF; }     // if
-        if tok_cmp2(tok, tlen, 'u', '8')  { return TK_U8; }     // u8
-        if tok_cmp2(tok, tlen, 'i', '8')  { return TK_I8; }     // i8
+        if tok_cmp(tok, tlen, "fn") { return TK_FN; }     // fn
+        if tok_cmp(tok, tlen, "as")  { return TK_AS; }     // as
+        if tok_cmp(tok, tlen, "if") { return TK_IF; }     // if
+        if tok_cmp(tok, tlen, "u8")  { return TK_U8; }     // u8
+        if tok_cmp(tok, tlen, "i8")  { return TK_I8; }     // i8
     }
     if tlen == 3 {
-        if tok_cmp3(tok,tlen,'v','a','r')   { return TK_VAR; }   // var
-        if tok_cmp3(tok,tlen,'u','1','6')    { return TK_U16; }   // u16
-        if tok_cmp3(tok,tlen,'u','3','2')    { return TK_U32; }   // u32
-        if tok_cmp3(tok,tlen,'i','1','6')    { return TK_I16; }   // i16
-        if tok_cmp3(tok,tlen,'i','3','2')    { return TK_I32; }   // i32
+        if tok_cmp(tok, tlen, "var")   { return TK_VAR; }   // var
+        if tok_cmp(tok, tlen, "u16")    { return TK_U16; }   // u16
+        if tok_cmp(tok, tlen, "u32")    { return TK_U32; }   // u32
+        if tok_cmp(tok, tlen, "i16")    { return TK_I16; }   // i16
+        if tok_cmp(tok, tlen, "i32")    { return TK_I32; }   // i32
     }
     if tlen == 4 {
-        if tok_cmp4(tok,tlen,'e','l','s','e') { return TK_ELSE; }  // else
-        if tok_cmp4(tok,tlen,'b','o','o','l')  { return TK_BOOL; }  // bool
-        if tok_cmp4(tok,tlen,'v','o','i','d') { return TK_VOID; }  // void
-        if tok_cmp4(tok,tlen,'t','r','u','e') { return TK_TRUE; }  // true
+        if tok_cmp(tok, tlen, "else") { return TK_ELSE; }  // else
+        if tok_cmp(tok, tlen, "bool")  { return TK_BOOL; }  // bool
+        if tok_cmp(tok, tlen, "void") { return TK_VOID; }  // void
+        if tok_cmp(tok, tlen, "true") { return TK_TRUE; }  // true
     }
     if tlen == 5 {
-        if tok_cmp5(tok,tlen,'w','h','i','l','e')  { return TK_WHILE; }  // while
-        if tok_cmp5(tok,tlen,'f','a','l','s','e')   { return TK_FALSE; }  // false
-        if tok_cmp5(tok,tlen,'b','r','e','a','k')    { return TK_BREAK; }  // break
+        if tok_cmp(tok, tlen, "while")  { return TK_WHILE; }  // while
+        if tok_cmp(tok, tlen, "false")   { return TK_FALSE; }  // false
+        if tok_cmp(tok, tlen, "break")    { return TK_BREAK; }  // break
     }
     if tlen == 6 {
-        if tok_cmp6(tok,tlen,'r','e','t','u','r','n') { return TK_RETURN; } // return
-        if tok_cmp6(tok,tlen,'s','t','r','u','c','t')  { return TK_STRUCT; } // struct
-        if tok_cmp6(tok,tlen,'i','m','p','o','r','t') { return TK_IMPORT; } // import
+        if tok_cmp(tok, tlen, "return") { return TK_RETURN; } // return
+        if tok_cmp(tok, tlen, "struct")  { return TK_STRUCT; } // struct
+        if tok_cmp(tok, tlen, "import") { return TK_IMPORT; } // import
     }
     if tlen == 8 {
-        // continue: c(99) o(111) n(110) t(116) i(105) n(110) u(117) e(101)
-        if tok_cmp8(tok,tlen,'c','o','n','t','i','n','u','e') { return TK_CONTINUE; }
+        if tok_cmp(tok, tlen, "continue") { return TK_CONTINUE; }
     }
     return TK_IDENT;
 }
@@ -414,6 +405,7 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
 
     // Character literal: 'X' -> u8 integer
     if c == '\'' {   // '\''
+        g_pos = g_pos + 1;  // skip opening '
         var cval: i32 = 0;
         var ch2: u8 = get(src, g_pos as u32);
         if ch2 == '\\' && g_pos + 1 < g_len {  // backslash escape
@@ -539,10 +531,7 @@ fn expect_tok(kind: i32, src: U8Array, tok: U8Array) -> void {
 fn wrap_binop(left_buf: U8Array, left_len: i32, op: i32,
               src: U8Array, tok: U8Array, ob: U8Array) -> void {
     // (binop OP LEFT RIGHT)
-    ob_char('(', ob);  // (
-    ob_char('b',ob); ob_char('i',ob); ob_char('n',ob);
-    ob_char('o',ob); ob_char('p',ob);  // binop
-    ob_char(' ', ob);  // space
+    ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob);
     ob_op(op, ob);
     ob_char(10u8, ob);  // newline (for readability, downstream ignores whitespace)
     ob_n(left_buf, 0, left_len, ob);
@@ -552,18 +541,14 @@ fn wrap_binop(left_buf: U8Array, left_len: i32, op: i32,
 
 fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     if g_tok == TK_INT_LIT {
-        ob_char('(', ob);  // (
-        ob_char('i',ob); ob_char('n',ob); ob_char('t',ob);  // int
-        ob_char(' ', ob);
+        ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob);
         ob_int(g_tok_ival, ob);
         ob_char(')', ob);  // )
         lex_tok(src, tok);
         return;
     }
     if g_tok == TK_STR_LIT {
-        ob_char('(', ob);  // (
-        ob_char('s',ob); ob_char('t',ob); ob_char('r',ob);  // str
-        ob_char(' ', ob);
+        ob_char('(', ob); ob_string("str", ob); ob_char(' ', ob);
         // Escape and print string content
         var i: i32 = 0;
         while i < g_tok_slen {
@@ -584,19 +569,13 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     }
     if g_tok == TK_TRUE {
         // (bool true)
-        ob_char('(',ob); ob_char('b',ob); ob_char('o',ob); ob_char('o',ob); ob_char('l',ob);
-        ob_char(' ',ob);
-        ob_char('t',ob); ob_char('r',ob); ob_char('u',ob); ob_char('e',ob);
-        ob_char(')',ob);
+        ob_char('(', ob); ob_string("bool", ob); ob_char(' ', ob); ob_string("true", ob); ob_char(')', ob);
         lex_tok(src, tok);
         return;
     }
     if g_tok == TK_FALSE {
         // (bool false)
-        ob_char('(',ob); ob_char('b',ob); ob_char('o',ob); ob_char('o',ob); ob_char('l',ob);
-        ob_char(' ',ob);
-        ob_char('f',ob); ob_char('a',ob); ob_char('l',ob); ob_char('s',ob); ob_char('e',ob);
-        ob_char(')',ob);
+        ob_char('(', ob); ob_string("bool", ob); ob_char(' ', ob); ob_string("false", ob); ob_char(')', ob);
         lex_tok(src, tok);
         return;
     }
@@ -620,8 +599,7 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         if g_tok == TK_LPAREN {
             // Function call: (call NAME args...)
             lex_tok(src, tok);  // consume '('
-            ob_char('(',ob); ob_char('c',ob); ob_char('a',ob); ob_char('l',ob); ob_char('l',ob);  // (call
-            ob_char(' ', ob);
+            ob_char('(', ob); ob_string("call", ob); ob_char(' ', ob);
             ob_n(name_buf, 0, name_len, ob);
             // Parse arguments
             if g_tok != TK_RPAREN {
@@ -640,8 +618,7 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             ob_char(')', ob);  // )
         } else {
             // Variable reference: (var NAME)
-            ob_char('(',ob); ob_char('v',ob); ob_char('a',ob); ob_char('r',ob);  // (var
-            ob_char(' ', ob);
+            ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
             ob_n(name_buf, 0, name_len, ob);
             ob_char(')', ob);  // )
         }
@@ -679,8 +656,7 @@ fn pars_postfix(src: U8Array, tok: U8Array, ob: U8Array) -> void {
 fn pars_unary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     if g_tok == TK_BANG {
         lex_tok(src, tok);
-        ob_char('(',ob); ob_char('u',ob); ob_char('n',ob); ob_char('a',ob); ob_char('r',ob); ob_char('y',ob);  // (unary
-        ob_char(' ',ob); ob_char('!',ob);  // !
+        ob_char('(', ob); ob_string("unary", ob); ob_char(' ', ob); ob_char('!', ob);
         ob_char(10u8,ob);
         pars_unary(src, tok, ob);
         ob_char(')', ob);
@@ -688,8 +664,7 @@ fn pars_unary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     }
     if g_tok == TK_MINUS {
         lex_tok(src, tok);
-        ob_char('(',ob); ob_char('u',ob); ob_char('n',ob); ob_char('a',ob); ob_char('r',ob); ob_char('y',ob);  // (unary
-        ob_char(' ',ob); ob_char('-',ob);  // -
+        ob_char('(', ob); ob_string("unary", ob); ob_char(' ', ob); ob_char('-', ob);
         ob_char(10u8,ob);
         pars_unary(src, tok, ob);
         ob_char(')', ob);
@@ -728,8 +703,7 @@ fn pars_mul(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);  // (binop
-        ob_char(' ',ob); ob_op(op, ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_unary(src, tok, ob);
         ob_char(')', ob);
@@ -752,8 +726,7 @@ fn pars_add(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);
-        ob_char(' ',ob); ob_op(op, ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_mul(src, tok, ob);
         ob_char(')', ob);
@@ -776,8 +749,7 @@ fn pars_shift(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);
-        ob_char(' ',ob); ob_op(op, ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_add(src, tok, ob);
         ob_char(')', ob);
@@ -799,8 +771,7 @@ fn pars_bitand(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);
-        ob_char(' ',ob); ob_char('&',ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_shift(src, tok, ob);
         ob_char(')', ob);
@@ -822,8 +793,7 @@ fn pars_bitxor(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);
-        ob_char(' ',ob); ob_char('^',ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_bitand(src, tok, ob);
         ob_char(')', ob);
@@ -845,8 +815,7 @@ fn pars_bitor(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);
-        ob_char(' ',ob); ob_char('|',ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_bitxor(src, tok, ob);
         ob_char(')', ob);
@@ -869,8 +838,7 @@ fn pars_compare(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);
-        ob_char(' ',ob); ob_op(k, ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_bitor(src, tok, ob);
         ob_char(')', ob);
@@ -892,8 +860,7 @@ fn pars_logic_and(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);
-        ob_char(' ',ob); ob_char('&',ob); ob_char('&',ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_string("&&", ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_compare(src, tok, ob);
         ob_char(')', ob);
@@ -915,8 +882,7 @@ fn pars_expr(src: U8Array, tok: U8Array, ob: U8Array) -> void {
             i = i + 1;
         }
         g_ob_pos = left_start;
-        ob_char('(',ob); ob_char('b',ob); ob_char('i',ob); ob_char('n',ob); ob_char('o',ob); ob_char('p',ob);
-        ob_char(' ',ob); ob_char('|',ob); ob_char('|',ob); ob_char(10u8,ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_string("||", ob); ob_char(10u8,ob);
         ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);
         pars_logic_and(src, tok, ob);
         ob_char(')', ob);
@@ -928,8 +894,7 @@ fn pars_expr(src: U8Array, tok: U8Array, ob: U8Array) -> void {
 // ===== Type parser =====
 fn pars_type(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     // Outputs: (type TYPENAME)
-    ob_char('(',ob); ob_char('t',ob); ob_char('y',ob); ob_char('p',ob); ob_char('e',ob);  // (type
-    ob_char(' ', ob);
+    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
     if is_type_tok(g_tok) && g_tok != TK_IDENT {
         ob_type_kw(g_tok, ob);
         lex_tok(src, tok);
@@ -960,8 +925,7 @@ fn pars_var_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_COLON, src, tok);
 
     // (var_decl NAME
-    ob_char('(',ob); ob_char('v',ob); ob_char('a',ob); ob_char('r',ob); ob_char('_',ob); ob_char('d',ob); ob_char('e',ob); ob_char('c',ob); ob_char('l',ob);  // (var_decl
-    ob_char(' ', ob);
+    ob_char('(', ob); ob_string("var_decl", ob); ob_char(' ', ob);
     ob_n(name_buf, 0, name_len, ob);
     delete(name_buf);
     ob_char(10u8, ob);
@@ -985,7 +949,7 @@ fn pars_break_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void
     expect_tok(TK_BREAK, src, tok);
     expect_tok(TK_SEMI, src, tok);
     // (break)
-    ob_char('(',ob);ob_char('b',ob);ob_char('r',ob);ob_char('e',ob);ob_char('a',ob);ob_char('k',ob);ob_char(')',ob);
+    ob_char('(', ob); ob_string("break", ob); ob_char(')', ob);
     return;
 }
 
@@ -993,13 +957,13 @@ fn pars_continue_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> v
     expect_tok(TK_CONTINUE, src, tok);
     expect_tok(TK_SEMI, src, tok);
     // (continue)
-    ob_char('(',ob);ob_char('c',ob);ob_char('o',ob);ob_char('n',ob);ob_char('t',ob);ob_char('i',ob);ob_char('n',ob);ob_char('u',ob);ob_char('e',ob);ob_char(')',ob);
+    ob_char('(', ob); ob_string("continue", ob); ob_char(')', ob);
     return;
 }
 
 fn pars_return_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_RETURN, src, tok);
-    ob_char('(',ob); ob_char('r',ob); ob_char('e',ob); ob_char('t',ob); ob_char('u',ob); ob_char('r',ob); ob_char('n',ob);  // (return
+    ob_char('(', ob); ob_string("return", ob);
     if g_tok != TK_SEMI {
         ob_char(10u8, ob);
         ob_indent(indent + 1, ob);
@@ -1014,7 +978,7 @@ fn pars_return_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
 
 fn pars_if_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_IF, src, tok);
-    ob_char('(',ob); ob_char('i',ob); ob_char('f',ob);  // (if
+    ob_char('(', ob); ob_string("if", ob);
     ob_char(10u8, ob);
     ob_indent(indent + 1, ob);
     pars_expr(src, tok, ob);
@@ -1039,7 +1003,7 @@ fn pars_if_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
 
 fn pars_while_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_WHILE, src, tok);
-    ob_char('(',ob); ob_char('w',ob); ob_char('h',ob); ob_char('i',ob); ob_char('l',ob); ob_char('e',ob);  // (while
+    ob_char('(', ob); ob_string("while", ob);
     ob_char(10u8, ob);
     ob_indent(indent + 1, ob);
     pars_expr(src, tok, ob);
@@ -1065,8 +1029,7 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void
     if g_tok == TK_EQ {
         lex_tok(src, tok);
         // (assign NAME\n  EXPR)
-        ob_char('(',ob); ob_char('a',ob); ob_char('s',ob); ob_char('s',ob); ob_char('i',ob); ob_char('g',ob); ob_char('n',ob);  // (assign
-        ob_char(' ', ob);
+        ob_char('(', ob); ob_string("assign", ob); ob_char(' ', ob);
         ob_n(name_buf, 0, name_len, ob);
         ob_char(10u8, ob);
         ob_indent(indent + 1, ob);
@@ -1079,8 +1042,7 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void
         if g_tok == TK_LPAREN {
             lex_tok(src, tok);
             // (call_stmt NAME args...)
-            ob_char('(',ob); ob_char('c',ob); ob_char('a',ob); ob_char('l',ob); ob_char('l',ob); ob_char('_',ob); ob_char('s',ob); ob_char('t',ob); ob_char('m',ob); ob_char('t',ob);  // (call_stmt
-            ob_char(' ', ob);
+            ob_char('(', ob); ob_string("call_stmt", ob); ob_char(' ', ob);
             ob_n(name_buf, 0, name_len, ob);
             if g_tok != TK_RPAREN {
                 var going: i32 = 1;
@@ -1122,7 +1084,7 @@ fn pars_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
 
 fn pars_block(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_LBRACE, src, tok);
-    ob_char('(',ob); ob_char('b',ob); ob_char('l',ob); ob_char('o',ob); ob_char('c',ob); ob_char('k',ob);  // (block
+    ob_char('(', ob); ob_string("block", ob);
     while g_tok != TK_RBRACE && g_tok != TK_EOF {
         ob_char(10u8, ob);
         ob_indent(indent + 1, ob);
@@ -1148,15 +1110,14 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_LPAREN, src, tok);
 
     // (fn NAME
-    ob_char('(',ob); ob_char('f',ob); ob_char('n',ob);  // (fn
-    ob_char(' ', ob);
+    ob_char('(', ob); ob_string("fn", ob); ob_char(' ', ob);
     ob_n(name_buf, 0, name_len, ob);
     delete(name_buf);
     ob_char(10u8, ob);
     ob_indent(indent + 1, ob);
 
     // (params ...)
-    ob_char('(',ob); ob_char('p',ob); ob_char('a',ob); ob_char('r',ob); ob_char('a',ob); ob_char('m',ob); ob_char('s',ob);  // (params
+    ob_char('(', ob); ob_string("params", ob);
     if g_tok != TK_RPAREN {
         var going: i32 = 1;
         while going == 1 {
@@ -1172,8 +1133,7 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
             ob_char(10u8, ob);
             ob_indent(indent + 2, ob);
             // (param NAME\n    (type T)\n  )
-            ob_char('(',ob); ob_char('p',ob); ob_char('a',ob); ob_char('r',ob); ob_char('a',ob); ob_char('m',ob);  // (param
-            ob_char(' ', ob);
+            ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob);
             ob_n(pname_buf, 0, pname_len, ob);
             ob_char(10u8, ob);
             ob_indent(indent + 3, ob);
@@ -1197,7 +1157,7 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     // (ret (type T))
     ob_char(10u8, ob);
     ob_indent(indent + 1, ob);
-    ob_char('(',ob); ob_char('r',ob); ob_char('e',ob); ob_char('t',ob);  // (ret
+    ob_char('(', ob); ob_string("ret", ob);
     ob_char(10u8, ob);
     ob_indent(indent + 2, ob);
     if g_tok == TK_ARROW {
@@ -1205,10 +1165,7 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
         pars_type(src, tok, ob, indent + 2);
     } else {
         // void return
-        ob_char('(',ob); ob_char('t',ob); ob_char('y',ob); ob_char('p',ob); ob_char('e',ob);
-        ob_char(' ',ob);
-        ob_char('v',ob); ob_char('o',ob); ob_char('i',ob); ob_char('d',ob);
-        ob_char(')',ob);
+        ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob); ob_string("void", ob); ob_char(')', ob);
     }
     ob_char(10u8, ob);
     ob_indent(indent + 1, ob);
@@ -1237,8 +1194,7 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
     expect_tok(TK_IDENT, src, tok);
     expect_tok(TK_LBRACE, src, tok);
 
-    ob_char('(',ob); ob_char('s',ob); ob_char('t',ob); ob_char('r',ob); ob_char('u',ob); ob_char('c',ob); ob_char('t',ob);  // (struct
-    ob_char(' ', ob);
+    ob_char('(', ob); ob_string("struct", ob); ob_char(' ', ob);
     ob_n(name_buf, 0, name_len, ob);
     delete(name_buf);
 
@@ -1261,8 +1217,7 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
             expect_tok(TK_COLON, src, tok);
             ob_char(10u8, ob);
             ob_indent(indent + 1, ob);
-            ob_char('(',ob); ob_char('f',ob); ob_char('i',ob); ob_char('e',ob); ob_char('l',ob); ob_char('d',ob);  // (field
-            ob_char(' ', ob);
+            ob_char('(', ob); ob_string("field", ob); ob_char(' ', ob);
             ob_n(fname_buf, 0, fname_len, ob);
             ob_char(10u8, ob);
             ob_indent(indent + 2, ob);
@@ -1282,8 +1237,7 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
 
 fn pars_import(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_IMPORT, src, tok);
-    ob_char('(',ob); ob_char('i',ob); ob_char('m',ob); ob_char('p',ob); ob_char('o',ob); ob_char('r',ob); ob_char('t',ob);  // (import
-    ob_char(' ', ob);
+    ob_char('(', ob); ob_string("import", ob); ob_char(' ', ob);
     if g_tok == TK_STR_LIT {
         ob_n(tok, 0, g_tok_slen, ob);
         lex_tok(src, tok);
@@ -1294,7 +1248,7 @@ fn pars_import(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
 }
 
 fn pars_program(src: U8Array, tok: U8Array, ob: U8Array) -> void {
-    ob_char('(',ob); ob_char('p',ob); ob_char('r',ob); ob_char('o',ob); ob_char('g',ob); ob_char('r',ob); ob_char('a',ob); ob_char('m',ob);  // (program
+    ob_char('(', ob); ob_string("program", ob);
 
     while g_tok == TK_IMPORT {
         ob_char(10u8, ob);

@@ -263,7 +263,7 @@ static int is_jump_target(BcFunc *fn, int i) {
     return 0;
 }
 
-static void emit_fn(BcProg *prog, BcFunc *fn) {
+static void emit_fn(BcProg *prog, BcFunc *fn, int fi) {
     int nvars      = fn->nparams + fn->nlocals;
     int frame_size = 8 + 4 * nvars;
     /* round up to 16-byte boundary */
@@ -295,7 +295,7 @@ static void emit_fn(BcProg *prog, BcFunc *fn) {
     for (int pc = 0; pc < fn->ninstrs; pc++) {
         /* emit label if this pc is a jump target */
         if (is_jump_target(fn, pc))
-            E("  .L_pc%d:\n", pc);
+            E("  .L_f%d_pc%d:\n", fi, pc);
 
         Instr *ins = &fn->instrs[pc];
 
@@ -325,7 +325,8 @@ static void emit_fn(BcProg *prog, BcFunc *fn) {
                 int off = var_offset(fn, ins->sarg);
                 E("    lw   t0, %d(s0)\n", off);
             } else {
-                E("    lw   t0, %s\n", ins->sarg);  /* global */
+                E("    la   t1, %s\n", ins->sarg);  /* global */
+                E("    lw   t0, 0(t1)\n");
             }
             push_t0();
             break;
@@ -336,7 +337,8 @@ static void emit_fn(BcProg *prog, BcFunc *fn) {
                 int off = var_offset(fn, ins->sarg);
                 E("    sw   t0, %d(s0)\n", off);
             } else {
-                E("    sw   t0, %s\n", ins->sarg);  /* global */
+                E("    la   t1, %s\n", ins->sarg);  /* global */
+                E("    sw   t0, 0(t1)\n");
             }
             break;
 
@@ -459,15 +461,15 @@ static void emit_fn(BcProg *prog, BcFunc *fn) {
         }
 
         case OP_JUMP:
-            E("    j    .L_pc%ld\n", ins->ival);
+            E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
             break;
         case OP_JUMP_IF:
             pop_t0();
-            E("    bnez t0, .L_pc%ld\n", ins->ival);
+            E("    bnez t0, .L_f%d_pc%ld\n", fi, ins->ival);
             break;
         case OP_JUMP_IFNOT:
             pop_t0();
-            E("    beqz t0, .L_pc%ld\n", ins->ival);
+            E("    beqz t0, .L_f%d_pc%ld\n", fi, ins->ival);
             break;
 
         } /* switch */
@@ -521,7 +523,7 @@ static void emit_program(BcProg *prog) {
     /* --- .text: functions --- */
     E("    .text\n\n");
     for (int i = 0; i < prog->nfuncs; i++)
-        emit_fn(prog, &prog->funcs[i]);
+        emit_fn(prog, &prog->funcs[i], i);
 }
 
 int main(int argc, char *argv[]) {

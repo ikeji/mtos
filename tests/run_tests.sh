@@ -360,6 +360,49 @@ else
     echo "FAIL: bc2asm.tc: FizzBuzz rv32 (no asm output)"; FAIL=$((FAIL+1))
 fi
 
+# ===== tc_run_all.sh 全方式一致テスト =====
+echo "=== tc_run_all.sh Consistency Tests ==="
+echo ""
+
+TC_RUN_ALL="$ROOT_DIR/tc_run_all.sh"
+ALL_AGREE=">>> All methods produced identical output."
+
+run_test_contains "tc_run_all hello.tc all methods agree" \
+    "$TC_RUN_ALL $SCRIPT_DIR/hello.tc" \
+    "$ALL_AGREE"
+
+run_test_contains "tc_run_all fib.tc all methods agree" \
+    "$TC_RUN_ALL $SCRIPT_DIR/fib.tc" \
+    "$ALL_AGREE"
+
+run_test_contains "tc_run_all fizzbuzz.tc all methods agree" \
+    "$TC_RUN_ALL $SCRIPT_DIR/fizzbuzz.tc" \
+    "$ALL_AGREE"
+
+run_test_contains "tc_run_all calc.tc all methods agree (12+34*56)" \
+    "$TC_RUN_ALL $SCRIPT_DIR/calc.tc '12 + 34 * 56'" \
+    "$ALL_AGREE"
+
+run_test_contains "tc_run_all elseif_test.tc all methods agree" \
+    "$TC_RUN_ALL $SCRIPT_DIR/elseif_test.tc" \
+    "$ALL_AGREE"
+
+run_test_contains "tc_run_all charliteral_test.tc all methods agree" \
+    "$TC_RUN_ALL $SCRIPT_DIR/charliteral_test.tc" \
+    "$ALL_AGREE"
+
+run_test_contains "tc_run_all break_test.tc all methods agree" \
+    "$TC_RUN_ALL $SCRIPT_DIR/break_test.tc" \
+    "$ALL_AGREE"
+
+run_test_contains "tc_run_all continue_test.tc all methods agree" \
+    "$TC_RUN_ALL $SCRIPT_DIR/continue_test.tc" \
+    "$ALL_AGREE"
+
+run_test_contains "tc_run_all nested_break_test.tc all methods agree" \
+    "$TC_RUN_ALL $SCRIPT_DIR/nested_break_test.tc" \
+    "$ALL_AGREE"
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [ $FAIL -eq 0 ] && exit 0 || exit 1

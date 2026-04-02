@@ -151,6 +151,9 @@ static AstNode *reader_read_node(Reader *r) {
                     || (atom[0] == '-' && isdigit((unsigned char)atom[1])))) {
                 n->ival = atol(atom);
                 free(atom);
+            } else if (strcmp(n->kind, "bool") == 0) {
+                n->ival = (strcmp(atom, "true") == 0) ? 1 : 0;
+                free(atom);
             } else if (n->sval == NULL) {
                 n->sval = atom;
             } else {
