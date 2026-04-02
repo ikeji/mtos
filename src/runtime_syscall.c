@@ -129,6 +129,12 @@ static HeapObj *new_array(int sz) {
     return o;
 }
 
+HeapObj *__tc_U8Array (int32_t sz) { return new_array(sz); }
+HeapObj *__tc_U16Array(int32_t sz) { return new_array(sz); }
+HeapObj *__tc_U32Array(int32_t sz) { return new_array(sz); }
+HeapObj *__tc_I8Array (int32_t sz) { return new_array(sz); }
+HeapObj *__tc_I16Array(int32_t sz) { return new_array(sz); }
+HeapObj *__tc_I32Array(int32_t sz) { return new_array(sz); }
 HeapObj *__tc_newU8Array (int32_t sz) { return new_array(sz); }
 HeapObj *__tc_newU16Array(int32_t sz) { return new_array(sz); }
 HeapObj *__tc_newU32Array(int32_t sz) { return new_array(sz); }
@@ -142,7 +148,12 @@ int32_t __tc_len(HeapObj *o) {
 }
 
 int32_t __tc_get(HeapObj *o, int32_t idx) {
-    if (!o || idx < 0 || idx >= o->size) {
+    if (!o) { do_write(2, "get: null\n", 10); __syscall1(SYS_exit, 1); }
+    if (o->kind == OBJ_STRING) {
+        if (idx < 0 || idx >= o->len) return 0;
+        return o->bytes[idx];
+    }
+    if (idx < 0 || idx >= o->size) {
         do_write(2, "get: out of bounds\n", 19);
         __syscall1(SYS_exit, 1);
     }
@@ -160,11 +171,6 @@ void __tc_set(HeapObj *o, int32_t idx, int32_t val) {
 void __tc_delete(HeapObj *o) { (void)o; /* bump allocator — no-op */ }
 
 /* ===== String operations ===== */
-
-int32_t __tc_getChar(HeapObj *s, int32_t idx) {
-    if (!s || s->kind != OBJ_STRING || idx < 0 || idx >= s->len) return 0;
-    return s->bytes[idx];
-}
 
 HeapObj *__tc_append_char(HeapObj *s, int32_t c) {
     int sl = s ? s->len : 0;

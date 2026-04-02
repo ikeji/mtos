@@ -7,7 +7,7 @@
     (block
       (var_decl buf
         (type U8Array)
-        (call newU8Array
+        (call U8Array
           (int 13)
         )
       )

@@ -10,7 +10,7 @@
   call len 1
   store len
   push_int 13
-  call newU8Array 1
+  call U8Array 1
   store buf
   push_int 0
   store i
@@ -23,7 +23,7 @@ __L0:
   load i
   load str
   load i
-  call getChar 2
+  call get 2
   call set 3
   pop
   load i

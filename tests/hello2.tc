@@ -1,9 +1,9 @@
 fn to_buf(str: String) {
   var len :u32 = len(str);
-  var buf : U8Array = newU8Array(13);
+  var buf : U8Array = U8Array(13);
   var i:i32 = 0;
   while i < len {
-    set(buf, i, getChar(str, i));
+    set(buf, i, get(str, i));
     i = i + 1;
   }
   return buf;

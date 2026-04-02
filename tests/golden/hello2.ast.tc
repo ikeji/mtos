@@ -16,7 +16,7 @@
       )
       (var_decl buf
         (type U8Array)
-        (call newU8Array
+        (call U8Array
 (int 13))
       )
       (var_decl i
@@ -31,7 +31,7 @@
           (call_stmt set
             (var buf)
             (var i)
-            (call getChar
+            (call get
 (var str)
 (var i))
           )

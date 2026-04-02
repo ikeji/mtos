@@ -217,12 +217,12 @@ static int is_builtin(const char *name) {
         "peek8","peek16","peek32","poke8","poke16","poke32",
         "sys_write","sys_read","sys_exit",
         "print_i32","print_u32","print_bool","print_str",
-        "len","get","set","delete","getChar","append","equals",
+        "len","get","set","delete","append","equals",
         NULL
     };
     for (int i = 0; B[i]; i++)
         if (!strcmp(name, B[i])) return 1;
-    if (!strncmp(name, "new", 3)) return 1;
+    { int n=strlen(name); if(n>5 && !strcmp(name+n-5,"Array") && isupper((unsigned char)name[0])) return 1; }
     return 0;
 }
 

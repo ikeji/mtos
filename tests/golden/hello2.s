@@ -32,7 +32,7 @@ to_buf:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call __tc_newU8Array
+    call __tc_U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -75,7 +75,7 @@ to_buf:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call __tc_getChar
+    call __tc_get
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)

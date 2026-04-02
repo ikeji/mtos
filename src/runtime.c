@@ -67,13 +67,20 @@ HeapObj *__tc_newArray(const char *type_name, int32_t size) {
     return o;
 }
 
-/* Individual typed constructors called by __tc_new<Type>Array */
-HeapObj *__tc_newU8Array (int32_t sz) { return __tc_newArray("U8Array",  sz); }
-HeapObj *__tc_newU16Array(int32_t sz) { return __tc_newArray("U16Array", sz); }
-HeapObj *__tc_newU32Array(int32_t sz) { return __tc_newArray("U32Array", sz); }
-HeapObj *__tc_newI8Array (int32_t sz) { return __tc_newArray("I8Array",  sz); }
-HeapObj *__tc_newI16Array(int32_t sz) { return __tc_newArray("I16Array", sz); }
-HeapObj *__tc_newI32Array(int32_t sz) { return __tc_newArray("I32Array", sz); }
+/* Constructors — name = type name (e.g., U8Array(size)) */
+HeapObj *__tc_U8Array (int32_t sz) { return __tc_newArray("U8Array",  sz); }
+HeapObj *__tc_U16Array(int32_t sz) { return __tc_newArray("U16Array", sz); }
+HeapObj *__tc_U32Array(int32_t sz) { return __tc_newArray("U32Array", sz); }
+HeapObj *__tc_I8Array (int32_t sz) { return __tc_newArray("I8Array",  sz); }
+HeapObj *__tc_I16Array(int32_t sz) { return __tc_newArray("I16Array", sz); }
+HeapObj *__tc_I32Array(int32_t sz) { return __tc_newArray("I32Array", sz); }
+/* Legacy aliases */
+HeapObj *__tc_newU8Array (int32_t sz) { return __tc_U8Array(sz); }
+HeapObj *__tc_newU16Array(int32_t sz) { return __tc_U16Array(sz); }
+HeapObj *__tc_newU32Array(int32_t sz) { return __tc_U32Array(sz); }
+HeapObj *__tc_newI8Array (int32_t sz) { return __tc_I8Array(sz); }
+HeapObj *__tc_newI16Array(int32_t sz) { return __tc_I16Array(sz); }
+HeapObj *__tc_newI32Array(int32_t sz) { return __tc_I32Array(sz); }
 
 int32_t __tc_len(HeapObj *o) {
     if (!o) return 0;
@@ -81,8 +88,13 @@ int32_t __tc_len(HeapObj *o) {
 }
 
 int32_t __tc_get(HeapObj *o, int32_t idx) {
-    if (!o || idx < 0 || idx >= o->size) {
-        fprintf(stderr, "runtime: get out of bounds %d/%d\n", idx, o ? o->size : 0);
+    if (!o) { fprintf(stderr, "runtime: get null\n"); exit(1); }
+    if (o->kind == OBJ_STRING) {
+        if (idx < 0 || idx >= o->len) return 0;
+        return (uint8_t)o->bytes[idx];
+    }
+    if (idx < 0 || idx >= o->size) {
+        fprintf(stderr, "runtime: get out of bounds %d/%d\n", idx, o->size);
         exit(1);
     }
     return o->fields[idx];
@@ -105,11 +117,6 @@ void __tc_delete(HeapObj *o) {
 }
 
 /* ===== String operations ===== */
-
-int32_t __tc_getChar(HeapObj *s, int32_t idx) {
-    if (!s || s->kind != OBJ_STRING || idx < 0 || idx >= s->len) return 0;
-    return s->bytes[idx];
-}
 
 HeapObj *__tc_append_char(HeapObj *s, int32_t c) {
     HeapObj *ns = alloc_obj(OBJ_STRING, "String");

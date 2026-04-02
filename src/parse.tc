@@ -124,7 +124,7 @@ fn tok_cmp(tok: U8Array, tlen: i32, target: String) -> bool {
     if tlen != len(target) as i32 { return false; }
     var i: i32 = 0;
     while i < tlen {
-        if get(tok, i as u32) != getChar(target, i as u32) { return false; }
+        if get(tok, i as u32) != get(target, i as u32) { return false; }
         i = i + 1;
     }
     return true;
@@ -134,7 +134,7 @@ fn ob_string(str: String, ob: U8Array) -> void {
     var i: u32 = 0u32;
     var n: u32 = len(str);
     while i < n {
-        ob_char(getChar(str, i), ob);
+        ob_char(get(str, i), ob);
         i = i + 1u32;
     }
     return;
@@ -150,7 +150,7 @@ fn ob_int(n: i32, ob: U8Array) -> void {
         return;
     }
     // Build digits in reverse
-    var tmp: U8Array = newU8Array(12);
+    var tmp: U8Array = U8Array(12);
     var len: i32 = 0;
     var v: i32 = n;
     while v > 0 {
@@ -510,7 +510,7 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
 fn expect_tok(kind: i32, src: U8Array, tok: U8Array) -> void {
     if g_tok != kind {
         // Error: write to stderr fd=2
-        var errbuf: U8Array = newU8Array(32);
+        var errbuf: U8Array = U8Array(32);
         set(errbuf, 0u32, 'p'); set(errbuf, 1u32, 'a'); set(errbuf, 2u32, 'r');
         set(errbuf, 3u32, 's'); set(errbuf, 4u32, 'e'); set(errbuf, 5u32, ':');
         set(errbuf, 6u32, ' '); set(errbuf, 7u32, 'u'); set(errbuf, 8u32, 'n');
@@ -588,7 +588,7 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     if g_tok == TK_IDENT {
         // Save the identifier name
         var name_len: i32 = g_tok_slen;
-        var name_buf: U8Array = newU8Array(name_len + 1);
+        var name_buf: U8Array = U8Array(name_len + 1);
         var i: i32 = 0;
         while i < name_len {
             set(name_buf, i as u32, get(tok, i as u32));
@@ -696,7 +696,7 @@ fn pars_mul(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var op: i32 = g_tok;
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -719,7 +719,7 @@ fn pars_add(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var op: i32 = g_tok;
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -742,7 +742,7 @@ fn pars_shift(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var op: i32 = g_tok;
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -764,7 +764,7 @@ fn pars_bitand(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     while g_tok == TK_AMP {
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -786,7 +786,7 @@ fn pars_bitxor(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     while g_tok == TK_CARET {
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -808,7 +808,7 @@ fn pars_bitor(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     while g_tok == TK_PIPE {
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -831,7 +831,7 @@ fn pars_compare(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     if k == TK_EQEQ || k == TK_BANGEQ || k == TK_LT || k == TK_LTEQ || k == TK_GT || k == TK_GTEQ {
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -853,7 +853,7 @@ fn pars_logic_and(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     while g_tok == TK_AMPAMP {
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -875,7 +875,7 @@ fn pars_expr(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     while g_tok == TK_PIPEPIPE {
         lex_tok(src, tok);
         var left_len: i32 = g_ob_pos - left_start;
-        var lbuf: U8Array = newU8Array(left_len + 1);
+        var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
             set(lbuf, i as u32, get(ob, (left_start + i) as u32));
@@ -915,7 +915,7 @@ fn pars_var_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     // 'var' already consumed, or we consume it here
     expect_tok(TK_VAR, src, tok);
     var name_len: i32 = g_tok_slen;
-    var name_buf: U8Array = newU8Array(name_len + 1);
+    var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
     while i < name_len {
         set(name_buf, i as u32, get(tok, i as u32));
@@ -1018,7 +1018,7 @@ fn pars_while_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void
 
 fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     var name_len: i32 = g_tok_slen;
-    var name_buf: U8Array = newU8Array(name_len + 1);
+    var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
     while i < name_len {
         set(name_buf, i as u32, get(tok, i as u32));
@@ -1100,7 +1100,7 @@ fn pars_block(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
 fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_FN, src, tok);
     var name_len: i32 = g_tok_slen;
-    var name_buf: U8Array = newU8Array(name_len + 1);
+    var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
     while i < name_len {
         set(name_buf, i as u32, get(tok, i as u32));
@@ -1122,7 +1122,7 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
         var going: i32 = 1;
         while going == 1 {
             var pname_len: i32 = g_tok_slen;
-            var pname_buf: U8Array = newU8Array(pname_len + 1);
+            var pname_buf: U8Array = U8Array(pname_len + 1);
             var j: i32 = 0;
             while j < pname_len {
                 set(pname_buf, j as u32, get(tok, j as u32));
@@ -1185,7 +1185,7 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
 fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_STRUCT, src, tok);
     var name_len: i32 = g_tok_slen;
-    var name_buf: U8Array = newU8Array(name_len + 1);
+    var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
     while i < name_len {
         set(name_buf, i as u32, get(tok, i as u32));
@@ -1207,7 +1207,7 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
         if g_tok == TK_RBRACE { g_tok = g_tok; }  // do nothing, will exit loop
         else {
             var fname_len: i32 = g_tok_slen;
-            var fname_buf: U8Array = newU8Array(fname_len + 1);
+            var fname_buf: U8Array = U8Array(fname_len + 1);
             var j: i32 = 0;
             while j < fname_len {
                 set(fname_buf, j as u32, get(tok, j as u32));
@@ -1280,9 +1280,9 @@ fn pars_program(src: U8Array, tok: U8Array, ob: U8Array) -> void {
 }
 
 fn main() -> i32 {
-    var src_buf: U8Array = newU8Array(131072);  // 128KB for source
-    var tok_buf: U8Array = newU8Array(4096);    // token string buffer
-    var out_buf: U8Array = newU8Array(16384);   // 16KB output buffer
+    var src_buf: U8Array = U8Array(131072);  // 128KB for source
+    var tok_buf: U8Array = U8Array(4096);    // token string buffer
+    var out_buf: U8Array = U8Array(16384);   // 16KB output buffer
 
     g_len = sys_read(0, src_buf, 131072u32);
     g_pos = 0;

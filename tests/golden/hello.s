@@ -14,7 +14,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call __tc_newU8Array
+    call __tc_U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)

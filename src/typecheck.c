@@ -198,11 +198,9 @@ static FnSig *resolve_overload(TypeEnv *e, const char *name,
 
 static void register_array_builtins(TypeEnv *e, const char *arr_type,
                                      const char *elem_type) {
-    char new_fn[64];
-    /* newXxxArray(size: u32) -> XxxArray */
-    snprintf(new_fn, sizeof(new_fn), "new%s", arr_type);
+    /* XxxArray(size: u32) -> XxxArray  (constructor has same name as type) */
     const char *pt_u32[] = {"u32"};
-    register_fn(e, new_fn, pt_u32, 1, arr_type);
+    register_fn(e, arr_type, pt_u32, 1, arr_type);
 
     const char *pt_arr[] = {arr_type};
     const char *pt_arr_idx[] = {arr_type, "u32"};
@@ -243,7 +241,7 @@ static void register_builtins(TypeEnv *e) {
     const char *ps_s[] = {"String","String"};
     register_fn(e, "delete", ps, 1, "void");
     register_fn(e, "len", ps, 1, "u32");
-    register_fn(e, "getChar", ps_u32, 2, "u8");
+    register_fn(e, "get", ps_u32, 2, "u8");
     register_fn(e, "append", ps_u8, 2, "String");
     register_fn(e, "append", ps_s, 2, "String");
     register_fn(e, "equals", ps_s, 2, "bool");
@@ -286,12 +284,10 @@ static void collect_struct(TypeEnv *e, AstNode *node) {
     sd->next = e->structs;
     e->structs = sd;
 
-    /* register constructor: newStructName(f1: t1, ...) -> StructName */
-    char ctor_name[128];
-    snprintf(ctor_name, sizeof(ctor_name), "new%s", sname);
+    /* register constructor: StructName(f1: t1, ...) -> StructName */
     const char **ptypes = calloc(sd->nfields, sizeof(char*));
     for (int i = 0; i < sd->nfields; i++) ptypes[i] = sd->fields[i].type;
-    register_fn(e, ctor_name, ptypes, sd->nfields, sname);
+    register_fn(e, sname, ptypes, sd->nfields, sname);
     free(ptypes);
 
     /* delete(s: StructName) */

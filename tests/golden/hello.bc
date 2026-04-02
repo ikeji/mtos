@@ -1,7 +1,7 @@
 .fn main 0 i32
 .local buf U8Array
   push_int 13
-  call newU8Array 1
+  call U8Array 1
   store buf
   load buf
   push_int 0

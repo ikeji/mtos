@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <ctype.h>
 #include <unistd.h>
 
 /* ===== Values ===== */
@@ -479,12 +480,12 @@ static int is_builtin(const char *name) {
         "peek8","peek16","peek32","poke8","poke16","poke32",
         "sys_write","sys_read","sys_exit",
         "print_i32","print_u32","print_bool","print_str",
-        "len","get","set","delete","getChar","append","equals",
+        "len","get","set","delete","append","equals",
         NULL
     };
     for (int i = 0; B[i]; i++)
         if (strcmp(name, B[i]) == 0) return 1;
-    if (strncmp(name, "new", 3) == 0) return 1;
+    { int n = strlen(name); if (n > 5 && !strcmp(name+n-5,"Array") && isupper((unsigned char)name[0])) return 1; }
     return 0;
 }
 
@@ -538,11 +539,11 @@ static Value call_builtin(const char *name, Value *args, int nargs) {
         putchar('\n'); return val_void();
     }
 
-    /* newXxxArray(size) */
-    if (strncmp(name,"new",3)==0 && nargs==1) {
-        const char *aname=name+3; int alen=strlen(aname);
-        if(alen>5 && !strcmp(aname+alen-5,"Array")) {
-            int sz=args[0].ival; HeapObj *o=heap_alloc(OBJ_ARRAY,aname);
+    /* XxxArray(size) — constructor = type name */
+    if (strlen(name)>5 && !strcmp(name+strlen(name)-5,"Array") && isupper((unsigned char)name[0]) && nargs==1) {
+        int alen=strlen(name);
+        if(alen>5) {
+            int sz=args[0].ival; HeapObj *o=heap_alloc(OBJ_ARRAY,name);
             o->size=sz; o->fields=calloc(sz>0?sz:1,sizeof(Value));
             return val_ref(o);
         }
@@ -556,6 +557,10 @@ static Value call_builtin(const char *name, Value *args, int nargs) {
     if (!strcmp(name,"get") && nargs==2) {
         HeapObj *o=args[0].ref; int idx=args[1].ival;
         if(!o){fprintf(stderr,"get: null\n");exit(1);}
+        if(o->kind==OBJ_STRING){
+            if(idx<0||idx>=o->len) return val_int(0);
+            return val_int(o->bytes[idx]);
+        }
         if(idx<0||idx>=o->size){fprintf(stderr,"get: index %d/%d\n",idx,o->size);exit(1);}
         return o->fields[idx];
     }
@@ -567,11 +572,6 @@ static Value call_builtin(const char *name, Value *args, int nargs) {
     }
     if (!strcmp(name,"delete")) return val_void();
 
-    if (!strcmp(name,"getChar") && nargs==2) {
-        HeapObj *s=args[0].ref; int idx=args[1].ival;
-        if(!s||s->kind!=OBJ_STRING||idx<0||idx>=s->len) return val_int(0);
-        return val_int(s->bytes[idx]);
-    }
     if (!strcmp(name,"append") && nargs==2) {
         HeapObj *s=args[0].ref; if(!s) return args[0];
         if(args[1].kind==VAL_INT) {

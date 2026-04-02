@@ -64,7 +64,7 @@ fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
 fn ob_int(n: i32, ob: U8Array) -> void {
     if n == 0 { ob_char('0', ob); return; }
     if n < 0 { ob_char('-', ob); n = 0 - n; }
-    var tmp: U8Array = newU8Array(12);
+    var tmp: U8Array = U8Array(12);
     var len: i32 = 0; var v: i32 = n;
     while v > 0 { set(tmp,len as u32,(48+v%10) as u8); len=len+1; v=v/10; }
     var i: i32 = len - 1;
@@ -614,13 +614,21 @@ fn is_builtin(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     var a: u8=get(strtab,ss as u32);
     var b: u8=0u8; if sl>1 { b=get(strtab,(ss+1) as u32); }
     var c: u8=0u8; if sl>2 { c=get(strtab,(ss+2) as u32); }
-    if a=='n'&&b=='e'&&c=='w' { return 1; }               // new*
+    // XxxArray constructor: starts uppercase, ends "Array"
+    if sl>=6 && a>='A' && a<='Z' {
+        var e1: u8=get(strtab,(ss+sl-5) as u32);
+        var e2: u8=get(strtab,(ss+sl-4) as u32);
+        var e3: u8=get(strtab,(ss+sl-3) as u32);
+        var e4: u8=get(strtab,(ss+sl-2) as u32);
+        var e5: u8=get(strtab,(ss+sl-1) as u32);
+        if e1=='A'&&e2=='r'&&e3=='r'&&e4=='a'&&e5=='y' { return 1; }
+    }
     if sl>=4&&a=='s'&&b=='y'&&c=='s' { return 1; }        // sys_*
     if sl>=6&&a=='p'&&b=='r'&&c=='i' { return 1; }        // print_*
     if sl>=4&&a=='p'&&b=='e'&&c=='e' { return 1; }        // peek*
     if sl>=4&&a=='p'&&b=='o'&&c=='k' { return 1; }        // poke*
     if sl==3&&a=='l'&&b=='e'&&c=='n' { return 1; }        // len
-    if a=='g'&&b=='e'&&c=='t' { return 1; }               // get/getChar
+    if a=='g'&&b=='e'&&c=='t' { return 1; }               // get
     if sl==3&&a=='s'&&b=='e'&&c=='t' { return 1; }        // set
     if sl>=6&&a=='d'&&b=='e'&&c=='l' { return 1; }        // delete
     if sl>=6&&a=='a'&&b=='p'&&c=='p' { return 1; }         // append
@@ -1016,21 +1024,21 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
 }
 
 fn main() -> i32 {
-    var src:          U8Array  = newU8Array(524288);
-    var strtab:       U8Array  = newU8Array(262144);
-    var ob:           U8Array  = newU8Array(16384);
-    var string_lits:  I32Array = newI32Array(512);
-    var global_vars:  I32Array = newI32Array(1024);
-    var global_inits: I32Array = newI32Array(256);
-    var fns:          I32Array = newI32Array(2560);
-    var params_pool:  I32Array = newI32Array(4096);
-    var locals_pool:  I32Array = newI32Array(4096);
-    var instrs:       I32Array = newI32Array(262144);
-    var label_pcs:    I32Array = newI32Array(16384);
+    var src:          U8Array  = U8Array(524288);
+    var strtab:       U8Array  = U8Array(262144);
+    var ob:           U8Array  = U8Array(16384);
+    var string_lits:  I32Array = I32Array(512);
+    var global_vars:  I32Array = I32Array(1024);
+    var global_inits: I32Array = I32Array(256);
+    var fns:          I32Array = I32Array(2560);
+    var params_pool:  I32Array = I32Array(4096);
+    var locals_pool:  I32Array = I32Array(4096);
+    var instrs:       I32Array = I32Array(262144);
+    var label_pcs:    I32Array = I32Array(16384);
 
     // Read all stdin
     g_in_len=0;
-    var chunk_buf: U8Array=newU8Array(65536);
+    var chunk_buf: U8Array=U8Array(65536);
     var rdone: i32=0;
     while rdone==0&&g_in_len<524000 {
         var chunk: i32=sys_read(0,chunk_buf,65536u32);

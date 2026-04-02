@@ -278,7 +278,7 @@ __L22:
 .local buf U8Array
 .local result i32
   push_int 256
-  call newU8Array 1
+  call U8Array 1
   store buf
   push_int 0
   load buf
