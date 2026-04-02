@@ -705,6 +705,14 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
     ob_n(strtab,nm_ss,nm_sl,ob); ob_char(':',ob);ob_char(10u8,ob);
 
     // Prologue
+    // "    # prologue: frame_size=X, params=Y, locals=Z\n"
+    e4(ob); ob_char('#',ob);ob_char(' ',ob);
+    ob_char('p',ob);ob_char('r',ob);ob_char('o',ob);ob_char('l',ob);ob_char('o',ob);ob_char('g',ob);ob_char('u',ob);ob_char('e',ob);ob_char(':',ob);ob_char(' ',ob);
+    ob_char('f',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char('e',ob);ob_char('_',ob);ob_char('s',ob);ob_char('i',ob);ob_char('z',ob);ob_char('e',ob);ob_char('=',ob);ob_int(frame_size,ob);
+    ob_char(',',ob);ob_char(' ',ob);
+    ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char('s',ob);ob_char('=',ob);ob_int(np,ob);
+    ob_char(',',ob);ob_char(' ',ob);
+    ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char('=',ob);ob_int(nl,ob);ob_char(10u8,ob);
     // "    addi sp, sp, -FRAME_SIZE\n"
     e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob); ob_int(frame_size,ob); ob_char(10u8,ob);
     // "    sw   ra, (frame_size-4)(sp)\n"
@@ -776,8 +784,11 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
                 var off: i32=var_offset(strtab,fns,params_pool,locals_pool,fi,sss,ssl);
                 e_lw(ob); eregt0(ob); eNs0nl(off,ob);
             } else {
-                // "    lw   t0, NAME\n"  (GAS expands to auipc+lw)
-                e_lw(ob); eregt0(ob); ob_n(strtab,sss,ssl,ob); ob_char(10u8,ob);
+                // "    la   t1, NAME\n"
+                e_la(ob); eregt1(ob); ob_n(strtab,sss,ssl,ob); ob_char(10u8,ob);
+                // "    lw   t0, 0(t1)\n"
+                e_lw(ob); eregt0(ob);
+                ob_char('0',ob);ob_char('(',ob);ob_char('t',ob);ob_char('1',ob);ob_char(')',ob);ob_char(10u8,ob);
             }
             asm_push_t0(ob);
         }
@@ -787,10 +798,11 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
                 var off: i32=var_offset(strtab,fns,params_pool,locals_pool,fi,sss,ssl);
                 e_sw(ob); eregt0(ob); eNs0nl(off,ob);
             } else {
-                // "    sw   t0, NAME, t1\n"  (t1 used as address temp by GAS)
+                // "    la   t1, NAME\n"
+                e_la(ob); eregt1(ob); ob_n(strtab,sss,ssl,ob); ob_char(10u8,ob);
+                // "    sw   t0, 0(t1)\n"
                 e_sw(ob); eregt0(ob);
-                ob_n(strtab,sss,ssl,ob); ecomma(ob);
-                ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+                ob_char('0',ob);ob_char('(',ob);ob_char('t',ob);ob_char('1',ob);ob_char(')',ob);ob_char(10u8,ob);
             }
         }
         if op==OP_CALL {
@@ -931,7 +943,10 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
         pc=pc+1;
     }
 
-    // end of function
+    // "    # end of NAME\n\n"
+    e4(ob); ob_char('#',ob); ob_char(' ',ob);
+    ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char(' ',ob);ob_char('o',ob);ob_char('f',ob);ob_char(' ',ob);
+    ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
     ob_char(10u8,ob);
     return;
 }

@@ -1,0 +1,99 @@
+(program
+  (fn fizzbuzz
+    (params
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl i
+        (type i32)
+        (int 1)
+      )
+      (while
+        (binop <=
+          (var i)
+          (var n)
+        )
+        (block
+          (if
+            (binop ==
+              (binop %
+                (var i)
+                (int 15)
+              )
+              (int 0)
+            )
+            (block
+              (call_stmt print_str
+                (str FizzBuzz)
+              )
+            )
+            (block
+              (if
+                (binop ==
+                  (binop %
+                    (var i)
+                    (int 3)
+                  )
+                  (int 0)
+                )
+                (block
+                  (call_stmt print_str
+                    (str Fizz)
+                  )
+                )
+                (block
+                  (if
+                    (binop ==
+                      (binop %
+                        (var i)
+                        (int 5)
+                      )
+                      (int 0)
+                    )
+                    (block
+                      (call_stmt print_str
+                        (str Buzz)
+                      )
+                    )
+                    (block
+                      (call_stmt print_i32
+                        (var i)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (return
+        (int 0)
+      )
+    )
+  )
+  (fn main
+    (params)
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call fizzbuzz
+          (int 15)
+        )
+      )
+    )
+  )
+)

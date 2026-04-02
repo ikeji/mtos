@@ -1,0 +1,27 @@
+.fn main 0 i32
+.local i i32
+  push_int 0
+  store i
+__L0:
+  load i
+  push_int 10
+  lt
+  jump_ifnot __L1
+  load i
+  push_int 5
+  eq
+  jump_ifnot __L2
+  jump __L1
+__L2:
+  load i
+  push_int 1
+  add
+  store i
+  jump __L0
+__L1:
+  load i
+  return
+  return_void
+.endfn
+
+.endbc

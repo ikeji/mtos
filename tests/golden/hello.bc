@@ -1,0 +1,84 @@
+.fn main 0 i32
+.local buf U8Array
+  push_int 13
+  call newU8Array 1
+  store buf
+  load buf
+  push_int 0
+  push_int 72
+  call set 3
+  pop
+  load buf
+  push_int 1
+  push_int 101
+  call set 3
+  pop
+  load buf
+  push_int 2
+  push_int 108
+  call set 3
+  pop
+  load buf
+  push_int 3
+  push_int 108
+  call set 3
+  pop
+  load buf
+  push_int 4
+  push_int 111
+  call set 3
+  pop
+  load buf
+  push_int 5
+  push_int 44
+  call set 3
+  pop
+  load buf
+  push_int 6
+  push_int 32
+  call set 3
+  pop
+  load buf
+  push_int 7
+  push_int 87
+  call set 3
+  pop
+  load buf
+  push_int 8
+  push_int 111
+  call set 3
+  pop
+  load buf
+  push_int 9
+  push_int 114
+  call set 3
+  pop
+  load buf
+  push_int 10
+  push_int 108
+  call set 3
+  pop
+  load buf
+  push_int 11
+  push_int 100
+  call set 3
+  pop
+  load buf
+  push_int 12
+  push_int 10
+  call set 3
+  pop
+  push_int 1
+  load buf
+  push_int 13
+  call sys_write 3
+  pop
+  load buf
+  call delete 1
+  pop
+  push_int 0
+  return
+  return_void
+.endfn
+
+.endbc

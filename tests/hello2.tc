@@ -1,0 +1,17 @@
+fn to_buf(str: String) {
+  var len :u32 = len(str);
+  var buf : U8Array = newU8Array(13);
+  var i:i32 = 0;
+  while i < len {
+    set(buf, i, getChar(str, i));
+    i = i + 1;
+  }
+  return buf;
+}
+
+fn main() -> i32 {
+    var buf: U8Array = to_buf("Hello, World\n");
+    sys_write(1, buf, 13);
+    delete(buf);
+    return 0;
+}

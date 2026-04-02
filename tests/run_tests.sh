@@ -403,6 +403,15 @@ run_test_contains "tc_run_all nested_break_test.tc all methods agree" \
     "$TC_RUN_ALL $SCRIPT_DIR/nested_break_test.tc" \
     "$ALL_AGREE"
 
+# ===== Golden Tests =====
+echo ""
+if "$SCRIPT_DIR/run_golden_tests.sh"; then
+    echo "Golden tests passed."
+else
+    echo "Golden tests failed."
+    FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [ $FAIL -eq 0 ] && exit 0 || exit 1

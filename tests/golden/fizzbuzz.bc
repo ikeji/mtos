@@ -1,0 +1,73 @@
+; string table
+.string 0 "FizzBuzz"
+.string 1 "Fizz"
+.string 2 "Buzz"
+
+.fn fizzbuzz 1 i32
+.param n i32
+.local i i32
+  push_int 1
+  store i
+__L0:
+  load i
+  load n
+  le
+  jump_ifnot __L1
+  load i
+  push_int 15
+  mod
+  push_int 0
+  eq
+  jump_ifnot __L2
+  push_str 0
+  call print_str 1
+  pop
+  jump __L3
+__L2:
+  load i
+  push_int 3
+  mod
+  push_int 0
+  eq
+  jump_ifnot __L4
+  push_str 1
+  call print_str 1
+  pop
+  jump __L5
+__L4:
+  load i
+  push_int 5
+  mod
+  push_int 0
+  eq
+  jump_ifnot __L6
+  push_str 2
+  call print_str 1
+  pop
+  jump __L7
+__L6:
+  load i
+  call print_i32 1
+  pop
+__L7:
+__L5:
+__L3:
+  load i
+  push_int 1
+  add
+  store i
+  jump __L0
+__L1:
+  push_int 0
+  return
+  return_void
+.endfn
+
+.fn main 0 i32
+  push_int 15
+  call fizzbuzz 1
+  return
+  return_void
+.endfn
+
+.endbc

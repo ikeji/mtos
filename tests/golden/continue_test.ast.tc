@@ -1,0 +1,49 @@
+(program
+  (fn main
+    (params
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl sum
+        (type i32)
+        (int 0)
+      )
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(int 10))
+        (block
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+          (if
+            (binop ==
+(binop %
+(var i)
+(int 2))
+(int 0))
+            (block
+              (continue)
+            )
+          )
+          (assign sum
+            (binop +
+(var sum)
+(var i))
+          )
+        )
+      )
+      (return
+        (var sum)
+      )
+    )
+  )
+)

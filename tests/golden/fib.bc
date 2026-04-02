@@ -1,0 +1,36 @@
+.fn fib 1 i32
+.param n i32
+  load n
+  push_int 1
+  le
+  jump_ifnot __L0
+  load n
+  return
+__L0:
+  load n
+  push_int 1
+  sub
+  call fib 1
+  load n
+  push_int 2
+  sub
+  call fib 1
+  add
+  return
+  return_void
+.endfn
+
+.fn main 0 i32
+.local result i32
+  push_int 10
+  call fib 1
+  store result
+  load result
+  call print_i32 1
+  pop
+  load result
+  return
+  return_void
+.endfn
+
+.endbc

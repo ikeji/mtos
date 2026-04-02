@@ -1,0 +1,81 @@
+(program
+  (fn to_buf
+    (params
+      (param str
+        (type String)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl len
+        (type u32)
+        (call len
+          (var str)
+        )
+      )
+      (var_decl buf
+        (type U8Array)
+        (call newU8Array
+          (int 13)
+        )
+      )
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+          (var i)
+          (var len)
+        )
+        (block
+          (call_stmt set
+            (var buf)
+            (var i)
+            (call getChar
+              (var str)
+              (var i)
+            )
+          )
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (return
+        (var buf)
+      )
+    )
+  )
+  (fn main
+    (params)
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl buf
+        (type U8Array)
+        (call to_buf
+          (str Hello, World
+)
+        )
+      )
+      (call_stmt sys_write
+        (int 1)
+        (var buf)
+        (int 13)
+      )
+      (call_stmt delete
+        (var buf)
+      )
+      (return
+        (int 0)
+      )
+    )
+  )
+)

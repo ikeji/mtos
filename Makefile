@@ -30,4 +30,10 @@ bc2asm: src/bc2asm.c
 clean:
 	rm -f $(OBJS) src/parse_main.o src/typecheck_main.o src/interp_main.o src/codegen_main.o parse typecheck interp codegen bcrun bc2asm
 
-.PHONY: all clean
+test: all
+	./tests/run_tests.sh
+
+update-golden: all
+	./tests/update_golden.sh
+
+.PHONY: all clean test update-golden

@@ -1,0 +1,58 @@
+; string table
+.string 0 "Hello, World\n"
+
+.fn to_buf 1 void
+.param str String
+.local len u32
+.local buf U8Array
+.local i i32
+  load str
+  call len 1
+  store len
+  push_int 13
+  call newU8Array 1
+  store buf
+  push_int 0
+  store i
+__L0:
+  load i
+  load len
+  lt
+  jump_ifnot __L1
+  load buf
+  load i
+  load str
+  load i
+  call getChar 2
+  call set 3
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L0
+__L1:
+  load buf
+  return
+  return_void
+.endfn
+
+.fn main 0 i32
+.local buf U8Array
+  push_str 0
+  call to_buf 1
+  store buf
+  push_int 1
+  load buf
+  push_int 13
+  call sys_write 3
+  pop
+  load buf
+  call delete 1
+  pop
+  push_int 0
+  return
+  return_void
+.endfn
+
+.endbc

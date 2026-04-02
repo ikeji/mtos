@@ -1,0 +1,71 @@
+.fn classify 1 i32
+.param x i32
+  load x
+  push_int 0
+  lt
+  jump_ifnot __L0
+  push_int 0
+  return
+  jump __L1
+__L0:
+  load x
+  push_int 0
+  eq
+  jump_ifnot __L2
+  push_int 1
+  return
+  jump __L3
+__L2:
+  load x
+  push_int 10
+  lt
+  jump_ifnot __L4
+  push_int 2
+  return
+  jump __L5
+__L4:
+  push_int 3
+  return
+__L5:
+__L3:
+__L1:
+  return_void
+.endfn
+
+.fn main 0 i32
+.local a i32
+.local b i32
+.local c i32
+.local d i32
+  push_int 0
+  push_int 5
+  sub
+  call classify 1
+  store a
+  push_int 0
+  call classify 1
+  store b
+  push_int 7
+  call classify 1
+  store c
+  push_int 42
+  call classify 1
+  store d
+  load a
+  call print_i32 1
+  pop
+  load b
+  call print_i32 1
+  pop
+  load c
+  call print_i32 1
+  pop
+  load d
+  call print_i32 1
+  pop
+  push_int 0
+  return
+  return_void
+.endfn
+
+.endbc

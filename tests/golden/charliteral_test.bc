@@ -1,0 +1,42 @@
+.fn main 0 i32
+.local a u8
+.local z u8
+.local n u8
+.local t u8
+.local q u8
+  push_int 65
+  store a
+  push_int 90
+  store z
+  push_int 10
+  store n
+  push_int 9
+  store t
+  push_int 39
+  store q
+  load a
+  cast i32
+  call print_i32 1
+  pop
+  load z
+  cast i32
+  call print_i32 1
+  pop
+  load n
+  cast i32
+  call print_i32 1
+  pop
+  load t
+  cast i32
+  call print_i32 1
+  pop
+  load q
+  cast i32
+  call print_i32 1
+  pop
+  push_int 0
+  return
+  return_void
+.endfn
+
+.endbc

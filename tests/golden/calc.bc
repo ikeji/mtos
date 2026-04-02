@@ -1,0 +1,302 @@
+; globals
+.global g_pos i32 0
+.global g_len i32 0
+
+.fn is_digit 1 bool
+.param c u8
+  load c
+  push_int 48
+  ge
+  jump_ifnot __L0
+  load c
+  push_int 57
+  le
+  jump_ifnot __L0
+  push_int 1
+  jump __L1
+__L0:
+  push_int 0
+__L1:
+  return
+  return_void
+.endfn
+
+.fn is_space 1 bool
+.param c u8
+  load c
+  push_int 32
+  eq
+  jump_if __L2
+  load c
+  push_int 9
+  eq
+  jump_if __L2
+  push_int 0
+  jump __L3
+__L2:
+  push_int 1
+__L3:
+  return
+  return_void
+.endfn
+
+.fn cur_char 1 u8
+.param buf U8Array
+  load g_pos
+  load g_len
+  ge
+  jump_ifnot __L4
+  push_int 0
+  return
+__L4:
+  load buf
+  load g_pos
+  cast u32
+  call get 2
+  return
+  return_void
+.endfn
+
+.fn skip_spaces 1 void
+.param buf U8Array
+__L5:
+  load g_pos
+  load g_len
+  lt
+  jump_ifnot __L7
+  load buf
+  call cur_char 1
+  call is_space 1
+  jump_ifnot __L7
+  push_int 1
+  jump __L8
+__L7:
+  push_int 0
+__L8:
+  jump_ifnot __L6
+  load g_pos
+  push_int 1
+  add
+  store g_pos
+  jump __L5
+__L6:
+  return_void
+  return_void
+.endfn
+
+.fn parse_num 1 i32
+.param buf U8Array
+.local result i32
+  load buf
+  call skip_spaces 1
+  pop
+  push_int 0
+  store result
+__L9:
+  load g_pos
+  load g_len
+  lt
+  jump_ifnot __L11
+  load buf
+  call cur_char 1
+  call is_digit 1
+  jump_ifnot __L11
+  push_int 1
+  jump __L12
+__L11:
+  push_int 0
+__L12:
+  jump_ifnot __L10
+  load result
+  push_int 10
+  mul
+  load buf
+  call cur_char 1
+  cast i32
+  push_int 48
+  sub
+  add
+  store result
+  load g_pos
+  push_int 1
+  add
+  store g_pos
+  jump __L9
+__L10:
+  load result
+  return
+  return_void
+.endfn
+
+.fn parse_mul 1 i32
+.param buf U8Array
+.local left i32
+.local op u8
+.local right i32
+  load buf
+  call parse_num 1
+  store left
+  load buf
+  call skip_spaces 1
+  pop
+__L13:
+  load g_pos
+  load g_len
+  lt
+  jump_ifnot __L15
+  load buf
+  call cur_char 1
+  push_int 42
+  eq
+  jump_if __L17
+  load buf
+  call cur_char 1
+  push_int 47
+  eq
+  jump_if __L17
+  push_int 0
+  jump __L18
+__L17:
+  push_int 1
+__L18:
+  jump_ifnot __L15
+  push_int 1
+  jump __L16
+__L15:
+  push_int 0
+__L16:
+  jump_ifnot __L14
+  load buf
+  call cur_char 1
+  store op
+  load g_pos
+  push_int 1
+  add
+  store g_pos
+  load buf
+  call parse_num 1
+  store right
+  load op
+  push_int 42
+  eq
+  jump_ifnot __L19
+  load left
+  load right
+  mul
+  store left
+  jump __L20
+__L19:
+  load left
+  load right
+  div
+  store left
+__L20:
+  load buf
+  call skip_spaces 1
+  pop
+  jump __L13
+__L14:
+  load left
+  return
+  return_void
+.endfn
+
+.fn parse_add 1 i32
+.param buf U8Array
+.local left i32
+.local op u8
+.local right i32
+  load buf
+  call parse_mul 1
+  store left
+  load buf
+  call skip_spaces 1
+  pop
+__L21:
+  load g_pos
+  load g_len
+  lt
+  jump_ifnot __L23
+  load buf
+  call cur_char 1
+  push_int 43
+  eq
+  jump_if __L25
+  load buf
+  call cur_char 1
+  push_int 45
+  eq
+  jump_if __L25
+  push_int 0
+  jump __L26
+__L25:
+  push_int 1
+__L26:
+  jump_ifnot __L23
+  push_int 1
+  jump __L24
+__L23:
+  push_int 0
+__L24:
+  jump_ifnot __L22
+  load buf
+  call cur_char 1
+  store op
+  load g_pos
+  push_int 1
+  add
+  store g_pos
+  load buf
+  call parse_mul 1
+  store right
+  load op
+  push_int 43
+  eq
+  jump_ifnot __L27
+  load left
+  load right
+  add
+  store left
+  jump __L28
+__L27:
+  load left
+  load right
+  sub
+  store left
+__L28:
+  load buf
+  call skip_spaces 1
+  pop
+  jump __L21
+__L22:
+  load left
+  return
+  return_void
+.endfn
+
+.fn main 0 i32
+.local buf U8Array
+.local result i32
+  push_int 256
+  call newU8Array 1
+  store buf
+  push_int 0
+  load buf
+  push_int 256
+  call sys_read 3
+  store g_len
+  load buf
+  call parse_add 1
+  store result
+  load result
+  call print_i32 1
+  pop
+  load buf
+  call delete 1
+  pop
+  push_int 0
+  return
+  return_void
+.endfn
+
+.endbc

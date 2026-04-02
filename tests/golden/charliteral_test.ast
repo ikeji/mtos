@@ -1,0 +1,63 @@
+(program
+  (fn main
+    (params)
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl a
+        (type u8)
+        (int 65)
+      )
+      (var_decl z
+        (type u8)
+        (int 90)
+      )
+      (var_decl n
+        (type u8)
+        (int 10)
+      )
+      (var_decl t
+        (type u8)
+        (int 9)
+      )
+      (var_decl q
+        (type u8)
+        (int 39)
+      )
+      (call_stmt print_i32
+        (cast
+          (var a)
+          (type i32)
+        )
+      )
+      (call_stmt print_i32
+        (cast
+          (var z)
+          (type i32)
+        )
+      )
+      (call_stmt print_i32
+        (cast
+          (var n)
+          (type i32)
+        )
+      )
+      (call_stmt print_i32
+        (cast
+          (var t)
+          (type i32)
+        )
+      )
+      (call_stmt print_i32
+        (cast
+          (var q)
+          (type i32)
+        )
+      )
+      (return
+        (int 0)
+      )
+    )
+  )
+)

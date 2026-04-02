@@ -1,0 +1,95 @@
+(program
+  (fn classify
+    (params
+      (param x
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (if
+        (binop <
+(var x)
+(int 0))
+        (block
+          (return
+            (int 0)
+          )
+        )
+        (if
+          (binop ==
+(var x)
+(int 0))
+          (block
+            (return
+              (int 1)
+            )
+          )
+          (if
+            (binop <
+(var x)
+(int 10))
+            (block
+              (return
+                (int 2)
+              )
+            )
+            (block
+              (return
+                (int 3)
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  (fn main
+    (params
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl a
+        (type i32)
+        (call classify
+(binop -
+(int 0)
+(int 5)))
+      )
+      (var_decl b
+        (type i32)
+        (call classify
+(int 0))
+      )
+      (var_decl c
+        (type i32)
+        (call classify
+(int 7))
+      )
+      (var_decl d
+        (type i32)
+        (call classify
+(int 42))
+      )
+      (call_stmt print_i32
+        (var a)
+      )
+      (call_stmt print_i32
+        (var b)
+      )
+      (call_stmt print_i32
+        (var c)
+      )
+      (call_stmt print_i32
+        (var d)
+      )
+      (return
+        (int 0)
+      )
+    )
+  )
+)

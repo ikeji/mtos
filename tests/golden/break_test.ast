@@ -1,0 +1,40 @@
+(program
+  (fn main
+    (params)
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+          (var i)
+          (int 10)
+        )
+        (block
+          (if
+            (binop ==
+              (var i)
+              (int 5)
+            )
+            (block
+              (break)
+            )
+          )
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (return
+        (var i)
+      )
+    )
+  )
+)

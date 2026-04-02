@@ -1,0 +1,68 @@
+(program
+  (fn main
+    (params)
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl result
+        (type i32)
+        (int 0)
+      )
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+          (var i)
+          (int 3)
+        )
+        (block
+          (var_decl j
+            (type i32)
+            (int 0)
+          )
+          (while
+            (binop <
+              (var j)
+              (int 10)
+            )
+            (block
+              (if
+                (binop ==
+                  (var j)
+                  (int 2)
+                )
+                (block
+                  (break)
+                )
+              )
+              (assign result
+                (binop +
+                  (var result)
+                  (int 1)
+                )
+              )
+              (assign j
+                (binop +
+                  (var j)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (return
+        (var result)
+      )
+    )
+  )
+)
