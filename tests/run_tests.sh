@@ -11,8 +11,8 @@ BCRUN="$ROOT_DIR/bcrun"
 BC2ASM="$ROOT_DIR/bc2asm"
 RISCV_CC="riscv64-unknown-elf-gcc"
 RISCV_FLAGS="-march=rv32im -mabi=ilp32 -static -nostdlib -lgcc -Wl,-Ttext-segment=0x10000"
-RUNTIME="$ROOT_DIR/src/runtime_syscall.c"
-CRT0="$ROOT_DIR/src/crt0.s"
+RUNTIME="$ROOT_DIR/compiler/runtime_syscall.c"
+CRT0="$ROOT_DIR/compiler/crt0.s"
 QEMU="qemu-riscv32"
 
 # Helper: compile .tc → rv32 ELF and run with qemu
@@ -236,7 +236,7 @@ run_test_exit "bcrun nested break only exits inner loop (result=6)" \
 echo "=== Pipeline Tests ==="
 echo ""
 
-SRC_DIR="$ROOT_DIR/src"
+SRC_DIR="$ROOT_DIR/tc"
 
 # パイプライン用チェックヘルパー
 check_output() {
@@ -309,7 +309,7 @@ check_output "pipeline[3]: continue sums odd 1-9 = 25" "25" "$?"
 echo "=== bc2asm.tc Pipeline Tests ==="
 echo ""
 
-BC2ASM_TC_BC=$({ "$CODEGEN" "$SRC_DIR/bc2asm.tc"; } 2>/dev/null)
+BC2ASM_TC_BC=$({ "$CODEGEN" "$ROOT_DIR/tc/bc2asm.tc"; } 2>/dev/null)
 
 # bc2asm.tc で fib.tc バイトコードを RISC-V アセンブリに変換して実行
 FIB_ASM_S=$( { printf '%s\n' "$BC2ASM_TC_BC"; "$CODEGEN" "$SCRIPT_DIR/fib.tc"; } | "$BCRUN" 2>/dev/null )

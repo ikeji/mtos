@@ -22,11 +22,12 @@ INTERP="$ROOT_DIR/interp"
 CODEGEN="$ROOT_DIR/codegen"
 BCRUN="$ROOT_DIR/bcrun"
 BC2ASM="$ROOT_DIR/bc2asm"
-SRC_DIR="$ROOT_DIR/src"
+COMPILER_DIR="$ROOT_DIR/compiler"
+TC_DIR="$ROOT_DIR/tc"
 RISCV_CC="riscv64-unknown-elf-gcc"
 RISCV_FLAGS="-march=rv32im -mabi=ilp32 -static -nostdlib -lgcc -Wl,-Ttext-segment=0x10000"
-RUNTIME="$SRC_DIR/runtime_syscall.c"
-CRT0="$SRC_DIR/crt0.s"
+RUNTIME="$COMPILER_DIR/runtime_syscall.c"
+CRT0="$COMPILER_DIR/crt0.s"
 QEMU="qemu-riscv32"
 
 usage() {
@@ -76,15 +77,15 @@ case "$METHOD" in
         ;;
 
     pipeline)
-        PARSE_TC_BC=$("$CODEGEN" "$SRC_DIR/parse.tc" 2>/dev/null)
-        CODEGEN_TC_BC=$("$CODEGEN" "$SRC_DIR/codegen.tc" 2>/dev/null)
+        PARSE_TC_BC=$("$CODEGEN" "$TC_DIR/parse.tc" 2>/dev/null)
+        CODEGEN_TC_BC=$("$CODEGEN" "$TC_DIR/codegen.tc" 2>/dev/null)
         AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$TC_FILE"; } | "$BCRUN" 2>/dev/null)
         BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
         { printf '%s\n' "$BC"; emit_stdin; } | "$BCRUN"
         ;;
 
     bc2asm_tc)
-        BC2ASM_TC_BC=$("$CODEGEN" "$SRC_DIR/bc2asm.tc" 2>/dev/null)
+        BC2ASM_TC_BC=$("$CODEGEN" "$TC_DIR/bc2asm.tc" 2>/dev/null)
         ASM=$(mktemp /tmp/tc_XXXXXX.s)
         ELF=$(mktemp /tmp/tc_XXXXXX)
         trap "rm -f '$ASM' '$ELF'" EXIT

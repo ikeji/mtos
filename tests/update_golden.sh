@@ -4,7 +4,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 GOLDEN_DIR="$SCRIPT_DIR/golden"
-SRC_DIR="$ROOT_DIR/src"
+TC_DIR="$ROOT_DIR/tc"
 
 PARSE="$ROOT_DIR/parse"
 CODEGEN="$ROOT_DIR/codegen"
@@ -38,7 +38,7 @@ get_stdin() {
     esac
 }
 
-PARSE_TC_BC=$("$PARSE" "$SRC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
+PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
 
 echo "Updating golden files in $GOLDEN_DIR..."
 

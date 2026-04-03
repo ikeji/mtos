@@ -4,7 +4,8 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 GOLDEN_DIR="$SCRIPT_DIR/golden"
-SRC_DIR="$ROOT_DIR/src"
+TC_DIR="$ROOT_DIR/tc"
+COMPILER_DIR="$ROOT_DIR/compiler"
 
 PARSE="$ROOT_DIR/parse"
 CODEGEN="$ROOT_DIR/codegen"
@@ -14,8 +15,8 @@ BC2ASM="$ROOT_DIR/bc2asm"
 # RISC-V Toolchain (Optional for checking execution results)
 RISCV_CC="riscv64-unknown-elf-gcc"
 RISCV_FLAGS="-march=rv32im -mabi=ilp32 -static -nostdlib -lgcc -Wl,-Ttext-segment=0x10000"
-RUNTIME="$SRC_DIR/runtime_syscall.c"
-CRT0="$SRC_DIR/crt0.s"
+RUNTIME="$COMPILER_DIR/runtime_syscall.c"
+CRT0="$COMPILER_DIR/crt0.s"
 QEMU="qemu-riscv32"
 
 PASS=0
@@ -63,9 +64,9 @@ if [ ! -x "$PARSE" ] || [ ! -x "$CODEGEN" ] || [ ! -x "$BCRUN" ] || [ ! -x "$BC2
 fi
 
 # Pre-compile self-hosted tools
-PARSE_TC_BC=$("$PARSE" "$SRC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
-CODEGEN_TC_BC=$("$PARSE" "$SRC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
-BC2ASM_TC_BC=$("$PARSE" "$SRC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
+PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
+CODEGEN_TC_BC=$("$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
+BC2ASM_TC_BC=$("$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
 
 echo "=== Running Golden Tests (C and Self-hosted) ==="
 
