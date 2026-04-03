@@ -108,4 +108,5 @@ docs/       ドキュメント
 | `docs/filesystem.md` | ファイルシステム設計 |
 | `docs/roadmap.md` | 開発ロードマップ |
 | `docs/tinyc_cheatsheet.md` | tinyc 言語クイックリファレンス |
+| `docs/bc_format.md` | バイトコード（`.bc`）フォーマット仕様 |
 | `docs/sources.md` | このファイル：ソースファイル一覧と説明 |
