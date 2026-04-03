@@ -19,6 +19,10 @@
       store a
       ```
 - [x] Golden testsの対象に、parser.tcなどのコンパイラのコードを入れる。
+- [ ] Gen2とGen3の一致検証（真の自己ホスト確認）をテストに追加する。
+      - Gen1(C)でtc/を → Gen2 BC
+      - Gen2でtc/を → Gen3 BC
+      - Gen2 BC == Gen3 BC を確認
 - [ ] 今の compiler ディレクトリを、bootstrapとかの名前にし、tcディレクトリのコンパイラ関連コードをcompilerディレクトリにする。
 - [ ] 引数の型や数が違う同名の関数(オーバーロード)をサポートしないといけない。
       - [ ] .bcのcallは今は`call to_buf 1`という形式だが、`call to_buf String`という形式にする必要がある。

@@ -56,13 +56,22 @@ source.tc
 
 ## テスト構造
 
-- `tests/run_golden_tests.sh` — C実装と自己ホスト実装の両方を比較
-  - `AST - C` / `AST - parse.tc` — パーサー出力の一致確認
-  - `BC - C` / `BC - codegen.tc` — バイトコードの一致確認
-  - `ASM - C` / `ASM - bc2asm.tc` — アセンブリの一致確認
+### 世代の定義
+- **Gen1 (C実装)**: `compiler/` の C コンパイラ（ブートストラップ用）
+- **Gen2**: `tc/` のコンパイラを Gen1 でコンパイルしたもの
+- **Gen3**: `tc/` のコンパイラを Gen2 でコンパイルしたもの
+
+### 現在のテスト（Gen1 vs Gen2 の比較）
+- `tests/run_golden_tests.sh` — golden（Gen1出力）と自己ホスト実装（Gen2）を比較
+  - `AST - C` / `AST - parse.tc` — パーサー出力の一致確認（Gen1 vs Gen2）
+  - `BC - C` / `BC - codegen.tc` — バイトコードの一致確認（Gen1 vs Gen2）
+  - `ASM - C` / `ASM - bc2asm.tc` — アセンブリの一致確認（Gen1 vs Gen2）
   - `Exec - bcrun C` / `Exec - bcrun tc` — 実行結果の確認
   - `Exec - rv32 C` / `Exec - rv32 tc` — RISC-V実機（qemu）での実行確認
 - goldenファイルの更新: `make update-golden`
+
+### 未実装：Gen2 vs Gen3 の比較（真の自己ホスト確認）
+Gen2 == Gen3 を確認することで、自己ホストコンパイラが正しく自分自身をコンパイルできることを証明できる。
 
 ## 言語仕様
 
