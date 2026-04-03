@@ -29,7 +29,7 @@
             )
             (block
               (call_stmt print_str
-                (str FizzBuzz)
+                (str "FizzBuzz")
               )
             )
             (block
@@ -43,7 +43,7 @@
                 )
                 (block
                   (call_stmt print_str
-                    (str Fizz)
+                    (str "Fizz")
                   )
                 )
                 (block
@@ -57,7 +57,7 @@
                     )
                     (block
                       (call_stmt print_str
-                        (str Buzz)
+                        (str "Buzz")
                       )
                     )
                     (block

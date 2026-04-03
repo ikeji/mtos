@@ -572,8 +572,8 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         return;
     }
     if g_tok == TK_STR_LIT {
-        ob_char('(', ob); ob_string("str", ob); ob_char(' ', ob);
-        // Escape and print string content
+        ob_char('(', ob); ob_string("str", ob); ob_char(' ', ob); ob_char('"', ob);
+        // Escape and print string content with double quotes
         var i: i32 = 0;
         while i < g_tok_slen {
             var ch: u8 = get(tok, i as u32);
@@ -582,12 +582,13 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
                 if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
                 else {
                     if ch == 10u8 { ob_char('\\', ob); ob_char('n', ob); }
-                    else { ob_char(ch, ob); }
+                    else { if ch == 9u8 { ob_char('\\', ob); ob_char('t', ob); }
+                           else { ob_char(ch, ob); } }
                 }
             }
             i = i + 1;
         }
-        ob_char(')', ob);  // )
+        ob_char('"', ob); ob_char(')', ob);  // ")
         lex_tok(src, tok);
         return;
     }

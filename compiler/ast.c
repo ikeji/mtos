@@ -36,6 +36,21 @@ static void print_indent(int indent) {
     for (int i = 0; i < indent * 2; i++) putchar(' ');
 }
 
+static void print_escaped_str(const char *s) {
+    putchar('"');
+    for (; *s; s++) {
+        switch ((unsigned char)*s) {
+            case '\n': fputs("\\n", stdout); break;
+            case '\t': fputs("\\t", stdout); break;
+            case '\r': fputs("\\r", stdout); break;
+            case '\\': fputs("\\\\", stdout); break;
+            case '"':  fputs("\\\"", stdout); break;
+            default:   putchar(*s); break;
+        }
+    }
+    putchar('"');
+}
+
 void ast_print(AstNode *node, int indent) {
     if (!node) return;
     print_indent(indent);
@@ -51,6 +66,9 @@ void ast_print(AstNode *node, int indent) {
         if (node->sval) {
             /* suffix as annotation if not already annotated */
         }
+    } else if (strcmp(node->kind, "str") == 0 && node->sval) {
+        putchar(' ');
+        print_escaped_str(node->sval);
     } else if (node->sval) {
         putchar(' ');
         fputs(node->sval, stdout);
@@ -141,6 +159,36 @@ static AstNode *reader_read_node(Reader *r) {
         if (r->ch == '(') {
             AstNode *child = reader_read_node(r);
             ast_add_child(n, child);
+        } else if (r->ch == '"' && strcmp(n->kind, "str") == 0 && n->sval == NULL) {
+            /* quoted string literal for str nodes */
+            reader_advance(r); /* consume opening '"' */
+            int cap = 64, len = 0;
+            char *buf = malloc(cap);
+            if (!buf) { fprintf(stderr, "out of memory\n"); exit(1); }
+            while (r->ch != EOF && r->ch != '"') {
+                char c;
+                if (r->ch == '\\') {
+                    reader_advance(r);
+                    switch (r->ch) {
+                        case 'n': c = '\n'; break;
+                        case 't': c = '\t'; break;
+                        case 'r': c = '\r'; break;
+                        case '\\': c = '\\'; break;
+                        case '"': c = '"'; break;
+                        default: c = (char)r->ch; break;
+                    }
+                } else {
+                    c = (char)r->ch;
+                }
+                if (len + 1 >= cap) { cap *= 2; buf = realloc(buf, cap); }
+                buf[len++] = c;
+                reader_advance(r);
+            }
+            buf[len] = '\0';
+            if (r->ch == '"') reader_advance(r); /* consume closing '"' */
+            n->sval = buf;
+            reader_skip_ws(r);
+            continue;
         } else {
             /* atom: could be sval or ival */
             char *atom = reader_read_atom(r);

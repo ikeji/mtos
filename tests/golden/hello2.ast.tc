@@ -57,7 +57,7 @@
       (var_decl buf
         (type U8Array)
         (call to_buf
-(str Hello, World\n))
+(str "Hello, World\n"))
       )
       (call_stmt sys_write
         (int 1)
