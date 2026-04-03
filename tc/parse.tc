@@ -43,25 +43,30 @@ var TK_GT: i32 = 36;
 var TK_GTEQ: i32 = 37;
 var TK_EQ: i32 = 38;
 var TK_ARROW: i32 = 39;
-var TK_LPAREN: i32 = 40;
-var TK_RPAREN: i32 = 41;
-var TK_LBRACE: i32 = 42;
-var TK_RBRACE: i32 = 43;
-var TK_COMMA: i32 = 44;
-var TK_SEMI: i32 = 45;
-var TK_COLON: i32 = 46;
-var TK_INT_LIT: i32 = 47;
-var TK_STR_LIT: i32 = 48;
-var TK_IDENT: i32 = 49;
-var TK_EOF: i32 = 50;
-var TK_BREAK: i32 = 51;
-var TK_CONTINUE: i32 = 52;
+var TK_PLUS_EQ: i32 = 40;
+var TK_MINUS_EQ: i32 = 41;
+var TK_STAR_EQ: i32 = 42;
+var TK_SLASH_EQ: i32 = 43;
+var TK_PERCENT_EQ: i32 = 44;
+var TK_LPAREN: i32 = 45;
+var TK_RPAREN: i32 = 46;
+var TK_LBRACE: i32 = 47;
+var TK_RBRACE: i32 = 48;
+var TK_COMMA: i32 = 49;
+var TK_SEMI: i32 = 50;
+var TK_COLON: i32 = 51;
+var TK_INT_LIT: i32 = 52;
+var TK_STR_LIT: i32 = 53;
+var TK_IDENT: i32 = 54;
+var TK_EOF: i32 = 55;
+var TK_BREAK: i32 = 56;
+var TK_CONTINUE: i32 = 57;
 
 // ===== Lexer state =====
 var g_pos: i32 = 0;
 var g_len: i32 = 0;
 var g_line: i32 = 1;
-var g_tok: i32 = 50;      // TK_EOF
+var g_tok: i32 = 55;      // TK_EOF
 var g_tok_ival: i32 = 0;
 var g_tok_slen: i32 = 0;  // length of current token string in tok buf
 var g_tok_neg: i32 = 0;   // 1 if int literal is negative
@@ -436,8 +441,18 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
     g_pos = g_pos + 1;  // consume the character
 
     // Single and multi-character operators
-    if c == '+' { g_tok = TK_PLUS; return; }    // +
-    if c == '%' { g_tok = TK_PERCENT; return; } // %
+    if c == '+' {  // + or +=
+        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+            g_pos = g_pos + 1; g_tok = TK_PLUS_EQ; return;
+        }
+        g_tok = TK_PLUS; return;
+    }
+    if c == '%' {  // % or %=
+        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+            g_pos = g_pos + 1; g_tok = TK_PERCENT_EQ; return;
+        }
+        g_tok = TK_PERCENT; return;
+    }
     if c == '^' { g_tok = TK_CARET; return; }   // ^
     if c == '(' { g_tok = TK_LPAREN; return; }  // (
     if c == ')' { g_tok = TK_RPAREN; return; }  // )
@@ -447,10 +462,16 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
     if c == ';' { g_tok = TK_SEMI; return; }    // ;
     if c == ':' { g_tok = TK_COLON; return; }   // :
 
-    if c == '*' {  // *
+    if c == '*' {  // * or *=
+        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+            g_pos = g_pos + 1; g_tok = TK_STAR_EQ; return;
+        }
         g_tok = TK_STAR; return;
     }
-    if c == '/' {  // /
+    if c == '/' {  // / or /=
+        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+            g_pos = g_pos + 1; g_tok = TK_SLASH_EQ; return;
+        }
         g_tok = TK_SLASH; return;
     }
     if c == '&' {  // & or &&
@@ -495,9 +516,12 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
         }
         g_tok = TK_GT; return;
     }
-    if c == '-' {  // - or ->
+    if c == '-' {  // - or -> or -=
         if g_pos < g_len && get(src, g_pos as u32) == '>' {
             g_pos = g_pos + 1; g_tok = TK_ARROW; return;
+        }
+        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+            g_pos = g_pos + 1; g_tok = TK_MINUS_EQ; return;
         }
         g_tok = TK_MINUS; return;
     }
@@ -1034,6 +1058,30 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void
         ob_char(10u8, ob);
         ob_indent(indent + 1, ob);
         pars_expr(src, tok, ob);
+        expect_tok(TK_SEMI, src, tok);
+        ob_char(10u8, ob);
+        ob_indent(indent, ob);
+        ob_char(')', ob);
+    } else if g_tok == TK_PLUS_EQ || g_tok == TK_MINUS_EQ ||
+               g_tok == TK_STAR_EQ || g_tok == TK_SLASH_EQ || g_tok == TK_PERCENT_EQ {
+        // desugar: NAME OP= RHS  →  (assign NAME (binop OP (var NAME) RHS))
+        var the_op: i32 = g_tok;
+        lex_tok(src, tok);
+        ob_char('(', ob); ob_string("assign", ob); ob_char(' ', ob);
+        ob_n(name_buf, 0, name_len, ob);
+        ob_char(10u8, ob);
+        ob_indent(indent + 1, ob);
+        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob);
+        if the_op == TK_PLUS_EQ    { ob_char('+', ob); }
+        if the_op == TK_MINUS_EQ   { ob_char('-', ob); }
+        if the_op == TK_STAR_EQ    { ob_char('*', ob); }
+        if the_op == TK_SLASH_EQ   { ob_char('/', ob); }
+        if the_op == TK_PERCENT_EQ { ob_char('%', ob); }
+        ob_char(10u8, ob);
+        ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
+        ob_n(name_buf, 0, name_len, ob); ob_char(')', ob); ob_char(10u8, ob);
+        pars_expr(src, tok, ob);
+        ob_char(')', ob);
         expect_tok(TK_SEMI, src, tok);
         ob_char(10u8, ob);
         ob_indent(indent, ob);

@@ -218,14 +218,27 @@ void lexer_tokenize(Lexer *l) {
         Token t = make_token(TK_EOF, line); /* placeholder */
 
         switch (c) {
-            case '+': t.kind = TK_PLUS; advance(l); break;
+            case '+':
+                if (n == '=') { t.kind = TK_PLUS_EQ; advance(l); advance(l); }
+                else { t.kind = TK_PLUS; advance(l); }
+                break;
             case '-':
                 if (n == '>') { t.kind = TK_ARROW; advance(l); advance(l); }
+                else if (n == '=') { t.kind = TK_MINUS_EQ; advance(l); advance(l); }
                 else { t.kind = TK_MINUS; advance(l); }
                 break;
-            case '*': t.kind = TK_STAR; advance(l); break;
-            case '/': t.kind = TK_SLASH; advance(l); break;
-            case '%': t.kind = TK_PERCENT; advance(l); break;
+            case '*':
+                if (n == '=') { t.kind = TK_STAR_EQ; advance(l); advance(l); }
+                else { t.kind = TK_STAR; advance(l); }
+                break;
+            case '/':
+                if (n == '=') { t.kind = TK_SLASH_EQ; advance(l); advance(l); }
+                else { t.kind = TK_SLASH; advance(l); }
+                break;
+            case '%':
+                if (n == '=') { t.kind = TK_PERCENT_EQ; advance(l); advance(l); }
+                else { t.kind = TK_PERCENT; advance(l); }
+                break;
             case '&':
                 if (n == '&') { t.kind = TK_AMPAMP; advance(l); advance(l); }
                 else { t.kind = TK_AMP; advance(l); }
@@ -308,6 +321,8 @@ const char *token_kind_name(TokenKind k) {
         case TK_LT: return "<"; case TK_LTEQ: return "<=";
         case TK_GT: return ">"; case TK_GTEQ: return ">=";
         case TK_EQ: return "="; case TK_ARROW: return "->";
+        case TK_PLUS_EQ: return "+="; case TK_MINUS_EQ: return "-=";
+        case TK_STAR_EQ: return "*="; case TK_SLASH_EQ: return "/="; case TK_PERCENT_EQ: return "%=";
         case TK_LPAREN: return "("; case TK_RPAREN: return ")";
         case TK_LBRACE: return "{"; case TK_RBRACE: return "}";
         case TK_COMMA: return ","; case TK_SEMI: return ";"; case TK_COLON: return ":";

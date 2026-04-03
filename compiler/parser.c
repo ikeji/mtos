@@ -403,6 +403,27 @@ static AstNode *parse_ident_stmt(Parser *p) {
         n->sval = name;
         ast_add_child(n, val);
         return n;
+    } else if (check(p, TK_PLUS_EQ) || check(p, TK_MINUS_EQ) ||
+               check(p, TK_STAR_EQ) || check(p, TK_SLASH_EQ) || check(p, TK_PERCENT_EQ)) {
+        /* desugar: a OP= b  →  assign a (OP (var a) b) */
+        TokenKind op = cur_tok(p)->kind;
+        advance_p(p);
+        AstNode *rhs = parse_expr(p);
+        expect(p, TK_SEMI);
+        const char *opname = (op == TK_PLUS_EQ) ? "+" :
+                             (op == TK_MINUS_EQ) ? "-" :
+                             (op == TK_STAR_EQ)  ? "*" :
+                             (op == TK_SLASH_EQ) ? "/" : "%";
+        AstNode *lhs_var = ast_node("var", line);
+        lhs_var->sval = strdup(name);
+        AstNode *binop = ast_node("binop", line);
+        binop->sval = strdup(opname);
+        ast_add_child(binop, lhs_var);
+        ast_add_child(binop, rhs);
+        AstNode *n = ast_node("assign", line);
+        n->sval = name;
+        ast_add_child(n, binop);
+        return n;
     } else if (check(p, TK_LPAREN)) {
         advance_p(p);
         AstNode *call = ast_node("call_stmt", line);
