@@ -1,0 +1,8043 @@
+(program
+  (var_decl NK_PROGRAM
+    (type i32)
+    (int 0)
+  )
+  (var_decl NK_FN
+    (type i32)
+    (int 1)
+  )
+  (var_decl NK_STRUCT
+    (type i32)
+    (int 2)
+  )
+  (var_decl NK_PARAMS
+    (type i32)
+    (int 3)
+  )
+  (var_decl NK_PARAM
+    (type i32)
+    (int 4)
+  )
+  (var_decl NK_RET
+    (type i32)
+    (int 5)
+  )
+  (var_decl NK_TYPE
+    (type i32)
+    (int 6)
+  )
+  (var_decl NK_BLOCK
+    (type i32)
+    (int 7)
+  )
+  (var_decl NK_VAR_DECL
+    (type i32)
+    (int 8)
+  )
+  (var_decl NK_ASSIGN
+    (type i32)
+    (int 9)
+  )
+  (var_decl NK_CALL_STMT
+    (type i32)
+    (int 10)
+  )
+  (var_decl NK_CALL
+    (type i32)
+    (int 11)
+  )
+  (var_decl NK_IF
+    (type i32)
+    (int 12)
+  )
+  (var_decl NK_WHILE
+    (type i32)
+    (int 13)
+  )
+  (var_decl NK_RETURN
+    (type i32)
+    (int 14)
+  )
+  (var_decl NK_BINOP
+    (type i32)
+    (int 15)
+  )
+  (var_decl NK_UNARY
+    (type i32)
+    (int 16)
+  )
+  (var_decl NK_INT
+    (type i32)
+    (int 17)
+  )
+  (var_decl NK_STR
+    (type i32)
+    (int 18)
+  )
+  (var_decl NK_BOOL
+    (type i32)
+    (int 19)
+  )
+  (var_decl NK_VAR
+    (type i32)
+    (int 20)
+  )
+  (var_decl NK_CAST
+    (type i32)
+    (int 21)
+  )
+  (var_decl NK_IMPORT
+    (type i32)
+    (int 22)
+  )
+  (var_decl NK_FIELD
+    (type i32)
+    (int 23)
+  )
+  (var_decl NK_BREAK
+    (type i32)
+    (int 24)
+  )
+  (var_decl NK_CONTINUE
+    (type i32)
+    (int 25)
+  )
+  (var_decl NK_COMMENT
+    (type i32)
+    (int 26)
+  )
+  (var_decl NK_UNKNOWN
+    (type i32)
+    (int 99)
+  )
+  (var_decl g_in_pos
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_in_len
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_nc
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_sp
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_lc
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_ob_pos
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_slc
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_locc
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_loop_depth
+    (type i32)
+    (int 0)
+  )
+  (fn ob_flush
+    (params
+      (param ob
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (if
+        (binop >
+(var g_ob_pos)
+(int 0))
+        (block
+          (call_stmt sys_write
+            (int 1)
+            (var ob)
+            (var g_ob_pos)
+          )
+          (assign g_ob_pos
+            (int 0)
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn ob_char
+    (params
+      (param c
+        (type u8)
+      )
+      (param ob
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (var ob)
+        (var g_ob_pos)
+        (var c)
+      )
+      (assign g_ob_pos
+        (binop +
+(var g_ob_pos)
+(int 1))
+      )
+      (if
+        (binop >=
+(var g_ob_pos)
+(int 8192))
+        (block
+          (call_stmt ob_flush
+            (var ob)
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn ob_n
+    (params
+      (param src
+        (type U8Array)
+      )
+      (param start
+        (type i32)
+      )
+      (param n
+        (type i32)
+      )
+      (param ob
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(var n))
+        (block
+          (call_stmt ob_char
+            (call get
+(var src)
+(binop +
+(var start)
+(var i)))
+            (var ob)
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn ob_int
+    (params
+      (param n
+        (type i32)
+      )
+      (param ob
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (if
+        (binop ==
+(var n)
+(int 0))
+        (block
+          (call_stmt ob_char
+            (int 48)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop <
+(var n)
+(int 0))
+        (block
+          (call_stmt ob_char
+            (int 45)
+            (var ob)
+          )
+          (assign n
+            (binop -
+(int 0)
+(var n))
+          )
+        )
+      )
+      (var_decl tmp
+        (type U8Array)
+        (call U8Array
+(int 12))
+      )
+      (var_decl len
+        (type i32)
+        (int 0)
+      )
+      (var_decl v
+        (type i32)
+        (var n)
+      )
+      (while
+        (binop >
+(var v)
+(int 0))
+        (block
+          (call_stmt set
+            (var tmp)
+            (var len)
+            (binop +
+(int 48)
+(binop %
+(var v)
+(int 10)))
+          )
+          (assign len
+            (binop +
+(var len)
+(int 1))
+          )
+          (assign v
+            (binop /
+(var v)
+(int 10))
+          )
+        )
+      )
+      (var_decl i
+        (type i32)
+        (binop -
+(var len)
+(int 1))
+      )
+      (while
+        (binop >=
+(var i)
+(int 0))
+        (block
+          (call_stmt ob_char
+            (call get
+(var tmp)
+(var i))
+            (var ob)
+          )
+          (assign i
+            (binop -
+(var i)
+(int 1))
+          )
+        )
+      )
+      (call_stmt delete
+        (var tmp)
+      )
+      (return
+      )
+    )
+  )
+  (fn ob_st_escaped
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param start
+        (type i32)
+      )
+      (param len
+        (type i32)
+      )
+      (param ob
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(var len))
+        (block
+          (var_decl c
+            (type u8)
+            (call get
+(var strtab)
+(binop +
+(var start)
+(var i)))
+          )
+          (if
+            (binop ==
+(var c)
+(int 34))
+            (block
+              (call_stmt ob_char
+                (int 92)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 34)
+                (var ob)
+              )
+            )
+            (block
+              (if
+                (binop ==
+(var c)
+(int 92))
+                (block
+                  (call_stmt ob_char
+                    (int 92)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 92)
+                    (var ob)
+                  )
+                )
+                (block
+                  (if
+                    (binop ==
+(var c)
+(int 10))
+                    (block
+                      (call_stmt ob_char
+                        (int 92)
+                        (var ob)
+                      )
+                      (call_stmt ob_char
+                        (int 110)
+                        (var ob)
+                      )
+                    )
+                    (block
+                      (if
+                        (binop ==
+(var c)
+(int 13))
+                        (block
+                          (call_stmt ob_char
+                            (int 92)
+                            (var ob)
+                          )
+                          (call_stmt ob_char
+                            (int 114)
+                            (var ob)
+                          )
+                        )
+                        (block
+                          (if
+                            (binop ==
+(var c)
+(int 9))
+                            (block
+                              (call_stmt ob_char
+                                (int 92)
+                                (var ob)
+                              )
+                              (call_stmt ob_char
+                                (int 116)
+                                (var ob)
+                              )
+                            )
+                            (block
+                              (call_stmt ob_char
+                                (var c)
+                                (var ob)
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn peek_in
+    (params
+      (param in
+        (type U8Array)
+      )
+    )
+    (ret
+      (type u8)
+    )
+    (block
+      (if
+        (binop >=
+(var g_in_pos)
+(var g_in_len))
+        (block
+          (return
+            (int 0)
+          )
+        )
+      )
+      (return
+        (call get
+(var in)
+(var g_in_pos))
+      )
+    )
+  )
+  (fn is_atom_end
+    (params
+      (param c
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (return
+        (binop ||
+(binop ||
+(binop ||
+(binop ||
+(binop ||
+(binop ||
+(binop ==
+(var c)
+(int 32))
+(binop ==
+(var c)
+(int 9)))
+(binop ==
+(var c)
+(int 10)))
+(binop ==
+(var c)
+(int 13)))
+(binop ==
+(var c)
+(int 40)))
+(binop ==
+(var c)
+(int 41)))
+(binop ==
+(var c)
+(int 0)))
+      )
+    )
+  )
+  (fn skip_ws_in
+    (params
+      (param in
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl c
+        (type u8)
+        (call peek_in
+(var in))
+      )
+      (while
+        (binop &&
+(binop ||
+(binop ||
+(binop ||
+(binop ==
+(var c)
+(int 32))
+(binop ==
+(var c)
+(int 9)))
+(binop ==
+(var c)
+(int 10)))
+(binop ==
+(var c)
+(int 13)))
+(binop <
+(var g_in_pos)
+(var g_in_len)))
+        (block
+          (assign g_in_pos
+            (binop +
+(var g_in_pos)
+(int 1))
+          )
+          (assign c
+            (call peek_in
+(var in))
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn read_atom_in
+    (params
+      (param in
+        (type U8Array)
+      )
+      (param atom
+        (type U8Array)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl len
+        (type i32)
+        (int 0)
+      )
+      (var_decl c
+        (type u8)
+        (call peek_in
+(var in))
+      )
+      (while
+        (unary !
+(call is_atom_end
+(var c)))
+        (block
+          (call_stmt set
+            (var atom)
+            (var len)
+            (var c)
+          )
+          (assign len
+            (binop +
+(var len)
+(int 1))
+          )
+          (assign g_in_pos
+            (binop +
+(var g_in_pos)
+(int 1))
+          )
+          (assign c
+            (call peek_in
+(var in))
+          )
+        )
+      )
+      (return
+        (var len)
+      )
+    )
+  )
+  (fn n_kind
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call get
+(var nodes)
+(binop *
+(var n)
+(int 6)))
+      )
+    )
+  )
+  (fn n_sk
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+      (param v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (var nodes)
+        (binop *
+(var n)
+(int 6))
+        (var v)
+      )
+    )
+  )
+  (fn n_ss
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call get
+(var nodes)
+(binop +
+(binop *
+(var n)
+(int 6))
+(int 1)))
+      )
+    )
+  )
+  (fn n_set_ss
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+      (param v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (var nodes)
+        (binop +
+(binop *
+(var n)
+(int 6))
+(int 1))
+        (var v)
+      )
+    )
+  )
+  (fn n_sl
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call get
+(var nodes)
+(binop +
+(binop *
+(var n)
+(int 6))
+(int 2)))
+      )
+    )
+  )
+  (fn n_set_sl
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+      (param v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (var nodes)
+        (binop +
+(binop *
+(var n)
+(int 6))
+(int 2))
+        (var v)
+      )
+    )
+  )
+  (fn n_ival
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call get
+(var nodes)
+(binop +
+(binop *
+(var n)
+(int 6))
+(int 3)))
+      )
+    )
+  )
+  (fn n_set_ival
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+      (param v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (var nodes)
+        (binop +
+(binop *
+(var n)
+(int 6))
+(int 3))
+        (var v)
+      )
+    )
+  )
+  (fn n_child
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call get
+(var nodes)
+(binop +
+(binop *
+(var n)
+(int 6))
+(int 4)))
+      )
+    )
+  )
+  (fn n_set_child
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+      (param v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (var nodes)
+        (binop +
+(binop *
+(var n)
+(int 6))
+(int 4))
+        (var v)
+      )
+    )
+  )
+  (fn n_sib
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call get
+(var nodes)
+(binop +
+(binop *
+(var n)
+(int 6))
+(int 5)))
+      )
+    )
+  )
+  (fn n_set_sib
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+      (param v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (var nodes)
+        (binop +
+(binop *
+(var n)
+(int 6))
+(int 5))
+        (var v)
+      )
+    )
+  )
+  (fn alloc_node
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param kind
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl n
+        (type i32)
+        (var g_nc)
+      )
+      (assign g_nc
+        (binop +
+(var g_nc)
+(int 1))
+      )
+      (var_decl b
+        (type i32)
+        (binop *
+(var n)
+(int 6))
+      )
+      (call_stmt set
+        (var nodes)
+        (var b)
+        (var kind)
+      )
+      (call_stmt set
+        (var nodes)
+        (binop +
+(var b)
+(int 1))
+        (unary -
+(int 1))
+      )
+      (call_stmt set
+        (var nodes)
+        (binop +
+(var b)
+(int 2))
+        (int 0)
+      )
+      (call_stmt set
+        (var nodes)
+        (binop +
+(var b)
+(int 3))
+        (int 0)
+      )
+      (call_stmt set
+        (var nodes)
+        (binop +
+(var b)
+(int 4))
+        (unary -
+(int 1))
+      )
+      (call_stmt set
+        (var nodes)
+        (binop +
+(var b)
+(int 5))
+        (unary -
+(int 1))
+      )
+      (return
+        (var n)
+      )
+    )
+  )
+  (fn n_nchildren
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl c
+        (type i32)
+        (call n_child
+(var nodes)
+(var n))
+      )
+      (var_decl count
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop >=
+(var c)
+(int 0))
+        (block
+          (assign count
+            (binop +
+(var count)
+(int 1))
+          )
+          (assign c
+            (call n_sib
+(var nodes)
+(var c))
+          )
+        )
+      )
+      (return
+        (var count)
+      )
+    )
+  )
+  (fn n_nth_child
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+      (param idx
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl c
+        (type i32)
+        (call n_child
+(var nodes)
+(var n))
+      )
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop &&
+(binop <
+(var i)
+(var idx))
+(binop >=
+(var c)
+(int 0)))
+        (block
+          (assign c
+            (call n_sib
+(var nodes)
+(var c))
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (return
+        (var c)
+      )
+    )
+  )
+  (fn add_child
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param parent
+        (type i32)
+      )
+      (param child
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl c
+        (type i32)
+        (call n_child
+(var nodes)
+(var parent))
+      )
+      (if
+        (binop <
+(var c)
+(int 0))
+        (block
+          (call_stmt n_set_child
+            (var nodes)
+            (var parent)
+            (var child)
+          )
+        )
+        (block
+          (while
+            (binop >=
+(call n_sib
+(var nodes)
+(var c))
+(int 0))
+            (block
+              (assign c
+                (call n_sib
+(var nodes)
+(var c))
+              )
+            )
+          )
+          (call_stmt n_set_sib
+            (var nodes)
+            (var c)
+            (var child)
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn cmp2
+    (params
+      (param a
+        (type U8Array)
+      )
+      (param st
+        (type i32)
+      )
+      (param b0
+        (type u8)
+      )
+      (param b1
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (return
+        (binop &&
+(binop ==
+(call get
+(var a)
+(var st))
+(var b0))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 1)))
+(var b1)))
+      )
+    )
+  )
+  (fn cmp3
+    (params
+      (param a
+        (type U8Array)
+      )
+      (param st
+        (type i32)
+      )
+      (param b0
+        (type u8)
+      )
+      (param b1
+        (type u8)
+      )
+      (param b2
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (return
+        (binop &&
+(binop &&
+(binop ==
+(call get
+(var a)
+(var st))
+(var b0))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 1)))
+(var b1)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 2)))
+(var b2)))
+      )
+    )
+  )
+  (fn cmp4
+    (params
+      (param a
+        (type U8Array)
+      )
+      (param st
+        (type i32)
+      )
+      (param b0
+        (type u8)
+      )
+      (param b1
+        (type u8)
+      )
+      (param b2
+        (type u8)
+      )
+      (param b3
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (return
+        (binop &&
+(binop &&
+(binop &&
+(binop ==
+(call get
+(var a)
+(var st))
+(var b0))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 1)))
+(var b1)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 2)))
+(var b2)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 3)))
+(var b3)))
+      )
+    )
+  )
+  (fn cmp5
+    (params
+      (param a
+        (type U8Array)
+      )
+      (param st
+        (type i32)
+      )
+      (param b0
+        (type u8)
+      )
+      (param b1
+        (type u8)
+      )
+      (param b2
+        (type u8)
+      )
+      (param b3
+        (type u8)
+      )
+      (param b4
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (return
+        (binop &&
+(binop &&
+(binop &&
+(binop &&
+(binop ==
+(call get
+(var a)
+(var st))
+(var b0))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 1)))
+(var b1)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 2)))
+(var b2)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 3)))
+(var b3)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 4)))
+(var b4)))
+      )
+    )
+  )
+  (fn cmp6
+    (params
+      (param a
+        (type U8Array)
+      )
+      (param st
+        (type i32)
+      )
+      (param b0
+        (type u8)
+      )
+      (param b1
+        (type u8)
+      )
+      (param b2
+        (type u8)
+      )
+      (param b3
+        (type u8)
+      )
+      (param b4
+        (type u8)
+      )
+      (param b5
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (return
+        (binop &&
+(binop &&
+(binop &&
+(binop &&
+(binop &&
+(binop ==
+(call get
+(var a)
+(var st))
+(var b0))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 1)))
+(var b1)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 2)))
+(var b2)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 3)))
+(var b3)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 4)))
+(var b4)))
+(binop ==
+(call get
+(var a)
+(binop +
+(var st)
+(int 5)))
+(var b5)))
+      )
+    )
+  )
+  (fn classify_kind
+    (params
+      (param atom
+        (type U8Array)
+      )
+      (param len
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (if
+        (binop ==
+(var len)
+(int 2))
+        (block
+          (if
+            (call cmp2
+(var atom)
+(int 0)
+(int 102)
+(int 110))
+            (block
+              (return
+                (var NK_FN)
+              )
+            )
+          )
+          (if
+            (call cmp2
+(var atom)
+(int 0)
+(int 105)
+(int 102))
+            (block
+              (return
+                (var NK_IF)
+              )
+            )
+          )
+        )
+      )
+      (if
+        (binop ==
+(var len)
+(int 3))
+        (block
+          (if
+            (call cmp3
+(var atom)
+(int 0)
+(int 114)
+(int 101)
+(int 116))
+            (block
+              (return
+                (var NK_RET)
+              )
+            )
+          )
+          (if
+            (call cmp3
+(var atom)
+(int 0)
+(int 105)
+(int 110)
+(int 116))
+            (block
+              (return
+                (var NK_INT)
+              )
+            )
+          )
+          (if
+            (call cmp3
+(var atom)
+(int 0)
+(int 115)
+(int 116)
+(int 114))
+            (block
+              (return
+                (var NK_STR)
+              )
+            )
+          )
+          (if
+            (call cmp3
+(var atom)
+(int 0)
+(int 118)
+(int 97)
+(int 114))
+            (block
+              (return
+                (var NK_VAR)
+              )
+            )
+          )
+        )
+      )
+      (if
+        (binop ==
+(var len)
+(int 4))
+        (block
+          (if
+            (call cmp4
+(var atom)
+(int 0)
+(int 98)
+(int 111)
+(int 111)
+(int 108))
+            (block
+              (return
+                (var NK_BOOL)
+              )
+            )
+          )
+          (if
+            (call cmp4
+(var atom)
+(int 0)
+(int 116)
+(int 121)
+(int 112)
+(int 101))
+            (block
+              (return
+                (var NK_TYPE)
+              )
+            )
+          )
+          (if
+            (call cmp4
+(var atom)
+(int 0)
+(int 99)
+(int 97)
+(int 115)
+(int 116))
+            (block
+              (return
+                (var NK_CAST)
+              )
+            )
+          )
+          (if
+            (call cmp4
+(var atom)
+(int 0)
+(int 99)
+(int 97)
+(int 108)
+(int 108))
+            (block
+              (return
+                (var NK_CALL)
+              )
+            )
+          )
+        )
+      )
+      (if
+        (binop ==
+(var len)
+(int 5))
+        (block
+          (if
+            (call cmp5
+(var atom)
+(int 0)
+(int 98)
+(int 108)
+(int 111)
+(int 99)
+(int 107))
+            (block
+              (return
+                (var NK_BLOCK)
+              )
+            )
+          )
+          (if
+            (call cmp5
+(var atom)
+(int 0)
+(int 112)
+(int 97)
+(int 114)
+(int 97)
+(int 109))
+            (block
+              (return
+                (var NK_PARAM)
+              )
+            )
+          )
+          (if
+            (call cmp5
+(var atom)
+(int 0)
+(int 119)
+(int 104)
+(int 105)
+(int 108)
+(int 101))
+            (block
+              (return
+                (var NK_WHILE)
+              )
+            )
+          )
+          (if
+            (call cmp5
+(var atom)
+(int 0)
+(int 98)
+(int 105)
+(int 110)
+(int 111)
+(int 112))
+            (block
+              (return
+                (var NK_BINOP)
+              )
+            )
+          )
+          (if
+            (call cmp5
+(var atom)
+(int 0)
+(int 117)
+(int 110)
+(int 97)
+(int 114)
+(int 121))
+            (block
+              (return
+                (var NK_UNARY)
+              )
+            )
+          )
+          (if
+            (call cmp5
+(var atom)
+(int 0)
+(int 102)
+(int 105)
+(int 101)
+(int 108)
+(int 100))
+            (block
+              (return
+                (var NK_FIELD)
+              )
+            )
+          )
+          (if
+            (call cmp5
+(var atom)
+(int 0)
+(int 98)
+(int 114)
+(int 101)
+(int 97)
+(int 107))
+            (block
+              (return
+                (var NK_BREAK)
+              )
+            )
+          )
+        )
+      )
+      (if
+        (binop ==
+(var len)
+(int 6))
+        (block
+          (if
+            (call cmp6
+(var atom)
+(int 0)
+(int 112)
+(int 97)
+(int 114)
+(int 97)
+(int 109)
+(int 115))
+            (block
+              (return
+                (var NK_PARAMS)
+              )
+            )
+          )
+          (if
+            (call cmp6
+(var atom)
+(int 0)
+(int 114)
+(int 101)
+(int 116)
+(int 117)
+(int 114)
+(int 110))
+            (block
+              (return
+                (var NK_RETURN)
+              )
+            )
+          )
+          (if
+            (call cmp6
+(var atom)
+(int 0)
+(int 115)
+(int 116)
+(int 114)
+(int 117)
+(int 99)
+(int 116))
+            (block
+              (return
+                (var NK_STRUCT)
+              )
+            )
+          )
+          (if
+            (call cmp6
+(var atom)
+(int 0)
+(int 97)
+(int 115)
+(int 115)
+(int 105)
+(int 103)
+(int 110))
+            (block
+              (return
+                (var NK_ASSIGN)
+              )
+            )
+          )
+          (if
+            (call cmp6
+(var atom)
+(int 0)
+(int 105)
+(int 109)
+(int 112)
+(int 111)
+(int 114)
+(int 116))
+            (block
+              (return
+                (var NK_IMPORT)
+              )
+            )
+          )
+        )
+      )
+      (if
+        (binop ==
+(var len)
+(int 7))
+        (block
+          (if
+            (binop &&
+(call cmp4
+(var atom)
+(int 0)
+(int 112)
+(int 114)
+(int 111)
+(int 103))
+(call cmp3
+(var atom)
+(int 4)
+(int 114)
+(int 97)
+(int 109)))
+            (block
+              (return
+                (var NK_PROGRAM)
+              )
+            )
+          )
+          (if
+            (binop &&
+(call cmp4
+(var atom)
+(int 0)
+(int 99)
+(int 111)
+(int 109)
+(int 109))
+(call cmp3
+(var atom)
+(int 4)
+(int 101)
+(int 110)
+(int 116)))
+            (block
+              (return
+                (var NK_COMMENT)
+              )
+            )
+          )
+        )
+      )
+      (if
+        (binop ==
+(var len)
+(int 8))
+        (block
+          (if
+            (binop &&
+(call cmp4
+(var atom)
+(int 0)
+(int 118)
+(int 97)
+(int 114)
+(int 95))
+(call cmp4
+(var atom)
+(int 4)
+(int 100)
+(int 101)
+(int 99)
+(int 108)))
+            (block
+              (return
+                (var NK_VAR_DECL)
+              )
+            )
+          )
+          (if
+            (binop &&
+(call cmp4
+(var atom)
+(int 0)
+(int 99)
+(int 111)
+(int 110)
+(int 116))
+(call cmp4
+(var atom)
+(int 4)
+(int 105)
+(int 110)
+(int 117)
+(int 101)))
+            (block
+              (return
+                (var NK_CONTINUE)
+              )
+            )
+          )
+        )
+      )
+      (if
+        (binop ==
+(var len)
+(int 9))
+        (block
+          (if
+            (binop &&
+(call cmp4
+(var atom)
+(int 0)
+(int 99)
+(int 97)
+(int 108)
+(int 108))
+(call cmp5
+(var atom)
+(int 4)
+(int 95)
+(int 115)
+(int 116)
+(int 109)
+(int 116)))
+            (block
+              (return
+                (var NK_CALL_STMT)
+              )
+            )
+          )
+        )
+      )
+      (return
+        (var NK_UNKNOWN)
+      )
+    )
+  )
+  (fn is_digit_c
+    (params
+      (param c
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (return
+        (binop &&
+(binop >=
+(var c)
+(int 48))
+(binop <=
+(var c)
+(int 57)))
+      )
+    )
+  )
+  (fn read_node
+    (params
+      (param in
+        (type U8Array)
+      )
+      (param atom
+        (type U8Array)
+      )
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (call_stmt skip_ws_in
+        (var in)
+      )
+      (if
+        (binop >=
+(var g_in_pos)
+(var g_in_len))
+        (block
+          (return
+            (unary -
+(int 1))
+          )
+        )
+      )
+      (if
+        (binop !=
+(call peek_in
+(var in))
+(int 40))
+        (block
+          (return
+            (unary -
+(int 1))
+          )
+        )
+      )
+      (assign g_in_pos
+        (binop +
+(var g_in_pos)
+(int 1))
+      )
+      (call_stmt skip_ws_in
+        (var in)
+      )
+      (var_decl klen
+        (type i32)
+        (call read_atom_in
+(var in)
+(var atom))
+      )
+      (var_decl actual_klen
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop &&
+(binop <
+(var actual_klen)
+(var klen))
+(binop !=
+(call get
+(var atom)
+(var actual_klen))
+(int 58)))
+        (block
+          (assign actual_klen
+            (binop +
+(var actual_klen)
+(int 1))
+          )
+        )
+      )
+      (var_decl kind_code
+        (type i32)
+        (call classify_kind
+(var atom)
+(var actual_klen))
+      )
+      (var_decl n
+        (type i32)
+        (call alloc_node
+(var nodes)
+(var kind_code))
+      )
+      (var_decl base
+        (type i32)
+        (binop *
+(var n)
+(int 6))
+      )
+      (call_stmt skip_ws_in
+        (var in)
+      )
+      (var_decl c
+        (type u8)
+        (call peek_in
+(var in))
+      )
+      (if
+        (binop &&
+(binop ||
+(binop ==
+(var kind_code)
+(var NK_STR))
+(binop ==
+(var kind_code)
+(var NK_COMMENT)))
+(binop ==
+(var c)
+(int 34)))
+        (block
+          (assign g_in_pos
+            (binop +
+(var g_in_pos)
+(int 1))
+          )
+          (var_decl ss
+            (type i32)
+            (var g_sp)
+          )
+          (var_decl ch
+            (type u8)
+            (call peek_in
+(var in))
+          )
+          (while
+            (binop &&
+(binop !=
+(var ch)
+(int 34))
+(binop !=
+(var ch)
+(int 0)))
+            (block
+              (if
+                (binop ==
+(var ch)
+(int 92))
+                (block
+                  (assign g_in_pos
+                    (binop +
+(var g_in_pos)
+(int 1))
+                  )
+                  (var_decl esc
+                    (type u8)
+                    (call peek_in
+(var in))
+                  )
+                  (if
+                    (binop ==
+(var esc)
+(int 110))
+                    (block
+                      (assign ch
+                        (int 10)
+                      )
+                    )
+                  )
+                  (if
+                    (binop ==
+(var esc)
+(int 116))
+                    (block
+                      (assign ch
+                        (int 9)
+                      )
+                    )
+                  )
+                  (if
+                    (binop ==
+(var esc)
+(int 114))
+                    (block
+                      (assign ch
+                        (int 13)
+                      )
+                    )
+                  )
+                  (if
+                    (binop ==
+(var esc)
+(int 92))
+                    (block
+                      (assign ch
+                        (int 92)
+                      )
+                    )
+                  )
+                  (if
+                    (binop ==
+(var esc)
+(int 34))
+                    (block
+                      (assign ch
+                        (int 34)
+                      )
+                    )
+                  )
+                  (if
+                    (binop &&
+(binop &&
+(binop &&
+(binop &&
+(binop !=
+(var esc)
+(int 110))
+(binop !=
+(var esc)
+(int 116)))
+(binop !=
+(var esc)
+(int 114)))
+(binop !=
+(var esc)
+(int 92)))
+(binop !=
+(var esc)
+(int 34)))
+                    (block
+                      (assign ch
+                        (var esc)
+                      )
+                    )
+                  )
+                )
+              )
+              (call_stmt set
+                (var strtab)
+                (var g_sp)
+                (var ch)
+              )
+              (assign g_sp
+                (binop +
+(var g_sp)
+(int 1))
+              )
+              (assign g_in_pos
+                (binop +
+(var g_in_pos)
+(int 1))
+              )
+              (assign ch
+                (call peek_in
+(var in))
+              )
+            )
+          )
+          (if
+            (binop ==
+(var ch)
+(int 34))
+            (block
+              (assign g_in_pos
+                (binop +
+(var g_in_pos)
+(int 1))
+              )
+            )
+          )
+          (call_stmt set
+            (var nodes)
+            (binop +
+(var base)
+(int 1))
+            (var ss)
+          )
+          (call_stmt set
+            (var nodes)
+            (binop +
+(var base)
+(int 2))
+            (binop -
+(var g_sp)
+(var ss))
+          )
+          (call_stmt skip_ws_in
+            (var in)
+          )
+        )
+        (if
+          (binop &&
+(binop &&
+(binop !=
+(var c)
+(int 40))
+(binop !=
+(var c)
+(int 41)))
+(binop !=
+(var c)
+(int 0)))
+          (block
+            (var_decl vlen
+              (type i32)
+              (call read_atom_in
+(var in)
+(var atom))
+            )
+            (if
+              (binop &&
+(binop &&
+(binop ==
+(var kind_code)
+(var NK_INT))
+(binop >
+(var vlen)
+(int 0)))
+(call is_digit_c
+(call get
+(var atom)
+(int 0))))
+              (block
+                (var_decl ival
+                  (type i32)
+                  (int 0)
+                )
+                (var_decl ii
+                  (type i32)
+                  (int 0)
+                )
+                (while
+                  (binop <
+(var ii)
+(var vlen))
+                  (block
+                    (assign ival
+                      (binop +
+(binop *
+(var ival)
+(int 10))
+(binop -
+(call get
+(var atom)
+(var ii))
+(int 48)))
+                    )
+                    (assign ii
+                      (binop +
+(var ii)
+(int 1))
+                    )
+                  )
+                )
+                (call_stmt set
+                  (var nodes)
+                  (binop +
+(var base)
+(int 3))
+                  (var ival)
+                )
+              )
+              (block
+                (var_decl ss
+                  (type i32)
+                  (var g_sp)
+                )
+                (var_decl ii
+                  (type i32)
+                  (int 0)
+                )
+                (while
+                  (binop <
+(var ii)
+(var vlen))
+                  (block
+                    (call_stmt set
+                      (var strtab)
+                      (var g_sp)
+                      (call get
+(var atom)
+(var ii))
+                    )
+                    (assign g_sp
+                      (binop +
+(var g_sp)
+(int 1))
+                    )
+                    (assign ii
+                      (binop +
+(var ii)
+(int 1))
+                    )
+                  )
+                )
+                (call_stmt set
+                  (var nodes)
+                  (binop +
+(var base)
+(int 1))
+                  (var ss)
+                )
+                (call_stmt set
+                  (var nodes)
+                  (binop +
+(var base)
+(int 2))
+                  (var vlen)
+                )
+              )
+            )
+            (call_stmt skip_ws_in
+              (var in)
+            )
+          )
+        )
+      )
+      (assign c
+        (call peek_in
+(var in))
+      )
+      (var_decl last_child
+        (type i32)
+        (unary -
+(int 1))
+      )
+      (while
+        (binop ==
+(var c)
+(int 40))
+        (block
+          (var_decl child
+            (type i32)
+            (call read_node
+(var in)
+(var atom)
+(var nodes)
+(var strtab))
+          )
+          (if
+            (binop >=
+(var child)
+(int 0))
+            (block
+              (if
+                (binop <
+(var last_child)
+(int 0))
+                (block
+                  (call_stmt set
+                    (var nodes)
+                    (binop +
+(var base)
+(int 4))
+                    (var child)
+                  )
+                )
+                (block
+                  (call_stmt n_set_sib
+                    (var nodes)
+                    (var last_child)
+                    (var child)
+                  )
+                )
+              )
+              (assign last_child
+                (var child)
+              )
+            )
+          )
+          (call_stmt skip_ws_in
+            (var in)
+          )
+          (assign c
+            (call peek_in
+(var in))
+          )
+        )
+      )
+      (if
+        (binop ==
+(call peek_in
+(var in))
+(int 41))
+        (block
+          (assign g_in_pos
+            (binop +
+(var g_in_pos)
+(int 1))
+          )
+        )
+      )
+      (return
+        (var n)
+      )
+    )
+  )
+  (fn sval_eq
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+      (param b
+        (type U8Array)
+      )
+      (param bl
+        (type i32)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (if
+        (binop !=
+(var sl)
+(var bl))
+        (block
+          (return
+            (bool false)
+          )
+        )
+      )
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(var sl))
+        (block
+          (if
+            (binop !=
+(call get
+(var strtab)
+(binop +
+(var ss)
+(var i)))
+(call get
+(var b)
+(var i)))
+            (block
+              (return
+                (bool false)
+              )
+            )
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (return
+        (bool true)
+      )
+    )
+  )
+  (fn sv1
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+      (param c0
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (if
+        (binop !=
+(var sl)
+(int 1))
+        (block
+          (return
+            (bool false)
+          )
+        )
+      )
+      (return
+        (binop ==
+(call get
+(var strtab)
+(var ss))
+(var c0))
+      )
+    )
+  )
+  (fn sv2
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+      (param c0
+        (type u8)
+      )
+      (param c1
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (if
+        (binop !=
+(var sl)
+(int 2))
+        (block
+          (return
+            (bool false)
+          )
+        )
+      )
+      (return
+        (binop &&
+(binop ==
+(call get
+(var strtab)
+(var ss))
+(var c0))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var ss)
+(int 1)))
+(var c1)))
+      )
+    )
+  )
+  (fn slit_find
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(var g_slc))
+        (block
+          (var_decl base
+            (type i32)
+            (binop *
+(var i)
+(int 2))
+          )
+          (var_decl es
+            (type i32)
+            (call get
+(var slits)
+(var base))
+          )
+          (var_decl el
+            (type i32)
+            (call get
+(var slits)
+(binop +
+(var base)
+(int 1)))
+          )
+          (if
+            (binop ==
+(var el)
+(var sl))
+            (block
+              (var_decl match
+                (type i32)
+                (int 1)
+              )
+              (var_decl j
+                (type i32)
+                (int 0)
+              )
+              (while
+                (binop &&
+(binop <
+(var j)
+(var sl))
+(binop ==
+(var match)
+(int 1)))
+                (block
+                  (if
+                    (binop !=
+(call get
+(var strtab)
+(binop +
+(var ss)
+(var j)))
+(call get
+(var strtab)
+(binop +
+(var es)
+(var j))))
+                    (block
+                      (assign match
+                        (int 0)
+                      )
+                    )
+                  )
+                  (assign j
+                    (binop +
+(var j)
+(int 1))
+                  )
+                )
+              )
+              (if
+                (binop ==
+(var match)
+(int 1))
+                (block
+                  (return
+                    (var i)
+                  )
+                )
+              )
+            )
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (return
+        (unary -
+(int 1))
+      )
+    )
+  )
+  (fn slit_add
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl idx
+        (type i32)
+        (call slit_find
+(var strtab)
+(var slits)
+(var ss)
+(var sl))
+      )
+      (if
+        (binop >=
+(var idx)
+(int 0))
+        (block
+          (return
+            (var idx)
+          )
+        )
+      )
+      (var_decl base
+        (type i32)
+        (var g_slc) c)
+(int 0)))
+          (block
+            (var_decl vlen
+              (type i32)
+              (call read_atom_in
+(var in)
+(var atom))
+            )
+            (if
+              (binop &&
+(binop &&
+(binop ==
+(var kind_code)
+(var NK_INT))
+(binop >
+(var vlen)
+(int 0)))
+(call is_digit_c
+(call get
+(var atom)
+(int 0))))
+              (block
+                (var_decl ival
+                  (type i32)
+                  (int 0)
+                )
+                (var_decl ii
+                  (type i32)
+                  (int 0)
+                )
+                (while
+                  (binop <
+(var ii)
+(var vlen))
+                  (block
+                    (assign ival
+                      (binop +
+(binop *
+(var ival)
+(int 10))
+(binop -
+(call get
+(var atom)
+(var ii))
+(int 48)))
+                    )
+                    (assign ii
+                      (binop +
+(var ii)
+(int 1))
+                    )
+                  )
+                )
+                (call_stmt set
+                  (var nodes)
+                  (binop +
+(var base)
+(int 3))
+                  (var ival)
+                )
+              )
+              (block
+                (var_decl ss
+                  (type i32)
+                  (var g_sp)
+                )
+                (var_decl ii
+                  (type i32)
+                  (int 0)
+                )
+                (while
+                  (binop <
+(var ii)
+(var vlen))
+                  (block
+                    (call_stmt set
+                      (var strtab)
+                      (var g_sp)
+                      (call get
+(var atom)
+(var ii))
+                    )
+                    (assign g_sp
+                      (binop +
+(var g_sp)
+(int 1))
+                    )
+                    (assign ii
+                      (binop +
+(var ii)
+(int 1))
+                    )
+                  )
+                )
+                (call_stmt set
+                  (var nodes)
+                  (binop +
+(var base)
+(int 1))
+                  (var ss)
+                )
+                (call_stmt set
+                  (var nodes)
+                  (binop +
+(var base)
+(int 2))
+                  (var vlen)
+                )
+              )
+            )
+            (call_stmt skip_ws_in
+              (var in)
+            )
+          )
+        )
+      )
+      (assign c
+        (call peek_in
+(var in))
+      )
+      (var_decl last_child
+        (type i32)
+        (unary -
+(int 1))
+      )
+      (while
+        (binop ==
+(var c)
+(int 40))
+        (block
+          (var_decl child
+            (type i32)
+            (call read_node
+(var in)
+(var atom)
+(var nodes)
+(var strtab))
+          )
+          (if
+            (binop >=
+(var child)
+(int 0))
+            (block
+              (if
+                (binop <
+(var last_child)
+(int 0))
+                (block
+                  (call_stmt set
+                    (var nodes)
+                    (binop +
+(var base)
+(int 4))
+                    (var child)
+                  )
+                )
+                (block
+                  (call_stmt n_set_sib
+                    (var nodes)
+                    (var last_child)
+                    (var child)
+                  )
+                )
+              )
+              (assign last_child
+                (var child)
+              )
+            )
+          )
+          (call_stmt skip_ws_in
+            (var in)
+          )
+          (assign c
+            (call peek_in
+(var in))
+          )
+        )
+      )
+      (if
+        (binop ==
+(call peek_in
+(var in))
+(int 41))
+        (block
+          (assign g_in_pos
+            (binop +
+(var g_in_pos)
+(int 1))
+          )
+        )
+      )
+      (return
+        (var n)
+      )
+    )
+  )
+  (fn sval_eq
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+      (param b
+        (type U8Array)
+      )
+      (param bl
+        (type i32)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (if
+        (binop !=
+(var sl)
+(var bl))
+        (block
+          (return
+            (bool false)
+          )
+        )
+      )
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(var sl))
+        (block
+          (if
+            (binop !=
+(call get
+(var strtab)
+(binop +
+(var ss)
+(var i)))
+(call get
+(var b)
+(var i)))
+            (block
+              (return
+                (bool false)
+              )
+            )
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (return
+        (bool true)
+      )
+    )
+  )
+  (fn sv1
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+      (param c0
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (if
+        (binop !=
+(var sl)
+(int 1))
+        (block
+          (return
+            (bool false)
+          )
+        )
+      )
+      (return
+        (binop ==
+(call get
+(var strtab)
+(var ss))
+(var c0))
+      )
+    )
+  )
+  (fn sv2
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+      (param c0
+        (type u8)
+      )
+      (param c1
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (if
+        (binop !=
+(var sl)
+(int 2))
+        (block
+          (return
+            (bool false)
+          )
+        )
+      )
+      (return
+        (binop &&
+(binop ==
+(call get
+(var strtab)
+(var ss))
+(var c0))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var ss)
+(int 1)))
+(var c1)))
+      )
+    )
+  )
+  (fn slit_find
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(var g_slc))
+        (block
+          (var_decl base
+            (type i32)
+            (binop *
+(var i)
+(int 2))
+          )
+          (var_decl es
+            (type i32)
+            (call get
+(var slits)
+(var base))
+          )
+          (var_decl el
+            (type i32)
+            (call get
+(var slits)
+(binop +
+(var base)
+(int 1)))
+          )
+          (if
+            (binop ==
+(var el)
+(var sl))
+            (block
+              (var_decl match
+                (type i32)
+                (int 1)
+              )
+              (var_decl j
+                (type i32)
+                (int 0)
+              )
+              (while
+                (binop &&
+(binop <
+(var j)
+(var sl))
+(binop ==
+(var match)
+(int 1)))
+                (block
+                  (if
+                    (binop !=
+(call get
+(var strtab)
+(binop +
+(var ss)
+(var j)))
+(call get
+(var strtab)
+(binop +
+(var es)
+(var j))))
+                    (block
+                      (assign match
+                        (int 0)
+                      )
+                    )
+                  )
+                  (assign j
+                    (binop +
+(var j)
+(int 1))
+                  )
+                )
+              )
+              (if
+                (binop ==
+(var match)
+(int 1))
+                (block
+                  (return
+                    (var i)
+                  )
+                )
+              )
+            )
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (return
+        (unary -
+(int 1))
+      )
+    )
+  )
+  (fn slit_add
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl idx
+        (type i32)
+        (call slit_find
+(var strtab)
+(var slits)
+(var ss)
+(var sl))
+      )
+      (if
+        (binop >=
+(var idx)
+(int 0))
+        (block
+          (return
+            (var idx)
+          )
+        )
+      )
+      (var_decl base
+        (type i32)
+        (binop *
+
+(int 2))
+      )
+      (call_stmt set
+        (var slits)
+        (var base)
+        (var ss)
+      )
+      (call_stmt set
+        (var slits)
+        (binop +
+(var base)
+(int 1))
+        (var sl)
+      )
+      (assign idx
+        (var g_slc)
+      )
+      (assign g_slc
+        (binop +
+(var g_slc)
+(int 1))
+      )
+      (return
+        (var idx)
+      )
+    )
+  )
+  (fn collect_strings
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (if
+        (binop <
+(var n)
+(int 0))
+        (block
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(call n_kind
+(var nodes)
+(var n))
+(var NK_STR))
+        (block
+          (call_stmt slit_add
+            (var strtab)
+            (var slits)
+            (call n_ss
+(var nodes)
+(var n))
+            (call n_sl
+(var nodes)
+(var n))
+          )
+          (return
+          )
+        )
+      )
+      (var_decl c
+        (type i32)
+        (call n_child
+(var nodes)
+(var n))
+      )
+      (while
+        (binop >=
+(var c)
+(int 0))
+        (block
+          (call_stmt collect_strings
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var c)
+          )
+          (assign c
+            (call n_sib
+(var nodes)
+(var c))
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn locals_find
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param locals
+        (type I32Array)
+      )
+      (param nss
+        (type i32)
+      )
+      (param nsl
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(var g_locc))
+        (block
+          (var_decl b
+            (type i32)
+            (binop *
+(var i)
+(int 4))
+          )
+          (var_decl es
+            (type i32)
+            (call get
+(var locals)
+(var b))
+          )
+          (var_decl el
+            (type i32)
+            (call get
+(var locals)
+(binop +
+(var b)
+(int 1)))
+          )
+          (if
+            (binop ==
+(var el)
+(var nsl))
+            (block
+              (var_decl match
+                (type i32)
+                (int 1)
+              )
+              (var_decl j
+                (type i32)
+                (int 0)
+              )
+              (while
+                (binop &&
+(binop <
+(var j)
+(var nsl))
+(binop ==
+(var match)
+(int 1)))
+                (block
+                  (if
+                    (binop !=
+(call get
+(var strtab)
+(binop +
+(var nss)
+(var j)))
+(call get
+(var strtab)
+(binop +
+(var es)
+(var j))))
+                    (block
+                      (assign match
+                        (int 0)
+                      )
+                    )
+                  )
+                  (assign j
+                    (binop +
+(var j)
+(int 1))
+                  )
+                )
+              )
+              (if
+                (binop ==
+(var match)
+(int 1))
+                (block
+                  (return
+                    (var i)
+                  )
+                )
+              )
+            )
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (return
+        (unary -
+(int 1))
+      )
+    )
+  )
+  (fn locals_add_entry
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param locals
+        (type I32Array)
+      )
+      (param nss
+        (type i32)
+      )
+      (param nsl
+        (type i32)
+      )
+      (param tss
+        (type i32)
+      )
+      (param tsl
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (if
+        (binop >=
+(call locals_find
+(var strtab)
+(var locals)
+(var nss)
+(var nsl))
+(int 0))
+        (block
+          (return
+          )
+        )
+      )
+      (var_decl b
+        (type i32)
+        (binop *
+(var g_locc)
+(int 4))
+      )
+      (call_stmt set
+        (var locals)
+        (var b)
+        (var nss)
+      )
+      (call_stmt set
+        (var locals)
+        (binop +
+(var b)
+(int 1))
+        (var nsl)
+      )
+      (call_stmt set
+        (var locals)
+        (binop +
+(var b)
+(int 2))
+        (var tss)
+      )
+      (call_stmt set
+        (var locals)
+        (binop +
+(var b)
+(int 3))
+        (var tsl)
+      )
+      (assign g_locc
+        (binop +
+(var g_locc)
+(int 1))
+      )
+      (return
+      )
+    )
+  )
+  (fn collect_locals_stmt
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param locals
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl k
+        (type i32)
+        (call n_kind
+(var nodes)
+(var n))
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_VAR_DECL))
+        (block
+          (var_decl type_n
+            (type i32)
+            (call n_child
+(var nodes)
+(var n))
+          )
+          (if
+            (binop >=
+(var type_n)
+(int 0))
+            (block
+              (call_stmt locals_add_entry
+                (var strtab)
+                (var locals)
+                (call n_ss
+(var nodes)
+(var n))
+                (call n_sl
+(var nodes)
+(var n))
+                (call n_ss
+(var nodes)
+(var type_n))
+                (call n_sl
+(var nodes)
+(var type_n))
+              )
+            )
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_IF))
+        (block
+          (call_stmt collect_locals_block
+            (var nodes)
+            (var strtab)
+            (var locals)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 1))
+          )
+          (var_decl ec
+            (type i32)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 2))
+          )
+          (if
+            (binop >=
+(var ec)
+(int 0))
+            (block
+              (if
+                (binop ==
+(call n_kind
+(var nodes)
+(var ec))
+(var NK_IF))
+                (block
+                  (call_stmt collect_locals_stmt
+                    (var nodes)
+                    (var strtab)
+                    (var locals)
+                    (var ec)
+                  )
+                )
+                (block
+                  (call_stmt collect_locals_block
+                    (var nodes)
+                    (var strtab)
+                    (var locals)
+                    (var ec)
+                  )
+                )
+              )
+            )
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_WHILE))
+        (block
+          (call_stmt collect_locals_block
+            (var nodes)
+            (var strtab)
+            (var locals)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 1))
+          )
+          (return
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn collect_locals_block
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param locals
+        (type I32Array)
+      )
+      (param blk
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl c
+        (type i32)
+        (call n_child
+(var nodes)
+(var blk))
+      )
+      (while
+        (binop >=
+(var c)
+(int 0))
+        (block
+          (call_stmt collect_locals_stmt
+            (var nodes)
+            (var strtab)
+            (var locals)
+            (var c)
+          )
+          (assign c
+            (call n_sib
+(var nodes)
+(var c))
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn cg_block
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param ob
+        (type U8Array)
+      )
+      (param loop_stk
+        (type I32Array)
+      )
+      (param blk
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl c
+        (type i32)
+        (call n_child
+(var nodes)
+(var blk))
+      )
+      (while
+        (binop >=
+(var c)
+(int 0))
+        (block
+          (call_stmt cg_stmt
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var ob)
+            (var loop_stk)
+            (var c)
+          )
+          (assign c
+            (call n_sib
+(var nodes)
+(var c))
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn cg_stmt
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param ob
+        (type U8Array)
+      )
+      (param loop_stk
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl k
+        (type i32)
+        (call n_kind
+(var nodes)
+(var n))
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_COMMENT))
+        (block
+          (call_stmt ob_char
+            (int 59)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var n))
+            (call n_sl
+(var nodes)
+(var n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_VAR_DECL))
+        (block
+          (var_decl init
+            (type i32)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 1))
+          )
+          (if
+            (binop >=
+(var init)
+(int 0))
+            (block
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var init)
+              )
+            )
+            (block
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 115)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 104)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 48)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+            )
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 114)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 101)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var n))
+            (call n_sl
+(var nodes)
+(var n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_ASSIGN))
+        (block
+          (call_stmt cg_expr
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var ob)
+            (call n_child
+(var nodes)
+(var n))
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 114)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 101)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var n))
+            (call n_sl
+(var nodes)
+(var n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_CALL_STMT))
+        (block
+          (var_decl c
+            (type i32)
+            (call n_child
+(var nodes)
+(var n))
+          )
+          (var_decl nargs
+            (type i32)
+            (int 0)
+          )
+          (while
+            (binop >=
+(var c)
+(int 0))
+            (block
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var c)
+              )
+              (assign c
+                (call n_sib
+(var nodes)
+(var c))
+              )
+              (assign nargs
+                (binop +
+(var nargs)
+(int 1))
+              )
+            )
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 99)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var n))
+            (call n_sl
+(var nodes)
+(var n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var nargs)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_IF))
+        (block
+          (var_decl nc
+            (type i32)
+            (call n_nchildren
+(var nodes)
+(var n))
+          )
+          (if
+            (binop >
+(var nc)
+(int 2))
+            (block
+              (var_decl lelse
+                (type i32)
+                (var g_lc)
+              )
+              (assign g_lc
+                (binop +
+(var g_lc)
+(int 1))
+              )
+              (var_decl lend
+                (type i32)
+                (var g_lc)
+              )
+              (assign g_lc
+                (binop +
+(var g_lc)
+(int 1))
+              )
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (call n_nth_child
+(var nodes)
+(var n)
+(int 0))
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 102)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 111)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lelse)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt cg_block
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var loop_stk)
+                (call n_nth_child
+(var nodes)
+(var n)
+(int 1))
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lend)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lelse)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 58)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (var_decl else_n
+                (type i32)
+                (call n_nth_child
+(var nodes)
+(var n)
+(int 2))
+              )
+              (if
+                (binop ==
+(call n_kind
+(var nodes)
+(var else_n))
+(var NK_IF))
+                (block
+                  (call_stmt cg_stmt
+                    (var nodes)
+                    (var strtab)
+                    (var slits)
+                    (var ob)
+                    (var loop_stk)
+                    (var else_n)
+                  )
+                )
+                (block
+                  (call_stmt cg_block
+                    (var nodes)
+                    (var strtab)
+                    (var slits)
+                    (var ob)
+                    (var loop_stk)
+                    (var else_n)
+                  )
+                )
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lend)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 58)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+            )
+            (block
+              (var_decl lend
+                (type i32)
+                (var g_lc)
+              )
+              (assign g_lc
+                (binop +
+(var g_lc)
+(int 1))
+              )
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (call n_nth_child
+(var nodes)
+(var n)
+(int 0))
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 102)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 111)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lend)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt cg_block
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var loop_stk)
+                (call n_nth_child
+(var nodes)
+(var n)
+(int 1))
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lend)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 58)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+            )
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_WHILE))
+        (block
+          (var_decl lloop
+            (type i32)
+            (var g_lc)
+          )
+          (assign g_lc
+            (binop +
+(var g_lc)
+(int 1))
+          )
+          (var_decl lend
+            (type i32)
+            (var g_lc)
+          )
+          (assign g_lc
+            (binop +
+(var g_lc)
+(int 1))
+          )
+          (call_stmt set
+            (var loop_stk)
+            (binop *
+(var g_loop_depth)
+(int 2))
+            (var lloop)
+          )
+          (call_stmt set
+            (var loop_stk)
+            (binop +
+(binop *
+(var g_loop_depth)
+(int 2))
+(int 1))
+            (var lend)
+          )
+          (assign g_loop_depth
+            (binop +
+(var g_loop_depth)
+(int 1))
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 76)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var lloop)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 58)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (call_stmt cg_expr
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var ob)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 0))
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 106)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 109)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 105)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 102)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 110)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 76)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var lend)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (call_stmt cg_block
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var ob)
+            (var loop_stk)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 1))
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 106)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 109)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 76)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var lloop)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 76)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var lend)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 58)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (assign g_loop_depth
+            (binop -
+(var g_loop_depth)
+(int 1))
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_BREAK))
+        (block
+          (var_decl lend
+            (type i32)
+            (call get
+(var loop_stk)
+(binop -
+(binop *
+(var g_loop_depth)
+(int 2))
+(int 1)))
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 106)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 109)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 76)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var lend)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_CONTINUE))
+        (block
+          (var_decl lloop
+            (type i32)
+            (call get
+(var loop_stk)
+(binop -
+(binop *
+(var g_loop_depth)
+(int 2))
+(int 2)))
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 106)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 109)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 76)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var lloop)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_RETURN))
+        (block
+          (var_decl v
+            (type i32)
+            (call n_child
+(var nodes)
+(var n))
+          )
+          (if
+            (binop >=
+(var v)
+(int 0))
+            (block
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var v)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 114)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 101)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 114)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+            )
+            (block
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 114)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 101)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 114)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 118)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 111)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 100)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+            )
+          )
+          (return
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn cg_binop_inst
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+      (param ob
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 43))
+        (block
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 100)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 100)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 45))
+        (block
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 98)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 42))
+        (block
+          (call_stmt ob_char
+            (int 109)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 47))
+        (block
+          (call_stmt ob_char
+            (int 100)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 105)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 118)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 37))
+        (block
+          (call_stmt ob_char
+            (int 109)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 100)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 38))
+        (block
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 110)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 100)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 124))
+        (block
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 114)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 94))
+        (block
+          (call_stmt ob_char
+            (int 120)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 114)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 60))
+        (block
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 62))
+        (block
+          (call_stmt ob_char
+            (int 103)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv2
+(var strtab)
+(var ss)
+(var sl)
+(int 60)
+(int 60))
+        (block
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 104)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv2
+(var strtab)
+(var ss)
+(var sl)
+(int 62)
+(int 62))
+        (block
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 104)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 114)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv2
+(var strtab)
+(var ss)
+(var sl)
+(int 61)
+(int 61))
+        (block
+          (call_stmt ob_char
+            (int 101)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 113)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv2
+(var strtab)
+(var ss)
+(var sl)
+(int 33)
+(int 61))
+        (block
+          (call_stmt ob_char
+            (int 110)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 101)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv2
+(var strtab)
+(var ss)
+(var sl)
+(int 60)
+(int 61))
+        (block
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 101)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (call sv2
+(var strtab)
+(var ss)
+(var sl)
+(int 62)
+(int 61))
+        (block
+          (call_stmt ob_char
+            (int 103)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 101)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (call_stmt ob_char
+        (int 10)
+        (var ob)
+      )
+      (return
+      )
+    )
+  )
+  (fn cg_expr
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param ob
+        (type U8Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl k
+        (type i32)
+        (call n_kind
+(var nodes)
+(var n))
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_INT))
+        (block
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 104)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 105)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 110)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (call n_ival
+(var nodes)
+(var n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_BOOL))
+        (block
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 104)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 105)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 110)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (var_decl is_true
+            (type i32)
+            (int 0)
+          )
+          (if
+            (binop ==
+(call n_sl
+(var nodes)
+(var n))
+(int 4))
+            (block
+              (var_decl ss
+                (type i32)
+                (call n_ss
+(var nodes)
+(var n))
+              )
+              (if
+                (binop &&
+(binop &&
+(binop &&
+(binop ==
+(call get
+(var strtab)
+(var ss))
+(int 116))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var ss)
+(int 1)))
+(int 114)))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var ss)
+(int 2)))
+(int 117)))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var ss)
+(int 3)))
+(int 101)))
+                (block
+                  (assign is_true
+                    (int 1)
+                  )
+                )
+              )
+            )
+          )
+          (call_stmt ob_int
+            (var is_true)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_STR))
+        (block
+          (var_decl idx
+            (type i32)
+            (call slit_find
+(var strtab)
+(var slits)
+(call n_ss
+(var nodes)
+(var n))
+(call n_sl
+(var nodes)
+(var n)))
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 117)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 104)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 95)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 114)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var idx)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_VAR))
+        (block
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 100)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var n))
+            (call n_sl
+(var nodes)
+(var n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_CALL))
+        (block
+          (var_decl c
+            (type i32)
+            (call n_child
+(var nodes)
+(var n))
+          )
+          (var_decl nargs
+            (type i32)
+            (int 0)
+          )
+          (while
+            (binop >=
+(var c)
+(int 0))
+            (block
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var c)
+              )
+              (assign c
+                (call n_sib
+(var nodes)
+(var c))
+              )
+              (assign nargs
+                (binop +
+(var nargs)
+(int 1))
+              )
+            )
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 99)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var n))
+            (call n_sl
+(var nodes)
+(var n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_int
+            (var nargs)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_UNARY))
+        (block
+          (call_stmt cg_expr
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var ob)
+            (call n_child
+(var nodes)
+(var n))
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (var_decl ss
+            (type i32)
+            (call n_ss
+(var nodes)
+(var n))
+          )
+          (var_decl sl
+            (type i32)
+            (call n_sl
+(var nodes)
+(var n))
+          )
+          (if
+            (call sv1
+(var strtab)
+(var ss)
+(var sl)
+(int 45))
+            (block
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 101)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 103)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+            )
+            (block
+              (call_stmt ob_char
+                (int 108)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 111)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+            )
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_BINOP))
+        (block
+          (var_decl ss
+            (type i32)
+            (call n_ss
+(var nodes)
+(var n))
+          )
+          (var_decl sl
+            (type i32)
+            (call n_sl
+(var nodes)
+(var n))
+          )
+          (var_decl child0
+            (type i32)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 0))
+          )
+          (var_decl child1
+            (type i32)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 1))
+          )
+          (if
+            (call sv2
+(var strtab)
+(var ss)
+(var sl)
+(int 38)
+(int 38))
+            (block
+              (var_decl lf
+                (type i32)
+                (var g_lc)
+              )
+              (assign g_lc
+                (binop +
+(var g_lc)
+(int 1))
+              )
+              (var_decl le
+                (type i32)
+                (var g_lc)
+              )
+              (assign g_lc
+                (binop +
+(var g_lc)
+(int 1))
+              )
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var child0)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 102)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 111)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lf)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var child1)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 102)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 111)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lf)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 115)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 104)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 49)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var le)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lf)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 58)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 115)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 104)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 48)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var le)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 58)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (return
+              )
+            )
+          )
+          (if
+            (call sv2
+(var strtab)
+(var ss)
+(var sl)
+(int 124)
+(int 124))
+            (block
+              (var_decl lt
+                (type i32)
+                (var g_lc)
+              )
+              (assign g_lc
+                (binop +
+(var g_lc)
+(int 1))
+              )
+              (var_decl le
+                (type i32)
+                (var g_lc)
+              )
+              (assign g_lc
+                (binop +
+(var g_lc)
+(int 1))
+              )
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var child0)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 102)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lt)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (var child1)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 102)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lt)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 115)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 104)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 48)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 106)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 109)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var le)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var lt)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 58)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 112)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 117)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 115)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 104)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 49)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 95)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 76)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var le)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 58)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (return
+              )
+            )
+          )
+          (call_stmt cg_expr
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var ob)
+            (var child0)
+          )
+          (call_stmt cg_expr
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var ob)
+            (var child1)
+          )
+          (call_stmt cg_binop_inst
+            (var strtab)
+            (var ss)
+            (var sl)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (if
+        (binop ==
+(var k)
+(var NK_CAST))
+        (block
+          (call_stmt cg_expr
+            (var nodes)
+            (var strtab)
+            (var slits)
+            (var ob)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 0))
+          )
+          (var_decl type_n
+            (type i32)
+            (call n_nth_child
+(var nodes)
+(var n)
+(int 1))
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 99)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var type_n))
+            (call n_sl
+(var nodes)
+(var type_n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (return
+          )
+        )
+      )
+      (return
+      )
+    )
+  )
+  (fn cg_fn
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param locals
+        (type I32Array)
+      )
+      (param ob
+        (type U8Array)
+      )
+      (param fn_node
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (var_decl params_n
+        (type i32)
+        (call n_nth_child
+(var nodes)
+(var fn_node)
+(int 0))
+      )
+      (var_decl ret_n
+        (type i32)
+        (call n_nth_child
+(var nodes)
+(var fn_node)
+(int 1))
+      )
+      (var_decl body_n
+        (type i32)
+        (call n_nth_child
+(var nodes)
+(var fn_node)
+(int 2))
+      )
+      (var_decl ret_type_n
+        (type i32)
+        (call n_child
+(var nodes)
+(var ret_n))
+      )
+      (var_decl ret_ss
+        (type i32)
+        (int 0)
+      )
+      (var_decl ret_sl
+        (type i32)
+        (int 4)
+      )
+      (if
+        (binop >=
+(var ret_type_n)
+(int 0))
+        (block
+          (assign ret_ss
+            (call n_ss
+(var nodes)
+(var ret_type_n))
+          )
+          (assign ret_sl
+            (call n_sl
+(var nodes)
+(var ret_type_n))
+          )
+        )
+      )
+      (call_stmt ob_char
+        (int 46)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 102)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 110)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (call_stmt ob_n
+        (var strtab)
+        (call n_ss
+(var nodes)
+(var fn_node))
+        (call n_sl
+(var nodes)
+(var fn_node))
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (call_stmt ob_int
+        (call n_nchildren
+(var nodes)
+(var params_n))
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (if
+        (binop ==
+(var ret_sl)
+(int 0))
+        (block
+          (call_stmt ob_char
+            (int 118)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 105)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 100)
+            (var ob)
+          )
+        )
+        (block
+          (call_stmt ob_n
+            (var strtab)
+            (var ret_ss)
+            (var ret_sl)
+            (var ob)
+          )
+        )
+      )
+      (call_stmt ob_char
+        (int 10)
+        (var ob)
+      )
+      (var_decl p
+        (type i32)
+        (call n_child
+(var nodes)
+(var params_n))
+      )
+      (while
+        (binop >=
+(var p)
+(int 0))
+        (block
+          (var_decl type_n
+            (type i32)
+            (call n_child
+(var nodes)
+(var p))
+          )
+          (call_stmt ob_char
+            (int 46)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 112)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 114)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 109)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var p))
+            (call n_sl
+(var nodes)
+(var p))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+(var nodes)
+(var type_n))
+            (call n_sl
+(var nodes)
+(var type_n))
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (assign p
+            (call n_sib
+(var nodes)
+(var p))
+          )
+        )
+      )
+      (assign g_locc
+        (int 0)
+      )
+      (call_stmt collect_locals_block
+        (var nodes)
+        (var strtab)
+        (var locals)
+        (var body_n)
+      )
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (while
+        (binop <
+(var i)
+(var g_locc))
+        (block
+          (var_decl b
+            (type i32)
+            (binop *
+(var i)
+(int 4))
+          )
+          (var_decl nss
+            (type i32)
+            (call get
+(var locals)
+(var b))
+          )
+          (var_decl nsl
+            (type i32)
+            (call get
+(var locals)
+(binop +
+(var b)
+(int 1)))
+          )
+          (var_decl tss
+            (type i32)
+            (call get
+(var locals)
+(binop +
+(var b)
+(int 2)))
+          )
+          (var_decl tsl
+            (type i32)
+            (call get
+(var locals)
+(binop +
+(var b)
+(int 3)))
+          )
+          (call_stmt ob_char
+            (int 46)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 111)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 99)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (var nss)
+            (var nsl)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_n
+            (var strtab)
+            (var tss)
+            (var tsl)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (assign i
+            (binop +
+(var i)
+(int 1))
+          )
+        )
+      )
+      (assign g_loop_depth
+        (int 0)
+      )
+      (var_decl loop_stk
+        (type I32Array)
+        (call I32Array
+(int 32))
+      )
+      (call_stmt cg_block
+        (var nodes)
+        (var strtab)
+        (var slits)
+        (var ob)
+        (var loop_stk)
+        (var body_n)
+      )
+      (call_stmt delete
+        (var loop_stk)
+      )
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 114)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 101)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 116)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 117)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 114)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 110)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 95)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 118)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 111)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 105)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 100)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 10)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 46)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 101)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 110)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 100)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 102)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 110)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 10)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 10)
+        (var ob)
+      )
+      (return
+      )
+    )
+  )
+  (fn cg_program
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param locals
+        (type I32Array)
+      )
+      (param ob
+        (type U8Array)
+      )
+      (param root
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt ob_char
+        (int 46)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 98)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 99)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 10)
+        (var ob)
+      )
+      (assign g_slc
+        (int 0)
+      )
+      (call_stmt collect_strings
+        (var nodes)
+        (var strtab)
+        (var slits)
+        (var root)
+      )
+      (if
+        (binop >
+(var g_slc)
+(int 0))
+        (block
+          (call_stmt ob_char
+            (int 59)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 115)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 114)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 105)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 110)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 103)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 32)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 116)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 97)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 98)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 108)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 101)
+            (var ob)
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (var_decl i
+            (type i32)
+            (int 0)
+          )
+          (while
+            (binop <
+(var i)
+(var g_slc))
+            (block
+              (var_decl b
+                (type i32)
+                (binop *
+(var i)
+(int 2))
+              )
+              (var_decl ss
+                (type i32)
+                (call get
+(var slits)
+(var b))
+              )
+              (var_decl sl
+                (type i32)
+                (call get
+(var slits)
+(binop +
+(var b)
+(int 1)))
+              )
+              (call_stmt ob_char
+                (int 46)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 115)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 116)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 114)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 105)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 110)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 103)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var i)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 34)
+                (var ob)
+              )
+              (call_stmt ob_st_escaped
+                (var strtab)
+                (var ss)
+                (var sl)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 34)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+              (assign i
+                (binop +
+(var i)
+(int 1))
+              )
+            )
+          )
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+        )
+      )
+      (var_decl has_global
+        (type i32)
+        (int 0)
+      )
+      (var_decl c
+        (type i32)
+        (call n_child
+(var nodes)
+(var root))
+      )
+      (while
+        (binop >=
+(var c)
+(int 0))
+        (block
+          (if
+            (binop ==
+(call n_kind
+(var nodes)
+(var c))
+(var NK_VAR_DECL))
+            (block
+              (if
+                (binop ==
+(var has_global)
+(int 0))
+                (block
+                  (call_stmt ob_char
+                    (int 59)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 32)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 103)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 108)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 111)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 98)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 97)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 108)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 115)
+                    (var ob)
+                  )
+                  (call_stmt ob_char
+                    (int 10)
+                    (var ob)
+                  )
+                  (assign has_global
+                    (int 1)
+                  )
+                )
+              )
+              (var_decl type_n
+                (type i32)
+                (call n_child
+(var nodes)
+(var c))
+              )
+              (var_decl init_n
+                (type i32)
+                (call n_sib
+(var nodes)
+(var type_n))
+              )
+              (var_decl initval
+                (type i32)
+                (int 0)
+              )
+              (if
+                (binop >=
+(var init_n)
+(int 0))
+                (block
+                  (assign initval
+                    (call n_ival
+(var nodes)
+(var init_n))
+                  )
+                )
+              )
+              (call_stmt ob_char
+                (int 46)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 103)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 108)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 111)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 98)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 97)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 108)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_n
+                (var strtab)
+                (call n_ss
+(var nodes)
+(var c))
+                (call n_sl
+(var nodes)
+(var c))
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_n
+                (var strtab)
+                (call n_ss
+(var nodes)
+(var type_n))
+                (call n_sl
+(var nodes)
+(var type_n))
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 32)
+                (var ob)
+              )
+              (call_stmt ob_int
+                (var initval)
+                (var ob)
+              )
+              (call_stmt ob_char
+                (int 10)
+                (var ob)
+              )
+            )
+          )
+          (assign c
+            (call n_sib
+(var nodes)
+(var c))
+          )
+        )
+      )
+      (if
+        (binop ==
+(var has_global)
+(int 1))
+        (block
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+        )
+      )
+      (assign c
+        (call n_child
+(var nodes)
+(var root))
+      )
+      (while
+        (binop >=
+(var c)
+(int 0))
+        (block
+          (if
+            (binop ==
+(call n_kind
+(var nodes)
+(var c))
+(var NK_FN))
+            (block
+              (call_stmt cg_fn
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var locals)
+                (var ob)
+                (var c)
+              )
+            )
+          )
+          (assign c
+            (call n_sib
+(var nodes)
+(var c))
+          )
+        )
+      )
+      (call_stmt ob_char
+        (int 46)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 101)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 110)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 100)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 98)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 99)
+        (var ob)
+      )
+      (call_stmt ob_char
+        (int 10)
+        (var ob)
+      )
+      (return
+      )
+    )
+  )
+  (fn main
+    (params
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl in_buf
+        (type U8Array)
+        (call U8Array
+(int 131072))
+      )
+      (var_decl atom_buf
+        (type U8Array)
+        (call U8Array
+(int 1024))
+      )
+      (var_decl out_buf
+        (type U8Array)
+        (call U8Array
+(int 16384))
+      )
+      (var_decl nodes
+        (type I32Array)
+        (call I32Array
+(int 24576))
+      )
+      (var_decl strtab
+        (type U8Array)
+        (call U8Array
+(int 65536))
+      )
+      (var_decl slits
+        (type I32Array)
+        (call I32Array
+(int 512))
+      )
+      (var_decl locals
+        (type I32Array)
+        (call I32Array
+(int 2048))
+      )
+      (assign g_in_len
+        (call sys_read
+(int 0)
+(var in_buf)
+(int 131072))
+      )
+      (assign g_in_pos
+        (int 0)
+      )
+      (assign g_nc
+        (int 0)
+      )
+      (assign g_sp
+        (int 0)
+      )
+      (assign g_lc
+        (int 0)
+      )
+      (assign g_ob_pos
+        (int 0)
+      )
+      (assign g_slc
+        (int 0)
+      )
+      (assign g_locc
+        (int 0)
+      )
+      (var_decl root
+        (type i32)
+        (call read_node
+(var in_buf)
+(var atom_buf)
+(var nodes)
+(var strtab))
+      )
+      (if
+        (binop <
+(var root)
+(int 0))
+        (block
+          (call_stmt sys_exit
+            (int 1)
+          )
+        )
+      )
+      (call_stmt cg_program
+        (var nodes)
+        (var strtab)
+        (var slits)
+        (var locals)
+        (var out_buf)
+        (var root)
+      )
+      (call_stmt ob_flush
+        (var out_buf)
+      )
+      (call_stmt delete
+        (var in_buf)
+      )
+      (call_stmt delete
+        (var atom_buf)
+      )
+      (call_stmt delete
+        (var out_buf)
+      )
+      (call_stmt delete
+        (var nodes)
+      )
+      (call_stmt delete
+        (var strtab)
+      )
+      (call_stmt delete
+        (var slits)
+      )
+      (call_stmt delete
+        (var locals)
+      )
+      (return
+        (int 0)
+      )
+    )
+  )
+)

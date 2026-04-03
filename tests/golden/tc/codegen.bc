@@ -1,0 +1,7849 @@
+.bc
+; globals
+.global NK_PROGRAM i32 0
+.global NK_FN i32 1
+.global NK_STRUCT i32 2
+.global NK_PARAMS i32 3
+.global NK_PARAM i32 4
+.global NK_RET i32 5
+.global NK_TYPE i32 6
+.global NK_BLOCK i32 7
+.global NK_VAR_DECL i32 8
+.global NK_ASSIGN i32 9
+.global NK_CALL_STMT i32 10
+.global NK_CALL i32 11
+.global NK_IF i32 12
+.global NK_WHILE i32 13
+.global NK_RETURN i32 14
+.global NK_BINOP i32 15
+.global NK_UNARY i32 16
+.global NK_INT i32 17
+.global NK_STR i32 18
+.global NK_BOOL i32 19
+.global NK_VAR i32 20
+.global NK_CAST i32 21
+.global NK_IMPORT i32 22
+.global NK_FIELD i32 23
+.global NK_BREAK i32 24
+.global NK_CONTINUE i32 25
+.global NK_COMMENT i32 26
+.global NK_UNKNOWN i32 99
+.global g_in_pos i32 0
+.global g_in_len i32 0
+.global g_nc i32 0
+.global g_sp i32 0
+.global g_lc i32 0
+.global g_ob_pos i32 0
+.global g_slc i32 0
+.global g_locc i32 0
+.global g_loop_depth i32 0
+
+.fn ob_flush 1 void
+.param ob U8Array
+; if g_ob_pos > 0 {
+  load g_ob_pos
+  push_int 0
+  gt
+  jump_ifnot __L0
+; sys_write(1, ob, g_ob_pos as u32);
+  push_int 1
+  load ob
+  load g_ob_pos
+  cast u32
+  call sys_write 3
+  pop
+; g_ob_pos = 0;
+  push_int 0
+  store g_ob_pos
+__L0:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn ob_char 2 void
+.param c u8
+.param ob U8Array
+; set(ob, g_ob_pos as u32, c);
+  load ob
+  load g_ob_pos
+  cast u32
+  load c
+  call set 3
+  pop
+; g_ob_pos = g_ob_pos + 1;
+  load g_ob_pos
+  push_int 1
+  add
+  store g_ob_pos
+; if g_ob_pos >= 8192 { ob_flush(ob); }
+  load g_ob_pos
+  push_int 8192
+  ge
+  jump_ifnot __L1
+; if g_ob_pos >= 8192 { ob_flush(ob); }
+  load ob
+  call ob_flush 1
+  pop
+__L1:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn ob_n 4 void
+.param src U8Array
+.param start i32
+.param n i32
+.param ob U8Array
+.local i i32
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < n {
+__L2:
+  load i
+  load n
+  lt
+  jump_ifnot __L3
+; ob_char(get(src, (start + i) as u32), ob);
+  load src
+  load start
+  load i
+  add
+  cast u32
+  call get 2
+  load ob
+  call ob_char 2
+  pop
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L2
+__L3:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn ob_int 2 void
+.param n i32
+.param ob U8Array
+.local tmp U8Array
+.local len i32
+.local v i32
+.local i i32
+; if n == 0 { ob_char('0', ob); return; }
+  load n
+  push_int 0
+  eq
+  jump_ifnot __L4
+; if n == 0 { ob_char('0', ob); return; }
+  push_int 48
+  load ob
+  call ob_char 2
+  pop
+; if n == 0 { ob_char('0', ob); return; }
+  return_void
+__L4:
+; if n < 0 { ob_char('-', ob); n = 0 - n; }
+  load n
+  push_int 0
+  lt
+  jump_ifnot __L5
+; if n < 0 { ob_char('-', ob); n = 0 - n; }
+  push_int 45
+  load ob
+  call ob_char 2
+  pop
+; if n < 0 { ob_char('-', ob); n = 0 - n; }
+  push_int 0
+  load n
+  sub
+  store n
+__L5:
+; var tmp: U8Array = U8Array(12);
+  push_int 12
+  call U8Array 1
+  store tmp
+; var len: i32 = 0;
+  push_int 0
+  store len
+; var v: i32 = n;
+  load n
+  store v
+; while v > 0 {
+__L6:
+  load v
+  push_int 0
+  gt
+  jump_ifnot __L7
+; set(tmp, len as u32, (48 + v % 10) as u8);
+  load tmp
+  load len
+  cast u32
+  push_int 48
+  load v
+  push_int 10
+  mod
+  add
+  cast u8
+  call set 3
+  pop
+; len = len + 1;
+  load len
+  push_int 1
+  add
+  store len
+; v = v / 10;
+  load v
+  push_int 10
+  div
+  store v
+  jump __L6
+__L7:
+; var i: i32 = len - 1;
+  load len
+  push_int 1
+  sub
+  store i
+; while i >= 0 { ob_char(get(tmp, i as u32), ob); i = i - 1; }
+__L8:
+  load i
+  push_int 0
+  ge
+  jump_ifnot __L9
+; while i >= 0 { ob_char(get(tmp, i as u32), ob); i = i - 1; }
+  load tmp
+  load i
+  cast u32
+  call get 2
+  load ob
+  call ob_char 2
+  pop
+; while i >= 0 { ob_char(get(tmp, i as u32), ob); i = i - 1; }
+  load i
+  push_int 1
+  sub
+  store i
+  jump __L8
+__L9:
+; delete(tmp);
+  load tmp
+  call delete 1
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn ob_st_escaped 4 void
+.param strtab U8Array
+.param start i32
+.param len i32
+.param ob U8Array
+.local i i32
+.local c u8
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < len {
+__L10:
+  load i
+  load len
+  lt
+  jump_ifnot __L11
+; var c: u8 = get(strtab, (start + i) as u32);
+  load strtab
+  load start
+  load i
+  add
+  cast u32
+  call get 2
+  store c
+; if c == '"'  { ob_char('\\', ob); ob_char('"', ob); }
+  load c
+  push_int 34
+  eq
+  jump_ifnot __L12
+; if c == '"'  { ob_char('\\', ob); ob_char('"', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+; if c == '"'  { ob_char('\\', ob); ob_char('"', ob); }
+  push_int 34
+  load ob
+  call ob_char 2
+  pop
+  jump __L13
+__L12:
+; else { if c == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+  load c
+  push_int 92
+  eq
+  jump_ifnot __L14
+; else { if c == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+; else { if c == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+  jump __L15
+__L14:
+; else { if c == 10u8 { ob_char('\\', ob); ob_char('n', ob); }
+  load c
+  push_int 10
+  eq
+  jump_ifnot __L16
+; else { if c == 10u8 { ob_char('\\', ob); ob_char('n', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+; else { if c == 10u8 { ob_char('\\', ob); ob_char('n', ob); }
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+  jump __L17
+__L16:
+; else { if c == 13u8 { ob_char('\\', ob); ob_char('r', ob); }
+  load c
+  push_int 13
+  eq
+  jump_ifnot __L18
+; else { if c == 13u8 { ob_char('\\', ob); ob_char('r', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+; else { if c == 13u8 { ob_char('\\', ob); ob_char('r', ob); }
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+  jump __L19
+__L18:
+; else { if c == 9u8  { ob_char('\\', ob); ob_char('t', ob); }
+  load c
+  push_int 9
+  eq
+  jump_ifnot __L20
+; else { if c == 9u8  { ob_char('\\', ob); ob_char('t', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+; else { if c == 9u8  { ob_char('\\', ob); ob_char('t', ob); }
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+  jump __L21
+__L20:
+; else { ob_char(c, ob); }}}}}
+  load c
+  load ob
+  call ob_char 2
+  pop
+__L21:
+__L19:
+__L17:
+__L15:
+__L13:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L10
+__L11:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn peek_in 1 u8
+.param in U8Array
+; if g_in_pos >= g_in_len { return 0u8; }
+  load g_in_pos
+  load g_in_len
+  ge
+  jump_ifnot __L22
+; if g_in_pos >= g_in_len { return 0u8; }
+  push_int 0
+  return
+__L22:
+; return get(in, g_in_pos as u32);
+  load in
+  load g_in_pos
+  cast u32
+  call get 2
+  return
+  return_void
+.endfn
+
+.fn is_atom_end 1 bool
+.param c u8
+; return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 ||
+  load c
+  push_int 32
+  eq
+  jump_if __L33
+  load c
+  push_int 9
+  eq
+  jump_if __L33
+  push_int 0
+  jump __L34
+__L33:
+  push_int 1
+__L34:
+  jump_if __L31
+  load c
+  push_int 10
+  eq
+  jump_if __L31
+  push_int 0
+  jump __L32
+__L31:
+  push_int 1
+__L32:
+  jump_if __L29
+  load c
+  push_int 13
+  eq
+  jump_if __L29
+  push_int 0
+  jump __L30
+__L29:
+  push_int 1
+__L30:
+  jump_if __L27
+  load c
+  push_int 40
+  eq
+  jump_if __L27
+  push_int 0
+  jump __L28
+__L27:
+  push_int 1
+__L28:
+  jump_if __L25
+  load c
+  push_int 41
+  eq
+  jump_if __L25
+  push_int 0
+  jump __L26
+__L25:
+  push_int 1
+__L26:
+  jump_if __L23
+  load c
+  push_int 0
+  eq
+  jump_if __L23
+  push_int 0
+  jump __L24
+__L23:
+  push_int 1
+__L24:
+  return
+  return_void
+.endfn
+
+.fn skip_ws_in 1 void
+.param in U8Array
+.local c u8
+; var c: u8 = peek_in(in);
+  load in
+  call peek_in 1
+  store c
+; while (c == ' ' || c == 9u8 || c == 10u8 || c == 13u8) && g_in_pos < g_in_len {
+__L35:
+  load c
+  push_int 32
+  eq
+  jump_if __L43
+  load c
+  push_int 9
+  eq
+  jump_if __L43
+  push_int 0
+  jump __L44
+__L43:
+  push_int 1
+__L44:
+  jump_if __L41
+  load c
+  push_int 10
+  eq
+  jump_if __L41
+  push_int 0
+  jump __L42
+__L41:
+  push_int 1
+__L42:
+  jump_if __L39
+  load c
+  push_int 13
+  eq
+  jump_if __L39
+  push_int 0
+  jump __L40
+__L39:
+  push_int 1
+__L40:
+  jump_ifnot __L37
+  load g_in_pos
+  load g_in_len
+  lt
+  jump_ifnot __L37
+  push_int 1
+  jump __L38
+__L37:
+  push_int 0
+__L38:
+  jump_ifnot __L36
+; g_in_pos = g_in_pos + 1;
+  load g_in_pos
+  push_int 1
+  add
+  store g_in_pos
+; c = peek_in(in);
+  load in
+  call peek_in 1
+  store c
+  jump __L35
+__L36:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn read_atom_in 2 i32
+.param in U8Array
+.param atom U8Array
+.local len i32
+.local c u8
+; var len: i32 = 0;
+  push_int 0
+  store len
+; var c: u8 = peek_in(in);
+  load in
+  call peek_in 1
+  store c
+; while !is_atom_end(c) {
+__L45:
+  load c
+  call is_atom_end 1
+  lnot
+  jump_ifnot __L46
+; set(atom, len as u32, c);
+  load atom
+  load len
+  cast u32
+  load c
+  call set 3
+  pop
+; len = len + 1;
+  load len
+  push_int 1
+  add
+  store len
+; g_in_pos = g_in_pos + 1;
+  load g_in_pos
+  push_int 1
+  add
+  store g_in_pos
+; c = peek_in(in);
+  load in
+  call peek_in 1
+  store c
+  jump __L45
+__L46:
+; return len;
+  load len
+  return
+  return_void
+.endfn
+
+.fn n_kind 2 i32
+.param nodes I32Array
+.param n i32
+; fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6) as u32); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  cast u32
+  call get 2
+  return
+  return_void
+.endfn
+
+.fn n_sk 3 void
+.param nodes I32Array
+.param n i32
+.param v i32
+; fn n_sk(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6) as u32, v); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  cast u32
+  load v
+  call set 3
+  pop
+  return_void
+.endfn
+
+.fn n_ss 2 i32
+.param nodes I32Array
+.param n i32
+; fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+1) as u32); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 1
+  add
+  cast u32
+  call get 2
+  return
+  return_void
+.endfn
+
+.fn n_set_ss 3 void
+.param nodes I32Array
+.param n i32
+.param v i32
+; fn n_set_ss(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+1) as u32, v); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 1
+  add
+  cast u32
+  load v
+  call set 3
+  pop
+  return_void
+.endfn
+
+.fn n_sl 2 i32
+.param nodes I32Array
+.param n i32
+; fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+2) as u32); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 2
+  add
+  cast u32
+  call get 2
+  return
+  return_void
+.endfn
+
+.fn n_set_sl 3 void
+.param nodes I32Array
+.param n i32
+.param v i32
+; fn n_set_sl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+2) as u32, v); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 2
+  add
+  cast u32
+  load v
+  call set 3
+  pop
+  return_void
+.endfn
+
+.fn n_ival 2 i32
+.param nodes I32Array
+.param n i32
+; fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+3) as u32); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 3
+  add
+  cast u32
+  call get 2
+  return
+  return_void
+.endfn
+
+.fn n_set_ival 3 void
+.param nodes I32Array
+.param n i32
+.param v i32
+; fn n_set_ival(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+3) as u32, v); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 3
+  add
+  cast u32
+  load v
+  call set 3
+  pop
+  return_void
+.endfn
+
+.fn n_child 2 i32
+.param nodes I32Array
+.param n i32
+; fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+4) as u32); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 4
+  add
+  cast u32
+  call get 2
+  return
+  return_void
+.endfn
+
+.fn n_set_child 3 void
+.param nodes I32Array
+.param n i32
+.param v i32
+; fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+4) as u32, v); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 4
+  add
+  cast u32
+  load v
+  call set 3
+  pop
+  return_void
+.endfn
+
+.fn n_sib 2 i32
+.param nodes I32Array
+.param n i32
+; fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+5) as u32); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 5
+  add
+  cast u32
+  call get 2
+  return
+  return_void
+.endfn
+
+.fn n_set_sib 3 void
+.param nodes I32Array
+.param n i32
+.param v i32
+; fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+5) as u32, v); }
+  load nodes
+  load n
+  push_int 6
+  mul
+  push_int 5
+  add
+  cast u32
+  load v
+  call set 3
+  pop
+  return_void
+.endfn
+
+.fn alloc_node 2 i32
+.param nodes I32Array
+.param kind i32
+.local n i32
+.local b i32
+; var n: i32 = g_nc;
+  load g_nc
+  store n
+; g_nc = g_nc + 1;
+  load g_nc
+  push_int 1
+  add
+  store g_nc
+; var b: i32 = n * 6;
+  load n
+  push_int 6
+  mul
+  store b
+; set(nodes, b as u32, kind);
+  load nodes
+  load b
+  cast u32
+  load kind
+  call set 3
+  pop
+; set(nodes, (b+1) as u32, -1);
+  load nodes
+  load b
+  push_int 1
+  add
+  cast u32
+  push_int 1
+  neg
+  call set 3
+  pop
+; set(nodes, (b+2) as u32, 0);
+  load nodes
+  load b
+  push_int 2
+  add
+  cast u32
+  push_int 0
+  call set 3
+  pop
+; set(nodes, (b+3) as u32, 0);
+  load nodes
+  load b
+  push_int 3
+  add
+  cast u32
+  push_int 0
+  call set 3
+  pop
+; set(nodes, (b+4) as u32, -1);
+  load nodes
+  load b
+  push_int 4
+  add
+  cast u32
+  push_int 1
+  neg
+  call set 3
+  pop
+; set(nodes, (b+5) as u32, -1);
+  load nodes
+  load b
+  push_int 5
+  add
+  cast u32
+  push_int 1
+  neg
+  call set 3
+  pop
+; return n;
+  load n
+  return
+  return_void
+.endfn
+
+.fn n_nchildren 2 i32
+.param nodes I32Array
+.param n i32
+.local c i32
+.local count i32
+; var c: i32 = n_child(nodes, n);
+  load nodes
+  load n
+  call n_child 2
+  store c
+; var count: i32 = 0;
+  push_int 0
+  store count
+; while c >= 0 { count = count + 1; c = n_sib(nodes, c); }
+__L47:
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L48
+; while c >= 0 { count = count + 1; c = n_sib(nodes, c); }
+  load count
+  push_int 1
+  add
+  store count
+; while c >= 0 { count = count + 1; c = n_sib(nodes, c); }
+  load nodes
+  load c
+  call n_sib 2
+  store c
+  jump __L47
+__L48:
+; return count;
+  load count
+  return
+  return_void
+.endfn
+
+.fn n_nth_child 3 i32
+.param nodes I32Array
+.param n i32
+.param idx i32
+.local c i32
+.local i i32
+; var c: i32 = n_child(nodes, n);
+  load nodes
+  load n
+  call n_child 2
+  store c
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }
+__L49:
+  load i
+  load idx
+  lt
+  jump_ifnot __L51
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L51
+  push_int 1
+  jump __L52
+__L51:
+  push_int 0
+__L52:
+  jump_ifnot __L50
+; while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }
+  load nodes
+  load c
+  call n_sib 2
+  store c
+; while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }
+  load i
+  push_int 1
+  add
+  store i
+  jump __L49
+__L50:
+; return c;
+  load c
+  return
+  return_void
+.endfn
+
+.fn add_child 3 void
+.param nodes I32Array
+.param parent i32
+.param child i32
+.local c i32
+; var c: i32 = n_child(nodes, parent);
+  load nodes
+  load parent
+  call n_child 2
+  store c
+; if c < 0 {
+  load c
+  push_int 0
+  lt
+  jump_ifnot __L53
+; n_set_child(nodes, parent, child);
+  load nodes
+  load parent
+  load child
+  call n_set_child 3
+  pop
+  jump __L54
+__L53:
+; while n_sib(nodes, c) >= 0 { c = n_sib(nodes, c); }
+__L55:
+  load nodes
+  load c
+  call n_sib 2
+  push_int 0
+  ge
+  jump_ifnot __L56
+; while n_sib(nodes, c) >= 0 { c = n_sib(nodes, c); }
+  load nodes
+  load c
+  call n_sib 2
+  store c
+  jump __L55
+__L56:
+; n_set_sib(nodes, c, child);
+  load nodes
+  load c
+  load child
+  call n_set_sib 3
+  pop
+__L54:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn cmp2 4 bool
+.param a U8Array
+.param st i32
+.param b0 u8
+.param b1 u8
+; return get(a, st as u32)==b0 && get(a, (st+1) as u32)==b1;
+  load a
+  load st
+  cast u32
+  call get 2
+  load b0
+  eq
+  jump_ifnot __L57
+  load a
+  load st
+  push_int 1
+  add
+  cast u32
+  call get 2
+  load b1
+  eq
+  jump_ifnot __L57
+  push_int 1
+  jump __L58
+__L57:
+  push_int 0
+__L58:
+  return
+  return_void
+.endfn
+
+.fn cmp3 5 bool
+.param a U8Array
+.param st i32
+.param b0 u8
+.param b1 u8
+.param b2 u8
+; return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2;
+  load a
+  load st
+  cast u32
+  call get 2
+  load b0
+  eq
+  jump_ifnot __L61
+  load a
+  load st
+  push_int 1
+  add
+  cast u32
+  call get 2
+  load b1
+  eq
+  jump_ifnot __L61
+  push_int 1
+  jump __L62
+__L61:
+  push_int 0
+__L62:
+  jump_ifnot __L59
+  load a
+  load st
+  push_int 2
+  add
+  cast u32
+  call get 2
+  load b2
+  eq
+  jump_ifnot __L59
+  push_int 1
+  jump __L60
+__L59:
+  push_int 0
+__L60:
+  return
+  return_void
+.endfn
+
+.fn cmp4 6 bool
+.param a U8Array
+.param st i32
+.param b0 u8
+.param b1 u8
+.param b2 u8
+.param b3 u8
+; return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 &&
+  load a
+  load st
+  cast u32
+  call get 2
+  load b0
+  eq
+  jump_ifnot __L67
+  load a
+  load st
+  push_int 1
+  add
+  cast u32
+  call get 2
+  load b1
+  eq
+  jump_ifnot __L67
+  push_int 1
+  jump __L68
+__L67:
+  push_int 0
+__L68:
+  jump_ifnot __L65
+  load a
+  load st
+  push_int 2
+  add
+  cast u32
+  call get 2
+  load b2
+  eq
+  jump_ifnot __L65
+  push_int 1
+  jump __L66
+__L65:
+  push_int 0
+__L66:
+  jump_ifnot __L63
+  load a
+  load st
+  push_int 3
+  add
+  cast u32
+  call get 2
+  load b3
+  eq
+  jump_ifnot __L63
+  push_int 1
+  jump __L64
+__L63:
+  push_int 0
+__L64:
+  return
+  return_void
+.endfn
+
+.fn cmp5 7 bool
+.param a U8Array
+.param st i32
+.param b0 u8
+.param b1 u8
+.param b2 u8
+.param b3 u8
+.param b4 u8
+; return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2 &&
+  load a
+  load st
+  cast u32
+  call get 2
+  load b0
+  eq
+  jump_ifnot __L75
+  load a
+  load st
+  push_int 1
+  add
+  cast u32
+  call get 2
+  load b1
+  eq
+  jump_ifnot __L75
+  push_int 1
+  jump __L76
+__L75:
+  push_int 0
+__L76:
+  jump_ifnot __L73
+  load a
+  load st
+  push_int 2
+  add
+  cast u32
+  call get 2
+  load b2
+  eq
+  jump_ifnot __L73
+  push_int 1
+  jump __L74
+__L73:
+  push_int 0
+__L74:
+  jump_ifnot __L71
+  load a
+  load st
+  push_int 3
+  add
+  cast u32
+  call get 2
+  load b3
+  eq
+  jump_ifnot __L71
+  push_int 1
+  jump __L72
+__L71:
+  push_int 0
+__L72:
+  jump_ifnot __L69
+  load a
+  load st
+  push_int 4
+  add
+  cast u32
+  call get 2
+  load b4
+  eq
+  jump_ifnot __L69
+  push_int 1
+  jump __L70
+__L69:
+  push_int 0
+__L70:
+  return
+  return_void
+.endfn
+
+.fn cmp6 8 bool
+.param a U8Array
+.param st i32
+.param b0 u8
+.param b1 u8
+.param b2 u8
+.param b3 u8
+.param b4 u8
+.param b5 u8
+; return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2 &&
+  load a
+  load st
+  cast u32
+  call get 2
+  load b0
+  eq
+  jump_ifnot __L85
+  load a
+  load st
+  push_int 1
+  add
+  cast u32
+  call get 2
+  load b1
+  eq
+  jump_ifnot __L85
+  push_int 1
+  jump __L86
+__L85:
+  push_int 0
+__L86:
+  jump_ifnot __L83
+  load a
+  load st
+  push_int 2
+  add
+  cast u32
+  call get 2
+  load b2
+  eq
+  jump_ifnot __L83
+  push_int 1
+  jump __L84
+__L83:
+  push_int 0
+__L84:
+  jump_ifnot __L81
+  load a
+  load st
+  push_int 3
+  add
+  cast u32
+  call get 2
+  load b3
+  eq
+  jump_ifnot __L81
+  push_int 1
+  jump __L82
+__L81:
+  push_int 0
+__L82:
+  jump_ifnot __L79
+  load a
+  load st
+  push_int 4
+  add
+  cast u32
+  call get 2
+  load b4
+  eq
+  jump_ifnot __L79
+  push_int 1
+  jump __L80
+__L79:
+  push_int 0
+__L80:
+  jump_ifnot __L77
+  load a
+  load st
+  push_int 5
+  add
+  cast u32
+  call get 2
+  load b5
+  eq
+  jump_ifnot __L77
+  push_int 1
+  jump __L78
+__L77:
+  push_int 0
+__L78:
+  return
+  return_void
+.endfn
+
+.fn classify_kind 2 i32
+.param atom U8Array
+.param len i32
+; if len == 2 {
+  load len
+  push_int 2
+  eq
+  jump_ifnot __L87
+; if cmp2(atom,0, 'f','n')  { return NK_FN; }     // fn
+  load atom
+  push_int 0
+  push_int 102
+  push_int 110
+  call cmp2 4
+  jump_ifnot __L88
+; if cmp2(atom,0, 'f','n')  { return NK_FN; }     // fn
+  load NK_FN
+  return
+__L88:
+; if cmp2(atom,0, 'i','f')  { return NK_IF; }     // if
+  load atom
+  push_int 0
+  push_int 105
+  push_int 102
+  call cmp2 4
+  jump_ifnot __L89
+; if cmp2(atom,0, 'i','f')  { return NK_IF; }     // if
+  load NK_IF
+  return
+__L89:
+__L87:
+; if len == 3 {
+  load len
+  push_int 3
+  eq
+  jump_ifnot __L90
+; if cmp3(atom,0, 'r','e','t') { return NK_RET; }   // ret
+  load atom
+  push_int 0
+  push_int 114
+  push_int 101
+  push_int 116
+  call cmp3 5
+  jump_ifnot __L91
+; if cmp3(atom,0, 'r','e','t') { return NK_RET; }   // ret
+  load NK_RET
+  return
+__L91:
+; if cmp3(atom,0, 'i','n','t') { return NK_INT; }   // int
+  load atom
+  push_int 0
+  push_int 105
+  push_int 110
+  push_int 116
+  call cmp3 5
+  jump_ifnot __L92
+; if cmp3(atom,0, 'i','n','t') { return NK_INT; }   // int
+  load NK_INT
+  return
+__L92:
+; if cmp3(atom,0, 's','t','r') { return NK_STR; }   // str
+  load atom
+  push_int 0
+  push_int 115
+  push_int 116
+  push_int 114
+  call cmp3 5
+  jump_ifnot __L93
+; if cmp3(atom,0, 's','t','r') { return NK_STR; }   // str
+  load NK_STR
+  return
+__L93:
+; if cmp3(atom,0, 'v','a','r')  { return NK_VAR; }   // var
+  load atom
+  push_int 0
+  push_int 118
+  push_int 97
+  push_int 114
+  call cmp3 5
+  jump_ifnot __L94
+; if cmp3(atom,0, 'v','a','r')  { return NK_VAR; }   // var
+  load NK_VAR
+  return
+__L94:
+__L90:
+; if len == 4 {
+  load len
+  push_int 4
+  eq
+  jump_ifnot __L95
+; if cmp4(atom,0, 'b','o','o','l') { return NK_BOOL; }   // bool
+  load atom
+  push_int 0
+  push_int 98
+  push_int 111
+  push_int 111
+  push_int 108
+  call cmp4 6
+  jump_ifnot __L96
+; if cmp4(atom,0, 'b','o','o','l') { return NK_BOOL; }   // bool
+  load NK_BOOL
+  return
+__L96:
+; if cmp4(atom,0, 't','y','p','e') { return NK_TYPE; }  // type
+  load atom
+  push_int 0
+  push_int 116
+  push_int 121
+  push_int 112
+  push_int 101
+  call cmp4 6
+  jump_ifnot __L97
+; if cmp4(atom,0, 't','y','p','e') { return NK_TYPE; }  // type
+  load NK_TYPE
+  return
+__L97:
+; if cmp4(atom,0, 'c','a','s','t')   { return NK_CAST; }  // cast
+  load atom
+  push_int 0
+  push_int 99
+  push_int 97
+  push_int 115
+  push_int 116
+  call cmp4 6
+  jump_ifnot __L98
+; if cmp4(atom,0, 'c','a','s','t')   { return NK_CAST; }  // cast
+  load NK_CAST
+  return
+__L98:
+; if cmp4(atom,0, 'c','a','l','l')   { return NK_CALL; }  // call
+  load atom
+  push_int 0
+  push_int 99
+  push_int 97
+  push_int 108
+  push_int 108
+  call cmp4 6
+  jump_ifnot __L99
+; if cmp4(atom,0, 'c','a','l','l')   { return NK_CALL; }  // call
+  load NK_CALL
+  return
+__L99:
+__L95:
+; if len == 5 {
+  load len
+  push_int 5
+  eq
+  jump_ifnot __L100
+; if cmp5(atom,0, 'b','l','o','c','k')   { return NK_BLOCK; }  // block
+  load atom
+  push_int 0
+  push_int 98
+  push_int 108
+  push_int 111
+  push_int 99
+  push_int 107
+  call cmp5 7
+  jump_ifnot __L101
+; if cmp5(atom,0, 'b','l','o','c','k')   { return NK_BLOCK; }  // block
+  load NK_BLOCK
+  return
+__L101:
+; if cmp5(atom,0, 'p','a','r','a','m')   { return NK_PARAM; }  // param
+  load atom
+  push_int 0
+  push_int 112
+  push_int 97
+  push_int 114
+  push_int 97
+  push_int 109
+  call cmp5 7
+  jump_ifnot __L102
+; if cmp5(atom,0, 'p','a','r','a','m')   { return NK_PARAM; }  // param
+  load NK_PARAM
+  return
+__L102:
+; if cmp5(atom,0, 'w','h','i','l','e') { return NK_WHILE; }  // while
+  load atom
+  push_int 0
+  push_int 119
+  push_int 104
+  push_int 105
+  push_int 108
+  push_int 101
+  call cmp5 7
+  jump_ifnot __L103
+; if cmp5(atom,0, 'w','h','i','l','e') { return NK_WHILE; }  // while
+  load NK_WHILE
+  return
+__L103:
+; if cmp5(atom,0, 'b','i','n','o','p')  { return NK_BINOP; }  // binop
+  load atom
+  push_int 0
+  push_int 98
+  push_int 105
+  push_int 110
+  push_int 111
+  push_int 112
+  call cmp5 7
+  jump_ifnot __L104
+; if cmp5(atom,0, 'b','i','n','o','p')  { return NK_BINOP; }  // binop
+  load NK_BINOP
+  return
+__L104:
+; if cmp5(atom,0, 'u','n','a','r','y')  { return NK_UNARY; }  // unary
+  load atom
+  push_int 0
+  push_int 117
+  push_int 110
+  push_int 97
+  push_int 114
+  push_int 121
+  call cmp5 7
+  jump_ifnot __L105
+; if cmp5(atom,0, 'u','n','a','r','y')  { return NK_UNARY; }  // unary
+  load NK_UNARY
+  return
+__L105:
+; if cmp5(atom,0, 'f','i','e','l','d') { return NK_FIELD; }  // field
+  load atom
+  push_int 0
+  push_int 102
+  push_int 105
+  push_int 101
+  push_int 108
+  push_int 100
+  call cmp5 7
+  jump_ifnot __L106
+; if cmp5(atom,0, 'f','i','e','l','d') { return NK_FIELD; }  // field
+  load NK_FIELD
+  return
+__L106:
+; if cmp5(atom,0, 'b','r','e','a','k')   { return NK_BREAK; }  // break
+  load atom
+  push_int 0
+  push_int 98
+  push_int 114
+  push_int 101
+  push_int 97
+  push_int 107
+  call cmp5 7
+  jump_ifnot __L107
+; if cmp5(atom,0, 'b','r','e','a','k')   { return NK_BREAK; }  // break
+  load NK_BREAK
+  return
+__L107:
+__L100:
+; if len == 6 {
+  load len
+  push_int 6
+  eq
+  jump_ifnot __L108
+; if cmp6(atom,0, 'p','a','r','a','m','s')  { return NK_PARAMS; }  // params
+  load atom
+  push_int 0
+  push_int 112
+  push_int 97
+  push_int 114
+  push_int 97
+  push_int 109
+  push_int 115
+  call cmp6 8
+  jump_ifnot __L109
+; if cmp6(atom,0, 'p','a','r','a','m','s')  { return NK_PARAMS; }  // params
+  load NK_PARAMS
+  return
+__L109:
+; if cmp6(atom,0, 'r','e','t','u','r','n'){ return NK_RETURN; }  // return
+  load atom
+  push_int 0
+  push_int 114
+  push_int 101
+  push_int 116
+  push_int 117
+  push_int 114
+  push_int 110
+  call cmp6 8
+  jump_ifnot __L110
+; if cmp6(atom,0, 'r','e','t','u','r','n'){ return NK_RETURN; }  // return
+  load NK_RETURN
+  return
+__L110:
+; if cmp6(atom,0, 's','t','r','u','c','t') { return NK_STRUCT; }  // struct
+  load atom
+  push_int 0
+  push_int 115
+  push_int 116
+  push_int 114
+  push_int 117
+  push_int 99
+  push_int 116
+  call cmp6 8
+  jump_ifnot __L111
+; if cmp6(atom,0, 's','t','r','u','c','t') { return NK_STRUCT; }  // struct
+  load NK_STRUCT
+  return
+__L111:
+; if cmp6(atom,0, 'a','s','s','i','g','n') { return NK_ASSIGN; }  // assign
+  load atom
+  push_int 0
+  push_int 97
+  push_int 115
+  push_int 115
+  push_int 105
+  push_int 103
+  push_int 110
+  call cmp6 8
+  jump_ifnot __L112
+; if cmp6(atom,0, 'a','s','s','i','g','n') { return NK_ASSIGN; }  // assign
+  load NK_ASSIGN
+  return
+__L112:
+; if cmp6(atom,0, 'i','m','p','o','r','t'){ return NK_IMPORT; }  // import
+  load atom
+  push_int 0
+  push_int 105
+  push_int 109
+  push_int 112
+  push_int 111
+  push_int 114
+  push_int 116
+  call cmp6 8
+  jump_ifnot __L113
+; if cmp6(atom,0, 'i','m','p','o','r','t'){ return NK_IMPORT; }  // import
+  load NK_IMPORT
+  return
+__L113:
+__L108:
+; if len == 7 {
+  load len
+  push_int 7
+  eq
+  jump_ifnot __L114
+; if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {
+  load atom
+  push_int 0
+  push_int 112
+  push_int 114
+  push_int 111
+  push_int 103
+  call cmp4 6
+  jump_ifnot __L116
+  load atom
+  push_int 4
+  push_int 114
+  push_int 97
+  push_int 109
+  call cmp3 5
+  jump_ifnot __L116
+  push_int 1
+  jump __L117
+__L116:
+  push_int 0
+__L117:
+  jump_ifnot __L115
+; return NK_PROGRAM;
+  load NK_PROGRAM
+  return
+__L115:
+; if cmp4(atom,0, 'c','o','m','m') && cmp3(atom,4, 'e','n','t') {
+  load atom
+  push_int 0
+  push_int 99
+  push_int 111
+  push_int 109
+  push_int 109
+  call cmp4 6
+  jump_ifnot __L119
+  load atom
+  push_int 4
+  push_int 101
+  push_int 110
+  push_int 116
+  call cmp3 5
+  jump_ifnot __L119
+  push_int 1
+  jump __L120
+__L119:
+  push_int 0
+__L120:
+  jump_ifnot __L118
+; return NK_COMMENT;
+  load NK_COMMENT
+  return
+__L118:
+__L114:
+; if len == 8 {
+  load len
+  push_int 8
+  eq
+  jump_ifnot __L121
+; if cmp4(atom,0, 'v','a','r','_') && cmp4(atom,4, 'd','e','c','l') {
+  load atom
+  push_int 0
+  push_int 118
+  push_int 97
+  push_int 114
+  push_int 95
+  call cmp4 6
+  jump_ifnot __L123
+  load atom
+  push_int 4
+  push_int 100
+  push_int 101
+  push_int 99
+  push_int 108
+  call cmp4 6
+  jump_ifnot __L123
+  push_int 1
+  jump __L124
+__L123:
+  push_int 0
+__L124:
+  jump_ifnot __L122
+; return NK_VAR_DECL;
+  load NK_VAR_DECL
+  return
+__L122:
+; if cmp4(atom,0, 'c','o','n','t') && cmp4(atom,4, 'i','n','u','e') {
+  load atom
+  push_int 0
+  push_int 99
+  push_int 111
+  push_int 110
+  push_int 116
+  call cmp4 6
+  jump_ifnot __L126
+  load atom
+  push_int 4
+  push_int 105
+  push_int 110
+  push_int 117
+  push_int 101
+  call cmp4 6
+  jump_ifnot __L126
+  push_int 1
+  jump __L127
+__L126:
+  push_int 0
+__L127:
+  jump_ifnot __L125
+; return NK_CONTINUE;
+  load NK_CONTINUE
+  return
+__L125:
+__L121:
+; if len == 9 {
+  load len
+  push_int 9
+  eq
+  jump_ifnot __L128
+; if cmp4(atom,0, 'c','a','l','l') && cmp5(atom,4, '_','s','t','m','t') {
+  load atom
+  push_int 0
+  push_int 99
+  push_int 97
+  push_int 108
+  push_int 108
+  call cmp4 6
+  jump_ifnot __L130
+  load atom
+  push_int 4
+  push_int 95
+  push_int 115
+  push_int 116
+  push_int 109
+  push_int 116
+  call cmp5 7
+  jump_ifnot __L130
+  push_int 1
+  jump __L131
+__L130:
+  push_int 0
+__L131:
+  jump_ifnot __L129
+; return NK_CALL_STMT;
+  load NK_CALL_STMT
+  return
+__L129:
+__L128:
+; return NK_UNKNOWN;
+  load NK_UNKNOWN
+  return
+  return_void
+.endfn
+
+.fn is_digit_c 1 bool
+.param c u8
+; fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
+  load c
+  push_int 48
+  ge
+  jump_ifnot __L132
+  load c
+  push_int 57
+  le
+  jump_ifnot __L132
+  push_int 1
+  jump __L133
+__L132:
+  push_int 0
+__L133:
+  return
+  return_void
+.endfn
+
+.fn read_node 4 i32
+.param in U8Array
+.param atom U8Array
+.param nodes I32Array
+.param strtab U8Array
+.local klen i32
+.local actual_klen i32
+.local kind_code i32
+.local n i32
+.local base i32
+.local c u8
+.local ss i32
+.local ch u8
+.local esc u8
+.local vlen i32
+.local ival i32
+.local ii i32
+.local last_child i32
+.local child i32
+; skip_ws_in(in);
+  load in
+  call skip_ws_in 1
+  pop
+; if g_in_pos >= g_in_len { return -1; }
+  load g_in_pos
+  load g_in_len
+  ge
+  jump_ifnot __L134
+; if g_in_pos >= g_in_len { return -1; }
+  push_int 1
+  neg
+  return
+__L134:
+; if peek_in(in) != '(' { return -1; }  // not '('
+  load in
+  call peek_in 1
+  push_int 40
+  ne
+  jump_ifnot __L135
+; if peek_in(in) != '(' { return -1; }  // not '('
+  push_int 1
+  neg
+  return
+__L135:
+; g_in_pos = g_in_pos + 1;
+  load g_in_pos
+  push_int 1
+  add
+  store g_in_pos
+; skip_ws_in(in);
+  load in
+  call skip_ws_in 1
+  pop
+; var klen: i32 = read_atom_in(in, atom);
+  load in
+  load atom
+  call read_atom_in 2
+  store klen
+; var actual_klen: i32 = 0;
+  push_int 0
+  store actual_klen
+; while actual_klen < klen && get(atom, actual_klen as u32) != ':' {
+__L136:
+  load actual_klen
+  load klen
+  lt
+  jump_ifnot __L138
+  load atom
+  load actual_klen
+  cast u32
+  call get 2
+  push_int 58
+  ne
+  jump_ifnot __L138
+  push_int 1
+  jump __L139
+__L138:
+  push_int 0
+__L139:
+  jump_ifnot __L137
+; actual_klen = actual_klen + 1;
+  load actual_klen
+  push_int 1
+  add
+  store actual_klen
+  jump __L136
+__L137:
+; var kind_code: i32 = classify_kind(atom, actual_klen);
+  load atom
+  load actual_klen
+  call classify_kind 2
+  store kind_code
+; var n: i32 = alloc_node(nodes, kind_code);
+  load nodes
+  load kind_code
+  call alloc_node 2
+  store n
+; var base: i32 = n * 6;
+  load n
+  push_int 6
+  mul
+  store base
+; skip_ws_in(in);
+  load in
+  call skip_ws_in 1
+  pop
+; var c: u8 = peek_in(in);
+  load in
+  call peek_in 1
+  store c
+; if (kind_code == NK_STR || kind_code == NK_COMMENT) && c == '"' {
+  load kind_code
+  load NK_STR
+  eq
+  jump_if __L144
+  load kind_code
+  load NK_COMMENT
+  eq
+  jump_if __L144
+  push_int 0
+  jump __L145
+__L144:
+  push_int 1
+__L145:
+  jump_ifnot __L142
+  load c
+  push_int 34
+  eq
+  jump_ifnot __L142
+  push_int 1
+  jump __L143
+__L142:
+  push_int 0
+__L143:
+  jump_ifnot __L140
+; g_in_pos = g_in_pos + 1; // consume opening '"'
+  load g_in_pos
+  push_int 1
+  add
+  store g_in_pos
+; var ss: i32 = g_sp;
+  load g_sp
+  store ss
+; var ch: u8 = peek_in(in);
+  load in
+  call peek_in 1
+  store ch
+; while ch != '"' && ch != 0u8 {
+__L146:
+  load ch
+  push_int 34
+  ne
+  jump_ifnot __L148
+  load ch
+  push_int 0
+  ne
+  jump_ifnot __L148
+  push_int 1
+  jump __L149
+__L148:
+  push_int 0
+__L149:
+  jump_ifnot __L147
+; if ch == '\\' {
+  load ch
+  push_int 92
+  eq
+  jump_ifnot __L150
+; g_in_pos = g_in_pos + 1;
+  load g_in_pos
+  push_int 1
+  add
+  store g_in_pos
+; var esc: u8 = peek_in(in);
+  load in
+  call peek_in 1
+  store esc
+; if esc == 'n'  { ch = 10u8; }
+  load esc
+  push_int 110
+  eq
+  jump_ifnot __L151
+; if esc == 'n'  { ch = 10u8; }
+  push_int 10
+  store ch
+__L151:
+; if esc == 't'  { ch = 9u8; }
+  load esc
+  push_int 116
+  eq
+  jump_ifnot __L152
+; if esc == 't'  { ch = 9u8; }
+  push_int 9
+  store ch
+__L152:
+; if esc == 'r'  { ch = 13u8; }
+  load esc
+  push_int 114
+  eq
+  jump_ifnot __L153
+; if esc == 'r'  { ch = 13u8; }
+  push_int 13
+  store ch
+__L153:
+; if esc == '\\' { ch = '\\'; }
+  load esc
+  push_int 92
+  eq
+  jump_ifnot __L154
+; if esc == '\\' { ch = '\\'; }
+  push_int 92
+  store ch
+__L154:
+; if esc == '"'  { ch = '"'; }
+  load esc
+  push_int 34
+  eq
+  jump_ifnot __L155
+; if esc == '"'  { ch = '"'; }
+  push_int 34
+  store ch
+__L155:
+; if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\' && esc != '"' { ch = esc; }
+  load esc
+  push_int 110
+  ne
+  jump_ifnot __L163
+  load esc
+  push_int 116
+  ne
+  jump_ifnot __L163
+  push_int 1
+  jump __L164
+__L163:
+  push_int 0
+__L164:
+  jump_ifnot __L161
+  load esc
+  push_int 114
+  ne
+  jump_ifnot __L161
+  push_int 1
+  jump __L162
+__L161:
+  push_int 0
+__L162:
+  jump_ifnot __L159
+  load esc
+  push_int 92
+  ne
+  jump_ifnot __L159
+  push_int 1
+  jump __L160
+__L159:
+  push_int 0
+__L160:
+  jump_ifnot __L157
+  load esc
+  push_int 34
+  ne
+  jump_ifnot __L157
+  push_int 1
+  jump __L158
+__L157:
+  push_int 0
+__L158:
+  jump_ifnot __L156
+; if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\' && esc != '"' { ch = esc; }
+  load esc
+  store ch
+__L156:
+__L150:
+; set(strtab, g_sp as u32, ch);
+  load strtab
+  load g_sp
+  cast u32
+  load ch
+  call set 3
+  pop
+; g_sp = g_sp + 1;
+  load g_sp
+  push_int 1
+  add
+  store g_sp
+; g_in_pos = g_in_pos + 1;
+  load g_in_pos
+  push_int 1
+  add
+  store g_in_pos
+; ch = peek_in(in);
+  load in
+  call peek_in 1
+  store ch
+  jump __L146
+__L147:
+; if ch == '"' { g_in_pos = g_in_pos + 1; } // consume closing '"'
+  load ch
+  push_int 34
+  eq
+  jump_ifnot __L165
+; if ch == '"' { g_in_pos = g_in_pos + 1; } // consume closing '"'
+  load g_in_pos
+  push_int 1
+  add
+  store g_in_pos
+__L165:
+; set(nodes, (base+1) as u32, ss);
+  load nodes
+  load base
+  push_int 1
+  add
+  cast u32
+  load ss
+  call set 3
+  pop
+; set(nodes, (base+2) as u32, g_sp - ss);
+  load nodes
+  load base
+  push_int 2
+  add
+  cast u32
+  load g_sp
+  load ss
+  sub
+  call set 3
+  pop
+; skip_ws_in(in);
+  load in
+  call skip_ws_in 1
+  pop
+  jump __L141
+__L140:
+  load c
+  push_int 40
+  ne
+  jump_ifnot __L169
+  load c
+  push_int 41
+  ne
+  jump_ifnot __L169
+  push_int 1
+  jump __L170
+__L169:
+  push_int 0
+__L170:
+  jump_ifnot __L167
+  load c
+  push_int 0
+  ne
+  jump_ifnot __L167
+  push_int 1
+  jump __L168
+__L167:
+  push_int 0
+__L168:
+  jump_ifnot __L166
+; var vlen: i32 = read_atom_in(in, atom);
+  load in
+  load atom
+  call read_atom_in 2
+  store vlen
+; if kind_code == NK_INT && vlen > 0 && is_digit_c(get(atom, 0u32)) {
+  load kind_code
+  load NK_INT
+  eq
+  jump_ifnot __L175
+  load vlen
+  push_int 0
+  gt
+  jump_ifnot __L175
+  push_int 1
+  jump __L176
+__L175:
+  push_int 0
+__L176:
+  jump_ifnot __L173
+  load atom
+  push_int 0
+  call get 2
+  call is_digit_c 1
+  jump_ifnot __L173
+  push_int 1
+  jump __L174
+__L173:
+  push_int 0
+__L174:
+  jump_ifnot __L171
+; var ival: i32 = 0;
+  push_int 0
+  store ival
+; var ii: i32 = 0;
+  push_int 0
+  store ii
+; while ii < vlen {
+__L177:
+  load ii
+  load vlen
+  lt
+  jump_ifnot __L178
+; ival = ival * 10 + (get(atom, ii as u32) as i32 - 48);
+  load ival
+  push_int 10
+  mul
+  load atom
+  load ii
+  cast u32
+  call get 2
+  cast i32
+  push_int 48
+  sub
+  add
+  store ival
+; ii = ii + 1;
+  load ii
+  push_int 1
+  add
+  store ii
+  jump __L177
+__L178:
+; set(nodes, (base+3) as u32, ival);
+  load nodes
+  load base
+  push_int 3
+  add
+  cast u32
+  load ival
+  call set 3
+  pop
+  jump __L172
+__L171:
+; var ss: i32 = g_sp;
+  load g_sp
+  store ss
+; var ii: i32 = 0;
+  push_int 0
+  store ii
+; while ii < vlen {
+__L179:
+  load ii
+  load vlen
+  lt
+  jump_ifnot __L180
+; set(strtab, g_sp as u32, get(atom, ii as u32));
+  load strtab
+  load g_sp
+  cast u32
+  load atom
+  load ii
+  cast u32
+  call get 2
+  call set 3
+  pop
+; g_sp = g_sp + 1;
+  load g_sp
+  push_int 1
+  add
+  store g_sp
+; ii = ii + 1;
+  load ii
+  push_int 1
+  add
+  store ii
+  jump __L179
+__L180:
+; set(nodes, (base+1) as u32, ss);
+  load nodes
+  load base
+  push_int 1
+  add
+  cast u32
+  load ss
+  call set 3
+  pop
+; set(nodes, (base+2) as u32, vlen);
+  load nodes
+  load base
+  push_int 2
+  add
+  cast u32
+  load vlen
+  call set 3
+  pop
+__L172:
+; skip_ws_in(in);
+  load in
+  call skip_ws_in 1
+  pop
+__L166:
+__L141:
+; c = peek_in(in);
+  load in
+  call peek_in 1
+  store c
+; var last_child: i32 = -1;
+  push_int 1
+  neg
+  store last_child
+; while c == '(' {
+__L181:
+  load c
+  push_int 40
+  eq
+  jump_ifnot __L182
+; var child: i32 = read_node(in, atom, nodes, strtab);
+  load in
+  load atom
+  load nodes
+  load strtab
+  call read_node 4
+  store child
+; if child >= 0 {
+  load child
+  push_int 0
+  ge
+  jump_ifnot __L183
+; if last_child < 0 {
+  load last_child
+  push_int 0
+  lt
+  jump_ifnot __L184
+; set(nodes, (base+4) as u32, child);
+  load nodes
+  load base
+  push_int 4
+  add
+  cast u32
+  load child
+  call set 3
+  pop
+  jump __L185
+__L184:
+; n_set_sib(nodes, last_child, child);
+  load nodes
+  load last_child
+  load child
+  call n_set_sib 3
+  pop
+__L185:
+; last_child = child;
+  load child
+  store last_child
+__L183:
+; skip_ws_in(in);
+  load in
+  call skip_ws_in 1
+  pop
+; c = peek_in(in);
+  load in
+  call peek_in 1
+  store c
+  jump __L181
+__L182:
+; if peek_in(in) == ')' { g_in_pos = g_in_pos + 1; }
+  load in
+  call peek_in 1
+  push_int 41
+  eq
+  jump_ifnot __L186
+; if peek_in(in) == ')' { g_in_pos = g_in_pos + 1; }
+  load g_in_pos
+  push_int 1
+  add
+  store g_in_pos
+__L186:
+; return n;
+  load n
+  return
+  return_void
+.endfn
+
+.fn sval_eq 5 bool
+.param strtab U8Array
+.param ss i32
+.param sl i32
+.param b U8Array
+.param bl i32
+.local i i32
+; if sl != bl { return false; }
+  load sl
+  load bl
+  ne
+  jump_ifnot __L187
+; if sl != bl { return false; }
+  push_int 0
+  return
+__L187:
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < sl {
+__L188:
+  load i
+  load sl
+  lt
+  jump_ifnot __L189
+; if get(strtab, (ss+i) as u32) != get(b, i as u32) { return false; }
+  load strtab
+  load ss
+  load i
+  add
+  cast u32
+  call get 2
+  load b
+  load i
+  cast u32
+  call get 2
+  ne
+  jump_ifnot __L190
+; if get(strtab, (ss+i) as u32) != get(b, i as u32) { return false; }
+  push_int 0
+  return
+__L190:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L188
+__L189:
+; return true;
+  push_int 1
+  return
+  return_void
+.endfn
+
+.fn sv1 4 bool
+.param strtab U8Array
+.param ss i32
+.param sl i32
+.param c0 u8
+; if sl != 1 { return false; }
+  load sl
+  push_int 1
+  ne
+  jump_ifnot __L191
+; if sl != 1 { return false; }
+  push_int 0
+  return
+__L191:
+; return get(strtab, ss as u32) == c0;
+  load strtab
+  load ss
+  cast u32
+  call get 2
+  load c0
+  eq
+  return
+  return_void
+.endfn
+
+.fn sv2 5 bool
+.param strtab U8Array
+.param ss i32
+.param sl i32
+.param c0 u8
+.param c1 u8
+; if sl != 2 { return false; }
+  load sl
+  push_int 2
+  ne
+  jump_ifnot __L192
+; if sl != 2 { return false; }
+  push_int 0
+  return
+__L192:
+; return get(strtab,ss as u32)==c0 && get(strtab,(ss+1) as u32)==c1;
+  load strtab
+  load ss
+  cast u32
+  call get 2
+  load c0
+  eq
+  jump_ifnot __L193
+  load strtab
+  load ss
+  push_int 1
+  add
+  cast u32
+  call get 2
+  load c1
+  eq
+  jump_ifnot __L193
+  push_int 1
+  jump __L194
+__L193:
+  push_int 0
+__L194:
+  return
+  return_void
+.endfn
+
+.fn slit_find 4 i32
+.param strtab U8Array
+.param slits I32Array
+.param ss i32
+.param sl i32
+.local i i32
+.local base i32
+.local es i32
+.local el i32
+.local match i32
+.local j i32
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < g_slc {
+__L195:
+  load i
+  load g_slc
+  lt
+  jump_ifnot __L196
+; var base: i32 = i * 2;
+  load i
+  push_int 2
+  mul
+  store base
+; var es: i32 = get(slits, base as u32);
+  load slits
+  load base
+  cast u32
+  call get 2
+  store es
+; var el: i32 = get(slits, (base+1) as u32);
+  load slits
+  load base
+  push_int 1
+  add
+  cast u32
+  call get 2
+  store el
+; if el == sl {
+  load el
+  load sl
+  eq
+  jump_ifnot __L197
+; var match: i32 = 1;
+  push_int 1
+  store match
+; var j: i32 = 0;
+  push_int 0
+  store j
+; while j < sl && match == 1 {
+__L198:
+  load j
+  load sl
+  lt
+  jump_ifnot __L200
+  load match
+  push_int 1
+  eq
+  jump_ifnot __L200
+  push_int 1
+  jump __L201
+__L200:
+  push_int 0
+__L201:
+  jump_ifnot __L199
+; if get(strtab,(ss+j) as u32) != get(strtab,(es+j) as u32) { match = 0; }
+  load strtab
+  load ss
+  load j
+  add
+  cast u32
+  call get 2
+  load strtab
+  load es
+  load j
+  add
+  cast u32
+  call get 2
+  ne
+  jump_ifnot __L202
+; if get(strtab,(ss+j) as u32) != get(strtab,(es+j) as u32) { match = 0; }
+  push_int 0
+  store match
+__L202:
+; j = j + 1;
+  load j
+  push_int 1
+  add
+  store j
+  jump __L198
+__L199:
+; if match == 1 { return i; }
+  load match
+  push_int 1
+  eq
+  jump_ifnot __L203
+; if match == 1 { return i; }
+  load i
+  return
+__L203:
+__L197:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L195
+__L196:
+; return -1;
+  push_int 1
+  neg
+  return
+  return_void
+.endfn
+
+.fn slit_add 4 i32
+.param strtab U8Array
+.param slits I32Array
+.param ss i32
+.param sl i32
+.local idx i32
+.local base i32
+; var idx: i32 = slit_find(strtab, slits, ss, sl);
+  load strtab
+  load slits
+  load ss
+  load sl
+  call slit_find 4
+  store idx
+; if idx >= 0 { return idx; }
+  load idx
+  push_int 0
+  ge
+  jump_ifnot __L204
+; if idx >= 0 { return idx; }
+  load idx
+  return
+__L204:
+; var base: i32 = g_slc * 2;
+  load g_slc
+  push_int 2
+  mul
+  store base
+; set(slits, base as u32, ss);
+  load slits
+  load base
+  cast u32
+  load ss
+  call set 3
+  pop
+; set(slits, (base+1) as u32, sl);
+  load slits
+  load base
+  push_int 1
+  add
+  cast u32
+  load sl
+  call set 3
+  pop
+; idx = g_slc;
+  load g_slc
+  store idx
+; g_slc = g_slc + 1;
+  load g_slc
+  push_int 1
+  add
+  store g_slc
+; return idx;
+  load idx
+  return
+  return_void
+.endfn
+
+.fn collect_strings 4 void
+.param nodes I32Array
+.param strtab U8Array
+.param slits I32Array
+.param n i32
+.local c i32
+; if n < 0 { return; }
+  load n
+  push_int 0
+  lt
+  jump_ifnot __L205
+; if n < 0 { return; }
+  return_void
+__L205:
+; if n_kind(nodes, n) == NK_STR {
+  load nodes
+  load n
+  call n_kind 2
+  load NK_STR
+  eq
+  jump_ifnot __L206
+; slit_add(strtab, slits, n_ss(nodes, n), n_sl(nodes, n));
+  load strtab
+  load slits
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  call slit_add 4
+  pop
+; return;
+  return_void
+__L206:
+; var c: i32 = n_child(nodes, n);
+  load nodes
+  load n
+  call n_child 2
+  store c
+; while c >= 0 {
+__L207:
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L208
+; collect_strings(nodes, strtab, slits, c);
+  load nodes
+  load strtab
+  load slits
+  load c
+  call collect_strings 4
+  pop
+; c = n_sib(nodes, c);
+  load nodes
+  load c
+  call n_sib 2
+  store c
+  jump __L207
+__L208:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn locals_find 4 i32
+.param strtab U8Array
+.param locals I32Array
+.param nss i32
+.param nsl i32
+.local i i32
+.local b i32
+.local es i32
+.local el i32
+.local match i32
+.local j i32
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < g_locc {
+__L209:
+  load i
+  load g_locc
+  lt
+  jump_ifnot __L210
+; var b: i32 = i * 4;
+  load i
+  push_int 4
+  mul
+  store b
+; var es: i32 = get(locals, b as u32);
+  load locals
+  load b
+  cast u32
+  call get 2
+  store es
+; var el: i32 = get(locals, (b+1) as u32);
+  load locals
+  load b
+  push_int 1
+  add
+  cast u32
+  call get 2
+  store el
+; if el == nsl {
+  load el
+  load nsl
+  eq
+  jump_ifnot __L211
+; var match: i32 = 1;
+  push_int 1
+  store match
+; var j: i32 = 0;
+  push_int 0
+  store j
+; while j < nsl && match == 1 {
+__L212:
+  load j
+  load nsl
+  lt
+  jump_ifnot __L214
+  load match
+  push_int 1
+  eq
+  jump_ifnot __L214
+  push_int 1
+  jump __L215
+__L214:
+  push_int 0
+__L215:
+  jump_ifnot __L213
+; if get(strtab,(nss+j) as u32) != get(strtab,(es+j) as u32) { match = 0; }
+  load strtab
+  load nss
+  load j
+  add
+  cast u32
+  call get 2
+  load strtab
+  load es
+  load j
+  add
+  cast u32
+  call get 2
+  ne
+  jump_ifnot __L216
+; if get(strtab,(nss+j) as u32) != get(strtab,(es+j) as u32) { match = 0; }
+  push_int 0
+  store match
+__L216:
+; j = j + 1;
+  load j
+  push_int 1
+  add
+  store j
+  jump __L212
+__L213:
+; if match == 1 { return i; }
+  load match
+  push_int 1
+  eq
+  jump_ifnot __L217
+; if match == 1 { return i; }
+  load i
+  return
+__L217:
+__L211:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L209
+__L210:
+; return -1;
+  push_int 1
+  neg
+  return
+  return_void
+.endfn
+
+.fn locals_add_entry 6 void
+.param strtab U8Array
+.param locals I32Array
+.param nss i32
+.param nsl i32
+.param tss i32
+.param tsl i32
+.local b i32
+; if locals_find(strtab, locals, nss, nsl) >= 0 { return; }
+  load strtab
+  load locals
+  load nss
+  load nsl
+  call locals_find 4
+  push_int 0
+  ge
+  jump_ifnot __L218
+; if locals_find(strtab, locals, nss, nsl) >= 0 { return; }
+  return_void
+__L218:
+; var b: i32 = g_locc * 4;
+  load g_locc
+  push_int 4
+  mul
+  store b
+; set(locals, b as u32, nss);
+  load locals
+  load b
+  cast u32
+  load nss
+  call set 3
+  pop
+; set(locals, (b+1) as u32, nsl);
+  load locals
+  load b
+  push_int 1
+  add
+  cast u32
+  load nsl
+  call set 3
+  pop
+; set(locals, (b+2) as u32, tss);
+  load locals
+  load b
+  push_int 2
+  add
+  cast u32
+  load tss
+  call set 3
+  pop
+; set(locals, (b+3) as u32, tsl);
+  load locals
+  load b
+  push_int 3
+  add
+  cast u32
+  load tsl
+  call set 3
+  pop
+; g_locc = g_locc + 1;
+  load g_locc
+  push_int 1
+  add
+  store g_locc
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn collect_locals_stmt 4 void
+.param nodes I32Array
+.param strtab U8Array
+.param locals I32Array
+.param n i32
+.local k i32
+.local type_n i32
+.local ec i32
+; var k: i32 = n_kind(nodes, n);
+  load nodes
+  load n
+  call n_kind 2
+  store k
+; if k == NK_VAR_DECL {
+  load k
+  load NK_VAR_DECL
+  eq
+  jump_ifnot __L219
+; var type_n: i32 = n_child(nodes, n);
+  load nodes
+  load n
+  call n_child 2
+  store type_n
+; if type_n >= 0 {
+  load type_n
+  push_int 0
+  ge
+  jump_ifnot __L220
+; locals_add_entry(strtab, locals,
+  load strtab
+  load locals
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  load nodes
+  load type_n
+  call n_ss 2
+  load nodes
+  load type_n
+  call n_sl 2
+  call locals_add_entry 6
+  pop
+__L220:
+; return;
+  return_void
+__L219:
+; if k == NK_IF {
+  load k
+  load NK_IF
+  eq
+  jump_ifnot __L221
+; collect_locals_block(nodes, strtab, locals, n_nth_child(nodes, n, 1));
+  load nodes
+  load strtab
+  load locals
+  load nodes
+  load n
+  push_int 1
+  call n_nth_child 3
+  call collect_locals_block 4
+  pop
+; var ec: i32 = n_nth_child(nodes, n, 2);
+  load nodes
+  load n
+  push_int 2
+  call n_nth_child 3
+  store ec
+; if ec >= 0 {
+  load ec
+  push_int 0
+  ge
+  jump_ifnot __L222
+; if n_kind(nodes, ec) == NK_IF {
+  load nodes
+  load ec
+  call n_kind 2
+  load NK_IF
+  eq
+  jump_ifnot __L223
+; collect_locals_stmt(nodes, strtab, locals, ec);
+  load nodes
+  load strtab
+  load locals
+  load ec
+  call collect_locals_stmt 4
+  pop
+  jump __L224
+__L223:
+; collect_locals_block(nodes, strtab, locals, ec);
+  load nodes
+  load strtab
+  load locals
+  load ec
+  call collect_locals_block 4
+  pop
+__L224:
+__L222:
+; return;
+  return_void
+__L221:
+; if k == NK_WHILE {
+  load k
+  load NK_WHILE
+  eq
+  jump_ifnot __L225
+; collect_locals_block(nodes, strtab, locals, n_nth_child(nodes, n, 1));
+  load nodes
+  load strtab
+  load locals
+  load nodes
+  load n
+  push_int 1
+  call n_nth_child 3
+  call collect_locals_block 4
+  pop
+; return;
+  return_void
+__L225:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn collect_locals_block 4 void
+.param nodes I32Array
+.param strtab U8Array
+.param locals I32Array
+.param blk i32
+.local c i32
+; var c: i32 = n_child(nodes, blk);
+  load nodes
+  load blk
+  call n_child 2
+  store c
+; while c >= 0 {
+__L226:
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L227
+; collect_locals_stmt(nodes, strtab, locals, c);
+  load nodes
+  load strtab
+  load locals
+  load c
+  call collect_locals_stmt 4
+  pop
+; c = n_sib(nodes, c);
+  load nodes
+  load c
+  call n_sib 2
+  store c
+  jump __L226
+__L227:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn cg_block 6 void
+.param nodes I32Array
+.param strtab U8Array
+.param slits I32Array
+.param ob U8Array
+.param loop_stk I32Array
+.param blk i32
+.local c i32
+; var c: i32 = n_child(nodes, blk);
+  load nodes
+  load blk
+  call n_child 2
+  store c
+; while c >= 0 {
+__L228:
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L229
+; cg_stmt(nodes, strtab, slits, ob, loop_stk, c);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load loop_stk
+  load c
+  call cg_stmt 6
+  pop
+; c = n_sib(nodes, c);
+  load nodes
+  load c
+  call n_sib 2
+  store c
+  jump __L228
+__L229:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn cg_stmt 6 void
+.param nodes I32Array
+.param strtab U8Array
+.param slits I32Array
+.param ob U8Array
+.param loop_stk I32Array
+.param n i32
+.local k i32
+.local init i32
+.local c i32
+.local nargs i32
+.local nc i32
+.local lelse i32
+.local lend i32
+.local else_n i32
+.local lloop i32
+.local v i32
+; var k: i32 = n_kind(nodes, n);
+  load nodes
+  load n
+  call n_kind 2
+  store k
+; if k == NK_COMMENT {
+  load k
+  load NK_COMMENT
+  eq
+  jump_ifnot __L230
+; ob_char(';', ob); ob_char(' ', ob);
+  push_int 59
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';', ob); ob_char(' ', ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
+  load strtab
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_char(10u8, ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L230:
+; if k == NK_VAR_DECL {
+  load k
+  load NK_VAR_DECL
+  eq
+  jump_ifnot __L231
+; var init: i32 = n_nth_child(nodes, n, 1);
+  load nodes
+  load n
+  push_int 1
+  call n_nth_child 3
+  store init
+; if init >= 0 {
+  load init
+  push_int 0
+  ge
+  jump_ifnot __L232
+; cg_expr(nodes, strtab, slits, ob, init);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load init
+  call cg_expr 5
+  pop
+  jump __L233
+__L232:
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 48
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+__L233:
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+  load strtab
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L231:
+; if k == NK_ASSIGN {
+  load k
+  load NK_ASSIGN
+  eq
+  jump_ifnot __L234
+; cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load nodes
+  load n
+  call n_child 2
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('o',ob);ob_char('r',ob);ob_char('e',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+  load strtab
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L234:
+; if k == NK_CALL_STMT {
+  load k
+  load NK_CALL_STMT
+  eq
+  jump_ifnot __L235
+; var c: i32 = n_child(nodes, n);
+  load nodes
+  load n
+  call n_child 2
+  store c
+; var nargs: i32 = 0;
+  push_int 0
+  store nargs
+; while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+__L236:
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L237
+; while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load c
+  call cg_expr 5
+  pop
+; while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+  load nodes
+  load c
+  call n_sib 2
+  store c
+; while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+  load nargs
+  push_int 1
+  add
+  store nargs
+  jump __L236
+__L237:
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 99
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob);
+  load strtab
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);
+  load nargs
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);ob_char('p',ob);ob_char('o',ob);ob_char('p',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);ob_char('p',ob);ob_char('o',ob);ob_char('p',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);ob_char('p',ob);ob_char('o',ob);ob_char('p',ob);ob_char(10u8,ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);ob_char('p',ob);ob_char('o',ob);ob_char('p',ob);ob_char(10u8,ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);ob_char('p',ob);ob_char('o',ob);ob_char('p',ob);ob_char(10u8,ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);ob_char('p',ob);ob_char('o',ob);ob_char('p',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L235:
+; if k == NK_IF {
+  load k
+  load NK_IF
+  eq
+  jump_ifnot __L238
+; var nc: i32 = n_nchildren(nodes, n);
+  load nodes
+  load n
+  call n_nchildren 2
+  store nc
+; if nc > 2 {
+  load nc
+  push_int 2
+  gt
+  jump_ifnot __L239
+; var lelse: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store lelse
+; var lelse: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; var lend: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store lend
+; var lend: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load nodes
+  load n
+  push_int 0
+  call n_nth_child 3
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(10u8,ob);
+  load lelse
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load loop_stk
+  load nodes
+  load n
+  push_int 1
+  call n_nth_child 3
+  call cg_block 6
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  load lend
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load lelse
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lelse,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; var else_n: i32 = n_nth_child(nodes, n, 2);
+  load nodes
+  load n
+  push_int 2
+  call n_nth_child 3
+  store else_n
+; if n_kind(nodes, else_n) == NK_IF {
+  load nodes
+  load else_n
+  call n_kind 2
+  load NK_IF
+  eq
+  jump_ifnot __L241
+; cg_stmt(nodes, strtab, slits, ob, loop_stk, else_n);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load loop_stk
+  load else_n
+  call cg_stmt 6
+  pop
+  jump __L242
+__L241:
+; cg_block(nodes, strtab, slits, ob, loop_stk, else_n);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load loop_stk
+  load else_n
+  call cg_block 6
+  pop
+__L242:
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load lend
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+  jump __L240
+__L239:
+; var lend: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store lend
+; var lend: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load nodes
+  load n
+  push_int 0
+  call n_nth_child 3
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  load lend
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load loop_stk
+  load nodes
+  load n
+  push_int 1
+  call n_nth_child 3
+  call cg_block 6
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load lend
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+__L240:
+; return;
+  return_void
+__L238:
+; if k == NK_WHILE {
+  load k
+  load NK_WHILE
+  eq
+  jump_ifnot __L243
+; var lloop: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store lloop
+; var lloop: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; var lend: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store lend
+; var lend: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; set(loop_stk, (g_loop_depth*2) as u32, lloop);
+  load loop_stk
+  load g_loop_depth
+  push_int 2
+  mul
+  cast u32
+  load lloop
+  call set 3
+  pop
+; set(loop_stk, (g_loop_depth*2+1) as u32, lend);
+  load loop_stk
+  load g_loop_depth
+  push_int 2
+  mul
+  push_int 1
+  add
+  cast u32
+  load lend
+  call set 3
+  pop
+; g_loop_depth = g_loop_depth + 1;
+  load g_loop_depth
+  push_int 1
+  add
+  store g_loop_depth
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load lloop
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load nodes
+  load n
+  push_int 0
+  call n_nth_child 3
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  load lend
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load loop_stk
+  load nodes
+  load n
+  push_int 1
+  call n_nth_child 3
+  call cg_block 6
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  load lloop
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load lend
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; g_loop_depth = g_loop_depth - 1;
+  load g_loop_depth
+  push_int 1
+  sub
+  store g_loop_depth
+; return;
+  return_void
+__L243:
+; if k == NK_BREAK {
+  load k
+  load NK_BREAK
+  eq
+  jump_ifnot __L244
+; var lend: i32 = get(loop_stk, (g_loop_depth*2-1) as u32);
+  load loop_stk
+  load g_loop_depth
+  push_int 2
+  mul
+  push_int 1
+  sub
+  cast u32
+  call get 2
+  store lend
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  load lend
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L244:
+; if k == NK_CONTINUE {
+  load k
+  load NK_CONTINUE
+  eq
+  jump_ifnot __L245
+; var lloop: i32 = get(loop_stk, (g_loop_depth*2-2) as u32);
+  load loop_stk
+  load g_loop_depth
+  push_int 2
+  mul
+  push_int 2
+  sub
+  cast u32
+  call get 2
+  store lloop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  load lloop
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L245:
+; if k == NK_RETURN {
+  load k
+  load NK_RETURN
+  eq
+  jump_ifnot __L246
+; var v: i32 = n_child(nodes, n);
+  load nodes
+  load n
+  call n_child 2
+  store v
+; if v >= 0 {
+  load v
+  push_int 0
+  ge
+  jump_ifnot __L247
+; cg_expr(nodes, strtab, slits, ob, v);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load v
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+  jump __L248
+__L247:
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 118
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+__L248:
+; return;
+  return_void
+__L246:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn cg_binop_inst 4 void
+.param strtab U8Array
+.param ss i32
+.param sl i32
+.param ob U8Array
+; ob_char(' ',ob); ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob); ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '+') { ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // add
+  load strtab
+  load ss
+  load sl
+  push_int 43
+  call sv1 4
+  jump_ifnot __L249
+; if sv1(strtab,ss,sl, '+') { ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // add
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '+') { ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // add
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '+') { ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // add
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '+') { ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // add
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '+') { ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // add
+  return_void
+__L249:
+; if sv1(strtab,ss,sl, '-') { ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(10u8,ob); return; }  // sub
+  load strtab
+  load ss
+  load sl
+  push_int 45
+  call sv1 4
+  jump_ifnot __L250
+; if sv1(strtab,ss,sl, '-') { ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(10u8,ob); return; }  // sub
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '-') { ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(10u8,ob); return; }  // sub
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '-') { ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(10u8,ob); return; }  // sub
+  push_int 98
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '-') { ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(10u8,ob); return; }  // sub
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '-') { ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(10u8,ob); return; }  // sub
+  return_void
+__L250:
+; if sv1(strtab,ss,sl, '*') { ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // mul
+  load strtab
+  load ss
+  load sl
+  push_int 42
+  call sv1 4
+  jump_ifnot __L251
+; if sv1(strtab,ss,sl, '*') { ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // mul
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '*') { ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // mul
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '*') { ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // mul
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '*') { ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // mul
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '*') { ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // mul
+  return_void
+__L251:
+; if sv1(strtab,ss,sl, '/') { ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(10u8,ob); return; }  // div
+  load strtab
+  load ss
+  load sl
+  push_int 47
+  call sv1 4
+  jump_ifnot __L252
+; if sv1(strtab,ss,sl, '/') { ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(10u8,ob); return; }  // div
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '/') { ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(10u8,ob); return; }  // div
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '/') { ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(10u8,ob); return; }  // div
+  push_int 118
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '/') { ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(10u8,ob); return; }  // div
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '/') { ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(10u8,ob); return; }  // div
+  return_void
+__L252:
+; if sv1(strtab,ss,sl, '%') { ob_char('m',ob);ob_char('o',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // mod
+  load strtab
+  load ss
+  load sl
+  push_int 37
+  call sv1 4
+  jump_ifnot __L253
+; if sv1(strtab,ss,sl, '%') { ob_char('m',ob);ob_char('o',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // mod
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '%') { ob_char('m',ob);ob_char('o',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // mod
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '%') { ob_char('m',ob);ob_char('o',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // mod
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '%') { ob_char('m',ob);ob_char('o',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // mod
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '%') { ob_char('m',ob);ob_char('o',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // mod
+  return_void
+__L253:
+; if sv1(strtab,ss,sl, '&') { ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // and
+  load strtab
+  load ss
+  load sl
+  push_int 38
+  call sv1 4
+  jump_ifnot __L254
+; if sv1(strtab,ss,sl, '&') { ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // and
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '&') { ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // and
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '&') { ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // and
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '&') { ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // and
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '&') { ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(10u8,ob); return; }  // and
+  return_void
+__L254:
+; if sv1(strtab,ss,sl, '|'){ ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // or
+  load strtab
+  load ss
+  load sl
+  push_int 124
+  call sv1 4
+  jump_ifnot __L255
+; if sv1(strtab,ss,sl, '|'){ ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // or
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '|'){ ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // or
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '|'){ ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // or
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '|'){ ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // or
+  return_void
+__L255:
+; if sv1(strtab,ss,sl, '^') { ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // xor
+  load strtab
+  load ss
+  load sl
+  push_int 94
+  call sv1 4
+  jump_ifnot __L256
+; if sv1(strtab,ss,sl, '^') { ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // xor
+  push_int 120
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '^') { ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // xor
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '^') { ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // xor
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '^') { ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // xor
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '^') { ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // xor
+  return_void
+__L256:
+; if sv1(strtab,ss,sl, '<') { ob_char('l',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // lt
+  load strtab
+  load ss
+  load sl
+  push_int 60
+  call sv1 4
+  jump_ifnot __L257
+; if sv1(strtab,ss,sl, '<') { ob_char('l',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // lt
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '<') { ob_char('l',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // lt
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '<') { ob_char('l',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // lt
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '<') { ob_char('l',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // lt
+  return_void
+__L257:
+; if sv1(strtab,ss,sl, '>') { ob_char('g',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // gt
+  load strtab
+  load ss
+  load sl
+  push_int 62
+  call sv1 4
+  jump_ifnot __L258
+; if sv1(strtab,ss,sl, '>') { ob_char('g',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // gt
+  push_int 103
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '>') { ob_char('g',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // gt
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '>') { ob_char('g',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // gt
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv1(strtab,ss,sl, '>') { ob_char('g',ob);ob_char('t',ob);ob_char(10u8,ob); return; }  // gt
+  return_void
+__L258:
+; if sv2(strtab,ss,sl, '<','<') { ob_char('s',ob);ob_char('h',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // shl
+  load strtab
+  load ss
+  load sl
+  push_int 60
+  push_int 60
+  call sv2 5
+  jump_ifnot __L259
+; if sv2(strtab,ss,sl, '<','<') { ob_char('s',ob);ob_char('h',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // shl
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '<','<') { ob_char('s',ob);ob_char('h',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // shl
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '<','<') { ob_char('s',ob);ob_char('h',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // shl
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '<','<') { ob_char('s',ob);ob_char('h',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // shl
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '<','<') { ob_char('s',ob);ob_char('h',ob);ob_char('l',ob);ob_char(10u8,ob); return; }  // shl
+  return_void
+__L259:
+; if sv2(strtab,ss,sl, '>','>') { ob_char('s',ob);ob_char('h',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // shr
+  load strtab
+  load ss
+  load sl
+  push_int 62
+  push_int 62
+  call sv2 5
+  jump_ifnot __L260
+; if sv2(strtab,ss,sl, '>','>') { ob_char('s',ob);ob_char('h',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // shr
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '>','>') { ob_char('s',ob);ob_char('h',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // shr
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '>','>') { ob_char('s',ob);ob_char('h',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // shr
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '>','>') { ob_char('s',ob);ob_char('h',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // shr
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '>','>') { ob_char('s',ob);ob_char('h',ob);ob_char('r',ob);ob_char(10u8,ob); return; }  // shr
+  return_void
+__L260:
+; if sv2(strtab,ss,sl, '=','=') { ob_char('e',ob);ob_char('q',ob);ob_char(10u8,ob); return; }  // eq
+  load strtab
+  load ss
+  load sl
+  push_int 61
+  push_int 61
+  call sv2 5
+  jump_ifnot __L261
+; if sv2(strtab,ss,sl, '=','=') { ob_char('e',ob);ob_char('q',ob);ob_char(10u8,ob); return; }  // eq
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '=','=') { ob_char('e',ob);ob_char('q',ob);ob_char(10u8,ob); return; }  // eq
+  push_int 113
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '=','=') { ob_char('e',ob);ob_char('q',ob);ob_char(10u8,ob); return; }  // eq
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '=','=') { ob_char('e',ob);ob_char('q',ob);ob_char(10u8,ob); return; }  // eq
+  return_void
+__L261:
+; if sv2(strtab,ss,sl, '!','=') { ob_char('n',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ne
+  load strtab
+  load ss
+  load sl
+  push_int 33
+  push_int 61
+  call sv2 5
+  jump_ifnot __L262
+; if sv2(strtab,ss,sl, '!','=') { ob_char('n',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ne
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '!','=') { ob_char('n',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ne
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '!','=') { ob_char('n',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ne
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '!','=') { ob_char('n',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ne
+  return_void
+__L262:
+; if sv2(strtab,ss,sl, '<','=') { ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // le
+  load strtab
+  load ss
+  load sl
+  push_int 60
+  push_int 61
+  call sv2 5
+  jump_ifnot __L263
+; if sv2(strtab,ss,sl, '<','=') { ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // le
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '<','=') { ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // le
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '<','=') { ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // le
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '<','=') { ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // le
+  return_void
+__L263:
+; if sv2(strtab,ss,sl, '>','=') { ob_char('g',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ge
+  load strtab
+  load ss
+  load sl
+  push_int 62
+  push_int 61
+  call sv2 5
+  jump_ifnot __L264
+; if sv2(strtab,ss,sl, '>','=') { ob_char('g',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ge
+  push_int 103
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '>','=') { ob_char('g',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ge
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '>','=') { ob_char('g',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ge
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; if sv2(strtab,ss,sl, '>','=') { ob_char('g',ob);ob_char('e',ob);ob_char(10u8,ob); return; }  // ge
+  return_void
+__L264:
+; ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn cg_expr 5 void
+.param nodes I32Array
+.param strtab U8Array
+.param slits I32Array
+.param ob U8Array
+.param n i32
+.local k i32
+.local is_true i32
+.local ss i32
+.local idx i32
+.local c i32
+.local nargs i32
+.local sl i32
+.local child0 i32
+.local child1 i32
+.local lf i32
+.local le i32
+.local lt i32
+.local type_n i32
+; var k: i32 = n_kind(nodes, n);
+  load nodes
+  load n
+  call n_kind 2
+  store k
+; if k == NK_INT {
+  load k
+  load NK_INT
+  eq
+  jump_ifnot __L265
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_int(n_ival(nodes,n), ob); ob_char(10u8,ob);
+  load nodes
+  load n
+  call n_ival 2
+  load ob
+  call ob_int 2
+  pop
+; ob_int(n_ival(nodes,n), ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L265:
+; if k == NK_BOOL {
+  load k
+  load NK_BOOL
+  eq
+  jump_ifnot __L266
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; var is_true: i32 = 0;
+  push_int 0
+  store is_true
+; if n_sl(nodes,n) == 4 {
+  load nodes
+  load n
+  call n_sl 2
+  push_int 4
+  eq
+  jump_ifnot __L267
+; var ss: i32 = n_ss(nodes,n);
+  load nodes
+  load n
+  call n_ss 2
+  store ss
+; if get(strtab,ss as u32)=='t' && get(strtab,(ss+1) as u32)=='r' &&
+  load strtab
+  load ss
+  cast u32
+  call get 2
+  push_int 116
+  eq
+  jump_ifnot __L273
+  load strtab
+  load ss
+  push_int 1
+  add
+  cast u32
+  call get 2
+  push_int 114
+  eq
+  jump_ifnot __L273
+  push_int 1
+  jump __L274
+__L273:
+  push_int 0
+__L274:
+  jump_ifnot __L271
+  load strtab
+  load ss
+  push_int 2
+  add
+  cast u32
+  call get 2
+  push_int 117
+  eq
+  jump_ifnot __L271
+  push_int 1
+  jump __L272
+__L271:
+  push_int 0
+__L272:
+  jump_ifnot __L269
+  load strtab
+  load ss
+  push_int 3
+  add
+  cast u32
+  call get 2
+  push_int 101
+  eq
+  jump_ifnot __L269
+  push_int 1
+  jump __L270
+__L269:
+  push_int 0
+__L270:
+  jump_ifnot __L268
+; is_true = 1;
+  push_int 1
+  store is_true
+__L268:
+__L267:
+; ob_int(is_true, ob); ob_char(10u8,ob);
+  load is_true
+  load ob
+  call ob_int 2
+  pop
+; ob_int(is_true, ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L266:
+; if k == NK_STR {
+  load k
+  load NK_STR
+  eq
+  jump_ifnot __L275
+; var idx: i32 = slit_find(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));
+  load strtab
+  load slits
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  call slit_find 4
+  store idx
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char(' ',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char(' ',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char(' ',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_int(idx, ob); ob_char(10u8,ob);
+  load idx
+  load ob
+  call ob_int 2
+  pop
+; ob_int(idx, ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L275:
+; if k == NK_VAR {
+  load k
+  load NK_VAR
+  eq
+  jump_ifnot __L276
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('o',ob);ob_char('a',ob);ob_char('d',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('o',ob);ob_char('a',ob);ob_char('d',ob);ob_char(' ',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('o',ob);ob_char('a',ob);ob_char('d',ob);ob_char(' ',ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('o',ob);ob_char('a',ob);ob_char('d',ob);ob_char(' ',ob);
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('o',ob);ob_char('a',ob);ob_char('d',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+  load strtab
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L276:
+; if k == NK_CALL {
+  load k
+  load NK_CALL
+  eq
+  jump_ifnot __L277
+; var c: i32 = n_child(nodes, n);
+  load nodes
+  load n
+  call n_child 2
+  store c
+; var nargs: i32 = 0;
+  push_int 0
+  store nargs
+; while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+__L278:
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L279
+; while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load c
+  call cg_expr 5
+  pop
+; while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+  load nodes
+  load c
+  call n_sib 2
+  store c
+; while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }
+  load nargs
+  push_int 1
+  add
+  store nargs
+  jump __L278
+__L279:
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 99
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,n), n_sl(nodes,n), ob);
+  load strtab
+  load nodes
+  load n
+  call n_ss 2
+  load nodes
+  load n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);
+  load nargs
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L277:
+; if k == NK_UNARY {
+  load k
+  load NK_UNARY
+  eq
+  jump_ifnot __L280
+; cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load nodes
+  load n
+  call n_child 2
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; var ss: i32 = n_ss(nodes,n);
+  load nodes
+  load n
+  call n_ss 2
+  store ss
+; var sl: i32 = n_sl(nodes,n);
+  load nodes
+  load n
+  call n_sl 2
+  store sl
+; if sv1(strtab,ss,sl, '-') {
+  load strtab
+  load ss
+  load sl
+  push_int 45
+  call sv1 4
+  jump_ifnot __L281
+; ob_char('n',ob);ob_char('e',ob);ob_char('g',ob);ob_char(10u8,ob);  // neg
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('n',ob);ob_char('e',ob);ob_char('g',ob);ob_char(10u8,ob);  // neg
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char('n',ob);ob_char('e',ob);ob_char('g',ob);ob_char(10u8,ob);  // neg
+  push_int 103
+  load ob
+  call ob_char 2
+  pop
+; ob_char('n',ob);ob_char('e',ob);ob_char('g',ob);ob_char(10u8,ob);  // neg
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+  jump __L282
+__L281:
+; ob_char('l',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);ob_char(10u8,ob);  // lnot
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);ob_char(10u8,ob);  // lnot
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);ob_char(10u8,ob);  // lnot
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);ob_char(10u8,ob);  // lnot
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('l',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);ob_char(10u8,ob);  // lnot
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+__L282:
+; return;
+  return_void
+__L280:
+; if k == NK_BINOP {
+  load k
+  load NK_BINOP
+  eq
+  jump_ifnot __L283
+; var ss: i32 = n_ss(nodes,n);
+  load nodes
+  load n
+  call n_ss 2
+  store ss
+; var sl: i32 = n_sl(nodes,n);
+  load nodes
+  load n
+  call n_sl 2
+  store sl
+; var child0: i32 = n_nth_child(nodes,n,0);
+  load nodes
+  load n
+  push_int 0
+  call n_nth_child 3
+  store child0
+; var child1: i32 = n_nth_child(nodes,n,1);
+  load nodes
+  load n
+  push_int 1
+  call n_nth_child 3
+  store child1
+; if sv2(strtab,ss,sl, '&','&') {
+  load strtab
+  load ss
+  load sl
+  push_int 38
+  push_int 38
+  call sv2 5
+  jump_ifnot __L284
+; var lf: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store lf
+; var lf: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; var le: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store le
+; var le: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; cg_expr(nodes, strtab, slits, ob, child0);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load child0
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  load lf
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; cg_expr(nodes, strtab, slits, ob, child1);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load child1
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);ob_char('n',ob);ob_char('o',ob);ob_char('t',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  load lf
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 49
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  load le
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load lf
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lf,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 48
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load le
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L284:
+; if sv2(strtab,ss,sl, '|','|') {
+  load strtab
+  load ss
+  load sl
+  push_int 124
+  push_int 124
+  call sv2 5
+  jump_ifnot __L285
+; var lt: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store lt
+; var lt: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; var le: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  store le
+; var le: i32 = g_lc; g_lc = g_lc + 1;
+  load g_lc
+  push_int 1
+  add
+  store g_lc
+; cg_expr(nodes, strtab, slits, ob, child0);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load child0
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  load lt
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; cg_expr(nodes, strtab, slits, ob, child1);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load child1
+  call cg_expr 5
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('f',ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  load lt
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 48
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 106
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  load le
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load lt
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lt,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 104
+  load ob
+  call ob_char 2
+  pop
+; ob_char('p',ob);ob_char('u',ob);ob_char('s',ob);ob_char('h',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 49
+  load ob
+  call ob_char 2
+  pop
+; ob_char('i',ob);ob_char('n',ob);ob_char('t',ob);ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 76
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  load le
+  load ob
+  call ob_int 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(le,ob);ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L285:
+; cg_expr(nodes, strtab, slits, ob, child0);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load child0
+  call cg_expr 5
+  pop
+; cg_expr(nodes, strtab, slits, ob, child1);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load child1
+  call cg_expr 5
+  pop
+; cg_binop_inst(strtab, ss, sl, ob);
+  load strtab
+  load ss
+  load sl
+  load ob
+  call cg_binop_inst 4
+  pop
+; return;
+  return_void
+__L283:
+; if k == NK_CAST {
+  load k
+  load NK_CAST
+  eq
+  jump_ifnot __L286
+; cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes,n,0));
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load nodes
+  load n
+  push_int 0
+  call n_nth_child 3
+  call cg_expr 5
+  pop
+; var type_n: i32 = n_nth_child(nodes,n,1);
+  load nodes
+  load n
+  push_int 1
+  call n_nth_child 3
+  store type_n
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 99
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob); ob_char(10u8,ob);
+  load strtab
+  load nodes
+  load type_n
+  call n_ss 2
+  load nodes
+  load type_n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob); ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+__L286:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn cg_fn 6 void
+.param nodes I32Array
+.param strtab U8Array
+.param slits I32Array
+.param locals I32Array
+.param ob U8Array
+.param fn_node i32
+.local params_n i32
+.local ret_n i32
+.local body_n i32
+.local ret_type_n i32
+.local ret_ss i32
+.local ret_sl i32
+.local p i32
+.local type_n i32
+.local i i32
+.local b i32
+.local nss i32
+.local nsl i32
+.local tss i32
+.local tsl i32
+.local loop_stk I32Array
+; var params_n: i32 = n_nth_child(nodes, fn_node, 0);
+  load nodes
+  load fn_node
+  push_int 0
+  call n_nth_child 3
+  store params_n
+; var ret_n: i32 = n_nth_child(nodes, fn_node, 1);
+  load nodes
+  load fn_node
+  push_int 1
+  call n_nth_child 3
+  store ret_n
+; var body_n: i32 = n_nth_child(nodes, fn_node, 2);
+  load nodes
+  load fn_node
+  push_int 2
+  call n_nth_child 3
+  store body_n
+; var ret_type_n: i32 = n_child(nodes, ret_n);
+  load nodes
+  load ret_n
+  call n_child 2
+  store ret_type_n
+; var ret_ss: i32 = 0;
+  push_int 0
+  store ret_ss
+; var ret_sl: i32 = 4;  // default "void"
+  push_int 4
+  store ret_sl
+; if ret_type_n >= 0 {
+  load ret_type_n
+  push_int 0
+  ge
+  jump_ifnot __L287
+; ret_ss = n_ss(nodes, ret_type_n);
+  load nodes
+  load ret_type_n
+  call n_ss 2
+  store ret_ss
+; ret_sl = n_sl(nodes, ret_type_n);
+  load nodes
+  load ret_type_n
+  call n_sl 2
+  store ret_sl
+__L287:
+; ob_char('.',ob);ob_char('f',ob);ob_char('n',ob);ob_char(' ',ob);
+  push_int 46
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('f',ob);ob_char('n',ob);ob_char(' ',ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('f',ob);ob_char('n',ob);ob_char(' ',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('f',ob);ob_char('n',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,fn_node), n_sl(nodes,fn_node), ob);
+  load strtab
+  load nodes
+  load fn_node
+  call n_ss 2
+  load nodes
+  load fn_node
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_char(' ',ob); ob_int(n_nchildren(nodes, params_n), ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob); ob_int(n_nchildren(nodes, params_n), ob);
+  load nodes
+  load params_n
+  call n_nchildren 2
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; if ret_sl == 0 {
+  load ret_sl
+  push_int 0
+  eq
+  jump_ifnot __L288
+; ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);
+  push_int 118
+  load ob
+  call ob_char 2
+  pop
+; ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+  jump __L289
+__L288:
+; ob_n(strtab, ret_ss, ret_sl, ob);
+  load strtab
+  load ret_ss
+  load ret_sl
+  load ob
+  call ob_n 4
+  pop
+__L289:
+; ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; var p: i32 = n_child(nodes, params_n);
+  load nodes
+  load params_n
+  call n_child 2
+  store p
+; while p >= 0 {
+__L290:
+  load p
+  push_int 0
+  ge
+  jump_ifnot __L291
+; var type_n: i32 = n_child(nodes, p);
+  load nodes
+  load p
+  call n_child 2
+  store type_n
+; ob_char('.',ob);ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char(' ',ob);
+  push_int 46
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char(' ',ob);
+  push_int 112
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char(' ',ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char(' ',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char(' ',ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char(' ',ob);
+  push_int 109
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,p), n_sl(nodes,p), ob);
+  load strtab
+  load nodes
+  load p
+  call n_ss 2
+  load nodes
+  load p
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob);
+  load strtab
+  load nodes
+  load type_n
+  call n_ss 2
+  load nodes
+  load type_n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; p = n_sib(nodes, p);
+  load nodes
+  load p
+  call n_sib 2
+  store p
+  jump __L290
+__L291:
+; g_locc = 0;
+  push_int 0
+  store g_locc
+; collect_locals_block(nodes, strtab, locals, body_n);
+  load nodes
+  load strtab
+  load locals
+  load body_n
+  call collect_locals_block 4
+  pop
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < g_locc {
+__L292:
+  load i
+  load g_locc
+  lt
+  jump_ifnot __L293
+; var b: i32 = i * 4;
+  load i
+  push_int 4
+  mul
+  store b
+; var nss: i32 = get(locals, b as u32);
+  load locals
+  load b
+  cast u32
+  call get 2
+  store nss
+; var nsl: i32 = get(locals, (b+1) as u32);
+  load locals
+  load b
+  push_int 1
+  add
+  cast u32
+  call get 2
+  store nsl
+; var tss: i32 = get(locals, (b+2) as u32);
+  load locals
+  load b
+  push_int 2
+  add
+  cast u32
+  call get 2
+  store tss
+; var tsl: i32 = get(locals, (b+3) as u32);
+  load locals
+  load b
+  push_int 3
+  add
+  cast u32
+  call get 2
+  store tsl
+; ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 46
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 99
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, nss, nsl, ob);
+  load strtab
+  load nss
+  load nsl
+  load ob
+  call ob_n 4
+  pop
+; ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, tss, tsl, ob);
+  load strtab
+  load tss
+  load tsl
+  load ob
+  call ob_n 4
+  pop
+; ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L292
+__L293:
+; g_loop_depth = 0;
+  push_int 0
+  store g_loop_depth
+; var loop_stk: I32Array = I32Array(32); // up to 16 nested while loops
+  push_int 32
+  call I32Array 1
+  store loop_stk
+; cg_block(nodes, strtab, slits, ob, loop_stk, body_n);
+  load nodes
+  load strtab
+  load slits
+  load ob
+  load loop_stk
+  load body_n
+  call cg_block 6
+  pop
+; delete(loop_stk);
+  load loop_stk
+  call delete 1
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 117
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char('u',ob);ob_char('r',ob);ob_char('n',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 95
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 118
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; ob_char('_',ob);ob_char('v',ob);ob_char('o',ob);ob_char('i',ob);ob_char('d',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char('f',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 46
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char('f',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char('f',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char('f',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char('f',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 102
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char('f',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char('f',ob);ob_char('n',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn cg_program 6 void
+.param nodes I32Array
+.param strtab U8Array
+.param slits I32Array
+.param locals I32Array
+.param ob U8Array
+.param root i32
+.local i i32
+.local b i32
+.local ss i32
+.local sl i32
+.local has_global i32
+.local c i32
+.local type_n i32
+.local init_n i32
+.local initval i32
+; ob_char('.',ob);ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
+  push_int 46
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
+  push_int 98
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
+  push_int 99
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; g_slc = 0;
+  push_int 0
+  store g_slc
+; collect_strings(nodes, strtab, slits, root);
+  load nodes
+  load strtab
+  load slits
+  load root
+  call collect_strings 4
+  pop
+; if g_slc > 0 {
+  load g_slc
+  push_int 0
+  gt
+  jump_ifnot __L294
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 59
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 103
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 98
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);ob_char('t',ob);ob_char('a',ob);ob_char('b',ob);ob_char('l',ob);ob_char('e',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < g_slc {
+__L295:
+  load i
+  load g_slc
+  lt
+  jump_ifnot __L296
+; var b: i32 = i * 2;
+  load i
+  push_int 2
+  mul
+  store b
+; var ss: i32 = get(slits, b as u32);
+  load slits
+  load b
+  cast u32
+  call get 2
+  store ss
+; var sl: i32 = get(slits, (b+1) as u32);
+  load slits
+  load b
+  push_int 1
+  add
+  cast u32
+  call get 2
+  store sl
+; ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
+  push_int 46
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
+  push_int 116
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
+  push_int 114
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
+  push_int 105
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
+  push_int 103
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_int(i, ob);
+  load i
+  load ob
+  call ob_int 2
+  pop
+; ob_char(' ',ob);ob_char('"',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(' ',ob);ob_char('"',ob);
+  push_int 34
+  load ob
+  call ob_char 2
+  pop
+; ob_st_escaped(strtab, ss, sl, ob);
+  load strtab
+  load ss
+  load sl
+  load ob
+  call ob_st_escaped 4
+  pop
+; ob_char('"',ob);ob_char(10u8,ob);
+  push_int 34
+  load ob
+  call ob_char 2
+  pop
+; ob_char('"',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L295
+__L296:
+; ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+__L294:
+; var has_global: i32 = 0;
+  push_int 0
+  store has_global
+; var c: i32 = n_child(nodes, root);
+  load nodes
+  load root
+  call n_child 2
+  store c
+; while c >= 0 {
+__L297:
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L298
+; if n_kind(nodes, c) == NK_VAR_DECL {
+  load nodes
+  load c
+  call n_kind 2
+  load NK_VAR_DECL
+  eq
+  jump_ifnot __L299
+; if has_global == 0 {
+  load has_global
+  push_int 0
+  eq
+  jump_ifnot __L300
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 59
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 103
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 98
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 115
+  load ob
+  call ob_char 2
+  pop
+; ob_char(';',ob);ob_char(' ',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; has_global = 1;
+  push_int 1
+  store has_global
+__L300:
+; var type_n: i32 = n_child(nodes, c);
+  load nodes
+  load c
+  call n_child 2
+  store type_n
+; var init_n: i32 = n_sib(nodes, type_n);
+  load nodes
+  load type_n
+  call n_sib 2
+  store init_n
+; var initval: i32 = 0;
+  push_int 0
+  store initval
+; if init_n >= 0 { initval = n_ival(nodes, init_n); }
+  load init_n
+  push_int 0
+  ge
+  jump_ifnot __L301
+; if init_n >= 0 { initval = n_ival(nodes, init_n); }
+  load nodes
+  load init_n
+  call n_ival 2
+  store initval
+__L301:
+; ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 46
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 103
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 111
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 98
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 97
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 108
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,c), n_sl(nodes,c), ob);
+  load strtab
+  load nodes
+  load c
+  call n_ss 2
+  load nodes
+  load c
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob);
+  load strtab
+  load nodes
+  load type_n
+  call n_ss 2
+  load nodes
+  load type_n
+  call n_sl 2
+  load ob
+  call ob_n 4
+  pop
+; ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_int(initval, ob);
+  load initval
+  load ob
+  call ob_int 2
+  pop
+; ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+__L299:
+; c = n_sib(nodes, c);
+  load nodes
+  load c
+  call n_sib 2
+  store c
+  jump __L297
+__L298:
+; if has_global == 1 { ob_char(10u8,ob); }
+  load has_global
+  push_int 1
+  eq
+  jump_ifnot __L302
+; if has_global == 1 { ob_char(10u8,ob); }
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+__L302:
+; c = n_child(nodes, root);
+  load nodes
+  load root
+  call n_child 2
+  store c
+; while c >= 0 {
+__L303:
+  load c
+  push_int 0
+  ge
+  jump_ifnot __L304
+; if n_kind(nodes, c) == NK_FN {
+  load nodes
+  load c
+  call n_kind 2
+  load NK_FN
+  eq
+  jump_ifnot __L305
+; cg_fn(nodes, strtab, slits, locals, ob, c);
+  load nodes
+  load strtab
+  load slits
+  load locals
+  load ob
+  load c
+  call cg_fn 6
+  pop
+__L305:
+; c = n_sib(nodes, c);
+  load nodes
+  load c
+  call n_sib 2
+  store c
+  jump __L303
+__L304:
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);
+  push_int 46
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);
+  push_int 101
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);
+  push_int 110
+  load ob
+  call ob_char 2
+  pop
+; ob_char('.',ob);ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);
+  push_int 100
+  load ob
+  call ob_char 2
+  pop
+; ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
+  push_int 98
+  load ob
+  call ob_char 2
+  pop
+; ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
+  push_int 99
+  load ob
+  call ob_char 2
+  pop
+; ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn main 0 i32
+.local in_buf U8Array
+.local atom_buf U8Array
+.local out_buf U8Array
+.local nodes I32Array
+.local strtab U8Array
+.local slits I32Array
+.local locals I32Array
+.local root i32
+; var in_buf: U8Array = U8Array(131072);   // 128KB input
+  push_int 131072
+  call U8Array 1
+  store in_buf
+; var atom_buf: U8Array = U8Array(1024);   // atom scratch buffer
+  push_int 1024
+  call U8Array 1
+  store atom_buf
+; var out_buf: U8Array = U8Array(16384);   // 16KB output buffer
+  push_int 16384
+  call U8Array 1
+  store out_buf
+; var nodes: I32Array = I32Array(24576);   // 4096 nodes × 6 ints
+  push_int 24576
+  call I32Array 1
+  store nodes
+; var strtab: U8Array = U8Array(65536);    // string table
+  push_int 65536
+  call U8Array 1
+  store strtab
+; var slits: I32Array = I32Array(512);     // 256 string literals × 2
+  push_int 512
+  call I32Array 1
+  store slits
+; var locals: I32Array = I32Array(2048);   // 512 locals × 4
+  push_int 2048
+  call I32Array 1
+  store locals
+; g_in_len = sys_read(0, in_buf, 131072u32);
+  push_int 0
+  load in_buf
+  push_int 131072
+  call sys_read 3
+  store g_in_len
+; g_in_pos = 0;
+  push_int 0
+  store g_in_pos
+; g_nc = 0;
+  push_int 0
+  store g_nc
+; g_sp = 0;
+  push_int 0
+  store g_sp
+; g_lc = 0;
+  push_int 0
+  store g_lc
+; g_ob_pos = 0;
+  push_int 0
+  store g_ob_pos
+; g_slc = 0;
+  push_int 0
+  store g_slc
+; g_locc = 0;
+  push_int 0
+  store g_locc
+; var root: i32 = read_node(in_buf, atom_buf, nodes, strtab);
+  load in_buf
+  load atom_buf
+  load nodes
+  load strtab
+  call read_node 4
+  store root
+; if root < 0 { sys_exit(1); }
+  load root
+  push_int 0
+  lt
+  jump_ifnot __L306
+; if root < 0 { sys_exit(1); }
+  push_int 1
+  call sys_exit 1
+  pop
+__L306:
+; cg_program(nodes, strtab, slits, locals, out_buf, root);
+  load nodes
+  load strtab
+  load slits
+  load locals
+  load out_buf
+  load root
+  call cg_program 6
+  pop
+; ob_flush(out_buf);
+  load out_buf
+  call ob_flush 1
+  pop
+; delete(in_buf); delete(atom_buf); delete(out_buf);
+  load in_buf
+  call delete 1
+  pop
+; delete(in_buf); delete(atom_buf); delete(out_buf);
+  load atom_buf
+  call delete 1
+  pop
+; delete(in_buf); delete(atom_buf); delete(out_buf);
+  load out_buf
+  call delete 1
+  pop
+; delete(nodes); delete(strtab); delete(slits); delete(locals);
+  load nodes
+  call delete 1
+  pop
+; delete(nodes); delete(strtab); delete(slits); delete(locals);
+  load strtab
+  call delete 1
+  pop
+; delete(nodes); delete(strtab); delete(slits); delete(locals);
+  load slits
+  call delete 1
+  pop
+; delete(nodes); delete(strtab); delete(slits); delete(locals);
+  load locals
+  call delete 1
+  pop
+; return 0;
+  push_int 0
+  return
+  return_void
+.endfn
+
+.endbc

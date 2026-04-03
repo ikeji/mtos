@@ -71,4 +71,55 @@ for f in "${FILES[@]}"; do
     echo $? > "$GOLDEN_DIR/$base.exit"
 done
 
+TC_FILES=(
+    "parse.tc"
+    "codegen.tc"
+    "bc2asm.tc"
+    "bcrun.tc"
+)
+
+# Return the file to pipe as stdin when executing each compiled tc file
+get_tc_exec_input_file() {
+    case "$1" in
+        "parse.tc") echo "$SCRIPT_DIR/hello.tc" ;;
+        "codegen.tc") echo "$GOLDEN_DIR/hello.ast" ;;
+        "bc2asm.tc") echo "$GOLDEN_DIR/hello.bc" ;;
+        "bcrun.tc") echo "$GOLDEN_DIR/hello.bc" ;;
+        *) echo "/dev/null" ;;
+    esac
+}
+
+mkdir -p "$GOLDEN_DIR/tc"
+
+echo "Updating golden files for tc/ compiler source files..."
+
+for f in "${TC_FILES[@]}"; do
+    input="$TC_DIR/$f"
+    base="${f%.tc}"
+
+    if [ ! -f "$input" ]; then
+        echo "Skipping tc/$f (not found)..."
+        continue
+    fi
+
+    echo "Processing tc/$f..."
+
+    # 1. Update AST (C impl)
+    "$PARSE" "$input" > "$GOLDEN_DIR/tc/$base.ast" 2>/dev/null
+    # 1b. Update AST (parse.tc self-hosted)
+    { echo "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.ast.tc" 2>/dev/null
+
+    # 2. Update Bytecode
+    bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
+    echo "$bc" > "$GOLDEN_DIR/tc/$base.bc"
+
+    # 3. Update Assembly
+    echo "$bc" | "$BC2ASM" > "$GOLDEN_DIR/tc/$base.s" 2>/dev/null
+
+    # 4. Update Execution Output and Exit Code (via bcrun)
+    exec_input=$(get_tc_exec_input_file "$f")
+    { echo "$bc"; cat "$exec_input"; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.out" 2>/dev/null
+    echo $? > "$GOLDEN_DIR/tc/$base.exit"
+done
+
 echo "Done."

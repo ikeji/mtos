@@ -1,0 +1,92 @@
+(program
+  (fn main
+    (params
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (var_decl buf
+        (type U8Array)
+        (call U8Array
+(int 13))
+      )
+      (call_stmt set
+        (var buf)
+        (int 0)
+        (int 72)
+      )
+      (call_stmt set
+        (var buf)
+        (int 1)
+        (int 101)
+      )
+      (call_stmt set
+        (var buf)
+        (int 2)
+        (int 108)
+      )
+      (call_stmt set
+        (var buf)
+        (int 3)
+        (int 108)
+      )
+      (call_stmt set
+        (var buf)
+        (int 4)
+        (int 111)
+      )
+      (call_stmt set
+        (var buf)
+        (int 5)
+        (int 44)
+      )
+      (call_stmt set
+        (var buf)
+        (int 6)
+        (int 32)
+      )
+      (call_stmt set
+        (var buf)
+        (int 7)
+        (int 87)
+      )
+      (call_stmt set
+        (var buf)
+        (int 8)
+        (int 111)
+      )
+      (call_stmt set
+        (var buf)
+        (int 9)
+        (int 114)
+      )
+      (call_stmt set
+        (var buf)
+        (int 10)
+        (int 108)
+      )
+      (call_stmt set
+        (var buf)
+        (int 11)
+        (int 100)
+      )
+      (call_stmt set
+        (var buf)
+        (int 12)
+        (int 10)
+      )
+      (call_stmt sys_write
+        (int 1)
+        (var buf)
+        (int 13)
+      )
+      (call_stmt delete
+        (var buf)
+      )
+      (return
+        (int 0)
+      )
+    )
+  )
+)
