@@ -881,6 +881,9 @@ fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob
 }
 
 fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob: U8Array, root: i32) -> void {
+    // ".bc\n" header
+    ob_char('.',ob);ob_char('b',ob);ob_char('c',ob);ob_char(10u8,ob);
+
     // Collect string literals
     g_slc = 0;
     collect_strings(nodes, strtab, slits, root);

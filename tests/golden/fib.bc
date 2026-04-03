@@ -1,3 +1,4 @@
+.bc
 .fn fib 1 i32
 .param n i32
   load n

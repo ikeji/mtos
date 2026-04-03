@@ -1,3 +1,4 @@
+.bc
 .fn main 0 i32
 .local sum i32
 .local i i32

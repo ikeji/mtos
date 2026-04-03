@@ -1,3 +1,4 @@
+.bc
 ; globals
 .global g_pos i32 0
 .global g_len i32 0

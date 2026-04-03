@@ -1,3 +1,4 @@
+.bc
 .fn classify 1 i32
 .param x i32
   load x

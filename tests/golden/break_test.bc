@@ -1,3 +1,4 @@
+.bc
 .fn main 0 i32
 .local i i32
   push_int 0

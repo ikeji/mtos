@@ -1,3 +1,4 @@
+.bc
 .fn main 0 i32
 .local a u8
 .local z u8

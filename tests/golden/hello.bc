@@ -1,3 +1,4 @@
+.bc
 .fn main 0 i32
 .local buf U8Array
   push_int 13

@@ -358,6 +358,9 @@ void codegen(AstNode *program) {
     memset(&cg, 0, sizeof(cg));
     cg.out = stdout;
 
+    /* emit header */
+    fprintf(cg.out, ".bc\n");
+
     /* collect all string literals in one pass */
     collect_strings(&cg, program);
 
