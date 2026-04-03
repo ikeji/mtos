@@ -5464,7 +5464,7 @@
 (binop &&
 (binop >=
 (var sl)
-(int 4))
+(int 5))
 (binop ==
 (var a)
 (int 112)))
@@ -5475,8 +5475,42 @@
 (var c)
 (int 101)))
         (block
-          (return
-            (int 1)
+          (var_decl d
+            (type u8)
+            (call get
+(var strtab)
+(binop +
+(var ss)
+(int 3)))
+          )
+          (if
+            (binop ==
+(var d)
+(int 107))
+            (block
+              (var_decl e
+                (type u8)
+                (call get
+(var strtab)
+(binop +
+(var ss)
+(int 4)))
+              )
+              (if
+                (binop &&
+(binop >=
+(var e)
+(int 48))
+(binop <=
+(var e)
+(int 57)))
+                (block
+                  (return
+                    (int 1)
+                  )
+                )
+              )
+            )
           )
         )
       )

@@ -9432,11 +9432,11 @@
       (type i32)
     )
     (block
-      (comment "var in_buf: U8Array = U8Array(131072);   // 128KB input")
+      (comment "var in_buf: U8Array = U8Array(524288);   // 512KB input")
       (var_decl in_buf
         (type U8Array)
         (call U8Array
-          (int 131072)
+          (int 524288)
         )
       )
       (comment "var atom_buf: U8Array = U8Array(1024);   // atom scratch buffer")
@@ -9453,18 +9453,18 @@
           (int 16384)
         )
       )
-      (comment "var nodes: I32Array = I32Array(24576);   // 4096 nodes × 6 ints")
+      (comment "var nodes: I32Array = I32Array(98304);   // 16384 nodes × 6 ints")
       (var_decl nodes
         (type I32Array)
         (call I32Array
-          (int 24576)
+          (int 98304)
         )
       )
-      (comment "var strtab: U8Array = U8Array(65536);    // string table")
+      (comment "var strtab: U8Array = U8Array(262144);   // string table")
       (var_decl strtab
         (type U8Array)
         (call U8Array
-          (int 65536)
+          (int 262144)
         )
       )
       (comment "var slits: I32Array = I32Array(512);     // 256 string literals × 2")
@@ -9481,12 +9481,12 @@
           (int 2048)
         )
       )
-      (comment "g_in_len = sys_read(0, in_buf, 131072u32);")
+      (comment "g_in_len = sys_read(0, in_buf, 524288u32);")
       (assign g_in_len
         (call sys_read
           (int 0)
           (var in_buf)
-          (int 131072)
+          (int 524288)
         )
       )
       (comment "g_in_pos = 0;")

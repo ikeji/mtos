@@ -4,85 +4,85 @@ NK_PROGRAM:
     .word 0
     .globl NK_FN
 NK_FN:
-    .word 0
+    .word 1
     .globl NK_STRUCT
 NK_STRUCT:
-    .word 0
+    .word 2
     .globl NK_PARAMS
 NK_PARAMS:
-    .word 0
+    .word 3
     .globl NK_PARAM
 NK_PARAM:
-    .word 0
+    .word 4
     .globl NK_RET
 NK_RET:
-    .word 0
+    .word 5
     .globl NK_TYPE
 NK_TYPE:
-    .word 0
+    .word 6
     .globl NK_BLOCK
 NK_BLOCK:
-    .word 0
+    .word 7
     .globl NK_VAR_DECL
 NK_VAR_DECL:
-    .word 0
+    .word 8
     .globl NK_ASSIGN
 NK_ASSIGN:
-    .word 0
+    .word 9
     .globl NK_CALL_STMT
 NK_CALL_STMT:
-    .word 0
+    .word 10
     .globl NK_CALL
 NK_CALL:
-    .word 0
+    .word 11
     .globl NK_IF
 NK_IF:
-    .word 0
+    .word 12
     .globl NK_WHILE
 NK_WHILE:
-    .word 0
+    .word 13
     .globl NK_RETURN
 NK_RETURN:
-    .word 0
+    .word 14
     .globl NK_BINOP
 NK_BINOP:
-    .word 0
+    .word 15
     .globl NK_UNARY
 NK_UNARY:
-    .word 0
+    .word 16
     .globl NK_INT
 NK_INT:
-    .word 0
+    .word 17
     .globl NK_STR
 NK_STR:
-    .word 0
+    .word 18
     .globl NK_BOOL
 NK_BOOL:
-    .word 0
+    .word 19
     .globl NK_VAR
 NK_VAR:
-    .word 0
+    .word 20
     .globl NK_CAST
 NK_CAST:
-    .word 0
+    .word 21
     .globl NK_IMPORT
 NK_IMPORT:
-    .word 0
+    .word 22
     .globl NK_FIELD
 NK_FIELD:
-    .word 0
+    .word 23
     .globl NK_BREAK
 NK_BREAK:
-    .word 0
+    .word 24
     .globl NK_CONTINUE
 NK_CONTINUE:
-    .word 0
+    .word 25
     .globl NK_COMMENT
 NK_COMMENT:
-    .word 0
+    .word 26
     .globl NK_UNKNOWN
 NK_UNKNOWN:
-    .word 0
+    .word 99
     .globl g_in_pos
 g_in_pos:
     .word 0
@@ -21869,7 +21869,7 @@ main:
     sw   zero, -32(s0)
     sw   zero, -36(s0)
     sw   zero, -40(s0)
-    li   t0, 131072
+    li   t0, 524288
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -21902,7 +21902,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -20(s0)
-    li   t0, 24576
+    li   t0, 98304
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -21913,7 +21913,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -24(s0)
-    li   t0, 65536
+    li   t0, 262144
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -21952,7 +21952,7 @@ main:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 131072
+    li   t0, 524288
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)

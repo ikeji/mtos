@@ -94,175 +94,175 @@ TK_FN:
     .word 0
     .globl TK_STRUCT
 TK_STRUCT:
-    .word 0
+    .word 1
     .globl TK_VAR
 TK_VAR:
-    .word 0
+    .word 2
     .globl TK_IF
 TK_IF:
-    .word 0
+    .word 3
     .globl TK_ELSE
 TK_ELSE:
-    .word 0
+    .word 4
     .globl TK_WHILE
 TK_WHILE:
-    .word 0
+    .word 5
     .globl TK_RETURN
 TK_RETURN:
-    .word 0
+    .word 6
     .globl TK_IMPORT
 TK_IMPORT:
-    .word 0
+    .word 7
     .globl TK_AS
 TK_AS:
-    .word 0
+    .word 8
     .globl TK_TRUE
 TK_TRUE:
-    .word 0
+    .word 9
     .globl TK_FALSE
 TK_FALSE:
-    .word 0
+    .word 10
     .globl TK_U8
 TK_U8:
-    .word 0
+    .word 11
     .globl TK_U16
 TK_U16:
-    .word 0
+    .word 12
     .globl TK_U32
 TK_U32:
-    .word 0
+    .word 13
     .globl TK_I8
 TK_I8:
-    .word 0
+    .word 14
     .globl TK_I16
 TK_I16:
-    .word 0
+    .word 15
     .globl TK_I32
 TK_I32:
-    .word 0
+    .word 16
     .globl TK_BOOL
 TK_BOOL:
-    .word 0
+    .word 17
     .globl TK_VOID
 TK_VOID:
-    .word 0
+    .word 18
     .globl TK_PLUS
 TK_PLUS:
-    .word 0
+    .word 19
     .globl TK_MINUS
 TK_MINUS:
-    .word 0
+    .word 20
     .globl TK_STAR
 TK_STAR:
-    .word 0
+    .word 21
     .globl TK_SLASH
 TK_SLASH:
-    .word 0
+    .word 22
     .globl TK_PERCENT
 TK_PERCENT:
-    .word 0
+    .word 23
     .globl TK_AMP
 TK_AMP:
-    .word 0
+    .word 24
     .globl TK_PIPE
 TK_PIPE:
-    .word 0
+    .word 25
     .globl TK_CARET
 TK_CARET:
-    .word 0
+    .word 26
     .globl TK_LSHIFT
 TK_LSHIFT:
-    .word 0
+    .word 27
     .globl TK_RSHIFT
 TK_RSHIFT:
-    .word 0
+    .word 28
     .globl TK_AMPAMP
 TK_AMPAMP:
-    .word 0
+    .word 29
     .globl TK_PIPEPIPE
 TK_PIPEPIPE:
-    .word 0
+    .word 30
     .globl TK_BANG
 TK_BANG:
-    .word 0
+    .word 31
     .globl TK_EQEQ
 TK_EQEQ:
-    .word 0
+    .word 32
     .globl TK_BANGEQ
 TK_BANGEQ:
-    .word 0
+    .word 33
     .globl TK_LT
 TK_LT:
-    .word 0
+    .word 34
     .globl TK_LTEQ
 TK_LTEQ:
-    .word 0
+    .word 35
     .globl TK_GT
 TK_GT:
-    .word 0
+    .word 36
     .globl TK_GTEQ
 TK_GTEQ:
-    .word 0
+    .word 37
     .globl TK_EQ
 TK_EQ:
-    .word 0
+    .word 38
     .globl TK_ARROW
 TK_ARROW:
-    .word 0
+    .word 39
     .globl TK_PLUS_EQ
 TK_PLUS_EQ:
-    .word 0
+    .word 40
     .globl TK_MINUS_EQ
 TK_MINUS_EQ:
-    .word 0
+    .word 41
     .globl TK_STAR_EQ
 TK_STAR_EQ:
-    .word 0
+    .word 42
     .globl TK_SLASH_EQ
 TK_SLASH_EQ:
-    .word 0
+    .word 43
     .globl TK_PERCENT_EQ
 TK_PERCENT_EQ:
-    .word 0
+    .word 44
     .globl TK_LPAREN
 TK_LPAREN:
-    .word 0
+    .word 45
     .globl TK_RPAREN
 TK_RPAREN:
-    .word 0
+    .word 46
     .globl TK_LBRACE
 TK_LBRACE:
-    .word 0
+    .word 47
     .globl TK_RBRACE
 TK_RBRACE:
-    .word 0
+    .word 48
     .globl TK_COMMA
 TK_COMMA:
-    .word 0
+    .word 49
     .globl TK_SEMI
 TK_SEMI:
-    .word 0
+    .word 50
     .globl TK_COLON
 TK_COLON:
-    .word 0
+    .word 51
     .globl TK_INT_LIT
 TK_INT_LIT:
-    .word 0
+    .word 52
     .globl TK_STR_LIT
 TK_STR_LIT:
-    .word 0
+    .word 53
     .globl TK_IDENT
 TK_IDENT:
-    .word 0
+    .word 54
     .globl TK_EOF
 TK_EOF:
-    .word 0
+    .word 55
     .globl TK_BREAK
 TK_BREAK:
-    .word 0
+    .word 56
     .globl TK_CONTINUE
 TK_CONTINUE:
-    .word 0
+    .word 57
     .globl g_pos
 g_pos:
     .word 0
@@ -271,10 +271,10 @@ g_len:
     .word 0
     .globl g_line
 g_line:
-    .word 0
+    .word 1
     .globl g_tok
 g_tok:
-    .word 0
+    .word 55
     .globl g_tok_ival
 g_tok_ival:
     .word 0

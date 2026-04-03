@@ -7038,14 +7038,14 @@
           )
         )
       )
-      (comment "if sl>=4&&a=='p'&&b=='e'&&c=='e' { return 1; }        // peek*")
+      (comment "if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3) as u32); if d=='k' { var e: u8=get(strtab,(ss+4) as u32); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32")
       (if
         (binop &&
           (binop &&
             (binop &&
               (binop >=
                 (var sl)
-                (int 4)
+                (int 5)
               )
               (binop ==
                 (var a)
@@ -7063,9 +7063,61 @@
           )
         )
         (block
-          (comment "if sl>=4&&a=='p'&&b=='e'&&c=='e' { return 1; }        // peek*")
-          (return
-            (int 1)
+          (comment "if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3) as u32); if d=='k' { var e: u8=get(strtab,(ss+4) as u32); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32")
+          (var_decl d
+            (type u8)
+            (call get
+              (var strtab)
+              (cast
+                (binop +
+                  (var ss)
+                  (int 3)
+                )
+                (type u32)
+              )
+            )
+          )
+          (comment "if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3) as u32); if d=='k' { var e: u8=get(strtab,(ss+4) as u32); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32")
+          (if
+            (binop ==
+              (var d)
+              (int 107)
+            )
+            (block
+              (comment "if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3) as u32); if d=='k' { var e: u8=get(strtab,(ss+4) as u32); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32")
+              (var_decl e
+                (type u8)
+                (call get
+                  (var strtab)
+                  (cast
+                    (binop +
+                      (var ss)
+                      (int 4)
+                    )
+                    (type u32)
+                  )
+                )
+              )
+              (comment "if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3) as u32); if d=='k' { var e: u8=get(strtab,(ss+4) as u32); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32")
+              (if
+                (binop &&
+                  (binop >=
+                    (var e)
+                    (int 48)
+                  )
+                  (binop <=
+                    (var e)
+                    (int 57)
+                  )
+                )
+                (block
+                  (comment "if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3) as u32); if d=='k' { var e: u8=get(strtab,(ss+4) as u32); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32")
+                  (return
+                    (int 1)
+                  )
+                )
+              )
+            )
           )
         )
       )

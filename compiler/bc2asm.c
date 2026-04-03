@@ -52,7 +52,7 @@ typedef struct {
 
 typedef struct {
     char  **strings;      int nstrings, strings_cap;
-    char  **global_names; char **global_types; int nglobals, globals_cap;
+    char  **global_names; char **global_types; int *global_inits; int nglobals, globals_cap;
     BcFunc *funcs;        int nfuncs,  funcs_cap;
 } BcProg;
 
@@ -99,11 +99,13 @@ static void prog_set_str(BcProg*p,int idx,const char*s){
         p->strings[p->nstrings++]=NULL;}
     free(p->strings[idx]); p->strings[idx]=strdup(s);
 }
-static void prog_add_global(BcProg*p,const char*nm,const char*ty){
+static void prog_add_global(BcProg*p,const char*nm,const char*ty,int iv){
     if(p->nglobals>=p->globals_cap){p->globals_cap=p->globals_cap?p->globals_cap*2:8;
         p->global_names=realloc(p->global_names,p->globals_cap*sizeof(char*));
-        p->global_types=realloc(p->global_types,p->globals_cap*sizeof(char*));}
-    p->global_names[p->nglobals]=strdup(nm); p->global_types[p->nglobals]=strdup(ty); p->nglobals++;
+        p->global_types=realloc(p->global_types,p->globals_cap*sizeof(char*));
+        p->global_inits=realloc(p->global_inits,p->globals_cap*sizeof(int));}
+    p->global_names[p->nglobals]=strdup(nm); p->global_types[p->nglobals]=strdup(ty);
+    p->global_inits[p->nglobals]=iv; p->nglobals++;
 }
 static BcFunc *prog_new_fn(BcProg*p){
     if(p->nfuncs>=p->funcs_cap){p->funcs_cap=p->funcs_cap?p->funcs_cap*2:8;p->funcs=realloc(p->funcs,p->funcs_cap*sizeof(BcFunc));}
@@ -139,7 +141,7 @@ static BcProg *bc_parse(FILE *in) {
         if(*s=='.'){
             char dir[64]; s=skip_ws(next_tok(s+1,dir,sizeof(dir)));
             if(!strcmp(dir,"string")){char is[16];s=skip_ws(next_tok(s,is,sizeof(is)));if(*s=='"'){char b[4096];parse_strlit(s+1,b,sizeof(b));prog_set_str(p,atoi(is),b);}}
-            else if(!strcmp(dir,"global")){char nm[128],ty[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,ty,sizeof(ty));prog_add_global(p,nm,ty);}
+            else if(!strcmp(dir,"global")){char nm[128],ty[64],iv[32];s=skip_ws(next_tok(s,nm,sizeof(nm)));s=skip_ws(next_tok(s,ty,sizeof(ty)));next_tok(s,iv,sizeof(iv));prog_add_global(p,nm,ty,atoi(iv));}
             else if(!strcmp(dir,"fn")){char nm[128],np[16],rt[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));s=skip_ws(next_tok(s,np,sizeof(np)));next_tok(s,rt,sizeof(rt));cur=prog_new_fn(p);cur->name=strdup(nm);cur->ret_type=strdup(rt);lt_free(&lt);}
             else if(!strcmp(dir,"param")){char nm[128],ty[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,ty,sizeof(ty));if(cur)fn_param(cur,nm,ty);}
             else if(!strcmp(dir,"local")){char nm[128],ty[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,ty,sizeof(ty));if(cur)fn_local(cur,nm,ty);}
@@ -515,7 +517,7 @@ static void emit_program(BcProg *prog) {
         E("    .data\n");
         for (int i = 0; i < prog->nglobals; i++) {
             E("    .globl %s\n", prog->global_names[i]);
-            E("%s:\n    .word 0\n", prog->global_names[i]);
+            E("%s:\n    .word %d\n", prog->global_names[i], prog->global_inits[i]);
         }
         E("\n");
     }

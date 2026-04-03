@@ -1,94 +1,94 @@
     .data
     .globl OP_PUSH_INT
 OP_PUSH_INT:
-    .word 0
+    .word 1
     .globl OP_PUSH_STR
 OP_PUSH_STR:
-    .word 0
+    .word 2
     .globl OP_LOAD
 OP_LOAD:
-    .word 0
+    .word 3
     .globl OP_STORE
 OP_STORE:
-    .word 0
+    .word 4
     .globl OP_CALL
 OP_CALL:
-    .word 0
+    .word 5
     .globl OP_RETURN
 OP_RETURN:
-    .word 0
+    .word 6
     .globl OP_RETURN_VOID
 OP_RETURN_VOID:
-    .word 0
+    .word 7
     .globl OP_POP
 OP_POP:
-    .word 0
+    .word 8
     .globl OP_ADD
 OP_ADD:
-    .word 0
+    .word 9
     .globl OP_SUB
 OP_SUB:
-    .word 0
+    .word 10
     .globl OP_MUL
 OP_MUL:
-    .word 0
+    .word 11
     .globl OP_DIV
 OP_DIV:
-    .word 0
+    .word 12
     .globl OP_MOD
 OP_MOD:
-    .word 0
+    .word 13
     .globl OP_AND
 OP_AND:
-    .word 0
+    .word 14
     .globl OP_OR
 OP_OR:
-    .word 0
+    .word 15
     .globl OP_XOR
 OP_XOR:
-    .word 0
+    .word 16
     .globl OP_SHL
 OP_SHL:
-    .word 0
+    .word 17
     .globl OP_SHR
 OP_SHR:
-    .word 0
+    .word 18
     .globl OP_EQ
 OP_EQ:
-    .word 0
+    .word 19
     .globl OP_NE
 OP_NE:
-    .word 0
+    .word 20
     .globl OP_LT
 OP_LT:
-    .word 0
+    .word 21
     .globl OP_LE
 OP_LE:
-    .word 0
+    .word 22
     .globl OP_GT
 OP_GT:
-    .word 0
+    .word 23
     .globl OP_GE
 OP_GE:
-    .word 0
+    .word 24
     .globl OP_NEG
 OP_NEG:
-    .word 0
+    .word 25
     .globl OP_LNOT
 OP_LNOT:
-    .word 0
+    .word 26
     .globl OP_CAST
 OP_CAST:
-    .word 0
+    .word 27
     .globl OP_JUMP
 OP_JUMP:
-    .word 0
+    .word 28
     .globl OP_JUMP_IF
 OP_JUMP_IF:
-    .word 0
+    .word 29
     .globl OP_JUMP_IFNOT
 OP_JUMP_IFNOT:
-    .word 0
+    .word 30
     .globl g_in_pos
 g_in_pos:
     .word 0
@@ -15630,7 +15630,7 @@ var_offset:
     .globl is_builtin
     .type  is_builtin, @function
 is_builtin:
-    # prologue: frame_size=64, params=3, locals=8
+    # prologue: frame_size=64, params=3, locals=10
     addi sp, sp, -64
     sw   ra, 60(sp)
     sw   s0, 56(sp)
@@ -15646,6 +15646,8 @@ is_builtin:
     sw   zero, -44(s0)
     sw   zero, -48(s0)
     sw   zero, -52(s0)
+    sw   zero, -56(s0)
+    sw   zero, -60(s0)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16417,7 +16419,7 @@ is_builtin:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 4
+    li   t0, 5
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16513,23 +16515,83 @@ is_builtin:
   .L_f65_pc227:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f65_pc230
-    li   t0, 1
+    beqz t0, .L_f65_pc260
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 3
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-  .L_f65_pc230:
-    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    addi sp, sp, 8
+    call __tc_get
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -56(s0)
+    lw   t0, -56(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 107
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc260
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    addi sp, sp, 8
+    call __tc_get
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -60(s0)
+    lw   t0, -60(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 48
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16541,74 +16603,18 @@ is_builtin:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f65_pc240
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 112
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f65_pc240
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    j    .L_f65_pc241
-  .L_f65_pc240:
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-  .L_f65_pc241:
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f65_pc248
-    lw   t0, -28(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 111
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f65_pc248
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    j    .L_f65_pc249
-  .L_f65_pc248:
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-  .L_f65_pc249:
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     beqz t0, .L_f65_pc256
-    lw   t0, -32(s0)
+    lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 107
+    li   t0, 57
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
+    slt  t0, t1, t0
+    xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
@@ -16641,14 +16647,14 @@ is_builtin:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 3
+    li   t0, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
+    slt  t0, t0, t1
+    xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
@@ -16657,7 +16663,7 @@ is_builtin:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 108
+    li   t0, 112
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16685,7 +16691,7 @@ is_builtin:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 101
+    li   t0, 111
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16713,7 +16719,7 @@ is_builtin:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 110
+    li   t0, 107
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16750,10 +16756,10 @@ is_builtin:
     addi sp, t0, 0
     ret
   .L_f65_pc290:
-    lw   t0, -24(s0)
+    lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 103
+    li   t0, 3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16766,10 +16772,10 @@ is_builtin:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, .L_f65_pc300
-    lw   t0, -28(s0)
+    lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 101
+    li   t0, 108
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16794,10 +16800,10 @@ is_builtin:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, .L_f65_pc308
-    lw   t0, -32(s0)
+    lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 116
+    li   t0, 101
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16821,7 +16827,35 @@ is_builtin:
   .L_f65_pc309:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f65_pc312
+    beqz t0, .L_f65_pc316
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 110
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc316
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f65_pc317
+  .L_f65_pc316:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f65_pc317:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc320
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16833,27 +16867,11 @@ is_builtin:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f65_pc312:
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 3
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f65_pc322
+  .L_f65_pc320:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 115
+    li   t0, 103
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -16863,18 +16881,6 @@ is_builtin:
     seqz t0, t0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f65_pc322
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    j    .L_f65_pc323
-  .L_f65_pc322:
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-  .L_f65_pc323:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, .L_f65_pc330
@@ -16949,14 +16955,14 @@ is_builtin:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 6
+    li   t0, 3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
-    xori t0, t0, 1
+    sub  t0, t0, t1
+    seqz t0, t0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
@@ -16965,7 +16971,7 @@ is_builtin:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 100
+    li   t0, 115
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -17021,7 +17027,7 @@ is_builtin:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 108
+    li   t0, 116
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -17077,7 +17083,7 @@ is_builtin:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 97
+    li   t0, 100
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -17105,7 +17111,7 @@ is_builtin:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 112
+    li   t0, 101
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -17133,7 +17139,7 @@ is_builtin:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 112
+    li   t0, 108
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -17189,7 +17195,7 @@ is_builtin:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 101
+    li   t0, 97
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -17217,7 +17223,7 @@ is_builtin:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 113
+    li   t0, 112
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -17245,7 +17251,7 @@ is_builtin:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 117
+    li   t0, 112
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -17282,6 +17288,118 @@ is_builtin:
     addi sp, t0, 0
     ret
   .L_f65_pc432:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 6
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc442
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 101
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc442
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f65_pc443
+  .L_f65_pc442:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f65_pc443:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc450
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 113
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc450
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f65_pc451
+  .L_f65_pc450:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f65_pc451:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc458
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc458
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f65_pc459
+  .L_f65_pc458:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f65_pc459:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f65_pc462
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_f65_pc462:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)

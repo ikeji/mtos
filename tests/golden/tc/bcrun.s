@@ -1,109 +1,109 @@
     .data
     .globl OP_PUSH_INT
 OP_PUSH_INT:
-    .word 0
+    .word 1
     .globl OP_PUSH_STR
 OP_PUSH_STR:
-    .word 0
+    .word 2
     .globl OP_LOAD
 OP_LOAD:
-    .word 0
+    .word 3
     .globl OP_STORE
 OP_STORE:
-    .word 0
+    .word 4
     .globl OP_CALL
 OP_CALL:
-    .word 0
+    .word 5
     .globl OP_RETURN
 OP_RETURN:
-    .word 0
+    .word 6
     .globl OP_RETURN_VOID
 OP_RETURN_VOID:
-    .word 0
+    .word 7
     .globl OP_POP
 OP_POP:
-    .word 0
+    .word 8
     .globl OP_ADD
 OP_ADD:
-    .word 0
+    .word 9
     .globl OP_SUB
 OP_SUB:
-    .word 0
+    .word 10
     .globl OP_MUL
 OP_MUL:
-    .word 0
+    .word 11
     .globl OP_DIV
 OP_DIV:
-    .word 0
+    .word 12
     .globl OP_MOD
 OP_MOD:
-    .word 0
+    .word 13
     .globl OP_AND
 OP_AND:
-    .word 0
+    .word 14
     .globl OP_OR
 OP_OR:
-    .word 0
+    .word 15
     .globl OP_XOR
 OP_XOR:
-    .word 0
+    .word 16
     .globl OP_SHL
 OP_SHL:
-    .word 0
+    .word 17
     .globl OP_SHR
 OP_SHR:
-    .word 0
+    .word 18
     .globl OP_EQ
 OP_EQ:
-    .word 0
+    .word 19
     .globl OP_NE
 OP_NE:
-    .word 0
+    .word 20
     .globl OP_LT
 OP_LT:
-    .word 0
+    .word 21
     .globl OP_LE
 OP_LE:
-    .word 0
+    .word 22
     .globl OP_GT
 OP_GT:
-    .word 0
+    .word 23
     .globl OP_GE
 OP_GE:
-    .word 0
+    .word 24
     .globl OP_NEG
 OP_NEG:
-    .word 0
+    .word 25
     .globl OP_LNOT
 OP_LNOT:
-    .word 0
+    .word 26
     .globl OP_CAST
 OP_CAST:
-    .word 0
+    .word 27
     .globl OP_JUMP
 OP_JUMP:
-    .word 0
+    .word 28
     .globl OP_JUMP_IF
 OP_JUMP_IF:
-    .word 0
+    .word 29
     .globl OP_JUMP_IFNOT
 OP_JUMP_IFNOT:
-    .word 0
+    .word 30
     .globl HK_U8
 HK_U8:
-    .word 0
+    .word 1
     .globl HK_I32
 HK_I32:
-    .word 0
+    .word 2
     .globl HK_STR
 HK_STR:
-    .word 0
+    .word 3
     .globl TAG_INT
 TAG_INT:
     .word 0
     .globl TAG_REF
 TAG_REF:
-    .word 0
+    .word 1
     .globl g_cur_func
 g_cur_func:
     .word 0

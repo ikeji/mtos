@@ -18,7 +18,7 @@
       push_int 3
       store a
       ```
-- [ ] Golden testsの対象に、parser.tcなどのコンパイラのコードを入れる。
+- [x] Golden testsの対象に、parser.tcなどのコンパイラのコードを入れる。
 - [ ] 今の compiler ディレクトリを、bootstrapとかの名前にし、tcディレクトリのコンパイラ関連コードをcompilerディレクトリにする。
 - [ ] 引数の型や数が違う同名の関数(オーバーロード)をサポートしないといけない。
       - [ ] .bcのcallは今は`call to_buf 1`という形式だが、`call to_buf String`という形式にする必要がある。

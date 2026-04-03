@@ -7926,7 +7926,7 @@
       (var_decl in_buf
         (type U8Array)
         (call U8Array
-(int 131072))
+(int 524288))
       )
       (var_decl atom_buf
         (type U8Array)
@@ -7941,12 +7941,12 @@
       (var_decl nodes
         (type I32Array)
         (call I32Array
-(int 24576))
+(int 98304))
       )
       (var_decl strtab
         (type U8Array)
         (call U8Array
-(int 65536))
+(int 262144))
       )
       (var_decl slits
         (type I32Array)
@@ -7962,7 +7962,7 @@
         (call sys_read
 (int 0)
 (var in_buf)
-(int 131072))
+(int 524288))
       )
       (assign g_in_pos
         (int 0)

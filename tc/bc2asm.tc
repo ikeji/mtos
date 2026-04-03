@@ -625,7 +625,7 @@ fn is_builtin(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     }
     if sl>=4&&a=='s'&&b=='y'&&c=='s' { return 1; }        // sys_*
     if sl>=6&&a=='p'&&b=='r'&&c=='i' { return 1; }        // print_*
-    if sl>=4&&a=='p'&&b=='e'&&c=='e' { return 1; }        // peek*
+    if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3) as u32); if d=='k' { var e: u8=get(strtab,(ss+4) as u32); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32
     if sl>=4&&a=='p'&&b=='o'&&c=='k' { return 1; }        // poke*
     if sl==3&&a=='l'&&b=='e'&&c=='n' { return 1; }        // len
     if a=='g'&&b=='e'&&c=='t' { return 1; }               // get

@@ -7727,8 +7727,8 @@ __L304:
 .local slits I32Array
 .local locals I32Array
 .local root i32
-; var in_buf: U8Array = U8Array(131072);   // 128KB input
-  push_int 131072
+; var in_buf: U8Array = U8Array(524288);   // 512KB input
+  push_int 524288
   call U8Array 1
   store in_buf
 ; var atom_buf: U8Array = U8Array(1024);   // atom scratch buffer
@@ -7739,12 +7739,12 @@ __L304:
   push_int 16384
   call U8Array 1
   store out_buf
-; var nodes: I32Array = I32Array(24576);   // 4096 nodes × 6 ints
-  push_int 24576
+; var nodes: I32Array = I32Array(98304);   // 16384 nodes × 6 ints
+  push_int 98304
   call I32Array 1
   store nodes
-; var strtab: U8Array = U8Array(65536);    // string table
-  push_int 65536
+; var strtab: U8Array = U8Array(262144);   // string table
+  push_int 262144
   call U8Array 1
   store strtab
 ; var slits: I32Array = I32Array(512);     // 256 string literals × 2
@@ -7755,10 +7755,10 @@ __L304:
   push_int 2048
   call I32Array 1
   store locals
-; g_in_len = sys_read(0, in_buf, 131072u32);
+; g_in_len = sys_read(0, in_buf, 524288u32);
   push_int 0
   load in_buf
-  push_int 131072
+  push_int 524288
   call sys_read 3
   store g_in_len
 ; g_in_pos = 0;
