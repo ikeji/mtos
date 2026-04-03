@@ -7442,8 +7442,11 @@ __L441:
 .local src_buf U8Array
 .local tok_buf U8Array
 .local out_buf U8Array
-; var src_buf: U8Array = U8Array(131072);  // 128KB for source
-  push_int 131072
+.local read_tmp U8Array
+.local chunk i32
+.local ci i32
+; var src_buf: U8Array = U8Array(524288);  // 512KB for source
+  push_int 524288
   call U8Array 1
   store src_buf
 ; var tok_buf: U8Array = U8Array(4096);    // token string buffer
@@ -7454,12 +7457,80 @@ __L441:
   push_int 1048576
   call U8Array 1
   store out_buf
-; g_len = sys_read(0, src_buf, 131072u32);
+; var read_tmp: U8Array = U8Array(4096);   // temp buffer for reading chunks
+  push_int 4096
+  call U8Array 1
+  store read_tmp
+; g_len = 0;
   push_int 0
-  load src_buf
-  push_int 131072
-  call sys_read 3
   store g_len
+; var chunk: i32 = sys_read(0, read_tmp, 4096u32);
+  push_int 0
+  load read_tmp
+  push_int 4096
+  call sys_read 3
+  store chunk
+; while chunk > 0 && g_len + chunk <= 524288 {
+__L448:
+  load chunk
+  push_int 0
+  gt
+  jump_ifnot __L450
+  load g_len
+  load chunk
+  add
+  push_int 524288
+  le
+  jump_ifnot __L450
+  push_int 1
+  jump __L451
+__L450:
+  push_int 0
+__L451:
+  jump_ifnot __L449
+; var ci: i32 = 0;
+  push_int 0
+  store ci
+; while ci < chunk {
+__L452:
+  load ci
+  load chunk
+  lt
+  jump_ifnot __L453
+; set(src_buf, g_len as u32, get(read_tmp, ci as u32));
+  load src_buf
+  load g_len
+  cast u32
+  load read_tmp
+  load ci
+  cast u32
+  call get 2
+  call set 3
+  pop
+; g_len = g_len + 1;
+  load g_len
+  push_int 1
+  add
+  store g_len
+; ci = ci + 1;
+  load ci
+  push_int 1
+  add
+  store ci
+  jump __L452
+__L453:
+; chunk = sys_read(0, read_tmp, 4096u32);
+  push_int 0
+  load read_tmp
+  push_int 4096
+  call sys_read 3
+  store chunk
+  jump __L448
+__L449:
+; delete(read_tmp);
+  load read_tmp
+  call delete 1
+  pop
 ; g_pos = 0;
   push_int 0
   store g_pos

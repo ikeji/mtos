@@ -1357,11 +1357,24 @@ fn pars_program(src: U8Array, tok: U8Array, ob: U8Array) -> void {
 }
 
 fn main() -> i32 {
-    var src_buf: U8Array = U8Array(131072);  // 128KB for source
+    var src_buf: U8Array = U8Array(524288);  // 512KB for source
     var tok_buf: U8Array = U8Array(4096);    // token string buffer
     var out_buf: U8Array = U8Array(1048576); // 1MB output buffer (avoids mid-expression flush)
+    var read_tmp: U8Array = U8Array(4096);   // temp buffer for reading chunks
 
-    g_len = sys_read(0, src_buf, 131072u32);
+    // Read all of stdin in a loop (a single sys_read may return less on pipes)
+    g_len = 0;
+    var chunk: i32 = sys_read(0, read_tmp, 4096u32);
+    while chunk > 0 && g_len + chunk <= 524288 {
+        var ci: i32 = 0;
+        while ci < chunk {
+            set(src_buf, g_len as u32, get(read_tmp, ci as u32));
+            g_len = g_len + 1;
+            ci = ci + 1;
+        }
+        chunk = sys_read(0, read_tmp, 4096u32);
+    }
+    delete(read_tmp);
     g_pos = 0;
     g_line = 1;
     g_ob_pos = 0;

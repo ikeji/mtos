@@ -58,7 +58,7 @@ static int u32_to_str(uint32_t v, char *buf) {
 #define OBJ_STRING 1
 
 /* Simple bump allocator (no free) */
-static char heap_mem[65536];
+static char heap_mem[8388608]; /* 8MB — large enough for compiler self-hosting */
 static int  heap_pos = 0;
 
 static void *bump_alloc(int size) {
@@ -216,11 +216,16 @@ void __tc_poke32(uint32_t a, uint32_t v) { *(uint32_t *)a = v; }
 int32_t __tc_sys_write(int32_t fd, HeapObj *buf, int32_t len) {
     if (!buf || buf->kind != OBJ_ARRAY) return -1;
     int n = len < buf->size ? len : buf->size;
-    /* write bytes directly from fields array */
     char tmp[256];
-    int chunk = n < 256 ? n : 256;
-    for (int i = 0; i < chunk; i++) tmp[i] = (char)buf->fields[i];
-    return (int32_t)__syscall3(SYS_write, fd, (long)tmp, chunk);
+    int total = 0;
+    while (total < n) {
+        int chunk = (n - total) < 256 ? (n - total) : 256;
+        for (int i = 0; i < chunk; i++) tmp[i] = (char)buf->fields[total + i];
+        long r = __syscall3(SYS_write, fd, (long)tmp, chunk);
+        if (r <= 0) break;
+        total += (int)r;
+    }
+    return total;
 }
 
 int32_t __tc_sys_read(int32_t fd, HeapObj *buf, int32_t len) {

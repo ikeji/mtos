@@ -9163,11 +9163,11 @@
       (type i32)
     )
     (block
-      (comment "var src_buf: U8Array = U8Array(131072);  // 128KB for source")
+      (comment "var src_buf: U8Array = U8Array(524288);  // 512KB for source")
       (var_decl src_buf
         (type U8Array)
         (call U8Array
-          (int 131072)
+          (int 524288)
         )
       )
       (comment "var tok_buf: U8Array = U8Array(4096);    // token string buffer")
@@ -9184,13 +9184,98 @@
           (int 1048576)
         )
       )
-      (comment "g_len = sys_read(0, src_buf, 131072u32);")
+      (comment "var read_tmp: U8Array = U8Array(4096);   // temp buffer for reading chunks")
+      (var_decl read_tmp
+        (type U8Array)
+        (call U8Array
+          (int 4096)
+        )
+      )
+      (comment "g_len = 0;")
       (assign g_len
+        (int 0)
+      )
+      (comment "var chunk: i32 = sys_read(0, read_tmp, 4096u32);")
+      (var_decl chunk
+        (type i32)
         (call sys_read
           (int 0)
-          (var src_buf)
-          (int 131072)
+          (var read_tmp)
+          (int 4096)
         )
+      )
+      (comment "while chunk > 0 && g_len + chunk <= 524288 {")
+      (while
+        (binop &&
+          (binop >
+            (var chunk)
+            (int 0)
+          )
+          (binop <=
+            (binop +
+              (var g_len)
+              (var chunk)
+            )
+            (int 524288)
+          )
+        )
+        (block
+          (comment "var ci: i32 = 0;")
+          (var_decl ci
+            (type i32)
+            (int 0)
+          )
+          (comment "while ci < chunk {")
+          (while
+            (binop <
+              (var ci)
+              (var chunk)
+            )
+            (block
+              (comment "set(src_buf, g_len as u32, get(read_tmp, ci as u32));")
+              (call_stmt set
+                (var src_buf)
+                (cast
+                  (var g_len)
+                  (type u32)
+                )
+                (call get
+                  (var read_tmp)
+                  (cast
+                    (var ci)
+                    (type u32)
+                  )
+                )
+              )
+              (comment "g_len = g_len + 1;")
+              (assign g_len
+                (binop +
+                  (var g_len)
+                  (int 1)
+                )
+              )
+              (comment "ci = ci + 1;")
+              (assign ci
+                (binop +
+                  (var ci)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "chunk = sys_read(0, read_tmp, 4096u32);")
+          (assign chunk
+            (call sys_read
+              (int 0)
+              (var read_tmp)
+              (int 4096)
+            )
+          )
+        )
+      )
+      (comment "delete(read_tmp);")
+      (call_stmt delete
+        (var read_tmp)
       )
       (comment "g_pos = 0;")
       (assign g_pos
