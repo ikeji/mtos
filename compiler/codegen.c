@@ -228,6 +228,11 @@ static void cg_expr(CG *cg, AstNode *node) {
 static void cg_stmt(CG *cg, AstNode *node) {
     const char *k = node->kind;
 
+    if (strcmp(k, "comment") == 0) {
+        fprintf(cg->out, "; %s\n", node->sval ? node->sval : "");
+        return;
+    }
+
     if (strcmp(k, "var_decl") == 0) {
         if (node->nchildren > 1)
             cg_expr(cg, node->children[1]);

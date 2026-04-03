@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     lexer_tokenize(&lex);
 
     AstNode *prog = parse(lex.tokens, lex.ntokens, filename);
-    ast_print(prog, 0);
+    ast_print_with_source(prog, 0, source);
     putchar('\n');
 
     ast_free(prog);

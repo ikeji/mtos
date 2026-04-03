@@ -3,44 +3,55 @@
 .local result i32
 .local i i32
 .local j i32
+; var result: i32 = 0;
   push_int 0
   store result
+; var i: i32 = 0;
   push_int 0
   store i
+; while i < 3 {
 __L0:
   load i
   push_int 3
   lt
   jump_ifnot __L1
+; var j: i32 = 0;
   push_int 0
   store j
+; while j < 10 {
 __L2:
   load j
   push_int 10
   lt
   jump_ifnot __L3
+; if j == 2 { break; }
   load j
   push_int 2
   eq
   jump_ifnot __L4
+; if j == 2 { break; }
   jump __L3
 __L4:
+; result = result + 1;
   load result
   push_int 1
   add
   store result
+; j = j + 1;
   load j
   push_int 1
   add
   store j
   jump __L2
 __L3:
+; i = i + 1;
   load i
   push_int 1
   add
   store i
   jump __L0
 __L1:
+; return result;
   load result
   return
   return_void

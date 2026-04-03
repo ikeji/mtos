@@ -2,33 +2,41 @@
 .fn main 0 i32
 .local sum i32
 .local i i32
+; var sum: i32 = 0;
   push_int 0
   store sum
+; var i: i32 = 0;
   push_int 0
   store i
+; while i < 10 {
 __L0:
   load i
   push_int 10
   lt
   jump_ifnot __L1
+; i = i + 1;
   load i
   push_int 1
   add
   store i
+; if i % 2 == 0 { continue; }
   load i
   push_int 2
   mod
   push_int 0
   eq
   jump_ifnot __L2
+; if i % 2 == 0 { continue; }
   jump __L0
 __L2:
+; sum = sum + i;
   load sum
   load i
   add
   store sum
   jump __L0
 __L1:
+; return sum;
   load sum
   return
   return_void

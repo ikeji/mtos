@@ -59,7 +59,7 @@ for f in "${FILES[@]}"; do
     { echo "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$GOLDEN_DIR/$base.ast.tc" 2>/dev/null
     
     # 2. Update Bytecode
-    bc=$("$CODEGEN" "$input" 2>/dev/null)
+    bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
     echo "$bc" > "$GOLDEN_DIR/$base.bc"
 
     # 3. Update Assembly

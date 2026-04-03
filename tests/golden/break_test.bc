@@ -1,25 +1,31 @@
 .bc
 .fn main 0 i32
 .local i i32
+; var i: i32 = 0;
   push_int 0
   store i
+; while i < 10 {
 __L0:
   load i
   push_int 10
   lt
   jump_ifnot __L1
+; if i == 5 { break; }
   load i
   push_int 5
   eq
   jump_ifnot __L2
+; if i == 5 { break; }
   jump __L1
 __L2:
+; i = i + 1;
   load i
   push_int 1
   add
   store i
   jump __L0
 __L1:
+; return i;
   load i
   return
   return_void

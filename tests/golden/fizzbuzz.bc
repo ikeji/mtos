@@ -7,64 +7,76 @@
 .fn fizzbuzz 1 i32
 .param n i32
 .local i i32
+; var i: i32 = 1;
   push_int 1
   store i
+; while i <= n {
 __L0:
   load i
   load n
   le
   jump_ifnot __L1
+; if i % 15 == 0 {
   load i
   push_int 15
   mod
   push_int 0
   eq
   jump_ifnot __L2
+; print_str("FizzBuzz");
   push_str 0
   call print_str 1
   pop
   jump __L3
 __L2:
+; if i % 3 == 0 {
   load i
   push_int 3
   mod
   push_int 0
   eq
   jump_ifnot __L4
+; print_str("Fizz");
   push_str 1
   call print_str 1
   pop
   jump __L5
 __L4:
+; if i % 5 == 0 {
   load i
   push_int 5
   mod
   push_int 0
   eq
   jump_ifnot __L6
+; print_str("Buzz");
   push_str 2
   call print_str 1
   pop
   jump __L7
 __L6:
+; print_i32(i);
   load i
   call print_i32 1
   pop
 __L7:
 __L5:
 __L3:
+; i = i + 1;
   load i
   push_int 1
   add
   store i
   jump __L0
 __L1:
+; return 0;
   push_int 0
   return
   return_void
 .endfn
 
 .fn main 0 i32
+; return fizzbuzz(15);
   push_int 15
   call fizzbuzz 1
   return

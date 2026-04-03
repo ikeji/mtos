@@ -51,6 +51,79 @@ static void print_escaped_str(const char *s) {
     putchar('"');
 }
 
+static int is_stmt_kind(const char *kind) {
+    return strcmp(kind, "assign") == 0 || strcmp(kind, "call_stmt") == 0 ||
+           strcmp(kind, "return") == 0 || strcmp(kind, "var_decl") == 0 ||
+           strcmp(kind, "if") == 0 || strcmp(kind, "while") == 0 ||
+           strcmp(kind, "break") == 0 || strcmp(kind, "continue") == 0;
+}
+
+static void get_source_line(const char *source, int lineno, char *buf, int bufsize) {
+    int cur_line = 1;
+    const char *p = source;
+    buf[0] = '\0';
+    while (*p && cur_line < lineno) {
+        if (*p++ == '\n') cur_line++;
+    }
+    int len = 0;
+    while (*p && *p != '\n' && len < bufsize - 1) {
+        buf[len++] = *p++;
+    }
+    /* strip trailing whitespace */
+    while (len > 0 && (buf[len-1] == ' ' || buf[len-1] == '\t')) len--;
+    buf[len] = '\0';
+}
+
+static void ast_print_with_source_inner(AstNode *node, int indent, const char *source, int emit_comment) {
+    if (!node) return;
+    if (emit_comment && source && is_stmt_kind(node->kind)) {
+        char line_buf[512];
+        get_source_line(source, node->line, line_buf, sizeof(line_buf));
+        /* strip leading whitespace */
+        char *trimmed = line_buf;
+        while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
+        if (*trimmed) {
+            print_indent(indent);
+            fputs("(comment ", stdout);
+            print_escaped_str(trimmed);
+            fputs(")\n", stdout);
+        }
+    }
+    print_indent(indent);
+    putchar('(');
+    fputs(node->kind, stdout);
+    if (node->type_annot) {
+        putchar(':');
+        fputs(node->type_annot, stdout);
+    }
+    if (strcmp(node->kind, "int") == 0) {
+        printf(" %ld", node->ival);
+    } else if (strcmp(node->kind, "str") == 0 && node->sval) {
+        putchar(' ');
+        print_escaped_str(node->sval);
+    } else if (node->sval) {
+        putchar(' ');
+        fputs(node->sval, stdout);
+    }
+    if (node->nchildren == 0) {
+        putchar(')');
+    } else {
+        /* only emit comments for children of block nodes */
+        int child_emit = (strcmp(node->kind, "block") == 0);
+        for (int i = 0; i < node->nchildren; i++) {
+            putchar('\n');
+            ast_print_with_source_inner(node->children[i], indent + 1, source, child_emit);
+        }
+        putchar('\n');
+        print_indent(indent);
+        putchar(')');
+    }
+}
+
+void ast_print_with_source(AstNode *node, int indent, const char *source) {
+    ast_print_with_source_inner(node, indent, source, 1);
+}
+
 void ast_print(AstNode *node, int indent) {
     if (!node) return;
     print_indent(indent);
@@ -159,8 +232,8 @@ static AstNode *reader_read_node(Reader *r) {
         if (r->ch == '(') {
             AstNode *child = reader_read_node(r);
             ast_add_child(n, child);
-        } else if (r->ch == '"' && strcmp(n->kind, "str") == 0 && n->sval == NULL) {
-            /* quoted string literal for str nodes */
+        } else if (r->ch == '"' && (strcmp(n->kind, "str") == 0 || strcmp(n->kind, "comment") == 0) && n->sval == NULL) {
+            /* quoted string literal for str/comment nodes */
             reader_advance(r); /* consume opening '"' */
             int cap = 64, len = 0;
             char *buf = malloc(cap);

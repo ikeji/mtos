@@ -28,6 +28,7 @@ var NK_IMPORT: i32 = 22;
 var NK_FIELD: i32 = 23;
 var NK_BREAK: i32 = 24;
 var NK_CONTINUE: i32 = 25;
+var NK_COMMENT: i32 = 26;
 var NK_UNKNOWN: i32 = 99;
 
 // ===== Global state =====
@@ -243,6 +244,10 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
         if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {
             return NK_PROGRAM;
         }
+        // comment
+        if cmp4(atom,0, 'c','o','m','m') && cmp3(atom,4, 'e','n','t') {
+            return NK_COMMENT;
+        }
     }
     if len == 8 {
         // var_decl: v(118) a(97) r(114) _(95) d(100) e(101) c(99) l(108)
@@ -288,7 +293,7 @@ fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i3
 
     // Check for sval/ival atom
     var c: u8 = peek_in(in);
-    if kind_code == NK_STR && c == '"' {
+    if (kind_code == NK_STR || kind_code == NK_COMMENT) && c == '"' {
         // Quoted string: read until closing '"' with escape processing
         g_in_pos = g_in_pos + 1; // consume opening '"'
         var ss: i32 = g_sp;
@@ -513,6 +518,14 @@ fn cg_block(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop
 
 fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_stk: I32Array, n: i32) -> void {
     var k: i32 = n_kind(nodes, n);
+
+    if k == NK_COMMENT {
+        // "; <comment text>\n"
+        ob_char(';', ob); ob_char(' ', ob);
+        ob_n(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
+        ob_char(10u8, ob);
+        return;
+    }
 
     if k == NK_VAR_DECL {
         var init: i32 = n_nth_child(nodes, n, 1);

@@ -7,19 +7,24 @@
 .local len u32
 .local buf U8Array
 .local i i32
+; var len :u32 = len(str);
   load str
   call len 1
   store len
+; var buf : U8Array = U8Array(13);
   push_int 13
   call U8Array 1
   store buf
+; var i:i32 = 0;
   push_int 0
   store i
+; while i < len {
 __L0:
   load i
   load len
   lt
   jump_ifnot __L1
+; set(buf, i, get(str, i));
   load buf
   load i
   load str
@@ -27,12 +32,14 @@ __L0:
   call get 2
   call set 3
   pop
+; i = i + 1;
   load i
   push_int 1
   add
   store i
   jump __L0
 __L1:
+; return buf;
   load buf
   return
   return_void
@@ -40,17 +47,21 @@ __L1:
 
 .fn main 0 i32
 .local buf U8Array
+; var buf: U8Array = to_buf("Hello, World\n");
   push_str 0
   call to_buf 1
   store buf
+; sys_write(1, buf, 13);
   push_int 1
   load buf
   push_int 13
   call sys_write 3
   pop
+; delete(buf);
   load buf
   call delete 1
   pop
+; return 0;
   push_int 0
   return
   return_void

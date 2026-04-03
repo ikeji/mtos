@@ -1,10 +1,12 @@
 .bc
 .fn classify 1 i32
 .param x i32
+; if x < 0 {
   load x
   push_int 0
   lt
   jump_ifnot __L0
+; return 0;
   push_int 0
   return
   jump __L1
@@ -13,6 +15,7 @@ __L0:
   push_int 0
   eq
   jump_ifnot __L2
+; return 1;
   push_int 1
   return
   jump __L3
@@ -21,10 +24,12 @@ __L2:
   push_int 10
   lt
   jump_ifnot __L4
+; return 2;
   push_int 2
   return
   jump __L5
 __L4:
+; return 3;
   push_int 3
   return
 __L5:
@@ -38,32 +43,41 @@ __L1:
 .local b i32
 .local c i32
 .local d i32
+; var a: i32 = classify(0 - 5);
   push_int 0
   push_int 5
   sub
   call classify 1
   store a
+; var b: i32 = classify(0);
   push_int 0
   call classify 1
   store b
+; var c: i32 = classify(7);
   push_int 7
   call classify 1
   store c
+; var d: i32 = classify(42);
   push_int 42
   call classify 1
   store d
+; print_i32(a);
   load a
   call print_i32 1
   pop
+; print_i32(b);
   load b
   call print_i32 1
   pop
+; print_i32(c);
   load c
   call print_i32 1
   pop
+; print_i32(d);
   load d
   call print_i32 1
   pop
+; return 0;
   push_int 0
   return
   return_void

@@ -117,7 +117,7 @@ for f in "${FILES[@]}"; do
     # --- 2. BC Checks ---
     actual_bc=$(mktemp)
     # C-impl
-    "$CODEGEN" "$input" > "$actual_bc" 2>/dev/null
+    "$PARSE" "$input" 2>/dev/null | "$CODEGEN" > "$actual_bc" 2>/dev/null
     if diff -u "$golden_bc" "$actual_bc" > /dev/null; then
         echo "PASS: $f (BC - C)"
         PASS=$((PASS + 1))

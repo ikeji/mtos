@@ -5,36 +5,47 @@
 .local n u8
 .local t u8
 .local q u8
+; var a: u8 = 'A';
   push_int 65
   store a
+; var z: u8 = 'Z';
   push_int 90
   store z
+; var n: u8 = '\n';
   push_int 10
   store n
+; var t: u8 = '\t';
   push_int 9
   store t
+; var q: u8 = '\'';
   push_int 39
   store q
+; print_i32(a as i32);
   load a
   cast i32
   call print_i32 1
   pop
+; print_i32(z as i32);
   load z
   cast i32
   call print_i32 1
   pop
+; print_i32(n as i32);
   load n
   cast i32
   call print_i32 1
   pop
+; print_i32(t as i32);
   load t
   cast i32
   call print_i32 1
   pop
+; print_i32(q as i32);
   load q
   cast i32
   call print_i32 1
   pop
+; return 0;
   push_int 0
   return
   return_void

@@ -1,13 +1,16 @@
 .bc
 .fn fib 1 i32
 .param n i32
+; if n <= 1 {
   load n
   push_int 1
   le
   jump_ifnot __L0
+; return n;
   load n
   return
 __L0:
+; return fib(n - 1) + fib(n - 2);
   load n
   push_int 1
   sub
@@ -23,12 +26,15 @@ __L0:
 
 .fn main 0 i32
 .local result i32
+; var result: i32 = fib(10);
   push_int 10
   call fib 1
   store result
+; print_i32(result);
   load result
   call print_i32 1
   pop
+; return result;
   load result
   return
   return_void
