@@ -259,6 +259,10 @@
     (type i32)
     (int 0)
   )
+  (var_decl g_tok_line
+    (type i32)
+    (int 1)
+  )
   (var_decl g_ob_pos
     (type i32)
     (int 0)
@@ -456,11 +460,11 @@
           (int 1)
         )
       )
-      (comment "if g_ob_pos >= 8192 {")
+      (comment "if g_ob_pos >= 1048576 {")
       (if
         (binop >=
           (var g_ob_pos)
-          (int 8192)
+          (int 1048576)
         )
         (block
           (comment "ob_flush(ob);")
@@ -2138,6 +2142,10 @@
       (comment "skip_ws_and_comments(src);")
       (call_stmt skip_ws_and_comments
         (var src)
+      )
+      (comment "g_tok_line = g_line;")
+      (assign g_tok_line
+        (var g_line)
       )
       (comment "if g_pos >= g_len {")
       (if
@@ -4528,6 +4536,11 @@
       (type void)
     )
     (block
+      (comment "var start: i32 = g_ob_pos;")
+      (var_decl start
+        (type i32)
+        (var g_ob_pos)
+      )
       (comment "pars_primary(src, tok, ob);")
       (call_stmt pars_primary
         (var src)
@@ -4546,15 +4559,106 @@
             (var src)
             (var tok)
           )
-          (comment "ob_char(0u8, ob);  // placeholder - this won't work right")
-          (call_stmt ob_char
+          (comment "var expr_len: i32 = g_ob_pos - start;")
+          (var_decl expr_len
+            (type i32)
+            (binop -
+              (var g_ob_pos)
+              (var start)
+            )
+          )
+          (comment "var saved: U8Array = U8Array(expr_len);")
+          (var_decl saved
+            (type U8Array)
+            (call U8Array
+              (var expr_len)
+            )
+          )
+          (comment "var i: i32 = 0;")
+          (var_decl i
+            (type i32)
             (int 0)
+          )
+          (comment "while i < expr_len {")
+          (while
+            (binop <
+              (var i)
+              (var expr_len)
+            )
+            (block
+              (comment "set(saved, i as u32, get(ob, (start + i) as u32));")
+              (call_stmt set
+                (var saved)
+                (cast
+                  (var i)
+                  (type u32)
+                )
+                (call get
+                  (var ob)
+                  (cast
+                    (binop +
+                      (var start)
+                      (var i)
+                    )
+                    (type u32)
+                  )
+                )
+              )
+              (comment "i = i + 1;")
+              (assign i
+                (binop +
+                  (var i)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "g_ob_pos = start;")
+          (assign g_ob_pos
+            (var start)
+          )
+          (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
+          (call_stmt ob_char
+            (int 40)
             (var ob)
           )
-          (comment "lex_tok(src, tok);  // consume type token")
-          (call_stmt lex_tok
+          (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
+          (call_stmt ob_string
+            (str "cast")
+            (var ob)
+          )
+          (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (comment "ob_n(saved, 0, expr_len, ob);")
+          (call_stmt ob_n
+            (var saved)
+            (int 0)
+            (var expr_len)
+            (var ob)
+          )
+          (comment "ob_char(10u8, ob);")
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (comment "pars_type(src, tok, ob, 0);")
+          (call_stmt pars_type
             (var src)
             (var tok)
+            (var ob)
+            (int 0)
+          )
+          (comment "ob_char(')', ob);")
+          (call_stmt ob_char
+            (int 41)
+            (var ob)
+          )
+          (comment "delete(saved);")
+          (call_stmt delete
+            (var saved)
           )
         )
       )
@@ -4682,46 +4786,11 @@
           (return)
         )
       )
-      (comment "pars_primary(src, tok, ob);")
-      (call_stmt pars_primary
+      (comment "pars_postfix(src, tok, ob);")
+      (call_stmt pars_postfix
         (var src)
         (var tok)
         (var ob)
-      )
-      (comment "while g_tok == TK_AS {")
-      (while
-        (binop ==
-          (var g_tok)
-          (var TK_AS)
-        )
-        (block
-          (comment "var left_start: i32 = g_ob_pos - 1;  // can't easily save here")
-          (var_decl left_start
-            (type i32)
-            (binop -
-              (var g_ob_pos)
-              (int 1)
-            )
-          )
-          (comment "lex_tok(src, tok);  // consume 'as'")
-          (call_stmt lex_tok
-            (var src)
-            (var tok)
-          )
-          (comment "if is_type_tok(g_tok) { lex_tok(src, tok); }")
-          (if
-            (call is_type_tok
-              (var g_tok)
-            )
-            (block
-              (comment "if is_type_tok(g_tok) { lex_tok(src, tok); }")
-              (call_stmt lex_tok
-                (var src)
-                (var tok)
-              )
-            )
-          )
-        )
       )
       (comment "return;")
       (return)
@@ -7470,6 +7539,287 @@
       (return)
     )
   )
+  (fn emit_stmt_comment
+    (params
+      (param src
+        (type U8Array)
+      )
+      (param line
+        (type i32)
+      )
+      (param ob
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "var pos: i32 = 0;")
+      (var_decl pos
+        (type i32)
+        (int 0)
+      )
+      (comment "var cur_line: i32 = 1;")
+      (var_decl cur_line
+        (type i32)
+        (int 1)
+      )
+      (comment "while cur_line < line && pos < g_len {")
+      (while
+        (binop &&
+          (binop <
+            (var cur_line)
+            (var line)
+          )
+          (binop <
+            (var pos)
+            (var g_len)
+          )
+        )
+        (block
+          (comment "if get(src, pos as u32) == 10u8 { cur_line = cur_line + 1; }")
+          (if
+            (binop ==
+              (call get
+                (var src)
+                (cast
+                  (var pos)
+                  (type u32)
+                )
+              )
+              (int 10)
+            )
+            (block
+              (comment "if get(src, pos as u32) == 10u8 { cur_line = cur_line + 1; }")
+              (assign cur_line
+                (binop +
+                  (var cur_line)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "pos = pos + 1;")
+          (assign pos
+            (binop +
+              (var pos)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "while pos < g_len && (get(src, pos as u32) == ' ' || get(src, pos as u32) == 9u8) {")
+      (while
+        (binop &&
+          (binop <
+            (var pos)
+            (var g_len)
+          )
+          (binop ||
+            (binop ==
+              (call get
+                (var src)
+                (cast
+                  (var pos)
+                  (type u32)
+                )
+              )
+              (int 32)
+            )
+            (binop ==
+              (call get
+                (var src)
+                (cast
+                  (var pos)
+                  (type u32)
+                )
+              )
+              (int 9)
+            )
+          )
+        )
+        (block
+          (comment "pos = pos + 1;")
+          (assign pos
+            (binop +
+              (var pos)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "if pos >= g_len { return; }")
+      (if
+        (binop >=
+          (var pos)
+          (var g_len)
+        )
+        (block
+          (comment "if pos >= g_len { return; }")
+          (return)
+        )
+      )
+      (comment "var first: u8 = get(src, pos as u32);")
+      (var_decl first
+        (type u8)
+        (call get
+          (var src)
+          (cast
+            (var pos)
+            (type u32)
+          )
+        )
+      )
+      (comment "if first == 10u8 || first == 13u8 { return; }")
+      (if
+        (binop ||
+          (binop ==
+            (var first)
+            (int 10)
+          )
+          (binop ==
+            (var first)
+            (int 13)
+          )
+        )
+        (block
+          (comment "if first == 10u8 || first == 13u8 { return; }")
+          (return)
+        )
+      )
+      (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
+      (call_stmt ob_char
+        (int 40)
+        (var ob)
+      )
+      (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
+      (call_stmt ob_string
+        (str "comment")
+        (var ob)
+      )
+      (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
+      (call_stmt ob_char
+        (int 34)
+        (var ob)
+      )
+      (comment "while pos < g_len && get(src, pos as u32) != 10u8 && get(src, pos as u32) != 13u8 {")
+      (while
+        (binop &&
+          (binop &&
+            (binop <
+              (var pos)
+              (var g_len)
+            )
+            (binop !=
+              (call get
+                (var src)
+                (cast
+                  (var pos)
+                  (type u32)
+                )
+              )
+              (int 10)
+            )
+          )
+          (binop !=
+            (call get
+              (var src)
+              (cast
+                (var pos)
+                (type u32)
+              )
+            )
+            (int 13)
+          )
+        )
+        (block
+          (comment "var ch: u8 = get(src, pos as u32);")
+          (var_decl ch
+            (type u8)
+            (call get
+              (var src)
+              (cast
+                (var pos)
+                (type u32)
+              )
+            )
+          )
+          (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
+          (if
+            (binop ==
+              (var ch)
+              (int 34)
+            )
+            (block
+              (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
+              (call_stmt ob_char
+                (int 92)
+                (var ob)
+              )
+              (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
+              (call_stmt ob_char
+                (int 34)
+                (var ob)
+              )
+            )
+            (block
+              (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
+              (if
+                (binop ==
+                  (var ch)
+                  (int 92)
+                )
+                (block
+                  (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
+                  (call_stmt ob_char
+                    (int 92)
+                    (var ob)
+                  )
+                  (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
+                  (call_stmt ob_char
+                    (int 92)
+                    (var ob)
+                  )
+                )
+                (block
+                  (comment "else { ob_char(ch, ob); }")
+                  (call_stmt ob_char
+                    (var ch)
+                    (var ob)
+                  )
+                )
+              )
+            )
+          )
+          (comment "pos = pos + 1;")
+          (assign pos
+            (binop +
+              (var pos)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "ob_char('\"', ob); ob_char(')', ob);")
+      (call_stmt ob_char
+        (int 34)
+        (var ob)
+      )
+      (comment "ob_char('\"', ob); ob_char(')', ob);")
+      (call_stmt ob_char
+        (int 41)
+        (var ob)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
   (fn pars_stmt
     (params
       (param src
@@ -7671,6 +8021,30 @@
           )
         )
         (block
+          (comment "var stmt_line: i32 = g_tok_line;")
+          (var_decl stmt_line
+            (type i32)
+            (var g_tok_line)
+          )
+          (comment "ob_char(10u8, ob);")
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (comment "ob_indent(indent + 1, ob);")
+          (call_stmt ob_indent
+            (binop +
+              (var indent)
+              (int 1)
+            )
+            (var ob)
+          )
+          (comment "emit_stmt_comment(src, stmt_line, ob);")
+          (call_stmt emit_stmt_comment
+            (var src)
+            (var stmt_line)
+            (var ob)
+          )
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
@@ -8803,11 +9177,11 @@
           (int 4096)
         )
       )
-      (comment "var out_buf: U8Array = U8Array(16384);   // 16KB output buffer")
+      (comment "var out_buf: U8Array = U8Array(1048576); // 1MB output buffer (avoids mid-expression flush)")
       (var_decl out_buf
         (type U8Array)
         (call U8Array
-          (int 16384)
+          (int 1048576)
         )
       )
       (comment "g_len = sys_read(0, src_buf, 131072u32);")

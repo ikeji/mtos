@@ -259,6 +259,10 @@
     (type i32)
     (int 0)
   )
+  (var_decl g_tok_line
+    (type i32)
+    (int 1)
+  )
   (var_decl g_ob_pos
     (type i32)
     (int 0)
@@ -273,6 +277,7 @@
       (type bool)
     )
     (block
+      (comment "return c >= '0' && c <= '9';")
       (return
         (binop &&
 (binop >=
@@ -294,6 +299,7 @@
       (type bool)
     )
     (block
+      (comment "return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';")
       (return
         (binop ||
 (binop ||
@@ -327,6 +333,7 @@
       (type bool)
     )
     (block
+      (comment "return is_alpha(c) || is_digit(c);")
       (return
         (binop ||
 (call is_alpha
@@ -346,6 +353,7 @@
       (type bool)
     )
     (block
+      (comment "return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8;")
       (return
         (binop ||
 (binop ||
@@ -375,21 +383,27 @@
       (type void)
     )
     (block
+      (comment "if g_ob_pos > 0 {")
       (if
         (binop >
 (var g_ob_pos)
 (int 0))
         (block
+          (comment "sys_write(1, ob, g_ob_pos as u32);")
           (call_stmt sys_write
             (int 1)
             (var ob)
-            (var g_ob_pos)
+            (cast
+(var g_ob_pos)
+(type u32))
           )
+          (comment "g_ob_pos = 0;")
           (assign g_ob_pos
             (int 0)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -407,26 +421,33 @@
       (type void)
     )
     (block
+      (comment "set(ob, g_ob_pos as u32, c);")
       (call_stmt set
         (var ob)
-        (var g_ob_pos)
+        (cast
+(var g_ob_pos)
+(type u32))
         (var c)
       )
+      (comment "g_ob_pos = g_ob_pos + 1;")
       (assign g_ob_pos
         (binop +
 (var g_ob_pos)
 (int 1))
       )
+      (comment "if g_ob_pos >= 1048576 {")
       (if
         (binop >=
 (var g_ob_pos)
-(int 8192))
+(int 1048576))
         (block
+          (comment "ob_flush(ob);")
           (call_stmt ob_flush
             (var ob)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -450,23 +471,29 @@
       (type void)
     )
     (block
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < n {")
       (while
         (binop <
 (var i)
 (var n))
         (block
+          (comment "ob_char(get(src, (start + i) as u32), ob);")
           (call_stmt ob_char
             (call get
 (var src)
+(cast
 (binop +
 (var start)
-(var i)))
+(var i))
+(type u32)))
             (var ob)
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -474,6 +501,7 @@
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -491,25 +519,30 @@
       (type void)
     )
     (block
+      (comment "var spaces: i32 = level * 2;")
       (var_decl spaces
         (type i32)
         (binop *
 (var level)
 (int 2))
       )
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < spaces {")
       (while
         (binop <
 (var i)
 (var spaces))
         (block
+          (comment "ob_char(' ', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -517,6 +550,7 @@
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -537,40 +571,53 @@
       (type bool)
     )
     (block
+      (comment "if tlen != len(target) as i32 { return false; }")
       (if
         (binop !=
 (var tlen)
+(cast
 (call len
-(var target)))
+(var target))
+(type i32)))
         (block
+          (comment "if tlen != len(target) as i32 { return false; }")
           (return
             (bool false)
           )
         )
       )
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < tlen {")
       (while
         (binop <
 (var i)
 (var tlen))
         (block
+          (comment "if get(tok, i as u32) != get(target, i as u32) { return false; }")
           (if
             (binop !=
 (call get
 (var tok)
-(var i))
+(cast
+(var i)
+(type u32)))
 (call get
 (var target)
-(var i)))
+(cast
+(var i)
+(type u32))))
             (block
+              (comment "if get(tok, i as u32) != get(target, i as u32) { return false; }")
               (return
                 (bool false)
               )
             )
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -578,6 +625,7 @@
           )
         )
       )
+      (comment "return true;")
       (return
         (bool true)
       )
@@ -596,26 +644,31 @@
       (type void)
     )
     (block
+      (comment "var i: u32 = 0u32;")
       (var_decl i
         (type u32)
         (int 0)
       )
+      (comment "var n: u32 = len(str);")
       (var_decl n
         (type u32)
         (call len
 (var str))
       )
+      (comment "while i < n {")
       (while
         (binop <
 (var i)
 (var n))
         (block
+          (comment "ob_char(get(str, i), ob);")
           (call_stmt ob_char
             (call get
 (var str)
 (var i))
             (var ob)
           )
+          (comment "i = i + 1u32;")
           (assign i
             (binop +
 (var i)
@@ -623,6 +676,7 @@
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -640,15 +694,18 @@
       (type void)
     )
     (block
+      (comment "if n < 0 {")
       (if
         (binop <
 (var n)
 (int 0))
         (block
+          (comment "ob_char('-', ob);  // '-'")
           (call_stmt ob_char
             (int 45)
             (var ob)
           )
+          (comment "n = 0 - n;")
           (assign n
             (binop -
 (int 0)
@@ -656,51 +713,65 @@
           )
         )
       )
+      (comment "if n == 0 {")
       (if
         (binop ==
 (var n)
 (int 0))
         (block
+          (comment "ob_char('0', ob);")
           (call_stmt ob_char
             (int 48)
             (var ob)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "var tmp: U8Array = U8Array(12);")
       (var_decl tmp
         (type U8Array)
         (call U8Array
 (int 12))
       )
+      (comment "var len: i32 = 0;")
       (var_decl len
         (type i32)
         (int 0)
       )
+      (comment "var v: i32 = n;")
       (var_decl v
         (type i32)
         (var n)
       )
+      (comment "while v > 0 {")
       (while
         (binop >
 (var v)
 (int 0))
         (block
+          (comment "set(tmp, len as u32, (48 + v % 10) as u8);")
           (call_stmt set
             (var tmp)
-            (var len)
-            (binop +
+            (cast
+(var len)
+(type u32))
+            (cast
+(binop +
 (int 48)
 (binop %
 (var v)
 (int 10)))
+(type u8))
           )
+          (comment "len = len + 1;")
           (assign len
             (binop +
 (var len)
 (int 1))
           )
+          (comment "v = v / 10;")
           (assign v
             (binop /
 (var v)
@@ -708,23 +779,29 @@
           )
         )
       )
+      (comment "var i: i32 = len - 1;")
       (var_decl i
         (type i32)
         (binop -
 (var len)
 (int 1))
       )
+      (comment "while i >= 0 {")
       (while
         (binop >=
 (var i)
 (int 0))
         (block
+          (comment "ob_char(get(tmp, i as u32), ob);")
           (call_stmt ob_char
             (call get
 (var tmp)
-(var i))
+(cast
+(var i)
+(type u32)))
             (var ob)
           )
+          (comment "i = i - 1;")
           (assign i
             (binop -
 (var i)
@@ -732,9 +809,11 @@
           )
         )
       )
+      (comment "delete(tmp);")
       (call_stmt delete
         (var tmp)
       )
+      (comment "return;")
       (return
       )
     )
@@ -752,253 +831,311 @@
       (type void)
     )
     (block
+      (comment "if kind == TK_PLUS     { ob_char('+', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_PLUS))
         (block
+          (comment "if kind == TK_PLUS     { ob_char('+', ob); return; }")
           (call_stmt ob_char
             (int 43)
             (var ob)
           )
+          (comment "if kind == TK_PLUS     { ob_char('+', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_MINUS    { ob_char('-', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_MINUS))
         (block
+          (comment "if kind == TK_MINUS    { ob_char('-', ob); return; }")
           (call_stmt ob_char
             (int 45)
             (var ob)
           )
+          (comment "if kind == TK_MINUS    { ob_char('-', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_STAR     { ob_char('*', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_STAR))
         (block
+          (comment "if kind == TK_STAR     { ob_char('*', ob); return; }")
           (call_stmt ob_char
             (int 42)
             (var ob)
           )
+          (comment "if kind == TK_STAR     { ob_char('*', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_SLASH    { ob_char('/', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_SLASH))
         (block
+          (comment "if kind == TK_SLASH    { ob_char('/', ob); return; }")
           (call_stmt ob_char
             (int 47)
             (var ob)
           )
+          (comment "if kind == TK_SLASH    { ob_char('/', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_PERCENT  { ob_char('%', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_PERCENT))
         (block
+          (comment "if kind == TK_PERCENT  { ob_char('%', ob); return; }")
           (call_stmt ob_char
             (int 37)
             (var ob)
           )
+          (comment "if kind == TK_PERCENT  { ob_char('%', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_AMP      { ob_char('&', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_AMP))
         (block
+          (comment "if kind == TK_AMP      { ob_char('&', ob); return; }")
           (call_stmt ob_char
             (int 38)
             (var ob)
           )
+          (comment "if kind == TK_AMP      { ob_char('&', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_PIPE     { ob_char('|', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_PIPE))
         (block
+          (comment "if kind == TK_PIPE     { ob_char('|', ob); return; }")
           (call_stmt ob_char
             (int 124)
             (var ob)
           )
+          (comment "if kind == TK_PIPE     { ob_char('|', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_CARET    { ob_char('^', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_CARET))
         (block
+          (comment "if kind == TK_CARET    { ob_char('^', ob); return; }")
           (call_stmt ob_char
             (int 94)
             (var ob)
           )
+          (comment "if kind == TK_CARET    { ob_char('^', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_LSHIFT   { ob_string(\"<<\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_LSHIFT))
         (block
+          (comment "if kind == TK_LSHIFT   { ob_string(\"<<\", ob); return; }")
           (call_stmt ob_string
             (str "<<")
             (var ob)
           )
+          (comment "if kind == TK_LSHIFT   { ob_string(\"<<\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_RSHIFT   { ob_string(\">>\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_RSHIFT))
         (block
+          (comment "if kind == TK_RSHIFT   { ob_string(\">>\", ob); return; }")
           (call_stmt ob_string
             (str ">>")
             (var ob)
           )
+          (comment "if kind == TK_RSHIFT   { ob_string(\">>\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_AMPAMP   { ob_string(\"&&\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_AMPAMP))
         (block
+          (comment "if kind == TK_AMPAMP   { ob_string(\"&&\", ob); return; }")
           (call_stmt ob_string
             (str "&&")
             (var ob)
           )
+          (comment "if kind == TK_AMPAMP   { ob_string(\"&&\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_PIPEPIPE { ob_string(\"||\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_PIPEPIPE))
         (block
+          (comment "if kind == TK_PIPEPIPE { ob_string(\"||\", ob); return; }")
           (call_stmt ob_string
             (str "||")
             (var ob)
           )
+          (comment "if kind == TK_PIPEPIPE { ob_string(\"||\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_BANG     { ob_char('!', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_BANG))
         (block
+          (comment "if kind == TK_BANG     { ob_char('!', ob); return; }")
           (call_stmt ob_char
             (int 33)
             (var ob)
           )
+          (comment "if kind == TK_BANG     { ob_char('!', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_EQEQ     { ob_string(\"==\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_EQEQ))
         (block
+          (comment "if kind == TK_EQEQ     { ob_string(\"==\", ob); return; }")
           (call_stmt ob_string
             (str "==")
             (var ob)
           )
+          (comment "if kind == TK_EQEQ     { ob_string(\"==\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_BANGEQ   { ob_string(\"!=\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_BANGEQ))
         (block
+          (comment "if kind == TK_BANGEQ   { ob_string(\"!=\", ob); return; }")
           (call_stmt ob_string
             (str "!=")
             (var ob)
           )
+          (comment "if kind == TK_BANGEQ   { ob_string(\"!=\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_LT       { ob_char('<', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_LT))
         (block
+          (comment "if kind == TK_LT       { ob_char('<', ob); return; }")
           (call_stmt ob_char
             (int 60)
             (var ob)
           )
+          (comment "if kind == TK_LT       { ob_char('<', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_LTEQ     { ob_string(\"<=\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_LTEQ))
         (block
+          (comment "if kind == TK_LTEQ     { ob_string(\"<=\", ob); return; }")
           (call_stmt ob_string
             (str "<=")
             (var ob)
           )
+          (comment "if kind == TK_LTEQ     { ob_string(\"<=\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_GT       { ob_char('>', ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_GT))
         (block
+          (comment "if kind == TK_GT       { ob_char('>', ob); return; }")
           (call_stmt ob_char
             (int 62)
             (var ob)
           )
+          (comment "if kind == TK_GT       { ob_char('>', ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_GTEQ     { ob_string(\">=\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_GTEQ))
         (block
+          (comment "if kind == TK_GTEQ     { ob_string(\">=\", ob); return; }")
           (call_stmt ob_string
             (str ">=")
             (var ob)
           )
+          (comment "if kind == TK_GTEQ     { ob_string(\">=\", ob); return; }")
           (return
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -1016,110 +1153,135 @@
       (type void)
     )
     (block
+      (comment "if kind == TK_U8   { ob_string(\"u8\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_U8))
         (block
+          (comment "if kind == TK_U8   { ob_string(\"u8\", ob); return; }")
           (call_stmt ob_string
             (str "u8")
             (var ob)
           )
+          (comment "if kind == TK_U8   { ob_string(\"u8\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_U16  { ob_string(\"u16\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_U16))
         (block
+          (comment "if kind == TK_U16  { ob_string(\"u16\", ob); return; }")
           (call_stmt ob_string
             (str "u16")
             (var ob)
           )
+          (comment "if kind == TK_U16  { ob_string(\"u16\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_U32  { ob_string(\"u32\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_U32))
         (block
+          (comment "if kind == TK_U32  { ob_string(\"u32\", ob); return; }")
           (call_stmt ob_string
             (str "u32")
             (var ob)
           )
+          (comment "if kind == TK_U32  { ob_string(\"u32\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_I8   { ob_string(\"i8\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_I8))
         (block
+          (comment "if kind == TK_I8   { ob_string(\"i8\", ob); return; }")
           (call_stmt ob_string
             (str "i8")
             (var ob)
           )
+          (comment "if kind == TK_I8   { ob_string(\"i8\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_I16  { ob_string(\"i16\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_I16))
         (block
+          (comment "if kind == TK_I16  { ob_string(\"i16\", ob); return; }")
           (call_stmt ob_string
             (str "i16")
             (var ob)
           )
+          (comment "if kind == TK_I16  { ob_string(\"i16\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_I32  { ob_string(\"i32\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_I32))
         (block
+          (comment "if kind == TK_I32  { ob_string(\"i32\", ob); return; }")
           (call_stmt ob_string
             (str "i32")
             (var ob)
           )
+          (comment "if kind == TK_I32  { ob_string(\"i32\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_BOOL { ob_string(\"bool\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_BOOL))
         (block
+          (comment "if kind == TK_BOOL { ob_string(\"bool\", ob); return; }")
           (call_stmt ob_string
             (str "bool")
             (var ob)
           )
+          (comment "if kind == TK_BOOL { ob_string(\"bool\", ob); return; }")
           (return
           )
         )
       )
+      (comment "if kind == TK_VOID { ob_string(\"void\", ob); return; }")
       (if
         (binop ==
 (var kind)
 (var TK_VOID))
         (block
+          (comment "if kind == TK_VOID { ob_string(\"void\", ob); return; }")
           (call_stmt ob_string
             (str "void")
             (var ob)
           )
+          (comment "if kind == TK_VOID { ob_string(\"void\", ob); return; }")
           (return
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -1134,6 +1296,7 @@
       (type bool)
     )
     (block
+      (comment "return kind == TK_U8 || kind == TK_U16 || kind == TK_U32 ||")
       (return
         (binop ||
 (binop ||
@@ -1186,61 +1349,72 @@
       (type i32)
     )
     (block
+      (comment "if tlen == 2 {")
       (if
         (binop ==
 (var tlen)
 (int 2))
         (block
+          (comment "if tok_cmp(tok, tlen, \"fn\") { return TK_FN; }     // fn")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "fn"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"fn\") { return TK_FN; }     // fn")
               (return
                 (var TK_FN)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"as\")  { return TK_AS; }     // as")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "as"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"as\")  { return TK_AS; }     // as")
               (return
                 (var TK_AS)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"if\") { return TK_IF; }     // if")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "if"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"if\") { return TK_IF; }     // if")
               (return
                 (var TK_IF)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"u8\")  { return TK_U8; }     // u8")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "u8"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"u8\")  { return TK_U8; }     // u8")
               (return
                 (var TK_U8)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"i8\")  { return TK_I8; }     // i8")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "i8"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"i8\")  { return TK_I8; }     // i8")
               (return
                 (var TK_I8)
               )
@@ -1248,61 +1422,72 @@
           )
         )
       )
+      (comment "if tlen == 3 {")
       (if
         (binop ==
 (var tlen)
 (int 3))
         (block
+          (comment "if tok_cmp(tok, tlen, \"var\")   { return TK_VAR; }   // var")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "var"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"var\")   { return TK_VAR; }   // var")
               (return
                 (var TK_VAR)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"u16\")    { return TK_U16; }   // u16")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "u16"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"u16\")    { return TK_U16; }   // u16")
               (return
                 (var TK_U16)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"u32\")    { return TK_U32; }   // u32")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "u32"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"u32\")    { return TK_U32; }   // u32")
               (return
                 (var TK_U32)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"i16\")    { return TK_I16; }   // i16")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "i16"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"i16\")    { return TK_I16; }   // i16")
               (return
                 (var TK_I16)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"i32\")    { return TK_I32; }   // i32")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "i32"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"i32\")    { return TK_I32; }   // i32")
               (return
                 (var TK_I32)
               )
@@ -1310,50 +1495,59 @@
           )
         )
       )
+      (comment "if tlen == 4 {")
       (if
         (binop ==
 (var tlen)
 (int 4))
         (block
+          (comment "if tok_cmp(tok, tlen, \"else\") { return TK_ELSE; }  // else")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "else"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"else\") { return TK_ELSE; }  // else")
               (return
                 (var TK_ELSE)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"bool\")  { return TK_BOOL; }  // bool")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "bool"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"bool\")  { return TK_BOOL; }  // bool")
               (return
                 (var TK_BOOL)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"void\") { return TK_VOID; }  // void")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "void"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"void\") { return TK_VOID; }  // void")
               (return
                 (var TK_VOID)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"true\") { return TK_TRUE; }  // true")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "true"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"true\") { return TK_TRUE; }  // true")
               (return
                 (var TK_TRUE)
               )
@@ -1361,39 +1555,46 @@
           )
         )
       )
+      (comment "if tlen == 5 {")
       (if
         (binop ==
 (var tlen)
 (int 5))
         (block
+          (comment "if tok_cmp(tok, tlen, \"while\")  { return TK_WHILE; }  // while")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "while"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"while\")  { return TK_WHILE; }  // while")
               (return
                 (var TK_WHILE)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"false\")   { return TK_FALSE; }  // false")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "false"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"false\")   { return TK_FALSE; }  // false")
               (return
                 (var TK_FALSE)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"break\")    { return TK_BREAK; }  // break")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "break"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"break\")    { return TK_BREAK; }  // break")
               (return
                 (var TK_BREAK)
               )
@@ -1401,39 +1602,46 @@
           )
         )
       )
+      (comment "if tlen == 6 {")
       (if
         (binop ==
 (var tlen)
 (int 6))
         (block
+          (comment "if tok_cmp(tok, tlen, \"return\") { return TK_RETURN; } // return")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "return"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"return\") { return TK_RETURN; } // return")
               (return
                 (var TK_RETURN)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"struct\")  { return TK_STRUCT; } // struct")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "struct"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"struct\")  { return TK_STRUCT; } // struct")
               (return
                 (var TK_STRUCT)
               )
             )
           )
+          (comment "if tok_cmp(tok, tlen, \"import\") { return TK_IMPORT; } // import")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "import"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"import\") { return TK_IMPORT; } // import")
               (return
                 (var TK_IMPORT)
               )
@@ -1441,17 +1649,20 @@
           )
         )
       )
+      (comment "if tlen == 8 {")
       (if
         (binop ==
 (var tlen)
 (int 8))
         (block
+          (comment "if tok_cmp(tok, tlen, \"continue\") { return TK_CONTINUE; }")
           (if
             (call tok_cmp
 (var tok)
 (var tlen)
 (str "continue"))
             (block
+              (comment "if tok_cmp(tok, tlen, \"continue\") { return TK_CONTINUE; }")
               (return
                 (var TK_CONTINUE)
               )
@@ -1459,6 +1670,7 @@
           )
         )
       )
+      (comment "return TK_IDENT;")
       (return
         (var TK_IDENT)
       )
@@ -1474,20 +1686,25 @@
       (type u8)
     )
     (block
+      (comment "if g_pos >= g_len { return 0u8; }")
       (if
         (binop >=
 (var g_pos)
 (var g_len))
         (block
+          (comment "if g_pos >= g_len { return 0u8; }")
           (return
             (int 0)
           )
         )
       )
+      (comment "return get(src, g_pos as u32);")
       (return
         (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
       )
     )
   )
@@ -1504,25 +1721,30 @@
       (type void)
     )
     (block
+      (comment "while g_pos < g_len {")
       (while
         (binop <
 (var g_pos)
 (var g_len))
         (block
+          (comment "var c: u8 = src_char(src);")
           (var_decl c
             (type u8)
             (call src_char
 (var src))
           )
+          (comment "if is_wspace(c) {")
           (if
             (call is_wspace
 (var c))
             (block
+              (comment "if c == 10u8 { g_line = g_line + 1; }")
               (if
                 (binop ==
 (var c)
 (int 10))
                 (block
+                  (comment "if c == 10u8 { g_line = g_line + 1; }")
                   (assign g_line
                     (binop +
 (var g_line)
@@ -1530,6 +1752,7 @@
                   )
                 )
               )
+              (comment "g_pos = g_pos + 1;")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -1537,6 +1760,7 @@
               )
             )
             (block
+              (comment "if c == '/' && g_pos + 1 < g_len && get(src, (g_pos+1) as u32) == '/' {")
               (if
                 (binop &&
 (binop &&
@@ -1551,11 +1775,14 @@
 (binop ==
 (call get
 (var src)
+(cast
 (binop +
 (var g_pos)
-(int 1)))
+(int 1))
+(type u32)))
 (int 47)))
                 (block
+                  (comment "while g_pos < g_len && src_char(src) != 10u8 {")
                   (while
                     (binop &&
 (binop <
@@ -1566,6 +1793,7 @@
 (var src))
 (int 10)))
                     (block
+                      (comment "g_pos = g_pos + 1;")
                       (assign g_pos
                         (binop +
 (var g_pos)
@@ -1575,24 +1803,29 @@
                   )
                 )
                 (block
+                  (comment "g_pos = g_pos + 1;  // not space, not comment: break")
                   (assign g_pos
                     (binop +
 (var g_pos)
 (int 1))
                   )
+                  (comment "g_pos = g_pos - 1;")
                   (assign g_pos
                     (binop -
 (var g_pos)
 (int 1))
                   )
+                  (comment "g_pos = g_pos + 0;")
                   (assign g_pos
                     (binop +
 (var g_pos)
 (int 0))
                   )
+                  (comment "g_tok = 99;  // sentinel to break")
                   (assign g_tok
                     (int 99)
                   )
+                  (comment "g_pos = g_len + 1;  // force exit loop")
                   (assign g_pos
                     (binop +
 (var g_len)
@@ -1604,16 +1837,19 @@
           )
         )
       )
+      (comment "if g_tok == 99 {")
       (if
         (binop ==
 (var g_tok)
 (int 99))
         (block
+          (comment "g_tok = TK_EOF;")
           (assign g_tok
             (var TK_EOF)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -1628,10 +1864,12 @@
       (type void)
     )
     (block
+      (comment "var done: i32 = 0;")
       (var_decl done
         (type i32)
         (int 0)
       )
+      (comment "while done == 0 && g_pos < g_len {")
       (while
         (binop &&
 (binop ==
@@ -1641,21 +1879,27 @@
 (var g_pos)
 (var g_len)))
         (block
+          (comment "var c: u8 = get(src, g_pos as u32);")
           (var_decl c
             (type u8)
             (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
           )
+          (comment "if is_wspace(c) {")
           (if
             (call is_wspace
 (var c))
             (block
+              (comment "if c == 10u8 { g_line = g_line + 1; }")
               (if
                 (binop ==
 (var c)
 (int 10))
                 (block
+                  (comment "if c == 10u8 { g_line = g_line + 1; }")
                   (assign g_line
                     (binop +
 (var g_line)
@@ -1663,6 +1907,7 @@
                   )
                 )
               )
+              (comment "g_pos = g_pos + 1;")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -1670,6 +1915,7 @@
               )
             )
             (block
+              (comment "if c == '/' && g_pos + 1 < g_len && get(src, (g_pos+1) as u32) == '/' {")
               (if
                 (binop &&
 (binop &&
@@ -1684,11 +1930,14 @@
 (binop ==
 (call get
 (var src)
+(cast
 (binop +
 (var g_pos)
-(int 1)))
+(int 1))
+(type u32)))
 (int 47)))
                 (block
+                  (comment "while g_pos < g_len && get(src, g_pos as u32) != 10u8 {")
                   (while
                     (binop &&
 (binop <
@@ -1697,9 +1946,12 @@
 (binop !=
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 10)))
                     (block
+                      (comment "g_pos = g_pos + 1;")
                       (assign g_pos
                         (binop +
 (var g_pos)
@@ -1709,6 +1961,7 @@
                   )
                 )
                 (block
+                  (comment "done = 1;")
                   (assign done
                     (int 1)
                   )
@@ -1718,6 +1971,7 @@
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -1735,38 +1989,53 @@
       (type void)
     )
     (block
+      (comment "skip_ws_and_comments(src);")
       (call_stmt skip_ws_and_comments
         (var src)
       )
+      (comment "g_tok_line = g_line;")
+      (assign g_tok_line
+        (var g_line)
+      )
+      (comment "if g_pos >= g_len {")
       (if
         (binop >=
 (var g_pos)
 (var g_len))
         (block
+          (comment "g_tok = TK_EOF;")
           (assign g_tok
             (var TK_EOF)
           )
+          (comment "g_tok_slen = 0;")
           (assign g_tok_slen
             (int 0)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "var c: u8 = get(src, g_pos as u32);")
       (var_decl c
         (type u8)
         (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
       )
+      (comment "if is_alpha(c) {")
       (if
         (call is_alpha
 (var c))
         (block
+          (comment "var start: i32 = g_pos;")
           (var_decl start
             (type i32)
             (var g_pos)
           )
+          (comment "while g_pos < g_len && is_alnum(get(src, g_pos as u32)) {")
           (while
             (binop &&
 (binop <
@@ -1775,8 +2044,11 @@
 (call is_alnum
 (call get
 (var src)
-(var g_pos))))
+(cast
+(var g_pos)
+(type u32)))))
             (block
+              (comment "g_pos = g_pos + 1;")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -1784,30 +2056,39 @@
               )
             )
           )
+          (comment "var tlen: i32 = g_pos - start;")
           (var_decl tlen
             (type i32)
             (binop -
 (var g_pos)
 (var start))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < tlen {")
           (while
             (binop <
 (var i)
 (var tlen))
             (block
+              (comment "set(tok, i as u32, get(src, (start + i) as u32));")
               (call_stmt set
                 (var tok)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var src)
+(cast
 (binop +
 (var start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -1815,26 +2096,32 @@
               )
             )
           )
+          (comment "g_tok_slen = tlen;")
           (assign g_tok_slen
             (var tlen)
           )
+          (comment "g_tok = classify_ident(tok, tlen);")
           (assign g_tok
             (call classify_ident
 (var tok)
 (var tlen))
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if is_digit(c) {")
       (if
         (call is_digit
 (var c))
         (block
+          (comment "var ival: i32 = 0;")
           (var_decl ival
             (type i32)
             (int 0)
           )
+          (comment "while g_pos < g_len && is_digit(get(src, g_pos as u32)) {")
           (while
             (binop &&
 (binop <
@@ -1843,19 +2130,27 @@
 (call is_digit
 (call get
 (var src)
-(var g_pos))))
+(cast
+(var g_pos)
+(type u32)))))
             (block
+              (comment "ival = ival * 10 + (get(src, g_pos as u32) as i32 - 48);")
               (assign ival
                 (binop +
 (binop *
 (var ival)
 (int 10))
 (binop -
+(cast
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
+(type i32))
 (int 48)))
               )
+              (comment "g_pos = g_pos + 1;")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -1863,6 +2158,7 @@
               )
             )
           )
+          (comment "if g_pos < g_len && is_alpha(get(src, g_pos as u32)) {")
           (if
             (binop &&
 (binop <
@@ -1871,12 +2167,16 @@
 (call is_alpha
 (call get
 (var src)
-(var g_pos))))
+(cast
+(var g_pos)
+(type u32)))))
             (block
+              (comment "var sstart: i32 = g_pos;")
               (var_decl sstart
                 (type i32)
                 (var g_pos)
               )
+              (comment "while g_pos < g_len && is_alnum(get(src, g_pos as u32)) {")
               (while
                 (binop &&
 (binop <
@@ -1885,8 +2185,11 @@
 (call is_alnum
 (call get
 (var src)
-(var g_pos))))
+(cast
+(var g_pos)
+(type u32)))))
                 (block
+                  (comment "g_pos = g_pos + 1;")
                   (assign g_pos
                     (binop +
 (var g_pos)
@@ -1894,30 +2197,39 @@
                   )
                 )
               )
+              (comment "var slen: i32 = g_pos - sstart;")
               (var_decl slen
                 (type i32)
                 (binop -
 (var g_pos)
 (var sstart))
               )
+              (comment "var i: i32 = 0;")
               (var_decl i
                 (type i32)
                 (int 0)
               )
+              (comment "while i < slen {")
               (while
                 (binop <
 (var i)
 (var slen))
                 (block
+                  (comment "set(tok, i as u32, get(src, (sstart + i) as u32));")
                   (call_stmt set
                     (var tok)
-                    (var i)
+                    (cast
+(var i)
+(type u32))
                     (call get
 (var src)
+(cast
 (binop +
 (var sstart)
-(var i)))
+(var i))
+(type u32)))
                   )
+                  (comment "i = i + 1;")
                   (assign i
                     (binop +
 (var i)
@@ -1925,40 +2237,49 @@
                   )
                 )
               )
+              (comment "g_tok_slen = slen;")
               (assign g_tok_slen
                 (var slen)
               )
             )
             (block
+              (comment "g_tok_slen = 0;")
               (assign g_tok_slen
                 (int 0)
               )
             )
           )
+          (comment "g_tok_ival = ival;")
           (assign g_tok_ival
             (var ival)
           )
+          (comment "g_tok = TK_INT_LIT;")
           (assign g_tok
             (var TK_INT_LIT)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if c == '\"' {   // '\"'")
       (if
         (binop ==
 (var c)
 (int 34))
         (block
+          (comment "g_pos = g_pos + 1;  // skip opening \"")
           (assign g_pos
             (binop +
 (var g_pos)
 (int 1))
           )
+          (comment "var slen: i32 = 0;")
           (var_decl slen
             (type i32)
             (int 0)
           )
+          (comment "while g_pos < g_len && get(src, g_pos as u32) != '\"' {")
           (while
             (binop &&
 (binop <
@@ -1967,15 +2288,21 @@
 (binop !=
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 34)))
             (block
+              (comment "var ch: u8 = get(src, g_pos as u32);")
               (var_decl ch
                 (type u8)
                 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
               )
+              (comment "if ch == '\\\\' && g_pos + 1 < g_len {")
               (if
                 (binop &&
 (binop ==
@@ -1987,91 +2314,113 @@
 (int 1))
 (var g_len)))
                 (block
+                  (comment "g_pos = g_pos + 1;")
                   (assign g_pos
                     (binop +
 (var g_pos)
 (int 1))
                   )
+                  (comment "var esc: u8 = get(src, g_pos as u32);")
                   (var_decl esc
                     (type u8)
                     (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
                   )
+                  (comment "var out: u8 = esc;")
                   (var_decl out
                     (type u8)
                     (var esc)
                   )
+                  (comment "if esc == 'n' { out = 10u8; }   // \\n")
                   (if
                     (binop ==
 (var esc)
 (int 110))
                     (block
+                      (comment "if esc == 'n' { out = 10u8; }   // \\n")
                       (assign out
                         (int 10)
                       )
                     )
                   )
+                  (comment "if esc == 't' { out = 9u8; }    // \\t")
                   (if
                     (binop ==
 (var esc)
 (int 116))
                     (block
+                      (comment "if esc == 't' { out = 9u8; }    // \\t")
                       (assign out
                         (int 9)
                       )
                     )
                   )
+                  (comment "if esc == 'r' { out = 13u8; }   // \\r")
                   (if
                     (binop ==
 (var esc)
 (int 114))
                     (block
+                      (comment "if esc == 'r' { out = 13u8; }   // \\r")
                       (assign out
                         (int 13)
                       )
                     )
                   )
+                  (comment "if esc == '\"'  { out = '\"'; }   // \\\"")
                   (if
                     (binop ==
 (var esc)
 (int 34))
                     (block
+                      (comment "if esc == '\"'  { out = '\"'; }   // \\\"")
                       (assign out
                         (int 34)
                       )
                     )
                   )
+                  (comment "if esc == '\\\\'  { out = '\\\\'; }   // \\\\")
                   (if
                     (binop ==
 (var esc)
 (int 92))
                     (block
+                      (comment "if esc == '\\\\'  { out = '\\\\'; }   // \\\\")
                       (assign out
                         (int 92)
                       )
                     )
                   )
+                  (comment "if esc == '0'  { out = 0u8; }    // \\0")
                   (if
                     (binop ==
 (var esc)
 (int 48))
                     (block
+                      (comment "if esc == '0'  { out = 0u8; }    // \\0")
                       (assign out
                         (int 0)
                       )
                     )
                   )
+                  (comment "set(tok, slen as u32, out);")
                   (call_stmt set
                     (var tok)
-                    (var slen)
+                    (cast
+(var slen)
+(type u32))
                     (var out)
                   )
+                  (comment "slen = slen + 1;")
                   (assign slen
                     (binop +
 (var slen)
 (int 1))
                   )
+                  (comment "g_pos = g_pos + 1;")
                   (assign g_pos
                     (binop +
 (var g_pos)
@@ -2079,16 +2428,21 @@
                   )
                 )
                 (block
+                  (comment "set(tok, slen as u32, ch);")
                   (call_stmt set
                     (var tok)
-                    (var slen)
+                    (cast
+(var slen)
+(type u32))
                     (var ch)
                   )
+                  (comment "slen = slen + 1;")
                   (assign slen
                     (binop +
 (var slen)
 (int 1))
                   )
+                  (comment "g_pos = g_pos + 1;")
                   (assign g_pos
                     (binop +
 (var g_pos)
@@ -2098,11 +2452,13 @@
               )
             )
           )
+          (comment "if g_pos < g_len { g_pos = g_pos + 1; }  // skip closing \"")
           (if
             (binop <
 (var g_pos)
 (var g_len))
             (block
+              (comment "if g_pos < g_len { g_pos = g_pos + 1; }  // skip closing \"")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -2110,36 +2466,46 @@
               )
             )
           )
+          (comment "g_tok_slen = slen;")
           (assign g_tok_slen
             (var slen)
           )
+          (comment "g_tok = TK_STR_LIT;")
           (assign g_tok
             (var TK_STR_LIT)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if c == '\\'' {   // '\\''")
       (if
         (binop ==
 (var c)
 (int 39))
         (block
+          (comment "g_pos = g_pos + 1;  // skip opening '")
           (assign g_pos
             (binop +
 (var g_pos)
 (int 1))
           )
+          (comment "var cval: i32 = 0;")
           (var_decl cval
             (type i32)
             (int 0)
           )
+          (comment "var ch2: u8 = get(src, g_pos as u32);")
           (var_decl ch2
             (type u8)
             (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
           )
+          (comment "if ch2 == '\\\\' && g_pos + 1 < g_len {  // backslash escape")
           (if
             (binop &&
 (binop ==
@@ -2151,109 +2517,137 @@
 (int 1))
 (var g_len)))
             (block
+              (comment "g_pos = g_pos + 1;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "var esc: u8 = get(src, g_pos as u32);")
               (var_decl esc
                 (type u8)
                 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
               )
+              (comment "var handled: i32 = 0;")
               (var_decl handled
                 (type i32)
                 (int 0)
               )
+              (comment "if esc == 'n' { cval = 10; handled = 1; }    // \\n")
               (if
                 (binop ==
 (var esc)
 (int 110))
                 (block
+                  (comment "if esc == 'n' { cval = 10; handled = 1; }    // \\n")
                   (assign cval
                     (int 10)
                   )
+                  (comment "if esc == 'n' { cval = 10; handled = 1; }    // \\n")
                   (assign handled
                     (int 1)
                   )
                 )
               )
+              (comment "if esc == 't' { cval = 9; handled = 1; }     // \\t")
               (if
                 (binop ==
 (var esc)
 (int 116))
                 (block
+                  (comment "if esc == 't' { cval = 9; handled = 1; }     // \\t")
                   (assign cval
                     (int 9)
                   )
+                  (comment "if esc == 't' { cval = 9; handled = 1; }     // \\t")
                   (assign handled
                     (int 1)
                   )
                 )
               )
+              (comment "if esc == 'r' { cval = 13; handled = 1; }    // \\r")
               (if
                 (binop ==
 (var esc)
 (int 114))
                 (block
+                  (comment "if esc == 'r' { cval = 13; handled = 1; }    // \\r")
                   (assign cval
                     (int 13)
                   )
+                  (comment "if esc == 'r' { cval = 13; handled = 1; }    // \\r")
                   (assign handled
                     (int 1)
                   )
                 )
               )
+              (comment "if esc == '\\\\'  { cval = 92; handled = 1; }    // \\\\")
               (if
                 (binop ==
 (var esc)
 (int 92))
                 (block
+                  (comment "if esc == '\\\\'  { cval = 92; handled = 1; }    // \\\\")
                   (assign cval
                     (int 92)
                   )
+                  (comment "if esc == '\\\\'  { cval = 92; handled = 1; }    // \\\\")
                   (assign handled
                     (int 1)
                   )
                 )
               )
+              (comment "if esc == '\\''  { cval = 39; handled = 1; }    // \\'")
               (if
                 (binop ==
 (var esc)
 (int 39))
                 (block
+                  (comment "if esc == '\\''  { cval = 39; handled = 1; }    // \\'")
                   (assign cval
                     (int 39)
                   )
+                  (comment "if esc == '\\''  { cval = 39; handled = 1; }    // \\'")
                   (assign handled
                     (int 1)
                   )
                 )
               )
+              (comment "if esc == '0'  { cval = 0; handled = 1; }     // \\0")
               (if
                 (binop ==
 (var esc)
 (int 48))
                 (block
+                  (comment "if esc == '0'  { cval = 0; handled = 1; }     // \\0")
                   (assign cval
                     (int 0)
                   )
+                  (comment "if esc == '0'  { cval = 0; handled = 1; }     // \\0")
                   (assign handled
                     (int 1)
                   )
                 )
               )
+              (comment "if handled == 0 { cval = esc as i32; }")
               (if
                 (binop ==
 (var handled)
 (int 0))
                 (block
+                  (comment "if handled == 0 { cval = esc as i32; }")
                   (assign cval
-                    (var esc)
+                    (cast
+(var esc)
+(type i32))
                   )
                 )
               )
+              (comment "g_pos = g_pos + 1;")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -2261,9 +2655,13 @@
               )
             )
             (block
+              (comment "cval = ch2 as i32;")
               (assign cval
-                (var ch2)
+                (cast
+(var ch2)
+(type i32))
               )
+              (comment "g_pos = g_pos + 1;")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -2271,6 +2669,7 @@
               )
             )
           )
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '\\'' { g_pos = g_pos + 1; }  // closing '")
           (if
             (binop &&
 (binop <
@@ -2279,9 +2678,12 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 39)))
             (block
+              (comment "if g_pos < g_len && get(src, g_pos as u32) == '\\'' { g_pos = g_pos + 1; }  // closing '")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -2289,39 +2691,48 @@
               )
             )
           )
+          (comment "set(tok, 0u32, 'u'); set(tok, 1u32, '8');")
           (call_stmt set
             (var tok)
             (int 0)
             (int 117)
           )
+          (comment "set(tok, 0u32, 'u'); set(tok, 1u32, '8');")
           (call_stmt set
             (var tok)
             (int 1)
             (int 56)
           )
+          (comment "g_tok_slen = 2;")
           (assign g_tok_slen
             (int 2)
           )
+          (comment "g_tok_ival = cval;")
           (assign g_tok_ival
             (var cval)
           )
+          (comment "g_tok = TK_INT_LIT;")
           (assign g_tok
             (var TK_INT_LIT)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "g_pos = g_pos + 1;  // consume the character")
       (assign g_pos
         (binop +
 (var g_pos)
 (int 1))
       )
+      (comment "if c == '+' {  // + or +=")
       (if
         (binop ==
 (var c)
 (int 43))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2330,33 +2741,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_PLUS_EQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_PLUS_EQ; return;")
               (assign g_tok
                 (var TK_PLUS_EQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_PLUS_EQ; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_PLUS; return;")
           (assign g_tok
             (var TK_PLUS)
           )
+          (comment "g_tok = TK_PLUS; return;")
           (return
           )
         )
       )
+      (comment "if c == '%' {  // % or %=")
       (if
         (binop ==
 (var c)
 (int 37))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2365,129 +2785,162 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_PERCENT_EQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_PERCENT_EQ; return;")
               (assign g_tok
                 (var TK_PERCENT_EQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_PERCENT_EQ; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_PERCENT; return;")
           (assign g_tok
             (var TK_PERCENT)
           )
+          (comment "g_tok = TK_PERCENT; return;")
           (return
           )
         )
       )
+      (comment "if c == '^' { g_tok = TK_CARET; return; }   // ^")
       (if
         (binop ==
 (var c)
 (int 94))
         (block
+          (comment "if c == '^' { g_tok = TK_CARET; return; }   // ^")
           (assign g_tok
             (var TK_CARET)
           )
+          (comment "if c == '^' { g_tok = TK_CARET; return; }   // ^")
           (return
           )
         )
       )
+      (comment "if c == '(' { g_tok = TK_LPAREN; return; }  // (")
       (if
         (binop ==
 (var c)
 (int 40))
         (block
+          (comment "if c == '(' { g_tok = TK_LPAREN; return; }  // (")
           (assign g_tok
             (var TK_LPAREN)
           )
+          (comment "if c == '(' { g_tok = TK_LPAREN; return; }  // (")
           (return
           )
         )
       )
+      (comment "if c == ')' { g_tok = TK_RPAREN; return; }  // )")
       (if
         (binop ==
 (var c)
 (int 41))
         (block
+          (comment "if c == ')' { g_tok = TK_RPAREN; return; }  // )")
           (assign g_tok
             (var TK_RPAREN)
           )
+          (comment "if c == ')' { g_tok = TK_RPAREN; return; }  // )")
           (return
           )
         )
       )
+      (comment "if c == '{' { g_tok = TK_LBRACE; return; } // {")
       (if
         (binop ==
 (var c)
 (int 123))
         (block
+          (comment "if c == '{' { g_tok = TK_LBRACE; return; } // {")
           (assign g_tok
             (var TK_LBRACE)
           )
+          (comment "if c == '{' { g_tok = TK_LBRACE; return; } // {")
           (return
           )
         )
       )
+      (comment "if c == '}' { g_tok = TK_RBRACE; return; } // }")
       (if
         (binop ==
 (var c)
 (int 125))
         (block
+          (comment "if c == '}' { g_tok = TK_RBRACE; return; } // }")
           (assign g_tok
             (var TK_RBRACE)
           )
+          (comment "if c == '}' { g_tok = TK_RBRACE; return; } // }")
           (return
           )
         )
       )
+      (comment "if c == ',' { g_tok = TK_COMMA; return; }   // ,")
       (if
         (binop ==
 (var c)
 (int 44))
         (block
+          (comment "if c == ',' { g_tok = TK_COMMA; return; }   // ,")
           (assign g_tok
             (var TK_COMMA)
           )
+          (comment "if c == ',' { g_tok = TK_COMMA; return; }   // ,")
           (return
           )
         )
       )
+      (comment "if c == ';' { g_tok = TK_SEMI; return; }    // ;")
       (if
         (binop ==
 (var c)
 (int 59))
         (block
+          (comment "if c == ';' { g_tok = TK_SEMI; return; }    // ;")
           (assign g_tok
             (var TK_SEMI)
           )
+          (comment "if c == ';' { g_tok = TK_SEMI; return; }    // ;")
           (return
           )
         )
       )
+      (comment "if c == ':' { g_tok = TK_COLON; return; }   // :")
       (if
         (binop ==
 (var c)
 (int 58))
         (block
+          (comment "if c == ':' { g_tok = TK_COLON; return; }   // :")
           (assign g_tok
             (var TK_COLON)
           )
+          (comment "if c == ':' { g_tok = TK_COLON; return; }   // :")
           (return
           )
         )
       )
+      (comment "if c == '*' {  // * or *=")
       (if
         (binop ==
 (var c)
 (int 42))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2496,33 +2949,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_STAR_EQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_STAR_EQ; return;")
               (assign g_tok
                 (var TK_STAR_EQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_STAR_EQ; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_STAR; return;")
           (assign g_tok
             (var TK_STAR)
           )
+          (comment "g_tok = TK_STAR; return;")
           (return
           )
         )
       )
+      (comment "if c == '/' {  // / or /=")
       (if
         (binop ==
 (var c)
 (int 47))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2531,33 +2993,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_SLASH_EQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_SLASH_EQ; return;")
               (assign g_tok
                 (var TK_SLASH_EQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_SLASH_EQ; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_SLASH; return;")
           (assign g_tok
             (var TK_SLASH)
           )
+          (comment "g_tok = TK_SLASH; return;")
           (return
           )
         )
       )
+      (comment "if c == '&' {  // & or &&")
       (if
         (binop ==
 (var c)
 (int 38))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '&' {")
           (if
             (binop &&
 (binop <
@@ -2566,33 +3037,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 38)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_AMPAMP; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_AMPAMP; return;")
               (assign g_tok
                 (var TK_AMPAMP)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_AMPAMP; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_AMP; return;")
           (assign g_tok
             (var TK_AMP)
           )
+          (comment "g_tok = TK_AMP; return;")
           (return
           )
         )
       )
+      (comment "if c == '|' {  // | or ||")
       (if
         (binop ==
 (var c)
 (int 124))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '|' {")
           (if
             (binop &&
 (binop <
@@ -2601,33 +3081,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 124)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_PIPEPIPE; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_PIPEPIPE; return;")
               (assign g_tok
                 (var TK_PIPEPIPE)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_PIPEPIPE; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_PIPE; return;")
           (assign g_tok
             (var TK_PIPE)
           )
+          (comment "g_tok = TK_PIPE; return;")
           (return
           )
         )
       )
+      (comment "if c == '!' {  // ! or !=")
       (if
         (binop ==
 (var c)
 (int 33))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2636,33 +3125,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_BANGEQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_BANGEQ; return;")
               (assign g_tok
                 (var TK_BANGEQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_BANGEQ; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_BANG; return;")
           (assign g_tok
             (var TK_BANG)
           )
+          (comment "g_tok = TK_BANG; return;")
           (return
           )
         )
       )
+      (comment "if c == '=' {  // = or ==")
       (if
         (binop ==
 (var c)
 (int 61))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2671,33 +3169,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_EQEQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_EQEQ; return;")
               (assign g_tok
                 (var TK_EQEQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_EQEQ; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_EQ; return;")
           (assign g_tok
             (var TK_EQ)
           )
+          (comment "g_tok = TK_EQ; return;")
           (return
           )
         )
       )
+      (comment "if c == '<' {  // < or <= or <<")
       (if
         (binop ==
 (var c)
 (int 60))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2706,21 +3213,27 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_LTEQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_LTEQ; return;")
               (assign g_tok
                 (var TK_LTEQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_LTEQ; return;")
               (return
               )
             )
           )
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '<' {")
           (if
             (binop &&
 (binop <
@@ -2729,33 +3242,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 60)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_LSHIFT; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_LSHIFT; return;")
               (assign g_tok
                 (var TK_LSHIFT)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_LSHIFT; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_LT; return;")
           (assign g_tok
             (var TK_LT)
           )
+          (comment "g_tok = TK_LT; return;")
           (return
           )
         )
       )
+      (comment "if c == '>' {  // > or >= or >>")
       (if
         (binop ==
 (var c)
 (int 62))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2764,21 +3286,27 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_GTEQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_GTEQ; return;")
               (assign g_tok
                 (var TK_GTEQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_GTEQ; return;")
               (return
               )
             )
           )
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '>' {")
           (if
             (binop &&
 (binop <
@@ -2787,33 +3315,42 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 62)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_RSHIFT; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_RSHIFT; return;")
               (assign g_tok
                 (var TK_RSHIFT)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_RSHIFT; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_GT; return;")
           (assign g_tok
             (var TK_GT)
           )
+          (comment "g_tok = TK_GT; return;")
           (return
           )
         )
       )
+      (comment "if c == '-' {  // - or -> or -=")
       (if
         (binop ==
 (var c)
 (int 45))
         (block
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '>' {")
           (if
             (binop &&
 (binop <
@@ -2822,21 +3359,27 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 62)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_ARROW; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_ARROW; return;")
               (assign g_tok
                 (var TK_ARROW)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_ARROW; return;")
               (return
               )
             )
           )
+          (comment "if g_pos < g_len && get(src, g_pos as u32) == '=' {")
           (if
             (binop &&
 (binop <
@@ -2845,31 +3388,40 @@
 (binop ==
 (call get
 (var src)
-(var g_pos))
+(cast
+(var g_pos)
+(type u32)))
 (int 61)))
             (block
+              (comment "g_pos = g_pos + 1; g_tok = TK_MINUS_EQ; return;")
               (assign g_pos
                 (binop +
 (var g_pos)
 (int 1))
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_MINUS_EQ; return;")
               (assign g_tok
                 (var TK_MINUS_EQ)
               )
+              (comment "g_pos = g_pos + 1; g_tok = TK_MINUS_EQ; return;")
               (return
               )
             )
           )
+          (comment "g_tok = TK_MINUS; return;")
           (assign g_tok
             (var TK_MINUS)
           )
+          (comment "g_tok = TK_MINUS; return;")
           (return
           )
         )
       )
+      (comment "g_tok = TK_EOF;")
       (assign g_tok
         (var TK_EOF)
       )
+      (comment "return;")
       (return
       )
     )
@@ -2890,123 +3442,148 @@
       (type void)
     )
     (block
+      (comment "if g_tok != kind {")
       (if
         (binop !=
 (var g_tok)
 (var kind))
         (block
+          (comment "var errbuf: U8Array = U8Array(32);")
           (var_decl errbuf
             (type U8Array)
             (call U8Array
 (int 32))
           )
+          (comment "set(errbuf, 0u32, 'p'); set(errbuf, 1u32, 'a'); set(errbuf, 2u32, 'r');")
           (call_stmt set
             (var errbuf)
             (int 0)
             (int 112)
           )
+          (comment "set(errbuf, 0u32, 'p'); set(errbuf, 1u32, 'a'); set(errbuf, 2u32, 'r');")
           (call_stmt set
             (var errbuf)
             (int 1)
             (int 97)
           )
+          (comment "set(errbuf, 0u32, 'p'); set(errbuf, 1u32, 'a'); set(errbuf, 2u32, 'r');")
           (call_stmt set
             (var errbuf)
             (int 2)
             (int 114)
           )
+          (comment "set(errbuf, 3u32, 's'); set(errbuf, 4u32, 'e'); set(errbuf, 5u32, ':');")
           (call_stmt set
             (var errbuf)
             (int 3)
             (int 115)
           )
+          (comment "set(errbuf, 3u32, 's'); set(errbuf, 4u32, 'e'); set(errbuf, 5u32, ':');")
           (call_stmt set
             (var errbuf)
             (int 4)
             (int 101)
           )
+          (comment "set(errbuf, 3u32, 's'); set(errbuf, 4u32, 'e'); set(errbuf, 5u32, ':');")
           (call_stmt set
             (var errbuf)
             (int 5)
             (int 58)
           )
+          (comment "set(errbuf, 6u32, ' '); set(errbuf, 7u32, 'u'); set(errbuf, 8u32, 'n');")
           (call_stmt set
             (var errbuf)
             (int 6)
             (int 32)
           )
+          (comment "set(errbuf, 6u32, ' '); set(errbuf, 7u32, 'u'); set(errbuf, 8u32, 'n');")
           (call_stmt set
             (var errbuf)
             (int 7)
             (int 117)
           )
+          (comment "set(errbuf, 6u32, ' '); set(errbuf, 7u32, 'u'); set(errbuf, 8u32, 'n');")
           (call_stmt set
             (var errbuf)
             (int 8)
             (int 110)
           )
+          (comment "set(errbuf, 9u32, 'e'); set(errbuf, 10u32, 'x'); set(errbuf, 11u32, 'p');")
           (call_stmt set
             (var errbuf)
             (int 9)
             (int 101)
           )
+          (comment "set(errbuf, 9u32, 'e'); set(errbuf, 10u32, 'x'); set(errbuf, 11u32, 'p');")
           (call_stmt set
             (var errbuf)
             (int 10)
             (int 120)
           )
+          (comment "set(errbuf, 9u32, 'e'); set(errbuf, 10u32, 'x'); set(errbuf, 11u32, 'p');")
           (call_stmt set
             (var errbuf)
             (int 11)
             (int 112)
           )
+          (comment "set(errbuf, 12u32, 'e'); set(errbuf, 13u32, 'c'); set(errbuf, 14u32, 't');")
           (call_stmt set
             (var errbuf)
             (int 12)
             (int 101)
           )
+          (comment "set(errbuf, 12u32, 'e'); set(errbuf, 13u32, 'c'); set(errbuf, 14u32, 't');")
           (call_stmt set
             (var errbuf)
             (int 13)
             (int 99)
           )
+          (comment "set(errbuf, 12u32, 'e'); set(errbuf, 13u32, 'c'); set(errbuf, 14u32, 't');")
           (call_stmt set
             (var errbuf)
             (int 14)
             (int 116)
           )
+          (comment "set(errbuf, 15u32, 'e'); set(errbuf, 16u32, 'd'); set(errbuf, 17u32, 10u8);")
           (call_stmt set
             (var errbuf)
             (int 15)
             (int 101)
           )
+          (comment "set(errbuf, 15u32, 'e'); set(errbuf, 16u32, 'd'); set(errbuf, 17u32, 10u8);")
           (call_stmt set
             (var errbuf)
             (int 16)
             (int 100)
           )
+          (comment "set(errbuf, 15u32, 'e'); set(errbuf, 16u32, 'd'); set(errbuf, 17u32, 10u8);")
           (call_stmt set
             (var errbuf)
             (int 17)
             (int 10)
           )
+          (comment "sys_write(2, errbuf, 18u32);")
           (call_stmt sys_write
             (int 2)
             (var errbuf)
             (int 18)
           )
+          (comment "delete(errbuf);")
           (call_stmt delete
             (var errbuf)
           )
+          (comment "sys_exit(1);")
           (call_stmt sys_exit
             (int 1)
           )
         )
       )
+      (comment "lex_tok(src, tok);")
       (call_stmt lex_tok
         (var src)
         (var tok)
       )
+      (comment "return;")
       (return
       )
     )
@@ -3036,36 +3613,44 @@
       (type void)
     )
     (block
+      (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
       (call_stmt ob_string
         (str "binop")
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 32)
         (var ob)
       )
+      (comment "ob_op(op, ob);")
       (call_stmt ob_op
         (var op)
         (var ob)
       )
+      (comment "ob_char(10u8, ob);  // newline (for readability, downstream ignores whitespace)")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_n(left_buf, 0, left_len, ob);")
       (call_stmt ob_n
         (var left_buf)
         (int 0)
         (var left_len)
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -3086,135 +3671,166 @@
       (type void)
     )
     (block
+      (comment "if g_tok == TK_INT_LIT {")
       (if
         (binop ==
 (var g_tok)
 (var TK_INT_LIT))
         (block
+          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
           (call_stmt ob_string
             (str "int")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_int(g_tok_ival, ob);")
           (call_stmt ob_int
             (var g_tok_ival)
             (var ob)
           )
+          (comment "ob_char(')', ob);  // )")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_STR_LIT {")
       (if
         (binop ==
 (var g_tok)
 (var TK_STR_LIT))
         (block
+          (comment "ob_char('(', ob); ob_string(\"str\", ob); ob_char(' ', ob); ob_char('\"', ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"str\", ob); ob_char(' ', ob); ob_char('\"', ob);")
           (call_stmt ob_string
             (str "str")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"str\", ob); ob_char(' ', ob); ob_char('\"', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"str\", ob); ob_char(' ', ob); ob_char('\"', ob);")
           (call_stmt ob_char
             (int 34)
             (var ob)
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < g_tok_slen {")
           (while
             (binop <
 (var i)
 (var g_tok_slen))
             (block
+              (comment "var ch: u8 = get(tok, i as u32);")
               (var_decl ch
                 (type u8)
                 (call get
 (var tok)
-(var i))
+(cast
+(var i)
+(type u32)))
               )
+              (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
               (if
                 (binop ==
 (var ch)
 (int 34))
                 (block
+                  (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
                   (call_stmt ob_char
                     (int 92)
                     (var ob)
                   )
+                  (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
                   (call_stmt ob_char
                     (int 34)
                     (var ob)
                   )
                 )
                 (block
+                  (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
                   (if
                     (binop ==
 (var ch)
 (int 92))
                     (block
+                      (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
                       (call_stmt ob_char
                         (int 92)
                         (var ob)
                       )
+                      (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
                       (call_stmt ob_char
                         (int 92)
                         (var ob)
                       )
                     )
                     (block
+                      (comment "if ch == 10u8 { ob_char('\\\\', ob); ob_char('n', ob); }")
                       (if
                         (binop ==
 (var ch)
 (int 10))
                         (block
+                          (comment "if ch == 10u8 { ob_char('\\\\', ob); ob_char('n', ob); }")
                           (call_stmt ob_char
                             (int 92)
                             (var ob)
                           )
+                          (comment "if ch == 10u8 { ob_char('\\\\', ob); ob_char('n', ob); }")
                           (call_stmt ob_char
                             (int 110)
                             (var ob)
                           )
                         )
                         (block
+                          (comment "else { if ch == 9u8 { ob_char('\\\\', ob); ob_char('t', ob); }")
                           (if
                             (binop ==
 (var ch)
 (int 9))
                             (block
+                              (comment "else { if ch == 9u8 { ob_char('\\\\', ob); ob_char('t', ob); }")
                               (call_stmt ob_char
                                 (int 92)
                                 (var ob)
                               )
+                              (comment "else { if ch == 9u8 { ob_char('\\\\', ob); ob_char('t', ob); }")
                               (call_stmt ob_char
                                 (int 116)
                                 (var ob)
                               )
                             )
                             (block
+                              (comment "else { ob_char(ch, ob); } }")
                               (call_stmt ob_char
                                 (var ch)
                                 (var ob)
@@ -3227,6 +3843,7 @@
                   )
                 )
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -3234,120 +3851,148 @@
               )
             )
           )
+          (comment "ob_char('\"', ob); ob_char(')', ob);  // \")")
           (call_stmt ob_char
             (int 34)
             (var ob)
           )
+          (comment "ob_char('\"', ob); ob_char(')', ob);  // \")")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_TRUE {")
       (if
         (binop ==
 (var g_tok)
 (var TK_TRUE))
         (block
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
           (call_stmt ob_string
             (str "bool")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
           (call_stmt ob_string
             (str "true")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_FALSE {")
       (if
         (binop ==
 (var g_tok)
 (var TK_FALSE))
         (block
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
           (call_stmt ob_string
             (str "bool")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
           (call_stmt ob_string
             (str "false")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_LPAREN {")
       (if
         (binop ==
 (var g_tok)
 (var TK_LPAREN))
         (block
+          (comment "lex_tok(src, tok);  // consume '('")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "pars_expr(src, tok, ob);")
           (call_stmt pars_expr
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "expect_tok(TK_RPAREN, src, tok);")
           (call_stmt expect_tok
             (var TK_RPAREN)
             (var src)
             (var tok)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_IDENT {")
       (if
         (binop ==
 (var g_tok)
 (var TK_IDENT))
         (block
+          (comment "var name_len: i32 = g_tok_slen;")
           (var_decl name_len
             (type i32)
             (var g_tok_slen)
           )
+          (comment "var name_buf: U8Array = U8Array(name_len + 1);")
           (var_decl name_buf
             (type U8Array)
             (call U8Array
@@ -3355,22 +4000,30 @@
 (var name_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < name_len {")
           (while
             (binop <
 (var i)
 (var name_len))
             (block
+              (comment "set(name_buf, i as u32, get(tok, i as u32));")
               (call_stmt set
                 (var name_buf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var tok)
-(var i))
+(cast
+(var i)
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -3378,71 +4031,86 @@
               )
             )
           )
+          (comment "lex_tok(src, tok);  // consume ident")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "if g_tok == TK_LPAREN {")
           (if
             (binop ==
 (var g_tok)
 (var TK_LPAREN))
             (block
+              (comment "lex_tok(src, tok);  // consume '('")
               (call_stmt lex_tok
                 (var src)
                 (var tok)
               )
+              (comment "ob_char('(', ob); ob_string(\"call\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
                 (int 40)
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"call\", ob); ob_char(' ', ob);")
               (call_stmt ob_string
                 (str "call")
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"call\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
                 (int 32)
                 (var ob)
               )
+              (comment "ob_n(name_buf, 0, name_len, ob);")
               (call_stmt ob_n
                 (var name_buf)
                 (int 0)
                 (var name_len)
                 (var ob)
               )
+              (comment "if g_tok != TK_RPAREN {")
               (if
                 (binop !=
 (var g_tok)
 (var TK_RPAREN))
                 (block
+                  (comment "var going: i32 = 1;")
                   (var_decl going
                     (type i32)
                     (int 1)
                   )
+                  (comment "while going == 1 {")
                   (while
                     (binop ==
 (var going)
 (int 1))
                     (block
+                      (comment "ob_char(10u8, ob);")
                       (call_stmt ob_char
                         (int 10)
                         (var ob)
                       )
+                      (comment "pars_expr(src, tok, ob);")
                       (call_stmt pars_expr
                         (var src)
                         (var tok)
                         (var ob)
                       )
+                      (comment "if g_tok == TK_COMMA {")
                       (if
                         (binop ==
 (var g_tok)
 (var TK_COMMA))
                         (block
+                          (comment "lex_tok(src, tok);")
                           (call_stmt lex_tok
                             (var src)
                             (var tok)
                           )
                         )
                         (block
+                          (comment "going = 0;")
                           (assign going
                             (int 0)
                           )
@@ -3452,51 +4120,62 @@
                   )
                 )
               )
+              (comment "expect_tok(TK_RPAREN, src, tok);")
               (call_stmt expect_tok
                 (var TK_RPAREN)
                 (var src)
                 (var tok)
               )
+              (comment "ob_char(')', ob);  // )")
               (call_stmt ob_char
                 (int 41)
                 (var ob)
               )
             )
             (block
+              (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
                 (int 40)
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
               (call_stmt ob_string
                 (str "var")
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
                 (int 32)
                 (var ob)
               )
+              (comment "ob_n(name_buf, 0, name_len, ob);")
               (call_stmt ob_n
                 (var name_buf)
                 (int 0)
                 (var name_len)
                 (var ob)
               )
+              (comment "ob_char(')', ob);  // )")
               (call_stmt ob_char
                 (int 41)
                 (var ob)
               )
             )
           )
+          (comment "delete(name_buf);")
           (call_stmt delete
             (var name_buf)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "sys_exit(1);")
       (call_stmt sys_exit
         (int 1)
       )
+      (comment "return;")
       (return
       )
     )
@@ -3517,30 +4196,124 @@
       (type void)
     )
     (block
+      (comment "var start: i32 = g_ob_pos;")
+      (var_decl start
+        (type i32)
+        (var g_ob_pos)
+      )
+      (comment "pars_primary(src, tok, ob);")
       (call_stmt pars_primary
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_AS {")
       (while
         (binop ==
 (var g_tok)
 (var TK_AS))
         (block
+          (comment "lex_tok(src, tok);  // consume 'as'")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
-          (call_stmt ob_char
+          (comment "var expr_len: i32 = g_ob_pos - start;")
+          (var_decl expr_len
+            (type i32)
+            (binop -
+(var g_ob_pos)
+(var start))
+          )
+          (comment "var saved: U8Array = U8Array(expr_len);")
+          (var_decl saved
+            (type U8Array)
+            (call U8Array
+(var expr_len))
+          )
+          (comment "var i: i32 = 0;")
+          (var_decl i
+            (type i32)
             (int 0)
+          )
+          (comment "while i < expr_len {")
+          (while
+            (binop <
+(var i)
+(var expr_len))
+            (block
+              (comment "set(saved, i as u32, get(ob, (start + i) as u32));")
+              (call_stmt set
+                (var saved)
+                (cast
+(var i)
+(type u32))
+                (call get
+(var ob)
+(cast
+(binop +
+(var start)
+(var i))
+(type u32)))
+              )
+              (comment "i = i + 1;")
+              (assign i
+                (binop +
+(var i)
+(int 1))
+              )
+            )
+          )
+          (comment "g_ob_pos = start;")
+          (assign g_ob_pos
+            (var start)
+          )
+          (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
+          (call_stmt ob_char
+            (int 40)
             (var ob)
           )
-          (call_stmt lex_tok
+          (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
+          (call_stmt ob_string
+            (str "cast")
+            (var ob)
+          )
+          (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (comment "ob_n(saved, 0, expr_len, ob);")
+          (call_stmt ob_n
+            (var saved)
+            (int 0)
+            (var expr_len)
+            (var ob)
+          )
+          (comment "ob_char(10u8, ob);")
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (comment "pars_type(src, tok, ob, 0);")
+          (call_stmt pars_type
             (var src)
             (var tok)
+            (var ob)
+            (int 0)
+          )
+          (comment "ob_char(')', ob);")
+          (call_stmt ob_char
+            (int 41)
+            (var ob)
+          )
+          (comment "delete(saved);")
+          (call_stmt delete
+            (var saved)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -3561,122 +4334,117 @@
       (type void)
     )
     (block
+      (comment "if g_tok == TK_BANG {")
       (if
         (binop ==
 (var g_tok)
 (var TK_BANG))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('!', ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('!', ob);")
           (call_stmt ob_string
             (str "unary")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('!', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('!', ob);")
           (call_stmt ob_char
             (int 33)
             (var ob)
           )
+          (comment "ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_unary(src, tok, ob);")
           (call_stmt pars_unary
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "return;")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_MINUS {")
       (if
         (binop ==
 (var g_tok)
 (var TK_MINUS))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('-', ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('-', ob);")
           (call_stmt ob_string
             (str "unary")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('-', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('-', ob);")
           (call_stmt ob_char
             (int 45)
             (var ob)
           )
+          (comment "ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_unary(src, tok, ob);")
           (call_stmt pars_unary
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "return;")
           (return
           )
         )
       )
-      (call_stmt pars_primary
+      (comment "pars_postfix(src, tok, ob);")
+      (call_stmt pars_postfix
         (var src)
         (var tok)
         (var ob)
       )
-      (while
-        (binop ==
-(var g_tok)
-(var TK_AS))
-        (block
-          (var_decl left_start
-            (type i32)
-            (binop -
-(var g_ob_pos)
-(int 1))
-          )
-          (call_stmt lex_tok
-            (var src)
-            (var tok)
-          )
-          (if
-            (call is_type_tok
-(var g_tok))
-            (block
-              (call_stmt lex_tok
-                (var src)
-                (var tok)
-              )
-            )
-          )
-        )
-      )
+      (comment "return;")
       (return
       )
     )
@@ -3697,15 +4465,18 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_unary(src, tok, ob);")
       (call_stmt pars_unary
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_STAR || g_tok == TK_SLASH || g_tok == TK_PERCENT {")
       (while
         (binop ||
 (binop ||
@@ -3719,20 +4490,24 @@
 (var g_tok)
 (var TK_PERCENT)))
         (block
+          (comment "var op: i32 = g_tok;")
           (var_decl op
             (type i32)
             (var g_tok)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -3740,24 +4515,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -3765,53 +4548,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_op
             (var op)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_unary(src, tok, ob);")
           (call_stmt pars_unary
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -3832,15 +4627,18 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_mul(src, tok, ob);")
       (call_stmt pars_mul
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_PLUS || g_tok == TK_MINUS {")
       (while
         (binop ||
 (binop ==
@@ -3850,20 +4648,24 @@
 (var g_tok)
 (var TK_MINUS)))
         (block
+          (comment "var op: i32 = g_tok;")
           (var_decl op
             (type i32)
             (var g_tok)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -3871,24 +4673,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -3896,53 +4706,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_op
             (var op)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_mul(src, tok, ob);")
           (call_stmt pars_mul
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -3963,15 +4785,18 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_add(src, tok, ob);")
       (call_stmt pars_add
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_LSHIFT || g_tok == TK_RSHIFT {")
       (while
         (binop ||
 (binop ==
@@ -3981,20 +4806,24 @@
 (var g_tok)
 (var TK_RSHIFT)))
         (block
+          (comment "var op: i32 = g_tok;")
           (var_decl op
             (type i32)
             (var g_tok)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -4002,24 +4831,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -4027,53 +4864,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_op
             (var op)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_add(src, tok, ob);")
           (call_stmt pars_add
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -4094,30 +4943,36 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_shift(src, tok, ob);")
       (call_stmt pars_shift
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_AMP {")
       (while
         (binop ==
 (var g_tok)
 (var TK_AMP))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -4125,24 +4980,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -4150,53 +5013,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 38)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_shift(src, tok, ob);")
           (call_stmt pars_shift
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -4217,30 +5092,36 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_bitand(src, tok, ob);")
       (call_stmt pars_bitand
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_CARET {")
       (while
         (binop ==
 (var g_tok)
 (var TK_CARET))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -4248,24 +5129,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -4273,53 +5162,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 94)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_bitand(src, tok, ob);")
           (call_stmt pars_bitand
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -4340,30 +5241,36 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_bitxor(src, tok, ob);")
       (call_stmt pars_bitxor
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_PIPE {")
       (while
         (binop ==
 (var g_tok)
 (var TK_PIPE))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -4371,24 +5278,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -4396,53 +5311,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 124)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_bitxor(src, tok, ob);")
           (call_stmt pars_bitxor
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -4463,19 +5390,23 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_bitor(src, tok, ob);")
       (call_stmt pars_bitor
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "var k: i32 = g_tok;")
       (var_decl k
         (type i32)
         (var g_tok)
       )
+      (comment "if k == TK_EQEQ || k == TK_BANGEQ || k == TK_LT || k == TK_LTEQ || k == TK_GT || k == TK_GTEQ {")
       (if
         (binop ||
 (binop ||
@@ -4501,16 +5432,19 @@
 (var k)
 (var TK_GTEQ)))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -4518,24 +5452,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -4543,53 +5485,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
           (call_stmt ob_op
             (var k)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_bitor(src, tok, ob);")
           (call_stmt pars_bitor
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -4610,30 +5564,36 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_compare(src, tok, ob);")
       (call_stmt pars_compare
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_AMPAMP {")
       (while
         (binop ==
 (var g_tok)
 (var TK_AMPAMP))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -4641,24 +5601,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -4666,53 +5634,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "&&")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_compare(src, tok, ob);")
           (call_stmt pars_compare
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -4733,30 +5713,36 @@
       (type void)
     )
     (block
+      (comment "var left_start: i32 = g_ob_pos;")
       (var_decl left_start
         (type i32)
         (var g_ob_pos)
       )
+      (comment "pars_logic_and(src, tok, ob);")
       (call_stmt pars_logic_and
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "while g_tok == TK_PIPEPIPE {")
       (while
         (binop ==
 (var g_tok)
 (var TK_PIPEPIPE))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "var left_len: i32 = g_ob_pos - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
 (var g_ob_pos)
 (var left_start))
           )
+          (comment "var lbuf: U8Array = U8Array(left_len + 1);")
           (var_decl lbuf
             (type U8Array)
             (call U8Array
@@ -4764,24 +5750,32 @@
 (var left_len)
 (int 1)))
           )
+          (comment "var i: i32 = 0;")
           (var_decl i
             (type i32)
             (int 0)
           )
+          (comment "while i < left_len {")
           (while
             (binop <
 (var i)
 (var left_len))
             (block
+              (comment "set(lbuf, i as u32, get(ob, (left_start + i) as u32));")
               (call_stmt set
                 (var lbuf)
-                (var i)
+                (cast
+(var i)
+(type u32))
                 (call get
 (var ob)
+(cast
 (binop +
 (var left_start)
-(var i)))
+(var i))
+(type u32)))
               )
+              (comment "i = i + 1;")
               (assign i
                 (binop +
 (var i)
@@ -4789,53 +5783,65 @@
               )
             )
           )
+          (comment "g_ob_pos = left_start;")
           (assign g_ob_pos
             (var left_start)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "binop")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
           (call_stmt ob_string
             (str "||")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_n
             (var lbuf)
             (int 0)
             (var left_len)
             (var ob)
           )
+          (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "pars_logic_and(src, tok, ob);")
           (call_stmt pars_logic_and
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
+          (comment "delete(lbuf);")
           (call_stmt delete
             (var lbuf)
           )
         )
       )
+      (comment "return;")
       (return
       )
     )
@@ -4859,18 +5865,22 @@
       (type void)
     )
     (block
+      (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob);")
       (call_stmt ob_string
         (str "type")
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 32)
         (var ob)
       )
+      (comment "if is_type_tok(g_tok) && g_tok != TK_IDENT {")
       (if
         (binop &&
 (call is_type_tok
@@ -4879,27 +5889,32 @@
 (var g_tok)
 (var TK_IDENT)))
         (block
+          (comment "ob_type_kw(g_tok, ob);")
           (call_stmt ob_type_kw
             (var g_tok)
             (var ob)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
         )
         (block
+          (comment "if g_tok == TK_IDENT {")
           (if
             (binop ==
 (var g_tok)
 (var TK_IDENT))
             (block
+              (comment "ob_n(tok, 0, g_tok_slen, ob);")
               (call_stmt ob_n
                 (var tok)
                 (int 0)
                 (var g_tok_slen)
                 (var ob)
               )
+              (comment "lex_tok(src, tok);")
               (call_stmt lex_tok
                 (var src)
                 (var tok)
@@ -4908,10 +5923,12 @@
           )
         )
       )
+      (comment "ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -4935,15 +5952,18 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_VAR, src, tok);")
       (call_stmt expect_tok
         (var TK_VAR)
         (var src)
         (var tok)
       )
+      (comment "var name_len: i32 = g_tok_slen;")
       (var_decl name_len
         (type i32)
         (var g_tok_slen)
       )
+      (comment "var name_buf: U8Array = U8Array(name_len + 1);")
       (var_decl name_buf
         (type U8Array)
         (call U8Array
@@ -4951,22 +5971,30 @@
 (var name_len)
 (int 1)))
       )
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < name_len {")
       (while
         (binop <
 (var i)
 (var name_len))
         (block
+          (comment "set(name_buf, i as u32, get(tok, i as u32));")
           (call_stmt set
             (var name_buf)
-            (var i)
+            (cast
+(var i)
+(type u32))
             (call get
 (var tok)
-(var i))
+(cast
+(var i)
+(type u32)))
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -4974,47 +6002,57 @@
           )
         )
       )
+      (comment "expect_tok(TK_IDENT, src, tok);")
       (call_stmt expect_tok
         (var TK_IDENT)
         (var src)
         (var tok)
       )
+      (comment "expect_tok(TK_COLON, src, tok);")
       (call_stmt expect_tok
         (var TK_COLON)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"var_decl\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"var_decl\", ob); ob_char(' ', ob);")
       (call_stmt ob_string
         (str "var_decl")
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"var_decl\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 32)
         (var ob)
       )
+      (comment "ob_n(name_buf, 0, name_len, ob);")
       (call_stmt ob_n
         (var name_buf)
         (int 0)
         (var name_len)
         (var ob)
       )
+      (comment "delete(name_buf);")
       (call_stmt delete
         (var name_buf)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "pars_type(src, tok, ob, indent + 1);")
       (call_stmt pars_type
         (var src)
         (var tok)
@@ -5023,25 +6061,30 @@
 (var indent)
 (int 1))
       )
+      (comment "if g_tok == TK_EQ {")
       (if
         (binop ==
 (var g_tok)
 (var TK_EQ))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_indent(indent + 1, ob);")
           (call_stmt ob_indent
             (binop +
 (var indent)
 (int 1))
             (var ob)
           )
+          (comment "pars_expr(src, tok, ob);")
           (call_stmt pars_expr
             (var src)
             (var tok)
@@ -5049,23 +6092,28 @@
           )
         )
       )
+      (comment "expect_tok(TK_SEMI, src, tok);")
       (call_stmt expect_tok
         (var TK_SEMI)
         (var src)
         (var tok)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent, ob);")
       (call_stmt ob_indent
         (var indent)
         (var ob)
       )
+      (comment "ob_char(')', ob);  // )")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -5089,28 +6137,34 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_BREAK, src, tok);")
       (call_stmt expect_tok
         (var TK_BREAK)
         (var src)
         (var tok)
       )
+      (comment "expect_tok(TK_SEMI, src, tok);")
       (call_stmt expect_tok
         (var TK_SEMI)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"break\", ob); ob_char(')', ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"break\", ob); ob_char(')', ob);")
       (call_stmt ob_string
         (str "break")
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"break\", ob); ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -5134,28 +6188,34 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_CONTINUE, src, tok);")
       (call_stmt expect_tok
         (var TK_CONTINUE)
         (var src)
         (var tok)
       )
+      (comment "expect_tok(TK_SEMI, src, tok);")
       (call_stmt expect_tok
         (var TK_SEMI)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"continue\", ob); ob_char(')', ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"continue\", ob); ob_char(')', ob);")
       (call_stmt ob_string
         (str "continue")
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"continue\", ob); ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -5179,34 +6239,41 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_RETURN, src, tok);")
       (call_stmt expect_tok
         (var TK_RETURN)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"return\", ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"return\", ob);")
       (call_stmt ob_string
         (str "return")
         (var ob)
       )
+      (comment "if g_tok != TK_SEMI {")
       (if
         (binop !=
 (var g_tok)
 (var TK_SEMI))
         (block
+          (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_indent(indent + 1, ob);")
           (call_stmt ob_indent
             (binop +
 (var indent)
 (int 1))
             (var ob)
           )
+          (comment "pars_expr(src, tok, ob);")
           (call_stmt pars_expr
             (var src)
             (var tok)
@@ -5214,23 +6281,28 @@
           )
         )
       )
+      (comment "expect_tok(TK_SEMI, src, tok);")
       (call_stmt expect_tok
         (var TK_SEMI)
         (var src)
         (var tok)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent, ob);")
       (call_stmt ob_indent
         (var indent)
         (var ob)
       )
+      (comment "ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -5254,44 +6326,53 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_IF, src, tok);")
       (call_stmt expect_tok
         (var TK_IF)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"if\", ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"if\", ob);")
       (call_stmt ob_string
         (str "if")
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "pars_expr(src, tok, ob);")
       (call_stmt pars_expr
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "pars_block(src, tok, ob, indent + 1);")
       (call_stmt pars_block
         (var src)
         (var tok)
@@ -5300,30 +6381,36 @@
 (var indent)
 (int 1))
       )
+      (comment "if g_tok == TK_ELSE {")
       (if
         (binop ==
 (var g_tok)
 (var TK_ELSE))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_indent(indent + 1, ob);")
           (call_stmt ob_indent
             (binop +
 (var indent)
 (int 1))
             (var ob)
           )
+          (comment "if g_tok == TK_IF {")
           (if
             (binop ==
 (var g_tok)
 (var TK_IF))
             (block
+              (comment "pars_if_stmt(src, tok, ob, indent + 1);")
               (call_stmt pars_if_stmt
                 (var src)
                 (var tok)
@@ -5334,6 +6421,7 @@
               )
             )
             (block
+              (comment "pars_block(src, tok, ob, indent + 1);")
               (call_stmt pars_block
                 (var src)
                 (var tok)
@@ -5346,18 +6434,22 @@
           )
         )
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent, ob);")
       (call_stmt ob_indent
         (var indent)
         (var ob)
       )
+      (comment "ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -5381,44 +6473,53 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_WHILE, src, tok);")
       (call_stmt expect_tok
         (var TK_WHILE)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"while\", ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"while\", ob);")
       (call_stmt ob_string
         (str "while")
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "pars_expr(src, tok, ob);")
       (call_stmt pars_expr
         (var src)
         (var tok)
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "pars_block(src, tok, ob, indent + 1);")
       (call_stmt pars_block
         (var src)
         (var tok)
@@ -5427,18 +6528,22 @@
 (var indent)
 (int 1))
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent, ob);")
       (call_stmt ob_indent
         (var indent)
         (var ob)
       )
+      (comment "ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -5462,10 +6567,12 @@
       (type void)
     )
     (block
+      (comment "var name_len: i32 = g_tok_slen;")
       (var_decl name_len
         (type i32)
         (var g_tok_slen)
       )
+      (comment "var name_buf: U8Array = U8Array(name_len + 1);")
       (var_decl name_buf
         (type U8Array)
         (call U8Array
@@ -5473,22 +6580,30 @@
 (var name_len)
 (int 1)))
       )
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < name_len {")
       (while
         (binop <
 (var i)
 (var name_len))
         (block
+          (comment "set(name_buf, i as u32, get(tok, i as u32));")
           (call_stmt set
             (var name_buf)
-            (var i)
+            (cast
+(var i)
+(type u32))
             (call get
 (var tok)
-(var i))
+(cast
+(var i)
+(type u32)))
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -5496,66 +6611,80 @@
           )
         )
       )
+      (comment "expect_tok(TK_IDENT, src, tok);")
       (call_stmt expect_tok
         (var TK_IDENT)
         (var src)
         (var tok)
       )
+      (comment "if g_tok == TK_EQ {")
       (if
         (binop ==
 (var g_tok)
 (var TK_EQ))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
           (call_stmt ob_string
             (str "assign")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_n(name_buf, 0, name_len, ob);")
           (call_stmt ob_n
             (var name_buf)
             (int 0)
             (var name_len)
             (var ob)
           )
+          (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_indent(indent + 1, ob);")
           (call_stmt ob_indent
             (binop +
 (var indent)
 (int 1))
             (var ob)
           )
+          (comment "pars_expr(src, tok, ob);")
           (call_stmt pars_expr
             (var src)
             (var tok)
             (var ob)
           )
+          (comment "expect_tok(TK_SEMI, src, tok);")
           (call_stmt expect_tok
             (var TK_SEMI)
             (var src)
             (var tok)
           )
+          (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_indent(indent, ob);")
           (call_stmt ob_indent
             (var indent)
             (var ob)
           )
+          (comment "ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
@@ -5582,234 +6711,283 @@
 (var g_tok)
 (var TK_PERCENT_EQ)))
           (block
+            (comment "var the_op: i32 = g_tok;")
             (var_decl the_op
               (type i32)
               (var g_tok)
             )
+            (comment "lex_tok(src, tok);")
             (call_stmt lex_tok
               (var src)
               (var tok)
             )
+            (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
               (int 40)
               (var ob)
             )
+            (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
             (call_stmt ob_string
               (str "assign")
               (var ob)
             )
+            (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
               (int 32)
               (var ob)
             )
+            (comment "ob_n(name_buf, 0, name_len, ob);")
             (call_stmt ob_n
               (var name_buf)
               (int 0)
               (var name_len)
               (var ob)
             )
+            (comment "ob_char(10u8, ob);")
             (call_stmt ob_char
               (int 10)
               (var ob)
             )
+            (comment "ob_indent(indent + 1, ob);")
             (call_stmt ob_indent
               (binop +
 (var indent)
 (int 1))
               (var ob)
             )
+            (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
               (int 40)
               (var ob)
             )
+            (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
             (call_stmt ob_string
               (str "binop")
               (var ob)
             )
+            (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
               (int 32)
               (var ob)
             )
+            (comment "if the_op == TK_PLUS_EQ    { ob_char('+', ob); }")
             (if
               (binop ==
 (var the_op)
 (var TK_PLUS_EQ))
               (block
+                (comment "if the_op == TK_PLUS_EQ    { ob_char('+', ob); }")
                 (call_stmt ob_char
                   (int 43)
                   (var ob)
                 )
               )
             )
+            (comment "if the_op == TK_MINUS_EQ   { ob_char('-', ob); }")
             (if
               (binop ==
 (var the_op)
 (var TK_MINUS_EQ))
               (block
+                (comment "if the_op == TK_MINUS_EQ   { ob_char('-', ob); }")
                 (call_stmt ob_char
                   (int 45)
                   (var ob)
                 )
               )
             )
+            (comment "if the_op == TK_STAR_EQ    { ob_char('*', ob); }")
             (if
               (binop ==
 (var the_op)
 (var TK_STAR_EQ))
               (block
+                (comment "if the_op == TK_STAR_EQ    { ob_char('*', ob); }")
                 (call_stmt ob_char
                   (int 42)
                   (var ob)
                 )
               )
             )
+            (comment "if the_op == TK_SLASH_EQ   { ob_char('/', ob); }")
             (if
               (binop ==
 (var the_op)
 (var TK_SLASH_EQ))
               (block
+                (comment "if the_op == TK_SLASH_EQ   { ob_char('/', ob); }")
                 (call_stmt ob_char
                   (int 47)
                   (var ob)
                 )
               )
             )
+            (comment "if the_op == TK_PERCENT_EQ { ob_char('%', ob); }")
             (if
               (binop ==
 (var the_op)
 (var TK_PERCENT_EQ))
               (block
+                (comment "if the_op == TK_PERCENT_EQ { ob_char('%', ob); }")
                 (call_stmt ob_char
                   (int 37)
                   (var ob)
                 )
               )
             )
+            (comment "ob_char(10u8, ob);")
             (call_stmt ob_char
               (int 10)
               (var ob)
             )
+            (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
               (int 40)
               (var ob)
             )
+            (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
             (call_stmt ob_string
               (str "var")
               (var ob)
             )
+            (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
               (int 32)
               (var ob)
             )
+            (comment "ob_n(name_buf, 0, name_len, ob); ob_char(')', ob); ob_char(10u8, ob);")
             (call_stmt ob_n
               (var name_buf)
               (int 0)
               (var name_len)
               (var ob)
             )
+            (comment "ob_n(name_buf, 0, name_len, ob); ob_char(')', ob); ob_char(10u8, ob);")
             (call_stmt ob_char
               (int 41)
               (var ob)
             )
+            (comment "ob_n(name_buf, 0, name_len, ob); ob_char(')', ob); ob_char(10u8, ob);")
             (call_stmt ob_char
               (int 10)
               (var ob)
             )
+            (comment "pars_expr(src, tok, ob);")
             (call_stmt pars_expr
               (var src)
               (var tok)
               (var ob)
             )
+            (comment "ob_char(')', ob);")
             (call_stmt ob_char
               (int 41)
               (var ob)
             )
+            (comment "expect_tok(TK_SEMI, src, tok);")
             (call_stmt expect_tok
               (var TK_SEMI)
               (var src)
               (var tok)
             )
+            (comment "ob_char(10u8, ob);")
             (call_stmt ob_char
               (int 10)
               (var ob)
             )
+            (comment "ob_indent(indent, ob);")
             (call_stmt ob_indent
               (var indent)
               (var ob)
             )
+            (comment "ob_char(')', ob);")
             (call_stmt ob_char
               (int 41)
               (var ob)
             )
           )
           (block
+            (comment "if g_tok == TK_LPAREN {")
             (if
               (binop ==
 (var g_tok)
 (var TK_LPAREN))
               (block
+                (comment "lex_tok(src, tok);")
                 (call_stmt lex_tok
                   (var src)
                   (var tok)
                 )
+                (comment "ob_char('(', ob); ob_string(\"call_stmt\", ob); ob_char(' ', ob);")
                 (call_stmt ob_char
                   (int 40)
                   (var ob)
                 )
+                (comment "ob_char('(', ob); ob_string(\"call_stmt\", ob); ob_char(' ', ob);")
                 (call_stmt ob_string
                   (str "call_stmt")
                   (var ob)
                 )
+                (comment "ob_char('(', ob); ob_string(\"call_stmt\", ob); ob_char(' ', ob);")
                 (call_stmt ob_char
                   (int 32)
                   (var ob)
                 )
+                (comment "ob_n(name_buf, 0, name_len, ob);")
                 (call_stmt ob_n
                   (var name_buf)
                   (int 0)
                   (var name_len)
                   (var ob)
                 )
+                (comment "if g_tok != TK_RPAREN {")
                 (if
                   (binop !=
 (var g_tok)
 (var TK_RPAREN))
                   (block
+                    (comment "var going: i32 = 1;")
                     (var_decl going
                       (type i32)
                       (int 1)
                     )
+                    (comment "while going == 1 {")
                     (while
                       (binop ==
 (var going)
 (int 1))
                       (block
+                        (comment "ob_char(10u8, ob);")
                         (call_stmt ob_char
                           (int 10)
                           (var ob)
                         )
+                        (comment "ob_indent(indent + 1, ob);")
                         (call_stmt ob_indent
                           (binop +
 (var indent)
 (int 1))
                           (var ob)
                         )
+                        (comment "pars_expr(src, tok, ob);")
                         (call_stmt pars_expr
                           (var src)
                           (var tok)
                           (var ob)
                         )
+                        (comment "if g_tok == TK_COMMA {")
                         (if
                           (binop ==
 (var g_tok)
 (var TK_COMMA))
                           (block
+                            (comment "lex_tok(src, tok);")
                             (call_stmt lex_tok
                               (var src)
                               (var tok)
                             )
                           )
                           (block
+                            (comment "going = 0;")
                             (assign going
                               (int 0)
                             )
@@ -5819,30 +6997,36 @@
                     )
                   )
                 )
+                (comment "expect_tok(TK_RPAREN, src, tok);")
                 (call_stmt expect_tok
                   (var TK_RPAREN)
                   (var src)
                   (var tok)
                 )
+                (comment "expect_tok(TK_SEMI, src, tok);")
                 (call_stmt expect_tok
                   (var TK_SEMI)
                   (var src)
                   (var tok)
                 )
+                (comment "ob_char(10u8, ob);")
                 (call_stmt ob_char
                   (int 10)
                   (var ob)
                 )
+                (comment "ob_indent(indent, ob);")
                 (call_stmt ob_indent
                   (var indent)
                   (var ob)
                 )
+                (comment "ob_char(')', ob);")
                 (call_stmt ob_char
                   (int 41)
                   (var ob)
                 )
               )
               (block
+                (comment "sys_exit(1);")
                 (call_stmt sys_exit
                   (int 1)
                 )
@@ -5851,9 +7035,257 @@
           )
         )
       )
+      (comment "delete(name_buf);")
       (call_stmt delete
         (var name_buf)
       )
+      (comment "return;")
+      (return
+      )
+    )
+  )
+  (fn emit_stmt_comment
+    (params
+      (param src
+        (type U8Array)
+      )
+      (param line
+        (type i32)
+      )
+      (param ob
+        (type U8Array)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "var pos: i32 = 0;")
+      (var_decl pos
+        (type i32)
+        (int 0)
+      )
+      (comment "var cur_line: i32 = 1;")
+      (var_decl cur_line
+        (type i32)
+        (int 1)
+      )
+      (comment "while cur_line < line && pos < g_len {")
+      (while
+        (binop &&
+(binop <
+(var cur_line)
+(var line))
+(binop <
+(var pos)
+(var g_len)))
+        (block
+          (comment "if get(src, pos as u32) == 10u8 { cur_line = cur_line + 1; }")
+          (if
+            (binop ==
+(call get
+(var src)
+(cast
+(var pos)
+(type u32)))
+(int 10))
+            (block
+              (comment "if get(src, pos as u32) == 10u8 { cur_line = cur_line + 1; }")
+              (assign cur_line
+                (binop +
+(var cur_line)
+(int 1))
+              )
+            )
+          )
+          (comment "pos = pos + 1;")
+          (assign pos
+            (binop +
+(var pos)
+(int 1))
+          )
+        )
+      )
+      (comment "while pos < g_len && (get(src, pos as u32) == ' ' || get(src, pos as u32) == 9u8) {")
+      (while
+        (binop &&
+(binop <
+(var pos)
+(var g_len))
+(binop ||
+(binop ==
+(call get
+(var src)
+(cast
+(var pos)
+(type u32)))
+(int 32))
+(binop ==
+(call get
+(var src)
+(cast
+(var pos)
+(type u32)))
+(int 9))))
+        (block
+          (comment "pos = pos + 1;")
+          (assign pos
+            (binop +
+(var pos)
+(int 1))
+          )
+        )
+      )
+      (comment "if pos >= g_len { return; }")
+      (if
+        (binop >=
+(var pos)
+(var g_len))
+        (block
+          (comment "if pos >= g_len { return; }")
+          (return
+          )
+        )
+      )
+      (comment "var first: u8 = get(src, pos as u32);")
+      (var_decl first
+        (type u8)
+        (call get
+(var src)
+(cast
+(var pos)
+(type u32)))
+      )
+      (comment "if first == 10u8 || first == 13u8 { return; }")
+      (if
+        (binop ||
+(binop ==
+(var first)
+(int 10))
+(binop ==
+(var first)
+(int 13)))
+        (block
+          (comment "if first == 10u8 || first == 13u8 { return; }")
+          (return
+          )
+        )
+      )
+      (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
+      (call_stmt ob_char
+        (int 40)
+        (var ob)
+      )
+      (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
+      (call_stmt ob_string
+        (str "comment")
+        (var ob)
+      )
+      (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
+      (call_stmt ob_char
+        (int 32)
+        (var ob)
+      )
+      (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
+      (call_stmt ob_char
+        (int 34)
+        (var ob)
+      )
+      (comment "while pos < g_len && get(src, pos as u32) != 10u8 && get(src, pos as u32) != 13u8 {")
+      (while
+        (binop &&
+(binop &&
+(binop <
+(var pos)
+(var g_len))
+(binop !=
+(call get
+(var src)
+(cast
+(var pos)
+(type u32)))
+(int 10)))
+(binop !=
+(call get
+(var src)
+(cast
+(var pos)
+(type u32)))
+(int 13)))
+        (block
+          (comment "var ch: u8 = get(src, pos as u32);")
+          (var_decl ch
+            (type u8)
+            (call get
+(var src)
+(cast
+(var pos)
+(type u32)))
+          )
+          (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
+          (if
+            (binop ==
+(var ch)
+(int 34))
+            (block
+              (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
+              (call_stmt ob_char
+                (int 92)
+                (var ob)
+              )
+              (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
+              (call_stmt ob_char
+                (int 34)
+                (var ob)
+              )
+            )
+            (block
+              (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
+              (if
+                (binop ==
+(var ch)
+(int 92))
+                (block
+                  (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
+                  (call_stmt ob_char
+                    (int 92)
+                    (var ob)
+                  )
+                  (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
+                  (call_stmt ob_char
+                    (int 92)
+                    (var ob)
+                  )
+                )
+                (block
+                  (comment "else { ob_char(ch, ob); }")
+                  (call_stmt ob_char
+                    (var ch)
+                    (var ob)
+                  )
+                )
+              )
+            )
+          )
+          (comment "pos = pos + 1;")
+          (assign pos
+            (binop +
+(var pos)
+(int 1))
+          )
+        )
+      )
+      (comment "ob_char('\"', ob); ob_char(')', ob);")
+      (call_stmt ob_char
+        (int 34)
+        (var ob)
+      )
+      (comment "ob_char('\"', ob); ob_char(')', ob);")
+      (call_stmt ob_char
+        (int 41)
+        (var ob)
+      )
+      (comment "return;")
       (return
       )
     )
@@ -5877,114 +7309,137 @@
       (type void)
     )
     (block
+      (comment "if g_tok == TK_VAR    { pars_var_decl(src, tok, ob, indent); return; }")
       (if
         (binop ==
 (var g_tok)
 (var TK_VAR))
         (block
+          (comment "if g_tok == TK_VAR    { pars_var_decl(src, tok, ob, indent); return; }")
           (call_stmt pars_var_decl
             (var src)
             (var tok)
             (var ob)
             (var indent)
           )
+          (comment "if g_tok == TK_VAR    { pars_var_decl(src, tok, ob, indent); return; }")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }")
       (if
         (binop ==
 (var g_tok)
 (var TK_IF))
         (block
+          (comment "if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }")
           (call_stmt pars_if_stmt
             (var src)
             (var tok)
             (var ob)
             (var indent)
           )
+          (comment "if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_WHILE    { pars_while_stmt(src, tok, ob, indent); return; }")
       (if
         (binop ==
 (var g_tok)
 (var TK_WHILE))
         (block
+          (comment "if g_tok == TK_WHILE    { pars_while_stmt(src, tok, ob, indent); return; }")
           (call_stmt pars_while_stmt
             (var src)
             (var tok)
             (var ob)
             (var indent)
           )
+          (comment "if g_tok == TK_WHILE    { pars_while_stmt(src, tok, ob, indent); return; }")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_RETURN   { pars_return_stmt(src, tok, ob, indent); return; }")
       (if
         (binop ==
 (var g_tok)
 (var TK_RETURN))
         (block
+          (comment "if g_tok == TK_RETURN   { pars_return_stmt(src, tok, ob, indent); return; }")
           (call_stmt pars_return_stmt
             (var src)
             (var tok)
             (var ob)
             (var indent)
           )
+          (comment "if g_tok == TK_RETURN   { pars_return_stmt(src, tok, ob, indent); return; }")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_BREAK    { pars_break_stmt(src, tok, ob, indent); return; }")
       (if
         (binop ==
 (var g_tok)
 (var TK_BREAK))
         (block
+          (comment "if g_tok == TK_BREAK    { pars_break_stmt(src, tok, ob, indent); return; }")
           (call_stmt pars_break_stmt
             (var src)
             (var tok)
             (var ob)
             (var indent)
           )
+          (comment "if g_tok == TK_BREAK    { pars_break_stmt(src, tok, ob, indent); return; }")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, ob, indent); return; }")
       (if
         (binop ==
 (var g_tok)
 (var TK_CONTINUE))
         (block
+          (comment "if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, ob, indent); return; }")
           (call_stmt pars_continue_stmt
             (var src)
             (var tok)
             (var ob)
             (var indent)
           )
+          (comment "if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, ob, indent); return; }")
           (return
           )
         )
       )
+      (comment "if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, ob, indent); return; }")
       (if
         (binop ==
 (var g_tok)
 (var TK_IDENT))
         (block
+          (comment "if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, ob, indent); return; }")
           (call_stmt pars_ident_stmt
             (var src)
             (var tok)
             (var ob)
             (var indent)
           )
+          (comment "if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, ob, indent); return; }")
           (return
           )
         )
       )
+      (comment "sys_exit(1);")
       (call_stmt sys_exit
         (int 1)
       )
+      (comment "return;")
       (return
       )
     )
@@ -6008,19 +7463,23 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_LBRACE, src, tok);")
       (call_stmt expect_tok
         (var TK_LBRACE)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"block\", ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"block\", ob);")
       (call_stmt ob_string
         (str "block")
         (var ob)
       )
+      (comment "while g_tok != TK_RBRACE && g_tok != TK_EOF {")
       (while
         (binop &&
 (binop !=
@@ -6030,16 +7489,42 @@
 (var g_tok)
 (var TK_EOF)))
         (block
+          (comment "var stmt_line: i32 = g_tok_line;")
+          (var_decl stmt_line
+            (type i32)
+            (var g_tok_line)
+          )
+          (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_indent(indent + 1, ob);")
           (call_stmt ob_indent
             (binop +
 (var indent)
 (int 1))
             (var ob)
           )
+          (comment "emit_stmt_comment(src, stmt_line, ob);")
+          (call_stmt emit_stmt_comment
+            (var src)
+            (var stmt_line)
+            (var ob)
+          )
+          (comment "ob_char(10u8, ob);")
+          (call_stmt ob_char
+            (int 10)
+            (var ob)
+          )
+          (comment "ob_indent(indent + 1, ob);")
+          (call_stmt ob_indent
+            (binop +
+(var indent)
+(int 1))
+            (var ob)
+          )
+          (comment "pars_stmt(src, tok, ob, indent + 1);")
           (call_stmt pars_stmt
             (var src)
             (var tok)
@@ -6050,23 +7535,28 @@
           )
         )
       )
+      (comment "expect_tok(TK_RBRACE, src, tok);")
       (call_stmt expect_tok
         (var TK_RBRACE)
         (var src)
         (var tok)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent, ob);")
       (call_stmt ob_indent
         (var indent)
         (var ob)
       )
+      (comment "ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -6090,15 +7580,18 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_FN, src, tok);")
       (call_stmt expect_tok
         (var TK_FN)
         (var src)
         (var tok)
       )
+      (comment "var name_len: i32 = g_tok_slen;")
       (var_decl name_len
         (type i32)
         (var g_tok_slen)
       )
+      (comment "var name_buf: U8Array = U8Array(name_len + 1);")
       (var_decl name_buf
         (type U8Array)
         (call U8Array
@@ -6106,22 +7599,30 @@
 (var name_len)
 (int 1)))
       )
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < name_len {")
       (while
         (binop <
 (var i)
 (var name_len))
         (block
+          (comment "set(name_buf, i as u32, get(tok, i as u32));")
           (call_stmt set
             (var name_buf)
-            (var i)
+            (cast
+(var i)
+(type u32))
             (call get
 (var tok)
-(var i))
+(cast
+(var i)
+(type u32)))
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -6129,73 +7630,89 @@
           )
         )
       )
+      (comment "expect_tok(TK_IDENT, src, tok);")
       (call_stmt expect_tok
         (var TK_IDENT)
         (var src)
         (var tok)
       )
+      (comment "expect_tok(TK_LPAREN, src, tok);")
       (call_stmt expect_tok
         (var TK_LPAREN)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
       (call_stmt ob_string
         (str "fn")
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 32)
         (var ob)
       )
+      (comment "ob_n(name_buf, 0, name_len, ob);")
       (call_stmt ob_n
         (var name_buf)
         (int 0)
         (var name_len)
         (var ob)
       )
+      (comment "delete(name_buf);")
       (call_stmt delete
         (var name_buf)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"params\", ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"params\", ob);")
       (call_stmt ob_string
         (str "params")
         (var ob)
       )
+      (comment "if g_tok != TK_RPAREN {")
       (if
         (binop !=
 (var g_tok)
 (var TK_RPAREN))
         (block
+          (comment "var going: i32 = 1;")
           (var_decl going
             (type i32)
             (int 1)
           )
+          (comment "while going == 1 {")
           (while
             (binop ==
 (var going)
 (int 1))
             (block
+              (comment "var pname_len: i32 = g_tok_slen;")
               (var_decl pname_len
                 (type i32)
                 (var g_tok_slen)
               )
+              (comment "var pname_buf: U8Array = U8Array(pname_len + 1);")
               (var_decl pname_buf
                 (type U8Array)
                 (call U8Array
@@ -6203,22 +7720,30 @@
 (var pname_len)
 (int 1)))
               )
+              (comment "var j: i32 = 0;")
               (var_decl j
                 (type i32)
                 (int 0)
               )
+              (comment "while j < pname_len {")
               (while
                 (binop <
 (var j)
 (var pname_len))
                 (block
+                  (comment "set(pname_buf, j as u32, get(tok, j as u32));")
                   (call_stmt set
                     (var pname_buf)
-                    (var j)
+                    (cast
+(var j)
+(type u32))
                     (call get
 (var tok)
-(var j))
+(cast
+(var j)
+(type u32)))
                   )
+                  (comment "j = j + 1;")
                   (assign j
                     (binop +
 (var j)
@@ -6226,54 +7751,65 @@
                   )
                 )
               )
+              (comment "expect_tok(TK_IDENT, src, tok);")
               (call_stmt expect_tok
                 (var TK_IDENT)
                 (var src)
                 (var tok)
               )
+              (comment "expect_tok(TK_COLON, src, tok);")
               (call_stmt expect_tok
                 (var TK_COLON)
                 (var src)
                 (var tok)
               )
+              (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
                 (int 10)
                 (var ob)
               )
+              (comment "ob_indent(indent + 2, ob);")
               (call_stmt ob_indent
                 (binop +
 (var indent)
 (int 2))
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"param\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
                 (int 40)
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"param\", ob); ob_char(' ', ob);")
               (call_stmt ob_string
                 (str "param")
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"param\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
                 (int 32)
                 (var ob)
               )
+              (comment "ob_n(pname_buf, 0, pname_len, ob);")
               (call_stmt ob_n
                 (var pname_buf)
                 (int 0)
                 (var pname_len)
                 (var ob)
               )
+              (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
                 (int 10)
                 (var ob)
               )
+              (comment "ob_indent(indent + 3, ob);")
               (call_stmt ob_indent
                 (binop +
 (var indent)
 (int 3))
                 (var ob)
               )
+              (comment "pars_type(src, tok, ob, indent + 3);")
               (call_stmt pars_type
                 (var src)
                 (var tok)
@@ -6282,34 +7818,41 @@
 (var indent)
 (int 3))
               )
+              (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
                 (int 10)
                 (var ob)
               )
+              (comment "ob_indent(indent + 2, ob);")
               (call_stmt ob_indent
                 (binop +
 (var indent)
 (int 2))
                 (var ob)
               )
+              (comment "ob_char(')', ob);")
               (call_stmt ob_char
                 (int 41)
                 (var ob)
               )
+              (comment "delete(pname_buf);")
               (call_stmt delete
                 (var pname_buf)
               )
+              (comment "if g_tok == TK_COMMA {")
               (if
                 (binop ==
 (var g_tok)
 (var TK_COMMA))
                 (block
+                  (comment "lex_tok(src, tok);")
                   (call_stmt lex_tok
                     (var src)
                     (var tok)
                   )
                 )
                 (block
+                  (comment "going = 0;")
                   (assign going
                     (int 0)
                   )
@@ -6319,62 +7862,75 @@
           )
         )
       )
+      (comment "expect_tok(TK_RPAREN, src, tok);")
       (call_stmt expect_tok
         (var TK_RPAREN)
         (var src)
         (var tok)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "ob_char(')', ob);  // close (params)")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"ret\", ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"ret\", ob);")
       (call_stmt ob_string
         (str "ret")
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 2, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 2))
         (var ob)
       )
+      (comment "if g_tok == TK_ARROW {")
       (if
         (binop ==
 (var g_tok)
 (var TK_ARROW))
         (block
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
+          (comment "pars_type(src, tok, ob, indent + 2);")
           (call_stmt pars_type
             (var src)
             (var tok)
@@ -6385,52 +7941,63 @@
           )
         )
         (block
+          (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 40)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
           (call_stmt ob_string
             (str "type")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 32)
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
           (call_stmt ob_string
             (str "void")
             (var ob)
           )
+          (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
           (call_stmt ob_char
             (int 41)
             (var ob)
           )
         )
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "ob_char(')', ob);  // close (ret)")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent + 1, ob);")
       (call_stmt ob_indent
         (binop +
 (var indent)
 (int 1))
         (var ob)
       )
+      (comment "pars_block(src, tok, ob, indent + 1);")
       (call_stmt pars_block
         (var src)
         (var tok)
@@ -6439,18 +8006,22 @@
 (var indent)
 (int 1))
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent, ob);")
       (call_stmt ob_indent
         (var indent)
         (var ob)
       )
+      (comment "ob_char(')', ob);  // close (fn)")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -6474,15 +8045,18 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_STRUCT, src, tok);")
       (call_stmt expect_tok
         (var TK_STRUCT)
         (var src)
         (var tok)
       )
+      (comment "var name_len: i32 = g_tok_slen;")
       (var_decl name_len
         (type i32)
         (var g_tok_slen)
       )
+      (comment "var name_buf: U8Array = U8Array(name_len + 1);")
       (var_decl name_buf
         (type U8Array)
         (call U8Array
@@ -6490,22 +8064,30 @@
 (var name_len)
 (int 1)))
       )
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < name_len {")
       (while
         (binop <
 (var i)
 (var name_len))
         (block
+          (comment "set(name_buf, i as u32, get(tok, i as u32));")
           (call_stmt set
             (var name_buf)
-            (var i)
+            (cast
+(var i)
+(type u32))
             (call get
 (var tok)
-(var i))
+(cast
+(var i)
+(type u32)))
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -6513,41 +8095,50 @@
           )
         )
       )
+      (comment "expect_tok(TK_IDENT, src, tok);")
       (call_stmt expect_tok
         (var TK_IDENT)
         (var src)
         (var tok)
       )
+      (comment "expect_tok(TK_LBRACE, src, tok);")
       (call_stmt expect_tok
         (var TK_LBRACE)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"struct\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"struct\", ob); ob_char(' ', ob);")
       (call_stmt ob_string
         (str "struct")
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"struct\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 32)
         (var ob)
       )
+      (comment "ob_n(name_buf, 0, name_len, ob);")
       (call_stmt ob_n
         (var name_buf)
         (int 0)
         (var name_len)
         (var ob)
       )
+      (comment "delete(name_buf);")
       (call_stmt delete
         (var name_buf)
       )
+      (comment "var first: i32 = 1;")
       (var_decl first
         (type i32)
         (int 1)
       )
+      (comment "while g_tok != TK_RBRACE && g_tok != TK_EOF {")
       (while
         (binop &&
 (binop !=
@@ -6557,16 +8148,19 @@
 (var g_tok)
 (var TK_EOF)))
         (block
+          (comment "if first == 0 {")
           (if
             (binop ==
 (var first)
 (int 0))
             (block
+              (comment "if g_tok == TK_COMMA { lex_tok(src, tok); }")
               (if
                 (binop ==
 (var g_tok)
 (var TK_COMMA))
                 (block
+                  (comment "if g_tok == TK_COMMA { lex_tok(src, tok); }")
                   (call_stmt lex_tok
                     (var src)
                     (var tok)
@@ -6575,23 +8169,28 @@
               )
             )
           )
+          (comment "first = 0;")
           (assign first
             (int 0)
           )
+          (comment "if g_tok == TK_RBRACE { g_tok = g_tok; }  // do nothing, will exit loop")
           (if
             (binop ==
 (var g_tok)
 (var TK_RBRACE))
             (block
+              (comment "if g_tok == TK_RBRACE { g_tok = g_tok; }  // do nothing, will exit loop")
               (assign g_tok
                 (var g_tok)
               )
             )
             (block
+              (comment "var fname_len: i32 = g_tok_slen;")
               (var_decl fname_len
                 (type i32)
                 (var g_tok_slen)
               )
+              (comment "var fname_buf: U8Array = U8Array(fname_len + 1);")
               (var_decl fname_buf
                 (type U8Array)
                 (call U8Array
@@ -6599,22 +8198,30 @@
 (var fname_len)
 (int 1)))
               )
+              (comment "var j: i32 = 0;")
               (var_decl j
                 (type i32)
                 (int 0)
               )
+              (comment "while j < fname_len {")
               (while
                 (binop <
 (var j)
 (var fname_len))
                 (block
+                  (comment "set(fname_buf, j as u32, get(tok, j as u32));")
                   (call_stmt set
                     (var fname_buf)
-                    (var j)
+                    (cast
+(var j)
+(type u32))
                     (call get
 (var tok)
-(var j))
+(cast
+(var j)
+(type u32)))
                   )
+                  (comment "j = j + 1;")
                   (assign j
                     (binop +
 (var j)
@@ -6622,54 +8229,65 @@
                   )
                 )
               )
+              (comment "expect_tok(TK_IDENT, src, tok);")
               (call_stmt expect_tok
                 (var TK_IDENT)
                 (var src)
                 (var tok)
               )
+              (comment "expect_tok(TK_COLON, src, tok);")
               (call_stmt expect_tok
                 (var TK_COLON)
                 (var src)
                 (var tok)
               )
+              (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
                 (int 10)
                 (var ob)
               )
+              (comment "ob_indent(indent + 1, ob);")
               (call_stmt ob_indent
                 (binop +
 (var indent)
 (int 1))
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"field\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
                 (int 40)
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"field\", ob); ob_char(' ', ob);")
               (call_stmt ob_string
                 (str "field")
                 (var ob)
               )
+              (comment "ob_char('(', ob); ob_string(\"field\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
                 (int 32)
                 (var ob)
               )
+              (comment "ob_n(fname_buf, 0, fname_len, ob);")
               (call_stmt ob_n
                 (var fname_buf)
                 (int 0)
                 (var fname_len)
                 (var ob)
               )
+              (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
                 (int 10)
                 (var ob)
               )
+              (comment "ob_indent(indent + 2, ob);")
               (call_stmt ob_indent
                 (binop +
 (var indent)
 (int 2))
                 (var ob)
               )
+              (comment "pars_type(src, tok, ob, indent + 2);")
               (call_stmt pars_type
                 (var src)
                 (var tok)
@@ -6678,20 +8296,24 @@
 (var indent)
 (int 2))
               )
+              (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
                 (int 10)
                 (var ob)
               )
+              (comment "ob_indent(indent + 1, ob);")
               (call_stmt ob_indent
                 (binop +
 (var indent)
 (int 1))
                 (var ob)
               )
+              (comment "ob_char(')', ob);")
               (call_stmt ob_char
                 (int 41)
                 (var ob)
               )
+              (comment "delete(fname_buf);")
               (call_stmt delete
                 (var fname_buf)
               )
@@ -6699,23 +8321,28 @@
           )
         )
       )
+      (comment "expect_tok(TK_RBRACE, src, tok);")
       (call_stmt expect_tok
         (var TK_RBRACE)
         (var src)
         (var tok)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_indent(indent, ob);")
       (call_stmt ob_indent
         (var indent)
         (var ob)
       )
+      (comment "ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -6739,49 +8366,59 @@
       (type void)
     )
     (block
+      (comment "expect_tok(TK_IMPORT, src, tok);")
       (call_stmt expect_tok
         (var TK_IMPORT)
         (var src)
         (var tok)
       )
+      (comment "ob_char('(', ob); ob_string(\"import\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"import\", ob); ob_char(' ', ob);")
       (call_stmt ob_string
         (str "import")
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"import\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
         (int 32)
         (var ob)
       )
+      (comment "if g_tok == TK_STR_LIT {")
       (if
         (binop ==
 (var g_tok)
 (var TK_STR_LIT))
         (block
+          (comment "ob_n(tok, 0, g_tok_slen, ob);")
           (call_stmt ob_n
             (var tok)
             (int 0)
             (var g_tok_slen)
             (var ob)
           )
+          (comment "lex_tok(src, tok);")
           (call_stmt lex_tok
             (var src)
             (var tok)
           )
         )
       )
+      (comment "expect_tok(TK_SEMI, src, tok);")
       (call_stmt expect_tok
         (var TK_SEMI)
         (var src)
         (var tok)
       )
+      (comment "ob_char(')', ob);")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -6802,27 +8439,33 @@
       (type void)
     )
     (block
+      (comment "ob_char('(', ob); ob_string(\"program\", ob);")
       (call_stmt ob_char
         (int 40)
         (var ob)
       )
+      (comment "ob_char('(', ob); ob_string(\"program\", ob);")
       (call_stmt ob_string
         (str "program")
         (var ob)
       )
+      (comment "while g_tok == TK_IMPORT {")
       (while
         (binop ==
 (var g_tok)
 (var TK_IMPORT))
         (block
+          (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_indent(1, ob);")
           (call_stmt ob_indent
             (int 1)
             (var ob)
           )
+          (comment "pars_import(src, tok, ob, 1);")
           (call_stmt pars_import
             (var src)
             (var tok)
@@ -6831,24 +8474,29 @@
           )
         )
       )
+      (comment "while g_tok != TK_EOF {")
       (while
         (binop !=
 (var g_tok)
 (var TK_EOF))
         (block
+          (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
             (int 10)
             (var ob)
           )
+          (comment "ob_indent(1, ob);")
           (call_stmt ob_indent
             (int 1)
             (var ob)
           )
+          (comment "if g_tok == TK_FN {")
           (if
             (binop ==
 (var g_tok)
 (var TK_FN))
             (block
+              (comment "pars_fn_decl(src, tok, ob, 1);")
               (call_stmt pars_fn_decl
                 (var src)
                 (var tok)
@@ -6857,11 +8505,13 @@
               )
             )
             (block
+              (comment "if g_tok == TK_STRUCT {")
               (if
                 (binop ==
 (var g_tok)
 (var TK_STRUCT))
                 (block
+                  (comment "pars_struct_decl(src, tok, ob, 1);")
                   (call_stmt pars_struct_decl
                     (var src)
                     (var tok)
@@ -6870,11 +8520,13 @@
                   )
                 )
                 (block
+                  (comment "if g_tok == TK_VAR {")
                   (if
                     (binop ==
 (var g_tok)
 (var TK_VAR))
                     (block
+                      (comment "pars_var_decl(src, tok, ob, 1);")
                       (call_stmt pars_var_decl
                         (var src)
                         (var tok)
@@ -6883,6 +8535,7 @@
                       )
                     )
                     (block
+                      (comment "sys_exit(1);")
                       (call_stmt sys_exit
                         (int 1)
                       )
@@ -6894,18 +8547,22 @@
           )
         )
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "ob_char(')', ob);  // )")
       (call_stmt ob_char
         (int 41)
         (var ob)
       )
+      (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
         (int 10)
         (var ob)
       )
+      (comment "return;")
       (return
       )
     )
@@ -6917,57 +8574,71 @@
       (type i32)
     )
     (block
+      (comment "var src_buf: U8Array = U8Array(131072);  // 128KB for source")
       (var_decl src_buf
         (type U8Array)
         (call U8Array
 (int 131072))
       )
+      (comment "var tok_buf: U8Array = U8Array(4096);    // token string buffer")
       (var_decl tok_buf
         (type U8Array)
         (call U8Array
 (int 4096))
       )
+      (comment "var out_buf: U8Array = U8Array(1048576); // 1MB output buffer (avoids mid-expression flush)")
       (var_decl out_buf
         (type U8Array)
         (call U8Array
-(int 16384))
+(int 1048576))
       )
+      (comment "g_len = sys_read(0, src_buf, 131072u32);")
       (assign g_len
         (call sys_read
 (int 0)
 (var src_buf)
 (int 131072))
       )
+      (comment "g_pos = 0;")
       (assign g_pos
         (int 0)
       )
+      (comment "g_line = 1;")
       (assign g_line
         (int 1)
       )
+      (comment "g_ob_pos = 0;")
       (assign g_ob_pos
         (int 0)
       )
+      (comment "lex_tok(src_buf, tok_buf);")
       (call_stmt lex_tok
         (var src_buf)
         (var tok_buf)
       )
+      (comment "pars_program(src_buf, tok_buf, out_buf);")
       (call_stmt pars_program
         (var src_buf)
         (var tok_buf)
         (var out_buf)
       )
+      (comment "ob_flush(out_buf);")
       (call_stmt ob_flush
         (var out_buf)
       )
+      (comment "delete(src_buf);")
       (call_stmt delete
         (var src_buf)
       )
+      (comment "delete(tok_buf);")
       (call_stmt delete
         (var tok_buf)
       )
+      (comment "delete(out_buf);")
       (call_stmt delete
         (var out_buf)
       )
+      (comment "return 0;")
       (return
         (int 0)
       )

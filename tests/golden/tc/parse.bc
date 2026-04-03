@@ -33,17 +33,19 @@
 .string 30 "int"
 .string 31 "str"
 .string 32 "call"
-.string 33 "unary"
-.string 34 "type"
-.string 35 "var_decl"
-.string 36 "assign"
-.string 37 "call_stmt"
-.string 38 "block"
-.string 39 "params"
-.string 40 "param"
-.string 41 "ret"
-.string 42 "field"
-.string 43 "program"
+.string 33 "cast"
+.string 34 "unary"
+.string 35 "type"
+.string 36 "var_decl"
+.string 37 "assign"
+.string 38 "call_stmt"
+.string 39 "comment"
+.string 40 "block"
+.string 41 "params"
+.string 42 "param"
+.string 43 "ret"
+.string 44 "field"
+.string 45 "program"
 
 ; globals
 .global TK_FN i32 0
@@ -111,6 +113,7 @@
 .global g_tok_ival i32 0
 .global g_tok_slen i32 0
 .global g_tok_neg i32 0
+.global g_tok_line i32 1
 .global g_ob_pos i32 0
 
 .fn is_digit 1 bool
@@ -279,9 +282,9 @@ __L18:
   push_int 1
   add
   store g_ob_pos
-; if g_ob_pos >= 8192 {
+; if g_ob_pos >= 1048576 {
   load g_ob_pos
-  push_int 8192
+  push_int 1048576
   ge
   jump_ifnot __L19
 ; ob_flush(ob);
@@ -1578,6 +1581,9 @@ __L124:
   load src
   call skip_ws_and_comments 1
   pop
+; g_tok_line = g_line;
+  load g_line
+  store g_tok_line
 ; if g_pos >= g_len {
   load g_pos
   load g_len
@@ -3490,6 +3496,13 @@ __L271:
 .param src U8Array
 .param tok U8Array
 .param ob U8Array
+.local start i32
+.local expr_len i32
+.local saved U8Array
+.local i i32
+; var start: i32 = g_ob_pos;
+  load g_ob_pos
+  store start
 ; pars_primary(src, tok, ob);
   load src
   load tok
@@ -3507,15 +3520,88 @@ __L281:
   load tok
   call lex_tok 2
   pop
-; ob_char(0u8, ob);  // placeholder - this won't work right
+; var expr_len: i32 = g_ob_pos - start;
+  load g_ob_pos
+  load start
+  sub
+  store expr_len
+; var saved: U8Array = U8Array(expr_len);
+  load expr_len
+  call U8Array 1
+  store saved
+; var i: i32 = 0;
   push_int 0
+  store i
+; while i < expr_len {
+__L283:
+  load i
+  load expr_len
+  lt
+  jump_ifnot __L284
+; set(saved, i as u32, get(ob, (start + i) as u32));
+  load saved
+  load i
+  cast u32
+  load ob
+  load start
+  load i
+  add
+  cast u32
+  call get 2
+  call set 3
+  pop
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L283
+__L284:
+; g_ob_pos = start;
+  load start
+  store g_ob_pos
+; ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+  push_int 40
   load ob
   call ob_char 2
   pop
-; lex_tok(src, tok);  // consume type token
+; ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+  push_str 33
+  load ob
+  call ob_string 2
+  pop
+; ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_n(saved, 0, expr_len, ob);
+  load saved
+  push_int 0
+  load expr_len
+  load ob
+  call ob_n 4
+  pop
+; ob_char(10u8, ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; pars_type(src, tok, ob, 0);
   load src
   load tok
-  call lex_tok 2
+  load ob
+  push_int 0
+  call pars_type 4
+  pop
+; ob_char(')', ob);
+  push_int 41
+  load ob
+  call ob_char 2
+  pop
+; delete(saved);
+  load saved
+  call delete 1
   pop
   jump __L281
 __L282:
@@ -3528,12 +3614,11 @@ __L282:
 .param src U8Array
 .param tok U8Array
 .param ob U8Array
-.local left_start i32
 ; if g_tok == TK_BANG {
   load g_tok
   load TK_BANG
   eq
-  jump_ifnot __L283
+  jump_ifnot __L285
 ; lex_tok(src, tok);
   load src
   load tok
@@ -3545,7 +3630,7 @@ __L282:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("unary", ob); ob_char(' ', ob); ob_char('!', ob);
-  push_str 33
+  push_str 34
   load ob
   call ob_string 2
   pop
@@ -3577,12 +3662,12 @@ __L282:
   pop
 ; return;
   return_void
-__L283:
+__L285:
 ; if g_tok == TK_MINUS {
   load g_tok
   load TK_MINUS
   eq
-  jump_ifnot __L284
+  jump_ifnot __L286
 ; lex_tok(src, tok);
   load src
   load tok
@@ -3594,7 +3679,7 @@ __L283:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("unary", ob); ob_char(' ', ob); ob_char('-', ob);
-  push_str 33
+  push_str 34
   load ob
   call ob_string 2
   pop
@@ -3626,41 +3711,13 @@ __L283:
   pop
 ; return;
   return_void
-__L284:
-; pars_primary(src, tok, ob);
+__L286:
+; pars_postfix(src, tok, ob);
   load src
   load tok
   load ob
-  call pars_primary 3
+  call pars_postfix 3
   pop
-; while g_tok == TK_AS {
-__L285:
-  load g_tok
-  load TK_AS
-  eq
-  jump_ifnot __L286
-; var left_start: i32 = g_ob_pos - 1;  // can't easily save here
-  load g_ob_pos
-  push_int 1
-  sub
-  store left_start
-; lex_tok(src, tok);  // consume 'as'
-  load src
-  load tok
-  call lex_tok 2
-  pop
-; if is_type_tok(g_tok) { lex_tok(src, tok); }
-  load g_tok
-  call is_type_tok 1
-  jump_ifnot __L287
-; if is_type_tok(g_tok) { lex_tok(src, tok); }
-  load src
-  load tok
-  call lex_tok 2
-  pop
-__L287:
-  jump __L285
-__L286:
 ; return;
   return_void
   return_void
@@ -3685,31 +3742,31 @@ __L286:
   call pars_unary 3
   pop
 ; while g_tok == TK_STAR || g_tok == TK_SLASH || g_tok == TK_PERCENT {
-__L288:
+__L287:
   load g_tok
   load TK_STAR
   eq
-  jump_if __L292
+  jump_if __L291
   load g_tok
   load TK_SLASH
   eq
-  jump_if __L292
+  jump_if __L291
   push_int 0
-  jump __L293
-__L292:
+  jump __L292
+__L291:
   push_int 1
-__L293:
-  jump_if __L290
+__L292:
+  jump_if __L289
   load g_tok
   load TK_PERCENT
   eq
-  jump_if __L290
+  jump_if __L289
   push_int 0
-  jump __L291
-__L290:
+  jump __L290
+__L289:
   push_int 1
-__L291:
-  jump_ifnot __L289
+__L290:
+  jump_ifnot __L288
 ; var op: i32 = g_tok;
   load g_tok
   store op
@@ -3733,11 +3790,11 @@ __L291:
   push_int 0
   store i
 ; while i < left_len {
-__L294:
+__L293:
   load i
   load left_len
   lt
-  jump_ifnot __L295
+  jump_ifnot __L294
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -3755,8 +3812,8 @@ __L294:
   push_int 1
   add
   store i
-  jump __L294
-__L295:
+  jump __L293
+__L294:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -3812,8 +3869,8 @@ __L295:
   load lbuf
   call delete 1
   pop
-  jump __L288
-__L289:
+  jump __L287
+__L288:
 ; return;
   return_void
   return_void
@@ -3838,21 +3895,21 @@ __L289:
   call pars_mul 3
   pop
 ; while g_tok == TK_PLUS || g_tok == TK_MINUS {
-__L296:
+__L295:
   load g_tok
   load TK_PLUS
   eq
-  jump_if __L298
+  jump_if __L297
   load g_tok
   load TK_MINUS
   eq
-  jump_if __L298
+  jump_if __L297
   push_int 0
-  jump __L299
-__L298:
+  jump __L298
+__L297:
   push_int 1
-__L299:
-  jump_ifnot __L297
+__L298:
+  jump_ifnot __L296
 ; var op: i32 = g_tok;
   load g_tok
   store op
@@ -3876,11 +3933,11 @@ __L299:
   push_int 0
   store i
 ; while i < left_len {
-__L300:
+__L299:
   load i
   load left_len
   lt
-  jump_ifnot __L301
+  jump_ifnot __L300
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -3898,8 +3955,8 @@ __L300:
   push_int 1
   add
   store i
-  jump __L300
-__L301:
+  jump __L299
+__L300:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -3955,8 +4012,8 @@ __L301:
   load lbuf
   call delete 1
   pop
-  jump __L296
-__L297:
+  jump __L295
+__L296:
 ; return;
   return_void
   return_void
@@ -3981,21 +4038,21 @@ __L297:
   call pars_add 3
   pop
 ; while g_tok == TK_LSHIFT || g_tok == TK_RSHIFT {
-__L302:
+__L301:
   load g_tok
   load TK_LSHIFT
   eq
-  jump_if __L304
+  jump_if __L303
   load g_tok
   load TK_RSHIFT
   eq
-  jump_if __L304
+  jump_if __L303
   push_int 0
-  jump __L305
-__L304:
+  jump __L304
+__L303:
   push_int 1
-__L305:
-  jump_ifnot __L303
+__L304:
+  jump_ifnot __L302
 ; var op: i32 = g_tok;
   load g_tok
   store op
@@ -4019,11 +4076,11 @@ __L305:
   push_int 0
   store i
 ; while i < left_len {
-__L306:
+__L305:
   load i
   load left_len
   lt
-  jump_ifnot __L307
+  jump_ifnot __L306
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -4041,8 +4098,8 @@ __L306:
   push_int 1
   add
   store i
-  jump __L306
-__L307:
+  jump __L305
+__L306:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -4098,8 +4155,8 @@ __L307:
   load lbuf
   call delete 1
   pop
-  jump __L302
-__L303:
+  jump __L301
+__L302:
 ; return;
   return_void
   return_void
@@ -4123,11 +4180,11 @@ __L303:
   call pars_shift 3
   pop
 ; while g_tok == TK_AMP {
-__L308:
+__L307:
   load g_tok
   load TK_AMP
   eq
-  jump_ifnot __L309
+  jump_ifnot __L308
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4148,11 +4205,11 @@ __L308:
   push_int 0
   store i
 ; while i < left_len {
-__L310:
+__L309:
   load i
   load left_len
   lt
-  jump_ifnot __L311
+  jump_ifnot __L310
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -4170,8 +4227,8 @@ __L310:
   push_int 1
   add
   store i
-  jump __L310
-__L311:
+  jump __L309
+__L310:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -4227,8 +4284,8 @@ __L311:
   load lbuf
   call delete 1
   pop
-  jump __L308
-__L309:
+  jump __L307
+__L308:
 ; return;
   return_void
   return_void
@@ -4252,11 +4309,11 @@ __L309:
   call pars_bitand 3
   pop
 ; while g_tok == TK_CARET {
-__L312:
+__L311:
   load g_tok
   load TK_CARET
   eq
-  jump_ifnot __L313
+  jump_ifnot __L312
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4277,11 +4334,11 @@ __L312:
   push_int 0
   store i
 ; while i < left_len {
-__L314:
+__L313:
   load i
   load left_len
   lt
-  jump_ifnot __L315
+  jump_ifnot __L314
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -4299,8 +4356,8 @@ __L314:
   push_int 1
   add
   store i
-  jump __L314
-__L315:
+  jump __L313
+__L314:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -4356,8 +4413,8 @@ __L315:
   load lbuf
   call delete 1
   pop
-  jump __L312
-__L313:
+  jump __L311
+__L312:
 ; return;
   return_void
   return_void
@@ -4381,11 +4438,11 @@ __L313:
   call pars_bitxor 3
   pop
 ; while g_tok == TK_PIPE {
-__L316:
+__L315:
   load g_tok
   load TK_PIPE
   eq
-  jump_ifnot __L317
+  jump_ifnot __L316
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4406,11 +4463,11 @@ __L316:
   push_int 0
   store i
 ; while i < left_len {
-__L318:
+__L317:
   load i
   load left_len
   lt
-  jump_ifnot __L319
+  jump_ifnot __L318
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -4428,8 +4485,8 @@ __L318:
   push_int 1
   add
   store i
-  jump __L318
-__L319:
+  jump __L317
+__L318:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -4485,8 +4542,8 @@ __L319:
   load lbuf
   call delete 1
   pop
-  jump __L316
-__L317:
+  jump __L315
+__L316:
 ; return;
   return_void
   return_void
@@ -4517,57 +4574,57 @@ __L317:
   load k
   load TK_EQEQ
   eq
-  jump_if __L329
+  jump_if __L328
   load k
   load TK_BANGEQ
   eq
-  jump_if __L329
+  jump_if __L328
   push_int 0
-  jump __L330
-__L329:
+  jump __L329
+__L328:
   push_int 1
-__L330:
-  jump_if __L327
+__L329:
+  jump_if __L326
   load k
   load TK_LT
   eq
-  jump_if __L327
+  jump_if __L326
   push_int 0
-  jump __L328
-__L327:
+  jump __L327
+__L326:
   push_int 1
-__L328:
-  jump_if __L325
+__L327:
+  jump_if __L324
   load k
   load TK_LTEQ
   eq
-  jump_if __L325
+  jump_if __L324
   push_int 0
-  jump __L326
-__L325:
+  jump __L325
+__L324:
   push_int 1
-__L326:
-  jump_if __L323
+__L325:
+  jump_if __L322
   load k
   load TK_GT
   eq
-  jump_if __L323
+  jump_if __L322
   push_int 0
-  jump __L324
-__L323:
+  jump __L323
+__L322:
   push_int 1
-__L324:
-  jump_if __L321
+__L323:
+  jump_if __L320
   load k
   load TK_GTEQ
   eq
-  jump_if __L321
+  jump_if __L320
   push_int 0
-  jump __L322
-__L321:
+  jump __L321
+__L320:
   push_int 1
-__L322:
-  jump_ifnot __L320
+__L321:
+  jump_ifnot __L319
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4588,11 +4645,11 @@ __L322:
   push_int 0
   store i
 ; while i < left_len {
-__L331:
+__L330:
   load i
   load left_len
   lt
-  jump_ifnot __L332
+  jump_ifnot __L331
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -4610,8 +4667,8 @@ __L331:
   push_int 1
   add
   store i
-  jump __L331
-__L332:
+  jump __L330
+__L331:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -4667,7 +4724,7 @@ __L332:
   load lbuf
   call delete 1
   pop
-__L320:
+__L319:
 ; return;
   return_void
   return_void
@@ -4691,11 +4748,11 @@ __L320:
   call pars_compare 3
   pop
 ; while g_tok == TK_AMPAMP {
-__L333:
+__L332:
   load g_tok
   load TK_AMPAMP
   eq
-  jump_ifnot __L334
+  jump_ifnot __L333
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4716,11 +4773,11 @@ __L333:
   push_int 0
   store i
 ; while i < left_len {
-__L335:
+__L334:
   load i
   load left_len
   lt
-  jump_ifnot __L336
+  jump_ifnot __L335
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -4738,8 +4795,8 @@ __L335:
   push_int 1
   add
   store i
-  jump __L335
-__L336:
+  jump __L334
+__L335:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -4795,8 +4852,8 @@ __L336:
   load lbuf
   call delete 1
   pop
-  jump __L333
-__L334:
+  jump __L332
+__L333:
 ; return;
   return_void
   return_void
@@ -4820,11 +4877,11 @@ __L334:
   call pars_logic_and 3
   pop
 ; while g_tok == TK_PIPEPIPE {
-__L337:
+__L336:
   load g_tok
   load TK_PIPEPIPE
   eq
-  jump_ifnot __L338
+  jump_ifnot __L337
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4845,11 +4902,11 @@ __L337:
   push_int 0
   store i
 ; while i < left_len {
-__L339:
+__L338:
   load i
   load left_len
   lt
-  jump_ifnot __L340
+  jump_ifnot __L339
 ; set(lbuf, i as u32, get(ob, (left_start + i) as u32));
   load lbuf
   load i
@@ -4867,8 +4924,8 @@ __L339:
   push_int 1
   add
   store i
-  jump __L339
-__L340:
+  jump __L338
+__L339:
 ; g_ob_pos = left_start;
   load left_start
   store g_ob_pos
@@ -4924,8 +4981,8 @@ __L340:
   load lbuf
   call delete 1
   pop
-  jump __L337
-__L338:
+  jump __L336
+__L337:
 ; return;
   return_void
   return_void
@@ -4942,7 +4999,7 @@ __L338:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-  push_str 34
+  push_str 35
   load ob
   call ob_string 2
   pop
@@ -4954,17 +5011,17 @@ __L338:
 ; if is_type_tok(g_tok) && g_tok != TK_IDENT {
   load g_tok
   call is_type_tok 1
-  jump_ifnot __L343
+  jump_ifnot __L342
   load g_tok
   load TK_IDENT
   ne
-  jump_ifnot __L343
+  jump_ifnot __L342
   push_int 1
-  jump __L344
-__L343:
+  jump __L343
+__L342:
   push_int 0
-__L344:
-  jump_ifnot __L341
+__L343:
+  jump_ifnot __L340
 ; ob_type_kw(g_tok, ob);
   load g_tok
   load ob
@@ -4975,13 +5032,13 @@ __L344:
   load tok
   call lex_tok 2
   pop
-  jump __L342
-__L341:
+  jump __L341
+__L340:
 ; if g_tok == TK_IDENT {
   load g_tok
   load TK_IDENT
   eq
-  jump_ifnot __L345
+  jump_ifnot __L344
 ; ob_n(tok, 0, g_tok_slen, ob);
   load tok
   push_int 0
@@ -4994,8 +5051,8 @@ __L341:
   load tok
   call lex_tok 2
   pop
-__L345:
-__L342:
+__L344:
+__L341:
 ; ob_char(')', ob);
   push_int 41
   load ob
@@ -5033,11 +5090,11 @@ __L342:
   push_int 0
   store i
 ; while i < name_len {
-__L346:
+__L345:
   load i
   load name_len
   lt
-  jump_ifnot __L347
+  jump_ifnot __L346
 ; set(name_buf, i as u32, get(tok, i as u32));
   load name_buf
   load i
@@ -5053,8 +5110,8 @@ __L346:
   push_int 1
   add
   store i
-  jump __L346
-__L347:
+  jump __L345
+__L346:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -5073,7 +5130,7 @@ __L347:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("var_decl", ob); ob_char(' ', ob);
-  push_str 35
+  push_str 36
   load ob
   call ob_string 2
   pop
@@ -5118,7 +5175,7 @@ __L347:
   load g_tok
   load TK_EQ
   eq
-  jump_ifnot __L348
+  jump_ifnot __L347
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5142,7 +5199,7 @@ __L347:
   load ob
   call pars_expr 3
   pop
-__L348:
+__L347:
 ; expect_tok(TK_SEMI, src, tok);
   load TK_SEMI
   load src
@@ -5268,7 +5325,7 @@ __L348:
   load g_tok
   load TK_SEMI
   ne
-  jump_ifnot __L349
+  jump_ifnot __L348
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -5287,7 +5344,7 @@ __L348:
   load ob
   call pars_expr 3
   pop
-__L349:
+__L348:
 ; expect_tok(TK_SEMI, src, tok);
   load TK_SEMI
   load src
@@ -5378,7 +5435,7 @@ __L349:
   load g_tok
   load TK_ELSE
   eq
-  jump_ifnot __L350
+  jump_ifnot __L349
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5400,7 +5457,7 @@ __L349:
   load g_tok
   load TK_IF
   eq
-  jump_ifnot __L351
+  jump_ifnot __L350
 ; pars_if_stmt(src, tok, ob, indent + 1);
   load src
   load tok
@@ -5410,8 +5467,8 @@ __L349:
   add
   call pars_if_stmt 4
   pop
-  jump __L352
-__L351:
+  jump __L351
+__L350:
 ; pars_block(src, tok, ob, indent + 1);
   load src
   load tok
@@ -5421,8 +5478,8 @@ __L351:
   add
   call pars_block 4
   pop
-__L352:
-__L350:
+__L351:
+__L349:
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -5546,11 +5603,11 @@ __L350:
   push_int 0
   store i
 ; while i < name_len {
-__L353:
+__L352:
   load i
   load name_len
   lt
-  jump_ifnot __L354
+  jump_ifnot __L353
 ; set(name_buf, i as u32, get(tok, i as u32));
   load name_buf
   load i
@@ -5566,8 +5623,8 @@ __L353:
   push_int 1
   add
   store i
-  jump __L353
-__L354:
+  jump __L352
+__L353:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -5578,7 +5635,7 @@ __L354:
   load g_tok
   load TK_EQ
   eq
-  jump_ifnot __L355
+  jump_ifnot __L354
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5590,7 +5647,7 @@ __L354:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("assign", ob); ob_char(' ', ob);
-  push_str 36
+  push_str 37
   load ob
   call ob_string 2
   pop
@@ -5645,52 +5702,52 @@ __L354:
   load ob
   call ob_char 2
   pop
-  jump __L356
-__L355:
+  jump __L355
+__L354:
   load g_tok
   load TK_PLUS_EQ
   eq
-  jump_if __L365
+  jump_if __L364
   load g_tok
   load TK_MINUS_EQ
   eq
-  jump_if __L365
+  jump_if __L364
   push_int 0
-  jump __L366
-__L365:
+  jump __L365
+__L364:
   push_int 1
-__L366:
-  jump_if __L363
+__L365:
+  jump_if __L362
   load g_tok
   load TK_STAR_EQ
   eq
-  jump_if __L363
+  jump_if __L362
   push_int 0
-  jump __L364
-__L363:
+  jump __L363
+__L362:
   push_int 1
-__L364:
-  jump_if __L361
+__L363:
+  jump_if __L360
   load g_tok
   load TK_SLASH_EQ
   eq
-  jump_if __L361
+  jump_if __L360
   push_int 0
-  jump __L362
-__L361:
+  jump __L361
+__L360:
   push_int 1
-__L362:
-  jump_if __L359
+__L361:
+  jump_if __L358
   load g_tok
   load TK_PERCENT_EQ
   eq
-  jump_if __L359
+  jump_if __L358
   push_int 0
-  jump __L360
-__L359:
+  jump __L359
+__L358:
   push_int 1
-__L360:
-  jump_ifnot __L357
+__L359:
+  jump_ifnot __L356
 ; var the_op: i32 = g_tok;
   load g_tok
   store the_op
@@ -5705,7 +5762,7 @@ __L360:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("assign", ob); ob_char(' ', ob);
-  push_str 36
+  push_str 37
   load ob
   call ob_string 2
   pop
@@ -5752,57 +5809,57 @@ __L360:
   load the_op
   load TK_PLUS_EQ
   eq
-  jump_ifnot __L367
+  jump_ifnot __L366
 ; if the_op == TK_PLUS_EQ    { ob_char('+', ob); }
   push_int 43
   load ob
   call ob_char 2
   pop
-__L367:
+__L366:
 ; if the_op == TK_MINUS_EQ   { ob_char('-', ob); }
   load the_op
   load TK_MINUS_EQ
   eq
-  jump_ifnot __L368
+  jump_ifnot __L367
 ; if the_op == TK_MINUS_EQ   { ob_char('-', ob); }
   push_int 45
   load ob
   call ob_char 2
   pop
-__L368:
+__L367:
 ; if the_op == TK_STAR_EQ    { ob_char('*', ob); }
   load the_op
   load TK_STAR_EQ
   eq
-  jump_ifnot __L369
+  jump_ifnot __L368
 ; if the_op == TK_STAR_EQ    { ob_char('*', ob); }
   push_int 42
   load ob
   call ob_char 2
   pop
-__L369:
+__L368:
 ; if the_op == TK_SLASH_EQ   { ob_char('/', ob); }
   load the_op
   load TK_SLASH_EQ
   eq
-  jump_ifnot __L370
+  jump_ifnot __L369
 ; if the_op == TK_SLASH_EQ   { ob_char('/', ob); }
   push_int 47
   load ob
   call ob_char 2
   pop
-__L370:
+__L369:
 ; if the_op == TK_PERCENT_EQ { ob_char('%', ob); }
   load the_op
   load TK_PERCENT_EQ
   eq
-  jump_ifnot __L371
+  jump_ifnot __L370
 ; if the_op == TK_PERCENT_EQ { ob_char('%', ob); }
   push_int 37
   load ob
   call ob_char 2
   pop
-__L371:
+__L370:
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -5872,13 +5929,13 @@ __L371:
   load ob
   call ob_char 2
   pop
-  jump __L358
-__L357:
+  jump __L357
+__L356:
 ; if g_tok == TK_LPAREN {
   load g_tok
   load TK_LPAREN
   eq
-  jump_ifnot __L372
+  jump_ifnot __L371
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5890,7 +5947,7 @@ __L357:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("call_stmt", ob); ob_char(' ', ob);
-  push_str 37
+  push_str 38
   load ob
   call ob_string 2
   pop
@@ -5910,16 +5967,16 @@ __L357:
   load g_tok
   load TK_RPAREN
   ne
-  jump_ifnot __L374
+  jump_ifnot __L373
 ; var going: i32 = 1;
   push_int 1
   store going
 ; while going == 1 {
-__L375:
+__L374:
   load going
   push_int 1
   eq
-  jump_ifnot __L376
+  jump_ifnot __L375
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -5942,21 +5999,21 @@ __L375:
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L377
+  jump_ifnot __L376
 ; lex_tok(src, tok);
   load src
   load tok
   call lex_tok 2
   pop
-  jump __L378
-__L377:
+  jump __L377
+__L376:
 ; going = 0;
   push_int 0
   store going
-__L378:
-  jump __L375
-__L376:
-__L374:
+__L377:
+  jump __L374
+__L375:
+__L373:
 ; expect_tok(TK_RPAREN, src, tok);
   load TK_RPAREN
   load src
@@ -5984,18 +6041,261 @@ __L374:
   load ob
   call ob_char 2
   pop
-  jump __L373
-__L372:
+  jump __L372
+__L371:
 ; sys_exit(1);
   push_int 1
   call sys_exit 1
   pop
-__L373:
-__L358:
-__L356:
+__L372:
+__L357:
+__L355:
 ; delete(name_buf);
   load name_buf
   call delete 1
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_stmt_comment 3 void
+.param src U8Array
+.param line i32
+.param ob U8Array
+.local pos i32
+.local cur_line i32
+.local first u8
+.local ch u8
+; var pos: i32 = 0;
+  push_int 0
+  store pos
+; var cur_line: i32 = 1;
+  push_int 1
+  store cur_line
+; while cur_line < line && pos < g_len {
+__L378:
+  load cur_line
+  load line
+  lt
+  jump_ifnot __L380
+  load pos
+  load g_len
+  lt
+  jump_ifnot __L380
+  push_int 1
+  jump __L381
+__L380:
+  push_int 0
+__L381:
+  jump_ifnot __L379
+; if get(src, pos as u32) == 10u8 { cur_line = cur_line + 1; }
+  load src
+  load pos
+  cast u32
+  call get 2
+  push_int 10
+  eq
+  jump_ifnot __L382
+; if get(src, pos as u32) == 10u8 { cur_line = cur_line + 1; }
+  load cur_line
+  push_int 1
+  add
+  store cur_line
+__L382:
+; pos = pos + 1;
+  load pos
+  push_int 1
+  add
+  store pos
+  jump __L378
+__L379:
+; while pos < g_len && (get(src, pos as u32) == ' ' || get(src, pos as u32) == 9u8) {
+__L383:
+  load pos
+  load g_len
+  lt
+  jump_ifnot __L385
+  load src
+  load pos
+  cast u32
+  call get 2
+  push_int 32
+  eq
+  jump_if __L387
+  load src
+  load pos
+  cast u32
+  call get 2
+  push_int 9
+  eq
+  jump_if __L387
+  push_int 0
+  jump __L388
+__L387:
+  push_int 1
+__L388:
+  jump_ifnot __L385
+  push_int 1
+  jump __L386
+__L385:
+  push_int 0
+__L386:
+  jump_ifnot __L384
+; pos = pos + 1;
+  load pos
+  push_int 1
+  add
+  store pos
+  jump __L383
+__L384:
+; if pos >= g_len { return; }
+  load pos
+  load g_len
+  ge
+  jump_ifnot __L389
+; if pos >= g_len { return; }
+  return_void
+__L389:
+; var first: u8 = get(src, pos as u32);
+  load src
+  load pos
+  cast u32
+  call get 2
+  store first
+; if first == 10u8 || first == 13u8 { return; }
+  load first
+  push_int 10
+  eq
+  jump_if __L391
+  load first
+  push_int 13
+  eq
+  jump_if __L391
+  push_int 0
+  jump __L392
+__L391:
+  push_int 1
+__L392:
+  jump_ifnot __L390
+; if first == 10u8 || first == 13u8 { return; }
+  return_void
+__L390:
+; ob_char('(', ob); ob_string("comment", ob); ob_char(' ', ob); ob_char('"', ob);
+  push_int 40
+  load ob
+  call ob_char 2
+  pop
+; ob_char('(', ob); ob_string("comment", ob); ob_char(' ', ob); ob_char('"', ob);
+  push_str 39
+  load ob
+  call ob_string 2
+  pop
+; ob_char('(', ob); ob_string("comment", ob); ob_char(' ', ob); ob_char('"', ob);
+  push_int 32
+  load ob
+  call ob_char 2
+  pop
+; ob_char('(', ob); ob_string("comment", ob); ob_char(' ', ob); ob_char('"', ob);
+  push_int 34
+  load ob
+  call ob_char 2
+  pop
+; while pos < g_len && get(src, pos as u32) != 10u8 && get(src, pos as u32) != 13u8 {
+__L393:
+  load pos
+  load g_len
+  lt
+  jump_ifnot __L397
+  load src
+  load pos
+  cast u32
+  call get 2
+  push_int 10
+  ne
+  jump_ifnot __L397
+  push_int 1
+  jump __L398
+__L397:
+  push_int 0
+__L398:
+  jump_ifnot __L395
+  load src
+  load pos
+  cast u32
+  call get 2
+  push_int 13
+  ne
+  jump_ifnot __L395
+  push_int 1
+  jump __L396
+__L395:
+  push_int 0
+__L396:
+  jump_ifnot __L394
+; var ch: u8 = get(src, pos as u32);
+  load src
+  load pos
+  cast u32
+  call get 2
+  store ch
+; if ch == '"' { ob_char('\\', ob); ob_char('"', ob); }
+  load ch
+  push_int 34
+  eq
+  jump_ifnot __L399
+; if ch == '"' { ob_char('\\', ob); ob_char('"', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+; if ch == '"' { ob_char('\\', ob); ob_char('"', ob); }
+  push_int 34
+  load ob
+  call ob_char 2
+  pop
+  jump __L400
+__L399:
+; if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+  load ch
+  push_int 92
+  eq
+  jump_ifnot __L401
+; if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+; if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+  push_int 92
+  load ob
+  call ob_char 2
+  pop
+  jump __L402
+__L401:
+; else { ob_char(ch, ob); }
+  load ch
+  load ob
+  call ob_char 2
+  pop
+__L402:
+__L400:
+; pos = pos + 1;
+  load pos
+  push_int 1
+  add
+  store pos
+  jump __L393
+__L394:
+; ob_char('"', ob); ob_char(')', ob);
+  push_int 34
+  load ob
+  call ob_char 2
+  pop
+; ob_char('"', ob); ob_char(')', ob);
+  push_int 41
+  load ob
+  call ob_char 2
   pop
 ; return;
   return_void
@@ -6011,7 +6311,7 @@ __L356:
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L379
+  jump_ifnot __L403
 ; if g_tok == TK_VAR    { pars_var_decl(src, tok, ob, indent); return; }
   load src
   load tok
@@ -6021,12 +6321,12 @@ __L356:
   pop
 ; if g_tok == TK_VAR    { pars_var_decl(src, tok, ob, indent); return; }
   return_void
-__L379:
+__L403:
 ; if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }
   load g_tok
   load TK_IF
   eq
-  jump_ifnot __L380
+  jump_ifnot __L404
 ; if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }
   load src
   load tok
@@ -6036,12 +6336,12 @@ __L379:
   pop
 ; if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }
   return_void
-__L380:
+__L404:
 ; if g_tok == TK_WHILE    { pars_while_stmt(src, tok, ob, indent); return; }
   load g_tok
   load TK_WHILE
   eq
-  jump_ifnot __L381
+  jump_ifnot __L405
 ; if g_tok == TK_WHILE    { pars_while_stmt(src, tok, ob, indent); return; }
   load src
   load tok
@@ -6051,12 +6351,12 @@ __L380:
   pop
 ; if g_tok == TK_WHILE    { pars_while_stmt(src, tok, ob, indent); return; }
   return_void
-__L381:
+__L405:
 ; if g_tok == TK_RETURN   { pars_return_stmt(src, tok, ob, indent); return; }
   load g_tok
   load TK_RETURN
   eq
-  jump_ifnot __L382
+  jump_ifnot __L406
 ; if g_tok == TK_RETURN   { pars_return_stmt(src, tok, ob, indent); return; }
   load src
   load tok
@@ -6066,12 +6366,12 @@ __L381:
   pop
 ; if g_tok == TK_RETURN   { pars_return_stmt(src, tok, ob, indent); return; }
   return_void
-__L382:
+__L406:
 ; if g_tok == TK_BREAK    { pars_break_stmt(src, tok, ob, indent); return; }
   load g_tok
   load TK_BREAK
   eq
-  jump_ifnot __L383
+  jump_ifnot __L407
 ; if g_tok == TK_BREAK    { pars_break_stmt(src, tok, ob, indent); return; }
   load src
   load tok
@@ -6081,12 +6381,12 @@ __L382:
   pop
 ; if g_tok == TK_BREAK    { pars_break_stmt(src, tok, ob, indent); return; }
   return_void
-__L383:
+__L407:
 ; if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, ob, indent); return; }
   load g_tok
   load TK_CONTINUE
   eq
-  jump_ifnot __L384
+  jump_ifnot __L408
 ; if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, ob, indent); return; }
   load src
   load tok
@@ -6096,12 +6396,12 @@ __L383:
   pop
 ; if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, ob, indent); return; }
   return_void
-__L384:
+__L408:
 ; if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, ob, indent); return; }
   load g_tok
   load TK_IDENT
   eq
-  jump_ifnot __L385
+  jump_ifnot __L409
 ; if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, ob, indent); return; }
   load src
   load tok
@@ -6111,7 +6411,7 @@ __L384:
   pop
 ; if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, ob, indent); return; }
   return_void
-__L385:
+__L409:
 ; sys_exit(1);
   push_int 1
   call sys_exit 1
@@ -6126,6 +6426,7 @@ __L385:
 .param tok U8Array
 .param ob U8Array
 .param indent i32
+.local stmt_line i32
 ; expect_tok(TK_LBRACE, src, tok);
   load TK_LBRACE
   load src
@@ -6138,26 +6439,47 @@ __L385:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("block", ob);
-  push_str 38
+  push_str 40
   load ob
   call ob_string 2
   pop
 ; while g_tok != TK_RBRACE && g_tok != TK_EOF {
-__L386:
+__L410:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L388
+  jump_ifnot __L412
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L388
+  jump_ifnot __L412
   push_int 1
-  jump __L389
-__L388:
+  jump __L413
+__L412:
   push_int 0
-__L389:
-  jump_ifnot __L387
+__L413:
+  jump_ifnot __L411
+; var stmt_line: i32 = g_tok_line;
+  load g_tok_line
+  store stmt_line
+; ob_char(10u8, ob);
+  push_int 10
+  load ob
+  call ob_char 2
+  pop
+; ob_indent(indent + 1, ob);
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent 2
+  pop
+; emit_stmt_comment(src, stmt_line, ob);
+  load src
+  load stmt_line
+  load ob
+  call emit_stmt_comment 3
+  pop
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -6179,8 +6501,8 @@ __L389:
   add
   call pars_stmt 4
   pop
-  jump __L386
-__L387:
+  jump __L410
+__L411:
 ; expect_tok(TK_RBRACE, src, tok);
   load TK_RBRACE
   load src
@@ -6238,11 +6560,11 @@ __L387:
   push_int 0
   store i
 ; while i < name_len {
-__L390:
+__L414:
   load i
   load name_len
   lt
-  jump_ifnot __L391
+  jump_ifnot __L415
 ; set(name_buf, i as u32, get(tok, i as u32));
   load name_buf
   load i
@@ -6258,8 +6580,8 @@ __L390:
   push_int 1
   add
   store i
-  jump __L390
-__L391:
+  jump __L414
+__L415:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -6316,7 +6638,7 @@ __L391:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("params", ob);
-  push_str 39
+  push_str 41
   load ob
   call ob_string 2
   pop
@@ -6324,16 +6646,16 @@ __L391:
   load g_tok
   load TK_RPAREN
   ne
-  jump_ifnot __L392
+  jump_ifnot __L416
 ; var going: i32 = 1;
   push_int 1
   store going
 ; while going == 1 {
-__L393:
+__L417:
   load going
   push_int 1
   eq
-  jump_ifnot __L394
+  jump_ifnot __L418
 ; var pname_len: i32 = g_tok_slen;
   load g_tok_slen
   store pname_len
@@ -6347,11 +6669,11 @@ __L393:
   push_int 0
   store j
 ; while j < pname_len {
-__L395:
+__L419:
   load j
   load pname_len
   lt
-  jump_ifnot __L396
+  jump_ifnot __L420
 ; set(pname_buf, j as u32, get(tok, j as u32));
   load pname_buf
   load j
@@ -6367,8 +6689,8 @@ __L395:
   push_int 1
   add
   store j
-  jump __L395
-__L396:
+  jump __L419
+__L420:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -6399,7 +6721,7 @@ __L396:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob);
-  push_str 40
+  push_str 42
   load ob
   call ob_string 2
   pop
@@ -6461,21 +6783,21 @@ __L396:
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L397
+  jump_ifnot __L421
 ; lex_tok(src, tok);
   load src
   load tok
   call lex_tok 2
   pop
-  jump __L398
-__L397:
+  jump __L422
+__L421:
 ; going = 0;
   push_int 0
   store going
-__L398:
-  jump __L393
-__L394:
-__L392:
+__L422:
+  jump __L417
+__L418:
+__L416:
 ; expect_tok(TK_RPAREN, src, tok);
   load TK_RPAREN
   load src
@@ -6517,7 +6839,7 @@ __L392:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("ret", ob);
-  push_str 41
+  push_str 43
   load ob
   call ob_string 2
   pop
@@ -6537,7 +6859,7 @@ __L392:
   load g_tok
   load TK_ARROW
   eq
-  jump_ifnot __L399
+  jump_ifnot __L423
 ; lex_tok(src, tok);
   load src
   load tok
@@ -6552,15 +6874,15 @@ __L392:
   add
   call pars_type 4
   pop
-  jump __L400
-__L399:
+  jump __L424
+__L423:
 ; ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob); ob_string("void", ob); ob_char(')', ob);
   push_int 40
   load ob
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob); ob_string("void", ob); ob_char(')', ob);
-  push_str 34
+  push_str 35
   load ob
   call ob_string 2
   pop
@@ -6579,7 +6901,7 @@ __L399:
   load ob
   call ob_char 2
   pop
-__L400:
+__L424:
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -6669,11 +6991,11 @@ __L400:
   push_int 0
   store i
 ; while i < name_len {
-__L401:
+__L425:
   load i
   load name_len
   lt
-  jump_ifnot __L402
+  jump_ifnot __L426
 ; set(name_buf, i as u32, get(tok, i as u32));
   load name_buf
   load i
@@ -6689,8 +7011,8 @@ __L401:
   push_int 1
   add
   store i
-  jump __L401
-__L402:
+  jump __L425
+__L426:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -6733,38 +7055,38 @@ __L402:
   push_int 1
   store first
 ; while g_tok != TK_RBRACE && g_tok != TK_EOF {
-__L403:
+__L427:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L405
+  jump_ifnot __L429
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L405
+  jump_ifnot __L429
   push_int 1
-  jump __L406
-__L405:
+  jump __L430
+__L429:
   push_int 0
-__L406:
-  jump_ifnot __L404
+__L430:
+  jump_ifnot __L428
 ; if first == 0 {
   load first
   push_int 0
   eq
-  jump_ifnot __L407
+  jump_ifnot __L431
 ; if g_tok == TK_COMMA { lex_tok(src, tok); }
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L408
+  jump_ifnot __L432
 ; if g_tok == TK_COMMA { lex_tok(src, tok); }
   load src
   load tok
   call lex_tok 2
   pop
-__L408:
-__L407:
+__L432:
+__L431:
 ; first = 0;
   push_int 0
   store first
@@ -6772,12 +7094,12 @@ __L407:
   load g_tok
   load TK_RBRACE
   eq
-  jump_ifnot __L409
+  jump_ifnot __L433
 ; if g_tok == TK_RBRACE { g_tok = g_tok; }  // do nothing, will exit loop
   load g_tok
   store g_tok
-  jump __L410
-__L409:
+  jump __L434
+__L433:
 ; var fname_len: i32 = g_tok_slen;
   load g_tok_slen
   store fname_len
@@ -6791,11 +7113,11 @@ __L409:
   push_int 0
   store j
 ; while j < fname_len {
-__L411:
+__L435:
   load j
   load fname_len
   lt
-  jump_ifnot __L412
+  jump_ifnot __L436
 ; set(fname_buf, j as u32, get(tok, j as u32));
   load fname_buf
   load j
@@ -6811,8 +7133,8 @@ __L411:
   push_int 1
   add
   store j
-  jump __L411
-__L412:
+  jump __L435
+__L436:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -6843,7 +7165,7 @@ __L412:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("field", ob); ob_char(' ', ob);
-  push_str 42
+  push_str 44
   load ob
   call ob_string 2
   pop
@@ -6901,9 +7223,9 @@ __L412:
   load fname_buf
   call delete 1
   pop
-__L410:
-  jump __L403
-__L404:
+__L434:
+  jump __L427
+__L428:
 ; expect_tok(TK_RBRACE, src, tok);
   load TK_RBRACE
   load src
@@ -6960,7 +7282,7 @@ __L404:
   load g_tok
   load TK_STR_LIT
   eq
-  jump_ifnot __L413
+  jump_ifnot __L437
 ; ob_n(tok, 0, g_tok_slen, ob);
   load tok
   push_int 0
@@ -6973,7 +7295,7 @@ __L404:
   load tok
   call lex_tok 2
   pop
-__L413:
+__L437:
 ; expect_tok(TK_SEMI, src, tok);
   load TK_SEMI
   load src
@@ -7000,16 +7322,16 @@ __L413:
   call ob_char 2
   pop
 ; ob_char('(', ob); ob_string("program", ob);
-  push_str 43
+  push_str 45
   load ob
   call ob_string 2
   pop
 ; while g_tok == TK_IMPORT {
-__L414:
+__L438:
   load g_tok
   load TK_IMPORT
   eq
-  jump_ifnot __L415
+  jump_ifnot __L439
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -7027,14 +7349,14 @@ __L414:
   push_int 1
   call pars_import 4
   pop
-  jump __L414
-__L415:
+  jump __L438
+__L439:
 ; while g_tok != TK_EOF {
-__L416:
+__L440:
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L417
+  jump_ifnot __L441
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -7049,7 +7371,7 @@ __L416:
   load g_tok
   load TK_FN
   eq
-  jump_ifnot __L418
+  jump_ifnot __L442
 ; pars_fn_decl(src, tok, ob, 1);
   load src
   load tok
@@ -7057,13 +7379,13 @@ __L416:
   push_int 1
   call pars_fn_decl 4
   pop
-  jump __L419
-__L418:
+  jump __L443
+__L442:
 ; if g_tok == TK_STRUCT {
   load g_tok
   load TK_STRUCT
   eq
-  jump_ifnot __L420
+  jump_ifnot __L444
 ; pars_struct_decl(src, tok, ob, 1);
   load src
   load tok
@@ -7071,13 +7393,13 @@ __L418:
   push_int 1
   call pars_struct_decl 4
   pop
-  jump __L421
-__L420:
+  jump __L445
+__L444:
 ; if g_tok == TK_VAR {
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L422
+  jump_ifnot __L446
 ; pars_var_decl(src, tok, ob, 1);
   load src
   load tok
@@ -7085,17 +7407,17 @@ __L420:
   push_int 1
   call pars_var_decl 4
   pop
-  jump __L423
-__L422:
+  jump __L447
+__L446:
 ; sys_exit(1);
   push_int 1
   call sys_exit 1
   pop
-__L423:
-__L421:
-__L419:
-  jump __L416
-__L417:
+__L447:
+__L445:
+__L443:
+  jump __L440
+__L441:
 ; ob_char(10u8, ob);
   push_int 10
   load ob
@@ -7128,8 +7450,8 @@ __L417:
   push_int 4096
   call U8Array 1
   store tok_buf
-; var out_buf: U8Array = U8Array(16384);   // 16KB output buffer
-  push_int 16384
+; var out_buf: U8Array = U8Array(1048576); // 1MB output buffer (avoids mid-expression flush)
+  push_int 1048576
   call U8Array 1
   store out_buf
 ; g_len = sys_read(0, src_buf, 131072u32);

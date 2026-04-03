@@ -9,25 +9,30 @@
       (type void)
     )
     (block
+      (comment "var len :u32 = len(str);")
       (var_decl len
         (type u32)
         (call len
 (var str))
       )
+      (comment "var buf : U8Array = U8Array(13);")
       (var_decl buf
         (type U8Array)
         (call U8Array
 (int 13))
       )
+      (comment "var i:i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < len {")
       (while
         (binop <
 (var i)
 (var len))
         (block
+          (comment "set(buf, i, get(str, i));")
           (call_stmt set
             (var buf)
             (var i)
@@ -35,6 +40,7 @@
 (var str)
 (var i))
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -42,6 +48,7 @@
           )
         )
       )
+      (comment "return buf;")
       (return
         (var buf)
       )
@@ -54,19 +61,23 @@
       (type i32)
     )
     (block
+      (comment "var buf: U8Array = to_buf(\"Hello, World\\n\");")
       (var_decl buf
         (type U8Array)
         (call to_buf
 (str "Hello, World\n"))
       )
+      (comment "sys_write(1, buf, 13);")
       (call_stmt sys_write
         (int 1)
         (var buf)
         (int 13)
       )
+      (comment "delete(buf);")
       (call_stmt delete
         (var buf)
       )
+      (comment "return 0;")
       (return
         (int 0)
       )

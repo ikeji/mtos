@@ -70,6 +70,7 @@ var g_tok: i32 = 55;      // TK_EOF
 var g_tok_ival: i32 = 0;
 var g_tok_slen: i32 = 0;  // length of current token string in tok buf
 var g_tok_neg: i32 = 0;   // 1 if int literal is negative
+var g_tok_line: i32 = 1;  // line number of current token
 
 // ===== Output buffer state =====
 var g_ob_pos: i32 = 0;
@@ -100,7 +101,7 @@ fn ob_flush(ob: U8Array) -> void {
 fn ob_char(c: u8, ob: U8Array) -> void {
     set(ob, g_ob_pos as u32, c);
     g_ob_pos = g_ob_pos + 1;
-    if g_ob_pos >= 8192 {
+    if g_ob_pos >= 1048576 {
         ob_flush(ob);
     }
     return;
@@ -319,6 +320,7 @@ fn skip_ws_and_comments(src: U8Array) -> void {
 
 fn lex_tok(src: U8Array, tok: U8Array) -> void {
     skip_ws_and_comments(src);
+    g_tok_line = g_line;
 
     if g_pos >= g_len {
         g_tok = TK_EOF;
@@ -656,24 +658,26 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
 }
 
 fn pars_postfix(src: U8Array, tok: U8Array, ob: U8Array) -> void {
+    var start: i32 = g_ob_pos;
     pars_primary(src, tok, ob);
-    // Handle 'as' casts
+    // Handle 'as' casts: wrap already-written expr as (cast EXPR (type T))
     while g_tok == TK_AS {
         lex_tok(src, tok);  // consume 'as'
-        // Save the current expression output
-        // Actually we need to wrap: (cast EXPR (type T))
-        // But we already wrote EXPR... need to restructure
-        // For now: we've already output the inner expression before seeing 'as'
-        // We need to wrap it. Let's do it properly:
-        // This is a known limitation - we'd need the save/wrap technique here too.
-        // For now, let's use a simple approach with a saved sub-buffer.
-        // Actually, pars_postfix doesn't save... let me handle 'as' differently.
-        // We'll use the fact that the caller pars_unary calls pars_postfix.
-        // For the 'as' cast wrapping, I'll handle it by modifying the approach:
-        // pars_postfix must save and wrap.
-        ob_char(0u8, ob);  // placeholder - this won't work right
-        // Skip the type for now
-        lex_tok(src, tok);  // consume type token
+        var expr_len: i32 = g_ob_pos - start;
+        var saved: U8Array = U8Array(expr_len);
+        var i: i32 = 0;
+        while i < expr_len {
+            set(saved, i as u32, get(ob, (start + i) as u32));
+            i = i + 1;
+        }
+        g_ob_pos = start;
+        ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+        ob_n(saved, 0, expr_len, ob);
+        ob_char(10u8, ob);
+        pars_type(src, tok, ob, 0);
+        ob_char(')', ob);
+        delete(saved);
+        // start stays the same for chained casts
     }
     return;
 }
@@ -695,18 +699,7 @@ fn pars_unary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         ob_char(')', ob);
         return;
     }
-    pars_primary(src, tok, ob);
-    // Handle 'as' casts here (postfix)
-    while g_tok == TK_AS {
-        var left_start: i32 = g_ob_pos - 1;  // can't easily save here
-        // For simplicity, skip 'as' casts for now and just output the type
-        lex_tok(src, tok);  // consume 'as'
-        // Wrap current output in (cast ... (type T))
-        // This requires knowing where current expression started.
-        // For now: just parse and ignore the type (broken but won't crash)
-        if is_type_tok(g_tok) { lex_tok(src, tok); }
-        // TODO: proper cast support
-    }
+    pars_postfix(src, tok, ob);
     return;
 }
 
@@ -1119,6 +1112,37 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void
     return;
 }
 
+fn emit_stmt_comment(src: U8Array, line: i32, ob: U8Array) -> void {
+    // Find start of line `line` in src
+    var pos: i32 = 0;
+    var cur_line: i32 = 1;
+    while cur_line < line && pos < g_len {
+        if get(src, pos as u32) == 10u8 { cur_line = cur_line + 1; }
+        pos = pos + 1;
+    }
+    // Skip leading whitespace
+    while pos < g_len && (get(src, pos as u32) == ' ' || get(src, pos as u32) == 9u8) {
+        pos = pos + 1;
+    }
+    // Skip empty lines
+    if pos >= g_len { return; }
+    var first: u8 = get(src, pos as u32);
+    if first == 10u8 || first == 13u8 { return; }
+    // Emit (comment "...")
+    ob_char('(', ob); ob_string("comment", ob); ob_char(' ', ob); ob_char('"', ob);
+    while pos < g_len && get(src, pos as u32) != 10u8 && get(src, pos as u32) != 13u8 {
+        var ch: u8 = get(src, pos as u32);
+        if ch == '"' { ob_char('\\', ob); ob_char('"', ob); }
+        else {
+            if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+            else { ob_char(ch, ob); }
+        }
+        pos = pos + 1;
+    }
+    ob_char('"', ob); ob_char(')', ob);
+    return;
+}
+
 fn pars_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     if g_tok == TK_VAR    { pars_var_decl(src, tok, ob, indent); return; }
     if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }
@@ -1135,6 +1159,10 @@ fn pars_block(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_LBRACE, src, tok);
     ob_char('(', ob); ob_string("block", ob);
     while g_tok != TK_RBRACE && g_tok != TK_EOF {
+        var stmt_line: i32 = g_tok_line;
+        ob_char(10u8, ob);
+        ob_indent(indent + 1, ob);
+        emit_stmt_comment(src, stmt_line, ob);
         ob_char(10u8, ob);
         ob_indent(indent + 1, ob);
         pars_stmt(src, tok, ob, indent + 1);
@@ -1331,7 +1359,7 @@ fn pars_program(src: U8Array, tok: U8Array, ob: U8Array) -> void {
 fn main() -> i32 {
     var src_buf: U8Array = U8Array(131072);  // 128KB for source
     var tok_buf: U8Array = U8Array(4096);    // token string buffer
-    var out_buf: U8Array = U8Array(16384);   // 16KB output buffer
+    var out_buf: U8Array = U8Array(1048576); // 1MB output buffer (avoids mid-expression flush)
 
     g_len = sys_read(0, src_buf, 131072u32);
     g_pos = 0;

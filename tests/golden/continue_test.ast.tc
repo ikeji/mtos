@@ -6,24 +6,29 @@
       (type i32)
     )
     (block
+      (comment "var sum: i32 = 0;")
       (var_decl sum
         (type i32)
         (int 0)
       )
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
+      (comment "while i < 10 {")
       (while
         (binop <
 (var i)
 (int 10))
         (block
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
 (int 1))
           )
+          (comment "if i % 2 == 0 { continue; }")
           (if
             (binop ==
 (binop %
@@ -31,9 +36,11 @@
 (int 2))
 (int 0))
             (block
+              (comment "if i % 2 == 0 { continue; }")
               (continue)
             )
           )
+          (comment "sum = sum + i;")
           (assign sum
             (binop +
 (var sum)
@@ -41,6 +48,7 @@
           )
         )
       )
+      (comment "return sum;")
       (return
         (var sum)
       )

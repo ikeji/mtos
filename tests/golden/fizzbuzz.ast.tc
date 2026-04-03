@@ -9,15 +9,18 @@
       (type i32)
     )
     (block
+      (comment "var i: i32 = 1;")
       (var_decl i
         (type i32)
         (int 1)
       )
+      (comment "while i <= n {")
       (while
         (binop <=
 (var i)
 (var n))
         (block
+          (comment "if i % 15 == 0 {")
           (if
             (binop ==
 (binop %
@@ -25,11 +28,13 @@
 (int 15))
 (int 0))
             (block
+              (comment "print_str(\"FizzBuzz\");")
               (call_stmt print_str
                 (str "FizzBuzz")
               )
             )
             (block
+              (comment "if i % 3 == 0 {")
               (if
                 (binop ==
 (binop %
@@ -37,11 +42,13 @@
 (int 3))
 (int 0))
                 (block
+                  (comment "print_str(\"Fizz\");")
                   (call_stmt print_str
                     (str "Fizz")
                   )
                 )
                 (block
+                  (comment "if i % 5 == 0 {")
                   (if
                     (binop ==
 (binop %
@@ -49,11 +56,13 @@
 (int 5))
 (int 0))
                     (block
+                      (comment "print_str(\"Buzz\");")
                       (call_stmt print_str
                         (str "Buzz")
                       )
                     )
                     (block
+                      (comment "print_i32(i);")
                       (call_stmt print_i32
                         (var i)
                       )
@@ -63,6 +72,7 @@
               )
             )
           )
+          (comment "i = i + 1;")
           (assign i
             (binop +
 (var i)
@@ -70,6 +80,7 @@
           )
         )
       )
+      (comment "return 0;")
       (return
         (int 0)
       )
@@ -82,6 +93,7 @@
       (type i32)
     )
     (block
+      (comment "return fizzbuzz(15);")
       (return
         (call fizzbuzz
 (int 15))
