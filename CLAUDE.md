@@ -70,8 +70,10 @@ source.tc
   - `Exec - rv32 C` / `Exec - rv32 tc` — RISC-V実機（qemu）での実行確認
 - goldenファイルの更新: `make update-golden`
 
-### 未実装：Gen2 vs Gen3 の比較（真の自己ホスト確認）
-Gen2 == Gen3 を確認することで、自己ホストコンパイラが正しく自分自身をコンパイルできることを証明できる。
+### Gen2 vs Gen3 の比較（真の自己ホスト確認）
+- `tests/run_golden_tests.sh` の末尾セクション — Gen2 BC == Gen3 BC を確認
+  - `tc/parse.tc (Gen2 == Gen3)` / `tc/codegen.tc (Gen2 == Gen3)` / `tc/bc2asm.tc (Gen2 == Gen3)`
+  - 自己ホストコンパイラが正しく自分自身をコンパイルできることを証明する
 
 ## 言語仕様
 
