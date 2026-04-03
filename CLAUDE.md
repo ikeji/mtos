@@ -61,18 +61,24 @@ source.tc
 - **Gen2**: `tc/` のコンパイラを Gen1 でコンパイルしたもの
 - **Gen3**: `tc/` のコンパイラを Gen2 でコンパイルしたもの
 
-### 現在のテスト（Gen1 vs Gen2 の比較）
-- `tests/run_golden_tests.sh` — golden（Gen1出力）と自己ホスト実装（Gen2）を比較
-  - `AST - C` / `AST - parse.tc` — パーサー出力の一致確認（Gen1 vs Gen2）
-  - `BC - C` / `BC - codegen.tc` — バイトコードの一致確認（Gen1 vs Gen2）
-  - `ASM - C` / `ASM - bc2asm.tc` — アセンブリの一致確認（Gen1 vs Gen2）
-  - `Exec - bcrun C` / `Exec - bcrun tc` — 実行結果の確認
-  - `Exec - rv32 C` / `Exec - rv32 tc` — RISC-V実機（qemu）での実行確認
+### テストスクリプト構成
+- `tests/run_golden_tests.sh` — 以下3つをまとめて実行するラッパー
+- `tests/run_example_tests.sh` — サンプル .tc ファイルの golden テスト（Gen1 vs Gen2）
+- `tests/run_compiler_tests.sh` — tc/ コンパイラソース自体の golden テスト（Gen1 vs Gen2）
+- `tests/run_gen3_tests.sh` — Gen2 vs Gen3 自己ホスト確認（単体実行可能）
 - goldenファイルの更新: `make update-golden`
 
+### 現在のテスト（Gen1 vs Gen2 の比較）
+- `AST - C` / `AST - parse.tc` — パーサー出力の一致確認（Gen1 vs Gen2）
+- `BC - C` / `BC - codegen.tc` — バイトコードの一致確認（Gen1 vs Gen2）
+- `ASM - C` / `ASM - bc2asm.tc` — アセンブリの一致確認（Gen1 vs Gen2）
+- `Exec - bcrun C` / `Exec - bcrun tc` — 実行結果の確認
+- `Exec - rv32 C` / `Exec - rv32 tc` — RISC-V実機（qemu）での実行確認
+
 ### Gen2 vs Gen3 の比較（真の自己ホスト確認）
-- `tests/run_golden_tests.sh` の末尾セクション — Gen2 BC == Gen3 BC を確認
+- `tests/run_gen3_tests.sh` — Gen2 BC == Gen3 BC を確認
   - `tc/parse.tc (Gen2 == Gen3)` / `tc/codegen.tc (Gen2 == Gen3)` / `tc/bc2asm.tc (Gen2 == Gen3)`
+  - Gen2 コンパイラを RISC-V にコンパイル（riscv-gcc + qemu）して Gen3 を生成
   - 自己ホストコンパイラが正しく自分自身をコンパイルできることを証明する
 
 ## 言語仕様
