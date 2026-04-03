@@ -364,5 +364,43 @@ for f in "${TC_FILES[@]}"; do
 done
 
 echo ""
+echo "=== Gen2 vs Gen3 Verification (True Self-Hosting Check) ==="
+# Gen2: tc/ compiled by Gen1 (C compiler) — already computed above
+# Gen3: tc/ compiled by Gen2
+# If Gen2 == Gen3, the self-hosted compiler correctly compiles itself.
+
+GEN2_BCS=("$PARSE_TC_BC" "$CODEGEN_TC_BC" "$BC2ASM_TC_BC")
+GEN2_BC_NAMES=("parse.tc" "codegen.tc" "bc2asm.tc")
+
+# Pre-compute Gen3 BCs: compile tc/ files using Gen2 parse + Gen2 codegen
+# bcrun.tc is not a compiler so we only verify parse, codegen, bc2asm
+for i in "${!GEN2_BC_NAMES[@]}"; do
+    f="${GEN2_BC_NAMES[$i]}"
+    gen2_bc="${GEN2_BCS[$i]}"
+    input="$TC_DIR/$f"
+
+    # Gen3: parse with Gen2 parse, then codegen with Gen2 codegen
+    gen3_ast=$({ echo "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" 2>/dev/null)
+    gen3_bc=$({ echo "$CODEGEN_TC_BC"; echo "$gen3_ast"; } | "$BCRUN" 2>/dev/null)
+
+    gen2_file=$(mktemp)
+    gen3_file=$(mktemp)
+    echo "$gen2_bc" > "$gen2_file"
+    echo "$gen3_bc" > "$gen3_file"
+
+    if diff -u "$gen2_file" "$gen3_file" > /dev/null; then
+        echo "PASS: tc/$f (Gen2 == Gen3)"
+        PASS=$((PASS + 1))
+    else
+        echo "FAIL: tc/$f (Gen2 != Gen3)"
+        echo "  --- diff (showing first 10 lines) ---"
+        diff -u "$gen2_file" "$gen3_file" | head -n 12
+        echo "  ------------------------------------"
+        FAIL=$((FAIL + 1))
+    fi
+    rm -f "$gen2_file" "$gen3_file"
+done
+
+echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [ $FAIL -eq 0 ] && exit 0 || exit 1
