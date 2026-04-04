@@ -21,6 +21,8 @@ QEMU="qemu-riscv32"
 PASS=0
 FAIL=0
 
+time_ms() { date +%s%3N; }
+
 TC_FILES=(
     "parse.tc"
     "codegen.tc"
@@ -43,7 +45,8 @@ report_fail() {
     local expected="$2"
     local actual="$3"
     local msg="${4:-}"
-    echo "FAIL: $name"
+    local elapsed="${5:-}"
+    echo "FAIL: $name${elapsed:+ [${elapsed}ms]}"
     [ -n "$msg" ] && echo "  $msg"
     echo "  --- diff (showing first 5 lines) ---"
     diff -u "$expected" "$actual" | head -n 10
@@ -85,62 +88,74 @@ for f in "${TC_FILES[@]}"; do
 
     # --- 1. AST Checks ---
     actual_ast=$(mktemp)
+    t0=$(time_ms)
     "$PARSE" "$input" > "$actual_ast" 2>/dev/null
+    elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_ast" "$actual_ast" > /dev/null; then
-        echo "PASS: tc/$f (AST - C)"
+        echo "PASS: tc/$f (AST - C) [${elapsed}ms]"
         PASS=$((PASS + 1))
     else
-        report_fail "tc/$f (AST - C)" "$golden_ast" "$actual_ast"
+        report_fail "tc/$f (AST - C)" "$golden_ast" "$actual_ast" "" "$elapsed"
     fi
 
     golden_ast_tc="$GOLDEN_DIR/tc/$base.ast.tc"
     [ -f "$golden_ast_tc" ] || golden_ast_tc="$golden_ast"
+    t0=$(time_ms)
     { echo "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$actual_ast" 2>/dev/null
+    elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_ast_tc" "$actual_ast" > /dev/null; then
-        echo "PASS: tc/$f (AST - parse.tc)"
+        echo "PASS: tc/$f (AST - parse.tc) [${elapsed}ms]"
         PASS=$((PASS + 1))
     else
-        report_fail "tc/$f (AST - parse.tc)" "$golden_ast_tc" "$actual_ast"
+        report_fail "tc/$f (AST - parse.tc)" "$golden_ast_tc" "$actual_ast" "" "$elapsed"
     fi
     rm -f "$actual_ast"
 
     # --- 2. BC Checks ---
     actual_bc=$(mktemp)
+    t0=$(time_ms)
     "$PARSE" "$input" 2>/dev/null | "$CODEGEN" > "$actual_bc" 2>/dev/null
+    elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_bc" "$actual_bc" > /dev/null; then
-        echo "PASS: tc/$f (BC - C)"
+        echo "PASS: tc/$f (BC - C) [${elapsed}ms]"
         PASS=$((PASS + 1))
     else
-        report_fail "tc/$f (BC - C)" "$golden_bc" "$actual_bc"
+        report_fail "tc/$f (BC - C)" "$golden_bc" "$actual_bc" "" "$elapsed"
     fi
 
     AST=$("$PARSE" "$input" 2>/dev/null)
+    t0=$(time_ms)
     { echo "$CODEGEN_TC_BC"; echo "$AST"; } | "$BCRUN" > "$actual_bc" 2>/dev/null
+    elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_bc" "$actual_bc" > /dev/null; then
-        echo "PASS: tc/$f (BC - codegen.tc)"
+        echo "PASS: tc/$f (BC - codegen.tc) [${elapsed}ms]"
         PASS=$((PASS + 1))
     else
-        report_fail "tc/$f (BC - codegen.tc)" "$golden_bc" "$actual_bc"
+        report_fail "tc/$f (BC - codegen.tc)" "$golden_bc" "$actual_bc" "" "$elapsed"
     fi
     rm -f "$actual_bc"
 
     # --- 3. ASM Checks ---
     actual_s=$(mktemp)
     bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
+    t0=$(time_ms)
     echo "$bc" | "$BC2ASM" > "$actual_s" 2>/dev/null
+    elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_s" "$actual_s" > /dev/null; then
-        echo "PASS: tc/$f (ASM - C)"
+        echo "PASS: tc/$f (ASM - C) [${elapsed}ms]"
         PASS=$((PASS + 1))
     else
-        report_fail "tc/$f (ASM - C)" "$golden_s" "$actual_s"
+        report_fail "tc/$f (ASM - C)" "$golden_s" "$actual_s" "" "$elapsed"
     fi
 
+    t0=$(time_ms)
     { echo "$BC2ASM_TC_BC"; echo "$bc"; } | "$BCRUN" > "$actual_s" 2>/dev/null
+    elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_s" "$actual_s" > /dev/null; then
-        echo "PASS: tc/$f (ASM - bc2asm.tc)"
+        echo "PASS: tc/$f (ASM - bc2asm.tc) [${elapsed}ms]"
         PASS=$((PASS + 1))
     else
-        report_fail "tc/$f (ASM - bc2asm.tc)" "$golden_s" "$actual_s"
+        report_fail "tc/$f (ASM - bc2asm.tc)" "$golden_s" "$actual_s" "" "$elapsed"
     fi
     rm -f "$actual_s"
 
@@ -150,15 +165,17 @@ for f in "${TC_FILES[@]}"; do
     exec_input_file=$(get_tc_exec_input_file "$f")
 
     bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
+    t0=$(time_ms)
     { echo "$bc"; cat "$exec_input_file"; } | "$BCRUN" > "$actual_out" 2>/dev/null
     actual_exit=$?
+    elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_out" "$actual_out" > /dev/null && [ "$actual_exit" -eq "$expected_exit" ]; then
-        echo "PASS: tc/$f (Exec - bcrun C)"
+        echo "PASS: tc/$f (Exec - bcrun C) [${elapsed}ms]"
         PASS=$((PASS + 1))
     else
         msg=""
         [ "$actual_exit" -ne "$expected_exit" ] && msg="exit code mismatch: expected $expected_exit, got $actual_exit"
-        report_fail "tc/$f (Exec - bcrun C)" "$golden_out" "$actual_out" "$msg"
+        report_fail "tc/$f (Exec - bcrun C)" "$golden_out" "$actual_out" "$msg" "$elapsed"
     fi
     rm -f "$actual_out"
 done
