@@ -574,14 +574,23 @@ AstNode *parse(Token *tokens, int ntokens, const char *filename) {
     while (!check(&p, TK_EOF)) {
         Token *t = cur_tok(&p);
         AstNode *d = NULL;
-        if (t->kind == TK_FN) {
+        if (t->kind == TK_EXPORT) {
+            advance_p(&p);
+            if (!check(&p, TK_FN)) {
+                fprintf(stderr, "%s:%d: expected 'fn' after 'export'\n",
+                        p.filename, t->line);
+                exit(1);
+            }
+            d = parse_fn_decl(&p);
+            d->type_annot = strdup("export");
+        } else if (t->kind == TK_FN) {
             d = parse_fn_decl(&p);
         } else if (t->kind == TK_STRUCT) {
             d = parse_struct_decl(&p);
         } else if (t->kind == TK_VAR) {
             d = parse_var_decl(&p);
         } else {
-            fprintf(stderr, "%s:%d: expected 'fn', 'struct', or 'var' at top level, got '%s'\n",
+            fprintf(stderr, "%s:%d: expected 'fn', 'struct', 'export', or 'var' at top level, got '%s'\n",
                     p.filename, t->line, token_kind_name(t->kind));
             exit(1);
         }

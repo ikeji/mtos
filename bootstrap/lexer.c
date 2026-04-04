@@ -53,7 +53,7 @@ static struct Keyword keywords[] = {
     {"if", TK_IF}, {"else", TK_ELSE}, {"while", TK_WHILE},
     {"return", TK_RETURN}, {"import", TK_IMPORT}, {"as", TK_AS},
     {"true", TK_TRUE}, {"false", TK_FALSE},
-    {"break", TK_BREAK}, {"continue", TK_CONTINUE},
+    {"break", TK_BREAK}, {"continue", TK_CONTINUE}, {"export", TK_EXPORT},
     {"u8", TK_U8}, {"u16", TK_U16}, {"u32", TK_U32},
     {"i8", TK_I8}, {"i16", TK_I16}, {"i32", TK_I32},
     {"bool", TK_BOOL}, {"void", TK_VOID},
@@ -328,6 +328,8 @@ const char *token_kind_name(TokenKind k) {
         case TK_COMMA: return ","; case TK_SEMI: return ";"; case TK_COLON: return ":";
         case TK_INT_LIT: return "INT_LIT"; case TK_STR_LIT: return "STR_LIT";
         case TK_IDENT: return "IDENT"; case TK_EOF: return "EOF";
+        case TK_BREAK: return "break"; case TK_CONTINUE: return "continue";
+        case TK_EXPORT: return "export";
         default: return "?";
     }
 }
