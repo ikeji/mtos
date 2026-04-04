@@ -3,8 +3,8 @@
 ## ディレクトリ構成
 
 ```
-compiler/   Cで書かれたブートストラップコンパイラ
-tc/         tinyc自己ホスト実装
+bootstrap/  Cで書かれたブートストラップコンパイラ
+compiler/   tinyc自己ホスト実装
 os/         OSカーネル（将来）
 tests/      テストファイル・テストインフラ
 docs/       ドキュメント
@@ -12,53 +12,53 @@ docs/       ドキュメント
 
 ---
 
-## C実装（フェーズ1ブートストラップツール）: `compiler/`
+## C実装（フェーズ1ブートストラップツール）: `bootstrap/`
 
 ### コアライブラリ
 
 | ファイル | 説明 |
 |----------|------|
-| `compiler/lexer.c` / `compiler/lexer.h` | 字句解析器（レキサー）。tinyc ソースを TOKEN に分割する |
-| `compiler/ast.c` / `compiler/ast.h` | AST（抽象構文木）のノード生成・操作・S式出力・S式読み込み |
-| `compiler/parser.c` / `compiler/parser.h` | 構文解析器（パーサー）。トークン列から AST を構築する |
-| `compiler/typecheck.c` / `compiler/typecheck.h` | 型チェッカー。AST に型アノテーションを付与し、型エラーを検出する |
-| `compiler/interp.c` / `compiler/interp.h` | AST インタープリタ。型チェック済み AST を直接実行する |
-| `compiler/codegen.c` / `compiler/codegen.h` | バイトコードジェネレータ（C実装）。AST からバイトコード（`.bc`）を生成する |
+| `bootstrap/lexer.c` / `bootstrap/lexer.h` | 字句解析器（レキサー）。tinyc ソースを TOKEN に分割する |
+| `bootstrap/ast.c` / `bootstrap/ast.h` | AST（抽象構文木）のノード生成・操作・S式出力・S式読み込み |
+| `bootstrap/parser.c` / `bootstrap/parser.h` | 構文解析器（パーサー）。トークン列から AST を構築する |
+| `bootstrap/typecheck.c` / `bootstrap/typecheck.h` | 型チェッカー。AST に型アノテーションを付与し、型エラーを検出する |
+| `bootstrap/interp.c` / `bootstrap/interp.h` | AST インタープリタ。型チェック済み AST を直接実行する |
+| `bootstrap/codegen.c` / `bootstrap/codegen.h` | バイトコードジェネレータ（C実装）。AST からバイトコード（`.bc`）を生成する |
 
 ### エントリーポイント（各バイナリの `main`）
 
 | ファイル | 生成バイナリ | 説明 |
 |----------|-------------|------|
-| `compiler/parse_main.c` | `./parse` | ソース → AST（S式）を出力する |
-| `compiler/typecheck_main.c` | `./typecheck` | ソース → 型チェック済み AST を出力する |
-| `compiler/interp_main.c` | `./interp` | ソース → AST インタープリタで実行する |
-| `compiler/codegen_main.c` | `./codegen` | ソース → バイトコード（`.bc`）を出力する |
+| `bootstrap/parse_main.c` | `./parse` | ソース → AST（S式）を出力する |
+| `bootstrap/typecheck_main.c` | `./typecheck` | ソース → 型チェック済み AST を出力する |
+| `bootstrap/interp_main.c` | `./interp` | ソース → AST インタープリタで実行する |
+| `bootstrap/codegen_main.c` | `./codegen` | ソース → バイトコード（`.bc`）を出力する |
 
 ### バイトコード実行・変換
 
 | ファイル | 生成バイナリ | 説明 |
 |----------|-------------|------|
-| `compiler/bcrun.c` | `./bcrun` | バイトコードインタープリタ。stdin からバイトコードを読んで実行する |
-| `compiler/bc2asm.c` | `./bc2asm` | バイトコード → RISC-V アセンブリ（C実装）。`riscv64-unknown-elf-gcc` でリンク可能 |
+| `bootstrap/bcrun.c` | `./bcrun` | バイトコードインタープリタ。stdin からバイトコードを読んで実行する |
+| `bootstrap/bc2asm.c` | `./bc2asm` | バイトコード → RISC-V アセンブリ（C実装）。`riscv64-unknown-elf-gcc` でリンク可能 |
 
 ### ランタイムライブラリ
 
 | ファイル | 説明 |
 |----------|------|
-| `compiler/runtime.c` | `bcrun` 用ランタイム。`malloc` ベースのヒープ管理・組み込み関数の C 実装 |
-| `compiler/runtime_syscall.c` | RISC-V ベアメタル用ランタイム。`ecall` 直接呼び出し、バンプアロケータ |
-| `compiler/crt0.s` | RISC-V 用スタートアップルーチン。`main` を呼び出す前に SP を設定する |
+| `bootstrap/runtime.c` | `bcrun` 用ランタイム。`malloc` ベースのヒープ管理・組み込み関数の C 実装 |
+| `bootstrap/runtime_syscall.c` | RISC-V ベアメタル用ランタイム。`ecall` 直接呼び出し、バンプアロケータ |
+| `bootstrap/crt0.s` | RISC-V 用スタートアップルーチン。`main` を呼び出す前に SP を設定する |
 
 ---
 
-## tinyc 自己ホスト実装（フェーズ2）: `tc/`
+## tinyc 自己ホスト実装（フェーズ2）: `compiler/`
 
 | ファイル | 説明 |
 |----------|------|
-| `tc/parse.tc` | tinyc で書かれたパーサー。ソース → AST（S式）を出力する |
-| `tc/codegen.tc` | tinyc で書かれたコードジェネレータ。AST → バイトコードを出力する |
-| `tc/bc2asm.tc` | tinyc で書かれた bc2asm。バイトコード → RISC-V アセンブリを出力する |
-| `tc/bcrun.tc` | tinyc で書かれたバイトコードインタープリタ（`bcrun` の自己ホスト版） |
+| `compiler/parse.tc` | tinyc で書かれたパーサー。ソース → AST（S式）を出力する |
+| `compiler/codegen.tc` | tinyc で書かれたコードジェネレータ。AST → バイトコードを出力する |
+| `compiler/bc2asm.tc` | tinyc で書かれた bc2asm。バイトコード → RISC-V アセンブリを出力する |
+| `compiler/bcrun.tc` | tinyc で書かれたバイトコードインタープリタ（`bcrun` の自己ホスト版） |
 
 ---
 

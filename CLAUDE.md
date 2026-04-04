@@ -10,15 +10,15 @@
 ## ディレクトリ構成
 
 ```
-compiler/   C実装のコンパイラ（ブートストラップ用）
-tc/         自作TinyC製の自己ホスト型コンパイラ
+bootstrap/  C実装のコンパイラ（ブートストラップ用）
+compiler/   自作TinyC製の自己ホスト型コンパイラ
   parse.tc      レキサー＋パーサー（ソース→AST）
   codegen.tc    コード生成（AST→バイトコード）
   bc2asm.tc     アセンブラ（バイトコード→RISC-V asm）
   bcrun.tc      バイトコードインタープリタ
 tests/      テストスイート
   golden/         C実装の基準出力（.ast .bc .s .out .exit）
-  golden/tc/      tc/コンパイラソース自体の基準出力
+  golden/tc/      compiler/コンパイラソース自体の基準出力
 docs/       仕様・設計ドキュメント
 os/         OSカーネル（作成中）
 ```
@@ -57,14 +57,14 @@ source.tc
 ## テスト構造
 
 ### 世代の定義
-- **Gen1 (C実装)**: `compiler/` の C コンパイラ（ブートストラップ用）
-- **Gen2**: `tc/` のコンパイラを Gen1 でコンパイルしたもの
-- **Gen3**: `tc/` のコンパイラを Gen2 でコンパイルしたもの
+- **Gen1 (C実装)**: `bootstrap/` の C コンパイラ（ブートストラップ用）
+- **Gen2**: `compiler/` のコンパイラを Gen1 でコンパイルしたもの
+- **Gen3**: `compiler/` のコンパイラを Gen2 でコンパイルしたもの
 
 ### テストスクリプト構成
 - `tests/run_golden_tests.sh` — 以下3つをまとめて実行するラッパー
 - `tests/run_example_tests.sh` — サンプル .tc ファイルの golden テスト（Gen1 vs Gen2）
-- `tests/run_compiler_tests.sh` — tc/ コンパイラソース自体の golden テスト（Gen1 vs Gen2）
+- `tests/run_compiler_tests.sh` — compiler/ コンパイラソース自体の golden テスト（Gen1 vs Gen2）
 - `tests/run_gen3_tests.sh` — Gen2 vs Gen3 自己ホスト確認（単体実行可能）
 - goldenファイルの更新: `make update-golden`
 
@@ -77,7 +77,7 @@ source.tc
 
 ### Gen2 vs Gen3 の比較（真の自己ホスト確認）
 - `tests/run_gen3_tests.sh` — Gen2 BC == Gen3 BC を確認
-  - `tc/parse.tc (Gen2 == Gen3)` / `tc/codegen.tc (Gen2 == Gen3)` / `tc/bc2asm.tc (Gen2 == Gen3)`
+  - `compiler/parse.tc (Gen2 == Gen3)` / `compiler/codegen.tc (Gen2 == Gen3)` / `compiler/bc2asm.tc (Gen2 == Gen3)`
   - Gen2 コンパイラを RISC-V にコンパイル（riscv-gcc + qemu）して Gen3 を生成
   - 自己ホストコンパイラが正しく自分自身をコンパイルできることを証明する
 

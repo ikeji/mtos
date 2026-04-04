@@ -24,7 +24,7 @@
       - Gen2でtc/を → Gen3 BC
       - Gen2 BC == Gen3 BC を確認
 - [x] 各テストや、テストグループごとの実行時間を結果に表示する。
-- [ ] 今の compiler ディレクトリを、bootstrapとかの名前にし、tcディレクトリのコンパイラ関連コードをcompilerディレクトリにする。
+- [x] 今の compiler ディレクトリを、bootstrapとかの名前にし、tcディレクトリのコンパイラ関連コードをcompilerディレクトリにする。
 - [ ] 引数の型や数が違う同名の関数(オーバーロード)をサポートしないといけない。
       - [ ] .bcのcallは今は`call to_buf 1`という形式だが、`call to_buf String`という形式にする必要がある。
       - [ ] 関数は引数の型をつけた名前にマングルする必要がある。`to_buf`->`to_buf__String`

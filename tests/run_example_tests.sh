@@ -4,8 +4,8 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 GOLDEN_DIR="$SCRIPT_DIR/golden"
-TC_DIR="$ROOT_DIR/tc"
-COMPILER_DIR="$ROOT_DIR/compiler"
+TC_DIR="$ROOT_DIR/compiler"
+COMPILER_DIR="$ROOT_DIR/bootstrap"
 
 PARSE="$ROOT_DIR/parse"
 CODEGEN="$ROOT_DIR/codegen"
