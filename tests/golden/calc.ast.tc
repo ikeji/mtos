@@ -22,10 +22,10 @@
         (binop &&
 (binop >=
 (var c)
-(int 48))
+(int:u8 48))
 (binop <=
 (var c)
-(int 57)))
+(int:u8 57)))
       )
     )
   )
@@ -44,10 +44,10 @@
         (binop ||
 (binop ==
 (var c)
-(int 32))
+(int:u8 32))
 (binop ==
 (var c)
-(int 9)))
+(int:u8 9)))
       )
     )
   )
@@ -69,7 +69,7 @@
         (block
           (comment "return 0u8;")
           (return
-            (int 0)
+            (int:u8 0)
           )
         )
       )
@@ -200,11 +200,11 @@
 (binop ==
 (call cur_char
 (var buf))
-(int 42))
+(int:u8 42))
 (binop ==
 (call cur_char
 (var buf))
-(int 47))))
+(int:u8 47))))
         (block
           (comment "var op: u8 = cur_char(buf);")
           (var_decl op
@@ -228,7 +228,7 @@
           (if
             (binop ==
 (var op)
-(int 42))
+(int:u8 42))
             (block
               (comment "left = left * right;")
               (assign left
@@ -288,11 +288,11 @@
 (binop ==
 (call cur_char
 (var buf))
-(int 43))
+(int:u8 43))
 (binop ==
 (call cur_char
 (var buf))
-(int 45))))
+(int:u8 45))))
         (block
           (comment "var op: u8 = cur_char(buf);")
           (var_decl op
@@ -316,7 +316,7 @@
           (if
             (binop ==
 (var op)
-(int 43))
+(int:u8 43))
             (block
               (comment "left = left + right;")
               (assign left

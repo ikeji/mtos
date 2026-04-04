@@ -63,6 +63,7 @@ if [ ! -x "$PARSE" ] || [ ! -x "$CODEGEN" ] || [ ! -x "$BCRUN" ] || [ ! -x "$BC2
 fi
 
 PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
+TYPECHECK_TC_BC=$("$PARSE" "$TC_DIR/typecheck.tc" | "$CODEGEN" 2>/dev/null)
 CODEGEN_TC_BC=$("$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
 BC2ASM_TC_BC=$("$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
 
@@ -104,7 +105,7 @@ for f in "${FILES[@]}"; do
     golden_ast_tc="$GOLDEN_DIR/$base.ast.tc"
     [ -f "$golden_ast_tc" ] || golden_ast_tc="$golden_ast"
     t0=$(time_ms)
-    { echo "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$actual_ast" 2>/dev/null
+    { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$actual_ast" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_ast_tc" "$actual_ast" > /dev/null; then
         echo "PASS: $f (AST - parse.tc) [${elapsed}ms]"
@@ -127,8 +128,9 @@ for f in "${FILES[@]}"; do
     fi
 
     AST=$("$PARSE" "$input" 2>/dev/null)
+    TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
     t0=$(time_ms)
-    { echo "$CODEGEN_TC_BC"; echo "$AST"; } | "$BCRUN" > "$actual_bc" 2>/dev/null
+    { printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$TAST"; } | "$BCRUN" > "$actual_bc" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_bc" "$actual_bc" > /dev/null; then
         echo "PASS: $f (BC - codegen.tc) [${elapsed}ms]"
@@ -142,7 +144,7 @@ for f in "${FILES[@]}"; do
     actual_s=$(mktemp)
     bc=$("$CODEGEN" "$input" 2>/dev/null)
     t0=$(time_ms)
-    echo "$bc" | "$BC2ASM" > "$actual_s" 2>/dev/null
+    printf '%s\n' "$bc" | "$BC2ASM" > "$actual_s" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_s" "$actual_s" > /dev/null; then
         echo "PASS: $f (ASM - C) [${elapsed}ms]"
@@ -152,7 +154,7 @@ for f in "${FILES[@]}"; do
     fi
 
     t0=$(time_ms)
-    { echo "$BC2ASM_TC_BC"; echo "$bc"; } | "$BCRUN" > "$actual_s" 2>/dev/null
+    { printf '%s\n' "$BC2ASM_TC_BC"; printf '%s\n' "$bc"; } | "$BCRUN" > "$actual_s" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_s" "$actual_s" > /dev/null; then
         echo "PASS: $f (ASM - bc2asm.tc) [${elapsed}ms]"
@@ -169,7 +171,7 @@ for f in "${FILES[@]}"; do
 
     bc=$("$CODEGEN" "$input" 2>/dev/null)
     t0=$(time_ms)
-    { echo "$bc"; echo -n "$stdin"; } | "$BCRUN" > "$actual_out" 2>/dev/null
+    { printf '%s\n' "$bc"; echo -n "$stdin"; } | "$BCRUN" > "$actual_out" 2>/dev/null
     actual_exit=$?
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_out" "$actual_out" > /dev/null && [ "$actual_exit" -eq "$expected_exit" ]; then
@@ -182,9 +184,10 @@ for f in "${FILES[@]}"; do
     fi
 
     AST=$("$PARSE" "$input" 2>/dev/null)
-    bc_tc=$({ echo "$CODEGEN_TC_BC"; echo "$AST"; } | "$BCRUN" 2>/dev/null)
+    TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
+    bc_tc=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$TAST"; } | "$BCRUN" 2>/dev/null)
     t0=$(time_ms)
-    { echo "$bc_tc"; echo -n "$stdin"; } | "$BCRUN" > "$actual_out" 2>/dev/null
+    { printf '%s\n' "$bc_tc"; echo -n "$stdin"; } | "$BCRUN" > "$actual_out" 2>/dev/null
     actual_exit_tc=$?
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_out" "$actual_out" > /dev/null && [ "$actual_exit_tc" -eq "$expected_exit" ]; then
@@ -203,7 +206,7 @@ for f in "${FILES[@]}"; do
         elf_file=$(mktemp)
 
         bc=$("$CODEGEN" "$input" 2>/dev/null)
-        echo "$bc" | "$BC2ASM" > "$asm_file" 2>/dev/null
+        printf '%s\n' "$bc" | "$BC2ASM" > "$asm_file" 2>/dev/null
         if "$RISCV_CC" $RISCV_FLAGS "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
             actual_out=$(mktemp)
             t0=$(time_ms)
@@ -225,7 +228,7 @@ for f in "${FILES[@]}"; do
         fi
 
         bc=$("$CODEGEN" "$input" 2>/dev/null)
-        { echo "$BC2ASM_TC_BC"; echo "$bc"; } | "$BCRUN" > "$asm_file" 2>/dev/null
+        { printf '%s\n' "$BC2ASM_TC_BC"; printf '%s\n' "$bc"; } | "$BCRUN" > "$asm_file" 2>/dev/null
         if "$RISCV_CC" $RISCV_FLAGS "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
             actual_out=$(mktemp)
             t0=$(time_ms)

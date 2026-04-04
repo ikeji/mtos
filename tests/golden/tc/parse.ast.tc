@@ -282,10 +282,10 @@
         (binop &&
 (binop >=
 (var c)
-(int 48))
+(int:u8 48))
 (binop <=
 (var c)
-(int 57)))
+(int:u8 57)))
       )
     )
   )
@@ -306,20 +306,20 @@
 (binop &&
 (binop >=
 (var c)
-(int 97))
+(int:u8 97))
 (binop <=
 (var c)
-(int 122)))
+(int:u8 122)))
 (binop &&
 (binop >=
 (var c)
-(int 65))
+(int:u8 65))
 (binop <=
 (var c)
-(int 90))))
+(int:u8 90))))
 (binop ==
 (var c)
-(int 95)))
+(int:u8 95)))
       )
     )
   )
@@ -360,16 +360,16 @@
 (binop ||
 (binop ==
 (var c)
-(int 32))
+(int:u8 32))
 (binop ==
 (var c)
-(int 9)))
+(int:u8 9)))
 (binop ==
 (var c)
-(int 10)))
+(int:u8 10)))
 (binop ==
 (var c)
-(int 13)))
+(int:u8 13)))
       )
     )
   )
@@ -533,7 +533,7 @@
         (block
           (comment "ob_char(' ', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "i = i + 1;")
@@ -690,7 +690,7 @@
         (block
           (comment "ob_char('-', ob);  // '-'")
           (call_stmt ob_char
-            (int 45)
+            (int:u8 45)
             (var ob)
           )
           (comment "n = 0 - n;")
@@ -709,7 +709,7 @@
         (block
           (comment "ob_char('0', ob);")
           (call_stmt ob_char
-            (int 48)
+            (int:u8 48)
             (var ob)
           )
           (comment "return;")
@@ -823,7 +823,7 @@
         (block
           (comment "if kind == TK_PLUS     { ob_char('+', ob); return; }")
           (call_stmt ob_char
-            (int 43)
+            (int:u8 43)
             (var ob)
           )
           (comment "if kind == TK_PLUS     { ob_char('+', ob); return; }")
@@ -839,7 +839,7 @@
         (block
           (comment "if kind == TK_MINUS    { ob_char('-', ob); return; }")
           (call_stmt ob_char
-            (int 45)
+            (int:u8 45)
             (var ob)
           )
           (comment "if kind == TK_MINUS    { ob_char('-', ob); return; }")
@@ -855,7 +855,7 @@
         (block
           (comment "if kind == TK_STAR     { ob_char('*', ob); return; }")
           (call_stmt ob_char
-            (int 42)
+            (int:u8 42)
             (var ob)
           )
           (comment "if kind == TK_STAR     { ob_char('*', ob); return; }")
@@ -871,7 +871,7 @@
         (block
           (comment "if kind == TK_SLASH    { ob_char('/', ob); return; }")
           (call_stmt ob_char
-            (int 47)
+            (int:u8 47)
             (var ob)
           )
           (comment "if kind == TK_SLASH    { ob_char('/', ob); return; }")
@@ -887,7 +887,7 @@
         (block
           (comment "if kind == TK_PERCENT  { ob_char('%', ob); return; }")
           (call_stmt ob_char
-            (int 37)
+            (int:u8 37)
             (var ob)
           )
           (comment "if kind == TK_PERCENT  { ob_char('%', ob); return; }")
@@ -903,7 +903,7 @@
         (block
           (comment "if kind == TK_AMP      { ob_char('&', ob); return; }")
           (call_stmt ob_char
-            (int 38)
+            (int:u8 38)
             (var ob)
           )
           (comment "if kind == TK_AMP      { ob_char('&', ob); return; }")
@@ -919,7 +919,7 @@
         (block
           (comment "if kind == TK_PIPE     { ob_char('|', ob); return; }")
           (call_stmt ob_char
-            (int 124)
+            (int:u8 124)
             (var ob)
           )
           (comment "if kind == TK_PIPE     { ob_char('|', ob); return; }")
@@ -935,7 +935,7 @@
         (block
           (comment "if kind == TK_CARET    { ob_char('^', ob); return; }")
           (call_stmt ob_char
-            (int 94)
+            (int:u8 94)
             (var ob)
           )
           (comment "if kind == TK_CARET    { ob_char('^', ob); return; }")
@@ -1015,7 +1015,7 @@
         (block
           (comment "if kind == TK_BANG     { ob_char('!', ob); return; }")
           (call_stmt ob_char
-            (int 33)
+            (int:u8 33)
             (var ob)
           )
           (comment "if kind == TK_BANG     { ob_char('!', ob); return; }")
@@ -1063,7 +1063,7 @@
         (block
           (comment "if kind == TK_LT       { ob_char('<', ob); return; }")
           (call_stmt ob_char
-            (int 60)
+            (int:u8 60)
             (var ob)
           )
           (comment "if kind == TK_LT       { ob_char('<', ob); return; }")
@@ -1095,7 +1095,7 @@
         (block
           (comment "if kind == TK_GT       { ob_char('>', ob); return; }")
           (call_stmt ob_char
-            (int 62)
+            (int:u8 62)
             (var ob)
           )
           (comment "if kind == TK_GT       { ob_char('>', ob); return; }")
@@ -1678,7 +1678,7 @@
         (block
           (comment "if g_pos >= g_len { return 0u8; }")
           (return
-            (int 0)
+            (int:u8 0)
           )
         )
       )
@@ -1724,7 +1724,7 @@
               (if
                 (binop ==
 (var c)
-(int 10))
+(int:u8 10))
                 (block
                   (comment "if c == 10u8 { g_line = g_line + 1; }")
                   (assign g_line
@@ -1748,7 +1748,7 @@
 (binop &&
 (binop ==
 (var c)
-(int 47))
+(int:u8 47))
 (binop <
 (binop +
 (var g_pos)
@@ -1760,7 +1760,7 @@
 (binop +
 (var g_pos)
 (int 1)))
-(int 47)))
+(int:u8 47)))
                 (block
                   (comment "while g_pos < g_len && src_char(src) != 10u8 {")
                   (while
@@ -1771,7 +1771,7 @@
 (binop !=
 (call src_char
 (var src))
-(int 10)))
+(int:u8 10)))
                     (block
                       (comment "g_pos = g_pos + 1;")
                       (assign g_pos
@@ -1875,7 +1875,7 @@
               (if
                 (binop ==
 (var c)
-(int 10))
+(int:u8 10))
                 (block
                   (comment "if c == 10u8 { g_line = g_line + 1; }")
                   (assign g_line
@@ -1899,7 +1899,7 @@
 (binop &&
 (binop ==
 (var c)
-(int 47))
+(int:u8 47))
 (binop <
 (binop +
 (var g_pos)
@@ -1911,7 +1911,7 @@
 (binop +
 (var g_pos)
 (int 1)))
-(int 47)))
+(int:u8 47)))
                 (block
                   (comment "while g_pos < g_len && get(src, g_pos) != 10u8 {")
                   (while
@@ -1923,7 +1923,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 10)))
+(int:u8 10)))
                     (block
                       (comment "g_pos = g_pos + 1;")
                       (assign g_pos
@@ -2220,7 +2220,7 @@
       (if
         (binop ==
 (var c)
-(int 34))
+(int:u8 34))
         (block
           (comment "g_pos = g_pos + 1;  // skip opening \"")
           (assign g_pos
@@ -2243,7 +2243,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 34)))
+(int:u8 34)))
             (block
               (comment "var ch: u8 = get(src, g_pos);")
               (var_decl ch
@@ -2257,7 +2257,7 @@
                 (binop &&
 (binop ==
 (var ch)
-(int 92))
+(int:u8 92))
 (binop <
 (binop +
 (var g_pos)
@@ -2286,11 +2286,11 @@
                   (if
                     (binop ==
 (var esc)
-(int 110))
+(int:u8 110))
                     (block
                       (comment "if esc == 'n' { out = 10u8; }   // \\n")
                       (assign out
-                        (int 10)
+                        (int:u8 10)
                       )
                     )
                   )
@@ -2298,11 +2298,11 @@
                   (if
                     (binop ==
 (var esc)
-(int 116))
+(int:u8 116))
                     (block
                       (comment "if esc == 't' { out = 9u8; }    // \\t")
                       (assign out
-                        (int 9)
+                        (int:u8 9)
                       )
                     )
                   )
@@ -2310,11 +2310,11 @@
                   (if
                     (binop ==
 (var esc)
-(int 114))
+(int:u8 114))
                     (block
                       (comment "if esc == 'r' { out = 13u8; }   // \\r")
                       (assign out
-                        (int 13)
+                        (int:u8 13)
                       )
                     )
                   )
@@ -2322,11 +2322,11 @@
                   (if
                     (binop ==
 (var esc)
-(int 34))
+(int:u8 34))
                     (block
                       (comment "if esc == '\"'  { out = '\"'; }   // \\\"")
                       (assign out
-                        (int 34)
+                        (int:u8 34)
                       )
                     )
                   )
@@ -2334,11 +2334,11 @@
                   (if
                     (binop ==
 (var esc)
-(int 92))
+(int:u8 92))
                     (block
                       (comment "if esc == '\\\\'  { out = '\\\\'; }   // \\\\")
                       (assign out
-                        (int 92)
+                        (int:u8 92)
                       )
                     )
                   )
@@ -2346,11 +2346,11 @@
                   (if
                     (binop ==
 (var esc)
-(int 48))
+(int:u8 48))
                     (block
                       (comment "if esc == '0'  { out = 0u8; }    // \\0")
                       (assign out
-                        (int 0)
+                        (int:u8 0)
                       )
                     )
                   )
@@ -2427,7 +2427,7 @@
       (if
         (binop ==
 (var c)
-(int 39))
+(int:u8 39))
         (block
           (comment "g_pos = g_pos + 1;  // skip opening '")
           (assign g_pos
@@ -2452,7 +2452,7 @@
             (binop &&
 (binop ==
 (var ch2)
-(int 92))
+(int:u8 92))
 (binop <
 (binop +
 (var g_pos)
@@ -2481,7 +2481,7 @@
               (if
                 (binop ==
 (var esc)
-(int 110))
+(int:u8 110))
                 (block
                   (comment "if esc == 'n' { cval = 10; handled = 1; }    // \\n")
                   (assign cval
@@ -2497,7 +2497,7 @@
               (if
                 (binop ==
 (var esc)
-(int 116))
+(int:u8 116))
                 (block
                   (comment "if esc == 't' { cval = 9; handled = 1; }     // \\t")
                   (assign cval
@@ -2513,7 +2513,7 @@
               (if
                 (binop ==
 (var esc)
-(int 114))
+(int:u8 114))
                 (block
                   (comment "if esc == 'r' { cval = 13; handled = 1; }    // \\r")
                   (assign cval
@@ -2529,7 +2529,7 @@
               (if
                 (binop ==
 (var esc)
-(int 92))
+(int:u8 92))
                 (block
                   (comment "if esc == '\\\\'  { cval = 92; handled = 1; }    // \\\\")
                   (assign cval
@@ -2545,7 +2545,7 @@
               (if
                 (binop ==
 (var esc)
-(int 39))
+(int:u8 39))
                 (block
                   (comment "if esc == '\\''  { cval = 39; handled = 1; }    // \\'")
                   (assign cval
@@ -2561,7 +2561,7 @@
               (if
                 (binop ==
 (var esc)
-(int 48))
+(int:u8 48))
                 (block
                   (comment "if esc == '0'  { cval = 0; handled = 1; }     // \\0")
                   (assign cval
@@ -2619,7 +2619,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 39)))
+(int:u8 39)))
             (block
               (comment "if g_pos < g_len && get(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
               (assign g_pos
@@ -2633,13 +2633,13 @@
           (call_stmt set
             (var tok)
             (int 0)
-            (int 117)
+            (int:u8 117)
           )
           (comment "set(tok, 0, 'u'); set(tok, 1, '8');")
           (call_stmt set
             (var tok)
             (int 1)
-            (int 56)
+            (int:u8 56)
           )
           (comment "g_tok_slen = 2;")
           (assign g_tok_slen
@@ -2668,7 +2668,7 @@
       (if
         (binop ==
 (var c)
-(int 43))
+(int:u8 43))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
           (if
@@ -2680,7 +2680,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_PLUS_EQ; return;")
               (assign g_pos
@@ -2710,7 +2710,7 @@
       (if
         (binop ==
 (var c)
-(int 37))
+(int:u8 37))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
           (if
@@ -2722,7 +2722,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_PERCENT_EQ; return;")
               (assign g_pos
@@ -2752,7 +2752,7 @@
       (if
         (binop ==
 (var c)
-(int 94))
+(int:u8 94))
         (block
           (comment "if c == '^' { g_tok = TK_CARET; return; }   // ^")
           (assign g_tok
@@ -2767,7 +2767,7 @@
       (if
         (binop ==
 (var c)
-(int 40))
+(int:u8 40))
         (block
           (comment "if c == '(' { g_tok = TK_LPAREN; return; }  // (")
           (assign g_tok
@@ -2782,7 +2782,7 @@
       (if
         (binop ==
 (var c)
-(int 41))
+(int:u8 41))
         (block
           (comment "if c == ')' { g_tok = TK_RPAREN; return; }  // )")
           (assign g_tok
@@ -2797,7 +2797,7 @@
       (if
         (binop ==
 (var c)
-(int 123))
+(int:u8 123))
         (block
           (comment "if c == '{' { g_tok = TK_LBRACE; return; } // {")
           (assign g_tok
@@ -2812,7 +2812,7 @@
       (if
         (binop ==
 (var c)
-(int 125))
+(int:u8 125))
         (block
           (comment "if c == '}' { g_tok = TK_RBRACE; return; } // }")
           (assign g_tok
@@ -2827,7 +2827,7 @@
       (if
         (binop ==
 (var c)
-(int 44))
+(int:u8 44))
         (block
           (comment "if c == ',' { g_tok = TK_COMMA; return; }   // ,")
           (assign g_tok
@@ -2842,7 +2842,7 @@
       (if
         (binop ==
 (var c)
-(int 59))
+(int:u8 59))
         (block
           (comment "if c == ';' { g_tok = TK_SEMI; return; }    // ;")
           (assign g_tok
@@ -2857,7 +2857,7 @@
       (if
         (binop ==
 (var c)
-(int 58))
+(int:u8 58))
         (block
           (comment "if c == ':' { g_tok = TK_COLON; return; }   // :")
           (assign g_tok
@@ -2872,7 +2872,7 @@
       (if
         (binop ==
 (var c)
-(int 42))
+(int:u8 42))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
           (if
@@ -2884,7 +2884,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_STAR_EQ; return;")
               (assign g_pos
@@ -2914,7 +2914,7 @@
       (if
         (binop ==
 (var c)
-(int 47))
+(int:u8 47))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
           (if
@@ -2926,7 +2926,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_SLASH_EQ; return;")
               (assign g_pos
@@ -2956,7 +2956,7 @@
       (if
         (binop ==
 (var c)
-(int 38))
+(int:u8 38))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '&' {")
           (if
@@ -2968,7 +2968,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 38)))
+(int:u8 38)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_AMPAMP; return;")
               (assign g_pos
@@ -2998,7 +2998,7 @@
       (if
         (binop ==
 (var c)
-(int 124))
+(int:u8 124))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '|' {")
           (if
@@ -3010,7 +3010,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 124)))
+(int:u8 124)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_PIPEPIPE; return;")
               (assign g_pos
@@ -3040,7 +3040,7 @@
       (if
         (binop ==
 (var c)
-(int 33))
+(int:u8 33))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
           (if
@@ -3052,7 +3052,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_BANGEQ; return;")
               (assign g_pos
@@ -3082,7 +3082,7 @@
       (if
         (binop ==
 (var c)
-(int 61))
+(int:u8 61))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
           (if
@@ -3094,7 +3094,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_EQEQ; return;")
               (assign g_pos
@@ -3124,7 +3124,7 @@
       (if
         (binop ==
 (var c)
-(int 60))
+(int:u8 60))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
           (if
@@ -3136,7 +3136,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_LTEQ; return;")
               (assign g_pos
@@ -3163,7 +3163,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 60)))
+(int:u8 60)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_LSHIFT; return;")
               (assign g_pos
@@ -3193,7 +3193,7 @@
       (if
         (binop ==
 (var c)
-(int 62))
+(int:u8 62))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
           (if
@@ -3205,7 +3205,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_GTEQ; return;")
               (assign g_pos
@@ -3232,7 +3232,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 62)))
+(int:u8 62)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_RSHIFT; return;")
               (assign g_pos
@@ -3262,7 +3262,7 @@
       (if
         (binop ==
 (var c)
-(int 45))
+(int:u8 45))
         (block
           (comment "if g_pos < g_len && get(src, g_pos) == '>' {")
           (if
@@ -3274,7 +3274,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 62)))
+(int:u8 62)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_ARROW; return;")
               (assign g_pos
@@ -3301,7 +3301,7 @@
 (call get
 (var src)
 (var g_pos))
-(int 61)))
+(int:u8 61)))
             (block
               (comment "g_pos = g_pos + 1; g_tok = TK_MINUS_EQ; return;")
               (assign g_pos
@@ -3368,109 +3368,109 @@
           (call_stmt set
             (var errbuf)
             (int 0)
-            (int 112)
+            (int:u8 112)
           )
           (comment "set(errbuf, 0, 'p'); set(errbuf, 1, 'a'); set(errbuf, 2, 'r');")
           (call_stmt set
             (var errbuf)
             (int 1)
-            (int 97)
+            (int:u8 97)
           )
           (comment "set(errbuf, 0, 'p'); set(errbuf, 1, 'a'); set(errbuf, 2, 'r');")
           (call_stmt set
             (var errbuf)
             (int 2)
-            (int 114)
+            (int:u8 114)
           )
           (comment "set(errbuf, 3, 's'); set(errbuf, 4, 'e'); set(errbuf, 5, ':');")
           (call_stmt set
             (var errbuf)
             (int 3)
-            (int 115)
+            (int:u8 115)
           )
           (comment "set(errbuf, 3, 's'); set(errbuf, 4, 'e'); set(errbuf, 5, ':');")
           (call_stmt set
             (var errbuf)
             (int 4)
-            (int 101)
+            (int:u8 101)
           )
           (comment "set(errbuf, 3, 's'); set(errbuf, 4, 'e'); set(errbuf, 5, ':');")
           (call_stmt set
             (var errbuf)
             (int 5)
-            (int 58)
+            (int:u8 58)
           )
           (comment "set(errbuf, 6, ' '); set(errbuf, 7, 'u'); set(errbuf, 8, 'n');")
           (call_stmt set
             (var errbuf)
             (int 6)
-            (int 32)
+            (int:u8 32)
           )
           (comment "set(errbuf, 6, ' '); set(errbuf, 7, 'u'); set(errbuf, 8, 'n');")
           (call_stmt set
             (var errbuf)
             (int 7)
-            (int 117)
+            (int:u8 117)
           )
           (comment "set(errbuf, 6, ' '); set(errbuf, 7, 'u'); set(errbuf, 8, 'n');")
           (call_stmt set
             (var errbuf)
             (int 8)
-            (int 110)
+            (int:u8 110)
           )
           (comment "set(errbuf, 9, 'e'); set(errbuf, 10, 'x'); set(errbuf, 11, 'p');")
           (call_stmt set
             (var errbuf)
             (int 9)
-            (int 101)
+            (int:u8 101)
           )
           (comment "set(errbuf, 9, 'e'); set(errbuf, 10, 'x'); set(errbuf, 11, 'p');")
           (call_stmt set
             (var errbuf)
             (int 10)
-            (int 120)
+            (int:u8 120)
           )
           (comment "set(errbuf, 9, 'e'); set(errbuf, 10, 'x'); set(errbuf, 11, 'p');")
           (call_stmt set
             (var errbuf)
             (int 11)
-            (int 112)
+            (int:u8 112)
           )
           (comment "set(errbuf, 12, 'e'); set(errbuf, 13, 'c'); set(errbuf, 14, 't');")
           (call_stmt set
             (var errbuf)
             (int 12)
-            (int 101)
+            (int:u8 101)
           )
           (comment "set(errbuf, 12, 'e'); set(errbuf, 13, 'c'); set(errbuf, 14, 't');")
           (call_stmt set
             (var errbuf)
             (int 13)
-            (int 99)
+            (int:u8 99)
           )
           (comment "set(errbuf, 12, 'e'); set(errbuf, 13, 'c'); set(errbuf, 14, 't');")
           (call_stmt set
             (var errbuf)
             (int 14)
-            (int 116)
+            (int:u8 116)
           )
           (comment "set(errbuf, 15, 'e'); set(errbuf, 16, 'd'); set(errbuf, 17, 10u8);")
           (call_stmt set
             (var errbuf)
             (int 15)
-            (int 101)
+            (int:u8 101)
           )
           (comment "set(errbuf, 15, 'e'); set(errbuf, 16, 'd'); set(errbuf, 17, 10u8);")
           (call_stmt set
             (var errbuf)
             (int 16)
-            (int 100)
+            (int:u8 100)
           )
           (comment "set(errbuf, 15, 'e'); set(errbuf, 16, 'd'); set(errbuf, 17, 10u8);")
           (call_stmt set
             (var errbuf)
             (int 17)
-            (int 10)
+            (int:u8 10)
           )
           (comment "sys_write(2, errbuf, 18);")
           (call_stmt sys_write
@@ -3525,7 +3525,7 @@
     (block
       (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
@@ -3535,7 +3535,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 32)
+        (int:u8 32)
         (var ob)
       )
       (comment "ob_op(op, ob);")
@@ -3545,7 +3545,7 @@
       )
       (comment "ob_char(10u8, ob);  // newline (for readability, downstream ignores whitespace)")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_n(left_buf, 0, left_len, ob);")
@@ -3557,7 +3557,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "return;")
@@ -3587,19 +3587,39 @@
 (var g_tok)
 (var TK_INT_LIT))
         (block
-          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
+          (comment "ob_char('(', ob); ob_string(\"int\", ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
-          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
+          (comment "ob_char('(', ob); ob_string(\"int\", ob);")
           (call_stmt ob_string
             (str "int")
             (var ob)
           )
-          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
+          (comment "if g_tok_slen > 0 {")
+          (if
+            (binop >
+(var g_tok_slen)
+(int 0))
+            (block
+              (comment "ob_char(':', ob);")
+              (call_stmt ob_char
+                (int:u8 58)
+                (var ob)
+              )
+              (comment "ob_n(tok, 0, g_tok_slen, ob);")
+              (call_stmt ob_n
+                (var tok)
+                (int 0)
+                (var g_tok_slen)
+                (var ob)
+              )
+            )
+          )
+          (comment "ob_char(' ', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_int(g_tok_ival, ob);")
@@ -3609,7 +3629,7 @@
           )
           (comment "ob_char(')', ob);  // )")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "lex_tok(src, tok);")
@@ -3630,7 +3650,7 @@
         (block
           (comment "ob_char('(', ob); ob_string(\"str\", ob); ob_char(' ', ob); ob_char('\"', ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"str\", ob); ob_char(' ', ob); ob_char('\"', ob);")
@@ -3640,12 +3660,12 @@
           )
           (comment "ob_char('(', ob); ob_string(\"str\", ob); ob_char(' ', ob); ob_char('\"', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"str\", ob); ob_char(' ', ob); ob_char('\"', ob);")
           (call_stmt ob_char
-            (int 34)
+            (int:u8 34)
             (var ob)
           )
           (comment "var i: i32 = 0;")
@@ -3670,16 +3690,16 @@
               (if
                 (binop ==
 (var ch)
-(int 34))
+(int:u8 34))
                 (block
                   (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
                   (call_stmt ob_char
-                    (int 92)
+                    (int:u8 92)
                     (var ob)
                   )
                   (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
                   (call_stmt ob_char
-                    (int 34)
+                    (int:u8 34)
                     (var ob)
                   )
                 )
@@ -3688,16 +3708,16 @@
                   (if
                     (binop ==
 (var ch)
-(int 92))
+(int:u8 92))
                     (block
                       (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
                       (call_stmt ob_char
-                        (int 92)
+                        (int:u8 92)
                         (var ob)
                       )
                       (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
                       (call_stmt ob_char
-                        (int 92)
+                        (int:u8 92)
                         (var ob)
                       )
                     )
@@ -3706,16 +3726,16 @@
                       (if
                         (binop ==
 (var ch)
-(int 10))
+(int:u8 10))
                         (block
                           (comment "if ch == 10u8 { ob_char('\\\\', ob); ob_char('n', ob); }")
                           (call_stmt ob_char
-                            (int 92)
+                            (int:u8 92)
                             (var ob)
                           )
                           (comment "if ch == 10u8 { ob_char('\\\\', ob); ob_char('n', ob); }")
                           (call_stmt ob_char
-                            (int 110)
+                            (int:u8 110)
                             (var ob)
                           )
                         )
@@ -3724,16 +3744,16 @@
                           (if
                             (binop ==
 (var ch)
-(int 9))
+(int:u8 9))
                             (block
                               (comment "else { if ch == 9u8 { ob_char('\\\\', ob); ob_char('t', ob); }")
                               (call_stmt ob_char
-                                (int 92)
+                                (int:u8 92)
                                 (var ob)
                               )
                               (comment "else { if ch == 9u8 { ob_char('\\\\', ob); ob_char('t', ob); }")
                               (call_stmt ob_char
-                                (int 116)
+                                (int:u8 116)
                                 (var ob)
                               )
                             )
@@ -3761,12 +3781,12 @@
           )
           (comment "ob_char('\"', ob); ob_char(')', ob);  // \")")
           (call_stmt ob_char
-            (int 34)
+            (int:u8 34)
             (var ob)
           )
           (comment "ob_char('\"', ob); ob_char(')', ob);  // \")")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "lex_tok(src, tok);")
@@ -3787,7 +3807,7 @@
         (block
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
@@ -3797,7 +3817,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
@@ -3807,7 +3827,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"true\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "lex_tok(src, tok);")
@@ -3828,7 +3848,7 @@
         (block
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
@@ -3838,7 +3858,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
@@ -3848,7 +3868,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"bool\", ob); ob_char(' ', ob); ob_string(\"false\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "lex_tok(src, tok);")
@@ -3953,7 +3973,7 @@
               )
               (comment "ob_char('(', ob); ob_string(\"call\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
-                (int 40)
+                (int:u8 40)
                 (var ob)
               )
               (comment "ob_char('(', ob); ob_string(\"call\", ob); ob_char(' ', ob);")
@@ -3963,7 +3983,7 @@
               )
               (comment "ob_char('(', ob); ob_string(\"call\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
-                (int 32)
+                (int:u8 32)
                 (var ob)
               )
               (comment "ob_n(name_buf, 0, name_len, ob);")
@@ -3992,7 +4012,7 @@
                     (block
                       (comment "ob_char(10u8, ob);")
                       (call_stmt ob_char
-                        (int 10)
+                        (int:u8 10)
                         (var ob)
                       )
                       (comment "pars_expr(src, tok, ob);")
@@ -4032,14 +4052,14 @@
               )
               (comment "ob_char(')', ob);  // )")
               (call_stmt ob_char
-                (int 41)
+                (int:u8 41)
                 (var ob)
               )
             )
             (block
               (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
-                (int 40)
+                (int:u8 40)
                 (var ob)
               )
               (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
@@ -4049,7 +4069,7 @@
               )
               (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
-                (int 32)
+                (int:u8 32)
                 (var ob)
               )
               (comment "ob_n(name_buf, 0, name_len, ob);")
@@ -4061,7 +4081,7 @@
               )
               (comment "ob_char(')', ob);  // )")
               (call_stmt ob_char
-                (int 41)
+                (int:u8 41)
                 (var ob)
               )
             )
@@ -4170,7 +4190,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
@@ -4180,7 +4200,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(saved, 0, expr_len, ob);")
@@ -4192,7 +4212,7 @@
           )
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_type(src, tok, ob, 0);")
@@ -4204,7 +4224,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(saved);")
@@ -4247,7 +4267,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('!', ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('!', ob);")
@@ -4257,17 +4277,17 @@
           )
           (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('!', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('!', ob);")
           (call_stmt ob_char
-            (int 33)
+            (int:u8 33)
             (var ob)
           )
           (comment "ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_unary(src, tok, ob);")
@@ -4278,7 +4298,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "return;")
@@ -4299,7 +4319,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('-', ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('-', ob);")
@@ -4309,17 +4329,17 @@
           )
           (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('-', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"unary\", ob); ob_char(' ', ob); ob_char('-', ob);")
           (call_stmt ob_char
-            (int 45)
+            (int:u8 45)
             (var ob)
           )
           (comment "ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_unary(src, tok, ob);")
@@ -4330,7 +4350,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "return;")
@@ -4450,7 +4470,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4460,7 +4480,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4470,7 +4490,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -4482,7 +4502,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_unary(src, tok, ob);")
@@ -4493,7 +4513,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -4604,7 +4624,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4614,7 +4634,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4624,7 +4644,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -4636,7 +4656,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_mul(src, tok, ob);")
@@ -4647,7 +4667,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -4758,7 +4778,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4768,7 +4788,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4778,7 +4798,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -4790,7 +4810,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_add(src, tok, ob);")
@@ -4801,7 +4821,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -4903,7 +4923,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
@@ -4913,17 +4933,17 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 38)
+            (int:u8 38)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -4935,7 +4955,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_shift(src, tok, ob);")
@@ -4946,7 +4966,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -5048,7 +5068,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
@@ -5058,17 +5078,17 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 94)
+            (int:u8 94)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -5080,7 +5100,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_bitand(src, tok, ob);")
@@ -5091,7 +5111,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -5193,7 +5213,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
@@ -5203,17 +5223,17 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 124)
+            (int:u8 124)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -5225,7 +5245,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_bitxor(src, tok, ob);")
@@ -5236,7 +5256,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -5363,7 +5383,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
@@ -5373,7 +5393,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
@@ -5383,7 +5403,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -5395,7 +5415,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_bitor(src, tok, ob);")
@@ -5406,7 +5426,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -5508,7 +5528,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
@@ -5518,7 +5538,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
@@ -5528,7 +5548,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -5540,7 +5560,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_compare(src, tok, ob);")
@@ -5551,7 +5571,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -5653,7 +5673,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
@@ -5663,7 +5683,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
@@ -5673,7 +5693,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
@@ -5685,7 +5705,7 @@
           )
           (comment "ob_n(lbuf, 0, left_len, ob); ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "pars_logic_and(src, tok, ob);")
@@ -5696,7 +5716,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
           (comment "delete(lbuf);")
@@ -5731,7 +5751,7 @@
     (block
       (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob);")
@@ -5741,7 +5761,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 32)
+        (int:u8 32)
         (var ob)
       )
       (comment "if is_type_tok(g_tok) && g_tok != TK_IDENT {")
@@ -5789,7 +5809,7 @@
       )
       (comment "ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -5876,7 +5896,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"var_decl\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"var_decl\", ob); ob_char(' ', ob);")
@@ -5886,7 +5906,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"var_decl\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 32)
+        (int:u8 32)
         (var ob)
       )
       (comment "ob_n(name_buf, 0, name_len, ob);")
@@ -5902,7 +5922,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -5934,7 +5954,7 @@
           )
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(indent + 1, ob);")
@@ -5960,7 +5980,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent, ob);")
@@ -5970,7 +5990,7 @@
       )
       (comment "ob_char(')', ob);  // )")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -6011,7 +6031,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"break\", ob); ob_char(')', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"break\", ob); ob_char(')', ob);")
@@ -6021,7 +6041,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"break\", ob); ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -6062,7 +6082,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"continue\", ob); ob_char(')', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"continue\", ob); ob_char(')', ob);")
@@ -6072,7 +6092,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"continue\", ob); ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -6107,7 +6127,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"return\", ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"return\", ob);")
@@ -6123,7 +6143,7 @@
         (block
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(indent + 1, ob);")
@@ -6149,7 +6169,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent, ob);")
@@ -6159,7 +6179,7 @@
       )
       (comment "ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -6194,7 +6214,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"if\", ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"if\", ob);")
@@ -6204,7 +6224,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -6222,7 +6242,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -6254,7 +6274,7 @@
           )
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(indent + 1, ob);")
@@ -6296,7 +6316,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent, ob);")
@@ -6306,7 +6326,7 @@
       )
       (comment "ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -6341,7 +6361,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"while\", ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"while\", ob);")
@@ -6351,7 +6371,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -6369,7 +6389,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -6390,7 +6410,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent, ob);")
@@ -6400,7 +6420,7 @@
       )
       (comment "ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -6486,7 +6506,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
@@ -6496,7 +6516,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_n(name_buf, 0, name_len, ob);")
@@ -6508,7 +6528,7 @@
           )
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(indent + 1, ob);")
@@ -6532,7 +6552,7 @@
           )
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(indent, ob);")
@@ -6542,7 +6562,7 @@
           )
           (comment "ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
         )
@@ -6579,7 +6599,7 @@
             )
             (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
-              (int 40)
+              (int:u8 40)
               (var ob)
             )
             (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
@@ -6589,7 +6609,7 @@
             )
             (comment "ob_char('(', ob); ob_string(\"assign\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
-              (int 32)
+              (int:u8 32)
               (var ob)
             )
             (comment "ob_n(name_buf, 0, name_len, ob);")
@@ -6601,7 +6621,7 @@
             )
             (comment "ob_char(10u8, ob);")
             (call_stmt ob_char
-              (int 10)
+              (int:u8 10)
               (var ob)
             )
             (comment "ob_indent(indent + 1, ob);")
@@ -6613,7 +6633,7 @@
             )
             (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
-              (int 40)
+              (int:u8 40)
               (var ob)
             )
             (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
@@ -6623,7 +6643,7 @@
             )
             (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
-              (int 32)
+              (int:u8 32)
               (var ob)
             )
             (comment "if the_op == TK_PLUS_EQ    { ob_char('+', ob); }")
@@ -6634,7 +6654,7 @@
               (block
                 (comment "if the_op == TK_PLUS_EQ    { ob_char('+', ob); }")
                 (call_stmt ob_char
-                  (int 43)
+                  (int:u8 43)
                   (var ob)
                 )
               )
@@ -6647,7 +6667,7 @@
               (block
                 (comment "if the_op == TK_MINUS_EQ   { ob_char('-', ob); }")
                 (call_stmt ob_char
-                  (int 45)
+                  (int:u8 45)
                   (var ob)
                 )
               )
@@ -6660,7 +6680,7 @@
               (block
                 (comment "if the_op == TK_STAR_EQ    { ob_char('*', ob); }")
                 (call_stmt ob_char
-                  (int 42)
+                  (int:u8 42)
                   (var ob)
                 )
               )
@@ -6673,7 +6693,7 @@
               (block
                 (comment "if the_op == TK_SLASH_EQ   { ob_char('/', ob); }")
                 (call_stmt ob_char
-                  (int 47)
+                  (int:u8 47)
                   (var ob)
                 )
               )
@@ -6686,19 +6706,19 @@
               (block
                 (comment "if the_op == TK_PERCENT_EQ { ob_char('%', ob); }")
                 (call_stmt ob_char
-                  (int 37)
+                  (int:u8 37)
                   (var ob)
                 )
               )
             )
             (comment "ob_char(10u8, ob);")
             (call_stmt ob_char
-              (int 10)
+              (int:u8 10)
               (var ob)
             )
             (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
-              (int 40)
+              (int:u8 40)
               (var ob)
             )
             (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
@@ -6708,7 +6728,7 @@
             )
             (comment "ob_char('(', ob); ob_string(\"var\", ob); ob_char(' ', ob);")
             (call_stmt ob_char
-              (int 32)
+              (int:u8 32)
               (var ob)
             )
             (comment "ob_n(name_buf, 0, name_len, ob); ob_char(')', ob); ob_char(10u8, ob);")
@@ -6720,12 +6740,12 @@
             )
             (comment "ob_n(name_buf, 0, name_len, ob); ob_char(')', ob); ob_char(10u8, ob);")
             (call_stmt ob_char
-              (int 41)
+              (int:u8 41)
               (var ob)
             )
             (comment "ob_n(name_buf, 0, name_len, ob); ob_char(')', ob); ob_char(10u8, ob);")
             (call_stmt ob_char
-              (int 10)
+              (int:u8 10)
               (var ob)
             )
             (comment "pars_expr(src, tok, ob);")
@@ -6736,7 +6756,7 @@
             )
             (comment "ob_char(')', ob);")
             (call_stmt ob_char
-              (int 41)
+              (int:u8 41)
               (var ob)
             )
             (comment "expect_tok(TK_SEMI, src, tok);")
@@ -6747,7 +6767,7 @@
             )
             (comment "ob_char(10u8, ob);")
             (call_stmt ob_char
-              (int 10)
+              (int:u8 10)
               (var ob)
             )
             (comment "ob_indent(indent, ob);")
@@ -6757,7 +6777,7 @@
             )
             (comment "ob_char(')', ob);")
             (call_stmt ob_char
-              (int 41)
+              (int:u8 41)
               (var ob)
             )
           )
@@ -6775,7 +6795,7 @@
                 )
                 (comment "ob_char('(', ob); ob_string(\"call_stmt\", ob); ob_char(' ', ob);")
                 (call_stmt ob_char
-                  (int 40)
+                  (int:u8 40)
                   (var ob)
                 )
                 (comment "ob_char('(', ob); ob_string(\"call_stmt\", ob); ob_char(' ', ob);")
@@ -6785,7 +6805,7 @@
                 )
                 (comment "ob_char('(', ob); ob_string(\"call_stmt\", ob); ob_char(' ', ob);")
                 (call_stmt ob_char
-                  (int 32)
+                  (int:u8 32)
                   (var ob)
                 )
                 (comment "ob_n(name_buf, 0, name_len, ob);")
@@ -6814,7 +6834,7 @@
                       (block
                         (comment "ob_char(10u8, ob);")
                         (call_stmt ob_char
-                          (int 10)
+                          (int:u8 10)
                           (var ob)
                         )
                         (comment "ob_indent(indent + 1, ob);")
@@ -6867,7 +6887,7 @@
                 )
                 (comment "ob_char(10u8, ob);")
                 (call_stmt ob_char
-                  (int 10)
+                  (int:u8 10)
                   (var ob)
                 )
                 (comment "ob_indent(indent, ob);")
@@ -6877,7 +6897,7 @@
                 )
                 (comment "ob_char(')', ob);")
                 (call_stmt ob_char
-                  (int 41)
+                  (int:u8 41)
                   (var ob)
                 )
               )
@@ -6942,7 +6962,7 @@
 (call get
 (var src)
 (var pos))
-(int 10))
+(int:u8 10))
             (block
               (comment "if get(src, pos) == 10u8 { cur_line = cur_line + 1; }")
               (assign cur_line
@@ -6971,12 +6991,12 @@
 (call get
 (var src)
 (var pos))
-(int 32))
+(int:u8 32))
 (binop ==
 (call get
 (var src)
 (var pos))
-(int 9))))
+(int:u8 9))))
         (block
           (comment "pos = pos + 1;")
           (assign pos
@@ -7009,10 +7029,10 @@
         (binop ||
 (binop ==
 (var first)
-(int 10))
+(int:u8 10))
 (binop ==
 (var first)
-(int 13)))
+(int:u8 13)))
         (block
           (comment "if first == 10u8 || first == 13u8 { return; }")
           (return
@@ -7021,7 +7041,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
@@ -7031,12 +7051,12 @@
       )
       (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
       (call_stmt ob_char
-        (int 32)
+        (int:u8 32)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"comment\", ob); ob_char(' ', ob); ob_char('\"', ob);")
       (call_stmt ob_char
-        (int 34)
+        (int:u8 34)
         (var ob)
       )
       (comment "while pos < g_len && get(src, pos) != 10u8 && get(src, pos) != 13u8 {")
@@ -7050,12 +7070,12 @@
 (call get
 (var src)
 (var pos))
-(int 10)))
+(int:u8 10)))
 (binop !=
 (call get
 (var src)
 (var pos))
-(int 13)))
+(int:u8 13)))
         (block
           (comment "var ch: u8 = get(src, pos);")
           (var_decl ch
@@ -7068,16 +7088,16 @@
           (if
             (binop ==
 (var ch)
-(int 34))
+(int:u8 34))
             (block
               (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
               (call_stmt ob_char
-                (int 92)
+                (int:u8 92)
                 (var ob)
               )
               (comment "if ch == '\"' { ob_char('\\\\', ob); ob_char('\"', ob); }")
               (call_stmt ob_char
-                (int 34)
+                (int:u8 34)
                 (var ob)
               )
             )
@@ -7086,16 +7106,16 @@
               (if
                 (binop ==
 (var ch)
-(int 92))
+(int:u8 92))
                 (block
                   (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
                   (call_stmt ob_char
-                    (int 92)
+                    (int:u8 92)
                     (var ob)
                   )
                   (comment "if ch == '\\\\' { ob_char('\\\\', ob); ob_char('\\\\', ob); }")
                   (call_stmt ob_char
-                    (int 92)
+                    (int:u8 92)
                     (var ob)
                   )
                 )
@@ -7119,12 +7139,12 @@
       )
       (comment "ob_char('\"', ob); ob_char(')', ob);")
       (call_stmt ob_char
-        (int 34)
+        (int:u8 34)
         (var ob)
       )
       (comment "ob_char('\"', ob); ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -7313,7 +7333,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"block\", ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"block\", ob);")
@@ -7338,7 +7358,7 @@
           )
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(indent + 1, ob);")
@@ -7356,7 +7376,7 @@
           )
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(indent + 1, ob);")
@@ -7385,7 +7405,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent, ob);")
@@ -7395,7 +7415,7 @@
       )
       (comment "ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -7482,7 +7502,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
@@ -7492,7 +7512,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 32)
+        (int:u8 32)
         (var ob)
       )
       (comment "ob_n(name_buf, 0, name_len, ob);")
@@ -7508,7 +7528,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -7520,7 +7540,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"params\", ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"params\", ob);")
@@ -7599,7 +7619,7 @@
               )
               (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
-                (int 10)
+                (int:u8 10)
                 (var ob)
               )
               (comment "ob_indent(indent + 2, ob);")
@@ -7611,7 +7631,7 @@
               )
               (comment "ob_char('(', ob); ob_string(\"param\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
-                (int 40)
+                (int:u8 40)
                 (var ob)
               )
               (comment "ob_char('(', ob); ob_string(\"param\", ob); ob_char(' ', ob);")
@@ -7621,7 +7641,7 @@
               )
               (comment "ob_char('(', ob); ob_string(\"param\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
-                (int 32)
+                (int:u8 32)
                 (var ob)
               )
               (comment "ob_n(pname_buf, 0, pname_len, ob);")
@@ -7633,7 +7653,7 @@
               )
               (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
-                (int 10)
+                (int:u8 10)
                 (var ob)
               )
               (comment "ob_indent(indent + 3, ob);")
@@ -7654,7 +7674,7 @@
               )
               (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
-                (int 10)
+                (int:u8 10)
                 (var ob)
               )
               (comment "ob_indent(indent + 2, ob);")
@@ -7666,7 +7686,7 @@
               )
               (comment "ob_char(')', ob);")
               (call_stmt ob_char
-                (int 41)
+                (int:u8 41)
                 (var ob)
               )
               (comment "delete(pname_buf);")
@@ -7704,7 +7724,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -7716,12 +7736,12 @@
       )
       (comment "ob_char(')', ob);  // close (params)")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -7733,7 +7753,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"ret\", ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"ret\", ob);")
@@ -7743,7 +7763,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 2, ob);")
@@ -7777,7 +7797,7 @@
         (block
           (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 40)
+            (int:u8 40)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
@@ -7787,7 +7807,7 @@
           )
           (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 32)
+            (int:u8 32)
             (var ob)
           )
           (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
@@ -7797,14 +7817,14 @@
           )
           (comment "ob_char('(', ob); ob_string(\"type\", ob); ob_char(' ', ob); ob_string(\"void\", ob); ob_char(')', ob);")
           (call_stmt ob_char
-            (int 41)
+            (int:u8 41)
             (var ob)
           )
         )
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -7816,12 +7836,12 @@
       )
       (comment "ob_char(')', ob);  // close (ret)")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent + 1, ob);")
@@ -7842,7 +7862,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent, ob);")
@@ -7852,7 +7872,7 @@
       )
       (comment "ob_char(')', ob);  // close (fn)")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -7939,7 +7959,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"struct\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"struct\", ob); ob_char(' ', ob);")
@@ -7949,7 +7969,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"struct\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 32)
+        (int:u8 32)
         (var ob)
       )
       (comment "ob_n(name_buf, 0, name_len, ob);")
@@ -8069,7 +8089,7 @@
               )
               (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
-                (int 10)
+                (int:u8 10)
                 (var ob)
               )
               (comment "ob_indent(indent + 1, ob);")
@@ -8081,7 +8101,7 @@
               )
               (comment "ob_char('(', ob); ob_string(\"field\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
-                (int 40)
+                (int:u8 40)
                 (var ob)
               )
               (comment "ob_char('(', ob); ob_string(\"field\", ob); ob_char(' ', ob);")
@@ -8091,7 +8111,7 @@
               )
               (comment "ob_char('(', ob); ob_string(\"field\", ob); ob_char(' ', ob);")
               (call_stmt ob_char
-                (int 32)
+                (int:u8 32)
                 (var ob)
               )
               (comment "ob_n(fname_buf, 0, fname_len, ob);")
@@ -8103,7 +8123,7 @@
               )
               (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
-                (int 10)
+                (int:u8 10)
                 (var ob)
               )
               (comment "ob_indent(indent + 2, ob);")
@@ -8124,7 +8144,7 @@
               )
               (comment "ob_char(10u8, ob);")
               (call_stmt ob_char
-                (int 10)
+                (int:u8 10)
                 (var ob)
               )
               (comment "ob_indent(indent + 1, ob);")
@@ -8136,7 +8156,7 @@
               )
               (comment "ob_char(')', ob);")
               (call_stmt ob_char
-                (int 41)
+                (int:u8 41)
                 (var ob)
               )
               (comment "delete(fname_buf);")
@@ -8155,7 +8175,7 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_indent(indent, ob);")
@@ -8165,7 +8185,7 @@
       )
       (comment "ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -8200,7 +8220,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"import\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"import\", ob); ob_char(' ', ob);")
@@ -8210,7 +8230,7 @@
       )
       (comment "ob_char('(', ob); ob_string(\"import\", ob); ob_char(' ', ob);")
       (call_stmt ob_char
-        (int 32)
+        (int:u8 32)
         (var ob)
       )
       (comment "if g_tok == TK_STR_LIT {")
@@ -8241,7 +8261,7 @@
       )
       (comment "ob_char(')', ob);")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "return;")
@@ -8267,7 +8287,7 @@
     (block
       (comment "ob_char('(', ob); ob_string(\"program\", ob);")
       (call_stmt ob_char
-        (int 40)
+        (int:u8 40)
         (var ob)
       )
       (comment "ob_char('(', ob); ob_string(\"program\", ob);")
@@ -8283,7 +8303,7 @@
         (block
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(1, ob);")
@@ -8308,7 +8328,7 @@
         (block
           (comment "ob_char(10u8, ob);")
           (call_stmt ob_char
-            (int 10)
+            (int:u8 10)
             (var ob)
           )
           (comment "ob_indent(1, ob);")
@@ -8375,17 +8395,17 @@
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "ob_char(')', ob);  // )")
       (call_stmt ob_char
-        (int 41)
+        (int:u8 41)
         (var ob)
       )
       (comment "ob_char(10u8, ob);")
       (call_stmt ob_char
-        (int 10)
+        (int:u8 10)
         (var ob)
       )
       (comment "return;")

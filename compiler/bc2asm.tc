@@ -193,13 +193,26 @@ fn asm_branch(fi: i32, cond_ne: i32, target: i32, ob: U8Array) -> void {
     e_pcref(fi,target,ob);ob_char(10u8,ob);
     return;
 }
-// "    call [__tc_]NAME\n"
+// Return length of base name (before first "__" separator in mangled name)
+fn base_name_len(strtab: U8Array, ss: i32, sl: i32) -> i32 {
+    var i: i32 = 0;
+    while i + 1 < sl {
+        if get(strtab,(ss+i))==95u8 && get(strtab,(ss+i+1))==95u8 { return i; }
+        i = i + 1;
+    }
+    return sl;
+}
+// "    call [__tc_]BASENAME\n"  (builtins use base name; user fns use full mangled name)
 fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, is_tc: i32, ob: U8Array) -> void {
     e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
     if is_tc == 1 {
         ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+        var bsl: i32 = base_name_len(strtab, nm_ss, nm_sl);
+        ob_n(strtab, nm_ss, bsl, ob);
+    } else {
+        ob_n(strtab, nm_ss, nm_sl, ob);
     }
-    ob_n(strtab, nm_ss, nm_sl, ob); ob_char(10u8,ob);
+    ob_char(10u8,ob);
     return;
 }
 // "    seqz t0, t0\n"
@@ -450,11 +463,19 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 }
                 if d0=='f'&&d1=='n' { // fn
                     discard_tok(dir_ss);
-                    var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
-                    var np_ss: i32=next_tok(src,strtab);
-                    var np: i32=int_from_stab(strtab,np_ss,tok_len(np_ss));
-                    discard_tok(np_ss);
-                    var rt_ss: i32=next_tok(src,strtab); discard_tok(rt_ss);
+                    var nm_ss: i32=next_tok(src,strtab);
+                    // Build mangled name: append __TYPE for each arg type (last token = rettype, skip it)
+                    var prev_under: i32=g_stab_pos;
+                    skip_spaces(src);
+                    while in_cur(src)!=10u8&&g_in_pos<g_in_len {
+                        prev_under=g_stab_pos;
+                        set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
+                        set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
+                        next_tok(src,strtab);
+                        skip_spaces(src);
+                    }
+                    g_stab_pos=prev_under; // remove last __ + rettype token
+                    var nm_sl: i32=g_stab_pos-nm_ss;
                     cur_fn=g_nfuncs;
                     fn_set(fns,cur_fn,0,nm_ss); fn_set(fns,cur_fn,1,nm_sl);
                     fn_set(fns,cur_fn,4,g_nparams); fn_set(fns,cur_fn,5,0);
@@ -543,10 +564,19 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                         ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
                     }
                     if op3==OP_CALL {
-                        var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
-                        var na_ss: i32=next_tok(src,strtab);
-                        var na: i32=int_from_stab(strtab,na_ss,tok_len(na_ss));
-                        discard_tok(na_ss);
+                        var nm_ss: i32=next_tok(src,strtab);
+                        var mangle_end: i32=g_stab_pos;
+                        var na: i32=0;
+                        skip_spaces(src);
+                        while in_cur(src)!=10u8&&g_in_pos<g_in_len {
+                            set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
+                            set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
+                            next_tok(src,strtab);
+                            mangle_end=g_stab_pos;
+                            na=na+1;
+                            skip_spaces(src);
+                        }
+                        var nm_sl: i32=mangle_end-nm_ss;
                         ins_set(instrs,ib3,iidx,1,na);
                         ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
                     }
@@ -608,36 +638,38 @@ fn var_offset(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool
     return 0;
 }
 
-// ===== Builtin detection =====
+// ===== Builtin detection (works with mangled names: checks base name before first __) =====
 fn is_builtin(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     if sl<=0 { return 0; }
+    var bsl: i32 = base_name_len(strtab, ss, sl);
     var a: u8=get(strtab,ss);
-    var b: u8=0u8; if sl>1 { b=get(strtab,(ss+1)); }
-    var c: u8=0u8; if sl>2 { c=get(strtab,(ss+2)); }
-    // XxxArray constructor: starts uppercase, ends "Array"
-    if sl>=6 && a>='A' && a<='Z' {
-        var e1: u8=get(strtab,(ss+sl-5));
-        var e2: u8=get(strtab,(ss+sl-4));
-        var e3: u8=get(strtab,(ss+sl-3));
-        var e4: u8=get(strtab,(ss+sl-2));
-        var e5: u8=get(strtab,(ss+sl-1));
+    var b: u8=0u8; if bsl>1 { b=get(strtab,(ss+1)); }
+    var c: u8=0u8; if bsl>2 { c=get(strtab,(ss+2)); }
+    // XxxArray constructor: base starts uppercase, base ends "Array"
+    if bsl>=6 && a>='A' && a<='Z' {
+        var e1: u8=get(strtab,(ss+bsl-5));
+        var e2: u8=get(strtab,(ss+bsl-4));
+        var e3: u8=get(strtab,(ss+bsl-3));
+        var e4: u8=get(strtab,(ss+bsl-2));
+        var e5: u8=get(strtab,(ss+bsl-1));
         if e1=='A'&&e2=='r'&&e3=='r'&&e4=='a'&&e5=='y' { return 1; }
     }
-    if sl>=4&&a=='s'&&b=='y'&&c=='s' { return 1; }        // sys_*
-    if sl>=6&&a=='p'&&b=='r'&&c=='i' { return 1; }        // print_*
-    if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3)); if d=='k' { var e: u8=get(strtab,(ss+4)); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32
-    if sl>=4&&a=='p'&&b=='o'&&c=='k' { return 1; }        // poke*
-    if sl==3&&a=='l'&&b=='e'&&c=='n' { return 1; }        // len
-    if a=='g'&&b=='e'&&c=='t' { return 1; }               // get
-    if sl==3&&a=='s'&&b=='e'&&c=='t' { return 1; }        // set
-    if sl>=6&&a=='d'&&b=='e'&&c=='l' { return 1; }        // delete
-    if sl>=6&&a=='a'&&b=='p'&&c=='p' { return 1; }         // append
-    if sl>=6&&a=='e'&&b=='q'&&c=='u' { return 1; }        // equals
+    if bsl>=4&&a=='s'&&b=='y'&&c=='s' { return 1; }        // sys_*
+    if bsl>=6&&a=='p'&&b=='r'&&c=='i' { return 1; }        // print_*
+    if bsl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3)); if d=='k' { var e: u8=get(strtab,(ss+4)); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32
+    if bsl>=4&&a=='p'&&b=='o'&&c=='k' { return 1; }        // poke*
+    if bsl==3&&a=='l'&&b=='e'&&c=='n' { return 1; }        // len
+    if a=='g'&&b=='e'&&c=='t' { return 1; }                // get
+    if bsl==3&&a=='s'&&b=='e'&&c=='t' { return 1; }        // set
+    if bsl>=6&&a=='d'&&b=='e'&&c=='l' { return 1; }        // delete
+    if bsl>=6&&a=='a'&&b=='p'&&c=='p' { return 1; }        // append
+    if bsl>=6&&a=='e'&&b=='q'&&c=='u' { return 1; }        // equals
     return 0;
 }
 fn is_sys_exit(strtab: U8Array, ss: i32, sl: i32) -> i32 {
-    // "sys_exit" = 115,121,115,95,101,120,105,116
-    if sl!=8 { return 0; }
+    // "sys_exit" = 115,121,115,95,101,120,105,116 — check base name length == 8
+    var bsl: i32 = base_name_len(strtab, ss, sl);
+    if bsl!=8 { return 0; }
     if get(strtab,ss)!='s' { return 0; }
     if get(strtab,(ss+4))!='e' { return 0; }
     if get(strtab,(ss+5))!='x' { return 0; }

@@ -391,12 +391,18 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 if d0=='f'&&d1=='n' { // "fn"
                     discard_tok(dir_ss);
                     var nm_ss: i32 = next_tok(src, strtab);
-                    var nm_sl: i32 = tok_len(nm_ss);
-                    var np_ss: i32 = next_tok(src, strtab);
-                    var np: i32 = int_from_stab(strtab, np_ss, tok_len(np_ss));
-                    discard_tok(np_ss);
-                    var rt_ss: i32 = next_tok(src, strtab);
-                    discard_tok(rt_ss);
+                    // Build mangled name: append __TYPE for each arg type (last token = rettype, skip it)
+                    var prev_under: i32 = g_stab_pos;
+                    skip_spaces(src);
+                    while in_cur(src) != 10u8 && g_in_pos < g_in_len {
+                        prev_under = g_stab_pos;
+                        set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;
+                        set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;
+                        next_tok(src, strtab);
+                        skip_spaces(src);
+                    }
+                    g_stab_pos = prev_under; // remove last __ + rettype token
+                    var nm_sl: i32 = g_stab_pos - nm_ss;
                     cur_fn = g_nfuncs;
                     fn_set(fns, cur_fn, 0, nm_ss);
                     fn_set(fns, cur_fn, 1, nm_sl);
@@ -515,10 +521,18 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     }
                     if op3 == OP_CALL {
                         var nm_ss: i32 = next_tok(src, strtab);
-                        var nm_sl: i32 = tok_len(nm_ss);
-                        var na_ss: i32 = next_tok(src, strtab);
-                        var na: i32 = int_from_stab(strtab, na_ss, tok_len(na_ss));
-                        discard_tok(na_ss);
+                        var mangle_end: i32 = g_stab_pos;
+                        var na: i32 = 0;
+                        skip_spaces(src);
+                        while in_cur(src) != 10u8 && g_in_pos < g_in_len {
+                            set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;
+                            set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;
+                            next_tok(src, strtab);
+                            mangle_end = g_stab_pos;
+                            na = na + 1;
+                            skip_spaces(src);
+                        }
+                        var nm_sl: i32 = mangle_end - nm_ss;
                         ins_set(instrs, ibase3, iidx, 1, na);
                         ins_set(instrs, ibase3, iidx, 2, nm_ss);
                         ins_set(instrs, ibase3, iidx, 3, nm_sl);
@@ -813,16 +827,16 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                         if c0!='I'  { r_ival=heap_new_u8(hm,asize);  r_tag=TAG_REF; }
                         bhandled = 1;
                     }
-                    // get(ssl==3): g=103 e=101 t=116
-                    if bhandled==0 && ssl==3&&c0=='g'&&c1=='e'&&c2=='t' {
+                    // get: g=103 e=101 t=116 (mangled: get__TYPE__TYPE, c3='_')
+                    if bhandled==0 && (ssl==3||(ssl>3&&c3=='_'))&&c0=='g'&&c1=='e'&&c2=='t' {
                         var obj: i32 = get(arg_i,0);
                         var idx: i32 = get(arg_i,1);
                         if hm_kind(hm,obj)==HK_I32 { r_ival=heap_geti32(hm,hi,obj,idx); }
                         if hm_kind(hm,obj)!=HK_I32 { r_ival=heap_getu8(hm,hb,obj,idx); }
                         bhandled = 1;
                     }
-                    // set(ssl==3): s=115 e=101 t=116
-                    if bhandled==0 && ssl==3&&c0=='s'&&c1=='e'&&c2=='t' {
+                    // set: s=115 e=101 t=116 (mangled: set__TYPE__TYPE__TYPE, c3='_')
+                    if bhandled==0 && (ssl==3||(ssl>3&&c3=='_'))&&c0=='s'&&c1=='e'&&c2=='t' {
                         var obj: i32 = get(arg_i,0);
                         var idx: i32 = get(arg_i,1);
                         var val: i32 = get(arg_i,2);
@@ -830,8 +844,8 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                         if hm_kind(hm,obj)!=HK_I32 { heap_setu8(hm,hb,obj,idx,val); }
                         bhandled = 1;
                     }
-                    // len(ssl==3): l=108 e=101 n=110
-                    if bhandled==0 && ssl==3&&c0=='l'&&c1=='e'&&c2=='n' {
+                    // len: l=108 e=101 n=110 (mangled: len__TYPE, c3='_')
+                    if bhandled==0 && (ssl==3||(ssl>3&&c3=='_'))&&c0=='l'&&c1=='e'&&c2=='n' {
                         r_ival = hm_size(hm,get(arg_i,0));
                         bhandled = 1;
                     }

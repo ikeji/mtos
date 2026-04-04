@@ -3813,47 +3813,82 @@
                           (var strtab)
                         )
                       )
-                      (comment "var nm_sl: i32 = tok_len(nm_ss);")
-                      (var_decl nm_sl
+                      (comment "var prev_under: i32 = g_stab_pos;")
+                      (var_decl prev_under
                         (type i32)
-                        (call tok_len
-                          (var nm_ss)
-                        )
+                        (var g_stab_pos)
                       )
-                      (comment "var np_ss: i32 = next_tok(src, strtab);")
-                      (var_decl np_ss
-                        (type i32)
-                        (call next_tok
-                          (var src)
-                          (var strtab)
-                        )
+                      (comment "skip_spaces(src);")
+                      (call_stmt skip_spaces
+                        (var src)
                       )
-                      (comment "var np: i32 = int_from_stab(strtab, np_ss, tok_len(np_ss));")
-                      (var_decl np
-                        (type i32)
-                        (call int_from_stab
-                          (var strtab)
-                          (var np_ss)
-                          (call tok_len
-                            (var np_ss)
+                      (comment "while in_cur(src) != 10u8 && g_in_pos < g_in_len {")
+                      (while
+                        (binop &&
+                          (binop !=
+                            (call in_cur
+                              (var src)
+                            )
+                            (int:u8 10)
+                          )
+                          (binop <
+                            (var g_in_pos)
+                            (var g_in_len)
+                          )
+                        )
+                        (block
+                          (comment "prev_under = g_stab_pos;")
+                          (assign prev_under
+                            (var g_stab_pos)
+                          )
+                          (comment "set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;")
+                          (call_stmt set
+                            (var strtab)
+                            (var g_stab_pos)
+                            (int:u8 95)
+                          )
+                          (comment "set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;")
+                          (assign g_stab_pos
+                            (binop +
+                              (var g_stab_pos)
+                              (int 1)
+                            )
+                          )
+                          (comment "set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;")
+                          (call_stmt set
+                            (var strtab)
+                            (var g_stab_pos)
+                            (int:u8 95)
+                          )
+                          (comment "set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;")
+                          (assign g_stab_pos
+                            (binop +
+                              (var g_stab_pos)
+                              (int 1)
+                            )
+                          )
+                          (comment "next_tok(src, strtab);")
+                          (call_stmt next_tok
+                            (var src)
+                            (var strtab)
+                          )
+                          (comment "skip_spaces(src);")
+                          (call_stmt skip_spaces
+                            (var src)
                           )
                         )
                       )
-                      (comment "discard_tok(np_ss);")
-                      (call_stmt discard_tok
-                        (var np_ss)
+                      (comment "g_stab_pos = prev_under; // remove last __ + rettype token")
+                      (assign g_stab_pos
+                        (var prev_under)
                       )
-                      (comment "var rt_ss: i32 = next_tok(src, strtab);")
-                      (var_decl rt_ss
+                      (comment "var nm_sl: i32 = g_stab_pos - nm_ss;")
+                      (var_decl nm_sl
                         (type i32)
-                        (call next_tok
-                          (var src)
-                          (var strtab)
+                        (binop -
+                          (var g_stab_pos)
+                          (var nm_ss)
                         )
-                      )
-                      (comment "discard_tok(rt_ss);")
-                      (call_stmt discard_tok
-                        (var rt_ss)
                       )
                       (comment "cur_fn = g_nfuncs;")
                       (assign cur_fn
@@ -4763,35 +4798,90 @@
                               (var strtab)
                             )
                           )
-                          (comment "var nm_sl: i32 = tok_len(nm_ss);")
-                          (var_decl nm_sl
+                          (comment "var mangle_end: i32 = g_stab_pos;")
+                          (var_decl mangle_end
                             (type i32)
-                            (call tok_len
-                              (var nm_ss)
-                            )
+                            (var g_stab_pos)
                           )
-                          (comment "var na_ss: i32 = next_tok(src, strtab);")
-                          (var_decl na_ss
-                            (type i32)
-                            (call next_tok
-                              (var src)
-                              (var strtab)
-                            )
-                          )
-                          (comment "var na: i32 = int_from_stab(strtab, na_ss, tok_len(na_ss));")
+                          (comment "var na: i32 = 0;")
                           (var_decl na
                             (type i32)
-                            (call int_from_stab
-                              (var strtab)
-                              (var na_ss)
-                              (call tok_len
-                                (var na_ss)
+                            (int 0)
+                          )
+                          (comment "skip_spaces(src);")
+                          (call_stmt skip_spaces
+                            (var src)
+                          )
+                          (comment "while in_cur(src) != 10u8 && g_in_pos < g_in_len {")
+                          (while
+                            (binop &&
+                              (binop !=
+                                (call in_cur
+                                  (var src)
+                                )
+                                (int:u8 10)
+                              )
+                              (binop <
+                                (var g_in_pos)
+                                (var g_in_len)
+                              )
+                            )
+                            (block
+                              (comment "set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;")
+                              (call_stmt set
+                                (var strtab)
+                                (var g_stab_pos)
+                                (int:u8 95)
+                              )
+                              (comment "set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;")
+                              (assign g_stab_pos
+                                (binop +
+                                  (var g_stab_pos)
+                                  (int 1)
+                                )
+                              )
+                              (comment "set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;")
+                              (call_stmt set
+                                (var strtab)
+                                (var g_stab_pos)
+                                (int:u8 95)
+                              )
+                              (comment "set(strtab, g_stab_pos, 95u8); g_stab_pos = g_stab_pos + 1;")
+                              (assign g_stab_pos
+                                (binop +
+                                  (var g_stab_pos)
+                                  (int 1)
+                                )
+                              )
+                              (comment "next_tok(src, strtab);")
+                              (call_stmt next_tok
+                                (var src)
+                                (var strtab)
+                              )
+                              (comment "mangle_end = g_stab_pos;")
+                              (assign mangle_end
+                                (var g_stab_pos)
+                              )
+                              (comment "na = na + 1;")
+                              (assign na
+                                (binop +
+                                  (var na)
+                                  (int 1)
+                                )
+                              )
+                              (comment "skip_spaces(src);")
+                              (call_stmt skip_spaces
+                                (var src)
                               )
                             )
                           )
-                          (comment "discard_tok(na_ss);")
-                          (call_stmt discard_tok
-                            (var na_ss)
+                          (comment "var nm_sl: i32 = mangle_end - nm_ss;")
+                          (var_decl nm_sl
+                            (type i32)
+                            (binop -
+                              (var mangle_end)
+                              (var nm_ss)
+                            )
                           )
                           (comment "ins_set(instrs, ibase3, iidx, 1, na);")
                           (call_stmt ins_set
@@ -7183,7 +7273,7 @@
                           )
                         )
                       )
-                      (comment "if bhandled==0 && ssl==3&&c0=='g'&&c1=='e'&&c2=='t' {")
+                      (comment "if bhandled==0 && (ssl==3||(ssl>3&&c3=='_'))&&c0=='g'&&c1=='e'&&c2=='t' {")
                       (if
                         (binop &&
                           (binop &&
@@ -7193,9 +7283,21 @@
                                   (var bhandled)
                                   (int 0)
                                 )
-                                (binop ==
-                                  (var ssl)
-                                  (int 3)
+                                (binop ||
+                                  (binop ==
+                                    (var ssl)
+                                    (int 3)
+                                  )
+                                  (binop &&
+                                    (binop >
+                                      (var ssl)
+                                      (int 3)
+                                    )
+                                    (binop ==
+                                      (var c3)
+                                      (int:u8 95)
+                                    )
+                                  )
                                 )
                               )
                               (binop ==
@@ -7278,7 +7380,7 @@
                           )
                         )
                       )
-                      (comment "if bhandled==0 && ssl==3&&c0=='s'&&c1=='e'&&c2=='t' {")
+                      (comment "if bhandled==0 && (ssl==3||(ssl>3&&c3=='_'))&&c0=='s'&&c1=='e'&&c2=='t' {")
                       (if
                         (binop &&
                           (binop &&
@@ -7288,9 +7390,21 @@
                                   (var bhandled)
                                   (int 0)
                                 )
-                                (binop ==
-                                  (var ssl)
-                                  (int 3)
+                                (binop ||
+                                  (binop ==
+                                    (var ssl)
+                                    (int 3)
+                                  )
+                                  (binop &&
+                                    (binop >
+                                      (var ssl)
+                                      (int 3)
+                                    )
+                                    (binop ==
+                                      (var c3)
+                                      (int:u8 95)
+                                    )
+                                  )
                                 )
                               )
                               (binop ==
@@ -7379,7 +7493,7 @@
                           )
                         )
                       )
-                      (comment "if bhandled==0 && ssl==3&&c0=='l'&&c1=='e'&&c2=='n' {")
+                      (comment "if bhandled==0 && (ssl==3||(ssl>3&&c3=='_'))&&c0=='l'&&c1=='e'&&c2=='n' {")
                       (if
                         (binop &&
                           (binop &&
@@ -7389,9 +7503,21 @@
                                   (var bhandled)
                                   (int 0)
                                 )
-                                (binop ==
-                                  (var ssl)
-                                  (int 3)
+                                (binop ||
+                                  (binop ==
+                                    (var ssl)
+                                    (int 3)
+                                  )
+                                  (binop &&
+                                    (binop >
+                                      (var ssl)
+                                      (int 3)
+                                    )
+                                    (binop ==
+                                      (var c3)
+                                      (int:u8 95)
+                                    )
+                                  )
                                 )
                               )
                               (binop ==

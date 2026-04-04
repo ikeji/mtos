@@ -567,7 +567,12 @@ fn wrap_binop(left_buf: U8Array, left_len: i32, op: i32,
 
 fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     if g_tok == TK_INT_LIT {
-        ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob);
+        ob_char('(', ob); ob_string("int", ob);
+        if g_tok_slen > 0 {
+            ob_char(':', ob);
+            ob_n(tok, 0, g_tok_slen, ob);
+        }
+        ob_char(' ', ob);
         ob_int(g_tok_ival, ob);
         ob_char(')', ob);  // )
         lex_tok(src, tok);

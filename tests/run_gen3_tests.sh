@@ -30,10 +30,6 @@ if [ ! -x "$PARSE" ] || [ ! -x "$CODEGEN" ] || [ ! -x "$BCRUN" ] || [ ! -x "$BC2
     exit 1
 fi
 
-PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
-CODEGEN_TC_BC=$("$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
-BC2ASM_TC_BC=$("$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
-
 echo "=== Gen2 vs Gen3 Verification (True Self-Hosting Check, RISC-V) ==="
 
 if ! command -v "$RISCV_CC" >/dev/null 2>&1 || ! command -v "$QEMU" >/dev/null 2>&1; then
@@ -41,43 +37,47 @@ if ! command -v "$RISCV_CC" >/dev/null 2>&1 || ! command -v "$QEMU" >/dev/null 2
 else
     GEN2_TMP=$(mktemp -d)
 
-    # Compile Gen2 parse and codegen BCs to RISC-V ELF
-    echo "$PARSE_TC_BC" | "$BC2ASM" > "$GEN2_TMP/parse_gen2.s" 2>/dev/null
+    # Compile Gen2 parse, typecheck, and codegen BCs to RISC-V ELF
+    # Use temp files to avoid bash stripping trailing newlines from command substitution
+    "$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" > "$GEN2_TMP/parse.bc" 2>/dev/null
+    "$PARSE" "$TC_DIR/typecheck.tc" | "$CODEGEN" > "$GEN2_TMP/typecheck.bc" 2>/dev/null
+    "$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" > "$GEN2_TMP/codegen.bc" 2>/dev/null
+    "$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" > "$GEN2_TMP/bc2asm.bc" 2>/dev/null
+
+    cat "$GEN2_TMP/parse.bc" | "$BC2ASM" > "$GEN2_TMP/parse_gen2.s" 2>/dev/null
     $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "$GEN2_TMP/parse_gen2.s" -o "$GEN2_TMP/parse_gen2" 2>/dev/null
 
-    echo "$CODEGEN_TC_BC" | "$BC2ASM" > "$GEN2_TMP/codegen_gen2.s" 2>/dev/null
+    cat "$GEN2_TMP/typecheck.bc" | "$BC2ASM" > "$GEN2_TMP/typecheck_gen2.s" 2>/dev/null
+    $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "$GEN2_TMP/typecheck_gen2.s" -o "$GEN2_TMP/typecheck_gen2" 2>/dev/null
+
+    cat "$GEN2_TMP/codegen.bc" | "$BC2ASM" > "$GEN2_TMP/codegen_gen2.s" 2>/dev/null
     $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "$GEN2_TMP/codegen_gen2.s" -o "$GEN2_TMP/codegen_gen2" 2>/dev/null
 
-    GEN2_BCS=("$PARSE_TC_BC" "$CODEGEN_TC_BC" "$BC2ASM_TC_BC")
-    GEN2_BC_NAMES=("parse.tc" "codegen.tc" "bc2asm.tc")
+    GEN2_BC_FILES=("$GEN2_TMP/parse.bc" "$GEN2_TMP/typecheck.bc" "$GEN2_TMP/codegen.bc" "$GEN2_TMP/bc2asm.bc")
+    GEN2_BC_NAMES=("parse.tc" "typecheck.tc" "codegen.tc" "bc2asm.tc")
 
     for i in "${!GEN2_BC_NAMES[@]}"; do
         f="${GEN2_BC_NAMES[$i]}"
-        gen2_bc="${GEN2_BCS[$i]}"
+        gen2_bc_file="${GEN2_BC_FILES[$i]}"
         input="$TC_DIR/$f"
 
-        # Gen3: parse with Gen2 parse (RISC-V), then codegen with Gen2 codegen (RISC-V)
+        # Gen3: parse → typecheck → codegen, all with Gen2 RISC-V binaries
         t0=$(time_ms)
-        gen3_ast=$(cat "$input" | "$QEMU" "$GEN2_TMP/parse_gen2" 2>/dev/null)
-        gen3_bc=$(printf '%s\n' "$gen3_ast" | "$QEMU" "$GEN2_TMP/codegen_gen2" 2>/dev/null)
+        "$QEMU" "$GEN2_TMP/parse_gen2" < "$input" > "$GEN2_TMP/gen3_ast" 2>/dev/null
+        "$QEMU" "$GEN2_TMP/typecheck_gen2" < "$GEN2_TMP/gen3_ast" > "$GEN2_TMP/gen3_tast" 2>/dev/null
+        "$QEMU" "$GEN2_TMP/codegen_gen2" < "$GEN2_TMP/gen3_tast" > "$GEN2_TMP/gen3_bc" 2>/dev/null
         elapsed=$(( $(time_ms) - t0 ))
 
-        gen2_file=$(mktemp)
-        gen3_file=$(mktemp)
-        printf '%s\n' "$gen2_bc" > "$gen2_file"
-        printf '%s\n' "$gen3_bc" > "$gen3_file"
-
-        if diff -u "$gen2_file" "$gen3_file" > /dev/null; then
+        if diff -u "$gen2_bc_file" "$GEN2_TMP/gen3_bc" > /dev/null; then
             echo "PASS: tc/$f (Gen2 == Gen3) [${elapsed}ms]"
             PASS=$((PASS + 1))
         else
             echo "FAIL: tc/$f (Gen2 != Gen3) [${elapsed}ms]"
             echo "  --- diff (showing first 10 lines) ---"
-            diff -u "$gen2_file" "$gen3_file" | head -n 12
+            diff -u "$gen2_bc_file" "$GEN2_TMP/gen3_bc" | head -n 12
             echo "  ------------------------------------"
             FAIL=$((FAIL + 1))
         fi
-        rm -f "$gen2_file" "$gen3_file"
     done
 
     rm -rf "$GEN2_TMP"

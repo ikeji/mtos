@@ -265,6 +265,7 @@ check_contains() {
 
 # parse.tc のバイトコードを一度生成（後続テストで再利用）
 PARSE_TC_BC=$({ "$PARSE" "$SRC_DIR/parse.tc" | "$CODEGEN"; } 2>/dev/null)
+TYPECHECK_TC_BC=$({ "$PARSE" "$SRC_DIR/typecheck.tc" | "$CODEGEN"; } 2>/dev/null)
 CODEGEN_TC_BC=$({ "$PARSE" "$SRC_DIR/codegen.tc" | "$CODEGEN"; } 2>/dev/null)
 
 # parse.tc を bcrun 上で動かして fib.tc を構文解析する
@@ -278,30 +279,34 @@ check_contains "pipeline[1]: parse.tc parses calc.tc → (fn main" "(fn main" "$
 
 # codegen.tc を bcrun 上で動かして fib.tc の AST からバイトコードを生成する
 FIB_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/fib.tc"; } | "$BCRUN" 2>/dev/null)
-actual=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$FIB_AST"; } | "$BCRUN" 2>&1)
-check_contains "pipeline[2]: codegen.tc generates .fn fib" ".fn fib 1 i32" "$actual"
+FIB_TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$FIB_AST"; } | "$BCRUN" 2>/dev/null)
+actual=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$FIB_TAST"; } | "$BCRUN" 2>&1)
+check_contains "pipeline[2]: codegen.tc generates .fn fib" ".fn fib i32 i32" "$actual"
 check_contains "pipeline[2]: codegen.tc generates .endbc" ".endbc" "$actual"
 
-# フルパイプライン: parse.tc → codegen.tc → bcrun で fib.tc をコンパイル・実行
-FIB_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$FIB_AST"; } | "$BCRUN" 2>/dev/null)
+# フルパイプライン: parse.tc → typecheck.tc → codegen.tc → bcrun で fib.tc をコンパイル・実行
+FIB_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$FIB_TAST"; } | "$BCRUN" 2>/dev/null)
 actual=$(printf '%s\n' "$FIB_BC" | "$BCRUN" 2>&1)
 check_output "pipeline[3]: tinyc compile+run fib(10) = 55" "55" "$actual"
 
 # フルパイプライン: calc.tc をコンパイルして stdin 付きで実行
 CALC_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/calc.tc"; } | "$BCRUN" 2>/dev/null)
-CALC_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$CALC_AST"; } | "$BCRUN" 2>/dev/null)
+CALC_TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$CALC_AST"; } | "$BCRUN" 2>/dev/null)
+CALC_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$CALC_TAST"; } | "$BCRUN" 2>/dev/null)
 actual=$({ printf '%s\n' "$CALC_BC"; printf '12 + 34 * 56'; } | "$BCRUN" 2>&1)
 check_output "pipeline[3]: tinyc compile+run calc.tc (12+34*56=1916)" "1916" "$actual"
 
 # フルパイプライン: break_test.tc
 BREAK_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/break_test.tc"; } | "$BCRUN" 2>/dev/null)
-BREAK_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$BREAK_AST"; } | "$BCRUN" 2>/dev/null)
+BREAK_TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$BREAK_AST"; } | "$BCRUN" 2>/dev/null)
+BREAK_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$BREAK_TAST"; } | "$BCRUN" 2>/dev/null)
 printf '%s\n' "$BREAK_BC" | "$BCRUN" > /dev/null 2>&1
 check_output "pipeline[3]: break exits loop at i==5" "5" "$?"
 
 # フルパイプライン: continue_test.tc
 CONT_AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/continue_test.tc"; } | "$BCRUN" 2>/dev/null)
-CONT_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$CONT_AST"; } | "$BCRUN" 2>/dev/null)
+CONT_TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$CONT_AST"; } | "$BCRUN" 2>/dev/null)
+CONT_BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$CONT_TAST"; } | "$BCRUN" 2>/dev/null)
 printf '%s\n' "$CONT_BC" | "$BCRUN" > /dev/null 2>&1
 check_output "pipeline[3]: continue sums odd 1-9 = 25" "25" "$?"
 

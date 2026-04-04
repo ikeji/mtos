@@ -58,7 +58,7 @@ static int u32_to_str(uint32_t v, char *buf) {
 #define OBJ_STRING 1
 
 /* Simple bump allocator (no free) */
-static char heap_mem[8388608]; /* 8MB — large enough for compiler self-hosting */
+static char heap_mem[33554432]; /* 32MB — large enough for compiler self-hosting */
 static int  heap_pos = 0;
 
 static void *bump_alloc(int size) {
@@ -134,7 +134,8 @@ HeapObj *__tc_U16Array(int32_t sz) { return new_array(sz); }
 HeapObj *__tc_U32Array(int32_t sz) { return new_array(sz); }
 HeapObj *__tc_I8Array (int32_t sz) { return new_array(sz); }
 HeapObj *__tc_I16Array(int32_t sz) { return new_array(sz); }
-HeapObj *__tc_I32Array(int32_t sz) { return new_array(sz); }
+HeapObj *__tc_I32Array  (int32_t sz) { return new_array(sz); }
+HeapObj *__tc_StringArray(int32_t sz) { return new_array(sz); }
 HeapObj *__tc_newU8Array (int32_t sz) { return new_array(sz); }
 HeapObj *__tc_newU16Array(int32_t sz) { return new_array(sz); }
 HeapObj *__tc_newU32Array(int32_t sz) { return new_array(sz); }

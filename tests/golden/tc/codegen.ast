@@ -822,13 +822,13 @@
       (type i32)
     )
     (block
-      (comment "fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6)); }")
+      (comment "fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8)); }")
       (return
         (call get
           (var nodes)
           (binop *
             (var n)
-            (int 6)
+            (int 8)
           )
         )
       )
@@ -850,12 +850,12 @@
       (type void)
     )
     (block
-      (comment "fn n_sk(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6), v); }")
+      (comment "fn n_sk(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8), v); }")
       (call_stmt set
         (var nodes)
         (binop *
           (var n)
-          (int 6)
+          (int 8)
         )
         (var v)
       )
@@ -874,14 +874,14 @@
       (type i32)
     )
     (block
-      (comment "fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+1)); }")
+      (comment "fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+1)); }")
       (return
         (call get
           (var nodes)
           (binop +
             (binop *
               (var n)
-              (int 6)
+              (int 8)
             )
             (int 1)
           )
@@ -905,13 +905,13 @@
       (type void)
     )
     (block
-      (comment "fn n_set_ss(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+1), v); }")
+      (comment "fn n_set_ss(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+1), v); }")
       (call_stmt set
         (var nodes)
         (binop +
           (binop *
             (var n)
-            (int 6)
+            (int 8)
           )
           (int 1)
         )
@@ -932,14 +932,14 @@
       (type i32)
     )
     (block
-      (comment "fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+2)); }")
+      (comment "fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+2)); }")
       (return
         (call get
           (var nodes)
           (binop +
             (binop *
               (var n)
-              (int 6)
+              (int 8)
             )
             (int 2)
           )
@@ -963,13 +963,13 @@
       (type void)
     )
     (block
-      (comment "fn n_set_sl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+2), v); }")
+      (comment "fn n_set_sl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+2), v); }")
       (call_stmt set
         (var nodes)
         (binop +
           (binop *
             (var n)
-            (int 6)
+            (int 8)
           )
           (int 2)
         )
@@ -990,14 +990,14 @@
       (type i32)
     )
     (block
-      (comment "fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+3)); }")
+      (comment "fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+3)); }")
       (return
         (call get
           (var nodes)
           (binop +
             (binop *
               (var n)
-              (int 6)
+              (int 8)
             )
             (int 3)
           )
@@ -1021,13 +1021,13 @@
       (type void)
     )
     (block
-      (comment "fn n_set_ival(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+3), v); }")
+      (comment "fn n_set_ival(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+3), v); }")
       (call_stmt set
         (var nodes)
         (binop +
           (binop *
             (var n)
-            (int 6)
+            (int 8)
           )
           (int 3)
         )
@@ -1048,14 +1048,14 @@
       (type i32)
     )
     (block
-      (comment "fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+4)); }")
+      (comment "fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+4)); }")
       (return
         (call get
           (var nodes)
           (binop +
             (binop *
               (var n)
-              (int 6)
+              (int 8)
             )
             (int 4)
           )
@@ -1079,13 +1079,13 @@
       (type void)
     )
     (block
-      (comment "fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+4), v); }")
+      (comment "fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+4), v); }")
       (call_stmt set
         (var nodes)
         (binop +
           (binop *
             (var n)
-            (int 6)
+            (int 8)
           )
           (int 4)
         )
@@ -1106,14 +1106,14 @@
       (type i32)
     )
     (block
-      (comment "fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+5)); }")
+      (comment "fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+5)); }")
       (return
         (call get
           (var nodes)
           (binop +
             (binop *
               (var n)
-              (int 6)
+              (int 8)
             )
             (int 5)
           )
@@ -1137,17 +1137,73 @@
       (type void)
     )
     (block
-      (comment "fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+5), v); }")
+      (comment "fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+5), v); }")
       (call_stmt set
         (var nodes)
         (binop +
           (binop *
             (var n)
-            (int 6)
+            (int 8)
           )
           (int 5)
         )
         (var v)
+      )
+    )
+  )
+  (fn n_tass
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "fn n_tass(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+6)); }")
+      (return
+        (call get
+          (var nodes)
+          (binop +
+            (binop *
+              (var n)
+              (int 8)
+            )
+            (int 6)
+          )
+        )
+      )
+    )
+  )
+  (fn n_tasl
+    (params
+      (param nodes
+        (type I32Array)
+      )
+      (param n
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "fn n_tasl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+7)); }")
+      (return
+        (call get
+          (var nodes)
+          (binop +
+            (binop *
+              (var n)
+              (int 8)
+            )
+            (int 7)
+          )
+        )
       )
     )
   )
@@ -1176,12 +1232,12 @@
           (int 1)
         )
       )
-      (comment "var b: i32 = n * 6;")
+      (comment "var b: i32 = n * 8;")
       (var_decl b
         (type i32)
         (binop *
           (var n)
-          (int 6)
+          (int 8)
         )
       )
       (comment "set(nodes, b, kind);")
@@ -1240,6 +1296,26 @@
         (unary -
           (int 1)
         )
+      )
+      (comment "set(nodes, (b+6), -1);")
+      (call_stmt set
+        (var nodes)
+        (binop +
+          (var b)
+          (int 6)
+        )
+        (unary -
+          (int 1)
+        )
+      )
+      (comment "set(nodes, (b+7), 0);")
+      (call_stmt set
+        (var nodes)
+        (binop +
+          (var b)
+          (int 7)
+        )
+        (int 0)
       )
       (comment "return n;")
       (return
@@ -2554,12 +2630,95 @@
           (var kind_code)
         )
       )
-      (comment "var base: i32 = n * 6;")
+      (comment "var base: i32 = n * 8;")
       (var_decl base
         (type i32)
         (binop *
           (var n)
-          (int 6)
+          (int 8)
+        )
+      )
+      (comment "if actual_klen < klen {")
+      (if
+        (binop <
+          (var actual_klen)
+          (var klen)
+        )
+        (block
+          (comment "var tss: i32 = g_sp;")
+          (var_decl tss
+            (type i32)
+            (var g_sp)
+          )
+          (comment "var tasl: i32 = klen - actual_klen - 1;")
+          (var_decl tasl
+            (type i32)
+            (binop -
+              (binop -
+                (var klen)
+                (var actual_klen)
+              )
+              (int 1)
+            )
+          )
+          (comment "var ti: i32 = actual_klen + 1;")
+          (var_decl ti
+            (type i32)
+            (binop +
+              (var actual_klen)
+              (int 1)
+            )
+          )
+          (comment "while ti < klen {")
+          (while
+            (binop <
+              (var ti)
+              (var klen)
+            )
+            (block
+              (comment "set(strtab, g_sp, get(atom, ti));")
+              (call_stmt set
+                (var strtab)
+                (var g_sp)
+                (call get
+                  (var atom)
+                  (var ti)
+                )
+              )
+              (comment "g_sp = g_sp + 1;")
+              (assign g_sp
+                (binop +
+                  (var g_sp)
+                  (int 1)
+                )
+              )
+              (comment "ti = ti + 1;")
+              (assign ti
+                (binop +
+                  (var ti)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "set(nodes, (base+6), tss);")
+          (call_stmt set
+            (var nodes)
+            (binop +
+              (var base)
+              (int 6)
+            )
+            (var tss)
+          )
+          (comment "set(nodes, (base+7), tasl);")
+          (call_stmt set
+            (var nodes)
+            (binop +
+              (var base)
+              (int 7)
+            )
+            (var tasl)
+          )
         )
       )
       (comment "skip_ws_in(in);")
@@ -4465,6 +4624,18 @@
           (var NK_CALL_STMT)
         )
         (block
+          (comment "var args: I32Array = I32Array(24);")
+          (var_decl args
+            (type I32Array)
+            (call I32Array
+              (int 24)
+            )
+          )
+          (comment "var nargs: i32 = 0;")
+          (var_decl nargs
+            (type i32)
+            (int 0)
+          )
           (comment "var c: i32 = n_child(nodes, n);")
           (var_decl c
             (type i32)
@@ -4473,41 +4644,76 @@
               (var n)
             )
           )
-          (comment "var nargs: i32 = 0;")
-          (var_decl nargs
-            (type i32)
-            (int 0)
-          )
-          (comment "while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }")
+          (comment "while c >= 0 && nargs < 24 {")
           (while
-            (binop >=
-              (var c)
-              (int 0)
+            (binop &&
+              (binop >=
+                (var c)
+                (int 0)
+              )
+              (binop <
+                (var nargs)
+                (int 24)
+              )
             )
             (block
-              (comment "while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }")
-              (call_stmt cg_expr
-                (var nodes)
-                (var strtab)
-                (var slits)
-                (var ob)
+              (comment "set(args, nargs, c);")
+              (call_stmt set
+                (var args)
+                (var nargs)
                 (var c)
               )
-              (comment "while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }")
-              (assign c
-                (call n_sib
-                  (var nodes)
-                  (var c)
-                )
-              )
-              (comment "while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }")
+              (comment "nargs = nargs + 1;")
               (assign nargs
                 (binop +
                   (var nargs)
                   (int 1)
                 )
               )
+              (comment "c = n_sib(nodes, c);")
+              (assign c
+                (call n_sib
+                  (var nodes)
+                  (var c)
+                )
+              )
             )
+          )
+          (comment "var ai: i32 = 0;")
+          (var_decl ai
+            (type i32)
+            (int 0)
+          )
+          (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
+          (while
+            (binop <
+              (var ai)
+              (var nargs)
+            )
+            (block
+              (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (call get
+                  (var args)
+                  (var ai)
+                )
+              )
+              (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
+              (assign ai
+                (binop +
+                  (var ai)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "delete(args);")
+          (call_stmt delete
+            (var args)
           )
           (comment "ob_char(' ',ob);ob_char(' ',ob);")
           (call_stmt ob_char
@@ -4557,17 +4763,69 @@
             )
             (var ob)
           )
-          (comment "ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);")
-          (call_stmt ob_char
-            (int:u8 32)
-            (var ob)
+          (comment "c = n_child(nodes, n);")
+          (assign c
+            (call n_child
+              (var nodes)
+              (var n)
+            )
           )
-          (comment "ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);")
-          (call_stmt ob_int
-            (var nargs)
-            (var ob)
+          (comment "while c >= 0 {")
+          (while
+            (binop >=
+              (var c)
+              (int 0)
+            )
+            (block
+              (comment "ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "var tsl: i32 = n_tasl(nodes, c);")
+              (var_decl tsl
+                (type i32)
+                (call n_tasl
+                  (var nodes)
+                  (var c)
+                )
+              )
+              (comment "if tsl > 0 {")
+              (if
+                (binop >
+                  (var tsl)
+                  (int 0)
+                )
+                (block
+                  (comment "ob_n(strtab, n_tass(nodes,c), tsl, ob);")
+                  (call_stmt ob_n
+                    (var strtab)
+                    (call n_tass
+                      (var nodes)
+                      (var c)
+                    )
+                    (var tsl)
+                    (var ob)
+                  )
+                )
+                (block
+                  (comment "ob_char('?',ob);")
+                  (call_stmt ob_char
+                    (int:u8 63)
+                    (var ob)
+                  )
+                )
+              )
+              (comment "c = n_sib(nodes, c);")
+              (assign c
+                (call n_sib
+                  (var nodes)
+                  (var c)
+                )
+              )
+            )
           )
-          (comment "ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);")
+          (comment "ob_char(10u8,ob);")
           (call_stmt ob_char
             (int:u8 10)
             (var ob)
@@ -6687,6 +6945,18 @@
           (var NK_CALL)
         )
         (block
+          (comment "var args: I32Array = I32Array(24);")
+          (var_decl args
+            (type I32Array)
+            (call I32Array
+              (int 24)
+            )
+          )
+          (comment "var nargs: i32 = 0;")
+          (var_decl nargs
+            (type i32)
+            (int 0)
+          )
           (comment "var c: i32 = n_child(nodes, n);")
           (var_decl c
             (type i32)
@@ -6695,41 +6965,76 @@
               (var n)
             )
           )
-          (comment "var nargs: i32 = 0;")
-          (var_decl nargs
-            (type i32)
-            (int 0)
-          )
-          (comment "while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }")
+          (comment "while c >= 0 && nargs < 24 {")
           (while
-            (binop >=
-              (var c)
-              (int 0)
+            (binop &&
+              (binop >=
+                (var c)
+                (int 0)
+              )
+              (binop <
+                (var nargs)
+                (int 24)
+              )
             )
             (block
-              (comment "while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }")
-              (call_stmt cg_expr
-                (var nodes)
-                (var strtab)
-                (var slits)
-                (var ob)
+              (comment "set(args, nargs, c);")
+              (call_stmt set
+                (var args)
+                (var nargs)
                 (var c)
               )
-              (comment "while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }")
-              (assign c
-                (call n_sib
-                  (var nodes)
-                  (var c)
-                )
-              )
-              (comment "while c >= 0 { cg_expr(nodes, strtab, slits, ob, c); c = n_sib(nodes, c); nargs = nargs + 1; }")
+              (comment "nargs = nargs + 1;")
               (assign nargs
                 (binop +
                   (var nargs)
                   (int 1)
                 )
               )
+              (comment "c = n_sib(nodes, c);")
+              (assign c
+                (call n_sib
+                  (var nodes)
+                  (var c)
+                )
+              )
             )
+          )
+          (comment "var ai: i32 = 0;")
+          (var_decl ai
+            (type i32)
+            (int 0)
+          )
+          (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
+          (while
+            (binop <
+              (var ai)
+              (var nargs)
+            )
+            (block
+              (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
+              (call_stmt cg_expr
+                (var nodes)
+                (var strtab)
+                (var slits)
+                (var ob)
+                (call get
+                  (var args)
+                  (var ai)
+                )
+              )
+              (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
+              (assign ai
+                (binop +
+                  (var ai)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "delete(args);")
+          (call_stmt delete
+            (var args)
           )
           (comment "ob_char(' ',ob);ob_char(' ',ob);")
           (call_stmt ob_char
@@ -6779,17 +7084,69 @@
             )
             (var ob)
           )
-          (comment "ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);")
-          (call_stmt ob_char
-            (int:u8 32)
-            (var ob)
+          (comment "c = n_child(nodes, n);")
+          (assign c
+            (call n_child
+              (var nodes)
+              (var n)
+            )
           )
-          (comment "ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);")
-          (call_stmt ob_int
-            (var nargs)
-            (var ob)
+          (comment "while c >= 0 {")
+          (while
+            (binop >=
+              (var c)
+              (int 0)
+            )
+            (block
+              (comment "ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "var tsl: i32 = n_tasl(nodes, c);")
+              (var_decl tsl
+                (type i32)
+                (call n_tasl
+                  (var nodes)
+                  (var c)
+                )
+              )
+              (comment "if tsl > 0 {")
+              (if
+                (binop >
+                  (var tsl)
+                  (int 0)
+                )
+                (block
+                  (comment "ob_n(strtab, n_tass(nodes,c), tsl, ob);")
+                  (call_stmt ob_n
+                    (var strtab)
+                    (call n_tass
+                      (var nodes)
+                      (var c)
+                    )
+                    (var tsl)
+                    (var ob)
+                  )
+                )
+                (block
+                  (comment "ob_char('?',ob);")
+                  (call_stmt ob_char
+                    (int:u8 63)
+                    (var ob)
+                  )
+                )
+              )
+              (comment "c = n_sib(nodes, c);")
+              (assign c
+                (call n_sib
+                  (var nodes)
+                  (var c)
+                )
+              )
+            )
           )
-          (comment "ob_char(' ',ob); ob_int(nargs, ob); ob_char(10u8,ob);")
+          (comment "ob_char(10u8,ob);")
           (call_stmt ob_char
             (int:u8 10)
             (var ob)
@@ -8125,18 +8482,55 @@
         )
         (var ob)
       )
-      (comment "ob_char(' ',ob); ob_int(n_nchildren(nodes, params_n), ob);")
-      (call_stmt ob_char
-        (int:u8 32)
-        (var ob)
-      )
-      (comment "ob_char(' ',ob); ob_int(n_nchildren(nodes, params_n), ob);")
-      (call_stmt ob_int
-        (call n_nchildren
+      (comment "var pp: i32 = n_child(nodes, params_n);")
+      (var_decl pp
+        (type i32)
+        (call n_child
           (var nodes)
           (var params_n)
         )
-        (var ob)
+      )
+      (comment "while pp >= 0 {")
+      (while
+        (binop >=
+          (var pp)
+          (int 0)
+        )
+        (block
+          (comment "var ptype_n: i32 = n_child(nodes, pp);")
+          (var_decl ptype_n
+            (type i32)
+            (call n_child
+              (var nodes)
+              (var pp)
+            )
+          )
+          (comment "ob_char(' ',ob);")
+          (call_stmt ob_char
+            (int:u8 32)
+            (var ob)
+          )
+          (comment "ob_n(strtab, n_ss(nodes,ptype_n), n_sl(nodes,ptype_n), ob);")
+          (call_stmt ob_n
+            (var strtab)
+            (call n_ss
+              (var nodes)
+              (var ptype_n)
+            )
+            (call n_sl
+              (var nodes)
+              (var ptype_n)
+            )
+            (var ob)
+          )
+          (comment "pp = n_sib(nodes, pp);")
+          (assign pp
+            (call n_sib
+              (var nodes)
+              (var pp)
+            )
+          )
+        )
       )
       (comment "ob_char(' ',ob);")
       (call_stmt ob_char
@@ -9183,11 +9577,11 @@
           (int 16384)
         )
       )
-      (comment "var nodes: I32Array = I32Array(98304);   // 16384 nodes × 6 ints")
+      (comment "var nodes: I32Array = I32Array(131072);  // 16384 nodes × 8 ints")
       (var_decl nodes
         (type I32Array)
         (call I32Array
-          (int 98304)
+          (int 131072)
         )
       )
       (comment "var strtab: U8Array = U8Array(262144);   // string table")

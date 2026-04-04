@@ -3865,17 +3865,38 @@
           (var TK_INT_LIT)
         )
         (block
-          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
+          (comment "ob_char('(', ob); ob_string(\"int\", ob);")
           (call_stmt ob_char
             (int:u8 40)
             (var ob)
           )
-          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
+          (comment "ob_char('(', ob); ob_string(\"int\", ob);")
           (call_stmt ob_string
             (str "int")
             (var ob)
           )
-          (comment "ob_char('(', ob); ob_string(\"int\", ob); ob_char(' ', ob);")
+          (comment "if g_tok_slen > 0 {")
+          (if
+            (binop >
+              (var g_tok_slen)
+              (int 0)
+            )
+            (block
+              (comment "ob_char(':', ob);")
+              (call_stmt ob_char
+                (int:u8 58)
+                (var ob)
+              )
+              (comment "ob_n(tok, 0, g_tok_slen, ob);")
+              (call_stmt ob_n
+                (var tok)
+                (int 0)
+                (var g_tok_slen)
+                (var ob)
+              )
+            )
+          )
+          (comment "ob_char(' ', ob);")
           (call_stmt ob_char
             (int:u8 32)
             (var ob)

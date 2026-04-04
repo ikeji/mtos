@@ -78,9 +78,11 @@ case "$METHOD" in
 
     pipeline)
         PARSE_TC_BC=$("$CODEGEN" "$TC_DIR/parse.tc" 2>/dev/null)
+        TYPECHECK_TC_BC=$("$CODEGEN" "$TC_DIR/typecheck.tc" 2>/dev/null)
         CODEGEN_TC_BC=$("$CODEGEN" "$TC_DIR/codegen.tc" 2>/dev/null)
         AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$TC_FILE"; } | "$BCRUN" 2>/dev/null)
-        BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
+        TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
+        BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$TAST"; } | "$BCRUN" 2>/dev/null)
         { printf '%s\n' "$BC"; emit_stdin; } | "$BCRUN"
         ;;
 

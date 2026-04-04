@@ -60,6 +60,7 @@ if [ ! -x "$PARSE" ] || [ ! -x "$CODEGEN" ] || [ ! -x "$BCRUN" ] || [ ! -x "$BC2
 fi
 
 PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
+TYPECHECK_TC_BC=$("$PARSE" "$TC_DIR/typecheck.tc" | "$CODEGEN" 2>/dev/null)
 CODEGEN_TC_BC=$("$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
 BC2ASM_TC_BC=$("$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
 
@@ -101,7 +102,7 @@ for f in "${TC_FILES[@]}"; do
     golden_ast_tc="$GOLDEN_DIR/tc/$base.ast.tc"
     [ -f "$golden_ast_tc" ] || golden_ast_tc="$golden_ast"
     t0=$(time_ms)
-    { echo "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$actual_ast" 2>/dev/null
+    { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$actual_ast" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_ast_tc" "$actual_ast" > /dev/null; then
         echo "PASS: tc/$f (AST - parse.tc) [${elapsed}ms]"
@@ -124,8 +125,9 @@ for f in "${TC_FILES[@]}"; do
     fi
 
     AST=$("$PARSE" "$input" 2>/dev/null)
+    TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
     t0=$(time_ms)
-    { echo "$CODEGEN_TC_BC"; echo "$AST"; } | "$BCRUN" > "$actual_bc" 2>/dev/null
+    { printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$TAST"; } | "$BCRUN" > "$actual_bc" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_bc" "$actual_bc" > /dev/null; then
         echo "PASS: tc/$f (BC - codegen.tc) [${elapsed}ms]"
@@ -139,7 +141,7 @@ for f in "${TC_FILES[@]}"; do
     actual_s=$(mktemp)
     bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
     t0=$(time_ms)
-    echo "$bc" | "$BC2ASM" > "$actual_s" 2>/dev/null
+    printf '%s\n' "$bc" | "$BC2ASM" > "$actual_s" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_s" "$actual_s" > /dev/null; then
         echo "PASS: tc/$f (ASM - C) [${elapsed}ms]"
@@ -149,7 +151,7 @@ for f in "${TC_FILES[@]}"; do
     fi
 
     t0=$(time_ms)
-    { echo "$BC2ASM_TC_BC"; echo "$bc"; } | "$BCRUN" > "$actual_s" 2>/dev/null
+    { printf '%s\n' "$BC2ASM_TC_BC"; printf '%s\n' "$bc"; } | "$BCRUN" > "$actual_s" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_s" "$actual_s" > /dev/null; then
         echo "PASS: tc/$f (ASM - bc2asm.tc) [${elapsed}ms]"
@@ -166,7 +168,7 @@ for f in "${TC_FILES[@]}"; do
 
     bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
     t0=$(time_ms)
-    { echo "$bc"; cat "$exec_input_file"; } | "$BCRUN" > "$actual_out" 2>/dev/null
+    { printf '%s\n' "$bc"; cat "$exec_input_file"; } | "$BCRUN" > "$actual_out" 2>/dev/null
     actual_exit=$?
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_out" "$actual_out" > /dev/null && [ "$actual_exit" -eq "$expected_exit" ]; then

@@ -1,0 +1,1193 @@
+// typecheck.tc — type annotation pass for TinyC self-hosting compiler
+// Reads text AST (S-expression) from stdin, annotates expression nodes
+// with their types (:TYPE suffix on kind name), outputs annotated AST to stdout.
+
+// ===== AST node kind constants =====
+var NK_PROGRAM: i32 = 0;
+var NK_FN: i32 = 1;
+var NK_STRUCT: i32 = 2;
+var NK_PARAMS: i32 = 3;
+var NK_PARAM: i32 = 4;
+var NK_RET: i32 = 5;
+var NK_TYPE: i32 = 6;
+var NK_BLOCK: i32 = 7;
+var NK_VAR_DECL: i32 = 8;
+var NK_ASSIGN: i32 = 9;
+var NK_CALL_STMT: i32 = 10;
+var NK_CALL: i32 = 11;
+var NK_IF: i32 = 12;
+var NK_WHILE: i32 = 13;
+var NK_RETURN: i32 = 14;
+var NK_BINOP: i32 = 15;
+var NK_UNARY: i32 = 16;
+var NK_INT: i32 = 17;
+var NK_STR: i32 = 18;
+var NK_BOOL: i32 = 19;
+var NK_VAR: i32 = 20;
+var NK_CAST: i32 = 21;
+var NK_IMPORT: i32 = 22;
+var NK_FIELD: i32 = 23;
+var NK_BREAK: i32 = 24;
+var NK_CONTINUE: i32 = 25;
+var NK_COMMENT: i32 = 26;
+var NK_UNKNOWN: i32 = 99;
+
+// ===== Global state =====
+var g_in_pos: i32 = 0;
+var g_in_len: i32 = 0;
+var g_nc: i32 = 0;
+var g_sp: i32 = 0;
+var g_ob_pos: i32 = 0;
+var g_fn_count: i32 = 0;
+var g_var_count: i32 = 0;
+var g_scope_depth: i32 = 0;
+var g_ret_ss: i32 = -1;
+var g_ret_sl: i32 = 0;
+// Returned type from check_expr
+var g_type_ss: i32 = -1;
+var g_type_sl: i32 = 0;
+
+// fntab stride: name_ss(0), name_sl(1), np(2), ret_ss(3), ret_sl(4),
+//               pss[0..20](5..25), psl[0..20](26..46) = 47 fields per entry
+var FN_STRIDE: i32 = 47;
+var FN_NSS: i32 = 0;
+var FN_NSL: i32 = 1;
+var FN_NP: i32 = 2;
+var FN_RSS: i32 = 3;
+var FN_RSL: i32 = 4;
+var FN_PSS: i32 = 5;
+var FN_PSL: i32 = 26;
+
+// vartab stride: name_ss(0), name_sl(1), type_ss(2), type_sl(3), scope(4) = 5 fields per entry
+var VAR_STRIDE: i32 = 5;
+var VAR_NSS: i32 = 0;
+var VAR_NSL: i32 = 1;
+var VAR_TSS: i32 = 2;
+var VAR_TSL: i32 = 3;
+var VAR_SCO: i32 = 4;
+
+// ===== Output buffer =====
+fn ob_flush(ob: U8Array) -> void {
+    if g_ob_pos > 0 {
+        sys_write(1, ob, g_ob_pos);
+        g_ob_pos = 0;
+    }
+    return;
+}
+
+fn ob_char(c: u8, ob: U8Array) -> void {
+    set(ob, g_ob_pos, c);
+    g_ob_pos = g_ob_pos + 1;
+    if g_ob_pos >= 8192 { ob_flush(ob); }
+    return;
+}
+
+fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
+    var i: i32 = 0;
+    while i < n {
+        ob_char(get(src, (start + i)), ob);
+        i = i + 1;
+    }
+    return;
+}
+
+fn ob_int(n: i32, ob: U8Array) -> void {
+    if n == 0 { ob_char('0', ob); return; }
+    if n < 0 { ob_char('-', ob); n = 0 - n; }
+    var tmp: U8Array = U8Array(12);
+    var len: i32 = 0;
+    var v: i32 = n;
+    while v > 0 {
+        set(tmp, len, (48 + v % 10) as u8);
+        len = len + 1;
+        v = v / 10;
+    }
+    var i: i32 = len - 1;
+    while i >= 0 { ob_char(get(tmp, i), ob); i = i - 1; }
+    delete(tmp);
+    return;
+}
+
+fn ob_str_escaped(strtab: U8Array, start: i32, slen: i32, ob: U8Array) -> void {
+    var i: i32 = 0;
+    while i < slen {
+        var c: u8 = get(strtab, (start + i));
+        if c == '"'  { ob_char('\\', ob); ob_char('"', ob); }
+        else { if c == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+        else { if c == 10u8 { ob_char('\\', ob); ob_char('n', ob); }
+        else { if c == 13u8 { ob_char('\\', ob); ob_char('r', ob); }
+        else { if c == 9u8  { ob_char('\\', ob); ob_char('t', ob); }
+        else { ob_char(c, ob); }}}}}
+        i = i + 1;
+    }
+    return;
+}
+
+// ===== Input reading =====
+fn peek_in(in: U8Array) -> u8 {
+    if g_in_pos >= g_in_len { return 0u8; }
+    return get(in, g_in_pos);
+}
+
+fn is_atom_end(c: u8) -> bool {
+    return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 ||
+           c == '(' || c == ')' || c == 0u8;
+}
+
+fn skip_ws_in(in: U8Array) -> void {
+    var c: u8 = peek_in(in);
+    while (c == ' ' || c == 9u8 || c == 10u8 || c == 13u8) && g_in_pos < g_in_len {
+        g_in_pos = g_in_pos + 1;
+        c = peek_in(in);
+    }
+    return;
+}
+
+fn read_atom_in(in: U8Array, atom: U8Array) -> i32 {
+    var len: i32 = 0;
+    var c: u8 = peek_in(in);
+    while !is_atom_end(c) {
+        set(atom, len, c);
+        len = len + 1;
+        g_in_pos = g_in_pos + 1;
+        c = peek_in(in);
+    }
+    return len;
+}
+
+// ===== Node pool (8 ints per node) =====
+// Layout: [kind, sstart, slen, ival, first_child, next_sibling, tass, tasl]
+fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8)); }
+fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+1)); }
+fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+2)); }
+fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+3)); }
+fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+4)); }
+fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+5)); }
+fn n_tass(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+6)); }
+fn n_tasl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+7)); }
+fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+5), v); }
+fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+4), v); }
+fn n_set_tass(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+6), v); }
+fn n_set_tasl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+7), v); }
+
+fn alloc_node(nodes: I32Array, kind: i32) -> i32 {
+    var n: i32 = g_nc;
+    g_nc = g_nc + 1;
+    var b: i32 = n * 8;
+    set(nodes, b, kind);
+    set(nodes, (b+1), -1);
+    set(nodes, (b+2), 0);
+    set(nodes, (b+3), 0);
+    set(nodes, (b+4), -1);
+    set(nodes, (b+5), -1);
+    set(nodes, (b+6), -1);
+    set(nodes, (b+7), 0);
+    return n;
+}
+
+fn n_nchildren(nodes: I32Array, n: i32) -> i32 {
+    var c: i32 = n_child(nodes, n);
+    var count: i32 = 0;
+    while c >= 0 { count = count + 1; c = n_sib(nodes, c); }
+    return count;
+}
+
+fn n_nth_child(nodes: I32Array, n: i32, idx: i32) -> i32 {
+    var c: i32 = n_child(nodes, n);
+    var i: i32 = 0;
+    while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }
+    return c;
+}
+
+// ===== Kind classification =====
+fn cmp2(a: U8Array, st: i32, b0: u8, b1: u8) -> bool {
+    return get(a, st)==b0 && get(a, (st+1))==b1;
+}
+fn cmp3(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8) -> bool {
+    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2;
+}
+fn cmp4(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8) -> bool {
+    return get(a,st)==b0 && get(a,(st+1))==b1 &&
+           get(a,(st+2))==b2 && get(a,(st+3))==b3;
+}
+fn cmp5(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8) -> bool {
+    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&
+           get(a,(st+3))==b3 && get(a,(st+4))==b4;
+}
+fn cmp6(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8, b5: u8) -> bool {
+    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&
+           get(a,(st+3))==b3 && get(a,(st+4))==b4 && get(a,(st+5))==b5;
+}
+
+fn classify_kind(atom: U8Array, len: i32) -> i32 {
+    if len == 2 {
+        if cmp2(atom,0, 'f','n')  { return NK_FN; }
+        if cmp2(atom,0, 'i','f')  { return NK_IF; }
+    }
+    if len == 3 {
+        if cmp3(atom,0, 'r','e','t') { return NK_RET; }
+        if cmp3(atom,0, 'i','n','t') { return NK_INT; }
+        if cmp3(atom,0, 's','t','r') { return NK_STR; }
+        if cmp3(atom,0, 'v','a','r') { return NK_VAR; }
+    }
+    if len == 4 {
+        if cmp4(atom,0, 'b','o','o','l') { return NK_BOOL; }
+        if cmp4(atom,0, 't','y','p','e') { return NK_TYPE; }
+        if cmp4(atom,0, 'c','a','s','t') { return NK_CAST; }
+        if cmp4(atom,0, 'c','a','l','l') { return NK_CALL; }
+    }
+    if len == 5 {
+        if cmp5(atom,0, 'b','l','o','c','k')  { return NK_BLOCK; }
+        if cmp5(atom,0, 'p','a','r','a','m')  { return NK_PARAM; }
+        if cmp5(atom,0, 'w','h','i','l','e')  { return NK_WHILE; }
+        if cmp5(atom,0, 'b','i','n','o','p')  { return NK_BINOP; }
+        if cmp5(atom,0, 'u','n','a','r','y')  { return NK_UNARY; }
+        if cmp5(atom,0, 'f','i','e','l','d')  { return NK_FIELD; }
+        if cmp5(atom,0, 'b','r','e','a','k')  { return NK_BREAK; }
+    }
+    if len == 6 {
+        if cmp6(atom,0, 'p','a','r','a','m','s') { return NK_PARAMS; }
+        if cmp6(atom,0, 'r','e','t','u','r','n') { return NK_RETURN; }
+        if cmp6(atom,0, 's','t','r','u','c','t') { return NK_STRUCT; }
+        if cmp6(atom,0, 'a','s','s','i','g','n') { return NK_ASSIGN; }
+        if cmp6(atom,0, 'i','m','p','o','r','t') { return NK_IMPORT; }
+    }
+    if len == 7 {
+        if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {
+            return NK_PROGRAM;
+        }
+        if cmp4(atom,0, 'c','o','m','m') && cmp3(atom,4, 'e','n','t') {
+            return NK_COMMENT;
+        }
+    }
+    if len == 8 {
+        if cmp4(atom,0, 'v','a','r','_') && cmp4(atom,4, 'd','e','c','l') {
+            return NK_VAR_DECL;
+        }
+        if cmp4(atom,0, 'c','o','n','t') && cmp4(atom,4, 'i','n','u','e') {
+            return NK_CONTINUE;
+        }
+    }
+    if len == 9 {
+        if cmp4(atom,0, 'c','a','l','l') && cmp5(atom,4, '_','s','t','m','t') {
+            return NK_CALL_STMT;
+        }
+    }
+    return NK_UNKNOWN;
+}
+
+// ===== S-expression reader =====
+fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
+
+fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
+    skip_ws_in(in);
+    if g_in_pos >= g_in_len { return -1; }
+    if peek_in(in) != '(' { return -1; }
+    g_in_pos = g_in_pos + 1;
+    skip_ws_in(in);
+
+    var klen: i32 = read_atom_in(in, atom);
+    var actual_klen: i32 = 0;
+    while actual_klen < klen && get(atom, actual_klen) != ':' {
+        actual_klen = actual_klen + 1;
+    }
+    var kind_code: i32 = classify_kind(atom, actual_klen);
+    var n: i32 = alloc_node(nodes, kind_code);
+    var base: i32 = n * 8;
+
+    // Store type_annot if present (after ':')
+    if actual_klen < klen {
+        var tss: i32 = g_sp;
+        var tasl: i32 = klen - actual_klen - 1;
+        var ti: i32 = actual_klen + 1;
+        while ti < klen {
+            set(strtab, g_sp, get(atom, ti));
+            g_sp = g_sp + 1;
+            ti = ti + 1;
+        }
+        set(nodes, (base+6), tss);
+        set(nodes, (base+7), tasl);
+    }
+
+    skip_ws_in(in);
+
+    var c: u8 = peek_in(in);
+    if (kind_code == NK_STR || kind_code == NK_COMMENT) && c == '"' {
+        g_in_pos = g_in_pos + 1;
+        var ss: i32 = g_sp;
+        var ch: u8 = peek_in(in);
+        while ch != '"' && ch != 0u8 {
+            if ch == '\\' {
+                g_in_pos = g_in_pos + 1;
+                var esc: u8 = peek_in(in);
+                if esc == 'n'  { ch = 10u8; }
+                if esc == 't'  { ch = 9u8; }
+                if esc == 'r'  { ch = 13u8; }
+                if esc == '\\' { ch = '\\'; }
+                if esc == '"'  { ch = '"'; }
+                if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\' && esc != '"' { ch = esc; }
+            }
+            set(strtab, g_sp, ch);
+            g_sp = g_sp + 1;
+            g_in_pos = g_in_pos + 1;
+            ch = peek_in(in);
+        }
+        if ch == '"' { g_in_pos = g_in_pos + 1; }
+        set(nodes, (base+1), ss);
+        set(nodes, (base+2), g_sp - ss);
+        skip_ws_in(in);
+    } else if c != '(' && c != ')' && c != 0u8 {
+        var vlen: i32 = read_atom_in(in, atom);
+        if kind_code == NK_INT && vlen > 0 && is_digit_c(get(atom, 0)) {
+            var ival: i32 = 0;
+            var ii: i32 = 0;
+            while ii < vlen {
+                ival = ival * 10 + (get(atom, ii) as i32 - 48);
+                ii = ii + 1;
+            }
+            set(nodes, (base+3), ival);
+        } else if kind_code == NK_BOOL {
+            // Store true/false as ival (1/0), do NOT store sval (matches C ast_read)
+            var bval: i32 = 0;
+            if vlen == 4 && get(atom,0)=='t' && get(atom,1)=='r' && get(atom,2)=='u' && get(atom,3)=='e' {
+                bval = 1;
+            }
+            set(nodes, (base+3), bval);
+        } else {
+            var ss2: i32 = g_sp;
+            var ii2: i32 = 0;
+            while ii2 < vlen {
+                set(strtab, g_sp, get(atom, ii2));
+                g_sp = g_sp + 1;
+                ii2 = ii2 + 1;
+            }
+            set(nodes, (base+1), ss2);
+            set(nodes, (base+2), vlen);
+        }
+        skip_ws_in(in);
+    }
+
+    c = peek_in(in);
+    var last_child: i32 = -1;
+    while c == '(' {
+        var child: i32 = read_node(in, atom, nodes, strtab);
+        if child >= 0 {
+            if last_child < 0 {
+                set(nodes, (base+4), child);
+            } else {
+                n_set_sib(nodes, last_child, child);
+            }
+            last_child = child;
+        }
+        skip_ws_in(in);
+        c = peek_in(in);
+    }
+
+    if peek_in(in) == ')' { g_in_pos = g_in_pos + 1; }
+    return n;
+}
+
+// ===== String helpers =====
+fn strtab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
+    if sl1 != sl2 { return false; }
+    var i: i32 = 0;
+    while i < sl1 {
+        if get(strtab, (ss1+i)) != get(strtab, (ss2+i)) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn st_add_str(strtab: U8Array, s: String) -> i32 {
+    var start: i32 = g_sp;
+    var i: i32 = 0;
+    var n: i32 = len(s);
+    while i < n {
+        set(strtab, g_sp, get(s, i) as u8);
+        g_sp = g_sp + 1;
+        i = i + 1;
+    }
+    return start;
+}
+
+// ===== fntab accessors =====
+// fntab stride=21: [nss, nsl, np, rss, rsl, pss[8], psl[8]]
+fn ft_nss(fntab: I32Array, fi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_NSS)); }
+fn ft_nsl(fntab: I32Array, fi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_NSL)); }
+fn ft_np(fntab: I32Array, fi: i32) -> i32  { return get(fntab, (fi*FN_STRIDE+FN_NP)); }
+fn ft_rss(fntab: I32Array, fi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_RSS)); }
+fn ft_rsl(fntab: I32Array, fi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_RSL)); }
+fn ft_pss(fntab: I32Array, fi: i32, pi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_PSS+pi)); }
+fn ft_psl(fntab: I32Array, fi: i32, pi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_PSL+pi)); }
+
+fn ft_set_nss(fntab: I32Array, fi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_NSS), v); }
+fn ft_set_nsl(fntab: I32Array, fi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_NSL), v); }
+fn ft_set_np(fntab: I32Array, fi: i32, v: i32) -> void  { set(fntab, (fi*FN_STRIDE+FN_NP), v); }
+fn ft_set_rss(fntab: I32Array, fi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_RSS), v); }
+fn ft_set_rsl(fntab: I32Array, fi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_RSL), v); }
+fn ft_set_pss(fntab: I32Array, fi: i32, pi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_PSS+pi), v); }
+fn ft_set_psl(fntab: I32Array, fi: i32, pi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_PSL+pi), v); }
+
+// ===== vartab accessors =====
+// vartab stride=5: [nss, nsl, tss, tsl, sco]
+fn vt_nss(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_NSS)); }
+fn vt_nsl(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_NSL)); }
+fn vt_tss(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_TSS)); }
+fn vt_tsl(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_TSL)); }
+fn vt_sco(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_SCO)); }
+
+fn vt_set(vartab: I32Array, vi: i32, nss: i32, nsl: i32, tss: i32, tsl: i32, sco: i32) -> void {
+    set(vartab, (vi*VAR_STRIDE+VAR_NSS), nss);
+    set(vartab, (vi*VAR_STRIDE+VAR_NSL), nsl);
+    set(vartab, (vi*VAR_STRIDE+VAR_TSS), tss);
+    set(vartab, (vi*VAR_STRIDE+VAR_TSL), tsl);
+    set(vartab, (vi*VAR_STRIDE+VAR_SCO), sco);
+    return;
+}
+
+// ===== Scope management =====
+fn push_scope() -> void {
+    g_scope_depth = g_scope_depth + 1;
+    return;
+}
+
+fn pop_scope(vartab: I32Array) -> void {
+    while g_var_count > 0 && vt_sco(vartab, (g_var_count-1)) >= g_scope_depth {
+        g_var_count = g_var_count - 1;
+    }
+    g_scope_depth = g_scope_depth - 1;
+    return;
+}
+
+// ===== Variable lookup/add =====
+fn var_find(strtab: U8Array, vartab: I32Array, name_ss: i32, name_sl: i32) -> bool {
+    var i: i32 = g_var_count - 1;
+    while i >= 0 {
+        if strtab_eq(strtab, vt_nss(vartab, i), vt_nsl(vartab, i), name_ss, name_sl) {
+            g_type_ss = vt_tss(vartab, i);
+            g_type_sl = vt_tsl(vartab, i);
+            return true;
+        }
+        i = i - 1;
+    }
+    return false;
+}
+
+fn var_add(strtab: U8Array, vartab: I32Array, nss: i32, nsl: i32, tss: i32, tsl: i32) -> void {
+    vt_set(vartab, g_var_count, nss, nsl, tss, tsl, g_scope_depth);
+    g_var_count = g_var_count + 1;
+    return;
+}
+
+// ===== Set type annotation =====
+fn set_annot(nodes: I32Array, n: i32, tss: i32, tsl: i32) -> void {
+    n_set_tass(nodes, n, tss);
+    n_set_tasl(nodes, n, tsl);
+    return;
+}
+
+fn set_annot_lit(nodes: I32Array, strtab: U8Array, n: i32, ty: String) -> void {
+    var start: i32 = st_add_str(strtab, ty);
+    var slen: i32 = len(ty);
+    set_annot(nodes, n, start, slen);
+    g_type_ss = start;
+    g_type_sl = slen;
+    return;
+}
+
+// ===== Register builtins =====
+fn reg_fn(strtab: U8Array, fntab: I32Array, name: String, pts: StringArray, np: i32, ret: String) -> void {
+    var fi: i32 = g_fn_count;
+    g_fn_count = g_fn_count + 1;
+    var nstart: i32 = st_add_str(strtab, name);
+    ft_set_nss(fntab, fi, nstart);
+    ft_set_nsl(fntab, fi, len(name));
+    ft_set_np(fntab, fi, np);
+    var rstart: i32 = st_add_str(strtab, ret);
+    ft_set_rss(fntab, fi, rstart);
+    ft_set_rsl(fntab, fi, len(ret));
+    var i: i32 = 0;
+    while i < np {
+        var pt: String = get(pts, i);
+        var pstart: i32 = st_add_str(strtab, pt);
+        ft_set_pss(fntab, fi, i, pstart);
+        ft_set_psl(fntab, fi, i, len(pt));
+        i = i + 1;
+    }
+    return;
+}
+
+fn reg_fn0(strtab: U8Array, fntab: I32Array, name: String, ret: String) -> void {
+    var pts: StringArray = StringArray(1);
+    reg_fn(strtab, fntab, name, pts, 0, ret);
+    delete(pts);
+    return;
+}
+
+fn reg_fn1(strtab: U8Array, fntab: I32Array, name: String, p0: String, ret: String) -> void {
+    var pts: StringArray = StringArray(1);
+    set(pts, 0, p0);
+    reg_fn(strtab, fntab, name, pts, 1, ret);
+    delete(pts);
+    return;
+}
+
+fn reg_fn2(strtab: U8Array, fntab: I32Array, name: String, p0: String, p1: String, ret: String) -> void {
+    var pts: StringArray = StringArray(2);
+    set(pts, 0, p0);
+    set(pts, 1, p1);
+    reg_fn(strtab, fntab, name, pts, 2, ret);
+    delete(pts);
+    return;
+}
+
+fn reg_fn3(strtab: U8Array, fntab: I32Array, name: String, p0: String, p1: String, p2: String, ret: String) -> void {
+    var pts: StringArray = StringArray(3);
+    set(pts, 0, p0);
+    set(pts, 1, p1);
+    set(pts, 2, p2);
+    reg_fn(strtab, fntab, name, pts, 3, ret);
+    delete(pts);
+    return;
+}
+
+fn reg_array_builtins(strtab: U8Array, fntab: I32Array, arr_type: String, elem_type: String) -> void {
+    reg_fn1(strtab, fntab, arr_type, "i32", arr_type);
+    reg_fn1(strtab, fntab, "len", arr_type, "i32");
+    reg_fn2(strtab, fntab, "get", arr_type, "i32", elem_type);
+    reg_fn3(strtab, fntab, "set", arr_type, "i32", elem_type, "void");
+    reg_fn1(strtab, fntab, "delete", arr_type, "void");
+    return;
+}
+
+fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
+    reg_fn1(strtab, fntab, "peek8", "u32", "u8");
+    reg_fn1(strtab, fntab, "peek16", "u32", "u16");
+    reg_fn1(strtab, fntab, "peek32", "u32", "u32");
+    reg_fn2(strtab, fntab, "poke8", "u32", "u8", "void");
+    reg_fn2(strtab, fntab, "poke16", "u32", "u16", "void");
+    reg_fn2(strtab, fntab, "poke32", "u32", "u32", "void");
+
+    reg_array_builtins(strtab, fntab, "U8Array", "u8");
+    reg_array_builtins(strtab, fntab, "U16Array", "u16");
+    reg_array_builtins(strtab, fntab, "U32Array", "u32");
+    reg_array_builtins(strtab, fntab, "I8Array", "i8");
+    reg_array_builtins(strtab, fntab, "I16Array", "i16");
+    reg_array_builtins(strtab, fntab, "I32Array", "i32");
+
+    reg_fn1(strtab, fntab, "delete", "String", "void");
+    reg_fn1(strtab, fntab, "len", "String", "i32");
+    reg_fn2(strtab, fntab, "get", "String", "i32", "u8");
+    reg_fn2(strtab, fntab, "append", "String", "u8", "String");
+    reg_fn2(strtab, fntab, "append", "String", "String", "String");
+    reg_fn2(strtab, fntab, "equals", "String", "String", "bool");
+
+    reg_array_builtins(strtab, fntab, "StringArray", "String");
+
+    reg_fn3(strtab, fntab, "sys_write", "i32", "U8Array", "i32", "i32");
+    reg_fn3(strtab, fntab, "sys_read", "i32", "U8Array", "i32", "i32");
+    reg_fn1(strtab, fntab, "sys_exit", "i32", "void");
+
+    reg_fn1(strtab, fntab, "print_i32", "i32", "void");
+    reg_fn1(strtab, fntab, "print_u32", "u32", "void");
+    reg_fn1(strtab, fntab, "print_bool", "bool", "void");
+    reg_fn1(strtab, fntab, "print_str", "String", "void");
+    return;
+}
+
+// ===== Resolve overload =====
+// Looks up function by name and nargs argument types (stored in arg_tss/arg_tsl arrays)
+// Sets g_type_ss/g_type_sl to return type on success. Returns fi or -1.
+fn resolve_overload(strtab: U8Array, fntab: I32Array, arg_tss: I32Array, arg_tsl: I32Array,
+                    name_ss: i32, name_sl: i32, nargs: i32) -> i32 {
+    var fi: i32 = 0;
+    while fi < g_fn_count {
+        if !strtab_eq(strtab, ft_nss(fntab, fi), ft_nsl(fntab, fi), name_ss, name_sl) {
+            fi = fi + 1;
+            continue;
+        }
+        if ft_np(fntab, fi) != nargs {
+            fi = fi + 1;
+            continue;
+        }
+        var ok: bool = true;
+        var pi: i32 = 0;
+        while pi < nargs {
+            if !strtab_eq(strtab, ft_pss(fntab, fi, pi), ft_psl(fntab, fi, pi),
+                          get(arg_tss, pi), get(arg_tsl, pi)) {
+                ok = false;
+            }
+            pi = pi + 1;
+        }
+        if ok {
+            g_type_ss = ft_rss(fntab, fi);
+            g_type_sl = ft_rsl(fntab, fi);
+            return fi;
+        }
+        fi = fi + 1;
+    }
+    return -1;
+}
+
+// ===== Type check expressions =====
+// Result type is stored in g_type_ss / g_type_sl.
+// Also annotates node n with its type.
+fn check_expr(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, n: i32) -> void {
+    if n < 0 {
+        g_type_ss = -1;
+        g_type_sl = 0;
+        return;
+    }
+    var k: i32 = n_kind(nodes, n);
+
+    if k == NK_INT {
+        if n_tass(nodes, n) >= 0 && n_tasl(nodes, n) > 0 {
+            g_type_ss = n_tass(nodes, n);
+            g_type_sl = n_tasl(nodes, n);
+        } else {
+            set_annot_lit(nodes, strtab, n, "i32");
+        }
+        return;
+    }
+
+    if k == NK_STR {
+        set_annot_lit(nodes, strtab, n, "String");
+        return;
+    }
+
+    if k == NK_BOOL {
+        set_annot_lit(nodes, strtab, n, "bool");
+        return;
+    }
+
+    if k == NK_VAR {
+        var name_ss: i32 = n_ss(nodes, n);
+        var name_sl: i32 = n_sl(nodes, n);
+        var found: bool = var_find(strtab, vartab, name_ss, name_sl);
+        if found {
+            set_annot(nodes, n, g_type_ss, g_type_sl);
+        } else {
+            set_annot_lit(nodes, strtab, n, "?");
+        }
+        return;
+    }
+
+    if k == NK_CALL {
+        check_call_site(nodes, strtab, fntab, vartab, n, n_ss(nodes, n), n_sl(nodes, n));
+        return;
+    }
+
+    if k == NK_BINOP {
+        var lc: i32 = n_child(nodes, n);
+        var rc: i32 = -1;
+        if lc >= 0 { rc = n_sib(nodes, lc); }
+        check_expr(nodes, strtab, fntab, vartab, lc);
+        var lt_ss: i32 = g_type_ss;
+        var lt_sl: i32 = g_type_sl;
+        check_expr(nodes, strtab, fntab, vartab, rc);
+        // Check op
+        var op_ss: i32 = n_ss(nodes, n);
+        var op_sl: i32 = n_sl(nodes, n);
+        var is_cmp: bool = false;
+        if op_sl == 1 {
+            var opc: u8 = get(strtab, op_ss);
+            if opc == '<' || opc == '>' { is_cmp = true; }
+        }
+        if op_sl == 2 {
+            var opc0: u8 = get(strtab, op_ss);
+            var opc1: u8 = get(strtab, (op_ss+1));
+            if opc0 == '=' && opc1 == '=' { is_cmp = true; }
+            if opc0 == '!' && opc1 == '=' { is_cmp = true; }
+            if opc0 == '<' && opc1 == '=' { is_cmp = true; }
+            if opc0 == '>' && opc1 == '=' { is_cmp = true; }
+            if opc0 == '&' && opc1 == '&' { is_cmp = true; }
+            if opc0 == '|' && opc1 == '|' { is_cmp = true; }
+        }
+        if is_cmp {
+            set_annot_lit(nodes, strtab, n, "bool");
+        } else {
+            set_annot(nodes, n, lt_ss, lt_sl);
+            g_type_ss = lt_ss;
+            g_type_sl = lt_sl;
+        }
+        return;
+    }
+
+    if k == NK_UNARY {
+        var uc: i32 = n_child(nodes, n);
+        check_expr(nodes, strtab, fntab, vartab, uc);
+        var ct_ss: i32 = g_type_ss;
+        var ct_sl: i32 = g_type_sl;
+        var uop_ss: i32 = n_ss(nodes, n);
+        var uop_sl: i32 = n_sl(nodes, n);
+        if uop_sl == 1 && get(strtab, uop_ss) == '!' {
+            set_annot_lit(nodes, strtab, n, "bool");
+        } else {
+            set_annot(nodes, n, ct_ss, ct_sl);
+            g_type_ss = ct_ss;
+            g_type_sl = ct_sl;
+        }
+        return;
+    }
+
+    if k == NK_CAST {
+        var cast_expr: i32 = n_child(nodes, n);
+        var cast_type: i32 = -1;
+        if cast_expr >= 0 { cast_type = n_sib(nodes, cast_expr); }
+        check_expr(nodes, strtab, fntab, vartab, cast_expr);
+        if cast_type >= 0 {
+            var ctype_ss: i32 = n_ss(nodes, cast_type);
+            var ctype_sl: i32 = n_sl(nodes, cast_type);
+            set_annot(nodes, n, ctype_ss, ctype_sl);
+            g_type_ss = ctype_ss;
+            g_type_sl = ctype_sl;
+        } else {
+            g_type_ss = -1;
+            g_type_sl = 0;
+        }
+        return;
+    }
+
+    // NK_FIELD and others: leave unannotated
+    g_type_ss = -1;
+    g_type_sl = 0;
+    return;
+}
+
+fn check_call_site(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array,
+                   n: i32, fname_ss: i32, fname_sl: i32) -> void {
+    var nargs: i32 = n_nchildren(nodes, n);
+    var arg_tss: I32Array = I32Array(24);
+    var arg_tsl: I32Array = I32Array(24);
+    var child: i32 = n_child(nodes, n);
+    var ai: i32 = 0;
+    while child >= 0 && ai < 24 {
+        check_expr(nodes, strtab, fntab, vartab, child);
+        set(arg_tss, ai, g_type_ss);
+        set(arg_tsl, ai, g_type_sl);
+        child = n_sib(nodes, child);
+        ai = ai + 1;
+    }
+
+    var fi: i32 = resolve_overload(strtab, fntab, arg_tss, arg_tsl, fname_ss, fname_sl, nargs);
+    delete(arg_tss);
+    delete(arg_tsl);
+
+    if fi < 0 {
+        var errbuf: U8Array = U8Array(64);
+        set(errbuf, 0, 'T'); set(errbuf, 1, 'y'); set(errbuf, 2, 'p'); set(errbuf, 3, 'e');
+        set(errbuf, 4, ' '); set(errbuf, 5, 'e'); set(errbuf, 6, 'r'); set(errbuf, 7, 'r');
+        set(errbuf, 8, 'o'); set(errbuf, 9, 'r'); set(errbuf, 10, 10u8);
+        sys_write(2, errbuf, 11);
+        delete(errbuf);
+        sys_exit(1);
+    }
+
+    // g_type_ss/g_type_sl already set by resolve_overload
+    set_annot(nodes, n, g_type_ss, g_type_sl);
+    return;
+}
+
+fn check_stmt(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, n: i32) -> void {
+    var k: i32 = n_kind(nodes, n);
+
+    if k == NK_VAR_DECL {
+        var type_n: i32 = n_child(nodes, n);
+        if type_n >= 0 {
+            var decl_tss: i32 = n_ss(nodes, type_n);
+            var decl_tsl: i32 = n_sl(nodes, type_n);
+            var init_n: i32 = n_sib(nodes, type_n);
+            if init_n >= 0 {
+                check_expr(nodes, strtab, fntab, vartab, init_n);
+            }
+            var_add(strtab, vartab, n_ss(nodes, n), n_sl(nodes, n), decl_tss, decl_tsl);
+            set_annot(nodes, n, decl_tss, decl_tsl);
+        }
+        return;
+    }
+
+    if k == NK_ASSIGN {
+        var aname_ss: i32 = n_ss(nodes, n);
+        var aname_sl: i32 = n_sl(nodes, n);
+        var found2: bool = var_find(strtab, vartab, aname_ss, aname_sl);
+        if found2 {
+            set_annot(nodes, n, g_type_ss, g_type_sl);
+        }
+        var rhs: i32 = n_child(nodes, n);
+        if rhs >= 0 {
+            check_expr(nodes, strtab, fntab, vartab, rhs);
+        }
+        return;
+    }
+
+    if k == NK_CALL_STMT {
+        check_call_site(nodes, strtab, fntab, vartab, n, n_ss(nodes, n), n_sl(nodes, n));
+        return;
+    }
+
+    if k == NK_IF {
+        var if_cond: i32 = n_child(nodes, n);
+        if if_cond >= 0 {
+            check_expr(nodes, strtab, fntab, vartab, if_cond);
+        }
+        var then_blk: i32 = n_nth_child(nodes, n, 1);
+        if then_blk >= 0 {
+            push_scope();
+            check_block(nodes, strtab, fntab, vartab, then_blk);
+            pop_scope(vartab);
+        }
+        var else_br: i32 = n_nth_child(nodes, n, 2);
+        if else_br >= 0 {
+            if n_kind(nodes, else_br) == NK_IF {
+                check_stmt(nodes, strtab, fntab, vartab, else_br);
+            } else {
+                push_scope();
+                check_block(nodes, strtab, fntab, vartab, else_br);
+                pop_scope(vartab);
+            }
+        }
+        return;
+    }
+
+    if k == NK_WHILE {
+        var wh_cond: i32 = n_child(nodes, n);
+        if wh_cond >= 0 {
+            check_expr(nodes, strtab, fntab, vartab, wh_cond);
+        }
+        var wh_body: i32 = n_nth_child(nodes, n, 1);
+        if wh_body >= 0 {
+            push_scope();
+            check_block(nodes, strtab, fntab, vartab, wh_body);
+            pop_scope(vartab);
+        }
+        return;
+    }
+
+    if k == NK_RETURN {
+        var ret_child: i32 = n_child(nodes, n);
+        if ret_child >= 0 {
+            check_expr(nodes, strtab, fntab, vartab, ret_child);
+            set_annot(nodes, n, g_type_ss, g_type_sl);
+        } else {
+            var void_ss: i32 = st_add_str(strtab, "void");
+            set_annot(nodes, n, void_ss, 4);
+        }
+        return;
+    }
+
+    // NK_BREAK, NK_CONTINUE, NK_COMMENT: do nothing
+    return;
+}
+
+fn check_block(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, blk_n: i32) -> void {
+    var c: i32 = n_child(nodes, blk_n);
+    while c >= 0 {
+        check_stmt(nodes, strtab, fntab, vartab, c);
+        c = n_sib(nodes, c);
+    }
+    return;
+}
+
+fn check_fn(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, fn_n: i32) -> void {
+    var params_n: i32 = n_child(nodes, fn_n);
+    var ret_n: i32 = -1;
+    var body_n: i32 = -1;
+    if params_n >= 0 { ret_n = n_sib(nodes, params_n); }
+    if ret_n >= 0 { body_n = n_sib(nodes, ret_n); }
+
+    g_ret_ss = -1;
+    g_ret_sl = 0;
+    if ret_n >= 0 {
+        var type_child: i32 = n_child(nodes, ret_n);
+        if type_child >= 0 {
+            g_ret_ss = n_ss(nodes, type_child);
+            g_ret_sl = n_sl(nodes, type_child);
+        }
+    }
+
+    push_scope();
+
+    if params_n >= 0 {
+        var pc: i32 = n_child(nodes, params_n);
+        while pc >= 0 {
+            var param_type_n: i32 = n_child(nodes, pc);
+            if param_type_n >= 0 {
+                var pt_ss: i32 = n_ss(nodes, param_type_n);
+                var pt_sl: i32 = n_sl(nodes, param_type_n);
+                var_add(strtab, vartab, n_ss(nodes, pc), n_sl(nodes, pc), pt_ss, pt_sl);
+                set_annot(nodes, pc, pt_ss, pt_sl);
+            }
+            pc = n_sib(nodes, pc);
+        }
+    }
+
+    if body_n >= 0 {
+        check_block(nodes, strtab, fntab, vartab, body_n);
+    }
+
+    pop_scope(vartab);
+    return;
+}
+
+// ===== Collect declarations =====
+fn collect_fn(nodes: I32Array, strtab: U8Array, fntab: I32Array, fn_n: i32) -> void {
+    var fi: i32 = g_fn_count;
+    g_fn_count = g_fn_count + 1;
+
+    ft_set_nss(fntab, fi, n_ss(nodes, fn_n));
+    ft_set_nsl(fntab, fi, n_sl(nodes, fn_n));
+
+    var params_n: i32 = n_child(nodes, fn_n);
+    var ret_n: i32 = -1;
+    if params_n >= 0 { ret_n = n_sib(nodes, params_n); }
+
+    var rt_ss: i32 = -1;
+    var rt_sl: i32 = 0;
+    if ret_n >= 0 {
+        var type_child2: i32 = n_child(nodes, ret_n);
+        if type_child2 >= 0 {
+            rt_ss = n_ss(nodes, type_child2);
+            rt_sl = n_sl(nodes, type_child2);
+        }
+    }
+    if rt_ss < 0 {
+        rt_ss = st_add_str(strtab, "void");
+        rt_sl = 4;
+    }
+    ft_set_rss(fntab, fi, rt_ss);
+    ft_set_rsl(fntab, fi, rt_sl);
+
+    var np: i32 = 0;
+    if params_n >= 0 {
+        var pc2: i32 = n_child(nodes, params_n);
+        while pc2 >= 0 && np < 21 {
+            var ptype_n: i32 = n_child(nodes, pc2);
+            if ptype_n >= 0 {
+                ft_set_pss(fntab, fi, np, n_ss(nodes, ptype_n));
+                ft_set_psl(fntab, fi, np, n_sl(nodes, ptype_n));
+            }
+            np = np + 1;
+            pc2 = n_sib(nodes, pc2);
+        }
+    }
+    ft_set_np(fntab, fi, np);
+    return;
+}
+
+fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i32) -> void {
+    var sname_ss: i32 = n_ss(nodes, struct_n);
+    var sname_sl: i32 = n_sl(nodes, struct_n);
+
+    // Register constructor
+    var fi2: i32 = g_fn_count;
+    g_fn_count = g_fn_count + 1;
+    ft_set_nss(fntab, fi2, sname_ss);
+    ft_set_nsl(fntab, fi2, sname_sl);
+    ft_set_rss(fntab, fi2, sname_ss);
+    ft_set_rsl(fntab, fi2, sname_sl);
+    var nfp: i32 = 0;
+    var fc2: i32 = n_child(nodes, struct_n);
+    while fc2 >= 0 && nfp < 21 {
+        var ftype_n: i32 = n_child(nodes, fc2);
+        if ftype_n >= 0 {
+            ft_set_pss(fntab, fi2, nfp, n_ss(nodes, ftype_n));
+            ft_set_psl(fntab, fi2, nfp, n_sl(nodes, ftype_n));
+        }
+        nfp = nfp + 1;
+        fc2 = n_sib(nodes, fc2);
+    }
+    ft_set_np(fntab, fi2, nfp);
+
+    // Register delete(StructName) -> void
+    var del_fi: i32 = g_fn_count;
+    g_fn_count = g_fn_count + 1;
+    var del_ss: i32 = st_add_str(strtab, "delete");
+    ft_set_nss(fntab, del_fi, del_ss);
+    ft_set_nsl(fntab, del_fi, 6);
+    ft_set_np(fntab, del_fi, 1);
+    ft_set_pss(fntab, del_fi, 0, sname_ss);
+    ft_set_psl(fntab, del_fi, 0, sname_sl);
+    var void_ss2: i32 = st_add_str(strtab, "void");
+    ft_set_rss(fntab, del_fi, void_ss2);
+    ft_set_rsl(fntab, del_fi, 4);
+    return;
+}
+
+fn collect_decls(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
+    var c: i32 = n_child(nodes, root);
+    while c >= 0 {
+        var ck: i32 = n_kind(nodes, c);
+        if ck == NK_FN {
+            collect_fn(nodes, strtab, fntab, c);
+        }
+        if ck == NK_STRUCT {
+            collect_struct(nodes, strtab, fntab, c);
+        }
+        c = n_sib(nodes, c);
+    }
+    return;
+}
+
+fn check_program(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
+    var c: i32 = n_child(nodes, root);
+    while c >= 0 {
+        var ck: i32 = n_kind(nodes, c);
+        if ck == NK_FN {
+            check_fn(nodes, strtab, fntab, vartab, c);
+        }
+        if ck == NK_VAR_DECL {
+            var gtype_n: i32 = n_child(nodes, c);
+            if gtype_n >= 0 {
+                var gt_ss: i32 = n_ss(nodes, gtype_n);
+                var gt_sl: i32 = n_sl(nodes, gtype_n);
+                var_add(strtab, vartab, n_ss(nodes, c), n_sl(nodes, c), gt_ss, gt_sl);
+                // Do NOT annotate global var_decl (matches C typecheck behavior)
+                var ginit: i32 = n_sib(nodes, gtype_n);
+                if ginit >= 0 {
+                    check_expr(nodes, strtab, fntab, vartab, ginit);
+                }
+            }
+        }
+        c = n_sib(nodes, c);
+    }
+    return;
+}
+
+// ===== AST writer =====
+fn emit_kind(k: i32, ob: U8Array) -> void {
+    if k == NK_PROGRAM  { ob_char('p', ob); ob_char('r', ob); ob_char('o', ob); ob_char('g', ob); ob_char('r', ob); ob_char('a', ob); ob_char('m', ob); return; }
+    if k == NK_FN       { ob_char('f', ob); ob_char('n', ob); return; }
+    if k == NK_STRUCT   { ob_char('s', ob); ob_char('t', ob); ob_char('r', ob); ob_char('u', ob); ob_char('c', ob); ob_char('t', ob); return; }
+    if k == NK_PARAMS   { ob_char('p', ob); ob_char('a', ob); ob_char('r', ob); ob_char('a', ob); ob_char('m', ob); ob_char('s', ob); return; }
+    if k == NK_PARAM    { ob_char('p', ob); ob_char('a', ob); ob_char('r', ob); ob_char('a', ob); ob_char('m', ob); return; }
+    if k == NK_RET      { ob_char('r', ob); ob_char('e', ob); ob_char('t', ob); return; }
+    if k == NK_TYPE     { ob_char('t', ob); ob_char('y', ob); ob_char('p', ob); ob_char('e', ob); return; }
+    if k == NK_BLOCK    { ob_char('b', ob); ob_char('l', ob); ob_char('o', ob); ob_char('c', ob); ob_char('k', ob); return; }
+    if k == NK_VAR_DECL { ob_char('v', ob); ob_char('a', ob); ob_char('r', ob); ob_char('_', ob); ob_char('d', ob); ob_char('e', ob); ob_char('c', ob); ob_char('l', ob); return; }
+    if k == NK_ASSIGN   { ob_char('a', ob); ob_char('s', ob); ob_char('s', ob); ob_char('i', ob); ob_char('g', ob); ob_char('n', ob); return; }
+    if k == NK_CALL_STMT { ob_char('c', ob); ob_char('a', ob); ob_char('l', ob); ob_char('l', ob); ob_char('_', ob); ob_char('s', ob); ob_char('t', ob); ob_char('m', ob); ob_char('t', ob); return; }
+    if k == NK_CALL     { ob_char('c', ob); ob_char('a', ob); ob_char('l', ob); ob_char('l', ob); return; }
+    if k == NK_IF       { ob_char('i', ob); ob_char('f', ob); return; }
+    if k == NK_WHILE    { ob_char('w', ob); ob_char('h', ob); ob_char('i', ob); ob_char('l', ob); ob_char('e', ob); return; }
+    if k == NK_RETURN   { ob_char('r', ob); ob_char('e', ob); ob_char('t', ob); ob_char('u', ob); ob_char('r', ob); ob_char('n', ob); return; }
+    if k == NK_BINOP    { ob_char('b', ob); ob_char('i', ob); ob_char('n', ob); ob_char('o', ob); ob_char('p', ob); return; }
+    if k == NK_UNARY    { ob_char('u', ob); ob_char('n', ob); ob_char('a', ob); ob_char('r', ob); ob_char('y', ob); return; }
+    if k == NK_INT      { ob_char('i', ob); ob_char('n', ob); ob_char('t', ob); return; }
+    if k == NK_STR      { ob_char('s', ob); ob_char('t', ob); ob_char('r', ob); return; }
+    if k == NK_BOOL     { ob_char('b', ob); ob_char('o', ob); ob_char('o', ob); ob_char('l', ob); return; }
+    if k == NK_VAR      { ob_char('v', ob); ob_char('a', ob); ob_char('r', ob); return; }
+    if k == NK_CAST     { ob_char('c', ob); ob_char('a', ob); ob_char('s', ob); ob_char('t', ob); return; }
+    if k == NK_IMPORT   { ob_char('i', ob); ob_char('m', ob); ob_char('p', ob); ob_char('o', ob); ob_char('r', ob); ob_char('t', ob); return; }
+    if k == NK_FIELD    { ob_char('f', ob); ob_char('i', ob); ob_char('e', ob); ob_char('l', ob); ob_char('d', ob); return; }
+    if k == NK_BREAK    { ob_char('b', ob); ob_char('r', ob); ob_char('e', ob); ob_char('a', ob); ob_char('k', ob); return; }
+    if k == NK_CONTINUE { ob_char('c', ob); ob_char('o', ob); ob_char('n', ob); ob_char('t', ob); ob_char('i', ob); ob_char('n', ob); ob_char('u', ob); ob_char('e', ob); return; }
+    if k == NK_COMMENT  { ob_char('c', ob); ob_char('o', ob); ob_char('m', ob); ob_char('m', ob); ob_char('e', ob); ob_char('n', ob); ob_char('t', ob); return; }
+    ob_char('?', ob);
+    return;
+}
+
+fn write_indent(indent: i32, ob: U8Array) -> void {
+    var i: i32 = 0;
+    while i < indent {
+        ob_char(' ', ob); ob_char(' ', ob);
+        i = i + 1;
+    }
+    return;
+}
+
+fn write_node(nodes: I32Array, strtab: U8Array, ob: U8Array, indent: i32, n: i32) -> void {
+    write_indent(indent, ob);
+    ob_char('(', ob);
+    var k: i32 = n_kind(nodes, n);
+    emit_kind(k, ob);
+
+    var tass: i32 = n_tass(nodes, n);
+    var tasl: i32 = n_tasl(nodes, n);
+    if tass >= 0 && tasl > 0 {
+        ob_char(':', ob);
+        ob_n(strtab, tass, tasl, ob);
+    }
+
+    if k == NK_INT {
+        ob_char(' ', ob);
+        ob_int(n_ival(nodes, n), ob);
+    } else if k == NK_BOOL {
+        ob_char(' ', ob);
+        if n_ival(nodes, n) == 1 {
+            ob_char('t', ob); ob_char('r', ob); ob_char('u', ob); ob_char('e', ob);
+        } else {
+            ob_char('f', ob); ob_char('a', ob); ob_char('l', ob); ob_char('s', ob); ob_char('e', ob);
+        }
+    } else if k == NK_STR {
+        ob_char(' ', ob); ob_char('"', ob);
+        ob_str_escaped(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
+        ob_char('"', ob);
+    } else if k == NK_COMMENT {
+        ob_char(' ', ob); ob_char('"', ob);
+        ob_str_escaped(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
+        ob_char('"', ob);
+    } else if n_sl(nodes, n) > 0 {
+        ob_char(' ', ob);
+        ob_n(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
+    }
+
+    var first_child: i32 = n_child(nodes, n);
+    if first_child < 0 {
+        ob_char(')', ob);
+    } else {
+        var c2: i32 = first_child;
+        while c2 >= 0 {
+            ob_char(10u8, ob);
+            write_node(nodes, strtab, ob, (indent + 1), c2);
+            c2 = n_sib(nodes, c2);
+        }
+        ob_char(10u8, ob);
+        write_indent(indent, ob);
+        ob_char(')', ob);
+    }
+    return;
+}
+
+// ===== Main =====
+fn main() -> i32 {
+    var nodes: I32Array = I32Array(131072);
+    var strtab: U8Array = U8Array(524288);
+    var in_buf: U8Array = U8Array(524288);
+    var atom_buf: U8Array = U8Array(1024);
+    var ob: U8Array = U8Array(16384);
+
+    // fntab: 600 entries * 47 fields = 28200
+    var fntab: I32Array = I32Array(28200);
+
+    // vartab: 512 vars * 5 fields = 2560
+    var vartab: I32Array = I32Array(2560);
+
+    g_in_len = sys_read(0, in_buf, 524288);
+    g_in_pos = 0;
+    g_nc = 0;
+    g_sp = 0;
+    g_fn_count = 0;
+    g_var_count = 0;
+    g_scope_depth = 0;
+    g_ob_pos = 0;
+    g_ret_ss = -1;
+    g_ret_sl = 0;
+    g_type_ss = -1;
+    g_type_sl = 0;
+
+    register_builtins(strtab, fntab);
+
+    var root: i32 = read_node(in_buf, atom_buf, nodes, strtab);
+    if root < 0 { sys_exit(1); }
+
+    collect_decls(nodes, strtab, fntab, vartab, root);
+    check_program(nodes, strtab, fntab, vartab, root);
+
+    write_node(nodes, strtab, ob, 0, root);
+    ob_char(10u8, ob);
+    ob_flush(ob);
+
+    delete(nodes); delete(strtab); delete(in_buf); delete(atom_buf); delete(ob);
+    delete(fntab); delete(vartab);
+    return 0;
+}

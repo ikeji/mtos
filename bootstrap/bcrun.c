@@ -309,9 +309,9 @@ static BcProg *bc_parse(FILE *in) {
             } else if (strcmp(dir, "fn") == 0) {
                 /* Format: .fn NAME ARG_TYPE... RET_TYPE
                    All tokens after name: last = rettype, rest = arg types */
-                char toks[17][128]; int ntok = 0;
+                char toks[30][128]; int ntok = 0;
                 char *p2 = s;
-                while (*p2 && ntok < 17) {
+                while (*p2 && ntok < 30) {
                     p2 = skip_ws(p2);
                     if (!*p2) break;
                     p2 = next_tok(p2, toks[ntok], sizeof(toks[0]));
@@ -319,8 +319,8 @@ static BcProg *bc_parse(FILE *in) {
                 }
                 /* toks[0]=name, toks[1..ntok-2]=arg_types, toks[ntok-1]=rettype */
                 int nargs = ntok >= 2 ? ntok - 2 : 0;
-                const char *argtypes[16];
-                for (int i = 0; i < nargs && i < 16; i++) argtypes[i] = toks[1 + i];
+                const char *argtypes[29];
+                for (int i = 0; i < nargs && i < 29; i++) argtypes[i] = toks[1 + i];
                 char mangled[512];
                 build_mangled(mangled, sizeof(mangled), toks[0], argtypes, nargs);
                 cur = prog_new_func(p);
@@ -375,9 +375,9 @@ static BcProg *bc_parse(FILE *in) {
             char nm[128];
             s = skip_ws(next_tok(s, nm, sizeof(nm)));
             /* remaining tokens are arg types */
-            const char *types[16]; char typebufs[16][64]; int ntypes = 0;
+            const char *types[29]; char typebufs[29][64]; int ntypes = 0;
             char *p2 = s;
-            while (*p2 && ntypes < 16) {
+            while (*p2 && ntypes < 29) {
                 p2 = skip_ws(p2);
                 if (!*p2) break;
                 p2 = next_tok(p2, typebufs[ntypes], sizeof(typebufs[0]));

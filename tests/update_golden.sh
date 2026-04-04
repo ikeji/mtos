@@ -56,18 +56,18 @@ for f in "${FILES[@]}"; do
     # 1. Update AST (C impl)
     "$PARSE" "$input" > "$GOLDEN_DIR/$base.ast" 2>/dev/null
     # 1b. Update AST (parse.tc self-hosted)
-    { echo "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$GOLDEN_DIR/$base.ast.tc" 2>/dev/null
+    { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$GOLDEN_DIR/$base.ast.tc" 2>/dev/null
     
     # 2. Update Bytecode
     bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
-    echo "$bc" > "$GOLDEN_DIR/$base.bc"
+    printf '%s\n' "$bc" >"$GOLDEN_DIR/$base.bc"
 
     # 3. Update Assembly
-    echo "$bc" | "$BC2ASM" > "$GOLDEN_DIR/$base.s" 2>/dev/null
+    printf '%s\n' "$bc" | "$BC2ASM" > "$GOLDEN_DIR/$base.s" 2>/dev/null
 
     # 4. Update Execution Output and Exit Code (via bcrun)
     stdin=$(get_stdin "$f")
-    { echo "$bc"; echo -n "$stdin"; } | "$BCRUN" > "$GOLDEN_DIR/$base.out" 2>/dev/null
+    { printf '%s\n' "$bc"; echo -n "$stdin"; } | "$BCRUN" > "$GOLDEN_DIR/$base.out" 2>/dev/null
     echo $? > "$GOLDEN_DIR/$base.exit"
 done
 
@@ -107,18 +107,18 @@ for f in "${TC_FILES[@]}"; do
     # 1. Update AST (C impl)
     "$PARSE" "$input" > "$GOLDEN_DIR/tc/$base.ast" 2>/dev/null
     # 1b. Update AST (parse.tc self-hosted)
-    { echo "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.ast.tc" 2>/dev/null
+    { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.ast.tc" 2>/dev/null
 
     # 2. Update Bytecode
     bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
-    echo "$bc" > "$GOLDEN_DIR/tc/$base.bc"
+    printf '%s\n' "$bc" >"$GOLDEN_DIR/tc/$base.bc"
 
     # 3. Update Assembly
-    echo "$bc" | "$BC2ASM" > "$GOLDEN_DIR/tc/$base.s" 2>/dev/null
+    printf '%s\n' "$bc" | "$BC2ASM" > "$GOLDEN_DIR/tc/$base.s" 2>/dev/null
 
     # 4. Update Execution Output and Exit Code (via bcrun)
     exec_input=$(get_tc_exec_input_file "$f")
-    { echo "$bc"; cat "$exec_input"; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.out" 2>/dev/null
+    { printf '%s\n' "$bc"; cat "$exec_input"; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.out" 2>/dev/null
     echo $? > "$GOLDEN_DIR/tc/$base.exit"
 done
 

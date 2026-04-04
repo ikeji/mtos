@@ -1,97 +1,97 @@
 .bc
-.fn main 0 i32
+.fn main i32
 .local buf U8Array
 ; var buf: U8Array = U8Array(13);
   push_int 13
-  call U8Array 1
+  call U8Array ?
   store buf
 ; set(buf, 0, 72u8);   // H
   load buf
   push_int 0
   push_int 72
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 1, 101u8);  // e
   load buf
   push_int 1
   push_int 101
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 2, 108u8);  // l
   load buf
   push_int 2
   push_int 108
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 3, 108u8);  // l
   load buf
   push_int 3
   push_int 108
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 4, 111u8);  // o
   load buf
   push_int 4
   push_int 111
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 5, 44u8);   // ,
   load buf
   push_int 5
   push_int 44
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 6, 32u8);   //
   load buf
   push_int 6
   push_int 32
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 7, 87u8);   // W
   load buf
   push_int 7
   push_int 87
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 8, 111u8);  // o
   load buf
   push_int 8
   push_int 111
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 9, 114u8);  // r
   load buf
   push_int 9
   push_int 114
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 10, 108u8); // l
   load buf
   push_int 10
   push_int 108
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 11, 100u8); // d
   load buf
   push_int 11
   push_int 100
-  call set 3
+  call set ? ? u8
   pop
 ; set(buf, 12, 10u8);  // \n
   load buf
   push_int 12
   push_int 10
-  call set 3
+  call set ? ? u8
   pop
 ; sys_write(1, buf, 13);
   push_int 1
   load buf
   push_int 13
-  call sys_write 3
+  call sys_write ? ? ?
   pop
 ; delete(buf);
   load buf
-  call delete 1
+  call delete ?
   pop
 ; return 0;
   push_int 0

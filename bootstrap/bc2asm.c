@@ -167,12 +167,12 @@ static BcProg *bc_parse(FILE *in) {
             else if(!strcmp(dir,"global")){char nm[128],ty[64],iv[32];s=skip_ws(next_tok(s,nm,sizeof(nm)));s=skip_ws(next_tok(s,ty,sizeof(ty)));next_tok(s,iv,sizeof(iv));prog_add_global(p,nm,ty,atoi(iv));}
             else if(!strcmp(dir,"fn")){
                 /* Format: .fn NAME ARG_TYPE... RET_TYPE */
-                char toks[17][128]; int ntok=0;
+                char toks[30][128]; int ntok=0;
                 char *p2=s;
-                while(*p2&&ntok<17){p2=skip_ws(p2);if(!*p2)break;p2=next_tok(p2,toks[ntok],sizeof(toks[0]));if(toks[ntok][0])ntok++;}
+                while(*p2&&ntok<30){p2=skip_ws(p2);if(!*p2)break;p2=next_tok(p2,toks[ntok],sizeof(toks[0]));if(toks[ntok][0])ntok++;}
                 int nargs=ntok>=2?ntok-2:0;
-                const char *argtypes[16];
-                for(int i=0;i<nargs&&i<16;i++)argtypes[i]=toks[1+i];
+                const char *argtypes[29];
+                for(int i=0;i<nargs&&i<29;i++)argtypes[i]=toks[1+i];
                 char mangled[512];
                 build_mangled(mangled,sizeof(mangled),toks[0],argtypes,nargs);
                 cur=prog_new_fn(p);cur->name=strdup(mangled);
@@ -196,9 +196,9 @@ static BcProg *bc_parse(FILE *in) {
         else if(!strcmp(op,"store"))     {ins.op=OP_STORE;char n[128];next_tok(s,n,sizeof(n));ins.sarg=strdup(n);}
         else if(!strcmp(op,"call"))      {
             ins.op=OP_CALL;char nm[128];s=skip_ws(next_tok(s,nm,sizeof(nm)));
-            const char *types[16];char typebufs[16][64];int ntypes=0;
+            const char *types[29];char typebufs[29][64];int ntypes=0;
             char *p2=s;
-            while(*p2&&ntypes<16){p2=skip_ws(p2);if(!*p2)break;p2=next_tok(p2,typebufs[ntypes],sizeof(typebufs[0]));if(typebufs[ntypes][0]){types[ntypes]=typebufs[ntypes];ntypes++;}}
+            while(*p2&&ntypes<29){p2=skip_ws(p2);if(!*p2)break;p2=next_tok(p2,typebufs[ntypes],sizeof(typebufs[0]));if(typebufs[ntypes][0]){types[ntypes]=typebufs[ntypes];ntypes++;}}
             char mangled[512];build_mangled(mangled,sizeof(mangled),nm,types,ntypes);
             ins.sarg=strdup(mangled);ins.ival=ntypes;}
         else if(!strcmp(op,"return"))    {ins.op=OP_RETURN;}
