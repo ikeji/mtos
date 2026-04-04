@@ -524,8 +524,8 @@ is_alnum__u8:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_alpha__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -535,8 +535,8 @@ is_alnum__u8:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_digit__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -725,8 +725,8 @@ ob_flush__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_sys_write
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -773,8 +773,8 @@ ob_char__u8__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -816,8 +816,8 @@ ob_char__u8__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ob_flush__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -886,8 +886,8 @@ ob_n__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -895,8 +895,8 @@ ob_n__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -986,8 +986,8 @@ ob_indent__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1039,8 +1039,8 @@ tok_cmp__U8Array__i32__String:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_len
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t1, 0(sp)
@@ -1095,8 +1095,8 @@ tok_cmp__U8Array__i32__String:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -20(s0)
@@ -1107,8 +1107,8 @@ tok_cmp__U8Array__i32__String:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t1, 0(sp)
@@ -1190,8 +1190,8 @@ ob_string__String__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_len
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -1221,8 +1221,8 @@ ob_string__String__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -16(s0)
@@ -1230,8 +1230,8 @@ ob_string__String__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1301,8 +1301,8 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1346,8 +1346,8 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1361,8 +1361,8 @@ ob_int__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -1431,8 +1431,8 @@ ob_int__i32__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1508,8 +1508,8 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -16(s0)
@@ -1517,8 +1517,8 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1543,8 +1543,8 @@ ob_int__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1595,8 +1595,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1631,8 +1631,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1667,8 +1667,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1703,8 +1703,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1739,8 +1739,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1775,8 +1775,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1811,8 +1811,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1847,8 +1847,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1885,8 +1885,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1923,8 +1923,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1961,8 +1961,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1999,8 +1999,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2035,8 +2035,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2073,8 +2073,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2111,8 +2111,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2147,8 +2147,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2185,8 +2185,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2221,8 +2221,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2259,8 +2259,8 @@ ob_op__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2319,8 +2319,8 @@ ob_type_kw__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2357,8 +2357,8 @@ ob_type_kw__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2395,8 +2395,8 @@ ob_type_kw__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2433,8 +2433,8 @@ ob_type_kw__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2471,8 +2471,8 @@ ob_type_kw__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2509,8 +2509,8 @@ ob_type_kw__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2547,8 +2547,8 @@ ob_type_kw__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2585,8 +2585,8 @@ ob_type_kw__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2918,8 +2918,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -2952,8 +2952,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -2986,8 +2986,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3020,8 +3020,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3054,8 +3054,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3104,8 +3104,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3138,8 +3138,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3172,8 +3172,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3206,8 +3206,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3240,8 +3240,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3290,8 +3290,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3324,8 +3324,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3358,8 +3358,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3392,8 +3392,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3442,8 +3442,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3476,8 +3476,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3510,8 +3510,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3560,8 +3560,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3594,8 +3594,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3628,8 +3628,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3678,8 +3678,8 @@ classify_ident__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3765,8 +3765,8 @@ src_char__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3817,8 +3817,8 @@ next_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call src_char__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3828,8 +3828,8 @@ next_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_wspace__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3960,8 +3960,8 @@ next_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 47
@@ -4011,8 +4011,8 @@ next_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call src_char__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 10
@@ -4249,8 +4249,8 @@ skip_ws_and_comments__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4260,8 +4260,8 @@ skip_ws_and_comments__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_wspace__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4392,8 +4392,8 @@ skip_ws_and_comments__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 47
@@ -4448,8 +4448,8 @@ skip_ws_and_comments__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 10
@@ -4546,8 +4546,8 @@ lex_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_ws_and_comments__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4607,8 +4607,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4618,8 +4618,8 @@ lex_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_alpha__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4659,13 +4659,13 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_alnum__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4763,15 +4763,15 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4807,8 +4807,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call classify_ident__U8Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4825,8 +4825,8 @@ lex_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_digit__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4865,13 +4865,13 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_digit__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4910,8 +4910,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4981,13 +4981,13 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_alpha__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5039,13 +5039,13 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_alnum__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5143,15 +5143,15 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -5276,8 +5276,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 34
@@ -5314,8 +5314,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5401,8 +5401,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5564,8 +5564,8 @@ lex_tok__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -5615,8 +5615,8 @@ lex_tok__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -5759,8 +5759,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5846,8 +5846,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6133,8 +6133,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 39
@@ -6192,8 +6192,8 @@ lex_tok__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -6209,8 +6209,8 @@ lex_tok__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -6301,8 +6301,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -6417,8 +6417,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -6773,8 +6773,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -6889,8 +6889,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -7005,8 +7005,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 38
@@ -7121,8 +7121,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 124
@@ -7237,8 +7237,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -7353,8 +7353,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -7469,8 +7469,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -7555,8 +7555,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 60
@@ -7671,8 +7671,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -7757,8 +7757,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 62
@@ -7873,8 +7873,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 62
@@ -7959,8 +7959,8 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 61
@@ -8086,8 +8086,8 @@ expect_tok__i32__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -8105,8 +8105,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8122,8 +8122,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8139,8 +8139,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8156,8 +8156,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8173,8 +8173,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8190,8 +8190,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8207,8 +8207,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8224,8 +8224,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8241,8 +8241,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8258,8 +8258,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8275,8 +8275,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8292,8 +8292,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8309,8 +8309,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8326,8 +8326,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8343,8 +8343,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8360,8 +8360,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8377,8 +8377,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8394,8 +8394,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8411,8 +8411,8 @@ expect_tok__i32__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_sys_write
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8420,8 +8420,8 @@ expect_tok__i32__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8429,9 +8429,9 @@ expect_tok__i32__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     li   a7, 93
     ecall
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8444,8 +8444,8 @@ expect_tok__i32__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8483,8 +8483,8 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8498,8 +8498,8 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8511,8 +8511,8 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8524,8 +8524,8 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_op__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8537,8 +8537,8 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8558,8 +8558,8 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8571,8 +8571,8 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8630,8 +8630,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8645,8 +8645,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8674,8 +8674,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8696,8 +8696,8 @@ pars_primary__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8710,8 +8710,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8724,8 +8724,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8737,8 +8737,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8750,8 +8750,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8787,8 +8787,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8802,8 +8802,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8815,8 +8815,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8828,8 +8828,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8864,8 +8864,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -8895,8 +8895,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8908,8 +8908,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8939,8 +8939,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8952,8 +8952,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8983,8 +8983,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8996,8 +8996,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9027,8 +9027,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9040,8 +9040,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9055,8 +9055,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9086,8 +9086,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9099,8 +9099,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9112,8 +9112,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9149,8 +9149,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9164,8 +9164,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9177,8 +9177,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9192,8 +9192,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9205,8 +9205,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9218,8 +9218,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9255,8 +9255,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9270,8 +9270,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9283,8 +9283,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9298,8 +9298,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9311,8 +9311,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9324,8 +9324,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9361,8 +9361,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9378,8 +9378,8 @@ pars_primary__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9396,8 +9396,8 @@ pars_primary__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9445,8 +9445,8 @@ pars_primary__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9488,15 +9488,15 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9525,8 +9525,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9556,8 +9556,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9569,8 +9569,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9584,8 +9584,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9597,8 +9597,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9618,8 +9618,8 @@ pars_primary__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9672,8 +9672,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9689,8 +9689,8 @@ pars_primary__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9720,8 +9720,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9749,8 +9749,8 @@ pars_primary__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9762,8 +9762,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9777,8 +9777,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9792,8 +9792,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9805,8 +9805,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9826,8 +9826,8 @@ pars_primary__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9839,8 +9839,8 @@ pars_primary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9849,8 +9849,8 @@ pars_primary__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9864,9 +9864,9 @@ pars_primary__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     li   a7, 93
     ecall
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9916,8 +9916,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_primary__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9948,8 +9948,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9973,8 +9973,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10025,15 +10025,15 @@ pars_postfix__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10069,8 +10069,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10084,8 +10084,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10097,8 +10097,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10118,8 +10118,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10131,8 +10131,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10152,8 +10152,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_type__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10165,8 +10165,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10174,8 +10174,8 @@ pars_postfix__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10230,8 +10230,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10243,8 +10243,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10258,8 +10258,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10271,8 +10271,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10284,8 +10284,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10297,8 +10297,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10314,8 +10314,8 @@ pars_unary__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_unary__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10327,8 +10327,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10364,8 +10364,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10377,8 +10377,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10392,8 +10392,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10405,8 +10405,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10418,8 +10418,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10431,8 +10431,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10448,8 +10448,8 @@ pars_unary__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_unary__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10461,8 +10461,8 @@ pars_unary__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10484,8 +10484,8 @@ pars_unary__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_postfix__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10536,8 +10536,8 @@ pars_mul__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_unary__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10635,8 +10635,8 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10669,8 +10669,8 @@ pars_mul__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10721,15 +10721,15 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10765,8 +10765,8 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10780,8 +10780,8 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10793,8 +10793,8 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10806,8 +10806,8 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_op__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10819,8 +10819,8 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10840,8 +10840,8 @@ pars_mul__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10853,8 +10853,8 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10870,8 +10870,8 @@ pars_mul__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_unary__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10883,8 +10883,8 @@ pars_mul__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10892,8 +10892,8 @@ pars_mul__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10946,8 +10946,8 @@ pars_add__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_mul__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11015,8 +11015,8 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11049,8 +11049,8 @@ pars_add__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11101,15 +11101,15 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11145,8 +11145,8 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11160,8 +11160,8 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11173,8 +11173,8 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11186,8 +11186,8 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_op__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11199,8 +11199,8 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11220,8 +11220,8 @@ pars_add__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11233,8 +11233,8 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11250,8 +11250,8 @@ pars_add__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_mul__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11263,8 +11263,8 @@ pars_add__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11272,8 +11272,8 @@ pars_add__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11326,8 +11326,8 @@ pars_shift__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_add__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11395,8 +11395,8 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11429,8 +11429,8 @@ pars_shift__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11481,15 +11481,15 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11525,8 +11525,8 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11540,8 +11540,8 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11553,8 +11553,8 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11566,8 +11566,8 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_op__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11579,8 +11579,8 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11600,8 +11600,8 @@ pars_shift__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11613,8 +11613,8 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11630,8 +11630,8 @@ pars_shift__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_add__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11643,8 +11643,8 @@ pars_shift__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11652,8 +11652,8 @@ pars_shift__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11705,8 +11705,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_shift__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11737,8 +11737,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11771,8 +11771,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11823,15 +11823,15 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11867,8 +11867,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11882,8 +11882,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11895,8 +11895,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11908,8 +11908,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11921,8 +11921,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11942,8 +11942,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11955,8 +11955,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11972,8 +11972,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_shift__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11985,8 +11985,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11994,8 +11994,8 @@ pars_bitand__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12047,8 +12047,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_bitand__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12079,8 +12079,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12113,8 +12113,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12165,15 +12165,15 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12209,8 +12209,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12224,8 +12224,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12237,8 +12237,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12250,8 +12250,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12263,8 +12263,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12284,8 +12284,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12297,8 +12297,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12314,8 +12314,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_bitand__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12327,8 +12327,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12336,8 +12336,8 @@ pars_bitxor__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12389,8 +12389,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_bitxor__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12421,8 +12421,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12455,8 +12455,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12507,15 +12507,15 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12551,8 +12551,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12566,8 +12566,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12579,8 +12579,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12592,8 +12592,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12605,8 +12605,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12626,8 +12626,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12639,8 +12639,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12656,8 +12656,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_bitxor__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12669,8 +12669,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12678,8 +12678,8 @@ pars_bitor__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12732,8 +12732,8 @@ pars_compare__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_bitor__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12914,8 +12914,8 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12948,8 +12948,8 @@ pars_compare__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13000,15 +13000,15 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13044,8 +13044,8 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13059,8 +13059,8 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13072,8 +13072,8 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13085,8 +13085,8 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_op__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13098,8 +13098,8 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13119,8 +13119,8 @@ pars_compare__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13132,8 +13132,8 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13149,8 +13149,8 @@ pars_compare__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_bitor__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13162,8 +13162,8 @@ pars_compare__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13171,8 +13171,8 @@ pars_compare__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13223,8 +13223,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_compare__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13255,8 +13255,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13289,8 +13289,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13341,15 +13341,15 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13385,8 +13385,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13400,8 +13400,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13413,8 +13413,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13428,8 +13428,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13441,8 +13441,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13462,8 +13462,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13475,8 +13475,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13492,8 +13492,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_compare__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13505,8 +13505,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13514,8 +13514,8 @@ pars_logic_and__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13567,8 +13567,8 @@ pars_expr__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_logic_and__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13599,8 +13599,8 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13633,8 +13633,8 @@ pars_expr__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13685,15 +13685,15 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13729,8 +13729,8 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13744,8 +13744,8 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13757,8 +13757,8 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13772,8 +13772,8 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13785,8 +13785,8 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13806,8 +13806,8 @@ pars_expr__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13819,8 +13819,8 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13836,8 +13836,8 @@ pars_expr__U8Array__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_logic_and__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13849,8 +13849,8 @@ pars_expr__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13858,8 +13858,8 @@ pars_expr__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13897,8 +13897,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13912,8 +13912,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13925,8 +13925,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13935,8 +13935,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_type_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13981,8 +13981,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_type_kw__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13994,8 +13994,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14036,8 +14036,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14049,8 +14049,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14063,8 +14063,8 @@ pars_type__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14108,8 +14108,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14133,8 +14133,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14176,15 +14176,15 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14218,8 +14218,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14236,8 +14236,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14249,8 +14249,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14264,8 +14264,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14277,8 +14277,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14298,8 +14298,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14307,8 +14307,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14320,8 +14320,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14342,8 +14342,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14372,8 +14372,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_type__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14403,8 +14403,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14416,8 +14416,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14438,8 +14438,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14455,8 +14455,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14474,8 +14474,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14487,8 +14487,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14500,8 +14500,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14513,8 +14513,8 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14555,8 +14555,8 @@ pars_break_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14573,8 +14573,8 @@ pars_break_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14586,8 +14586,8 @@ pars_break_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14601,8 +14601,8 @@ pars_break_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14614,8 +14614,8 @@ pars_break_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14656,8 +14656,8 @@ pars_continue_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14674,8 +14674,8 @@ pars_continue_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14687,8 +14687,8 @@ pars_continue_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14702,8 +14702,8 @@ pars_continue_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14715,8 +14715,8 @@ pars_continue_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14757,8 +14757,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14770,8 +14770,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14785,8 +14785,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14816,8 +14816,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14838,8 +14838,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14855,8 +14855,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14874,8 +14874,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14887,8 +14887,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14900,8 +14900,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14913,8 +14913,8 @@ pars_return_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14955,8 +14955,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14968,8 +14968,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14983,8 +14983,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14996,8 +14996,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15018,8 +15018,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15035,8 +15035,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15048,8 +15048,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15070,8 +15070,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15100,8 +15100,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_block__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15131,8 +15131,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15144,8 +15144,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15166,8 +15166,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15214,8 +15214,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_if_stmt__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15246,8 +15246,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_block__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15260,8 +15260,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15273,8 +15273,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15286,8 +15286,8 @@ pars_if_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15328,8 +15328,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15341,8 +15341,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15356,8 +15356,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15369,8 +15369,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15391,8 +15391,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15408,8 +15408,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15421,8 +15421,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15443,8 +15443,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15473,8 +15473,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_block__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15486,8 +15486,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15499,8 +15499,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15512,8 +15512,8 @@ pars_while_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15566,8 +15566,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15609,15 +15609,15 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15651,8 +15651,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15682,8 +15682,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15695,8 +15695,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15710,8 +15710,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15723,8 +15723,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15744,8 +15744,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15757,8 +15757,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15779,8 +15779,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15796,8 +15796,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15814,8 +15814,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15827,8 +15827,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15840,8 +15840,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15853,8 +15853,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16013,8 +16013,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16026,8 +16026,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16041,8 +16041,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16054,8 +16054,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16075,8 +16075,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16088,8 +16088,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16110,8 +16110,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16123,8 +16123,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16138,8 +16138,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16151,8 +16151,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16181,8 +16181,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16212,8 +16212,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16243,8 +16243,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16274,8 +16274,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16305,8 +16305,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16319,8 +16319,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16332,8 +16332,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16347,8 +16347,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16360,8 +16360,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16381,8 +16381,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16394,8 +16394,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16407,8 +16407,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16424,8 +16424,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16437,8 +16437,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16455,8 +16455,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16468,8 +16468,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16481,8 +16481,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16494,8 +16494,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16527,8 +16527,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16540,8 +16540,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16555,8 +16555,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16568,8 +16568,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16589,8 +16589,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16643,8 +16643,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16665,8 +16665,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16682,8 +16682,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_expr__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16713,8 +16713,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16742,8 +16742,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16760,8 +16760,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16773,8 +16773,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16786,8 +16786,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16799,8 +16799,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16810,9 +16810,9 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     li   a7, 93
     ecall
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16821,8 +16821,8 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16917,8 +16917,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 10
@@ -16991,8 +16991,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 32
@@ -17016,8 +17016,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 9
@@ -17105,8 +17105,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -17170,8 +17170,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17185,8 +17185,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17198,8 +17198,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17211,8 +17211,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17241,8 +17241,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 10
@@ -17278,8 +17278,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 13
@@ -17315,8 +17315,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -17346,8 +17346,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17359,8 +17359,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17390,8 +17390,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17403,8 +17403,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17418,8 +17418,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17449,8 +17449,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17462,8 +17462,8 @@ emit_stmt_comment__U8Array__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17525,8 +17525,8 @@ pars_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_var_decl__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17570,8 +17570,8 @@ pars_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_if_stmt__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17615,8 +17615,8 @@ pars_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_while_stmt__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17660,8 +17660,8 @@ pars_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_return_stmt__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17705,8 +17705,8 @@ pars_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_break_stmt__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17750,8 +17750,8 @@ pars_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_continue_stmt__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17795,8 +17795,8 @@ pars_stmt__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_ident_stmt__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17810,9 +17810,9 @@ pars_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     li   a7, 93
     ecall
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17854,8 +17854,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17867,8 +17867,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17882,8 +17882,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17951,8 +17951,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17973,8 +17973,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17990,8 +17990,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call emit_stmt_comment__U8Array__i32__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18003,8 +18003,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18025,8 +18025,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18055,8 +18055,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_stmt__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18075,8 +18075,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18088,8 +18088,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18101,8 +18101,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18114,8 +18114,8 @@ pars_block__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18163,8 +18163,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18188,8 +18188,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18231,15 +18231,15 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18273,8 +18273,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18291,8 +18291,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18304,8 +18304,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18319,8 +18319,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18332,8 +18332,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18353,8 +18353,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18362,8 +18362,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18375,8 +18375,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18397,8 +18397,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18410,8 +18410,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18425,8 +18425,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18491,8 +18491,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18534,15 +18534,15 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18576,8 +18576,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18594,8 +18594,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18607,8 +18607,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18629,8 +18629,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18642,8 +18642,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18657,8 +18657,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18670,8 +18670,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18691,8 +18691,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18704,8 +18704,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18726,8 +18726,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18756,8 +18756,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_type__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18769,8 +18769,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18791,8 +18791,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18804,8 +18804,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18813,8 +18813,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18844,8 +18844,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18873,8 +18873,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18886,8 +18886,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18908,8 +18908,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18921,8 +18921,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18934,8 +18934,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18956,8 +18956,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18969,8 +18969,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18984,8 +18984,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18997,8 +18997,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19019,8 +19019,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19050,8 +19050,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19080,8 +19080,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_type__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19095,8 +19095,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19110,8 +19110,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19123,8 +19123,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19138,8 +19138,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19151,8 +19151,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19165,8 +19165,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19187,8 +19187,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19200,8 +19200,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19213,8 +19213,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19235,8 +19235,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19265,8 +19265,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_block__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19278,8 +19278,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19291,8 +19291,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19304,8 +19304,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19353,8 +19353,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19378,8 +19378,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19421,15 +19421,15 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19463,8 +19463,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19481,8 +19481,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19494,8 +19494,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19509,8 +19509,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19522,8 +19522,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19543,8 +19543,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19552,8 +19552,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19654,8 +19654,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19714,8 +19714,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19757,15 +19757,15 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19799,8 +19799,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19817,8 +19817,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19830,8 +19830,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19852,8 +19852,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19865,8 +19865,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19880,8 +19880,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19893,8 +19893,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19914,8 +19914,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19927,8 +19927,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19949,8 +19949,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19979,8 +19979,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_type__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19992,8 +19992,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20014,8 +20014,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20027,8 +20027,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20036,8 +20036,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20057,8 +20057,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20070,8 +20070,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20083,8 +20083,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20096,8 +20096,8 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20138,8 +20138,8 @@ pars_import__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20151,8 +20151,8 @@ pars_import__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20166,8 +20166,8 @@ pars_import__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20179,8 +20179,8 @@ pars_import__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20219,8 +20219,8 @@ pars_import__U8Array__U8Array__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20232,8 +20232,8 @@ pars_import__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20251,8 +20251,8 @@ pars_import__U8Array__U8Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call expect_tok__i32__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20264,8 +20264,8 @@ pars_import__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20300,8 +20300,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20315,8 +20315,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_string__String__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20347,8 +20347,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20360,8 +20360,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20381,8 +20381,8 @@ pars_program__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_import__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20414,8 +20414,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20427,8 +20427,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_indent__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20466,8 +20466,8 @@ pars_program__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_fn_decl__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20507,8 +20507,8 @@ pars_program__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_struct_decl__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20548,8 +20548,8 @@ pars_program__U8Array__U8Array__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pars_var_decl__U8Array__U8Array__U8Array__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20559,9 +20559,9 @@ pars_program__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     li   a7, 93
     ecall
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20576,8 +20576,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20589,8 +20589,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20602,8 +20602,8 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20637,8 +20637,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -20648,8 +20648,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -20659,8 +20659,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -20670,8 +20670,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -20696,8 +20696,8 @@ main:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_sys_read
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -20794,15 +20794,15 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20852,8 +20852,8 @@ main:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_sys_read
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -20865,8 +20865,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20899,8 +20899,8 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20916,8 +20916,8 @@ main:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call pars_program__U8Array__U8Array__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20925,8 +20925,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ob_flush__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20934,8 +20934,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20943,8 +20943,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20952,8 +20952,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4

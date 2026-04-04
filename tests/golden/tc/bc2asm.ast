@@ -8536,6 +8536,154 @@
           )
         )
       )
+      (comment "var oi: i32=8;")
+      (var_decl oi
+        (type i32)
+        (int 8)
+      )
+      (comment "while oi<np {")
+      (while
+        (binop <
+          (var oi)
+          (var np)
+        )
+        (block
+          (comment "ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);")
+          (call_stmt ob_char
+            (int:u8 32)
+            (var ob)
+          )
+          (comment "ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);")
+          (call_stmt ob_char
+            (int:u8 32)
+            (var ob)
+          )
+          (comment "ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);")
+          (call_stmt ob_char
+            (int:u8 32)
+            (var ob)
+          )
+          (comment "ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);")
+          (call_stmt ob_char
+            (int:u8 32)
+            (var ob)
+          )
+          (comment "ob_char('l',ob);ob_char('w',ob);")
+          (call_stmt ob_char
+            (int:u8 108)
+            (var ob)
+          )
+          (comment "ob_char('l',ob);ob_char('w',ob);")
+          (call_stmt ob_char
+            (int:u8 119)
+            (var ob)
+          )
+          (comment "ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);")
+          (call_stmt ob_char
+            (int:u8 32)
+            (var ob)
+          )
+          (comment "ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);")
+          (call_stmt ob_char
+            (int:u8 32)
+            (var ob)
+          )
+          (comment "ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);")
+          (call_stmt ob_char
+            (int:u8 32)
+            (var ob)
+          )
+          (comment "ob_char('t',ob);ob_char('0',ob);ecomma(ob);")
+          (call_stmt ob_char
+            (int:u8 116)
+            (var ob)
+          )
+          (comment "ob_char('t',ob);ob_char('0',ob);ecomma(ob);")
+          (call_stmt ob_char
+            (int:u8 48)
+            (var ob)
+          )
+          (comment "ob_char('t',ob);ob_char('0',ob);ecomma(ob);")
+          (call_stmt ecomma
+            (var ob)
+          )
+          (comment "ob_int(4*(oi-8),ob);")
+          (call_stmt ob_int
+            (binop *
+              (int 4)
+              (binop -
+                (var oi)
+                (int 8)
+              )
+            )
+            (var ob)
+          )
+          (comment "ob_char('(',ob);ob_char('s',ob);ob_char('0',ob);ob_char(')',ob);")
+          (call_stmt ob_char
+            (int:u8 40)
+            (var ob)
+          )
+          (comment "ob_char('(',ob);ob_char('s',ob);ob_char('0',ob);ob_char(')',ob);")
+          (call_stmt ob_char
+            (int:u8 115)
+            (var ob)
+          )
+          (comment "ob_char('(',ob);ob_char('s',ob);ob_char('0',ob);ob_char(')',ob);")
+          (call_stmt ob_char
+            (int:u8 48)
+            (var ob)
+          )
+          (comment "ob_char('(',ob);ob_char('s',ob);ob_char('0',ob);ob_char(')',ob);")
+          (call_stmt ob_char
+            (int:u8 41)
+            (var ob)
+          )
+          (comment "ob_char(10u8,ob);")
+          (call_stmt ob_char
+            (int:u8 10)
+            (var ob)
+          )
+          (comment "e_sw(ob);")
+          (call_stmt e_sw
+            (var ob)
+          )
+          (comment "ob_char('t',ob);ob_char('0',ob);ecomma(ob);")
+          (call_stmt ob_char
+            (int:u8 116)
+            (var ob)
+          )
+          (comment "ob_char('t',ob);ob_char('0',ob);ecomma(ob);")
+          (call_stmt ob_char
+            (int:u8 48)
+            (var ob)
+          )
+          (comment "ob_char('t',ob);ob_char('0',ob);ecomma(ob);")
+          (call_stmt ecomma
+            (var ob)
+          )
+          (comment "eNs0nl(0-12-4*oi,ob);")
+          (call_stmt eNs0nl
+            (binop -
+              (binop -
+                (int 0)
+                (int 12)
+              )
+              (binop *
+                (int 4)
+                (var oi)
+              )
+            )
+            (var ob)
+          )
+          (comment "oi=oi+1;")
+          (assign oi
+            (binop +
+              (var oi)
+              (int 1)
+            )
+          )
+        )
+      )
       (comment "var li: i32=0;")
       (var_decl li
         (type i32)
@@ -9251,22 +9399,147 @@
                 (type i32)
                 (var ival)
               )
+              (comment "var nreg: i32=nargs; if nreg>8 { nreg=8; }")
+              (var_decl nreg
+                (type i32)
+                (var nargs)
+              )
+              (comment "var nreg: i32=nargs; if nreg>8 { nreg=8; }")
+              (if
+                (binop >
+                  (var nreg)
+                  (int 8)
+                )
+                (block
+                  (comment "var nreg: i32=nargs; if nreg>8 { nreg=8; }")
+                  (assign nreg
+                    (int 8)
+                  )
+                )
+              )
+              (comment "var noverflow: i32=nargs-nreg;")
+              (var_decl noverflow
+                (type i32)
+                (binop -
+                  (var nargs)
+                  (var nreg)
+                )
+              )
+              (comment "if noverflow>0 {")
+              (if
+                (binop >
+                  (var noverflow)
+                  (int 0)
+                )
+                (block
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(0-4*noverflow,ob); ob_char(10u8,ob);")
+                  (call_stmt e_addi
+                    (var ob)
+                  )
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(0-4*noverflow,ob); ob_char(10u8,ob);")
+                  (call_stmt eregsp
+                    (var ob)
+                  )
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(0-4*noverflow,ob); ob_char(10u8,ob);")
+                  (call_stmt eregsp
+                    (var ob)
+                  )
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(0-4*noverflow,ob); ob_char(10u8,ob);")
+                  (call_stmt ob_int
+                    (binop -
+                      (int 0)
+                      (binop *
+                        (int 4)
+                        (var noverflow)
+                      )
+                    )
+                    (var ob)
+                  )
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(0-4*noverflow,ob); ob_char(10u8,ob);")
+                  (call_stmt ob_char
+                    (int:u8 10)
+                    (var ob)
+                  )
+                  (comment "var ci: i32=8;")
+                  (var_decl ci
+                    (type i32)
+                    (int 8)
+                  )
+                  (comment "while ci<nargs {")
+                  (while
+                    (binop <
+                      (var ci)
+                      (var nargs)
+                    )
+                    (block
+                      (comment "e_lw(ob); eregt0(ob); eNspnl(4*noverflow+4*(nargs-1-ci),ob);")
+                      (call_stmt e_lw
+                        (var ob)
+                      )
+                      (comment "e_lw(ob); eregt0(ob); eNspnl(4*noverflow+4*(nargs-1-ci),ob);")
+                      (call_stmt eregt0
+                        (var ob)
+                      )
+                      (comment "e_lw(ob); eregt0(ob); eNspnl(4*noverflow+4*(nargs-1-ci),ob);")
+                      (call_stmt eNspnl
+                        (binop +
+                          (binop *
+                            (int 4)
+                            (var noverflow)
+                          )
+                          (binop *
+                            (int 4)
+                            (binop -
+                              (binop -
+                                (var nargs)
+                                (int 1)
+                              )
+                              (var ci)
+                            )
+                          )
+                        )
+                        (var ob)
+                      )
+                      (comment "e_sw(ob); eregt0(ob); eNspnl(4*(ci-8),ob);")
+                      (call_stmt e_sw
+                        (var ob)
+                      )
+                      (comment "e_sw(ob); eregt0(ob); eNspnl(4*(ci-8),ob);")
+                      (call_stmt eregt0
+                        (var ob)
+                      )
+                      (comment "e_sw(ob); eregt0(ob); eNspnl(4*(ci-8),ob);")
+                      (call_stmt eNspnl
+                        (binop *
+                          (int 4)
+                          (binop -
+                            (var ci)
+                            (int 8)
+                          )
+                        )
+                        (var ob)
+                      )
+                      (comment "ci=ci+1;")
+                      (assign ci
+                        (binop +
+                          (var ci)
+                          (int 1)
+                        )
+                      )
+                    )
+                  )
+                )
+              )
               (comment "var ai: i32=0;")
               (var_decl ai
                 (type i32)
                 (int 0)
               )
-              (comment "while ai<nargs && ai<8 {")
+              (comment "while ai<nreg {")
               (while
-                (binop &&
-                  (binop <
-                    (var ai)
-                    (var nargs)
-                  )
-                  (binop <
-                    (var ai)
-                    (int 8)
-                  )
+                (binop <
+                  (var ai)
+                  (var nreg)
                 )
                 (block
                   (comment "e_lw(ob);")
@@ -9293,16 +9566,22 @@
                   (call_stmt ecomma
                     (var ob)
                   )
-                  (comment "eNspnl(4*(nargs-1-ai),ob);")
+                  (comment "eNspnl(4*noverflow+4*(nargs-1-ai),ob);")
                   (call_stmt eNspnl
-                    (binop *
-                      (int 4)
-                      (binop -
+                    (binop +
+                      (binop *
+                        (int 4)
+                        (var noverflow)
+                      )
+                      (binop *
+                        (int 4)
                         (binop -
-                          (var nargs)
-                          (int 1)
+                          (binop -
+                            (var nargs)
+                            (int 1)
+                          )
+                          (var ai)
                         )
-                        (var ai)
                       )
                     )
                     (var ob)
@@ -9313,40 +9592,6 @@
                       (var ai)
                       (int 1)
                     )
-                  )
-                )
-              )
-              (comment "if nargs>0 {")
-              (if
-                (binop >
-                  (var nargs)
-                  (int 0)
-                )
-                (block
-                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
-                  (call_stmt e_addi
-                    (var ob)
-                  )
-                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
-                  (call_stmt eregsp
-                    (var ob)
-                  )
-                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
-                  (call_stmt eregsp
-                    (var ob)
-                  )
-                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
-                  (call_stmt ob_int
-                    (binop *
-                      (int 4)
-                      (var nargs)
-                    )
-                    (var ob)
-                  )
-                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
-                  (call_stmt ob_char
-                    (int:u8 10)
-                    (var ob)
                   )
                 )
               )
@@ -9441,6 +9686,82 @@
                       (var ssl)
                     )
                     (var ob)
+                  )
+                )
+              )
+              (comment "if noverflow>0 {")
+              (if
+                (binop >
+                  (var noverflow)
+                  (int 0)
+                )
+                (block
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*noverflow+4*nargs,ob); ob_char(10u8,ob);")
+                  (call_stmt e_addi
+                    (var ob)
+                  )
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*noverflow+4*nargs,ob); ob_char(10u8,ob);")
+                  (call_stmt eregsp
+                    (var ob)
+                  )
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*noverflow+4*nargs,ob); ob_char(10u8,ob);")
+                  (call_stmt eregsp
+                    (var ob)
+                  )
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*noverflow+4*nargs,ob); ob_char(10u8,ob);")
+                  (call_stmt ob_int
+                    (binop +
+                      (binop *
+                        (int 4)
+                        (var noverflow)
+                      )
+                      (binop *
+                        (int 4)
+                        (var nargs)
+                      )
+                    )
+                    (var ob)
+                  )
+                  (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*noverflow+4*nargs,ob); ob_char(10u8,ob);")
+                  (call_stmt ob_char
+                    (int:u8 10)
+                    (var ob)
+                  )
+                )
+                (block
+                  (comment "if nargs>0 {")
+                  (if
+                    (binop >
+                      (var nargs)
+                      (int 0)
+                    )
+                    (block
+                      (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
+                      (call_stmt e_addi
+                        (var ob)
+                      )
+                      (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
+                      (call_stmt eregsp
+                        (var ob)
+                      )
+                      (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
+                      (call_stmt eregsp
+                        (var ob)
+                      )
+                      (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
+                      (call_stmt ob_int
+                        (binop *
+                          (int 4)
+                          (var nargs)
+                        )
+                        (var ob)
+                      )
+                      (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);")
+                      (call_stmt ob_char
+                        (int:u8 10)
+                        (var ob)
+                      )
+                    )
                   )
                 )
               )

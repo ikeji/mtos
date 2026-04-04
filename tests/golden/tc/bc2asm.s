@@ -160,8 +160,8 @@ ob_flush__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_sys_write
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -208,8 +208,8 @@ ob_char__u8__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -251,8 +251,8 @@ ob_char__u8__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ob_flush__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -321,8 +321,8 @@ ob_n__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -330,8 +330,8 @@ ob_n__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -402,8 +402,8 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -436,8 +436,8 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -461,8 +461,8 @@ ob_int__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -531,8 +531,8 @@ ob_int__i32__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -608,8 +608,8 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -16(s0)
@@ -617,8 +617,8 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -643,8 +643,8 @@ ob_int__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -677,8 +677,8 @@ e4__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -690,8 +690,8 @@ e4__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -703,8 +703,8 @@ e4__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -716,8 +716,8 @@ e4__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -750,8 +750,8 @@ ecomma__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -763,8 +763,8 @@ ecomma__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -798,8 +798,8 @@ eNspnl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -811,8 +811,8 @@ eNspnl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -824,8 +824,8 @@ eNspnl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -837,8 +837,8 @@ eNspnl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -850,8 +850,8 @@ eNspnl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -863,8 +863,8 @@ eNspnl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -898,8 +898,8 @@ eNs0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -911,8 +911,8 @@ eNs0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -924,8 +924,8 @@ eNs0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -937,8 +937,8 @@ eNs0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -950,8 +950,8 @@ eNs0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -963,8 +963,8 @@ eNs0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -998,8 +998,8 @@ eNt0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1011,8 +1011,8 @@ eNt0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1024,8 +1024,8 @@ eNt0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1037,8 +1037,8 @@ eNt0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1050,8 +1050,8 @@ eNt0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1063,8 +1063,8 @@ eNt0nl__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1097,8 +1097,8 @@ eregsp__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1110,8 +1110,8 @@ eregsp__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1123,8 +1123,8 @@ eregsp__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1136,8 +1136,8 @@ eregsp__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1170,8 +1170,8 @@ eregs0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1183,8 +1183,8 @@ eregs0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1196,8 +1196,8 @@ eregs0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1209,8 +1209,8 @@ eregs0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1243,8 +1243,8 @@ eregt0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1256,8 +1256,8 @@ eregt0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1269,8 +1269,8 @@ eregt0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1282,8 +1282,8 @@ eregt0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1316,8 +1316,8 @@ eregt1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1329,8 +1329,8 @@ eregt1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1342,8 +1342,8 @@ eregt1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1355,8 +1355,8 @@ eregt1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1389,8 +1389,8 @@ eregra__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1402,8 +1402,8 @@ eregra__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1415,8 +1415,8 @@ eregra__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1428,8 +1428,8 @@ eregra__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1458,8 +1458,8 @@ e_addi__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1471,8 +1471,8 @@ e_addi__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1484,8 +1484,8 @@ e_addi__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1497,8 +1497,8 @@ e_addi__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1510,8 +1510,8 @@ e_addi__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1523,8 +1523,8 @@ e_addi__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1553,8 +1553,8 @@ e_sw__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1566,8 +1566,8 @@ e_sw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1579,8 +1579,8 @@ e_sw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1592,8 +1592,8 @@ e_sw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1605,8 +1605,8 @@ e_sw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1618,8 +1618,8 @@ e_sw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1648,8 +1648,8 @@ e_lw__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1661,8 +1661,8 @@ e_lw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1674,8 +1674,8 @@ e_lw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1687,8 +1687,8 @@ e_lw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1700,8 +1700,8 @@ e_lw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1713,8 +1713,8 @@ e_lw__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1743,8 +1743,8 @@ e_li__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1756,8 +1756,8 @@ e_li__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1769,8 +1769,8 @@ e_li__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1782,8 +1782,8 @@ e_li__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1795,8 +1795,8 @@ e_li__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1808,8 +1808,8 @@ e_li__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1838,8 +1838,8 @@ e_la__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1851,8 +1851,8 @@ e_la__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1864,8 +1864,8 @@ e_la__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1877,8 +1877,8 @@ e_la__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1890,8 +1890,8 @@ e_la__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1903,8 +1903,8 @@ e_la__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1933,8 +1933,8 @@ asm_push_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1942,8 +1942,8 @@ asm_push_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1951,8 +1951,8 @@ asm_push_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1964,8 +1964,8 @@ asm_push_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1977,8 +1977,8 @@ asm_push_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1990,8 +1990,8 @@ asm_push_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -1999,8 +1999,8 @@ asm_push_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2008,8 +2008,8 @@ asm_push_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2021,8 +2021,8 @@ asm_push_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2051,8 +2051,8 @@ asm_pop_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_lw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2060,8 +2060,8 @@ asm_pop_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2073,8 +2073,8 @@ asm_pop_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2082,8 +2082,8 @@ asm_pop_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2091,8 +2091,8 @@ asm_pop_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2100,8 +2100,8 @@ asm_pop_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2113,8 +2113,8 @@ asm_pop_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2126,8 +2126,8 @@ asm_pop_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2156,8 +2156,8 @@ asm_pop_t1_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_lw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2165,8 +2165,8 @@ asm_pop_t1_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt1__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2178,8 +2178,8 @@ asm_pop_t1_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2187,8 +2187,8 @@ asm_pop_t1_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_lw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2196,8 +2196,8 @@ asm_pop_t1_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2209,8 +2209,8 @@ asm_pop_t1_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2218,8 +2218,8 @@ asm_pop_t1_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2227,8 +2227,8 @@ asm_pop_t1_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2236,8 +2236,8 @@ asm_pop_t1_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2249,8 +2249,8 @@ asm_pop_t1_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2262,8 +2262,8 @@ asm_pop_t1_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2292,8 +2292,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2305,8 +2305,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2318,8 +2318,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2331,8 +2331,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2344,8 +2344,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2357,8 +2357,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2366,8 +2366,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2379,8 +2379,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2392,8 +2392,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2405,8 +2405,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2414,8 +2414,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_lw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2423,8 +2423,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregra__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2445,8 +2445,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNt0nl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2454,8 +2454,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_lw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2463,8 +2463,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregs0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2485,8 +2485,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNt0nl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2494,8 +2494,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2503,8 +2503,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2516,8 +2516,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2529,8 +2529,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2542,8 +2542,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2555,8 +2555,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2568,8 +2568,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2581,8 +2581,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2590,8 +2590,8 @@ asm_epilogue__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2603,8 +2603,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2616,8 +2616,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2629,8 +2629,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2642,8 +2642,8 @@ asm_epilogue__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2678,8 +2678,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2691,8 +2691,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2704,8 +2704,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2717,8 +2717,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2730,8 +2730,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2743,8 +2743,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2756,8 +2756,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2769,8 +2769,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2782,8 +2782,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2795,8 +2795,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2808,8 +2808,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2821,8 +2821,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2834,8 +2834,8 @@ asm_pc_label__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2870,8 +2870,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2883,8 +2883,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2896,8 +2896,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2909,8 +2909,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2922,8 +2922,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2935,8 +2935,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2948,8 +2948,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2961,8 +2961,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2974,8 +2974,8 @@ e_pcref__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3006,8 +3006,8 @@ asm_jump__i32__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3019,8 +3019,8 @@ asm_jump__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3032,8 +3032,8 @@ asm_jump__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3045,8 +3045,8 @@ asm_jump__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3058,8 +3058,8 @@ asm_jump__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3071,8 +3071,8 @@ asm_jump__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3088,8 +3088,8 @@ asm_jump__i32__i32__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call e_pcref__i32__i32__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3101,8 +3101,8 @@ asm_jump__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3134,8 +3134,8 @@ asm_branch__i32__i32__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3163,8 +3163,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3176,8 +3176,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3189,8 +3189,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3202,8 +3202,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3215,8 +3215,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3230,8 +3230,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3243,8 +3243,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3256,8 +3256,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3269,8 +3269,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3282,8 +3282,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3296,8 +3296,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3309,8 +3309,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3318,8 +3318,8 @@ asm_branch__i32__i32__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3335,8 +3335,8 @@ asm_branch__i32__i32__i32__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call e_pcref__i32__i32__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3348,8 +3348,8 @@ asm_branch__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3425,8 +3425,8 @@ base_name_len__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 95
@@ -3468,8 +3468,8 @@ base_name_len__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 95
@@ -3562,8 +3562,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3575,8 +3575,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3588,8 +3588,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3601,8 +3601,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3614,8 +3614,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3627,8 +3627,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3656,8 +3656,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3669,8 +3669,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3682,8 +3682,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3695,8 +3695,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3708,8 +3708,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3725,8 +3725,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call base_name_len__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3748,8 +3748,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3771,8 +3771,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3785,8 +3785,8 @@ asm_call_fn__U8Array__i32__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3815,8 +3815,8 @@ asm_seqz_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3828,8 +3828,8 @@ asm_seqz_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3841,8 +3841,8 @@ asm_seqz_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3854,8 +3854,8 @@ asm_seqz_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3867,8 +3867,8 @@ asm_seqz_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3880,8 +3880,8 @@ asm_seqz_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3889,8 +3889,8 @@ asm_seqz_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3902,8 +3902,8 @@ asm_seqz_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3915,8 +3915,8 @@ asm_seqz_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3928,8 +3928,8 @@ asm_seqz_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3958,8 +3958,8 @@ asm_snez_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3971,8 +3971,8 @@ asm_snez_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3984,8 +3984,8 @@ asm_snez_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -3997,8 +3997,8 @@ asm_snez_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4010,8 +4010,8 @@ asm_snez_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4023,8 +4023,8 @@ asm_snez_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4032,8 +4032,8 @@ asm_snez_t0__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4045,8 +4045,8 @@ asm_snez_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4058,8 +4058,8 @@ asm_snez_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4071,8 +4071,8 @@ asm_snez_t0__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4101,8 +4101,8 @@ asm_xori_t0_1__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4114,8 +4114,8 @@ asm_xori_t0_1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4127,8 +4127,8 @@ asm_xori_t0_1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4140,8 +4140,8 @@ asm_xori_t0_1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4153,8 +4153,8 @@ asm_xori_t0_1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4166,8 +4166,8 @@ asm_xori_t0_1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4175,8 +4175,8 @@ asm_xori_t0_1__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4184,8 +4184,8 @@ asm_xori_t0_1__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4197,8 +4197,8 @@ asm_xori_t0_1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4210,8 +4210,8 @@ asm_xori_t0_1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4240,8 +4240,8 @@ asm_sub_t0_t0_t1__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4253,8 +4253,8 @@ asm_sub_t0_t0_t1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4266,8 +4266,8 @@ asm_sub_t0_t0_t1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4279,8 +4279,8 @@ asm_sub_t0_t0_t1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4292,8 +4292,8 @@ asm_sub_t0_t0_t1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4305,8 +4305,8 @@ asm_sub_t0_t0_t1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4314,8 +4314,8 @@ asm_sub_t0_t0_t1__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4323,8 +4323,8 @@ asm_sub_t0_t0_t1__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4336,8 +4336,8 @@ asm_sub_t0_t0_t1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4349,8 +4349,8 @@ asm_sub_t0_t0_t1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4362,8 +4362,8 @@ asm_sub_t0_t0_t1__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4393,8 +4393,8 @@ asm_slt__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4406,8 +4406,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4419,8 +4419,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4432,8 +4432,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4445,8 +4445,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4458,8 +4458,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4467,8 +4467,8 @@ asm_slt__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4492,8 +4492,8 @@ asm_slt__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4505,8 +4505,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4518,8 +4518,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4531,8 +4531,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4542,8 +4542,8 @@ asm_slt__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt1__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4555,8 +4555,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4568,8 +4568,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4581,8 +4581,8 @@ asm_slt__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -4680,8 +4680,8 @@ stab_eq__U8Array__i32__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -4701,8 +4701,8 @@ stab_eq__U8Array__i32__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t1, 0(sp)
@@ -4810,8 +4810,8 @@ in_cur__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4981,8 +4981,8 @@ skip_spaces__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 32
@@ -5002,8 +5002,8 @@ skip_spaces__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 9
@@ -5105,8 +5105,8 @@ skip_line__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 10
@@ -5215,8 +5215,8 @@ next_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_spaces__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -5249,13 +5249,13 @@ next_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_ws__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5289,15 +5289,15 @@ next_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -5470,8 +5470,8 @@ int_from_stab__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 45
@@ -5551,8 +5551,8 @@ int_from_stab__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5760,8 +5760,8 @@ read_strlit__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 34
@@ -5863,8 +5863,8 @@ read_strlit__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5970,8 +5970,8 @@ read_strlit__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6089,8 +6089,8 @@ read_strlit__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6117,8 +6117,8 @@ read_strlit__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6580,8 +6580,8 @@ read_strlit__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -6638,8 +6638,8 @@ read_strlit__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -6751,8 +6751,8 @@ classify_op__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6791,8 +6791,8 @@ classify_op__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6831,8 +6831,8 @@ classify_op__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6871,8 +6871,8 @@ classify_op__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6911,8 +6911,8 @@ classify_op__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9285,8 +9285,8 @@ classify_op__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9482,8 +9482,8 @@ classify_op__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9724,8 +9724,8 @@ fn_name_ss__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9779,8 +9779,8 @@ fn_name_sl__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9834,8 +9834,8 @@ fn_param_base__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9889,8 +9889,8 @@ fn_nparam__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9944,8 +9944,8 @@ fn_local_base__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9999,8 +9999,8 @@ fn_nlocal__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10054,8 +10054,8 @@ fn_instr_base__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10109,8 +10109,8 @@ fn_ninstr__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10170,8 +10170,8 @@ fn_set__I32Array__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10223,8 +10223,8 @@ pl_name_ss__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10278,8 +10278,8 @@ pl_name_sl__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10339,8 +10339,8 @@ pl_set__I32Array__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10402,8 +10402,8 @@ ins_op__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10467,8 +10467,8 @@ ins_ival__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10532,8 +10532,8 @@ ins_ss__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10597,8 +10597,8 @@ ins_sl__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10668,8 +10668,8 @@ ins_set__I32Array__i32__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10744,8 +10744,8 @@ parse_lnum__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10884,6 +10884,10 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   a5, -32(s0)
     sw   a6, -36(s0)
     sw   a7, -40(s0)
+    lw   t0, 0(s0)
+    sw   t0, -44(s0)
+    lw   t0, 4(s0)
+    sw   t0, -48(s0)
     sw   zero, -52(s0)
     sw   zero, -56(s0)
     sw   zero, -60(s0)
@@ -10988,8 +10992,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_spaces__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11038,8 +11042,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11183,8 +11187,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11314,8 +11318,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11325,8 +11329,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11367,8 +11371,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11407,8 +11411,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11463,8 +11467,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11476,8 +11480,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11493,15 +11497,15 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call int_from_stab__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11511,8 +11515,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11520,8 +11524,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_spaces__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11533,8 +11537,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call read_strlit__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11586,8 +11590,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11621,8 +11625,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11672,8 +11676,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11726,8 +11730,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11739,8 +11743,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11750,8 +11754,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11765,8 +11769,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11776,8 +11780,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11789,8 +11793,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11800,8 +11804,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11819,8 +11823,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call int_from_stab__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11830,8 +11834,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11872,8 +11876,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11907,8 +11911,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11924,8 +11928,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11950,8 +11954,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12004,8 +12008,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12017,8 +12021,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12035,8 +12039,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_spaces__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12045,8 +12049,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 10
@@ -12111,8 +12115,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12146,8 +12150,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12176,8 +12180,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12185,8 +12189,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_spaces__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12238,8 +12242,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12259,8 +12263,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12281,8 +12285,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12302,8 +12306,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12324,8 +12328,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12345,8 +12349,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12367,8 +12371,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12388,8 +12392,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12414,8 +12418,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12468,8 +12472,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12481,8 +12485,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12492,8 +12496,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12507,8 +12511,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12518,8 +12522,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12540,8 +12544,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pl_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12562,8 +12566,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pl_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12617,8 +12621,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_nparam__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 1
@@ -12634,8 +12638,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12644,8 +12648,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12698,8 +12702,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12711,8 +12715,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12722,8 +12726,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12737,8 +12741,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12748,8 +12752,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12770,8 +12774,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pl_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12792,8 +12796,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call pl_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12847,8 +12851,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_nlocal__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 1
@@ -12864,8 +12868,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12874,8 +12878,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12918,8 +12922,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12974,8 +12978,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13034,8 +13038,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13063,8 +13067,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_instr_base__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13078,8 +13082,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_ninstr__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13119,8 +13123,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call ins_op__I32Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13213,8 +13217,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call ins_ival__I32Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13240,8 +13244,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -13249,8 +13253,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13287,8 +13291,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13453,8 +13457,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13462,8 +13466,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13625,8 +13629,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 58
@@ -13658,13 +13662,13 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_ws__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13727,8 +13731,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 58
@@ -13769,8 +13773,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call parse_lnum__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13827,8 +13831,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_instr_base__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t1, 0(sp)
@@ -13840,8 +13844,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13850,8 +13854,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13992,8 +13996,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14003,8 +14007,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14022,8 +14026,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call classify_op__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14033,8 +14037,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14090,8 +14094,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_instr_base__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14105,8 +14109,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_ninstr__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14132,8 +14136,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14157,8 +14161,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14182,8 +14186,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14207,8 +14211,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14237,8 +14241,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14266,15 +14270,15 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call int_from_stab__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -14282,8 +14286,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14291,8 +14295,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14322,8 +14326,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14351,15 +14355,15 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call int_from_stab__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -14367,8 +14371,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14376,8 +14380,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call discard_tok__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14436,8 +14440,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14447,8 +14451,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14474,8 +14478,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14499,8 +14503,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14530,8 +14534,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14554,8 +14558,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_spaces__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14564,8 +14568,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 10
@@ -14623,8 +14627,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14658,8 +14662,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14688,8 +14692,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14719,8 +14723,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_spaces__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14761,8 +14765,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14786,8 +14790,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14811,8 +14815,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14842,8 +14846,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call next_tok__U8Array__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14853,8 +14857,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call tok_len__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14880,8 +14884,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14905,8 +14909,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14990,8 +14994,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_spaces__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15024,13 +15028,13 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call in_cur__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call is_ws__u8
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15097,8 +15101,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call parse_lnum__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -15106,8 +15110,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call ins_set__I32Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15137,8 +15141,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call fn_set__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15164,8 +15168,8 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call skip_line__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15212,8 +15216,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_param_base__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15227,8 +15231,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_nparam__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15242,8 +15246,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_local_base__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15257,8 +15261,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_nlocal__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15306,8 +15310,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call pl_name_ss__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -20(s0)
@@ -15327,8 +15331,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call pl_name_sl__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -32(s0)
@@ -15342,8 +15346,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call stab_eq__U8Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15420,8 +15424,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call pl_name_ss__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -15441,8 +15445,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call pl_name_sl__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -32(s0)
@@ -15456,8 +15460,8 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call stab_eq__U8Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15538,8 +15542,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_param_base__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15553,8 +15557,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_nparam__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15568,8 +15572,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_local_base__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15583,8 +15587,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_nlocal__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15632,8 +15636,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call pl_name_ss__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -20(s0)
@@ -15653,8 +15657,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call pl_name_sl__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -32(s0)
@@ -15668,8 +15672,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call stab_eq__U8Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15773,8 +15777,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call pl_name_ss__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -15794,8 +15798,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call pl_name_sl__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -32(s0)
@@ -15809,8 +15813,8 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call stab_eq__U8Array__i32__i32__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15970,8 +15974,8 @@ is_builtin__U8Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call base_name_len__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15985,8 +15989,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16030,8 +16034,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16076,8 +16080,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16182,8 +16186,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16215,8 +16219,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16248,8 +16252,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16281,8 +16285,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16314,8 +16318,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16802,8 +16806,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16842,8 +16846,8 @@ is_builtin__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -17703,8 +17707,8 @@ is_sys_exit__U8Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call base_name_len__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -17746,8 +17750,8 @@ is_sys_exit__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 115
@@ -17792,8 +17796,8 @@ is_sys_exit__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 101
@@ -17838,8 +17842,8 @@ is_sys_exit__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 120
@@ -17933,8 +17937,8 @@ is_jump_target__I32Array__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call ins_op__I32Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18027,8 +18031,8 @@ is_jump_target__I32Array__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call ins_ival__I32Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -18114,8 +18118,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18158,8 +18162,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18195,8 +18199,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18208,8 +18212,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18272,8 +18276,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18285,8 +18289,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18349,8 +18353,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18362,8 +18366,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18426,8 +18430,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18439,8 +18443,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18503,8 +18507,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18516,8 +18520,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18607,8 +18611,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18656,8 +18660,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18705,8 +18709,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18745,8 +18749,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18781,8 +18785,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18812,8 +18816,8 @@ emit_strdata__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18832,11 +18836,11 @@ emit_strdata__U8Array__i32__i32__U8Array:
     .globl emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     .type  emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array, @function
 emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array:
-    # prologue: frame_size=128, params=8, locals=22
-    addi sp, sp, -128
-    sw   ra, 124(sp)
-    sw   s0, 120(sp)
-    addi s0, sp, 128
+    # prologue: frame_size=144, params=8, locals=26
+    addi sp, sp, -144
+    sw   ra, 140(sp)
+    sw   s0, 136(sp)
+    addi s0, sp, 144
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -18867,6 +18871,10 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   zero, -120(s0)
     sw   zero, -124(s0)
     sw   zero, -128(s0)
+    sw   zero, -132(s0)
+    sw   zero, -136(s0)
+    sw   zero, -140(s0)
+    sw   zero, -144(s0)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18875,8 +18883,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_name_ss__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18890,8 +18898,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_name_sl__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18905,8 +18913,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_nparam__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18920,8 +18928,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_nlocal__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18935,8 +18943,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_instr_base__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18950,8 +18958,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call fn_ninstr__I32Array__i32
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19056,8 +19064,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19069,8 +19077,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19082,8 +19090,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19095,8 +19103,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19108,8 +19116,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19121,8 +19129,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19134,8 +19142,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19147,8 +19155,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19168,8 +19176,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19181,8 +19189,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19190,8 +19198,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19203,8 +19211,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19216,8 +19224,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19229,8 +19237,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19242,8 +19250,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19255,8 +19263,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19268,8 +19276,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19281,8 +19289,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19302,8 +19310,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19315,8 +19323,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19328,8 +19336,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19341,8 +19349,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19354,8 +19362,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19367,8 +19375,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19380,8 +19388,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19393,8 +19401,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19406,8 +19414,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19419,8 +19427,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19432,8 +19440,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19445,8 +19453,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19458,8 +19466,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19479,8 +19487,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19492,8 +19500,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19505,8 +19513,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19514,8 +19522,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19527,8 +19535,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19540,8 +19548,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19553,8 +19561,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19566,8 +19574,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19579,8 +19587,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19592,8 +19600,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19605,8 +19613,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19618,8 +19626,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19631,8 +19639,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19644,8 +19652,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19657,8 +19665,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19670,8 +19678,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19683,8 +19691,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19696,8 +19704,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19709,8 +19717,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19722,8 +19730,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19735,8 +19743,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19748,8 +19756,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19761,8 +19769,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19774,8 +19782,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19787,8 +19795,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19800,8 +19808,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19813,8 +19821,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19826,8 +19834,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19839,8 +19847,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19852,8 +19860,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19865,8 +19873,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19878,8 +19886,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19891,8 +19899,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19904,8 +19912,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19917,8 +19925,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19930,8 +19938,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19943,8 +19951,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19956,8 +19964,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19969,8 +19977,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19982,8 +19990,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19995,8 +20003,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20008,8 +20016,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20021,8 +20029,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20034,8 +20042,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20047,8 +20055,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20060,8 +20068,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20073,8 +20081,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20086,8 +20094,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20099,8 +20107,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20108,8 +20116,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20117,8 +20125,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20126,8 +20134,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20139,8 +20147,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20152,8 +20160,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20165,8 +20173,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20174,8 +20182,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20183,8 +20191,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregra__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20205,8 +20213,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20214,8 +20222,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20223,8 +20231,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregs0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20245,8 +20253,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20254,8 +20262,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20263,8 +20271,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregs0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20272,8 +20280,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20285,8 +20293,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20298,8 +20306,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20356,8 +20364,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20369,8 +20377,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20396,8 +20404,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20405,8 +20413,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20445,8 +20453,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNs0nl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20467,7 +20475,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, -80(s0)
     j    .L_f70_pc435
   .L_f70_pc479:
-    li   t0, 0
+    li   t0, 8
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
@@ -20475,6 +20483,377 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, -84(s0)
   .L_f70_pc481:
     lw   t0, -84(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -52(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc589
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 108
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 119
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 116
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call ecomma__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -84(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 8
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_int__i32__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 40
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 115
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 41
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e_sw__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 116
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call ecomma__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 12
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -84(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call eNs0nl__i32__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -84(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -84(s0)
+    j    .L_f70_pc481
+  .L_f70_pc589:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -88(s0)
+  .L_f70_pc591:
+    lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -56(s0)
@@ -20488,13 +20867,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc526
+    beqz t0, .L_f70_pc636
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20506,8 +20885,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20519,8 +20898,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20532,8 +20911,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20545,8 +20924,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20554,8 +20933,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20592,7 +20971,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     li   t0, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -84(s0)
+    lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -20612,12 +20991,12 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNs0nl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -84(s0)
+    lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -20631,17 +21010,17 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -84(s0)
-    j    .L_f70_pc481
-  .L_f70_pc526:
+    sw   t0, -88(s0)
+    j    .L_f70_pc591
+  .L_f70_pc636:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -88(s0)
-  .L_f70_pc528:
-    lw   t0, -88(s0)
+    sw   t0, -92(s0)
+  .L_f70_pc638:
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -64(s0)
@@ -20655,7 +21034,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2344
+    beqz t0, .L_f70_pc2560
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20665,15 +21044,15 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -88(s0)
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 12(sp)
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call is_jump_target__I32Array__i32__i32__i32
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 1
@@ -20688,11 +21067,11 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc545
+    beqz t0, .L_f70_pc655
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -88(s0)
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -20701,45 +21080,26 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call asm_pc_label__i32__i32__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc545:
+  .L_f70_pc655:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -88(s0)
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call ins_op__I32Array__i32__i32
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -92(s0)
-    lw   t0, -28(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -60(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -88(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
     addi sp, sp, 12
-    call ins_ival__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -20751,14 +21111,14 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -88(s0)
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
+    call ins_ival__I32Array__i32__i32
     addi sp, sp, 12
-    call ins_ss__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -20770,20 +21130,39 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -88(s0)
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
+    call ins_ss__I32Array__i32__i32
     addi sp, sp, 12
-    call ins_sl__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -104(s0)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -60(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   t0, -92(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call ins_sl__I32Array__i32__i32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -108(s0)
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_PUSH_INT
@@ -20799,13 +21178,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc586
+    beqz t0, .L_f70_pc696
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_li__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20813,12 +21192,12 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -96(s0)
+    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -20826,8 +21205,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20839,8 +21218,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20848,13 +21227,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc586:
-    lw   t0, -92(s0)
+  .L_f70_pc696:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_PUSH_STR
@@ -20870,13 +21249,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc820
+    beqz t0, .L_f70_pc930
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_la__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20888,8 +21267,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20901,8 +21280,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20910,8 +21289,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20923,8 +21302,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20936,8 +21315,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20949,8 +21328,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20962,8 +21341,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20975,8 +21354,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20988,8 +21367,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21001,8 +21380,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21014,8 +21393,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21027,8 +21406,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21040,8 +21419,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21053,8 +21432,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21066,12 +21445,12 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -96(s0)
+    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -21079,8 +21458,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21092,15 +21471,15 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -96(s0)
+    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 2
@@ -21123,19 +21502,19 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -108(s0)
+    sw   t0, -112(s0)
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_li__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21147,8 +21526,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21160,8 +21539,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21169,12 +21548,12 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -108(s0)
+    lw   t0, -112(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -21182,8 +21561,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21195,8 +21574,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21204,8 +21583,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21217,8 +21596,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21230,8 +21609,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21243,8 +21622,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21256,8 +21635,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21269,8 +21648,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21282,8 +21661,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21295,8 +21674,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21308,8 +21687,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21321,8 +21700,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21334,8 +21713,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21347,8 +21726,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21360,8 +21739,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21373,8 +21752,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21386,8 +21765,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21399,8 +21778,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21412,8 +21791,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21425,8 +21804,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21438,8 +21817,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21451,8 +21830,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21464,8 +21843,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21477,8 +21856,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21490,8 +21869,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21499,8 +21878,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21508,8 +21887,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21517,8 +21896,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21530,8 +21909,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21543,8 +21922,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21556,8 +21935,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21565,8 +21944,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21578,8 +21957,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21591,8 +21970,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21600,8 +21979,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21613,13 +21992,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc820:
-    lw   t0, -92(s0)
+  .L_f70_pc930:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_LOAD
@@ -21635,7 +22014,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc904
+    beqz t0, .L_f70_pc1014
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21651,10 +22030,10 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -104(s0)
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 24(sp)
@@ -21664,8 +22043,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a4, 8(sp)
     lw   a5, 4(sp)
     lw   a6, 0(sp)
-    addi sp, sp, 28
     call is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32
+    addi sp, sp, 28
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 1
@@ -21680,7 +22059,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc855
+    beqz t0, .L_f70_pc965
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21696,10 +22075,10 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -104(s0)
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 24(sp)
@@ -21709,19 +22088,19 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a4, 8(sp)
     lw   a5, 4(sp)
     lw   a6, 0(sp)
-    addi sp, sp, 28
     call var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32
+    addi sp, sp, 28
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -112(s0)
+    sw   t0, -116(s0)
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_lw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21729,12 +22108,12 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -112(s0)
+    lw   t0, -116(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -21742,19 +22121,19 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNs0nl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f70_pc901
-  .L_f70_pc855:
+    j    .L_f70_pc1011
+  .L_f70_pc965:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_la__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21762,18 +22141,18 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt1__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -104(s0)
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -21783,8 +22162,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21796,8 +22175,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21805,8 +22184,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_lw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21814,8 +22193,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21827,8 +22206,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21840,8 +22219,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21853,8 +22232,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21866,8 +22245,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21879,8 +22258,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21892,23 +22271,23 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc901:
+  .L_f70_pc1011:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc904:
-    lw   t0, -92(s0)
+  .L_f70_pc1014:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_STORE
@@ -21924,13 +22303,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc988
+    beqz t0, .L_f70_pc1098
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21949,10 +22328,10 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -104(s0)
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 24(sp)
@@ -21962,8 +22341,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a4, 8(sp)
     lw   a5, 4(sp)
     lw   a6, 0(sp)
-    addi sp, sp, 28
     call is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32
+    addi sp, sp, 28
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 1
@@ -21978,7 +22357,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc942
+    beqz t0, .L_f70_pc1052
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21994,10 +22373,10 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -104(s0)
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 24(sp)
@@ -22007,19 +22386,19 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a4, 8(sp)
     lw   a5, 4(sp)
     lw   a6, 0(sp)
-    addi sp, sp, 28
     call var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32
+    addi sp, sp, 28
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -112(s0)
+    sw   t0, -116(s0)
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22027,12 +22406,12 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -112(s0)
+    lw   t0, -116(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -22040,19 +22419,19 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNs0nl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f70_pc988
-  .L_f70_pc942:
+    j    .L_f70_pc1098
+  .L_f70_pc1052:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_la__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22060,18 +22439,18 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt1__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -104(s0)
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -22081,8 +22460,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22094,8 +22473,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22103,8 +22482,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22112,8 +22491,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22125,8 +22504,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22138,8 +22517,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22151,8 +22530,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22164,8 +22543,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22177,8 +22556,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22190,13 +22569,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc988:
-    lw   t0, -92(s0)
+  .L_f70_pc1098:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_CALL
@@ -22212,36 +22591,20 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1173
-    lw   t0, -96(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -116(s0)
-    li   t0, 0
+    beqz t0, .L_f70_pc1389
+    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -120(s0)
-  .L_f70_pc996:
     lw   t0, -120(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -116(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    slt  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1006
-    lw   t0, -120(s0)
+    sw   t0, -124(s0)
+    lw   t0, -124(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 8
@@ -22250,30 +22613,312 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
+    slt  t0, t1, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1112
+    li   t0, 8
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -124(s0)
+  .L_f70_pc1112:
+    lw   t0, -120(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -124(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -128(s0)
+    lw   t0, -128(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1186
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e_addi__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregsp__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregsp__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -128(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_int__i32__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 8
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -132(s0)
+  .L_f70_pc1143:
+    lw   t0, -132(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -120(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
     slt  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1006
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    j    .L_f70_pc1007
-  .L_f70_pc1006:
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-  .L_f70_pc1007:
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1040
+    beqz t0, .L_f70_pc1186
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_lw__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -128(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -120(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -132(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call eNspnl__i32__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e_sw__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -132(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 8
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call eNspnl__i32__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -132(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -132(s0)
+    j    .L_f70_pc1143
+  .L_f70_pc1186:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -136(s0)
+  .L_f70_pc1188:
+    lw   t0, -136(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -124(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1228
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e_lw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22285,15 +22930,15 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
     li   t0, 48
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -120(s0)
+    lw   t0, -136(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -22312,8 +22957,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22321,15 +22966,27 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
     li   t0, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -116(s0)
+    lw   t0, -128(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -120(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -22341,7 +22998,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sub  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -120(s0)
+    lw   t0, -136(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -22356,17 +23013,23 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     mul  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -120(s0)
+    lw   t0, -136(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -22380,101 +23043,23 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -120(s0)
-    j    .L_f70_pc996
-  .L_f70_pc1040:
-    lw   t0, -116(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    slt  t0, t1, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1063
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call e_addi__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregsp__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregsp__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -116(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_int__i32__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 10
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_f70_pc1063:
+    sw   t0, -136(s0)
+    j    .L_f70_pc1188
+  .L_f70_pc1228:
     lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
+    lw   t0, -108(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call is_sys_exit__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 1
@@ -22489,13 +23074,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1124
+    beqz t0, .L_f70_pc1289
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_li__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22507,8 +23092,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22520,8 +23105,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22529,8 +23114,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22542,8 +23127,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22555,8 +23140,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22568,8 +23153,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22577,8 +23162,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22590,8 +23175,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22603,8 +23188,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22616,8 +23201,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22629,8 +23214,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22642,8 +23227,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22655,36 +23240,36 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f70_pc1134
-  .L_f70_pc1124:
+    j    .L_f70_pc1299
+  .L_f70_pc1289:
     lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
+    lw   t0, -108(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -104(s0)
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call is_builtin__U8Array__i32__i32
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -40(s0)
@@ -22695,18 +23280,33 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    addi sp, sp, 20
     call asm_call_fn__U8Array__i32__i32__i32__U8Array
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1134:
+  .L_f70_pc1299:
+    lw   t0, -128(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1327
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22714,8 +23314,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22723,8 +23323,168 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -128(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -120(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_int__i32__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    j    .L_f70_pc1350
+  .L_f70_pc1327:
+    lw   t0, -120(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1350
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e_addi__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregsp__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregsp__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -120(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_int__i32__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f70_pc1350:
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e_addi__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregsp__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22736,8 +23496,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22749,8 +23509,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22762,8 +23522,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22771,8 +23531,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_sw__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22784,8 +23544,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22797,8 +23557,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22806,8 +23566,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22819,13 +23579,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call eNspnl__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1173:
-    lw   t0, -92(s0)
+  .L_f70_pc1389:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_RETURN
@@ -22841,13 +23601,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1229
+    beqz t0, .L_f70_pc1445
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22855,8 +23615,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22868,8 +23628,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22881,8 +23641,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22894,8 +23654,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22907,8 +23667,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22920,8 +23680,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22933,8 +23693,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22946,8 +23706,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22955,8 +23715,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ecomma__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22968,8 +23728,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22981,8 +23741,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22994,8 +23754,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23003,13 +23763,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_epilogue__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1229:
-    lw   t0, -92(s0)
+  .L_f70_pc1445:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_RETURN_VOID
@@ -23025,18 +23785,18 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1236
+    beqz t0, .L_f70_pc1452
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_epilogue__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1236:
-    lw   t0, -92(s0)
+  .L_f70_pc1452:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_POP
@@ -23052,13 +23812,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1257
+    beqz t0, .L_f70_pc1473
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e_addi__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23066,8 +23826,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23075,8 +23835,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregsp__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23088,8 +23848,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23101,13 +23861,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1257:
-    lw   t0, -92(s0)
+  .L_f70_pc1473:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_ADD
@@ -23123,13 +23883,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1308
+    beqz t0, .L_f70_pc1524
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23137,8 +23897,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23150,8 +23910,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23163,8 +23923,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23176,8 +23936,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23189,8 +23949,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23202,8 +23962,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23211,8 +23971,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23220,8 +23980,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23233,8 +23993,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23246,8 +24006,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23259,8 +24019,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23268,13 +24028,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1308:
-    lw   t0, -92(s0)
+  .L_f70_pc1524:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_SUB
@@ -23290,13 +24050,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1359
+    beqz t0, .L_f70_pc1575
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23304,8 +24064,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23317,8 +24077,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23330,8 +24090,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23343,8 +24103,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23356,8 +24116,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23369,8 +24129,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23378,8 +24138,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23387,8 +24147,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23400,8 +24160,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23413,8 +24173,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23426,8 +24186,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23435,13 +24195,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1359:
-    lw   t0, -92(s0)
+  .L_f70_pc1575:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_MUL
@@ -23457,13 +24217,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1410
+    beqz t0, .L_f70_pc1626
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23471,8 +24231,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23484,8 +24244,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23497,8 +24257,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23510,8 +24270,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23523,8 +24283,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23536,8 +24296,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23545,8 +24305,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23554,8 +24314,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23567,8 +24327,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23580,8 +24340,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23593,8 +24353,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23602,13 +24362,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1410:
-    lw   t0, -92(s0)
+  .L_f70_pc1626:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_DIV
@@ -23624,13 +24384,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1461
+    beqz t0, .L_f70_pc1677
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23638,8 +24398,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23651,8 +24411,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23664,8 +24424,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23677,8 +24437,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23690,8 +24450,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23703,8 +24463,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23712,8 +24472,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23721,8 +24481,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23734,8 +24494,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23747,8 +24507,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23760,8 +24520,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23769,13 +24529,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1461:
-    lw   t0, -92(s0)
+  .L_f70_pc1677:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_MOD
@@ -23791,13 +24551,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1512
+    beqz t0, .L_f70_pc1728
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23805,8 +24565,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23818,8 +24578,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23831,8 +24591,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23844,8 +24604,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23857,8 +24617,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23870,8 +24630,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23879,8 +24639,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23888,8 +24648,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23901,8 +24661,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23914,8 +24674,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23927,8 +24687,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23936,13 +24696,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1512:
-    lw   t0, -92(s0)
+  .L_f70_pc1728:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_AND
@@ -23958,13 +24718,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1563
+    beqz t0, .L_f70_pc1779
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23972,8 +24732,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23985,8 +24745,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23998,8 +24758,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24011,8 +24771,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24024,8 +24784,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24037,8 +24797,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24046,8 +24806,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24055,8 +24815,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24068,8 +24828,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24081,8 +24841,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24094,8 +24854,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24103,841 +24863,16 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1563:
-    lw   t0, -92(s0)
+  .L_f70_pc1779:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_OR
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1614
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_pop_t1_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call e4__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 111
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 114
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregt0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregt0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 116
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 49
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 10
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_push_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_f70_pc1614:
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t1, OP_XOR
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1665
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_pop_t1_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call e4__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 120
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 111
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 114
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregt0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregt0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 116
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 49
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 10
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_push_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_f70_pc1665:
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t1, OP_SHL
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1716
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_pop_t1_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call e4__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 115
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 108
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 108
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregt0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregt0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 116
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 49
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 10
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_push_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_f70_pc1716:
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t1, OP_SHR
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1767
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_pop_t1_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call e4__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 115
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 114
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 97
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregt0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call eregt0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 116
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 49
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 10
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call ob_char__u8__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_push_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_f70_pc1767:
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t1, OP_EQ
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1783
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_pop_t1_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_sub_t0_t0_t1__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_seqz_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_push_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_f70_pc1783:
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t1, OP_NE
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1799
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_pop_t1_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_sub_t0_t0_t1__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_snez_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_push_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_f70_pc1799:
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t1, OP_LT
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    sub  t0, t0, t1
-    seqz t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f70_pc1813
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_pop_t1_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    addi sp, sp, 8
-    call asm_slt__i32__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
-    call asm_push_t0__U8Array
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_f70_pc1813:
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t1, OP_LE
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24955,8 +24890,833 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e4__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 111
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 114
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 116
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 49
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_push_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f70_pc1830:
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, OP_XOR
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1881
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e4__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 120
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 111
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 114
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 116
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 49
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_push_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f70_pc1881:
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, OP_SHL
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1932
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e4__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 115
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 108
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 108
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 116
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 49
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_push_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f70_pc1932:
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, OP_SHR
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1983
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call e4__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 115
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 114
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 97
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 32
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call eregt0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 116
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 49
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_push_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f70_pc1983:
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, OP_EQ
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc1999
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_sub_t0_t0_t1__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_seqz_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_push_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f70_pc1999:
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, OP_NE
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc2015
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_sub_t0_t0_t1__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_snez_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_push_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f70_pc2015:
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, OP_LT
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc2029
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call asm_slt__i32__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_push_t0__U8Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f70_pc2029:
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, OP_LE
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f70_pc2046
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24968,8 +25728,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call asm_slt__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24977,8 +25737,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_xori_t0_1__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -24986,13 +25746,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1830:
-    lw   t0, -92(s0)
+  .L_f70_pc2046:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_GT
@@ -25008,13 +25768,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1844
+    beqz t0, .L_f70_pc2060
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25026,8 +25786,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call asm_slt__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25035,13 +25795,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1844:
-    lw   t0, -92(s0)
+  .L_f70_pc2060:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_GE
@@ -25057,13 +25817,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1861
+    beqz t0, .L_f70_pc2077
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t1_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25075,8 +25835,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call asm_slt__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25084,8 +25844,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_xori_t0_1__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25093,13 +25853,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1861:
-    lw   t0, -92(s0)
+  .L_f70_pc2077:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_NEG
@@ -25115,13 +25875,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1909
+    beqz t0, .L_f70_pc2125
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25129,8 +25889,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25142,8 +25902,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25155,8 +25915,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25168,8 +25928,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25181,8 +25941,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25194,8 +25954,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25203,8 +25963,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25216,8 +25976,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25229,8 +25989,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25242,8 +26002,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25251,13 +26011,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1909:
-    lw   t0, -92(s0)
+  .L_f70_pc2125:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_LNOT
@@ -25273,13 +26033,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1922
+    beqz t0, .L_f70_pc2138
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25287,8 +26047,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_seqz_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25296,13 +26056,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc1922:
-    lw   t0, -92(s0)
+  .L_f70_pc2138:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_CAST
@@ -25318,13 +26078,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2304
+    beqz t0, .L_f70_pc2520
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25333,14 +26093,14 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -124(s0)
+    sw   t0, -140(s0)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -128(s0)
-    lw   t0, -104(s0)
+    sw   t0, -144(s0)
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -25354,24 +26114,24 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1941
+    beqz t0, .L_f70_pc2157
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -124(s0)
-  .L_f70_pc1941:
-    lw   t0, -104(s0)
+    sw   t0, -140(s0)
+  .L_f70_pc2157:
+    lw   t0, -108(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -25385,11 +26145,11 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1951
+    beqz t0, .L_f70_pc2167
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -100(s0)
+    lw   t0, -104(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -25403,15 +26163,15 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -128(s0)
-  .L_f70_pc1951:
-    lw   t0, -124(s0)
+    sw   t0, -144(s0)
+  .L_f70_pc2167:
+    lw   t0, -140(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 117
@@ -25426,8 +26186,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1961
-    lw   t0, -128(s0)
+    beqz t0, .L_f70_pc2177
+    lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 56
@@ -25442,25 +26202,25 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc1961
+    beqz t0, .L_f70_pc2177
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f70_pc1962
-  .L_f70_pc1961:
+    j    .L_f70_pc2178
+  .L_f70_pc2177:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f70_pc1962:
+  .L_f70_pc2178:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2012
+    beqz t0, .L_f70_pc2228
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25472,8 +26232,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25485,8 +26245,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25498,8 +26258,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25511,8 +26271,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25524,8 +26284,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25533,8 +26293,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25542,8 +26302,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25555,8 +26315,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25568,8 +26328,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25581,8 +26341,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25594,8 +26354,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25607,13 +26367,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2012:
-    lw   t0, -124(s0)
+  .L_f70_pc2228:
+    lw   t0, -140(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 117
@@ -25628,8 +26388,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2022
-    lw   t0, -128(s0)
+    beqz t0, .L_f70_pc2238
+    lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 49
@@ -25644,25 +26404,25 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2022
+    beqz t0, .L_f70_pc2238
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f70_pc2023
-  .L_f70_pc2022:
+    j    .L_f70_pc2239
+  .L_f70_pc2238:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f70_pc2023:
+  .L_f70_pc2239:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2106
+    beqz t0, .L_f70_pc2322
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25674,8 +26434,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25687,8 +26447,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25700,8 +26460,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25713,8 +26473,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25726,8 +26486,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25735,8 +26495,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25744,8 +26504,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25757,8 +26517,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25770,8 +26530,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25783,8 +26543,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25792,8 +26552,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25805,8 +26565,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25818,8 +26578,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25831,8 +26591,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25844,8 +26604,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25857,8 +26617,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25866,8 +26626,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25875,8 +26635,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25888,8 +26648,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25901,8 +26661,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25914,13 +26674,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2106:
-    lw   t0, -124(s0)
+  .L_f70_pc2322:
+    lw   t0, -140(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 105
@@ -25935,8 +26695,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2116
-    lw   t0, -128(s0)
+    beqz t0, .L_f70_pc2332
+    lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 56
@@ -25951,25 +26711,25 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2116
+    beqz t0, .L_f70_pc2332
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f70_pc2117
-  .L_f70_pc2116:
+    j    .L_f70_pc2333
+  .L_f70_pc2332:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f70_pc2117:
+  .L_f70_pc2333:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2200
+    beqz t0, .L_f70_pc2416
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25981,8 +26741,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -25994,8 +26754,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26007,8 +26767,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26020,8 +26780,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26033,8 +26793,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26042,8 +26802,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26051,8 +26811,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26064,8 +26824,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26077,8 +26837,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26090,8 +26850,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26099,8 +26859,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26112,8 +26872,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26125,8 +26885,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26138,8 +26898,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26151,8 +26911,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26164,8 +26924,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26173,8 +26933,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26182,8 +26942,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26195,8 +26955,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26208,8 +26968,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26221,13 +26981,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2200:
-    lw   t0, -124(s0)
+  .L_f70_pc2416:
+    lw   t0, -140(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 105
@@ -26242,8 +27002,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2210
-    lw   t0, -128(s0)
+    beqz t0, .L_f70_pc2426
+    lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 49
@@ -26258,25 +27018,25 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2210
+    beqz t0, .L_f70_pc2426
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f70_pc2211
-  .L_f70_pc2210:
+    j    .L_f70_pc2427
+  .L_f70_pc2426:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f70_pc2211:
+  .L_f70_pc2427:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2294
+    beqz t0, .L_f70_pc2510
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26288,8 +27048,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26301,8 +27061,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26314,8 +27074,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26327,8 +27087,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26340,8 +27100,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26349,8 +27109,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26358,8 +27118,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26371,8 +27131,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26384,8 +27144,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26397,8 +27157,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26406,8 +27166,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26419,8 +27179,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26432,8 +27192,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26445,8 +27205,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26458,8 +27218,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26471,8 +27231,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26480,8 +27240,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26489,8 +27249,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call eregt0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26502,8 +27262,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26515,8 +27275,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26528,13 +27288,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2294:
-    lw   t0, -124(s0)
+  .L_f70_pc2510:
+    lw   t0, -140(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 98
@@ -26549,28 +27309,28 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2301
+    beqz t0, .L_f70_pc2517
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_snez_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2301:
+  .L_f70_pc2517:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_push_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2304:
-    lw   t0, -92(s0)
+  .L_f70_pc2520:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_JUMP
@@ -26586,11 +27346,11 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2313
+    beqz t0, .L_f70_pc2529
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -96(s0)
+    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -26599,13 +27359,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call asm_jump__i32__i32__U8Array
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2313:
-    lw   t0, -92(s0)
+  .L_f70_pc2529:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_JUMP_IF
@@ -26621,13 +27381,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2326
+    beqz t0, .L_f70_pc2542
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26637,7 +27397,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -96(s0)
+    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -26647,13 +27407,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call asm_branch__i32__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2326:
-    lw   t0, -92(s0)
+  .L_f70_pc2542:
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, OP_JUMP_IFNOT
@@ -26669,13 +27429,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f70_pc2339
+    beqz t0, .L_f70_pc2555
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call asm_pop_t0__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26685,7 +27445,7 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -96(s0)
+    lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
@@ -26695,13 +27455,13 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call asm_branch__i32__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f70_pc2339:
-    lw   t0, -88(s0)
+  .L_f70_pc2555:
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -26715,15 +27475,15 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -88(s0)
-    j    .L_f70_pc528
-  .L_f70_pc2344:
+    sw   t0, -92(s0)
+    j    .L_f70_pc638
+  .L_f70_pc2560:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26735,8 +27495,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26748,8 +27508,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26761,8 +27521,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26774,8 +27534,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26787,8 +27547,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26800,8 +27560,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26813,8 +27573,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26826,8 +27586,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26839,8 +27599,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26860,8 +27620,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26873,8 +27633,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26886,8 +27646,8 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26919,6 +27679,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   a5, -32(s0)
     sw   a6, -36(s0)
     sw   a7, -40(s0)
+    lw   t0, 0(s0)
+    sw   t0, -44(s0)
     sw   zero, -48(s0)
     sw   zero, -52(s0)
     sw   zero, -56(s0)
@@ -26947,8 +27709,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26960,8 +27722,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26973,8 +27735,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26986,8 +27748,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -26999,8 +27761,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27012,8 +27774,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27025,8 +27787,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27038,8 +27800,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27051,8 +27813,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27064,8 +27826,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27077,8 +27839,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27090,8 +27852,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27103,8 +27865,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27116,8 +27878,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27129,8 +27891,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27142,8 +27904,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27155,8 +27917,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27168,8 +27930,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27222,8 +27984,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -27255,8 +28017,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -27270,8 +28032,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27283,8 +28045,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27296,8 +28058,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27309,8 +28071,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27322,8 +28084,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27335,8 +28097,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27348,8 +28110,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27361,8 +28123,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27374,8 +28136,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27387,8 +28149,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27400,8 +28162,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27413,8 +28175,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27426,8 +28188,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27439,8 +28201,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27452,8 +28214,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27461,8 +28223,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27474,8 +28236,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27487,8 +28249,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27500,8 +28262,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27513,8 +28275,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27526,8 +28288,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27539,8 +28301,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27552,8 +28314,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27565,8 +28327,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27586,8 +28348,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call emit_strdata__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27599,8 +28361,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27629,8 +28391,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27655,8 +28417,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27668,8 +28430,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27681,8 +28443,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27694,8 +28456,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27707,8 +28469,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27720,8 +28482,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27733,8 +28495,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27787,8 +28549,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -27820,8 +28582,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -27835,8 +28597,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -27846,8 +28608,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27859,8 +28621,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27872,8 +28634,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27885,8 +28647,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27898,8 +28660,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27911,8 +28673,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27924,8 +28686,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27937,8 +28699,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27958,8 +28720,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27971,8 +28733,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -27992,8 +28754,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    addi sp, sp, 16
     call ob_n__U8Array__i32__i32__U8Array
+    addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28005,8 +28767,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28018,8 +28780,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28027,8 +28789,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28040,8 +28802,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28053,8 +28815,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28066,8 +28828,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28079,8 +28841,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28092,8 +28854,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28105,8 +28867,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28118,8 +28880,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_int__i32__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28131,8 +28893,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28161,8 +28923,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28171,8 +28933,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call e4__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28184,8 +28946,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28197,8 +28959,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28210,8 +28972,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28223,8 +28985,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28236,8 +28998,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28249,8 +29011,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28262,8 +29024,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call ob_char__u8__U8Array
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28322,8 +29084,8 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     lw   a5, 8(sp)
     lw   a6, 4(sp)
     lw   a7, 0(sp)
-    addi sp, sp, 32
     call emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__U8Array
+    addi sp, sp, 32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28383,8 +29145,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28394,8 +29156,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28405,8 +29167,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28416,8 +29178,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_I32Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28427,8 +29189,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_I32Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28438,8 +29200,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_I32Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28449,8 +29211,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_I32Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28460,8 +29222,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_I32Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28471,8 +29233,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_I32Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28482,8 +29244,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_I32Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28493,8 +29255,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_I32Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28511,8 +29273,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28581,8 +29343,8 @@ main:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_sys_read
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28672,15 +29434,15 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    addi sp, sp, 8
     call __tc_get
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    addi sp, sp, 12
     call __tc_set
+    addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28725,8 +29487,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call __tc_delete
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28789,16 +29551,21 @@ main:
     lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 36(sp)
-    lw   a1, 32(sp)
-    lw   a2, 28(sp)
-    lw   a3, 24(sp)
-    lw   a4, 20(sp)
-    lw   a5, 16(sp)
-    lw   a6, 12(sp)
-    lw   a7, 8(sp)
-    addi sp, sp, 40
+    addi sp, sp, -8
+    lw   t0, 12(sp)
+    sw   t0, 0(sp)
+    lw   t0, 8(sp)
+    sw   t0, 4(sp)
+    lw   a0, 44(sp)
+    lw   a1, 40(sp)
+    lw   a2, 36(sp)
+    lw   a3, 32(sp)
+    lw   a4, 28(sp)
+    lw   a5, 24(sp)
+    lw   a6, 20(sp)
+    lw   a7, 16(sp)
     call parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array
+    addi sp, sp, 48
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28829,16 +29596,19 @@ main:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 32(sp)
-    lw   a1, 28(sp)
-    lw   a2, 24(sp)
-    lw   a3, 20(sp)
-    lw   a4, 16(sp)
-    lw   a5, 12(sp)
-    lw   a6, 8(sp)
-    lw   a7, 4(sp)
-    addi sp, sp, 36
+    addi sp, sp, -4
+    lw   t0, 4(sp)
+    sw   t0, 0(sp)
+    lw   a0, 36(sp)
+    lw   a1, 32(sp)
+    lw   a2, 28(sp)
+    lw   a3, 24(sp)
+    lw   a4, 20(sp)
+    lw   a5, 16(sp)
+    lw   a6, 12(sp)
+    lw   a7, 8(sp)
     call emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__U8Array
+    addi sp, sp, 40
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28846,8 +29616,8 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    addi sp, sp, 4
     call ob_flush__U8Array
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4

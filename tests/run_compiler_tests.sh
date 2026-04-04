@@ -59,10 +59,81 @@ if [ ! -x "$PARSE" ] || [ ! -x "$CODEGEN" ] || [ ! -x "$BCRUN" ] || [ ! -x "$BC2
     exit 1
 fi
 
-PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
-TYPECHECK_TC_BC=$("$PARSE" "$TC_DIR/typecheck.tc" | "$CODEGEN" 2>/dev/null)
-CODEGEN_TC_BC=$("$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
-BC2ASM_TC_BC=$("$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
+# Build Gen2 RISC-V binaries for fast self-hosted execution (if toolchain available)
+USE_NATIVE=false
+GEN2_TMP=""
+if command -v "$RISCV_CC" >/dev/null 2>&1 && command -v "$QEMU" >/dev/null 2>&1; then
+    GEN2_TMP=$(mktemp -d)
+
+    # Compile Gen2 tools to BC, then to RISC-V ELF
+    build_gen2_tool() {
+        local name="$1"
+        "$PARSE" "$TC_DIR/$name.tc" | "$CODEGEN" > "$GEN2_TMP/$name.bc" 2>/dev/null
+        cat "$GEN2_TMP/$name.bc" | "$BC2ASM" > "$GEN2_TMP/$name.s" 2>/dev/null
+        $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "$GEN2_TMP/$name.s" -o "$GEN2_TMP/$name" 2>/dev/null
+    }
+
+    build_gen2_tool "parse"
+    build_gen2_tool "typecheck"
+    build_gen2_tool "codegen"
+    build_gen2_tool "bc2asm"
+
+    # Verify all binaries were built
+    if [ -x "$GEN2_TMP/parse" ] && [ -x "$GEN2_TMP/typecheck" ] && \
+       [ -x "$GEN2_TMP/codegen" ] && [ -x "$GEN2_TMP/bc2asm" ]; then
+        USE_NATIVE=true
+        echo "Using RISC-V native execution for self-hosted tests (fast mode)"
+    else
+        echo "Warning: Failed to build Gen2 RISC-V binaries, falling back to bcrun"
+    fi
+else
+    echo "Note: RISC-V toolchain not found, using bcrun for self-hosted tests (slow)"
+fi
+
+# Fallback: compile Gen2 BCs for bcrun if native not available
+if [ "$USE_NATIVE" = false ]; then
+    PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
+    TYPECHECK_TC_BC=$("$PARSE" "$TC_DIR/typecheck.tc" | "$CODEGEN" 2>/dev/null)
+    CODEGEN_TC_BC=$("$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
+    BC2ASM_TC_BC=$("$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
+fi
+
+# Helper: run self-hosted parse.tc on input file, write AST to stdout
+run_parse_tc() {
+    local input="$1"
+    if [ "$USE_NATIVE" = true ]; then
+        "$QEMU" "$GEN2_TMP/parse" < "$input" 2>/dev/null
+    else
+        { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" 2>/dev/null
+    fi
+}
+
+# Helper: run self-hosted typecheck.tc on AST (from stdin), write typed AST to stdout
+run_typecheck_tc() {
+    if [ "$USE_NATIVE" = true ]; then
+        "$QEMU" "$GEN2_TMP/typecheck" 2>/dev/null
+    else
+        { printf '%s\n' "$TYPECHECK_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
+    fi
+}
+
+# Helper: run self-hosted codegen.tc on typed AST (from stdin), write BC to stdout
+run_codegen_tc() {
+    if [ "$USE_NATIVE" = true ]; then
+        "$QEMU" "$GEN2_TMP/codegen" 2>/dev/null
+    else
+        { printf '%s\n' "$CODEGEN_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
+    fi
+}
+
+# Helper: run self-hosted bc2asm.tc on BC (from stdin), write ASM to stdout
+run_bc2asm_tc() {
+    if [ "$USE_NATIVE" = true ]; then
+        "$QEMU" "$GEN2_TMP/bc2asm" 2>/dev/null
+    else
+        { printf '%s\n' "$BC2ASM_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
+    fi
+}
 
 echo "=== Golden Tests: tc/ Compiler Source Files ==="
 
@@ -102,7 +173,7 @@ for f in "${TC_FILES[@]}"; do
     golden_ast_tc="$GOLDEN_DIR/tc/$base.ast.tc"
     [ -f "$golden_ast_tc" ] || golden_ast_tc="$golden_ast"
     t0=$(time_ms)
-    { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$actual_ast" 2>/dev/null
+    run_parse_tc "$input" > "$actual_ast"
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_ast_tc" "$actual_ast" > /dev/null; then
         echo "PASS: tc/$f (AST - parse.tc) [${elapsed}ms]"
@@ -125,9 +196,8 @@ for f in "${TC_FILES[@]}"; do
     fi
 
     AST=$("$PARSE" "$input" 2>/dev/null)
-    TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
     t0=$(time_ms)
-    { printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$TAST"; } | "$BCRUN" > "$actual_bc" 2>/dev/null
+    printf '%s\n' "$AST" | run_typecheck_tc | run_codegen_tc > "$actual_bc"
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_bc" "$actual_bc" > /dev/null; then
         echo "PASS: tc/$f (BC - codegen.tc) [${elapsed}ms]"
@@ -151,7 +221,7 @@ for f in "${TC_FILES[@]}"; do
     fi
 
     t0=$(time_ms)
-    { printf '%s\n' "$BC2ASM_TC_BC"; printf '%s\n' "$bc"; } | "$BCRUN" > "$actual_s" 2>/dev/null
+    printf '%s\n' "$bc" | run_bc2asm_tc > "$actual_s"
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_s" "$actual_s" > /dev/null; then
         echo "PASS: tc/$f (ASM - bc2asm.tc) [${elapsed}ms]"
@@ -181,6 +251,9 @@ for f in "${TC_FILES[@]}"; do
     fi
     rm -f "$actual_out"
 done
+
+# Cleanup Gen2 temp directory
+[ -n "$GEN2_TMP" ] && rm -rf "$GEN2_TMP"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

@@ -327,8 +327,16 @@ static void emit_fn(BcProg *prog, BcFunc *fn, int fi) {
 
     /* save incoming args (a0-a7) to param slots */
     static const char *areg[] = {"a0","a1","a2","a3","a4","a5","a6","a7"};
-    for (int i = 0; i < fn->nparams && i < 8; i++)
+    int nreg_params = fn->nparams < 8 ? fn->nparams : 8;
+    for (int i = 0; i < nreg_params; i++)
         E("    sw   %s, %d(s0)\n", areg[i], -12 - 4*i);
+
+    /* load overflow args from caller's stack (above our frame).
+       Caller placed: arg8 at s0+0, arg9 at s0+4, etc. */
+    for (int i = 8; i < fn->nparams; i++) {
+        E("    lw   t0, %d(s0)\n", 4*(i - 8));
+        E("    sw   t0, %d(s0)\n", -12 - 4*i);
+    }
 
     /* zero-initialize locals */
     for (int i = 0; i < fn->nlocals; i++)
@@ -387,13 +395,27 @@ static void emit_fn(BcProg *prog, BcFunc *fn, int fi) {
 
         case OP_CALL: {
             int nargs = (int)ins->ival;
-            /* Load args from expression stack into a0-a7.
-               Stack: [arg0, arg1, ..., argn-1]  (argn-1 at top = 0(sp)) */
-            /* arg[0] pushed first → at 4*(nargs-1)(sp), arg[nargs-1] at 0(sp) */
-            for (int i = 0; i < nargs && i < 8; i++)
-                E("    lw   %s, %d(sp)\n", areg[i], 4*(nargs-1-i));
-            if (nargs > 0)
-                E("    addi sp, sp, %d\n", 4*nargs);
+            /* Expression stack layout (arg0 pushed first → at bottom):
+               sp+4*(nargs-1): arg0, ..., sp+0: arg(nargs-1) */
+            int nreg = nargs < 8 ? nargs : 8;
+            int noverflow = nargs - nreg;
+
+            if (noverflow > 0) {
+                /* Allocate space below expression stack for overflow args */
+                E("    addi sp, sp, %d\n", -4*noverflow);
+                /* Copy overflow args to new area (no overlap guaranteed).
+                   Source: sp+4*noverflow+4*(nargs-1-i), Dest: sp+4*(i-8) */
+                for (int i = 8; i < nargs; i++) {
+                    E("    lw   t0, %d(sp)\n", 4*noverflow + 4*(nargs-1-i));
+                    E("    sw   t0, %d(sp)\n", 4*(i-8));
+                }
+            }
+
+            /* Load register args (arg0..arg7) into a0-a7.
+               Offsets shifted by 4*noverflow if overflow area was allocated. */
+            for (int i = 0; i < nreg; i++)
+                E("    lw   %s, %d(sp)\n", areg[i],
+                  4*noverflow + 4*(nargs-1-i));
 
             if (is_builtin(ins->sarg)) {
                 char bname[128]; base_name(ins->sarg, bname, sizeof(bname));
@@ -407,6 +429,12 @@ static void emit_fn(BcProg *prog, BcFunc *fn, int fi) {
             } else {
                 E("    call %s\n", ins->sarg);
             }
+
+            /* pop overflow args + expression stack */
+            if (noverflow > 0)
+                E("    addi sp, sp, %d\n", 4*noverflow + 4*nargs);
+            else if (nargs > 0)
+                E("    addi sp, sp, %d\n", 4*nargs);
 
             /* push return value (a0) — callers of void fns will pop it */
             E("    addi sp, sp, -4\n");

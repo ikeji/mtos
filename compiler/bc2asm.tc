@@ -770,6 +770,24 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
         eNs0nl(0-12-4*pi,ob);
         pi=pi+1;
     }
+    // Load overflow args from caller's stack (above our frame)
+    // arg8 at s0+0, arg9 at s0+4, etc.
+    var oi: i32=8;
+    while oi<np {
+        // "    lw   t0, 4*(oi-8)(s0)\n"
+        ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('l',ob);ob_char('w',ob);
+        ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
+        ob_char('t',ob);ob_char('0',ob);ecomma(ob);
+        ob_int(4*(oi-8),ob);
+        ob_char('(',ob);ob_char('s',ob);ob_char('0',ob);ob_char(')',ob);
+        ob_char(10u8,ob);
+        // "    sw   t0, (-12-4*oi)(s0)\n"
+        e_sw(ob);
+        ob_char('t',ob);ob_char('0',ob);ecomma(ob);
+        eNs0nl(0-12-4*oi,ob);
+        oi=oi+1;
+    }
     // Zero-initialize locals
     var li: i32=0;
     while li<nl {
@@ -847,16 +865,26 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
         }
         if op==OP_CALL {
             var nargs: i32=ival;
-            // Load args from expression stack: arg0 at 4*(nargs-1)(sp), etc.
+            var nreg: i32=nargs; if nreg>8 { nreg=8; }
+            var noverflow: i32=nargs-nreg;
+            // Allocate space below expression stack for overflow args copy
+            if noverflow>0 {
+                e_addi(ob); eregsp(ob); eregsp(ob); ob_int(0-4*noverflow,ob); ob_char(10u8,ob);
+                // Copy overflow args to new area (no overlap guaranteed)
+                var ci: i32=8;
+                while ci<nargs {
+                    e_lw(ob); eregt0(ob); eNspnl(4*noverflow+4*(nargs-1-ci),ob);
+                    e_sw(ob); eregt0(ob); eNspnl(4*(ci-8),ob);
+                    ci=ci+1;
+                }
+            }
+            // Load register args (arg0-arg7) into a0-a7
             var ai: i32=0;
-            while ai<nargs && ai<8 {
+            while ai<nreg {
                 e_lw(ob);
                 ob_char('a',ob); ob_char((48+ai) as u8,ob); ecomma(ob);
-                eNspnl(4*(nargs-1-ai),ob);
+                eNspnl(4*noverflow+4*(nargs-1-ai),ob);
                 ai=ai+1;
-            }
-            if nargs>0 {
-                e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);
             }
             if is_sys_exit(strtab,sss,ssl)==1 {
                 // inline: li a7, 93; ecall
@@ -867,6 +895,14 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
                 ob_char('l',ob);ob_char(10u8,ob);
             } else {
                 asm_call_fn(strtab,sss,ssl,is_builtin(strtab,sss,ssl),ob);
+            }
+            // Pop overflow args + expression stack
+            if noverflow>0 {
+                e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*noverflow+4*nargs,ob); ob_char(10u8,ob);
+            } else {
+                if nargs>0 {
+                    e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);
+                }
             }
             // push return value (a0) onto expression stack
             e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
