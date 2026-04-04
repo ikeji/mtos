@@ -13,7 +13,8 @@
 bootstrap/  C実装のコンパイラ（ブートストラップ用）
 compiler/   自作TinyC製の自己ホスト型コンパイラ
   parse.tc      レキサー＋パーサー（ソース→AST）
-  codegen.tc    コード生成（AST→バイトコード）
+  typecheck.tc  型チェック＋オーバーロード解決（AST→型付きAST）
+  codegen.tc    コード生成（型付きAST→バイトコード）
   bc2asm.tc     アセンブラ（バイトコード→RISC-V asm）
   bcrun.tc      バイトコードインタープリタ
 tests/      テストスイート
@@ -49,10 +50,13 @@ make update-golden    # goldenファイルを再生成
 ```
 source.tc
   → ./parse source.tc              # AST（S式テキスト形式）
-  → ./parse | ./codegen            # バイトコード（.bc形式）
+  → ./parse | ./codegen            # バイトコード（.bc形式、内部でtypecheckも実行）
   → ./parse | ./codegen | ./bc2asm # RISC-V アセンブリ（.s形式）
   → ./bcrun                        # バイトコード実行（stdin経由でbcを渡す）
 ```
+
+自己ホスト版のパイプライン: `parse.tc → typecheck.tc → codegen.tc → bc2asm.tc/bcrun.tc`
+（C版の `codegen` は内部で typecheck を呼ぶが、自己ホスト版は明示的に分離）
 
 ## テスト構造
 
@@ -77,7 +81,7 @@ source.tc
 
 ### Gen2 vs Gen3 の比較（真の自己ホスト確認）
 - `tests/run_gen3_tests.sh` — Gen2 BC == Gen3 BC を確認
-  - `compiler/parse.tc (Gen2 == Gen3)` / `compiler/codegen.tc (Gen2 == Gen3)` / `compiler/bc2asm.tc (Gen2 == Gen3)`
+  - `compiler/parse.tc (Gen2 == Gen3)` / `compiler/typecheck.tc (Gen2 == Gen3)` / `compiler/codegen.tc (Gen2 == Gen3)` / `compiler/bc2asm.tc (Gen2 == Gen3)`
   - Gen2 コンパイラを RISC-V にコンパイル（riscv-gcc + qemu）して Gen3 を生成
   - 自己ホストコンパイラが正しく自分自身をコンパイルできることを証明する
 
