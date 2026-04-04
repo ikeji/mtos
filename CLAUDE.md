@@ -68,7 +68,7 @@ source.tc
 ### テストスクリプト構成
 - `tests/run_golden_tests.sh` — 以下3つをまとめて実行するラッパー
 - `tests/run_example_tests.sh` — サンプル .tc ファイルの golden テスト（Gen1 vs Gen2）
-- `tests/run_compiler_tests.sh` — compiler/ コンパイラソース自体の golden テスト（Gen1 vs Gen2）
+- `tests/run_compiler_tests.sh` — compiler/ コンパイラソース自体の golden テスト（Gen1 vs Gen2、RISC-V toolchain があれば自己ホスト版をネイティブ実行で高速化）
 - `tests/run_gen3_tests.sh` — Gen2 vs Gen3 自己ホスト確認（単体実行可能）
 - goldenファイルの更新: `make update-golden`
 
