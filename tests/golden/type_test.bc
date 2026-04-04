@@ -1,0 +1,74 @@
+.bc
+.fn double_val i32 i32
+.param x i32
+; return x * 2;
+  load x
+  push_int 2
+  mul
+  return
+  return_void
+.endfn
+
+.fn double_val u8 u8
+.param x u8
+; return x + x;
+  load x
+  load x
+  add
+  return
+  return_void
+.endfn
+
+.fn main i32
+.local a i32
+.local b u8
+.local buf U8Array
+.local c i32
+; var a: i32 = double_val(21);
+  push_int 21
+  call double_val i32
+  store a
+; print_i32(a);
+  load a
+  call print_i32 i32
+  pop
+; var b: u8 = double_val(33u8);
+  push_int 33
+  call double_val u8
+  store b
+; print_i32(b as i32);
+  load b
+  cast i32
+  call print_i32 i32
+  pop
+; var buf: U8Array = U8Array(1);
+  push_int 1
+  call U8Array i32
+  store buf
+; set(buf, 0, 65u8);
+  load buf
+  push_int 0
+  push_int 65
+  call set U8Array i32 u8
+  pop
+; var c: i32 = get(buf, 0) as i32;
+  load buf
+  push_int 0
+  call get U8Array i32
+  cast i32
+  store c
+; print_i32(c);
+  load c
+  call print_i32 i32
+  pop
+; delete(buf);
+  load buf
+  call delete U8Array
+  pop
+; return 0;
+  push_int 0
+  return
+  return_void
+.endfn
+
+.endbc

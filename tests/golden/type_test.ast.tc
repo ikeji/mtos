@@ -1,0 +1,102 @@
+(program
+  (fn double_val
+    (params
+      (param x
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "return x * 2;")
+      (return
+        (binop *
+(var x)
+(int 2))
+      )
+    )
+  )
+  (fn double_val
+    (params
+      (param x
+        (type u8)
+      )
+    )
+    (ret
+      (type u8)
+    )
+    (block
+      (comment "return x + x;")
+      (return
+        (binop +
+(var x)
+(var x))
+      )
+    )
+  )
+  (fn main
+    (params
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "var a: i32 = double_val(21);")
+      (var_decl a
+        (type i32)
+        (call double_val
+(int 21))
+      )
+      (comment "print_i32(a);")
+      (call_stmt print_i32
+        (var a)
+      )
+      (comment "var b: u8 = double_val(33u8);")
+      (var_decl b
+        (type u8)
+        (call double_val
+(int:u8 33))
+      )
+      (comment "print_i32(b as i32);")
+      (call_stmt print_i32
+        (cast
+(var b)
+(type i32))
+      )
+      (comment "var buf: U8Array = U8Array(1);")
+      (var_decl buf
+        (type U8Array)
+        (call U8Array
+(int 1))
+      )
+      (comment "set(buf, 0, 65u8);")
+      (call_stmt set
+        (var buf)
+        (int 0)
+        (int:u8 65)
+      )
+      (comment "var c: i32 = get(buf, 0) as i32;")
+      (var_decl c
+        (type i32)
+        (cast
+(call get
+(var buf)
+(int 0))
+(type i32))
+      )
+      (comment "print_i32(c);")
+      (call_stmt print_i32
+        (var c)
+      )
+      (comment "delete(buf);")
+      (call_stmt delete
+        (var buf)
+      )
+      (comment "return 0;")
+      (return
+        (int 0)
+      )
+    )
+  )
+)
