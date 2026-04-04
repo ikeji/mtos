@@ -131,6 +131,29 @@ static void fn_resolve(BcFunc*f,LabelTab*lt){
             ins->ival=lt_find(lt,ins->sarg); free(ins->sarg); ins->sarg=NULL;}}
 }
 
+/* Build mangled name: "name__type1__type2..." */
+static void build_mangled(char *buf, int bufsz,
+                           const char *name,
+                           const char **types, int ntypes) {
+    strncpy(buf, name, bufsz - 1); buf[bufsz - 1] = '\0';
+    for (int i = 0; i < ntypes; i++) {
+        strncat(buf, "__", bufsz - strlen(buf) - 1);
+        strncat(buf, types[i], bufsz - strlen(buf) - 1);
+    }
+}
+
+/* Extract base name (before first "__") */
+static void base_name(const char *mangled, char *buf, int bufsz) {
+    const char *sep = strstr(mangled, "__");
+    if (sep) {
+        int len = (int)(sep - mangled);
+        if (len >= bufsz) len = bufsz - 1;
+        strncpy(buf, mangled, len); buf[len] = '\0';
+    } else {
+        strncpy(buf, mangled, bufsz - 1); buf[bufsz - 1] = '\0';
+    }
+}
+
 static BcProg *bc_parse(FILE *in) {
     BcProg *p=calloc(1,sizeof(BcProg)); BcFunc *cur=NULL; LabelTab lt={0};
     char line[4096];
@@ -142,7 +165,18 @@ static BcProg *bc_parse(FILE *in) {
             char dir[64]; s=skip_ws(next_tok(s+1,dir,sizeof(dir)));
             if(!strcmp(dir,"string")){char is[16];s=skip_ws(next_tok(s,is,sizeof(is)));if(*s=='"'){char b[4096];parse_strlit(s+1,b,sizeof(b));prog_set_str(p,atoi(is),b);}}
             else if(!strcmp(dir,"global")){char nm[128],ty[64],iv[32];s=skip_ws(next_tok(s,nm,sizeof(nm)));s=skip_ws(next_tok(s,ty,sizeof(ty)));next_tok(s,iv,sizeof(iv));prog_add_global(p,nm,ty,atoi(iv));}
-            else if(!strcmp(dir,"fn")){char nm[128],np[16],rt[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));s=skip_ws(next_tok(s,np,sizeof(np)));next_tok(s,rt,sizeof(rt));cur=prog_new_fn(p);cur->name=strdup(nm);cur->ret_type=strdup(rt);lt_free(&lt);}
+            else if(!strcmp(dir,"fn")){
+                /* Format: .fn NAME ARG_TYPE... RET_TYPE */
+                char toks[17][128]; int ntok=0;
+                char *p2=s;
+                while(*p2&&ntok<17){p2=skip_ws(p2);if(!*p2)break;p2=next_tok(p2,toks[ntok],sizeof(toks[0]));if(toks[ntok][0])ntok++;}
+                int nargs=ntok>=2?ntok-2:0;
+                const char *argtypes[16];
+                for(int i=0;i<nargs&&i<16;i++)argtypes[i]=toks[1+i];
+                char mangled[512];
+                build_mangled(mangled,sizeof(mangled),toks[0],argtypes,nargs);
+                cur=prog_new_fn(p);cur->name=strdup(mangled);
+                cur->ret_type=ntok>=1?strdup(toks[ntok-1]):strdup("void");lt_free(&lt);}
             else if(!strcmp(dir,"param")){char nm[128],ty[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,ty,sizeof(ty));if(cur)fn_param(cur,nm,ty);}
             else if(!strcmp(dir,"local")){char nm[128],ty[64];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,ty,sizeof(ty));if(cur)fn_local(cur,nm,ty);}
             else if(!strcmp(dir,"endfn")){if(cur){fn_resolve(cur,&lt);lt_free(&lt);}cur=NULL;}
@@ -160,7 +194,13 @@ static BcProg *bc_parse(FILE *in) {
         else if(!strcmp(op,"push_str"))  {ins.op=OP_PUSH_STR;ins.ival=atol(skip_ws(s));}
         else if(!strcmp(op,"load"))      {ins.op=OP_LOAD;char n[128];next_tok(s,n,sizeof(n));ins.sarg=strdup(n);}
         else if(!strcmp(op,"store"))     {ins.op=OP_STORE;char n[128];next_tok(s,n,sizeof(n));ins.sarg=strdup(n);}
-        else if(!strcmp(op,"call"))      {ins.op=OP_CALL;char nm[128],na[16];s=skip_ws(next_tok(s,nm,sizeof(nm)));next_tok(s,na,sizeof(na));ins.sarg=strdup(nm);ins.ival=atol(na);}
+        else if(!strcmp(op,"call"))      {
+            ins.op=OP_CALL;char nm[128];s=skip_ws(next_tok(s,nm,sizeof(nm)));
+            const char *types[16];char typebufs[16][64];int ntypes=0;
+            char *p2=s;
+            while(*p2&&ntypes<16){p2=skip_ws(p2);if(!*p2)break;p2=next_tok(p2,typebufs[ntypes],sizeof(typebufs[0]));if(typebufs[ntypes][0]){types[ntypes]=typebufs[ntypes];ntypes++;}}
+            char mangled[512];build_mangled(mangled,sizeof(mangled),nm,types,ntypes);
+            ins.sarg=strdup(mangled);ins.ival=ntypes;}
         else if(!strcmp(op,"return"))    {ins.op=OP_RETURN;}
         else if(!strcmp(op,"return_void")){ins.op=OP_RETURN_VOID;}
         else if(!strcmp(op,"pop"))       {ins.op=OP_POP;}
@@ -214,7 +254,7 @@ static int is_local(BcFunc *fn, const char *name) {
 
 /* ===== Builtin detection ===== */
 
-static int is_builtin(const char *name) {
+static int is_builtin(const char *mangled) {
     static const char *B[] = {
         "peek8","peek16","peek32","poke8","poke16","poke32",
         "sys_write","sys_read","sys_exit",
@@ -222,6 +262,7 @@ static int is_builtin(const char *name) {
         "len","get","set","delete","append","equals",
         NULL
     };
+    char name[128]; base_name(mangled, name, sizeof(name));
     for (int i = 0; B[i]; i++)
         if (!strcmp(name, B[i])) return 1;
     { int n=strlen(name); if(n>5 && !strcmp(name+n-5,"Array") && isupper((unsigned char)name[0])) return 1; }
@@ -355,12 +396,13 @@ static void emit_fn(BcProg *prog, BcFunc *fn, int fi) {
                 E("    addi sp, sp, %d\n", 4*nargs);
 
             if (is_builtin(ins->sarg)) {
+                char bname[128]; base_name(ins->sarg, bname, sizeof(bname));
                 /* Inline sys_exit */
-                if (!strcmp(ins->sarg, "sys_exit")) {
+                if (!strcmp(bname, "sys_exit")) {
                     E("    li   a7, 93\n");   /* __NR_exit (Linux riscv) */
                     E("    ecall\n");
                 } else {
-                    E("    call __tc_%s\n", ins->sarg);
+                    E("    call __tc_%s\n", bname);
                 }
             } else {
                 E("    call %s\n", ins->sarg);

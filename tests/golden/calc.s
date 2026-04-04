@@ -8,9 +8,9 @@ g_len:
 
     .text
 
-    .globl is_digit
-    .type  is_digit, @function
-is_digit:
+    .globl is_digit__u8
+    .type  is_digit__u8, @function
+is_digit__u8:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -71,11 +71,11 @@ is_digit:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of is_digit
+    # end of is_digit__u8
 
-    .globl is_space
-    .type  is_space, @function
-is_space:
+    .globl is_space__u8
+    .type  is_space__u8, @function
+is_space__u8:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -136,11 +136,11 @@ is_space:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of is_space
+    # end of is_space__u8
 
-    .globl cur_char
-    .type  cur_char, @function
-cur_char:
+    .globl cur_char__U8Array
+    .type  cur_char__U8Array, @function
+cur_char__U8Array:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -184,10 +184,6 @@ cur_char:
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -207,11 +203,11 @@ cur_char:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cur_char
+    # end of cur_char__U8Array
 
-    .globl skip_spaces
-    .type  skip_spaces, @function
-skip_spaces:
+    .globl skip_spaces__U8Array
+    .type  skip_spaces__U8Array, @function
+skip_spaces__U8Array:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -241,12 +237,12 @@ skip_spaces:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call is_space
+    call is_space__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -293,11 +289,11 @@ skip_spaces:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of skip_spaces
+    # end of skip_spaces__U8Array
 
-    .globl parse_num
-    .type  parse_num, @function
-parse_num:
+    .globl parse_num__U8Array
+    .type  parse_num__U8Array, @function
+parse_num__U8Array:
     # prologue: frame_size=16, params=1, locals=1
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -310,7 +306,7 @@ parse_num:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_spaces
+    call skip_spaces__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -343,12 +339,12 @@ parse_num:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call is_digit
+    call is_digit__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -383,7 +379,7 @@ parse_num:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -443,11 +439,11 @@ parse_num:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of parse_num
+    # end of parse_num__U8Array
 
-    .globl parse_mul
-    .type  parse_mul, @function
-parse_mul:
+    .globl parse_mul__U8Array
+    .type  parse_mul__U8Array, @function
+parse_mul__U8Array:
     # prologue: frame_size=32, params=1, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -462,7 +458,7 @@ parse_mul:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call parse_num
+    call parse_num__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -473,7 +469,7 @@ parse_mul:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_spaces
+    call skip_spaces__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -500,7 +496,7 @@ parse_mul:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 42
@@ -521,7 +517,7 @@ parse_mul:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 47
@@ -566,7 +562,7 @@ parse_mul:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -594,7 +590,7 @@ parse_mul:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call parse_num
+    call parse_num__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -654,7 +650,7 @@ parse_mul:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_spaces
+    call skip_spaces__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -676,11 +672,11 @@ parse_mul:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of parse_mul
+    # end of parse_mul__U8Array
 
-    .globl parse_add
-    .type  parse_add, @function
-parse_add:
+    .globl parse_add__U8Array
+    .type  parse_add__U8Array, @function
+parse_add__U8Array:
     # prologue: frame_size=32, params=1, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -695,7 +691,7 @@ parse_add:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call parse_mul
+    call parse_mul__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -706,7 +702,7 @@ parse_add:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_spaces
+    call skip_spaces__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -733,7 +729,7 @@ parse_add:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 43
@@ -754,7 +750,7 @@ parse_add:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 45
@@ -799,7 +795,7 @@ parse_add:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call cur_char
+    call cur_char__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -827,7 +823,7 @@ parse_add:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call parse_mul
+    call parse_mul__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -887,7 +883,7 @@ parse_add:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_spaces
+    call skip_spaces__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -909,7 +905,7 @@ parse_add:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of parse_add
+    # end of parse_add__U8Array
 
     .globl main
     .type  main, @function
@@ -957,7 +953,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call parse_add
+    call parse_add__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)

@@ -1,5 +1,5 @@
 .bc
-.fn fib 1 i32
+.fn fib i32 i32
 .param n i32
 ; if n <= 1 {
   load n
@@ -14,25 +14,25 @@ __L0:
   load n
   push_int 1
   sub
-  call fib 1
+  call fib i32
   load n
   push_int 2
   sub
-  call fib 1
+  call fib i32
   add
   return
   return_void
 .endfn
 
-.fn main 0 i32
+.fn main i32
 .local result i32
 ; var result: i32 = fib(10);
   push_int 10
-  call fib 1
+  call fib i32
   store result
 ; print_i32(result);
   load result
-  call print_i32 1
+  call print_i32 i32
   pop
 ; return result;
   load result

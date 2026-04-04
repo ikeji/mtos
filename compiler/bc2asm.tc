@@ -47,18 +47,18 @@ var g_ob_pos: i32 = 0;
 
 // ===== Output buffer =====
 fn ob_flush(ob: U8Array) -> void {
-    if g_ob_pos > 0 { sys_write(1, ob, g_ob_pos as u32); g_ob_pos = 0; }
+    if g_ob_pos > 0 { sys_write(1, ob, g_ob_pos); g_ob_pos = 0; }
     return;
 }
 fn ob_char(c: u8, ob: U8Array) -> void {
-    set(ob, g_ob_pos as u32, c);
+    set(ob, g_ob_pos, c);
     g_ob_pos = g_ob_pos + 1;
     if g_ob_pos >= 8192 { ob_flush(ob); }
     return;
 }
 fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
     var i: i32 = 0;
-    while i < n { ob_char(get(src,(start+i) as u32), ob); i = i + 1; }
+    while i < n { ob_char(get(src,(start+i)), ob); i = i + 1; }
     return;
 }
 fn ob_int(n: i32, ob: U8Array) -> void {
@@ -66,9 +66,9 @@ fn ob_int(n: i32, ob: U8Array) -> void {
     if n < 0 { ob_char('-', ob); n = 0 - n; }
     var tmp: U8Array = U8Array(12);
     var len: i32 = 0; var v: i32 = n;
-    while v > 0 { set(tmp,len as u32,(48+v%10) as u8); len=len+1; v=v/10; }
+    while v > 0 { set(tmp,len,(48+v%10) as u8); len=len+1; v=v/10; }
     var i: i32 = len - 1;
-    while i >= 0 { ob_char(get(tmp,i as u32),ob); i=i-1; }
+    while i >= 0 { ob_char(get(tmp,i),ob); i=i-1; }
     delete(tmp);
     return;
 }
@@ -242,7 +242,7 @@ fn stab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
     if sl1 != sl2 { return false; }
     var i: i32 = 0;
     while i < sl1 {
-        if get(strtab,(ss1+i) as u32)!=get(strtab,(ss2+i) as u32) { return false; }
+        if get(strtab,(ss1+i))!=get(strtab,(ss2+i)) { return false; }
         i=i+1;
     }
     return true;
@@ -251,7 +251,7 @@ fn stab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
 // ===== Input utilities =====
 fn in_cur(src: U8Array) -> u8 {
     if g_in_pos >= g_in_len { return 0u8; }
-    return get(src, g_in_pos as u32);
+    return get(src, g_in_pos);
 }
 fn is_ws(c: u8) -> bool { return c==' '||c==9u8||c==13u8||c==10u8; }
 fn skip_spaces(src: U8Array) -> void {
@@ -267,7 +267,7 @@ fn next_tok(src: U8Array, strtab: U8Array) -> i32 {
     skip_spaces(src);
     var start: i32 = g_stab_pos;
     while g_in_pos < g_in_len && !is_ws(in_cur(src)) {
-        set(strtab,g_stab_pos as u32,in_cur(src));
+        set(strtab,g_stab_pos,in_cur(src));
         g_stab_pos=g_stab_pos+1; g_in_pos=g_in_pos+1;
     }
     return start;
@@ -276,10 +276,10 @@ fn tok_len(start: i32) -> i32 { return g_stab_pos - start; }
 fn discard_tok(start: i32) -> void { g_stab_pos = start; return; }
 fn int_from_stab(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     var neg: i32=0; var i: i32=0;
-    if sl>0&&get(strtab,ss as u32)=='-' { neg=1; i=1; }
+    if sl>0&&get(strtab,ss)=='-' { neg=1; i=1; }
     var r: i32=0;
     while i<sl {
-        var c: u8=get(strtab,(ss+i) as u32);
+        var c: u8=get(strtab,(ss+i));
         if c>='0'&&c<='9' { r=r*10+(c as i32-48); }
         i=i+1;
     }
@@ -312,9 +312,9 @@ fn read_strlit(src: U8Array, strtab: U8Array) -> i32 {
                 if h2>='a'&&h2<='f' { v2=h2 as i32-87; }
                 out=(v1*16+v2) as u8;
             }
-            set(strtab,g_stab_pos as u32,out); g_stab_pos=g_stab_pos+1; handled=1;
+            set(strtab,g_stab_pos,out); g_stab_pos=g_stab_pos+1; handled=1;
         }
-        if handled==0 { set(strtab,g_stab_pos as u32,c); g_stab_pos=g_stab_pos+1; }
+        if handled==0 { set(strtab,g_stab_pos,c); g_stab_pos=g_stab_pos+1; }
     }
     return start;
 }
@@ -322,11 +322,11 @@ fn read_strlit(src: U8Array, strtab: U8Array) -> i32 {
 // ===== Opcode classifier =====
 fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
-    if sl>0 { a=get(strtab,ss as u32); }
-    if sl>1 { b=get(strtab,(ss+1) as u32); }
-    if sl>2 { c=get(strtab,(ss+2) as u32); }
-    if sl>3 { d=get(strtab,(ss+3) as u32); }
-    if sl>4 { e=get(strtab,(ss+4) as u32); }
+    if sl>0 { a=get(strtab,ss); }
+    if sl>1 { b=get(strtab,(ss+1)); }
+    if sl>2 { c=get(strtab,(ss+2)); }
+    if sl>3 { d=get(strtab,(ss+3)); }
+    if sl>4 { e=get(strtab,(ss+4)); }
     if sl==2 {
         if a=='o'&&b=='r' { return OP_OR; }
         if a=='e'&&b=='q' { return OP_EQ; }
@@ -360,13 +360,13 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     if sl==6 { if a=='r'&&b=='e'&&c=='t' { return OP_RETURN; } }
     if sl==7 {
         if a=='j'&&b=='u'&&c=='m'&&d=='p'&&e=='_' {
-            var f: u8=get(strtab,(ss+5) as u32);
+            var f: u8=get(strtab,(ss+5));
             if f=='i' { return OP_JUMP_IF; }
         }
     }
     if sl==8 {
         if a=='p'&&b=='u'&&c=='s'&&d=='h'&&e=='_' {
-            var f: u8=get(strtab,(ss+5) as u32);
+            var f: u8=get(strtab,(ss+5));
             if f=='i' { return OP_PUSH_INT; }
             if f=='s' { return OP_PUSH_STR; }
         }
@@ -377,30 +377,30 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
 }
 
 // ===== Table accessors =====
-fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+0) as u32); }
-fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+1) as u32); }
-fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+4) as u32); }
-fn fn_nparam(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+5) as u32); }
-fn fn_local_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+6) as u32); }
-fn fn_nlocal(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+7) as u32); }
-fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+8) as u32); }
-fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+9) as u32); }
-fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns,(fi*10+f) as u32,v); return; }
-fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+0) as u32); }
-fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+1) as u32); }
-fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool,(i*4+f) as u32,v); return; }
-fn ins_op(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+0) as u32); }
-fn ins_ival(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+1) as u32); }
-fn ins_ss(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+2) as u32); }
-fn ins_sl(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+3) as u32); }
+fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+0)); }
+fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+1)); }
+fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+4)); }
+fn fn_nparam(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+5)); }
+fn fn_local_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+6)); }
+fn fn_nlocal(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+7)); }
+fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+8)); }
+fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+9)); }
+fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns,(fi*10+f),v); return; }
+fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+0)); }
+fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+1)); }
+fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool,(i*4+f),v); return; }
+fn ins_op(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+0)); }
+fn ins_ival(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+1)); }
+fn ins_ss(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+2)); }
+fn ins_sl(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+3)); }
 fn ins_set(instrs: I32Array, base: i32, pc: i32, f: i32, v: i32) -> void {
-    set(instrs,((base+pc)*4+f) as u32,v); return;
+    set(instrs,((base+pc)*4+f),v); return;
 }
 
 // ===== Label number =====
 fn parse_lnum(src: U8Array, from: i32, to: i32) -> i32 {
     var r: i32=0; var i: i32=from+3;
-    while i<to { var c: u8=get(src,i as u32); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }
+    while i<to { var c: u8=get(src,i); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }
     return r;
 }
 
@@ -422,8 +422,8 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 var dir_ss: i32=next_tok(src,strtab);
                 var dir_sl: i32=tok_len(dir_ss);
                 var d0: u8=0u8; var d1: u8=0u8;
-                if dir_sl>0 { d0=get(strtab,dir_ss as u32); }
-                if dir_sl>1 { d1=get(strtab,(dir_ss+1) as u32); }
+                if dir_sl>0 { d0=get(strtab,dir_ss); }
+                if dir_sl>1 { d1=get(strtab,(dir_ss+1)); }
                 if d0=='s'&&d1=='t' { // string
                     discard_tok(dir_ss);
                     var idx_ss: i32=next_tok(src,strtab);
@@ -431,8 +431,8 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     discard_tok(idx_ss); skip_spaces(src);
                     var slit_ss: i32=read_strlit(src,strtab);
                     var slit_sl: i32=g_stab_pos-slit_ss;
-                    set(string_lits,(idx*2+0) as u32,slit_ss);
-                    set(string_lits,(idx*2+1) as u32,slit_sl);
+                    set(string_lits,(idx*2+0),slit_ss);
+                    set(string_lits,(idx*2+1),slit_sl);
                     if idx+1>g_nstrings { g_nstrings=idx+1; }
                     skip_line(src);
                 }
@@ -443,9 +443,9 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     var iv_ss: i32=next_tok(src,strtab); var iv_sl: i32=tok_len(iv_ss);
                     var iv: i32=int_from_stab(strtab,iv_ss,iv_sl); discard_tok(iv_ss);
                     var gi: i32=g_nglobals;
-                    set(global_vars,(gi*4+0) as u32,nm_ss);
-                    set(global_vars,(gi*4+1) as u32,nm_sl);
-                    set(global_inits,gi as u32,iv);
+                    set(global_vars,(gi*4+0),nm_ss);
+                    set(global_vars,(gi*4+1),nm_sl);
+                    set(global_inits,gi,iv);
                     g_nglobals=g_nglobals+1; skip_line(src);
                 }
                 if d0=='f'&&d1=='n' { // fn
@@ -481,7 +481,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     skip_line(src);
                 }
                 var d3b: u8=0u8;
-                if dir_sl>3 { d3b=get(strtab,(dir_ss+3) as u32); }
+                if dir_sl>3 { d3b=get(strtab,(dir_ss+3)); }
                 if d0=='e'&&d3b=='b' { // endbc
                     discard_tok(dir_ss); done=1;
                 }
@@ -495,7 +495,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                             var op2: i32=ins_op(instrs,ib,ii);
                             if op2==OP_JUMP||op2==OP_JUMP_IF||op2==OP_JUMP_IFNOT {
                                 var lnum2: i32=ins_ival(instrs,ib,ii);
-                                ins_set(instrs,ib,ii,1,get(label_pcs,lnum2 as u32));
+                                ins_set(instrs,ib,ii,1,get(label_pcs,lnum2));
                             }
                             ii=ii+1;
                         }
@@ -512,7 +512,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 if g_in_pos<g_in_len&&in_cur(src)==':' {
                     var lnum3: i32=parse_lnum(src,lbl_start,g_in_pos);
                     g_in_pos=g_in_pos+1;
-                    if cur_fn>=0 { set(label_pcs,lnum3 as u32,g_ninstrs-fn_instr_base(fns,cur_fn)); }
+                    if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-fn_instr_base(fns,cur_fn)); }
                 }
                 skip_line(src);
             }
@@ -611,21 +611,21 @@ fn var_offset(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool
 // ===== Builtin detection =====
 fn is_builtin(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     if sl<=0 { return 0; }
-    var a: u8=get(strtab,ss as u32);
-    var b: u8=0u8; if sl>1 { b=get(strtab,(ss+1) as u32); }
-    var c: u8=0u8; if sl>2 { c=get(strtab,(ss+2) as u32); }
+    var a: u8=get(strtab,ss);
+    var b: u8=0u8; if sl>1 { b=get(strtab,(ss+1)); }
+    var c: u8=0u8; if sl>2 { c=get(strtab,(ss+2)); }
     // XxxArray constructor: starts uppercase, ends "Array"
     if sl>=6 && a>='A' && a<='Z' {
-        var e1: u8=get(strtab,(ss+sl-5) as u32);
-        var e2: u8=get(strtab,(ss+sl-4) as u32);
-        var e3: u8=get(strtab,(ss+sl-3) as u32);
-        var e4: u8=get(strtab,(ss+sl-2) as u32);
-        var e5: u8=get(strtab,(ss+sl-1) as u32);
+        var e1: u8=get(strtab,(ss+sl-5));
+        var e2: u8=get(strtab,(ss+sl-4));
+        var e3: u8=get(strtab,(ss+sl-3));
+        var e4: u8=get(strtab,(ss+sl-2));
+        var e5: u8=get(strtab,(ss+sl-1));
         if e1=='A'&&e2=='r'&&e3=='r'&&e4=='a'&&e5=='y' { return 1; }
     }
     if sl>=4&&a=='s'&&b=='y'&&c=='s' { return 1; }        // sys_*
     if sl>=6&&a=='p'&&b=='r'&&c=='i' { return 1; }        // print_*
-    if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3) as u32); if d=='k' { var e: u8=get(strtab,(ss+4) as u32); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32
+    if sl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3)); if d=='k' { var e: u8=get(strtab,(ss+4)); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32
     if sl>=4&&a=='p'&&b=='o'&&c=='k' { return 1; }        // poke*
     if sl==3&&a=='l'&&b=='e'&&c=='n' { return 1; }        // len
     if a=='g'&&b=='e'&&c=='t' { return 1; }               // get
@@ -638,9 +638,9 @@ fn is_builtin(strtab: U8Array, ss: i32, sl: i32) -> i32 {
 fn is_sys_exit(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     // "sys_exit" = 115,121,115,95,101,120,105,116
     if sl!=8 { return 0; }
-    if get(strtab,ss as u32)!='s' { return 0; }
-    if get(strtab,(ss+4) as u32)!='e' { return 0; }
-    if get(strtab,(ss+5) as u32)!='x' { return 0; }
+    if get(strtab,ss)!='s' { return 0; }
+    if get(strtab,(ss+4))!='e' { return 0; }
+    if get(strtab,(ss+5))!='x' { return 0; }
     return 1;
 }
 
@@ -662,7 +662,7 @@ fn emit_strdata(strtab: U8Array, ss: i32, sl: i32, ob: U8Array) -> void {
     ob_char('"',ob);
     var i: i32=0;
     while i<sl {
-        var c: u8=get(strtab,(ss+i) as u32);
+        var c: u8=get(strtab,(ss+i));
         var handled: i32=0;
         if c=='"'  { ob_char('\\',ob);ob_char('"',ob); handled=1; }
         if handled==0&&c=='\\'  { ob_char('\\',ob);ob_char('\\',ob); handled=1; }
@@ -772,7 +772,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             ob_char('t',ob);ob_char('a',ob);
             ob_int(ival,ob); ob_char(10u8,ob);
             // li a1, LEN
-            var str_len: i32=get(string_lits,(ival*2+1) as u32);
+            var str_len: i32=get(string_lits,(ival*2+1));
             e_li(ob);
             ob_char('a',ob);ob_char('1',ob); ecomma(ob);
             ob_int(str_len,ob); ob_char(10u8,ob);
@@ -913,8 +913,8 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
         if op==OP_CAST {
             asm_pop_t0(ob);
             var ta: u8=0u8; var tb: u8=0u8;
-            if ssl>0 { ta=get(strtab,sss as u32); }
-            if ssl>1 { tb=get(strtab,(sss+1) as u32); }
+            if ssl>0 { ta=get(strtab,sss); }
+            if ssl>1 { tb=get(strtab,(sss+1)); }
             if ta=='u'&&tb=='8' { // u8: andi t0,t0,0xff
                 e4(ob);ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char('i',ob);ob_char(' ',ob);
                 eregt0(ob);eregt0(ob);
@@ -973,8 +973,8 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
         ob_char('t',ob);ob_char('a',ob);ob_char(10u8,ob);
         var si: i32=0;
         while si<g_nstrings {
-            var ss: i32=get(string_lits,(si*2+0) as u32);
-            var sl: i32=get(string_lits,(si*2+1) as u32);
+            var ss: i32=get(string_lits,(si*2+0));
+            var sl: i32=get(string_lits,(si*2+1));
             // "__tc_strdataN:\n"
             ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
             ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
@@ -995,9 +995,9 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
         ob_char('.',ob);ob_char('d',ob);ob_char('a',ob);ob_char('t',ob);ob_char('a',ob);ob_char(10u8,ob);
         var gi: i32=0;
         while gi<g_nglobals {
-            var nm_ss: i32=get(global_vars,(gi*4+0) as u32);
-            var nm_sl: i32=get(global_vars,(gi*4+1) as u32);
-            var initval: i32=get(global_inits,gi as u32);
+            var nm_ss: i32=get(global_vars,(gi*4+0));
+            var nm_sl: i32=get(global_vars,(gi*4+1));
+            var initval: i32=get(global_inits,gi);
             // "    .globl NAME\n"
             e4(ob);
             ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('l',ob);
@@ -1041,12 +1041,12 @@ fn main() -> i32 {
     var chunk_buf: U8Array=U8Array(65536);
     var rdone: i32=0;
     while rdone==0&&g_in_len<524000 {
-        var chunk: i32=sys_read(0,chunk_buf,65536u32);
+        var chunk: i32=sys_read(0,chunk_buf,65536);
         if chunk<=0 { rdone=1; }
         if chunk>0 {
             var ci: i32=0;
             while ci<chunk {
-                set(src,(g_in_len+ci) as u32,get(chunk_buf,ci as u32));
+                set(src,(g_in_len+ci),get(chunk_buf,ci));
                 ci=ci+1;
             }
             g_in_len=g_in_len+chunk;

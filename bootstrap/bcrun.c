@@ -257,6 +257,21 @@ static void func_resolve_labels(BcFunc *f, LabelTab *lt) {
     }
 }
 
+/* ===== Name mangling ===== */
+
+/* Build mangled name: "name__type1__type2..." into buf.
+   Zero arg types → just copies name. */
+static void build_mangled(char *buf, int bufsz,
+                           const char *name,
+                           const char **types, int ntypes) {
+    strncpy(buf, name, bufsz - 1);
+    buf[bufsz - 1] = '\0';
+    for (int i = 0; i < ntypes; i++) {
+        strncat(buf, "__", bufsz - strlen(buf) - 1);
+        strncat(buf, types[i], bufsz - strlen(buf) - 1);
+    }
+}
+
 /* ===== .bc file parser ===== */
 
 static BcProg *bc_parse(FILE *in) {
@@ -292,13 +307,25 @@ static BcProg *bc_parse(FILE *in) {
                 next_tok(s, iv, sizeof(iv));
                 prog_add_global(p, nm, ty, (int32_t)atol(iv));
             } else if (strcmp(dir, "fn") == 0) {
-                char nm[128], np[16], rt[64];
-                s = skip_ws(next_tok(s, nm,  sizeof(nm)));
-                s = skip_ws(next_tok(s, np,  sizeof(np)));
-                next_tok(s, rt, sizeof(rt));
+                /* Format: .fn NAME ARG_TYPE... RET_TYPE
+                   All tokens after name: last = rettype, rest = arg types */
+                char toks[17][128]; int ntok = 0;
+                char *p2 = s;
+                while (*p2 && ntok < 17) {
+                    p2 = skip_ws(p2);
+                    if (!*p2) break;
+                    p2 = next_tok(p2, toks[ntok], sizeof(toks[0]));
+                    if (toks[ntok][0]) ntok++;
+                }
+                /* toks[0]=name, toks[1..ntok-2]=arg_types, toks[ntok-1]=rettype */
+                int nargs = ntok >= 2 ? ntok - 2 : 0;
+                const char *argtypes[16];
+                for (int i = 0; i < nargs && i < 16; i++) argtypes[i] = toks[1 + i];
+                char mangled[512];
+                build_mangled(mangled, sizeof(mangled), toks[0], argtypes, nargs);
                 cur = prog_new_func(p);
-                cur->name     = strdup(nm);
-                cur->ret_type = strdup(rt);
+                cur->name     = strdup(mangled);
+                cur->ret_type = ntok >= 1 ? strdup(toks[ntok - 1]) : strdup("void");
                 label_free(&lt);
             } else if (strcmp(dir, "param") == 0) {
                 char nm[128], ty[64];
@@ -345,10 +372,21 @@ static BcProg *bc_parse(FILE *in) {
         else if (!strcmp(op, "store"))      { ins.op = OP_STORE;       char n[128]; next_tok(s,n,sizeof(n)); ins.sarg=strdup(n); }
         else if (!strcmp(op, "call")) {
             ins.op = OP_CALL;
-            char nm[128], na[16];
+            char nm[128];
             s = skip_ws(next_tok(s, nm, sizeof(nm)));
-            next_tok(s, na, sizeof(na));
-            ins.sarg = strdup(nm); ins.ival = atol(na);
+            /* remaining tokens are arg types */
+            const char *types[16]; char typebufs[16][64]; int ntypes = 0;
+            char *p2 = s;
+            while (*p2 && ntypes < 16) {
+                p2 = skip_ws(p2);
+                if (!*p2) break;
+                p2 = next_tok(p2, typebufs[ntypes], sizeof(typebufs[0]));
+                if (typebufs[ntypes][0]) { types[ntypes] = typebufs[ntypes]; ntypes++; }
+            }
+            char mangled[512];
+            build_mangled(mangled, sizeof(mangled), nm, types, ntypes);
+            ins.sarg = strdup(mangled);
+            ins.ival = ntypes;
         }
         else if (!strcmp(op, "return"))      { ins.op = OP_RETURN; }
         else if (!strcmp(op, "return_void")) { ins.op = OP_RETURN_VOID; }
@@ -475,6 +513,20 @@ static void vm_var_store(VM *vm, const char *name, Value val) {
 
 /* ===== Built-in functions ===== */
 
+/* Extract base name (before first "__") into buf. */
+static void base_name(const char *mangled, char *buf, int bufsz) {
+    const char *sep = strstr(mangled, "__");
+    if (sep) {
+        int len = (int)(sep - mangled);
+        if (len >= bufsz) len = bufsz - 1;
+        strncpy(buf, mangled, len);
+        buf[len] = '\0';
+    } else {
+        strncpy(buf, mangled, bufsz - 1);
+        buf[bufsz - 1] = '\0';
+    }
+}
+
 static int is_builtin(const char *name) {
     static const char *B[] = {
         "peek8","peek16","peek32","poke8","poke16","poke32",
@@ -483,13 +535,16 @@ static int is_builtin(const char *name) {
         "len","get","set","delete","append","equals",
         NULL
     };
+    char base[128]; base_name(name, base, sizeof(base));
     for (int i = 0; B[i]; i++)
-        if (strcmp(name, B[i]) == 0) return 1;
-    { int n = strlen(name); if (n > 5 && !strcmp(name+n-5,"Array") && isupper((unsigned char)name[0])) return 1; }
+        if (strcmp(base, B[i]) == 0) return 1;
+    /* XxxArray constructor */
+    { int n = strlen(base); if (n > 5 && !strcmp(base+n-5,"Array") && isupper((unsigned char)base[0])) return 1; }
     return 0;
 }
 
-static Value call_builtin(const char *name, Value *args, int nargs) {
+static Value call_builtin(const char *mangled, Value *args, int nargs) {
+    char name[128]; base_name(mangled, name, sizeof(name));
     /* peek / poke */
     if (!strcmp(name,"peek8"))  { uint32_t a=(uint32_t)args[0].ival; return a<FAKE_MEM_SIZE ? val_int(fake_mem[a]) : val_int(0); }
     if (!strcmp(name,"peek16")) { uint32_t a=(uint32_t)args[0].ival; return a+1<FAKE_MEM_SIZE ? val_int(*(uint16_t*)(fake_mem+a)) : val_int(0); }

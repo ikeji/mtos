@@ -4,9 +4,9 @@ __tc_strdata0:
 
     .text
 
-    .globl to_buf
-    .type  to_buf, @function
-to_buf:
+    .globl to_buf__String
+    .type  to_buf__String, @function
+to_buf__String:
     # prologue: frame_size=32, params=1, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -119,7 +119,7 @@ to_buf:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of to_buf
+    # end of to_buf__String
 
     .globl main
     .type  main, @function
@@ -137,7 +137,7 @@ main:
     sw   a0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call to_buf
+    call to_buf__String
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)

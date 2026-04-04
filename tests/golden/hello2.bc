@@ -2,20 +2,20 @@
 ; string table
 .string 0 "Hello, World\n"
 
-.fn to_buf 1 void
+.fn to_buf String void
 .param str String
-.local len u32
+.local len i32
 .local buf U8Array
 .local i i32
-; var len :u32 = len(str);
+; var len: i32 = len(str);
   load str
-  call len 1
+  call len String
   store len
-; var buf : U8Array = U8Array(13);
+; var buf: U8Array = U8Array(13);
   push_int 13
-  call U8Array 1
+  call U8Array i32
   store buf
-; var i:i32 = 0;
+; var i: i32 = 0;
   push_int 0
   store i
 ; while i < len {
@@ -29,8 +29,8 @@ __L0:
   load i
   load str
   load i
-  call get 2
-  call set 3
+  call get String i32
+  call set U8Array i32 u8
   pop
 ; i = i + 1;
   load i
@@ -45,21 +45,21 @@ __L1:
   return_void
 .endfn
 
-.fn main 0 i32
+.fn main i32
 .local buf U8Array
 ; var buf: U8Array = to_buf("Hello, World\n");
   push_str 0
-  call to_buf 1
+  call to_buf String
   store buf
 ; sys_write(1, buf, 13);
   push_int 1
   load buf
   push_int 13
-  call sys_write 3
+  call sys_write i32 U8Array i32
   pop
 ; delete(buf);
   load buf
-  call delete 1
+  call delete U8Array
   pop
 ; return 0;
   push_int 0

@@ -1,7 +1,7 @@
 fn to_buf(str: String) {
-  var len :u32 = len(str);
-  var buf : U8Array = U8Array(13);
-  var i:i32 = 0;
+  var len: i32 = len(str);
+  var buf: U8Array = U8Array(13);
+  var i: i32 = 0;
   while i < len {
     set(buf, i, get(str, i));
     i = i + 1;

@@ -45,14 +45,14 @@ var g_loop_depth: i32 = 0; // nesting depth of while loops (for break/continue)
 // ===== Output buffer =====
 fn ob_flush(ob: U8Array) -> void {
     if g_ob_pos > 0 {
-        sys_write(1, ob, g_ob_pos as u32);
+        sys_write(1, ob, g_ob_pos);
         g_ob_pos = 0;
     }
     return;
 }
 
 fn ob_char(c: u8, ob: U8Array) -> void {
-    set(ob, g_ob_pos as u32, c);
+    set(ob, g_ob_pos, c);
     g_ob_pos = g_ob_pos + 1;
     if g_ob_pos >= 8192 { ob_flush(ob); }
     return;
@@ -61,7 +61,7 @@ fn ob_char(c: u8, ob: U8Array) -> void {
 fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
     var i: i32 = 0;
     while i < n {
-        ob_char(get(src, (start + i) as u32), ob);
+        ob_char(get(src, (start + i)), ob);
         i = i + 1;
     }
     return;
@@ -74,12 +74,12 @@ fn ob_int(n: i32, ob: U8Array) -> void {
     var len: i32 = 0;
     var v: i32 = n;
     while v > 0 {
-        set(tmp, len as u32, (48 + v % 10) as u8);
+        set(tmp, len, (48 + v % 10) as u8);
         len = len + 1;
         v = v / 10;
     }
     var i: i32 = len - 1;
-    while i >= 0 { ob_char(get(tmp, i as u32), ob); i = i - 1; }
+    while i >= 0 { ob_char(get(tmp, i), ob); i = i - 1; }
     delete(tmp);
     return;
 }
@@ -88,7 +88,7 @@ fn ob_int(n: i32, ob: U8Array) -> void {
 fn ob_st_escaped(strtab: U8Array, start: i32, len: i32, ob: U8Array) -> void {
     var i: i32 = 0;
     while i < len {
-        var c: u8 = get(strtab, (start + i) as u32);
+        var c: u8 = get(strtab, (start + i));
         if c == '"'  { ob_char('\\', ob); ob_char('"', ob); }
         else { if c == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
         else { if c == 10u8 { ob_char('\\', ob); ob_char('n', ob); }
@@ -103,7 +103,7 @@ fn ob_st_escaped(strtab: U8Array, start: i32, len: i32, ob: U8Array) -> void {
 // ===== Input reading =====
 fn peek_in(in: U8Array) -> u8 {
     if g_in_pos >= g_in_len { return 0u8; }
-    return get(in, g_in_pos as u32);
+    return get(in, g_in_pos);
 }
 
 fn is_atom_end(c: u8) -> bool {
@@ -124,7 +124,7 @@ fn read_atom_in(in: U8Array, atom: U8Array) -> i32 {
     var len: i32 = 0;
     var c: u8 = peek_in(in);
     while !is_atom_end(c) {
-        set(atom, len as u32, c);
+        set(atom, len, c);
         len = len + 1;
         g_in_pos = g_in_pos + 1;
         c = peek_in(in);
@@ -134,29 +134,29 @@ fn read_atom_in(in: U8Array, atom: U8Array) -> i32 {
 
 // ===== Node pool (6 ints per node) =====
 // Layout: [kind, sstart, slen, ival, first_child, next_sibling]
-fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6) as u32); }
-fn n_sk(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6) as u32, v); }
-fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+1) as u32); }
-fn n_set_ss(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+1) as u32, v); }
-fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+2) as u32); }
-fn n_set_sl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+2) as u32, v); }
-fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+3) as u32); }
-fn n_set_ival(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+3) as u32, v); }
-fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+4) as u32); }
-fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+4) as u32, v); }
-fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+5) as u32); }
-fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+5) as u32, v); }
+fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6)); }
+fn n_sk(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6), v); }
+fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+1)); }
+fn n_set_ss(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+1), v); }
+fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+2)); }
+fn n_set_sl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+2), v); }
+fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+3)); }
+fn n_set_ival(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+3), v); }
+fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+4)); }
+fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+4), v); }
+fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*6+5)); }
+fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*6+5), v); }
 
 fn alloc_node(nodes: I32Array, kind: i32) -> i32 {
     var n: i32 = g_nc;
     g_nc = g_nc + 1;
     var b: i32 = n * 6;
-    set(nodes, b as u32, kind);
-    set(nodes, (b+1) as u32, -1);
-    set(nodes, (b+2) as u32, 0);
-    set(nodes, (b+3) as u32, 0);
-    set(nodes, (b+4) as u32, -1);
-    set(nodes, (b+5) as u32, -1);
+    set(nodes, b, kind);
+    set(nodes, (b+1), -1);
+    set(nodes, (b+2), 0);
+    set(nodes, (b+3), 0);
+    set(nodes, (b+4), -1);
+    set(nodes, (b+5), -1);
     return n;
 }
 
@@ -187,22 +187,22 @@ fn add_child(nodes: I32Array, parent: i32, child: i32) -> void {
 
 // ===== Kind classification =====
 fn cmp2(a: U8Array, st: i32, b0: u8, b1: u8) -> bool {
-    return get(a, st as u32)==b0 && get(a, (st+1) as u32)==b1;
+    return get(a, st)==b0 && get(a, (st+1))==b1;
 }
 fn cmp3(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8) -> bool {
-    return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2;
+    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2;
 }
 fn cmp4(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8) -> bool {
-    return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 &&
-           get(a,(st+2) as u32)==b2 && get(a,(st+3) as u32)==b3;
+    return get(a,st)==b0 && get(a,(st+1))==b1 &&
+           get(a,(st+2))==b2 && get(a,(st+3))==b3;
 }
 fn cmp5(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8) -> bool {
-    return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2 &&
-           get(a,(st+3) as u32)==b3 && get(a,(st+4) as u32)==b4;
+    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&
+           get(a,(st+3))==b3 && get(a,(st+4))==b4;
 }
 fn cmp6(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8, b5: u8) -> bool {
-    return get(a,st as u32)==b0 && get(a,(st+1) as u32)==b1 && get(a,(st+2) as u32)==b2 &&
-           get(a,(st+3) as u32)==b3 && get(a,(st+4) as u32)==b4 && get(a,(st+5) as u32)==b5;
+    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&
+           get(a,(st+3))==b3 && get(a,(st+4))==b4 && get(a,(st+5))==b5;
 }
 
 fn classify_kind(atom: U8Array, len: i32) -> i32 {
@@ -281,7 +281,7 @@ fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i3
     // Read kind (strip :type_annot if present)
     var klen: i32 = read_atom_in(in, atom);
     var actual_klen: i32 = 0;
-    while actual_klen < klen && get(atom, actual_klen as u32) != ':' {
+    while actual_klen < klen && get(atom, actual_klen) != ':' {
         actual_klen = actual_klen + 1;
     }
     var kind_code: i32 = classify_kind(atom, actual_klen);
@@ -309,36 +309,36 @@ fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i3
                 if esc == '"'  { ch = '"'; }
                 if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\' && esc != '"' { ch = esc; }
             }
-            set(strtab, g_sp as u32, ch);
+            set(strtab, g_sp, ch);
             g_sp = g_sp + 1;
             g_in_pos = g_in_pos + 1;
             ch = peek_in(in);
         }
         if ch == '"' { g_in_pos = g_in_pos + 1; } // consume closing '"'
-        set(nodes, (base+1) as u32, ss);
-        set(nodes, (base+2) as u32, g_sp - ss);
+        set(nodes, (base+1), ss);
+        set(nodes, (base+2), g_sp - ss);
         skip_ws_in(in);
         // Now at ')'; no skip_ws needed
     } else if c != '(' && c != ')' && c != 0u8 {
         var vlen: i32 = read_atom_in(in, atom);
-        if kind_code == NK_INT && vlen > 0 && is_digit_c(get(atom, 0u32)) {
+        if kind_code == NK_INT && vlen > 0 && is_digit_c(get(atom, 0)) {
             var ival: i32 = 0;
             var ii: i32 = 0;
             while ii < vlen {
-                ival = ival * 10 + (get(atom, ii as u32) as i32 - 48);
+                ival = ival * 10 + (get(atom, ii) as i32 - 48);
                 ii = ii + 1;
             }
-            set(nodes, (base+3) as u32, ival);
+            set(nodes, (base+3), ival);
         } else {
             var ss: i32 = g_sp;
             var ii: i32 = 0;
             while ii < vlen {
-                set(strtab, g_sp as u32, get(atom, ii as u32));
+                set(strtab, g_sp, get(atom, ii));
                 g_sp = g_sp + 1;
                 ii = ii + 1;
             }
-            set(nodes, (base+1) as u32, ss);
-            set(nodes, (base+2) as u32, vlen);
+            set(nodes, (base+1), ss);
+            set(nodes, (base+2), vlen);
         }
         skip_ws_in(in);
     }
@@ -350,7 +350,7 @@ fn read_node(in: U8Array, atom: U8Array, nodes: I32Array, strtab: U8Array) -> i3
         var child: i32 = read_node(in, atom, nodes, strtab);
         if child >= 0 {
             if last_child < 0 {
-                set(nodes, (base+4) as u32, child);
+                set(nodes, (base+4), child);
             } else {
                 n_set_sib(nodes, last_child, child);
             }
@@ -371,7 +371,7 @@ fn sval_eq(strtab: U8Array, ss: i32, sl: i32, b: U8Array, bl: i32) -> bool {
     if sl != bl { return false; }
     var i: i32 = 0;
     while i < sl {
-        if get(strtab, (ss+i) as u32) != get(b, i as u32) { return false; }
+        if get(strtab, (ss+i)) != get(b, i) { return false; }
         i = i + 1;
     }
     return true;
@@ -380,11 +380,11 @@ fn sval_eq(strtab: U8Array, ss: i32, sl: i32, b: U8Array, bl: i32) -> bool {
 // Compare node sval with a 1/2/3/... char sequence
 fn sv1(strtab: U8Array, ss: i32, sl: i32, c0: u8) -> bool {
     if sl != 1 { return false; }
-    return get(strtab, ss as u32) == c0;
+    return get(strtab, ss) == c0;
 }
 fn sv2(strtab: U8Array, ss: i32, sl: i32, c0: u8, c1: u8) -> bool {
     if sl != 2 { return false; }
-    return get(strtab,ss as u32)==c0 && get(strtab,(ss+1) as u32)==c1;
+    return get(strtab,ss)==c0 && get(strtab,(ss+1))==c1;
 }
 
 // ===== String literal collection =====
@@ -392,13 +392,13 @@ fn slit_find(strtab: U8Array, slits: I32Array, ss: i32, sl: i32) -> i32 {
     var i: i32 = 0;
     while i < g_slc {
         var base: i32 = i * 2;
-        var es: i32 = get(slits, base as u32);
-        var el: i32 = get(slits, (base+1) as u32);
+        var es: i32 = get(slits, base);
+        var el: i32 = get(slits, (base+1));
         if el == sl {
             var match: i32 = 1;
             var j: i32 = 0;
             while j < sl && match == 1 {
-                if get(strtab,(ss+j) as u32) != get(strtab,(es+j) as u32) { match = 0; }
+                if get(strtab,(ss+j)) != get(strtab,(es+j)) { match = 0; }
                 j = j + 1;
             }
             if match == 1 { return i; }
@@ -412,8 +412,8 @@ fn slit_add(strtab: U8Array, slits: I32Array, ss: i32, sl: i32) -> i32 {
     var idx: i32 = slit_find(strtab, slits, ss, sl);
     if idx >= 0 { return idx; }
     var base: i32 = g_slc * 2;
-    set(slits, base as u32, ss);
-    set(slits, (base+1) as u32, sl);
+    set(slits, base, ss);
+    set(slits, (base+1), sl);
     idx = g_slc;
     g_slc = g_slc + 1;
     return idx;
@@ -439,13 +439,13 @@ fn locals_find(strtab: U8Array, locals: I32Array, nss: i32, nsl: i32) -> i32 {
     var i: i32 = 0;
     while i < g_locc {
         var b: i32 = i * 4;
-        var es: i32 = get(locals, b as u32);
-        var el: i32 = get(locals, (b+1) as u32);
+        var es: i32 = get(locals, b);
+        var el: i32 = get(locals, (b+1));
         if el == nsl {
             var match: i32 = 1;
             var j: i32 = 0;
             while j < nsl && match == 1 {
-                if get(strtab,(nss+j) as u32) != get(strtab,(es+j) as u32) { match = 0; }
+                if get(strtab,(nss+j)) != get(strtab,(es+j)) { match = 0; }
                 j = j + 1;
             }
             if match == 1 { return i; }
@@ -458,10 +458,10 @@ fn locals_find(strtab: U8Array, locals: I32Array, nss: i32, nsl: i32) -> i32 {
 fn locals_add_entry(strtab: U8Array, locals: I32Array, nss: i32, nsl: i32, tss: i32, tsl: i32) -> void {
     if locals_find(strtab, locals, nss, nsl) >= 0 { return; }
     var b: i32 = g_locc * 4;
-    set(locals, b as u32, nss);
-    set(locals, (b+1) as u32, nsl);
-    set(locals, (b+2) as u32, tss);
-    set(locals, (b+3) as u32, tsl);
+    set(locals, b, nss);
+    set(locals, (b+1), nsl);
+    set(locals, (b+2), tss);
+    set(locals, (b+3), tsl);
     g_locc = g_locc + 1;
     return;
 }
@@ -608,8 +608,8 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
     if k == NK_WHILE {
         var lloop: i32 = g_lc; g_lc = g_lc + 1;
         var lend: i32 = g_lc; g_lc = g_lc + 1;
-        set(loop_stk, (g_loop_depth*2) as u32, lloop);
-        set(loop_stk, (g_loop_depth*2+1) as u32, lend);
+        set(loop_stk, (g_loop_depth*2), lloop);
+        set(loop_stk, (g_loop_depth*2+1), lend);
         g_loop_depth = g_loop_depth + 1;
         // "__Lloop:\n"
         ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(':',ob);ob_char(10u8,ob);
@@ -630,7 +630,7 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
 
     if k == NK_BREAK {
         // "  jump __Lend\n"
-        var lend: i32 = get(loop_stk, (g_loop_depth*2-1) as u32);
+        var lend: i32 = get(loop_stk, (g_loop_depth*2-1));
         ob_char(' ',ob);ob_char(' ',ob);
         ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
         ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lend,ob);ob_char(10u8,ob);
@@ -639,7 +639,7 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, loop_
 
     if k == NK_CONTINUE {
         // "  jump __Lloop\n"
-        var lloop: i32 = get(loop_stk, (g_loop_depth*2-2) as u32);
+        var lloop: i32 = get(loop_stk, (g_loop_depth*2-2));
         ob_char(' ',ob);ob_char(' ',ob);
         ob_char('j',ob);ob_char('u',ob);ob_char('m',ob);ob_char('p',ob);
         ob_char(' ',ob);ob_char('_',ob);ob_char('_',ob);ob_char('L',ob);ob_int(lloop,ob);ob_char(10u8,ob);
@@ -706,8 +706,8 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: U8Array, n: i3
         var is_true: i32 = 0;
         if n_sl(nodes,n) == 4 {
             var ss: i32 = n_ss(nodes,n);
-            if get(strtab,ss as u32)=='t' && get(strtab,(ss+1) as u32)=='r' &&
-               get(strtab,(ss+2) as u32)=='u' && get(strtab,(ss+3) as u32)=='e' {
+            if get(strtab,ss)=='t' && get(strtab,(ss+1))=='r' &&
+               get(strtab,(ss+2))=='u' && get(strtab,(ss+3))=='e' {
                 is_true = 1;
             }
         }
@@ -880,10 +880,10 @@ fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob
     var i: i32 = 0;
     while i < g_locc {
         var b: i32 = i * 4;
-        var nss: i32 = get(locals, b as u32);
-        var nsl: i32 = get(locals, (b+1) as u32);
-        var tss: i32 = get(locals, (b+2) as u32);
-        var tsl: i32 = get(locals, (b+3) as u32);
+        var nss: i32 = get(locals, b);
+        var nsl: i32 = get(locals, (b+1));
+        var tss: i32 = get(locals, (b+2));
+        var tsl: i32 = get(locals, (b+3));
         ob_char('.',ob);ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char(' ',ob);
         ob_n(strtab, nss, nsl, ob);
         ob_char(' ',ob);
@@ -921,8 +921,8 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
         var i: i32 = 0;
         while i < g_slc {
             var b: i32 = i * 2;
-            var ss: i32 = get(slits, b as u32);
-            var sl: i32 = get(slits, (b+1) as u32);
+            var ss: i32 = get(slits, b);
+            var sl: i32 = get(slits, (b+1));
             // ".string i \"...\"\n"
             ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
             ob_int(i, ob);
@@ -983,7 +983,7 @@ fn main() -> i32 {
     var slits: I32Array = I32Array(512);     // 256 string literals × 2
     var locals: I32Array = I32Array(2048);   // 512 locals × 4
 
-    g_in_len = sys_read(0, in_buf, 524288u32);
+    g_in_len = sys_read(0, in_buf, 524288);
     g_in_pos = 0;
     g_nc = 0;
     g_sp = 0;

@@ -121,22 +121,22 @@ run_test_exit "fib exit code 55" \
 # Test: codegen fib.tc produces .fn directive
 run_test_contains "codegen fib.tc has .fn fib" \
     "$CODEGEN $SCRIPT_DIR/fib.tc" \
-    ".fn fib 1 i32"
+    ".fn fib i32 i32"
 
 # Test: codegen fib.tc has call instruction
 run_test_contains "codegen fib.tc has call fib" \
     "$CODEGEN $SCRIPT_DIR/fib.tc" \
-    "call fib 1"
+    "call fib i32"
 
 # Test: codegen hello.tc produces .fn main
 run_test_contains "codegen hello.tc has .fn main" \
     "$CODEGEN $SCRIPT_DIR/hello.tc" \
-    ".fn main 0 i32"
+    ".fn main i32"
 
 # Test: codegen hello.tc has call sys_write
 run_test_contains "codegen hello.tc has call sys_write" \
     "$CODEGEN $SCRIPT_DIR/hello.tc" \
-    "call sys_write 3"
+    "call sys_write i32 U8Array i32"
 
 # Test: codegen | bcrun pipeline — hello world
 run_test "bcrun hello world" \

@@ -22,11 +22,11 @@
         (binop &&
           (binop >=
             (var c)
-            (int 48)
+            (int:u8 48)
           )
           (binop <=
             (var c)
-            (int 57)
+            (int:u8 57)
           )
         )
       )
@@ -47,11 +47,11 @@
         (binop ||
           (binop ==
             (var c)
-            (int 32)
+            (int:u8 32)
           )
           (binop ==
             (var c)
-            (int 9)
+            (int:u8 9)
           )
         )
       )
@@ -76,18 +76,15 @@
         (block
           (comment "return 0u8;")
           (return
-            (int 0)
+            (int:u8 0)
           )
         )
       )
-      (comment "return get(buf, g_pos as u32);")
+      (comment "return get(buf, g_pos);")
       (return
         (call get
           (var buf)
-          (cast
-            (var g_pos)
-            (type u32)
-          )
+          (var g_pos)
         )
       )
     )
@@ -228,13 +225,13 @@
               (call cur_char
                 (var buf)
               )
-              (int 42)
+              (int:u8 42)
             )
             (binop ==
               (call cur_char
                 (var buf)
               )
-              (int 47)
+              (int:u8 47)
             )
           )
         )
@@ -264,7 +261,7 @@
           (if
             (binop ==
               (var op)
-              (int 42)
+              (int:u8 42)
             )
             (block
               (comment "left = left * right;")
@@ -330,13 +327,13 @@
               (call cur_char
                 (var buf)
               )
-              (int 43)
+              (int:u8 43)
             )
             (binop ==
               (call cur_char
                 (var buf)
               )
-              (int 45)
+              (int:u8 45)
             )
           )
         )
@@ -366,7 +363,7 @@
           (if
             (binop ==
               (var op)
-              (int 43)
+              (int:u8 43)
             )
             (block
               (comment "left = left + right;")
@@ -412,7 +409,7 @@
           (int 256)
         )
       )
-      (comment "g_len = sys_read(0, buf, 256u32);")
+      (comment "g_len = sys_read(0, buf, 256);")
       (assign g_len
         (call sys_read
           (int 0)

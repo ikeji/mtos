@@ -1,5 +1,5 @@
 .bc
-.fn main 0 i32
+.fn main i32
 .local i i32
 ; var i: i32 = 0;
   push_int 0

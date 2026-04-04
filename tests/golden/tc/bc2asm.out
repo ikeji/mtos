@@ -12,8 +12,15 @@ main:
     li   t0, 13
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
+    lw   a0, 124(sp)
+    lw   a1, 120(sp)
+    lw   a2, 116(sp)
+    lw   a3, 112(sp)
+    lw   a4, 108(sp)
+    lw   a5, 104(sp)
+    lw   a6, 100(sp)
+    lw   a7, 96(sp)
+    addi sp, sp, 128
     call __tc_U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -29,10 +36,15 @@ main:
     li   t0, 72
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -46,10 +58,15 @@ main:
     li   t0, 101
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -63,10 +80,15 @@ main:
     li   t0, 108
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -80,10 +102,15 @@ main:
     li   t0, 108
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -97,10 +124,15 @@ main:
     li   t0, 111
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -114,10 +146,15 @@ main:
     li   t0, 44
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -131,10 +168,15 @@ main:
     li   t0, 32
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -148,10 +190,15 @@ main:
     li   t0, 87
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -165,10 +212,15 @@ main:
     li   t0, 111
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -182,10 +234,15 @@ main:
     li   t0, 114
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -199,10 +256,15 @@ main:
     li   t0, 108
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -216,10 +278,15 @@ main:
     li   t0, 100
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -233,10 +300,15 @@ main:
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_set
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -250,10 +322,15 @@ main:
     li   t0, 13
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    addi sp, sp, 12
+    lw   a0, 124(sp)
+    lw   a1, 120(sp)
+    lw   a2, 116(sp)
+    lw   a3, 112(sp)
+    lw   a4, 108(sp)
+    lw   a5, 104(sp)
+    lw   a6, 100(sp)
+    lw   a7, 96(sp)
+    addi sp, sp, 128
     call __tc_sys_write
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -261,8 +338,15 @@ main:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    addi sp, sp, 4
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    addi sp, sp, 32
     call __tc_delete
     addi sp, sp, -4
     sw   a0, 0(sp)

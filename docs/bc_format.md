@@ -13,23 +13,23 @@ tinyc コンパイラが生成するバイトコード（`.bc`）フォーマッ
 ## ファイル構造
 
 ```
-.bc                        ← ヘッダー（必須・1行目）
+.bc                                  ← ヘッダー（必須・1行目）
 
-; コメント                  ← セミコロンで始まる行はコメント
+; コメント                            ← セミコロンで始まる行はコメント
 
-.string 0 "..."            ← 文字列テーブル（0個以上）
+.string 0 "..."                      ← 文字列テーブル（0個以上）
 .string 1 "..."
 
-.global NAME TYPE INITVAL  ← グローバル変数宣言（0個以上）
+.global NAME TYPE INITVAL            ← グローバル変数宣言（0個以上）
 
-.fn NAME NPARAMS RETTYPE   ← 関数定義（1個以上）
+.fn NAME ARG_TYPE... RET_TYPE        ← 関数定義（1個以上）
 .param PNAME TYPE
 .local LNAME TYPE
   命令
   ...
 .endfn
 
-.endbc                     ← 終端マーカー（プログラムの標準入力はここ以降）
+.endbc                               ← 終端マーカー（プログラムの標準入力はここ以降）
 ```
 
 ---
@@ -54,11 +54,15 @@ tinyc コンパイラが生成するバイトコード（`.bc`）フォーマッ
 .global count i32 0
 ```
 
-### `.fn NAME NPARAMS RETTYPE`
-関数定義の開始。`NPARAMS` は引数の個数、`RETTYPE` は戻り値の型名。
+### `.fn NAME ARG_TYPE... RET_TYPE`
+関数定義の開始。引数の型を列挙し、最後のトークンが戻り値の型。
+引数なしの場合は `NAME RET_TYPE` の 2 トークン。
+bc2asm / bcrun はこの行からマングル名を計算する（`NAME__ARG1__ARG2...`）。
 
 ```
-.fn fib 1 i32
+.fn fib i32 i32          ← 引数 1 つ(i32)、戻り値 i32
+.fn to_buf String U8Array ← 引数 1 つ(String)、戻り値 U8Array
+.fn main i32              ← 引数なし、戻り値 i32
 ```
 
 ### `.param NAME TYPE`
@@ -159,7 +163,7 @@ __L1:
 
 | 命令 | 引数 | 説明 |
 |------|------|------|
-| `call NAME N` | 関数名・引数数 | スタックトップから N 個を引数として NAME を呼び出し、結果をスタックに積む |
+| `call NAME ARG_TYPE...` | 関数名・引数の型リスト | 型リストの個数分をスタックから引数として NAME を呼び出し、結果をスタックに積む。bc2asm/bcrun が内部でマングル名（`NAME__TYPE1__TYPE2...`）に変換して呼び出す |
 
 ### 型変換
 
@@ -196,7 +200,7 @@ __L1:
 
 ```
 .bc
-.fn fib 1 i32
+.fn fib i32 i32
 .param n i32
   load n
   push_int 1
@@ -208,19 +212,19 @@ __L0:
   load n
   push_int 1
   sub
-  call fib 1
+  call fib i32
   load n
   push_int 2
   sub
-  call fib 1
+  call fib i32
   add
   return
   return_void
 .endfn
 
-.fn main 0 i32
+.fn main i32
   push_int 10
-  call fib 1
+  call fib i32
   return
   return_void
 .endfn

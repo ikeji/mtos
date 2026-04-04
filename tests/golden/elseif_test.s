@@ -1,8 +1,8 @@
     .text
 
-    .globl classify
-    .type  classify, @function
-classify:
+    .globl classify__i32
+    .type  classify__i32, @function
+classify__i32:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -111,7 +111,7 @@ classify:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of classify
+    # end of classify__i32
 
     .globl main
     .type  main, @function
@@ -139,7 +139,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call classify
+    call classify__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -150,7 +150,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call classify
+    call classify__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -161,7 +161,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call classify
+    call classify__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -172,7 +172,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call classify
+    call classify__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)

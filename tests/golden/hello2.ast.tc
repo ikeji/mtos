@@ -9,19 +9,19 @@
       (type void)
     )
     (block
-      (comment "var len :u32 = len(str);")
+      (comment "var len: i32 = len(str);")
       (var_decl len
-        (type u32)
+        (type i32)
         (call len
 (var str))
       )
-      (comment "var buf : U8Array = U8Array(13);")
+      (comment "var buf: U8Array = U8Array(13);")
       (var_decl buf
         (type U8Array)
         (call U8Array
 (int 13))
       )
-      (comment "var i:i32 = 0;")
+      (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)

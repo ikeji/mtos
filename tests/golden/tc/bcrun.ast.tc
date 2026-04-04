@@ -293,25 +293,21 @@
 (var i)
 (var sl1))
         (block
-          (comment "if get(strtab, (ss1+i) as u32) != get(strtab, (ss2+i) as u32) { return false; }")
+          (comment "if get(strtab, (ss1+i)) != get(strtab, (ss2+i)) { return false; }")
           (if
             (binop !=
 (call get
 (var strtab)
-(cast
 (binop +
 (var ss1)
-(var i))
-(type u32)))
+(var i)))
 (call get
 (var strtab)
-(cast
 (binop +
 (var ss2)
-(var i))
-(type u32))))
+(var i))))
             (block
-              (comment "if get(strtab, (ss1+i) as u32) != get(strtab, (ss2+i) as u32) { return false; }")
+              (comment "if get(strtab, (ss1+i)) != get(strtab, (ss2+i)) { return false; }")
               (return
                 (bool false)
               )
@@ -353,13 +349,11 @@
           )
         )
       )
-      (comment "return get(src, g_in_pos as u32);")
+      (comment "return get(src, g_in_pos);")
       (return
         (call get
 (var src)
-(cast
-(var g_in_pos)
-(type u32)))
+(var g_in_pos))
       )
     )
   )
@@ -513,12 +507,10 @@
 (call in_cur
 (var src)))))
         (block
-          (comment "set(strtab, g_stab_pos as u32, in_cur(src));")
+          (comment "set(strtab, g_stab_pos, in_cur(src));")
           (call_stmt set
             (var strtab)
-            (cast
-(var g_stab_pos)
-(type u32))
+            (var g_stab_pos)
             (call in_cur
 (var src))
           )
@@ -605,7 +597,7 @@
         (type i32)
         (int 0)
       )
-      (comment "if sl > 0 && get(strtab, ss as u32) == '-' { neg = 1; i = 1; }")
+      (comment "if sl > 0 && get(strtab, ss) == '-' { neg = 1; i = 1; }")
       (if
         (binop &&
 (binop >
@@ -614,16 +606,14 @@
 (binop ==
 (call get
 (var strtab)
-(cast
-(var ss)
-(type u32)))
+(var ss))
 (int 45)))
         (block
-          (comment "if sl > 0 && get(strtab, ss as u32) == '-' { neg = 1; i = 1; }")
+          (comment "if sl > 0 && get(strtab, ss) == '-' { neg = 1; i = 1; }")
           (assign neg
             (int 1)
           )
-          (comment "if sl > 0 && get(strtab, ss as u32) == '-' { neg = 1; i = 1; }")
+          (comment "if sl > 0 && get(strtab, ss) == '-' { neg = 1; i = 1; }")
           (assign i
             (int 1)
           )
@@ -640,16 +630,14 @@
 (var i)
 (var sl))
         (block
-          (comment "var c: u8 = get(strtab, (ss+i) as u32);")
+          (comment "var c: u8 = get(strtab, (ss+i));")
           (var_decl c
             (type u8)
             (call get
 (var strtab)
-(cast
 (binop +
 (var ss)
-(var i))
-(type u32)))
+(var i)))
           )
           (comment "if c >= '0' && c <= '9' { r = r * 10 + (c as i32 - 48); }")
           (if
@@ -1023,15 +1011,13 @@
                   )
                 )
               )
-              (comment "set(strtab, g_stab_pos as u32, out); g_stab_pos = g_stab_pos + 1;")
+              (comment "set(strtab, g_stab_pos, out); g_stab_pos = g_stab_pos + 1;")
               (call_stmt set
                 (var strtab)
-                (cast
-(var g_stab_pos)
-(type u32))
+                (var g_stab_pos)
                 (var out)
               )
-              (comment "set(strtab, g_stab_pos as u32, out); g_stab_pos = g_stab_pos + 1;")
+              (comment "set(strtab, g_stab_pos, out); g_stab_pos = g_stab_pos + 1;")
               (assign g_stab_pos
                 (binop +
 (var g_stab_pos)
@@ -1049,15 +1035,13 @@
 (var handled)
 (int 0))
             (block
-              (comment "set(strtab, g_stab_pos as u32, c); g_stab_pos = g_stab_pos + 1;")
+              (comment "set(strtab, g_stab_pos, c); g_stab_pos = g_stab_pos + 1;")
               (call_stmt set
                 (var strtab)
-                (cast
-(var g_stab_pos)
-(type u32))
+                (var g_stab_pos)
                 (var c)
               )
-              (comment "set(strtab, g_stab_pos as u32, c); g_stab_pos = g_stab_pos + 1;")
+              (comment "set(strtab, g_stab_pos, c); g_stab_pos = g_stab_pos + 1;")
               (assign g_stab_pos
                 (binop +
 (var g_stab_pos)
@@ -1114,91 +1098,81 @@
         (type u8)
         (int 0)
       )
-      (comment "if sl > 0 { a = get(strtab, ss as u32); }")
+      (comment "if sl > 0 { a = get(strtab, ss); }")
       (if
         (binop >
 (var sl)
 (int 0))
         (block
-          (comment "if sl > 0 { a = get(strtab, ss as u32); }")
+          (comment "if sl > 0 { a = get(strtab, ss); }")
           (assign a
             (call get
 (var strtab)
-(cast
-(var ss)
-(type u32)))
+(var ss))
           )
         )
       )
-      (comment "if sl > 1 { b = get(strtab, (ss+1) as u32); }")
+      (comment "if sl > 1 { b = get(strtab, (ss+1)); }")
       (if
         (binop >
 (var sl)
 (int 1))
         (block
-          (comment "if sl > 1 { b = get(strtab, (ss+1) as u32); }")
+          (comment "if sl > 1 { b = get(strtab, (ss+1)); }")
           (assign b
             (call get
 (var strtab)
-(cast
 (binop +
 (var ss)
-(int 1))
-(type u32)))
+(int 1)))
           )
         )
       )
-      (comment "if sl > 2 { c = get(strtab, (ss+2) as u32); }")
+      (comment "if sl > 2 { c = get(strtab, (ss+2)); }")
       (if
         (binop >
 (var sl)
 (int 2))
         (block
-          (comment "if sl > 2 { c = get(strtab, (ss+2) as u32); }")
+          (comment "if sl > 2 { c = get(strtab, (ss+2)); }")
           (assign c
             (call get
 (var strtab)
-(cast
 (binop +
 (var ss)
-(int 2))
-(type u32)))
+(int 2)))
           )
         )
       )
-      (comment "if sl > 3 { d = get(strtab, (ss+3) as u32); }")
+      (comment "if sl > 3 { d = get(strtab, (ss+3)); }")
       (if
         (binop >
 (var sl)
 (int 3))
         (block
-          (comment "if sl > 3 { d = get(strtab, (ss+3) as u32); }")
+          (comment "if sl > 3 { d = get(strtab, (ss+3)); }")
           (assign d
             (call get
 (var strtab)
-(cast
 (binop +
 (var ss)
-(int 3))
-(type u32)))
+(int 3)))
           )
         )
       )
-      (comment "if sl > 4 { e = get(strtab, (ss+4) as u32); }")
+      (comment "if sl > 4 { e = get(strtab, (ss+4)); }")
       (if
         (binop >
 (var sl)
 (int 4))
         (block
-          (comment "if sl > 4 { e = get(strtab, (ss+4) as u32); }")
+          (comment "if sl > 4 { e = get(strtab, (ss+4)); }")
           (assign e
             (call get
 (var strtab)
-(cast
 (binop +
 (var ss)
-(int 4))
-(type u32)))
+(int 4)))
           )
         )
       )
@@ -1770,16 +1744,14 @@
 (var e)
 (int 95)))
             (block
-              (comment "var f: u8 = get(strtab, (ss+5) as u32);")
+              (comment "var f: u8 = get(strtab, (ss+5));")
               (var_decl f
                 (type u8)
                 (call get
 (var strtab)
-(cast
 (binop +
 (var ss)
-(int 5))
-(type u32)))
+(int 5)))
               )
               (comment "if f=='i' { return OP_JUMP_IF; }")
               (if
@@ -1825,16 +1797,14 @@
 (var e)
 (int 95)))
             (block
-              (comment "var f: u8 = get(strtab, (ss+5) as u32);")
+              (comment "var f: u8 = get(strtab, (ss+5));")
               (var_decl f
                 (type u8)
                 (call get
 (var strtab)
-(cast
 (binop +
 (var ss)
-(int 5))
-(type u32)))
+(int 5)))
               )
               (comment "if f=='i' { return OP_PUSH_INT; } // push_int")
               (if
@@ -1928,17 +1898,15 @@
       (type i32)
     )
     (block
-      (comment "fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+0) as u32); }")
+      (comment "fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+0)); }")
       (return
         (call get
 (var fns)
-(cast
 (binop +
 (binop *
 (var fi)
 (int 10))
-(int 0))
-(type u32)))
+(int 0)))
       )
     )
   )
@@ -1955,17 +1923,15 @@
       (type i32)
     )
     (block
-      (comment "fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+1) as u32); }")
+      (comment "fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+1)); }")
       (return
         (call get
 (var fns)
-(cast
 (binop +
 (binop *
 (var fi)
 (int 10))
-(int 1))
-(type u32)))
+(int 1)))
       )
     )
   )
@@ -1982,17 +1948,15 @@
       (type i32)
     )
     (block
-      (comment "fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+4) as u32); }")
+      (comment "fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+4)); }")
       (return
         (call get
 (var fns)
-(cast
 (binop +
 (binop *
 (var fi)
 (int 10))
-(int 4))
-(type u32)))
+(int 4)))
       )
     )
   )
@@ -2009,17 +1973,15 @@
       (type i32)
     )
     (block
-      (comment "fn fn_nparam(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+5) as u32); }")
+      (comment "fn fn_nparam(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+5)); }")
       (return
         (call get
 (var fns)
-(cast
 (binop +
 (binop *
 (var fi)
 (int 10))
-(int 5))
-(type u32)))
+(int 5)))
       )
     )
   )
@@ -2036,17 +1998,15 @@
       (type i32)
     )
     (block
-      (comment "fn fn_local_base(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+6) as u32); }")
+      (comment "fn fn_local_base(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+6)); }")
       (return
         (call get
 (var fns)
-(cast
 (binop +
 (binop *
 (var fi)
 (int 10))
-(int 6))
-(type u32)))
+(int 6)))
       )
     )
   )
@@ -2063,17 +2023,15 @@
       (type i32)
     )
     (block
-      (comment "fn fn_nlocal(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+7) as u32); }")
+      (comment "fn fn_nlocal(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+7)); }")
       (return
         (call get
 (var fns)
-(cast
 (binop +
 (binop *
 (var fi)
 (int 10))
-(int 7))
-(type u32)))
+(int 7)))
       )
     )
   )
@@ -2090,17 +2048,15 @@
       (type i32)
     )
     (block
-      (comment "fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+8) as u32); }")
+      (comment "fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+8)); }")
       (return
         (call get
 (var fns)
-(cast
 (binop +
 (binop *
 (var fi)
 (int 10))
-(int 8))
-(type u32)))
+(int 8)))
       )
     )
   )
@@ -2117,17 +2073,15 @@
       (type i32)
     )
     (block
-      (comment "fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+9) as u32); }")
+      (comment "fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+9)); }")
       (return
         (call get
 (var fns)
-(cast
 (binop +
 (binop *
 (var fi)
 (int 10))
-(int 9))
-(type u32)))
+(int 9)))
       )
     )
   )
@@ -2150,19 +2104,17 @@
       (type void)
     )
     (block
-      (comment "fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns, (fi*10+f) as u32, v); return; }")
+      (comment "fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns, (fi*10+f), v); return; }")
       (call_stmt set
         (var fns)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var fi)
 (int 10))
 (var f))
-(type u32))
         (var v)
       )
-      (comment "fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns, (fi*10+f) as u32, v); return; }")
+      (comment "fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns, (fi*10+f), v); return; }")
       (return
       )
     )
@@ -2180,17 +2132,15 @@
       (type i32)
     )
     (block
-      (comment "fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool, (i*4+0) as u32); }")
+      (comment "fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool, (i*4+0)); }")
       (return
         (call get
 (var pool)
-(cast
 (binop +
 (binop *
 (var i)
 (int 4))
-(int 0))
-(type u32)))
+(int 0)))
       )
     )
   )
@@ -2207,17 +2157,15 @@
       (type i32)
     )
     (block
-      (comment "fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool, (i*4+1) as u32); }")
+      (comment "fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool, (i*4+1)); }")
       (return
         (call get
 (var pool)
-(cast
 (binop +
 (binop *
 (var i)
 (int 4))
-(int 1))
-(type u32)))
+(int 1)))
       )
     )
   )
@@ -2240,19 +2188,17 @@
       (type void)
     )
     (block
-      (comment "fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool, (i*4+f) as u32, v); return; }")
+      (comment "fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool, (i*4+f), v); return; }")
       (call_stmt set
         (var pool)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var i)
 (int 4))
 (var f))
-(type u32))
         (var v)
       )
-      (comment "fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool, (i*4+f) as u32, v); return; }")
+      (comment "fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool, (i*4+f), v); return; }")
       (return
       )
     )
@@ -2273,19 +2219,17 @@
       (type i32)
     )
     (block
-      (comment "fn ins_op(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+0) as u32); }")
+      (comment "fn ins_op(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+0)); }")
       (return
         (call get
 (var instrs)
-(cast
 (binop +
 (binop *
 (binop +
 (var base)
 (var pc))
 (int 4))
-(int 0))
-(type u32)))
+(int 0)))
       )
     )
   )
@@ -2305,19 +2249,17 @@
       (type i32)
     )
     (block
-      (comment "fn ins_ival(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+1) as u32); }")
+      (comment "fn ins_ival(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+1)); }")
       (return
         (call get
 (var instrs)
-(cast
 (binop +
 (binop *
 (binop +
 (var base)
 (var pc))
 (int 4))
-(int 1))
-(type u32)))
+(int 1)))
       )
     )
   )
@@ -2337,19 +2279,17 @@
       (type i32)
     )
     (block
-      (comment "fn ins_ss(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+2) as u32); }")
+      (comment "fn ins_ss(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+2)); }")
       (return
         (call get
 (var instrs)
-(cast
 (binop +
 (binop *
 (binop +
 (var base)
 (var pc))
 (int 4))
-(int 2))
-(type u32)))
+(int 2)))
       )
     )
   )
@@ -2369,19 +2309,17 @@
       (type i32)
     )
     (block
-      (comment "fn ins_sl(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+3) as u32); }")
+      (comment "fn ins_sl(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+3)); }")
       (return
         (call get
 (var instrs)
-(cast
 (binop +
 (binop *
 (binop +
 (var base)
 (var pc))
 (int 4))
-(int 3))
-(type u32)))
+(int 3)))
       )
     )
   )
@@ -2407,21 +2345,19 @@
       (type void)
     )
     (block
-      (comment "set(instrs, ((base+pc)*4+f) as u32, v); return;")
+      (comment "set(instrs, ((base+pc)*4+f), v); return;")
       (call_stmt set
         (var instrs)
-        (cast
-(binop +
+        (binop +
 (binop *
 (binop +
 (var base)
 (var pc))
 (int 4))
 (var f))
-(type u32))
         (var v)
       )
-      (comment "set(instrs, ((base+pc)*4+f) as u32, v); return;")
+      (comment "set(instrs, ((base+pc)*4+f), v); return;")
       (return
       )
     )
@@ -2439,17 +2375,15 @@
       (type i32)
     )
     (block
-      (comment "fn hm_kind(hm: I32Array, obj: i32) -> i32 { return get(hm, (obj*4+0) as u32); }")
+      (comment "fn hm_kind(hm: I32Array, obj: i32) -> i32 { return get(hm, (obj*4+0)); }")
       (return
         (call get
 (var hm)
-(cast
 (binop +
 (binop *
 (var obj)
 (int 4))
-(int 0))
-(type u32)))
+(int 0)))
       )
     )
   )
@@ -2466,17 +2400,15 @@
       (type i32)
     )
     (block
-      (comment "fn hm_base(hm: I32Array, obj: i32) -> i32 { return get(hm, (obj*4+1) as u32); }")
+      (comment "fn hm_base(hm: I32Array, obj: i32) -> i32 { return get(hm, (obj*4+1)); }")
       (return
         (call get
 (var hm)
-(cast
 (binop +
 (binop *
 (var obj)
 (int 4))
-(int 1))
-(type u32)))
+(int 1)))
       )
     )
   )
@@ -2493,17 +2425,15 @@
       (type i32)
     )
     (block
-      (comment "fn hm_size(hm: I32Array, obj: i32) -> i32 { return get(hm, (obj*4+2) as u32); }")
+      (comment "fn hm_size(hm: I32Array, obj: i32) -> i32 { return get(hm, (obj*4+2)); }")
       (return
         (call get
 (var hm)
-(cast
 (binop +
 (binop *
 (var obj)
 (int 4))
-(int 2))
-(type u32)))
+(int 2)))
       )
     )
   )
@@ -2525,40 +2455,34 @@
         (type i32)
         (var g_heap_obj_count)
       )
-      (comment "set(hm, (obj*4+0) as u32, 1); set(hm, (obj*4+1) as u32, g_heap_bytes_top); set(hm, (obj*4+2) as u32, size);")
+      (comment "set(hm, (obj*4+0), 1); set(hm, (obj*4+1), g_heap_bytes_top); set(hm, (obj*4+2), size);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 0))
-(type u32))
         (int 1)
       )
-      (comment "set(hm, (obj*4+0) as u32, 1); set(hm, (obj*4+1) as u32, g_heap_bytes_top); set(hm, (obj*4+2) as u32, size);")
+      (comment "set(hm, (obj*4+0), 1); set(hm, (obj*4+1), g_heap_bytes_top); set(hm, (obj*4+2), size);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 1))
-(type u32))
         (var g_heap_bytes_top)
       )
-      (comment "set(hm, (obj*4+0) as u32, 1); set(hm, (obj*4+1) as u32, g_heap_bytes_top); set(hm, (obj*4+2) as u32, size);")
+      (comment "set(hm, (obj*4+0), 1); set(hm, (obj*4+1), g_heap_bytes_top); set(hm, (obj*4+2), size);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 2))
-(type u32))
         (var size)
       )
       (comment "g_heap_bytes_top = g_heap_bytes_top + size; g_heap_obj_count = g_heap_obj_count + 1;")
@@ -2597,40 +2521,34 @@
         (type i32)
         (var g_heap_obj_count)
       )
-      (comment "set(hm, (obj*4+0) as u32, 2); set(hm, (obj*4+1) as u32, g_heap_i32s_top); set(hm, (obj*4+2) as u32, size);")
+      (comment "set(hm, (obj*4+0), 2); set(hm, (obj*4+1), g_heap_i32s_top); set(hm, (obj*4+2), size);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 0))
-(type u32))
         (int 2)
       )
-      (comment "set(hm, (obj*4+0) as u32, 2); set(hm, (obj*4+1) as u32, g_heap_i32s_top); set(hm, (obj*4+2) as u32, size);")
+      (comment "set(hm, (obj*4+0), 2); set(hm, (obj*4+1), g_heap_i32s_top); set(hm, (obj*4+2), size);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 1))
-(type u32))
         (var g_heap_i32s_top)
       )
-      (comment "set(hm, (obj*4+0) as u32, 2); set(hm, (obj*4+1) as u32, g_heap_i32s_top); set(hm, (obj*4+2) as u32, size);")
+      (comment "set(hm, (obj*4+0), 2); set(hm, (obj*4+1), g_heap_i32s_top); set(hm, (obj*4+2), size);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 2))
-(type u32))
         (var size)
       )
       (comment "g_heap_i32s_top = g_heap_i32s_top + size; g_heap_obj_count = g_heap_obj_count + 1;")
@@ -2678,40 +2596,34 @@
         (type i32)
         (var g_heap_obj_count)
       )
-      (comment "set(hm, (obj*4+0) as u32, 3); set(hm, (obj*4+1) as u32, g_heap_bytes_top); set(hm, (obj*4+2) as u32, sl);")
+      (comment "set(hm, (obj*4+0), 3); set(hm, (obj*4+1), g_heap_bytes_top); set(hm, (obj*4+2), sl);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 0))
-(type u32))
         (int 3)
       )
-      (comment "set(hm, (obj*4+0) as u32, 3); set(hm, (obj*4+1) as u32, g_heap_bytes_top); set(hm, (obj*4+2) as u32, sl);")
+      (comment "set(hm, (obj*4+0), 3); set(hm, (obj*4+1), g_heap_bytes_top); set(hm, (obj*4+2), sl);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 1))
-(type u32))
         (var g_heap_bytes_top)
       )
-      (comment "set(hm, (obj*4+0) as u32, 3); set(hm, (obj*4+1) as u32, g_heap_bytes_top); set(hm, (obj*4+2) as u32, sl);")
+      (comment "set(hm, (obj*4+0), 3); set(hm, (obj*4+1), g_heap_bytes_top); set(hm, (obj*4+2), sl);")
       (call_stmt set
         (var hm)
-        (cast
-(binop +
+        (binop +
 (binop *
 (var obj)
 (int 4))
 (int 2))
-(type u32))
         (var sl)
       )
       (comment "var i: i32 = 0;")
@@ -2719,29 +2631,25 @@
         (type i32)
         (int 0)
       )
-      (comment "while i < sl { set(hb, (g_heap_bytes_top+i) as u32, get(strtab, (ss+i) as u32)); i = i + 1; }")
+      (comment "while i < sl { set(hb, (g_heap_bytes_top+i), get(strtab, (ss+i))); i = i + 1; }")
       (while
         (binop <
 (var i)
 (var sl))
         (block
-          (comment "while i < sl { set(hb, (g_heap_bytes_top+i) as u32, get(strtab, (ss+i) as u32)); i = i + 1; }")
+          (comment "while i < sl { set(hb, (g_heap_bytes_top+i), get(strtab, (ss+i))); i = i + 1; }")
           (call_stmt set
             (var hb)
-            (cast
-(binop +
+            (binop +
 (var g_heap_bytes_top)
 (var i))
-(type u32))
             (call get
 (var strtab)
-(cast
 (binop +
 (var ss)
-(var i))
-(type u32)))
+(var i)))
           )
-          (comment "while i < sl { set(hb, (g_heap_bytes_top+i) as u32, get(strtab, (ss+i) as u32)); i = i + 1; }")
+          (comment "while i < sl { set(hb, (g_heap_bytes_top+i), get(strtab, (ss+i))); i = i + 1; }")
           (assign i
             (binop +
 (var i)
@@ -2786,18 +2694,16 @@
       (type i32)
     )
     (block
-      (comment "return get(hb, (hm_base(hm,obj)+idx) as u32) as i32;")
+      (comment "return get(hb, (hm_base(hm,obj)+idx)) as i32;")
       (return
         (cast
 (call get
 (var hb)
-(cast
 (binop +
 (call hm_base
 (var hm)
 (var obj))
-(var idx))
-(type u32)))
+(var idx)))
 (type i32))
       )
     )
@@ -2824,23 +2730,21 @@
       (type void)
     )
     (block
-      (comment "set(hb, (hm_base(hm,obj)+idx) as u32, (val&255) as u8); return;")
+      (comment "set(hb, (hm_base(hm,obj)+idx), (val&255) as u8); return;")
       (call_stmt set
         (var hb)
-        (cast
-(binop +
+        (binop +
 (call hm_base
 (var hm)
 (var obj))
 (var idx))
-(type u32))
         (cast
 (binop &
 (var val)
 (int 255))
 (type u8))
       )
-      (comment "set(hb, (hm_base(hm,obj)+idx) as u32, (val&255) as u8); return;")
+      (comment "set(hb, (hm_base(hm,obj)+idx), (val&255) as u8); return;")
       (return
       )
     )
@@ -2864,17 +2768,15 @@
       (type i32)
     )
     (block
-      (comment "return get(hi, (hm_base(hm,obj)+idx) as u32);")
+      (comment "return get(hi, (hm_base(hm,obj)+idx));")
       (return
         (call get
 (var hi)
-(cast
 (binop +
 (call hm_base
 (var hm)
 (var obj))
-(var idx))
-(type u32)))
+(var idx)))
       )
     )
   )
@@ -2900,19 +2802,17 @@
       (type void)
     )
     (block
-      (comment "set(hi, (hm_base(hm,obj)+idx) as u32, val); return;")
+      (comment "set(hi, (hm_base(hm,obj)+idx), val); return;")
       (call_stmt set
         (var hi)
-        (cast
-(binop +
+        (binop +
 (call hm_base
 (var hm)
 (var obj))
 (var idx))
-(type u32))
         (var val)
       )
-      (comment "set(hi, (hm_base(hm,obj)+idx) as u32, val); return;")
+      (comment "set(hi, (hm_base(hm,obj)+idx), val); return;")
       (return
       )
     )
@@ -2951,14 +2851,12 @@
 (var i)
 (var to))
         (block
-          (comment "var c: u8 = get(src, i as u32);")
+          (comment "var c: u8 = get(src, i);")
           (var_decl c
             (type u8)
             (call get
 (var src)
-(cast
-(var i)
-(type u32)))
+(var i))
           )
           (comment "if c >= '0' && c <= '9' { r = r * 10 + (c as i32 - 48); }")
           (if
@@ -3169,37 +3067,33 @@
                     (type u8)
                     (int 0)
                   )
-                  (comment "if dir_sl > 0 { d0 = get(strtab, dir_ss as u32); }")
+                  (comment "if dir_sl > 0 { d0 = get(strtab, dir_ss); }")
                   (if
                     (binop >
 (var dir_sl)
 (int 0))
                     (block
-                      (comment "if dir_sl > 0 { d0 = get(strtab, dir_ss as u32); }")
+                      (comment "if dir_sl > 0 { d0 = get(strtab, dir_ss); }")
                       (assign d0
                         (call get
 (var strtab)
-(cast
-(var dir_ss)
-(type u32)))
+(var dir_ss))
                       )
                     )
                   )
-                  (comment "if dir_sl > 1 { d1 = get(strtab, (dir_ss+1) as u32); }")
+                  (comment "if dir_sl > 1 { d1 = get(strtab, (dir_ss+1)); }")
                   (if
                     (binop >
 (var dir_sl)
 (int 1))
                     (block
-                      (comment "if dir_sl > 1 { d1 = get(strtab, (dir_ss+1) as u32); }")
+                      (comment "if dir_sl > 1 { d1 = get(strtab, (dir_ss+1)); }")
                       (assign d1
                         (call get
 (var strtab)
-(cast
 (binop +
 (var dir_ss)
-(int 1))
-(type u32)))
+(int 1)))
                       )
                     )
                   )
@@ -3255,28 +3149,24 @@
 (var g_stab_pos)
 (var slit_ss))
                       )
-                      (comment "set(string_lits, (idx*2+0) as u32, slit_ss);")
+                      (comment "set(string_lits, (idx*2+0), slit_ss);")
                       (call_stmt set
                         (var string_lits)
-                        (cast
-(binop +
+                        (binop +
 (binop *
 (var idx)
 (int 2))
 (int 0))
-(type u32))
                         (var slit_ss)
                       )
-                      (comment "set(string_lits, (idx*2+1) as u32, slit_sl);")
+                      (comment "set(string_lits, (idx*2+1), slit_sl);")
                       (call_stmt set
                         (var string_lits)
-                        (cast
-(binop +
+                        (binop +
 (binop *
 (var idx)
 (int 2))
 (int 1))
-(type u32))
                         (var slit_sl)
                       )
                       (comment "if idx + 1 > g_nstrings { g_nstrings = idx + 1; }")
@@ -3371,60 +3261,50 @@
                         (type i32)
                         (var g_nglobals)
                       )
-                      (comment "set(global_vars, (gi*4+0) as u32, nm_ss);")
+                      (comment "set(global_vars, (gi*4+0), nm_ss);")
                       (call_stmt set
                         (var global_vars)
-                        (cast
-(binop +
+                        (binop +
 (binop *
 (var gi)
 (int 4))
 (int 0))
-(type u32))
                         (var nm_ss)
                       )
-                      (comment "set(global_vars, (gi*4+1) as u32, nm_sl);")
+                      (comment "set(global_vars, (gi*4+1), nm_sl);")
                       (call_stmt set
                         (var global_vars)
-                        (cast
-(binop +
+                        (binop +
 (binop *
 (var gi)
 (int 4))
 (int 1))
-(type u32))
                         (var nm_sl)
                       )
-                      (comment "set(global_vars, (gi*4+2) as u32, ty_ss);")
+                      (comment "set(global_vars, (gi*4+2), ty_ss);")
                       (call_stmt set
                         (var global_vars)
-                        (cast
-(binop +
+                        (binop +
 (binop *
 (var gi)
 (int 4))
 (int 2))
-(type u32))
                         (var ty_ss)
                       )
-                      (comment "set(global_vars, (gi*4+3) as u32, ty_sl);")
+                      (comment "set(global_vars, (gi*4+3), ty_sl);")
                       (call_stmt set
                         (var global_vars)
-                        (cast
-(binop +
+                        (binop +
 (binop *
 (var gi)
 (int 4))
 (int 3))
-(type u32))
                         (var ty_sl)
                       )
-                      (comment "set(global_inits, gi as u32, iv);")
+                      (comment "set(global_inits, gi, iv);")
                       (call_stmt set
                         (var global_inits)
-                        (cast
-(var gi)
-(type u32))
+                        (var gi)
                         (var iv)
                       )
                       (comment "g_nglobals = g_nglobals + 1;")
@@ -3772,21 +3652,19 @@
                     (type u8)
                     (int 0)
                   )
-                  (comment "if dir_sl > 3 { d3b = get(strtab, (dir_ss+3) as u32); }")
+                  (comment "if dir_sl > 3 { d3b = get(strtab, (dir_ss+3)); }")
                   (if
                     (binop >
 (var dir_sl)
 (int 3))
                     (block
-                      (comment "if dir_sl > 3 { d3b = get(strtab, (dir_ss+3) as u32); }")
+                      (comment "if dir_sl > 3 { d3b = get(strtab, (dir_ss+3)); }")
                       (assign d3b
                         (call get
 (var strtab)
-(cast
 (binop +
 (var dir_ss)
-(int 3))
-(type u32)))
+(int 3)))
                       )
                     )
                   )
@@ -3889,7 +3767,7 @@
 (var ibase2)
 (var ii))
                                   )
-                                  (comment "ins_set(instrs, ibase2, ii, 1, get(label_pcs, lnum2 as u32));")
+                                  (comment "ins_set(instrs, ibase2, ii, 1, get(label_pcs, lnum2));")
                                   (call_stmt ins_set
                                     (var instrs)
                                     (var ibase2)
@@ -3897,9 +3775,7 @@
                                     (int 1)
                                     (call get
 (var label_pcs)
-(cast
-(var lnum2)
-(type u32)))
+(var lnum2))
                                   )
                                 )
                               )
@@ -4044,12 +3920,10 @@
 (var cur_fn)
 (int 0))
                         (block
-                          (comment "set(label_pcs, lnum3 as u32, g_ninstrs - fn_instr_base(fns, cur_fn));")
+                          (comment "set(label_pcs, lnum3, g_ninstrs - fn_instr_base(fns, cur_fn));")
                           (call_stmt set
                             (var label_pcs)
-                            (cast
-(var lnum3)
-(type u32))
+                            (var lnum3)
                             (binop -
 (var g_ninstrs)
 (call fn_instr_base
@@ -4654,28 +4528,24 @@
 (var i)
 (var g_nglobals))
         (block
-          (comment "if stab_eq(strtab, get(global_vars,(i*4+0) as u32), get(global_vars,(i*4+1) as u32), name_ss, name_sl) {")
+          (comment "if stab_eq(strtab, get(global_vars,(i*4+0)), get(global_vars,(i*4+1)), name_ss, name_sl) {")
           (if
             (call stab_eq
 (var strtab)
 (call get
 (var global_vars)
-(cast
 (binop +
 (binop *
 (var i)
 (int 4))
-(int 0))
-(type u32)))
+(int 0)))
 (call get
 (var global_vars)
-(cast
 (binop +
 (binop *
 (var i)
 (int 4))
-(int 1))
-(type u32)))
+(int 1)))
 (var name_ss)
 (var name_sl))
             (block
@@ -4783,29 +4653,25 @@
       (type void)
     )
     (block
-      (comment "set(si, g_sp as u32, ival); set(st, g_sp as u32, tag); g_sp = g_sp + 1; return;")
+      (comment "set(si, g_sp, ival); set(st, g_sp, tag); g_sp = g_sp + 1; return;")
       (call_stmt set
         (var si)
-        (cast
-(var g_sp)
-(type u32))
+        (var g_sp)
         (var ival)
       )
-      (comment "set(si, g_sp as u32, ival); set(st, g_sp as u32, tag); g_sp = g_sp + 1; return;")
+      (comment "set(si, g_sp, ival); set(st, g_sp, tag); g_sp = g_sp + 1; return;")
       (call_stmt set
         (var st)
-        (cast
-(var g_sp)
-(type u32))
+        (var g_sp)
         (var tag)
       )
-      (comment "set(si, g_sp as u32, ival); set(st, g_sp as u32, tag); g_sp = g_sp + 1; return;")
+      (comment "set(si, g_sp, ival); set(st, g_sp, tag); g_sp = g_sp + 1; return;")
       (assign g_sp
         (binop +
 (var g_sp)
 (int 1))
       )
-      (comment "set(si, g_sp as u32, ival); set(st, g_sp as u32, tag); g_sp = g_sp + 1; return;")
+      (comment "set(si, g_sp, ival); set(st, g_sp, tag); g_sp = g_sp + 1; return;")
       (return
       )
     )
@@ -4823,29 +4689,25 @@
       (type void)
     )
     (block
-      (comment "g_sp = g_sp - 1; g_pop_ival = get(si, g_sp as u32); g_pop_tag = get(st, g_sp as u32); return;")
+      (comment "g_sp = g_sp - 1; g_pop_ival = get(si, g_sp); g_pop_tag = get(st, g_sp); return;")
       (assign g_sp
         (binop -
 (var g_sp)
 (int 1))
       )
-      (comment "g_sp = g_sp - 1; g_pop_ival = get(si, g_sp as u32); g_pop_tag = get(st, g_sp as u32); return;")
+      (comment "g_sp = g_sp - 1; g_pop_ival = get(si, g_sp); g_pop_tag = get(st, g_sp); return;")
       (assign g_pop_ival
         (call get
 (var si)
-(cast
-(var g_sp)
-(type u32)))
+(var g_sp))
       )
-      (comment "g_sp = g_sp - 1; g_pop_ival = get(si, g_sp as u32); g_pop_tag = get(st, g_sp as u32); return;")
+      (comment "g_sp = g_sp - 1; g_pop_ival = get(si, g_sp); g_pop_tag = get(st, g_sp); return;")
       (assign g_pop_tag
         (call get
 (var st)
-(cast
-(var g_sp)
-(type u32)))
+(var g_sp))
       )
-      (comment "g_sp = g_sp - 1; g_pop_ival = get(si, g_sp as u32); g_pop_tag = get(st, g_sp as u32); return;")
+      (comment "g_sp = g_sp - 1; g_pop_ival = get(si, g_sp); g_pop_tag = get(st, g_sp); return;")
       (return
       )
     )
@@ -4882,54 +4744,44 @@
 (var g_csp)
 (int 5))
       )
-      (comment "set(cs,(b+0) as u32,func); set(cs,(b+1) as u32,pc); set(cs,(b+2) as u32,fb);")
+      (comment "set(cs,(b+0),func); set(cs,(b+1),pc); set(cs,(b+2),fb);")
       (call_stmt set
         (var cs)
-        (cast
-(binop +
+        (binop +
 (var b)
 (int 0))
-(type u32))
         (var func)
       )
-      (comment "set(cs,(b+0) as u32,func); set(cs,(b+1) as u32,pc); set(cs,(b+2) as u32,fb);")
+      (comment "set(cs,(b+0),func); set(cs,(b+1),pc); set(cs,(b+2),fb);")
       (call_stmt set
         (var cs)
-        (cast
-(binop +
+        (binop +
 (var b)
 (int 1))
-(type u32))
         (var pc)
       )
-      (comment "set(cs,(b+0) as u32,func); set(cs,(b+1) as u32,pc); set(cs,(b+2) as u32,fb);")
+      (comment "set(cs,(b+0),func); set(cs,(b+1),pc); set(cs,(b+2),fb);")
       (call_stmt set
         (var cs)
-        (cast
-(binop +
+        (binop +
 (var b)
 (int 2))
-(type u32))
         (var fb)
       )
-      (comment "set(cs,(b+3) as u32,vp);   set(cs,(b+4) as u32,sp);")
+      (comment "set(cs,(b+3),vp);   set(cs,(b+4),sp);")
       (call_stmt set
         (var cs)
-        (cast
-(binop +
+        (binop +
 (var b)
 (int 3))
-(type u32))
         (var vp)
       )
-      (comment "set(cs,(b+3) as u32,vp);   set(cs,(b+4) as u32,sp);")
+      (comment "set(cs,(b+3),vp);   set(cs,(b+4),sp);")
       (call_stmt set
         (var cs)
-        (cast
-(binop +
+        (binop +
 (var b)
 (int 4))
-(type u32))
         (var sp)
       )
       (comment "g_csp = g_csp + 1; return;")
@@ -4966,55 +4818,45 @@
 (var g_csp)
 (int 5))
       )
-      (comment "g_cs_func=get(cs,(b+0) as u32); g_cs_pc=get(cs,(b+1) as u32); g_cs_fbase=get(cs,(b+2) as u32);")
+      (comment "g_cs_func=get(cs,(b+0)); g_cs_pc=get(cs,(b+1)); g_cs_fbase=get(cs,(b+2));")
       (assign g_cs_func
         (call get
 (var cs)
-(cast
 (binop +
 (var b)
-(int 0))
-(type u32)))
+(int 0)))
       )
-      (comment "g_cs_func=get(cs,(b+0) as u32); g_cs_pc=get(cs,(b+1) as u32); g_cs_fbase=get(cs,(b+2) as u32);")
+      (comment "g_cs_func=get(cs,(b+0)); g_cs_pc=get(cs,(b+1)); g_cs_fbase=get(cs,(b+2));")
       (assign g_cs_pc
         (call get
 (var cs)
-(cast
 (binop +
 (var b)
-(int 1))
-(type u32)))
+(int 1)))
       )
-      (comment "g_cs_func=get(cs,(b+0) as u32); g_cs_pc=get(cs,(b+1) as u32); g_cs_fbase=get(cs,(b+2) as u32);")
+      (comment "g_cs_func=get(cs,(b+0)); g_cs_pc=get(cs,(b+1)); g_cs_fbase=get(cs,(b+2));")
       (assign g_cs_fbase
         (call get
 (var cs)
-(cast
 (binop +
 (var b)
-(int 2))
-(type u32)))
+(int 2)))
       )
-      (comment "g_cs_vp=get(cs,(b+3) as u32);   g_cs_sp=get(cs,(b+4) as u32);")
+      (comment "g_cs_vp=get(cs,(b+3));   g_cs_sp=get(cs,(b+4));")
       (assign g_cs_vp
         (call get
 (var cs)
-(cast
 (binop +
 (var b)
-(int 3))
-(type u32)))
+(int 3)))
       )
-      (comment "g_cs_vp=get(cs,(b+3) as u32);   g_cs_sp=get(cs,(b+4) as u32);")
+      (comment "g_cs_vp=get(cs,(b+3));   g_cs_sp=get(cs,(b+4));")
       (assign g_cs_sp
         (call get
 (var cs)
-(cast
 (binop +
 (var b)
-(int 4))
-(type u32)))
+(int 4)))
       )
       (comment "return;")
       (return
@@ -5096,57 +4938,49 @@
         (type i32)
         (var g_stab_pos)
       )
-      (comment "set(strtab,g_stab_pos as u32,'m'); g_stab_pos=g_stab_pos+1;")
+      (comment "set(strtab,g_stab_pos,'m'); g_stab_pos=g_stab_pos+1;")
       (call_stmt set
         (var strtab)
-        (cast
-(var g_stab_pos)
-(type u32))
+        (var g_stab_pos)
         (int 109)
       )
-      (comment "set(strtab,g_stab_pos as u32,'m'); g_stab_pos=g_stab_pos+1;")
+      (comment "set(strtab,g_stab_pos,'m'); g_stab_pos=g_stab_pos+1;")
       (assign g_stab_pos
         (binop +
 (var g_stab_pos)
 (int 1))
       )
-      (comment "set(strtab,g_stab_pos as u32,'a');  g_stab_pos=g_stab_pos+1;")
+      (comment "set(strtab,g_stab_pos,'a');  g_stab_pos=g_stab_pos+1;")
       (call_stmt set
         (var strtab)
-        (cast
-(var g_stab_pos)
-(type u32))
+        (var g_stab_pos)
         (int 97)
       )
-      (comment "set(strtab,g_stab_pos as u32,'a');  g_stab_pos=g_stab_pos+1;")
+      (comment "set(strtab,g_stab_pos,'a');  g_stab_pos=g_stab_pos+1;")
       (assign g_stab_pos
         (binop +
 (var g_stab_pos)
 (int 1))
       )
-      (comment "set(strtab,g_stab_pos as u32,'i'); g_stab_pos=g_stab_pos+1;")
+      (comment "set(strtab,g_stab_pos,'i'); g_stab_pos=g_stab_pos+1;")
       (call_stmt set
         (var strtab)
-        (cast
-(var g_stab_pos)
-(type u32))
+        (var g_stab_pos)
         (int 105)
       )
-      (comment "set(strtab,g_stab_pos as u32,'i'); g_stab_pos=g_stab_pos+1;")
+      (comment "set(strtab,g_stab_pos,'i'); g_stab_pos=g_stab_pos+1;")
       (assign g_stab_pos
         (binop +
 (var g_stab_pos)
 (int 1))
       )
-      (comment "set(strtab,g_stab_pos as u32,'n'); g_stab_pos=g_stab_pos+1;")
+      (comment "set(strtab,g_stab_pos,'n'); g_stab_pos=g_stab_pos+1;")
       (call_stmt set
         (var strtab)
-        (cast
-(var g_stab_pos)
-(type u32))
+        (var g_stab_pos)
         (int 110)
       )
-      (comment "set(strtab,g_stab_pos as u32,'n'); g_stab_pos=g_stab_pos+1;")
+      (comment "set(strtab,g_stab_pos,'n'); g_stab_pos=g_stab_pos+1;")
       (assign g_stab_pos
         (binop +
 (var g_stab_pos)
@@ -5188,32 +5022,26 @@
 (var gi)
 (var g_nglobals))
         (block
-          (comment "set(gv_i,(gi*2+0) as u32, get(global_inits, gi as u32));")
+          (comment "set(gv_i,(gi*2+0), get(global_inits, gi));")
           (call_stmt set
             (var gv_i)
-            (cast
-(binop +
+            (binop +
 (binop *
 (var gi)
 (int 2))
 (int 0))
-(type u32))
             (call get
 (var global_inits)
-(cast
-(var gi)
-(type u32)))
+(var gi))
           )
-          (comment "set(gv_t,(gi*2+1) as u32, 0);")
+          (comment "set(gv_t,(gi*2+1), 0);")
           (call_stmt set
             (var gv_t)
-            (cast
-(binop +
+            (binop +
 (binop *
 (var gi)
 (int 2))
 (int 1))
-(type u32))
             (int 0)
           )
           (comment "gi = gi + 1;")
@@ -5251,7 +5079,7 @@
         (type i32)
         (int 0)
       )
-      (comment "while vi < np + nl { set(var_i,vi as u32,0); set(var_t,vi as u32,0); vi=vi+1; }")
+      (comment "while vi < np + nl { set(var_i,vi,0); set(var_t,vi,0); vi=vi+1; }")
       (while
         (binop <
 (var vi)
@@ -5259,23 +5087,19 @@
 (var np)
 (var nl)))
         (block
-          (comment "while vi < np + nl { set(var_i,vi as u32,0); set(var_t,vi as u32,0); vi=vi+1; }")
+          (comment "while vi < np + nl { set(var_i,vi,0); set(var_t,vi,0); vi=vi+1; }")
           (call_stmt set
             (var var_i)
-            (cast
-(var vi)
-(type u32))
+            (var vi)
             (int 0)
           )
-          (comment "while vi < np + nl { set(var_i,vi as u32,0); set(var_t,vi as u32,0); vi=vi+1; }")
+          (comment "while vi < np + nl { set(var_i,vi,0); set(var_t,vi,0); vi=vi+1; }")
           (call_stmt set
             (var var_t)
-            (cast
-(var vi)
-(type u32))
+            (var vi)
             (int 0)
           )
-          (comment "while vi < np + nl { set(var_i,vi as u32,0); set(var_t,vi as u32,0); vi=vi+1; }")
+          (comment "while vi < np + nl { set(var_i,vi,0); set(var_t,vi,0); vi=vi+1; }")
           (assign vi
             (binop +
 (var vi)
@@ -5463,31 +5287,27 @@
 (var op)
 (var OP_PUSH_STR))
                     (block
-                      (comment "var str_ss: i32 = get(string_lits,(ival*2+0) as u32);")
+                      (comment "var str_ss: i32 = get(string_lits,(ival*2+0));")
                       (var_decl str_ss
                         (type i32)
                         (call get
 (var string_lits)
-(cast
 (binop +
 (binop *
 (var ival)
 (int 2))
-(int 0))
-(type u32)))
+(int 0)))
                       )
-                      (comment "var str_sl: i32 = get(string_lits,(ival*2+1) as u32);")
+                      (comment "var str_sl: i32 = get(string_lits,(ival*2+1));")
                       (var_decl str_sl
                         (type i32)
                         (call get
 (var string_lits)
-(cast
 (binop +
 (binop *
 (var ival)
 (int 2))
-(int 1))
-(type u32)))
+(int 1)))
                       )
                       (comment "stk_push(stk_i, stk_t, heap_new_str(hm,hb,strtab,str_ss,str_sl), TAG_REF);")
                       (call_stmt stk_push
@@ -5527,24 +5347,20 @@
 (var slot)
 (int 0))
                         (block
-                          (comment "stk_push(stk_i,stk_t, get(var_i,(g_frame_base+slot) as u32), get(var_t,(g_frame_base+slot) as u32));")
+                          (comment "stk_push(stk_i,stk_t, get(var_i,(g_frame_base+slot)), get(var_t,(g_frame_base+slot)));")
                           (call_stmt stk_push
                             (var stk_i)
                             (var stk_t)
                             (call get
 (var var_i)
-(cast
 (binop +
 (var g_frame_base)
-(var slot))
-(type u32)))
+(var slot)))
                             (call get
 (var var_t)
-(cast
 (binop +
 (var g_frame_base)
-(var slot))
-(type u32)))
+(var slot)))
                           )
                         )
                       )
@@ -5569,28 +5385,24 @@
 (var gidx)
 (int 0))
                             (block
-                              (comment "stk_push(stk_i,stk_t, get(gv_i,(gidx*2+0) as u32), get(gv_t,(gidx*2+1) as u32));")
+                              (comment "stk_push(stk_i,stk_t, get(gv_i,(gidx*2+0)), get(gv_t,(gidx*2+1)));")
                               (call_stmt stk_push
                                 (var stk_i)
                                 (var stk_t)
                                 (call get
 (var gv_i)
-(cast
 (binop +
 (binop *
 (var gidx)
 (int 2))
-(int 0))
-(type u32)))
+(int 0)))
                                 (call get
 (var gv_t)
-(cast
 (binop +
 (binop *
 (var gidx)
 (int 2))
-(int 1))
-(type u32)))
+(int 1)))
                               )
                             )
                           )
@@ -5652,24 +5464,20 @@
 (var slot)
 (int 0))
                         (block
-                          (comment "set(var_i,(g_frame_base+slot) as u32,pv);")
+                          (comment "set(var_i,(g_frame_base+slot),pv);")
                           (call_stmt set
                             (var var_i)
-                            (cast
-(binop +
+                            (binop +
 (var g_frame_base)
 (var slot))
-(type u32))
                             (var pv)
                           )
-                          (comment "set(var_t,(g_frame_base+slot) as u32,pt);")
+                          (comment "set(var_t,(g_frame_base+slot),pt);")
                           (call_stmt set
                             (var var_t)
-                            (cast
-(binop +
+                            (binop +
 (var g_frame_base)
 (var slot))
-(type u32))
                             (var pt)
                           )
                         )
@@ -5695,28 +5503,24 @@
 (var gidx)
 (int 0))
                             (block
-                              (comment "set(gv_i,(gidx*2+0) as u32,pv);")
+                              (comment "set(gv_i,(gidx*2+0),pv);")
                               (call_stmt set
                                 (var gv_i)
-                                (cast
-(binop +
+                                (binop +
 (binop *
 (var gidx)
 (int 2))
 (int 0))
-(type u32))
                                 (var pv)
                               )
-                              (comment "set(gv_t,(gidx*2+1) as u32,pt);")
+                              (comment "set(gv_t,(gidx*2+1),pt);")
                               (call_stmt set
                                 (var gv_t)
-                                (cast
-(binop +
+                                (binop +
 (binop *
 (var gidx)
 (int 2))
 (int 1))
-(type u32))
                                 (var pt)
                               )
                             )
@@ -5754,20 +5558,16 @@
                             (var stk_i)
                             (var stk_t)
                           )
-                          (comment "set(arg_i,ai as u32,g_pop_ival); set(arg_t,ai as u32,g_pop_tag);")
+                          (comment "set(arg_i,ai,g_pop_ival); set(arg_t,ai,g_pop_tag);")
                           (call_stmt set
                             (var arg_i)
-                            (cast
-(var ai)
-(type u32))
+                            (var ai)
                             (var g_pop_ival)
                           )
-                          (comment "set(arg_i,ai as u32,g_pop_ival); set(arg_t,ai as u32,g_pop_tag);")
+                          (comment "set(arg_i,ai,g_pop_ival); set(arg_t,ai,g_pop_tag);")
                           (call_stmt set
                             (var arg_t)
-                            (cast
-(var ai)
-(type u32))
+                            (var ai)
                             (var g_pop_tag)
                           )
                           (comment "ai = ai - 1;")
@@ -5818,127 +5618,113 @@
                         (type u8)
                         (int 0)
                       )
-                      (comment "if ssl > 0 { c0 = get(strtab, sss as u32); }")
+                      (comment "if ssl > 0 { c0 = get(strtab, sss); }")
                       (if
                         (binop >
 (var ssl)
 (int 0))
                         (block
-                          (comment "if ssl > 0 { c0 = get(strtab, sss as u32); }")
+                          (comment "if ssl > 0 { c0 = get(strtab, sss); }")
                           (assign c0
                             (call get
 (var strtab)
-(cast
-(var sss)
-(type u32)))
+(var sss))
                           )
                         )
                       )
-                      (comment "if ssl > 1 { c1 = get(strtab, (sss+1) as u32); }")
+                      (comment "if ssl > 1 { c1 = get(strtab, (sss+1)); }")
                       (if
                         (binop >
 (var ssl)
 (int 1))
                         (block
-                          (comment "if ssl > 1 { c1 = get(strtab, (sss+1) as u32); }")
+                          (comment "if ssl > 1 { c1 = get(strtab, (sss+1)); }")
                           (assign c1
                             (call get
 (var strtab)
-(cast
 (binop +
 (var sss)
-(int 1))
-(type u32)))
+(int 1)))
                           )
                         )
                       )
-                      (comment "if ssl > 2 { c2 = get(strtab, (sss+2) as u32); }")
+                      (comment "if ssl > 2 { c2 = get(strtab, (sss+2)); }")
                       (if
                         (binop >
 (var ssl)
 (int 2))
                         (block
-                          (comment "if ssl > 2 { c2 = get(strtab, (sss+2) as u32); }")
+                          (comment "if ssl > 2 { c2 = get(strtab, (sss+2)); }")
                           (assign c2
                             (call get
 (var strtab)
-(cast
 (binop +
 (var sss)
-(int 2))
-(type u32)))
+(int 2)))
                           )
                         )
                       )
-                      (comment "if ssl > 3 { c3 = get(strtab, (sss+3) as u32); }")
+                      (comment "if ssl > 3 { c3 = get(strtab, (sss+3)); }")
                       (if
                         (binop >
 (var ssl)
 (int 3))
                         (block
-                          (comment "if ssl > 3 { c3 = get(strtab, (sss+3) as u32); }")
+                          (comment "if ssl > 3 { c3 = get(strtab, (sss+3)); }")
                           (assign c3
                             (call get
 (var strtab)
-(cast
 (binop +
 (var sss)
-(int 3))
-(type u32)))
+(int 3)))
                           )
                         )
                       )
-                      (comment "if ssl > 4 { c4 = get(strtab, (sss+4) as u32); }")
+                      (comment "if ssl > 4 { c4 = get(strtab, (sss+4)); }")
                       (if
                         (binop >
 (var ssl)
 (int 4))
                         (block
-                          (comment "if ssl > 4 { c4 = get(strtab, (sss+4) as u32); }")
+                          (comment "if ssl > 4 { c4 = get(strtab, (sss+4)); }")
                           (assign c4
                             (call get
 (var strtab)
-(cast
 (binop +
 (var sss)
-(int 4))
-(type u32)))
+(int 4)))
                           )
                         )
                       )
-                      (comment "if ssl > 5 { c5 = get(strtab, (sss+5) as u32); }")
+                      (comment "if ssl > 5 { c5 = get(strtab, (sss+5)); }")
                       (if
                         (binop >
 (var ssl)
 (int 5))
                         (block
-                          (comment "if ssl > 5 { c5 = get(strtab, (sss+5) as u32); }")
+                          (comment "if ssl > 5 { c5 = get(strtab, (sss+5)); }")
                           (assign c5
                             (call get
 (var strtab)
-(cast
 (binop +
 (var sss)
-(int 5))
-(type u32)))
+(int 5)))
                           )
                         )
                       )
-                      (comment "if ssl > 6 { c6 = get(strtab, (sss+6) as u32); }")
+                      (comment "if ssl > 6 { c6 = get(strtab, (sss+6)); }")
                       (if
                         (binop >
 (var ssl)
 (int 6))
                         (block
-                          (comment "if ssl > 6 { c6 = get(strtab, (sss+6) as u32); }")
+                          (comment "if ssl > 6 { c6 = get(strtab, (sss+6)); }")
                           (assign c6
                             (call get
 (var strtab)
-(cast
 (binop +
 (var sss)
-(int 6))
-(type u32)))
+(int 6)))
                           )
                         )
                       )
@@ -5985,21 +5771,21 @@
 (var c4)
 (int 119))
                             (block
-                              (comment "var fd: i32 = get(arg_i,0u32);")
+                              (comment "var fd: i32 = get(arg_i,0);")
                               (var_decl fd
                                 (type i32)
                                 (call get
 (var arg_i)
 (int 0))
                               )
-                              (comment "var obj: i32 = get(arg_i,1u32);")
+                              (comment "var obj: i32 = get(arg_i,1);")
                               (var_decl obj
                                 (type i32)
                                 (call get
 (var arg_i)
 (int 1))
                               )
-                              (comment "var wlen: i32 = get(arg_i,2u32);")
+                              (comment "var wlen: i32 = get(arg_i,2);")
                               (var_decl wlen
                                 (type i32)
                                 (call get
@@ -6043,27 +5829,23 @@
                                 (type i32)
                                 (int 0)
                               )
-                              (comment "while ti < wlen { set(tmp,ti as u32,get(hb,(base+ti) as u32)); ti=ti+1; }")
+                              (comment "while ti < wlen { set(tmp,ti,get(hb,(base+ti))); ti=ti+1; }")
                               (while
                                 (binop <
 (var ti)
 (var wlen))
                                 (block
-                                  (comment "while ti < wlen { set(tmp,ti as u32,get(hb,(base+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < wlen { set(tmp,ti,get(hb,(base+ti))); ti=ti+1; }")
                                   (call_stmt set
                                     (var tmp)
-                                    (cast
-(var ti)
-(type u32))
+                                    (var ti)
                                     (call get
 (var hb)
-(cast
 (binop +
 (var base)
-(var ti))
-(type u32)))
+(var ti)))
                                   )
-                                  (comment "while ti < wlen { set(tmp,ti as u32,get(hb,(base+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < wlen { set(tmp,ti,get(hb,(base+ti))); ti=ti+1; }")
                                   (assign ti
                                     (binop +
 (var ti)
@@ -6071,14 +5853,12 @@
                                   )
                                 )
                               )
-                              (comment "r_ival = sys_write(fd, tmp, wlen as u32);")
+                              (comment "r_ival = sys_write(fd, tmp, wlen);")
                               (assign r_ival
                                 (call sys_write
 (var fd)
 (var tmp)
-(cast
-(var wlen)
-(type u32)))
+(var wlen))
                               )
                               (comment "delete(tmp);")
                               (call_stmt delete
@@ -6092,21 +5872,21 @@
 (var c4)
 (int 114))
                             (block
-                              (comment "var fd: i32 = get(arg_i,0u32);")
+                              (comment "var fd: i32 = get(arg_i,0);")
                               (var_decl fd
                                 (type i32)
                                 (call get
 (var arg_i)
 (int 0))
                               )
-                              (comment "var obj: i32 = get(arg_i,1u32);")
+                              (comment "var obj: i32 = get(arg_i,1);")
                               (var_decl obj
                                 (type i32)
                                 (call get
 (var arg_i)
 (int 1))
                               )
-                              (comment "var rlen: i32 = get(arg_i,2u32);")
+                              (comment "var rlen: i32 = get(arg_i,2);")
                               (var_decl rlen
                                 (type i32)
                                 (call get
@@ -6190,21 +5970,17 @@
 (var ti)
 (var rlen))
                                         (block
-                                          (comment "set(hb,(base+ti) as u32,get(prog_stdin,(g_prog_stdin_pos+ti) as u32));")
+                                          (comment "set(hb,(base+ti),get(prog_stdin,(g_prog_stdin_pos+ti)));")
                                           (call_stmt set
                                             (var hb)
-                                            (cast
-(binop +
+                                            (binop +
 (var base)
 (var ti))
-(type u32))
                                             (call get
 (var prog_stdin)
-(cast
 (binop +
 (var g_prog_stdin_pos)
-(var ti))
-(type u32)))
+(var ti)))
                                           )
                                           (comment "ti=ti+1;")
                                           (assign ti
@@ -6248,15 +6024,13 @@
                                     (call U8Array
 (var rlen))
                                   )
-                                  (comment "var r2: i32 = sys_read(fd, tmp, rlen as u32);")
+                                  (comment "var r2: i32 = sys_read(fd, tmp, rlen);")
                                   (var_decl r2
                                     (type i32)
                                     (call sys_read
 (var fd)
 (var tmp)
-(cast
-(var rlen)
-(type u32)))
+(var rlen))
                                   )
                                   (comment "if r2 > 0 {")
                                   (if
@@ -6269,27 +6043,23 @@
                                         (type i32)
                                         (int 0)
                                       )
-                                      (comment "while ti < r2 { set(hb,(base+ti) as u32,get(tmp,ti as u32)); ti=ti+1; }")
+                                      (comment "while ti < r2 { set(hb,(base+ti),get(tmp,ti)); ti=ti+1; }")
                                       (while
                                         (binop <
 (var ti)
 (var r2))
                                         (block
-                                          (comment "while ti < r2 { set(hb,(base+ti) as u32,get(tmp,ti as u32)); ti=ti+1; }")
+                                          (comment "while ti < r2 { set(hb,(base+ti),get(tmp,ti)); ti=ti+1; }")
                                           (call_stmt set
                                             (var hb)
-                                            (cast
-(binop +
+                                            (binop +
 (var base)
 (var ti))
-(type u32))
                                             (call get
 (var tmp)
-(cast
-(var ti)
-(type u32)))
+(var ti))
                                           )
-                                          (comment "while ti < r2 { set(hb,(base+ti) as u32,get(tmp,ti as u32)); ti=ti+1; }")
+                                          (comment "while ti < r2 { set(hb,(base+ti),get(tmp,ti)); ti=ti+1; }")
                                           (assign ti
                                             (binop +
 (var ti)
@@ -6315,13 +6085,13 @@
                               )
                             )
                           )
-                          (comment "if c4=='e' { sys_exit(get(arg_i,0u32)); }")
+                          (comment "if c4=='e' { sys_exit(get(arg_i,0)); }")
                           (if
                             (binop ==
 (var c4)
 (int 101))
                             (block
-                              (comment "if c4=='e' { sys_exit(get(arg_i,0u32)); }")
+                              (comment "if c4=='e' { sys_exit(get(arg_i,0)); }")
                               (call_stmt sys_exit
                                 (call get
 (var arg_i)
@@ -6353,13 +6123,13 @@
 (var c2)
 (int 105)))
                         (block
-                          (comment "if c6=='i' { print_i32(get(arg_i,0u32)); }")
+                          (comment "if c6=='i' { print_i32(get(arg_i,0)); }")
                           (if
                             (binop ==
 (var c6)
 (int 105))
                             (block
-                              (comment "if c6=='i' { print_i32(get(arg_i,0u32)); }")
+                              (comment "if c6=='i' { print_i32(get(arg_i,0)); }")
                               (call_stmt print_i32
                                 (call get
 (var arg_i)
@@ -6367,13 +6137,13 @@
                               )
                             )
                           )
-                          (comment "if c6=='u' { print_u32(get(arg_i,0u32) as u32); }")
+                          (comment "if c6=='u' { print_u32(get(arg_i,0) as u32); }")
                           (if
                             (binop ==
 (var c6)
 (int 117))
                             (block
-                              (comment "if c6=='u' { print_u32(get(arg_i,0u32) as u32); }")
+                              (comment "if c6=='u' { print_u32(get(arg_i,0) as u32); }")
                               (call_stmt print_u32
                                 (cast
 (call get
@@ -6383,13 +6153,13 @@
                               )
                             )
                           )
-                          (comment "if c6=='b'  { print_bool(get(arg_i,0u32) != 0); }")
+                          (comment "if c6=='b'  { print_bool(get(arg_i,0) != 0); }")
                           (if
                             (binop ==
 (var c6)
 (int 98))
                             (block
-                              (comment "if c6=='b'  { print_bool(get(arg_i,0u32) != 0); }")
+                              (comment "if c6=='b'  { print_bool(get(arg_i,0) != 0); }")
                               (call_stmt print_bool
                                 (binop !=
 (call get
@@ -6405,7 +6175,7 @@
 (var c6)
 (int 115))
                             (block
-                              (comment "var obj: i32 = get(arg_i,0u32);")
+                              (comment "var obj: i32 = get(arg_i,0);")
                               (var_decl obj
                                 (type i32)
                                 (call get
@@ -6439,27 +6209,23 @@
                                 (type i32)
                                 (int 0)
                               )
-                              (comment "while ti < osize { set(tmp,ti as u32,get(hb,(base+ti) as u32)); ti=ti+1; }")
+                              (comment "while ti < osize { set(tmp,ti,get(hb,(base+ti))); ti=ti+1; }")
                               (while
                                 (binop <
 (var ti)
 (var osize))
                                 (block
-                                  (comment "while ti < osize { set(tmp,ti as u32,get(hb,(base+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < osize { set(tmp,ti,get(hb,(base+ti))); ti=ti+1; }")
                                   (call_stmt set
                                     (var tmp)
-                                    (cast
-(var ti)
-(type u32))
+                                    (var ti)
                                     (call get
 (var hb)
-(cast
 (binop +
 (var base)
-(var ti))
-(type u32)))
+(var ti)))
                                   )
-                                  (comment "while ti < osize { set(tmp,ti as u32,get(hb,(base+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < osize { set(tmp,ti,get(hb,(base+ti))); ti=ti+1; }")
                                   (assign ti
                                     (binop +
 (var ti)
@@ -6467,23 +6233,19 @@
                                   )
                                 )
                               )
-                              (comment "set(tmp,osize as u32,10u8);")
+                              (comment "set(tmp,osize,10u8);")
                               (call_stmt set
                                 (var tmp)
-                                (cast
-(var osize)
-(type u32))
+                                (var osize)
                                 (int 10)
                               )
-                              (comment "sys_write(1,tmp,(osize+1) as u32);")
+                              (comment "sys_write(1,tmp,(osize+1));")
                               (call_stmt sys_write
                                 (int 1)
                                 (var tmp)
-                                (cast
-(binop +
+                                (binop +
 (var osize)
 (int 1))
-(type u32))
                               )
                               (comment "delete(tmp);")
                               (call_stmt delete
@@ -6515,7 +6277,7 @@
 (var ssl)
 (int 7)))
                         (block
-                          (comment "var asize: i32 = get(arg_i,0u32);")
+                          (comment "var asize: i32 = get(arg_i,0);")
                           (var_decl asize
                             (type i32)
                             (call get
@@ -6586,14 +6348,14 @@
 (var c2)
 (int 116)))
                         (block
-                          (comment "var obj: i32 = get(arg_i,0u32);")
+                          (comment "var obj: i32 = get(arg_i,0);")
                           (var_decl obj
                             (type i32)
                             (call get
 (var arg_i)
 (int 0))
                           )
-                          (comment "var idx: i32 = get(arg_i,1u32);")
+                          (comment "var idx: i32 = get(arg_i,1);")
                           (var_decl idx
                             (type i32)
                             (call get
@@ -6664,21 +6426,21 @@
 (var c2)
 (int 116)))
                         (block
-                          (comment "var obj: i32 = get(arg_i,0u32);")
+                          (comment "var obj: i32 = get(arg_i,0);")
                           (var_decl obj
                             (type i32)
                             (call get
 (var arg_i)
 (int 0))
                           )
-                          (comment "var idx: i32 = get(arg_i,1u32);")
+                          (comment "var idx: i32 = get(arg_i,1);")
                           (var_decl idx
                             (type i32)
                             (call get
 (var arg_i)
 (int 1))
                           )
-                          (comment "var val: i32 = get(arg_i,2u32);")
+                          (comment "var val: i32 = get(arg_i,2);")
                           (var_decl val
                             (type i32)
                             (call get
@@ -6749,7 +6511,7 @@
 (var c2)
 (int 110)))
                         (block
-                          (comment "r_ival = hm_size(hm,get(arg_i,0u32));")
+                          (comment "r_ival = hm_size(hm,get(arg_i,0));")
                           (assign r_ival
                             (call hm_size
 (var hm)
@@ -6801,21 +6563,21 @@
 (var c1)
 (int 112)))
                         (block
-                          (comment "var obj: i32 = get(arg_i,0u32);")
+                          (comment "var obj: i32 = get(arg_i,0);")
                           (var_decl obj
                             (type i32)
                             (call get
 (var arg_i)
 (int 0))
                           )
-                          (comment "var v2: i32 = get(arg_i,1u32);")
+                          (comment "var v2: i32 = get(arg_i,1);")
                           (var_decl v2
                             (type i32)
                             (call get
 (var arg_i)
 (int 1))
                           )
-                          (comment "var v2t: i32 = get(arg_t,1u32);")
+                          (comment "var v2t: i32 = get(arg_t,1);")
                           (var_decl v2t
                             (type i32)
                             (call get
@@ -6863,29 +6625,25 @@
                                 (type i32)
                                 (int 0)
                               )
-                              (comment "while ti < sz1 { set(hb,(nb+ti) as u32,get(hb,(base1+ti) as u32)); ti=ti+1; }")
+                              (comment "while ti < sz1 { set(hb,(nb+ti),get(hb,(base1+ti))); ti=ti+1; }")
                               (while
                                 (binop <
 (var ti)
 (var sz1))
                                 (block
-                                  (comment "while ti < sz1 { set(hb,(nb+ti) as u32,get(hb,(base1+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < sz1 { set(hb,(nb+ti),get(hb,(base1+ti))); ti=ti+1; }")
                                   (call_stmt set
                                     (var hb)
-                                    (cast
-(binop +
+                                    (binop +
 (var nb)
 (var ti))
-(type u32))
                                     (call get
 (var hb)
-(cast
 (binop +
 (var base1)
-(var ti))
-(type u32)))
+(var ti)))
                                   )
-                                  (comment "while ti < sz1 { set(hb,(nb+ti) as u32,get(hb,(base1+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < sz1 { set(hb,(nb+ti),get(hb,(base1+ti))); ti=ti+1; }")
                                   (assign ti
                                     (binop +
 (var ti)
@@ -6893,14 +6651,12 @@
                                   )
                                 )
                               )
-                              (comment "set(hb,(nb+sz1) as u32,(v2&255) as u8);")
+                              (comment "set(hb,(nb+sz1),(v2&255) as u8);")
                               (call_stmt set
                                 (var hb)
-                                (cast
-(binop +
+                                (binop +
 (var nb)
 (var sz1))
-(type u32))
                                 (cast
 (binop &
 (var v2)
@@ -6958,29 +6714,25 @@
                                 (type i32)
                                 (int 0)
                               )
-                              (comment "while ti < sz1 { set(hb,(nb+ti) as u32,get(hb,(base1+ti) as u32)); ti=ti+1; }")
+                              (comment "while ti < sz1 { set(hb,(nb+ti),get(hb,(base1+ti))); ti=ti+1; }")
                               (while
                                 (binop <
 (var ti)
 (var sz1))
                                 (block
-                                  (comment "while ti < sz1 { set(hb,(nb+ti) as u32,get(hb,(base1+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < sz1 { set(hb,(nb+ti),get(hb,(base1+ti))); ti=ti+1; }")
                                   (call_stmt set
                                     (var hb)
-                                    (cast
-(binop +
+                                    (binop +
 (var nb)
 (var ti))
-(type u32))
                                     (call get
 (var hb)
-(cast
 (binop +
 (var base1)
-(var ti))
-(type u32)))
+(var ti)))
                                   )
-                                  (comment "while ti < sz1 { set(hb,(nb+ti) as u32,get(hb,(base1+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < sz1 { set(hb,(nb+ti),get(hb,(base1+ti))); ti=ti+1; }")
                                   (assign ti
                                     (binop +
 (var ti)
@@ -6992,31 +6744,27 @@
                               (assign ti
                                 (int 0)
                               )
-                              (comment "while ti < sz2 { set(hb,(nb+sz1+ti) as u32,get(hb,(base2+ti) as u32)); ti=ti+1; }")
+                              (comment "while ti < sz2 { set(hb,(nb+sz1+ti),get(hb,(base2+ti))); ti=ti+1; }")
                               (while
                                 (binop <
 (var ti)
 (var sz2))
                                 (block
-                                  (comment "while ti < sz2 { set(hb,(nb+sz1+ti) as u32,get(hb,(base2+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < sz2 { set(hb,(nb+sz1+ti),get(hb,(base2+ti))); ti=ti+1; }")
                                   (call_stmt set
                                     (var hb)
-                                    (cast
-(binop +
+                                    (binop +
 (binop +
 (var nb)
 (var sz1))
 (var ti))
-(type u32))
                                     (call get
 (var hb)
-(cast
 (binop +
 (var base2)
-(var ti))
-(type u32)))
+(var ti)))
                                   )
-                                  (comment "while ti < sz2 { set(hb,(nb+sz1+ti) as u32,get(hb,(base2+ti) as u32)); ti=ti+1; }")
+                                  (comment "while ti < sz2 { set(hb,(nb+sz1+ti),get(hb,(base2+ti))); ti=ti+1; }")
                                   (assign ti
                                     (binop +
 (var ti)
@@ -7054,14 +6802,14 @@
 (var c1)
 (int 113)))
                         (block
-                          (comment "var obj1: i32 = get(arg_i,0u32);")
+                          (comment "var obj1: i32 = get(arg_i,0);")
                           (var_decl obj1
                             (type i32)
                             (call get
 (var arg_i)
 (int 0))
                           )
-                          (comment "var obj2: i32 = get(arg_i,1u32);")
+                          (comment "var obj2: i32 = get(arg_i,1);")
                           (var_decl obj2
                             (type i32)
                             (call get
@@ -7134,25 +6882,21 @@
 (var eq)
 (int 1)))
                                 (block
-                                  (comment "if get(hb,(b1+ei) as u32)!=get(hb,(b2+ei) as u32) { eq=0; }")
+                                  (comment "if get(hb,(b1+ei))!=get(hb,(b2+ei)) { eq=0; }")
                                   (if
                                     (binop !=
 (call get
 (var hb)
-(cast
 (binop +
 (var b1)
-(var ei))
-(type u32)))
+(var ei)))
 (call get
 (var hb)
-(cast
 (binop +
 (var b2)
-(var ei))
-(type u32))))
+(var ei))))
                                     (block
-                                      (comment "if get(hb,(b1+ei) as u32)!=get(hb,(b2+ei) as u32) { eq=0; }")
+                                      (comment "if get(hb,(b1+ei))!=get(hb,(b2+ei)) { eq=0; }")
                                       (assign eq
                                         (int 0)
                                       )
@@ -7296,33 +7040,25 @@
 (var pi2)
 (var cnp))
                                 (block
-                                  (comment "set(var_i,(new_fb+pi2) as u32,get(arg_i,pi2 as u32));")
+                                  (comment "set(var_i,(new_fb+pi2),get(arg_i,pi2));")
                                   (call_stmt set
                                     (var var_i)
-                                    (cast
-(binop +
+                                    (binop +
 (var new_fb)
 (var pi2))
-(type u32))
                                     (call get
 (var arg_i)
-(cast
-(var pi2)
-(type u32)))
+(var pi2))
                                   )
-                                  (comment "set(var_t,(new_fb+pi2) as u32,get(arg_t,pi2 as u32));")
+                                  (comment "set(var_t,(new_fb+pi2),get(arg_t,pi2));")
                                   (call_stmt set
                                     (var var_t)
-                                    (cast
-(binop +
+                                    (binop +
 (var new_fb)
 (var pi2))
-(type u32))
                                     (call get
 (var arg_t)
-(cast
-(var pi2)
-(type u32)))
+(var pi2))
                                   )
                                   (comment "pi2=pi2+1;")
                                   (assign pi2
@@ -7343,28 +7079,24 @@
 (var li2)
 (var cnl))
                                 (block
-                                  (comment "set(var_i,(new_fb+cnp+li2) as u32,0);")
+                                  (comment "set(var_i,(new_fb+cnp+li2),0);")
                                   (call_stmt set
                                     (var var_i)
-                                    (cast
-(binop +
+                                    (binop +
 (binop +
 (var new_fb)
 (var cnp))
 (var li2))
-(type u32))
                                     (int 0)
                                   )
-                                  (comment "set(var_t,(new_fb+cnp+li2) as u32,0);")
+                                  (comment "set(var_t,(new_fb+cnp+li2),0);")
                                   (call_stmt set
                                     (var var_t)
-                                    (cast
-(binop +
+                                    (binop +
 (binop +
 (var new_fb)
 (var cnp))
 (var li2))
-(type u32))
                                     (int 0)
                                   )
                                   (comment "li2=li2+1;")
@@ -7940,37 +7672,33 @@
                         (type u8)
                         (int 0)
                       )
-                      (comment "if ssl>0 { tc=get(strtab,sss as u32); }")
+                      (comment "if ssl>0 { tc=get(strtab,sss); }")
                       (if
                         (binop >
 (var ssl)
 (int 0))
                         (block
-                          (comment "if ssl>0 { tc=get(strtab,sss as u32); }")
+                          (comment "if ssl>0 { tc=get(strtab,sss); }")
                           (assign tc
                             (call get
 (var strtab)
-(cast
-(var sss)
-(type u32)))
+(var sss))
                           )
                         )
                       )
-                      (comment "if ssl>1 { tc1=get(strtab,(sss+1) as u32); }")
+                      (comment "if ssl>1 { tc1=get(strtab,(sss+1)); }")
                       (if
                         (binop >
 (var ssl)
 (int 1))
                         (block
-                          (comment "if ssl>1 { tc1=get(strtab,(sss+1) as u32); }")
+                          (comment "if ssl>1 { tc1=get(strtab,(sss+1)); }")
                           (assign tc1
                             (call get
 (var strtab)
-(cast
 (binop +
 (var sss)
-(int 1))
-(type u32)))
+(int 1)))
                           )
                         )
                       )
@@ -8358,7 +8086,7 @@
 (var g_in_len)
 (int 524000)))
         (block
-          (comment "var chunk: i32 = sys_read(0, chunk_buf, 65536u32);")
+          (comment "var chunk: i32 = sys_read(0, chunk_buf, 65536);")
           (var_decl chunk
             (type i32)
             (call sys_read
@@ -8395,19 +8123,15 @@
 (var ci)
 (var chunk))
                 (block
-                  (comment "set(src, (g_in_len + ci) as u32, get(chunk_buf, ci as u32));")
+                  (comment "set(src, (g_in_len + ci), get(chunk_buf, ci));")
                   (call_stmt set
                     (var src)
-                    (cast
-(binop +
+                    (binop +
 (var g_in_len)
 (var ci))
-(type u32))
                     (call get
 (var chunk_buf)
-(cast
-(var ci)
-(type u32)))
+(var ci))
                   )
                   (comment "ci = ci + 1;")
                   (assign ci
@@ -8482,19 +8206,15 @@
 (var psi)
 (var prog_stdin_len))
         (block
-          (comment "set(prog_stdin, psi as u32, get(src, (g_in_pos + psi) as u32));")
+          (comment "set(prog_stdin, psi, get(src, (g_in_pos + psi)));")
           (call_stmt set
             (var prog_stdin)
-            (cast
-(var psi)
-(type u32))
+            (var psi)
             (call get
 (var src)
-(cast
 (binop +
 (var g_in_pos)
-(var psi))
-(type u32)))
+(var psi)))
           )
           (comment "psi = psi + 1;")
           (assign psi

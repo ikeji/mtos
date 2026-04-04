@@ -1,5 +1,5 @@
 .bc
-.fn main 0 i32
+.fn main i32
 .local a u8
 .local z u8
 .local n u8
@@ -23,27 +23,27 @@
 ; print_i32(a as i32);
   load a
   cast i32
-  call print_i32 1
+  call print_i32 i32
   pop
 ; print_i32(z as i32);
   load z
   cast i32
-  call print_i32 1
+  call print_i32 i32
   pop
 ; print_i32(n as i32);
   load n
   cast i32
-  call print_i32 1
+  call print_i32 i32
   pop
 ; print_i32(t as i32);
   load t
   cast i32
-  call print_i32 1
+  call print_i32 i32
   pop
 ; print_i32(q as i32);
   load q
   cast i32
-  call print_i32 1
+  call print_i32 i32
   pop
 ; return 0;
   push_int 0

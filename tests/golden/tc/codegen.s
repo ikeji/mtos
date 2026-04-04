@@ -113,9 +113,9 @@ g_loop_depth:
 
     .text
 
-    .globl ob_flush
-    .type  ob_flush, @function
-ob_flush:
+    .globl ob_flush__U8Array
+    .type  ob_flush__U8Array, @function
+ob_flush__U8Array:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -137,7 +137,7 @@ ob_flush:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f0_pc12
+    beqz t0, .L_f0_pc11
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -146,10 +146,6 @@ ob_flush:
     sw   t0, 0(sp)
     la   t1, g_ob_pos
     lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
@@ -167,7 +163,7 @@ ob_flush:
     addi sp, sp, 4
     la   t1, g_ob_pos
     sw   t0, 0(t1)
-  .L_f0_pc12:
+  .L_f0_pc11:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -178,11 +174,11 @@ ob_flush:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of ob_flush
+    # end of ob_flush__U8Array
 
-    .globl ob_char
-    .type  ob_char, @function
-ob_char:
+    .globl ob_char__u8__U8Array
+    .type  ob_char__u8__U8Array, @function
+ob_char__u8__U8Array:
     # prologue: frame_size=16, params=2, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -195,10 +191,6 @@ ob_char:
     sw   t0, 0(sp)
     la   t1, g_ob_pos
     lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -12(s0)
@@ -245,17 +237,17 @@ ob_char:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f1_pc17
+    beqz t0, .L_f1_pc16
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call ob_flush
+    call ob_flush__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f1_pc17:
+  .L_f1_pc16:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -266,11 +258,11 @@ ob_char:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of ob_char
+    # end of ob_char__u8__U8Array
 
-    .globl ob_n
-    .type  ob_n, @function
-ob_n:
+    .globl ob_n__U8Array__i32__i32__U8Array
+    .type  ob_n__U8Array__i32__i32__U8Array, @function
+ob_n__U8Array__i32__i32__U8Array:
     # prologue: frame_size=32, params=4, locals=1
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -302,7 +294,7 @@ ob_n:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f2_pc20
+    beqz t0, .L_f2_pc19
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -318,10 +310,6 @@ ob_n:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -334,7 +322,7 @@ ob_n:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -354,7 +342,7 @@ ob_n:
     addi sp, sp, 4
     sw   t0, -28(s0)
     j    .L_f2_pc2
-  .L_f2_pc20:
+  .L_f2_pc19:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -365,11 +353,11 @@ ob_n:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of ob_n
+    # end of ob_n__U8Array__i32__i32__U8Array
 
-    .globl ob_int
-    .type  ob_int, @function
-ob_int:
+    .globl ob_int__i32__U8Array
+    .type  ob_int__i32__U8Array, @function
+ob_int__i32__U8Array:
     # prologue: frame_size=32, params=2, locals=4
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -406,7 +394,7 @@ ob_int:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -440,7 +428,7 @@ ob_int:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -498,15 +486,11 @@ ob_int:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f3_pc52
+    beqz t0, .L_f3_pc51
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 48
@@ -574,7 +558,7 @@ ob_int:
     addi sp, sp, 4
     sw   t0, -28(s0)
     j    .L_f3_pc28
-  .L_f3_pc52:
+  .L_f3_pc51:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -590,7 +574,7 @@ ob_int:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-  .L_f3_pc56:
+  .L_f3_pc55:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -606,15 +590,11 @@ ob_int:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f3_pc72
+    beqz t0, .L_f3_pc70
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -629,7 +609,7 @@ ob_int:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -648,8 +628,8 @@ ob_int:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-    j    .L_f3_pc56
-  .L_f3_pc72:
+    j    .L_f3_pc55
+  .L_f3_pc70:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -669,11 +649,11 @@ ob_int:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of ob_int
+    # end of ob_int__i32__U8Array
 
-    .globl ob_st_escaped
-    .type  ob_st_escaped, @function
-ob_st_escaped:
+    .globl ob_st_escaped__U8Array__i32__i32__U8Array
+    .type  ob_st_escaped__U8Array__i32__i32__U8Array, @function
+ob_st_escaped__U8Array__i32__i32__U8Array:
     # prologue: frame_size=32, params=4, locals=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -706,7 +686,7 @@ ob_st_escaped:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f4_pc87
+    beqz t0, .L_f4_pc86
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -720,10 +700,6 @@ ob_st_escaped:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -750,7 +726,7 @@ ob_st_escaped:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f4_pc26
+    beqz t0, .L_f4_pc25
     li   t0, 92
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -760,7 +736,7 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -773,12 +749,12 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f4_pc82
-  .L_f4_pc26:
+    j    .L_f4_pc81
+  .L_f4_pc25:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -794,7 +770,7 @@ ob_st_escaped:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f4_pc39
+    beqz t0, .L_f4_pc38
     li   t0, 92
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -804,7 +780,7 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -817,12 +793,12 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f4_pc82
-  .L_f4_pc39:
+    j    .L_f4_pc81
+  .L_f4_pc38:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -838,7 +814,7 @@ ob_st_escaped:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f4_pc52
+    beqz t0, .L_f4_pc51
     li   t0, 92
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -848,7 +824,7 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -861,12 +837,12 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f4_pc82
-  .L_f4_pc52:
+    j    .L_f4_pc81
+  .L_f4_pc51:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -882,7 +858,7 @@ ob_st_escaped:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f4_pc65
+    beqz t0, .L_f4_pc64
     li   t0, 92
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -892,7 +868,7 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -905,12 +881,12 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f4_pc82
-  .L_f4_pc65:
+    j    .L_f4_pc81
+  .L_f4_pc64:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -926,7 +902,7 @@ ob_st_escaped:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f4_pc78
+    beqz t0, .L_f4_pc77
     li   t0, 92
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -936,7 +912,7 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -949,12 +925,12 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f4_pc82
-  .L_f4_pc78:
+    j    .L_f4_pc81
+  .L_f4_pc77:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -964,11 +940,11 @@ ob_st_escaped:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f4_pc82:
+  .L_f4_pc81:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -985,7 +961,7 @@ ob_st_escaped:
     addi sp, sp, 4
     sw   t0, -28(s0)
     j    .L_f4_pc2
-  .L_f4_pc87:
+  .L_f4_pc86:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -996,11 +972,11 @@ ob_st_escaped:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of ob_st_escaped
+    # end of ob_st_escaped__U8Array__i32__i32__U8Array
 
-    .globl peek_in
-    .type  peek_in, @function
-peek_in:
+    .globl peek_in__U8Array
+    .type  peek_in__U8Array, @function
+peek_in__U8Array:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -1044,10 +1020,6 @@ peek_in:
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -1067,11 +1039,11 @@ peek_in:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of peek_in
+    # end of peek_in__U8Array
 
-    .globl is_atom_end
-    .type  is_atom_end, @function
-is_atom_end:
+    .globl is_atom_end__u8
+    .type  is_atom_end__u8, @function
+is_atom_end__u8:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -1272,11 +1244,11 @@ is_atom_end:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of is_atom_end
+    # end of is_atom_end__u8
 
-    .globl skip_ws_in
-    .type  skip_ws_in, @function
-skip_ws_in:
+    .globl skip_ws_in__U8Array
+    .type  skip_ws_in__U8Array, @function
+skip_ws_in__U8Array:
     # prologue: frame_size=16, params=1, locals=1
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -1289,7 +1261,7 @@ skip_ws_in:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -1447,7 +1419,7 @@ skip_ws_in:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -1465,11 +1437,11 @@ skip_ws_in:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of skip_ws_in
+    # end of skip_ws_in__U8Array
 
-    .globl read_atom_in
-    .type  read_atom_in, @function
-read_atom_in:
+    .globl read_atom_in__U8Array__U8Array
+    .type  read_atom_in__U8Array__U8Array, @function
+read_atom_in__U8Array__U8Array:
     # prologue: frame_size=32, params=2, locals=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -1490,7 +1462,7 @@ read_atom_in:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -1502,7 +1474,7 @@ read_atom_in:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call is_atom_end
+    call is_atom_end__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -1512,15 +1484,11 @@ read_atom_in:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f8_pc27
+    beqz t0, .L_f8_pc26
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -24(s0)
@@ -1571,14 +1539,14 @@ read_atom_in:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -24(s0)
     j    .L_f8_pc5
-  .L_f8_pc27:
+  .L_f8_pc26:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1595,11 +1563,11 @@ read_atom_in:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of read_atom_in
+    # end of read_atom_in__U8Array__U8Array
 
-    .globl n_kind
-    .type  n_kind, @function
-n_kind:
+    .globl n_kind__I32Array__i32
+    .type  n_kind__I32Array__i32, @function
+n_kind__I32Array__i32:
     # prologue: frame_size=16, params=2, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -1622,10 +1590,6 @@ n_kind:
     mul  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -1645,11 +1609,11 @@ n_kind:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_kind
+    # end of n_kind__I32Array__i32
 
-    .globl n_sk
-    .type  n_sk, @function
-n_sk:
+    .globl n_sk__I32Array__i32__i32
+    .type  n_sk__I32Array__i32__i32, @function
+n_sk__I32Array__i32__i32:
     # prologue: frame_size=32, params=3, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -1673,10 +1637,6 @@ n_sk:
     mul  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1693,11 +1653,11 @@ n_sk:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_sk
+    # end of n_sk__I32Array__i32__i32
 
-    .globl n_ss
-    .type  n_ss, @function
-n_ss:
+    .globl n_ss__I32Array__i32
+    .type  n_ss__I32Array__i32, @function
+n_ss__I32Array__i32:
     # prologue: frame_size=16, params=2, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -1729,10 +1689,6 @@ n_ss:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -1752,11 +1708,11 @@ n_ss:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_ss
+    # end of n_ss__I32Array__i32
 
-    .globl n_set_ss
-    .type  n_set_ss, @function
-n_set_ss:
+    .globl n_set_ss__I32Array__i32__i32
+    .type  n_set_ss__I32Array__i32__i32, @function
+n_set_ss__I32Array__i32__i32:
     # prologue: frame_size=32, params=3, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -1789,10 +1745,6 @@ n_set_ss:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1809,11 +1761,11 @@ n_set_ss:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_set_ss
+    # end of n_set_ss__I32Array__i32__i32
 
-    .globl n_sl
-    .type  n_sl, @function
-n_sl:
+    .globl n_sl__I32Array__i32
+    .type  n_sl__I32Array__i32, @function
+n_sl__I32Array__i32:
     # prologue: frame_size=16, params=2, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -1845,10 +1797,6 @@ n_sl:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -1868,11 +1816,11 @@ n_sl:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_sl
+    # end of n_sl__I32Array__i32
 
-    .globl n_set_sl
-    .type  n_set_sl, @function
-n_set_sl:
+    .globl n_set_sl__I32Array__i32__i32
+    .type  n_set_sl__I32Array__i32__i32, @function
+n_set_sl__I32Array__i32__i32:
     # prologue: frame_size=32, params=3, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -1905,10 +1853,6 @@ n_set_sl:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1925,11 +1869,11 @@ n_set_sl:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_set_sl
+    # end of n_set_sl__I32Array__i32__i32
 
-    .globl n_ival
-    .type  n_ival, @function
-n_ival:
+    .globl n_ival__I32Array__i32
+    .type  n_ival__I32Array__i32, @function
+n_ival__I32Array__i32:
     # prologue: frame_size=16, params=2, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -1961,10 +1905,6 @@ n_ival:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -1984,11 +1924,11 @@ n_ival:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_ival
+    # end of n_ival__I32Array__i32
 
-    .globl n_set_ival
-    .type  n_set_ival, @function
-n_set_ival:
+    .globl n_set_ival__I32Array__i32__i32
+    .type  n_set_ival__I32Array__i32__i32, @function
+n_set_ival__I32Array__i32__i32:
     # prologue: frame_size=32, params=3, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -2021,10 +1961,6 @@ n_set_ival:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2041,11 +1977,11 @@ n_set_ival:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_set_ival
+    # end of n_set_ival__I32Array__i32__i32
 
-    .globl n_child
-    .type  n_child, @function
-n_child:
+    .globl n_child__I32Array__i32
+    .type  n_child__I32Array__i32, @function
+n_child__I32Array__i32:
     # prologue: frame_size=16, params=2, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -2077,10 +2013,6 @@ n_child:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -2100,11 +2032,11 @@ n_child:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_child
+    # end of n_child__I32Array__i32
 
-    .globl n_set_child
-    .type  n_set_child, @function
-n_set_child:
+    .globl n_set_child__I32Array__i32__i32
+    .type  n_set_child__I32Array__i32__i32, @function
+n_set_child__I32Array__i32__i32:
     # prologue: frame_size=32, params=3, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -2137,10 +2069,6 @@ n_set_child:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2157,11 +2085,11 @@ n_set_child:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_set_child
+    # end of n_set_child__I32Array__i32__i32
 
-    .globl n_sib
-    .type  n_sib, @function
-n_sib:
+    .globl n_sib__I32Array__i32
+    .type  n_sib__I32Array__i32, @function
+n_sib__I32Array__i32:
     # prologue: frame_size=16, params=2, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -2193,10 +2121,6 @@ n_sib:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -2216,11 +2140,11 @@ n_sib:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_sib
+    # end of n_sib__I32Array__i32
 
-    .globl n_set_sib
-    .type  n_set_sib, @function
-n_set_sib:
+    .globl n_set_sib__I32Array__i32__i32
+    .type  n_set_sib__I32Array__i32__i32, @function
+n_set_sib__I32Array__i32__i32:
     # prologue: frame_size=32, params=3, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -2253,10 +2177,6 @@ n_set_sib:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2273,11 +2193,11 @@ n_set_sib:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_set_sib
+    # end of n_set_sib__I32Array__i32__i32
 
-    .globl alloc_node
-    .type  alloc_node, @function
-alloc_node:
+    .globl alloc_node__I32Array__i32
+    .type  alloc_node__I32Array__i32, @function
+alloc_node__I32Array__i32:
     # prologue: frame_size=32, params=2, locals=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -2332,10 +2252,6 @@ alloc_node:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2360,10 +2276,6 @@ alloc_node:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -2397,10 +2309,6 @@ alloc_node:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2427,10 +2335,6 @@ alloc_node:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2455,10 +2359,6 @@ alloc_node:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -2490,10 +2390,6 @@ alloc_node:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -2528,11 +2424,11 @@ alloc_node:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of alloc_node
+    # end of alloc_node__I32Array__i32
 
-    .globl n_nchildren
-    .type  n_nchildren, @function
-n_nchildren:
+    .globl n_nchildren__I32Array__i32
+    .type  n_nchildren__I32Array__i32, @function
+n_nchildren__I32Array__i32:
     # prologue: frame_size=32, params=2, locals=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -2551,7 +2447,7 @@ n_nchildren:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -2604,7 +2500,7 @@ n_nchildren:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -2628,11 +2524,11 @@ n_nchildren:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_nchildren
+    # end of n_nchildren__I32Array__i32
 
-    .globl n_nth_child
-    .type  n_nth_child, @function
-n_nth_child:
+    .globl n_nth_child__I32Array__i32__i32
+    .type  n_nth_child__I32Array__i32__i32, @function
+n_nth_child__I32Array__i32__i32:
     # prologue: frame_size=32, params=3, locals=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -2652,7 +2548,7 @@ n_nth_child:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -2717,7 +2613,7 @@ n_nth_child:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -2756,11 +2652,11 @@ n_nth_child:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of n_nth_child
+    # end of n_nth_child__I32Array__i32__i32
 
-    .globl add_child
-    .type  add_child, @function
-add_child:
+    .globl add_child__I32Array__i32__i32
+    .type  add_child__I32Array__i32__i32, @function
+add_child__I32Array__i32__i32:
     # prologue: frame_size=32, params=3, locals=1
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -2779,7 +2675,7 @@ add_child:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -2813,7 +2709,7 @@ add_child:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_set_child
+    call n_set_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2828,7 +2724,7 @@ add_child:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 0
@@ -2853,7 +2749,7 @@ add_child:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -2874,7 +2770,7 @@ add_child:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_set_sib
+    call n_set_sib__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -2889,11 +2785,11 @@ add_child:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of add_child
+    # end of add_child__I32Array__i32__i32
 
-    .globl cmp2
-    .type  cmp2, @function
-cmp2:
+    .globl cmp2__U8Array__i32__u8__u8
+    .type  cmp2__U8Array__i32__u8__u8, @function
+cmp2__U8Array__i32__u8__u8:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -2907,10 +2803,6 @@ cmp2:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -2931,7 +2823,7 @@ cmp2:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f25_pc18
+    beqz t0, .L_f25_pc16
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2945,10 +2837,6 @@ cmp2:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -2969,16 +2857,16 @@ cmp2:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f25_pc18
+    beqz t0, .L_f25_pc16
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f25_pc19
-  .L_f25_pc18:
+    j    .L_f25_pc17
+  .L_f25_pc16:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f25_pc19:
+  .L_f25_pc17:
     lw   t0, 0(sp)
     addi sp, sp, 4
     mv   a0, t0
@@ -2992,11 +2880,11 @@ cmp2:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cmp2
+    # end of cmp2__U8Array__i32__u8__u8
 
-    .globl cmp3
-    .type  cmp3, @function
-cmp3:
+    .globl cmp3__U8Array__i32__u8__u8__u8
+    .type  cmp3__U8Array__i32__u8__u8__u8, @function
+cmp3__U8Array__i32__u8__u8__u8:
     # prologue: frame_size=32, params=5, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -3013,10 +2901,6 @@ cmp3:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -3035,7 +2919,7 @@ cmp3:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f26_pc18
+    beqz t0, .L_f26_pc16
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3049,10 +2933,6 @@ cmp3:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3073,19 +2953,19 @@ cmp3:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f26_pc18
+    beqz t0, .L_f26_pc16
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f26_pc19
-  .L_f26_pc18:
+    j    .L_f26_pc17
+  .L_f26_pc16:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f26_pc19:
+  .L_f26_pc17:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f26_pc31
+    beqz t0, .L_f26_pc28
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3099,10 +2979,6 @@ cmp3:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3123,16 +2999,16 @@ cmp3:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f26_pc31
+    beqz t0, .L_f26_pc28
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f26_pc32
-  .L_f26_pc31:
+    j    .L_f26_pc29
+  .L_f26_pc28:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f26_pc32:
+  .L_f26_pc29:
     lw   t0, 0(sp)
     addi sp, sp, 4
     mv   a0, t0
@@ -3146,11 +3022,11 @@ cmp3:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cmp3
+    # end of cmp3__U8Array__i32__u8__u8__u8
 
-    .globl cmp4
-    .type  cmp4, @function
-cmp4:
+    .globl cmp4__U8Array__i32__u8__u8__u8__u8
+    .type  cmp4__U8Array__i32__u8__u8__u8__u8, @function
+cmp4__U8Array__i32__u8__u8__u8__u8:
     # prologue: frame_size=32, params=6, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -3168,10 +3044,6 @@ cmp4:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -3190,7 +3062,7 @@ cmp4:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f27_pc18
+    beqz t0, .L_f27_pc16
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3204,10 +3076,6 @@ cmp4:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3228,19 +3096,19 @@ cmp4:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f27_pc18
+    beqz t0, .L_f27_pc16
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f27_pc19
-  .L_f27_pc18:
+    j    .L_f27_pc17
+  .L_f27_pc16:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f27_pc19:
+  .L_f27_pc17:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f27_pc31
+    beqz t0, .L_f27_pc28
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3254,10 +3122,6 @@ cmp4:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3278,19 +3142,19 @@ cmp4:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f27_pc31
+    beqz t0, .L_f27_pc28
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f27_pc32
-  .L_f27_pc31:
+    j    .L_f27_pc29
+  .L_f27_pc28:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f27_pc32:
+  .L_f27_pc29:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f27_pc44
+    beqz t0, .L_f27_pc40
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3304,10 +3168,6 @@ cmp4:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3328,16 +3188,16 @@ cmp4:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f27_pc44
+    beqz t0, .L_f27_pc40
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f27_pc45
-  .L_f27_pc44:
+    j    .L_f27_pc41
+  .L_f27_pc40:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f27_pc45:
+  .L_f27_pc41:
     lw   t0, 0(sp)
     addi sp, sp, 4
     mv   a0, t0
@@ -3351,11 +3211,11 @@ cmp4:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cmp4
+    # end of cmp4__U8Array__i32__u8__u8__u8__u8
 
-    .globl cmp5
-    .type  cmp5, @function
-cmp5:
+    .globl cmp5__U8Array__i32__u8__u8__u8__u8__u8
+    .type  cmp5__U8Array__i32__u8__u8__u8__u8__u8, @function
+cmp5__U8Array__i32__u8__u8__u8__u8__u8:
     # prologue: frame_size=48, params=7, locals=0
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -3374,10 +3234,6 @@ cmp5:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -3396,7 +3252,7 @@ cmp5:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f28_pc18
+    beqz t0, .L_f28_pc16
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3410,10 +3266,6 @@ cmp5:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3434,19 +3286,19 @@ cmp5:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f28_pc18
+    beqz t0, .L_f28_pc16
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f28_pc19
-  .L_f28_pc18:
+    j    .L_f28_pc17
+  .L_f28_pc16:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f28_pc19:
+  .L_f28_pc17:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f28_pc31
+    beqz t0, .L_f28_pc28
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3460,10 +3312,6 @@ cmp5:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3484,19 +3332,19 @@ cmp5:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f28_pc31
+    beqz t0, .L_f28_pc28
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f28_pc32
-  .L_f28_pc31:
+    j    .L_f28_pc29
+  .L_f28_pc28:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f28_pc32:
+  .L_f28_pc29:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f28_pc44
+    beqz t0, .L_f28_pc40
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3510,10 +3358,6 @@ cmp5:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3534,19 +3378,19 @@ cmp5:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f28_pc44
+    beqz t0, .L_f28_pc40
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f28_pc45
-  .L_f28_pc44:
+    j    .L_f28_pc41
+  .L_f28_pc40:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f28_pc45:
+  .L_f28_pc41:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f28_pc57
+    beqz t0, .L_f28_pc52
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3560,10 +3404,6 @@ cmp5:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3584,16 +3424,16 @@ cmp5:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f28_pc57
+    beqz t0, .L_f28_pc52
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f28_pc58
-  .L_f28_pc57:
+    j    .L_f28_pc53
+  .L_f28_pc52:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f28_pc58:
+  .L_f28_pc53:
     lw   t0, 0(sp)
     addi sp, sp, 4
     mv   a0, t0
@@ -3607,11 +3447,11 @@ cmp5:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cmp5
+    # end of cmp5__U8Array__i32__u8__u8__u8__u8__u8
 
-    .globl cmp6
-    .type  cmp6, @function
-cmp6:
+    .globl cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8
+    .type  cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8, @function
+cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8:
     # prologue: frame_size=48, params=8, locals=0
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -3631,10 +3471,6 @@ cmp6:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -3653,7 +3489,7 @@ cmp6:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc18
+    beqz t0, .L_f29_pc16
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3667,10 +3503,6 @@ cmp6:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3691,19 +3523,19 @@ cmp6:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc18
+    beqz t0, .L_f29_pc16
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f29_pc19
-  .L_f29_pc18:
+    j    .L_f29_pc17
+  .L_f29_pc16:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f29_pc19:
+  .L_f29_pc17:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc31
+    beqz t0, .L_f29_pc28
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3717,10 +3549,6 @@ cmp6:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3741,19 +3569,19 @@ cmp6:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc31
+    beqz t0, .L_f29_pc28
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f29_pc32
-  .L_f29_pc31:
+    j    .L_f29_pc29
+  .L_f29_pc28:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f29_pc32:
+  .L_f29_pc29:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc44
+    beqz t0, .L_f29_pc40
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3767,10 +3595,6 @@ cmp6:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3791,19 +3615,19 @@ cmp6:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc44
+    beqz t0, .L_f29_pc40
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f29_pc45
-  .L_f29_pc44:
+    j    .L_f29_pc41
+  .L_f29_pc40:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f29_pc45:
+  .L_f29_pc41:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc57
+    beqz t0, .L_f29_pc52
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3817,10 +3641,6 @@ cmp6:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3841,19 +3661,19 @@ cmp6:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc57
+    beqz t0, .L_f29_pc52
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f29_pc58
-  .L_f29_pc57:
+    j    .L_f29_pc53
+  .L_f29_pc52:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f29_pc58:
+  .L_f29_pc53:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc70
+    beqz t0, .L_f29_pc64
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3867,10 +3687,6 @@ cmp6:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3891,16 +3707,16 @@ cmp6:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f29_pc70
+    beqz t0, .L_f29_pc64
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f29_pc71
-  .L_f29_pc70:
+    j    .L_f29_pc65
+  .L_f29_pc64:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f29_pc71:
+  .L_f29_pc65:
     lw   t0, 0(sp)
     addi sp, sp, 4
     mv   a0, t0
@@ -3914,11 +3730,11 @@ cmp6:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cmp6
+    # end of cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8
 
-    .globl classify_kind
-    .type  classify_kind, @function
-classify_kind:
+    .globl classify_kind__U8Array__i32
+    .type  classify_kind__U8Array__i32, @function
+classify_kind__U8Array__i32:
     # prologue: frame_size=16, params=2, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -3959,7 +3775,7 @@ classify_kind:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call cmp2
+    call cmp2__U8Array__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -3995,7 +3811,7 @@ classify_kind:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call cmp2
+    call cmp2__U8Array__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4051,7 +3867,7 @@ classify_kind:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cmp3
+    call cmp3__U8Array__i32__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4091,7 +3907,7 @@ classify_kind:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cmp3
+    call cmp3__U8Array__i32__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4131,7 +3947,7 @@ classify_kind:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cmp3
+    call cmp3__U8Array__i32__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4171,7 +3987,7 @@ classify_kind:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cmp3
+    call cmp3__U8Array__i32__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4231,7 +4047,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4275,7 +4091,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4319,7 +4135,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4363,7 +4179,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4427,7 +4243,7 @@ classify_kind:
     lw   a5, 4(sp)
     lw   a6, 0(sp)
     addi sp, sp, 28
-    call cmp5
+    call cmp5__U8Array__i32__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4475,7 +4291,7 @@ classify_kind:
     lw   a5, 4(sp)
     lw   a6, 0(sp)
     addi sp, sp, 28
-    call cmp5
+    call cmp5__U8Array__i32__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4523,7 +4339,7 @@ classify_kind:
     lw   a5, 4(sp)
     lw   a6, 0(sp)
     addi sp, sp, 28
-    call cmp5
+    call cmp5__U8Array__i32__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4571,7 +4387,7 @@ classify_kind:
     lw   a5, 4(sp)
     lw   a6, 0(sp)
     addi sp, sp, 28
-    call cmp5
+    call cmp5__U8Array__i32__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4619,7 +4435,7 @@ classify_kind:
     lw   a5, 4(sp)
     lw   a6, 0(sp)
     addi sp, sp, 28
-    call cmp5
+    call cmp5__U8Array__i32__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4667,7 +4483,7 @@ classify_kind:
     lw   a5, 4(sp)
     lw   a6, 0(sp)
     addi sp, sp, 28
-    call cmp5
+    call cmp5__U8Array__i32__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4715,7 +4531,7 @@ classify_kind:
     lw   a5, 4(sp)
     lw   a6, 0(sp)
     addi sp, sp, 28
-    call cmp5
+    call cmp5__U8Array__i32__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4783,7 +4599,7 @@ classify_kind:
     lw   a6, 4(sp)
     lw   a7, 0(sp)
     addi sp, sp, 32
-    call cmp6
+    call cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4835,7 +4651,7 @@ classify_kind:
     lw   a6, 4(sp)
     lw   a7, 0(sp)
     addi sp, sp, 32
-    call cmp6
+    call cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4887,7 +4703,7 @@ classify_kind:
     lw   a6, 4(sp)
     lw   a7, 0(sp)
     addi sp, sp, 32
-    call cmp6
+    call cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4939,7 +4755,7 @@ classify_kind:
     lw   a6, 4(sp)
     lw   a7, 0(sp)
     addi sp, sp, 32
-    call cmp6
+    call cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -4991,7 +4807,7 @@ classify_kind:
     lw   a6, 4(sp)
     lw   a7, 0(sp)
     addi sp, sp, 32
-    call cmp6
+    call cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5051,7 +4867,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5078,7 +4894,7 @@ classify_kind:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cmp3
+    call cmp3__U8Array__i32__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5134,7 +4950,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5161,7 +4977,7 @@ classify_kind:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cmp3
+    call cmp3__U8Array__i32__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5233,7 +5049,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5264,7 +5080,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5320,7 +5136,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5351,7 +5167,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5423,7 +5239,7 @@ classify_kind:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cmp4
+    call cmp4__U8Array__i32__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5458,7 +5274,7 @@ classify_kind:
     lw   a5, 4(sp)
     lw   a6, 0(sp)
     addi sp, sp, 28
-    call cmp5
+    call cmp5__U8Array__i32__u8__u8__u8__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5506,11 +5322,11 @@ classify_kind:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of classify_kind
+    # end of classify_kind__U8Array__i32
 
-    .globl is_digit_c
-    .type  is_digit_c, @function
-is_digit_c:
+    .globl is_digit_c__u8
+    .type  is_digit_c__u8, @function
+is_digit_c__u8:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -5571,11 +5387,11 @@ is_digit_c:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of is_digit_c
+    # end of is_digit_c__u8
 
-    .globl read_node
-    .type  read_node, @function
-read_node:
+    .globl read_node__U8Array__U8Array__I32Array__U8Array
+    .type  read_node__U8Array__U8Array__I32Array__U8Array, @function
+read_node__U8Array__U8Array__I32Array__U8Array:
     # prologue: frame_size=80, params=4, locals=14
     addi sp, sp, -80
     sw   ra, 76(sp)
@@ -5604,7 +5420,7 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_ws_in
+    call skip_ws_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -5648,7 +5464,7 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 40
@@ -5703,7 +5519,7 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_ws_in
+    call skip_ws_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -5716,7 +5532,7 @@ read_node:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call read_atom_in
+    call read_atom_in__U8Array__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5743,15 +5559,11 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc44
+    beqz t0, .L_f32_pc43
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -5772,19 +5584,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc44
+    beqz t0, .L_f32_pc43
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc45
-  .L_f32_pc44:
+    j    .L_f32_pc44
+  .L_f32_pc43:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc45:
+  .L_f32_pc44:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc51
+    beqz t0, .L_f32_pc50
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5801,7 +5613,7 @@ read_node:
     addi sp, sp, 4
     sw   t0, -32(s0)
     j    .L_f32_pc31
-  .L_f32_pc51:
+  .L_f32_pc50:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5811,7 +5623,7 @@ read_node:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call classify_kind
+    call classify_kind__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5826,7 +5638,7 @@ read_node:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call alloc_node
+    call alloc_node__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5852,7 +5664,7 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_ws_in
+    call skip_ws_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -5861,7 +5673,7 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -5883,7 +5695,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, .L_f32_pc79
+    bnez t0, .L_f32_pc78
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5900,19 +5712,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, .L_f32_pc79
+    bnez t0, .L_f32_pc78
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc80
-  .L_f32_pc79:
+    j    .L_f32_pc79
+  .L_f32_pc78:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc80:
+  .L_f32_pc79:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc87
+    beqz t0, .L_f32_pc86
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5928,19 +5740,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc87
+    beqz t0, .L_f32_pc86
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc88
-  .L_f32_pc87:
+    j    .L_f32_pc87
+  .L_f32_pc86:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc88:
+  .L_f32_pc87:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc237
+    beqz t0, .L_f32_pc233
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -5970,13 +5782,13 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f32_pc98:
+  .L_f32_pc97:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5992,7 +5804,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc108
+    beqz t0, .L_f32_pc107
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6008,19 +5820,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc108
+    beqz t0, .L_f32_pc107
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc109
-  .L_f32_pc108:
+    j    .L_f32_pc108
+  .L_f32_pc107:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc109:
+  .L_f32_pc108:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc207
+    beqz t0, .L_f32_pc205
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6036,7 +5848,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc189
+    beqz t0, .L_f32_pc188
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -6059,7 +5871,7 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6080,14 +5892,14 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc127
+    beqz t0, .L_f32_pc126
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f32_pc127:
+  .L_f32_pc126:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6103,14 +5915,14 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc133
+    beqz t0, .L_f32_pc132
     li   t0, 9
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f32_pc133:
+  .L_f32_pc132:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6126,14 +5938,14 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc139
+    beqz t0, .L_f32_pc138
     li   t0, 13
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f32_pc139:
+  .L_f32_pc138:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6149,14 +5961,14 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc145
+    beqz t0, .L_f32_pc144
     li   t0, 92
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f32_pc145:
+  .L_f32_pc144:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6172,14 +5984,14 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc151
+    beqz t0, .L_f32_pc150
     li   t0, 34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f32_pc151:
+  .L_f32_pc150:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6195,7 +6007,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc161
+    beqz t0, .L_f32_pc160
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6211,19 +6023,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc161
+    beqz t0, .L_f32_pc160
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc162
-  .L_f32_pc161:
+    j    .L_f32_pc161
+  .L_f32_pc160:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc162:
+  .L_f32_pc161:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc169
+    beqz t0, .L_f32_pc168
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6239,19 +6051,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc169
+    beqz t0, .L_f32_pc168
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc170
-  .L_f32_pc169:
+    j    .L_f32_pc169
+  .L_f32_pc168:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc170:
+  .L_f32_pc169:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc177
+    beqz t0, .L_f32_pc176
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6267,19 +6079,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc177
+    beqz t0, .L_f32_pc176
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc178
-  .L_f32_pc177:
+    j    .L_f32_pc177
+  .L_f32_pc176:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc178:
+  .L_f32_pc177:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc185
+    beqz t0, .L_f32_pc184
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6295,35 +6107,31 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc185
+    beqz t0, .L_f32_pc184
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc186
-  .L_f32_pc185:
+    j    .L_f32_pc185
+  .L_f32_pc184:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc186:
+  .L_f32_pc185:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc189
+    beqz t0, .L_f32_pc188
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f32_pc189:
+  .L_f32_pc188:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, g_sp
     lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -56(s0)
@@ -6376,14 +6184,14 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-    j    .L_f32_pc98
-  .L_f32_pc207:
+    j    .L_f32_pc97
+  .L_f32_pc205:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6399,7 +6207,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc215
+    beqz t0, .L_f32_pc213
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -6417,7 +6225,7 @@ read_node:
     addi sp, sp, 4
     la   t1, g_in_pos
     sw   t0, 0(t1)
-  .L_f32_pc215:
+  .L_f32_pc213:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6431,10 +6239,6 @@ read_node:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -52(s0)
@@ -6463,10 +6267,6 @@ read_node:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     la   t1, g_sp
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -6493,12 +6293,12 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_ws_in
+    call skip_ws_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f32_pc361
-  .L_f32_pc237:
+    j    .L_f32_pc351
+  .L_f32_pc233:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6514,7 +6314,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc247
+    beqz t0, .L_f32_pc243
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6530,19 +6330,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc247
+    beqz t0, .L_f32_pc243
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc248
-  .L_f32_pc247:
+    j    .L_f32_pc244
+  .L_f32_pc243:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc248:
+  .L_f32_pc244:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc255
+    beqz t0, .L_f32_pc251
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6558,19 +6358,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc255
+    beqz t0, .L_f32_pc251
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc256
-  .L_f32_pc255:
+    j    .L_f32_pc252
+  .L_f32_pc251:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc256:
+  .L_f32_pc252:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc361
+    beqz t0, .L_f32_pc351
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6580,7 +6380,7 @@ read_node:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call read_atom_in
+    call read_atom_in__U8Array__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6602,7 +6402,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc271
+    beqz t0, .L_f32_pc267
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6617,19 +6417,19 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc271
+    beqz t0, .L_f32_pc267
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc272
-  .L_f32_pc271:
+    j    .L_f32_pc268
+  .L_f32_pc267:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc272:
+  .L_f32_pc268:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc280
+    beqz t0, .L_f32_pc276
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6644,24 +6444,24 @@ read_node:
     sw   a0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call is_digit_c
+    call is_digit_c__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc280
+    beqz t0, .L_f32_pc276
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f32_pc281
-  .L_f32_pc280:
+    j    .L_f32_pc277
+  .L_f32_pc276:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f32_pc281:
+  .L_f32_pc277:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc316
+    beqz t0, .L_f32_pc310
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6674,7 +6474,7 @@ read_node:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -72(s0)
-  .L_f32_pc286:
+  .L_f32_pc282:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6689,7 +6489,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc307
+    beqz t0, .L_f32_pc302
     lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6706,10 +6506,6 @@ read_node:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -72(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -6755,8 +6551,8 @@ read_node:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -72(s0)
-    j    .L_f32_pc286
-  .L_f32_pc307:
+    j    .L_f32_pc282
+  .L_f32_pc302:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6772,10 +6568,6 @@ read_node:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6787,8 +6579,8 @@ read_node:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f32_pc358
-  .L_f32_pc316:
+    j    .L_f32_pc348
+  .L_f32_pc310:
     la   t1, g_sp
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -6802,7 +6594,7 @@ read_node:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -72(s0)
-  .L_f32_pc320:
+  .L_f32_pc314:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6817,7 +6609,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc342
+    beqz t0, .L_f32_pc334
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6825,18 +6617,10 @@ read_node:
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -72(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -6885,8 +6669,8 @@ read_node:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -72(s0)
-    j    .L_f32_pc320
-  .L_f32_pc342:
+    j    .L_f32_pc314
+  .L_f32_pc334:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6900,10 +6684,6 @@ read_node:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -52(s0)
@@ -6932,10 +6712,6 @@ read_node:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6947,23 +6723,23 @@ read_node:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f32_pc358:
+  .L_f32_pc348:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_ws_in
+    call skip_ws_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f32_pc361:
+  .L_f32_pc351:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -6980,7 +6756,7 @@ read_node:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -76(s0)
-  .L_f32_pc367:
+  .L_f32_pc357:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6996,7 +6772,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc408
+    beqz t0, .L_f32_pc397
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7014,7 +6790,7 @@ read_node:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call read_node
+    call read_node__U8Array__U8Array__I32Array__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -7035,7 +6811,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc401
+    beqz t0, .L_f32_pc390
     lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7050,7 +6826,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc394
+    beqz t0, .L_f32_pc383
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7066,10 +6842,6 @@ read_node:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -80(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7081,8 +6853,8 @@ read_node:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f32_pc399
-  .L_f32_pc394:
+    j    .L_f32_pc388
+  .L_f32_pc383:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7096,24 +6868,24 @@ read_node:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_set_sib
+    call n_set_sib__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f32_pc399:
+  .L_f32_pc388:
     lw   t0, -80(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -76(s0)
-  .L_f32_pc401:
+  .L_f32_pc390:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call skip_ws_in
+    call skip_ws_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -7122,20 +6894,20 @@ read_node:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-    j    .L_f32_pc367
-  .L_f32_pc408:
+    j    .L_f32_pc357
+  .L_f32_pc397:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call peek_in
+    call peek_in__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 41
@@ -7150,7 +6922,7 @@ read_node:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f32_pc417
+    beqz t0, .L_f32_pc406
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -7168,7 +6940,7 @@ read_node:
     addi sp, sp, 4
     la   t1, g_in_pos
     sw   t0, 0(t1)
-  .L_f32_pc417:
+  .L_f32_pc406:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7185,11 +6957,11 @@ read_node:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of read_node
+    # end of read_node__U8Array__U8Array__I32Array__U8Array
 
-    .globl sval_eq
-    .type  sval_eq, @function
-sval_eq:
+    .globl sval_eq__U8Array__i32__i32__U8Array__i32
+    .type  sval_eq__U8Array__i32__i32__U8Array__i32, @function
+sval_eq__U8Array__i32__i32__U8Array__i32:
     # prologue: frame_size=32, params=5, locals=1
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -7250,7 +7022,7 @@ sval_eq:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f33_pc31
+    beqz t0, .L_f33_pc29
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7266,10 +7038,6 @@ sval_eq:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -7280,10 +7048,6 @@ sval_eq:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -7301,7 +7065,7 @@ sval_eq:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f33_pc26
+    beqz t0, .L_f33_pc24
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7313,7 +7077,7 @@ sval_eq:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f33_pc26:
+  .L_f33_pc24:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7330,7 +7094,7 @@ sval_eq:
     addi sp, sp, 4
     sw   t0, -32(s0)
     j    .L_f33_pc8
-  .L_f33_pc31:
+  .L_f33_pc29:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7347,11 +7111,11 @@ sval_eq:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of sval_eq
+    # end of sval_eq__U8Array__i32__i32__U8Array__i32
 
-    .globl sv1
-    .type  sv1, @function
-sv1:
+    .globl sv1__U8Array__i32__i32__u8
+    .type  sv1__U8Array__i32__i32__u8, @function
+sv1__U8Array__i32__i32__u8:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -7395,10 +7159,6 @@ sv1:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -7428,11 +7188,11 @@ sv1:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of sv1
+    # end of sv1__U8Array__i32__i32__u8
 
-    .globl sv2
-    .type  sv2, @function
-sv2:
+    .globl sv2__U8Array__i32__i32__u8__u8
+    .type  sv2__U8Array__i32__i32__u8__u8, @function
+sv2__U8Array__i32__i32__u8__u8:
     # prologue: frame_size=32, params=5, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -7477,10 +7237,6 @@ sv2:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -7499,7 +7255,7 @@ sv2:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f35_pc24
+    beqz t0, .L_f35_pc22
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7513,10 +7269,6 @@ sv2:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -7537,16 +7289,16 @@ sv2:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f35_pc24
+    beqz t0, .L_f35_pc22
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f35_pc25
-  .L_f35_pc24:
+    j    .L_f35_pc23
+  .L_f35_pc22:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f35_pc25:
+  .L_f35_pc23:
     lw   t0, 0(sp)
     addi sp, sp, 4
     mv   a0, t0
@@ -7560,11 +7312,11 @@ sv2:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of sv2
+    # end of sv2__U8Array__i32__i32__u8__u8
 
-    .globl slit_find
-    .type  slit_find, @function
-slit_find:
+    .globl slit_find__U8Array__I32Array__i32__i32
+    .type  slit_find__U8Array__I32Array__i32__i32, @function
+slit_find__U8Array__I32Array__i32__i32:
     # prologue: frame_size=48, params=4, locals=6
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -7602,7 +7354,7 @@ slit_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f36_pc74
+    beqz t0, .L_f36_pc70
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7622,10 +7374,6 @@ slit_find:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -7652,10 +7400,6 @@ slit_find:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -7680,7 +7424,7 @@ slit_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f36_pc69
+    beqz t0, .L_f36_pc65
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7693,7 +7437,7 @@ slit_find:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_f36_pc30:
+  .L_f36_pc28:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7708,7 +7452,7 @@ slit_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f36_pc40
+    beqz t0, .L_f36_pc38
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7724,19 +7468,19 @@ slit_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f36_pc40
+    beqz t0, .L_f36_pc38
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f36_pc41
-  .L_f36_pc40:
+    j    .L_f36_pc39
+  .L_f36_pc38:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f36_pc41:
+  .L_f36_pc39:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f36_pc63
+    beqz t0, .L_f36_pc59
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7750,10 +7494,6 @@ slit_find:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -7777,10 +7517,6 @@ slit_find:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -7796,14 +7532,14 @@ slit_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f36_pc58
+    beqz t0, .L_f36_pc54
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -44(s0)
-  .L_f36_pc58:
+  .L_f36_pc54:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7819,8 +7555,8 @@ slit_find:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-    j    .L_f36_pc30
-  .L_f36_pc63:
+    j    .L_f36_pc28
+  .L_f36_pc59:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7836,7 +7572,7 @@ slit_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f36_pc69
+    beqz t0, .L_f36_pc65
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7848,7 +7584,7 @@ slit_find:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f36_pc69:
+  .L_f36_pc65:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7865,7 +7601,7 @@ slit_find:
     addi sp, sp, 4
     sw   t0, -28(s0)
     j    .L_f36_pc2
-  .L_f36_pc74:
+  .L_f36_pc70:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7887,11 +7623,11 @@ slit_find:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of slit_find
+    # end of slit_find__U8Array__I32Array__i32__i32
 
-    .globl slit_add
-    .type  slit_add, @function
-slit_add:
+    .globl slit_add__U8Array__I32Array__i32__i32
+    .type  slit_add__U8Array__I32Array__i32__i32, @function
+slit_add__U8Array__I32Array__i32__i32:
     # prologue: frame_size=32, params=4, locals=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -7920,7 +7656,7 @@ slit_add:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call slit_find
+    call slit_find__U8Array__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -7976,10 +7712,6 @@ slit_add:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8004,10 +7736,6 @@ slit_add:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -24(s0)
@@ -8061,11 +7789,11 @@ slit_add:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of slit_add
+    # end of slit_add__U8Array__I32Array__i32__i32
 
-    .globl collect_strings
-    .type  collect_strings, @function
-collect_strings:
+    .globl collect_strings__I32Array__U8Array__I32Array__i32
+    .type  collect_strings__I32Array__U8Array__I32Array__i32, @function
+collect_strings__I32Array__U8Array__I32Array__i32:
     # prologue: frame_size=32, params=4, locals=1
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -8106,7 +7834,7 @@ collect_strings:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_kind
+    call n_kind__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     la   t1, NK_STR
@@ -8138,7 +7866,7 @@ collect_strings:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -8150,7 +7878,7 @@ collect_strings:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 12(sp)
@@ -8158,7 +7886,7 @@ collect_strings:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call slit_add
+    call slit_add__U8Array__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8177,7 +7905,7 @@ collect_strings:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -8217,7 +7945,7 @@ collect_strings:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call collect_strings
+    call collect_strings__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8230,7 +7958,7 @@ collect_strings:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -8248,11 +7976,11 @@ collect_strings:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of collect_strings
+    # end of collect_strings__I32Array__U8Array__I32Array__i32
 
-    .globl locals_find
-    .type  locals_find, @function
-locals_find:
+    .globl locals_find__U8Array__I32Array__i32__i32
+    .type  locals_find__U8Array__I32Array__i32__i32, @function
+locals_find__U8Array__I32Array__i32__i32:
     # prologue: frame_size=48, params=4, locals=6
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -8290,7 +8018,7 @@ locals_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f39_pc74
+    beqz t0, .L_f39_pc70
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8310,10 +8038,6 @@ locals_find:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -8340,10 +8064,6 @@ locals_find:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -8368,7 +8088,7 @@ locals_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f39_pc69
+    beqz t0, .L_f39_pc65
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8381,7 +8101,7 @@ locals_find:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_f39_pc30:
+  .L_f39_pc28:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8396,7 +8116,7 @@ locals_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f39_pc40
+    beqz t0, .L_f39_pc38
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8412,19 +8132,19 @@ locals_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f39_pc40
+    beqz t0, .L_f39_pc38
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f39_pc41
-  .L_f39_pc40:
+    j    .L_f39_pc39
+  .L_f39_pc38:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f39_pc41:
+  .L_f39_pc39:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f39_pc63
+    beqz t0, .L_f39_pc59
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8438,10 +8158,6 @@ locals_find:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -8465,10 +8181,6 @@ locals_find:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -8484,14 +8196,14 @@ locals_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f39_pc58
+    beqz t0, .L_f39_pc54
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -44(s0)
-  .L_f39_pc58:
+  .L_f39_pc54:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8507,8 +8219,8 @@ locals_find:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-    j    .L_f39_pc30
-  .L_f39_pc63:
+    j    .L_f39_pc28
+  .L_f39_pc59:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8524,7 +8236,7 @@ locals_find:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f39_pc69
+    beqz t0, .L_f39_pc65
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8536,7 +8248,7 @@ locals_find:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f39_pc69:
+  .L_f39_pc65:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8553,7 +8265,7 @@ locals_find:
     addi sp, sp, 4
     sw   t0, -28(s0)
     j    .L_f39_pc2
-  .L_f39_pc74:
+  .L_f39_pc70:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8575,11 +8287,11 @@ locals_find:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of locals_find
+    # end of locals_find__U8Array__I32Array__i32__i32
 
-    .globl locals_add_entry
-    .type  locals_add_entry, @function
-locals_add_entry:
+    .globl locals_add_entry__U8Array__I32Array__i32__i32__i32__i32
+    .type  locals_add_entry__U8Array__I32Array__i32__i32__i32__i32, @function
+locals_add_entry__U8Array__I32Array__i32__i32__i32__i32:
     # prologue: frame_size=48, params=6, locals=1
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -8609,7 +8321,7 @@ locals_add_entry:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call locals_find
+    call locals_find__U8Array__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 0
@@ -8653,10 +8365,6 @@ locals_add_entry:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8681,10 +8389,6 @@ locals_add_entry:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -24(s0)
@@ -8713,10 +8417,6 @@ locals_add_entry:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8741,10 +8441,6 @@ locals_add_entry:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -32(s0)
@@ -8785,11 +8481,11 @@ locals_add_entry:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of locals_add_entry
+    # end of locals_add_entry__U8Array__I32Array__i32__i32__i32__i32
 
-    .globl collect_locals_stmt
-    .type  collect_locals_stmt, @function
-collect_locals_stmt:
+    .globl collect_locals_stmt__I32Array__U8Array__I32Array__i32
+    .type  collect_locals_stmt__I32Array__U8Array__I32Array__i32, @function
+collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     # prologue: frame_size=48, params=4, locals=3
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -8811,7 +8507,7 @@ collect_locals_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_kind
+    call n_kind__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -8843,7 +8539,7 @@ collect_locals_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -8880,7 +8576,7 @@ collect_locals_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -8892,7 +8588,7 @@ collect_locals_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -8904,7 +8600,7 @@ collect_locals_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -8916,7 +8612,7 @@ collect_locals_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 20(sp)
@@ -8926,7 +8622,7 @@ collect_locals_stmt:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call locals_add_entry
+    call locals_add_entry__U8Array__I32Array__i32__i32__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -8976,7 +8672,7 @@ collect_locals_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 12(sp)
@@ -8984,7 +8680,7 @@ collect_locals_stmt:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call collect_locals_block
+    call collect_locals_block__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9001,7 +8697,7 @@ collect_locals_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9032,7 +8728,7 @@ collect_locals_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_kind
+    call n_kind__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     la   t1, NK_IF
@@ -9066,7 +8762,7 @@ collect_locals_stmt:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call collect_locals_stmt
+    call collect_locals_stmt__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9089,7 +8785,7 @@ collect_locals_stmt:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call collect_locals_block
+    call collect_locals_block__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9139,7 +8835,7 @@ collect_locals_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 12(sp)
@@ -9147,7 +8843,7 @@ collect_locals_stmt:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call collect_locals_block
+    call collect_locals_block__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9167,11 +8863,11 @@ collect_locals_stmt:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of collect_locals_stmt
+    # end of collect_locals_stmt__I32Array__U8Array__I32Array__i32
 
-    .globl collect_locals_block
-    .type  collect_locals_block, @function
-collect_locals_block:
+    .globl collect_locals_block__I32Array__U8Array__I32Array__i32
+    .type  collect_locals_block__I32Array__U8Array__I32Array__i32, @function
+collect_locals_block__I32Array__U8Array__I32Array__i32:
     # prologue: frame_size=32, params=4, locals=1
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -9191,7 +8887,7 @@ collect_locals_block:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9231,7 +8927,7 @@ collect_locals_block:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call collect_locals_stmt
+    call collect_locals_stmt__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9244,7 +8940,7 @@ collect_locals_block:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9262,11 +8958,11 @@ collect_locals_block:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of collect_locals_block
+    # end of collect_locals_block__I32Array__U8Array__I32Array__i32
 
-    .globl cg_block
-    .type  cg_block, @function
-cg_block:
+    .globl cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32
+    .type  cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32, @function
+cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     # prologue: frame_size=48, params=6, locals=1
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -9288,7 +8984,7 @@ cg_block:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9336,7 +9032,7 @@ cg_block:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_stmt
+    call cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9349,7 +9045,7 @@ cg_block:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9367,11 +9063,11 @@ cg_block:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_block
+    # end of cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32
 
-    .globl cg_stmt
-    .type  cg_stmt, @function
-cg_stmt:
+    .globl cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32
+    .type  cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32, @function
+cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     # prologue: frame_size=80, params=6, locals=10
     addi sp, sp, -80
     sw   ra, 76(sp)
@@ -9402,7 +9098,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_kind
+    call n_kind__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9434,7 +9130,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9447,7 +9143,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9463,7 +9159,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -9475,7 +9171,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -9486,7 +9182,7 @@ cg_stmt:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9499,7 +9195,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9539,7 +9235,7 @@ cg_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9582,7 +9278,7 @@ cg_stmt:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9597,7 +9293,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9610,7 +9306,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9623,7 +9319,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9636,7 +9332,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9649,7 +9345,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9662,7 +9358,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9675,7 +9371,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9688,7 +9384,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9701,7 +9397,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9714,7 +9410,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9727,7 +9423,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9740,7 +9436,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9753,7 +9449,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9767,7 +9463,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9780,7 +9476,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9793,7 +9489,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9806,7 +9502,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9819,7 +9515,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9832,7 +9528,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9845,7 +9541,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9858,7 +9554,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9874,7 +9570,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -9886,7 +9582,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -9897,7 +9593,7 @@ cg_stmt:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9910,7 +9606,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9958,7 +9654,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -9967,7 +9663,7 @@ cg_stmt:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9980,7 +9676,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -9993,7 +9689,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10006,7 +9702,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10019,7 +9715,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10032,7 +9728,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10045,7 +9741,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10058,7 +9754,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10071,7 +9767,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10087,7 +9783,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -10099,7 +9795,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -10110,7 +9806,7 @@ cg_stmt:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10123,7 +9819,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10159,7 +9855,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10209,7 +9905,7 @@ cg_stmt:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10222,7 +9918,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10254,7 +9950,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10267,7 +9963,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10280,7 +9976,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10293,7 +9989,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10306,7 +10002,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10319,7 +10015,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10332,7 +10028,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10348,7 +10044,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -10360,7 +10056,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -10371,7 +10067,7 @@ cg_stmt:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10384,7 +10080,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10397,7 +10093,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10410,7 +10106,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10423,7 +10119,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10436,7 +10132,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10449,7 +10145,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10462,7 +10158,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10475,7 +10171,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10488,7 +10184,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10524,7 +10220,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_nchildren
+    call n_nchildren__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10618,7 +10314,7 @@ cg_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -10627,7 +10323,7 @@ cg_stmt:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10640,7 +10336,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10653,7 +10349,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10666,7 +10362,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10679,7 +10375,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10692,7 +10388,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10705,7 +10401,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10718,7 +10414,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10731,7 +10427,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10744,7 +10440,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10757,7 +10453,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10770,7 +10466,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10783,7 +10479,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10796,7 +10492,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10809,7 +10505,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10822,7 +10518,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10835,7 +10531,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10848,7 +10544,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10861,7 +10557,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10893,7 +10589,7 @@ cg_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 20(sp)
@@ -10903,7 +10599,7 @@ cg_stmt:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_block
+    call cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10916,7 +10612,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10929,7 +10625,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10942,7 +10638,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10955,7 +10651,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10968,7 +10664,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10981,7 +10677,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -10994,7 +10690,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11007,7 +10703,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11020,7 +10716,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11033,7 +10729,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11046,7 +10742,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11059,7 +10755,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11072,7 +10768,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11085,7 +10781,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11098,7 +10794,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11111,7 +10807,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11124,7 +10820,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11137,7 +10833,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11154,7 +10850,7 @@ cg_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11169,7 +10865,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_kind
+    call n_kind__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     la   t1, NK_IF
@@ -11211,7 +10907,7 @@ cg_stmt:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_stmt
+    call cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11242,7 +10938,7 @@ cg_stmt:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_block
+    call cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11256,7 +10952,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11269,7 +10965,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11282,7 +10978,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11295,7 +10991,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11308,7 +11004,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11321,7 +11017,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11376,7 +11072,7 @@ cg_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -11385,7 +11081,7 @@ cg_stmt:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11398,7 +11094,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11411,7 +11107,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11424,7 +11120,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11437,7 +11133,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11450,7 +11146,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11463,7 +11159,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11476,7 +11172,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11489,7 +11185,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11502,7 +11198,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11515,7 +11211,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11528,7 +11224,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11541,7 +11237,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11554,7 +11250,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11567,7 +11263,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11580,7 +11276,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11593,7 +11289,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11606,7 +11302,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11619,7 +11315,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11651,7 +11347,7 @@ cg_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 20(sp)
@@ -11661,7 +11357,7 @@ cg_stmt:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_block
+    call cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11674,7 +11370,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11687,7 +11383,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11700,7 +11396,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11713,7 +11409,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11726,7 +11422,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11739,7 +11435,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11766,7 +11462,7 @@ cg_stmt:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc914
+    beqz t0, .L_f44_pc912
     la   t1, g_lc
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -11831,10 +11527,6 @@ cg_stmt:
     mul  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11869,10 +11561,6 @@ cg_stmt:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -60(s0)
@@ -11912,7 +11600,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11925,7 +11613,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11938,7 +11626,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11951,7 +11639,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11964,7 +11652,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -11977,7 +11665,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12006,7 +11694,7 @@ cg_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -12015,7 +11703,7 @@ cg_stmt:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12028,7 +11716,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12041,7 +11729,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12054,7 +11742,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12067,7 +11755,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12080,7 +11768,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12093,7 +11781,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12106,7 +11794,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12119,7 +11807,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12132,7 +11820,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12145,7 +11833,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12158,7 +11846,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12171,7 +11859,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12184,7 +11872,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12197,7 +11885,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12210,7 +11898,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12223,7 +11911,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12236,7 +11924,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12249,7 +11937,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12281,7 +11969,7 @@ cg_stmt:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 20(sp)
@@ -12291,7 +11979,7 @@ cg_stmt:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_block
+    call cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12304,7 +11992,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12317,7 +12005,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12330,7 +12018,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12343,7 +12031,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12356,7 +12044,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12369,7 +12057,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12382,7 +12070,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12395,7 +12083,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12408,7 +12096,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12421,7 +12109,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12434,7 +12122,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12447,7 +12135,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12460,7 +12148,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12473,7 +12161,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12486,7 +12174,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12499,7 +12187,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12512,7 +12200,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12525,7 +12213,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12551,7 +12239,7 @@ cg_stmt:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f44_pc914:
+  .L_f44_pc912:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12568,7 +12256,7 @@ cg_stmt:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc976
+    beqz t0, .L_f44_pc973
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12594,10 +12282,6 @@ cg_stmt:
     sub  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -12616,7 +12300,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12629,7 +12313,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12642,7 +12326,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12655,7 +12339,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12668,7 +12352,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12681,7 +12365,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12694,7 +12378,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12707,7 +12391,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12720,7 +12404,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12733,7 +12417,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12746,7 +12430,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12759,7 +12443,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12768,7 +12452,7 @@ cg_stmt:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f44_pc976:
+  .L_f44_pc973:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12785,7 +12469,7 @@ cg_stmt:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc1038
+    beqz t0, .L_f44_pc1034
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12811,10 +12495,6 @@ cg_stmt:
     sub  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -12833,7 +12513,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12846,7 +12526,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12859,7 +12539,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12872,7 +12552,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12885,7 +12565,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12898,7 +12578,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12911,7 +12591,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12924,7 +12604,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12937,7 +12617,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12950,7 +12630,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12963,7 +12643,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12976,7 +12656,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -12985,7 +12665,7 @@ cg_stmt:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f44_pc1038:
+  .L_f44_pc1034:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13002,7 +12682,7 @@ cg_stmt:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc1151
+    beqz t0, .L_f44_pc1147
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13012,7 +12692,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13033,7 +12713,7 @@ cg_stmt:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc1094
+    beqz t0, .L_f44_pc1090
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13055,7 +12735,7 @@ cg_stmt:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13068,7 +12748,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13081,7 +12761,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13094,7 +12774,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13107,7 +12787,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13120,7 +12800,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13133,7 +12813,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13146,7 +12826,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13159,7 +12839,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13172,12 +12852,12 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f44_pc1150
-  .L_f44_pc1094:
+    j    .L_f44_pc1146
+  .L_f44_pc1090:
     li   t0, 32
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13187,7 +12867,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13200,7 +12880,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13213,7 +12893,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13226,7 +12906,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13239,7 +12919,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13252,7 +12932,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13265,7 +12945,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13278,7 +12958,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13291,7 +12971,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13304,7 +12984,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13317,7 +12997,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13330,7 +13010,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13343,7 +13023,7 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13356,17 +13036,17 @@ cg_stmt:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f44_pc1150:
+  .L_f44_pc1146:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f44_pc1151:
+  .L_f44_pc1147:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -13377,11 +13057,11 @@ cg_stmt:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_stmt
+    # end of cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32
 
-    .globl cg_binop_inst
-    .type  cg_binop_inst, @function
-cg_binop_inst:
+    .globl cg_binop_inst__U8Array__i32__i32__U8Array
+    .type  cg_binop_inst__U8Array__i32__i32__U8Array, @function
+cg_binop_inst__U8Array__i32__i32__U8Array:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -13400,7 +13080,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13413,7 +13093,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13434,7 +13114,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13449,7 +13129,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13462,7 +13142,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13475,7 +13155,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13488,7 +13168,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13515,7 +13195,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13530,7 +13210,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13543,7 +13223,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13556,7 +13236,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13569,7 +13249,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13596,7 +13276,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13611,7 +13291,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13624,7 +13304,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13637,7 +13317,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13650,7 +13330,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13677,7 +13357,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13692,7 +13372,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13705,7 +13385,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13718,7 +13398,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13731,7 +13411,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13758,7 +13438,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13773,7 +13453,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13786,7 +13466,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13799,7 +13479,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13812,7 +13492,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13839,7 +13519,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13854,7 +13534,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13867,7 +13547,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13880,7 +13560,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13893,7 +13573,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13920,7 +13600,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -13935,7 +13615,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13948,7 +13628,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13961,7 +13641,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -13988,7 +13668,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14003,7 +13683,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14016,7 +13696,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14029,7 +13709,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14042,7 +13722,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14069,7 +13749,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14084,7 +13764,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14097,7 +13777,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14110,7 +13790,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14137,7 +13817,7 @@ cg_binop_inst:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14152,7 +13832,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14165,7 +13845,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14178,7 +13858,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14209,7 +13889,7 @@ cg_binop_inst:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call sv2
+    call sv2__U8Array__i32__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14224,7 +13904,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14237,7 +13917,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14250,7 +13930,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14263,7 +13943,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14294,7 +13974,7 @@ cg_binop_inst:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call sv2
+    call sv2__U8Array__i32__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14309,7 +13989,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14322,7 +14002,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14335,7 +14015,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14348,7 +14028,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14379,7 +14059,7 @@ cg_binop_inst:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call sv2
+    call sv2__U8Array__i32__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14394,7 +14074,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14407,7 +14087,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14420,7 +14100,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14451,7 +14131,7 @@ cg_binop_inst:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call sv2
+    call sv2__U8Array__i32__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14466,7 +14146,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14479,7 +14159,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14492,7 +14172,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14523,7 +14203,7 @@ cg_binop_inst:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call sv2
+    call sv2__U8Array__i32__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14538,7 +14218,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14551,7 +14231,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14564,7 +14244,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14595,7 +14275,7 @@ cg_binop_inst:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call sv2
+    call sv2__U8Array__i32__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14610,7 +14290,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14623,7 +14303,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14636,7 +14316,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14655,7 +14335,7 @@ cg_binop_inst:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14669,11 +14349,11 @@ cg_binop_inst:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_binop_inst
+    # end of cg_binop_inst__U8Array__i32__i32__U8Array
 
-    .globl cg_expr
-    .type  cg_expr, @function
-cg_expr:
+    .globl cg_expr__I32Array__U8Array__I32Array__U8Array__i32
+    .type  cg_expr__I32Array__U8Array__I32Array__U8Array__i32, @function
+cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     # prologue: frame_size=80, params=5, locals=13
     addi sp, sp, -80
     sw   ra, 76(sp)
@@ -14706,7 +14386,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_kind
+    call n_kind__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -14738,7 +14418,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14751,7 +14431,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14764,7 +14444,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14777,7 +14457,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14790,7 +14470,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14803,7 +14483,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14816,7 +14496,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14829,7 +14509,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14842,7 +14522,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14855,7 +14535,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14868,7 +14548,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14881,7 +14561,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ival
+    call n_ival__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -14890,7 +14570,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14903,7 +14583,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14929,7 +14609,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc180
+    beqz t0, .L_f46_pc176
     li   t0, 32
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14939,7 +14619,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14952,7 +14632,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14965,7 +14645,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14978,7 +14658,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -14991,7 +14671,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15004,7 +14684,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15017,7 +14697,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15030,7 +14710,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15043,7 +14723,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15056,7 +14736,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15069,7 +14749,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15088,7 +14768,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     li   t0, 4
@@ -15103,7 +14783,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc171
+    beqz t0, .L_f46_pc167
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15113,7 +14793,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15123,10 +14803,6 @@ cg_expr:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -15147,7 +14823,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc141
+    beqz t0, .L_f46_pc139
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15161,10 +14837,6 @@ cg_expr:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -15185,19 +14857,19 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc141
+    beqz t0, .L_f46_pc139
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f46_pc142
-  .L_f46_pc141:
+    j    .L_f46_pc140
+  .L_f46_pc139:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f46_pc142:
+  .L_f46_pc140:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc154
+    beqz t0, .L_f46_pc151
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15211,10 +14883,6 @@ cg_expr:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -15235,19 +14903,19 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc154
+    beqz t0, .L_f46_pc151
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f46_pc155
-  .L_f46_pc154:
+    j    .L_f46_pc152
+  .L_f46_pc151:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f46_pc155:
+  .L_f46_pc152:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc167
+    beqz t0, .L_f46_pc163
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15261,10 +14929,6 @@ cg_expr:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -15285,26 +14949,26 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc167
+    beqz t0, .L_f46_pc163
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f46_pc168
-  .L_f46_pc167:
+    j    .L_f46_pc164
+  .L_f46_pc163:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f46_pc168:
+  .L_f46_pc164:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc171
+    beqz t0, .L_f46_pc167
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-  .L_f46_pc171:
+  .L_f46_pc167:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15314,7 +14978,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15327,7 +14991,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15336,7 +15000,7 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc180:
+  .L_f46_pc176:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15353,7 +15017,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc247
+    beqz t0, .L_f46_pc243
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15369,7 +15033,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -15381,7 +15045,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 12(sp)
@@ -15389,7 +15053,7 @@ cg_expr:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call slit_find
+    call slit_find__U8Array__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15404,7 +15068,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15417,7 +15081,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15430,7 +15094,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15443,7 +15107,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15456,7 +15120,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15469,7 +15133,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15482,7 +15146,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15495,7 +15159,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15508,7 +15172,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15521,7 +15185,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15534,7 +15198,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15547,7 +15211,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15560,7 +15224,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15569,7 +15233,7 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc247:
+  .L_f46_pc243:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15586,7 +15250,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc294
+    beqz t0, .L_f46_pc290
     li   t0, 32
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15596,7 +15260,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15609,7 +15273,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15622,7 +15286,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15635,7 +15299,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15648,7 +15312,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15661,7 +15325,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15674,7 +15338,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15690,7 +15354,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -15702,7 +15366,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -15713,7 +15377,7 @@ cg_expr:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15726,7 +15390,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15735,7 +15399,7 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc294:
+  .L_f46_pc290:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15752,7 +15416,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc375
+    beqz t0, .L_f46_pc371
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15762,7 +15426,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15774,7 +15438,7 @@ cg_expr:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-  .L_f46_pc304:
+  .L_f46_pc300:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15790,7 +15454,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc324
+    beqz t0, .L_f46_pc320
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15812,7 +15476,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15825,7 +15489,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -15846,8 +15510,8 @@ cg_expr:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-    j    .L_f46_pc304
-  .L_f46_pc324:
+    j    .L_f46_pc300
+  .L_f46_pc320:
     li   t0, 32
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15857,7 +15521,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15870,7 +15534,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15883,7 +15547,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15896,7 +15560,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15909,7 +15573,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15922,7 +15586,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15935,7 +15599,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15951,7 +15615,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -15963,7 +15627,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -15974,7 +15638,7 @@ cg_expr:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -15987,7 +15651,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16000,7 +15664,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16013,7 +15677,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16022,7 +15686,7 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc375:
+  .L_f46_pc371:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16039,7 +15703,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc448
+    beqz t0, .L_f46_pc444
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16061,7 +15725,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -16070,7 +15734,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16083,7 +15747,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16096,7 +15760,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16109,7 +15773,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16124,7 +15788,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16147,12 +15811,12 @@ cg_expr:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call sv1
+    call sv1__U8Array__i32__i32__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc427
+    beqz t0, .L_f46_pc423
     li   t0, 110
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16162,7 +15826,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16175,7 +15839,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16188,7 +15852,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16201,12 +15865,12 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f46_pc447
-  .L_f46_pc427:
+    j    .L_f46_pc443
+  .L_f46_pc423:
     li   t0, 108
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16216,7 +15880,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16229,7 +15893,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16242,7 +15906,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16255,7 +15919,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16268,17 +15932,17 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f46_pc447:
+  .L_f46_pc443:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc448:
+  .L_f46_pc444:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16295,7 +15959,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc1223
+    beqz t0, .L_f46_pc1219
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16305,7 +15969,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16320,7 +15984,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16339,7 +16003,7 @@ cg_expr:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16358,7 +16022,7 @@ cg_expr:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -16385,12 +16049,12 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call sv2
+    call sv2__U8Array__i32__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc848
+    beqz t0, .L_f46_pc844
     la   t1, g_lc
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -16460,7 +16124,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16473,7 +16137,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16486,7 +16150,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16499,7 +16163,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16512,7 +16176,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16525,7 +16189,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16538,7 +16202,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16551,7 +16215,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16564,7 +16228,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16577,7 +16241,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16590,7 +16254,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16603,7 +16267,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16616,7 +16280,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16629,7 +16293,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16642,7 +16306,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16655,7 +16319,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16668,7 +16332,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16681,7 +16345,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16694,7 +16358,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16719,7 +16383,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16732,7 +16396,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16745,7 +16409,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16758,7 +16422,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16771,7 +16435,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16784,7 +16448,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16797,7 +16461,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16810,7 +16474,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16823,7 +16487,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16836,7 +16500,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16849,7 +16513,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16862,7 +16526,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16875,7 +16539,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16888,7 +16552,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16901,7 +16565,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16914,7 +16578,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16927,7 +16591,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16940,7 +16604,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16953,7 +16617,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16966,7 +16630,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16979,7 +16643,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -16992,7 +16656,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17005,7 +16669,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17018,7 +16682,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17031,7 +16695,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17044,7 +16708,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17057,7 +16721,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17070,7 +16734,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17083,7 +16747,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17096,7 +16760,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17109,7 +16773,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17122,7 +16786,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17135,7 +16799,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17148,7 +16812,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17161,7 +16825,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17174,7 +16838,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17187,7 +16851,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17200,7 +16864,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17213,7 +16877,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17226,7 +16890,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17239,7 +16903,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17252,7 +16916,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17265,7 +16929,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17278,7 +16942,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17291,7 +16955,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17304,7 +16968,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17317,7 +16981,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17330,7 +16994,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17343,7 +17007,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17356,7 +17020,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17369,7 +17033,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17382,7 +17046,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17395,7 +17059,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17408,7 +17072,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17421,7 +17085,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17434,7 +17098,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17447,7 +17111,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17460,7 +17124,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17473,7 +17137,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17486,7 +17150,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17499,7 +17163,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17512,7 +17176,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17525,7 +17189,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17538,7 +17202,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17551,7 +17215,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17564,7 +17228,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17577,7 +17241,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17590,7 +17254,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17603,7 +17267,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17612,7 +17276,7 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc848:
+  .L_f46_pc844:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17634,12 +17298,12 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call sv2
+    call sv2__U8Array__i32__i32__u8__u8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc1202
+    beqz t0, .L_f46_pc1198
     la   t1, g_lc
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -17709,7 +17373,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17722,7 +17386,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17735,7 +17399,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17748,7 +17412,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17761,7 +17425,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17774,7 +17438,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17787,7 +17451,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17800,7 +17464,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17813,7 +17477,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17826,7 +17490,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17839,7 +17503,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17852,7 +17516,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17865,7 +17529,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17878,7 +17542,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17891,7 +17555,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17904,7 +17568,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17929,7 +17593,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17942,7 +17606,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17955,7 +17619,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17968,7 +17632,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17981,7 +17645,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -17994,7 +17658,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18007,7 +17671,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18020,7 +17684,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18033,7 +17697,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18046,7 +17710,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18059,7 +17723,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18072,7 +17736,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18085,7 +17749,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18098,7 +17762,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18111,7 +17775,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18124,7 +17788,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18137,7 +17801,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18150,7 +17814,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18163,7 +17827,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18176,7 +17840,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18189,7 +17853,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18202,7 +17866,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18215,7 +17879,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18228,7 +17892,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18241,7 +17905,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18254,7 +17918,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18267,7 +17931,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18280,7 +17944,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18293,7 +17957,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18306,7 +17970,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18319,7 +17983,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18332,7 +17996,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18345,7 +18009,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18358,7 +18022,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18371,7 +18035,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18384,7 +18048,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18397,7 +18061,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18410,7 +18074,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18423,7 +18087,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18436,7 +18100,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18449,7 +18113,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18462,7 +18126,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18475,7 +18139,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18488,7 +18152,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18501,7 +18165,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18514,7 +18178,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18527,7 +18191,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18540,7 +18204,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18553,7 +18217,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18566,7 +18230,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18579,7 +18243,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18592,7 +18256,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18605,7 +18269,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18618,7 +18282,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18631,7 +18295,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18644,7 +18308,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18657,7 +18321,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18670,7 +18334,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18683,7 +18347,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18696,7 +18360,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18709,7 +18373,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18722,7 +18386,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18735,7 +18399,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18748,7 +18412,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18761,7 +18425,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18774,7 +18438,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18783,7 +18447,7 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc1202:
+  .L_f46_pc1198:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18805,7 +18469,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18830,7 +18494,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18851,7 +18515,7 @@ cg_expr:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call cg_binop_inst
+    call cg_binop_inst__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18860,7 +18524,7 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc1223:
+  .L_f46_pc1219:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18877,7 +18541,7 @@ cg_expr:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f46_pc1285
+    beqz t0, .L_f46_pc1281
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18903,7 +18567,7 @@ cg_expr:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 16(sp)
@@ -18912,7 +18576,7 @@ cg_expr:
     lw   a3, 4(sp)
     lw   a4, 0(sp)
     addi sp, sp, 20
-    call cg_expr
+    call cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18929,7 +18593,7 @@ cg_expr:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -18944,7 +18608,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18957,7 +18621,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18970,7 +18634,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18983,7 +18647,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -18996,7 +18660,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19009,7 +18673,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19022,7 +18686,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19038,7 +18702,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -19050,7 +18714,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -24(s0)
@@ -19061,7 +18725,7 @@ cg_expr:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19074,7 +18738,7 @@ cg_expr:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19083,7 +18747,7 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f46_pc1285:
+  .L_f46_pc1281:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -19094,11 +18758,11 @@ cg_expr:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_expr
+    # end of cg_expr__I32Array__U8Array__I32Array__U8Array__i32
 
-    .globl cg_fn
-    .type  cg_fn, @function
-cg_fn:
+    .globl cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32
+    .type  cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32, @function
+cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     # prologue: frame_size=96, params=6, locals=15
     addi sp, sp, -96
     sw   ra, 92(sp)
@@ -19138,7 +18802,7 @@ cg_fn:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19157,7 +18821,7 @@ cg_fn:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19176,7 +18840,7 @@ cg_fn:
     lw   a1, 4(sp)
     lw   a2, 0(sp)
     addi sp, sp, 12
-    call n_nth_child
+    call n_nth_child__I32Array__i32__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19191,7 +18855,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19234,7 +18898,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19249,7 +18913,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19265,7 +18929,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19278,7 +18942,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19291,7 +18955,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19304,7 +18968,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19320,7 +18984,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -19332,7 +18996,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -28(s0)
@@ -19343,7 +19007,7 @@ cg_fn:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19356,7 +19020,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19369,7 +19033,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_nchildren
+    call n_nchildren__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -28(s0)
@@ -19378,7 +19042,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19391,7 +19055,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19420,7 +19084,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19433,7 +19097,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19446,7 +19110,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19459,7 +19123,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19482,7 +19146,7 @@ cg_fn:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19496,7 +19160,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19509,7 +19173,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19541,7 +19205,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19556,7 +19220,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19569,7 +19233,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19582,7 +19246,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19595,7 +19259,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19608,7 +19272,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19621,7 +19285,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19634,7 +19298,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19650,7 +19314,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -19662,7 +19326,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -28(s0)
@@ -19673,7 +19337,7 @@ cg_fn:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19686,7 +19350,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19702,7 +19366,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -19714,7 +19378,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -28(s0)
@@ -19725,7 +19389,7 @@ cg_fn:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19738,7 +19402,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19751,7 +19415,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -19783,7 +19447,7 @@ cg_fn:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call collect_locals_block
+    call collect_locals_block__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19809,7 +19473,7 @@ cg_fn:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f47_pc276
+    beqz t0, .L_f47_pc272
     lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19829,10 +19493,6 @@ cg_fn:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -72(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -19859,10 +19519,6 @@ cg_fn:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -19885,10 +19541,6 @@ cg_fn:
     lw   t0, 4(sp)
     addi sp, sp, 8
     add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -19915,10 +19567,6 @@ cg_fn:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -19937,7 +19585,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19950,7 +19598,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19963,7 +19611,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19976,7 +19624,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -19989,7 +19637,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20002,7 +19650,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20015,7 +19663,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20036,7 +19684,7 @@ cg_fn:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20049,7 +19697,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20070,7 +19718,7 @@ cg_fn:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20083,7 +19731,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20103,7 +19751,7 @@ cg_fn:
     addi sp, sp, 4
     sw   t0, -68(s0)
     j    .L_f47_pc189
-  .L_f47_pc276:
+  .L_f47_pc272:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20147,7 +19795,7 @@ cg_fn:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_block
+    call cg_block__I32Array__U8Array__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20169,7 +19817,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20182,7 +19830,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20195,7 +19843,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20208,7 +19856,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20221,7 +19869,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20234,7 +19882,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20247,7 +19895,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20260,7 +19908,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20273,7 +19921,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20286,7 +19934,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20299,7 +19947,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20312,7 +19960,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20325,7 +19973,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20338,7 +19986,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20351,7 +19999,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20364,7 +20012,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20377,7 +20025,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20390,7 +20038,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20403,7 +20051,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20416,7 +20064,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20429,7 +20077,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20442,7 +20090,7 @@ cg_fn:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20456,11 +20104,11 @@ cg_fn:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_fn
+    # end of cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32
 
-    .globl cg_program
-    .type  cg_program, @function
-cg_program:
+    .globl cg_program__I32Array__U8Array__I32Array__I32Array__U8Array__i32
+    .type  cg_program__I32Array__U8Array__I32Array__I32Array__U8Array__i32, @function
+cg_program__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     # prologue: frame_size=80, params=6, locals=9
     addi sp, sp, -80
     sw   ra, 76(sp)
@@ -20490,7 +20138,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20503,7 +20151,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20516,7 +20164,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20529,7 +20177,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20557,7 +20205,7 @@ cg_program:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call collect_strings
+    call collect_strings__I32Array__U8Array__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20576,7 +20224,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc177
+    beqz t0, .L_f48_pc175
     li   t0, 59
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20586,7 +20234,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20599,7 +20247,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20612,7 +20260,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20625,7 +20273,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20638,7 +20286,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20651,7 +20299,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20664,7 +20312,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20677,7 +20325,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20690,7 +20338,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20703,7 +20351,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20716,7 +20364,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20729,7 +20377,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20742,7 +20390,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20755,7 +20403,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20768,7 +20416,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20794,7 +20442,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc173
+    beqz t0, .L_f48_pc171
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20814,10 +20462,6 @@ cg_program:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -20844,10 +20488,6 @@ cg_program:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
@@ -20866,7 +20506,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20879,7 +20519,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20892,7 +20532,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20905,7 +20545,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20918,7 +20558,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20931,7 +20571,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20944,7 +20584,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20957,7 +20597,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20970,7 +20610,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20983,7 +20623,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -20996,7 +20636,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21017,7 +20657,7 @@ cg_program:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_st_escaped
+    call ob_st_escaped__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21030,7 +20670,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21043,7 +20683,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21063,7 +20703,7 @@ cg_program:
     addi sp, sp, 4
     sw   t0, -36(s0)
     j    .L_f48_pc90
-  .L_f48_pc173:
+  .L_f48_pc171:
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21073,11 +20713,11 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f48_pc177:
+  .L_f48_pc175:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21093,13 +20733,13 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f48_pc183:
+  .L_f48_pc181:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21115,7 +20755,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc330
+    beqz t0, .L_f48_pc328
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21125,7 +20765,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_kind
+    call n_kind__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     la   t1, NK_VAR_DECL
@@ -21141,7 +20781,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc325
+    beqz t0, .L_f48_pc323
     lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21157,7 +20797,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc239
+    beqz t0, .L_f48_pc237
     li   t0, 59
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21167,7 +20807,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21180,7 +20820,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21193,7 +20833,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21206,7 +20846,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21219,7 +20859,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21232,7 +20872,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21245,7 +20885,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21258,7 +20898,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21271,7 +20911,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21284,7 +20924,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21294,7 +20934,7 @@ cg_program:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-  .L_f48_pc239:
+  .L_f48_pc237:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21304,7 +20944,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -21319,7 +20959,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -21346,7 +20986,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc257
+    beqz t0, .L_f48_pc255
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21356,13 +20996,13 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ival
+    call n_ival__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -68(s0)
-  .L_f48_pc257:
+  .L_f48_pc255:
     li   t0, 46
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21372,7 +21012,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21385,7 +21025,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21398,7 +21038,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21411,7 +21051,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21424,7 +21064,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21437,7 +21077,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21450,7 +21090,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21463,7 +21103,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21479,7 +21119,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -21491,7 +21131,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -28(s0)
@@ -21502,7 +21142,7 @@ cg_program:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21515,7 +21155,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21531,7 +21171,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_ss
+    call n_ss__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -21543,7 +21183,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sl
+    call n_sl__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -28(s0)
@@ -21554,7 +21194,7 @@ cg_program:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call ob_n
+    call ob_n__U8Array__i32__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21567,7 +21207,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21580,7 +21220,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_int
+    call ob_int__i32__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21593,11 +21233,11 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f48_pc325:
+  .L_f48_pc323:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21607,14 +21247,14 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-    j    .L_f48_pc183
-  .L_f48_pc330:
+    j    .L_f48_pc181
+  .L_f48_pc328:
     lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21630,7 +21270,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc338
+    beqz t0, .L_f48_pc336
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21640,11 +21280,11 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f48_pc338:
+  .L_f48_pc336:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21654,13 +21294,13 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_child
+    call n_child__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_f48_pc342:
+  .L_f48_pc340:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21676,7 +21316,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc365
+    beqz t0, .L_f48_pc363
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21686,7 +21326,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_kind
+    call n_kind__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     la   t1, NK_FN
@@ -21702,7 +21342,7 @@ cg_program:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc360
+    beqz t0, .L_f48_pc358
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21728,11 +21368,11 @@ cg_program:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_fn
+    call cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f48_pc360:
+  .L_f48_pc358:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21742,14 +21382,14 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call n_sib
+    call n_sib__I32Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-    j    .L_f48_pc342
-  .L_f48_pc365:
+    j    .L_f48_pc340
+  .L_f48_pc363:
     li   t0, 46
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21759,7 +21399,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21772,7 +21412,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21785,7 +21425,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21798,7 +21438,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21811,7 +21451,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21824,7 +21464,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21837,7 +21477,7 @@ cg_program:
     lw   a0, 4(sp)
     lw   a1, 0(sp)
     addi sp, sp, 8
-    call ob_char
+    call ob_char__u8__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -21851,7 +21491,7 @@ cg_program:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_program
+    # end of cg_program__I32Array__U8Array__I32Array__I32Array__U8Array__i32
 
     .globl main
     .type  main, @function
@@ -22032,7 +21672,7 @@ main:
     lw   a2, 4(sp)
     lw   a3, 0(sp)
     addi sp, sp, 16
-    call read_node
+    call read_node__U8Array__U8Array__I32Array__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -22089,7 +21729,7 @@ main:
     lw   a4, 4(sp)
     lw   a5, 0(sp)
     addi sp, sp, 24
-    call cg_program
+    call cg_program__I32Array__U8Array__I32Array__I32Array__U8Array__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -22098,7 +21738,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call ob_flush
+    call ob_flush__U8Array
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4

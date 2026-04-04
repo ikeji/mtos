@@ -8,9 +8,9 @@ __tc_strdata2:
 
     .text
 
-    .globl fizzbuzz
-    .type  fizzbuzz, @function
-fizzbuzz:
+    .globl fizzbuzz__i32
+    .type  fizzbuzz__i32, @function
+fizzbuzz__i32:
     # prologue: frame_size=16, params=1, locals=1
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -198,7 +198,7 @@ fizzbuzz:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of fizzbuzz
+    # end of fizzbuzz__i32
 
     .globl main
     .type  main, @function
@@ -213,7 +213,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call fizzbuzz
+    call fizzbuzz__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)

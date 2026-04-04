@@ -53,8 +53,9 @@ int main(int argc, char *argv[]) {
         prog = ast_read(f);
         fclose(f);
     } else {
-        /* stdin: assume typed AST */
+        /* stdin: read AST then typecheck */
         prog = ast_read(stdin);
+        typecheck(prog, filename);
     }
 
     if (!prog) { fprintf(stderr, "failed to read program\n"); exit(1); }

@@ -146,7 +146,12 @@ static void cg_expr(CG *cg, AstNode *node) {
     if (strcmp(k, "call") == 0) {
         for (int i = 0; i < node->nchildren; i++)
             cg_expr(cg, node->children[i]);
-        fprintf(cg->out, "  call %s %d\n", node->sval, node->nchildren);
+        fprintf(cg->out, "  call %s", node->sval);
+        for (int i = 0; i < node->nchildren; i++) {
+            const char *ty = node->children[i]->type_annot;
+            fprintf(cg->out, " %s", ty ? ty : "?");
+        }
+        fprintf(cg->out, "\n");
         return;
     }
 
@@ -251,7 +256,12 @@ static void cg_stmt(CG *cg, AstNode *node) {
     if (strcmp(k, "call_stmt") == 0) {
         for (int i = 0; i < node->nchildren; i++)
             cg_expr(cg, node->children[i]);
-        fprintf(cg->out, "  call %s %d\n", node->sval, node->nchildren);
+        fprintf(cg->out, "  call %s", node->sval);
+        for (int i = 0; i < node->nchildren; i++) {
+            const char *ty = node->children[i]->type_annot;
+            fprintf(cg->out, " %s", ty ? ty : "?");
+        }
+        fprintf(cg->out, "\n");
         fprintf(cg->out, "  pop\n"); /* always discard call_stmt result */
         return;
     }
@@ -335,7 +345,10 @@ static void cg_fn(CG *cg, AstNode *node) {
     if (ret_nd->nchildren > 0 && ret_nd->children[0]->sval)
         ret_type = ret_nd->children[0]->sval;
 
-    fprintf(cg->out, ".fn %s %d %s\n", fname, params->nchildren, ret_type);
+    fprintf(cg->out, ".fn %s", fname);
+    for (int i = 0; i < params->nchildren; i++)
+        fprintf(cg->out, " %s", params->children[i]->children[0]->sval);
+    fprintf(cg->out, " %s\n", ret_type);
 
     for (int i = 0; i < params->nchildren; i++) {
         AstNode *p = params->children[i];

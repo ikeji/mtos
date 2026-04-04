@@ -3,7 +3,7 @@
 .global g_pos i32 0
 .global g_len i32 0
 
-.fn is_digit 1 bool
+.fn is_digit u8 bool
 .param c u8
 ; return c >= 48u8 && c <= 57u8;
   load c
@@ -23,7 +23,7 @@ __L1:
   return_void
 .endfn
 
-.fn is_space 1 bool
+.fn is_space u8 bool
 .param c u8
 ; return c == 32u8 || c == 9u8;
   load c
@@ -43,7 +43,7 @@ __L3:
   return_void
 .endfn
 
-.fn cur_char 1 u8
+.fn cur_char U8Array u8
 .param buf U8Array
 ; if g_pos >= g_len {
   load g_pos
@@ -54,16 +54,15 @@ __L3:
   push_int 0
   return
 __L4:
-; return get(buf, g_pos as u32);
+; return get(buf, g_pos);
   load buf
   load g_pos
-  cast u32
-  call get 2
+  call get U8Array i32
   return
   return_void
 .endfn
 
-.fn skip_spaces 1 void
+.fn skip_spaces U8Array void
 .param buf U8Array
 ; while g_pos < g_len && is_space(cur_char(buf)) {
 __L5:
@@ -72,8 +71,8 @@ __L5:
   lt
   jump_ifnot __L7
   load buf
-  call cur_char 1
-  call is_space 1
+  call cur_char U8Array
+  call is_space u8
   jump_ifnot __L7
   push_int 1
   jump __L8
@@ -93,12 +92,12 @@ __L6:
   return_void
 .endfn
 
-.fn parse_num 1 i32
+.fn parse_num U8Array i32
 .param buf U8Array
 .local result i32
 ; skip_spaces(buf);
   load buf
-  call skip_spaces 1
+  call skip_spaces U8Array
   pop
 ; var result: i32 = 0;
   push_int 0
@@ -110,8 +109,8 @@ __L9:
   lt
   jump_ifnot __L11
   load buf
-  call cur_char 1
-  call is_digit 1
+  call cur_char U8Array
+  call is_digit u8
   jump_ifnot __L11
   push_int 1
   jump __L12
@@ -124,7 +123,7 @@ __L12:
   push_int 10
   mul
   load buf
-  call cur_char 1
+  call cur_char U8Array
   cast i32
   push_int 48
   sub
@@ -143,18 +142,18 @@ __L10:
   return_void
 .endfn
 
-.fn parse_mul 1 i32
+.fn parse_mul U8Array i32
 .param buf U8Array
 .local left i32
 .local op u8
 .local right i32
 ; var left: i32 = parse_num(buf);
   load buf
-  call parse_num 1
+  call parse_num U8Array
   store left
 ; skip_spaces(buf);
   load buf
-  call skip_spaces 1
+  call skip_spaces U8Array
   pop
 ; while g_pos < g_len && (cur_char(buf) == 42u8 || cur_char(buf) == 47u8) {
 __L13:
@@ -163,12 +162,12 @@ __L13:
   lt
   jump_ifnot __L15
   load buf
-  call cur_char 1
+  call cur_char U8Array
   push_int 42
   eq
   jump_if __L17
   load buf
-  call cur_char 1
+  call cur_char U8Array
   push_int 47
   eq
   jump_if __L17
@@ -186,7 +185,7 @@ __L16:
   jump_ifnot __L14
 ; var op: u8 = cur_char(buf);
   load buf
-  call cur_char 1
+  call cur_char U8Array
   store op
 ; g_pos = g_pos + 1;
   load g_pos
@@ -195,7 +194,7 @@ __L16:
   store g_pos
 ; var right: i32 = parse_num(buf);
   load buf
-  call parse_num 1
+  call parse_num U8Array
   store right
 ; if op == 42u8 {
   load op
@@ -217,7 +216,7 @@ __L19:
 __L20:
 ; skip_spaces(buf);
   load buf
-  call skip_spaces 1
+  call skip_spaces U8Array
   pop
   jump __L13
 __L14:
@@ -227,18 +226,18 @@ __L14:
   return_void
 .endfn
 
-.fn parse_add 1 i32
+.fn parse_add U8Array i32
 .param buf U8Array
 .local left i32
 .local op u8
 .local right i32
 ; var left: i32 = parse_mul(buf);
   load buf
-  call parse_mul 1
+  call parse_mul U8Array
   store left
 ; skip_spaces(buf);
   load buf
-  call skip_spaces 1
+  call skip_spaces U8Array
   pop
 ; while g_pos < g_len && (cur_char(buf) == 43u8 || cur_char(buf) == 45u8) {
 __L21:
@@ -247,12 +246,12 @@ __L21:
   lt
   jump_ifnot __L23
   load buf
-  call cur_char 1
+  call cur_char U8Array
   push_int 43
   eq
   jump_if __L25
   load buf
-  call cur_char 1
+  call cur_char U8Array
   push_int 45
   eq
   jump_if __L25
@@ -270,7 +269,7 @@ __L24:
   jump_ifnot __L22
 ; var op: u8 = cur_char(buf);
   load buf
-  call cur_char 1
+  call cur_char U8Array
   store op
 ; g_pos = g_pos + 1;
   load g_pos
@@ -279,7 +278,7 @@ __L24:
   store g_pos
 ; var right: i32 = parse_mul(buf);
   load buf
-  call parse_mul 1
+  call parse_mul U8Array
   store right
 ; if op == 43u8 {
   load op
@@ -301,7 +300,7 @@ __L27:
 __L28:
 ; skip_spaces(buf);
   load buf
-  call skip_spaces 1
+  call skip_spaces U8Array
   pop
   jump __L21
 __L22:
@@ -311,30 +310,30 @@ __L22:
   return_void
 .endfn
 
-.fn main 0 i32
+.fn main i32
 .local buf U8Array
 .local result i32
 ; var buf: U8Array = U8Array(256);
   push_int 256
-  call U8Array 1
+  call U8Array i32
   store buf
-; g_len = sys_read(0, buf, 256u32);
+; g_len = sys_read(0, buf, 256);
   push_int 0
   load buf
   push_int 256
-  call sys_read 3
+  call sys_read i32 U8Array i32
   store g_len
 ; var result: i32 = parse_add(buf);
   load buf
-  call parse_add 1
+  call parse_add U8Array
   store result
 ; print_i32(result);
   load result
-  call print_i32 1
+  call print_i32 i32
   pop
 ; delete(buf);
   load buf
-  call delete 1
+  call delete U8Array
   pop
 ; return 0;
   push_int 0

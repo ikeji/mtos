@@ -4,7 +4,7 @@
 .string 1 "Fizz"
 .string 2 "Buzz"
 
-.fn fizzbuzz 1 i32
+.fn fizzbuzz i32 i32
 .param n i32
 .local i i32
 ; var i: i32 = 1;
@@ -25,7 +25,7 @@ __L0:
   jump_ifnot __L2
 ; print_str("FizzBuzz");
   push_str 0
-  call print_str 1
+  call print_str String
   pop
   jump __L3
 __L2:
@@ -38,7 +38,7 @@ __L2:
   jump_ifnot __L4
 ; print_str("Fizz");
   push_str 1
-  call print_str 1
+  call print_str String
   pop
   jump __L5
 __L4:
@@ -51,13 +51,13 @@ __L4:
   jump_ifnot __L6
 ; print_str("Buzz");
   push_str 2
-  call print_str 1
+  call print_str String
   pop
   jump __L7
 __L6:
 ; print_i32(i);
   load i
-  call print_i32 1
+  call print_i32 i32
   pop
 __L7:
 __L5:
@@ -75,10 +75,10 @@ __L1:
   return_void
 .endfn
 
-.fn main 0 i32
+.fn main i32
 ; return fizzbuzz(15);
   push_int 15
-  call fizzbuzz 1
+  call fizzbuzz i32
   return
   return_void
 .endfn

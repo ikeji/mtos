@@ -148,26 +148,12 @@ static const char *scope_lookup(TypeEnv *e, const char *name) {
     return NULL;
 }
 
-static int types_compatible(const char *param_type, const char *arg_type) {
-    if (!param_type || !arg_type) return 0;
-    if (strcmp(param_type, arg_type) == 0) return 1;
-    /* integer coercion: any int type is compatible with any other int type */
-    static const char *int_types[] = {"u8","u16","u32","i8","i16","i32","bool",NULL};
-    int param_int = 0, arg_int = 0;
-    for (int i = 0; int_types[i]; i++) {
-        if (strcmp(param_type, int_types[i]) == 0) param_int = 1;
-        if (strcmp(arg_type, int_types[i]) == 0) arg_int = 1;
-    }
-    if (param_int && arg_int) return 1;
-    return 0;
-}
-
 /* Match args to overloads. Return matched FnSig or NULL */
 static FnSig *resolve_overload(TypeEnv *e, const char *name,
                                 const char **arg_types, int nargs) {
     FnSig *matched = NULL;
     int nmatch = 0;
-    /* First try exact match */
+    /* Exact match only — no integer coercion */
     for (FnSig *s = e->fns; s; s = s->next) {
         if (strcmp(s->name, name) != 0) continue;
         if (s->nparam != nargs) continue;
@@ -178,19 +164,7 @@ static FnSig *resolve_overload(TypeEnv *e, const char *name,
         if (ok) { matched = s; nmatch++; }
     }
     if (nmatch == 1) return matched;
-    if (nmatch > 1) return NULL; /* ambiguous exact match */
-
-    /* Try with integer coercion */
-    for (FnSig *s = e->fns; s; s = s->next) {
-        if (strcmp(s->name, name) != 0) continue;
-        if (s->nparam != nargs) continue;
-        int ok = 1;
-        for (int i = 0; i < nargs; i++) {
-            if (!types_compatible(s->param_types[i], arg_types[i])) { ok = 0; break; }
-        }
-        if (ok) { matched = s; nmatch++; }
-    }
-    if (nmatch == 1) return matched;
+    if (nmatch > 1) return NULL; /* ambiguous */
     return NULL;
 }
 
@@ -198,16 +172,16 @@ static FnSig *resolve_overload(TypeEnv *e, const char *name,
 
 static void register_array_builtins(TypeEnv *e, const char *arr_type,
                                      const char *elem_type) {
-    /* XxxArray(size: u32) -> XxxArray  (constructor has same name as type) */
-    const char *pt_u32[] = {"u32"};
-    register_fn(e, arr_type, pt_u32, 1, arr_type);
+    /* XxxArray(size: i32) -> XxxArray  (constructor has same name as type) */
+    const char *pt_i32[] = {"i32"};
+    register_fn(e, arr_type, pt_i32, 1, arr_type);
 
     const char *pt_arr[] = {arr_type};
-    const char *pt_arr_idx[] = {arr_type, "u32"};
+    const char *pt_arr_idx[] = {arr_type, "i32"};
     const char *pt_arr_idx_val[3];
-    pt_arr_idx_val[0] = arr_type; pt_arr_idx_val[1] = "u32"; pt_arr_idx_val[2] = elem_type;
+    pt_arr_idx_val[0] = arr_type; pt_arr_idx_val[1] = "i32"; pt_arr_idx_val[2] = elem_type;
 
-    register_fn(e, "len", pt_arr, 1, "u32");
+    register_fn(e, "len", pt_arr, 1, "i32");
     register_fn(e, "get", pt_arr_idx, 2, elem_type);
     register_fn(e, "set", pt_arr_idx_val, 3, "void");
     register_fn(e, "delete", pt_arr, 1, "void");
@@ -236,12 +210,12 @@ static void register_builtins(TypeEnv *e) {
 
     /* String */
     const char *ps[] = {"String"};
-    const char *ps_u32[] = {"String","u32"};
+    const char *ps_i32[] = {"String","i32"};
     const char *ps_u8[] = {"String","u8"};
     const char *ps_s[] = {"String","String"};
     register_fn(e, "delete", ps, 1, "void");
-    register_fn(e, "len", ps, 1, "u32");
-    register_fn(e, "get", ps_u32, 2, "u8");
+    register_fn(e, "len", ps, 1, "i32");
+    register_fn(e, "get", ps_i32, 2, "u8");
     register_fn(e, "append", ps_u8, 2, "String");
     register_fn(e, "append", ps_s, 2, "String");
     register_fn(e, "equals", ps_s, 2, "bool");
@@ -250,8 +224,8 @@ static void register_builtins(TypeEnv *e) {
     register_array_builtins(e, "StringArray", "String");
 
     /* sys calls */
-    const char *sys_w[] = {"i32","U8Array","u32"};
-    const char *sys_r[] = {"i32","U8Array","u32"};
+    const char *sys_w[] = {"i32","U8Array","i32"};
+    const char *sys_r[] = {"i32","U8Array","i32"};
     const char *sys_e[] = {"i32"};
     register_fn(e, "sys_write", sys_w, 3, "i32");
     register_fn(e, "sys_read", sys_r, 3, "i32");
@@ -375,16 +349,16 @@ static const char *check_expr(TypeEnv *e, AstNode *node) {
     const char *k = node->kind;
 
     if (strcmp(k, "int") == 0) {
-        /* default type is i32, unless suffix overrides */
+        /* default type is i32, unless suffix (sval or pre-existing type_annot) overrides */
         const char *ty = "i32";
-        if (node->sval) {
-            /* suffix present */
-            if (strcmp(node->sval, "u8") == 0) ty = "u8";
-            else if (strcmp(node->sval, "u16") == 0) ty = "u16";
-            else if (strcmp(node->sval, "u32") == 0) ty = "u32";
-            else if (strcmp(node->sval, "i8") == 0) ty = "i8";
-            else if (strcmp(node->sval, "i16") == 0) ty = "i16";
-            else if (strcmp(node->sval, "i32") == 0) ty = "i32";
+        const char *suffix = node->type_annot ? node->type_annot : node->sval;
+        if (suffix) {
+            if (strcmp(suffix, "u8") == 0) ty = "u8";
+            else if (strcmp(suffix, "u16") == 0) ty = "u16";
+            else if (strcmp(suffix, "u32") == 0) ty = "u32";
+            else if (strcmp(suffix, "i8") == 0) ty = "i8";
+            else if (strcmp(suffix, "i16") == 0) ty = "i16";
+            else if (strcmp(suffix, "i32") == 0) ty = "i32";
         }
         set_annot(node, ty);
         return node->type_annot;
@@ -523,6 +497,8 @@ static void check_stmt(TypeEnv *e, AstNode *node) {
     }
 
     if (strcmp(k, "break") == 0 || strcmp(k, "continue") == 0) return;
+
+    if (strcmp(k, "comment") == 0) return;
 
     if (strcmp(k, "return") == 0) {
         if (node->nchildren > 0) {

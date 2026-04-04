@@ -1,8 +1,8 @@
     .text
 
-    .globl fib
-    .type  fib, @function
-fib:
+    .globl fib__i32
+    .type  fib__i32, @function
+fib__i32:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -51,7 +51,7 @@ fib:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call fib
+    call fib__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, -12(s0)
@@ -68,7 +68,7 @@ fib:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call fib
+    call fib__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t1, 0(sp)
@@ -90,7 +90,7 @@ fib:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of fib
+    # end of fib__i32
 
     .globl main
     .type  main, @function
@@ -106,7 +106,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 0(sp)
     addi sp, sp, 4
-    call fib
+    call fib__i32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)

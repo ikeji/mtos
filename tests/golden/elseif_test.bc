@@ -1,5 +1,5 @@
 .bc
-.fn classify 1 i32
+.fn classify i32 i32
 .param x i32
 ; if x < 0 {
   load x
@@ -38,7 +38,7 @@ __L1:
   return_void
 .endfn
 
-.fn main 0 i32
+.fn main i32
 .local a i32
 .local b i32
 .local c i32
@@ -47,35 +47,35 @@ __L1:
   push_int 0
   push_int 5
   sub
-  call classify 1
+  call classify i32
   store a
 ; var b: i32 = classify(0);
   push_int 0
-  call classify 1
+  call classify i32
   store b
 ; var c: i32 = classify(7);
   push_int 7
-  call classify 1
+  call classify i32
   store c
 ; var d: i32 = classify(42);
   push_int 42
-  call classify 1
+  call classify i32
   store d
 ; print_i32(a);
   load a
-  call print_i32 1
+  call print_i32 i32
   pop
 ; print_i32(b);
   load b
-  call print_i32 1
+  call print_i32 i32
   pop
 ; print_i32(c);
   load c
-  call print_i32 1
+  call print_i32 i32
   pop
 ; print_i32(d);
   load d
-  call print_i32 1
+  call print_i32 i32
   pop
 ; return 0;
   push_int 0

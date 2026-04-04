@@ -97,6 +97,11 @@ static void ast_print_with_source_inner(AstNode *node, int indent, const char *s
         fputs(node->type_annot, stdout);
     }
     if (strcmp(node->kind, "int") == 0) {
+        /* emit suffix as type_annot if not already annotated */
+        if (node->sval && !node->type_annot) {
+            putchar(':');
+            fputs(node->sval, stdout);
+        }
         printf(" %ld", node->ival);
     } else if (strcmp(node->kind, "str") == 0 && node->sval) {
         putchar(' ');
@@ -134,11 +139,12 @@ void ast_print(AstNode *node, int indent) {
         fputs(node->type_annot, stdout);
     }
     if (strcmp(node->kind, "int") == 0) {
-        /* always print ival; sval holds suffix */
-        printf(" %ld", node->ival);
-        if (node->sval) {
-            /* suffix as annotation if not already annotated */
+        /* always print ival; sval holds suffix — emit suffix as type_annot */
+        if (node->sval && !node->type_annot) {
+            putchar(':');
+            fputs(node->sval, stdout);
         }
+        printf(" %ld", node->ival);
     } else if (strcmp(node->kind, "str") == 0 && node->sval) {
         putchar(' ');
         print_escaped_str(node->sval);

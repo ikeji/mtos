@@ -92,14 +92,14 @@ fn is_wspace(c: u8) -> bool {
 // ===== Output buffer helpers =====
 fn ob_flush(ob: U8Array) -> void {
     if g_ob_pos > 0 {
-        sys_write(1, ob, g_ob_pos as u32);
+        sys_write(1, ob, g_ob_pos);
         g_ob_pos = 0;
     }
     return;
 }
 
 fn ob_char(c: u8, ob: U8Array) -> void {
-    set(ob, g_ob_pos as u32, c);
+    set(ob, g_ob_pos, c);
     g_ob_pos = g_ob_pos + 1;
     if g_ob_pos >= 1048576 {
         ob_flush(ob);
@@ -110,7 +110,7 @@ fn ob_char(c: u8, ob: U8Array) -> void {
 fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
     var i: i32 = 0;
     while i < n {
-        ob_char(get(src, (start + i) as u32), ob);
+        ob_char(get(src, (start + i)), ob);
         i = i + 1;
     }
     return;
@@ -127,21 +127,21 @@ fn ob_indent(level: i32, ob: U8Array) -> void {
 }
 
 fn tok_cmp(tok: U8Array, tlen: i32, target: String) -> bool {
-    if tlen != len(target) as i32 { return false; }
+    if tlen != len(target) { return false; }
     var i: i32 = 0;
     while i < tlen {
-        if get(tok, i as u32) != get(target, i as u32) { return false; }
+        if get(tok, i) != get(target, i) { return false; }
         i = i + 1;
     }
     return true;
 }
 
 fn ob_string(str: String, ob: U8Array) -> void {
-    var i: u32 = 0u32;
-    var n: u32 = len(str);
+    var i: i32 = 0;
+    var n: i32 = len(str);
     while i < n {
         ob_char(get(str, i), ob);
-        i = i + 1u32;
+        i = i + 1;
     }
     return;
 }
@@ -160,14 +160,14 @@ fn ob_int(n: i32, ob: U8Array) -> void {
     var len: i32 = 0;
     var v: i32 = n;
     while v > 0 {
-        set(tmp, len as u32, (48 + v % 10) as u8);
+        set(tmp, len, (48 + v % 10) as u8);
         len = len + 1;
         v = v / 10;
     }
     // Write in reverse
     var i: i32 = len - 1;
     while i >= 0 {
-        ob_char(get(tmp, i as u32), ob);
+        ob_char(get(tmp, i), ob);
         i = i - 1;
     }
     delete(tmp);
@@ -259,7 +259,7 @@ fn classify_ident(tok: U8Array, tlen: i32) -> i32 {
 
 fn src_char(src: U8Array) -> u8 {
     if g_pos >= g_len { return 0u8; }
-    return get(src, g_pos as u32);
+    return get(src, g_pos);
 }
 
 fn next_tok(src: U8Array, tok: U8Array) -> void {
@@ -270,7 +270,7 @@ fn next_tok(src: U8Array, tok: U8Array) -> void {
             if c == 10u8 { g_line = g_line + 1; }
             g_pos = g_pos + 1;
         } else {
-            if c == '/' && g_pos + 1 < g_len && get(src, (g_pos+1) as u32) == '/' {
+            if c == '/' && g_pos + 1 < g_len && get(src, (g_pos+1)) == '/' {
                 // '//' comment: skip to end of line
                 while g_pos < g_len && src_char(src) != 10u8 {
                     g_pos = g_pos + 1;
@@ -300,14 +300,14 @@ fn next_tok(src: U8Array, tok: U8Array) -> void {
 fn skip_ws_and_comments(src: U8Array) -> void {
     var done: i32 = 0;
     while done == 0 && g_pos < g_len {
-        var c: u8 = get(src, g_pos as u32);
+        var c: u8 = get(src, g_pos);
         if is_wspace(c) {
             if c == 10u8 { g_line = g_line + 1; }
             g_pos = g_pos + 1;
         } else {
-            if c == '/' && g_pos + 1 < g_len && get(src, (g_pos+1) as u32) == '/' {
+            if c == '/' && g_pos + 1 < g_len && get(src, (g_pos+1)) == '/' {
                 // line comment
-                while g_pos < g_len && get(src, g_pos as u32) != 10u8 {
+                while g_pos < g_len && get(src, g_pos) != 10u8 {
                     g_pos = g_pos + 1;
                 }
             } else {
@@ -328,19 +328,19 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
         return;
     }
 
-    var c: u8 = get(src, g_pos as u32);
+    var c: u8 = get(src, g_pos);
 
     // Identifier or keyword
     if is_alpha(c) {
         var start: i32 = g_pos;
-        while g_pos < g_len && is_alnum(get(src, g_pos as u32)) {
+        while g_pos < g_len && is_alnum(get(src, g_pos)) {
             g_pos = g_pos + 1;
         }
         var tlen: i32 = g_pos - start;
         // Copy to tok buffer
         var i: i32 = 0;
         while i < tlen {
-            set(tok, i as u32, get(src, (start + i) as u32));
+            set(tok, i, get(src, (start + i)));
             i = i + 1;
         }
         g_tok_slen = tlen;
@@ -351,22 +351,22 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
     // Integer literal
     if is_digit(c) {
         var ival: i32 = 0;
-        while g_pos < g_len && is_digit(get(src, g_pos as u32)) {
-            ival = ival * 10 + (get(src, g_pos as u32) as i32 - 48);
+        while g_pos < g_len && is_digit(get(src, g_pos)) {
+            ival = ival * 10 + (get(src, g_pos) as i32 - 48);
             g_pos = g_pos + 1;
         }
         // Check for suffix (u8, u16, u32, i8, i16, i32)
         // We'll skip the suffix but remember we had one
-        if g_pos < g_len && is_alpha(get(src, g_pos as u32)) {
+        if g_pos < g_len && is_alpha(get(src, g_pos)) {
             var sstart: i32 = g_pos;
-            while g_pos < g_len && is_alnum(get(src, g_pos as u32)) {
+            while g_pos < g_len && is_alnum(get(src, g_pos)) {
                 g_pos = g_pos + 1;
             }
             // Store suffix in tok buf
             var slen: i32 = g_pos - sstart;
             var i: i32 = 0;
             while i < slen {
-                set(tok, i as u32, get(src, (sstart + i) as u32));
+                set(tok, i, get(src, (sstart + i)));
                 i = i + 1;
             }
             g_tok_slen = slen;
@@ -382,12 +382,12 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
     if c == '"' {   // '"'
         g_pos = g_pos + 1;  // skip opening "
         var slen: i32 = 0;
-        while g_pos < g_len && get(src, g_pos as u32) != '"' {
-            var ch: u8 = get(src, g_pos as u32);
+        while g_pos < g_len && get(src, g_pos) != '"' {
+            var ch: u8 = get(src, g_pos);
             if ch == '\\' && g_pos + 1 < g_len {
                 // escape sequence
                 g_pos = g_pos + 1;
-                var esc: u8 = get(src, g_pos as u32);
+                var esc: u8 = get(src, g_pos);
                 var out: u8 = esc;
                 if esc == 'n' { out = 10u8; }   // \n
                 if esc == 't' { out = 9u8; }    // \t
@@ -395,11 +395,11 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
                 if esc == '"'  { out = '"'; }   // \"
                 if esc == '\\'  { out = '\\'; }   // \\
                 if esc == '0'  { out = 0u8; }    // \0
-                set(tok, slen as u32, out);
+                set(tok, slen, out);
                 slen = slen + 1;
                 g_pos = g_pos + 1;
             } else {
-                set(tok, slen as u32, ch);
+                set(tok, slen, ch);
                 slen = slen + 1;
                 g_pos = g_pos + 1;
             }
@@ -414,10 +414,10 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
     if c == '\'' {   // '\''
         g_pos = g_pos + 1;  // skip opening '
         var cval: i32 = 0;
-        var ch2: u8 = get(src, g_pos as u32);
+        var ch2: u8 = get(src, g_pos);
         if ch2 == '\\' && g_pos + 1 < g_len {  // backslash escape
             g_pos = g_pos + 1;
-            var esc: u8 = get(src, g_pos as u32);
+            var esc: u8 = get(src, g_pos);
             var handled: i32 = 0;
             if esc == 'n' { cval = 10; handled = 1; }    // \n
             if esc == 't' { cval = 9; handled = 1; }     // \t
@@ -431,9 +431,9 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
             cval = ch2 as i32;
             g_pos = g_pos + 1;
         }
-        if g_pos < g_len && get(src, g_pos as u32) == '\'' { g_pos = g_pos + 1; }  // closing '
+        if g_pos < g_len && get(src, g_pos) == '\'' { g_pos = g_pos + 1; }  // closing '
         // Store "u8" suffix in tok buffer: 117='u', 56='8'
-        set(tok, 0u32, 'u'); set(tok, 1u32, '8');
+        set(tok, 0, 'u'); set(tok, 1, '8');
         g_tok_slen = 2;
         g_tok_ival = cval;
         g_tok = TK_INT_LIT;
@@ -444,13 +444,13 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
 
     // Single and multi-character operators
     if c == '+' {  // + or +=
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_PLUS_EQ; return;
         }
         g_tok = TK_PLUS; return;
     }
     if c == '%' {  // % or %=
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_PERCENT_EQ; return;
         }
         g_tok = TK_PERCENT; return;
@@ -465,64 +465,64 @@ fn lex_tok(src: U8Array, tok: U8Array) -> void {
     if c == ':' { g_tok = TK_COLON; return; }   // :
 
     if c == '*' {  // * or *=
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_STAR_EQ; return;
         }
         g_tok = TK_STAR; return;
     }
     if c == '/' {  // / or /=
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_SLASH_EQ; return;
         }
         g_tok = TK_SLASH; return;
     }
     if c == '&' {  // & or &&
-        if g_pos < g_len && get(src, g_pos as u32) == '&' {
+        if g_pos < g_len && get(src, g_pos) == '&' {
             g_pos = g_pos + 1; g_tok = TK_AMPAMP; return;
         }
         g_tok = TK_AMP; return;
     }
     if c == '|' {  // | or ||
-        if g_pos < g_len && get(src, g_pos as u32) == '|' {
+        if g_pos < g_len && get(src, g_pos) == '|' {
             g_pos = g_pos + 1; g_tok = TK_PIPEPIPE; return;
         }
         g_tok = TK_PIPE; return;
     }
     if c == '!' {  // ! or !=
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_BANGEQ; return;
         }
         g_tok = TK_BANG; return;
     }
     if c == '=' {  // = or ==
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_EQEQ; return;
         }
         g_tok = TK_EQ; return;
     }
     if c == '<' {  // < or <= or <<
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_LTEQ; return;
         }
-        if g_pos < g_len && get(src, g_pos as u32) == '<' {
+        if g_pos < g_len && get(src, g_pos) == '<' {
             g_pos = g_pos + 1; g_tok = TK_LSHIFT; return;
         }
         g_tok = TK_LT; return;
     }
     if c == '>' {  // > or >= or >>
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_GTEQ; return;
         }
-        if g_pos < g_len && get(src, g_pos as u32) == '>' {
+        if g_pos < g_len && get(src, g_pos) == '>' {
             g_pos = g_pos + 1; g_tok = TK_RSHIFT; return;
         }
         g_tok = TK_GT; return;
     }
     if c == '-' {  // - or -> or -=
-        if g_pos < g_len && get(src, g_pos as u32) == '>' {
+        if g_pos < g_len && get(src, g_pos) == '>' {
             g_pos = g_pos + 1; g_tok = TK_ARROW; return;
         }
-        if g_pos < g_len && get(src, g_pos as u32) == '=' {
+        if g_pos < g_len && get(src, g_pos) == '=' {
             g_pos = g_pos + 1; g_tok = TK_MINUS_EQ; return;
         }
         g_tok = TK_MINUS; return;
@@ -537,13 +537,13 @@ fn expect_tok(kind: i32, src: U8Array, tok: U8Array) -> void {
     if g_tok != kind {
         // Error: write to stderr fd=2
         var errbuf: U8Array = U8Array(32);
-        set(errbuf, 0u32, 'p'); set(errbuf, 1u32, 'a'); set(errbuf, 2u32, 'r');
-        set(errbuf, 3u32, 's'); set(errbuf, 4u32, 'e'); set(errbuf, 5u32, ':');
-        set(errbuf, 6u32, ' '); set(errbuf, 7u32, 'u'); set(errbuf, 8u32, 'n');
-        set(errbuf, 9u32, 'e'); set(errbuf, 10u32, 'x'); set(errbuf, 11u32, 'p');
-        set(errbuf, 12u32, 'e'); set(errbuf, 13u32, 'c'); set(errbuf, 14u32, 't');
-        set(errbuf, 15u32, 'e'); set(errbuf, 16u32, 'd'); set(errbuf, 17u32, 10u8);
-        sys_write(2, errbuf, 18u32);
+        set(errbuf, 0, 'p'); set(errbuf, 1, 'a'); set(errbuf, 2, 'r');
+        set(errbuf, 3, 's'); set(errbuf, 4, 'e'); set(errbuf, 5, ':');
+        set(errbuf, 6, ' '); set(errbuf, 7, 'u'); set(errbuf, 8, 'n');
+        set(errbuf, 9, 'e'); set(errbuf, 10, 'x'); set(errbuf, 11, 'p');
+        set(errbuf, 12, 'e'); set(errbuf, 13, 'c'); set(errbuf, 14, 't');
+        set(errbuf, 15, 'e'); set(errbuf, 16, 'd'); set(errbuf, 17, 10u8);
+        sys_write(2, errbuf, 18);
         delete(errbuf);
         sys_exit(1);
     }
@@ -578,7 +578,7 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         // Escape and print string content with double quotes
         var i: i32 = 0;
         while i < g_tok_slen {
-            var ch: u8 = get(tok, i as u32);
+            var ch: u8 = get(tok, i);
             if ch == '"' { ob_char('\\', ob); ob_char('"', ob); }
             else {
                 if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
@@ -618,7 +618,7 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var name_buf: U8Array = U8Array(name_len + 1);
         var i: i32 = 0;
         while i < name_len {
-            set(name_buf, i as u32, get(tok, i as u32));
+            set(name_buf, i, get(tok, i));
             i = i + 1;
         }
         lex_tok(src, tok);  // consume ident
@@ -667,7 +667,7 @@ fn pars_postfix(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var saved: U8Array = U8Array(expr_len);
         var i: i32 = 0;
         while i < expr_len {
-            set(saved, i as u32, get(ob, (start + i) as u32));
+            set(saved, i, get(ob, (start + i)));
             i = i + 1;
         }
         g_ob_pos = start;
@@ -717,7 +717,7 @@ fn pars_mul(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -740,7 +740,7 @@ fn pars_add(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -763,7 +763,7 @@ fn pars_shift(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -785,7 +785,7 @@ fn pars_bitand(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -807,7 +807,7 @@ fn pars_bitxor(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -829,7 +829,7 @@ fn pars_bitor(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -852,7 +852,7 @@ fn pars_compare(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -874,7 +874,7 @@ fn pars_logic_and(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -896,7 +896,7 @@ fn pars_expr(src: U8Array, tok: U8Array, ob: U8Array) -> void {
         var lbuf: U8Array = U8Array(left_len + 1);
         var i: i32 = 0;
         while i < left_len {
-            set(lbuf, i as u32, get(ob, (left_start + i) as u32));
+            set(lbuf, i, get(ob, (left_start + i)));
             i = i + 1;
         }
         g_ob_pos = left_start;
@@ -936,7 +936,7 @@ fn pars_var_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
     while i < name_len {
-        set(name_buf, i as u32, get(tok, i as u32));
+        set(name_buf, i, get(tok, i));
         i = i + 1;
     }
     expect_tok(TK_IDENT, src, tok);
@@ -1039,7 +1039,7 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void
     var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
     while i < name_len {
-        set(name_buf, i as u32, get(tok, i as u32));
+        set(name_buf, i, get(tok, i));
         i = i + 1;
     }
     expect_tok(TK_IDENT, src, tok);
@@ -1117,21 +1117,21 @@ fn emit_stmt_comment(src: U8Array, line: i32, ob: U8Array) -> void {
     var pos: i32 = 0;
     var cur_line: i32 = 1;
     while cur_line < line && pos < g_len {
-        if get(src, pos as u32) == 10u8 { cur_line = cur_line + 1; }
+        if get(src, pos) == 10u8 { cur_line = cur_line + 1; }
         pos = pos + 1;
     }
     // Skip leading whitespace
-    while pos < g_len && (get(src, pos as u32) == ' ' || get(src, pos as u32) == 9u8) {
+    while pos < g_len && (get(src, pos) == ' ' || get(src, pos) == 9u8) {
         pos = pos + 1;
     }
     // Skip empty lines
     if pos >= g_len { return; }
-    var first: u8 = get(src, pos as u32);
+    var first: u8 = get(src, pos);
     if first == 10u8 || first == 13u8 { return; }
     // Emit (comment "...")
     ob_char('(', ob); ob_string("comment", ob); ob_char(' ', ob); ob_char('"', ob);
-    while pos < g_len && get(src, pos as u32) != 10u8 && get(src, pos as u32) != 13u8 {
-        var ch: u8 = get(src, pos as u32);
+    while pos < g_len && get(src, pos) != 10u8 && get(src, pos) != 13u8 {
+        var ch: u8 = get(src, pos);
         if ch == '"' { ob_char('\\', ob); ob_char('"', ob); }
         else {
             if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
@@ -1180,7 +1180,7 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
     while i < name_len {
-        set(name_buf, i as u32, get(tok, i as u32));
+        set(name_buf, i, get(tok, i));
         i = i + 1;
     }
     expect_tok(TK_IDENT, src, tok);
@@ -1202,7 +1202,7 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
             var pname_buf: U8Array = U8Array(pname_len + 1);
             var j: i32 = 0;
             while j < pname_len {
-                set(pname_buf, j as u32, get(tok, j as u32));
+                set(pname_buf, j, get(tok, j));
                 j = j + 1;
             }
             expect_tok(TK_IDENT, src, tok);
@@ -1265,7 +1265,7 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
     var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
     while i < name_len {
-        set(name_buf, i as u32, get(tok, i as u32));
+        set(name_buf, i, get(tok, i));
         i = i + 1;
     }
     expect_tok(TK_IDENT, src, tok);
@@ -1287,7 +1287,7 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
             var fname_buf: U8Array = U8Array(fname_len + 1);
             var j: i32 = 0;
             while j < fname_len {
-                set(fname_buf, j as u32, get(tok, j as u32));
+                set(fname_buf, j, get(tok, j));
                 j = j + 1;
             }
             expect_tok(TK_IDENT, src, tok);
@@ -1364,15 +1364,15 @@ fn main() -> i32 {
 
     // Read all of stdin in a loop (a single sys_read may return less on pipes)
     g_len = 0;
-    var chunk: i32 = sys_read(0, read_tmp, 4096u32);
+    var chunk: i32 = sys_read(0, read_tmp, 4096);
     while chunk > 0 && g_len + chunk <= 524288 {
         var ci: i32 = 0;
         while ci < chunk {
-            set(src_buf, g_len as u32, get(read_tmp, ci as u32));
+            set(src_buf, g_len, get(read_tmp, ci));
             g_len = g_len + 1;
             ci = ci + 1;
         }
-        chunk = sys_read(0, read_tmp, 4096u32);
+        chunk = sys_read(0, read_tmp, 4096);
     }
     delete(read_tmp);
     g_pos = 0;

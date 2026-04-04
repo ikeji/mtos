@@ -73,13 +73,11 @@
           )
         )
       )
-      (comment "return get(buf, g_pos as u32);")
+      (comment "return get(buf, g_pos);")
       (return
         (call get
 (var buf)
-(cast
-(var g_pos)
-(type u32)))
+(var g_pos))
       )
     )
   )
@@ -361,7 +359,7 @@
         (call U8Array
 (int 256))
       )
-      (comment "g_len = sys_read(0, buf, 256u32);")
+      (comment "g_len = sys_read(0, buf, 256);")
       (assign g_len
         (call sys_read
 (int 0)
