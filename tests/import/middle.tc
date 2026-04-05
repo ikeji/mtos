@@ -1,0 +1,5 @@
+import "inner.tc";
+
+export fn middle_val() -> i32 {
+    return inner_val();
+}

@@ -1,0 +1,6 @@
+import "types.tc";
+
+fn main() -> i32 {
+    var p: Point = Point(1, 2);
+    return 0;
+}

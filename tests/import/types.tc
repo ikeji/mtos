@@ -1,0 +1,16 @@
+struct Point {
+    x: i32,
+    y: i32
+}
+
+export fn make_point(px: i32, py: i32) -> Point {
+    return Point(px, py);
+}
+
+export fn point_x(p: Point) -> i32 {
+    return x(p);
+}
+
+export fn point_y(p: Point) -> i32 {
+    return y(p);
+}

@@ -29,6 +29,8 @@ echo ""
 run_suite run_compiler_tests.sh
 echo ""
 run_suite run_gen3_tests.sh
+echo ""
+run_suite run_import_tests.sh
 
 TOTAL_ELAPSED=$(( $(time_ms) - TOTAL_START ))
 echo ""
