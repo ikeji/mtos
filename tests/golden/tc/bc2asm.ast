@@ -7355,6 +7355,106 @@
           )
         )
       )
+      (comment "if a=='h'&&b=='e'&&c=='a' {                            // heap_mark / heap_reset")
+      (if
+        (binop &&
+          (binop &&
+            (binop ==
+              (var a)
+              (int:u8 104)
+            )
+            (binop ==
+              (var b)
+              (int:u8 101)
+            )
+          )
+          (binop ==
+            (var c)
+            (int:u8 97)
+          )
+        )
+        (block
+          (comment "if bsl==9||bsl==10 {")
+          (if
+            (binop ||
+              (binop ==
+                (var bsl)
+                (int 9)
+              )
+              (binop ==
+                (var bsl)
+                (int 10)
+              )
+            )
+            (block
+              (comment "var d: u8=get(strtab,(ss+3));")
+              (var_decl d
+                (type u8)
+                (call get
+                  (var strtab)
+                  (binop +
+                    (var ss)
+                    (int 3)
+                  )
+                )
+              )
+              (comment "var e: u8=get(strtab,(ss+4));")
+              (var_decl e
+                (type u8)
+                (call get
+                  (var strtab)
+                  (binop +
+                    (var ss)
+                    (int 4)
+                  )
+                )
+              )
+              (comment "var f: u8=get(strtab,(ss+5));")
+              (var_decl f
+                (type u8)
+                (call get
+                  (var strtab)
+                  (binop +
+                    (var ss)
+                    (int 5)
+                  )
+                )
+              )
+              (comment "if d=='p'&&e=='_'&&(f=='m'||f=='r') { return 1; }")
+              (if
+                (binop &&
+                  (binop &&
+                    (binop ==
+                      (var d)
+                      (int:u8 112)
+                    )
+                    (binop ==
+                      (var e)
+                      (int:u8 95)
+                    )
+                  )
+                  (binop ||
+                    (binop ==
+                      (var f)
+                      (int:u8 109)
+                    )
+                    (binop ==
+                      (var f)
+                      (int:u8 114)
+                    )
+                  )
+                )
+                (block
+                  (comment "if d=='p'&&e=='_'&&(f=='m'||f=='r') { return 1; }")
+                  (return
+                    (int 1)
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
       (comment "return 0;")
       (return
         (int 0)

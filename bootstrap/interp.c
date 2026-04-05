@@ -297,6 +297,10 @@ static Value call_builtin(Interp *ip, const char *name, Value *args, int nargs) 
         exit(args[0].ival);
     }
 
+    /* heap scope management — no-ops in interp (uses GC-like allocation) */
+    if (strcmp(name, "heap_mark") == 0 && nargs == 0) return val_int(0);
+    if (strcmp(name, "heap_reset") == 0 && nargs == 1) return val_void();
+
     /* print helpers */
     if (strcmp(name, "print_i32") == 0 && nargs == 1) {
         printf("%d\n", (int)args[0].ival);
@@ -424,6 +428,7 @@ static int is_builtin(const char *name) {
         "sys_write","sys_read","sys_exit",
         "print_i32","print_u32","print_bool","print_str",
         "len","get","set","delete","append","equals",
+        "heap_mark","heap_reset",
         NULL
     };
     for (int i = 0; builtins[i]; i++)

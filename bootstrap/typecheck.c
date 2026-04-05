@@ -231,6 +231,11 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "sys_read", sys_r, 3, "i32");
     register_fn(e, "sys_exit", sys_e, 1, "void");
 
+    /* Heap scope management */
+    register_fn(e, "heap_mark", NULL, 0, "i32");
+    const char *hm_args[] = {"i32"};
+    register_fn(e, "heap_reset", hm_args, 1, "void");
+
     /* print helpers */
     const char *pi[] = {"i32"};
     const char *pu[] = {"u32"};

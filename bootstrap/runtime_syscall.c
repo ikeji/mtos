@@ -171,6 +171,12 @@ void __tc_set(HeapObj *o, int32_t idx, int32_t val) {
 
 void __tc_delete(HeapObj *o) { (void)o; /* bump allocator — no-op */ }
 
+/* Mark/reset pair for scope-based memory reclamation. */
+int32_t __tc_heap_mark(void) { return heap_pos; }
+void __tc_heap_reset(int32_t mark) {
+    if (mark >= 0 && mark <= heap_pos) heap_pos = mark;
+}
+
 /* ===== String operations ===== */
 
 HeapObj *__tc_append_char(HeapObj *s, int32_t c) {

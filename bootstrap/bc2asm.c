@@ -260,6 +260,7 @@ static int is_builtin(const char *mangled) {
         "sys_write","sys_read","sys_exit",
         "print_i32","print_u32","print_bool","print_str",
         "len","get","set","delete","append","equals",
+        "heap_mark","heap_reset",
         NULL
     };
     char name[128]; base_name(mangled, name, sizeof(name));

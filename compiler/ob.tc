@@ -99,7 +99,13 @@ export fn ob_pos(ob: OutputBuffer) -> i32 {
     return pos(ob);
 }
 
-export fn ob_set_pos(ob: OutputBuffer, new_pos: i32) -> void {
-    pos(ob, new_pos);
+// Append all bytes from src (positions 0..pos(src)) into dst.
+export fn ob_append(dst: OutputBuffer, src: OutputBuffer) -> void {
+    var n: i32 = pos(src);
+    var i: i32 = 0;
+    while i < n {
+        ob_char(get(buf(src), i), dst);
+        i = i + 1;
+    }
     return;
 }

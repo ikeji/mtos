@@ -533,6 +533,7 @@ static int is_builtin(const char *name) {
         "sys_write","sys_read","sys_exit",
         "print_i32","print_u32","print_bool","print_str",
         "len","get","set","delete","append","equals",
+        "heap_mark","heap_reset",
         NULL
     };
     char base[128]; base_name(name, base, sizeof(base));
@@ -583,6 +584,10 @@ static Value call_builtin(const char *mangled, Value *args, int nargs) {
         return val_int(-1);
     }
     if (!strcmp(name,"sys_exit") && nargs==1) exit(args[0].ival);
+
+    /* heap scope management — no-ops in bcrun (uses malloc-backed heap) */
+    if (!strcmp(name,"heap_mark") && nargs==0) return val_int(0);
+    if (!strcmp(name,"heap_reset") && nargs==1) return val_void();
 
     /* print helpers */
     if (!strcmp(name,"print_i32"))  { printf("%d\n",  (int)args[0].ival);              return val_void(); }

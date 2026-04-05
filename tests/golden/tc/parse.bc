@@ -2686,16 +2686,17 @@ __L259:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local start i32
-.local expr_len i32
-.local saved U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store start
+.local mark i32
+.local inner OutputBuffer
+.local wrapped OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store inner
   load src
   load tok
-  load ob
+  load inner
   call pars_primary U8Array U8Array OutputBuffer
   pop
 __L269:
@@ -2707,77 +2708,50 @@ __L269:
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load start
-  sub
-  store expr_len
-  load expr_len
-  call U8Array i32
-  store saved
-  push_int 0
-  store i
-__L271:
-  load i
-  load expr_len
-  lt
-  jump_ifnot __L272
-  load saved
-  load i
-  load ob
-  load start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
-  pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L271
-__L272:
-  load ob
-  load start
-  call ob_set_pos OutputBuffer i32
-  pop
+  push_int 65536
+  call ob_new i32
+  store wrapped
   push_int 40
-  load ob
+  load wrapped
   call ob_char u8 OutputBuffer
   pop
   push_str 34
-  load ob
+  load wrapped
   call ob_string String OutputBuffer
   pop
   push_int 10
-  load ob
+  load wrapped
   call ob_char u8 OutputBuffer
   pop
-  load saved
-  push_int 0
-  load expr_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load wrapped
+  load inner
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
-  load ob
+  load wrapped
   call ob_char u8 OutputBuffer
   pop
   load src
   load tok
-  load ob
+  load wrapped
   push_int 0
   call pars_type U8Array U8Array OutputBuffer i32
   pop
   push_int 41
-  load ob
+  load wrapped
   call ob_char u8 OutputBuffer
   pop
-  load saved
-  call delete U8Array
-  pop
+  load wrapped
+  store inner
   jump __L269
 __L270:
+  load ob
+  load inner
+  call ob_append OutputBuffer OutputBuffer
+  pop
+  load mark
+  call heap_reset i32
+  pop
   return_void
   return_void
 .endfn
@@ -2789,7 +2763,7 @@ __L270:
   load g_tok
   load TK_BANG
   eq
-  jump_ifnot __L273
+  jump_ifnot __L271
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -2824,11 +2798,11 @@ __L270:
   call ob_char u8 OutputBuffer
   pop
   return_void
-__L273:
+__L271:
   load g_tok
   load TK_MINUS
   eq
-  jump_ifnot __L274
+  jump_ifnot __L272
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -2863,7 +2837,7 @@ __L273:
   call ob_char u8 OutputBuffer
   pop
   return_void
-__L274:
+__L272:
   load src
   load tok
   load ob
@@ -2877,36 +2851,28 @@ __L274:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local left_start i32
+.local mark i32
+.local left_ob OutputBuffer
 .local op i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store left_start
+.local right_ob OutputBuffer
+.local combined OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
   load src
   load tok
-  load ob
+  load left_ob
   call pars_unary U8Array U8Array OutputBuffer
   pop
-__L275:
+__L273:
   load g_tok
   load TK_STAR
   eq
-  jump_if __L279
-  load g_tok
-  load TK_SLASH
-  eq
-  jump_if __L279
-  push_int 0
-  jump __L280
-__L279:
-  push_int 1
-__L280:
   jump_if __L277
   load g_tok
-  load TK_PERCENT
+  load TK_SLASH
   eq
   jump_if __L277
   push_int 0
@@ -2914,93 +2880,81 @@ __L280:
 __L277:
   push_int 1
 __L278:
-  jump_ifnot __L276
+  jump_if __L275
+  load g_tok
+  load TK_PERCENT
+  eq
+  jump_if __L275
+  push_int 0
+  jump __L276
+__L275:
+  push_int 1
+__L276:
+  jump_ifnot __L274
   load g_tok
   store op
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L281:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L282
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_unary U8Array U8Array OutputBuffer
   pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L281
-__L282:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
-  pop
+  push_int 65536
+  call ob_new i32
+  store combined
   push_int 40
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 30
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 32
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   load op
-  load ob
+  load combined
   call ob_op i32 OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  push_int 0
-  load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load combined
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load src
-  load tok
-  load ob
-  call pars_unary U8Array U8Array OutputBuffer
+  load combined
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 41
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  call delete U8Array
+  load combined
+  store left_ob
+  jump __L273
+__L274:
+  load ob
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
-  jump __L275
-__L276:
+  load mark
+  call heap_reset i32
+  pop
   return_void
   return_void
 .endfn
@@ -3009,26 +2963,130 @@ __L276:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local left_start i32
+.local mark i32
+.local left_ob OutputBuffer
 .local op i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store left_start
+.local right_ob OutputBuffer
+.local combined OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
   load src
   load tok
-  load ob
+  load left_ob
   call pars_mul U8Array U8Array OutputBuffer
   pop
-__L283:
+__L279:
   load g_tok
   load TK_PLUS
   eq
-  jump_if __L285
+  jump_if __L281
   load g_tok
   load TK_MINUS
+  eq
+  jump_if __L281
+  push_int 0
+  jump __L282
+__L281:
+  push_int 1
+__L282:
+  jump_ifnot __L280
+  load g_tok
+  store op
+  load src
+  load tok
+  call lex_tok U8Array U8Array
+  pop
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_mul U8Array U8Array OutputBuffer
+  pop
+  push_int 65536
+  call ob_new i32
+  store combined
+  push_int 40
+  load combined
+  call ob_char u8 OutputBuffer
+  pop
+  push_str 30
+  load combined
+  call ob_string String OutputBuffer
+  pop
+  push_int 32
+  load combined
+  call ob_char u8 OutputBuffer
+  pop
+  load op
+  load combined
+  call ob_op i32 OutputBuffer
+  pop
+  push_int 10
+  load combined
+  call ob_char u8 OutputBuffer
+  pop
+  load combined
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
+  pop
+  push_int 10
+  load combined
+  call ob_char u8 OutputBuffer
+  pop
+  load combined
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
+  pop
+  push_int 41
+  load combined
+  call ob_char u8 OutputBuffer
+  pop
+  load combined
+  store left_ob
+  jump __L279
+__L280:
+  load ob
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
+  pop
+  load mark
+  call heap_reset i32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn pars_shift U8Array U8Array OutputBuffer void
+.param src U8Array
+.param tok U8Array
+.param ob OutputBuffer
+.local mark i32
+.local left_ob OutputBuffer
+.local op i32
+.local right_ob OutputBuffer
+.local combined OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
+  load src
+  load tok
+  load left_ob
+  call pars_add U8Array U8Array OutputBuffer
+  pop
+__L283:
+  load g_tok
+  load TK_LSHIFT
+  eq
+  jump_if __L285
+  load g_tok
+  load TK_RSHIFT
   eq
   jump_if __L285
   push_int 0
@@ -3043,208 +3101,64 @@ __L286:
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L287:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L288
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_add U8Array U8Array OutputBuffer
   pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L287
-__L288:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
-  pop
+  push_int 65536
+  call ob_new i32
+  store combined
   push_int 40
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 30
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 32
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   load op
-  load ob
+  load combined
   call ob_op i32 OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  push_int 0
-  load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load combined
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load src
-  load tok
-  load ob
-  call pars_mul U8Array U8Array OutputBuffer
+  load combined
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 41
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  call delete U8Array
-  pop
+  load combined
+  store left_ob
   jump __L283
 __L284:
-  return_void
-  return_void
-.endfn
-
-.fn pars_shift U8Array U8Array OutputBuffer void
-.param src U8Array
-.param tok U8Array
-.param ob OutputBuffer
-.local left_start i32
-.local op i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
   load ob
-  call ob_pos OutputBuffer
-  store left_start
-  load src
-  load tok
-  load ob
-  call pars_add U8Array U8Array OutputBuffer
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
-__L289:
-  load g_tok
-  load TK_LSHIFT
-  eq
-  jump_if __L291
-  load g_tok
-  load TK_RSHIFT
-  eq
-  jump_if __L291
-  push_int 0
-  jump __L292
-__L291:
-  push_int 1
-__L292:
-  jump_ifnot __L290
-  load g_tok
-  store op
-  load src
-  load tok
-  call lex_tok U8Array U8Array
+  load mark
+  call heap_reset i32
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L293:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L294
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
-  pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L293
-__L294:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
-  pop
-  push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
-  pop
-  push_str 30
-  load ob
-  call ob_string String OutputBuffer
-  pop
-  push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
-  pop
-  load op
-  load ob
-  call ob_op i32 OutputBuffer
-  pop
-  push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
-  pop
-  load lbuf
-  push_int 0
-  load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
-  pop
-  push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
-  pop
-  load src
-  load tok
-  load ob
-  call pars_add U8Array U8Array OutputBuffer
-  pop
-  push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
-  pop
-  load lbuf
-  call delete U8Array
-  pop
-  jump __L289
-__L290:
   return_void
   return_void
 .endfn
@@ -3253,107 +3167,87 @@ __L290:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local left_start i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store left_start
+.local mark i32
+.local left_ob OutputBuffer
+.local right_ob OutputBuffer
+.local combined OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
   load src
   load tok
-  load ob
+  load left_ob
   call pars_shift U8Array U8Array OutputBuffer
   pop
-__L295:
+__L287:
   load g_tok
   load TK_AMP
   eq
-  jump_ifnot __L296
+  jump_ifnot __L288
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L297:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L298
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_shift U8Array U8Array OutputBuffer
   pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L297
-__L298:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
-  pop
+  push_int 65536
+  call ob_new i32
+  store combined
   push_int 40
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 30
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 32
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_int 38
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  push_int 0
-  load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load combined
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load src
-  load tok
-  load ob
-  call pars_shift U8Array U8Array OutputBuffer
+  load combined
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 41
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  call delete U8Array
+  load combined
+  store left_ob
+  jump __L287
+__L288:
+  load ob
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
-  jump __L295
-__L296:
+  load mark
+  call heap_reset i32
+  pop
   return_void
   return_void
 .endfn
@@ -3362,107 +3256,87 @@ __L296:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local left_start i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store left_start
+.local mark i32
+.local left_ob OutputBuffer
+.local right_ob OutputBuffer
+.local combined OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
   load src
   load tok
-  load ob
+  load left_ob
   call pars_bitand U8Array U8Array OutputBuffer
   pop
-__L299:
+__L289:
   load g_tok
   load TK_CARET
   eq
-  jump_ifnot __L300
+  jump_ifnot __L290
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L301:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L302
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_bitand U8Array U8Array OutputBuffer
   pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L301
-__L302:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
-  pop
+  push_int 65536
+  call ob_new i32
+  store combined
   push_int 40
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 30
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 32
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_int 94
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  push_int 0
-  load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load combined
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load src
-  load tok
-  load ob
-  call pars_bitand U8Array U8Array OutputBuffer
+  load combined
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 41
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  call delete U8Array
+  load combined
+  store left_ob
+  jump __L289
+__L290:
+  load ob
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
-  jump __L299
-__L300:
+  load mark
+  call heap_reset i32
+  pop
   return_void
   return_void
 .endfn
@@ -3471,107 +3345,87 @@ __L300:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local left_start i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store left_start
+.local mark i32
+.local left_ob OutputBuffer
+.local right_ob OutputBuffer
+.local combined OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
   load src
   load tok
-  load ob
+  load left_ob
   call pars_bitxor U8Array U8Array OutputBuffer
   pop
-__L303:
+__L291:
   load g_tok
   load TK_PIPE
   eq
-  jump_ifnot __L304
+  jump_ifnot __L292
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L305:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L306
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_bitxor U8Array U8Array OutputBuffer
   pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L305
-__L306:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
-  pop
+  push_int 65536
+  call ob_new i32
+  store combined
   push_int 40
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 30
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 32
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_int 124
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  push_int 0
-  load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load combined
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load src
-  load tok
-  load ob
-  call pars_bitxor U8Array U8Array OutputBuffer
+  load combined
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 41
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  call delete U8Array
+  load combined
+  store left_ob
+  jump __L291
+__L292:
+  load ob
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
-  jump __L303
-__L304:
+  load mark
+  call heap_reset i32
+  pop
   return_void
   return_void
 .endfn
@@ -3580,17 +3434,18 @@ __L304:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local left_start i32
+.local mark i32
+.local left_ob OutputBuffer
 .local k i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store left_start
+.local right_ob OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
   load src
   load tok
-  load ob
+  load left_ob
   call pars_bitor U8Array U8Array OutputBuffer
   pop
   load g_tok
@@ -3598,96 +3453,68 @@ __L304:
   load k
   load TK_EQEQ
   eq
-  jump_if __L316
+  jump_if __L302
   load k
   load TK_BANGEQ
   eq
-  jump_if __L316
+  jump_if __L302
   push_int 0
-  jump __L317
-__L316:
+  jump __L303
+__L302:
   push_int 1
-__L317:
-  jump_if __L314
+__L303:
+  jump_if __L300
   load k
   load TK_LT
   eq
-  jump_if __L314
+  jump_if __L300
   push_int 0
-  jump __L315
-__L314:
+  jump __L301
+__L300:
   push_int 1
-__L315:
-  jump_if __L312
+__L301:
+  jump_if __L298
   load k
   load TK_LTEQ
   eq
-  jump_if __L312
+  jump_if __L298
   push_int 0
-  jump __L313
-__L312:
+  jump __L299
+__L298:
   push_int 1
-__L313:
-  jump_if __L310
+__L299:
+  jump_if __L296
   load k
   load TK_GT
   eq
-  jump_if __L310
+  jump_if __L296
   push_int 0
-  jump __L311
-__L310:
+  jump __L297
+__L296:
   push_int 1
-__L311:
-  jump_if __L308
+__L297:
+  jump_if __L294
   load k
   load TK_GTEQ
   eq
-  jump_if __L308
+  jump_if __L294
   push_int 0
-  jump __L309
-__L308:
+  jump __L295
+__L294:
   push_int 1
-__L309:
-  jump_ifnot __L307
+__L295:
+  jump_ifnot __L293
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L318:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L319
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
-  pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L318
-__L319:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_bitor U8Array U8Array OutputBuffer
   pop
   push_int 40
   load ob
@@ -3709,29 +3536,34 @@ __L319:
   load ob
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  push_int 0
-  load left_len
   load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
   pop
-  load src
-  load tok
   load ob
-  call pars_bitor U8Array U8Array OutputBuffer
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 41
   load ob
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  call delete U8Array
+  load mark
+  call heap_reset i32
   pop
-__L307:
+  return_void
+__L293:
+  load ob
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
+  pop
+  load mark
+  call heap_reset i32
+  pop
   return_void
   return_void
 .endfn
@@ -3740,107 +3572,87 @@ __L307:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local left_start i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store left_start
+.local mark i32
+.local left_ob OutputBuffer
+.local right_ob OutputBuffer
+.local combined OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
   load src
   load tok
-  load ob
+  load left_ob
   call pars_compare U8Array U8Array OutputBuffer
   pop
-__L320:
+__L304:
   load g_tok
   load TK_AMPAMP
   eq
-  jump_ifnot __L321
+  jump_ifnot __L305
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L322:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L323
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_compare U8Array U8Array OutputBuffer
   pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L322
-__L323:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
-  pop
+  push_int 65536
+  call ob_new i32
+  store combined
   push_int 40
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 30
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 32
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 2
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  push_int 0
-  load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load combined
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load src
-  load tok
-  load ob
-  call pars_compare U8Array U8Array OutputBuffer
+  load combined
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 41
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  call delete U8Array
+  load combined
+  store left_ob
+  jump __L304
+__L305:
+  load ob
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
-  jump __L320
-__L321:
+  load mark
+  call heap_reset i32
+  pop
   return_void
   return_void
 .endfn
@@ -3849,107 +3661,87 @@ __L321:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local left_start i32
-.local left_len i32
-.local lbuf U8Array
-.local i i32
-  load ob
-  call ob_pos OutputBuffer
-  store left_start
+.local mark i32
+.local left_ob OutputBuffer
+.local right_ob OutputBuffer
+.local combined OutputBuffer
+  call heap_mark
+  store mark
+  push_int 65536
+  call ob_new i32
+  store left_ob
   load src
   load tok
-  load ob
+  load left_ob
   call pars_logic_and U8Array U8Array OutputBuffer
   pop
-__L324:
+__L306:
   load g_tok
   load TK_PIPEPIPE
   eq
-  jump_ifnot __L325
+  jump_ifnot __L307
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  load ob
-  call ob_pos OutputBuffer
-  load left_start
-  sub
-  store left_len
-  load left_len
-  push_int 1
-  add
-  call U8Array i32
-  store lbuf
-  push_int 0
-  store i
-__L326:
-  load i
-  load left_len
-  lt
-  jump_ifnot __L327
-  load lbuf
-  load i
-  load ob
-  load left_start
-  load i
-  add
-  call ob_peek OutputBuffer i32
-  call set U8Array i32 u8
+  push_int 65536
+  call ob_new i32
+  store right_ob
+  load src
+  load tok
+  load right_ob
+  call pars_logic_and U8Array U8Array OutputBuffer
   pop
-  load i
-  push_int 1
-  add
-  store i
-  jump __L326
-__L327:
-  load ob
-  load left_start
-  call ob_set_pos OutputBuffer i32
-  pop
+  push_int 65536
+  call ob_new i32
+  store combined
   push_int 40
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 30
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 32
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
   push_str 3
-  load ob
+  load combined
   call ob_string String OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  push_int 0
-  load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  load combined
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 10
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load src
-  load tok
-  load ob
-  call pars_logic_and U8Array U8Array OutputBuffer
+  load combined
+  load right_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
   push_int 41
-  load ob
+  load combined
   call ob_char u8 OutputBuffer
   pop
-  load lbuf
-  call delete U8Array
+  load combined
+  store left_ob
+  jump __L306
+__L307:
+  load ob
+  load left_ob
+  call ob_append OutputBuffer OutputBuffer
   pop
-  jump __L324
-__L325:
+  load mark
+  call heap_reset i32
+  pop
   return_void
   return_void
 .endfn
@@ -3973,17 +3765,17 @@ __L325:
   pop
   load g_tok
   call is_type_tok i32
-  jump_ifnot __L330
+  jump_ifnot __L310
   load g_tok
   load TK_IDENT
   ne
-  jump_ifnot __L330
+  jump_ifnot __L310
   push_int 1
-  jump __L331
-__L330:
+  jump __L311
+__L310:
   push_int 0
-__L331:
-  jump_ifnot __L328
+__L311:
+  jump_ifnot __L308
   load g_tok
   load ob
   call ob_type_kw i32 OutputBuffer
@@ -3992,12 +3784,12 @@ __L331:
   load tok
   call lex_tok U8Array U8Array
   pop
-  jump __L329
-__L328:
+  jump __L309
+__L308:
   load g_tok
   load TK_IDENT
   eq
-  jump_ifnot __L332
+  jump_ifnot __L312
   load tok
   push_int 0
   load g_tok_slen
@@ -4008,8 +3800,8 @@ __L328:
   load tok
   call lex_tok U8Array U8Array
   pop
-__L332:
-__L329:
+__L312:
+__L309:
   push_int 41
   load ob
   call ob_char u8 OutputBuffer
@@ -4040,11 +3832,11 @@ __L329:
   store name_buf
   push_int 0
   store i
-__L333:
+__L313:
   load i
   load name_len
   lt
-  jump_ifnot __L334
+  jump_ifnot __L314
   load name_buf
   load i
   load tok
@@ -4056,8 +3848,8 @@ __L333:
   push_int 1
   add
   store i
-  jump __L333
-__L334:
+  jump __L313
+__L314:
   load TK_IDENT
   load src
   load tok
@@ -4110,7 +3902,7 @@ __L334:
   load g_tok
   load TK_EQ
   eq
-  jump_ifnot __L335
+  jump_ifnot __L315
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -4130,7 +3922,7 @@ __L334:
   load ob
   call pars_expr U8Array U8Array OutputBuffer
   pop
-__L335:
+__L315:
   load TK_SEMI
   load src
   load tok
@@ -4235,7 +4027,7 @@ __L335:
   load g_tok
   load TK_SEMI
   ne
-  jump_ifnot __L336
+  jump_ifnot __L316
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -4251,7 +4043,7 @@ __L335:
   load ob
   call pars_expr U8Array U8Array OutputBuffer
   pop
-__L336:
+__L316:
   load TK_SEMI
   load src
   load tok
@@ -4327,7 +4119,7 @@ __L336:
   load g_tok
   load TK_ELSE
   eq
-  jump_ifnot __L337
+  jump_ifnot __L317
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -4345,7 +4137,7 @@ __L336:
   load g_tok
   load TK_IF
   eq
-  jump_ifnot __L338
+  jump_ifnot __L318
   load src
   load tok
   load ob
@@ -4354,8 +4146,8 @@ __L336:
   add
   call pars_if_stmt U8Array U8Array OutputBuffer i32
   pop
-  jump __L339
-__L338:
+  jump __L319
+__L318:
   load src
   load tok
   load ob
@@ -4364,8 +4156,8 @@ __L338:
   add
   call pars_block U8Array U8Array OutputBuffer i32
   pop
-__L339:
-__L337:
+__L319:
+__L317:
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -4468,11 +4260,11 @@ __L337:
   store name_buf
   push_int 0
   store i
-__L340:
+__L320:
   load i
   load name_len
   lt
-  jump_ifnot __L341
+  jump_ifnot __L321
   load name_buf
   load i
   load tok
@@ -4484,8 +4276,8 @@ __L340:
   push_int 1
   add
   store i
-  jump __L340
-__L341:
+  jump __L320
+__L321:
   load TK_IDENT
   load src
   load tok
@@ -4494,7 +4286,7 @@ __L341:
   load g_tok
   load TK_EQ
   eq
-  jump_ifnot __L342
+  jump_ifnot __L322
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -4549,52 +4341,52 @@ __L341:
   load ob
   call ob_char u8 OutputBuffer
   pop
-  jump __L343
-__L342:
+  jump __L323
+__L322:
   load g_tok
   load TK_PLUS_EQ
   eq
-  jump_if __L352
+  jump_if __L332
   load g_tok
   load TK_MINUS_EQ
   eq
-  jump_if __L352
+  jump_if __L332
   push_int 0
-  jump __L353
-__L352:
+  jump __L333
+__L332:
   push_int 1
-__L353:
-  jump_if __L350
+__L333:
+  jump_if __L330
   load g_tok
   load TK_STAR_EQ
   eq
-  jump_if __L350
+  jump_if __L330
   push_int 0
-  jump __L351
-__L350:
+  jump __L331
+__L330:
   push_int 1
-__L351:
-  jump_if __L348
+__L331:
+  jump_if __L328
   load g_tok
   load TK_SLASH_EQ
   eq
-  jump_if __L348
+  jump_if __L328
   push_int 0
-  jump __L349
-__L348:
+  jump __L329
+__L328:
   push_int 1
-__L349:
-  jump_if __L346
+__L329:
+  jump_if __L326
   load g_tok
   load TK_PERCENT_EQ
   eq
-  jump_if __L346
+  jump_if __L326
   push_int 0
-  jump __L347
-__L346:
+  jump __L327
+__L326:
   push_int 1
-__L347:
-  jump_ifnot __L344
+__L327:
+  jump_ifnot __L324
   load g_tok
   store the_op
   load src
@@ -4644,48 +4436,48 @@ __L347:
   load the_op
   load TK_PLUS_EQ
   eq
-  jump_ifnot __L354
+  jump_ifnot __L334
   push_int 43
   load ob
   call ob_char u8 OutputBuffer
   pop
-__L354:
+__L334:
   load the_op
   load TK_MINUS_EQ
   eq
-  jump_ifnot __L355
+  jump_ifnot __L335
   push_int 45
   load ob
   call ob_char u8 OutputBuffer
   pop
-__L355:
+__L335:
   load the_op
   load TK_STAR_EQ
   eq
-  jump_ifnot __L356
+  jump_ifnot __L336
   push_int 42
   load ob
   call ob_char u8 OutputBuffer
   pop
-__L356:
+__L336:
   load the_op
   load TK_SLASH_EQ
   eq
-  jump_ifnot __L357
+  jump_ifnot __L337
   push_int 47
   load ob
   call ob_char u8 OutputBuffer
   pop
-__L357:
+__L337:
   load the_op
   load TK_PERCENT_EQ
   eq
-  jump_ifnot __L358
+  jump_ifnot __L338
   push_int 37
   load ob
   call ob_char u8 OutputBuffer
   pop
-__L358:
+__L338:
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -4742,12 +4534,12 @@ __L358:
   load ob
   call ob_char u8 OutputBuffer
   pop
-  jump __L345
-__L344:
+  jump __L325
+__L324:
   load g_tok
   load TK_LPAREN
   eq
-  jump_ifnot __L359
+  jump_ifnot __L339
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -4773,14 +4565,14 @@ __L344:
   load g_tok
   load TK_RPAREN
   ne
-  jump_ifnot __L361
+  jump_ifnot __L341
   push_int 1
   store going
-__L362:
+__L342:
   load going
   push_int 1
   eq
-  jump_ifnot __L363
+  jump_ifnot __L343
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -4799,19 +4591,19 @@ __L362:
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L364
+  jump_ifnot __L344
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  jump __L365
-__L364:
+  jump __L345
+__L344:
   push_int 0
   store going
-__L365:
-  jump __L362
-__L363:
-__L361:
+__L345:
+  jump __L342
+__L343:
+__L341:
   load TK_RPAREN
   load src
   load tok
@@ -4834,14 +4626,14 @@ __L361:
   load ob
   call ob_char u8 OutputBuffer
   pop
-  jump __L360
-__L359:
+  jump __L340
+__L339:
   push_int 1
   call sys_exit i32
   pop
-__L360:
-__L345:
-__L343:
+__L340:
+__L325:
+__L323:
   load name_buf
   call delete U8Array
   pop
@@ -4861,79 +4653,79 @@ __L343:
   store pos
   push_int 1
   store cur_line
-__L366:
+__L346:
   load cur_line
   load line
   lt
-  jump_ifnot __L368
+  jump_ifnot __L348
   load pos
   load g_len
   lt
-  jump_ifnot __L368
+  jump_ifnot __L348
   push_int 1
-  jump __L369
-__L368:
+  jump __L349
+__L348:
   push_int 0
-__L369:
-  jump_ifnot __L367
+__L349:
+  jump_ifnot __L347
   load src
   load pos
   call get U8Array i32
   push_int 10
   eq
-  jump_ifnot __L370
+  jump_ifnot __L350
   load cur_line
   push_int 1
   add
   store cur_line
-__L370:
+__L350:
   load pos
   push_int 1
   add
   store pos
-  jump __L366
-__L367:
-__L371:
+  jump __L346
+__L347:
+__L351:
   load pos
   load g_len
   lt
-  jump_ifnot __L373
+  jump_ifnot __L353
   load src
   load pos
   call get U8Array i32
   push_int 32
   eq
-  jump_if __L375
+  jump_if __L355
   load src
   load pos
   call get U8Array i32
   push_int 9
   eq
-  jump_if __L375
+  jump_if __L355
   push_int 0
-  jump __L376
-__L375:
+  jump __L356
+__L355:
   push_int 1
-__L376:
-  jump_ifnot __L373
+__L356:
+  jump_ifnot __L353
   push_int 1
-  jump __L374
-__L373:
+  jump __L354
+__L353:
   push_int 0
-__L374:
-  jump_ifnot __L372
+__L354:
+  jump_ifnot __L352
   load pos
   push_int 1
   add
   store pos
-  jump __L371
-__L372:
+  jump __L351
+__L352:
   load pos
   load g_len
   ge
-  jump_ifnot __L377
+  jump_ifnot __L357
   return_void
-__L377:
+__L357:
   load src
   load pos
   call get U8Array i32
@@ -4941,19 +4733,19 @@ __L377:
   load first
   push_int 10
   eq
-  jump_if __L379
+  jump_if __L359
   load first
   push_int 13
   eq
-  jump_if __L379
+  jump_if __L359
   push_int 0
-  jump __L380
-__L379:
+  jump __L360
+__L359:
   push_int 1
-__L380:
-  jump_ifnot __L378
+__L360:
+  jump_ifnot __L358
   return_void
-__L378:
+__L358:
   push_int 40
   load ob
   call ob_char u8 OutputBuffer
@@ -4970,35 +4762,35 @@ __L378:
   load ob
   call ob_char u8 OutputBuffer
   pop
-__L381:
+__L361:
   load pos
   load g_len
   lt
-  jump_ifnot __L385
+  jump_ifnot __L365
   load src
   load pos
   call get U8Array i32
   push_int 10
   ne
-  jump_ifnot __L385
+  jump_ifnot __L365
   push_int 1
-  jump __L386
-__L385:
+  jump __L366
+__L365:
   push_int 0
-__L386:
-  jump_ifnot __L383
+__L366:
+  jump_ifnot __L363
   load src
   load pos
   call get U8Array i32
   push_int 13
   ne
-  jump_ifnot __L383
+  jump_ifnot __L363
   push_int 1
-  jump __L384
-__L383:
+  jump __L364
+__L363:
   push_int 0
-__L384:
-  jump_ifnot __L382
+__L364:
+  jump_ifnot __L362
   load src
   load pos
   call get U8Array i32
@@ -5006,7 +4798,7 @@ __L384:
   load ch
   push_int 34
   eq
-  jump_ifnot __L387
+  jump_ifnot __L367
   push_int 92
   load ob
   call ob_char u8 OutputBuffer
@@ -5015,12 +4807,12 @@ __L384:
   load ob
   call ob_char u8 OutputBuffer
   pop
-  jump __L388
-__L387:
+  jump __L368
+__L367:
   load ch
   push_int 92
   eq
-  jump_ifnot __L389
+  jump_ifnot __L369
   push_int 92
   load ob
   call ob_char u8 OutputBuffer
@@ -5029,20 +4821,20 @@ __L387:
   load ob
   call ob_char u8 OutputBuffer
   pop
-  jump __L390
-__L389:
+  jump __L370
+__L369:
   load ch
   load ob
   call ob_char u8 OutputBuffer
   pop
-__L390:
-__L388:
+__L370:
+__L368:
   load pos
   push_int 1
   add
   store pos
-  jump __L381
-__L382:
+  jump __L361
+__L362:
   push_int 34
   load ob
   call ob_char u8 OutputBuffer
@@ -5063,7 +4855,7 @@ __L382:
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L391
+  jump_ifnot __L371
   load src
   load tok
   load ob
@@ -5071,11 +4863,11 @@ __L382:
   call pars_var_decl U8Array U8Array OutputBuffer i32
   pop
   return_void
-__L391:
+__L371:
   load g_tok
   load TK_IF
   eq
-  jump_ifnot __L392
+  jump_ifnot __L372
   load src
   load tok
   load ob
@@ -5083,11 +4875,11 @@ __L391:
   call pars_if_stmt U8Array U8Array OutputBuffer i32
   pop
   return_void
-__L392:
+__L372:
   load g_tok
   load TK_WHILE
   eq
-  jump_ifnot __L393
+  jump_ifnot __L373
   load src
   load tok
   load ob
@@ -5095,11 +4887,11 @@ __L392:
   call pars_while_stmt U8Array U8Array OutputBuffer i32
   pop
   return_void
-__L393:
+__L373:
   load g_tok
   load TK_RETURN
   eq
-  jump_ifnot __L394
+  jump_ifnot __L374
   load src
   load tok
   load ob
@@ -5107,11 +4899,11 @@ __L393:
   call pars_return_stmt U8Array U8Array OutputBuffer i32
   pop
   return_void
-__L394:
+__L374:
   load g_tok
   load TK_BREAK
   eq
-  jump_ifnot __L395
+  jump_ifnot __L375
   load src
   load tok
   load ob
@@ -5119,11 +4911,11 @@ __L394:
   call pars_break_stmt U8Array U8Array OutputBuffer i32
   pop
   return_void
-__L395:
+__L375:
   load g_tok
   load TK_CONTINUE
   eq
-  jump_ifnot __L396
+  jump_ifnot __L376
   load src
   load tok
   load ob
@@ -5131,11 +4923,11 @@ __L395:
   call pars_continue_stmt U8Array U8Array OutputBuffer i32
   pop
   return_void
-__L396:
+__L376:
   load g_tok
   load TK_IDENT
   eq
-  jump_ifnot __L397
+  jump_ifnot __L377
   load src
   load tok
   load ob
@@ -5143,7 +4935,7 @@ __L396:
   call pars_ident_stmt U8Array U8Array OutputBuffer i32
   pop
   return_void
-__L397:
+__L377:
   push_int 1
   call sys_exit i32
   pop
@@ -5170,21 +4962,21 @@ __L397:
   load ob
   call ob_string String OutputBuffer
   pop
-__L398:
+__L378:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L400
+  jump_ifnot __L380
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L400
+  jump_ifnot __L380
   push_int 1
-  jump __L401
-__L400:
+  jump __L381
+__L380:
   push_int 0
-__L401:
-  jump_ifnot __L399
+__L381:
+  jump_ifnot __L379
   load g_tok_line
   store stmt_line
   push_int 10
@@ -5220,8 +5012,8 @@ __L401:
   add
   call pars_stmt U8Array U8Array OutputBuffer i32
   pop
-  jump __L398
-__L399:
+  jump __L378
+__L379:
   load TK_RBRACE
   load src
   load tok
@@ -5270,11 +5062,11 @@ __L399:
   store name_buf
   push_int 0
   store i
-__L402:
+__L382:
   load i
   load name_len
   lt
-  jump_ifnot __L403
+  jump_ifnot __L383
   load name_buf
   load i
   load tok
@@ -5286,8 +5078,8 @@ __L402:
   push_int 1
   add
   store i
-  jump __L402
-__L403:
+  jump __L382
+__L383:
   load TK_IDENT
   load src
   load tok
@@ -5309,7 +5101,7 @@ __L403:
   load is_export
   push_int 1
   eq
-  jump_ifnot __L404
+  jump_ifnot __L384
   push_int 58
   load ob
   call ob_char u8 OutputBuffer
@@ -5318,7 +5110,7 @@ __L403:
   load ob
   call ob_string String OutputBuffer
   pop
-__L404:
+__L384:
   push_int 32
   load ob
   call ob_char u8 OutputBuffer
@@ -5353,14 +5145,14 @@ __L404:
   load g_tok
   load TK_RPAREN
   ne
-  jump_ifnot __L405
+  jump_ifnot __L385
   push_int 1
   store going
-__L406:
+__L386:
   load going
   push_int 1
   eq
-  jump_ifnot __L407
+  jump_ifnot __L387
   load g_tok_slen
   store pname_len
   load pname_len
@@ -5370,11 +5162,11 @@ __L406:
   store pname_buf
   push_int 0
   store j
-__L408:
+__L388:
   load j
   load pname_len
   lt
-  jump_ifnot __L409
+  jump_ifnot __L389
   load pname_buf
   load j
   load tok
@@ -5386,8 +5178,8 @@ __L408:
   push_int 1
   add
   store j
-  jump __L408
-__L409:
+  jump __L388
+__L389:
   load TK_IDENT
   load src
   load tok
@@ -5464,19 +5256,19 @@ __L409:
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L410
+  jump_ifnot __L390
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-  jump __L411
-__L410:
+  jump __L391
+__L390:
   push_int 0
   store going
-__L411:
-  jump __L406
-__L407:
-__L405:
+__L391:
+  jump __L386
+__L387:
+__L385:
   load TK_RPAREN
   load src
   load tok
@@ -5527,7 +5319,7 @@ __L405:
   load g_tok
   load TK_ARROW
   eq
-  jump_ifnot __L412
+  jump_ifnot __L392
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -5540,8 +5332,8 @@ __L405:
   add
   call pars_type U8Array U8Array OutputBuffer i32
   pop
-  jump __L413
-__L412:
+  jump __L393
+__L392:
   push_int 40
   load ob
   call ob_char u8 OutputBuffer
@@ -5562,7 +5354,7 @@ __L412:
   load ob
   call ob_char u8 OutputBuffer
   pop
-__L413:
+__L393:
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -5622,7 +5414,7 @@ __L413:
   load k
   load TK_U8
   eq
-  jump_ifnot __L414
+  jump_ifnot __L394
   load buf
   load bstart
   push_int 0
@@ -5639,11 +5431,11 @@ __L413:
   pop
   push_int 2
   return
-__L414:
+__L394:
   load k
   load TK_I8
   eq
-  jump_ifnot __L415
+  jump_ifnot __L395
   load buf
   load bstart
   push_int 0
@@ -5660,11 +5452,11 @@ __L414:
   pop
   push_int 2
   return
-__L415:
+__L395:
   load k
   load TK_U16
   eq
-  jump_ifnot __L416
+  jump_ifnot __L396
   load buf
   load bstart
   push_int 0
@@ -5688,11 +5480,11 @@ __L415:
   pop
   push_int 3
   return
-__L416:
+__L396:
   load k
   load TK_U32
   eq
-  jump_ifnot __L417
+  jump_ifnot __L397
   load buf
   load bstart
   push_int 0
@@ -5716,11 +5508,11 @@ __L416:
   pop
   push_int 3
   return
-__L417:
+__L397:
   load k
   load TK_I16
   eq
-  jump_ifnot __L418
+  jump_ifnot __L398
   load buf
   load bstart
   push_int 0
@@ -5744,11 +5536,11 @@ __L417:
   pop
   push_int 3
   return
-__L418:
+__L398:
   load k
   load TK_I32
   eq
-  jump_ifnot __L419
+  jump_ifnot __L399
   load buf
   load bstart
   push_int 0
@@ -5772,11 +5564,11 @@ __L418:
   pop
   push_int 3
   return
-__L419:
+__L399:
   load k
   load TK_BOOL
   eq
-  jump_ifnot __L420
+  jump_ifnot __L400
   load buf
   load bstart
   push_int 0
@@ -5807,11 +5599,11 @@ __L419:
   pop
   push_int 4
   return
-__L420:
+__L400:
   load k
   load TK_VOID
   eq
-  jump_ifnot __L421
+  jump_ifnot __L401
   load buf
   load bstart
   push_int 0
@@ -5842,18 +5634,18 @@ __L420:
   pop
   push_int 4
   return
-__L421:
+__L401:
   load k
   load TK_IDENT
   eq
-  jump_ifnot __L422
+  jump_ifnot __L402
   push_int 0
   store i
-__L423:
+__L403:
   load i
   load g_tok_slen
   lt
-  jump_ifnot __L424
+  jump_ifnot __L404
   load buf
   load bstart
   load i
@@ -5867,11 +5659,11 @@ __L423:
   push_int 1
   add
   store i
-  jump __L423
-__L424:
+  jump __L403
+__L404:
   load g_tok_slen
   return
-__L422:
+__L402:
   push_int 0
   return
   return_void
@@ -5886,23 +5678,23 @@ __L422:
   load n
   push_int 0
   eq
-  jump_ifnot __L425
+  jump_ifnot __L405
   push_int 48
   load ob
   call ob_char u8 OutputBuffer
   pop
   return_void
-__L425:
+__L405:
   push_int 12
   call U8Array i32
   store tmp
   push_int 0
   store l
-__L426:
+__L406:
   load n
   push_int 0
   gt
-  jump_ifnot __L427
+  jump_ifnot __L407
   load tmp
   load l
   push_int 48
@@ -5921,17 +5713,17 @@ __L426:
   push_int 10
   div
   store n
-  jump __L426
-__L427:
+  jump __L406
+__L407:
   load l
   push_int 1
   sub
   store i
-__L428:
+__L408:
   load i
   push_int 0
   ge
-  jump_ifnot __L429
+  jump_ifnot __L409
   load tmp
   load i
   call get U8Array i32
@@ -5942,8 +5734,8 @@ __L428:
   push_int 1
   sub
   store i
-  jump __L428
-__L429:
+  jump __L408
+__L409:
   load tmp
   call delete U8Array
   pop
@@ -6328,11 +6120,11 @@ __L429:
   pop
   push_int 0
   store i
-__L430:
+__L410:
   load i
   load nfields
   lt
-  jump_ifnot __L431
+  jump_ifnot __L411
   load indent
   push_int 2
   add
@@ -6401,8 +6193,8 @@ __L430:
   push_int 1
   add
   store i
-  jump __L430
-__L431:
+  jump __L410
+__L411:
   load indent
   push_int 1
   add
@@ -6649,11 +6441,11 @@ __L431:
   pop
   push_int 0
   store k
-__L432:
+__L412:
   load k
   load nfields
   lt
-  jump_ifnot __L433
+  jump_ifnot __L413
   load src
   load sline
   load ob
@@ -6862,8 +6654,8 @@ __L432:
   push_int 1
   add
   store k
-  jump __L432
-__L433:
+  jump __L412
+__L413:
   load src
   load sline
   load ob
@@ -7955,11 +7747,11 @@ __L433:
   store snlen
   push_int 0
   store ci
-__L434:
+__L414:
   load ci
   load snlen
   lt
-  jump_ifnot __L435
+  jump_ifnot __L415
   load sname_buf
   load ci
   load tok
@@ -7971,8 +7763,8 @@ __L434:
   push_int 1
   add
   store ci
-  jump __L434
-__L435:
+  jump __L414
+__L415:
   load TK_IDENT
   load src
   load tok
@@ -8027,45 +7819,45 @@ __L435:
   pop
   push_int 1
   store first
-__L436:
+__L416:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L438
+  jump_ifnot __L418
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L438
+  jump_ifnot __L418
   push_int 1
-  jump __L439
-__L438:
+  jump __L419
+__L418:
   push_int 0
-__L439:
-  jump_ifnot __L437
+__L419:
+  jump_ifnot __L417
   load first
   push_int 0
   eq
-  jump_ifnot __L440
+  jump_ifnot __L420
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L441
+  jump_ifnot __L421
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-__L441:
-__L440:
+__L421:
+__L420:
   push_int 0
   store first
   load g_tok
   load TK_RBRACE
   eq
-  jump_ifnot __L442
+  jump_ifnot __L422
   load g_tok
   store g_tok
-  jump __L443
-__L442:
+  jump __L423
+__L422:
   load g_tok_slen
   store fname_len
   load fname_len
@@ -8075,11 +7867,11 @@ __L442:
   store fname_buf
   push_int 0
   store j
-__L444:
+__L424:
   load j
   load fname_len
   lt
-  jump_ifnot __L445
+  jump_ifnot __L425
   load fname_buf
   load j
   load tok
@@ -8091,8 +7883,8 @@ __L444:
   push_int 1
   add
   store j
-  jump __L444
-__L445:
+  jump __L424
+__L425:
   load fnoffs
   load nfields
   load fnpos
@@ -8105,11 +7897,11 @@ __L445:
   pop
   push_int 0
   store j
-__L446:
+__L426:
   load j
   load fname_len
   lt
-  jump_ifnot __L447
+  jump_ifnot __L427
   load fnames
   load fnpos
   load j
@@ -8123,8 +7915,8 @@ __L446:
   push_int 1
   add
   store j
-  jump __L446
-__L447:
+  jump __L426
+__L427:
   load fnpos
   load fname_len
   add
@@ -8225,9 +8017,9 @@ __L447:
   push_int 1
   add
   store nfields
-__L443:
-  jump __L436
-__L437:
+__L423:
+  jump __L416
+__L417:
   load TK_RBRACE
   load src
   load tok
@@ -8263,11 +8055,11 @@ __L437:
   pop
   push_int 0
   store gi
-__L448:
+__L428:
   load gi
   load nfields
   lt
-  jump_ifnot __L449
+  jump_ifnot __L429
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -8299,15 +8091,15 @@ __L448:
   push_int 1
   add
   store gi
-  jump __L448
-__L449:
+  jump __L428
+__L429:
   push_int 0
   store si
-__L450:
+__L430:
   load si
   load nfields
   lt
-  jump_ifnot __L451
+  jump_ifnot __L431
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -8339,8 +8131,8 @@ __L450:
   push_int 1
   add
   store si
-  jump __L450
-__L451:
+  jump __L430
+__L431:
   load sname_buf
   call delete U8Array
   pop
@@ -8391,7 +8183,7 @@ __L451:
   load g_tok
   load TK_STR_LIT
   eq
-  jump_ifnot __L452
+  jump_ifnot __L432
   load tok
   push_int 0
   load g_tok_slen
@@ -8402,7 +8194,7 @@ __L451:
   load tok
   call lex_tok U8Array U8Array
   pop
-__L452:
+__L432:
   load TK_SEMI
   load src
   load tok
@@ -8428,11 +8220,11 @@ __L452:
   load ob
   call ob_string String OutputBuffer
   pop
-__L453:
+__L433:
   load g_tok
   load TK_IMPORT
   eq
-  jump_ifnot __L454
+  jump_ifnot __L434
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -8447,13 +8239,13 @@ __L453:
   push_int 1
   call pars_import U8Array U8Array OutputBuffer i32
   pop
-  jump __L453
-__L454:
-__L455:
+  jump __L433
+__L434:
+__L435:
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L456
+  jump_ifnot __L436
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -8465,7 +8257,7 @@ __L455:
   load g_tok
   load TK_EXPORT
   eq
-  jump_ifnot __L457
+  jump_ifnot __L437
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -8477,12 +8269,12 @@ __L455:
   push_int 1
   call pars_fn_decl U8Array U8Array OutputBuffer i32 i32
   pop
-  jump __L458
-__L457:
+  jump __L438
+__L437:
   load g_tok
   load TK_FN
   eq
-  jump_ifnot __L459
+  jump_ifnot __L439
   load src
   load tok
   load ob
@@ -8490,41 +8282,41 @@ __L457:
   push_int 0
   call pars_fn_decl U8Array U8Array OutputBuffer i32 i32
   pop
-  jump __L460
-__L459:
+  jump __L440
+__L439:
   load g_tok
   load TK_STRUCT
   eq
-  jump_ifnot __L461
+  jump_ifnot __L441
   load src
   load tok
   load ob
   push_int 1
   call pars_struct_decl U8Array U8Array OutputBuffer i32
   pop
-  jump __L462
-__L461:
+  jump __L442
+__L441:
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L463
+  jump_ifnot __L443
   load src
   load tok
   load ob
   push_int 1
   call pars_var_decl U8Array U8Array OutputBuffer i32
   pop
-  jump __L464
-__L463:
+  jump __L444
+__L443:
   push_int 1
   call sys_exit i32
   pop
-__L464:
-__L462:
-__L460:
-__L458:
-  jump __L455
-__L456:
+__L444:
+__L442:
+__L440:
+__L438:
+  jump __L435
+__L436:
   push_int 10
   load ob
   call ob_char u8 OutputBuffer
@@ -8567,30 +8359,30 @@ __L456:
   push_int 4096
   call sys_read i32 U8Array i32
   store chunk
-__L465:
+__L445:
   load chunk
   push_int 0
   gt
-  jump_ifnot __L467
+  jump_ifnot __L447
   load g_len
   load chunk
   add
   push_int 524288
   le
-  jump_ifnot __L467
+  jump_ifnot __L447
   push_int 1
-  jump __L468
-__L467:
+  jump __L448
+__L447:
   push_int 0
-__L468:
-  jump_ifnot __L466
+__L448:
+  jump_ifnot __L446
   push_int 0
   store ci
-__L469:
+__L449:
   load ci
   load chunk
   lt
-  jump_ifnot __L470
+  jump_ifnot __L450
   load src_buf
   load g_len
   load read_tmp
@@ -8606,15 +8398,15 @@ __L469:
   push_int 1
   add
   store ci
-  jump __L469
-__L470:
+  jump __L449
+__L450:
   push_int 0
   load read_tmp
   push_int 4096
   call sys_read i32 U8Array i32
   store chunk
-  jump __L465
-__L466:
+  jump __L445
+__L446:
   load read_tmp
   call delete U8Array
   pop
