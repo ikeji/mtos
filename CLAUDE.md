@@ -29,9 +29,10 @@ os/         OSカーネル（作成中）
 ## ビルド＆実行
 
 ```bash
-make                  # 全バイナリをビルド（parse, codegen, bcrun, bc2asm, interp, typecheck）
-make test             # テスト実行
-make update-golden    # goldenファイルを再生成
+make                              # 全バイナリをビルド（parse, codegen, bcrun, bc2asm, interp, typecheck）
+make test                         # テスト実行
+make update-golden                # goldenファイルを再生成
+make update-golden-and-run-test   # golden 再生成してからテスト実行
 ```
 
 ## .tcファイルの実行方法
@@ -40,7 +41,7 @@ make update-golden    # goldenファイルを再生成
 ./tc_run.sh interp    foo.tc          # ASTインタープリタで直接実行（速い）
 ./tc_run.sh bcrun     foo.tc          # Cコード生成→バイトコード実行
 ./tc_run.sh rv32      foo.tc          # Cコード生成→RISC-V→qemu実行
-./tc_run.sh pipeline  foo.tc          # 自己ホスト版(parse.tc+codegen.tc)で実行
+./tc_run.sh pipeline  foo.tc          # 自己ホスト版(parse.tc+typecheck.tc+codegen.tc)で実行
 ./tc_run.sh bc2asm_tc foo.tc          # 自己ホスト版bc2asm→RISC-V→qemu実行
 # stdinを渡す場合
 ./tc_run.sh bcrun     calc.tc "1 + 2"
@@ -53,8 +54,9 @@ make update-golden    # goldenファイルを再生成
 ./tc_build.sh -o prog main.tc lib.tc  # 複数 .tc ファイルをコンパイル＋リンク
 ```
 
-`import "lib.tc";` で他ファイルの `export fn` を呼べる。struct は型名として使える。
-詳細は `docs/task/multi_file.md`。
+`import "lib.tc";` で他ファイルの `export fn` を呼べる。struct は**型名として**使えるが、
+自動生成関数（コンストラクタ、getter/setter、delete）は import 先から呼べないので、
+必要なら `export fn` のラッパーを定義する。詳細は `docs/task/multi_file.md`。
 
 ## コンパイルパイプライン
 
