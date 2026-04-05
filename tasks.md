@@ -37,6 +37,8 @@
       - bcrun / bc2asm / runtime.c への変更は不要
       - tests/import/main_struct.tc と tests/struct_basic.tc が動作
       - 詳細は docs/task/struct_runtime.md
-- [ ] ob.tc に、OutputBuffer構造体を定義し、バッファと位置を持つ。ob変数の変わりに使う。
+- [x] ob.tc に、OutputBuffer構造体を定義し、バッファと位置を持つ。ob変数の変わりに使う。
+      - ob_new/ob_delete/ob_peek のラッパー関数も追加（import 先で struct 自動
+        生成関数が使えないため）。
 - [ ] parse.tcで、ob_set_posで巻き戻さず、別なobを定義しそこに出し、確定したらメインの物に移動させる方針で書き直し、ob_set_posを削除したい。
 - [ ] ob.tc の各関数はob_プリフィックスをつけない。
