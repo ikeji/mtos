@@ -7,6 +7,161 @@
       (type i32)
     )
   )
+  (fn Point
+    (params
+      (param __a0
+        (type i32)
+      )
+      (param __a1
+        (type i32)
+      )
+    )
+    (ret
+      (type Point)
+    )
+    (block
+      (comment "struct Point { x: i32, y: i32 }")
+      (var_decl __p
+        (type U32Array)
+        (call U32Array
+          (int 2)
+        )
+      )
+      (comment "struct Point { x: i32, y: i32 }")
+      (call_stmt set
+        (var __p)
+        (int 0)
+        (cast
+          (var __a0)
+          (type u32)
+        )
+      )
+      (comment "struct Point { x: i32, y: i32 }")
+      (call_stmt set
+        (var __p)
+        (int 1)
+        (cast
+          (var __a1)
+          (type u32)
+        )
+      )
+      (comment "struct Point { x: i32, y: i32 }")
+      (return
+        (cast
+          (var __p)
+          (type Point)
+        )
+      )
+    )
+  )
+  (fn x
+    (params
+      (param __p
+        (type Point)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "struct Point { x: i32, y: i32 }")
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 0)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn y
+    (params
+      (param __p
+        (type Point)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "struct Point { x: i32, y: i32 }")
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 1)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn x
+    (params
+      (param __p
+        (type Point)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "struct Point { x: i32, y: i32 }")
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 0)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (comment "struct Point { x: i32, y: i32 }")
+      (return)
+    )
+  )
+  (fn y
+    (params
+      (param __p
+        (type Point)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "struct Point { x: i32, y: i32 }")
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 1)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (comment "struct Point { x: i32, y: i32 }")
+      (return)
+    )
+  )
   (fn main
     (params
     )

@@ -1194,21 +1194,307 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32, is_export:
     return;
 }
 
-fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
-    expect_tok(TK_STRUCT, src, tok);
-    var name_len: i32 = g_tok_slen;
-    var name_buf: U8Array = U8Array(name_len + 1);
+// ===== Synthetic function generation for struct =====
+// Emit the name of the current type token into a buffer and return length.
+// Does not advance the lexer.
+fn type_tok_name(tok: U8Array, buf: U8Array, bstart: i32) -> i32 {
+    var k: i32 = g_tok;
+    if k == TK_U8   { set(buf,(bstart+0),'u'); set(buf,(bstart+1),'8');  return 2; }
+    if k == TK_I8   { set(buf,(bstart+0),'i'); set(buf,(bstart+1),'8');  return 2; }
+    if k == TK_U16  { set(buf,(bstart+0),'u'); set(buf,(bstart+1),'1'); set(buf,(bstart+2),'6'); return 3; }
+    if k == TK_U32  { set(buf,(bstart+0),'u'); set(buf,(bstart+1),'3'); set(buf,(bstart+2),'2'); return 3; }
+    if k == TK_I16  { set(buf,(bstart+0),'i'); set(buf,(bstart+1),'1'); set(buf,(bstart+2),'6'); return 3; }
+    if k == TK_I32  { set(buf,(bstart+0),'i'); set(buf,(bstart+1),'3'); set(buf,(bstart+2),'2'); return 3; }
+    if k == TK_BOOL { set(buf,(bstart+0),'b'); set(buf,(bstart+1),'o'); set(buf,(bstart+2),'o'); set(buf,(bstart+3),'l'); return 4; }
+    if k == TK_VOID { set(buf,(bstart+0),'v'); set(buf,(bstart+1),'o'); set(buf,(bstart+2),'i'); set(buf,(bstart+3),'d'); return 4; }
+    if k == TK_IDENT {
+        var i: i32 = 0;
+        while i < g_tok_slen { set(buf,(bstart+i),get(tok,i)); i = i + 1; }
+        return g_tok_slen;
+    }
+    return 0;
+}
+
+// Emit a decimal integer to ob.
+fn ob_dec(n: i32, ob: U8Array) -> void {
+    if n == 0 { ob_char('0', ob); return; }
+    var tmp: U8Array = U8Array(12);
+    var l: i32 = 0;
+    while n > 0 {
+        set(tmp, l, (48 + n % 10) as u8);
+        l = l + 1;
+        n = n / 10;
+    }
+    var i: i32 = l - 1;
+    while i >= 0 { ob_char(get(tmp,i), ob); i = i - 1; }
+    delete(tmp);
+    return;
+}
+
+// Emit a (param __aN (type T)) node.
+fn emit_param(name: String, tbuf: U8Array, tstart: i32, tlen: i32, ob: U8Array, indent: i32) -> void {
+    ob_indent(indent, ob);
+    ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob);
+    ob_string(name, ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob);
+    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(tbuf, tstart, tlen, ob);
+    ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent, ob);
+    ob_char(')', ob);
+    return;
+}
+
+// Emit a (type T) node at current indent.
+fn emit_type(tbuf: U8Array, tstart: i32, tlen: i32, ob: U8Array) -> void {
+    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(tbuf, tstart, tlen, ob);
+    ob_char(')', ob);
+    return;
+}
+
+// Emit (cast (var NAME) (type T)) — NAME is a String literal.
+fn emit_cast_var(name: String, tname: String, ob: U8Array, indent: i32) -> void {
+    ob_indent(indent, ob);
+    ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob);
+    ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
+    ob_string(name, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob);
+    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_string(tname, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent, ob);
+    ob_char(')', ob);
+    return;
+}
+
+// Emit (cast (var NAME) (type T)) where T comes from tbuf[tstart..].
+fn emit_cast_var_tbuf(name: String, tbuf: U8Array, tstart: i32, tlen: i32, ob: U8Array, indent: i32) -> void {
+    ob_indent(indent, ob);
+    ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob);
+    ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
+    ob_string(name, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob);
+    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(tbuf, tstart, tlen, ob);
+    ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent, ob);
+    ob_char(')', ob);
+    return;
+}
+
+// Emit a (comment "...") node at current indent for a given source line.
+fn emit_stmt_comment_line(src: U8Array, line: i32, ob: U8Array, indent: i32) -> void {
+    ob_indent(indent, ob);
+    emit_stmt_comment(src, line, ob);
+    ob_char(10u8, ob);
+    return;
+}
+
+// Emit the constructor fn for a struct.
+//   fn StructName(__a0: T0, __a1: T1, ...) -> StructName {
+//       var __p: U32Array = U32Array(N);
+//       set(__p, 0, __a0 as u32);
+//       ...
+//       return __p as StructName;
+//   }
+fn emit_struct_ctor(
+    sbuf: U8Array, snlen: i32,
+    ftypes: U8Array, ftoffs: I32Array, ftlens: I32Array,
+    nfields: i32,
+    src: U8Array, sline: i32,
+    ob: U8Array, indent: i32
+) -> void {
+    ob_indent(indent, ob);
+    ob_char('(', ob); ob_string("fn", ob); ob_char(' ', ob);
+    ob_n(sbuf, 0, snlen, ob); ob_char(10u8, ob);
+    // params
+    ob_indent(indent + 1, ob);
+    ob_char('(', ob); ob_string("params", ob); ob_char(10u8, ob);
     var i: i32 = 0;
-    while i < name_len {
-        set(name_buf, i, get(tok, i));
+    while i < nfields {
+        // __aN
+        ob_indent(indent + 2, ob);
+        ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob);
+        ob_string("__a", ob); ob_dec(i, ob); ob_char(10u8, ob);
+        ob_indent(indent + 3, ob);
+        emit_type(ftypes, get(ftoffs, i), get(ftlens, i), ob); ob_char(10u8, ob);
+        ob_indent(indent + 2, ob);
+        ob_char(')', ob); ob_char(10u8, ob);
         i = i + 1;
     }
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    // ret
+    ob_indent(indent + 1, ob);
+    ob_char('(', ob); ob_string("ret", ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob);
+    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(sbuf, 0, snlen, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    // block
+    ob_indent(indent + 1, ob);
+    ob_char('(', ob); ob_string("block", ob); ob_char(10u8, ob);
+    // comment for var_decl
+    emit_stmt_comment_line(src, sline, ob, indent + 2);
+    // var_decl __p (type U32Array) (call U32Array (int N))
+    ob_indent(indent + 2, ob);
+    ob_char('(', ob); ob_string("var_decl", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob);
+    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob); ob_string("U32Array", ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob);
+    ob_char('(', ob); ob_string("call", ob); ob_char(' ', ob); ob_string("U32Array", ob); ob_char(10u8, ob);
+    ob_indent(indent + 4, ob);
+    ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob); ob_dec(nfields, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+    // set(__p, i, __ai as u32) for each field
+    var k: i32 = 0;
+    while k < nfields {
+        emit_stmt_comment_line(src, sline, ob, indent + 2);
+        ob_indent(indent + 2, ob);
+        ob_char('(', ob); ob_string("call_stmt", ob); ob_char(' ', ob); ob_string("set", ob); ob_char(10u8, ob);
+        ob_indent(indent + 3, ob);
+        ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(')', ob); ob_char(10u8, ob);
+        ob_indent(indent + 3, ob);
+        ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob); ob_dec(k, ob); ob_char(')', ob); ob_char(10u8, ob);
+        // (cast (var __aN) (type u32))
+        ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+        ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
+        ob_string("__a", ob); ob_dec(k, ob); ob_char(')', ob); ob_char(10u8, ob);
+        ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+        ob_string("u32", ob); ob_char(')', ob); ob_char(10u8, ob);
+        ob_indent(indent + 3, ob); ob_char(')', ob); ob_char(10u8, ob);
+        ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+        k = k + 1;
+    }
+    // comment for return
+    emit_stmt_comment_line(src, sline, ob, indent + 2);
+    // return (cast (var __p) (type StructName))
+    ob_indent(indent + 2, ob);
+    ob_char('(', ob); ob_string("return", ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+    ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(sbuf, 0, snlen, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent, ob); ob_char(')', ob);
+    return;
+}
+
+// Emit a getter fn: field_name(__p: StructName) -> field_type { return get(__p as U32Array, i) as field_type; }
+fn emit_struct_getter(
+    sbuf: U8Array, snlen: i32,
+    fnames: U8Array, fnoff: i32, fnlen: i32,
+    ftypes: U8Array, ftoff: i32, ftlen: i32,
+    fidx: i32,
+    src: U8Array, sline: i32,
+    ob: U8Array, indent: i32
+) -> void {
+    ob_indent(indent, ob);
+    ob_char('(', ob); ob_string("fn", ob); ob_char(' ', ob);
+    ob_n(fnames, fnoff, fnlen, ob); ob_char(10u8, ob);
+    // params
+    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("params", ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(sbuf, 0, snlen, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    // ret
+    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("ret", ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(ftypes, ftoff, ftlen, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    // block { return get(__p as U32Array, i) as field_type; }
+    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("block", ob); ob_char(10u8, ob);
+    emit_stmt_comment_line(src, sline, ob, indent + 2);
+    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("return", ob); ob_char(10u8, ob);
+    // outer cast: get(...) as field_type
+    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+    // call get (cast __p U32Array) (int i)
+    ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("call", ob); ob_char(' ', ob); ob_string("get", ob); ob_char(10u8, ob);
+    emit_cast_var("__p", "U32Array", ob, indent + 5); ob_char(10u8, ob);
+    ob_indent(indent + 5, ob); ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob); ob_dec(fidx, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 4, ob); ob_char(')', ob); ob_char(10u8, ob);
+    // (type field_type)
+    ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(ftypes, ftoff, ftlen, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent, ob); ob_char(')', ob);
+    return;
+}
+
+// Emit a setter fn: field_name(__p: StructName, __v: field_type) -> void { set(__p as U32Array, i, __v as u32); return; }
+fn emit_struct_setter(
+    sbuf: U8Array, snlen: i32,
+    fnames: U8Array, fnoff: i32, fnlen: i32,
+    ftypes: U8Array, ftoff: i32, ftlen: i32,
+    fidx: i32,
+    src: U8Array, sline: i32,
+    ob: U8Array, indent: i32
+) -> void {
+    ob_indent(indent, ob);
+    ob_char('(', ob); ob_string("fn", ob); ob_char(' ', ob);
+    ob_n(fnames, fnoff, fnlen, ob); ob_char(10u8, ob);
+    // params
+    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("params", ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(sbuf, 0, snlen, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob); ob_string("__v", ob); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    ob_n(ftypes, ftoff, ftlen, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    // ret void
+    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("ret", ob); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob); ob_string("void", ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    // block { set(__p as U32Array, i, __v as u32); return; }
+    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("block", ob); ob_char(10u8, ob);
+    emit_stmt_comment_line(src, sline, ob, indent + 2);
+    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("call_stmt", ob); ob_char(' ', ob); ob_string("set", ob); ob_char(10u8, ob);
+    emit_cast_var("__p", "U32Array", ob, indent + 3); ob_char(10u8, ob);
+    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob); ob_dec(fidx, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_cast_var("__v", "u32", ob, indent + 3); ob_char(10u8, ob);
+    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_stmt_comment_line(src, sline, ob, indent + 2);
+    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("return", ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    ob_indent(indent, ob); ob_char(')', ob);
+    return;
+}
+
+fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
+    var struct_line: i32 = g_tok_line;
+    expect_tok(TK_STRUCT, src, tok);
+    // Capture struct name
+    var sname_buf: U8Array = U8Array(64);
+    var snlen: i32 = g_tok_slen;
+    var ci: i32 = 0;
+    while ci < snlen { set(sname_buf, ci, get(tok, ci)); ci = ci + 1; }
     expect_tok(TK_IDENT, src, tok);
     expect_tok(TK_LBRACE, src, tok);
 
+    // Buffers for field info (max 16 fields, ~64 bytes per name/type)
+    var fnames: U8Array = U8Array(1024);
+    var fnoffs: I32Array = I32Array(17);
+    var fnlens: I32Array = I32Array(16);
+    var ftypes: U8Array = U8Array(1024);
+    var ftoffs: I32Array = I32Array(17);
+    var ftlens: I32Array = I32Array(16);
+    var nfields: i32 = 0;
+    var fnpos: i32 = 0;
+    var ftpos: i32 = 0;
+
     ob_char('(', ob); ob_string("struct", ob); ob_char(' ', ob);
-    ob_n(name_buf, 0, name_len, ob);
-    delete(name_buf);
+    ob_n(sname_buf, 0, snlen, ob);
 
     var first: i32 = 1;
     while g_tok != TK_RBRACE && g_tok != TK_EOF {
@@ -1218,6 +1504,7 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
         first = 0;
         if g_tok == TK_RBRACE { g_tok = g_tok; }  // do nothing, will exit loop
         else {
+            // Capture field name
             var fname_len: i32 = g_tok_slen;
             var fname_buf: U8Array = U8Array(fname_len + 1);
             var j: i32 = 0;
@@ -1225,8 +1512,19 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
                 set(fname_buf, j, get(tok, j));
                 j = j + 1;
             }
+            // Record field name in fnames buffer
+            set(fnoffs, nfields, fnpos);
+            set(fnlens, nfields, fname_len);
+            j = 0;
+            while j < fname_len { set(fnames, (fnpos+j), get(fname_buf, j)); j = j + 1; }
+            fnpos = fnpos + fname_len;
             expect_tok(TK_IDENT, src, tok);
             expect_tok(TK_COLON, src, tok);
+            // Capture type name (peek current token BEFORE pars_type advances)
+            set(ftoffs, nfields, ftpos);
+            var ftl: i32 = type_tok_name(tok, ftypes, ftpos);
+            set(ftlens, nfields, ftl);
+            ftpos = ftpos + ftl;
             ob_char(10u8, ob);
             ob_indent(indent + 1, ob);
             ob_char('(', ob); ob_string("field", ob); ob_char(' ', ob);
@@ -1238,12 +1536,43 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> voi
             ob_indent(indent + 1, ob);
             ob_char(')', ob);
             delete(fname_buf);
+            nfields = nfields + 1;
         }
     }
     expect_tok(TK_RBRACE, src, tok);
     ob_char(10u8, ob);
     ob_indent(indent, ob);
     ob_char(')', ob);
+
+    // Emit synthetic functions: constructor, getters, setters
+    ob_char(10u8, ob);
+    emit_struct_ctor(sname_buf, snlen, ftypes, ftoffs, ftlens, nfields, src, struct_line, ob, indent);
+
+    var gi: i32 = 0;
+    while gi < nfields {
+        ob_char(10u8, ob);
+        emit_struct_getter(
+            sname_buf, snlen,
+            fnames, get(fnoffs, gi), get(fnlens, gi),
+            ftypes, get(ftoffs, gi), get(ftlens, gi),
+            gi, src, struct_line, ob, indent);
+        gi = gi + 1;
+    }
+
+    var si: i32 = 0;
+    while si < nfields {
+        ob_char(10u8, ob);
+        emit_struct_setter(
+            sname_buf, snlen,
+            fnames, get(fnoffs, si), get(fnlens, si),
+            ftypes, get(ftoffs, si), get(ftlens, si),
+            si, src, struct_line, ob, indent);
+        si = si + 1;
+    }
+
+    delete(sname_buf);
+    delete(fnames); delete(fnoffs); delete(fnlens);
+    delete(ftypes); delete(ftoffs); delete(ftlens);
     return;
 }
 

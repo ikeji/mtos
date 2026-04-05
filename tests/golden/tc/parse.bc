@@ -45,8 +45,14 @@
 .string 42 "params"
 .string 43 "param"
 .string 44 "ret"
-.string 45 "field"
-.string 46 "program"
+.string 45 "__a"
+.string 46 "__p"
+.string 47 "U32Array"
+.string 48 "set"
+.string 49 "get"
+.string 50 "__v"
+.string 51 "field"
+.string 52 "program"
 
 ; globals
 .global TK_FN i32 0
@@ -5575,39 +5581,253 @@ __L413:
   return_void
 .endfn
 
-.fn pars_struct_decl U8Array U8Array U8Array i32 void
-.param src U8Array
+.fn type_tok_name U8Array U8Array i32 i32
 .param tok U8Array
-.param ob U8Array
-.param indent i32
-.local name_len i32
-.local name_buf U8Array
+.param buf U8Array
+.param bstart i32
+.local k i32
 .local i i32
-.local first i32
-.local fname_len i32
-.local fname_buf U8Array
-.local j i32
-  load TK_STRUCT
-  load src
-  load tok
-  call expect_tok i32 U8Array U8Array
+  load g_tok
+  store k
+  load k
+  load TK_U8
+  eq
+  jump_ifnot __L414
+  load buf
+  load bstart
+  push_int 0
+  add
+  push_int 117
+  call set U8Array i32 u8
   pop
-  load g_tok_slen
-  store name_len
-  load name_len
+  load buf
+  load bstart
   push_int 1
   add
-  call U8Array i32
-  store name_buf
+  push_int 56
+  call set U8Array i32 u8
+  pop
+  push_int 2
+  return
+__L414:
+  load k
+  load TK_I8
+  eq
+  jump_ifnot __L415
+  load buf
+  load bstart
+  push_int 0
+  add
+  push_int 105
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 1
+  add
+  push_int 56
+  call set U8Array i32 u8
+  pop
+  push_int 2
+  return
+__L415:
+  load k
+  load TK_U16
+  eq
+  jump_ifnot __L416
+  load buf
+  load bstart
+  push_int 0
+  add
+  push_int 117
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 1
+  add
+  push_int 49
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 2
+  add
+  push_int 54
+  call set U8Array i32 u8
+  pop
+  push_int 3
+  return
+__L416:
+  load k
+  load TK_U32
+  eq
+  jump_ifnot __L417
+  load buf
+  load bstart
+  push_int 0
+  add
+  push_int 117
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 1
+  add
+  push_int 51
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 2
+  add
+  push_int 50
+  call set U8Array i32 u8
+  pop
+  push_int 3
+  return
+__L417:
+  load k
+  load TK_I16
+  eq
+  jump_ifnot __L418
+  load buf
+  load bstart
+  push_int 0
+  add
+  push_int 105
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 1
+  add
+  push_int 49
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 2
+  add
+  push_int 54
+  call set U8Array i32 u8
+  pop
+  push_int 3
+  return
+__L418:
+  load k
+  load TK_I32
+  eq
+  jump_ifnot __L419
+  load buf
+  load bstart
+  push_int 0
+  add
+  push_int 105
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 1
+  add
+  push_int 51
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 2
+  add
+  push_int 50
+  call set U8Array i32 u8
+  pop
+  push_int 3
+  return
+__L419:
+  load k
+  load TK_BOOL
+  eq
+  jump_ifnot __L420
+  load buf
+  load bstart
+  push_int 0
+  add
+  push_int 98
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 1
+  add
+  push_int 111
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 2
+  add
+  push_int 111
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 3
+  add
+  push_int 108
+  call set U8Array i32 u8
+  pop
+  push_int 4
+  return
+__L420:
+  load k
+  load TK_VOID
+  eq
+  jump_ifnot __L421
+  load buf
+  load bstart
+  push_int 0
+  add
+  push_int 118
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 1
+  add
+  push_int 111
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 2
+  add
+  push_int 105
+  call set U8Array i32 u8
+  pop
+  load buf
+  load bstart
+  push_int 3
+  add
+  push_int 100
+  call set U8Array i32 u8
+  pop
+  push_int 4
+  return
+__L421:
+  load k
+  load TK_IDENT
+  eq
+  jump_ifnot __L422
   push_int 0
   store i
-__L414:
+__L423:
   load i
-  load name_len
+  load g_tok_slen
   lt
-  jump_ifnot __L415
-  load name_buf
+  jump_ifnot __L424
+  load buf
+  load bstart
   load i
+  add
   load tok
   load i
   call get U8Array i32
@@ -5617,23 +5837,106 @@ __L414:
   push_int 1
   add
   store i
-  jump __L414
-__L415:
-  load TK_IDENT
-  load src
-  load tok
-  call expect_tok i32 U8Array U8Array
+  jump __L423
+__L424:
+  load g_tok_slen
+  return
+__L422:
+  push_int 0
+  return
+  return_void
+.endfn
+
+.fn ob_dec i32 U8Array void
+.param n i32
+.param ob U8Array
+.local tmp U8Array
+.local l i32
+.local i i32
+  load n
+  push_int 0
+  eq
+  jump_ifnot __L425
+  push_int 48
+  load ob
+  call ob_char u8 U8Array
   pop
-  load TK_LBRACE
-  load src
-  load tok
-  call expect_tok i32 U8Array U8Array
+  return_void
+__L425:
+  push_int 12
+  call U8Array i32
+  store tmp
+  push_int 0
+  store l
+__L426:
+  load n
+  push_int 0
+  gt
+  jump_ifnot __L427
+  load tmp
+  load l
+  push_int 48
+  load n
+  push_int 10
+  mod
+  add
+  cast u8
+  call set U8Array i32 u8
+  pop
+  load l
+  push_int 1
+  add
+  store l
+  load n
+  push_int 10
+  div
+  store n
+  jump __L426
+__L427:
+  load l
+  push_int 1
+  sub
+  store i
+__L428:
+  load i
+  push_int 0
+  ge
+  jump_ifnot __L429
+  load tmp
+  load i
+  call get U8Array i32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load i
+  push_int 1
+  sub
+  store i
+  jump __L428
+__L429:
+  load tmp
+  call delete U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_param String U8Array i32 i32 U8Array i32 void
+.param name String
+.param tbuf U8Array
+.param tstart i32
+.param tlen i32
+.param ob U8Array
+.param indent i32
+  load indent
+  load ob
+  call ob_indent i32 U8Array
   pop
   push_int 40
   load ob
   call ob_char u8 U8Array
   pop
-  push_str 26
+  push_str 43
   load ob
   call ob_string String U8Array
   pop
@@ -5641,92 +5944,9 @@ __L415:
   load ob
   call ob_char u8 U8Array
   pop
-  load name_buf
-  push_int 0
-  load name_len
+  load name
   load ob
-  call ob_n U8Array i32 i32 U8Array
-  pop
-  load name_buf
-  call delete U8Array
-  pop
-  push_int 1
-  store first
-__L416:
-  load g_tok
-  load TK_RBRACE
-  ne
-  jump_ifnot __L418
-  load g_tok
-  load TK_EOF
-  ne
-  jump_ifnot __L418
-  push_int 1
-  jump __L419
-__L418:
-  push_int 0
-__L419:
-  jump_ifnot __L417
-  load first
-  push_int 0
-  eq
-  jump_ifnot __L420
-  load g_tok
-  load TK_COMMA
-  eq
-  jump_ifnot __L421
-  load src
-  load tok
-  call lex_tok U8Array U8Array
-  pop
-__L421:
-__L420:
-  push_int 0
-  store first
-  load g_tok
-  load TK_RBRACE
-  eq
-  jump_ifnot __L422
-  load g_tok
-  store g_tok
-  jump __L423
-__L422:
-  load g_tok_slen
-  store fname_len
-  load fname_len
-  push_int 1
-  add
-  call U8Array i32
-  store fname_buf
-  push_int 0
-  store j
-__L424:
-  load j
-  load fname_len
-  lt
-  jump_ifnot __L425
-  load fname_buf
-  load j
-  load tok
-  load j
-  call get U8Array i32
-  call set U8Array i32 u8
-  pop
-  load j
-  push_int 1
-  add
-  store j
-  jump __L424
-__L425:
-  load TK_IDENT
-  load src
-  load tok
-  call expect_tok i32 U8Array U8Array
-  pop
-  load TK_COLON
-  load src
-  load tok
-  call expect_tok i32 U8Array U8Array
+  call ob_string String U8Array
   pop
   push_int 10
   load ob
@@ -5742,7 +5962,2187 @@ __L425:
   load ob
   call ob_char u8 U8Array
   pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load tbuf
+  load tstart
+  load tlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_type U8Array i32 i32 U8Array void
+.param tbuf U8Array
+.param tstart i32
+.param tlen i32
+.param ob U8Array
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load tbuf
+  load tstart
+  load tlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_cast_var String String U8Array i32 void
+.param name String
+.param tname String
+.param ob U8Array
+.param indent i32
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 34
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 19
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load name
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load tname
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_cast_var_tbuf String U8Array i32 i32 U8Array i32 void
+.param name String
+.param tbuf U8Array
+.param tstart i32
+.param tlen i32
+.param ob U8Array
+.param indent i32
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 34
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 19
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load name
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load tbuf
+  load tstart
+  load tlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_stmt_comment_line U8Array i32 U8Array i32 void
+.param src U8Array
+.param line i32
+.param ob U8Array
+.param indent i32
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  load src
+  load line
+  load ob
+  call emit_stmt_comment U8Array i32 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_struct_ctor U8Array i32 U8Array I32Array I32Array i32 U8Array i32 U8Array i32 void
+.param sbuf U8Array
+.param snlen i32
+.param ftypes U8Array
+.param ftoffs I32Array
+.param ftlens I32Array
+.param nfields i32
+.param src U8Array
+.param sline i32
+.param ob U8Array
+.param indent i32
+.local i i32
+.local k i32
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 16
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sbuf
+  push_int 0
+  load snlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 42
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 0
+  store i
+__L430:
+  load i
+  load nfields
+  lt
+  jump_ifnot __L431
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 43
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
   push_str 45
+  load ob
+  call ob_string String U8Array
+  pop
+  load i
+  load ob
+  call ob_dec i32 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  load ftypes
+  load ftoffs
+  load i
+  call get I32Array i32
+  load ftlens
+  load i
+  call get I32Array i32
+  load ob
+  call emit_type U8Array i32 i32 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L430
+__L431:
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 44
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sbuf
+  push_int 0
+  load snlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 41
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load src
+  load sline
+  load ob
+  load indent
+  push_int 2
+  add
+  call emit_stmt_comment_line U8Array i32 U8Array i32
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 37
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 46
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 47
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 33
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 47
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 4
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 31
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load nfields
+  load ob
+  call ob_dec i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 0
+  store k
+__L432:
+  load k
+  load nfields
+  lt
+  jump_ifnot __L433
+  load src
+  load sline
+  load ob
+  load indent
+  push_int 2
+  add
+  call emit_stmt_comment_line U8Array i32 U8Array i32
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 39
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 48
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 19
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 46
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 31
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load k
+  load ob
+  call ob_dec i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 34
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 4
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 19
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 45
+  load ob
+  call ob_string String U8Array
+  pop
+  load k
+  load ob
+  call ob_dec i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 4
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 10
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load k
+  push_int 1
+  add
+  store k
+  jump __L432
+__L433:
+  load src
+  load sline
+  load ob
+  load indent
+  push_int 2
+  add
+  call emit_stmt_comment_line U8Array i32 U8Array i32
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 25
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 34
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 4
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 19
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 46
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 4
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sbuf
+  push_int 0
+  load snlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_struct_getter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 U8Array i32 void
+.param sbuf U8Array
+.param snlen i32
+.param fnames U8Array
+.param fnoff i32
+.param fnlen i32
+.param ftypes U8Array
+.param ftoff i32
+.param ftlen i32
+.param fidx i32
+.param src U8Array
+.param sline i32
+.param ob U8Array
+.param indent i32
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 16
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load fnames
+  load fnoff
+  load fnlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 42
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 43
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 46
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sbuf
+  push_int 0
+  load snlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 44
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load ftypes
+  load ftoff
+  load ftlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 41
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load src
+  load sline
+  load ob
+  load indent
+  push_int 2
+  add
+  call emit_stmt_comment_line U8Array i32 U8Array i32
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 25
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 34
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 4
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 33
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 49
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 46
+  push_str 47
+  load ob
+  load indent
+  push_int 5
+  add
+  call emit_cast_var String String U8Array i32
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 5
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 31
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load fidx
+  load ob
+  call ob_dec i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 4
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 4
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load ftypes
+  load ftoff
+  load ftlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_struct_setter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 U8Array i32 void
+.param sbuf U8Array
+.param snlen i32
+.param fnames U8Array
+.param fnoff i32
+.param fnlen i32
+.param ftypes U8Array
+.param ftoff i32
+.param ftlen i32
+.param fidx i32
+.param src U8Array
+.param sline i32
+.param ob U8Array
+.param indent i32
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 16
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load fnames
+  load fnoff
+  load fnlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 42
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 43
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 46
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sbuf
+  push_int 0
+  load snlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 43
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 50
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load ftypes
+  load ftoff
+  load ftlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 44
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 36
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 15
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 41
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load src
+  load sline
+  load ob
+  load indent
+  push_int 2
+  add
+  call emit_stmt_comment_line U8Array i32 U8Array i32
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 39
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 48
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 46
+  push_str 47
+  load ob
+  load indent
+  push_int 3
+  add
+  call emit_cast_var String String U8Array i32
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 3
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 31
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load fidx
+  load ob
+  call ob_dec i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 50
+  push_str 10
+  load ob
+  load indent
+  push_int 3
+  add
+  call emit_cast_var String String U8Array i32
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load src
+  load sline
+  load ob
+  load indent
+  push_int 2
+  add
+  call emit_stmt_comment_line U8Array i32 U8Array i32
+  pop
+  load indent
+  push_int 2
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 25
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 41
+  load ob
+  call ob_char u8 U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn pars_struct_decl U8Array U8Array U8Array i32 void
+.param src U8Array
+.param tok U8Array
+.param ob U8Array
+.param indent i32
+.local struct_line i32
+.local sname_buf U8Array
+.local snlen i32
+.local ci i32
+.local fnames U8Array
+.local fnoffs I32Array
+.local fnlens I32Array
+.local ftypes U8Array
+.local ftoffs I32Array
+.local ftlens I32Array
+.local nfields i32
+.local fnpos i32
+.local ftpos i32
+.local first i32
+.local fname_len i32
+.local fname_buf U8Array
+.local j i32
+.local ftl i32
+.local gi i32
+.local si i32
+  load g_tok_line
+  store struct_line
+  load TK_STRUCT
+  load src
+  load tok
+  call expect_tok i32 U8Array U8Array
+  pop
+  push_int 64
+  call U8Array i32
+  store sname_buf
+  load g_tok_slen
+  store snlen
+  push_int 0
+  store ci
+__L434:
+  load ci
+  load snlen
+  lt
+  jump_ifnot __L435
+  load sname_buf
+  load ci
+  load tok
+  load ci
+  call get U8Array i32
+  call set U8Array i32 u8
+  pop
+  load ci
+  push_int 1
+  add
+  store ci
+  jump __L434
+__L435:
+  load TK_IDENT
+  load src
+  load tok
+  call expect_tok i32 U8Array U8Array
+  pop
+  load TK_LBRACE
+  load src
+  load tok
+  call expect_tok i32 U8Array U8Array
+  pop
+  push_int 1024
+  call U8Array i32
+  store fnames
+  push_int 17
+  call I32Array i32
+  store fnoffs
+  push_int 16
+  call I32Array i32
+  store fnlens
+  push_int 1024
+  call U8Array i32
+  store ftypes
+  push_int 17
+  call I32Array i32
+  store ftoffs
+  push_int 16
+  call I32Array i32
+  store ftlens
+  push_int 0
+  store nfields
+  push_int 0
+  store fnpos
+  push_int 0
+  store ftpos
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 26
+  load ob
+  call ob_string String U8Array
+  pop
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sname_buf
+  push_int 0
+  load snlen
+  load ob
+  call ob_n U8Array i32 i32 U8Array
+  pop
+  push_int 1
+  store first
+__L436:
+  load g_tok
+  load TK_RBRACE
+  ne
+  jump_ifnot __L438
+  load g_tok
+  load TK_EOF
+  ne
+  jump_ifnot __L438
+  push_int 1
+  jump __L439
+__L438:
+  push_int 0
+__L439:
+  jump_ifnot __L437
+  load first
+  push_int 0
+  eq
+  jump_ifnot __L440
+  load g_tok
+  load TK_COMMA
+  eq
+  jump_ifnot __L441
+  load src
+  load tok
+  call lex_tok U8Array U8Array
+  pop
+__L441:
+__L440:
+  push_int 0
+  store first
+  load g_tok
+  load TK_RBRACE
+  eq
+  jump_ifnot __L442
+  load g_tok
+  store g_tok
+  jump __L443
+__L442:
+  load g_tok_slen
+  store fname_len
+  load fname_len
+  push_int 1
+  add
+  call U8Array i32
+  store fname_buf
+  push_int 0
+  store j
+__L444:
+  load j
+  load fname_len
+  lt
+  jump_ifnot __L445
+  load fname_buf
+  load j
+  load tok
+  load j
+  call get U8Array i32
+  call set U8Array i32 u8
+  pop
+  load j
+  push_int 1
+  add
+  store j
+  jump __L444
+__L445:
+  load fnoffs
+  load nfields
+  load fnpos
+  call set I32Array i32 i32
+  pop
+  load fnlens
+  load nfields
+  load fname_len
+  call set I32Array i32 i32
+  pop
+  push_int 0
+  store j
+__L446:
+  load j
+  load fname_len
+  lt
+  jump_ifnot __L447
+  load fnames
+  load fnpos
+  load j
+  add
+  load fname_buf
+  load j
+  call get U8Array i32
+  call set U8Array i32 u8
+  pop
+  load j
+  push_int 1
+  add
+  store j
+  jump __L446
+__L447:
+  load fnpos
+  load fname_len
+  add
+  store fnpos
+  load TK_IDENT
+  load src
+  load tok
+  call expect_tok i32 U8Array U8Array
+  pop
+  load TK_COLON
+  load src
+  load tok
+  call expect_tok i32 U8Array U8Array
+  pop
+  load ftoffs
+  load nfields
+  load ftpos
+  call set I32Array i32 i32
+  pop
+  load tok
+  load ftypes
+  load ftpos
+  call type_tok_name U8Array U8Array i32
+  store ftl
+  load ftlens
+  load nfields
+  load ftl
+  call set I32Array i32 i32
+  pop
+  load ftpos
+  load ftl
+  add
+  store ftpos
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load indent
+  push_int 1
+  add
+  load ob
+  call ob_indent i32 U8Array
+  pop
+  push_int 40
+  load ob
+  call ob_char u8 U8Array
+  pop
+  push_str 51
   load ob
   call ob_string String U8Array
   pop
@@ -5791,9 +8191,13 @@ __L425:
   load fname_buf
   call delete U8Array
   pop
-__L423:
-  jump __L416
-__L417:
+  load nfields
+  push_int 1
+  add
+  store nfields
+__L443:
+  jump __L436
+__L437:
   load TK_RBRACE
   load src
   load tok
@@ -5810,6 +8214,123 @@ __L417:
   push_int 41
   load ob
   call ob_char u8 U8Array
+  pop
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sname_buf
+  load snlen
+  load ftypes
+  load ftoffs
+  load ftlens
+  load nfields
+  load src
+  load struct_line
+  load ob
+  load indent
+  call emit_struct_ctor U8Array i32 U8Array I32Array I32Array i32 U8Array i32 U8Array i32
+  pop
+  push_int 0
+  store gi
+__L448:
+  load gi
+  load nfields
+  lt
+  jump_ifnot __L449
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sname_buf
+  load snlen
+  load fnames
+  load fnoffs
+  load gi
+  call get I32Array i32
+  load fnlens
+  load gi
+  call get I32Array i32
+  load ftypes
+  load ftoffs
+  load gi
+  call get I32Array i32
+  load ftlens
+  load gi
+  call get I32Array i32
+  load gi
+  load src
+  load struct_line
+  load ob
+  load indent
+  call emit_struct_getter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 U8Array i32
+  pop
+  load gi
+  push_int 1
+  add
+  store gi
+  jump __L448
+__L449:
+  push_int 0
+  store si
+__L450:
+  load si
+  load nfields
+  lt
+  jump_ifnot __L451
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+  load sname_buf
+  load snlen
+  load fnames
+  load fnoffs
+  load si
+  call get I32Array i32
+  load fnlens
+  load si
+  call get I32Array i32
+  load ftypes
+  load ftoffs
+  load si
+  call get I32Array i32
+  load ftlens
+  load si
+  call get I32Array i32
+  load si
+  load src
+  load struct_line
+  load ob
+  load indent
+  call emit_struct_setter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 U8Array i32
+  pop
+  load si
+  push_int 1
+  add
+  store si
+  jump __L450
+__L451:
+  load sname_buf
+  call delete U8Array
+  pop
+  load fnames
+  call delete U8Array
+  pop
+  load fnoffs
+  call delete I32Array
+  pop
+  load fnlens
+  call delete I32Array
+  pop
+  load ftypes
+  call delete U8Array
+  pop
+  load ftoffs
+  call delete I32Array
+  pop
+  load ftlens
+  call delete I32Array
   pop
   return_void
   return_void
@@ -5840,7 +8361,7 @@ __L417:
   load g_tok
   load TK_STR_LIT
   eq
-  jump_ifnot __L426
+  jump_ifnot __L452
   load tok
   push_int 0
   load g_tok_slen
@@ -5851,7 +8372,7 @@ __L417:
   load tok
   call lex_tok U8Array U8Array
   pop
-__L426:
+__L452:
   load TK_SEMI
   load src
   load tok
@@ -5873,15 +8394,15 @@ __L426:
   load ob
   call ob_char u8 U8Array
   pop
-  push_str 46
+  push_str 52
   load ob
   call ob_string String U8Array
   pop
-__L427:
+__L453:
   load g_tok
   load TK_IMPORT
   eq
-  jump_ifnot __L428
+  jump_ifnot __L454
   push_int 10
   load ob
   call ob_char u8 U8Array
@@ -5896,13 +8417,13 @@ __L427:
   push_int 1
   call pars_import U8Array U8Array U8Array i32
   pop
-  jump __L427
-__L428:
-__L429:
+  jump __L453
+__L454:
+__L455:
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L430
+  jump_ifnot __L456
   push_int 10
   load ob
   call ob_char u8 U8Array
@@ -5914,7 +8435,7 @@ __L429:
   load g_tok
   load TK_EXPORT
   eq
-  jump_ifnot __L431
+  jump_ifnot __L457
   load src
   load tok
   call lex_tok U8Array U8Array
@@ -5926,12 +8447,12 @@ __L429:
   push_int 1
   call pars_fn_decl U8Array U8Array U8Array i32 i32
   pop
-  jump __L432
-__L431:
+  jump __L458
+__L457:
   load g_tok
   load TK_FN
   eq
-  jump_ifnot __L433
+  jump_ifnot __L459
   load src
   load tok
   load ob
@@ -5939,41 +8460,41 @@ __L431:
   push_int 0
   call pars_fn_decl U8Array U8Array U8Array i32 i32
   pop
-  jump __L434
-__L433:
+  jump __L460
+__L459:
   load g_tok
   load TK_STRUCT
   eq
-  jump_ifnot __L435
+  jump_ifnot __L461
   load src
   load tok
   load ob
   push_int 1
   call pars_struct_decl U8Array U8Array U8Array i32
   pop
-  jump __L436
-__L435:
+  jump __L462
+__L461:
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L437
+  jump_ifnot __L463
   load src
   load tok
   load ob
   push_int 1
   call pars_var_decl U8Array U8Array U8Array i32
   pop
-  jump __L438
-__L437:
+  jump __L464
+__L463:
   push_int 1
   call sys_exit i32
   pop
-__L438:
-__L436:
-__L434:
-__L432:
-  jump __L429
-__L430:
+__L464:
+__L462:
+__L460:
+__L458:
+  jump __L455
+__L456:
   push_int 10
   load ob
   call ob_char u8 U8Array
@@ -6016,30 +8537,30 @@ __L430:
   push_int 4096
   call sys_read i32 U8Array i32
   store chunk
-__L439:
+__L465:
   load chunk
   push_int 0
   gt
-  jump_ifnot __L441
+  jump_ifnot __L467
   load g_len
   load chunk
   add
   push_int 524288
   le
-  jump_ifnot __L441
+  jump_ifnot __L467
   push_int 1
-  jump __L442
-__L441:
+  jump __L468
+__L467:
   push_int 0
-__L442:
-  jump_ifnot __L440
+__L468:
+  jump_ifnot __L466
   push_int 0
   store ci
-__L443:
+__L469:
   load ci
   load chunk
   lt
-  jump_ifnot __L444
+  jump_ifnot __L470
   load src_buf
   load g_len
   load read_tmp
@@ -6055,15 +8576,15 @@ __L443:
   push_int 1
   add
   store ci
-  jump __L443
-__L444:
+  jump __L469
+__L470:
   push_int 0
   load read_tmp
   push_int 4096
   call sys_read i32 U8Array i32
   store chunk
-  jump __L439
-__L440:
+  jump __L465
+__L466:
   load read_tmp
   call delete U8Array
   pop
