@@ -17,9 +17,11 @@ compiler/   自作TinyC製の自己ホスト型コンパイラ
   codegen.tc    コード生成（型付きAST→バイトコード）
   bc2asm.tc     アセンブラ（バイトコード→RISC-V asm）
   bcrun.tc      バイトコードインタープリタ
+  ob.tc         output buffer ライブラリ（parse.tc から import）
 tests/      テストスイート
   golden/         C実装の基準出力（.ast .bc .s .out .exit）
   golden/tc/      compiler/コンパイラソース自体の基準出力
+  compile_tc.sh   import 解決つき BC 生成ヘルパー（他スクリプトから source）
 docs/       仕様・設計ドキュメント
 os/         OSカーネル（作成中）
 ```
@@ -45,15 +47,27 @@ make update-golden    # goldenファイルを再生成
 ./tc_run.sh bcrun     calc.tc @input.txt
 ```
 
+## 複数ファイルのコンパイル
+
+```bash
+./tc_build.sh -o prog main.tc lib.tc  # 複数 .tc ファイルをコンパイル＋リンク
+```
+
+`import "lib.tc";` で他ファイルの `export fn` を呼べる。struct は型名として使える。
+詳細は `docs/task/multi_file.md`。
+
 ## コンパイルパイプライン
 
 ```
 source.tc
   → ./parse source.tc              # AST（S式テキスト形式）
-  → ./parse | ./codegen            # バイトコード（.bc形式、内部でtypecheckも実行）
-  → ./parse | ./codegen | ./bc2asm # RISC-V アセンブリ（.s形式）
+  → ./codegen source.tc            # バイトコード（.bc形式、typecheck込み、import 解決）
+  → ./codegen source.tc | ./bc2asm # RISC-V アセンブリ（.s形式）
   → ./bcrun                        # バイトコード実行（stdin経由でbcを渡す）
 ```
+
+import を含むファイルは `./codegen source.tc` のようにファイル引数で渡す必要がある
+（パイプ経由ではファイル名情報が失われ相対パス解決ができない）。
 
 自己ホスト版のパイプライン: `parse.tc → typecheck.tc → codegen.tc → bc2asm.tc/bcrun.tc`
 （C版の `codegen` は内部で typecheck を呼ぶが、自己ホスト版は明示的に分離）
@@ -66,15 +80,17 @@ source.tc
 - **Gen3**: `compiler/` のコンパイラを Gen2 でコンパイルしたもの
 
 ### テストスクリプト構成
-- `tests/run_golden_tests.sh` — 以下3つをまとめて実行するラッパー
+- `tests/run_golden_tests.sh` — 以下4つをまとめて実行するラッパー
 - `tests/run_example_tests.sh` — サンプル .tc ファイルの golden テスト（Gen1 vs Gen2）
 - `tests/run_compiler_tests.sh` — compiler/ コンパイラソース自体の golden テスト（Gen1 vs Gen2、RISC-V toolchain があれば自己ホスト版をネイティブ実行で高速化）
 - `tests/run_gen3_tests.sh` — Gen2 vs Gen3 自己ホスト確認（単体実行可能）
+- `tests/run_import_tests.sh` — 複数ファイル import/export のテスト
 - goldenファイルの更新: `make update-golden`
 
 ### 現在のテスト（Gen1 vs Gen2 の比較）
 - `AST - C` / `AST - parse.tc` — パーサー出力の一致確認（Gen1 vs Gen2）
 - `BC - C` / `BC - codegen.tc` — バイトコードの一致確認（Gen1 vs Gen2）
+  - `.bc` golden は C版（ソースコメント付き）、`.bc.tc` golden は自己ホスト版用
 - `ASM - C` / `ASM - bc2asm.tc` — アセンブリの一致確認（Gen1 vs Gen2）
 - `Exec - bcrun C` / `Exec - bcrun tc` — 実行結果の確認
 - `Exec - rv32 C` / `Exec - rv32 tc` — RISC-V実機（qemu）での実行確認
