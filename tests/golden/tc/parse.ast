@@ -479,7 +479,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -800,7 +800,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -3429,7 +3429,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -3486,7 +3486,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -4041,17 +4041,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var start: i32 = ob_pos();")
+      (comment "var start: i32 = ob_pos(ob);")
       (var_decl start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_primary(src, tok, ob);")
       (call_stmt pars_primary
@@ -4071,11 +4073,13 @@
             (var src)
             (var tok)
           )
-          (comment "var expr_len: i32 = ob_pos() - start;")
+          (comment "var expr_len: i32 = ob_pos(ob) - start;")
           (var_decl expr_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var start)
             )
           )
@@ -4098,11 +4102,11 @@
               (var expr_len)
             )
             (block
-              (comment "set(saved, i, get(ob, (start + i)));")
+              (comment "set(saved, i, ob_peek(ob, (start + i)));")
               (call_stmt set
                 (var saved)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var start)
@@ -4119,8 +4123,9 @@
               )
             )
           )
-          (comment "ob_set_pos(start);")
+          (comment "ob_set_pos(ob, start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var start)
           )
           (comment "ob_char('(', ob); ob_string(\"cast\", ob); ob_char(10u8, ob);")
@@ -4181,7 +4186,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -4311,17 +4316,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_unary(src, tok, ob);")
       (call_stmt pars_unary
@@ -4358,11 +4365,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -4388,11 +4397,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -4409,8 +4418,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4480,17 +4490,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_mul(src, tok, ob);")
       (call_stmt pars_mul
@@ -4521,11 +4533,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -4551,11 +4565,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -4572,8 +4586,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4643,17 +4658,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_add(src, tok, ob);")
       (call_stmt pars_add
@@ -4684,11 +4701,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -4714,11 +4733,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -4735,8 +4754,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(op, ob); ob_char(10u8,ob);")
@@ -4806,17 +4826,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_shift(src, tok, ob);")
       (call_stmt pars_shift
@@ -4836,11 +4858,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -4866,11 +4890,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -4887,8 +4911,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('&', ob); ob_char(10u8,ob);")
@@ -4958,17 +4983,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_bitand(src, tok, ob);")
       (call_stmt pars_bitand
@@ -4988,11 +5015,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -5018,11 +5047,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -5039,8 +5068,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('^', ob); ob_char(10u8,ob);")
@@ -5110,17 +5140,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_bitxor(src, tok, ob);")
       (call_stmt pars_bitxor
@@ -5140,11 +5172,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -5170,11 +5204,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -5191,8 +5225,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_char('|', ob); ob_char(10u8,ob);")
@@ -5262,17 +5297,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_bitor(src, tok, ob);")
       (call_stmt pars_bitor
@@ -5327,11 +5364,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -5357,11 +5396,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -5378,8 +5417,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8,ob);")
@@ -5449,17 +5489,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_compare(src, tok, ob);")
       (call_stmt pars_compare
@@ -5479,11 +5521,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -5509,11 +5553,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -5530,8 +5574,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"&&\", ob); ob_char(10u8,ob);")
@@ -5601,17 +5646,19 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "var left_start: i32 = ob_pos();")
+      (comment "var left_start: i32 = ob_pos(ob);")
       (var_decl left_start
         (type i32)
-        (call ob_pos)
+        (call ob_pos
+          (var ob)
+        )
       )
       (comment "pars_logic_and(src, tok, ob);")
       (call_stmt pars_logic_and
@@ -5631,11 +5678,13 @@
             (var src)
             (var tok)
           )
-          (comment "var left_len: i32 = ob_pos() - left_start;")
+          (comment "var left_len: i32 = ob_pos(ob) - left_start;")
           (var_decl left_len
             (type i32)
             (binop -
-              (call ob_pos)
+              (call ob_pos
+                (var ob)
+              )
               (var left_start)
             )
           )
@@ -5661,11 +5710,11 @@
               (var left_len)
             )
             (block
-              (comment "set(lbuf, i, get(ob, (left_start + i)));")
+              (comment "set(lbuf, i, ob_peek(ob, (left_start + i)));")
               (call_stmt set
                 (var lbuf)
                 (var i)
-                (call get
+                (call ob_peek
                   (var ob)
                   (binop +
                     (var left_start)
@@ -5682,8 +5731,9 @@
               )
             )
           )
-          (comment "ob_set_pos(left_start);")
+          (comment "ob_set_pos(ob, left_start);")
           (call_stmt ob_set_pos
+            (var ob)
             (var left_start)
           )
           (comment "ob_char('(', ob); ob_string(\"binop\", ob); ob_char(' ', ob); ob_string(\"||\", ob); ob_char(10u8,ob);")
@@ -5753,7 +5803,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -5843,7 +5893,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -6032,7 +6082,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -6082,7 +6132,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -6132,7 +6182,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -6220,7 +6270,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -6374,7 +6424,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -6470,7 +6520,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -6988,7 +7038,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -7248,7 +7298,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -7401,7 +7451,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -7523,7 +7573,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -8417,7 +8467,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -8545,7 +8595,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -8651,7 +8701,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -8698,7 +8748,7 @@
         (type String)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -8833,7 +8883,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -8964,7 +9014,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -9021,7 +9071,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -10017,7 +10067,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -10599,7 +10649,7 @@
         (type i32)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -11174,7 +11224,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -11801,7 +11851,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
       (param indent
         (type i32)
@@ -11877,7 +11927,7 @@
         (type U8Array)
       )
       (param ob
-        (type U8Array)
+        (type OutputBuffer)
       )
     )
     (ret
@@ -12061,10 +12111,10 @@
           (int 4096)
         )
       )
-      (comment "var out_buf: U8Array = U8Array(1048576); // 1MB output buffer (avoids mid-expression flush)")
-      (var_decl out_buf
-        (type U8Array)
-        (call U8Array
+      (comment "var ob: OutputBuffer = ob_new(1048576);  // 1MB output buffer")
+      (var_decl ob
+        (type OutputBuffer)
+        (call ob_new
           (int 1048576)
         )
       )
@@ -12163,24 +12213,20 @@
       (assign g_line
         (int 1)
       )
-      (comment "ob_set_pos(0);")
-      (call_stmt ob_set_pos
-        (int 0)
-      )
       (comment "lex_tok(src_buf, tok_buf);")
       (call_stmt lex_tok
         (var src_buf)
         (var tok_buf)
       )
-      (comment "pars_program(src_buf, tok_buf, out_buf);")
+      (comment "pars_program(src_buf, tok_buf, ob);")
       (call_stmt pars_program
         (var src_buf)
         (var tok_buf)
-        (var out_buf)
+        (var ob)
       )
-      (comment "ob_flush(out_buf);")
+      (comment "ob_flush(ob);")
       (call_stmt ob_flush
-        (var out_buf)
+        (var ob)
       )
       (comment "delete(src_buf);")
       (call_stmt delete
@@ -12190,9 +12236,9 @@
       (call_stmt delete
         (var tok_buf)
       )
-      (comment "delete(out_buf);")
-      (call_stmt delete
-        (var out_buf)
+      (comment "ob_delete(ob);")
+      (call_stmt ob_delete
+        (var ob)
       )
       (comment "return 0;")
       (return

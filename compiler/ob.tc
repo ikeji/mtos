@@ -1,26 +1,46 @@
 // ob.tc — output buffer utilities
 // Buffered output to stdout with flush-on-full semantics.
 
-var g_ob_pos: i32 = 0;
+struct OutputBuffer {
+    buf: U8Array,
+    pos: i32
+}
 
-export fn ob_flush(ob: U8Array) -> void {
-    if g_ob_pos > 0 {
-        sys_write(1, ob, g_ob_pos);
-        g_ob_pos = 0;
+// Create a new OutputBuffer with a byte buffer of the given size.
+export fn ob_new(size: i32) -> OutputBuffer {
+    return OutputBuffer(U8Array(size), 0);
+}
+
+// Free an OutputBuffer and its underlying byte buffer.
+export fn ob_delete(ob: OutputBuffer) -> void {
+    delete(buf(ob));
+    delete(ob);
+    return;
+}
+
+// Read a byte from the output buffer at the given index.
+export fn ob_peek(ob: OutputBuffer, idx: i32) -> u8 {
+    return get(buf(ob), idx);
+}
+
+export fn ob_flush(ob: OutputBuffer) -> void {
+    if pos(ob) > 0 {
+        sys_write(1, buf(ob), pos(ob));
+        pos(ob, 0);
     }
     return;
 }
 
-export fn ob_char(c: u8, ob: U8Array) -> void {
-    set(ob, g_ob_pos, c);
-    g_ob_pos = g_ob_pos + 1;
-    if g_ob_pos >= 1048576 {
+export fn ob_char(c: u8, ob: OutputBuffer) -> void {
+    set(buf(ob), pos(ob), c);
+    pos(ob, pos(ob) + 1);
+    if pos(ob) >= 1048576 {
         ob_flush(ob);
     }
     return;
 }
 
-export fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
+export fn ob_n(src: U8Array, start: i32, n: i32, ob: OutputBuffer) -> void {
     var i: i32 = 0;
     while i < n {
         ob_char(get(src, (start + i)), ob);
@@ -29,7 +49,7 @@ export fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
     return;
 }
 
-export fn ob_indent(level: i32, ob: U8Array) -> void {
+export fn ob_indent(level: i32, ob: OutputBuffer) -> void {
     var spaces: i32 = level * 2;
     var i: i32 = 0;
     while i < spaces {
@@ -39,7 +59,7 @@ export fn ob_indent(level: i32, ob: U8Array) -> void {
     return;
 }
 
-export fn ob_string(str: String, ob: U8Array) -> void {
+export fn ob_string(str: String, ob: OutputBuffer) -> void {
     var i: i32 = 0;
     var slen: i32 = len(str);
     while i < slen {
@@ -49,7 +69,7 @@ export fn ob_string(str: String, ob: U8Array) -> void {
     return;
 }
 
-export fn ob_int(val: i32, ob: U8Array) -> void {
+export fn ob_int(val: i32, ob: OutputBuffer) -> void {
     if val < 0 {
         ob_char('-', ob);
         val = 0 - val;
@@ -75,11 +95,11 @@ export fn ob_int(val: i32, ob: U8Array) -> void {
     return;
 }
 
-export fn ob_pos() -> i32 {
-    return g_ob_pos;
+export fn ob_pos(ob: OutputBuffer) -> i32 {
+    return pos(ob);
 }
 
-export fn ob_set_pos(pos: i32) -> void {
-    g_ob_pos = pos;
+export fn ob_set_pos(ob: OutputBuffer, new_pos: i32) -> void {
+    pos(ob, new_pos);
     return;
 }

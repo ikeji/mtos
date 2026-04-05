@@ -760,7 +760,12 @@ static Value vm_exec(VM *vm, BcFunc *fn, Value *args, int nargs) {
         case OP_LNOT: { Value a=vm_pop(vm); vm_push(vm,val_int(!a.ival)); break; }
 
         case OP_CAST: {
-            Value a = vm_pop(vm); int32_t v = a.ival;
+            Value a = vm_pop(vm);
+            /* Preserve references: `ref as u32` etc. must not lose the
+               HeapObj pointer. Struct fields can store refs through a
+               U32Array, so refs flow through cast instructions. */
+            if (a.kind == VAL_REF) { vm_push(vm, a); break; }
+            int32_t v = a.ival;
             const char *t = ins->sarg;
             if      (!strcmp(t,"u8"))   v=(uint8_t)v;
             else if (!strcmp(t,"u16"))  v=(uint16_t)v;

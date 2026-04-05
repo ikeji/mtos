@@ -557,6 +557,9 @@ static Value eval_expr(Interp *ip, AstNode *node) {
     if (strcmp(k, "cast") == 0) {
         Value v = eval_expr(ip, node->children[0]);
         const char *target = node->children[1]->sval;
+        /* Preserve references through cast — refs can flow through
+           cast expressions (e.g. struct field holding a U8Array). */
+        if (v.kind == VAL_REF) return v;
         /* truncate integer casts */
         if (strcmp(target, "u8") == 0) return val_int((uint8_t)v.ival);
         if (strcmp(target, "u16") == 0) return val_int((uint16_t)v.ival);
