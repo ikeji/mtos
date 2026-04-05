@@ -244,6 +244,18 @@ static void register_builtins(TypeEnv *e) {
 
 /* ---- forward pass: collect all function/struct/global signatures ---- */
 
+/* Register struct as type name only (for imports — no auto-generated functions) */
+static void collect_struct_type_only(TypeEnv *e, AstNode *node) {
+    const char *sname = node->sval;
+    if (find_struct(e, sname)) return; /* already registered */
+    StructDef *sd = calloc(1, sizeof(StructDef));
+    sd->name = strdup(sname);
+    sd->nfields = 0;
+    sd->fields = NULL;
+    sd->next = e->structs;
+    e->structs = sd;
+}
+
 static void collect_struct(TypeEnv *e, AstNode *node) {
     const char *sname = node->sval;
     StructDef *sd = calloc(1, sizeof(StructDef));
@@ -582,11 +594,16 @@ static void process_import(TypeEnv *e, const char *import_path) {
     lexer_free(&lex);
     free(src);
 
-    /* collect signatures only */
+    /* collect exported signatures only */
     for (int i = 0; i < prog->nchildren; i++) {
         AstNode *d = prog->children[i];
-        if (strcmp(d->kind, "fn") == 0) collect_fn(e, d);
-        else if (strcmp(d->kind, "struct") == 0) collect_struct(e, d);
+        if (strcmp(d->kind, "fn") == 0 && d->type_annot &&
+            strcmp(d->type_annot, "export") == 0) {
+            collect_fn(e, d);
+        } else if (strcmp(d->kind, "struct") == 0) {
+            /* register struct as type name only (no auto-generated functions) */
+            collect_struct_type_only(e, d);
+        }
     }
     ast_free(prog);
 }
