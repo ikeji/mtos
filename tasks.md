@@ -29,3 +29,7 @@
       - [x] .bcのcallは今は`call to_buf 1`という形式だが、`call to_buf String`という形式にする必要がある。
       - [x] 関数は引数の型をつけた名前にマングルする必要がある。`to_buf`->`to_buf__String`
 - [x] ./tests/run_compiler_tests.sh が非常に遅い。このテストは、bcrunを使っていて遅い。これをbc2asmを使ってネイティブコードに変換して実行する事で高速化したい。
+- [x] docs/language.md の配列のコンストラクタが間違ってる newXxxArray→XxxArray
+- [ ] ob.tc に、OutputBuffer構造体を定義し、バッファと位置を持つ。ob変数の変わりに使う。
+- [ ] parse.tcで、ob_set_posで巻き戻さず、別なobを定義しそこに出し、確定したらメインの物に移動させる方針で書き直し、ob_set_posを削除したい。
+- [ ] ob.tc の各関数はob_プリフィックスをつけない。
