@@ -231,6 +231,10 @@
     (type i32)
     (int 57)
   )
+  (var_decl TK_EXPORT
+    (type i32)
+    (int 58)
+  )
   (var_decl g_pos
     (type i32)
     (int 0)
@@ -1628,6 +1632,19 @@
               (comment "if tok_cmp(tok, tlen, \"import\") { return TK_IMPORT; } // import")
               (return
                 (var TK_IMPORT)
+              )
+            )
+          )
+          (comment "if tok_cmp(tok, tlen, \"export\") { return TK_EXPORT; } // export")
+          (if
+            (call tok_cmp
+(var tok)
+(var tlen)
+(str "export"))
+            (block
+              (comment "if tok_cmp(tok, tlen, \"export\") { return TK_EXPORT; } // export")
+              (return
+                (var TK_EXPORT)
               )
             )
           )
@@ -7437,6 +7454,9 @@
       (param indent
         (type i32)
       )
+      (param is_export
+        (type i32)
+      )
     )
     (ret
       (type void)
@@ -7500,17 +7520,35 @@
         (var src)
         (var tok)
       )
-      (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
+      (comment "ob_char('(', ob); ob_string(\"fn\", ob);")
       (call_stmt ob_char
         (int:u8 40)
         (var ob)
       )
-      (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
+      (comment "ob_char('(', ob); ob_string(\"fn\", ob);")
       (call_stmt ob_string
         (str "fn")
         (var ob)
       )
-      (comment "ob_char('(', ob); ob_string(\"fn\", ob); ob_char(' ', ob);")
+      (comment "if is_export == 1 {")
+      (if
+        (binop ==
+(var is_export)
+(int 1))
+        (block
+          (comment "ob_char(':', ob); ob_string(\"export\", ob);")
+          (call_stmt ob_char
+            (int:u8 58)
+            (var ob)
+          )
+          (comment "ob_char(':', ob); ob_string(\"export\", ob);")
+          (call_stmt ob_string
+            (str "export")
+            (var ob)
+          )
+        )
+      )
+      (comment "ob_char(' ', ob);")
       (call_stmt ob_char
         (int:u8 32)
         (var ob)
@@ -8336,44 +8374,51 @@
             (int 1)
             (var ob)
           )
-          (comment "if g_tok == TK_FN {")
+          (comment "if g_tok == TK_EXPORT {")
           (if
             (binop ==
 (var g_tok)
-(var TK_FN))
+(var TK_EXPORT))
             (block
-              (comment "pars_fn_decl(src, tok, ob, 1);")
+              (comment "lex_tok(src, tok);")
+              (call_stmt lex_tok
+                (var src)
+                (var tok)
+              )
+              (comment "pars_fn_decl(src, tok, ob, 1, 1);")
               (call_stmt pars_fn_decl
                 (var src)
                 (var tok)
                 (var ob)
                 (int 1)
+                (int 1)
               )
             )
             (block
-              (comment "if g_tok == TK_STRUCT {")
+              (comment "if g_tok == TK_FN {")
               (if
                 (binop ==
 (var g_tok)
-(var TK_STRUCT))
+(var TK_FN))
                 (block
-                  (comment "pars_struct_decl(src, tok, ob, 1);")
-                  (call_stmt pars_struct_decl
+                  (comment "pars_fn_decl(src, tok, ob, 1, 0);")
+                  (call_stmt pars_fn_decl
                     (var src)
                     (var tok)
                     (var ob)
                     (int 1)
+                    (int 0)
                   )
                 )
                 (block
-                  (comment "if g_tok == TK_VAR {")
+                  (comment "if g_tok == TK_STRUCT {")
                   (if
                     (binop ==
 (var g_tok)
-(var TK_VAR))
+(var TK_STRUCT))
                     (block
-                      (comment "pars_var_decl(src, tok, ob, 1);")
-                      (call_stmt pars_var_decl
+                      (comment "pars_struct_decl(src, tok, ob, 1);")
+                      (call_stmt pars_struct_decl
                         (var src)
                         (var tok)
                         (var ob)
@@ -8381,9 +8426,26 @@
                       )
                     )
                     (block
-                      (comment "sys_exit(1);")
-                      (call_stmt sys_exit
-                        (int 1)
+                      (comment "if g_tok == TK_VAR {")
+                      (if
+                        (binop ==
+(var g_tok)
+(var TK_VAR))
+                        (block
+                          (comment "pars_var_decl(src, tok, ob, 1);")
+                          (call_stmt pars_var_decl
+                            (var src)
+                            (var tok)
+                            (var ob)
+                            (int 1)
+                          )
+                        )
+                        (block
+                          (comment "sys_exit(1);")
+                          (call_stmt sys_exit
+                            (int 1)
+                          )
+                        )
                       )
                     )
                   )

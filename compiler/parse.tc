@@ -61,6 +61,7 @@ var TK_IDENT: i32 = 54;
 var TK_EOF: i32 = 55;
 var TK_BREAK: i32 = 56;
 var TK_CONTINUE: i32 = 57;
+var TK_EXPORT: i32 = 58;
 
 // ===== Lexer state =====
 var g_pos: i32 = 0;
@@ -250,6 +251,7 @@ fn classify_ident(tok: U8Array, tlen: i32) -> i32 {
         if tok_cmp(tok, tlen, "return") { return TK_RETURN; } // return
         if tok_cmp(tok, tlen, "struct")  { return TK_STRUCT; } // struct
         if tok_cmp(tok, tlen, "import") { return TK_IMPORT; } // import
+        if tok_cmp(tok, tlen, "export") { return TK_EXPORT; } // export
     }
     if tlen == 8 {
         if tok_cmp(tok, tlen, "continue") { return TK_CONTINUE; }
@@ -1179,7 +1181,7 @@ fn pars_block(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     return;
 }
 
-fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
+fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32, is_export: i32) -> void {
     expect_tok(TK_FN, src, tok);
     var name_len: i32 = g_tok_slen;
     var name_buf: U8Array = U8Array(name_len + 1);
@@ -1191,8 +1193,12 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: U8Array, indent: i32) -> void {
     expect_tok(TK_IDENT, src, tok);
     expect_tok(TK_LPAREN, src, tok);
 
-    // (fn NAME
-    ob_char('(', ob); ob_string("fn", ob); ob_char(' ', ob);
+    // (fn NAME  or  (fn:export NAME
+    ob_char('(', ob); ob_string("fn", ob);
+    if is_export == 1 {
+        ob_char(':', ob); ob_string("export", ob);
+    }
+    ob_char(' ', ob);
     ob_n(name_buf, 0, name_len, ob);
     delete(name_buf);
     ob_char(10u8, ob);
@@ -1341,16 +1347,21 @@ fn pars_program(src: U8Array, tok: U8Array, ob: U8Array) -> void {
     while g_tok != TK_EOF {
         ob_char(10u8, ob);
         ob_indent(1, ob);
-        if g_tok == TK_FN {
-            pars_fn_decl(src, tok, ob, 1);
+        if g_tok == TK_EXPORT {
+            lex_tok(src, tok);
+            pars_fn_decl(src, tok, ob, 1, 1);
         } else {
-            if g_tok == TK_STRUCT {
-                pars_struct_decl(src, tok, ob, 1);
+            if g_tok == TK_FN {
+                pars_fn_decl(src, tok, ob, 1, 0);
             } else {
-                if g_tok == TK_VAR {
-                    pars_var_decl(src, tok, ob, 1);
+                if g_tok == TK_STRUCT {
+                    pars_struct_decl(src, tok, ob, 1);
                 } else {
-                    sys_exit(1);
+                    if g_tok == TK_VAR {
+                        pars_var_decl(src, tok, ob, 1);
+                    } else {
+                        sys_exit(1);
+                    }
                 }
             }
         }

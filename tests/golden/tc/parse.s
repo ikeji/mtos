@@ -56,40 +56,42 @@ __tc_strdata26:
 __tc_strdata27:
     .string "import"
 __tc_strdata28:
-    .string "continue"
+    .string "export"
 __tc_strdata29:
-    .string "binop"
+    .string "continue"
 __tc_strdata30:
-    .string "int"
+    .string "binop"
 __tc_strdata31:
-    .string "str"
+    .string "int"
 __tc_strdata32:
-    .string "call"
+    .string "str"
 __tc_strdata33:
-    .string "cast"
+    .string "call"
 __tc_strdata34:
-    .string "unary"
+    .string "cast"
 __tc_strdata35:
-    .string "type"
+    .string "unary"
 __tc_strdata36:
-    .string "var_decl"
+    .string "type"
 __tc_strdata37:
-    .string "assign"
+    .string "var_decl"
 __tc_strdata38:
-    .string "call_stmt"
+    .string "assign"
 __tc_strdata39:
-    .string "comment"
+    .string "call_stmt"
 __tc_strdata40:
-    .string "block"
+    .string "comment"
 __tc_strdata41:
-    .string "params"
+    .string "block"
 __tc_strdata42:
-    .string "param"
+    .string "params"
 __tc_strdata43:
-    .string "ret"
+    .string "param"
 __tc_strdata44:
-    .string "field"
+    .string "ret"
 __tc_strdata45:
+    .string "field"
+__tc_strdata46:
     .string "program"
 
     .data
@@ -267,6 +269,9 @@ TK_BREAK:
     .globl TK_CONTINUE
 TK_CONTINUE:
     .word 57
+    .globl TK_EXPORT
+TK_EXPORT:
+    .word 58
     .globl g_pos
 g_pos:
     .word 0
@@ -3545,7 +3550,7 @@ classify_ident__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f14_pc160
+    beqz t0, .L_f14_pc167
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3648,6 +3653,40 @@ classify_ident__U8Array__i32:
     addi sp, t0, 0
     ret
   .L_f14_pc160:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   a0, __tc_strdata28
+    li   a1, 6
+    call __tc_make_string
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call tok_cmp__U8Array__i32__String
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f14_pc167
+    la   t1, TK_EXPORT
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_f14_pc167:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3663,14 +3702,14 @@ classify_ident__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f14_pc171
+    beqz t0, .L_f14_pc178
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   a0, __tc_strdata28
+    la   a0, __tc_strdata29
     li   a1, 8
     call __tc_make_string
     addi sp, sp, -4
@@ -3684,7 +3723,7 @@ classify_ident__U8Array__i32:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f14_pc171
+    beqz t0, .L_f14_pc178
     la   t1, TK_CONTINUE
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3697,7 +3736,7 @@ classify_ident__U8Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f14_pc171:
+  .L_f14_pc178:
     la   t1, TK_IDENT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -8488,7 +8527,7 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -8635,7 +8674,7 @@ pars_primary__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata30
+    la   a0, __tc_strdata31
     li   a1, 3
     call __tc_make_string
     addi sp, sp, -4
@@ -8792,7 +8831,7 @@ pars_primary__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata31
+    la   a0, __tc_strdata32
     li   a1, 3
     call __tc_make_string
     addi sp, sp, -4
@@ -9574,7 +9613,7 @@ pars_primary__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata32
+    la   a0, __tc_strdata33
     li   a1, 4
     call __tc_make_string
     addi sp, sp, -4
@@ -10074,7 +10113,7 @@ pars_postfix__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata33
+    la   a0, __tc_strdata34
     li   a1, 4
     call __tc_make_string
     addi sp, sp, -4
@@ -10248,7 +10287,7 @@ pars_unary__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata34
+    la   a0, __tc_strdata35
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -10382,7 +10421,7 @@ pars_unary__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata34
+    la   a0, __tc_strdata35
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -10770,7 +10809,7 @@ pars_mul__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -11150,7 +11189,7 @@ pars_add__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -11530,7 +11569,7 @@ pars_shift__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -11872,7 +11911,7 @@ pars_bitand__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -12214,7 +12253,7 @@ pars_bitxor__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -12556,7 +12595,7 @@ pars_bitor__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -13049,7 +13088,7 @@ pars_compare__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -13390,7 +13429,7 @@ pars_logic_and__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -13734,7 +13773,7 @@ pars_expr__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -13902,7 +13941,7 @@ pars_type__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata35
+    la   a0, __tc_strdata36
     li   a1, 4
     call __tc_make_string
     addi sp, sp, -4
@@ -14254,7 +14293,7 @@ pars_var_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata36
+    la   a0, __tc_strdata37
     li   a1, 8
     call __tc_make_string
     addi sp, sp, -4
@@ -14692,7 +14731,7 @@ pars_continue_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata28
+    la   a0, __tc_strdata29
     li   a1, 8
     call __tc_make_string
     addi sp, sp, -4
@@ -15700,7 +15739,7 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata37
+    la   a0, __tc_strdata38
     li   a1, 6
     call __tc_make_string
     addi sp, sp, -4
@@ -16031,7 +16070,7 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata37
+    la   a0, __tc_strdata38
     li   a1, 6
     call __tc_make_string
     addi sp, sp, -4
@@ -16128,7 +16167,7 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata29
+    la   a0, __tc_strdata30
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -16545,7 +16584,7 @@ pars_ident_stmt__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata38
+    la   a0, __tc_strdata39
     li   a1, 9
     call __tc_make_string
     addi sp, sp, -4
@@ -17175,7 +17214,7 @@ emit_stmt_comment__U8Array__i32__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata39
+    la   a0, __tc_strdata40
     li   a1, 7
     call __tc_make_string
     addi sp, sp, -4
@@ -17872,7 +17911,7 @@ pars_block__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata40
+    la   a0, __tc_strdata41
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -18131,10 +18170,10 @@ pars_block__U8Array__U8Array__U8Array__i32:
     ret
     # end of pars_block__U8Array__U8Array__U8Array__i32
 
-    .globl pars_fn_decl__U8Array__U8Array__U8Array__i32
-    .type  pars_fn_decl__U8Array__U8Array__U8Array__i32, @function
-pars_fn_decl__U8Array__U8Array__U8Array__i32:
-    # prologue: frame_size=64, params=4, locals=7
+    .globl pars_fn_decl__U8Array__U8Array__U8Array__i32__i32
+    .type  pars_fn_decl__U8Array__U8Array__U8Array__i32__i32, @function
+pars_fn_decl__U8Array__U8Array__U8Array__i32__i32:
+    # prologue: frame_size=64, params=5, locals=7
     addi sp, sp, -64
     sw   ra, 60(sp)
     sw   s0, 56(sp)
@@ -18143,13 +18182,14 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   a1, -16(s0)
     sw   a2, -20(s0)
     sw   a3, -24(s0)
-    sw   zero, -28(s0)
+    sw   a4, -28(s0)
     sw   zero, -32(s0)
     sw   zero, -36(s0)
     sw   zero, -40(s0)
     sw   zero, -44(s0)
     sw   zero, -48(s0)
     sw   zero, -52(s0)
+    sw   zero, -56(s0)
     la   t1, TK_FN
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -18174,8 +18214,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -28(s0)
-    lw   t0, -28(s0)
+    sw   t0, -32(s0)
+    lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -18194,18 +18234,18 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -32(s0)
+    sw   t0, -36(s0)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -36(s0)
+    sw   t0, -40(s0)
   .L_f44_pc14:
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -28(s0)
+    lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -18217,16 +18257,16 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, .L_f44_pc30
-    lw   t0, -32(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -18243,7 +18283,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -18257,7 +18297,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -36(s0)
+    sw   t0, -40(s0)
     j    .L_f44_pc14
   .L_f44_pc30:
     la   t1, TK_IDENT
@@ -18324,6 +18364,51 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f44_pc60
+    li   t0, 58
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_char__u8__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    la   a0, __tc_strdata28
+    li   a1, 6
+    call __tc_make_string
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ob_string__String__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_f44_pc60:
     li   t0, 32
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18337,13 +18422,13 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -32(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -28(s0)
+    lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -20(s0)
@@ -18358,7 +18443,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -32(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -18415,7 +18500,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata41
+    la   a0, __tc_strdata42
     li   a1, 6
     call __tc_make_string
     addi sp, sp, -4
@@ -18447,15 +18532,15 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc199
+    beqz t0, .L_f44_pc211
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -40(s0)
-  .L_f44_pc85:
-    lw   t0, -40(s0)
+    sw   t0, -44(s0)
+  .L_f44_pc97:
+    lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -18470,15 +18555,15 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc199
+    beqz t0, .L_f44_pc211
     la   t1, g_tok_slen
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -44(s0)
-    lw   t0, -44(s0)
+    sw   t0, -48(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -18497,18 +18582,18 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -48(s0)
+    sw   t0, -52(s0)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -52(s0)
-  .L_f44_pc98:
-    lw   t0, -52(s0)
+    sw   t0, -56(s0)
+  .L_f44_pc110:
+    lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -44(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -18519,17 +18604,17 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc114
-    lw   t0, -48(s0)
+    beqz t0, .L_f44_pc126
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -52(s0)
+    lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -52(s0)
+    lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -18546,7 +18631,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -52(s0)
+    lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -18560,9 +18645,9 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -52(s0)
-    j    .L_f44_pc98
-  .L_f44_pc114:
+    sw   t0, -56(s0)
+    j    .L_f44_pc110
+  .L_f44_pc126:
     la   t1, TK_IDENT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -18647,7 +18732,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata42
+    la   a0, __tc_strdata43
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -18675,13 +18760,13 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -48(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -44(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -20(s0)
@@ -18809,7 +18894,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -48(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -18835,7 +18920,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc196
+    beqz t0, .L_f44_pc208
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18849,17 +18934,17 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f44_pc198
-  .L_f44_pc196:
+    j    .L_f44_pc210
+  .L_f44_pc208:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -40(s0)
-  .L_f44_pc198:
-    j    .L_f44_pc85
-  .L_f44_pc199:
+    sw   t0, -44(s0)
+  .L_f44_pc210:
+    j    .L_f44_pc97
+  .L_f44_pc211:
     la   t1, TK_RPAREN
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -18974,7 +19059,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata43
+    la   a0, __tc_strdata44
     li   a1, 3
     call __tc_make_string
     addi sp, sp, -4
@@ -19041,7 +19126,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f44_pc263
+    beqz t0, .L_f44_pc275
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19085,8 +19170,8 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f44_pc283
-  .L_f44_pc263:
+    j    .L_f44_pc295
+  .L_f44_pc275:
     li   t0, 40
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19100,7 +19185,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata35
+    la   a0, __tc_strdata36
     li   a1, 4
     call __tc_make_string
     addi sp, sp, -4
@@ -19156,7 +19241,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f44_pc283:
+  .L_f44_pc295:
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19319,7 +19404,7 @@ pars_fn_decl__U8Array__U8Array__U8Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_fn_decl__U8Array__U8Array__U8Array__i32
+    # end of pars_fn_decl__U8Array__U8Array__U8Array__i32__i32
 
     .globl pars_struct_decl__U8Array__U8Array__U8Array__i32
     .type  pars_struct_decl__U8Array__U8Array__U8Array__i32, @function
@@ -19870,7 +19955,7 @@ pars_struct_decl__U8Array__U8Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata44
+    la   a0, __tc_strdata45
     li   a1, 5
     call __tc_make_string
     addi sp, sp, -4
@@ -20305,7 +20390,7 @@ pars_program__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    la   a0, __tc_strdata45
+    la   a0, __tc_strdata46
     li   a1, 7
     call __tc_make_string
     addi sp, sp, -4
@@ -20405,7 +20490,7 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f47_pc76
+    beqz t0, .L_f47_pc93
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20436,6 +20521,64 @@ pars_program__U8Array__U8Array__U8Array:
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
+    la   t1, TK_EXPORT
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f47_pc55
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call lex_tok__U8Array__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 16(sp)
+    lw   a1, 12(sp)
+    lw   a2, 8(sp)
+    lw   a3, 4(sp)
+    lw   a4, 0(sp)
+    call pars_fn_decl__U8Array__U8Array__U8Array__i32__i32
+    addi sp, sp, 20
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    j    .L_f47_pc92
+  .L_f47_pc55:
+    la   t1, g_tok
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     la   t1, TK_FN
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -20449,7 +20592,7 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f47_pc50
+    beqz t0, .L_f47_pc67
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20462,17 +20605,21 @@ pars_program__U8Array__U8Array__U8Array:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 12(sp)
-    lw   a1, 8(sp)
-    lw   a2, 4(sp)
-    lw   a3, 0(sp)
-    call pars_fn_decl__U8Array__U8Array__U8Array__i32
-    addi sp, sp, 16
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 16(sp)
+    lw   a1, 12(sp)
+    lw   a2, 8(sp)
+    lw   a3, 4(sp)
+    lw   a4, 0(sp)
+    call pars_fn_decl__U8Array__U8Array__U8Array__i32__i32
+    addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f47_pc75
-  .L_f47_pc50:
+    j    .L_f47_pc92
+  .L_f47_pc67:
     la   t1, g_tok
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -20490,7 +20637,7 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f47_pc61
+    beqz t0, .L_f47_pc78
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20512,8 +20659,8 @@ pars_program__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f47_pc75
-  .L_f47_pc61:
+    j    .L_f47_pc92
+  .L_f47_pc78:
     la   t1, g_tok
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -20531,7 +20678,7 @@ pars_program__U8Array__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f47_pc72
+    beqz t0, .L_f47_pc89
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20553,8 +20700,8 @@ pars_program__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f47_pc75
-  .L_f47_pc72:
+    j    .L_f47_pc92
+  .L_f47_pc89:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20565,9 +20712,9 @@ pars_program__U8Array__U8Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f47_pc75:
+  .L_f47_pc92:
     j    .L_f47_pc27
-  .L_f47_pc76:
+  .L_f47_pc93:
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
