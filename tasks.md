@@ -30,6 +30,12 @@
       - [x] 関数は引数の型をつけた名前にマングルする必要がある。`to_buf`->`to_buf__String`
 - [x] ./tests/run_compiler_tests.sh が非常に遅い。このテストは、bcrunを使っていて遅い。これをbc2asmを使ってネイティブコードに変換して実行する事で高速化したい。
 - [x] docs/language.md の配列のコンストラクタが間違ってる newXxxArray→XxxArray
+- [ ] struct のランタイムサポートを追加する（現状 struct 構文はあるがランタイム未実装）。
+      - bcrun: OBJ_STRUCT 追加、コンストラクタ/ゲッター/セッターのビルトインディスパッチ
+      - runtime.c (ネイティブ): __tc_StructName, __tc_field, __tc_field_set 等を追加
+      - bc2asm の is_builtin に struct 系を追加
+      - self-hosted typecheck.tc にフィールド getter/setter 登録を追加
+      - tests/import/main_struct.tc が動作することを確認
 - [ ] ob.tc に、OutputBuffer構造体を定義し、バッファと位置を持つ。ob変数の変わりに使う。
 - [ ] parse.tcで、ob_set_posで巻き戻さず、別なobを定義しそこに出し、確定したらメインの物に移動させる方針で書き直し、ob_set_posを削除したい。
 - [ ] ob.tc の各関数はob_プリフィックスをつけない。
