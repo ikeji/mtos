@@ -65,12 +65,28 @@ GEN2_TMP=""
 if command -v "$RISCV_CC" >/dev/null 2>&1 && command -v "$QEMU" >/dev/null 2>&1; then
     GEN2_TMP=$(mktemp -d)
 
-    # Compile Gen2 tools to BC, then to RISC-V ELF
+    # Compile Gen2 tools to BC, then to RISC-V ELF (with import support)
     build_gen2_tool() {
         local name="$1"
-        "$PARSE" "$TC_DIR/$name.tc" | "$CODEGEN" > "$GEN2_TMP/$name.bc" 2>/dev/null
-        cat "$GEN2_TMP/$name.bc" | "$BC2ASM" > "$GEN2_TMP/$name.s" 2>/dev/null
-        $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "$GEN2_TMP/$name.s" -o "$GEN2_TMP/$name" 2>/dev/null
+        local tc_file="$TC_DIR/$name.tc"
+        local tc_dir
+        tc_dir=$(dirname "$tc_file")
+        # Collect import files
+        local imports=() asm_files=()
+        while IFS= read -r imp; do
+            imports+=("$tc_dir/$imp")
+        done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
+        # Compile imports to .s
+        for imp_file in "${imports[@]}"; do
+            local base=$(basename "$imp_file" .tc)
+            "$CODEGEN" "$imp_file" 2>/dev/null | "$BC2ASM" > "$GEN2_TMP/${name}_dep_${base}.s" 2>/dev/null
+            asm_files+=("$GEN2_TMP/${name}_dep_${base}.s")
+        done
+        # Compile main file to .s
+        "$CODEGEN" "$tc_file" 2>/dev/null | "$BC2ASM" > "$GEN2_TMP/$name.s" 2>/dev/null
+        asm_files+=("$GEN2_TMP/$name.s")
+        # Link
+        $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "${asm_files[@]}" -o "$GEN2_TMP/$name" 2>/dev/null
     }
 
     build_gen2_tool "parse"
@@ -91,11 +107,12 @@ else
 fi
 
 # Fallback: compile Gen2 BCs for bcrun if native not available
+source "$SCRIPT_DIR/compile_tc.sh"
 if [ "$USE_NATIVE" = false ]; then
-    PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
-    TYPECHECK_TC_BC=$("$PARSE" "$TC_DIR/typecheck.tc" | "$CODEGEN" 2>/dev/null)
-    CODEGEN_TC_BC=$("$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
-    BC2ASM_TC_BC=$("$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
+    PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
+    TYPECHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/typecheck.tc")
+    CODEGEN_TC_BC=$(compile_tc_to_bc "$TC_DIR/codegen.tc")
+    BC2ASM_TC_BC=$(compile_tc_to_bc "$TC_DIR/bc2asm.tc")
 fi
 
 # Helper: run self-hosted parse.tc on input file, write AST to stdout

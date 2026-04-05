@@ -39,7 +39,8 @@ get_stdin() {
     esac
 }
 
-PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
+source "$SCRIPT_DIR/compile_tc.sh"
+PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
 
 echo "Updating golden files in $GOLDEN_DIR..."
 

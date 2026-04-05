@@ -264,9 +264,10 @@ check_contains() {
 }
 
 # parse.tc のバイトコードを一度生成（後続テストで再利用）
-PARSE_TC_BC=$({ "$PARSE" "$SRC_DIR/parse.tc" | "$CODEGEN"; } 2>/dev/null)
-TYPECHECK_TC_BC=$({ "$PARSE" "$SRC_DIR/typecheck.tc" | "$CODEGEN"; } 2>/dev/null)
-CODEGEN_TC_BC=$({ "$PARSE" "$SRC_DIR/codegen.tc" | "$CODEGEN"; } 2>/dev/null)
+source "$SCRIPT_DIR/compile_tc.sh"
+PARSE_TC_BC=$(compile_tc_to_bc "$SRC_DIR/parse.tc")
+TYPECHECK_TC_BC=$(compile_tc_to_bc "$SRC_DIR/typecheck.tc")
+CODEGEN_TC_BC=$(compile_tc_to_bc "$SRC_DIR/codegen.tc")
 
 # parse.tc を bcrun 上で動かして fib.tc を構文解析する
 actual=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$SCRIPT_DIR/fib.tc"; } | "$BCRUN" 2>&1)

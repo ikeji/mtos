@@ -37,21 +37,39 @@ if ! command -v "$RISCV_CC" >/dev/null 2>&1 || ! command -v "$QEMU" >/dev/null 2
 else
     GEN2_TMP=$(mktemp -d)
 
-    # Compile Gen2 parse, typecheck, and codegen BCs to RISC-V ELF
-    # Use temp files to avoid bash stripping trailing newlines from command substitution
+    source "$SCRIPT_DIR/compile_tc.sh"
+
+    # compile_tc_to_elf: compile a .tc file (with imports) to RISC-V ELF
+    compile_tc_to_elf() {
+        local tc_file="$1" out_elf="$2"
+        local tc_dir tmp_dir
+        tc_dir=$(dirname "$tc_file")
+        tmp_dir=$(mktemp -d)
+        local imports=() asm_files=()
+        while IFS= read -r imp; do
+            imports+=("$tc_dir/$imp")
+        done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
+        for imp_file in "${imports[@]}"; do
+            local base=$(basename "$imp_file" .tc)
+            "$CODEGEN" "$imp_file" 2>/dev/null | "$BC2ASM" > "$tmp_dir/$base.s" 2>/dev/null
+            asm_files+=("$tmp_dir/$base.s")
+        done
+        local main_base=$(basename "$tc_file" .tc)
+        "$CODEGEN" "$tc_file" 2>/dev/null | "$BC2ASM" > "$tmp_dir/$main_base.s" 2>/dev/null
+        asm_files+=("$tmp_dir/$main_base.s")
+        $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "${asm_files[@]}" -o "$out_elf" 2>/dev/null
+        rm -rf "$tmp_dir"
+    }
+
+    # Compile Gen2 BCs (for Gen2==Gen3 comparison)
     "$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" > "$GEN2_TMP/parse.bc" 2>/dev/null
     "$PARSE" "$TC_DIR/typecheck.tc" | "$CODEGEN" > "$GEN2_TMP/typecheck.bc" 2>/dev/null
     "$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" > "$GEN2_TMP/codegen.bc" 2>/dev/null
     "$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" > "$GEN2_TMP/bc2asm.bc" 2>/dev/null
 
-    cat "$GEN2_TMP/parse.bc" | "$BC2ASM" > "$GEN2_TMP/parse_gen2.s" 2>/dev/null
-    $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "$GEN2_TMP/parse_gen2.s" -o "$GEN2_TMP/parse_gen2" 2>/dev/null
-
-    cat "$GEN2_TMP/typecheck.bc" | "$BC2ASM" > "$GEN2_TMP/typecheck_gen2.s" 2>/dev/null
-    $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "$GEN2_TMP/typecheck_gen2.s" -o "$GEN2_TMP/typecheck_gen2" 2>/dev/null
-
-    cat "$GEN2_TMP/codegen.bc" | "$BC2ASM" > "$GEN2_TMP/codegen_gen2.s" 2>/dev/null
-    $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "$GEN2_TMP/codegen_gen2.s" -o "$GEN2_TMP/codegen_gen2" 2>/dev/null
+    compile_tc_to_elf "$TC_DIR/parse.tc" "$GEN2_TMP/parse_gen2"
+    compile_tc_to_elf "$TC_DIR/typecheck.tc" "$GEN2_TMP/typecheck_gen2"
+    compile_tc_to_elf "$TC_DIR/codegen.tc" "$GEN2_TMP/codegen_gen2"
 
     GEN2_BC_FILES=("$GEN2_TMP/parse.bc" "$GEN2_TMP/typecheck.bc" "$GEN2_TMP/codegen.bc" "$GEN2_TMP/bc2asm.bc")
     GEN2_BC_NAMES=("parse.tc" "typecheck.tc" "codegen.tc" "bc2asm.tc")

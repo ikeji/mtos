@@ -77,9 +77,10 @@ case "$METHOD" in
         ;;
 
     pipeline)
-        PARSE_TC_BC=$("$CODEGEN" "$TC_DIR/parse.tc" 2>/dev/null)
-        TYPECHECK_TC_BC=$("$CODEGEN" "$TC_DIR/typecheck.tc" 2>/dev/null)
-        CODEGEN_TC_BC=$("$CODEGEN" "$TC_DIR/codegen.tc" 2>/dev/null)
+        source "$ROOT_DIR/tests/compile_tc.sh"
+        PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
+        TYPECHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/typecheck.tc")
+        CODEGEN_TC_BC=$(compile_tc_to_bc "$TC_DIR/codegen.tc")
         AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$TC_FILE"; } | "$BCRUN" 2>/dev/null)
         TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
         BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$TAST"; } | "$BCRUN" 2>/dev/null)
@@ -87,7 +88,8 @@ case "$METHOD" in
         ;;
 
     bc2asm_tc)
-        BC2ASM_TC_BC=$("$CODEGEN" "$TC_DIR/bc2asm.tc" 2>/dev/null)
+        source "$ROOT_DIR/tests/compile_tc.sh"
+        BC2ASM_TC_BC=$(compile_tc_to_bc "$TC_DIR/bc2asm.tc")
         ASM=$(mktemp /tmp/tc_XXXXXX.s)
         ELF=$(mktemp /tmp/tc_XXXXXX)
         trap "rm -f '$ASM' '$ELF'" EXIT

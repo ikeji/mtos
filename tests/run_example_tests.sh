@@ -63,10 +63,11 @@ if [ ! -x "$PARSE" ] || [ ! -x "$CODEGEN" ] || [ ! -x "$BCRUN" ] || [ ! -x "$BC2
     exit 1
 fi
 
-PARSE_TC_BC=$("$PARSE" "$TC_DIR/parse.tc" | "$CODEGEN" 2>/dev/null)
-TYPECHECK_TC_BC=$("$PARSE" "$TC_DIR/typecheck.tc" | "$CODEGEN" 2>/dev/null)
-CODEGEN_TC_BC=$("$PARSE" "$TC_DIR/codegen.tc" | "$CODEGEN" 2>/dev/null)
-BC2ASM_TC_BC=$("$PARSE" "$TC_DIR/bc2asm.tc" | "$CODEGEN" 2>/dev/null)
+source "$SCRIPT_DIR/compile_tc.sh"
+PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
+TYPECHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/typecheck.tc")
+CODEGEN_TC_BC=$(compile_tc_to_bc "$TC_DIR/codegen.tc")
+BC2ASM_TC_BC=$(compile_tc_to_bc "$TC_DIR/bc2asm.tc")
 
 echo "=== Golden Tests: Example Files ==="
 
