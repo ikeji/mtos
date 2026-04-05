@@ -14942,11 +14942,11 @@ cg_binop_inst__U8Array__i32__i32__U8Array:
     .globl cg_expr__I32Array__U8Array__I32Array__U8Array__i32
     .type  cg_expr__I32Array__U8Array__I32Array__U8Array__i32, @function
 cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
-    # prologue: frame_size=96, params=5, locals=16
-    addi sp, sp, -96
-    sw   ra, 92(sp)
-    sw   s0, 88(sp)
-    addi s0, sp, 96
+    # prologue: frame_size=112, params=5, locals=18
+    addi sp, sp, -112
+    sw   ra, 108(sp)
+    sw   s0, 104(sp)
+    addi s0, sp, 112
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -14968,6 +14968,8 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   zero, -84(s0)
     sw   zero, -88(s0)
     sw   zero, -92(s0)
+    sw   zero, -96(s0)
+    sw   zero, -100(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19356,7 +19358,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f48_pc1343
+    beqz t0, .L_f48_pc1549
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19414,6 +19416,814 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -92(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -92(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_ss__I32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -96(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -92(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_sl__I32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -64(s0)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -100(s0)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -64(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 56
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 16(sp)
+    lw   a1, 12(sp)
+    lw   a2, 8(sp)
+    lw   a3, 4(sp)
+    lw   a4, 0(sp)
+    call sv2__U8Array__i32__i32__u8__u8
+    addi sp, sp, 20
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1319
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -100(s0)
+  .L_f48_pc1319:
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -64(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 105
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 56
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 16(sp)
+    lw   a1, 12(sp)
+    lw   a2, 8(sp)
+    lw   a3, 4(sp)
+    lw   a4, 0(sp)
+    call sv2__U8Array__i32__i32__u8__u8
+    addi sp, sp, 20
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1328
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -100(s0)
+  .L_f48_pc1328:
+    lw   t0, -64(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 3
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1460
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1348
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 49
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1348
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1349
+  .L_f48_pc1348:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1349:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1360
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 54
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1360
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1361
+  .L_f48_pc1360:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1361:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1364
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -100(s0)
+  .L_f48_pc1364:
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1380
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 51
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1380
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1381
+  .L_f48_pc1380:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1381:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1392
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 50
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1392
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1393
+  .L_f48_pc1392:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1393:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1396
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -100(s0)
+  .L_f48_pc1396:
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 105
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1412
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 49
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1412
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1413
+  .L_f48_pc1412:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1413:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1424
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 54
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1424
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1425
+  .L_f48_pc1424:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1425:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1428
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -100(s0)
+  .L_f48_pc1428:
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 105
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1444
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 51
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1444
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1445
+  .L_f48_pc1444:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1445:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1456
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 50
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1456
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1457
+  .L_f48_pc1456:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1457:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1460
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -100(s0)
+  .L_f48_pc1460:
+    lw   t0, -64(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1508
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 98
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1480
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 111
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1480
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1481
+  .L_f48_pc1480:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1481:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1492
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 111
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1492
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1493
+  .L_f48_pc1492:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1493:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1504
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -96(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 3
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call __tc_get
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 108
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1504
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_f48_pc1505
+  .L_f48_pc1504:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_f48_pc1505:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1508
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -100(s0)
+  .L_f48_pc1508:
+    lw   t0, -100(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f48_pc1548
     li   t0, 32
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19508,30 +20318,12 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -12(s0)
+    lw   t0, -96(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -92(s0)
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_ss__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_sl__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19557,12 +20349,13 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
+  .L_f48_pc1548:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f48_pc1343:
+  .L_f48_pc1549:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)

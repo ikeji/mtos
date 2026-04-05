@@ -4457,6 +4457,8 @@ __L275:
 .local le i32
 .local lt i32
 .local type_n i32
+.local tss i32
+.local is_prim bool
   load nodes
   load n
   call n_kind I32Array i32
@@ -5786,6 +5788,247 @@ __L302:
   push_int 1
   call n_nth_child I32Array i32 i32
   store type_n
+  load nodes
+  load type_n
+  call n_ss I32Array i32
+  store tss
+  load nodes
+  load type_n
+  call n_sl I32Array i32
+  store tsl
+  push_int 0
+  store is_prim
+  load strtab
+  load tss
+  load tsl
+  push_int 117
+  push_int 56
+  call sv2 U8Array i32 i32 u8 u8
+  jump_ifnot __L306
+  push_int 1
+  store is_prim
+__L306:
+  load strtab
+  load tss
+  load tsl
+  push_int 105
+  push_int 56
+  call sv2 U8Array i32 i32 u8 u8
+  jump_ifnot __L307
+  push_int 1
+  store is_prim
+__L307:
+  load tsl
+  push_int 3
+  eq
+  jump_ifnot __L308
+  load strtab
+  load tss
+  call get U8Array i32
+  push_int 117
+  eq
+  jump_ifnot __L312
+  load strtab
+  load tss
+  push_int 1
+  add
+  call get U8Array i32
+  push_int 49
+  eq
+  jump_ifnot __L312
+  push_int 1
+  jump __L313
+__L312:
+  push_int 0
+__L313:
+  jump_ifnot __L310
+  load strtab
+  load tss
+  push_int 2
+  add
+  call get U8Array i32
+  push_int 54
+  eq
+  jump_ifnot __L310
+  push_int 1
+  jump __L311
+__L310:
+  push_int 0
+__L311:
+  jump_ifnot __L309
+  push_int 1
+  store is_prim
+__L309:
+  load strtab
+  load tss
+  call get U8Array i32
+  push_int 117
+  eq
+  jump_ifnot __L317
+  load strtab
+  load tss
+  push_int 1
+  add
+  call get U8Array i32
+  push_int 51
+  eq
+  jump_ifnot __L317
+  push_int 1
+  jump __L318
+__L317:
+  push_int 0
+__L318:
+  jump_ifnot __L315
+  load strtab
+  load tss
+  push_int 2
+  add
+  call get U8Array i32
+  push_int 50
+  eq
+  jump_ifnot __L315
+  push_int 1
+  jump __L316
+__L315:
+  push_int 0
+__L316:
+  jump_ifnot __L314
+  push_int 1
+  store is_prim
+__L314:
+  load strtab
+  load tss
+  call get U8Array i32
+  push_int 105
+  eq
+  jump_ifnot __L322
+  load strtab
+  load tss
+  push_int 1
+  add
+  call get U8Array i32
+  push_int 49
+  eq
+  jump_ifnot __L322
+  push_int 1
+  jump __L323
+__L322:
+  push_int 0
+__L323:
+  jump_ifnot __L320
+  load strtab
+  load tss
+  push_int 2
+  add
+  call get U8Array i32
+  push_int 54
+  eq
+  jump_ifnot __L320
+  push_int 1
+  jump __L321
+__L320:
+  push_int 0
+__L321:
+  jump_ifnot __L319
+  push_int 1
+  store is_prim
+__L319:
+  load strtab
+  load tss
+  call get U8Array i32
+  push_int 105
+  eq
+  jump_ifnot __L327
+  load strtab
+  load tss
+  push_int 1
+  add
+  call get U8Array i32
+  push_int 51
+  eq
+  jump_ifnot __L327
+  push_int 1
+  jump __L328
+__L327:
+  push_int 0
+__L328:
+  jump_ifnot __L325
+  load strtab
+  load tss
+  push_int 2
+  add
+  call get U8Array i32
+  push_int 50
+  eq
+  jump_ifnot __L325
+  push_int 1
+  jump __L326
+__L325:
+  push_int 0
+__L326:
+  jump_ifnot __L324
+  push_int 1
+  store is_prim
+__L324:
+__L308:
+  load tsl
+  push_int 4
+  eq
+  jump_ifnot __L329
+  load strtab
+  load tss
+  call get U8Array i32
+  push_int 98
+  eq
+  jump_ifnot __L335
+  load strtab
+  load tss
+  push_int 1
+  add
+  call get U8Array i32
+  push_int 111
+  eq
+  jump_ifnot __L335
+  push_int 1
+  jump __L336
+__L335:
+  push_int 0
+__L336:
+  jump_ifnot __L333
+  load strtab
+  load tss
+  push_int 2
+  add
+  call get U8Array i32
+  push_int 111
+  eq
+  jump_ifnot __L333
+  push_int 1
+  jump __L334
+__L333:
+  push_int 0
+__L334:
+  jump_ifnot __L331
+  load strtab
+  load tss
+  push_int 3
+  add
+  call get U8Array i32
+  push_int 108
+  eq
+  jump_ifnot __L331
+  push_int 1
+  jump __L332
+__L331:
+  push_int 0
+__L332:
+  jump_ifnot __L330
+  push_int 1
+  store is_prim
+__L330:
+__L329:
+  load is_prim
+  jump_ifnot __L337
   push_int 32
   load ob
   call ob_char u8 U8Array
@@ -5815,12 +6058,8 @@ __L302:
   call ob_char u8 U8Array
   pop
   load strtab
-  load nodes
-  load type_n
-  call n_ss I32Array i32
-  load nodes
-  load type_n
-  call n_sl I32Array i32
+  load tss
+  load tsl
   load ob
   call ob_n U8Array i32 i32 U8Array
   pop
@@ -5828,6 +6067,7 @@ __L302:
   load ob
   call ob_char u8 U8Array
   pop
+__L337:
   return_void
 __L305:
   return_void
@@ -5884,7 +6124,7 @@ __L305:
   load ret_type_n
   push_int 0
   ge
-  jump_ifnot __L306
+  jump_ifnot __L338
   load nodes
   load ret_type_n
   call n_ss I32Array i32
@@ -5893,7 +6133,7 @@ __L305:
   load ret_type_n
   call n_sl I32Array i32
   store ret_sl
-__L306:
+__L338:
   push_int 46
   load ob
   call ob_char u8 U8Array
@@ -5924,11 +6164,11 @@ __L306:
   load params_n
   call n_child I32Array i32
   store pp
-__L307:
+__L339:
   load pp
   push_int 0
   ge
-  jump_ifnot __L308
+  jump_ifnot __L340
   load nodes
   load pp
   call n_child I32Array i32
@@ -5951,8 +6191,8 @@ __L307:
   load pp
   call n_sib I32Array i32
   store pp
-  jump __L307
-__L308:
+  jump __L339
+__L340:
   push_int 32
   load ob
   call ob_char u8 U8Array
@@ -5960,7 +6200,7 @@ __L308:
   load ret_sl
   push_int 0
   eq
-  jump_ifnot __L309
+  jump_ifnot __L341
   push_int 118
   load ob
   call ob_char u8 U8Array
@@ -5977,15 +6217,15 @@ __L308:
   load ob
   call ob_char u8 U8Array
   pop
-  jump __L310
-__L309:
+  jump __L342
+__L341:
   load strtab
   load ret_ss
   load ret_sl
   load ob
   call ob_n U8Array i32 i32 U8Array
   pop
-__L310:
+__L342:
   push_int 10
   load ob
   call ob_char u8 U8Array
@@ -5994,11 +6234,11 @@ __L310:
   load params_n
   call n_child I32Array i32
   store p
-__L311:
+__L343:
   load p
   push_int 0
   ge
-  jump_ifnot __L312
+  jump_ifnot __L344
   load nodes
   load p
   call n_child I32Array i32
@@ -6063,8 +6303,8 @@ __L311:
   load p
   call n_sib I32Array i32
   store p
-  jump __L311
-__L312:
+  jump __L343
+__L344:
   push_int 0
   store g_locc
   load nodes
@@ -6075,11 +6315,11 @@ __L312:
   pop
   push_int 0
   store i
-__L313:
+__L345:
   load i
   load g_locc
   lt
-  jump_ifnot __L314
+  jump_ifnot __L346
   load i
   push_int 4
   mul
@@ -6158,8 +6398,8 @@ __L313:
   push_int 1
   add
   store i
-  jump __L313
-__L314:
+  jump __L345
+__L346:
   push_int 0
   store g_loop_depth
   push_int 32
@@ -6311,7 +6551,7 @@ __L314:
   load g_slc
   push_int 0
   gt
-  jump_ifnot __L315
+  jump_ifnot __L347
   push_int 59
   load ob
   call ob_char u8 U8Array
@@ -6374,11 +6614,11 @@ __L314:
   pop
   push_int 0
   store i
-__L316:
+__L348:
   load i
   load g_slc
   lt
-  jump_ifnot __L317
+  jump_ifnot __L349
   load i
   push_int 2
   mul
@@ -6455,34 +6695,34 @@ __L316:
   push_int 1
   add
   store i
-  jump __L316
-__L317:
+  jump __L348
+__L349:
   push_int 10
   load ob
   call ob_char u8 U8Array
   pop
-__L315:
+__L347:
   push_int 0
   store has_global
   load nodes
   load root
   call n_child I32Array i32
   store c
-__L318:
+__L350:
   load c
   push_int 0
   ge
-  jump_ifnot __L319
+  jump_ifnot __L351
   load nodes
   load c
   call n_kind I32Array i32
   load NK_VAR_DECL
   eq
-  jump_ifnot __L320
+  jump_ifnot __L352
   load has_global
   push_int 0
   eq
-  jump_ifnot __L321
+  jump_ifnot __L353
   push_int 59
   load ob
   call ob_char u8 U8Array
@@ -6525,7 +6765,7 @@ __L318:
   pop
   push_int 1
   store has_global
-__L321:
+__L353:
   load nodes
   load c
   call n_child I32Array i32
@@ -6539,12 +6779,12 @@ __L321:
   load init_n
   push_int 0
   ge
-  jump_ifnot __L322
+  jump_ifnot __L354
   load nodes
   load init_n
   call n_ival I32Array i32
   store initval
-__L322:
+__L354:
   push_int 46
   load ob
   call ob_char u8 U8Array
@@ -6613,37 +6853,37 @@ __L322:
   load ob
   call ob_char u8 U8Array
   pop
-__L320:
+__L352:
   load nodes
   load c
   call n_sib I32Array i32
   store c
-  jump __L318
-__L319:
+  jump __L350
+__L351:
   load has_global
   push_int 1
   eq
-  jump_ifnot __L323
+  jump_ifnot __L355
   push_int 10
   load ob
   call ob_char u8 U8Array
   pop
-__L323:
+__L355:
   load nodes
   load root
   call n_child I32Array i32
   store c
-__L324:
+__L356:
   load c
   push_int 0
   ge
-  jump_ifnot __L325
+  jump_ifnot __L357
   load nodes
   load c
   call n_kind I32Array i32
   load NK_FN
   eq
-  jump_ifnot __L326
+  jump_ifnot __L358
   load nodes
   load strtab
   load slits
@@ -6652,13 +6892,13 @@ __L324:
   load c
   call cg_fn I32Array U8Array I32Array I32Array U8Array i32
   pop
-__L326:
+__L358:
   load nodes
   load c
   call n_sib I32Array i32
   store c
-  jump __L324
-__L325:
+  jump __L356
+__L357:
   push_int 46
   load ob
   call ob_char u8 U8Array
@@ -6749,11 +6989,11 @@ __L325:
   load root
   push_int 0
   lt
-  jump_ifnot __L327
+  jump_ifnot __L359
   push_int 1
   call sys_exit i32
   pop
-__L327:
+__L359:
   load nodes
   load strtab
   load slits

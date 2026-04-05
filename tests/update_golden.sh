@@ -29,6 +29,7 @@ FILES=(
     "continue_test.tc"
     "nested_break_test.tc"
     "type_test.tc"
+    "struct_basic.tc"
 )
 
 # Define stdin for specific tests

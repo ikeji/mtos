@@ -220,7 +220,15 @@ static void cg_expr(CG *cg, AstNode *node) {
 
     if (strcmp(k, "cast") == 0) {
         cg_expr(cg, node->children[0]);
-        fprintf(cg->out, "  cast %s\n", node->children[1]->sval);
+        const char *target = node->children[1]->sval;
+        /* Emit cast only for primitive integer types. Casts involving
+           reference types (struct <-> U32Array, String, etc.) are no-op
+           because all references share the same 32-bit representation. */
+        if (!strcmp(target, "u8")  || !strcmp(target, "u16") || !strcmp(target, "u32") ||
+            !strcmp(target, "i8")  || !strcmp(target, "i16") || !strcmp(target, "i32") ||
+            !strcmp(target, "bool")) {
+            fprintf(cg->out, "  cast %s\n", target);
+        }
         return;
     }
 

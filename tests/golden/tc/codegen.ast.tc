@@ -7766,56 +7766,281 @@
 (var n)
 (int 1))
           )
-          (comment "ob_char(' ',ob);ob_char(' ',ob);")
-          (call_stmt ob_char
-            (int:u8 32)
-            (var ob)
-          )
-          (comment "ob_char(' ',ob);ob_char(' ',ob);")
-          (call_stmt ob_char
-            (int:u8 32)
-            (var ob)
-          )
-          (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
-          (call_stmt ob_char
-            (int:u8 99)
-            (var ob)
-          )
-          (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
-          (call_stmt ob_char
-            (int:u8 97)
-            (var ob)
-          )
-          (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
-          (call_stmt ob_char
-            (int:u8 115)
-            (var ob)
-          )
-          (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
-          (call_stmt ob_char
-            (int:u8 116)
-            (var ob)
-          )
-          (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
-          (call_stmt ob_char
-            (int:u8 32)
-            (var ob)
-          )
-          (comment "ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob); ob_char(10u8,ob);")
-          (call_stmt ob_n
-            (var strtab)
+          (comment "var tss: i32 = n_ss(nodes,type_n);")
+          (var_decl tss
+            (type i32)
             (call n_ss
 (var nodes)
 (var type_n))
+          )
+          (comment "var tsl: i32 = n_sl(nodes,type_n);")
+          (var_decl tsl
+            (type i32)
             (call n_sl
 (var nodes)
 (var type_n))
-            (var ob)
           )
-          (comment "ob_n(strtab, n_ss(nodes,type_n), n_sl(nodes,type_n), ob); ob_char(10u8,ob);")
-          (call_stmt ob_char
-            (int:u8 10)
-            (var ob)
+          (comment "var is_prim: bool = false;")
+          (var_decl is_prim
+            (type bool)
+            (bool false)
+          )
+          (comment "if sv2(strtab, tss, tsl, 'u','8') { is_prim = true; }")
+          (if
+            (call sv2
+(var strtab)
+(var tss)
+(var tsl)
+(int:u8 117)
+(int:u8 56))
+            (block
+              (comment "if sv2(strtab, tss, tsl, 'u','8') { is_prim = true; }")
+              (assign is_prim
+                (bool true)
+              )
+            )
+          )
+          (comment "if sv2(strtab, tss, tsl, 'i','8') { is_prim = true; }")
+          (if
+            (call sv2
+(var strtab)
+(var tss)
+(var tsl)
+(int:u8 105)
+(int:u8 56))
+            (block
+              (comment "if sv2(strtab, tss, tsl, 'i','8') { is_prim = true; }")
+              (assign is_prim
+                (bool true)
+              )
+            )
+          )
+          (comment "if tsl==3 {")
+          (if
+            (binop ==
+(var tsl)
+(int 3))
+            (block
+              (comment "if get(strtab,tss)=='u' && get(strtab,(tss+1))=='1' && get(strtab,(tss+2))=='6' { is_prim = true; }")
+              (if
+                (binop &&
+(binop &&
+(binop ==
+(call get
+(var strtab)
+(var tss))
+(int:u8 117))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 1)))
+(int:u8 49)))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 2)))
+(int:u8 54)))
+                (block
+                  (comment "if get(strtab,tss)=='u' && get(strtab,(tss+1))=='1' && get(strtab,(tss+2))=='6' { is_prim = true; }")
+                  (assign is_prim
+                    (bool true)
+                  )
+                )
+              )
+              (comment "if get(strtab,tss)=='u' && get(strtab,(tss+1))=='3' && get(strtab,(tss+2))=='2' { is_prim = true; }")
+              (if
+                (binop &&
+(binop &&
+(binop ==
+(call get
+(var strtab)
+(var tss))
+(int:u8 117))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 1)))
+(int:u8 51)))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 2)))
+(int:u8 50)))
+                (block
+                  (comment "if get(strtab,tss)=='u' && get(strtab,(tss+1))=='3' && get(strtab,(tss+2))=='2' { is_prim = true; }")
+                  (assign is_prim
+                    (bool true)
+                  )
+                )
+              )
+              (comment "if get(strtab,tss)=='i' && get(strtab,(tss+1))=='1' && get(strtab,(tss+2))=='6' { is_prim = true; }")
+              (if
+                (binop &&
+(binop &&
+(binop ==
+(call get
+(var strtab)
+(var tss))
+(int:u8 105))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 1)))
+(int:u8 49)))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 2)))
+(int:u8 54)))
+                (block
+                  (comment "if get(strtab,tss)=='i' && get(strtab,(tss+1))=='1' && get(strtab,(tss+2))=='6' { is_prim = true; }")
+                  (assign is_prim
+                    (bool true)
+                  )
+                )
+              )
+              (comment "if get(strtab,tss)=='i' && get(strtab,(tss+1))=='3' && get(strtab,(tss+2))=='2' { is_prim = true; }")
+              (if
+                (binop &&
+(binop &&
+(binop ==
+(call get
+(var strtab)
+(var tss))
+(int:u8 105))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 1)))
+(int:u8 51)))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 2)))
+(int:u8 50)))
+                (block
+                  (comment "if get(strtab,tss)=='i' && get(strtab,(tss+1))=='3' && get(strtab,(tss+2))=='2' { is_prim = true; }")
+                  (assign is_prim
+                    (bool true)
+                  )
+                )
+              )
+            )
+          )
+          (comment "if tsl==4 {")
+          (if
+            (binop ==
+(var tsl)
+(int 4))
+            (block
+              (comment "if get(strtab,tss)=='b' && get(strtab,(tss+1))=='o' && get(strtab,(tss+2))=='o' && get(strtab,(tss+3))=='l' { is_prim = true; }")
+              (if
+                (binop &&
+(binop &&
+(binop &&
+(binop ==
+(call get
+(var strtab)
+(var tss))
+(int:u8 98))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 1)))
+(int:u8 111)))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 2)))
+(int:u8 111)))
+(binop ==
+(call get
+(var strtab)
+(binop +
+(var tss)
+(int 3)))
+(int:u8 108)))
+                (block
+                  (comment "if get(strtab,tss)=='b' && get(strtab,(tss+1))=='o' && get(strtab,(tss+2))=='o' && get(strtab,(tss+3))=='l' { is_prim = true; }")
+                  (assign is_prim
+                    (bool true)
+                  )
+                )
+              )
+            )
+          )
+          (comment "if is_prim {")
+          (if
+            (var is_prim)
+            (block
+              (comment "ob_char(' ',ob);ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 99)
+                (var ob)
+              )
+              (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 97)
+                (var ob)
+              )
+              (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 115)
+                (var ob)
+              )
+              (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 116)
+                (var ob)
+              )
+              (comment "ob_char('c',ob);ob_char('a',ob);ob_char('s',ob);ob_char('t',ob);ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_n(strtab, tss, tsl, ob); ob_char(10u8,ob);")
+              (call_stmt ob_n
+                (var strtab)
+                (var tss)
+                (var tsl)
+                (var ob)
+              )
+              (comment "ob_n(strtab, tss, tsl, ob); ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+            )
           )
           (comment "return;")
           (return

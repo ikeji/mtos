@@ -35,6 +35,7 @@ FILES=(
     "continue_test.tc"
     "nested_break_test.tc"
     "type_test.tc"
+    "struct_basic.tc"
 )
 
 get_stdin() {

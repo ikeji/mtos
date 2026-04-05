@@ -202,7 +202,12 @@ static AstNode *find_fn(Interp *ip, const char *name,
                        strcmp(pty,"bool")==0 ))
                     ok = 0;
             } else if (av->kind == VAL_REF) {
-                if (av->ref && strcmp(av->ref->type_name, pty) != 0) ok = 0;
+                /* At runtime all references share a common representation.
+                   Overload resolution between distinct reference types
+                   (String, XxxArray, struct types) is a compile-time
+                   concern — mangled names already encode the distinction.
+                   The interp accepts any ref for any ref-typed param. */
+                (void)av;
             }
         }
         if (ok) return d;

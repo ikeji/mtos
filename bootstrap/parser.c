@@ -517,6 +517,190 @@ static AstNode *parse_fn_decl(Parser *p) {
     return n;
 }
 
+/* ---- synthetic function generation for struct ---- */
+
+/* Create a (type T) node. */
+static AstNode *mk_type(const char *tname, int line) {
+    AstNode *n = ast_node("type", line);
+    n->sval = strdup(tname);
+    return n;
+}
+
+/* Create a (var name) node. */
+static AstNode *mk_var(const char *name, int line) {
+    AstNode *n = ast_node("var", line);
+    n->sval = strdup(name);
+    return n;
+}
+
+/* Create a (param name (type T)) node. */
+static AstNode *mk_param(const char *name, const char *tname, int line) {
+    AstNode *n = ast_node("param", line);
+    n->sval = strdup(name);
+    ast_add_child(n, mk_type(tname, line));
+    return n;
+}
+
+/* Create an (int N) node with optional u32 suffix marker. */
+static AstNode *mk_int(long v, int line) {
+    AstNode *n = ast_node("int", line);
+    n->ival = v;
+    return n;
+}
+
+/* Create a (cast expr (type T)) node. */
+static AstNode *mk_cast(AstNode *expr, const char *tname, int line) {
+    AstNode *n = ast_node("cast", line);
+    ast_add_child(n, expr);
+    ast_add_child(n, mk_type(tname, line));
+    return n;
+}
+
+/* Create a call/call_stmt node. varargs are AstNode* children ending in NULL. */
+static AstNode *mk_call(const char *kind, const char *fname, int line, int nargs, AstNode **args) {
+    AstNode *n = ast_node(kind, line);
+    n->sval = strdup(fname);
+    for (int i = 0; i < nargs; i++) ast_add_child(n, args[i]);
+    return n;
+}
+
+/* Generate synthetic fn AST nodes for a struct and add them to `prog`.
+   For struct Point { x: i32, y: i32 }, generates:
+     fn Point(__a0: i32, __a1: i32) -> Point { ... }
+     fn x(__p: Point) -> i32 { ... }    (getter)
+     fn y(__p: Point) -> i32 { ... }
+     fn x(__p: Point, __v: i32) -> void { ... }   (setter)
+     fn y(__p: Point, __v: i32) -> void { ... }
+*/
+static void gen_struct_synthetic_fns(AstNode *prog, AstNode *struct_node) {
+    const char *sname = struct_node->sval;
+    int nfields = struct_node->nchildren;
+    int line = struct_node->line;
+
+    /* --- constructor: StructName(__a0: t0, __a1: t1, ...) -> StructName --- */
+    {
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup(sname);
+
+        AstNode *params = ast_node("params", line);
+        for (int i = 0; i < nfields; i++) {
+            AstNode *field = struct_node->children[i];
+            const char *ftype = field->children[0]->sval;
+            char pname[32];
+            snprintf(pname, sizeof(pname), "__a%d", i);
+            ast_add_child(params, mk_param(pname, ftype, line));
+        }
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type(sname, line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+
+        /* var __p: U32Array = U32Array(nfields); */
+        {
+            AstNode *sz = mk_int(nfields, line);
+            AstNode *args[] = {sz};
+            AstNode *call = mk_call("call", "U32Array", line, 1, args);
+            AstNode *vd = ast_node("var_decl", line);
+            vd->sval = strdup("__p");
+            ast_add_child(vd, mk_type("U32Array", line));
+            ast_add_child(vd, call);
+            ast_add_child(block, vd);
+        }
+
+        /* set(__p, i, __ai as u32); */
+        for (int i = 0; i < nfields; i++) {
+            char pname[32];
+            snprintf(pname, sizeof(pname), "__a%d", i);
+            AstNode *pvar = mk_var("__p", line);
+            AstNode *idx = mk_int(i, line);
+            AstNode *val = mk_cast(mk_var(pname, line), "u32", line);
+            AstNode *args[] = {pvar, idx, val};
+            AstNode *cs = mk_call("call_stmt", "set", line, 3, args);
+            ast_add_child(block, cs);
+        }
+
+        /* return __p as StructName; */
+        {
+            AstNode *ret_stmt = ast_node("return", line);
+            ast_add_child(ret_stmt, mk_cast(mk_var("__p", line), sname, line));
+            ast_add_child(block, ret_stmt);
+        }
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
+
+    /* --- getters: fieldName(__p: StructName) -> fieldType --- */
+    for (int i = 0; i < nfields; i++) {
+        AstNode *field = struct_node->children[i];
+        const char *fname = field->sval;
+        const char *ftype = field->children[0]->sval;
+
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup(fname);
+
+        AstNode *params = ast_node("params", line);
+        ast_add_child(params, mk_param("__p", sname, line));
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type(ftype, line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+        /* return get(__p as U32Array, i) as FieldType; */
+        AstNode *p_as_arr = mk_cast(mk_var("__p", line), "U32Array", line);
+        AstNode *idx = mk_int(i, line);
+        AstNode *getargs[] = {p_as_arr, idx};
+        AstNode *getcall = mk_call("call", "get", line, 2, getargs);
+        AstNode *casted = mk_cast(getcall, ftype, line);
+        AstNode *ret_stmt = ast_node("return", line);
+        ast_add_child(ret_stmt, casted);
+        ast_add_child(block, ret_stmt);
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
+
+    /* --- setters: fieldName(__p: StructName, __v: fieldType) -> void --- */
+    for (int i = 0; i < nfields; i++) {
+        AstNode *field = struct_node->children[i];
+        const char *fname = field->sval;
+        const char *ftype = field->children[0]->sval;
+
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup(fname);
+
+        AstNode *params = ast_node("params", line);
+        ast_add_child(params, mk_param("__p", sname, line));
+        ast_add_child(params, mk_param("__v", ftype, line));
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type("void", line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+        /* set(__p as U32Array, i, __v as u32); */
+        AstNode *p_as_arr = mk_cast(mk_var("__p", line), "U32Array", line);
+        AstNode *idx = mk_int(i, line);
+        AstNode *val_cast = mk_cast(mk_var("__v", line), "u32", line);
+        AstNode *setargs[] = {p_as_arr, idx, val_cast};
+        AstNode *setcall = mk_call("call_stmt", "set", line, 3, setargs);
+        ast_add_child(block, setcall);
+
+        /* return; */
+        AstNode *ret_stmt = ast_node("return", line);
+        ast_add_child(block, ret_stmt);
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
+}
+
 static AstNode *parse_struct_decl(Parser *p) {
     int line = cur_tok(p)->line;
     expect(p, TK_STRUCT);
@@ -587,6 +771,9 @@ AstNode *parse(Token *tokens, int ntokens, const char *filename) {
             d = parse_fn_decl(&p);
         } else if (t->kind == TK_STRUCT) {
             d = parse_struct_decl(&p);
+            ast_add_child(prog, d);
+            gen_struct_synthetic_fns(prog, d);
+            continue;
         } else if (t->kind == TK_VAR) {
             d = parse_var_decl(&p);
         } else {
