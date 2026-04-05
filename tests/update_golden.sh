@@ -41,6 +41,8 @@ get_stdin() {
 
 source "$SCRIPT_DIR/compile_tc.sh"
 PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
+TYPECHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/typecheck.tc")
+CODEGEN_TC_BC=$(compile_tc_to_bc "$TC_DIR/codegen.tc")
 
 echo "Updating golden files in $GOLDEN_DIR..."
 
@@ -111,9 +113,13 @@ for f in "${TC_FILES[@]}"; do
     # 1b. Update AST (parse.tc self-hosted)
     { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.ast.tc" 2>/dev/null
 
-    # 2. Update Bytecode
-    bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
-    printf '%s\n' "$bc" >"$GOLDEN_DIR/tc/$base.bc"
+    # 2. Update Bytecode (use file arg so import is resolved)
+    "$CODEGEN" "$input" >"$GOLDEN_DIR/tc/$base.bc" 2>/dev/null
+    bc=$(cat "$GOLDEN_DIR/tc/$base.bc")
+    # 2b. Update Bytecode (codegen.tc self-hosted — no source comments)
+    AST=$("$PARSE" "$input" 2>/dev/null)
+    { printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null | \
+    { printf '%s\n' "$CODEGEN_TC_BC"; cat; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.bc.tc" 2>/dev/null
 
     # 3. Update Assembly
     printf '%s\n' "$bc" | "$BC2ASM" > "$GOLDEN_DIR/tc/$base.s" 2>/dev/null

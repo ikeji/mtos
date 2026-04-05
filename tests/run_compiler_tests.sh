@@ -203,7 +203,7 @@ for f in "${TC_FILES[@]}"; do
     # --- 2. BC Checks ---
     actual_bc=$(mktemp)
     t0=$(time_ms)
-    "$PARSE" "$input" 2>/dev/null | "$CODEGEN" > "$actual_bc" 2>/dev/null
+    "$CODEGEN" "$input" > "$actual_bc" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_bc" "$actual_bc" > /dev/null; then
         echo "PASS: tc/$f (BC - C) [${elapsed}ms]"
@@ -212,21 +212,23 @@ for f in "${TC_FILES[@]}"; do
         report_fail "tc/$f (BC - C)" "$golden_bc" "$actual_bc" "" "$elapsed"
     fi
 
+    golden_bc_tc="$GOLDEN_DIR/tc/$base.bc.tc"
+    [ -f "$golden_bc_tc" ] || golden_bc_tc="$golden_bc"
     AST=$("$PARSE" "$input" 2>/dev/null)
     t0=$(time_ms)
     printf '%s\n' "$AST" | run_typecheck_tc | run_codegen_tc > "$actual_bc"
     elapsed=$(( $(time_ms) - t0 ))
-    if diff -u "$golden_bc" "$actual_bc" > /dev/null; then
+    if diff -u "$golden_bc_tc" "$actual_bc" > /dev/null; then
         echo "PASS: tc/$f (BC - codegen.tc) [${elapsed}ms]"
         PASS=$((PASS + 1))
     else
-        report_fail "tc/$f (BC - codegen.tc)" "$golden_bc" "$actual_bc" "" "$elapsed"
+        report_fail "tc/$f (BC - codegen.tc)" "$golden_bc_tc" "$actual_bc" "" "$elapsed"
     fi
     rm -f "$actual_bc"
 
     # --- 3. ASM Checks ---
     actual_s=$(mktemp)
-    bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
+    bc=$("$CODEGEN" "$input" 2>/dev/null)
     t0=$(time_ms)
     printf '%s\n' "$bc" | "$BC2ASM" > "$actual_s" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
@@ -253,7 +255,7 @@ for f in "${TC_FILES[@]}"; do
     actual_out=$(mktemp)
     exec_input_file=$(get_tc_exec_input_file "$f")
 
-    bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
+    bc=$("$CODEGEN" "$input" 2>/dev/null)
     t0=$(time_ms)
     { printf '%s\n' "$bc"; cat "$exec_input_file"; } | "$BCRUN" > "$actual_out" 2>/dev/null
     actual_exit=$?
