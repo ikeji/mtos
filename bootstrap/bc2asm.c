@@ -554,8 +554,7 @@ static void emit_program(BcProg *prog) {
             E("    .word 0\n");                     /* size = 0 */
             E("    .word %d\n", (int)strlen(s));    /* len */
             E("    .word 1\n");                     /* is_literal = 1 */
-            E("    .word 0\n");                     /* fields = NULL */
-            E("    .word __tc_strdata%d\n", i);     /* bytes */
+            E("    .word __tc_strdata%d\n", i);     /* data */
         }
         E("\n");
     }

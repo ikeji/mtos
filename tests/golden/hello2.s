@@ -8,7 +8,6 @@ __tc_strobj0:
     .word 0
     .word 13
     .word 1
-    .word 0
     .word __tc_strdata0
 
     .text

@@ -1034,10 +1034,7 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
             // "    .word 1\n"  (is_literal = 1)
             e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
             ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
-            // "    .word 0\n"  (fields = NULL)
-            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-            ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
-            // "    .word __tc_strdataN\n"  (bytes)
+            // "    .word __tc_strdataN\n"  (data)
             e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
             ob_char(' ',ob);
             ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);

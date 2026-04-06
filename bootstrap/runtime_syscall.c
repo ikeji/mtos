@@ -154,8 +154,7 @@ typedef struct {
     int      size;
     int      len;
     int      is_literal;
-    int32_t *fields;
-    uint8_t *bytes;
+    void    *data;     /* int32_t* for arrays, uint8_t* for strings */
 } HeapObj;
 
 static HeapObj *new_obj(int kind) {
@@ -182,8 +181,8 @@ void print_bool__bool(int32_t v) {
 }
 
 void print_str__String(HeapObj *s) {
-    if (s && s->kind == OBJ_STRING && s->bytes)
-        do_write(1, (char*)s->bytes, s->len);
+    if (s && s->kind == OBJ_STRING && s->data)
+        do_write(1, (char*)s->data, s->len);
     do_write(1, "\n", 1);
 }
 
@@ -192,7 +191,7 @@ void print_str__String(HeapObj *s) {
 static HeapObj *new_array(int sz) {
     HeapObj *o = new_obj(OBJ_ARRAY);
     o->size = sz;
-    o->fields = pool_alloc(sz > 0 ? sz * (int)sizeof(int32_t) : 4);
+    o->data = pool_alloc(sz > 0 ? sz * (int)sizeof(int32_t) : 4);
     return o;
 }
 
@@ -221,13 +220,13 @@ static int32_t get_impl(HeapObj *o, int32_t idx) {
     if (!o) { do_write(2, "get: null\n", 10); __syscall1(SYS_exit, 1); }
     if (o->kind == OBJ_STRING) {
         if (idx < 0 || idx >= o->len) return 0;
-        return o->bytes[idx];
+        return ((uint8_t*)o->data)[idx];
     }
     if (idx < 0 || idx >= o->size) {
         do_write(2, "get: out of bounds\n", 19);
         __syscall1(SYS_exit, 1);
     }
-    return o->fields[idx];
+    return ((int32_t*)o->data)[idx];
 }
 #define GET_ALIAS(T) int32_t get__##T##__i32(HeapObj *o, int32_t i) { return get_impl(o, i); }
 GET_ALIAS(U8Array)   GET_ALIAS(U16Array)  GET_ALIAS(U32Array)
@@ -240,7 +239,7 @@ static void set_impl(HeapObj *o, int32_t idx, int32_t val) {
         do_write(2, "set: out of bounds\n", 19);
         __syscall1(SYS_exit, 1);
     }
-    o->fields[idx] = val;
+    ((int32_t*)o->data)[idx] = val;
 }
 void set__U8Array__i32__u8    (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
 void set__U16Array__i32__u16  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
@@ -254,8 +253,7 @@ void set__StringArray__i32__String(HeapObj *o, int32_t i, int32_t v) { set_impl(
 static void delete_impl(HeapObj *o) {
     if (!o) return;
     if (o->is_literal) return;
-    if (o->kind == OBJ_ARRAY) pool_free_blk(o->fields);
-    else if (o->bytes)        pool_free_blk(o->bytes);
+    if (o->data) pool_free_blk(o->data);
     pool_free_blk(o);
 }
 #define DELETE_ALIAS(T) void delete__##T(HeapObj *o) { delete_impl(o); }
@@ -271,31 +269,37 @@ void heap_reset__i32(int32_t mark) { (void)mark; }
 
 HeapObj *append__String__u8(HeapObj *s, int32_t c) {
     int sl = s ? s->len : 0;
+    uint8_t *sb = s ? (uint8_t*)s->data : 0;
     HeapObj *ns = new_obj(OBJ_STRING);
     ns->len = sl + 1;
-    ns->bytes = pool_alloc(ns->len + 1);
-    for (int i = 0; i < sl; i++) ns->bytes[i] = s->bytes[i];
-    ns->bytes[sl] = (uint8_t)c;
-    ns->bytes[ns->len] = 0;
+    uint8_t *nb = pool_alloc(ns->len + 1);
+    for (int i = 0; i < sl; i++) nb[i] = sb[i];
+    nb[sl] = (uint8_t)c;
+    nb[ns->len] = 0;
+    ns->data = nb;
     return ns;
 }
 
 HeapObj *append__String__String(HeapObj *s, HeapObj *t) {
     int sl = s ? s->len : 0, tl = t ? t->len : 0;
+    uint8_t *sb = s ? (uint8_t*)s->data : 0;
+    uint8_t *tb = t ? (uint8_t*)t->data : 0;
     HeapObj *ns = new_obj(OBJ_STRING);
     ns->len = sl + tl;
-    ns->bytes = pool_alloc(ns->len + 1);
-    for (int i = 0; i < sl; i++) ns->bytes[i] = s->bytes[i];
-    for (int i = 0; i < tl; i++) ns->bytes[sl+i] = t->bytes[i];
-    ns->bytes[ns->len] = 0;
+    uint8_t *nb = pool_alloc(ns->len + 1);
+    for (int i = 0; i < sl; i++) nb[i] = sb[i];
+    for (int i = 0; i < tl; i++) nb[sl+i] = tb[i];
+    nb[ns->len] = 0;
+    ns->data = nb;
     return ns;
 }
 
 int32_t equals__String__String(HeapObj *s, HeapObj *t) {
     if (!s || !t) return s == t;
     if (s->len != t->len) return 0;
+    uint8_t *sb = (uint8_t*)s->data, *tb = (uint8_t*)t->data;
     for (int i = 0; i < s->len; i++)
-        if (s->bytes[i] != t->bytes[i]) return 0;
+        if (sb[i] != tb[i]) return 0;
     return 1;
 }
 
@@ -317,7 +321,8 @@ static int32_t sys_write_impl(int32_t fd, HeapObj *buf, int32_t len) {
     int total = 0;
     while (total < n) {
         int chunk = (n - total) < 256 ? (n - total) : 256;
-        for (int i = 0; i < chunk; i++) tmp[i] = (char)buf->fields[total + i];
+        int32_t *fp = (int32_t*)buf->data;
+        for (int i = 0; i < chunk; i++) tmp[i] = (char)fp[total + i];
         long r = __syscall3(SYS_write, fd, (long)tmp, chunk);
         if (r <= 0) break;
         total += (int)r;
@@ -336,7 +341,7 @@ static int32_t sys_read_impl(int32_t fd, HeapObj *buf, int32_t len) {
         long r = __syscall3(SYS_read, fd, (long)tmp, chunk);
         if (r <= 0) break;
         for (int i = 0; i < (int)r; i++)
-            buf->fields[total + i] = (uint8_t)tmp[i];
+            ((int32_t*)buf->data)[total + i] = (uint8_t)tmp[i];
         total += (int)r;
     }
     return total;
