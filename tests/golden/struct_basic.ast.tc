@@ -162,6 +162,24 @@
       (return)
     )
   )
+  (comment "struct Point { x: i32, y: i32 }")
+  (fn delete
+    (params
+      (param __p
+        (type Point)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __p)
+        (type U32Array))
+      (return)
+    )
+  )
   (fn main
     (params
     )

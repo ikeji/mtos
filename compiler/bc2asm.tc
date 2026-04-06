@@ -202,16 +202,10 @@ fn base_name_len(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     }
     return sl;
 }
-// "    call [__tc_]BASENAME\n"  (builtins use base name; user fns use full mangled name)
-fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, is_tc: i32, ob: U8Array) -> void {
+// "    call NAME\n"  (all calls use full mangled name directly)
+fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: U8Array) -> void {
     e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-    if is_tc == 1 {
-        ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-        var bsl: i32 = base_name_len(strtab, nm_ss, nm_sl);
-        ob_n(strtab, nm_ss, bsl, ob);
-    } else {
-        ob_n(strtab, nm_ss, nm_sl, ob);
-    }
+    ob_n(strtab, nm_ss, nm_sl, ob);
     ob_char(10u8,ob);
     return;
 }
@@ -639,41 +633,7 @@ fn var_offset(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool
 }
 
 // ===== Builtin detection (works with mangled names: checks base name before first __) =====
-fn is_builtin(strtab: U8Array, ss: i32, sl: i32) -> i32 {
-    if sl<=0 { return 0; }
-    var bsl: i32 = base_name_len(strtab, ss, sl);
-    var a: u8=get(strtab,ss);
-    var b: u8=0u8; if bsl>1 { b=get(strtab,(ss+1)); }
-    var c: u8=0u8; if bsl>2 { c=get(strtab,(ss+2)); }
-    // XxxArray constructor: base starts uppercase, base ends "Array"
-    if bsl>=6 && a>='A' && a<='Z' {
-        var e1: u8=get(strtab,(ss+bsl-5));
-        var e2: u8=get(strtab,(ss+bsl-4));
-        var e3: u8=get(strtab,(ss+bsl-3));
-        var e4: u8=get(strtab,(ss+bsl-2));
-        var e5: u8=get(strtab,(ss+bsl-1));
-        if e1=='A'&&e2=='r'&&e3=='r'&&e4=='a'&&e5=='y' { return 1; }
-    }
-    if bsl>=4&&a=='s'&&b=='y'&&c=='s' { return 1; }        // sys_*
-    if bsl>=6&&a=='p'&&b=='r'&&c=='i' { return 1; }        // print_*
-    if bsl>=5&&a=='p'&&b=='e'&&c=='e' { var d: u8=get(strtab,(ss+3)); if d=='k' { var e: u8=get(strtab,(ss+4)); if e>='0'&&e<='9' { return 1; } } }  // peek8/16/32
-    if bsl>=4&&a=='p'&&b=='o'&&c=='k' { return 1; }        // poke*
-    if bsl==3&&a=='l'&&b=='e'&&c=='n' { return 1; }        // len
-    if a=='g'&&b=='e'&&c=='t' { return 1; }                // get
-    if bsl==3&&a=='s'&&b=='e'&&c=='t' { return 1; }        // set
-    if bsl>=6&&a=='d'&&b=='e'&&c=='l' { return 1; }        // delete
-    if bsl>=6&&a=='a'&&b=='p'&&c=='p' { return 1; }        // append
-    if bsl>=6&&a=='e'&&b=='q'&&c=='u' { return 1; }        // equals
-    if a=='h'&&b=='e'&&c=='a' {                            // heap_mark / heap_reset
-        if bsl==9||bsl==10 {
-            var d: u8=get(strtab,(ss+3));
-            var e: u8=get(strtab,(ss+4));
-            var f: u8=get(strtab,(ss+5));
-            if d=='p'&&e=='_'&&(f=='m'||f=='r') { return 1; }
-        }
-    }
-    return 0;
-}
+// is_builtin removed — all calls use mangled names directly.
 fn is_sys_exit(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     // "sys_exit" = 115,121,115,95,101,120,105,116 — check base name length == 8
     var bsl: i32 = base_name_len(strtab, ss, sl);
@@ -887,7 +847,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
                 e4(ob);ob_char('e',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);
                 ob_char('l',ob);ob_char(10u8,ob);
             } else {
-                asm_call_fn(strtab,sss,ssl,is_builtin(strtab,sss,ssl),ob);
+                asm_call_fn(strtab,sss,ssl,ob);
             }
             // Pop overflow args + expression stack
             if noverflow>0 {

@@ -15,7 +15,7 @@ Point__i32__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_U32Array
+    call U32Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -38,7 +38,7 @@ Point__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U32Array__i32__u32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -59,7 +59,7 @@ Point__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U32Array__i32__u32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -99,7 +99,7 @@ x__Point:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -139,7 +139,7 @@ y__Point:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -188,7 +188,7 @@ x__Point__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U32Array__i32__u32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -231,7 +231,7 @@ y__Point__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U32Array__i32__u32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -247,6 +247,36 @@ y__Point__i32:
     addi sp, t0, 0
     ret
     # end of y__Point__i32
+
+    .globl delete__Point
+    .type  delete__Point, @function
+delete__Point:
+    # prologue: frame_size=16, params=1, locals=0
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call delete__U32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of delete__Point
 
     .globl main
     .type  main, @function
@@ -281,7 +311,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_print_i32
+    call print_i32__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -295,7 +325,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_print_i32
+    call print_i32__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -349,7 +379,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_print_i32
+    call print_i32__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -358,7 +388,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__Point
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

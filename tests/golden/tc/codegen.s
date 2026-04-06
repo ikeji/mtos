@@ -151,7 +151,7 @@ ob_flush__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_sys_write
+    call sys_write__i32__U8Array__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -199,7 +199,7 @@ ob_char__u8__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U8Array__i32__u8
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -312,7 +312,7 @@ ob_n__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -452,7 +452,7 @@ ob_int__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_U8Array
+    call U8Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -522,7 +522,7 @@ ob_int__i32__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U8Array__i32__u8
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -599,7 +599,7 @@ ob_int__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -634,7 +634,7 @@ ob_int__i32__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__U8Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -704,7 +704,7 @@ ob_st_escaped__U8Array__i32__i32__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1022,7 +1022,7 @@ peek_in__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1497,7 +1497,7 @@ read_atom_in__U8Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U8Array__i32__u8
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1592,7 +1592,7 @@ n_kind__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1643,7 +1643,7 @@ n_sk__I32Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1691,7 +1691,7 @@ n_ss__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1751,7 +1751,7 @@ n_set_ss__I32Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1799,7 +1799,7 @@ n_sl__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1859,7 +1859,7 @@ n_set_sl__I32Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1907,7 +1907,7 @@ n_ival__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1967,7 +1967,7 @@ n_set_ival__I32Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2015,7 +2015,7 @@ n_child__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2075,7 +2075,7 @@ n_set_child__I32Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2123,7 +2123,7 @@ n_sib__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2183,7 +2183,7 @@ n_set_sib__I32Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2231,7 +2231,7 @@ n_tass__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2286,7 +2286,7 @@ n_tasl__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2368,7 +2368,7 @@ alloc_node__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2399,7 +2399,7 @@ alloc_node__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2425,7 +2425,7 @@ alloc_node__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2451,7 +2451,7 @@ alloc_node__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2482,7 +2482,7 @@ alloc_node__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2513,7 +2513,7 @@ alloc_node__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2544,7 +2544,7 @@ alloc_node__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2570,7 +2570,7 @@ alloc_node__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2974,7 +2974,7 @@ cmp2__U8Array__i32__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3008,7 +3008,7 @@ cmp2__U8Array__i32__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3070,7 +3070,7 @@ cmp3__U8Array__i32__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3104,7 +3104,7 @@ cmp3__U8Array__i32__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3150,7 +3150,7 @@ cmp3__U8Array__i32__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3213,7 +3213,7 @@ cmp4__U8Array__i32__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3247,7 +3247,7 @@ cmp4__U8Array__i32__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3293,7 +3293,7 @@ cmp4__U8Array__i32__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3339,7 +3339,7 @@ cmp4__U8Array__i32__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3403,7 +3403,7 @@ cmp5__U8Array__i32__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3437,7 +3437,7 @@ cmp5__U8Array__i32__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3483,7 +3483,7 @@ cmp5__U8Array__i32__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3529,7 +3529,7 @@ cmp5__U8Array__i32__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3575,7 +3575,7 @@ cmp5__U8Array__i32__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3640,7 +3640,7 @@ cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3674,7 +3674,7 @@ cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3720,7 +3720,7 @@ cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3766,7 +3766,7 @@ cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3812,7 +3812,7 @@ cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3858,7 +3858,7 @@ cmp6__U8Array__i32__u8__u8__u8__u8__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5738,7 +5738,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5921,14 +5921,14 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U8Array__i32__u8
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5988,7 +5988,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6014,7 +6014,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6501,7 +6501,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U8Array__i32__u8
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6608,7 +6608,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6644,7 +6644,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6799,7 +6799,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6871,7 +6871,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6935,7 +6935,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6986,14 +6986,14 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__U8Array__i32__u8
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7053,7 +7053,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7079,7 +7079,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7209,7 +7209,7 @@ read_node__U8Array__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7401,7 +7401,7 @@ sval_eq__U8Array__i32__i32__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7413,7 +7413,7 @@ sval_eq__U8Array__i32__i32__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7522,7 +7522,7 @@ sv1__U8Array__i32__i32__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7600,7 +7600,7 @@ sv2__U8Array__i32__i32__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7634,7 +7634,7 @@ sv2__U8Array__i32__i32__u8__u8:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7739,7 +7739,7 @@ slit_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7763,7 +7763,7 @@ slit_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7859,7 +7859,7 @@ slit_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7880,7 +7880,7 @@ slit_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8079,7 +8079,7 @@ slit_add__U8Array__I32Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8105,7 +8105,7 @@ slit_add__U8Array__I32Array__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8403,7 +8403,7 @@ locals_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8427,7 +8427,7 @@ locals_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8523,7 +8523,7 @@ locals_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8544,7 +8544,7 @@ locals_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8732,7 +8732,7 @@ locals_add_entry__U8Array__I32Array__i32__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8758,7 +8758,7 @@ locals_add_entry__U8Array__I32Array__i32__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8784,7 +8784,7 @@ locals_add_entry__U8Array__I32Array__i32__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8810,7 +8810,7 @@ locals_add_entry__U8Array__I32Array__i32__i32__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10214,7 +10214,7 @@ cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_I32Array
+    call I32Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10298,7 +10298,7 @@ cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10377,7 +10377,7 @@ cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10412,7 +10412,7 @@ cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__I32Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12121,7 +12121,7 @@ cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12157,7 +12157,7 @@ cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12872,7 +12872,7 @@ cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13085,7 +13085,7 @@ cg_stmt__I32Array__U8Array__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15400,7 +15400,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15434,7 +15434,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15480,7 +15480,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15526,7 +15526,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16014,7 +16014,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_I32Array
+    call I32Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16098,7 +16098,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_set
+    call set__I32Array__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16177,7 +16177,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16212,7 +16212,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__I32Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19544,7 +19544,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19578,7 +19578,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19624,7 +19624,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19668,7 +19668,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19702,7 +19702,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19748,7 +19748,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19792,7 +19792,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19826,7 +19826,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19872,7 +19872,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19916,7 +19916,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19950,7 +19950,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19996,7 +19996,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20056,7 +20056,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20090,7 +20090,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20136,7 +20136,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20182,7 +20182,7 @@ cg_expr__I32Array__U8Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__U8Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21188,7 +21188,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21212,7 +21212,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21236,7 +21236,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21260,7 +21260,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21454,7 +21454,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_I32Array
+    call I32Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21494,7 +21494,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__I32Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -22157,7 +22157,7 @@ cg_program__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -22181,7 +22181,7 @@ cg_program__I32Array__U8Array__I32Array__I32Array__U8Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call get__I32Array__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23204,7 +23204,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_U8Array
+    call U8Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23215,7 +23215,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_U8Array
+    call U8Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23226,7 +23226,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_U8Array
+    call U8Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23237,7 +23237,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_I32Array
+    call I32Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23248,7 +23248,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_U8Array
+    call U8Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23259,7 +23259,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_I32Array
+    call I32Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23270,7 +23270,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_I32Array
+    call I32Array__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23289,7 +23289,7 @@ main:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call __tc_sys_read
+    call sys_read__i32__U8Array__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23437,7 +23437,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__U8Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23446,7 +23446,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__U8Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23455,7 +23455,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__U8Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23464,7 +23464,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__I32Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23473,7 +23473,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__U8Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23482,7 +23482,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__I32Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23491,7 +23491,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call delete__I32Array
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

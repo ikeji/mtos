@@ -275,9 +275,7 @@ static void collect_struct(TypeEnv *e, AstNode *node) {
     sd->next = e->structs;
     e->structs = sd;
 
-    /* delete(s: StructName) — resolved to builtin delete at runtime */
-    const char *ps[] = {sname};
-    register_fn(e, "delete", ps, 1, "void");
+    /* delete(s: StructName) is now generated as a synthetic fn by the parser */
 
     /* array type: StructNameArray — all ops resolve to U32Array builtins at runtime */
     char arr_type[128];

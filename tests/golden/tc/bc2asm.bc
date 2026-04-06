@@ -1093,13 +1093,11 @@ __L13:
   return_void
 .endfn
 
-.fn asm_call_fn U8Array i32 i32 i32 U8Array void
+.fn asm_call_fn U8Array i32 i32 U8Array void
 .param strtab U8Array
 .param nm_ss i32
 .param nm_sl i32
-.param is_tc i32
 .param ob U8Array
-.local bsl i32
   load ob
   call e4 U8Array
   pop
@@ -1123,50 +1121,12 @@ __L13:
   load ob
   call ob_char u8 U8Array
   pop
-  load is_tc
-  push_int 1
-  eq
-  jump_ifnot __L17
-  push_int 95
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 95
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 116
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 99
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 95
-  load ob
-  call ob_char u8 U8Array
-  pop
-  load strtab
-  load nm_ss
-  load nm_sl
-  call base_name_len U8Array i32 i32
-  store bsl
-  load strtab
-  load nm_ss
-  load bsl
-  load ob
-  call ob_n U8Array i32 i32 U8Array
-  pop
-  jump __L18
-__L17:
   load strtab
   load nm_ss
   load nm_sl
   load ob
   call ob_n U8Array i32 i32 U8Array
   pop
-__L18:
   push_int 10
   load ob
   call ob_char u8 U8Array
@@ -1385,7 +1345,7 @@ __L18:
   load swap
   push_int 0
   eq
-  jump_ifnot __L19
+  jump_ifnot __L17
   load ob
   call eregt0 U8Array
   pop
@@ -1401,8 +1361,8 @@ __L18:
   load ob
   call ob_char u8 U8Array
   pop
-  jump __L20
-__L19:
+  jump __L18
+__L17:
   load ob
   call eregt1 U8Array
   pop
@@ -1418,7 +1378,7 @@ __L19:
   load ob
   call ob_char u8 U8Array
   pop
-__L20:
+__L18:
   return_void
   return_void
 .endfn
@@ -1433,17 +1393,17 @@ __L20:
   load sl1
   load sl2
   ne
-  jump_ifnot __L21
+  jump_ifnot __L19
   push_int 0
   return
-__L21:
+__L19:
   push_int 0
   store i
-__L22:
+__L20:
   load i
   load sl1
   lt
-  jump_ifnot __L23
+  jump_ifnot __L21
   load strtab
   load ss1
   load i
@@ -1455,16 +1415,16 @@ __L22:
   add
   call get U8Array i32
   ne
-  jump_ifnot __L24
+  jump_ifnot __L22
   push_int 0
   return
-__L24:
+__L22:
   load i
   push_int 1
   add
   store i
-  jump __L22
-__L23:
+  jump __L20
+__L21:
   push_int 1
   return
   return_void
@@ -1475,10 +1435,10 @@ __L23:
   load g_in_pos
   load g_in_len
   ge
-  jump_ifnot __L25
+  jump_ifnot __L23
   push_int 0
   return
-__L25:
+__L23:
   load src
   load g_in_pos
   call get U8Array i32
@@ -1491,19 +1451,9 @@ __L25:
   load c
   push_int 32
   eq
-  jump_if __L30
-  load c
-  push_int 9
-  eq
-  jump_if __L30
-  push_int 0
-  jump __L31
-__L30:
-  push_int 1
-__L31:
   jump_if __L28
   load c
-  push_int 13
+  push_int 9
   eq
   jump_if __L28
   push_int 0
@@ -1513,7 +1463,7 @@ __L28:
 __L29:
   jump_if __L26
   load c
-  push_int 10
+  push_int 13
   eq
   jump_if __L26
   push_int 0
@@ -1521,82 +1471,92 @@ __L29:
 __L26:
   push_int 1
 __L27:
+  jump_if __L24
+  load c
+  push_int 10
+  eq
+  jump_if __L24
+  push_int 0
+  jump __L25
+__L24:
+  push_int 1
+__L25:
   return
   return_void
 .endfn
 
 .fn skip_spaces U8Array void
 .param src U8Array
-__L32:
+__L30:
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L34
+  jump_ifnot __L32
   load src
   call in_cur U8Array
   push_int 32
   eq
-  jump_if __L36
+  jump_if __L34
   load src
   call in_cur U8Array
   push_int 9
   eq
-  jump_if __L36
+  jump_if __L34
   push_int 0
-  jump __L37
-__L36:
-  push_int 1
-__L37:
-  jump_ifnot __L34
-  push_int 1
   jump __L35
 __L34:
-  push_int 0
+  push_int 1
 __L35:
-  jump_ifnot __L33
+  jump_ifnot __L32
+  push_int 1
+  jump __L33
+__L32:
+  push_int 0
+__L33:
+  jump_ifnot __L31
   load g_in_pos
   push_int 1
   add
   store g_in_pos
-  jump __L32
-__L33:
+  jump __L30
+__L31:
   return_void
   return_void
 .endfn
 
 .fn skip_line U8Array void
 .param src U8Array
-__L38:
+__L36:
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L40
+  jump_ifnot __L38
   load src
   call in_cur U8Array
   push_int 10
   ne
-  jump_ifnot __L40
+  jump_ifnot __L38
   push_int 1
-  jump __L41
-__L40:
+  jump __L39
+__L38:
   push_int 0
-__L41:
-  jump_ifnot __L39
+__L39:
+  jump_ifnot __L37
   load g_in_pos
   push_int 1
   add
   store g_in_pos
-  jump __L38
-__L39:
+  jump __L36
+__L37:
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L42
+  jump_ifnot __L40
   load g_in_pos
   push_int 1
   add
   store g_in_pos
-__L42:
+__L40:
   return_void
   return_void
 .endfn
@@ -1610,22 +1570,22 @@ __L42:
   pop
   load g_stab_pos
   store start
-__L43:
+__L41:
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L45
+  jump_ifnot __L43
   load src
   call in_cur U8Array
   call is_ws u8
   lnot
-  jump_ifnot __L45
+  jump_ifnot __L43
   push_int 1
-  jump __L46
-__L45:
+  jump __L44
+__L43:
   push_int 0
-__L46:
-  jump_ifnot __L44
+__L44:
+  jump_ifnot __L42
   load strtab
   load g_stab_pos
   load src
@@ -1640,8 +1600,8 @@ __L46:
   push_int 1
   add
   store g_in_pos
-  jump __L43
-__L44:
+  jump __L41
+__L42:
   load start
   return
   return_void
@@ -1679,31 +1639,31 @@ __L44:
   load sl
   push_int 0
   gt
-  jump_ifnot __L48
+  jump_ifnot __L46
   load strtab
   load ss
   call get U8Array i32
   push_int 45
   eq
-  jump_ifnot __L48
+  jump_ifnot __L46
   push_int 1
-  jump __L49
-__L48:
+  jump __L47
+__L46:
   push_int 0
-__L49:
-  jump_ifnot __L47
+__L47:
+  jump_ifnot __L45
   push_int 1
   store neg
   push_int 1
   store i
-__L47:
+__L45:
   push_int 0
   store r
-__L50:
+__L48:
   load i
   load sl
   lt
-  jump_ifnot __L51
+  jump_ifnot __L49
   load strtab
   load ss
   load i
@@ -1713,17 +1673,17 @@ __L50:
   load c
   push_int 48
   ge
-  jump_ifnot __L53
+  jump_ifnot __L51
   load c
   push_int 57
   le
-  jump_ifnot __L53
+  jump_ifnot __L51
   push_int 1
-  jump __L54
-__L53:
+  jump __L52
+__L51:
   push_int 0
-__L54:
-  jump_ifnot __L52
+__L52:
+  jump_ifnot __L50
   load r
   push_int 10
   mul
@@ -1733,22 +1693,22 @@ __L54:
   sub
   add
   store r
-__L52:
+__L50:
   load i
   push_int 1
   add
   store i
-  jump __L50
-__L51:
+  jump __L48
+__L49:
   load neg
   push_int 1
   eq
-  jump_ifnot __L55
+  jump_ifnot __L53
   push_int 0
   load r
   sub
   return
-__L55:
+__L53:
   load r
   return
   return_void
@@ -1772,40 +1732,40 @@ __L55:
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L57
+  jump_ifnot __L55
   load src
   call in_cur U8Array
   push_int 34
   eq
-  jump_ifnot __L57
+  jump_ifnot __L55
   push_int 1
-  jump __L58
-__L57:
+  jump __L56
+__L55:
   push_int 0
-__L58:
-  jump_ifnot __L56
+__L56:
+  jump_ifnot __L54
   load g_in_pos
   push_int 1
   add
   store g_in_pos
-__L56:
+__L54:
   push_int 0
   store done
-__L59:
+__L57:
   load done
   push_int 0
   eq
-  jump_ifnot __L61
+  jump_ifnot __L59
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L61
+  jump_ifnot __L59
   push_int 1
-  jump __L62
-__L61:
+  jump __L60
+__L59:
   push_int 0
-__L62:
-  jump_ifnot __L60
+__L60:
+  jump_ifnot __L58
   load src
   call in_cur U8Array
   store c
@@ -1818,26 +1778,26 @@ __L62:
   load c
   push_int 34
   eq
-  jump_ifnot __L63
+  jump_ifnot __L61
   push_int 1
   store done
   push_int 1
   store handled
-__L63:
+__L61:
   load handled
   push_int 0
   eq
-  jump_ifnot __L65
+  jump_ifnot __L63
   load c
   push_int 92
   eq
-  jump_ifnot __L65
+  jump_ifnot __L63
   push_int 1
-  jump __L66
-__L65:
+  jump __L64
+__L63:
   push_int 0
-__L66:
-  jump_ifnot __L64
+__L64:
+  jump_ifnot __L62
   load src
   call in_cur U8Array
   store e
@@ -1850,28 +1810,28 @@ __L66:
   load e
   push_int 110
   eq
-  jump_ifnot __L67
+  jump_ifnot __L65
   push_int 10
   store out
-__L67:
+__L65:
   load e
   push_int 114
   eq
-  jump_ifnot __L68
+  jump_ifnot __L66
   push_int 13
   store out
-__L68:
+__L66:
   load e
   push_int 116
   eq
-  jump_ifnot __L69
+  jump_ifnot __L67
   push_int 9
   store out
-__L69:
+__L67:
   load e
   push_int 120
   eq
-  jump_ifnot __L70
+  jump_ifnot __L68
   load src
   call in_cur U8Array
   store h1
@@ -1893,123 +1853,123 @@ __L69:
   load h1
   push_int 48
   ge
-  jump_ifnot __L72
+  jump_ifnot __L70
   load h1
   push_int 57
   le
-  jump_ifnot __L72
+  jump_ifnot __L70
   push_int 1
-  jump __L73
-__L72:
+  jump __L71
+__L70:
   push_int 0
-__L73:
-  jump_ifnot __L71
-  load h1
-  cast i32
-  push_int 48
-  sub
-  store v1
 __L71:
+  jump_ifnot __L69
+  load h1
+  cast i32
+  push_int 48
+  sub
+  store v1
+__L69:
   load h1
   push_int 65
   ge
-  jump_ifnot __L75
+  jump_ifnot __L73
   load h1
   push_int 70
   le
-  jump_ifnot __L75
+  jump_ifnot __L73
   push_int 1
-  jump __L76
-__L75:
+  jump __L74
+__L73:
   push_int 0
-__L76:
-  jump_ifnot __L74
+__L74:
+  jump_ifnot __L72
   load h1
   cast i32
   push_int 55
   sub
   store v1
-__L74:
+__L72:
   load h1
   push_int 97
   ge
-  jump_ifnot __L78
+  jump_ifnot __L76
   load h1
   push_int 102
   le
-  jump_ifnot __L78
+  jump_ifnot __L76
   push_int 1
-  jump __L79
-__L78:
+  jump __L77
+__L76:
   push_int 0
-__L79:
-  jump_ifnot __L77
+__L77:
+  jump_ifnot __L75
   load h1
   cast i32
   push_int 87
   sub
   store v1
-__L77:
+__L75:
   load h2
   push_int 48
   ge
-  jump_ifnot __L81
+  jump_ifnot __L79
   load h2
   push_int 57
   le
-  jump_ifnot __L81
+  jump_ifnot __L79
   push_int 1
-  jump __L82
-__L81:
+  jump __L80
+__L79:
   push_int 0
-__L82:
-  jump_ifnot __L80
+__L80:
+  jump_ifnot __L78
   load h2
   cast i32
   push_int 48
   sub
   store v2
-__L80:
+__L78:
   load h2
   push_int 65
   ge
-  jump_ifnot __L84
+  jump_ifnot __L82
   load h2
   push_int 70
   le
-  jump_ifnot __L84
+  jump_ifnot __L82
   push_int 1
-  jump __L85
-__L84:
+  jump __L83
+__L82:
   push_int 0
-__L85:
-  jump_ifnot __L83
+__L83:
+  jump_ifnot __L81
   load h2
   cast i32
   push_int 55
   sub
   store v2
-__L83:
+__L81:
   load h2
   push_int 97
   ge
-  jump_ifnot __L87
+  jump_ifnot __L85
   load h2
   push_int 102
   le
-  jump_ifnot __L87
+  jump_ifnot __L85
   push_int 1
-  jump __L88
-__L87:
+  jump __L86
+__L85:
   push_int 0
-__L88:
-  jump_ifnot __L86
+__L86:
+  jump_ifnot __L84
   load h2
   cast i32
   push_int 87
   sub
   store v2
-__L86:
+__L84:
   load v1
   push_int 16
   mul
@@ -2017,7 +1977,7 @@ __L86:
   add
   cast u8
   store out
-__L70:
+__L68:
   load strtab
   load g_stab_pos
   load out
@@ -2029,11 +1989,11 @@ __L70:
   store g_stab_pos
   push_int 1
   store handled
-__L64:
+__L62:
   load handled
   push_int 0
   eq
-  jump_ifnot __L89
+  jump_ifnot __L87
   load strtab
   load g_stab_pos
   load c
@@ -2043,9 +2003,9 @@ __L64:
   push_int 1
   add
   store g_stab_pos
-__L89:
-  jump __L59
-__L60:
+__L87:
+  jump __L57
+__L58:
   load start
   return
   return_void
@@ -2074,199 +2034,189 @@ __L60:
   load sl
   push_int 0
   gt
-  jump_ifnot __L90
+  jump_ifnot __L88
   load strtab
   load ss
   call get U8Array i32
   store a
-__L90:
+__L88:
   load sl
   push_int 1
   gt
-  jump_ifnot __L91
+  jump_ifnot __L89
   load strtab
   load ss
   push_int 1
   add
   call get U8Array i32
   store b
-__L91:
+__L89:
   load sl
   push_int 2
   gt
-  jump_ifnot __L92
+  jump_ifnot __L90
   load strtab
   load ss
   push_int 2
   add
   call get U8Array i32
   store c
-__L92:
+__L90:
   load sl
   push_int 3
   gt
-  jump_ifnot __L93
+  jump_ifnot __L91
   load strtab
   load ss
   push_int 3
   add
   call get U8Array i32
   store d
-__L93:
+__L91:
   load sl
   push_int 4
   gt
-  jump_ifnot __L94
+  jump_ifnot __L92
   load strtab
   load ss
   push_int 4
   add
   call get U8Array i32
   store e
-__L94:
+__L92:
   load sl
   push_int 2
   eq
-  jump_ifnot __L95
+  jump_ifnot __L93
   load a
   push_int 111
   eq
-  jump_ifnot __L97
+  jump_ifnot __L95
   load b
   push_int 114
   eq
-  jump_ifnot __L97
+  jump_ifnot __L95
   push_int 1
-  jump __L98
-__L97:
+  jump __L96
+__L95:
   push_int 0
-__L98:
-  jump_ifnot __L96
+__L96:
+  jump_ifnot __L94
   load OP_OR
   return
-__L96:
+__L94:
   load a
   push_int 101
   eq
-  jump_ifnot __L100
+  jump_ifnot __L98
   load b
   push_int 113
   eq
-  jump_ifnot __L100
+  jump_ifnot __L98
   push_int 1
-  jump __L101
-__L100:
+  jump __L99
+__L98:
   push_int 0
-__L101:
-  jump_ifnot __L99
+__L99:
+  jump_ifnot __L97
   load OP_EQ
   return
-__L99:
+__L97:
   load a
   push_int 110
   eq
-  jump_ifnot __L103
+  jump_ifnot __L101
   load b
   push_int 101
   eq
-  jump_ifnot __L103
+  jump_ifnot __L101
   push_int 1
-  jump __L104
-__L103:
+  jump __L102
+__L101:
   push_int 0
-__L104:
-  jump_ifnot __L102
+__L102:
+  jump_ifnot __L100
   load OP_NE
   return
-__L102:
+__L100:
   load a
   push_int 108
   eq
-  jump_ifnot __L106
+  jump_ifnot __L104
   load b
   push_int 116
   eq
-  jump_ifnot __L106
+  jump_ifnot __L104
   push_int 1
-  jump __L107
-__L106:
+  jump __L105
+__L104:
   push_int 0
-__L107:
-  jump_ifnot __L105
+__L105:
+  jump_ifnot __L103
   load OP_LT
   return
-__L105:
+__L103:
   load a
   push_int 108
   eq
-  jump_ifnot __L109
+  jump_ifnot __L107
   load b
   push_int 101
   eq
-  jump_ifnot __L109
+  jump_ifnot __L107
   push_int 1
-  jump __L110
-__L109:
+  jump __L108
+__L107:
   push_int 0
-__L110:
-  jump_ifnot __L108
+__L108:
+  jump_ifnot __L106
   load OP_LE
   return
-__L108:
+__L106:
   load a
   push_int 103
   eq
-  jump_ifnot __L112
+  jump_ifnot __L110
   load b
   push_int 116
   eq
-  jump_ifnot __L112
+  jump_ifnot __L110
   push_int 1
-  jump __L113
-__L112:
+  jump __L111
+__L110:
   push_int 0
-__L113:
-  jump_ifnot __L111
+__L111:
+  jump_ifnot __L109
   load OP_GT
   return
-__L111:
+__L109:
   load a
   push_int 103
   eq
-  jump_ifnot __L115
+  jump_ifnot __L113
   load b
   push_int 101
   eq
-  jump_ifnot __L115
+  jump_ifnot __L113
   push_int 1
-  jump __L116
-__L115:
+  jump __L114
+__L113:
   push_int 0
-__L116:
-  jump_ifnot __L114
+__L114:
+  jump_ifnot __L112
   load OP_GE
   return
-__L114:
-__L95:
+__L112:
+__L93:
   load sl
   push_int 3
   eq
-  jump_ifnot __L117
+  jump_ifnot __L115
   load a
   push_int 97
   eq
-  jump_ifnot __L121
-  load b
-  push_int 100
-  eq
-  jump_ifnot __L121
-  push_int 1
-  jump __L122
-__L121:
-  push_int 0
-__L122:
   jump_ifnot __L119
-  load c
+  load b
   push_int 100
   eq
   jump_ifnot __L119
@@ -2275,26 +2225,26 @@ __L122:
 __L119:
   push_int 0
 __L120:
-  jump_ifnot __L118
+  jump_ifnot __L117
+  load c
+  push_int 100
+  eq
+  jump_ifnot __L117
+  push_int 1
+  jump __L118
+__L117:
+  push_int 0
+__L118:
+  jump_ifnot __L116
   load OP_ADD
   return
-__L118:
+__L116:
   load a
   push_int 115
   eq
-  jump_ifnot __L126
+  jump_ifnot __L124
   load b
   push_int 117
-  eq
-  jump_ifnot __L126
-  push_int 1
-  jump __L127
-__L126:
-  push_int 0
-__L127:
-  jump_ifnot __L124
-  load c
-  push_int 98
   eq
   jump_ifnot __L124
   push_int 1
@@ -2302,26 +2252,26 @@ __L127:
 __L124:
   push_int 0
 __L125:
-  jump_ifnot __L123
+  jump_ifnot __L122
+  load c
+  push_int 98
+  eq
+  jump_ifnot __L122
+  push_int 1
+  jump __L123
+__L122:
+  push_int 0
+__L123:
+  jump_ifnot __L121
   load OP_SUB
   return
-__L123:
+__L121:
   load a
   push_int 109
   eq
-  jump_ifnot __L131
+  jump_ifnot __L129
   load b
   push_int 117
-  eq
-  jump_ifnot __L131
-  push_int 1
-  jump __L132
-__L131:
-  push_int 0
-__L132:
-  jump_ifnot __L129
-  load c
-  push_int 108
   eq
   jump_ifnot __L129
   push_int 1
@@ -2329,26 +2279,26 @@ __L132:
 __L129:
   push_int 0
 __L130:
-  jump_ifnot __L128
+  jump_ifnot __L127
+  load c
+  push_int 108
+  eq
+  jump_ifnot __L127
+  push_int 1
+  jump __L128
+__L127:
+  push_int 0
+__L128:
+  jump_ifnot __L126
   load OP_MUL
   return
-__L128:
+__L126:
   load a
   push_int 100
   eq
-  jump_ifnot __L136
+  jump_ifnot __L134
   load b
   push_int 105
-  eq
-  jump_ifnot __L136
-  push_int 1
-  jump __L137
-__L136:
-  push_int 0
-__L137:
-  jump_ifnot __L134
-  load c
-  push_int 118
   eq
   jump_ifnot __L134
   push_int 1
@@ -2356,26 +2306,26 @@ __L137:
 __L134:
   push_int 0
 __L135:
-  jump_ifnot __L133
+  jump_ifnot __L132
+  load c
+  push_int 118
+  eq
+  jump_ifnot __L132
+  push_int 1
+  jump __L133
+__L132:
+  push_int 0
+__L133:
+  jump_ifnot __L131
   load OP_DIV
   return
-__L133:
+__L131:
   load a
   push_int 109
   eq
-  jump_ifnot __L141
+  jump_ifnot __L139
   load b
   push_int 111
-  eq
-  jump_ifnot __L141
-  push_int 1
-  jump __L142
-__L141:
-  push_int 0
-__L142:
-  jump_ifnot __L139
-  load c
-  push_int 100
   eq
   jump_ifnot __L139
   push_int 1
@@ -2383,26 +2333,26 @@ __L142:
 __L139:
   push_int 0
 __L140:
-  jump_ifnot __L138
+  jump_ifnot __L137
+  load c
+  push_int 100
+  eq
+  jump_ifnot __L137
+  push_int 1
+  jump __L138
+__L137:
+  push_int 0
+__L138:
+  jump_ifnot __L136
   load OP_MOD
   return
-__L138:
+__L136:
   load a
   push_int 97
   eq
-  jump_ifnot __L146
+  jump_ifnot __L144
   load b
   push_int 110
-  eq
-  jump_ifnot __L146
-  push_int 1
-  jump __L147
-__L146:
-  push_int 0
-__L147:
-  jump_ifnot __L144
-  load c
-  push_int 100
   eq
   jump_ifnot __L144
   push_int 1
@@ -2410,26 +2360,26 @@ __L147:
 __L144:
   push_int 0
 __L145:
-  jump_ifnot __L143
+  jump_ifnot __L142
+  load c
+  push_int 100
+  eq
+  jump_ifnot __L142
+  push_int 1
+  jump __L143
+__L142:
+  push_int 0
+__L143:
+  jump_ifnot __L141
   load OP_AND
   return
-__L143:
+__L141:
   load a
   push_int 120
   eq
-  jump_ifnot __L151
+  jump_ifnot __L149
   load b
   push_int 111
-  eq
-  jump_ifnot __L151
-  push_int 1
-  jump __L152
-__L151:
-  push_int 0
-__L152:
-  jump_ifnot __L149
-  load c
-  push_int 114
   eq
   jump_ifnot __L149
   push_int 1
@@ -2437,26 +2387,26 @@ __L152:
 __L149:
   push_int 0
 __L150:
-  jump_ifnot __L148
+  jump_ifnot __L147
+  load c
+  push_int 114
+  eq
+  jump_ifnot __L147
+  push_int 1
+  jump __L148
+__L147:
+  push_int 0
+__L148:
+  jump_ifnot __L146
   load OP_XOR
   return
-__L148:
+__L146:
   load a
   push_int 115
   eq
-  jump_ifnot __L156
+  jump_ifnot __L154
   load b
   push_int 104
-  eq
-  jump_ifnot __L156
-  push_int 1
-  jump __L157
-__L156:
-  push_int 0
-__L157:
-  jump_ifnot __L154
-  load c
-  push_int 108
   eq
   jump_ifnot __L154
   push_int 1
@@ -2464,26 +2414,26 @@ __L157:
 __L154:
   push_int 0
 __L155:
-  jump_ifnot __L153
+  jump_ifnot __L152
+  load c
+  push_int 108
+  eq
+  jump_ifnot __L152
+  push_int 1
+  jump __L153
+__L152:
+  push_int 0
+__L153:
+  jump_ifnot __L151
   load OP_SHL
   return
-__L153:
+__L151:
   load a
   push_int 115
   eq
-  jump_ifnot __L161
+  jump_ifnot __L159
   load b
   push_int 104
-  eq
-  jump_ifnot __L161
-  push_int 1
-  jump __L162
-__L161:
-  push_int 0
-__L162:
-  jump_ifnot __L159
-  load c
-  push_int 114
   eq
   jump_ifnot __L159
   push_int 1
@@ -2491,26 +2441,26 @@ __L162:
 __L159:
   push_int 0
 __L160:
-  jump_ifnot __L158
+  jump_ifnot __L157
+  load c
+  push_int 114
+  eq
+  jump_ifnot __L157
+  push_int 1
+  jump __L158
+__L157:
+  push_int 0
+__L158:
+  jump_ifnot __L156
   load OP_SHR
   return
-__L158:
+__L156:
   load a
   push_int 112
   eq
-  jump_ifnot __L166
+  jump_ifnot __L164
   load b
   push_int 111
-  eq
-  jump_ifnot __L166
-  push_int 1
-  jump __L167
-__L166:
-  push_int 0
-__L167:
-  jump_ifnot __L164
-  load c
-  push_int 112
   eq
   jump_ifnot __L164
   push_int 1
@@ -2518,26 +2468,26 @@ __L167:
 __L164:
   push_int 0
 __L165:
-  jump_ifnot __L163
+  jump_ifnot __L162
+  load c
+  push_int 112
+  eq
+  jump_ifnot __L162
+  push_int 1
+  jump __L163
+__L162:
+  push_int 0
+__L163:
+  jump_ifnot __L161
   load OP_POP
   return
-__L163:
+__L161:
   load a
   push_int 110
   eq
-  jump_ifnot __L171
+  jump_ifnot __L169
   load b
   push_int 101
-  eq
-  jump_ifnot __L171
-  push_int 1
-  jump __L172
-__L171:
-  push_int 0
-__L172:
-  jump_ifnot __L169
-  load c
-  push_int 103
   eq
   jump_ifnot __L169
   push_int 1
@@ -2545,31 +2495,31 @@ __L172:
 __L169:
   push_int 0
 __L170:
-  jump_ifnot __L168
+  jump_ifnot __L167
+  load c
+  push_int 103
+  eq
+  jump_ifnot __L167
+  push_int 1
+  jump __L168
+__L167:
+  push_int 0
+__L168:
+  jump_ifnot __L166
   load OP_NEG
   return
-__L168:
-__L117:
+__L166:
+__L115:
   load sl
   push_int 4
   eq
-  jump_ifnot __L173
+  jump_ifnot __L171
   load a
   push_int 108
   eq
-  jump_ifnot __L179
+  jump_ifnot __L177
   load b
   push_int 110
-  eq
-  jump_ifnot __L179
-  push_int 1
-  jump __L180
-__L179:
-  push_int 0
-__L180:
-  jump_ifnot __L177
-  load c
-  push_int 111
   eq
   jump_ifnot __L177
   push_int 1
@@ -2578,8 +2528,8 @@ __L177:
   push_int 0
 __L178:
   jump_ifnot __L175
-  load d
-  push_int 116
+  load c
+  push_int 111
   eq
   jump_ifnot __L175
   push_int 1
@@ -2587,26 +2537,26 @@ __L178:
 __L175:
   push_int 0
 __L176:
-  jump_ifnot __L174
+  jump_ifnot __L173
+  load d
+  push_int 116
+  eq
+  jump_ifnot __L173
+  push_int 1
+  jump __L174
+__L173:
+  push_int 0
+__L174:
+  jump_ifnot __L172
   load OP_LNOT
   return
-__L174:
+__L172:
   load a
   push_int 99
   eq
-  jump_ifnot __L186
+  jump_ifnot __L184
   load b
   push_int 97
-  eq
-  jump_ifnot __L186
-  push_int 1
-  jump __L187
-__L186:
-  push_int 0
-__L187:
-  jump_ifnot __L184
-  load c
-  push_int 115
   eq
   jump_ifnot __L184
   push_int 1
@@ -2615,8 +2565,8 @@ __L184:
   push_int 0
 __L185:
   jump_ifnot __L182
-  load d
-  push_int 116
+  load c
+  push_int 115
   eq
   jump_ifnot __L182
   push_int 1
@@ -2624,26 +2574,26 @@ __L185:
 __L182:
   push_int 0
 __L183:
-  jump_ifnot __L181
+  jump_ifnot __L180
+  load d
+  push_int 116
+  eq
+  jump_ifnot __L180
+  push_int 1
+  jump __L181
+__L180:
+  push_int 0
+__L181:
+  jump_ifnot __L179
   load OP_CAST
   return
-__L181:
+__L179:
   load a
   push_int 108
   eq
-  jump_ifnot __L193
+  jump_ifnot __L191
   load b
   push_int 111
-  eq
-  jump_ifnot __L193
-  push_int 1
-  jump __L194
-__L193:
-  push_int 0
-__L194:
-  jump_ifnot __L191
-  load c
-  push_int 97
   eq
   jump_ifnot __L191
   push_int 1
@@ -2652,8 +2602,8 @@ __L191:
   push_int 0
 __L192:
   jump_ifnot __L189
-  load d
-  push_int 100
+  load c
+  push_int 97
   eq
   jump_ifnot __L189
   push_int 1
@@ -2661,26 +2611,26 @@ __L192:
 __L189:
   push_int 0
 __L190:
-  jump_ifnot __L188
+  jump_ifnot __L187
+  load d
+  push_int 100
+  eq
+  jump_ifnot __L187
+  push_int 1
+  jump __L188
+__L187:
+  push_int 0
+__L188:
+  jump_ifnot __L186
   load OP_LOAD
   return
-__L188:
+__L186:
   load a
   push_int 106
   eq
-  jump_ifnot __L200
+  jump_ifnot __L198
   load b
   push_int 117
-  eq
-  jump_ifnot __L200
-  push_int 1
-  jump __L201
-__L200:
-  push_int 0
-__L201:
-  jump_ifnot __L198
-  load c
-  push_int 109
   eq
   jump_ifnot __L198
   push_int 1
@@ -2689,8 +2639,8 @@ __L198:
   push_int 0
 __L199:
   jump_ifnot __L196
-  load d
-  push_int 112
+  load c
+  push_int 109
   eq
   jump_ifnot __L196
   push_int 1
@@ -2698,26 +2648,26 @@ __L199:
 __L196:
   push_int 0
 __L197:
-  jump_ifnot __L195
+  jump_ifnot __L194
+  load d
+  push_int 112
+  eq
+  jump_ifnot __L194
+  push_int 1
+  jump __L195
+__L194:
+  push_int 0
+__L195:
+  jump_ifnot __L193
   load OP_JUMP
   return
-__L195:
+__L193:
   load a
   push_int 99
   eq
-  jump_ifnot __L207
+  jump_ifnot __L205
   load b
   push_int 97
-  eq
-  jump_ifnot __L207
-  push_int 1
-  jump __L208
-__L207:
-  push_int 0
-__L208:
-  jump_ifnot __L205
-  load c
-  push_int 108
   eq
   jump_ifnot __L205
   push_int 1
@@ -2726,7 +2676,7 @@ __L205:
   push_int 0
 __L206:
   jump_ifnot __L203
-  load d
+  load c
   push_int 108
   eq
   jump_ifnot __L203
@@ -2735,31 +2685,31 @@ __L206:
 __L203:
   push_int 0
 __L204:
-  jump_ifnot __L202
+  jump_ifnot __L201
+  load d
+  push_int 108
+  eq
+  jump_ifnot __L201
+  push_int 1
+  jump __L202
+__L201:
+  push_int 0
+__L202:
+  jump_ifnot __L200
   load OP_CALL
   return
-__L202:
-__L173:
+__L200:
+__L171:
   load sl
   push_int 5
   eq
-  jump_ifnot __L209
+  jump_ifnot __L207
   load a
   push_int 115
   eq
-  jump_ifnot __L217
+  jump_ifnot __L215
   load b
   push_int 116
-  eq
-  jump_ifnot __L217
-  push_int 1
-  jump __L218
-__L217:
-  push_int 0
-__L218:
-  jump_ifnot __L215
-  load c
-  push_int 111
   eq
   jump_ifnot __L215
   push_int 1
@@ -2768,8 +2718,8 @@ __L215:
   push_int 0
 __L216:
   jump_ifnot __L213
-  load d
-  push_int 114
+  load c
+  push_int 111
   eq
   jump_ifnot __L213
   push_int 1
@@ -2778,8 +2728,8 @@ __L213:
   push_int 0
 __L214:
   jump_ifnot __L211
-  load e
-  push_int 101
+  load d
+  push_int 114
   eq
   jump_ifnot __L211
   push_int 1
@@ -2787,31 +2737,31 @@ __L214:
 __L211:
   push_int 0
 __L212:
-  jump_ifnot __L210
+  jump_ifnot __L209
+  load e
+  push_int 101
+  eq
+  jump_ifnot __L209
+  push_int 1
+  jump __L210
+__L209:
+  push_int 0
+__L210:
+  jump_ifnot __L208
   load OP_STORE
   return
-__L210:
-__L209:
+__L208:
+__L207:
   load sl
   push_int 6
   eq
-  jump_ifnot __L219
+  jump_ifnot __L217
   load a
   push_int 114
   eq
-  jump_ifnot __L223
+  jump_ifnot __L221
   load b
   push_int 101
-  eq
-  jump_ifnot __L223
-  push_int 1
-  jump __L224
-__L223:
-  push_int 0
-__L224:
-  jump_ifnot __L221
-  load c
-  push_int 116
   eq
   jump_ifnot __L221
   push_int 1
@@ -2819,31 +2769,31 @@ __L224:
 __L221:
   push_int 0
 __L222:
-  jump_ifnot __L220
+  jump_ifnot __L219
+  load c
+  push_int 116
+  eq
+  jump_ifnot __L219
+  push_int 1
+  jump __L220
+__L219:
+  push_int 0
+__L220:
+  jump_ifnot __L218
   load OP_RETURN
   return
-__L220:
-__L219:
+__L218:
+__L217:
   load sl
   push_int 7
   eq
-  jump_ifnot __L225
+  jump_ifnot __L223
   load a
   push_int 106
   eq
-  jump_ifnot __L233
+  jump_ifnot __L231
   load b
   push_int 117
-  eq
-  jump_ifnot __L233
-  push_int 1
-  jump __L234
-__L233:
-  push_int 0
-__L234:
-  jump_ifnot __L231
-  load c
-  push_int 109
   eq
   jump_ifnot __L231
   push_int 1
@@ -2852,8 +2802,8 @@ __L231:
   push_int 0
 __L232:
   jump_ifnot __L229
-  load d
-  push_int 112
+  load c
+  push_int 109
   eq
   jump_ifnot __L229
   push_int 1
@@ -2862,8 +2812,8 @@ __L229:
   push_int 0
 __L230:
   jump_ifnot __L227
-  load e
-  push_int 95
+  load d
+  push_int 112
   eq
   jump_ifnot __L227
   push_int 1
@@ -2871,7 +2821,17 @@ __L230:
 __L227:
   push_int 0
 __L228:
-  jump_ifnot __L226
+  jump_ifnot __L225
+  load e
+  push_int 95
+  eq
+  jump_ifnot __L225
+  push_int 1
+  jump __L226
+__L225:
+  push_int 0
+__L226:
+  jump_ifnot __L224
   load strtab
   load ss
   push_int 5
@@ -2881,32 +2841,22 @@ __L228:
   load f
   push_int 105
   eq
-  jump_ifnot __L235
+  jump_ifnot __L233
   load OP_JUMP_IF
   return
-__L235:
-__L226:
-__L225:
+__L233:
+__L224:
+__L223:
   load sl
   push_int 8
   eq
-  jump_ifnot __L236
+  jump_ifnot __L234
   load a
   push_int 112
   eq
-  jump_ifnot __L244
+  jump_ifnot __L242
   load b
   push_int 117
-  eq
-  jump_ifnot __L244
-  push_int 1
-  jump __L245
-__L244:
-  push_int 0
-__L245:
-  jump_ifnot __L242
-  load c
-  push_int 115
   eq
   jump_ifnot __L242
   push_int 1
@@ -2915,8 +2865,8 @@ __L242:
   push_int 0
 __L243:
   jump_ifnot __L240
-  load d
-  push_int 104
+  load c
+  push_int 115
   eq
   jump_ifnot __L240
   push_int 1
@@ -2925,8 +2875,8 @@ __L240:
   push_int 0
 __L241:
   jump_ifnot __L238
-  load e
-  push_int 95
+  load d
+  push_int 104
   eq
   jump_ifnot __L238
   push_int 1
@@ -2934,7 +2884,17 @@ __L241:
 __L238:
   push_int 0
 __L239:
-  jump_ifnot __L237
+  jump_ifnot __L236
+  load e
+  push_int 95
+  eq
+  jump_ifnot __L236
+  push_int 1
+  jump __L237
+__L236:
+  push_int 0
+__L237:
+  jump_ifnot __L235
   load strtab
   load ss
   push_int 5
@@ -2944,53 +2904,53 @@ __L239:
   load f
   push_int 105
   eq
-  jump_ifnot __L246
+  jump_ifnot __L244
   load OP_PUSH_INT
   return
-__L246:
+__L244:
   load f
   push_int 115
   eq
-  jump_ifnot __L247
+  jump_ifnot __L245
   load OP_PUSH_STR
   return
-__L247:
-__L237:
-__L236:
+__L245:
+__L235:
+__L234:
   load sl
   push_int 10
   eq
-  jump_ifnot __L248
+  jump_ifnot __L246
   load a
   push_int 106
   eq
-  jump_ifnot __L249
+  jump_ifnot __L247
   load OP_JUMP_IFNOT
   return
-__L249:
-__L248:
+__L247:
+__L246:
   load sl
   push_int 11
   eq
-  jump_ifnot __L250
+  jump_ifnot __L248
   load a
   push_int 114
   eq
-  jump_ifnot __L252
+  jump_ifnot __L250
   load b
   push_int 101
   eq
-  jump_ifnot __L252
+  jump_ifnot __L250
   push_int 1
-  jump __L253
-__L252:
+  jump __L251
+__L250:
   push_int 0
-__L253:
-  jump_ifnot __L251
+__L251:
+  jump_ifnot __L249
   load OP_RETURN_VOID
   return
-__L251:
-__L250:
+__L249:
+__L248:
   push_int 1
   neg
   return
@@ -3275,11 +3235,11 @@ __L250:
   push_int 3
   add
   store i
-__L254:
+__L252:
   load i
   load to
   lt
-  jump_ifnot __L255
+  jump_ifnot __L253
   load src
   load i
   call get U8Array i32
@@ -3287,17 +3247,17 @@ __L254:
   load c
   push_int 48
   ge
-  jump_ifnot __L257
+  jump_ifnot __L255
   load c
   push_int 57
   le
-  jump_ifnot __L257
+  jump_ifnot __L255
   push_int 1
-  jump __L258
-__L257:
+  jump __L256
+__L255:
   push_int 0
-__L258:
-  jump_ifnot __L256
+__L256:
+  jump_ifnot __L254
   load r
   push_int 10
   mul
@@ -3307,13 +3267,13 @@ __L258:
   sub
   add
   store r
-__L256:
+__L254:
   load i
   push_int 1
   add
   store i
-  jump __L254
-__L255:
+  jump __L252
+__L253:
   load r
   return
   return_void
@@ -3372,101 +3332,91 @@ __L255:
   store cur_fn
   push_int 0
   store done
-__L259:
+__L257:
   load done
   push_int 0
   eq
-  jump_ifnot __L261
+  jump_ifnot __L259
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L261
+  jump_ifnot __L259
   push_int 1
-  jump __L262
-__L261:
+  jump __L260
+__L259:
   push_int 0
-__L262:
-  jump_ifnot __L260
+__L260:
+  jump_ifnot __L258
   load src
   call skip_spaces U8Array
   pop
   load g_in_pos
   load g_in_len
   ge
-  jump_ifnot __L263
+  jump_ifnot __L261
   push_int 1
   store done
-__L263:
+__L261:
   load done
   push_int 0
   eq
-  jump_ifnot __L264
+  jump_ifnot __L262
   load src
   call in_cur U8Array
   store c
   load c
   push_int 10
   eq
-  jump_if __L266
+  jump_if __L264
   load c
   push_int 13
   eq
-  jump_if __L266
+  jump_if __L264
   push_int 0
-  jump __L267
-__L266:
+  jump __L265
+__L264:
   push_int 1
-__L267:
-  jump_ifnot __L265
+__L265:
+  jump_ifnot __L263
   load g_in_pos
   push_int 1
   add
   store g_in_pos
-__L265:
+__L263:
   load c
   push_int 10
   ne
-  jump_ifnot __L271
+  jump_ifnot __L269
   load c
   push_int 13
   ne
-  jump_ifnot __L271
-  push_int 1
-  jump __L272
-__L271:
-  push_int 0
-__L272:
-  jump_ifnot __L269
-  load c
-  push_int 59
-  eq
   jump_ifnot __L269
   push_int 1
   jump __L270
 __L269:
   push_int 0
 __L270:
-  jump_ifnot __L268
+  jump_ifnot __L267
+  load c
+  push_int 59
+  eq
+  jump_ifnot __L267
+  push_int 1
+  jump __L268
+__L267:
+  push_int 0
+__L268:
+  jump_ifnot __L266
   load src
   call skip_line U8Array
   pop
-__L268:
+__L266:
   load c
   push_int 10
   ne
-  jump_ifnot __L278
-  load c
-  push_int 13
-  ne
-  jump_ifnot __L278
-  push_int 1
-  jump __L279
-__L278:
-  push_int 0
-__L279:
   jump_ifnot __L276
   load c
-  push_int 59
+  push_int 13
   ne
   jump_ifnot __L276
   push_int 1
@@ -3476,15 +3426,25 @@ __L276:
 __L277:
   jump_ifnot __L274
   load c
-  push_int 46
-  eq
+  push_int 59
+  ne
   jump_ifnot __L274
   push_int 1
   jump __L275
 __L274:
   push_int 0
 __L275:
-  jump_ifnot __L273
+  jump_ifnot __L272
+  load c
+  push_int 46
+  eq
+  jump_ifnot __L272
+  push_int 1
+  jump __L273
+__L272:
+  push_int 0
+__L273:
+  jump_ifnot __L271
   load g_in_pos
   push_int 1
   add
@@ -3503,37 +3463,37 @@ __L275:
   load dir_sl
   push_int 0
   gt
-  jump_ifnot __L280
+  jump_ifnot __L278
   load strtab
   load dir_ss
   call get U8Array i32
   store d0
-__L280:
+__L278:
   load dir_sl
   push_int 1
   gt
-  jump_ifnot __L281
+  jump_ifnot __L279
   load strtab
   load dir_ss
   push_int 1
   add
   call get U8Array i32
   store d1
-__L281:
+__L279:
   load d0
   push_int 115
   eq
-  jump_ifnot __L283
+  jump_ifnot __L281
   load d1
   push_int 116
   eq
-  jump_ifnot __L283
+  jump_ifnot __L281
   push_int 1
-  jump __L284
-__L283:
+  jump __L282
+__L281:
   push_int 0
-__L284:
-  jump_ifnot __L282
+__L282:
+  jump_ifnot __L280
   load dir_ss
   call discard_tok i32
   pop
@@ -3584,30 +3544,30 @@ __L284:
   add
   load g_nstrings
   gt
-  jump_ifnot __L285
+  jump_ifnot __L283
   load idx
   push_int 1
   add
   store g_nstrings
-__L285:
+__L283:
   load src
   call skip_line U8Array
   pop
-__L282:
+__L280:
   load d0
   push_int 103
   eq
-  jump_ifnot __L287
+  jump_ifnot __L285
   load d1
   push_int 108
   eq
-  jump_ifnot __L287
+  jump_ifnot __L285
   push_int 1
-  jump __L288
-__L287:
+  jump __L286
+__L285:
   push_int 0
-__L288:
-  jump_ifnot __L286
+__L286:
+  jump_ifnot __L284
   load dir_ss
   call discard_tok i32
   pop
@@ -3672,21 +3632,21 @@ __L288:
   load src
   call skip_line U8Array
   pop
-__L286:
+__L284:
   load d0
   push_int 102
   eq
-  jump_ifnot __L290
+  jump_ifnot __L288
   load d1
   push_int 110
   eq
-  jump_ifnot __L290
+  jump_ifnot __L288
   push_int 1
-  jump __L291
-__L290:
+  jump __L289
+__L288:
   push_int 0
-__L291:
-  jump_ifnot __L289
+__L289:
+  jump_ifnot __L287
   load dir_ss
   call discard_tok i32
   pop
@@ -3699,22 +3659,22 @@ __L291:
   load src
   call skip_spaces U8Array
   pop
-__L292:
+__L290:
   load src
   call in_cur U8Array
   push_int 10
   ne
-  jump_ifnot __L294
+  jump_ifnot __L292
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L294
+  jump_ifnot __L292
   push_int 1
-  jump __L295
-__L294:
+  jump __L293
+__L292:
   push_int 0
-__L295:
-  jump_ifnot __L293
+__L293:
+  jump_ifnot __L291
   load g_stab_pos
   store prev_under
   load strtab
@@ -3742,8 +3702,8 @@ __L295:
   load src
   call skip_spaces U8Array
   pop
-  jump __L292
-__L293:
+  jump __L290
+__L291:
   load prev_under
   store g_stab_pos
   load g_stab_pos
@@ -3807,21 +3767,21 @@ __L293:
   load src
   call skip_line U8Array
   pop
-__L289:
+__L287:
   load d0
   push_int 112
   eq
-  jump_ifnot __L297
+  jump_ifnot __L295
   load d1
   push_int 97
   eq
-  jump_ifnot __L297
+  jump_ifnot __L295
   push_int 1
-  jump __L298
-__L297:
+  jump __L296
+__L295:
   push_int 0
-__L298:
-  jump_ifnot __L296
+__L296:
+  jump_ifnot __L294
   load dir_ss
   call discard_tok i32
   pop
@@ -3858,7 +3818,7 @@ __L298:
   load cur_fn
   push_int 0
   ge
-  jump_ifnot __L299
+  jump_ifnot __L297
   load fns
   load cur_fn
   push_int 5
@@ -3869,25 +3829,25 @@ __L298:
   add
   call fn_set I32Array i32 i32 i32
   pop
-__L299:
+__L297:
   load src
   call skip_line U8Array
   pop
-__L296:
+__L294:
   load d0
   push_int 108
   eq
-  jump_ifnot __L301
+  jump_ifnot __L299
   load d1
   push_int 111
   eq
-  jump_ifnot __L301
+  jump_ifnot __L299
   push_int 1
-  jump __L302
-__L301:
+  jump __L300
+__L299:
   push_int 0
-__L302:
-  jump_ifnot __L300
+__L300:
+  jump_ifnot __L298
   load dir_ss
   call discard_tok i32
   pop
@@ -3924,7 +3884,7 @@ __L302:
   load cur_fn
   push_int 0
   ge
-  jump_ifnot __L303
+  jump_ifnot __L301
   load fns
   load cur_fn
   push_int 7
@@ -3935,65 +3895,65 @@ __L302:
   add
   call fn_set I32Array i32 i32 i32
   pop
-__L303:
+__L301:
   load src
   call skip_line U8Array
   pop
-__L300:
+__L298:
   push_int 0
   store d3b
   load dir_sl
   push_int 3
   gt
-  jump_ifnot __L304
+  jump_ifnot __L302
   load strtab
   load dir_ss
   push_int 3
   add
   call get U8Array i32
   store d3b
-__L304:
+__L302:
   load d0
   push_int 101
   eq
-  jump_ifnot __L306
+  jump_ifnot __L304
   load d3b
   push_int 98
   eq
-  jump_ifnot __L306
+  jump_ifnot __L304
   push_int 1
-  jump __L307
-__L306:
+  jump __L305
+__L304:
   push_int 0
-__L307:
-  jump_ifnot __L305
+__L305:
+  jump_ifnot __L303
   load dir_ss
   call discard_tok i32
   pop
   push_int 1
   store done
-__L305:
+__L303:
   load d0
   push_int 101
   eq
-  jump_ifnot __L309
+  jump_ifnot __L307
   load d3b
   push_int 98
   ne
-  jump_ifnot __L309
+  jump_ifnot __L307
   push_int 1
-  jump __L310
-__L309:
+  jump __L308
+__L307:
   push_int 0
-__L310:
-  jump_ifnot __L308
+__L308:
+  jump_ifnot __L306
   load dir_ss
   call discard_tok i32
   pop
   load cur_fn
   push_int 0
   ge
-  jump_ifnot __L311
+  jump_ifnot __L309
   load fns
   load cur_fn
   call fn_instr_base I32Array i32
@@ -4004,11 +3964,11 @@ __L310:
   store ni
   push_int 0
   store ii
-__L312:
+__L310:
   load ii
   load ni
   lt
-  jump_ifnot __L313
+  jump_ifnot __L311
   load instrs
   load ib
   load ii
@@ -4017,19 +3977,9 @@ __L312:
   load op2
   load OP_JUMP
   eq
-  jump_if __L317
-  load op2
-  load OP_JUMP_IF
-  eq
-  jump_if __L317
-  push_int 0
-  jump __L318
-__L317:
-  push_int 1
-__L318:
   jump_if __L315
   load op2
-  load OP_JUMP_IFNOT
+  load OP_JUMP_IF
   eq
   jump_if __L315
   push_int 0
@@ -4037,7 +3987,17 @@ __L318:
 __L315:
   push_int 1
 __L316:
-  jump_ifnot __L314
+  jump_if __L313
+  load op2
+  load OP_JUMP_IFNOT
+  eq
+  jump_if __L313
+  push_int 0
+  jump __L314
+__L313:
+  push_int 1
+__L314:
+  jump_ifnot __L312
   load instrs
   load ib
   load ii
@@ -4052,37 +4012,27 @@ __L316:
   call get I32Array i32
   call ins_set I32Array i32 i32 i32 i32
   pop
-__L314:
+__L312:
   load ii
   push_int 1
   add
   store ii
-  jump __L312
-__L313:
+  jump __L310
 __L311:
+__L309:
   push_int 1
   neg
   store cur_fn
   load src
   call skip_line U8Array
   pop
-__L308:
+__L306:
   load d0
   push_int 115
   ne
-  jump_ifnot __L328
-  load d0
-  push_int 103
-  ne
-  jump_ifnot __L328
-  push_int 1
-  jump __L329
-__L328:
-  push_int 0
-__L329:
   jump_ifnot __L326
   load d0
-  push_int 102
+  push_int 103
   ne
   jump_ifnot __L326
   push_int 1
@@ -4092,7 +4042,7 @@ __L326:
 __L327:
   jump_ifnot __L324
   load d0
-  push_int 112
+  push_int 102
   ne
   jump_ifnot __L324
   push_int 1
@@ -4102,7 +4052,7 @@ __L324:
 __L325:
   jump_ifnot __L322
   load d0
-  push_int 108
+  push_int 112
   ne
   jump_ifnot __L322
   push_int 1
@@ -4112,7 +4062,7 @@ __L322:
 __L323:
   jump_ifnot __L320
   load d0
-  push_int 101
+  push_int 108
   ne
   jump_ifnot __L320
   push_int 1
@@ -4120,31 +4070,31 @@ __L323:
 __L320:
   push_int 0
 __L321:
-  jump_ifnot __L319
+  jump_ifnot __L318
+  load d0
+  push_int 101
+  ne
+  jump_ifnot __L318
+  push_int 1
+  jump __L319
+__L318:
+  push_int 0
+__L319:
+  jump_ifnot __L317
   load dir_ss
   call discard_tok i32
   pop
   load src
   call skip_line U8Array
   pop
-__L319:
-__L273:
+__L317:
+__L271:
   load c
   push_int 10
   ne
-  jump_ifnot __L337
-  load c
-  push_int 13
-  ne
-  jump_ifnot __L337
-  push_int 1
-  jump __L338
-__L337:
-  push_int 0
-__L338:
   jump_ifnot __L335
   load c
-  push_int 59
+  push_int 13
   ne
   jump_ifnot __L335
   push_int 1
@@ -4154,7 +4104,7 @@ __L335:
 __L336:
   jump_ifnot __L333
   load c
-  push_int 46
+  push_int 59
   ne
   jump_ifnot __L333
   push_int 1
@@ -4164,65 +4114,75 @@ __L333:
 __L334:
   jump_ifnot __L331
   load c
-  push_int 95
-  eq
+  push_int 46
+  ne
   jump_ifnot __L331
   push_int 1
   jump __L332
 __L331:
   push_int 0
 __L332:
-  jump_ifnot __L330
+  jump_ifnot __L329
+  load c
+  push_int 95
+  eq
+  jump_ifnot __L329
+  push_int 1
+  jump __L330
+__L329:
+  push_int 0
+__L330:
+  jump_ifnot __L328
   load g_in_pos
   store lbl_start
-__L339:
+__L337:
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L343
+  jump_ifnot __L341
   load src
   call in_cur U8Array
   push_int 58
   ne
-  jump_ifnot __L343
-  push_int 1
-  jump __L344
-__L343:
-  push_int 0
-__L344:
-  jump_ifnot __L341
-  load src
-  call in_cur U8Array
-  call is_ws u8
-  lnot
   jump_ifnot __L341
   push_int 1
   jump __L342
 __L341:
   push_int 0
 __L342:
-  jump_ifnot __L340
+  jump_ifnot __L339
+  load src
+  call in_cur U8Array
+  call is_ws u8
+  lnot
+  jump_ifnot __L339
+  push_int 1
+  jump __L340
+__L339:
+  push_int 0
+__L340:
+  jump_ifnot __L338
   load g_in_pos
   push_int 1
   add
   store g_in_pos
-  jump __L339
-__L340:
+  jump __L337
+__L338:
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L346
+  jump_ifnot __L344
   load src
   call in_cur U8Array
   push_int 58
   eq
-  jump_ifnot __L346
+  jump_ifnot __L344
   push_int 1
-  jump __L347
-__L346:
+  jump __L345
+__L344:
   push_int 0
-__L347:
-  jump_ifnot __L345
+__L345:
+  jump_ifnot __L343
   load src
   load lbl_start
   load g_in_pos
@@ -4235,7 +4195,7 @@ __L347:
   load cur_fn
   push_int 0
   ge
-  jump_ifnot __L348
+  jump_ifnot __L346
   load label_pcs
   load lnum3
   load g_ninstrs
@@ -4245,28 +4205,18 @@ __L347:
   sub
   call set I32Array i32 i32
   pop
-__L348:
-__L345:
+__L346:
+__L343:
   load src
   call skip_line U8Array
   pop
-__L330:
+__L328:
   load c
   push_int 10
   ne
-  jump_ifnot __L356
-  load c
-  push_int 13
-  ne
-  jump_ifnot __L356
-  push_int 1
-  jump __L357
-__L356:
-  push_int 0
-__L357:
   jump_ifnot __L354
   load c
-  push_int 59
+  push_int 13
   ne
   jump_ifnot __L354
   push_int 1
@@ -4276,7 +4226,7 @@ __L354:
 __L355:
   jump_ifnot __L352
   load c
-  push_int 46
+  push_int 59
   ne
   jump_ifnot __L352
   push_int 1
@@ -4286,7 +4236,7 @@ __L352:
 __L353:
   jump_ifnot __L350
   load c
-  push_int 95
+  push_int 46
   ne
   jump_ifnot __L350
   push_int 1
@@ -4294,7 +4244,17 @@ __L353:
 __L350:
   push_int 0
 __L351:
-  jump_ifnot __L349
+  jump_ifnot __L348
+  load c
+  push_int 95
+  ne
+  jump_ifnot __L348
+  push_int 1
+  jump __L349
+__L348:
+  push_int 0
+__L349:
+  jump_ifnot __L347
   load src
   load strtab
   call next_tok U8Array U8Array
@@ -4313,17 +4273,17 @@ __L351:
   load op3
   push_int 0
   ge
-  jump_ifnot __L359
+  jump_ifnot __L357
   load cur_fn
   push_int 0
   ge
-  jump_ifnot __L359
+  jump_ifnot __L357
   push_int 1
-  jump __L360
-__L359:
+  jump __L358
+__L357:
   push_int 0
-__L360:
-  jump_ifnot __L358
+__L358:
+  jump_ifnot __L356
   load fns
   load cur_fn
   call fn_instr_base I32Array i32
@@ -4363,7 +4323,7 @@ __L360:
   load op3
   load OP_PUSH_INT
   eq
-  jump_ifnot __L361
+  jump_ifnot __L359
   load src
   load strtab
   call next_tok U8Array U8Array
@@ -4382,11 +4342,11 @@ __L360:
   load v_ss
   call discard_tok i32
   pop
-__L361:
+__L359:
   load op3
   load OP_PUSH_STR
   eq
-  jump_ifnot __L362
+  jump_ifnot __L360
   load src
   load strtab
   call next_tok U8Array U8Array
@@ -4405,21 +4365,21 @@ __L361:
   load v_ss
   call discard_tok i32
   pop
-__L362:
+__L360:
   load op3
   load OP_LOAD
   eq
-  jump_if __L364
+  jump_if __L362
   load op3
   load OP_STORE
   eq
-  jump_if __L364
+  jump_if __L362
   push_int 0
-  jump __L365
-__L364:
+  jump __L363
+__L362:
   push_int 1
-__L365:
-  jump_ifnot __L363
+__L363:
+  jump_ifnot __L361
   load src
   load strtab
   call next_tok U8Array U8Array
@@ -4441,11 +4401,11 @@ __L365:
   load nm_sl
   call ins_set I32Array i32 i32 i32 i32
   pop
-__L363:
+__L361:
   load op3
   load OP_CALL
   eq
-  jump_ifnot __L366
+  jump_ifnot __L364
   load src
   load strtab
   call next_tok U8Array U8Array
@@ -4457,22 +4417,22 @@ __L363:
   load src
   call skip_spaces U8Array
   pop
-__L367:
+__L365:
   load src
   call in_cur U8Array
   push_int 10
   ne
-  jump_ifnot __L369
+  jump_ifnot __L367
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L369
+  jump_ifnot __L367
   push_int 1
-  jump __L370
-__L369:
+  jump __L368
+__L367:
   push_int 0
-__L370:
-  jump_ifnot __L368
+__L368:
+  jump_ifnot __L366
   load strtab
   load g_stab_pos
   push_int 95
@@ -4504,8 +4464,8 @@ __L370:
   load src
   call skip_spaces U8Array
   pop
-  jump __L367
-__L368:
+  jump __L365
+__L366:
   load mangle_end
   load nm_ss
   sub
@@ -4531,11 +4491,11 @@ __L368:
   load nm_sl
   call ins_set I32Array i32 i32 i32 i32
   pop
-__L366:
+__L364:
   load op3
   load OP_CAST
   eq
-  jump_ifnot __L371
+  jump_ifnot __L369
   load src
   load strtab
   call next_tok U8Array U8Array
@@ -4557,23 +4517,13 @@ __L366:
   load ty_sl
   call ins_set I32Array i32 i32 i32 i32
   pop
-__L371:
+__L369:
   load op3
   load OP_JUMP
   eq
-  jump_if __L375
-  load op3
-  load OP_JUMP_IF
-  eq
-  jump_if __L375
-  push_int 0
-  jump __L376
-__L375:
-  push_int 1
-__L376:
   jump_if __L373
   load op3
-  load OP_JUMP_IFNOT
+  load OP_JUMP_IF
   eq
   jump_if __L373
   push_int 0
@@ -4581,34 +4531,44 @@ __L376:
 __L373:
   push_int 1
 __L374:
-  jump_ifnot __L372
+  jump_if __L371
+  load op3
+  load OP_JUMP_IFNOT
+  eq
+  jump_if __L371
+  push_int 0
+  jump __L372
+__L371:
+  push_int 1
+__L372:
+  jump_ifnot __L370
   load src
   call skip_spaces U8Array
   pop
   load g_in_pos
   store lbl_in
-__L377:
+__L375:
   load g_in_pos
   load g_in_len
   lt
-  jump_ifnot __L379
+  jump_ifnot __L377
   load src
   call in_cur U8Array
   call is_ws u8
   lnot
-  jump_ifnot __L379
+  jump_ifnot __L377
   push_int 1
-  jump __L380
-__L379:
+  jump __L378
+__L377:
   push_int 0
-__L380:
-  jump_ifnot __L378
+__L378:
+  jump_ifnot __L376
   load g_in_pos
   push_int 1
   add
   store g_in_pos
-  jump __L377
-__L378:
+  jump __L375
+__L376:
   load instrs
   load ib3
   load iidx
@@ -4619,7 +4579,7 @@ __L378:
   call parse_lnum U8Array i32 i32
   call ins_set I32Array i32 i32 i32 i32
   pop
-__L372:
+__L370:
   load fns
   load cur_fn
   push_int 9
@@ -4632,14 +4592,14 @@ __L372:
   push_int 1
   add
   store g_ninstrs
-__L358:
+__L356:
   load src
   call skip_line U8Array
   pop
-__L349:
-__L264:
-  jump __L259
-__L260:
+__L347:
+__L262:
+  jump __L257
+__L258:
   return_void
   return_void
 .endfn
@@ -4675,11 +4635,11 @@ __L260:
   store nl
   push_int 0
   store i
-__L381:
+__L379:
   load i
   load np
   lt
-  jump_ifnot __L382
+  jump_ifnot __L380
   load strtab
   load params_pool
   load pb
@@ -4694,23 +4654,23 @@ __L381:
   load nm_ss
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
-  jump_ifnot __L383
+  jump_ifnot __L381
   push_int 1
   return
-__L383:
+__L381:
   load i
   push_int 1
   add
   store i
-  jump __L381
-__L382:
+  jump __L379
+__L380:
   push_int 0
   store i
-__L384:
+__L382:
   load i
   load nl
   lt
-  jump_ifnot __L385
+  jump_ifnot __L383
   load strtab
   load locals_pool
   load lb
@@ -4725,16 +4685,16 @@ __L384:
   load nm_ss
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
-  jump_ifnot __L386
+  jump_ifnot __L384
   push_int 1
   return
-__L386:
+__L384:
   load i
   push_int 1
   add
   store i
-  jump __L384
-__L385:
+  jump __L382
+__L383:
   push_int 0
   return
   return_void
@@ -4771,11 +4731,11 @@ __L385:
   store nl
   push_int 0
   store i
-__L387:
+__L385:
   load i
   load np
   lt
-  jump_ifnot __L388
+  jump_ifnot __L386
   load strtab
   load params_pool
   load pb
@@ -4790,7 +4750,7 @@ __L387:
   load nm_ss
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
-  jump_ifnot __L389
+  jump_ifnot __L387
   push_int 0
   push_int 12
   sub
@@ -4799,20 +4759,20 @@ __L387:
   mul
   sub
   return
-__L389:
+__L387:
   load i
   push_int 1
   add
   store i
-  jump __L387
-__L388:
+  jump __L385
+__L386:
   push_int 0
   store i
-__L390:
+__L388:
   load i
   load nl
   lt
-  jump_ifnot __L391
+  jump_ifnot __L389
   load strtab
   load locals_pool
   load lb
@@ -4827,7 +4787,7 @@ __L390:
   load nm_ss
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
-  jump_ifnot __L392
+  jump_ifnot __L390
   push_int 0
   push_int 12
   sub
@@ -4840,675 +4800,13 @@ __L390:
   mul
   sub
   return
-__L392:
+__L390:
   load i
   push_int 1
   add
   store i
-  jump __L390
-__L391:
-  push_int 0
-  return
-  return_void
-.endfn
-
-.fn is_builtin U8Array i32 i32 i32
-.param strtab U8Array
-.param ss i32
-.param sl i32
-.local bsl i32
-.local a u8
-.local b u8
-.local c u8
-.local e1 u8
-.local e2 u8
-.local e3 u8
-.local e4 u8
-.local e5 u8
-.local d u8
-.local e u8
-.local f u8
-  load sl
-  push_int 0
-  le
-  jump_ifnot __L393
-  push_int 0
-  return
-__L393:
-  load strtab
-  load ss
-  load sl
-  call base_name_len U8Array i32 i32
-  store bsl
-  load strtab
-  load ss
-  call get U8Array i32
-  store a
-  push_int 0
-  store b
-  load bsl
-  push_int 1
-  gt
-  jump_ifnot __L394
-  load strtab
-  load ss
-  push_int 1
-  add
-  call get U8Array i32
-  store b
-__L394:
-  push_int 0
-  store c
-  load bsl
-  push_int 2
-  gt
-  jump_ifnot __L395
-  load strtab
-  load ss
-  push_int 2
-  add
-  call get U8Array i32
-  store c
-__L395:
-  load bsl
-  push_int 6
-  ge
-  jump_ifnot __L399
-  load a
-  push_int 65
-  ge
-  jump_ifnot __L399
-  push_int 1
-  jump __L400
-__L399:
-  push_int 0
-__L400:
-  jump_ifnot __L397
-  load a
-  push_int 90
-  le
-  jump_ifnot __L397
-  push_int 1
-  jump __L398
-__L397:
-  push_int 0
-__L398:
-  jump_ifnot __L396
-  load strtab
-  load ss
-  load bsl
-  add
-  push_int 5
-  sub
-  call get U8Array i32
-  store e1
-  load strtab
-  load ss
-  load bsl
-  add
-  push_int 4
-  sub
-  call get U8Array i32
-  store e2
-  load strtab
-  load ss
-  load bsl
-  add
-  push_int 3
-  sub
-  call get U8Array i32
-  store e3
-  load strtab
-  load ss
-  load bsl
-  add
-  push_int 2
-  sub
-  call get U8Array i32
-  store e4
-  load strtab
-  load ss
-  load bsl
-  add
-  push_int 1
-  sub
-  call get U8Array i32
-  store e5
-  load e1
-  push_int 65
-  eq
-  jump_ifnot __L408
-  load e2
-  push_int 114
-  eq
-  jump_ifnot __L408
-  push_int 1
-  jump __L409
-__L408:
-  push_int 0
-__L409:
-  jump_ifnot __L406
-  load e3
-  push_int 114
-  eq
-  jump_ifnot __L406
-  push_int 1
-  jump __L407
-__L406:
-  push_int 0
-__L407:
-  jump_ifnot __L404
-  load e4
-  push_int 97
-  eq
-  jump_ifnot __L404
-  push_int 1
-  jump __L405
-__L404:
-  push_int 0
-__L405:
-  jump_ifnot __L402
-  load e5
-  push_int 121
-  eq
-  jump_ifnot __L402
-  push_int 1
-  jump __L403
-__L402:
-  push_int 0
-__L403:
-  jump_ifnot __L401
-  push_int 1
-  return
-__L401:
-__L396:
-  load bsl
-  push_int 4
-  ge
-  jump_ifnot __L415
-  load a
-  push_int 115
-  eq
-  jump_ifnot __L415
-  push_int 1
-  jump __L416
-__L415:
-  push_int 0
-__L416:
-  jump_ifnot __L413
-  load b
-  push_int 121
-  eq
-  jump_ifnot __L413
-  push_int 1
-  jump __L414
-__L413:
-  push_int 0
-__L414:
-  jump_ifnot __L411
-  load c
-  push_int 115
-  eq
-  jump_ifnot __L411
-  push_int 1
-  jump __L412
-__L411:
-  push_int 0
-__L412:
-  jump_ifnot __L410
-  push_int 1
-  return
-__L410:
-  load bsl
-  push_int 6
-  ge
-  jump_ifnot __L422
-  load a
-  push_int 112
-  eq
-  jump_ifnot __L422
-  push_int 1
-  jump __L423
-__L422:
-  push_int 0
-__L423:
-  jump_ifnot __L420
-  load b
-  push_int 114
-  eq
-  jump_ifnot __L420
-  push_int 1
-  jump __L421
-__L420:
-  push_int 0
-__L421:
-  jump_ifnot __L418
-  load c
-  push_int 105
-  eq
-  jump_ifnot __L418
-  push_int 1
-  jump __L419
-__L418:
-  push_int 0
-__L419:
-  jump_ifnot __L417
-  push_int 1
-  return
-__L417:
-  load bsl
-  push_int 5
-  ge
-  jump_ifnot __L429
-  load a
-  push_int 112
-  eq
-  jump_ifnot __L429
-  push_int 1
-  jump __L430
-__L429:
-  push_int 0
-__L430:
-  jump_ifnot __L427
-  load b
-  push_int 101
-  eq
-  jump_ifnot __L427
-  push_int 1
-  jump __L428
-__L427:
-  push_int 0
-__L428:
-  jump_ifnot __L425
-  load c
-  push_int 101
-  eq
-  jump_ifnot __L425
-  push_int 1
-  jump __L426
-__L425:
-  push_int 0
-__L426:
-  jump_ifnot __L424
-  load strtab
-  load ss
-  push_int 3
-  add
-  call get U8Array i32
-  store d
-  load d
-  push_int 107
-  eq
-  jump_ifnot __L431
-  load strtab
-  load ss
-  push_int 4
-  add
-  call get U8Array i32
-  store e
-  load e
-  push_int 48
-  ge
-  jump_ifnot __L433
-  load e
-  push_int 57
-  le
-  jump_ifnot __L433
-  push_int 1
-  jump __L434
-__L433:
-  push_int 0
-__L434:
-  jump_ifnot __L432
-  push_int 1
-  return
-__L432:
-__L431:
-__L424:
-  load bsl
-  push_int 4
-  ge
-  jump_ifnot __L440
-  load a
-  push_int 112
-  eq
-  jump_ifnot __L440
-  push_int 1
-  jump __L441
-__L440:
-  push_int 0
-__L441:
-  jump_ifnot __L438
-  load b
-  push_int 111
-  eq
-  jump_ifnot __L438
-  push_int 1
-  jump __L439
-__L438:
-  push_int 0
-__L439:
-  jump_ifnot __L436
-  load c
-  push_int 107
-  eq
-  jump_ifnot __L436
-  push_int 1
-  jump __L437
-__L436:
-  push_int 0
-__L437:
-  jump_ifnot __L435
-  push_int 1
-  return
-__L435:
-  load bsl
-  push_int 3
-  eq
-  jump_ifnot __L447
-  load a
-  push_int 108
-  eq
-  jump_ifnot __L447
-  push_int 1
-  jump __L448
-__L447:
-  push_int 0
-__L448:
-  jump_ifnot __L445
-  load b
-  push_int 101
-  eq
-  jump_ifnot __L445
-  push_int 1
-  jump __L446
-__L445:
-  push_int 0
-__L446:
-  jump_ifnot __L443
-  load c
-  push_int 110
-  eq
-  jump_ifnot __L443
-  push_int 1
-  jump __L444
-__L443:
-  push_int 0
-__L444:
-  jump_ifnot __L442
-  push_int 1
-  return
-__L442:
-  load a
-  push_int 103
-  eq
-  jump_ifnot __L452
-  load b
-  push_int 101
-  eq
-  jump_ifnot __L452
-  push_int 1
-  jump __L453
-__L452:
-  push_int 0
-__L453:
-  jump_ifnot __L450
-  load c
-  push_int 116
-  eq
-  jump_ifnot __L450
-  push_int 1
-  jump __L451
-__L450:
-  push_int 0
-__L451:
-  jump_ifnot __L449
-  push_int 1
-  return
-__L449:
-  load bsl
-  push_int 3
-  eq
-  jump_ifnot __L459
-  load a
-  push_int 115
-  eq
-  jump_ifnot __L459
-  push_int 1
-  jump __L460
-__L459:
-  push_int 0
-__L460:
-  jump_ifnot __L457
-  load b
-  push_int 101
-  eq
-  jump_ifnot __L457
-  push_int 1
-  jump __L458
-__L457:
-  push_int 0
-__L458:
-  jump_ifnot __L455
-  load c
-  push_int 116
-  eq
-  jump_ifnot __L455
-  push_int 1
-  jump __L456
-__L455:
-  push_int 0
-__L456:
-  jump_ifnot __L454
-  push_int 1
-  return
-__L454:
-  load bsl
-  push_int 6
-  ge
-  jump_ifnot __L466
-  load a
-  push_int 100
-  eq
-  jump_ifnot __L466
-  push_int 1
-  jump __L467
-__L466:
-  push_int 0
-__L467:
-  jump_ifnot __L464
-  load b
-  push_int 101
-  eq
-  jump_ifnot __L464
-  push_int 1
-  jump __L465
-__L464:
-  push_int 0
-__L465:
-  jump_ifnot __L462
-  load c
-  push_int 108
-  eq
-  jump_ifnot __L462
-  push_int 1
-  jump __L463
-__L462:
-  push_int 0
-__L463:
-  jump_ifnot __L461
-  push_int 1
-  return
-__L461:
-  load bsl
-  push_int 6
-  ge
-  jump_ifnot __L473
-  load a
-  push_int 97
-  eq
-  jump_ifnot __L473
-  push_int 1
-  jump __L474
-__L473:
-  push_int 0
-__L474:
-  jump_ifnot __L471
-  load b
-  push_int 112
-  eq
-  jump_ifnot __L471
-  push_int 1
-  jump __L472
-__L471:
-  push_int 0
-__L472:
-  jump_ifnot __L469
-  load c
-  push_int 112
-  eq
-  jump_ifnot __L469
-  push_int 1
-  jump __L470
-__L469:
-  push_int 0
-__L470:
-  jump_ifnot __L468
-  push_int 1
-  return
-__L468:
-  load bsl
-  push_int 6
-  ge
-  jump_ifnot __L480
-  load a
-  push_int 101
-  eq
-  jump_ifnot __L480
-  push_int 1
-  jump __L481
-__L480:
-  push_int 0
-__L481:
-  jump_ifnot __L478
-  load b
-  push_int 113
-  eq
-  jump_ifnot __L478
-  push_int 1
-  jump __L479
-__L478:
-  push_int 0
-__L479:
-  jump_ifnot __L476
-  load c
-  push_int 117
-  eq
-  jump_ifnot __L476
-  push_int 1
-  jump __L477
-__L476:
-  push_int 0
-__L477:
-  jump_ifnot __L475
-  push_int 1
-  return
-__L475:
-  load a
-  push_int 104
-  eq
-  jump_ifnot __L485
-  load b
-  push_int 101
-  eq
-  jump_ifnot __L485
-  push_int 1
-  jump __L486
-__L485:
-  push_int 0
-__L486:
-  jump_ifnot __L483
-  load c
-  push_int 97
-  eq
-  jump_ifnot __L483
-  push_int 1
-  jump __L484
-__L483:
-  push_int 0
-__L484:
-  jump_ifnot __L482
-  load bsl
-  push_int 9
-  eq
-  jump_if __L488
-  load bsl
-  push_int 10
-  eq
-  jump_if __L488
-  push_int 0
-  jump __L489
-__L488:
-  push_int 1
-__L489:
-  jump_ifnot __L487
-  load strtab
-  load ss
-  push_int 3
-  add
-  call get U8Array i32
-  store d
-  load strtab
-  load ss
-  push_int 4
-  add
-  call get U8Array i32
-  store e
-  load strtab
-  load ss
-  push_int 5
-  add
-  call get U8Array i32
-  store f
-  load d
-  push_int 112
-  eq
-  jump_ifnot __L493
-  load e
-  push_int 95
-  eq
-  jump_ifnot __L493
-  push_int 1
-  jump __L494
-__L493:
-  push_int 0
-__L494:
-  jump_ifnot __L491
-  load f
-  push_int 109
-  eq
-  jump_if __L495
-  load f
-  push_int 114
-  eq
-  jump_if __L495
-  push_int 0
-  jump __L496
-__L495:
-  push_int 1
-__L496:
-  jump_ifnot __L491
-  push_int 1
-  jump __L492
-__L491:
-  push_int 0
-__L492:
-  jump_ifnot __L490
-  push_int 1
-  return
-__L490:
-__L487:
-__L482:
+  jump __L388
+__L389:
   push_int 0
   return
   return_void
@@ -5527,19 +4825,19 @@ __L482:
   load bsl
   push_int 8
   ne
-  jump_ifnot __L497
+  jump_ifnot __L391
   push_int 0
   return
-__L497:
+__L391:
   load strtab
   load ss
   call get U8Array i32
   push_int 115
   ne
-  jump_ifnot __L498
+  jump_ifnot __L392
   push_int 0
   return
-__L498:
+__L392:
   load strtab
   load ss
   push_int 4
@@ -5547,10 +4845,10 @@ __L498:
   call get U8Array i32
   push_int 101
   ne
-  jump_ifnot __L499
+  jump_ifnot __L393
   push_int 0
   return
-__L499:
+__L393:
   load strtab
   load ss
   push_int 5
@@ -5558,10 +4856,10 @@ __L499:
   call get U8Array i32
   push_int 120
   ne
-  jump_ifnot __L500
+  jump_ifnot __L394
   push_int 0
   return
-__L500:
+__L394:
   push_int 1
   return
   return_void
@@ -5576,11 +4874,11 @@ __L500:
 .local op i32
   push_int 0
   store j
-__L501:
+__L395:
   load j
   load ni
   lt
-  jump_ifnot __L502
+  jump_ifnot __L396
   load instrs
   load ibase
   load j
@@ -5589,44 +4887,44 @@ __L501:
   load op
   load OP_JUMP
   eq
-  jump_if __L506
+  jump_if __L400
   load op
   load OP_JUMP_IF
   eq
-  jump_if __L506
+  jump_if __L400
   push_int 0
-  jump __L507
-__L506:
+  jump __L401
+__L400:
   push_int 1
-__L507:
-  jump_if __L504
+__L401:
+  jump_if __L398
   load op
   load OP_JUMP_IFNOT
   eq
-  jump_if __L504
+  jump_if __L398
   push_int 0
-  jump __L505
-__L504:
+  jump __L399
+__L398:
   push_int 1
-__L505:
-  jump_ifnot __L503
+__L399:
+  jump_ifnot __L397
   load instrs
   load ibase
   load j
   call ins_ival I32Array i32 i32
   load pc
   eq
-  jump_ifnot __L508
+  jump_ifnot __L402
   push_int 1
   return
-__L508:
-__L503:
+__L402:
+__L397:
   load j
   push_int 1
   add
   store j
-  jump __L501
-__L502:
+  jump __L395
+__L396:
   push_int 0
   return
   return_void
@@ -5646,11 +4944,11 @@ __L502:
   pop
   push_int 0
   store i
-__L509:
+__L403:
   load i
   load sl
   lt
-  jump_ifnot __L510
+  jump_ifnot __L404
   load strtab
   load ss
   load i
@@ -5662,7 +4960,7 @@ __L509:
   load c
   push_int 34
   eq
-  jump_ifnot __L511
+  jump_ifnot __L405
   push_int 92
   load ob
   call ob_char u8 U8Array
@@ -5673,21 +4971,21 @@ __L509:
   pop
   push_int 1
   store handled
-__L511:
+__L405:
   load handled
   push_int 0
   eq
-  jump_ifnot __L513
+  jump_ifnot __L407
   load c
   push_int 92
   eq
-  jump_ifnot __L513
+  jump_ifnot __L407
   push_int 1
-  jump __L514
-__L513:
+  jump __L408
+__L407:
   push_int 0
-__L514:
-  jump_ifnot __L512
+__L408:
+  jump_ifnot __L406
   push_int 92
   load ob
   call ob_char u8 U8Array
@@ -5698,21 +4996,21 @@ __L514:
   pop
   push_int 1
   store handled
-__L512:
+__L406:
   load handled
   push_int 0
   eq
-  jump_ifnot __L516
+  jump_ifnot __L410
   load c
   push_int 10
   eq
-  jump_ifnot __L516
+  jump_ifnot __L410
   push_int 1
-  jump __L517
-__L516:
+  jump __L411
+__L410:
   push_int 0
-__L517:
-  jump_ifnot __L515
+__L411:
+  jump_ifnot __L409
   push_int 92
   load ob
   call ob_char u8 U8Array
@@ -5723,21 +5021,21 @@ __L517:
   pop
   push_int 1
   store handled
-__L515:
+__L409:
   load handled
   push_int 0
   eq
-  jump_ifnot __L519
+  jump_ifnot __L413
   load c
   push_int 13
   eq
-  jump_ifnot __L519
+  jump_ifnot __L413
   push_int 1
-  jump __L520
-__L519:
+  jump __L414
+__L413:
   push_int 0
-__L520:
-  jump_ifnot __L518
+__L414:
+  jump_ifnot __L412
   push_int 92
   load ob
   call ob_char u8 U8Array
@@ -5748,21 +5046,21 @@ __L520:
   pop
   push_int 1
   store handled
-__L518:
+__L412:
   load handled
   push_int 0
   eq
-  jump_ifnot __L522
+  jump_ifnot __L416
   load c
   push_int 9
   eq
-  jump_ifnot __L522
+  jump_ifnot __L416
   push_int 1
-  jump __L523
-__L522:
+  jump __L417
+__L416:
   push_int 0
-__L523:
-  jump_ifnot __L521
+__L417:
+  jump_ifnot __L415
   push_int 92
   load ob
   call ob_char u8 U8Array
@@ -5773,31 +5071,31 @@ __L523:
   pop
   push_int 1
   store handled
-__L521:
+__L415:
   load handled
   push_int 0
   eq
-  jump_ifnot __L525
+  jump_ifnot __L419
   load c
   push_int 32
   lt
-  jump_if __L527
+  jump_if __L421
   load c
   push_int 127
   eq
-  jump_if __L527
+  jump_if __L421
   push_int 0
-  jump __L528
-__L527:
+  jump __L422
+__L421:
   push_int 1
-__L528:
-  jump_ifnot __L525
+__L422:
+  jump_ifnot __L419
   push_int 1
-  jump __L526
-__L525:
+  jump __L420
+__L419:
   push_int 0
-__L526:
-  jump_ifnot __L524
+__L420:
+  jump_ifnot __L418
   push_int 92
   load ob
   call ob_char u8 U8Array
@@ -5838,22 +5136,22 @@ __L526:
   pop
   push_int 1
   store handled
-__L524:
+__L418:
   load handled
   push_int 0
   eq
-  jump_ifnot __L529
+  jump_ifnot __L423
   load c
   load ob
   call ob_char u8 U8Array
   pop
-__L529:
+__L423:
   load i
   push_int 1
   add
   store i
-  jump __L509
-__L510:
+  jump __L403
+__L404:
   push_int 34
   load ob
   call ob_char u8 U8Array
@@ -5937,14 +5235,14 @@ __L510:
   load pad
   push_int 0
   ne
-  jump_ifnot __L530
+  jump_ifnot __L424
   load frame_size
   push_int 16
   load pad
   sub
   add
   store frame_size
-__L530:
+__L424:
   load ob
   call e4 U8Array
   pop
@@ -6332,21 +5630,21 @@ __L530:
   pop
   push_int 0
   store pi
-__L531:
+__L425:
   load pi
   load np
   lt
-  jump_ifnot __L533
+  jump_ifnot __L427
   load pi
   push_int 8
   lt
-  jump_ifnot __L533
+  jump_ifnot __L427
   push_int 1
-  jump __L534
-__L533:
+  jump __L428
+__L427:
   push_int 0
-__L534:
-  jump_ifnot __L532
+__L428:
+  jump_ifnot __L426
   load ob
   call e_sw U8Array
   pop
@@ -6378,15 +5676,15 @@ __L534:
   push_int 1
   add
   store pi
-  jump __L531
-__L532:
+  jump __L425
+__L426:
   push_int 8
   store oi
-__L535:
+__L429:
   load oi
   load np
   lt
-  jump_ifnot __L536
+  jump_ifnot __L430
   push_int 32
   load ob
   call ob_char u8 U8Array
@@ -6490,15 +5788,15 @@ __L535:
   push_int 1
   add
   store oi
-  jump __L535
-__L536:
+  jump __L429
+__L430:
   push_int 0
   store li
-__L537:
+__L431:
   load li
   load nl
   lt
-  jump_ifnot __L538
+  jump_ifnot __L432
   load ob
   call e_sw U8Array
   pop
@@ -6539,15 +5837,15 @@ __L537:
   push_int 1
   add
   store li
-  jump __L537
-__L538:
+  jump __L431
+__L432:
   push_int 0
   store pc
-__L539:
+__L433:
   load pc
   load ni
   lt
-  jump_ifnot __L540
+  jump_ifnot __L434
   load instrs
   load ibase
   load ni
@@ -6555,13 +5853,13 @@ __L539:
   call is_jump_target I32Array i32 i32 i32
   push_int 1
   eq
-  jump_ifnot __L541
+  jump_ifnot __L435
   load fi
   load pc
   load ob
   call asm_pc_label i32 i32 U8Array
   pop
-__L541:
+__L435:
   load instrs
   load ibase
   load pc
@@ -6585,7 +5883,7 @@ __L541:
   load op
   load OP_PUSH_INT
   eq
-  jump_ifnot __L542
+  jump_ifnot __L436
   load ob
   call e_li U8Array
   pop
@@ -6603,11 +5901,11 @@ __L541:
   load ob
   call asm_push_t0 U8Array
   pop
-__L542:
+__L436:
   load op
   load OP_PUSH_STR
   eq
-  jump_ifnot __L543
+  jump_ifnot __L437
   load ob
   call e_la U8Array
   pop
@@ -6669,11 +5967,11 @@ __L542:
   load ob
   call asm_push_t0 U8Array
   pop
-__L543:
+__L437:
   load op
   load OP_LOAD
   eq
-  jump_ifnot __L544
+  jump_ifnot __L438
   load strtab
   load fns
   load params_pool
@@ -6684,7 +5982,7 @@ __L543:
   call is_local U8Array I32Array I32Array I32Array i32 i32 i32
   push_int 1
   eq
-  jump_ifnot __L545
+  jump_ifnot __L439
   load strtab
   load fns
   load params_pool
@@ -6704,8 +6002,8 @@ __L543:
   load ob
   call eNs0nl i32 U8Array
   pop
-  jump __L546
-__L545:
+  jump __L440
+__L439:
   load ob
   call e_la U8Array
   pop
@@ -6752,15 +6050,15 @@ __L545:
   load ob
   call ob_char u8 U8Array
   pop
-__L546:
+__L440:
   load ob
   call asm_push_t0 U8Array
   pop
-__L544:
+__L438:
   load op
   load OP_STORE
   eq
-  jump_ifnot __L547
+  jump_ifnot __L441
   load ob
   call asm_pop_t0 U8Array
   pop
@@ -6774,7 +6072,7 @@ __L544:
   call is_local U8Array I32Array I32Array I32Array i32 i32 i32
   push_int 1
   eq
-  jump_ifnot __L548
+  jump_ifnot __L442
   load strtab
   load fns
   load params_pool
@@ -6794,8 +6092,8 @@ __L544:
   load ob
   call eNs0nl i32 U8Array
   pop
-  jump __L549
-__L548:
+  jump __L443
+__L442:
   load ob
   call e_la U8Array
   pop
@@ -6842,12 +6140,12 @@ __L548:
   load ob
   call ob_char u8 U8Array
   pop
-__L549:
-__L547:
+__L443:
+__L441:
   load op
   load OP_CALL
   eq
-  jump_ifnot __L550
+  jump_ifnot __L444
   load ival
   store nargs
   load nargs
@@ -6855,10 +6153,10 @@ __L547:
   load nreg
   push_int 8
   gt
-  jump_ifnot __L551
+  jump_ifnot __L445
   push_int 8
   store nreg
-__L551:
+__L445:
   load nargs
   load nreg
   sub
@@ -6866,7 +6164,7 @@ __L551:
   load noverflow
   push_int 0
   gt
-  jump_ifnot __L552
+  jump_ifnot __L446
   load ob
   call e_addi U8Array
   pop
@@ -6890,11 +6188,11 @@ __L551:
   pop
   push_int 8
   store ci
-__L553:
+__L447:
   load ci
   load nargs
   lt
-  jump_ifnot __L554
+  jump_ifnot __L448
   load ob
   call e_lw U8Array
   pop
@@ -6933,16 +6231,16 @@ __L553:
   push_int 1
   add
   store ci
-  jump __L553
-__L554:
-__L552:
+  jump __L447
+__L448:
+__L446:
   push_int 0
   store ai
-__L555:
+__L449:
   load ai
   load nreg
   lt
-  jump_ifnot __L556
+  jump_ifnot __L450
   load ob
   call e_lw U8Array
   pop
@@ -6978,15 +6276,15 @@ __L555:
   push_int 1
   add
   store ai
-  jump __L555
-__L556:
+  jump __L449
+__L450:
   load strtab
   load sss
   load ssl
   call is_sys_exit U8Array i32 i32
   push_int 1
   eq
-  jump_ifnot __L557
+  jump_ifnot __L451
   load ob
   call e_li U8Array
   pop
@@ -7040,23 +6338,19 @@ __L556:
   load ob
   call ob_char u8 U8Array
   pop
-  jump __L558
-__L557:
+  jump __L452
+__L451:
   load strtab
   load sss
   load ssl
-  load strtab
-  load sss
-  load ssl
-  call is_builtin U8Array i32 i32
   load ob
-  call asm_call_fn U8Array i32 i32 i32 U8Array
+  call asm_call_fn U8Array i32 i32 U8Array
   pop
-__L558:
+__L452:
   load noverflow
   push_int 0
   gt
-  jump_ifnot __L559
+  jump_ifnot __L453
   load ob
   call e_addi U8Array
   pop
@@ -7080,12 +6374,12 @@ __L558:
   load ob
   call ob_char u8 U8Array
   pop
-  jump __L560
-__L559:
+  jump __L454
+__L453:
   load nargs
   push_int 0
   gt
-  jump_ifnot __L561
+  jump_ifnot __L455
   load ob
   call e_addi U8Array
   pop
@@ -7105,8 +6399,8 @@ __L559:
   load ob
   call ob_char u8 U8Array
   pop
-__L561:
-__L560:
+__L455:
+__L454:
   load ob
   call e_addi U8Array
   pop
@@ -7146,11 +6440,11 @@ __L560:
   load ob
   call eNspnl i32 U8Array
   pop
-__L550:
+__L444:
   load op
   load OP_RETURN
   eq
-  jump_ifnot __L562
+  jump_ifnot __L456
   load ob
   call asm_pop_t0 U8Array
   pop
@@ -7203,19 +6497,19 @@ __L550:
   load ob
   call asm_epilogue U8Array
   pop
-__L562:
+__L456:
   load op
   load OP_RETURN_VOID
   eq
-  jump_ifnot __L563
+  jump_ifnot __L457
   load ob
   call asm_epilogue U8Array
   pop
-__L563:
+__L457:
   load op
   load OP_POP
   eq
-  jump_ifnot __L564
+  jump_ifnot __L458
   load ob
   call e_addi U8Array
   pop
@@ -7233,11 +6527,11 @@ __L563:
   load ob
   call ob_char u8 U8Array
   pop
-__L564:
+__L458:
   load op
   load OP_ADD
   eq
-  jump_ifnot __L565
+  jump_ifnot __L459
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7285,11 +6579,11 @@ __L564:
   load ob
   call asm_push_t0 U8Array
   pop
-__L565:
+__L459:
   load op
   load OP_SUB
   eq
-  jump_ifnot __L566
+  jump_ifnot __L460
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7337,11 +6631,11 @@ __L565:
   load ob
   call asm_push_t0 U8Array
   pop
-__L566:
+__L460:
   load op
   load OP_MUL
   eq
-  jump_ifnot __L567
+  jump_ifnot __L461
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7389,11 +6683,11 @@ __L566:
   load ob
   call asm_push_t0 U8Array
   pop
-__L567:
+__L461:
   load op
   load OP_DIV
   eq
-  jump_ifnot __L568
+  jump_ifnot __L462
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7441,11 +6735,11 @@ __L567:
   load ob
   call asm_push_t0 U8Array
   pop
-__L568:
+__L462:
   load op
   load OP_MOD
   eq
-  jump_ifnot __L569
+  jump_ifnot __L463
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7493,11 +6787,11 @@ __L568:
   load ob
   call asm_push_t0 U8Array
   pop
-__L569:
+__L463:
   load op
   load OP_AND
   eq
-  jump_ifnot __L570
+  jump_ifnot __L464
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7545,11 +6839,11 @@ __L569:
   load ob
   call asm_push_t0 U8Array
   pop
-__L570:
+__L464:
   load op
   load OP_OR
   eq
-  jump_ifnot __L571
+  jump_ifnot __L465
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7597,11 +6891,11 @@ __L570:
   load ob
   call asm_push_t0 U8Array
   pop
-__L571:
+__L465:
   load op
   load OP_XOR
   eq
-  jump_ifnot __L572
+  jump_ifnot __L466
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7649,11 +6943,11 @@ __L571:
   load ob
   call asm_push_t0 U8Array
   pop
-__L572:
+__L466:
   load op
   load OP_SHL
   eq
-  jump_ifnot __L573
+  jump_ifnot __L467
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7701,11 +6995,11 @@ __L572:
   load ob
   call asm_push_t0 U8Array
   pop
-__L573:
+__L467:
   load op
   load OP_SHR
   eq
-  jump_ifnot __L574
+  jump_ifnot __L468
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7753,11 +7047,11 @@ __L573:
   load ob
   call asm_push_t0 U8Array
   pop
-__L574:
+__L468:
   load op
   load OP_EQ
   eq
-  jump_ifnot __L575
+  jump_ifnot __L469
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7770,11 +7064,11 @@ __L574:
   load ob
   call asm_push_t0 U8Array
   pop
-__L575:
+__L469:
   load op
   load OP_NE
   eq
-  jump_ifnot __L576
+  jump_ifnot __L470
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7787,11 +7081,11 @@ __L575:
   load ob
   call asm_push_t0 U8Array
   pop
-__L576:
+__L470:
   load op
   load OP_LT
   eq
-  jump_ifnot __L577
+  jump_ifnot __L471
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7802,11 +7096,11 @@ __L576:
   load ob
   call asm_push_t0 U8Array
   pop
-__L577:
+__L471:
   load op
   load OP_LE
   eq
-  jump_ifnot __L578
+  jump_ifnot __L472
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7820,11 +7114,11 @@ __L577:
   load ob
   call asm_push_t0 U8Array
   pop
-__L578:
+__L472:
   load op
   load OP_GT
   eq
-  jump_ifnot __L579
+  jump_ifnot __L473
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7835,11 +7129,11 @@ __L578:
   load ob
   call asm_push_t0 U8Array
   pop
-__L579:
+__L473:
   load op
   load OP_GE
   eq
-  jump_ifnot __L580
+  jump_ifnot __L474
   load ob
   call asm_pop_t1_t0 U8Array
   pop
@@ -7853,11 +7147,11 @@ __L579:
   load ob
   call asm_push_t0 U8Array
   pop
-__L580:
+__L474:
   load op
   load OP_NEG
   eq
-  jump_ifnot __L581
+  jump_ifnot __L475
   load ob
   call asm_pop_t0 U8Array
   pop
@@ -7902,11 +7196,11 @@ __L580:
   load ob
   call asm_push_t0 U8Array
   pop
-__L581:
+__L475:
   load op
   load OP_LNOT
   eq
-  jump_ifnot __L582
+  jump_ifnot __L476
   load ob
   call asm_pop_t0 U8Array
   pop
@@ -7916,11 +7210,11 @@ __L581:
   load ob
   call asm_push_t0 U8Array
   pop
-__L582:
+__L476:
   load op
   load OP_CAST
   eq
-  jump_ifnot __L583
+  jump_ifnot __L477
   load ob
   call asm_pop_t0 U8Array
   pop
@@ -7931,37 +7225,37 @@ __L582:
   load ssl
   push_int 0
   gt
-  jump_ifnot __L584
+  jump_ifnot __L478
   load strtab
   load sss
   call get U8Array i32
   store ta
-__L584:
+__L478:
   load ssl
   push_int 1
   gt
-  jump_ifnot __L585
+  jump_ifnot __L479
   load strtab
   load sss
   push_int 1
   add
   call get U8Array i32
   store tb
-__L585:
+__L479:
   load ta
   push_int 117
   eq
-  jump_ifnot __L587
+  jump_ifnot __L481
   load tb
   push_int 56
   eq
-  jump_ifnot __L587
+  jump_ifnot __L481
   push_int 1
-  jump __L588
-__L587:
+  jump __L482
+__L481:
   push_int 0
-__L588:
-  jump_ifnot __L586
+__L482:
+  jump_ifnot __L480
   load ob
   call e4 U8Array
   pop
@@ -8011,21 +7305,21 @@ __L588:
   load ob
   call ob_char u8 U8Array
   pop
-__L586:
+__L480:
   load ta
   push_int 117
   eq
-  jump_ifnot __L590
+  jump_ifnot __L484
   load tb
   push_int 49
   eq
-  jump_ifnot __L590
+  jump_ifnot __L484
   push_int 1
-  jump __L591
-__L590:
+  jump __L485
+__L484:
   push_int 0
-__L591:
-  jump_ifnot __L589
+__L485:
+  jump_ifnot __L483
   load ob
   call e4 U8Array
   pop
@@ -8108,21 +7402,21 @@ __L591:
   load ob
   call ob_char u8 U8Array
   pop
-__L589:
+__L483:
   load ta
   push_int 105
   eq
-  jump_ifnot __L593
+  jump_ifnot __L487
   load tb
   push_int 56
   eq
-  jump_ifnot __L593
+  jump_ifnot __L487
   push_int 1
-  jump __L594
-__L593:
+  jump __L488
+__L487:
   push_int 0
-__L594:
-  jump_ifnot __L592
+__L488:
+  jump_ifnot __L486
   load ob
   call e4 U8Array
   pop
@@ -8205,21 +7499,21 @@ __L594:
   load ob
   call ob_char u8 U8Array
   pop
-__L592:
+__L486:
   load ta
   push_int 105
   eq
-  jump_ifnot __L596
+  jump_ifnot __L490
   load tb
   push_int 49
   eq
-  jump_ifnot __L596
+  jump_ifnot __L490
   push_int 1
-  jump __L597
-__L596:
+  jump __L491
+__L490:
   push_int 0
-__L597:
-  jump_ifnot __L595
+__L491:
+  jump_ifnot __L489
   load ob
   call e4 U8Array
   pop
@@ -8302,33 +7596,33 @@ __L597:
   load ob
   call ob_char u8 U8Array
   pop
-__L595:
+__L489:
   load ta
   push_int 98
   eq
-  jump_ifnot __L598
+  jump_ifnot __L492
   load ob
   call asm_snez_t0 U8Array
   pop
-__L598:
+__L492:
   load ob
   call asm_push_t0 U8Array
   pop
-__L583:
+__L477:
   load op
   load OP_JUMP
   eq
-  jump_ifnot __L599
+  jump_ifnot __L493
   load fi
   load ival
   load ob
   call asm_jump i32 i32 U8Array
   pop
-__L599:
+__L493:
   load op
   load OP_JUMP_IF
   eq
-  jump_ifnot __L600
+  jump_ifnot __L494
   load ob
   call asm_pop_t0 U8Array
   pop
@@ -8338,11 +7632,11 @@ __L599:
   load ob
   call asm_branch i32 i32 i32 U8Array
   pop
-__L600:
+__L494:
   load op
   load OP_JUMP_IFNOT
   eq
-  jump_ifnot __L601
+  jump_ifnot __L495
   load ob
   call asm_pop_t0 U8Array
   pop
@@ -8352,13 +7646,13 @@ __L600:
   load ob
   call asm_branch i32 i32 i32 U8Array
   pop
-__L601:
+__L495:
   load pc
   push_int 1
   add
   store pc
-  jump __L539
-__L540:
+  jump __L433
+__L434:
   load ob
   call e4 U8Array
   pop
@@ -8440,7 +7734,7 @@ __L540:
   load g_nstrings
   push_int 0
   gt
-  jump_ifnot __L602
+  jump_ifnot __L496
   load ob
   call e4 U8Array
   pop
@@ -8514,11 +7808,11 @@ __L540:
   pop
   push_int 0
   store si
-__L603:
+__L497:
   load si
   load g_nstrings
   lt
-  jump_ifnot __L604
+  jump_ifnot __L498
   load string_lits
   load si
   push_int 2
@@ -8644,19 +7938,19 @@ __L603:
   push_int 1
   add
   store si
-  jump __L603
-__L604:
+  jump __L497
+__L498:
   push_int 10
   load ob
   call ob_char u8 U8Array
   pop
   push_int 0
   store si2
-__L605:
+__L499:
   load si2
   load g_nstrings
   lt
-  jump_ifnot __L606
+  jump_ifnot __L500
   load string_lits
   load si2
   push_int 2
@@ -9030,17 +8324,17 @@ __L605:
   push_int 1
   add
   store si2
-  jump __L605
-__L606:
+  jump __L499
+__L500:
   push_int 10
   load ob
   call ob_char u8 U8Array
   pop
-__L602:
+__L496:
   load g_nglobals
   push_int 0
   gt
-  jump_ifnot __L607
+  jump_ifnot __L501
   load ob
   call e4 U8Array
   pop
@@ -9070,11 +8364,11 @@ __L602:
   pop
   push_int 0
   store gi
-__L608:
+__L502:
   load gi
   load g_nglobals
   lt
-  jump_ifnot __L609
+  jump_ifnot __L503
   load global_vars
   load gi
   push_int 4
@@ -9189,13 +8483,13 @@ __L608:
   push_int 1
   add
   store gi
-  jump __L608
-__L609:
+  jump __L502
+__L503:
   push_int 10
   load ob
   call ob_char u8 U8Array
   pop
-__L607:
+__L501:
   load ob
   call e4 U8Array
   pop
@@ -9229,11 +8523,11 @@ __L607:
   pop
   push_int 0
   store fi
-__L610:
+__L504:
   load fi
   load g_nfuncs
   lt
-  jump_ifnot __L611
+  jump_ifnot __L505
   load strtab
   load fns
   load params_pool
@@ -9248,8 +8542,8 @@ __L610:
   push_int 1
   add
   store fi
-  jump __L610
-__L611:
+  jump __L504
+__L505:
   return_void
   return_void
 .endfn
@@ -9310,21 +8604,21 @@ __L611:
   store chunk_buf
   push_int 0
   store rdone
-__L612:
+__L506:
   load rdone
   push_int 0
   eq
-  jump_ifnot __L614
+  jump_ifnot __L508
   load g_in_len
   push_int 524000
   lt
-  jump_ifnot __L614
+  jump_ifnot __L508
   push_int 1
-  jump __L615
-__L614:
+  jump __L509
+__L508:
   push_int 0
-__L615:
-  jump_ifnot __L613
+__L509:
+  jump_ifnot __L507
   push_int 0
   load chunk_buf
   push_int 65536
@@ -9333,21 +8627,21 @@ __L615:
   load chunk
   push_int 0
   le
-  jump_ifnot __L616
+  jump_ifnot __L510
   push_int 1
   store rdone
-__L616:
+__L510:
   load chunk
   push_int 0
   gt
-  jump_ifnot __L617
+  jump_ifnot __L511
   push_int 0
   store ci
-__L618:
+__L512:
   load ci
   load chunk
   lt
-  jump_ifnot __L619
+  jump_ifnot __L513
   load src
   load g_in_len
   load ci
@@ -9361,25 +8655,25 @@ __L618:
   push_int 1
   add
   store ci
-  jump __L618
-__L619:
+  jump __L512
+__L513:
   load g_in_len
   load chunk
   add
   store g_in_len
-__L617:
-  jump __L612
-__L613:
+__L511:
+  jump __L506
+__L507:
   load chunk_buf
   call delete U8Array
   pop
   load g_in_len
   push_int 0
   le
-  jump_ifnot __L620
+  jump_ifnot __L514
   push_int 1
   return
-__L620:
+__L514:
   load src
   load strtab
   load string_lits

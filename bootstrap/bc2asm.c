@@ -143,16 +143,6 @@ static void build_mangled(char *buf, int bufsz,
 }
 
 /* Extract base name (before first "__") */
-static void base_name(const char *mangled, char *buf, int bufsz) {
-    const char *sep = strstr(mangled, "__");
-    if (sep) {
-        int len = (int)(sep - mangled);
-        if (len >= bufsz) len = bufsz - 1;
-        strncpy(buf, mangled, len); buf[len] = '\0';
-    } else {
-        strncpy(buf, mangled, bufsz - 1); buf[bufsz - 1] = '\0';
-    }
-}
 
 static BcProg *bc_parse(FILE *in) {
     BcProg *p=calloc(1,sizeof(BcProg)); BcFunc *cur=NULL; LabelTab lt={0};
@@ -254,21 +244,6 @@ static int is_local(BcFunc *fn, const char *name) {
 
 /* ===== Builtin detection ===== */
 
-static int is_builtin(const char *mangled) {
-    static const char *B[] = {
-        "peek8","peek16","peek32","poke8","poke16","poke32",
-        "sys_write","sys_read","sys_exit",
-        "print_i32","print_u32","print_bool","print_str",
-        "len","get","set","delete","append","equals",
-        "heap_mark","heap_reset",
-        NULL
-    };
-    char name[128]; base_name(mangled, name, sizeof(name));
-    for (int i = 0; B[i]; i++)
-        if (!strcmp(name, B[i])) return 1;
-    { int n=strlen(name); if(n>5 && !strcmp(name+n-5,"Array") && isupper((unsigned char)name[0])) return 1; }
-    return 0;
-}
 
 /* ===== Code generation ===== */
 
@@ -412,15 +387,10 @@ static void emit_fn(BcProg *prog, BcFunc *fn, int fi) {
                 E("    lw   %s, %d(sp)\n", areg[i],
                   4*noverflow + 4*(nargs-1-i));
 
-            if (is_builtin(ins->sarg)) {
-                char bname[128]; base_name(ins->sarg, bname, sizeof(bname));
-                /* Inline sys_exit */
-                if (!strcmp(bname, "sys_exit")) {
-                    E("    li   a7, 93\n");   /* __NR_exit (Linux riscv) */
-                    E("    ecall\n");
-                } else {
-                    E("    call __tc_%s\n", bname);
-                }
+            /* Inline sys_exit as ecall; everything else is a normal call */
+            if (!strncmp(ins->sarg, "sys_exit", 8)) {
+                E("    li   a7, 93\n");   /* __NR_exit (Linux riscv) */
+                E("    ecall\n");
             } else {
                 E("    call %s\n", ins->sarg);
             }

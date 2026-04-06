@@ -52,7 +52,8 @@
 .string 49 "get"
 .string 50 "__v"
 .string 51 "field"
-.string 52 "program"
+.string 52 "delete"
+.string 53 "program"
 
 ; globals
 .global TK_FN i32 0
@@ -8055,6 +8056,376 @@ __L425:
   store si
   jump __L425
 __L426:
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load src
+  load struct_line
+  load sb
+  load indent
+  call emit_stmt_comment_line StringBuffer i32 StringBuffer i32
+  pop
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 16
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 52
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 42
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 43
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 46
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 36
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load sname_buf
+  push_int 0
+  load snlen
+  call emit_n StringBuffer U8Array i32 i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 44
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 36
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 15
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 41
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 39
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 52
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 34
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 4
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 19
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 46
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 36
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 47
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 25
+  call emit_string StringBuffer String
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
   load sname_buf
   call delete U8Array
   pop
@@ -8139,7 +8510,7 @@ __L427:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 52
+  push_str 53
   call emit_string StringBuffer String
   pop
 __L428:

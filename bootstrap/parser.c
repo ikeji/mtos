@@ -699,6 +699,34 @@ static void gen_struct_synthetic_fns(AstNode *prog, AstNode *struct_node) {
         ast_add_child(fn, block);
         ast_add_child(prog, fn);
     }
+
+    /* --- delete: delete(__p: StructName) -> void --- */
+    {
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup("delete");
+
+        AstNode *params = ast_node("params", line);
+        ast_add_child(params, mk_param("__p", sname, line));
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type("void", line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+        /* delete(__p as U32Array); */
+        AstNode *p_as_arr = mk_cast(mk_var("__p", line), "U32Array", line);
+        AstNode *args[] = {p_as_arr};
+        AstNode *cs = mk_call("call_stmt", "delete", line, 1, args);
+        ast_add_child(block, cs);
+
+        /* return; */
+        AstNode *ret_stmt = ast_node("return", line);
+        ast_add_child(block, ret_stmt);
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
 }
 
 static AstNode *parse_struct_decl(Parser *p) {

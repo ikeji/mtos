@@ -221,6 +221,22 @@ static void exec_block(Interp *ip, AstNode *block);
 
 /* ---- built-in function dispatch ---- */
 
+/* Check if name is a known builtin (for interp dispatch priority). */
+static int call_builtin_known(const char *name) {
+    static const char *B[] = {
+        "peek8","peek16","peek32","poke8","poke16","poke32",
+        "sys_write","sys_read","sys_exit",
+        "print_i32","print_u32","print_bool","print_str",
+        "len","get","set","delete","append","equals",
+        "heap_mark","heap_reset",
+        NULL
+    };
+    for (int i = 0; B[i]; i++)
+        if (strcmp(name, B[i]) == 0) return 1;
+    { int n = strlen(name); if (n > 5 && strcmp(name+n-5,"Array")==0 && isupper((unsigned char)name[0])) return 1; }
+    return 0;
+}
+
 static Value call_builtin(Interp *ip, const char *name, Value *args, int nargs) {
     /* peek/poke */
     if (strcmp(name, "peek8") == 0) {
@@ -422,20 +438,8 @@ static Value call_builtin(Interp *ip, const char *name, Value *args, int nargs) 
     return val_void(); /* unhandled built-in */
 }
 
-static int is_builtin(const char *name) {
-    static const char *builtins[] = {
-        "peek8","peek16","peek32","poke8","poke16","poke32",
-        "sys_write","sys_read","sys_exit",
-        "print_i32","print_u32","print_bool","print_str",
-        "len","get","set","delete","append","equals",
-        "heap_mark","heap_reset",
-        NULL
-    };
-    for (int i = 0; builtins[i]; i++)
-        if (strcmp(name, builtins[i]) == 0) return 1;
-    { int n = strlen(name); if (n > 5 && strcmp(name+n-5,"Array")==0 && isupper((unsigned char)name[0])) return 1; }
-    return 0;
-}
+/* is_builtin removed — dispatch_call now searches user functions first,
+   falling back to call_builtin. */
 
 /* ---- call user function ---- */
 
@@ -460,15 +464,13 @@ static Value call_fn(Interp *ip, AstNode *fn_node, Value *args, int nargs) {
 /* ---- dispatch call ---- */
 
 static Value dispatch_call(Interp *ip, const char *name, Value *args, int nargs) {
-    if (is_builtin(name)) {
+    /* Builtin first (interp cannot distinguish ref types for overloads) */
+    if (call_builtin_known(name))
         return call_builtin(ip, name, args, nargs);
-    }
+    /* User function fallback */
     AstNode *fn = find_fn(ip, name, args, nargs);
-    if (!fn) {
-        /* try built-in as fallback (e.g. newStructName) */
-        return call_builtin(ip, name, args, nargs);
-    }
-    return call_fn(ip, fn, args, nargs);
+    if (fn) return call_fn(ip, fn, args, nargs);
+    return call_builtin(ip, name, args, nargs);
 }
 
 /* ---- evaluate expressions ---- */

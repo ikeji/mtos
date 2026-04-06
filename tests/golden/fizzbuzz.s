@@ -95,7 +95,7 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_print_str
+    call print_str__String
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -131,7 +131,7 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_print_str
+    call print_str__String
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -167,7 +167,7 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_print_str
+    call print_str__String
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -178,7 +178,7 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_print_i32
+    call print_i32__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

@@ -527,22 +527,8 @@ static void base_name(const char *mangled, char *buf, int bufsz) {
     }
 }
 
-static int is_builtin(const char *name) {
-    static const char *B[] = {
-        "peek8","peek16","peek32","poke8","poke16","poke32",
-        "sys_write","sys_read","sys_exit",
-        "print_i32","print_u32","print_bool","print_str",
-        "len","get","set","delete","append","equals",
-        "heap_mark","heap_reset",
-        NULL
-    };
-    char base[128]; base_name(name, base, sizeof(base));
-    for (int i = 0; B[i]; i++)
-        if (strcmp(base, B[i]) == 0) return 1;
-    /* XxxArray constructor */
-    { int n = strlen(base); if (n > 5 && !strcmp(base+n-5,"Array") && isupper((unsigned char)base[0])) return 1; }
-    return 0;
-}
+/* is_builtin removed — vm_dispatch now searches user functions first,
+   falling back to call_builtin which dispatches by base name. */
 
 static Value call_builtin(const char *mangled, Value *args, int nargs) {
     char name[128]; base_name(mangled, name, sizeof(name));
@@ -662,12 +648,12 @@ static Value call_builtin(const char *mangled, Value *args, int nargs) {
 static Value vm_exec(VM *vm, BcFunc *fn, Value *args, int nargs);
 
 static Value vm_dispatch(VM *vm, const char *name, Value *args, int nargs) {
-    if (is_builtin(name)) return call_builtin(name, args, nargs);
+    /* User functions first (exact mangled name match) */
     for (int i = 0; i < vm->prog->nfuncs; i++) {
         if (strcmp(vm->prog->funcs[i].name, name) == 0)
             return vm_exec(vm, &vm->prog->funcs[i], args, nargs);
     }
-    /* fallback to builtin (e.g. newStructName) */
+    /* Builtin fallback */
     return call_builtin(name, args, nargs);
 }
 

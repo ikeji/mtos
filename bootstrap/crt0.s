@@ -9,7 +9,7 @@ _start:
     la   sp, __stack_end
     call main
     # exit(result) — go through __tc_sys_exit for cleanup/stats
-    call __tc_sys_exit
+    call sys_exit__i32
     # fallback if __tc_sys_exit returns
     li   a7, 93       /* __NR_exit */
     ecall

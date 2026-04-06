@@ -79,6 +79,17 @@
   return_void
 .endfn
 
+.fn delete Point void
+.param __p Point
+; struct Point { x: i32, y: i32 }
+  load __p
+  call delete U32Array
+  pop
+; struct Point { x: i32, y: i32 }
+  return_void
+  return_void
+.endfn
+
 .fn main i32
 .local p Point
 ; var p: Point = Point(3, 4);

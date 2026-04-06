@@ -1001,18 +1001,7 @@ fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i
     }
     ft_set_np(fntab, fi2, nfp);
 
-    // Register delete(StructName) -> void
-    var del_fi: i32 = g_fn_count;
-    g_fn_count = g_fn_count + 1;
-    var del_ss: i32 = st_add_str(strtab, "delete");
-    ft_set_nss(fntab, del_fi, del_ss);
-    ft_set_nsl(fntab, del_fi, 6);
-    ft_set_np(fntab, del_fi, 1);
-    ft_set_pss(fntab, del_fi, 0, sname_ss);
-    ft_set_psl(fntab, del_fi, 0, sname_sl);
-    var void_ss2: i32 = st_add_str(strtab, "void");
-    ft_set_rss(fntab, del_fi, void_ss2);
-    ft_set_rsl(fntab, del_fi, 4);
+    // delete(StructName) is now generated as a synthetic fn by the parser
     return;
 }
 

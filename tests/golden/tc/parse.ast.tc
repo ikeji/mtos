@@ -10822,6 +10822,460 @@
           )
         )
       )
+      (comment "emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_stmt_comment_line(src, struct_line, sb, indent);")
+      (call_stmt emit_stmt_comment_line
+        (var src)
+        (var struct_line)
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
+      (call_stmt emit_string
+        (var sb)
+        (str "fn")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"delete\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "delete")
+      )
+      (comment "emit_string(sb, \"delete\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 1))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "params")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 2))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
+      (call_stmt emit_string
+        (var sb)
+        (str "param")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "__p")
+      )
+      (comment "emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 3))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_n(sb, sname_buf, 0, snlen);")
+      (call_stmt emit_n
+        (var sb)
+        (var sname_buf)
+        (int 0)
+        (var snlen)
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 2))
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 1))
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 1))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "ret")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 2))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"void\");")
+      (call_stmt emit_string
+        (var sb)
+        (str "void")
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 1))
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 1))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "block")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 2))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
+      (call_stmt emit_string
+        (var sb)
+        (str "call_stmt")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"delete\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "delete")
+      )
+      (comment "emit_string(sb, \"delete\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 3))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "cast")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 4);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 4))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
+      (call_stmt emit_string
+        (var sb)
+        (str "var")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "__p")
+      )
+      (comment "emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 3))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "U32Array")
+      )
+      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 2))
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "return")
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+(var indent)
+(int 1))
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, ')');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
       (comment "delete(sname_buf);")
       (call_stmt delete
         (var sname_buf)

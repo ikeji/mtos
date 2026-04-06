@@ -166,33 +166,25 @@ static HeapObj *new_obj(int kind) {
 
 /* ===== Print helpers ===== */
 
-void __tc_print_i32(int32_t v) {
+void print_i32__i32(int32_t v) {
     char buf[16]; int len = i32_to_str(v, buf);
     do_write(1, buf, len);
 }
 
-void __tc_print_u32(uint32_t v) {
+void print_u32__u32(uint32_t v) {
     char buf[16]; int len = u32_to_str(v, buf);
     do_write(1, buf, len);
 }
 
-void __tc_print_bool(int32_t v) {
+void print_bool__bool(int32_t v) {
     if (v) do_write(1, "true\n",  5);
     else   do_write(1, "false\n", 6);
 }
 
-void __tc_print_str(HeapObj *s) {
+void print_str__String(HeapObj *s) {
     if (s && s->kind == OBJ_STRING && s->bytes)
         do_write(1, (char*)s->bytes, s->len);
     do_write(1, "\n", 1);
-}
-
-/* ===== String construction ===== */
-
-HeapObj *__tc_make_string(const char *data, int len) {
-    HeapObj *o = new_obj(OBJ_STRING);
-    o->len = len; o->bytes = (uint8_t*)data; o->is_literal = 1;
-    return o;
 }
 
 /* ===== Array operations ===== */
@@ -204,26 +196,28 @@ static HeapObj *new_array(int sz) {
     return o;
 }
 
-HeapObj *__tc_U8Array (int32_t sz) { return new_array(sz); }
-HeapObj *__tc_U16Array(int32_t sz) { return new_array(sz); }
-HeapObj *__tc_U32Array(int32_t sz) { return new_array(sz); }
-HeapObj *__tc_I8Array (int32_t sz) { return new_array(sz); }
-HeapObj *__tc_I16Array(int32_t sz) { return new_array(sz); }
-HeapObj *__tc_I32Array  (int32_t sz) { return new_array(sz); }
-HeapObj *__tc_StringArray(int32_t sz) { return new_array(sz); }
-HeapObj *__tc_newU8Array (int32_t sz) { return new_array(sz); }
-HeapObj *__tc_newU16Array(int32_t sz) { return new_array(sz); }
-HeapObj *__tc_newU32Array(int32_t sz) { return new_array(sz); }
-HeapObj *__tc_newI8Array (int32_t sz) { return new_array(sz); }
-HeapObj *__tc_newI16Array(int32_t sz) { return new_array(sz); }
-HeapObj *__tc_newI32Array(int32_t sz) { return new_array(sz); }
+/* Array constructors — mangled as TypeName__i32 */
+#define ARRAY_CTOR(T) HeapObj * T##__i32(int32_t sz) { return new_array(sz); }
+ARRAY_CTOR(U8Array)
+ARRAY_CTOR(U16Array)
+ARRAY_CTOR(U32Array)
+ARRAY_CTOR(I8Array)
+ARRAY_CTOR(I16Array)
+ARRAY_CTOR(I32Array)
+ARRAY_CTOR(StringArray)
 
-int32_t __tc_len(HeapObj *o) {
+/* len — all array/string types share the same implementation */
+static int32_t len_impl(HeapObj *o) {
     if (!o) return 0;
     return o->kind == OBJ_ARRAY ? o->size : o->len;
 }
+#define LEN_ALIAS(T) int32_t len__##T(HeapObj *o) { return len_impl(o); }
+LEN_ALIAS(U8Array)   LEN_ALIAS(U16Array)  LEN_ALIAS(U32Array)
+LEN_ALIAS(I8Array)   LEN_ALIAS(I16Array)  LEN_ALIAS(I32Array)
+LEN_ALIAS(StringArray) LEN_ALIAS(String)
 
-int32_t __tc_get(HeapObj *o, int32_t idx) {
+/* get — all array/string types share the same implementation */
+static int32_t get_impl(HeapObj *o, int32_t idx) {
     if (!o) { do_write(2, "get: null\n", 10); __syscall1(SYS_exit, 1); }
     if (o->kind == OBJ_STRING) {
         if (idx < 0 || idx >= o->len) return 0;
@@ -235,30 +229,47 @@ int32_t __tc_get(HeapObj *o, int32_t idx) {
     }
     return o->fields[idx];
 }
+#define GET_ALIAS(T) int32_t get__##T##__i32(HeapObj *o, int32_t i) { return get_impl(o, i); }
+GET_ALIAS(U8Array)   GET_ALIAS(U16Array)  GET_ALIAS(U32Array)
+GET_ALIAS(I8Array)   GET_ALIAS(I16Array)  GET_ALIAS(I32Array)
+GET_ALIAS(StringArray) GET_ALIAS(String)
 
-void __tc_set(HeapObj *o, int32_t idx, int32_t val) {
+/* set — all array types share the same implementation */
+static void set_impl(HeapObj *o, int32_t idx, int32_t val) {
     if (!o || idx < 0 || idx >= o->size) {
         do_write(2, "set: out of bounds\n", 19);
         __syscall1(SYS_exit, 1);
     }
     o->fields[idx] = val;
 }
+void set__U8Array__i32__u8    (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
+void set__U16Array__i32__u16  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
+void set__U32Array__i32__u32  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
+void set__I8Array__i32__i8    (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
+void set__I16Array__i32__i16  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
+void set__I32Array__i32__i32  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
+void set__StringArray__i32__String(HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
 
-void __tc_delete(HeapObj *o) {
+/* delete — all types share the same implementation */
+static void delete_impl(HeapObj *o) {
     if (!o) return;
-    if (o->is_literal) return; /* static .rodata HeapObj — do not free */
+    if (o->is_literal) return;
     if (o->kind == OBJ_ARRAY) pool_free_blk(o->fields);
     else if (o->bytes)        pool_free_blk(o->bytes);
     pool_free_blk(o);
 }
+#define DELETE_ALIAS(T) void delete__##T(HeapObj *o) { delete_impl(o); }
+DELETE_ALIAS(U8Array)   DELETE_ALIAS(U16Array)  DELETE_ALIAS(U32Array)
+DELETE_ALIAS(I8Array)   DELETE_ALIAS(I16Array)  DELETE_ALIAS(I32Array)
+DELETE_ALIAS(StringArray) DELETE_ALIAS(String)
 
 /* Mark/reset are no-ops now that the pool allocator supports free(). */
-int32_t __tc_heap_mark(void) { return 0; }
-void __tc_heap_reset(int32_t mark) { (void)mark; }
+int32_t heap_mark(void) { return 0; }
+void heap_reset__i32(int32_t mark) { (void)mark; }
 
 /* ===== String operations ===== */
 
-HeapObj *__tc_append_char(HeapObj *s, int32_t c) {
+HeapObj *append__String__u8(HeapObj *s, int32_t c) {
     int sl = s ? s->len : 0;
     HeapObj *ns = new_obj(OBJ_STRING);
     ns->len = sl + 1;
@@ -269,7 +280,7 @@ HeapObj *__tc_append_char(HeapObj *s, int32_t c) {
     return ns;
 }
 
-HeapObj *__tc_append_str(HeapObj *s, HeapObj *t) {
+HeapObj *append__String__String(HeapObj *s, HeapObj *t) {
     int sl = s ? s->len : 0, tl = t ? t->len : 0;
     HeapObj *ns = new_obj(OBJ_STRING);
     ns->len = sl + tl;
@@ -280,7 +291,7 @@ HeapObj *__tc_append_str(HeapObj *s, HeapObj *t) {
     return ns;
 }
 
-int32_t __tc_equals(HeapObj *s, HeapObj *t) {
+int32_t equals__String__String(HeapObj *s, HeapObj *t) {
     if (!s || !t) return s == t;
     if (s->len != t->len) return 0;
     for (int i = 0; i < s->len; i++)
@@ -290,16 +301,16 @@ int32_t __tc_equals(HeapObj *s, HeapObj *t) {
 
 /* ===== peek / poke ===== */
 
-uint32_t __tc_peek8 (uint32_t a) { return *(uint8_t  *)a; }
-uint32_t __tc_peek16(uint32_t a) { return *(uint16_t *)a; }
-uint32_t __tc_peek32(uint32_t a) { return *(uint32_t *)a; }
-void __tc_poke8 (uint32_t a, uint32_t v) { *(uint8_t  *)a = v; }
-void __tc_poke16(uint32_t a, uint32_t v) { *(uint16_t *)a = v; }
-void __tc_poke32(uint32_t a, uint32_t v) { *(uint32_t *)a = v; }
+uint32_t peek8__u32 (uint32_t a) { return *(uint8_t  *)a; }
+uint32_t peek16__u32(uint32_t a) { return *(uint16_t *)a; }
+uint32_t peek32__u32(uint32_t a) { return *(uint32_t *)a; }
+void poke8__u32__u32 (uint32_t a, uint32_t v) { *(uint8_t  *)a = v; }
+void poke16__u32__u32(uint32_t a, uint32_t v) { *(uint16_t *)a = v; }
+void poke32__u32__u32(uint32_t a, uint32_t v) { *(uint32_t *)a = v; }
 
 /* ===== sys calls ===== */
 
-int32_t __tc_sys_write(int32_t fd, HeapObj *buf, int32_t len) {
+static int32_t sys_write_impl(int32_t fd, HeapObj *buf, int32_t len) {
     if (!buf || buf->kind != OBJ_ARRAY) return -1;
     int n = len < buf->size ? len : buf->size;
     char tmp[256];
@@ -313,8 +324,9 @@ int32_t __tc_sys_write(int32_t fd, HeapObj *buf, int32_t len) {
     }
     return total;
 }
+int32_t sys_write__i32__U8Array__i32(int32_t fd, HeapObj *b, int32_t l) { return sys_write_impl(fd,b,l); }
 
-int32_t __tc_sys_read(int32_t fd, HeapObj *buf, int32_t len) {
+static int32_t sys_read_impl(int32_t fd, HeapObj *buf, int32_t len) {
     if (!buf || buf->kind != OBJ_ARRAY) return -1;
     int n = len < buf->size ? len : buf->size;
     char tmp[256];
@@ -329,6 +341,7 @@ int32_t __tc_sys_read(int32_t fd, HeapObj *buf, int32_t len) {
     }
     return total;
 }
+int32_t sys_read__i32__U8Array__i32(int32_t fd, HeapObj *b, int32_t l) { return sys_read_impl(fd,b,l); }
 
 static void pool_dump_stats(void) {
     char tmp[16]; int n;
@@ -347,7 +360,7 @@ static void pool_dump_stats(void) {
     }
 }
 
-void __tc_sys_exit(int32_t code) {
+void sys_exit__i32(int32_t code) {
     pool_dump_stats();
     __syscall1(SYS_exit, code);
 }
