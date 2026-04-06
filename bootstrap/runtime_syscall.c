@@ -188,22 +188,22 @@ void print_str__String(HeapObj *s) {
 
 /* ===== Array operations ===== */
 
-static HeapObj *new_array(int sz) {
+/* Typed array constructor: allocates sz * elem_bytes for the data buffer. */
+static HeapObj *new_typed_array(int sz, int elem_bytes) {
     HeapObj *o = new_obj(OBJ_ARRAY);
     o->size = sz;
-    o->data = pool_alloc(sz > 0 ? sz * (int)sizeof(int32_t) : 4);
+    o->data = pool_alloc(sz > 0 ? sz * elem_bytes : 4);
     return o;
 }
 
-/* Array constructors — mangled as TypeName__i32 */
-#define ARRAY_CTOR(T) HeapObj * T##__i32(int32_t sz) { return new_array(sz); }
-ARRAY_CTOR(U8Array)
-ARRAY_CTOR(U16Array)
-ARRAY_CTOR(U32Array)
-ARRAY_CTOR(I8Array)
-ARRAY_CTOR(I16Array)
-ARRAY_CTOR(I32Array)
-ARRAY_CTOR(StringArray)
+/* Array constructors — element size matches the type name */
+HeapObj *U8Array__i32 (int32_t sz) { return new_typed_array(sz, 1); }
+HeapObj *U16Array__i32(int32_t sz) { return new_typed_array(sz, 2); }
+HeapObj *U32Array__i32(int32_t sz) { return new_typed_array(sz, 4); }
+HeapObj *I8Array__i32 (int32_t sz) { return new_typed_array(sz, 1); }
+HeapObj *I16Array__i32(int32_t sz) { return new_typed_array(sz, 2); }
+HeapObj *I32Array__i32(int32_t sz) { return new_typed_array(sz, 4); }
+HeapObj *StringArray__i32(int32_t sz) { return new_typed_array(sz, 4); } /* ptrs are 4B */
 
 /* len — all array/string types share the same implementation */
 static int32_t len_impl(HeapObj *o) {
@@ -215,39 +215,43 @@ LEN_ALIAS(U8Array)   LEN_ALIAS(U16Array)  LEN_ALIAS(U32Array)
 LEN_ALIAS(I8Array)   LEN_ALIAS(I16Array)  LEN_ALIAS(I32Array)
 LEN_ALIAS(StringArray) LEN_ALIAS(String)
 
-/* get — all array/string types share the same implementation */
-static int32_t get_impl(HeapObj *o, int32_t idx) {
+/* get — typed per element size */
+static void get_null_check(HeapObj *o) {
     if (!o) { do_write(2, "get: null\n", 10); __syscall1(SYS_exit, 1); }
-    if (o->kind == OBJ_STRING) {
-        if (idx < 0 || idx >= o->len) return 0;
-        return ((uint8_t*)o->data)[idx];
-    }
+}
+static void get_bounds_check(HeapObj *o, int32_t idx) {
     if (idx < 0 || idx >= o->size) {
-        do_write(2, "get: out of bounds\n", 19);
-        __syscall1(SYS_exit, 1);
+        do_write(2, "get: out of bounds\n", 19); __syscall1(SYS_exit, 1);
     }
-    return ((int32_t*)o->data)[idx];
 }
-#define GET_ALIAS(T) int32_t get__##T##__i32(HeapObj *o, int32_t i) { return get_impl(o, i); }
-GET_ALIAS(U8Array)   GET_ALIAS(U16Array)  GET_ALIAS(U32Array)
-GET_ALIAS(I8Array)   GET_ALIAS(I16Array)  GET_ALIAS(I32Array)
-GET_ALIAS(StringArray) GET_ALIAS(String)
 
-/* set — all array types share the same implementation */
-static void set_impl(HeapObj *o, int32_t idx, int32_t val) {
-    if (!o || idx < 0 || idx >= o->size) {
-        do_write(2, "set: out of bounds\n", 19);
-        __syscall1(SYS_exit, 1);
-    }
-    ((int32_t*)o->data)[idx] = val;
+int32_t get__U8Array__i32 (HeapObj *o, int32_t i) { get_null_check(o); get_bounds_check(o,i); return ((uint8_t *)o->data)[i]; }
+int32_t get__U16Array__i32(HeapObj *o, int32_t i) { get_null_check(o); get_bounds_check(o,i); return ((uint16_t*)o->data)[i]; }
+int32_t get__U32Array__i32(HeapObj *o, int32_t i) { get_null_check(o); get_bounds_check(o,i); return ((uint32_t*)o->data)[i]; }
+int32_t get__I8Array__i32 (HeapObj *o, int32_t i) { get_null_check(o); get_bounds_check(o,i); return ((int8_t  *)o->data)[i]; }
+int32_t get__I16Array__i32(HeapObj *o, int32_t i) { get_null_check(o); get_bounds_check(o,i); return ((int16_t *)o->data)[i]; }
+int32_t get__I32Array__i32(HeapObj *o, int32_t i) { get_null_check(o); get_bounds_check(o,i); return ((int32_t *)o->data)[i]; }
+int32_t get__StringArray__i32(HeapObj *o, int32_t i) { get_null_check(o); get_bounds_check(o,i); return ((int32_t *)o->data)[i]; }
+int32_t get__String__i32(HeapObj *o, int32_t i) {
+    get_null_check(o);
+    if (i < 0 || i >= o->len) return 0;
+    return ((uint8_t*)o->data)[i];
 }
-void set__U8Array__i32__u8    (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
-void set__U16Array__i32__u16  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
-void set__U32Array__i32__u32  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
-void set__I8Array__i32__i8    (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
-void set__I16Array__i32__i16  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
-void set__I32Array__i32__i32  (HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
-void set__StringArray__i32__String(HeapObj *o, int32_t i, int32_t v) { set_impl(o,i,v); }
+
+/* set — typed per element size */
+static void set_bounds_check(HeapObj *o, int32_t idx) {
+    if (!o || idx < 0 || idx >= o->size) {
+        do_write(2, "set: out of bounds\n", 19); __syscall1(SYS_exit, 1);
+    }
+}
+
+void set__U8Array__i32__u8    (HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((uint8_t *)o->data)[i] = (uint8_t)v; }
+void set__U16Array__i32__u16  (HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((uint16_t*)o->data)[i] = (uint16_t)v; }
+void set__U32Array__i32__u32  (HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((uint32_t*)o->data)[i] = (uint32_t)v; }
+void set__I8Array__i32__i8    (HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int8_t  *)o->data)[i] = (int8_t)v; }
+void set__I16Array__i32__i16  (HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int16_t *)o->data)[i] = (int16_t)v; }
+void set__I32Array__i32__i32  (HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int32_t *)o->data)[i] = v; }
+void set__StringArray__i32__String(HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int32_t *)o->data)[i] = v; }
 
 /* delete — all types share the same implementation */
 static void delete_impl(HeapObj *o) {
@@ -314,39 +318,32 @@ void poke32__u32__u32(uint32_t a, uint32_t v) { *(uint32_t *)a = v; }
 
 /* ===== sys calls ===== */
 
-static int32_t sys_write_impl(int32_t fd, HeapObj *buf, int32_t len) {
+/* sys_write/read: U8Array is now 1 byte per element — direct I/O. */
+int32_t sys_write__i32__U8Array__i32(int32_t fd, HeapObj *buf, int32_t len) {
     if (!buf || buf->kind != OBJ_ARRAY) return -1;
     int n = len < buf->size ? len : buf->size;
-    char tmp[256];
+    uint8_t *p = (uint8_t*)buf->data;
     int total = 0;
     while (total < n) {
-        int chunk = (n - total) < 256 ? (n - total) : 256;
-        int32_t *fp = (int32_t*)buf->data;
-        for (int i = 0; i < chunk; i++) tmp[i] = (char)fp[total + i];
-        long r = __syscall3(SYS_write, fd, (long)tmp, chunk);
+        long r = __syscall3(SYS_write, fd, (long)(p + total), n - total);
         if (r <= 0) break;
         total += (int)r;
     }
     return total;
 }
-int32_t sys_write__i32__U8Array__i32(int32_t fd, HeapObj *b, int32_t l) { return sys_write_impl(fd,b,l); }
 
-static int32_t sys_read_impl(int32_t fd, HeapObj *buf, int32_t len) {
+int32_t sys_read__i32__U8Array__i32(int32_t fd, HeapObj *buf, int32_t len) {
     if (!buf || buf->kind != OBJ_ARRAY) return -1;
     int n = len < buf->size ? len : buf->size;
-    char tmp[256];
+    uint8_t *p = (uint8_t*)buf->data;
     int total = 0;
     while (total < n) {
-        int chunk = (n - total) < 256 ? (n - total) : 256;
-        long r = __syscall3(SYS_read, fd, (long)tmp, chunk);
+        long r = __syscall3(SYS_read, fd, (long)(p + total), n - total);
         if (r <= 0) break;
-        for (int i = 0; i < (int)r; i++)
-            ((int32_t*)buf->data)[total + i] = (uint8_t)tmp[i];
         total += (int)r;
     }
     return total;
 }
-int32_t sys_read__i32__U8Array__i32(int32_t fd, HeapObj *b, int32_t l) { return sys_read_impl(fd,b,l); }
 
 static void pool_dump_stats(void) {
     char tmp[16]; int n;
