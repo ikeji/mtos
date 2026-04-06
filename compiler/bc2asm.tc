@@ -822,28 +822,13 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             asm_push_t0(ob);
         }
         if op==OP_PUSH_STR {
-            // la a0, __tc_strdataN
-            e_la(ob);
-            ob_char('a',ob);ob_char('0',ob); ecomma(ob);
+            // la t0, __tc_strobjN
+            e_la(ob); eregt0(ob);
             ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
-            ob_char('t',ob);ob_char('a',ob);
+            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+            ob_char('j',ob);
             ob_int(ival,ob); ob_char(10u8,ob);
-            // li a1, LEN
-            var str_len: i32=get(string_lits,(ival*2+1));
-            e_li(ob);
-            ob_char('a',ob);ob_char('1',ob); ecomma(ob);
-            ob_int(str_len,ob); ob_char(10u8,ob);
-            // call __tc_make_string
-            e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-            ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);
-            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);
-            ob_char('g',ob);ob_char(10u8,ob);
-            // push a0 onto expression stack
-            e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
-            e_sw(ob);
-            ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);
+            asm_push_t0(ob);
         }
         if op==OP_LOAD {
             if is_local(strtab,fns,params_pool,locals_pool,fi,sss,ssl)==1 {
@@ -1062,6 +1047,44 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
             ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
             emit_strdata(strtab,ss,sl,ob); ob_char(10u8,ob);
             si=si+1;
+        }
+        ob_char(10u8,ob);
+        // Static HeapObj for each string literal
+        var si2: i32=0;
+        while si2<g_nstrings {
+            var ss2: i32=get(string_lits,(si2*2+0));
+            var sl2: i32=get(string_lits,(si2*2+1));
+            // "    .align 4\n"
+            e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);
+            ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);
+            // "__tc_strobjN:\n"
+            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+            ob_char('j',ob);
+            ob_int(si2,ob); ob_char(':',ob);ob_char(10u8,ob);
+            // "    .word 1\n"  (kind = OBJ_STRING)
+            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+            ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+            // "    .word 0\n"  (size = 0)
+            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+            ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+            // "    .word LEN\n"  (len)
+            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+            ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);
+            // "    .word 1\n"  (is_literal = 1)
+            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+            ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+            // "    .word 0\n"  (fields = NULL)
+            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+            ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+            // "    .word __tc_strdataN\n"  (bytes)
+            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+            ob_char(' ',ob);
+            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+            ob_char('t',ob);ob_char('a',ob);
+            ob_int(si2,ob);ob_char(10u8,ob);
+            si2=si2+1;
         }
         ob_char(10u8,ob);
     }

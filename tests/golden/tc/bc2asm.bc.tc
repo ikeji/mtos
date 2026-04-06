@@ -6742,7 +6742,6 @@ __L510:
 .local ival i32
 .local sss i32
 .local ssl i32
-.local str_len i32
 .local off i32
 .local nargs i32
 .local nreg i32
@@ -7630,23 +7629,13 @@ __L542:
   load OP_PUSH_STR
   eq
   jump_ifnot __L543
-; e_la(ob);
+; e_la(ob); eregt0(ob);
   load ob
   call e_la U8Array
   pop
-; ob_char('a',ob);ob_char('0',ob); ecomma(ob);
-  push_int 97
+; e_la(ob); eregt0(ob);
   load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('a',ob);ob_char('0',ob); ecomma(ob);
-  push_int 48
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('a',ob);ob_char('0',ob); ecomma(ob);
-  load ob
-  call ecomma U8Array
+  call eregt0 U8Array
   pop
 ; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
   push_int 95
@@ -7673,38 +7662,33 @@ __L542:
   load ob
   call ob_char u8 U8Array
   pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
   push_int 115
   load ob
   call ob_char u8 U8Array
   pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
   push_int 116
   load ob
   call ob_char u8 U8Array
   pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
   push_int 114
   load ob
   call ob_char u8 U8Array
   pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
-  push_int 100
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+  push_int 111
   load ob
   call ob_char u8 U8Array
   pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
-  push_int 97
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+  push_int 98
   load ob
   call ob_char u8 U8Array
   pop
-; ob_char('t',ob);ob_char('a',ob);
-  push_int 116
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('t',ob);ob_char('a',ob);
-  push_int 97
+; ob_char('j',ob);
+  push_int 106
   load ob
   call ob_char u8 U8Array
   pop
@@ -7718,206 +7702,9 @@ __L542:
   load ob
   call ob_char u8 U8Array
   pop
-; var str_len: i32=get(string_lits,(ival*2+1));
-  load string_lits
-  load ival
-  push_int 2
-  mul
-  push_int 1
-  add
-  call get I32Array i32
-  store str_len
-; e_li(ob);
+; asm_push_t0(ob);
   load ob
-  call e_li U8Array
-  pop
-; ob_char('a',ob);ob_char('1',ob); ecomma(ob);
-  push_int 97
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('a',ob);ob_char('1',ob); ecomma(ob);
-  push_int 49
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('a',ob);ob_char('1',ob); ecomma(ob);
-  load ob
-  call ecomma U8Array
-  pop
-; ob_int(str_len,ob); ob_char(10u8,ob);
-  load str_len
-  load ob
-  call ob_int i32 U8Array
-  pop
-; ob_int(str_len,ob); ob_char(10u8,ob);
-  push_int 10
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-  load ob
-  call e4 U8Array
-  pop
-; e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-  push_int 99
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-  push_int 97
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-  push_int 108
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-  push_int 108
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-  push_int 32
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-  push_int 95
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-  push_int 95
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-  push_int 116
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-  push_int 99
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-  push_int 95
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);
-  push_int 109
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);
-  push_int 97
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);
-  push_int 107
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);
-  push_int 101
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);
-  push_int 95
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);
-  push_int 115
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);
-  push_int 116
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);
-  push_int 114
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);
-  push_int 105
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);
-  push_int 110
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('g',ob);ob_char(10u8,ob);
-  push_int 103
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('g',ob);ob_char(10u8,ob);
-  push_int 10
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
-  load ob
-  call e_addi U8Array
-  pop
-; e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
-  load ob
-  call eregsp U8Array
-  pop
-; e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
-  load ob
-  call eregsp U8Array
-  pop
-; e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
-  push_int 45
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
-  push_int 52
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
-  push_int 10
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e_sw(ob);
-  load ob
-  call e_sw U8Array
-  pop
-; ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);
-  push_int 97
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);
-  push_int 48
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);
-  load ob
-  call ecomma U8Array
-  pop
-; ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);
-  push_int 0
-  load ob
-  call eNspnl i32 U8Array
+  call asm_push_t0 U8Array
   pop
 __L543:
 ; if op==OP_LOAD {
@@ -10110,6 +9897,9 @@ __L540:
 .local si i32
 .local ss i32
 .local sl i32
+.local si2 i32
+.local ss2 i32
+.local sl2 i32
 .local gi i32
 .local nm_ss i32
 .local nm_sl i32
@@ -10379,12 +10169,494 @@ __L604:
   load ob
   call ob_char u8 U8Array
   pop
+; var si2: i32=0;
+  push_int 0
+  store si2
+; while si2<g_nstrings {
+__L605:
+  load si2
+  load g_nstrings
+  lt
+  jump_ifnot __L606
+; var ss2: i32=get(string_lits,(si2*2+0));
+  load string_lits
+  load si2
+  push_int 2
+  mul
+  push_int 0
+  add
+  call get I32Array i32
+  store ss2
+; var sl2: i32=get(string_lits,(si2*2+1));
+  load string_lits
+  load si2
+  push_int 2
+  mul
+  push_int 1
+  add
+  call get I32Array i32
+  store sl2
+; e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);
+  load ob
+  call e4 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);
+  push_int 46
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);
+  push_int 97
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);
+  push_int 108
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);
+  push_int 105
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);
+  push_int 103
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);
+  push_int 110
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);
+  push_int 52
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 116
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 99
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+  push_int 115
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+  push_int 116
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+  push_int 114
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+  push_int 111
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
+  push_int 98
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('j',ob);
+  push_int 106
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_int(si2,ob); ob_char(':',ob);ob_char(10u8,ob);
+  load si2
+  load ob
+  call ob_int i32 U8Array
+  pop
+; ob_int(si2,ob); ob_char(':',ob);ob_char(10u8,ob);
+  push_int 58
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_int(si2,ob); ob_char(':',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  load ob
+  call e4 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 46
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 119
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 111
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 114
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 100
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 49
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  load ob
+  call e4 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 46
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 119
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 111
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 114
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 100
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 48
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  load ob
+  call e4 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 46
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 119
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 111
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 114
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 100
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);
+  load sl2
+  load ob
+  call ob_int i32 U8Array
+  pop
+; ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  load ob
+  call e4 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 46
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 119
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 111
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 114
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 100
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 49
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  load ob
+  call e4 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 46
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 119
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 111
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 114
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 100
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 48
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  load ob
+  call e4 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 46
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 119
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 111
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 114
+  load ob
+  call ob_char u8 U8Array
+  pop
+; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
+  push_int 100
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char(' ',ob);
+  push_int 32
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 116
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 99
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
+  push_int 95
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+  push_int 115
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+  push_int 116
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+  push_int 114
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+  push_int 100
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
+  push_int 97
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('t',ob);ob_char('a',ob);
+  push_int 116
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_char('t',ob);ob_char('a',ob);
+  push_int 97
+  load ob
+  call ob_char u8 U8Array
+  pop
+; ob_int(si2,ob);ob_char(10u8,ob);
+  load si2
+  load ob
+  call ob_int i32 U8Array
+  pop
+; ob_int(si2,ob);ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
+; si2=si2+1;
+  load si2
+  push_int 1
+  add
+  store si2
+  jump __L605
+__L606:
+; ob_char(10u8,ob);
+  push_int 10
+  load ob
+  call ob_char u8 U8Array
+  pop
 __L602:
 ; if g_nglobals > 0 {
   load g_nglobals
   push_int 0
   gt
-  jump_ifnot __L605
+  jump_ifnot __L607
 ; e4(ob);
   load ob
   call e4 U8Array
@@ -10423,11 +10695,11 @@ __L602:
   push_int 0
   store gi
 ; while gi<g_nglobals {
-__L606:
+__L608:
   load gi
   load g_nglobals
   lt
-  jump_ifnot __L607
+  jump_ifnot __L609
 ; var nm_ss: i32=get(global_vars,(gi*4+0));
   load global_vars
   load gi
@@ -10568,14 +10840,14 @@ __L606:
   push_int 1
   add
   store gi
-  jump __L606
-__L607:
+  jump __L608
+__L609:
 ; ob_char(10u8,ob);
   push_int 10
   load ob
   call ob_char u8 U8Array
   pop
-__L605:
+__L607:
 ; e4(ob);
   load ob
   call e4 U8Array
@@ -10619,11 +10891,11 @@ __L605:
   push_int 0
   store fi
 ; while fi<g_nfuncs {
-__L608:
+__L610:
   load fi
   load g_nfuncs
   lt
-  jump_ifnot __L609
+  jump_ifnot __L611
 ; emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);
   load strtab
   load fns
@@ -10640,8 +10912,8 @@ __L608:
   push_int 1
   add
   store fi
-  jump __L608
-__L609:
+  jump __L610
+__L611:
 ; return;
   return_void
   return_void
@@ -10718,21 +10990,21 @@ __L609:
   push_int 0
   store rdone
 ; while rdone==0&&g_in_len<524000 {
-__L610:
+__L612:
   load rdone
   push_int 0
   eq
-  jump_ifnot __L612
+  jump_ifnot __L614
   load g_in_len
   push_int 524000
   lt
-  jump_ifnot __L612
+  jump_ifnot __L614
   push_int 1
-  jump __L613
-__L612:
+  jump __L615
+__L614:
   push_int 0
-__L613:
-  jump_ifnot __L611
+__L615:
+  jump_ifnot __L613
 ; var chunk: i32=sys_read(0,chunk_buf,65536);
   push_int 0
   load chunk_buf
@@ -10743,25 +11015,25 @@ __L613:
   load chunk
   push_int 0
   le
-  jump_ifnot __L614
+  jump_ifnot __L616
 ; if chunk<=0 { rdone=1; }
   push_int 1
   store rdone
-__L614:
+__L616:
 ; if chunk>0 {
   load chunk
   push_int 0
   gt
-  jump_ifnot __L615
+  jump_ifnot __L617
 ; var ci: i32=0;
   push_int 0
   store ci
 ; while ci<chunk {
-__L616:
+__L618:
   load ci
   load chunk
   lt
-  jump_ifnot __L617
+  jump_ifnot __L619
 ; set(src,(g_in_len+ci),get(chunk_buf,ci));
   load src
   load g_in_len
@@ -10777,16 +11049,16 @@ __L616:
   push_int 1
   add
   store ci
-  jump __L616
-__L617:
+  jump __L618
+__L619:
 ; g_in_len=g_in_len+chunk;
   load g_in_len
   load chunk
   add
   store g_in_len
-__L615:
-  jump __L610
-__L611:
+__L617:
+  jump __L612
+__L613:
 ; delete(chunk_buf);
   load chunk_buf
   call delete U8Array
@@ -10795,11 +11067,11 @@ __L611:
   load g_in_len
   push_int 0
   le
-  jump_ifnot __L618
+  jump_ifnot __L620
 ; if g_in_len<=0 { return 1; }
   push_int 1
   return
-__L618:
+__L620:
 ; parse_bc(src,strtab,string_lits,global_vars,global_inits,
   load src
   load strtab

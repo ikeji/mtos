@@ -359,16 +359,10 @@ static void emit_fn(BcProg *prog, BcFunc *fn, int fi) {
             break;
 
         case OP_PUSH_STR: {
-            /* Push pointer to __tc_str_N object (initialized by runtime) */
+            /* Push pointer to static HeapObj in .rodata (no allocation) */
             int idx = (int)ins->ival;
-            E("    la   a0, __tc_strdata%d\n", idx);
-            E("    li   a1, %d\n",
-              idx < prog->nstrings && prog->strings[idx]
-              ? (int)strlen(prog->strings[idx]) : 0);
-            E("    call __tc_make_string\n");
-            /* result (HeapObj*) is in a0 — push it */
-            E("    addi sp, sp, -4\n");
-            E("    sw   a0, 0(sp)\n");
+            E("    la   t0, __tc_strobj%d\n", idx);
+            push_t0();
             break;
         }
 
@@ -572,13 +566,26 @@ static void emit_strdata(FILE *f, const char *s) {
 static void emit_program(BcProg *prog) {
     out = stdout;
 
-    /* --- .rodata: string literal data --- */
+    /* --- .rodata: string literal data + static HeapObj --- */
     if (prog->nstrings > 0) {
         E("    .section .rodata\n");
         for (int i = 0; i < prog->nstrings; i++) {
             const char *s = prog->strings[i] ? prog->strings[i] : "";
             E("__tc_strdata%d:\n", i);
             E("    .string "); emit_strdata(out, s); E("\n");
+        }
+        E("\n");
+        /* Static HeapObj for each string literal (immutable, no alloc needed) */
+        for (int i = 0; i < prog->nstrings; i++) {
+            const char *s = prog->strings[i] ? prog->strings[i] : "";
+            E("    .align 4\n");
+            E("__tc_strobj%d:\n", i);
+            E("    .word 1\n");                     /* kind = OBJ_STRING */
+            E("    .word 0\n");                     /* size = 0 */
+            E("    .word %d\n", (int)strlen(s));    /* len */
+            E("    .word 1\n");                     /* is_literal = 1 */
+            E("    .word 0\n");                     /* fields = NULL */
+            E("    .word __tc_strdata%d\n", i);     /* bytes */
         }
         E("\n");
     }

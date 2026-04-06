@@ -8,7 +8,9 @@ _start:
     .option pop
     la   sp, __stack_end
     call main
-    # exit(result)
+    # exit(result) — go through __tc_sys_exit for cleanup/stats
+    call __tc_sys_exit
+    # fallback if __tc_sys_exit returns
     li   a7, 93       /* __NR_exit */
     ecall
     /* should not reach here */

@@ -6,6 +6,31 @@ __tc_strdata1:
 __tc_strdata2:
     .string "Buzz"
 
+    .align 4
+__tc_strobj0:
+    .word 1
+    .word 0
+    .word 8
+    .word 1
+    .word 0
+    .word __tc_strdata0
+    .align 4
+__tc_strobj1:
+    .word 1
+    .word 0
+    .word 4
+    .word 1
+    .word 0
+    .word __tc_strdata1
+    .align 4
+__tc_strobj2:
+    .word 1
+    .word 0
+    .word 4
+    .word 1
+    .word 0
+    .word __tc_strdata2
+
     .text
 
     .globl fizzbuzz__i32
@@ -66,11 +91,9 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, .L_f0_pc16
-    la   a0, __tc_strdata0
-    li   a1, 8
-    call __tc_make_string
+    la   t0, __tc_strobj0
     addi sp, sp, -4
-    sw   a0, 0(sp)
+    sw   t0, 0(sp)
     lw   a0, 0(sp)
     call __tc_print_str
     addi sp, sp, 4
@@ -104,11 +127,9 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, .L_f0_pc26
-    la   a0, __tc_strdata1
-    li   a1, 4
-    call __tc_make_string
+    la   t0, __tc_strobj1
     addi sp, sp, -4
-    sw   a0, 0(sp)
+    sw   t0, 0(sp)
     lw   a0, 0(sp)
     call __tc_print_str
     addi sp, sp, 4
@@ -142,11 +163,9 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, .L_f0_pc36
-    la   a0, __tc_strdata2
-    li   a1, 4
-    call __tc_make_string
+    la   t0, __tc_strobj2
     addi sp, sp, -4
-    sw   a0, 0(sp)
+    sw   t0, 0(sp)
     lw   a0, 0(sp)
     call __tc_print_str
     addi sp, sp, 4

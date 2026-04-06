@@ -2,6 +2,15 @@
 __tc_strdata0:
     .string "Hello, World\n"
 
+    .align 4
+__tc_strobj0:
+    .word 1
+    .word 0
+    .word 13
+    .word 1
+    .word 0
+    .word __tc_strdata0
+
     .text
 
     .globl to_buf__String
@@ -130,11 +139,9 @@ main:
     sw   s0, 8(sp)
     addi s0, sp, 16
     sw   zero, -12(s0)
-    la   a0, __tc_strdata0
-    li   a1, 13
-    call __tc_make_string
+    la   t0, __tc_strobj0
     addi sp, sp, -4
-    sw   a0, 0(sp)
+    sw   t0, 0(sp)
     lw   a0, 0(sp)
     call to_buf__String
     addi sp, sp, 4

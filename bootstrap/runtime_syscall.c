@@ -77,6 +77,11 @@ static char *pool_base[NPOOLS];
 static char *pool_end[NPOOLS];
 static int   pools_ready = 0;
 
+/* Stats: per-bucket live count and peak */
+static int pool_live[NPOOLS];
+static int pool_peak[NPOOLS];
+static int pool_total[NPOOLS];
+
 static void pool_init(void) {
     char *p = heap_mem;
     char *limit = heap_mem + sizeof(heap_mem);
@@ -123,6 +128,9 @@ static void *pool_alloc(int size) {
     pool_free[i] = *(char **)slot;
     int sz = pool_size[i];
     for (int k = 0; k < sz; k++) slot[k] = 0;
+    pool_live[i]++;
+    pool_total[i]++;
+    if (pool_live[i] > pool_peak[i]) pool_peak[i] = pool_live[i];
     return slot;
 }
 
@@ -133,6 +141,7 @@ static void pool_free_blk(void *ptr) {
         if (p >= pool_base[i] && p < pool_end[i]) {
             *(char **)p = pool_free[i];
             pool_free[i] = p;
+            pool_live[i]--;
             return;
         }
     }
@@ -237,10 +246,9 @@ void __tc_set(HeapObj *o, int32_t idx, int32_t val) {
 
 void __tc_delete(HeapObj *o) {
     if (!o) return;
-    if (!o->is_literal) {
-        if (o->kind == OBJ_ARRAY) pool_free_blk(o->fields);
-        else if (o->bytes)        pool_free_blk(o->bytes);
-    }
+    if (o->is_literal) return; /* static .rodata HeapObj — do not free */
+    if (o->kind == OBJ_ARRAY) pool_free_blk(o->fields);
+    else if (o->bytes)        pool_free_blk(o->bytes);
     pool_free_blk(o);
 }
 
@@ -322,4 +330,24 @@ int32_t __tc_sys_read(int32_t fd, HeapObj *buf, int32_t len) {
     return total;
 }
 
-void __tc_sys_exit(int32_t code) { __syscall1(SYS_exit, code); }
+static void pool_dump_stats(void) {
+    char tmp[16]; int n;
+    do_write(2, "\npool stats (bucket: peak/total/provisioned):\n", 46);
+    for (int i = 0; i < NPOOLS; i++) {
+        if (pool_total[i] == 0 && pool_peak[i] == 0) continue;
+        n = i32_to_str(pool_size[i], tmp); tmp[n-1] = ' '; /* strip \n */
+        do_write(2, "  ", 2); do_write(2, tmp, n);
+        do_write(2, ": ", 2);
+        n = i32_to_str(pool_peak[i], tmp); tmp[n-1] = '/';
+        do_write(2, tmp, n);
+        n = i32_to_str(pool_total[i], tmp); tmp[n-1] = '/';
+        do_write(2, tmp, n);
+        n = i32_to_str(pool_count[i], tmp);
+        do_write(2, tmp, n);
+    }
+}
+
+void __tc_sys_exit(int32_t code) {
+    pool_dump_stats();
+    __syscall1(SYS_exit, code);
+}

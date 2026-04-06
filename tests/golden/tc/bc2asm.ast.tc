@@ -8110,22 +8110,12 @@
 (var op)
 (var OP_PUSH_STR))
             (block
-              (comment "e_la(ob);")
+              (comment "e_la(ob); eregt0(ob);")
               (call_stmt e_la
                 (var ob)
               )
-              (comment "ob_char('a',ob);ob_char('0',ob); ecomma(ob);")
-              (call_stmt ob_char
-                (int:u8 97)
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('0',ob); ecomma(ob);")
-              (call_stmt ob_char
-                (int:u8 48)
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('0',ob); ecomma(ob);")
-              (call_stmt ecomma
+              (comment "e_la(ob); eregt0(ob);")
+              (call_stmt eregt0
                 (var ob)
               )
               (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
@@ -8153,39 +8143,34 @@
                 (int:u8 95)
                 (var ob)
               )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
               (call_stmt ob_char
                 (int:u8 115)
                 (var ob)
               )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
               (call_stmt ob_char
                 (int:u8 116)
                 (var ob)
               )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
               (call_stmt ob_char
                 (int:u8 114)
                 (var ob)
               )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
               (call_stmt ob_char
-                (int:u8 100)
+                (int:u8 111)
                 (var ob)
               )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
               (call_stmt ob_char
-                (int:u8 97)
+                (int:u8 98)
                 (var ob)
               )
-              (comment "ob_char('t',ob);ob_char('a',ob);")
+              (comment "ob_char('j',ob);")
               (call_stmt ob_char
-                (int:u8 116)
-                (var ob)
-              )
-              (comment "ob_char('t',ob);ob_char('a',ob);")
-              (call_stmt ob_char
-                (int:u8 97)
+                (int:u8 106)
                 (var ob)
               )
               (comment "ob_int(ival,ob); ob_char(10u8,ob);")
@@ -8198,207 +8183,8 @@
                 (int:u8 10)
                 (var ob)
               )
-              (comment "var str_len: i32=get(string_lits,(ival*2+1));")
-              (var_decl str_len
-                (type i32)
-                (call get
-(var string_lits)
-(binop +
-(binop *
-(var ival)
-(int 2))
-(int 1)))
-              )
-              (comment "e_li(ob);")
-              (call_stmt e_li
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('1',ob); ecomma(ob);")
-              (call_stmt ob_char
-                (int:u8 97)
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('1',ob); ecomma(ob);")
-              (call_stmt ob_char
-                (int:u8 49)
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('1',ob); ecomma(ob);")
-              (call_stmt ecomma
-                (var ob)
-              )
-              (comment "ob_int(str_len,ob); ob_char(10u8,ob);")
-              (call_stmt ob_int
-                (var str_len)
-                (var ob)
-              )
-              (comment "ob_int(str_len,ob); ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 10)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);")
-              (call_stmt e4
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);")
-              (call_stmt ob_char
-                (int:u8 99)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);")
-              (call_stmt ob_char
-                (int:u8 97)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);")
-              (call_stmt ob_char
-                (int:u8 108)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);")
-              (call_stmt ob_char
-                (int:u8 108)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);")
-              (call_stmt ob_char
-                (int:u8 32)
-                (var ob)
-              )
-              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 95)
-                (var ob)
-              )
-              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 95)
-                (var ob)
-              )
-              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 116)
-                (var ob)
-              )
-              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 99)
-                (var ob)
-              )
-              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 95)
-                (var ob)
-              )
-              (comment "ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 109)
-                (var ob)
-              )
-              (comment "ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 97)
-                (var ob)
-              )
-              (comment "ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 107)
-                (var ob)
-              )
-              (comment "ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 101)
-                (var ob)
-              )
-              (comment "ob_char('m',ob);ob_char('a',ob);ob_char('k',ob);ob_char('e',ob);ob_char('_',ob);")
-              (call_stmt ob_char
-                (int:u8 95)
-                (var ob)
-              )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);")
-              (call_stmt ob_char
-                (int:u8 115)
-                (var ob)
-              )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);")
-              (call_stmt ob_char
-                (int:u8 116)
-                (var ob)
-              )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);")
-              (call_stmt ob_char
-                (int:u8 114)
-                (var ob)
-              )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);")
-              (call_stmt ob_char
-                (int:u8 105)
-                (var ob)
-              )
-              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);ob_char('n',ob);")
-              (call_stmt ob_char
-                (int:u8 110)
-                (var ob)
-              )
-              (comment "ob_char('g',ob);ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 103)
-                (var ob)
-              )
-              (comment "ob_char('g',ob);ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 10)
-                (var ob)
-              )
-              (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);")
-              (call_stmt e_addi
-                (var ob)
-              )
-              (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);")
-              (call_stmt eregsp
-                (var ob)
-              )
-              (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);")
-              (call_stmt eregsp
-                (var ob)
-              )
-              (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 45)
-                (var ob)
-              )
-              (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 52)
-                (var ob)
-              )
-              (comment "e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 10)
-                (var ob)
-              )
-              (comment "e_sw(ob);")
-              (call_stmt e_sw
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);")
-              (call_stmt ob_char
-                (int:u8 97)
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);")
-              (call_stmt ob_char
-                (int:u8 48)
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);")
-              (call_stmt ecomma
-                (var ob)
-              )
-              (comment "ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);")
-              (call_stmt eNspnl
-                (int 0)
+              (comment "asm_push_t0(ob);")
+              (call_stmt asm_push_t0
                 (var ob)
               )
             )
@@ -10962,6 +10748,495 @@
               (assign si
                 (binop +
 (var si)
+(int 1))
+              )
+            )
+          )
+          (comment "ob_char(10u8,ob);")
+          (call_stmt ob_char
+            (int:u8 10)
+            (var ob)
+          )
+          (comment "var si2: i32=0;")
+          (var_decl si2
+            (type i32)
+            (int 0)
+          )
+          (comment "while si2<g_nstrings {")
+          (while
+            (binop <
+(var si2)
+(var g_nstrings))
+            (block
+              (comment "var ss2: i32=get(string_lits,(si2*2+0));")
+              (var_decl ss2
+                (type i32)
+                (call get
+(var string_lits)
+(binop +
+(binop *
+(var si2)
+(int 2))
+(int 0)))
+              )
+              (comment "var sl2: i32=get(string_lits,(si2*2+1));")
+              (var_decl sl2
+                (type i32)
+                (call get
+(var string_lits)
+(binop +
+(binop *
+(var si2)
+(int 2))
+(int 1)))
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);")
+              (call_stmt ob_char
+                (int:u8 46)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);")
+              (call_stmt ob_char
+                (int:u8 97)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);")
+              (call_stmt ob_char
+                (int:u8 108)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);")
+              (call_stmt ob_char
+                (int:u8 105)
+                (var ob)
+              )
+              (comment "ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 103)
+                (var ob)
+              )
+              (comment "ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 110)
+                (var ob)
+              )
+              (comment "ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 52)
+                (var ob)
+              )
+              (comment "ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 95)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 95)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 116)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 99)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 95)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
+              (call_stmt ob_char
+                (int:u8 115)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
+              (call_stmt ob_char
+                (int:u8 116)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
+              (call_stmt ob_char
+                (int:u8 114)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
+              (call_stmt ob_char
+                (int:u8 111)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);")
+              (call_stmt ob_char
+                (int:u8 98)
+                (var ob)
+              )
+              (comment "ob_char('j',ob);")
+              (call_stmt ob_char
+                (int:u8 106)
+                (var ob)
+              )
+              (comment "ob_int(si2,ob); ob_char(':',ob);ob_char(10u8,ob);")
+              (call_stmt ob_int
+                (var si2)
+                (var ob)
+              )
+              (comment "ob_int(si2,ob); ob_char(':',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 58)
+                (var ob)
+              )
+              (comment "ob_int(si2,ob); ob_char(':',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 46)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 119)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 111)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 114)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 100)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 49)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 46)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 119)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 111)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 114)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 100)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 48)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 46)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 119)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 111)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 114)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 100)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);")
+              (call_stmt ob_int
+                (var sl2)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 46)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 119)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 111)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 114)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 100)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 49)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 46)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 119)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 111)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 114)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 100)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 48)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 46)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 119)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 111)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 114)
+                (var ob)
+              )
+              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
+              (call_stmt ob_char
+                (int:u8 100)
+                (var ob)
+              )
+              (comment "ob_char(' ',ob);")
+              (call_stmt ob_char
+                (int:u8 32)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 95)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 95)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 116)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 99)
+                (var ob)
+              )
+              (comment "ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);")
+              (call_stmt ob_char
+                (int:u8 95)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (call_stmt ob_char
+                (int:u8 115)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (call_stmt ob_char
+                (int:u8 116)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (call_stmt ob_char
+                (int:u8 114)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (call_stmt ob_char
+                (int:u8 100)
+                (var ob)
+              )
+              (comment "ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);")
+              (call_stmt ob_char
+                (int:u8 97)
+                (var ob)
+              )
+              (comment "ob_char('t',ob);ob_char('a',ob);")
+              (call_stmt ob_char
+                (int:u8 116)
+                (var ob)
+              )
+              (comment "ob_char('t',ob);ob_char('a',ob);")
+              (call_stmt ob_char
+                (int:u8 97)
+                (var ob)
+              )
+              (comment "ob_int(si2,ob);ob_char(10u8,ob);")
+              (call_stmt ob_int
+                (var si2)
+                (var ob)
+              )
+              (comment "ob_int(si2,ob);ob_char(10u8,ob);")
+              (call_stmt ob_char
+                (int:u8 10)
+                (var ob)
+              )
+              (comment "si2=si2+1;")
+              (assign si2
+                (binop +
+(var si2)
 (int 1))
               )
             )
