@@ -45,8 +45,7 @@ docs/       ドキュメント
 
 | ファイル | 説明 |
 |----------|------|
-| `bootstrap/runtime.c` | `bcrun` 用ランタイム。`malloc` ベースのヒープ管理・組み込み関数の C 実装 |
-| `bootstrap/runtime_syscall.c` | RISC-V ベアメタル用ランタイム。`ecall` 直接呼び出し、バンプアロケータ |
+| `bootstrap/runtime_syscall.c` | RISC-V ベアメタル用ランタイム。プールアロケータ・組み込み関数実装 |
 | `bootstrap/crt0.s` | RISC-V 用スタートアップルーチン。`main` を呼び出す前に SP を設定する |
 
 ---
