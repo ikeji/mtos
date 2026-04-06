@@ -589,7 +589,6 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
 }
 
 fn pars_postfix(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var inner: OutputBuffer = ob_new(65536);
     pars_primary(src, tok, inner);
     // Handle 'as' casts: wrap already-written expr as (cast EXPR (type T))
@@ -601,10 +600,11 @@ fn pars_postfix(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_char(10u8, wrapped);
         pars_type(src, tok, wrapped, 0);
         ob_char(')', wrapped);
+        ob_delete(inner);
         inner = wrapped;
     }
     ob_append(ob, inner);
-    heap_reset(mark);
+    ob_delete(inner);
     return;
 }
 
@@ -634,7 +634,6 @@ fn pars_unary(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
 // We need one function per level since we can't pass function pointers.
 
 fn pars_mul(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_unary(src, tok, left_ob);
     while g_tok == TK_STAR || g_tok == TK_SLASH || g_tok == TK_PERCENT {
@@ -647,15 +646,15 @@ fn pars_mul(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(combined, left_ob); ob_char(10u8, combined);
         ob_append(combined, right_ob);
         ob_char(')', combined);
+        ob_delete(left_ob); ob_delete(right_ob);
         left_ob = combined;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 
 fn pars_add(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_mul(src, tok, left_ob);
     while g_tok == TK_PLUS || g_tok == TK_MINUS {
@@ -668,15 +667,15 @@ fn pars_add(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(combined, left_ob); ob_char(10u8, combined);
         ob_append(combined, right_ob);
         ob_char(')', combined);
+        ob_delete(left_ob); ob_delete(right_ob);
         left_ob = combined;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 
 fn pars_shift(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_add(src, tok, left_ob);
     while g_tok == TK_LSHIFT || g_tok == TK_RSHIFT {
@@ -689,15 +688,15 @@ fn pars_shift(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(combined, left_ob); ob_char(10u8, combined);
         ob_append(combined, right_ob);
         ob_char(')', combined);
+        ob_delete(left_ob); ob_delete(right_ob);
         left_ob = combined;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 
 fn pars_bitand(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_shift(src, tok, left_ob);
     while g_tok == TK_AMP {
@@ -709,15 +708,15 @@ fn pars_bitand(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(combined, left_ob); ob_char(10u8, combined);
         ob_append(combined, right_ob);
         ob_char(')', combined);
+        ob_delete(left_ob); ob_delete(right_ob);
         left_ob = combined;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 
 fn pars_bitxor(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_bitand(src, tok, left_ob);
     while g_tok == TK_CARET {
@@ -729,15 +728,15 @@ fn pars_bitxor(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(combined, left_ob); ob_char(10u8, combined);
         ob_append(combined, right_ob);
         ob_char(')', combined);
+        ob_delete(left_ob); ob_delete(right_ob);
         left_ob = combined;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 
 fn pars_bitor(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_bitxor(src, tok, left_ob);
     while g_tok == TK_PIPE {
@@ -749,15 +748,15 @@ fn pars_bitor(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(combined, left_ob); ob_char(10u8, combined);
         ob_append(combined, right_ob);
         ob_char(')', combined);
+        ob_delete(left_ob); ob_delete(right_ob);
         left_ob = combined;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 
 fn pars_compare(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_bitor(src, tok, left_ob);
     var k: i32 = g_tok;
@@ -769,16 +768,15 @@ fn pars_compare(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(ob, left_ob); ob_char(10u8, ob);
         ob_append(ob, right_ob);
         ob_char(')', ob);
-        heap_reset(mark);
+        ob_delete(left_ob); ob_delete(right_ob);
         return;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 
 fn pars_logic_and(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_compare(src, tok, left_ob);
     while g_tok == TK_AMPAMP {
@@ -790,15 +788,15 @@ fn pars_logic_and(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(combined, left_ob); ob_char(10u8, combined);
         ob_append(combined, right_ob);
         ob_char(')', combined);
+        ob_delete(left_ob); ob_delete(right_ob);
         left_ob = combined;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 
 fn pars_expr(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var mark: i32 = heap_mark();
     var left_ob: OutputBuffer = ob_new(65536);
     pars_logic_and(src, tok, left_ob);
     while g_tok == TK_PIPEPIPE {
@@ -810,10 +808,11 @@ fn pars_expr(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         ob_append(combined, left_ob); ob_char(10u8, combined);
         ob_append(combined, right_ob);
         ob_char(')', combined);
+        ob_delete(left_ob); ob_delete(right_ob);
         left_ob = combined;
     }
     ob_append(ob, left_ob);
-    heap_reset(mark);
+    ob_delete(left_ob);
     return;
 }
 

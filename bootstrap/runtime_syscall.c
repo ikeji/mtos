@@ -57,19 +57,87 @@ static int u32_to_str(uint32_t v, char *buf) {
 #define OBJ_ARRAY  0
 #define OBJ_STRING 1
 
-/* Simple bump allocator (no free) */
-static char heap_mem[33554432]; /* 32MB — large enough for compiler self-hosting */
-static int  heap_pos = 0;
+/* Power-of-2 pool allocator with 19 size classes.
+ * Each bucket holds a fixed set of pre-linked slots; alloc/free are O(1)
+ * within a bucket, O(NPOOLS=19) for locating the bucket on free.
+ * See docs/task/pool_allocator.md for sizing rationale. */
+#define NPOOLS 19
+static const int pool_size[NPOOLS] = {
+    16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192,
+    16384, 32768, 65536, 131072, 262144, 524288,
+    1048576, 2097152, 4194304
+};
+static const int pool_count[NPOOLS] = {
+    128, 32768, 64, 64, 32, 32, 16, 16, 16, 16,
+    32, 8, 8, 4, 48, 4, 4, 4, 2
+};
+static char heap_mem[50331648]; /* 48MB arena */
+static char *pool_free[NPOOLS];
+static char *pool_base[NPOOLS];
+static char *pool_end[NPOOLS];
+static int   pools_ready = 0;
 
-static void *bump_alloc(int size) {
-    size = (size + 3) & ~3;  /* align to 4 */
-    if (heap_pos + size > (int)sizeof(heap_mem)) {
-        do_write(2, "runtime: out of heap\n", 21);
+static void pool_init(void) {
+    char *p = heap_mem;
+    char *limit = heap_mem + sizeof(heap_mem);
+    for (int i = 0; i < NPOOLS; i++) {
+        int sz = pool_size[i];
+        int n  = pool_count[i];
+        pool_base[i] = p;
+        pool_free[i] = p;
+        for (int j = 0; j < n - 1; j++) {
+            *(char **)p = p + sz;
+            p += sz;
+        }
+        *(char **)p = 0;
+        p += sz;
+        pool_end[i] = p;
+    }
+    if (p > limit) {
+        do_write(2, "runtime: arena too small\n", 25);
         __syscall1(SYS_exit, 1);
     }
-    void *p = &heap_mem[heap_pos];
-    heap_pos += size;
-    return p;
+    pools_ready = 1;
+}
+
+static int bucket_of(int size) {
+    int i = 0, v = pool_size[0];
+    while (v < size && i < NPOOLS - 1) { i++; v = pool_size[i]; }
+    return i;
+}
+
+static void *pool_alloc(int size) {
+    if (!pools_ready) pool_init();
+    if (size <= 0) size = 1;
+    int i = bucket_of(size);
+    if (!pool_free[i]) {
+        do_write(2, "runtime: pool OOM bucket=", 25);
+        char tmp[16]; int n = i32_to_str(i, tmp);
+        do_write(2, tmp, n);
+        do_write(2, "size=", 5);
+        n = i32_to_str(pool_size[i], tmp);
+        do_write(2, tmp, n);
+        __syscall1(SYS_exit, 1);
+    }
+    char *slot = pool_free[i];
+    pool_free[i] = *(char **)slot;
+    int sz = pool_size[i];
+    for (int k = 0; k < sz; k++) slot[k] = 0;
+    return slot;
+}
+
+static void pool_free_blk(void *ptr) {
+    if (!ptr) return;
+    char *p = (char *)ptr;
+    for (int i = 0; i < NPOOLS; i++) {
+        if (p >= pool_base[i] && p < pool_end[i]) {
+            *(char **)p = pool_free[i];
+            pool_free[i] = p;
+            return;
+        }
+    }
+    do_write(2, "runtime: bad free\n", 18);
+    __syscall1(SYS_exit, 1);
 }
 
 typedef struct {
@@ -82,9 +150,8 @@ typedef struct {
 } HeapObj;
 
 static HeapObj *new_obj(int kind) {
-    HeapObj *o = bump_alloc(sizeof(HeapObj));
-    o->kind = kind; o->size = 0; o->len = 0;
-    o->is_literal = 0; o->fields = 0; o->bytes = 0;
+    HeapObj *o = pool_alloc(sizeof(HeapObj));
+    o->kind = kind;
     return o;
 }
 
@@ -124,8 +191,7 @@ HeapObj *__tc_make_string(const char *data, int len) {
 static HeapObj *new_array(int sz) {
     HeapObj *o = new_obj(OBJ_ARRAY);
     o->size = sz;
-    o->fields = bump_alloc(sz > 0 ? sz * sizeof(int32_t) : 4);
-    for (int i = 0; i < sz; i++) o->fields[i] = 0;
+    o->fields = pool_alloc(sz > 0 ? sz * (int)sizeof(int32_t) : 4);
     return o;
 }
 
@@ -169,13 +235,18 @@ void __tc_set(HeapObj *o, int32_t idx, int32_t val) {
     o->fields[idx] = val;
 }
 
-void __tc_delete(HeapObj *o) { (void)o; /* bump allocator — no-op */ }
-
-/* Mark/reset pair for scope-based memory reclamation. */
-int32_t __tc_heap_mark(void) { return heap_pos; }
-void __tc_heap_reset(int32_t mark) {
-    if (mark >= 0 && mark <= heap_pos) heap_pos = mark;
+void __tc_delete(HeapObj *o) {
+    if (!o) return;
+    if (!o->is_literal) {
+        if (o->kind == OBJ_ARRAY) pool_free_blk(o->fields);
+        else if (o->bytes)        pool_free_blk(o->bytes);
+    }
+    pool_free_blk(o);
 }
+
+/* Mark/reset are no-ops now that the pool allocator supports free(). */
+int32_t __tc_heap_mark(void) { return 0; }
+void __tc_heap_reset(int32_t mark) { (void)mark; }
 
 /* ===== String operations ===== */
 
@@ -183,7 +254,7 @@ HeapObj *__tc_append_char(HeapObj *s, int32_t c) {
     int sl = s ? s->len : 0;
     HeapObj *ns = new_obj(OBJ_STRING);
     ns->len = sl + 1;
-    ns->bytes = bump_alloc(ns->len + 1);
+    ns->bytes = pool_alloc(ns->len + 1);
     for (int i = 0; i < sl; i++) ns->bytes[i] = s->bytes[i];
     ns->bytes[sl] = (uint8_t)c;
     ns->bytes[ns->len] = 0;
@@ -194,7 +265,7 @@ HeapObj *__tc_append_str(HeapObj *s, HeapObj *t) {
     int sl = s ? s->len : 0, tl = t ? t->len : 0;
     HeapObj *ns = new_obj(OBJ_STRING);
     ns->len = sl + tl;
-    ns->bytes = bump_alloc(ns->len + 1);
+    ns->bytes = pool_alloc(ns->len + 1);
     for (int i = 0; i < sl; i++) ns->bytes[i] = s->bytes[i];
     for (int i = 0; i < tl; i++) ns->bytes[sl+i] = t->bytes[i];
     ns->bytes[ns->len] = 0;

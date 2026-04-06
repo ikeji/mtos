@@ -2686,11 +2686,8 @@ __L259:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local inner OutputBuffer
 .local wrapped OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store inner
@@ -2741,6 +2738,9 @@ __L269:
   load wrapped
   call ob_char u8 OutputBuffer
   pop
+  load inner
+  call ob_delete OutputBuffer
+  pop
   load wrapped
   store inner
   jump __L269
@@ -2749,8 +2749,8 @@ __L270:
   load inner
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load inner
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -2851,13 +2851,10 @@ __L272:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local op i32
 .local right_ob OutputBuffer
 .local combined OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -2944,6 +2941,12 @@ __L276:
   load combined
   call ob_char u8 OutputBuffer
   pop
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
+  pop
   load combined
   store left_ob
   jump __L273
@@ -2952,8 +2955,8 @@ __L274:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -2963,13 +2966,10 @@ __L274:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local op i32
 .local right_ob OutputBuffer
 .local combined OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -3046,6 +3046,12 @@ __L282:
   load combined
   call ob_char u8 OutputBuffer
   pop
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
+  pop
   load combined
   store left_ob
   jump __L279
@@ -3054,8 +3060,8 @@ __L280:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -3065,13 +3071,10 @@ __L280:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local op i32
 .local right_ob OutputBuffer
 .local combined OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -3148,6 +3151,12 @@ __L286:
   load combined
   call ob_char u8 OutputBuffer
   pop
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
+  pop
   load combined
   store left_ob
   jump __L283
@@ -3156,8 +3165,8 @@ __L284:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -3167,12 +3176,9 @@ __L284:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local right_ob OutputBuffer
 .local combined OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -3237,6 +3243,12 @@ __L287:
   load combined
   call ob_char u8 OutputBuffer
   pop
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
+  pop
   load combined
   store left_ob
   jump __L287
@@ -3245,8 +3257,8 @@ __L288:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -3256,12 +3268,9 @@ __L288:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local right_ob OutputBuffer
 .local combined OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -3326,6 +3335,12 @@ __L289:
   load combined
   call ob_char u8 OutputBuffer
   pop
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
+  pop
   load combined
   store left_ob
   jump __L289
@@ -3334,8 +3349,8 @@ __L290:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -3345,12 +3360,9 @@ __L290:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local right_ob OutputBuffer
 .local combined OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -3415,6 +3427,12 @@ __L291:
   load combined
   call ob_char u8 OutputBuffer
   pop
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
+  pop
   load combined
   store left_ob
   jump __L291
@@ -3423,8 +3441,8 @@ __L292:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -3434,12 +3452,9 @@ __L292:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local k i32
 .local right_ob OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -3552,8 +3567,11 @@ __L295:
   load ob
   call ob_char u8 OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
   pop
   return_void
 __L293:
@@ -3561,8 +3579,8 @@ __L293:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -3572,12 +3590,9 @@ __L293:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local right_ob OutputBuffer
 .local combined OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -3642,6 +3657,12 @@ __L304:
   load combined
   call ob_char u8 OutputBuffer
   pop
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
+  pop
   load combined
   store left_ob
   jump __L304
@@ -3650,8 +3671,8 @@ __L305:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void
@@ -3661,12 +3682,9 @@ __L305:
 .param src U8Array
 .param tok U8Array
 .param ob OutputBuffer
-.local mark i32
 .local left_ob OutputBuffer
 .local right_ob OutputBuffer
 .local combined OutputBuffer
-  call heap_mark
-  store mark
   push_int 65536
   call ob_new i32
   store left_ob
@@ -3731,6 +3749,12 @@ __L306:
   load combined
   call ob_char u8 OutputBuffer
   pop
+  load left_ob
+  call ob_delete OutputBuffer
+  pop
+  load right_ob
+  call ob_delete OutputBuffer
+  pop
   load combined
   store left_ob
   jump __L306
@@ -3739,8 +3763,8 @@ __L307:
   load left_ob
   call ob_append OutputBuffer OutputBuffer
   pop
-  load mark
-  call heap_reset i32
+  load left_ob
+  call ob_delete OutputBuffer
   pop
   return_void
   return_void

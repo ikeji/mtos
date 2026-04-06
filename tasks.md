@@ -42,3 +42,6 @@
         生成関数が使えないため）。
 - [x] parse.tcで、ob_set_posで巻き戻さず、別なobを定義しそこに出し、確定したらメインの物に移動させる方針で書き直し、ob_set_posを削除したい。
 - [ ] ob.tc の各関数はob_プリフィックスをつけない。
+- [ ] heap_mark/heap_resetを廃止し、倍々サイズのプールアロケータを導入する。
+      - 事前調査: docs/task/pool_allocator.md（完了）
+      - 実装: bootstrap/runtime_syscall.c の bump allocator を置き換え

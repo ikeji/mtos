@@ -4048,11 +4048,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var inner: OutputBuffer = ob_new(65536);")
       (var_decl inner
         (type OutputBuffer)
@@ -4122,6 +4117,10 @@
             (int:u8 41)
             (var wrapped)
           )
+          (comment "ob_delete(inner);")
+          (call_stmt ob_delete
+            (var inner)
+          )
           (comment "inner = wrapped;")
           (assign inner
             (var wrapped)
@@ -4133,9 +4132,9 @@
         (var ob)
         (var inner)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(inner);")
+      (call_stmt ob_delete
+        (var inner)
       )
       (comment "return;")
       (return)
@@ -4287,11 +4286,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -4399,6 +4393,14 @@
             (int:u8 41)
             (var combined)
           )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
+          )
           (comment "left_ob = combined;")
           (assign left_ob
             (var combined)
@@ -4410,9 +4412,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
@@ -4434,11 +4436,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -4540,6 +4537,14 @@
             (int:u8 41)
             (var combined)
           )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
+          )
           (comment "left_ob = combined;")
           (assign left_ob
             (var combined)
@@ -4551,9 +4556,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
@@ -4575,11 +4580,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -4681,6 +4681,14 @@
             (int:u8 41)
             (var combined)
           )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
+          )
           (comment "left_ob = combined;")
           (assign left_ob
             (var combined)
@@ -4692,9 +4700,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
@@ -4716,11 +4724,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -4811,6 +4814,14 @@
             (int:u8 41)
             (var combined)
           )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
+          )
           (comment "left_ob = combined;")
           (assign left_ob
             (var combined)
@@ -4822,9 +4833,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
@@ -4846,11 +4857,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -4941,6 +4947,14 @@
             (int:u8 41)
             (var combined)
           )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
+          )
           (comment "left_ob = combined;")
           (assign left_ob
             (var combined)
@@ -4952,9 +4966,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
@@ -4976,11 +4990,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -5071,6 +5080,14 @@
             (int:u8 41)
             (var combined)
           )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
+          )
           (comment "left_ob = combined;")
           (assign left_ob
             (var combined)
@@ -5082,9 +5099,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
@@ -5106,11 +5123,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -5229,9 +5241,13 @@
             (int:u8 41)
             (var ob)
           )
-          (comment "heap_reset(mark);")
-          (call_stmt heap_reset
-            (var mark)
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
           )
           (comment "return;")
           (return)
@@ -5242,9 +5258,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
@@ -5266,11 +5282,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -5361,6 +5372,14 @@
             (int:u8 41)
             (var combined)
           )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
+          )
           (comment "left_ob = combined;")
           (assign left_ob
             (var combined)
@@ -5372,9 +5391,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
@@ -5396,11 +5415,6 @@
       (type void)
     )
     (block
-      (comment "var mark: i32 = heap_mark();")
-      (var_decl mark
-        (type i32)
-        (call heap_mark)
-      )
       (comment "var left_ob: OutputBuffer = ob_new(65536);")
       (var_decl left_ob
         (type OutputBuffer)
@@ -5491,6 +5505,14 @@
             (int:u8 41)
             (var combined)
           )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var left_ob)
+          )
+          (comment "ob_delete(left_ob); ob_delete(right_ob);")
+          (call_stmt ob_delete
+            (var right_ob)
+          )
           (comment "left_ob = combined;")
           (assign left_ob
             (var combined)
@@ -5502,9 +5524,9 @@
         (var ob)
         (var left_ob)
       )
-      (comment "heap_reset(mark);")
-      (call_stmt heap_reset
-        (var mark)
+      (comment "ob_delete(left_ob);")
+      (call_stmt ob_delete
+        (var left_ob)
       )
       (comment "return;")
       (return)
