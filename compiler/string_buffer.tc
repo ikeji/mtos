@@ -1,0 +1,130 @@
+// string_buffer.tc — growable string buffer utilities
+
+struct StringBuffer {
+    buf: U8Array,
+    pos: i32
+}
+
+// Create a new StringBuffer with initial capacity 128.
+export fn sb_new() -> StringBuffer {
+    return StringBuffer(U8Array(128), 0);
+}
+
+// Free a StringBuffer and its underlying byte buffer.
+export fn sb_delete(sb: StringBuffer) -> void {
+    delete(buf(sb));
+    delete(sb);
+    return;
+}
+
+// Grow the buffer by doubling its capacity.
+fn sb_grow(sb: StringBuffer) -> void {
+    var old_buf: U8Array = buf(sb);
+    var old_cap: i32 = len(old_buf);
+    var new_cap: i32 = old_cap * 2;
+    var new_buf: U8Array = U8Array(new_cap);
+    var i: i32 = 0;
+    while i < old_cap {
+        set(new_buf, i, get(old_buf, i));
+        i = i + 1;
+    }
+    buf(sb, new_buf);
+    delete(old_buf);
+    return;
+}
+
+// Emit a single byte into the buffer, growing if needed.
+export fn emit_char(sb: StringBuffer, c: u8) -> void {
+    if pos(sb) >= len(buf(sb)) {
+        sb_grow(sb);
+    }
+    set(buf(sb), pos(sb), c);
+    pos(sb, pos(sb) + 1);
+    return;
+}
+
+// Emit all characters of a string into the buffer.
+export fn emit_string(sb: StringBuffer, s: String) -> void {
+    var i: i32 = 0;
+    var slen: i32 = len(s);
+    while i < slen {
+        emit_char(sb, get(s, i));
+        i = i + 1;
+    }
+    return;
+}
+
+// Emit the decimal representation of an integer.
+export fn emit_int(sb: StringBuffer, val: i32) -> void {
+    if val < 0 {
+        emit_char(sb, '-');
+        val = 0 - val;
+    }
+    if val == 0 {
+        emit_char(sb, '0');
+        return;
+    }
+    var tmp: U8Array = U8Array(12);
+    var dlen: i32 = 0;
+    var v: i32 = val;
+    while v > 0 {
+        set(tmp, dlen, (48 + v % 10) as u8);
+        dlen = dlen + 1;
+        v = v / 10;
+    }
+    var i: i32 = dlen - 1;
+    while i >= 0 {
+        emit_char(sb, get(tmp, i));
+        i = i - 1;
+    }
+    delete(tmp);
+    return;
+}
+
+// Emit n bytes from src starting at offset start.
+export fn emit_n(sb: StringBuffer, src: U8Array, start: i32, n: i32) -> void {
+    var i: i32 = 0;
+    while i < n {
+        emit_char(sb, get(src, (start + i)));
+        i = i + 1;
+    }
+    return;
+}
+
+// Emit level*2 space characters for indentation.
+export fn emit_indent(sb: StringBuffer, level: i32) -> void {
+    var spaces: i32 = level * 2;
+    var i: i32 = 0;
+    while i < spaces {
+        emit_char(sb, ' ');
+        i = i + 1;
+    }
+    return;
+}
+
+// Append all bytes from src into dst.
+export fn sb_append(dst: StringBuffer, src: StringBuffer) -> void {
+    var n: i32 = pos(src);
+    var i: i32 = 0;
+    while i < n {
+        emit_char(dst, get(buf(src), i));
+        i = i + 1;
+    }
+    return;
+}
+
+// Return the current length (number of bytes written).
+export fn sb_len(sb: StringBuffer) -> i32 {
+    return pos(sb);
+}
+
+// Return the byte at the given index.
+export fn sb_get(sb: StringBuffer, idx: i32) -> u8 {
+    return get(buf(sb), idx);
+}
+
+// Write the buffer contents to the given file descriptor.
+export fn sb_write(sb: StringBuffer, fd: i32) -> void {
+    sys_write(fd, buf(sb), pos(sb));
+    return;
+}

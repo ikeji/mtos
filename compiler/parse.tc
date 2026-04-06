@@ -2,7 +2,7 @@
 // Reads tinyc source from stdin, outputs text AST to stdout.
 // Expressions are output flat; statements/blocks are indented.
 
-import "ob.tc";
+import "string_buffer.tc";
 
 // ===== Token kind constants =====
 var TK_FN: i32 = 0;
@@ -100,39 +100,39 @@ fn tok_cmp(tok: U8Array, tlen: i32, target: String) -> bool {
 }
 
 // Write operator string for binary/unary ops
-fn ob_op(kind: i32, ob: OutputBuffer) -> void {
-    if kind == TK_PLUS     { ob_char('+', ob); return; }
-    if kind == TK_MINUS    { ob_char('-', ob); return; }
-    if kind == TK_STAR     { ob_char('*', ob); return; }
-    if kind == TK_SLASH    { ob_char('/', ob); return; }
-    if kind == TK_PERCENT  { ob_char('%', ob); return; }
-    if kind == TK_AMP      { ob_char('&', ob); return; }
-    if kind == TK_PIPE     { ob_char('|', ob); return; }
-    if kind == TK_CARET    { ob_char('^', ob); return; }
-    if kind == TK_LSHIFT   { ob_string("<<", ob); return; }
-    if kind == TK_RSHIFT   { ob_string(">>", ob); return; }
-    if kind == TK_AMPAMP   { ob_string("&&", ob); return; }
-    if kind == TK_PIPEPIPE { ob_string("||", ob); return; }
-    if kind == TK_BANG     { ob_char('!', ob); return; }
-    if kind == TK_EQEQ     { ob_string("==", ob); return; }
-    if kind == TK_BANGEQ   { ob_string("!=", ob); return; }
-    if kind == TK_LT       { ob_char('<', ob); return; }
-    if kind == TK_LTEQ     { ob_string("<=", ob); return; }
-    if kind == TK_GT       { ob_char('>', ob); return; }
-    if kind == TK_GTEQ     { ob_string(">=", ob); return; }
+fn sb_op(kind: i32, sb: StringBuffer) -> void {
+    if kind == TK_PLUS     { emit_char(sb, '+'); return; }
+    if kind == TK_MINUS    { emit_char(sb, '-'); return; }
+    if kind == TK_STAR     { emit_char(sb, '*'); return; }
+    if kind == TK_SLASH    { emit_char(sb, '/'); return; }
+    if kind == TK_PERCENT  { emit_char(sb, '%'); return; }
+    if kind == TK_AMP      { emit_char(sb, '&'); return; }
+    if kind == TK_PIPE     { emit_char(sb, '|'); return; }
+    if kind == TK_CARET    { emit_char(sb, '^'); return; }
+    if kind == TK_LSHIFT   { emit_string(sb, "<<"); return; }
+    if kind == TK_RSHIFT   { emit_string(sb, ">>"); return; }
+    if kind == TK_AMPAMP   { emit_string(sb, "&&"); return; }
+    if kind == TK_PIPEPIPE { emit_string(sb, "||"); return; }
+    if kind == TK_BANG     { emit_char(sb, '!'); return; }
+    if kind == TK_EQEQ     { emit_string(sb, "=="); return; }
+    if kind == TK_BANGEQ   { emit_string(sb, "!="); return; }
+    if kind == TK_LT       { emit_char(sb, '<'); return; }
+    if kind == TK_LTEQ     { emit_string(sb, "<="); return; }
+    if kind == TK_GT       { emit_char(sb, '>'); return; }
+    if kind == TK_GTEQ     { emit_string(sb, ">="); return; }
     return;
 }
 
 // Write type keyword string for type tokens
-fn ob_type_kw(kind: i32, ob: OutputBuffer) -> void {
-    if kind == TK_U8   { ob_string("u8", ob); return; }
-    if kind == TK_U16  { ob_string("u16", ob); return; }
-    if kind == TK_U32  { ob_string("u32", ob); return; }
-    if kind == TK_I8   { ob_string("i8", ob); return; }
-    if kind == TK_I16  { ob_string("i16", ob); return; }
-    if kind == TK_I32  { ob_string("i32", ob); return; }
-    if kind == TK_BOOL { ob_string("bool", ob); return; }
-    if kind == TK_VOID { ob_string("void", ob); return; }
+fn sb_type_kw(kind: i32, sb: StringBuffer) -> void {
+    if kind == TK_U8   { emit_string(sb, "u8"); return; }
+    if kind == TK_U16  { emit_string(sb, "u16"); return; }
+    if kind == TK_U32  { emit_string(sb, "u32"); return; }
+    if kind == TK_I8   { emit_string(sb, "i8"); return; }
+    if kind == TK_I16  { emit_string(sb, "i16"); return; }
+    if kind == TK_I32  { emit_string(sb, "i32"); return; }
+    if kind == TK_BOOL { emit_string(sb, "bool"); return; }
+    if kind == TK_VOID { emit_string(sb, "void"); return; }
     return;
 }
 
@@ -481,65 +481,65 @@ fn expect_tok(kind: i32, src: U8Array, tok: U8Array) -> void {
 
 // Write binop wrapper around a saved left expression
 fn wrap_binop(left_buf: U8Array, left_len: i32, op: i32,
-              src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
+              src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
     // (binop OP LEFT RIGHT)
-    ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob);
-    ob_op(op, ob);
-    ob_char(10u8, ob);  // newline (for readability, downstream ignores whitespace)
-    ob_n(left_buf, 0, left_len, ob);
-    ob_char(10u8, ob);
+    emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' ');
+    sb_op(op, sb);
+    emit_char(sb, 10u8);  // newline (for readability, downstream ignores whitespace)
+    emit_n(sb, left_buf, 0, left_len);
+    emit_char(sb, 10u8);
     return;
 }
 
-fn pars_primary(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
+fn pars_primary(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
     if g_tok == TK_INT_LIT {
-        ob_char('(', ob); ob_string("int", ob);
+        emit_char(sb, '('); emit_string(sb, "int");
         if g_tok_slen > 0 {
-            ob_char(':', ob);
-            ob_n(tok, 0, g_tok_slen, ob);
+            emit_char(sb, ':');
+            emit_n(sb, tok, 0, g_tok_slen);
         }
-        ob_char(' ', ob);
-        ob_int(g_tok_ival, ob);
-        ob_char(')', ob);  // )
+        emit_char(sb, ' ');
+        emit_int(sb, g_tok_ival);
+        emit_char(sb, ')');  // )
         lex_tok(src, tok);
         return;
     }
     if g_tok == TK_STR_LIT {
-        ob_char('(', ob); ob_string("str", ob); ob_char(' ', ob); ob_char('"', ob);
+        emit_char(sb, '('); emit_string(sb, "str"); emit_char(sb, ' '); emit_char(sb, '"');
         // Escape and print string content with double quotes
         var i: i32 = 0;
         while i < g_tok_slen {
             var ch: u8 = get(tok, i);
-            if ch == '"' { ob_char('\\', ob); ob_char('"', ob); }
+            if ch == '"' { emit_char(sb, '\\'); emit_char(sb, '"'); }
             else {
-                if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
+                if ch == '\\' { emit_char(sb, '\\'); emit_char(sb, '\\'); }
                 else {
-                    if ch == 10u8 { ob_char('\\', ob); ob_char('n', ob); }
-                    else { if ch == 9u8 { ob_char('\\', ob); ob_char('t', ob); }
-                           else { ob_char(ch, ob); } }
+                    if ch == 10u8 { emit_char(sb, '\\'); emit_char(sb, 'n'); }
+                    else { if ch == 9u8 { emit_char(sb, '\\'); emit_char(sb, 't'); }
+                           else { emit_char(sb, ch); } }
                 }
             }
             i = i + 1;
         }
-        ob_char('"', ob); ob_char(')', ob);  // ")
+        emit_char(sb, '"'); emit_char(sb, ')');  // ")
         lex_tok(src, tok);
         return;
     }
     if g_tok == TK_TRUE {
         // (bool true)
-        ob_char('(', ob); ob_string("bool", ob); ob_char(' ', ob); ob_string("true", ob); ob_char(')', ob);
+        emit_char(sb, '('); emit_string(sb, "bool"); emit_char(sb, ' '); emit_string(sb, "true"); emit_char(sb, ')');
         lex_tok(src, tok);
         return;
     }
     if g_tok == TK_FALSE {
         // (bool false)
-        ob_char('(', ob); ob_string("bool", ob); ob_char(' ', ob); ob_string("false", ob); ob_char(')', ob);
+        emit_char(sb, '('); emit_string(sb, "bool"); emit_char(sb, ' '); emit_string(sb, "false"); emit_char(sb, ')');
         lex_tok(src, tok);
         return;
     }
     if g_tok == TK_LPAREN {
         lex_tok(src, tok);  // consume '('
-        pars_expr(src, tok, ob);
+        pars_expr(src, tok, sb);
         expect_tok(TK_RPAREN, src, tok);
         return;
     }
@@ -557,14 +557,14 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
         if g_tok == TK_LPAREN {
             // Function call: (call NAME args...)
             lex_tok(src, tok);  // consume '('
-            ob_char('(', ob); ob_string("call", ob); ob_char(' ', ob);
-            ob_n(name_buf, 0, name_len, ob);
+            emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' ');
+            emit_n(sb, name_buf, 0, name_len);
             // Parse arguments
             if g_tok != TK_RPAREN {
                 var going: i32 = 1;
                 while going == 1 {
-                    ob_char(10u8, ob);
-                    pars_expr(src, tok, ob);
+                    emit_char(sb, 10u8);
+                    pars_expr(src, tok, sb);
                     if g_tok == TK_COMMA {
                         lex_tok(src, tok);
                     } else {
@@ -573,12 +573,12 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
                 }
             }
             expect_tok(TK_RPAREN, src, tok);
-            ob_char(')', ob);  // )
+            emit_char(sb, ')');  // )
         } else {
             // Variable reference: (var NAME)
-            ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
-            ob_n(name_buf, 0, name_len, ob);
-            ob_char(')', ob);  // )
+            emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+            emit_n(sb, name_buf, 0, name_len);
+            emit_char(sb, ')');  // )
         }
         delete(name_buf);
         return;
@@ -588,44 +588,44 @@ fn pars_primary(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
     return;
 }
 
-fn pars_postfix(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var inner: OutputBuffer = ob_new(65536);
+fn pars_postfix(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var inner: StringBuffer = sb_new();
     pars_primary(src, tok, inner);
     // Handle 'as' casts: wrap already-written expr as (cast EXPR (type T))
     while g_tok == TK_AS {
         lex_tok(src, tok);  // consume 'as'
-        var wrapped: OutputBuffer = ob_new(65536);
-        ob_char('(', wrapped); ob_string("cast", wrapped); ob_char(10u8, wrapped);
-        ob_append(wrapped, inner);
-        ob_char(10u8, wrapped);
+        var wrapped: StringBuffer = sb_new();
+        emit_char(wrapped, '('); emit_string(wrapped, "cast"); emit_char(wrapped, 10u8);
+        sb_append(wrapped, inner);
+        emit_char(wrapped, 10u8);
         pars_type(src, tok, wrapped, 0);
-        ob_char(')', wrapped);
-        ob_delete(inner);
+        emit_char(wrapped, ')');
+        sb_delete(inner);
         inner = wrapped;
     }
-    ob_append(ob, inner);
-    ob_delete(inner);
+    sb_append(sb, inner);
+    sb_delete(inner);
     return;
 }
 
-fn pars_unary(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
+fn pars_unary(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
     if g_tok == TK_BANG {
         lex_tok(src, tok);
-        ob_char('(', ob); ob_string("unary", ob); ob_char(' ', ob); ob_char('!', ob);
-        ob_char(10u8,ob);
-        pars_unary(src, tok, ob);
-        ob_char(')', ob);
+        emit_char(sb, '('); emit_string(sb, "unary"); emit_char(sb, ' '); emit_char(sb, '!');
+        emit_char(sb, 10u8);
+        pars_unary(src, tok, sb);
+        emit_char(sb, ')');
         return;
     }
     if g_tok == TK_MINUS {
         lex_tok(src, tok);
-        ob_char('(', ob); ob_string("unary", ob); ob_char(' ', ob); ob_char('-', ob);
-        ob_char(10u8,ob);
-        pars_unary(src, tok, ob);
-        ob_char(')', ob);
+        emit_char(sb, '('); emit_string(sb, "unary"); emit_char(sb, ' '); emit_char(sb, '-');
+        emit_char(sb, 10u8);
+        pars_unary(src, tok, sb);
+        emit_char(sb, ')');
         return;
     }
-    pars_postfix(src, tok, ob);
+    pars_postfix(src, tok, sb);
     return;
 }
 
@@ -633,210 +633,210 @@ fn pars_unary(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
 // then for each operator in the set, save left and wrap.
 // We need one function per level since we can't pass function pointers.
 
-fn pars_mul(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_unary(src, tok, left_ob);
+fn pars_mul(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_unary(src, tok, left_sb);
     while g_tok == TK_STAR || g_tok == TK_SLASH || g_tok == TK_PERCENT {
         var op: i32 = g_tok;
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_unary(src, tok, right_ob);
-        var combined: OutputBuffer = ob_new(65536);
-        ob_char('(', combined); ob_string("binop", combined); ob_char(' ', combined); ob_op(op, combined); ob_char(10u8, combined);
-        ob_append(combined, left_ob); ob_char(10u8, combined);
-        ob_append(combined, right_ob);
-        ob_char(')', combined);
-        ob_delete(left_ob); ob_delete(right_ob);
-        left_ob = combined;
+        var right_sb: StringBuffer = sb_new();
+        pars_unary(src, tok, right_sb);
+        var combined: StringBuffer = sb_new();
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);
+        sb_append(combined, left_sb); emit_char(combined, 10u8);
+        sb_append(combined, right_sb);
+        emit_char(combined, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
+        left_sb = combined;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
-fn pars_add(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_mul(src, tok, left_ob);
+fn pars_add(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_mul(src, tok, left_sb);
     while g_tok == TK_PLUS || g_tok == TK_MINUS {
         var op: i32 = g_tok;
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_mul(src, tok, right_ob);
-        var combined: OutputBuffer = ob_new(65536);
-        ob_char('(', combined); ob_string("binop", combined); ob_char(' ', combined); ob_op(op, combined); ob_char(10u8, combined);
-        ob_append(combined, left_ob); ob_char(10u8, combined);
-        ob_append(combined, right_ob);
-        ob_char(')', combined);
-        ob_delete(left_ob); ob_delete(right_ob);
-        left_ob = combined;
+        var right_sb: StringBuffer = sb_new();
+        pars_mul(src, tok, right_sb);
+        var combined: StringBuffer = sb_new();
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);
+        sb_append(combined, left_sb); emit_char(combined, 10u8);
+        sb_append(combined, right_sb);
+        emit_char(combined, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
+        left_sb = combined;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
-fn pars_shift(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_add(src, tok, left_ob);
+fn pars_shift(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_add(src, tok, left_sb);
     while g_tok == TK_LSHIFT || g_tok == TK_RSHIFT {
         var op: i32 = g_tok;
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_add(src, tok, right_ob);
-        var combined: OutputBuffer = ob_new(65536);
-        ob_char('(', combined); ob_string("binop", combined); ob_char(' ', combined); ob_op(op, combined); ob_char(10u8, combined);
-        ob_append(combined, left_ob); ob_char(10u8, combined);
-        ob_append(combined, right_ob);
-        ob_char(')', combined);
-        ob_delete(left_ob); ob_delete(right_ob);
-        left_ob = combined;
+        var right_sb: StringBuffer = sb_new();
+        pars_add(src, tok, right_sb);
+        var combined: StringBuffer = sb_new();
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);
+        sb_append(combined, left_sb); emit_char(combined, 10u8);
+        sb_append(combined, right_sb);
+        emit_char(combined, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
+        left_sb = combined;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
-fn pars_bitand(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_shift(src, tok, left_ob);
+fn pars_bitand(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_shift(src, tok, left_sb);
     while g_tok == TK_AMP {
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_shift(src, tok, right_ob);
-        var combined: OutputBuffer = ob_new(65536);
-        ob_char('(', combined); ob_string("binop", combined); ob_char(' ', combined); ob_char('&', combined); ob_char(10u8, combined);
-        ob_append(combined, left_ob); ob_char(10u8, combined);
-        ob_append(combined, right_ob);
-        ob_char(')', combined);
-        ob_delete(left_ob); ob_delete(right_ob);
-        left_ob = combined;
+        var right_sb: StringBuffer = sb_new();
+        pars_shift(src, tok, right_sb);
+        var combined: StringBuffer = sb_new();
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '&'); emit_char(combined, 10u8);
+        sb_append(combined, left_sb); emit_char(combined, 10u8);
+        sb_append(combined, right_sb);
+        emit_char(combined, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
+        left_sb = combined;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
-fn pars_bitxor(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_bitand(src, tok, left_ob);
+fn pars_bitxor(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_bitand(src, tok, left_sb);
     while g_tok == TK_CARET {
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_bitand(src, tok, right_ob);
-        var combined: OutputBuffer = ob_new(65536);
-        ob_char('(', combined); ob_string("binop", combined); ob_char(' ', combined); ob_char('^', combined); ob_char(10u8, combined);
-        ob_append(combined, left_ob); ob_char(10u8, combined);
-        ob_append(combined, right_ob);
-        ob_char(')', combined);
-        ob_delete(left_ob); ob_delete(right_ob);
-        left_ob = combined;
+        var right_sb: StringBuffer = sb_new();
+        pars_bitand(src, tok, right_sb);
+        var combined: StringBuffer = sb_new();
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '^'); emit_char(combined, 10u8);
+        sb_append(combined, left_sb); emit_char(combined, 10u8);
+        sb_append(combined, right_sb);
+        emit_char(combined, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
+        left_sb = combined;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
-fn pars_bitor(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_bitxor(src, tok, left_ob);
+fn pars_bitor(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_bitxor(src, tok, left_sb);
     while g_tok == TK_PIPE {
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_bitxor(src, tok, right_ob);
-        var combined: OutputBuffer = ob_new(65536);
-        ob_char('(', combined); ob_string("binop", combined); ob_char(' ', combined); ob_char('|', combined); ob_char(10u8, combined);
-        ob_append(combined, left_ob); ob_char(10u8, combined);
-        ob_append(combined, right_ob);
-        ob_char(')', combined);
-        ob_delete(left_ob); ob_delete(right_ob);
-        left_ob = combined;
+        var right_sb: StringBuffer = sb_new();
+        pars_bitxor(src, tok, right_sb);
+        var combined: StringBuffer = sb_new();
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '|'); emit_char(combined, 10u8);
+        sb_append(combined, left_sb); emit_char(combined, 10u8);
+        sb_append(combined, right_sb);
+        emit_char(combined, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
+        left_sb = combined;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
-fn pars_compare(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_bitor(src, tok, left_ob);
+fn pars_compare(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_bitor(src, tok, left_sb);
     var k: i32 = g_tok;
     if k == TK_EQEQ || k == TK_BANGEQ || k == TK_LT || k == TK_LTEQ || k == TK_GT || k == TK_GTEQ {
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_bitor(src, tok, right_ob);
-        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob); ob_op(k, ob); ob_char(10u8, ob);
-        ob_append(ob, left_ob); ob_char(10u8, ob);
-        ob_append(ob, right_ob);
-        ob_char(')', ob);
-        ob_delete(left_ob); ob_delete(right_ob);
+        var right_sb: StringBuffer = sb_new();
+        pars_bitor(src, tok, right_sb);
+        emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' '); sb_op(k, sb); emit_char(sb, 10u8);
+        sb_append(sb, left_sb); emit_char(sb, 10u8);
+        sb_append(sb, right_sb);
+        emit_char(sb, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
         return;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
-fn pars_logic_and(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_compare(src, tok, left_ob);
+fn pars_logic_and(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_compare(src, tok, left_sb);
     while g_tok == TK_AMPAMP {
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_compare(src, tok, right_ob);
-        var combined: OutputBuffer = ob_new(65536);
-        ob_char('(', combined); ob_string("binop", combined); ob_char(' ', combined); ob_string("&&", combined); ob_char(10u8, combined);
-        ob_append(combined, left_ob); ob_char(10u8, combined);
-        ob_append(combined, right_ob);
-        ob_char(')', combined);
-        ob_delete(left_ob); ob_delete(right_ob);
-        left_ob = combined;
+        var right_sb: StringBuffer = sb_new();
+        pars_compare(src, tok, right_sb);
+        var combined: StringBuffer = sb_new();
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_string(combined, "&&"); emit_char(combined, 10u8);
+        sb_append(combined, left_sb); emit_char(combined, 10u8);
+        sb_append(combined, right_sb);
+        emit_char(combined, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
+        left_sb = combined;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
-fn pars_expr(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    var left_ob: OutputBuffer = ob_new(65536);
-    pars_logic_and(src, tok, left_ob);
+fn pars_expr(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    var left_sb: StringBuffer = sb_new();
+    pars_logic_and(src, tok, left_sb);
     while g_tok == TK_PIPEPIPE {
         lex_tok(src, tok);
-        var right_ob: OutputBuffer = ob_new(65536);
-        pars_logic_and(src, tok, right_ob);
-        var combined: OutputBuffer = ob_new(65536);
-        ob_char('(', combined); ob_string("binop", combined); ob_char(' ', combined); ob_string("||", combined); ob_char(10u8, combined);
-        ob_append(combined, left_ob); ob_char(10u8, combined);
-        ob_append(combined, right_ob);
-        ob_char(')', combined);
-        ob_delete(left_ob); ob_delete(right_ob);
-        left_ob = combined;
+        var right_sb: StringBuffer = sb_new();
+        pars_logic_and(src, tok, right_sb);
+        var combined: StringBuffer = sb_new();
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_string(combined, "||"); emit_char(combined, 10u8);
+        sb_append(combined, left_sb); emit_char(combined, 10u8);
+        sb_append(combined, right_sb);
+        emit_char(combined, ')');
+        sb_delete(left_sb); sb_delete(right_sb);
+        left_sb = combined;
     }
-    ob_append(ob, left_ob);
-    ob_delete(left_ob);
+    sb_append(sb, left_sb);
+    sb_delete(left_sb);
     return;
 }
 
 // ===== Type parser =====
-fn pars_type(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_type(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     // Outputs: (type TYPENAME)
-    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
     if is_type_tok(g_tok) && g_tok != TK_IDENT {
-        ob_type_kw(g_tok, ob);
+        sb_type_kw(g_tok, sb);
         lex_tok(src, tok);
     } else {
         if g_tok == TK_IDENT {
-            ob_n(tok, 0, g_tok_slen, ob);
+            emit_n(sb, tok, 0, g_tok_slen);
             lex_tok(src, tok);
         }
     }
-    ob_char(')', ob);
+    emit_char(sb, ')');
     return;
 }
 
 // ===== Statement parsers (indented) =====
 // pars_block is defined below
 
-fn pars_var_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_var_decl(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     // 'var' already consumed, or we consume it here
     expect_tok(TK_VAR, src, tok);
     var name_len: i32 = g_tok_slen;
@@ -850,98 +850,98 @@ fn pars_var_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> v
     expect_tok(TK_COLON, src, tok);
 
     // (var_decl NAME
-    ob_char('(', ob); ob_string("var_decl", ob); ob_char(' ', ob);
-    ob_n(name_buf, 0, name_len, ob);
+    emit_char(sb, '('); emit_string(sb, "var_decl"); emit_char(sb, ' ');
+    emit_n(sb, name_buf, 0, name_len);
     delete(name_buf);
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    pars_type(src, tok, ob, indent + 1);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    pars_type(src, tok, sb, indent + 1);
 
     if g_tok == TK_EQ {
         lex_tok(src, tok);
-        ob_char(10u8, ob);
-        ob_indent(indent + 1, ob);
-        pars_expr(src, tok, ob);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 1);
+        pars_expr(src, tok, sb);
     }
     expect_tok(TK_SEMI, src, tok);
-    ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);  // )
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');  // )
     return;
 }
 
-fn pars_break_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_break_stmt(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     expect_tok(TK_BREAK, src, tok);
     expect_tok(TK_SEMI, src, tok);
     // (break)
-    ob_char('(', ob); ob_string("break", ob); ob_char(')', ob);
+    emit_char(sb, '('); emit_string(sb, "break"); emit_char(sb, ')');
     return;
 }
 
-fn pars_continue_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_continue_stmt(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     expect_tok(TK_CONTINUE, src, tok);
     expect_tok(TK_SEMI, src, tok);
     // (continue)
-    ob_char('(', ob); ob_string("continue", ob); ob_char(')', ob);
+    emit_char(sb, '('); emit_string(sb, "continue"); emit_char(sb, ')');
     return;
 }
 
-fn pars_return_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_return_stmt(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     expect_tok(TK_RETURN, src, tok);
-    ob_char('(', ob); ob_string("return", ob);
+    emit_char(sb, '('); emit_string(sb, "return");
     if g_tok != TK_SEMI {
-        ob_char(10u8, ob);
-        ob_indent(indent + 1, ob);
-        pars_expr(src, tok, ob);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 1);
+        pars_expr(src, tok, sb);
     }
     expect_tok(TK_SEMI, src, tok);
-    ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
     return;
 }
 
-fn pars_if_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_if_stmt(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     expect_tok(TK_IF, src, tok);
-    ob_char('(', ob); ob_string("if", ob);
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    pars_expr(src, tok, ob);
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    pars_block(src, tok, ob, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "if");
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    pars_expr(src, tok, sb);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    pars_block(src, tok, sb, indent + 1);
     if g_tok == TK_ELSE {
         lex_tok(src, tok);
-        ob_char(10u8, ob);
-        ob_indent(indent + 1, ob);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 1);
         if g_tok == TK_IF {
-            pars_if_stmt(src, tok, ob, indent + 1);
+            pars_if_stmt(src, tok, sb, indent + 1);
         } else {
-            pars_block(src, tok, ob, indent + 1);
+            pars_block(src, tok, sb, indent + 1);
         }
     }
-    ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
     return;
 }
 
-fn pars_while_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_while_stmt(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     expect_tok(TK_WHILE, src, tok);
-    ob_char('(', ob); ob_string("while", ob);
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    pars_expr(src, tok, ob);
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    pars_block(src, tok, ob, indent + 1);
-    ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);
+    emit_char(sb, '('); emit_string(sb, "while");
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    pars_expr(src, tok, sb);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    pars_block(src, tok, sb, indent + 1);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
     return;
 }
 
-fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_ident_stmt(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     var name_len: i32 = g_tok_slen;
     var name_buf: U8Array = U8Array(name_len + 1);
     var i: i32 = 0;
@@ -954,51 +954,51 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) ->
     if g_tok == TK_EQ {
         lex_tok(src, tok);
         // (assign NAME\n  EXPR)
-        ob_char('(', ob); ob_string("assign", ob); ob_char(' ', ob);
-        ob_n(name_buf, 0, name_len, ob);
-        ob_char(10u8, ob);
-        ob_indent(indent + 1, ob);
-        pars_expr(src, tok, ob);
+        emit_char(sb, '('); emit_string(sb, "assign"); emit_char(sb, ' ');
+        emit_n(sb, name_buf, 0, name_len);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 1);
+        pars_expr(src, tok, sb);
         expect_tok(TK_SEMI, src, tok);
-        ob_char(10u8, ob);
-        ob_indent(indent, ob);
-        ob_char(')', ob);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent);
+        emit_char(sb, ')');
     } else if g_tok == TK_PLUS_EQ || g_tok == TK_MINUS_EQ ||
                g_tok == TK_STAR_EQ || g_tok == TK_SLASH_EQ || g_tok == TK_PERCENT_EQ {
         // desugar: NAME OP= RHS  →  (assign NAME (binop OP (var NAME) RHS))
         var the_op: i32 = g_tok;
         lex_tok(src, tok);
-        ob_char('(', ob); ob_string("assign", ob); ob_char(' ', ob);
-        ob_n(name_buf, 0, name_len, ob);
-        ob_char(10u8, ob);
-        ob_indent(indent + 1, ob);
-        ob_char('(', ob); ob_string("binop", ob); ob_char(' ', ob);
-        if the_op == TK_PLUS_EQ    { ob_char('+', ob); }
-        if the_op == TK_MINUS_EQ   { ob_char('-', ob); }
-        if the_op == TK_STAR_EQ    { ob_char('*', ob); }
-        if the_op == TK_SLASH_EQ   { ob_char('/', ob); }
-        if the_op == TK_PERCENT_EQ { ob_char('%', ob); }
-        ob_char(10u8, ob);
-        ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
-        ob_n(name_buf, 0, name_len, ob); ob_char(')', ob); ob_char(10u8, ob);
-        pars_expr(src, tok, ob);
-        ob_char(')', ob);
+        emit_char(sb, '('); emit_string(sb, "assign"); emit_char(sb, ' ');
+        emit_n(sb, name_buf, 0, name_len);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 1);
+        emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' ');
+        if the_op == TK_PLUS_EQ    { emit_char(sb, '+'); }
+        if the_op == TK_MINUS_EQ   { emit_char(sb, '-'); }
+        if the_op == TK_STAR_EQ    { emit_char(sb, '*'); }
+        if the_op == TK_SLASH_EQ   { emit_char(sb, '/'); }
+        if the_op == TK_PERCENT_EQ { emit_char(sb, '%'); }
+        emit_char(sb, 10u8);
+        emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+        emit_n(sb, name_buf, 0, name_len); emit_char(sb, ')'); emit_char(sb, 10u8);
+        pars_expr(src, tok, sb);
+        emit_char(sb, ')');
         expect_tok(TK_SEMI, src, tok);
-        ob_char(10u8, ob);
-        ob_indent(indent, ob);
-        ob_char(')', ob);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent);
+        emit_char(sb, ')');
     } else {
         if g_tok == TK_LPAREN {
             lex_tok(src, tok);
             // (call_stmt NAME args...)
-            ob_char('(', ob); ob_string("call_stmt", ob); ob_char(' ', ob);
-            ob_n(name_buf, 0, name_len, ob);
+            emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' ');
+            emit_n(sb, name_buf, 0, name_len);
             if g_tok != TK_RPAREN {
                 var going: i32 = 1;
                 while going == 1 {
-                    ob_char(10u8, ob);
-                    ob_indent(indent + 1, ob);
-                    pars_expr(src, tok, ob);
+                    emit_char(sb, 10u8);
+                    emit_indent(sb, indent + 1);
+                    pars_expr(src, tok, sb);
                     if g_tok == TK_COMMA {
                         lex_tok(src, tok);
                     } else {
@@ -1008,9 +1008,9 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) ->
             }
             expect_tok(TK_RPAREN, src, tok);
             expect_tok(TK_SEMI, src, tok);
-            ob_char(10u8, ob);
-            ob_indent(indent, ob);
-            ob_char(')', ob);
+            emit_char(sb, 10u8);
+            emit_indent(sb, indent);
+            emit_char(sb, ')');
         } else {
             sys_exit(1);
         }
@@ -1019,7 +1019,7 @@ fn pars_ident_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) ->
     return;
 }
 
-fn emit_stmt_comment(src: U8Array, line: i32, ob: OutputBuffer) -> void {
+fn emit_stmt_comment(src: U8Array, line: i32, sb: StringBuffer) -> void {
     // Find start of line `line` in src
     var pos: i32 = 0;
     var cur_line: i32 = 1;
@@ -1036,52 +1036,52 @@ fn emit_stmt_comment(src: U8Array, line: i32, ob: OutputBuffer) -> void {
     var first: u8 = get(src, pos);
     if first == 10u8 || first == 13u8 { return; }
     // Emit (comment "...")
-    ob_char('(', ob); ob_string("comment", ob); ob_char(' ', ob); ob_char('"', ob);
+    emit_char(sb, '('); emit_string(sb, "comment"); emit_char(sb, ' '); emit_char(sb, '"');
     while pos < g_len && get(src, pos) != 10u8 && get(src, pos) != 13u8 {
         var ch: u8 = get(src, pos);
-        if ch == '"' { ob_char('\\', ob); ob_char('"', ob); }
+        if ch == '"' { emit_char(sb, '\\'); emit_char(sb, '"'); }
         else {
-            if ch == '\\' { ob_char('\\', ob); ob_char('\\', ob); }
-            else { ob_char(ch, ob); }
+            if ch == '\\' { emit_char(sb, '\\'); emit_char(sb, '\\'); }
+            else { emit_char(sb, ch); }
         }
         pos = pos + 1;
     }
-    ob_char('"', ob); ob_char(')', ob);
+    emit_char(sb, '"'); emit_char(sb, ')');
     return;
 }
 
-fn pars_stmt(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
-    if g_tok == TK_VAR    { pars_var_decl(src, tok, ob, indent); return; }
-    if g_tok == TK_IF     { pars_if_stmt(src, tok, ob, indent); return; }
-    if g_tok == TK_WHILE    { pars_while_stmt(src, tok, ob, indent); return; }
-    if g_tok == TK_RETURN   { pars_return_stmt(src, tok, ob, indent); return; }
-    if g_tok == TK_BREAK    { pars_break_stmt(src, tok, ob, indent); return; }
-    if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, ob, indent); return; }
-    if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, ob, indent); return; }
+fn pars_stmt(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
+    if g_tok == TK_VAR    { pars_var_decl(src, tok, sb, indent); return; }
+    if g_tok == TK_IF     { pars_if_stmt(src, tok, sb, indent); return; }
+    if g_tok == TK_WHILE    { pars_while_stmt(src, tok, sb, indent); return; }
+    if g_tok == TK_RETURN   { pars_return_stmt(src, tok, sb, indent); return; }
+    if g_tok == TK_BREAK    { pars_break_stmt(src, tok, sb, indent); return; }
+    if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, sb, indent); return; }
+    if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, sb, indent); return; }
     sys_exit(1);
     return;
 }
 
-fn pars_block(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_block(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     expect_tok(TK_LBRACE, src, tok);
-    ob_char('(', ob); ob_string("block", ob);
+    emit_char(sb, '('); emit_string(sb, "block");
     while g_tok != TK_RBRACE && g_tok != TK_EOF {
         var stmt_line: i32 = g_tok_line;
-        ob_char(10u8, ob);
-        ob_indent(indent + 1, ob);
-        emit_stmt_comment(src, stmt_line, ob);
-        ob_char(10u8, ob);
-        ob_indent(indent + 1, ob);
-        pars_stmt(src, tok, ob, indent + 1);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 1);
+        emit_stmt_comment(src, stmt_line, sb);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 1);
+        pars_stmt(src, tok, sb, indent + 1);
     }
     expect_tok(TK_RBRACE, src, tok);
-    ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
     return;
 }
 
-fn pars_fn_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32, is_export: i32) -> void {
+fn pars_fn_decl(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32, is_export: i32) -> void {
     expect_tok(TK_FN, src, tok);
     var name_len: i32 = g_tok_slen;
     var name_buf: U8Array = U8Array(name_len + 1);
@@ -1094,18 +1094,18 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32, is_ex
     expect_tok(TK_LPAREN, src, tok);
 
     // (fn NAME  or  (fn:export NAME
-    ob_char('(', ob); ob_string("fn", ob);
+    emit_char(sb, '('); emit_string(sb, "fn");
     if is_export == 1 {
-        ob_char(':', ob); ob_string("export", ob);
+        emit_char(sb, ':'); emit_string(sb, "export");
     }
-    ob_char(' ', ob);
-    ob_n(name_buf, 0, name_len, ob);
+    emit_char(sb, ' ');
+    emit_n(sb, name_buf, 0, name_len);
     delete(name_buf);
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
 
     // (params ...)
-    ob_char('(', ob); ob_string("params", ob);
+    emit_char(sb, '('); emit_string(sb, "params");
     if g_tok != TK_RPAREN {
         var going: i32 = 1;
         while going == 1 {
@@ -1118,17 +1118,17 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32, is_ex
             }
             expect_tok(TK_IDENT, src, tok);
             expect_tok(TK_COLON, src, tok);
-            ob_char(10u8, ob);
-            ob_indent(indent + 2, ob);
+            emit_char(sb, 10u8);
+            emit_indent(sb, indent + 2);
             // (param NAME\n    (type T)\n  )
-            ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob);
-            ob_n(pname_buf, 0, pname_len, ob);
-            ob_char(10u8, ob);
-            ob_indent(indent + 3, ob);
-            pars_type(src, tok, ob, indent + 3);
-            ob_char(10u8, ob);
-            ob_indent(indent + 2, ob);
-            ob_char(')', ob);
+            emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+            emit_n(sb, pname_buf, 0, pname_len);
+            emit_char(sb, 10u8);
+            emit_indent(sb, indent + 3);
+            pars_type(src, tok, sb, indent + 3);
+            emit_char(sb, 10u8);
+            emit_indent(sb, indent + 2);
+            emit_char(sb, ')');
             delete(pname_buf);
             if g_tok == TK_COMMA {
                 lex_tok(src, tok);
@@ -1138,35 +1138,35 @@ fn pars_fn_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32, is_ex
         }
     }
     expect_tok(TK_RPAREN, src, tok);
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    ob_char(')', ob);  // close (params)
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, ')');  // close (params)
 
     // (ret (type T))
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("ret", ob);
-    ob_char(10u8, ob);
-    ob_indent(indent + 2, ob);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "ret");
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2);
     if g_tok == TK_ARROW {
         lex_tok(src, tok);
-        pars_type(src, tok, ob, indent + 2);
+        pars_type(src, tok, sb, indent + 2);
     } else {
         // void return
-        ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob); ob_string("void", ob); ob_char(')', ob);
+        emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' '); emit_string(sb, "void"); emit_char(sb, ')');
     }
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    ob_char(')', ob);  // close (ret)
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, ')');  // close (ret)
 
     // body block
-    ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    pars_block(src, tok, ob, indent + 1);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    pars_block(src, tok, sb, indent + 1);
 
-    ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);  // close (fn)
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');  // close (fn)
     return;
 }
 
@@ -1191,80 +1191,64 @@ fn type_tok_name(tok: U8Array, buf: U8Array, bstart: i32) -> i32 {
     return 0;
 }
 
-// Emit a decimal integer to ob.
-fn ob_dec(n: i32, ob: OutputBuffer) -> void {
-    if n == 0 { ob_char('0', ob); return; }
-    var tmp: U8Array = U8Array(12);
-    var l: i32 = 0;
-    while n > 0 {
-        set(tmp, l, (48 + n % 10) as u8);
-        l = l + 1;
-        n = n / 10;
-    }
-    var i: i32 = l - 1;
-    while i >= 0 { ob_char(get(tmp,i), ob); i = i - 1; }
-    delete(tmp);
-    return;
-}
-
 // Emit a (param __aN (type T)) node.
-fn emit_param(name: String, tbuf: U8Array, tstart: i32, tlen: i32, ob: OutputBuffer, indent: i32) -> void {
-    ob_indent(indent, ob);
-    ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob);
-    ob_string(name, ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(tbuf, tstart, tlen, ob);
-    ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);
+fn emit_param(name: String, tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer, indent: i32) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+    emit_string(sb, name); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, tbuf, tstart, tlen);
+    emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
     return;
 }
 
 // Emit a (type T) node at current indent.
-fn emit_type(tbuf: U8Array, tstart: i32, tlen: i32, ob: OutputBuffer) -> void {
-    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(tbuf, tstart, tlen, ob);
-    ob_char(')', ob);
+fn emit_type(tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer) -> void {
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, tbuf, tstart, tlen);
+    emit_char(sb, ')');
     return;
 }
 
 // Emit (cast (var NAME) (type T)) — NAME is a String literal.
-fn emit_cast_var(name: String, tname: String, ob: OutputBuffer, indent: i32) -> void {
-    ob_indent(indent, ob);
-    ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
-    ob_string(name, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_string(tname, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);
+fn emit_cast_var(name: String, tname: String, sb: StringBuffer, indent: i32) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+    emit_string(sb, name); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
     return;
 }
 
 // Emit (cast (var NAME) (type T)) where T comes from tbuf[tstart..].
-fn emit_cast_var_tbuf(name: String, tbuf: U8Array, tstart: i32, tlen: i32, ob: OutputBuffer, indent: i32) -> void {
-    ob_indent(indent, ob);
-    ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
-    ob_string(name, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(tbuf, tstart, tlen, ob);
-    ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);
+fn emit_cast_var_tbuf(name: String, tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer, indent: i32) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+    emit_string(sb, name); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, tbuf, tstart, tlen);
+    emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
     return;
 }
 
 // Emit a (comment "...") node at current indent for a given source line.
-fn emit_stmt_comment_line(src: U8Array, line: i32, ob: OutputBuffer, indent: i32) -> void {
-    ob_indent(indent, ob);
-    emit_stmt_comment(src, line, ob);
-    ob_char(10u8, ob);
+fn emit_stmt_comment_line(src: U8Array, line: i32, sb: StringBuffer, indent: i32) -> void {
+    emit_indent(sb, indent);
+    emit_stmt_comment(src, line, sb);
+    emit_char(sb, 10u8);
     return;
 }
 
@@ -1280,83 +1264,83 @@ fn emit_struct_ctor(
     ftypes: U8Array, ftoffs: I32Array, ftlens: I32Array,
     nfields: i32,
     src: U8Array, sline: i32,
-    ob: OutputBuffer, indent: i32
+    sb: StringBuffer, indent: i32
 ) -> void {
-    ob_indent(indent, ob);
-    ob_char('(', ob); ob_string("fn", ob); ob_char(' ', ob);
-    ob_n(sbuf, 0, snlen, ob); ob_char(10u8, ob);
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_char(sb, 10u8);
     // params
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("params", ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
     var i: i32 = 0;
     while i < nfields {
         // __aN
-        ob_indent(indent + 2, ob);
-        ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob);
-        ob_string("__a", ob); ob_dec(i, ob); ob_char(10u8, ob);
-        ob_indent(indent + 3, ob);
-        emit_type(ftypes, get(ftoffs, i), get(ftlens, i), ob); ob_char(10u8, ob);
-        ob_indent(indent + 2, ob);
-        ob_char(')', ob); ob_char(10u8, ob);
+        emit_indent(sb, indent + 2);
+        emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+        emit_string(sb, "__a"); emit_int(sb, i); emit_char(sb, 10u8);
+        emit_indent(sb, indent + 3);
+        emit_type(ftypes, get(ftoffs, i), get(ftlens, i), sb); emit_char(sb, 10u8);
+        emit_indent(sb, indent + 2);
+        emit_char(sb, ')'); emit_char(sb, 10u8);
         i = i + 1;
     }
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     // ret
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("ret", ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob);
-    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(sbuf, 0, snlen, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     // block
-    ob_indent(indent + 1, ob);
-    ob_char('(', ob); ob_string("block", ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
     // comment for var_decl
-    emit_stmt_comment_line(src, sline, ob, indent + 2);
+    emit_stmt_comment_line(src, sline, sb, indent + 2);
     // var_decl __p (type U32Array) (call U32Array (int N))
-    ob_indent(indent + 2, ob);
-    ob_char('(', ob); ob_string("var_decl", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob);
-    ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob); ob_string("U32Array", ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob);
-    ob_char('(', ob); ob_string("call", ob); ob_char(' ', ob); ob_string("U32Array", ob); ob_char(10u8, ob);
-    ob_indent(indent + 4, ob);
-    ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob); ob_dec(nfields, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "var_decl"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' '); emit_string(sb, "U32Array"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3);
+    emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "U32Array"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 4);
+    emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
     // set(__p, i, __ai as u32) for each field
     var k: i32 = 0;
     while k < nfields {
-        emit_stmt_comment_line(src, sline, ob, indent + 2);
-        ob_indent(indent + 2, ob);
-        ob_char('(', ob); ob_string("call_stmt", ob); ob_char(' ', ob); ob_string("set", ob); ob_char(10u8, ob);
-        ob_indent(indent + 3, ob);
-        ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(')', ob); ob_char(10u8, ob);
-        ob_indent(indent + 3, ob);
-        ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob); ob_dec(k, ob); ob_char(')', ob); ob_char(10u8, ob);
+        emit_stmt_comment_line(src, sline, sb, indent + 2);
+        emit_indent(sb, indent + 2);
+        emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' '); emit_string(sb, "set"); emit_char(sb, 10u8);
+        emit_indent(sb, indent + 3);
+        emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, ')'); emit_char(sb, 10u8);
+        emit_indent(sb, indent + 3);
+        emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);
         // (cast (var __aN) (type u32))
-        ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
-        ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob);
-        ob_string("__a", ob); ob_dec(k, ob); ob_char(')', ob); ob_char(10u8, ob);
-        ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-        ob_string("u32", ob); ob_char(')', ob); ob_char(10u8, ob);
-        ob_indent(indent + 3, ob); ob_char(')', ob); ob_char(10u8, ob);
-        ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
+        emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+        emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+        emit_string(sb, "__a"); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);
+        emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+        emit_string(sb, "u32"); emit_char(sb, ')'); emit_char(sb, 10u8);
+        emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+        emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
         k = k + 1;
     }
     // comment for return
-    emit_stmt_comment_line(src, sline, ob, indent + 2);
+    emit_stmt_comment_line(src, sline, sb, indent + 2);
     // return (cast (var __p) (type StructName))
-    ob_indent(indent + 2, ob);
-    ob_char('(', ob); ob_string("return", ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
-    ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("var", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(sbuf, 0, snlen, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent, ob); ob_char(')', ob);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent); emit_char(sb, ')');
     return;
 }
 
@@ -1367,41 +1351,41 @@ fn emit_struct_getter(
     ftypes: U8Array, ftoff: i32, ftlen: i32,
     fidx: i32,
     src: U8Array, sline: i32,
-    ob: OutputBuffer, indent: i32
+    sb: StringBuffer, indent: i32
 ) -> void {
-    ob_indent(indent, ob);
-    ob_char('(', ob); ob_string("fn", ob); ob_char(' ', ob);
-    ob_n(fnames, fnoff, fnlen, ob); ob_char(10u8, ob);
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+    emit_n(sb, fnames, fnoff, fnlen); emit_char(sb, 10u8);
     // params
-    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("params", ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(sbuf, 0, snlen, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     // ret
-    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("ret", ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(ftypes, ftoff, ftlen, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     // block { return get(__p as U32Array, i) as field_type; }
-    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("block", ob); ob_char(10u8, ob);
-    emit_stmt_comment_line(src, sline, ob, indent + 2);
-    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("return", ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+    emit_stmt_comment_line(src, sline, sb, indent + 2);
+    emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
     // outer cast: get(...) as field_type
-    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("cast", ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
     // call get (cast __p U32Array) (int i)
-    ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("call", ob); ob_char(' ', ob); ob_string("get", ob); ob_char(10u8, ob);
-    emit_cast_var("__p", "U32Array", ob, indent + 5); ob_char(10u8, ob);
-    ob_indent(indent + 5, ob); ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob); ob_dec(fidx, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 4, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "get"); emit_char(sb, 10u8);
+    emit_cast_var("__p", "U32Array", sb, indent + 5); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
     // (type field_type)
-    ob_indent(indent + 4, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(ftypes, ftoff, ftlen, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent, ob); ob_char(')', ob);
+    emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent); emit_char(sb, ')');
     return;
 }
 
@@ -1412,42 +1396,42 @@ fn emit_struct_setter(
     ftypes: U8Array, ftoff: i32, ftlen: i32,
     fidx: i32,
     src: U8Array, sline: i32,
-    ob: OutputBuffer, indent: i32
+    sb: StringBuffer, indent: i32
 ) -> void {
-    ob_indent(indent, ob);
-    ob_char('(', ob); ob_string("fn", ob); ob_char(' ', ob);
-    ob_n(fnames, fnoff, fnlen, ob); ob_char(10u8, ob);
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+    emit_n(sb, fnames, fnoff, fnlen); emit_char(sb, 10u8);
     // params
-    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("params", ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob); ob_string("__p", ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(sbuf, 0, snlen, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("param", ob); ob_char(' ', ob); ob_string("__v", ob); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob);
-    ob_n(ftypes, ftoff, ftlen, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__v"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     // ret void
-    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("ret", ob); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("type", ob); ob_char(' ', ob); ob_string("void", ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
+    emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' '); emit_string(sb, "void"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     // block { set(__p as U32Array, i, __v as u32); return; }
-    ob_indent(indent + 1, ob); ob_char('(', ob); ob_string("block", ob); ob_char(10u8, ob);
-    emit_stmt_comment_line(src, sline, ob, indent + 2);
-    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("call_stmt", ob); ob_char(' ', ob); ob_string("set", ob); ob_char(10u8, ob);
-    emit_cast_var("__p", "U32Array", ob, indent + 3); ob_char(10u8, ob);
-    ob_indent(indent + 3, ob); ob_char('(', ob); ob_string("int", ob); ob_char(' ', ob); ob_dec(fidx, ob); ob_char(')', ob); ob_char(10u8, ob);
-    emit_cast_var("__v", "u32", ob, indent + 3); ob_char(10u8, ob);
-    ob_indent(indent + 2, ob); ob_char(')', ob); ob_char(10u8, ob);
-    emit_stmt_comment_line(src, sline, ob, indent + 2);
-    ob_indent(indent + 2, ob); ob_char('(', ob); ob_string("return", ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent + 1, ob); ob_char(')', ob); ob_char(10u8, ob);
-    ob_indent(indent, ob); ob_char(')', ob);
+    emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+    emit_stmt_comment_line(src, sline, sb, indent + 2);
+    emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' '); emit_string(sb, "set"); emit_char(sb, 10u8);
+    emit_cast_var("__p", "U32Array", sb, indent + 3); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_cast_var("__v", "u32", sb, indent + 3); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_stmt_comment_line(src, sline, sb, indent + 2);
+    emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent); emit_char(sb, ')');
     return;
 }
 
-fn pars_struct_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_struct_decl(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     var struct_line: i32 = g_tok_line;
     expect_tok(TK_STRUCT, src, tok);
     // Capture struct name
@@ -1469,8 +1453,8 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -
     var fnpos: i32 = 0;
     var ftpos: i32 = 0;
 
-    ob_char('(', ob); ob_string("struct", ob); ob_char(' ', ob);
-    ob_n(sname_buf, 0, snlen, ob);
+    emit_char(sb, '('); emit_string(sb, "struct"); emit_char(sb, ' ');
+    emit_n(sb, sname_buf, 0, snlen);
 
     var first: i32 = 1;
     while g_tok != TK_RBRACE && g_tok != TK_EOF {
@@ -1501,48 +1485,48 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -
             var ftl: i32 = type_tok_name(tok, ftypes, ftpos);
             set(ftlens, nfields, ftl);
             ftpos = ftpos + ftl;
-            ob_char(10u8, ob);
-            ob_indent(indent + 1, ob);
-            ob_char('(', ob); ob_string("field", ob); ob_char(' ', ob);
-            ob_n(fname_buf, 0, fname_len, ob);
-            ob_char(10u8, ob);
-            ob_indent(indent + 2, ob);
-            pars_type(src, tok, ob, indent + 2);
-            ob_char(10u8, ob);
-            ob_indent(indent + 1, ob);
-            ob_char(')', ob);
+            emit_char(sb, 10u8);
+            emit_indent(sb, indent + 1);
+            emit_char(sb, '('); emit_string(sb, "field"); emit_char(sb, ' ');
+            emit_n(sb, fname_buf, 0, fname_len);
+            emit_char(sb, 10u8);
+            emit_indent(sb, indent + 2);
+            pars_type(src, tok, sb, indent + 2);
+            emit_char(sb, 10u8);
+            emit_indent(sb, indent + 1);
+            emit_char(sb, ')');
             delete(fname_buf);
             nfields = nfields + 1;
         }
     }
     expect_tok(TK_RBRACE, src, tok);
-    ob_char(10u8, ob);
-    ob_indent(indent, ob);
-    ob_char(')', ob);
+    emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
 
     // Emit synthetic functions: constructor, getters, setters
-    ob_char(10u8, ob);
-    emit_struct_ctor(sname_buf, snlen, ftypes, ftoffs, ftlens, nfields, src, struct_line, ob, indent);
+    emit_char(sb, 10u8);
+    emit_struct_ctor(sname_buf, snlen, ftypes, ftoffs, ftlens, nfields, src, struct_line, sb, indent);
 
     var gi: i32 = 0;
     while gi < nfields {
-        ob_char(10u8, ob);
+        emit_char(sb, 10u8);
         emit_struct_getter(
             sname_buf, snlen,
             fnames, get(fnoffs, gi), get(fnlens, gi),
             ftypes, get(ftoffs, gi), get(ftlens, gi),
-            gi, src, struct_line, ob, indent);
+            gi, src, struct_line, sb, indent);
         gi = gi + 1;
     }
 
     var si: i32 = 0;
     while si < nfields {
-        ob_char(10u8, ob);
+        emit_char(sb, 10u8);
         emit_struct_setter(
             sname_buf, snlen,
             fnames, get(fnoffs, si), get(fnlens, si),
             ftypes, get(ftoffs, si), get(ftlens, si),
-            si, src, struct_line, ob, indent);
+            si, src, struct_line, sb, indent);
         si = si + 1;
     }
 
@@ -1552,42 +1536,42 @@ fn pars_struct_decl(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -
     return;
 }
 
-fn pars_import(src: U8Array, tok: U8Array, ob: OutputBuffer, indent: i32) -> void {
+fn pars_import(src: U8Array, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     expect_tok(TK_IMPORT, src, tok);
-    ob_char('(', ob); ob_string("import", ob); ob_char(' ', ob);
+    emit_char(sb, '('); emit_string(sb, "import"); emit_char(sb, ' ');
     if g_tok == TK_STR_LIT {
-        ob_n(tok, 0, g_tok_slen, ob);
+        emit_n(sb, tok, 0, g_tok_slen);
         lex_tok(src, tok);
     }
     expect_tok(TK_SEMI, src, tok);
-    ob_char(')', ob);
+    emit_char(sb, ')');
     return;
 }
 
-fn pars_program(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
-    ob_char('(', ob); ob_string("program", ob);
+fn pars_program(src: U8Array, tok: U8Array, sb: StringBuffer) -> void {
+    emit_char(sb, '('); emit_string(sb, "program");
 
     while g_tok == TK_IMPORT {
-        ob_char(10u8, ob);
-        ob_indent(1, ob);
-        pars_import(src, tok, ob, 1);
+        emit_char(sb, 10u8);
+        emit_indent(sb, 1);
+        pars_import(src, tok, sb, 1);
     }
 
     while g_tok != TK_EOF {
-        ob_char(10u8, ob);
-        ob_indent(1, ob);
+        emit_char(sb, 10u8);
+        emit_indent(sb, 1);
         if g_tok == TK_EXPORT {
             lex_tok(src, tok);
-            pars_fn_decl(src, tok, ob, 1, 1);
+            pars_fn_decl(src, tok, sb, 1, 1);
         } else {
             if g_tok == TK_FN {
-                pars_fn_decl(src, tok, ob, 1, 0);
+                pars_fn_decl(src, tok, sb, 1, 0);
             } else {
                 if g_tok == TK_STRUCT {
-                    pars_struct_decl(src, tok, ob, 1);
+                    pars_struct_decl(src, tok, sb, 1);
                 } else {
                     if g_tok == TK_VAR {
-                        pars_var_decl(src, tok, ob, 1);
+                        pars_var_decl(src, tok, sb, 1);
                     } else {
                         sys_exit(1);
                     }
@@ -1595,16 +1579,16 @@ fn pars_program(src: U8Array, tok: U8Array, ob: OutputBuffer) -> void {
             }
         }
     }
-    ob_char(10u8, ob);
-    ob_char(')', ob);  // )
-    ob_char(10u8, ob);
+    emit_char(sb, 10u8);
+    emit_char(sb, ')');  // )
+    emit_char(sb, 10u8);
     return;
 }
 
 fn main() -> i32 {
     var src_buf: U8Array = U8Array(524288);  // 512KB for source
     var tok_buf: U8Array = U8Array(4096);    // token string buffer
-    var ob: OutputBuffer = ob_new(1048576);  // 1MB output buffer
+    var sb: StringBuffer = sb_new();
     var read_tmp: U8Array = U8Array(4096);   // temp buffer for reading chunks
 
     // Read all of stdin in a loop (a single sys_read may return less on pipes)
@@ -1626,12 +1610,12 @@ fn main() -> i32 {
     // Prime the lexer
     lex_tok(src_buf, tok_buf);
 
-    pars_program(src_buf, tok_buf, ob);
+    pars_program(src_buf, tok_buf, sb);
 
-    ob_flush(ob);
+    sb_write(sb, 1);
 
     delete(src_buf);
     delete(tok_buf);
-    ob_delete(ob);
+    sb_delete(sb);
     return 0;
 }

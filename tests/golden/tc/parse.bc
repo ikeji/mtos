@@ -289,16 +289,16 @@ __L20:
   return_void
 .endfn
 
-.fn ob_op i32 OutputBuffer void
+.fn sb_op i32 StringBuffer void
 .param kind i32
-.param ob OutputBuffer
+.param sb StringBuffer
   load kind
   load TK_PLUS
   eq
   jump_ifnot __L22
+  load sb
   push_int 43
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L22:
@@ -306,9 +306,9 @@ __L22:
   load TK_MINUS
   eq
   jump_ifnot __L23
+  load sb
   push_int 45
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L23:
@@ -316,9 +316,9 @@ __L23:
   load TK_STAR
   eq
   jump_ifnot __L24
+  load sb
   push_int 42
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L24:
@@ -326,9 +326,9 @@ __L24:
   load TK_SLASH
   eq
   jump_ifnot __L25
+  load sb
   push_int 47
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L25:
@@ -336,9 +336,9 @@ __L25:
   load TK_PERCENT
   eq
   jump_ifnot __L26
+  load sb
   push_int 37
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L26:
@@ -346,9 +346,9 @@ __L26:
   load TK_AMP
   eq
   jump_ifnot __L27
+  load sb
   push_int 38
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L27:
@@ -356,9 +356,9 @@ __L27:
   load TK_PIPE
   eq
   jump_ifnot __L28
+  load sb
   push_int 124
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L28:
@@ -366,9 +366,9 @@ __L28:
   load TK_CARET
   eq
   jump_ifnot __L29
+  load sb
   push_int 94
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L29:
@@ -376,9 +376,9 @@ __L29:
   load TK_LSHIFT
   eq
   jump_ifnot __L30
+  load sb
   push_str 0
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L30:
@@ -386,9 +386,9 @@ __L30:
   load TK_RSHIFT
   eq
   jump_ifnot __L31
+  load sb
   push_str 1
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L31:
@@ -396,9 +396,9 @@ __L31:
   load TK_AMPAMP
   eq
   jump_ifnot __L32
+  load sb
   push_str 2
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L32:
@@ -406,9 +406,9 @@ __L32:
   load TK_PIPEPIPE
   eq
   jump_ifnot __L33
+  load sb
   push_str 3
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L33:
@@ -416,9 +416,9 @@ __L33:
   load TK_BANG
   eq
   jump_ifnot __L34
+  load sb
   push_int 33
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L34:
@@ -426,9 +426,9 @@ __L34:
   load TK_EQEQ
   eq
   jump_ifnot __L35
+  load sb
   push_str 4
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L35:
@@ -436,9 +436,9 @@ __L35:
   load TK_BANGEQ
   eq
   jump_ifnot __L36
+  load sb
   push_str 5
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L36:
@@ -446,9 +446,9 @@ __L36:
   load TK_LT
   eq
   jump_ifnot __L37
+  load sb
   push_int 60
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L37:
@@ -456,9 +456,9 @@ __L37:
   load TK_LTEQ
   eq
   jump_ifnot __L38
+  load sb
   push_str 6
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L38:
@@ -466,9 +466,9 @@ __L38:
   load TK_GT
   eq
   jump_ifnot __L39
+  load sb
   push_int 62
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L39:
@@ -476,9 +476,9 @@ __L39:
   load TK_GTEQ
   eq
   jump_ifnot __L40
+  load sb
   push_str 7
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L40:
@@ -486,16 +486,16 @@ __L40:
   return_void
 .endfn
 
-.fn ob_type_kw i32 OutputBuffer void
+.fn sb_type_kw i32 StringBuffer void
 .param kind i32
-.param ob OutputBuffer
+.param sb StringBuffer
   load kind
   load TK_U8
   eq
   jump_ifnot __L41
+  load sb
   push_str 8
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L41:
@@ -503,9 +503,9 @@ __L41:
   load TK_U16
   eq
   jump_ifnot __L42
+  load sb
   push_str 9
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L42:
@@ -513,9 +513,9 @@ __L42:
   load TK_U32
   eq
   jump_ifnot __L43
+  load sb
   push_str 10
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L43:
@@ -523,9 +523,9 @@ __L43:
   load TK_I8
   eq
   jump_ifnot __L44
+  load sb
   push_str 11
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L44:
@@ -533,9 +533,9 @@ __L44:
   load TK_I16
   eq
   jump_ifnot __L45
+  load sb
   push_str 12
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L45:
@@ -543,9 +543,9 @@ __L45:
   load TK_I32
   eq
   jump_ifnot __L46
+  load sb
   push_str 13
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L46:
@@ -553,9 +553,9 @@ __L46:
   load TK_BOOL
   eq
   jump_ifnot __L47
+  load sb
   push_str 14
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L47:
@@ -563,9 +563,9 @@ __L47:
   load TK_VOID
   eq
   jump_ifnot __L48
+  load sb
   push_str 15
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   return_void
 __L48:
@@ -2249,51 +2249,51 @@ __L242:
   return_void
 .endfn
 
-.fn wrap_binop U8Array i32 i32 U8Array U8Array OutputBuffer void
+.fn wrap_binop U8Array i32 i32 U8Array U8Array StringBuffer void
 .param left_buf U8Array
 .param left_len i32
 .param op i32
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 30
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load op
-  load ob
-  call ob_op i32 OutputBuffer
+  load sb
+  call sb_op i32 StringBuffer
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load left_buf
   push_int 0
   load left_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_primary U8Array U8Array OutputBuffer void
+.fn pars_primary U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .local i i32
 .local ch u8
 .local name_len i32
@@ -2303,40 +2303,40 @@ __L242:
   load TK_INT_LIT
   eq
   jump_ifnot __L243
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 31
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   load g_tok_slen
   push_int 0
   gt
   jump_ifnot __L244
+  load sb
   push_int 58
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load tok
   push_int 0
   load g_tok_slen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
 __L244:
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load g_tok_ival
-  load ob
-  call ob_int i32 OutputBuffer
+  call emit_int StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
@@ -2348,21 +2348,21 @@ __L243:
   load TK_STR_LIT
   eq
   jump_ifnot __L245
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 32
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 34
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   push_int 0
   store i
@@ -2379,13 +2379,13 @@ __L246:
   push_int 34
   eq
   jump_ifnot __L248
+  load sb
   push_int 92
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 34
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L249
 __L248:
@@ -2393,13 +2393,13 @@ __L248:
   push_int 92
   eq
   jump_ifnot __L250
+  load sb
   push_int 92
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 92
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L251
 __L250:
@@ -2407,13 +2407,13 @@ __L250:
   push_int 10
   eq
   jump_ifnot __L252
+  load sb
   push_int 92
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 110
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L253
 __L252:
@@ -2421,19 +2421,19 @@ __L252:
   push_int 9
   eq
   jump_ifnot __L254
+  load sb
   push_int 92
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 116
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L255
 __L254:
+  load sb
   load ch
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L255:
 __L253:
@@ -2445,13 +2445,13 @@ __L249:
   store i
   jump __L246
 __L247:
+  load sb
   push_int 34
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
@@ -2463,25 +2463,25 @@ __L245:
   load TK_TRUE
   eq
   jump_ifnot __L256
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 14
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 21
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
@@ -2493,25 +2493,25 @@ __L256:
   load TK_FALSE
   eq
   jump_ifnot __L257
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 14
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 23
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
@@ -2529,8 +2529,8 @@ __L257:
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
   load TK_RPAREN
   load src
@@ -2582,23 +2582,23 @@ __L261:
   load tok
   call lex_tok U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 33
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name_buf
   push_int 0
   load name_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
   load g_tok
   load TK_RPAREN
@@ -2611,14 +2611,14 @@ __L265:
   push_int 1
   eq
   jump_ifnot __L266
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
   load g_tok
   load TK_COMMA
@@ -2641,33 +2641,33 @@ __L264:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L263
 __L262:
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 19
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name_buf
   push_int 0
   load name_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L263:
   load name_buf
@@ -2682,19 +2682,18 @@ __L259:
   return_void
 .endfn
 
-.fn pars_postfix U8Array U8Array OutputBuffer void
+.fn pars_postfix U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local inner OutputBuffer
-.local wrapped OutputBuffer
-  push_int 65536
-  call ob_new i32
+.param sb StringBuffer
+.local inner StringBuffer
+.local wrapped StringBuffer
+  call sb_new
   store inner
   load src
   load tok
   load inner
-  call pars_primary U8Array U8Array OutputBuffer
+  call pars_primary U8Array U8Array StringBuffer
   pop
 __L269:
   load g_tok
@@ -2705,61 +2704,60 @@ __L269:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store wrapped
+  load wrapped
   push_int 40
-  load wrapped
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load wrapped
   push_str 34
-  load wrapped
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
-  push_int 10
   load wrapped
-  call ob_char u8 OutputBuffer
+  push_int 10
+  call emit_char StringBuffer u8
   pop
   load wrapped
   load inner
-  call ob_append OutputBuffer OutputBuffer
+  call sb_append StringBuffer StringBuffer
   pop
-  push_int 10
   load wrapped
-  call ob_char u8 OutputBuffer
+  push_int 10
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
   load wrapped
   push_int 0
-  call pars_type U8Array U8Array OutputBuffer i32
+  call pars_type U8Array U8Array StringBuffer i32
   pop
-  push_int 41
   load wrapped
-  call ob_char u8 OutputBuffer
+  push_int 41
+  call emit_char StringBuffer u8
   pop
   load inner
-  call ob_delete OutputBuffer
+  call sb_delete StringBuffer
   pop
   load wrapped
   store inner
   jump __L269
 __L270:
-  load ob
+  load sb
   load inner
-  call ob_append OutputBuffer OutputBuffer
+  call sb_append StringBuffer StringBuffer
   pop
   load inner
-  call ob_delete OutputBuffer
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_unary U8Array U8Array OutputBuffer void
+.fn pars_unary U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
   load g_tok
   load TK_BANG
   eq
@@ -2768,34 +2766,34 @@ __L270:
   load tok
   call lex_tok U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 35
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 33
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
-  load ob
-  call pars_unary U8Array U8Array OutputBuffer
+  load sb
+  call pars_unary U8Array U8Array StringBuffer
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L271:
@@ -2807,61 +2805,60 @@ __L271:
   load tok
   call lex_tok U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 35
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 45
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
-  load ob
-  call pars_unary U8Array U8Array OutputBuffer
+  load sb
+  call pars_unary U8Array U8Array StringBuffer
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
 __L272:
   load src
   load tok
-  load ob
-  call pars_postfix U8Array U8Array OutputBuffer
+  load sb
+  call pars_postfix U8Array U8Array StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_mul U8Array U8Array OutputBuffer void
+.fn pars_mul U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
+.param sb StringBuffer
+.local left_sb StringBuffer
 .local op i32
-.local right_ob OutputBuffer
-.local combined OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.local right_sb StringBuffer
+.local combined StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_unary U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_unary U8Array U8Array StringBuffer
   pop
 __L273:
   load g_tok
@@ -2894,89 +2891,86 @@ __L276:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_unary U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_unary U8Array U8Array StringBuffer
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store combined
+  load combined
   push_int 40
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 30
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
-  push_int 32
   load combined
-  call ob_char u8 OutputBuffer
+  push_int 32
+  call emit_char StringBuffer u8
   pop
   load op
   load combined
-  call ob_op i32 OutputBuffer
+  call sb_op i32 StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load left_sb
+  call sb_delete StringBuffer
+  pop
+  load right_sb
+  call sb_delete StringBuffer
+  pop
   load combined
-  call ob_char u8 OutputBuffer
-  pop
-  load left_ob
-  call ob_delete OutputBuffer
-  pop
-  load right_ob
-  call ob_delete OutputBuffer
-  pop
-  load combined
-  store left_ob
+  store left_sb
   jump __L273
 __L274:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_add U8Array U8Array OutputBuffer void
+.fn pars_add U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
+.param sb StringBuffer
+.local left_sb StringBuffer
 .local op i32
-.local right_ob OutputBuffer
-.local combined OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.local right_sb StringBuffer
+.local combined StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_mul U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_mul U8Array U8Array StringBuffer
   pop
 __L279:
   load g_tok
@@ -2999,89 +2993,86 @@ __L282:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_mul U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_mul U8Array U8Array StringBuffer
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store combined
+  load combined
   push_int 40
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 30
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
-  push_int 32
   load combined
-  call ob_char u8 OutputBuffer
+  push_int 32
+  call emit_char StringBuffer u8
   pop
   load op
   load combined
-  call ob_op i32 OutputBuffer
+  call sb_op i32 StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load left_sb
+  call sb_delete StringBuffer
+  pop
+  load right_sb
+  call sb_delete StringBuffer
+  pop
   load combined
-  call ob_char u8 OutputBuffer
-  pop
-  load left_ob
-  call ob_delete OutputBuffer
-  pop
-  load right_ob
-  call ob_delete OutputBuffer
-  pop
-  load combined
-  store left_ob
+  store left_sb
   jump __L279
 __L280:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_shift U8Array U8Array OutputBuffer void
+.fn pars_shift U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
+.param sb StringBuffer
+.local left_sb StringBuffer
 .local op i32
-.local right_ob OutputBuffer
-.local combined OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.local right_sb StringBuffer
+.local combined StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_add U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_add U8Array U8Array StringBuffer
   pop
 __L283:
   load g_tok
@@ -3104,88 +3095,85 @@ __L286:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_add U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_add U8Array U8Array StringBuffer
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store combined
+  load combined
   push_int 40
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 30
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
-  push_int 32
   load combined
-  call ob_char u8 OutputBuffer
+  push_int 32
+  call emit_char StringBuffer u8
   pop
   load op
   load combined
-  call ob_op i32 OutputBuffer
+  call sb_op i32 StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load left_sb
+  call sb_delete StringBuffer
+  pop
+  load right_sb
+  call sb_delete StringBuffer
+  pop
   load combined
-  call ob_char u8 OutputBuffer
-  pop
-  load left_ob
-  call ob_delete OutputBuffer
-  pop
-  load right_ob
-  call ob_delete OutputBuffer
-  pop
-  load combined
-  store left_ob
+  store left_sb
   jump __L283
 __L284:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_bitand U8Array U8Array OutputBuffer void
+.fn pars_bitand U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
-.local right_ob OutputBuffer
-.local combined OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.param sb StringBuffer
+.local left_sb StringBuffer
+.local right_sb StringBuffer
+.local combined StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_shift U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_shift U8Array U8Array StringBuffer
   pop
 __L287:
   load g_tok
@@ -3196,88 +3184,85 @@ __L287:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_shift U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_shift U8Array U8Array StringBuffer
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store combined
+  load combined
   push_int 40
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 30
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load combined
   push_int 32
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_int 38
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load left_sb
+  call sb_delete StringBuffer
+  pop
+  load right_sb
+  call sb_delete StringBuffer
+  pop
   load combined
-  call ob_char u8 OutputBuffer
-  pop
-  load left_ob
-  call ob_delete OutputBuffer
-  pop
-  load right_ob
-  call ob_delete OutputBuffer
-  pop
-  load combined
-  store left_ob
+  store left_sb
   jump __L287
 __L288:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_bitxor U8Array U8Array OutputBuffer void
+.fn pars_bitxor U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
-.local right_ob OutputBuffer
-.local combined OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.param sb StringBuffer
+.local left_sb StringBuffer
+.local right_sb StringBuffer
+.local combined StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_bitand U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_bitand U8Array U8Array StringBuffer
   pop
 __L289:
   load g_tok
@@ -3288,88 +3273,85 @@ __L289:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_bitand U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_bitand U8Array U8Array StringBuffer
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store combined
+  load combined
   push_int 40
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 30
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load combined
   push_int 32
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_int 94
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load left_sb
+  call sb_delete StringBuffer
+  pop
+  load right_sb
+  call sb_delete StringBuffer
+  pop
   load combined
-  call ob_char u8 OutputBuffer
-  pop
-  load left_ob
-  call ob_delete OutputBuffer
-  pop
-  load right_ob
-  call ob_delete OutputBuffer
-  pop
-  load combined
-  store left_ob
+  store left_sb
   jump __L289
 __L290:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_bitor U8Array U8Array OutputBuffer void
+.fn pars_bitor U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
-.local right_ob OutputBuffer
-.local combined OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.param sb StringBuffer
+.local left_sb StringBuffer
+.local right_sb StringBuffer
+.local combined StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_bitxor U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_bitxor U8Array U8Array StringBuffer
   pop
 __L291:
   load g_tok
@@ -3380,88 +3362,85 @@ __L291:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_bitxor U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_bitxor U8Array U8Array StringBuffer
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store combined
+  load combined
   push_int 40
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 30
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load combined
   push_int 32
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_int 124
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load left_sb
+  call sb_delete StringBuffer
+  pop
+  load right_sb
+  call sb_delete StringBuffer
+  pop
   load combined
-  call ob_char u8 OutputBuffer
-  pop
-  load left_ob
-  call ob_delete OutputBuffer
-  pop
-  load right_ob
-  call ob_delete OutputBuffer
-  pop
-  load combined
-  store left_ob
+  store left_sb
   jump __L291
 __L292:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_compare U8Array U8Array OutputBuffer void
+.fn pars_compare U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
+.param sb StringBuffer
+.local left_sb StringBuffer
 .local k i32
-.local right_ob OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.local right_sb StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_bitor U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_bitor U8Array U8Array StringBuffer
   pop
   load g_tok
   store k
@@ -3523,83 +3502,81 @@ __L295:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_bitor U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_bitor U8Array U8Array StringBuffer
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 30
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load k
-  load ob
-  call ob_op i32 OutputBuffer
+  load sb
+  call sb_op i32 StringBuffer
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
-  load ob
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
-  load right_ob
-  call ob_delete OutputBuffer
+  load right_sb
+  call sb_delete StringBuffer
   pop
   return_void
 __L293:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_logic_and U8Array U8Array OutputBuffer void
+.fn pars_logic_and U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
-.local right_ob OutputBuffer
-.local combined OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.param sb StringBuffer
+.local left_sb StringBuffer
+.local right_sb StringBuffer
+.local combined StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_compare U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_compare U8Array U8Array StringBuffer
   pop
 __L304:
   load g_tok
@@ -3610,88 +3587,85 @@ __L304:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_compare U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_compare U8Array U8Array StringBuffer
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store combined
+  load combined
   push_int 40
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 30
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load combined
   push_int 32
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 2
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load left_sb
+  call sb_delete StringBuffer
+  pop
+  load right_sb
+  call sb_delete StringBuffer
+  pop
   load combined
-  call ob_char u8 OutputBuffer
-  pop
-  load left_ob
-  call ob_delete OutputBuffer
-  pop
-  load right_ob
-  call ob_delete OutputBuffer
-  pop
-  load combined
-  store left_ob
+  store left_sb
   jump __L304
 __L305:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_expr U8Array U8Array OutputBuffer void
+.fn pars_expr U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
-.local left_ob OutputBuffer
-.local right_ob OutputBuffer
-.local combined OutputBuffer
-  push_int 65536
-  call ob_new i32
-  store left_ob
+.param sb StringBuffer
+.local left_sb StringBuffer
+.local right_sb StringBuffer
+.local combined StringBuffer
+  call sb_new
+  store left_sb
   load src
   load tok
-  load left_ob
-  call pars_logic_and U8Array U8Array OutputBuffer
+  load left_sb
+  call pars_logic_and U8Array U8Array StringBuffer
   pop
 __L306:
   load g_tok
@@ -3702,90 +3676,88 @@ __L306:
   load tok
   call lex_tok U8Array U8Array
   pop
-  push_int 65536
-  call ob_new i32
-  store right_ob
+  call sb_new
+  store right_sb
   load src
   load tok
-  load right_ob
-  call pars_logic_and U8Array U8Array OutputBuffer
+  load right_sb
+  call pars_logic_and U8Array U8Array StringBuffer
   pop
-  push_int 65536
-  call ob_new i32
+  call sb_new
   store combined
+  load combined
   push_int 40
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 30
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load combined
   push_int 32
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load combined
   push_str 3
-  load combined
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 10
-  load combined
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load combined
-  load right_ob
-  call ob_append OutputBuffer OutputBuffer
+  load right_sb
+  call sb_append StringBuffer StringBuffer
   pop
+  load combined
   push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load left_sb
+  call sb_delete StringBuffer
+  pop
+  load right_sb
+  call sb_delete StringBuffer
+  pop
   load combined
-  call ob_char u8 OutputBuffer
-  pop
-  load left_ob
-  call ob_delete OutputBuffer
-  pop
-  load right_ob
-  call ob_delete OutputBuffer
-  pop
-  load combined
-  store left_ob
+  store left_sb
   jump __L306
 __L307:
-  load ob
-  load left_ob
-  call ob_append OutputBuffer OutputBuffer
+  load sb
+  load left_sb
+  call sb_append StringBuffer StringBuffer
   pop
-  load left_ob
-  call ob_delete OutputBuffer
+  load left_sb
+  call sb_delete StringBuffer
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_type U8Array U8Array OutputBuffer i32 void
+.fn pars_type U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load g_tok
   call is_type_tok i32
@@ -3801,8 +3773,8 @@ __L310:
 __L311:
   jump_ifnot __L308
   load g_tok
-  load ob
-  call ob_type_kw i32 OutputBuffer
+  load sb
+  call sb_type_kw i32 StringBuffer
   pop
   load src
   load tok
@@ -3814,11 +3786,11 @@ __L308:
   load TK_IDENT
   eq
   jump_ifnot __L312
+  load sb
   load tok
   push_int 0
   load g_tok_slen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
   load src
   load tok
@@ -3826,18 +3798,18 @@ __L308:
   pop
 __L312:
 __L309:
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_var_decl U8Array U8Array OutputBuffer i32 void
+.fn pars_var_decl U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
 .local name_len i32
 .local name_buf U8Array
@@ -3884,44 +3856,44 @@ __L314:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 37
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name_buf
   push_int 0
   load name_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
   load name_buf
   call delete U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 1
   add
-  call pars_type U8Array U8Array OutputBuffer i32
+  call pars_type U8Array U8Array StringBuffer i32
   pop
   load g_tok
   load TK_EQ
@@ -3931,20 +3903,20 @@ __L314:
   load tok
   call lex_tok U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
 __L315:
   load TK_SEMI
@@ -3952,26 +3924,26 @@ __L315:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_break_stmt U8Array U8Array OutputBuffer i32 void
+.fn pars_break_stmt U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
   load TK_BREAK
   load src
@@ -3983,26 +3955,26 @@ __L315:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 24
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_continue_stmt U8Array U8Array OutputBuffer i32 void
+.fn pars_continue_stmt U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
   load TK_CONTINUE
   load src
@@ -4014,58 +3986,58 @@ __L315:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 29
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_return_stmt U8Array U8Array OutputBuffer i32 void
+.fn pars_return_stmt U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
   load TK_RETURN
   load src
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 25
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   load g_tok
   load TK_SEMI
   ne
   jump_ifnot __L316
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
 __L316:
   load TK_SEMI
@@ -4073,72 +4045,72 @@ __L316:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_if_stmt U8Array U8Array OutputBuffer i32 void
+.fn pars_if_stmt U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
   load TK_IF
   load src
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 18
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 1
   add
-  call pars_block U8Array U8Array OutputBuffer i32
+  call pars_block U8Array U8Array StringBuffer i32
   pop
   load g_tok
   load TK_ELSE
@@ -4148,15 +4120,15 @@ __L316:
   load tok
   call lex_tok U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load g_tok
   load TK_IF
@@ -4164,111 +4136,111 @@ __L316:
   jump_ifnot __L318
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 1
   add
-  call pars_if_stmt U8Array U8Array OutputBuffer i32
+  call pars_if_stmt U8Array U8Array StringBuffer i32
   pop
   jump __L319
 __L318:
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 1
   add
-  call pars_block U8Array U8Array OutputBuffer i32
+  call pars_block U8Array U8Array StringBuffer i32
   pop
 __L319:
 __L317:
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_while_stmt U8Array U8Array OutputBuffer i32 void
+.fn pars_while_stmt U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
   load TK_WHILE
   load src
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 22
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 1
   add
-  call pars_block U8Array U8Array OutputBuffer i32
+  call pars_block U8Array U8Array StringBuffer i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_ident_stmt U8Array U8Array OutputBuffer i32 void
+.fn pars_ident_stmt U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
 .local name_len i32
 .local name_buf U8Array
@@ -4315,55 +4287,55 @@ __L321:
   load tok
   call lex_tok U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 38
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name_buf
   push_int 0
   load name_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
   load TK_SEMI
   load src
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L323
 __L322:
@@ -4417,146 +4389,146 @@ __L327:
   load tok
   call lex_tok U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 38
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name_buf
   push_int 0
   load name_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 30
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load the_op
   load TK_PLUS_EQ
   eq
   jump_ifnot __L334
+  load sb
   push_int 43
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L334:
   load the_op
   load TK_MINUS_EQ
   eq
   jump_ifnot __L335
+  load sb
   push_int 45
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L335:
   load the_op
   load TK_STAR_EQ
   eq
   jump_ifnot __L336
+  load sb
   push_int 42
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L336:
   load the_op
   load TK_SLASH_EQ
   eq
   jump_ifnot __L337
+  load sb
   push_int 47
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L337:
   load the_op
   load TK_PERCENT_EQ
   eq
   jump_ifnot __L338
+  load sb
   push_int 37
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L338:
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 19
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name_buf
   push_int 0
   load name_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load TK_SEMI
   load src
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L325
 __L324:
@@ -4568,23 +4540,23 @@ __L324:
   load tok
   call lex_tok U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 39
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name_buf
   push_int 0
   load name_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
   load g_tok
   load TK_RPAREN
@@ -4597,20 +4569,20 @@ __L342:
   push_int 1
   eq
   jump_ifnot __L343
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
-  call pars_expr U8Array U8Array OutputBuffer
+  load sb
+  call pars_expr U8Array U8Array StringBuffer
   pop
   load g_tok
   load TK_COMMA
@@ -4638,17 +4610,17 @@ __L341:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L340
 __L339:
@@ -4665,10 +4637,10 @@ __L323:
   return_void
 .endfn
 
-.fn emit_stmt_comment U8Array i32 OutputBuffer void
+.fn emit_stmt_comment U8Array i32 StringBuffer void
 .param src U8Array
 .param line i32
-.param ob OutputBuffer
+.param sb StringBuffer
 .local pos i32
 .local cur_line i32
 .local first u8
@@ -4770,21 +4742,21 @@ __L360:
   jump_ifnot __L358
   return_void
 __L358:
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 40
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 34
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L361:
   load pos
@@ -4823,13 +4795,13 @@ __L364:
   push_int 34
   eq
   jump_ifnot __L367
+  load sb
   push_int 92
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 34
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L368
 __L367:
@@ -4837,19 +4809,19 @@ __L367:
   push_int 92
   eq
   jump_ifnot __L369
+  load sb
   push_int 92
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 92
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   jump __L370
 __L369:
+  load sb
   load ch
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L370:
 __L368:
@@ -4859,22 +4831,22 @@ __L368:
   store pos
   jump __L361
 __L362:
+  load sb
   push_int 34
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_stmt U8Array U8Array OutputBuffer i32 void
+.fn pars_stmt U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
   load g_tok
   load TK_VAR
@@ -4882,9 +4854,9 @@ __L362:
   jump_ifnot __L371
   load src
   load tok
-  load ob
+  load sb
   load indent
-  call pars_var_decl U8Array U8Array OutputBuffer i32
+  call pars_var_decl U8Array U8Array StringBuffer i32
   pop
   return_void
 __L371:
@@ -4894,9 +4866,9 @@ __L371:
   jump_ifnot __L372
   load src
   load tok
-  load ob
+  load sb
   load indent
-  call pars_if_stmt U8Array U8Array OutputBuffer i32
+  call pars_if_stmt U8Array U8Array StringBuffer i32
   pop
   return_void
 __L372:
@@ -4906,9 +4878,9 @@ __L372:
   jump_ifnot __L373
   load src
   load tok
-  load ob
+  load sb
   load indent
-  call pars_while_stmt U8Array U8Array OutputBuffer i32
+  call pars_while_stmt U8Array U8Array StringBuffer i32
   pop
   return_void
 __L373:
@@ -4918,9 +4890,9 @@ __L373:
   jump_ifnot __L374
   load src
   load tok
-  load ob
+  load sb
   load indent
-  call pars_return_stmt U8Array U8Array OutputBuffer i32
+  call pars_return_stmt U8Array U8Array StringBuffer i32
   pop
   return_void
 __L374:
@@ -4930,9 +4902,9 @@ __L374:
   jump_ifnot __L375
   load src
   load tok
-  load ob
+  load sb
   load indent
-  call pars_break_stmt U8Array U8Array OutputBuffer i32
+  call pars_break_stmt U8Array U8Array StringBuffer i32
   pop
   return_void
 __L375:
@@ -4942,9 +4914,9 @@ __L375:
   jump_ifnot __L376
   load src
   load tok
-  load ob
+  load sb
   load indent
-  call pars_continue_stmt U8Array U8Array OutputBuffer i32
+  call pars_continue_stmt U8Array U8Array StringBuffer i32
   pop
   return_void
 __L376:
@@ -4954,9 +4926,9 @@ __L376:
   jump_ifnot __L377
   load src
   load tok
-  load ob
+  load sb
   load indent
-  call pars_ident_stmt U8Array U8Array OutputBuffer i32
+  call pars_ident_stmt U8Array U8Array StringBuffer i32
   pop
   return_void
 __L377:
@@ -4967,10 +4939,10 @@ __L377:
   return_void
 .endfn
 
-.fn pars_block U8Array U8Array OutputBuffer i32 void
+.fn pars_block U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
 .local stmt_line i32
   load TK_LBRACE
@@ -4978,13 +4950,13 @@ __L377:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 41
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
 __L378:
   load g_tok
@@ -5003,38 +4975,38 @@ __L381:
   jump_ifnot __L379
   load g_tok_line
   store stmt_line
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load stmt_line
-  load ob
-  call emit_stmt_comment U8Array i32 OutputBuffer
+  load sb
+  call emit_stmt_comment U8Array i32 StringBuffer
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 1
   add
-  call pars_stmt U8Array U8Array OutputBuffer i32
+  call pars_stmt U8Array U8Array StringBuffer i32
   pop
   jump __L378
 __L379:
@@ -5043,26 +5015,26 @@ __L379:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_fn_decl U8Array U8Array OutputBuffer i32 i32 void
+.fn pars_fn_decl U8Array U8Array StringBuffer i32 i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
 .param is_export i32
 .local name_len i32
@@ -5114,57 +5086,57 @@ __L383:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 16
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   load is_export
   push_int 1
   eq
   jump_ifnot __L384
+  load sb
   push_int 58
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 28
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
 __L384:
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name_buf
   push_int 0
   load name_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
   load name_buf
   call delete U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 42
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
   load g_tok
   load TK_RPAREN
@@ -5214,65 +5186,65 @@ __L389:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 43
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load pname_buf
   push_int 0
   load pname_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 3
   add
-  call pars_type U8Array U8Array OutputBuffer i32
+  call pars_type U8Array U8Array StringBuffer i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load pname_buf
   call delete U8Array
@@ -5298,47 +5270,47 @@ __L385:
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 44
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load g_tok
   load TK_ARROW
@@ -5350,78 +5322,78 @@ __L385:
   pop
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 2
   add
-  call pars_type U8Array U8Array OutputBuffer i32
+  call pars_type U8Array U8Array StringBuffer i32
   pop
   jump __L393
 __L392:
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 15
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
 __L393:
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 1
   add
-  call pars_block U8Array U8Array OutputBuffer i32
+  call pars_block U8Array U8Array StringBuffer i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
@@ -5693,399 +5665,325 @@ __L402:
   return_void
 .endfn
 
-.fn ob_dec i32 OutputBuffer void
-.param n i32
-.param ob OutputBuffer
-.local tmp U8Array
-.local l i32
-.local i i32
-  load n
-  push_int 0
-  eq
-  jump_ifnot __L405
-  push_int 48
-  load ob
-  call ob_char u8 OutputBuffer
-  pop
-  return_void
-__L405:
-  push_int 12
-  call U8Array i32
-  store tmp
-  push_int 0
-  store l
-__L406:
-  load n
-  push_int 0
-  gt
-  jump_ifnot __L407
-  load tmp
-  load l
-  push_int 48
-  load n
-  push_int 10
-  mod
-  add
-  cast u8
-  call set U8Array i32 u8
-  pop
-  load l
-  push_int 1
-  add
-  store l
-  load n
-  push_int 10
-  div
-  store n
-  jump __L406
-__L407:
-  load l
-  push_int 1
-  sub
-  store i
-__L408:
-  load i
-  push_int 0
-  ge
-  jump_ifnot __L409
-  load tmp
-  load i
-  call get U8Array i32
-  load ob
-  call ob_char u8 OutputBuffer
-  pop
-  load i
-  push_int 1
-  sub
-  store i
-  jump __L408
-__L409:
-  load tmp
-  call delete U8Array
-  pop
-  return_void
-  return_void
-.endfn
-
-.fn emit_param String U8Array i32 i32 OutputBuffer i32 void
+.fn emit_param String U8Array i32 i32 StringBuffer i32 void
 .param name String
 .param tbuf U8Array
 .param tstart i32
 .param tlen i32
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 43
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load tbuf
   load tstart
   load tlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn emit_type U8Array i32 i32 OutputBuffer void
+.fn emit_type U8Array i32 i32 StringBuffer void
 .param tbuf U8Array
 .param tstart i32
 .param tlen i32
-.param ob OutputBuffer
+.param sb StringBuffer
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load tbuf
   load tstart
   load tlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn emit_cast_var String String OutputBuffer i32 void
+.fn emit_cast_var String String StringBuffer i32 void
 .param name String
 .param tname String
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 34
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 19
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load tname
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn emit_cast_var_tbuf String U8Array i32 i32 OutputBuffer i32 void
+.fn emit_cast_var_tbuf String U8Array i32 i32 StringBuffer i32 void
 .param name String
 .param tbuf U8Array
 .param tstart i32
 .param tlen i32
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 34
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 19
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load name
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load tbuf
   load tstart
   load tlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn emit_stmt_comment_line U8Array i32 OutputBuffer i32 void
+.fn emit_stmt_comment_line U8Array i32 StringBuffer i32 void
 .param src U8Array
 .param line i32
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load line
-  load ob
-  call emit_stmt_comment U8Array i32 OutputBuffer
+  load sb
+  call emit_stmt_comment U8Array i32 StringBuffer
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn emit_struct_ctor U8Array i32 U8Array I32Array I32Array i32 U8Array i32 OutputBuffer i32 void
+.fn emit_struct_ctor U8Array i32 U8Array I32Array I32Array i32 U8Array i32 StringBuffer i32 void
 .param sbuf U8Array
 .param snlen i32
 .param ftypes U8Array
@@ -6094,96 +5992,96 @@ __L409:
 .param nfields i32
 .param src U8Array
 .param sline i32
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
 .local i i32
 .local k i32
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 16
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load sbuf
   push_int 0
   load snlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 42
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   push_int 0
   store i
-__L410:
+__L405:
   load i
   load nfields
   lt
-  jump_ifnot __L411
+  jump_ifnot __L406
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 43
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 45
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   load i
-  load ob
-  call ob_dec i32 OutputBuffer
+  call emit_int StringBuffer i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load ftypes
   load ftoffs
@@ -6192,655 +6090,655 @@ __L410:
   load ftlens
   load i
   call get I32Array i32
-  load ob
-  call emit_type U8Array i32 i32 OutputBuffer
+  load sb
+  call emit_type U8Array i32 i32 StringBuffer
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load i
   push_int 1
   add
   store i
-  jump __L410
-__L411:
+  jump __L405
+__L406:
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 44
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load sbuf
   push_int 0
   load snlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 41
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load sline
-  load ob
+  load sb
   load indent
   push_int 2
   add
-  call emit_stmt_comment_line U8Array i32 OutputBuffer i32
+  call emit_stmt_comment_line U8Array i32 StringBuffer i32
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 37
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 46
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 47
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 33
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 47
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 4
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 31
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load nfields
-  load ob
-  call ob_dec i32 OutputBuffer
+  call emit_int StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   push_int 0
   store k
-__L412:
+__L407:
   load k
   load nfields
   lt
-  jump_ifnot __L413
+  jump_ifnot __L408
   load src
   load sline
-  load ob
+  load sb
   load indent
   push_int 2
   add
-  call emit_stmt_comment_line U8Array i32 OutputBuffer i32
+  call emit_stmt_comment_line U8Array i32 StringBuffer i32
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 39
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 48
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 19
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 46
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 31
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load k
-  load ob
-  call ob_dec i32 OutputBuffer
+  call emit_int StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 34
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 4
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 19
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 45
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   load k
-  load ob
-  call ob_dec i32 OutputBuffer
+  call emit_int StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 4
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 10
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load k
   push_int 1
   add
   store k
-  jump __L412
-__L413:
+  jump __L407
+__L408:
   load src
   load sline
-  load ob
+  load sb
   load indent
   push_int 2
   add
-  call emit_stmt_comment_line U8Array i32 OutputBuffer i32
+  call emit_stmt_comment_line U8Array i32 StringBuffer i32
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 25
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 34
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 4
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 19
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 46
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 4
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load sbuf
   push_int 0
   load snlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn emit_struct_getter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 OutputBuffer i32 void
+.fn emit_struct_getter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 StringBuffer i32 void
 .param sbuf U8Array
 .param snlen i32
 .param fnames U8Array
@@ -6852,433 +6750,433 @@ __L413:
 .param fidx i32
 .param src U8Array
 .param sline i32
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 16
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load fnames
   load fnoff
   load fnlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 42
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 43
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 46
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load sbuf
   push_int 0
   load snlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 44
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load ftypes
   load ftoff
   load ftlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 41
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load sline
-  load ob
+  load sb
   load indent
   push_int 2
   add
-  call emit_stmt_comment_line U8Array i32 OutputBuffer i32
+  call emit_stmt_comment_line U8Array i32 StringBuffer i32
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 25
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 34
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 4
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 33
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 49
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   push_str 46
   push_str 47
-  load ob
+  load sb
   load indent
   push_int 5
   add
-  call emit_cast_var String String OutputBuffer i32
+  call emit_cast_var String String StringBuffer i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 5
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 31
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load fidx
-  load ob
-  call ob_dec i32 OutputBuffer
+  call emit_int StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 4
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 4
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load ftypes
   load ftoff
   load ftlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn emit_struct_setter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 OutputBuffer i32 void
+.fn emit_struct_setter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 StringBuffer i32 void
 .param sbuf U8Array
 .param snlen i32
 .param fnames U8Array
@@ -7290,452 +7188,452 @@ __L413:
 .param fidx i32
 .param src U8Array
 .param sline i32
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 16
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load fnames
   load fnoff
   load fnlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 42
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 43
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 46
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load sbuf
   push_int 0
   load snlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 43
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 50
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load ftypes
   load ftoff
   load ftlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 44
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 36
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 15
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 41
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load sline
-  load ob
+  load sb
   load indent
   push_int 2
   add
-  call emit_stmt_comment_line U8Array i32 OutputBuffer i32
+  call emit_stmt_comment_line U8Array i32 StringBuffer i32
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 39
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 48
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   push_str 46
   push_str 47
-  load ob
+  load sb
   load indent
   push_int 3
   add
-  call emit_cast_var String String OutputBuffer i32
+  call emit_cast_var String String StringBuffer i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 3
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 31
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load fidx
-  load ob
-  call ob_dec i32 OutputBuffer
+  call emit_int StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   push_str 50
   push_str 10
-  load ob
+  load sb
   load indent
   push_int 3
   add
-  call emit_cast_var String String OutputBuffer i32
+  call emit_cast_var String String StringBuffer i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load src
   load sline
-  load ob
+  load sb
   load indent
   push_int 2
   add
-  call emit_stmt_comment_line U8Array i32 OutputBuffer i32
+  call emit_stmt_comment_line U8Array i32 StringBuffer i32
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 25
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_struct_decl U8Array U8Array OutputBuffer i32 void
+.fn pars_struct_decl U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
 .local struct_line i32
 .local sname_buf U8Array
@@ -7771,11 +7669,11 @@ __L413:
   store snlen
   push_int 0
   store ci
-__L414:
+__L409:
   load ci
   load snlen
   lt
-  jump_ifnot __L415
+  jump_ifnot __L410
   load sname_buf
   load ci
   load tok
@@ -7787,8 +7685,8 @@ __L414:
   push_int 1
   add
   store ci
-  jump __L414
-__L415:
+  jump __L409
+__L410:
   load TK_IDENT
   load src
   load tok
@@ -7823,65 +7721,65 @@ __L415:
   store fnpos
   push_int 0
   store ftpos
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 26
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load sname_buf
   push_int 0
   load snlen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
   push_int 1
   store first
-__L416:
+__L411:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L418
+  jump_ifnot __L413
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L418
+  jump_ifnot __L413
   push_int 1
-  jump __L419
-__L418:
+  jump __L414
+__L413:
   push_int 0
-__L419:
-  jump_ifnot __L417
+__L414:
+  jump_ifnot __L412
   load first
   push_int 0
   eq
-  jump_ifnot __L420
+  jump_ifnot __L415
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L421
+  jump_ifnot __L416
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-__L421:
-__L420:
+__L416:
+__L415:
   push_int 0
   store first
   load g_tok
   load TK_RBRACE
   eq
-  jump_ifnot __L422
+  jump_ifnot __L417
   load g_tok
   store g_tok
-  jump __L423
-__L422:
+  jump __L418
+__L417:
   load g_tok_slen
   store fname_len
   load fname_len
@@ -7891,11 +7789,11 @@ __L422:
   store fname_buf
   push_int 0
   store j
-__L424:
+__L419:
   load j
   load fname_len
   lt
-  jump_ifnot __L425
+  jump_ifnot __L420
   load fname_buf
   load j
   load tok
@@ -7907,8 +7805,8 @@ __L424:
   push_int 1
   add
   store j
-  jump __L424
-__L425:
+  jump __L419
+__L420:
   load fnoffs
   load nfields
   load fnpos
@@ -7921,11 +7819,11 @@ __L425:
   pop
   push_int 0
   store j
-__L426:
+__L421:
   load j
   load fname_len
   lt
-  jump_ifnot __L427
+  jump_ifnot __L422
   load fnames
   load fnpos
   load j
@@ -7939,8 +7837,8 @@ __L426:
   push_int 1
   add
   store j
-  jump __L426
-__L427:
+  jump __L421
+__L422:
   load fnpos
   load fname_len
   add
@@ -7974,65 +7872,65 @@ __L427:
   load ftl
   add
   store ftpos
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 51
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load fname_buf
   push_int 0
   load fname_len
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 2
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
+  load sb
   load indent
   push_int 2
   add
-  call pars_type U8Array U8Array OutputBuffer i32
+  call pars_type U8Array U8Array StringBuffer i32
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
   push_int 1
   add
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load fname_buf
   call delete U8Array
@@ -8041,29 +7939,29 @@ __L427:
   push_int 1
   add
   store nfields
-__L423:
-  jump __L416
-__L417:
+__L418:
+  jump __L411
+__L412:
   load TK_RBRACE
   load src
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   load indent
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load sname_buf
   load snlen
@@ -8073,20 +7971,20 @@ __L417:
   load nfields
   load src
   load struct_line
-  load ob
+  load sb
   load indent
-  call emit_struct_ctor U8Array i32 U8Array I32Array I32Array i32 U8Array i32 OutputBuffer i32
+  call emit_struct_ctor U8Array i32 U8Array I32Array I32Array i32 U8Array i32 StringBuffer i32
   pop
   push_int 0
   store gi
-__L428:
+__L423:
   load gi
   load nfields
   lt
-  jump_ifnot __L429
+  jump_ifnot __L424
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load sname_buf
   load snlen
@@ -8107,26 +8005,26 @@ __L428:
   load gi
   load src
   load struct_line
-  load ob
+  load sb
   load indent
-  call emit_struct_getter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 OutputBuffer i32
+  call emit_struct_getter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 StringBuffer i32
   pop
   load gi
   push_int 1
   add
   store gi
-  jump __L428
-__L429:
+  jump __L423
+__L424:
   push_int 0
   store si
-__L430:
+__L425:
   load si
   load nfields
   lt
-  jump_ifnot __L431
+  jump_ifnot __L426
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load sname_buf
   load snlen
@@ -8147,16 +8045,16 @@ __L430:
   load si
   load src
   load struct_line
-  load ob
+  load sb
   load indent
-  call emit_struct_setter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 OutputBuffer i32
+  call emit_struct_setter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 U8Array i32 StringBuffer i32
   pop
   load si
   push_int 1
   add
   store si
-  jump __L430
-__L431:
+  jump __L425
+__L426:
   load sname_buf
   call delete U8Array
   pop
@@ -8182,176 +8080,176 @@ __L431:
   return_void
 .endfn
 
-.fn pars_import U8Array U8Array OutputBuffer i32 void
+.fn pars_import U8Array U8Array StringBuffer i32 void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
 .param indent i32
   load TK_IMPORT
   load src
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 27
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
+  load sb
   push_int 32
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   load g_tok
   load TK_STR_LIT
   eq
-  jump_ifnot __L432
+  jump_ifnot __L427
+  load sb
   load tok
   push_int 0
   load g_tok_slen
-  load ob
-  call ob_n U8Array i32 i32 OutputBuffer
+  call emit_n StringBuffer U8Array i32 i32
   pop
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
-__L432:
+__L427:
   load TK_SEMI
   load src
   load tok
   call expect_tok i32 U8Array U8Array
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
 .endfn
 
-.fn pars_program U8Array U8Array OutputBuffer void
+.fn pars_program U8Array U8Array StringBuffer void
 .param src U8Array
 .param tok U8Array
-.param ob OutputBuffer
+.param sb StringBuffer
+  load sb
   push_int 40
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_str 52
-  load ob
-  call ob_string String OutputBuffer
+  call emit_string StringBuffer String
   pop
-__L433:
+__L428:
   load g_tok
   load TK_IMPORT
   eq
-  jump_ifnot __L434
+  jump_ifnot __L429
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 1
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load src
   load tok
-  load ob
+  load sb
   push_int 1
-  call pars_import U8Array U8Array OutputBuffer i32
+  call pars_import U8Array U8Array StringBuffer i32
   pop
-  jump __L433
-__L434:
-__L435:
+  jump __L428
+__L429:
+__L430:
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L436
+  jump_ifnot __L431
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 1
-  load ob
-  call ob_indent i32 OutputBuffer
+  call emit_indent StringBuffer i32
   pop
   load g_tok
   load TK_EXPORT
   eq
-  jump_ifnot __L437
+  jump_ifnot __L432
   load src
   load tok
   call lex_tok U8Array U8Array
   pop
   load src
   load tok
-  load ob
+  load sb
   push_int 1
   push_int 1
-  call pars_fn_decl U8Array U8Array OutputBuffer i32 i32
+  call pars_fn_decl U8Array U8Array StringBuffer i32 i32
   pop
-  jump __L438
-__L437:
+  jump __L433
+__L432:
   load g_tok
   load TK_FN
   eq
-  jump_ifnot __L439
+  jump_ifnot __L434
   load src
   load tok
-  load ob
+  load sb
   push_int 1
   push_int 0
-  call pars_fn_decl U8Array U8Array OutputBuffer i32 i32
+  call pars_fn_decl U8Array U8Array StringBuffer i32 i32
   pop
-  jump __L440
-__L439:
+  jump __L435
+__L434:
   load g_tok
   load TK_STRUCT
   eq
-  jump_ifnot __L441
+  jump_ifnot __L436
   load src
   load tok
-  load ob
+  load sb
   push_int 1
-  call pars_struct_decl U8Array U8Array OutputBuffer i32
+  call pars_struct_decl U8Array U8Array StringBuffer i32
   pop
-  jump __L442
-__L441:
+  jump __L437
+__L436:
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L443
+  jump_ifnot __L438
   load src
   load tok
-  load ob
+  load sb
   push_int 1
-  call pars_var_decl U8Array U8Array OutputBuffer i32
+  call pars_var_decl U8Array U8Array StringBuffer i32
   pop
-  jump __L444
-__L443:
+  jump __L439
+__L438:
   push_int 1
   call sys_exit i32
   pop
-__L444:
-__L442:
-__L440:
-__L438:
-  jump __L435
-__L436:
+__L439:
+__L437:
+__L435:
+__L433:
+  jump __L430
+__L431:
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 41
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
+  load sb
   push_int 10
-  load ob
-  call ob_char u8 OutputBuffer
+  call emit_char StringBuffer u8
   pop
   return_void
   return_void
@@ -8360,7 +8258,7 @@ __L436:
 .fn main i32
 .local src_buf U8Array
 .local tok_buf U8Array
-.local ob OutputBuffer
+.local sb StringBuffer
 .local read_tmp U8Array
 .local chunk i32
 .local ci i32
@@ -8370,9 +8268,8 @@ __L436:
   push_int 4096
   call U8Array i32
   store tok_buf
-  push_int 1048576
-  call ob_new i32
-  store ob
+  call sb_new
+  store sb
   push_int 4096
   call U8Array i32
   store read_tmp
@@ -8383,30 +8280,30 @@ __L436:
   push_int 4096
   call sys_read i32 U8Array i32
   store chunk
-__L445:
+__L440:
   load chunk
   push_int 0
   gt
-  jump_ifnot __L447
+  jump_ifnot __L442
   load g_len
   load chunk
   add
   push_int 524288
   le
-  jump_ifnot __L447
+  jump_ifnot __L442
   push_int 1
-  jump __L448
-__L447:
+  jump __L443
+__L442:
   push_int 0
-__L448:
-  jump_ifnot __L446
+__L443:
+  jump_ifnot __L441
   push_int 0
   store ci
-__L449:
+__L444:
   load ci
   load chunk
   lt
-  jump_ifnot __L450
+  jump_ifnot __L445
   load src_buf
   load g_len
   load read_tmp
@@ -8422,15 +8319,15 @@ __L449:
   push_int 1
   add
   store ci
-  jump __L449
-__L450:
+  jump __L444
+__L445:
   push_int 0
   load read_tmp
   push_int 4096
   call sys_read i32 U8Array i32
   store chunk
-  jump __L445
-__L446:
+  jump __L440
+__L441:
   load read_tmp
   call delete U8Array
   pop
@@ -8444,11 +8341,12 @@ __L446:
   pop
   load src_buf
   load tok_buf
-  load ob
-  call pars_program U8Array U8Array OutputBuffer
+  load sb
+  call pars_program U8Array U8Array StringBuffer
   pop
-  load ob
-  call ob_flush OutputBuffer
+  load sb
+  push_int 1
+  call sb_write StringBuffer i32
   pop
   load src_buf
   call delete U8Array
@@ -8456,8 +8354,8 @@ __L446:
   load tok_buf
   call delete U8Array
   pop
-  load ob
-  call ob_delete OutputBuffer
+  load sb
+  call sb_delete StringBuffer
   pop
   push_int 0
   return

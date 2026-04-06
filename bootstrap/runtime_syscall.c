@@ -68,8 +68,8 @@ static const int pool_size[NPOOLS] = {
     1048576, 2097152, 4194304
 };
 static const int pool_count[NPOOLS] = {
-    128, 32768, 64, 64, 32, 32, 16, 16, 16, 16,
-    32, 8, 8, 4, 48, 4, 4, 4, 2
+    256, 32768, 256, 128, 64, 256, 64, 64, 32, 16,
+    32, 8, 8, 4, 8, 4, 4, 4, 2
 };
 static char heap_mem[50331648]; /* 48MB arena */
 static char *pool_free[NPOOLS];
