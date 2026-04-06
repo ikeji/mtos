@@ -14,7 +14,7 @@
  * Expression stack: hardware stack below sp, grows downward during
  * expression evaluation, fully consumed by each statement.
  *
- * Built-in functions: emitted as calls to __tc_<name> (see runtime.c).
+ * Functions are emitted as calls to mangled names (see runtime_syscall.c).
  * Exception: sys_exit is inlined as an ecall.
  */
 #include <stdio.h>
@@ -282,7 +282,7 @@ static int is_jump_target(BcFunc *fn, int i) {
     return 0;
 }
 
-static void emit_fn(BcProg *prog, BcFunc *fn, int fi) {
+static void emit_fn(BcFunc *fn, int fi) {
     int nvars      = fn->nparams + fn->nlocals;
     int frame_size = 8 + 4 * nvars;
     /* round up to 16-byte boundary */
@@ -573,7 +573,7 @@ static void emit_program(BcProg *prog) {
     /* --- .text: functions --- */
     E("    .text\n\n");
     for (int i = 0; i < prog->nfuncs; i++)
-        emit_fn(prog, &prog->funcs[i], i);
+        emit_fn(&prog->funcs[i], i);
 }
 
 int main(int argc, char *argv[]) {
