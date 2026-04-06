@@ -11117,10 +11117,11 @@
         (call U8Array
 (int 4096))
       )
-      (comment "var sb: StringBuffer = sb_new();")
+      (comment "var sb: StringBuffer = sb_new_output(1);")
       (var_decl sb
         (type StringBuffer)
-        (call sb_new)
+        (call sb_new_output
+(int 1))
       )
       (comment "var read_tmp: U8Array = U8Array(4096);   // temp buffer for reading chunks")
       (var_decl read_tmp

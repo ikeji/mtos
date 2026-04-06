@@ -8267,7 +8267,8 @@ __L431:
   push_int 4096
   call U8Array i32
   store tok_buf
-  call sb_new
+  push_int 1
+  call sb_new_output i32
   store sb
   push_int 4096
   call U8Array i32

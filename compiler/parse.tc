@@ -1588,7 +1588,7 @@ fn pars_program(src: StringBuffer, tok: U8Array, sb: StringBuffer) -> void {
 fn main() -> i32 {
     var src_buf: StringBuffer = sb_new();
     var tok_buf: U8Array = U8Array(4096);    // token string buffer
-    var sb: StringBuffer = sb_new();
+    var sb: StringBuffer = sb_new_output(1);
     var read_tmp: U8Array = U8Array(4096);   // temp buffer for reading chunks
 
     // Read all of stdin in a loop

@@ -27893,7 +27893,12 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-    call sb_new
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call sb_new_output__i32
+    addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -27936,7 +27941,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-  .L_f51_pc17:
+  .L_f51_pc18:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -27951,14 +27956,14 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f51_pc48
+    beqz t0, .L_f51_pc49
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-  .L_f51_pc23:
+  .L_f51_pc24:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -27973,7 +27978,7 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f51_pc42
+    beqz t0, .L_f51_pc43
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28028,8 +28033,8 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-    j    .L_f51_pc23
-  .L_f51_pc42:
+    j    .L_f51_pc24
+  .L_f51_pc43:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28049,8 +28054,8 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-    j    .L_f51_pc17
-  .L_f51_pc48:
+    j    .L_f51_pc18
+  .L_f51_pc49:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
