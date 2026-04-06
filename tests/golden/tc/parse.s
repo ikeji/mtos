@@ -3389,9 +3389,9 @@ classify_ident__U8Array__i32:
     ret
     # end of classify_ident__U8Array__i32
 
-    .globl src_char__U8Array
-    .type  src_char__U8Array, @function
-src_char__U8Array:
+    .globl src_char__StringBuffer
+    .type  src_char__StringBuffer, @function
+src_char__StringBuffer:
     # prologue: frame_size=16, params=1, locals=0
     addi sp, sp, -16
     sw   ra, 12(sp)
@@ -3437,7 +3437,7 @@ src_char__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3454,11 +3454,11 @@ src_char__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of src_char__U8Array
+    # end of src_char__StringBuffer
 
-    .globl next_tok__U8Array__U8Array
-    .type  next_tok__U8Array__U8Array, @function
-next_tok__U8Array__U8Array:
+    .globl next_tok__StringBuffer__U8Array
+    .type  next_tok__StringBuffer__U8Array, @function
+next_tok__StringBuffer__U8Array:
     # prologue: frame_size=32, params=2, locals=1
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -3489,7 +3489,7 @@ next_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call src_char__U8Array
+    call src_char__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3632,7 +3632,7 @@ next_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3683,7 +3683,7 @@ next_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call src_char__U8Array
+    call src_char__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3847,11 +3847,11 @@ next_tok__U8Array__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of next_tok__U8Array__U8Array
+    # end of next_tok__StringBuffer__U8Array
 
-    .globl skip_ws_and_comments__U8Array
-    .type  skip_ws_and_comments__U8Array, @function
-skip_ws_and_comments__U8Array:
+    .globl skip_ws_and_comments__StringBuffer
+    .type  skip_ws_and_comments__StringBuffer, @function
+skip_ws_and_comments__StringBuffer:
     # prologue: frame_size=32, params=1, locals=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -3921,7 +3921,7 @@ skip_ws_and_comments__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4064,7 +4064,7 @@ skip_ws_and_comments__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4120,7 +4120,7 @@ skip_ws_and_comments__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4189,11 +4189,11 @@ skip_ws_and_comments__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of skip_ws_and_comments__U8Array
+    # end of skip_ws_and_comments__StringBuffer
 
-    .globl lex_tok__U8Array__U8Array
-    .type  lex_tok__U8Array__U8Array, @function
-lex_tok__U8Array__U8Array:
+    .globl lex_tok__StringBuffer__U8Array
+    .type  lex_tok__StringBuffer__U8Array, @function
+lex_tok__StringBuffer__U8Array:
     # prologue: frame_size=80, params=2, locals=13
     addi sp, sp, -80
     sw   ra, 76(sp)
@@ -4218,7 +4218,7 @@ lex_tok__U8Array__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call skip_ws_and_comments__U8Array
+    call skip_ws_and_comments__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4279,7 +4279,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4331,7 +4331,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4435,7 +4435,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4537,7 +4537,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4582,7 +4582,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4653,7 +4653,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4711,7 +4711,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4815,7 +4815,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4948,7 +4948,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4986,7 +4986,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5073,7 +5073,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5431,7 +5431,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5518,7 +5518,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5805,7 +5805,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5973,7 +5973,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6089,7 +6089,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6445,7 +6445,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6561,7 +6561,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6677,7 +6677,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6793,7 +6793,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6909,7 +6909,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7025,7 +7025,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7141,7 +7141,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7227,7 +7227,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7343,7 +7343,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7429,7 +7429,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7545,7 +7545,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7631,7 +7631,7 @@ lex_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7723,11 +7723,11 @@ lex_tok__U8Array__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of lex_tok__U8Array__U8Array
+    # end of lex_tok__StringBuffer__U8Array
 
-    .globl expect_tok__i32__U8Array__U8Array
-    .type  expect_tok__i32__U8Array__U8Array, @function
-expect_tok__i32__U8Array__U8Array:
+    .globl expect_tok__i32__StringBuffer__U8Array
+    .type  expect_tok__i32__StringBuffer__U8Array, @function
+expect_tok__i32__StringBuffer__U8Array:
     # prologue: frame_size=32, params=3, locals=1
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -8116,7 +8116,7 @@ expect_tok__i32__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8131,11 +8131,11 @@ expect_tok__i32__U8Array__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of expect_tok__i32__U8Array__U8Array
+    # end of expect_tok__i32__StringBuffer__U8Array
 
-    .globl wrap_binop__U8Array__i32__i32__U8Array__U8Array__StringBuffer
-    .type  wrap_binop__U8Array__i32__i32__U8Array__U8Array__StringBuffer, @function
-wrap_binop__U8Array__i32__i32__U8Array__U8Array__StringBuffer:
+    .globl wrap_binop__U8Array__i32__i32__StringBuffer__U8Array__StringBuffer
+    .type  wrap_binop__U8Array__i32__i32__StringBuffer__U8Array__StringBuffer, @function
+wrap_binop__U8Array__i32__i32__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=6, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -8256,11 +8256,11 @@ wrap_binop__U8Array__i32__i32__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of wrap_binop__U8Array__i32__i32__U8Array__U8Array__StringBuffer
+    # end of wrap_binop__U8Array__i32__i32__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_primary__U8Array__U8Array__StringBuffer
-    .type  pars_primary__U8Array__U8Array__StringBuffer, @function
-pars_primary__U8Array__U8Array__StringBuffer:
+    .globl pars_primary__StringBuffer__U8Array__StringBuffer
+    .type  pars_primary__StringBuffer__U8Array__StringBuffer, @function
+pars_primary__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=48, params=3, locals=5
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -8418,7 +8418,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8778,7 +8778,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8880,7 +8880,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -8982,7 +8982,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9019,7 +9019,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9036,7 +9036,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9054,7 +9054,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9183,7 +9183,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9214,7 +9214,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9345,7 +9345,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9376,7 +9376,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9405,7 +9405,7 @@ pars_primary__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9534,11 +9534,11 @@ pars_primary__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_primary__U8Array__U8Array__StringBuffer
+    # end of pars_primary__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_postfix__U8Array__U8Array__StringBuffer
-    .type  pars_postfix__U8Array__U8Array__StringBuffer, @function
-pars_postfix__U8Array__U8Array__StringBuffer:
+    .globl pars_postfix__StringBuffer__U8Array__StringBuffer
+    .type  pars_postfix__StringBuffer__U8Array__StringBuffer, @function
+pars_postfix__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -9567,7 +9567,7 @@ pars_postfix__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_primary__U8Array__U8Array__StringBuffer
+    call pars_primary__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9599,7 +9599,7 @@ pars_postfix__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9691,7 +9691,7 @@ pars_postfix__U8Array__U8Array__StringBuffer:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_type__U8Array__U8Array__StringBuffer__i32
+    call pars_type__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9758,11 +9758,11 @@ pars_postfix__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_postfix__U8Array__U8Array__StringBuffer
+    # end of pars_postfix__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_unary__U8Array__U8Array__StringBuffer
-    .type  pars_unary__U8Array__U8Array__StringBuffer, @function
-pars_unary__U8Array__U8Array__StringBuffer:
+    .globl pars_unary__StringBuffer__U8Array__StringBuffer
+    .type  pars_unary__StringBuffer__U8Array__StringBuffer, @function
+pars_unary__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -9797,7 +9797,7 @@ pars_unary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9879,7 +9879,7 @@ pars_unary__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_unary__U8Array__U8Array__StringBuffer
+    call pars_unary__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9929,7 +9929,7 @@ pars_unary__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10011,7 +10011,7 @@ pars_unary__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_unary__U8Array__U8Array__StringBuffer
+    call pars_unary__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10047,7 +10047,7 @@ pars_unary__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_postfix__U8Array__U8Array__StringBuffer
+    call pars_postfix__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10062,11 +10062,11 @@ pars_unary__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_unary__U8Array__U8Array__StringBuffer
+    # end of pars_unary__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_mul__U8Array__U8Array__StringBuffer
-    .type  pars_mul__U8Array__U8Array__StringBuffer, @function
-pars_mul__U8Array__U8Array__StringBuffer:
+    .globl pars_mul__StringBuffer__U8Array__StringBuffer
+    .type  pars_mul__StringBuffer__U8Array__StringBuffer, @function
+pars_mul__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=48, params=3, locals=4
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -10097,7 +10097,7 @@ pars_mul__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_unary__U8Array__U8Array__StringBuffer
+    call pars_unary__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10196,7 +10196,7 @@ pars_mul__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10219,7 +10219,7 @@ pars_mul__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_unary__U8Array__U8Array__StringBuffer
+    call pars_unary__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10405,11 +10405,11 @@ pars_mul__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_mul__U8Array__U8Array__StringBuffer
+    # end of pars_mul__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_add__U8Array__U8Array__StringBuffer
-    .type  pars_add__U8Array__U8Array__StringBuffer, @function
-pars_add__U8Array__U8Array__StringBuffer:
+    .globl pars_add__StringBuffer__U8Array__StringBuffer
+    .type  pars_add__StringBuffer__U8Array__StringBuffer, @function
+pars_add__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=48, params=3, locals=4
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -10440,7 +10440,7 @@ pars_add__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_mul__U8Array__U8Array__StringBuffer
+    call pars_mul__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10509,7 +10509,7 @@ pars_add__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10532,7 +10532,7 @@ pars_add__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_mul__U8Array__U8Array__StringBuffer
+    call pars_mul__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10718,11 +10718,11 @@ pars_add__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_add__U8Array__U8Array__StringBuffer
+    # end of pars_add__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_shift__U8Array__U8Array__StringBuffer
-    .type  pars_shift__U8Array__U8Array__StringBuffer, @function
-pars_shift__U8Array__U8Array__StringBuffer:
+    .globl pars_shift__StringBuffer__U8Array__StringBuffer
+    .type  pars_shift__StringBuffer__U8Array__StringBuffer, @function
+pars_shift__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=48, params=3, locals=4
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -10753,7 +10753,7 @@ pars_shift__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_add__U8Array__U8Array__StringBuffer
+    call pars_add__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10822,7 +10822,7 @@ pars_shift__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10845,7 +10845,7 @@ pars_shift__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_add__U8Array__U8Array__StringBuffer
+    call pars_add__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11031,11 +11031,11 @@ pars_shift__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_shift__U8Array__U8Array__StringBuffer
+    # end of pars_shift__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_bitand__U8Array__U8Array__StringBuffer
-    .type  pars_bitand__U8Array__U8Array__StringBuffer, @function
-pars_bitand__U8Array__U8Array__StringBuffer:
+    .globl pars_bitand__StringBuffer__U8Array__StringBuffer
+    .type  pars_bitand__StringBuffer__U8Array__StringBuffer, @function
+pars_bitand__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -11065,7 +11065,7 @@ pars_bitand__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_shift__U8Array__U8Array__StringBuffer
+    call pars_shift__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11097,7 +11097,7 @@ pars_bitand__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11120,7 +11120,7 @@ pars_bitand__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_shift__U8Array__U8Array__StringBuffer
+    call pars_shift__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11306,11 +11306,11 @@ pars_bitand__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_bitand__U8Array__U8Array__StringBuffer
+    # end of pars_bitand__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_bitxor__U8Array__U8Array__StringBuffer
-    .type  pars_bitxor__U8Array__U8Array__StringBuffer, @function
-pars_bitxor__U8Array__U8Array__StringBuffer:
+    .globl pars_bitxor__StringBuffer__U8Array__StringBuffer
+    .type  pars_bitxor__StringBuffer__U8Array__StringBuffer, @function
+pars_bitxor__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -11340,7 +11340,7 @@ pars_bitxor__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_bitand__U8Array__U8Array__StringBuffer
+    call pars_bitand__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11372,7 +11372,7 @@ pars_bitxor__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11395,7 +11395,7 @@ pars_bitxor__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_bitand__U8Array__U8Array__StringBuffer
+    call pars_bitand__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11581,11 +11581,11 @@ pars_bitxor__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_bitxor__U8Array__U8Array__StringBuffer
+    # end of pars_bitxor__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_bitor__U8Array__U8Array__StringBuffer
-    .type  pars_bitor__U8Array__U8Array__StringBuffer, @function
-pars_bitor__U8Array__U8Array__StringBuffer:
+    .globl pars_bitor__StringBuffer__U8Array__StringBuffer
+    .type  pars_bitor__StringBuffer__U8Array__StringBuffer, @function
+pars_bitor__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -11615,7 +11615,7 @@ pars_bitor__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_bitxor__U8Array__U8Array__StringBuffer
+    call pars_bitxor__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11647,7 +11647,7 @@ pars_bitor__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11670,7 +11670,7 @@ pars_bitor__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_bitxor__U8Array__U8Array__StringBuffer
+    call pars_bitxor__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11856,11 +11856,11 @@ pars_bitor__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_bitor__U8Array__U8Array__StringBuffer
+    # end of pars_bitor__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_compare__U8Array__U8Array__StringBuffer
-    .type  pars_compare__U8Array__U8Array__StringBuffer, @function
-pars_compare__U8Array__U8Array__StringBuffer:
+    .globl pars_compare__StringBuffer__U8Array__StringBuffer
+    .type  pars_compare__StringBuffer__U8Array__StringBuffer, @function
+pars_compare__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -11890,7 +11890,7 @@ pars_compare__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_bitor__U8Array__U8Array__StringBuffer
+    call pars_bitor__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12072,7 +12072,7 @@ pars_compare__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12095,7 +12095,7 @@ pars_compare__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_bitor__U8Array__U8Array__StringBuffer
+    call pars_bitor__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12273,11 +12273,11 @@ pars_compare__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_compare__U8Array__U8Array__StringBuffer
+    # end of pars_compare__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_logic_and__U8Array__U8Array__StringBuffer
-    .type  pars_logic_and__U8Array__U8Array__StringBuffer, @function
-pars_logic_and__U8Array__U8Array__StringBuffer:
+    .globl pars_logic_and__StringBuffer__U8Array__StringBuffer
+    .type  pars_logic_and__StringBuffer__U8Array__StringBuffer, @function
+pars_logic_and__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -12307,7 +12307,7 @@ pars_logic_and__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_compare__U8Array__U8Array__StringBuffer
+    call pars_compare__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12339,7 +12339,7 @@ pars_logic_and__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12362,7 +12362,7 @@ pars_logic_and__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_compare__U8Array__U8Array__StringBuffer
+    call pars_compare__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12548,11 +12548,11 @@ pars_logic_and__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_logic_and__U8Array__U8Array__StringBuffer
+    # end of pars_logic_and__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_expr__U8Array__U8Array__StringBuffer
-    .type  pars_expr__U8Array__U8Array__StringBuffer, @function
-pars_expr__U8Array__U8Array__StringBuffer:
+    .globl pars_expr__StringBuffer__U8Array__StringBuffer
+    .type  pars_expr__StringBuffer__U8Array__StringBuffer, @function
+pars_expr__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -12582,7 +12582,7 @@ pars_expr__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_logic_and__U8Array__U8Array__StringBuffer
+    call pars_logic_and__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12614,7 +12614,7 @@ pars_expr__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12637,7 +12637,7 @@ pars_expr__U8Array__U8Array__StringBuffer:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_logic_and__U8Array__U8Array__StringBuffer
+    call pars_logic_and__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12823,11 +12823,11 @@ pars_expr__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_expr__U8Array__U8Array__StringBuffer
+    # end of pars_expr__StringBuffer__U8Array__StringBuffer
 
-    .globl pars_type__U8Array__U8Array__StringBuffer__i32
-    .type  pars_type__U8Array__U8Array__StringBuffer__i32, @function
-pars_type__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_type__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_type__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_type__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -12940,7 +12940,7 @@ pars_type__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12995,7 +12995,7 @@ pars_type__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13024,11 +13024,11 @@ pars_type__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_type__U8Array__U8Array__StringBuffer__i32
+    # end of pars_type__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_var_decl__U8Array__U8Array__StringBuffer__i32
-    .type  pars_var_decl__U8Array__U8Array__StringBuffer__i32, @function
-pars_var_decl__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_var_decl__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_var_decl__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_var_decl__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=48, params=4, locals=3
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -13054,7 +13054,7 @@ pars_var_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13164,7 +13164,7 @@ pars_var_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13182,7 +13182,7 @@ pars_var_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13316,7 +13316,7 @@ pars_var_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_type__U8Array__U8Array__StringBuffer__i32
+    call pars_type__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13347,7 +13347,7 @@ pars_var_decl__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13399,7 +13399,7 @@ pars_var_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13418,7 +13418,7 @@ pars_var_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13472,11 +13472,11 @@ pars_var_decl__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_var_decl__U8Array__U8Array__StringBuffer__i32
+    # end of pars_var_decl__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_break_stmt__U8Array__U8Array__StringBuffer__i32
-    .type  pars_break_stmt__U8Array__U8Array__StringBuffer__i32, @function
-pars_break_stmt__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_break_stmt__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_break_stmt__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_break_stmt__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -13499,7 +13499,7 @@ pars_break_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13517,7 +13517,7 @@ pars_break_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13571,11 +13571,11 @@ pars_break_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_break_stmt__U8Array__U8Array__StringBuffer__i32
+    # end of pars_break_stmt__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_continue_stmt__U8Array__U8Array__StringBuffer__i32
-    .type  pars_continue_stmt__U8Array__U8Array__StringBuffer__i32, @function
-pars_continue_stmt__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_continue_stmt__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_continue_stmt__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_continue_stmt__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -13598,7 +13598,7 @@ pars_continue_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13616,7 +13616,7 @@ pars_continue_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13670,11 +13670,11 @@ pars_continue_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_continue_stmt__U8Array__U8Array__StringBuffer__i32
+    # end of pars_continue_stmt__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_return_stmt__U8Array__U8Array__StringBuffer__i32
-    .type  pars_return_stmt__U8Array__U8Array__StringBuffer__i32, @function
-pars_return_stmt__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_return_stmt__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_return_stmt__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_return_stmt__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -13697,7 +13697,7 @@ pars_return_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13793,7 +13793,7 @@ pars_return_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13812,7 +13812,7 @@ pars_return_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13866,11 +13866,11 @@ pars_return_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_return_stmt__U8Array__U8Array__StringBuffer__i32
+    # end of pars_return_stmt__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_if_stmt__U8Array__U8Array__StringBuffer__i32
-    .type  pars_if_stmt__U8Array__U8Array__StringBuffer__i32, @function
-pars_if_stmt__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_if_stmt__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_if_stmt__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_if_stmt__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -13893,7 +13893,7 @@ pars_if_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13971,7 +13971,7 @@ pars_if_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14036,7 +14036,7 @@ pars_if_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_block__U8Array__U8Array__StringBuffer__i32
+    call pars_block__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14067,7 +14067,7 @@ pars_if_stmt__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14150,7 +14150,7 @@ pars_if_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_if_stmt__U8Array__U8Array__StringBuffer__i32
+    call pars_if_stmt__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14182,7 +14182,7 @@ pars_if_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_block__U8Array__U8Array__StringBuffer__i32
+    call pars_block__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14237,11 +14237,11 @@ pars_if_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_if_stmt__U8Array__U8Array__StringBuffer__i32
+    # end of pars_if_stmt__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_while_stmt__U8Array__U8Array__StringBuffer__i32
-    .type  pars_while_stmt__U8Array__U8Array__StringBuffer__i32, @function
-pars_while_stmt__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_while_stmt__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_while_stmt__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_while_stmt__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -14264,7 +14264,7 @@ pars_while_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14342,7 +14342,7 @@ pars_while_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14407,7 +14407,7 @@ pars_while_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_block__U8Array__U8Array__StringBuffer__i32
+    call pars_block__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14461,11 +14461,11 @@ pars_while_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_while_stmt__U8Array__U8Array__StringBuffer__i32
+    # end of pars_while_stmt__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_ident_stmt__U8Array__U8Array__StringBuffer__i32
-    .type  pars_ident_stmt__U8Array__U8Array__StringBuffer__i32, @function
-pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_ident_stmt__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_ident_stmt__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_ident_stmt__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=48, params=4, locals=5
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -14585,7 +14585,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14616,7 +14616,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14728,7 +14728,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14746,7 +14746,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14945,7 +14945,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15350,7 +15350,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15381,7 +15381,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15453,7 +15453,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15606,7 +15606,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_expr__U8Array__U8Array__StringBuffer
+    call pars_expr__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15637,7 +15637,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15666,7 +15666,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15684,7 +15684,7 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15760,11 +15760,11 @@ pars_ident_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_ident_stmt__U8Array__U8Array__StringBuffer__i32
+    # end of pars_ident_stmt__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl emit_stmt_comment__U8Array__i32__StringBuffer
-    .type  emit_stmt_comment__U8Array__i32__StringBuffer, @function
-emit_stmt_comment__U8Array__i32__StringBuffer:
+    .globl emit_stmt_comment__StringBuffer__i32__StringBuffer
+    .type  emit_stmt_comment__StringBuffer__i32__StringBuffer, @function
+emit_stmt_comment__StringBuffer__i32__StringBuffer:
     # prologue: frame_size=48, params=3, locals=4
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -15841,7 +15841,7 @@ emit_stmt_comment__U8Array__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15915,7 +15915,7 @@ emit_stmt_comment__U8Array__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15940,7 +15940,7 @@ emit_stmt_comment__U8Array__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16029,7 +16029,7 @@ emit_stmt_comment__U8Array__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16163,7 +16163,7 @@ emit_stmt_comment__U8Array__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16200,7 +16200,7 @@ emit_stmt_comment__U8Array__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16237,7 +16237,7 @@ emit_stmt_comment__U8Array__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call __tc_get
+    call sb_get__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16399,11 +16399,11 @@ emit_stmt_comment__U8Array__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_stmt_comment__U8Array__i32__StringBuffer
+    # end of emit_stmt_comment__StringBuffer__i32__StringBuffer
 
-    .globl pars_stmt__U8Array__U8Array__StringBuffer__i32
-    .type  pars_stmt__U8Array__U8Array__StringBuffer__i32, @function
-pars_stmt__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_stmt__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_stmt__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_stmt__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -16447,7 +16447,7 @@ pars_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_var_decl__U8Array__U8Array__StringBuffer__i32
+    call pars_var_decl__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16492,7 +16492,7 @@ pars_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_if_stmt__U8Array__U8Array__StringBuffer__i32
+    call pars_if_stmt__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16537,7 +16537,7 @@ pars_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_while_stmt__U8Array__U8Array__StringBuffer__i32
+    call pars_while_stmt__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16582,7 +16582,7 @@ pars_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_return_stmt__U8Array__U8Array__StringBuffer__i32
+    call pars_return_stmt__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16627,7 +16627,7 @@ pars_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_break_stmt__U8Array__U8Array__StringBuffer__i32
+    call pars_break_stmt__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16672,7 +16672,7 @@ pars_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_continue_stmt__U8Array__U8Array__StringBuffer__i32
+    call pars_continue_stmt__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16717,7 +16717,7 @@ pars_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_ident_stmt__U8Array__U8Array__StringBuffer__i32
+    call pars_ident_stmt__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16748,11 +16748,11 @@ pars_stmt__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_stmt__U8Array__U8Array__StringBuffer__i32
+    # end of pars_stmt__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_block__U8Array__U8Array__StringBuffer__i32
-    .type  pars_block__U8Array__U8Array__StringBuffer__i32, @function
-pars_block__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_block__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_block__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_block__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=1
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -16776,7 +16776,7 @@ pars_block__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16910,7 +16910,7 @@ pars_block__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call emit_stmt_comment__U8Array__i32__StringBuffer
+    call emit_stmt_comment__StringBuffer__i32__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16975,7 +16975,7 @@ pars_block__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_stmt__U8Array__U8Array__StringBuffer__i32
+    call pars_stmt__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16995,7 +16995,7 @@ pars_block__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17049,11 +17049,11 @@ pars_block__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_block__U8Array__U8Array__StringBuffer__i32
+    # end of pars_block__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32
-    .type  pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32, @function
-pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
+    .globl pars_fn_decl__StringBuffer__U8Array__StringBuffer__i32__i32
+    .type  pars_fn_decl__StringBuffer__U8Array__StringBuffer__i32__i32, @function
+pars_fn_decl__StringBuffer__U8Array__StringBuffer__i32__i32:
     # prologue: frame_size=64, params=5, locals=7
     addi sp, sp, -64
     sw   ra, 60(sp)
@@ -17084,7 +17084,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17194,7 +17194,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17212,7 +17212,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17536,7 +17536,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17554,7 +17554,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17714,7 +17714,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_type__U8Array__U8Array__StringBuffer__i32
+    call pars_type__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17802,7 +17802,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17831,7 +17831,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -18006,7 +18006,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -18036,7 +18036,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_type__U8Array__U8Array__StringBuffer__i32
+    call pars_type__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -18217,7 +18217,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_block__U8Array__U8Array__StringBuffer__i32
+    call pars_block__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -18271,7 +18271,7 @@ pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32
+    # end of pars_fn_decl__StringBuffer__U8Array__StringBuffer__i32__i32
 
     .globl type_tok_name__U8Array__U8Array__i32
     .type  type_tok_name__U8Array__U8Array__i32, @function
@@ -20221,9 +20221,9 @@ emit_cast_var_tbuf__String__U8Array__i32__i32__StringBuffer__i32:
     ret
     # end of emit_cast_var_tbuf__String__U8Array__i32__i32__StringBuffer__i32
 
-    .globl emit_stmt_comment_line__U8Array__i32__StringBuffer__i32
-    .type  emit_stmt_comment_line__U8Array__i32__StringBuffer__i32, @function
-emit_stmt_comment_line__U8Array__i32__StringBuffer__i32:
+    .globl emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32
+    .type  emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32, @function
+emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -20258,7 +20258,7 @@ emit_stmt_comment_line__U8Array__i32__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call emit_stmt_comment__U8Array__i32__StringBuffer
+    call emit_stmt_comment__StringBuffer__i32__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20286,11 +20286,11 @@ emit_stmt_comment_line__U8Array__i32__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_stmt_comment_line__U8Array__i32__StringBuffer__i32
+    # end of emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32
 
-    .globl emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__StringBuffer__i32
-    .type  emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__StringBuffer__i32, @function
-emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__StringBuffer__i32:
+    .globl emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__StringBuffer__i32__StringBuffer__i32
+    .type  emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__StringBuffer__i32__StringBuffer__i32, @function
+emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__StringBuffer__i32__StringBuffer__i32:
     # prologue: frame_size=64, params=10, locals=2
     addi sp, sp, -64
     sw   ra, 60(sp)
@@ -21069,7 +21069,7 @@ emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_stmt_comment_line__U8Array__i32__StringBuffer__i32
+    call emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21591,7 +21591,7 @@ emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_stmt_comment_line__U8Array__i32__StringBuffer__i32
+    call emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -22295,7 +22295,7 @@ emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_stmt_comment_line__U8Array__i32__StringBuffer__i32
+    call emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -22810,11 +22810,11 @@ emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__StringBuffer__i32
+    # end of emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__StringBuffer__i32__StringBuffer__i32
 
-    .globl emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32
-    .type  emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32, @function
-emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32:
+    .globl emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32
+    .type  emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32, @function
+emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32:
     # prologue: frame_size=64, params=13, locals=0
     addi sp, sp, -64
     sw   ra, 60(sp)
@@ -23579,7 +23579,7 @@ emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8A
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_stmt_comment_line__U8Array__i32__StringBuffer__i32
+    call emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24272,11 +24272,11 @@ emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8A
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32
+    # end of emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32
 
-    .globl emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32
-    .type  emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32, @function
-emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32:
+    .globl emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32
+    .type  emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32, @function
+emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32:
     # prologue: frame_size=64, params=13, locals=0
     addi sp, sp, -64
     sw   ra, 60(sp)
@@ -25276,7 +25276,7 @@ emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8A
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_stmt_comment_line__U8Array__i32__StringBuffer__i32
+    call emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25627,7 +25627,7 @@ emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8A
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_stmt_comment_line__U8Array__i32__StringBuffer__i32
+    call emit_stmt_comment_line__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25790,11 +25790,11 @@ emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8A
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32
+    # end of emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32
 
-    .globl pars_struct_decl__U8Array__U8Array__StringBuffer__i32
-    .type  pars_struct_decl__U8Array__U8Array__StringBuffer__i32, @function
-pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_struct_decl__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_struct_decl__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_struct_decl__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=112, params=4, locals=20
     addi sp, sp, -112
     sw   ra, 108(sp)
@@ -25844,7 +25844,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25945,7 +25945,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25963,7 +25963,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26209,7 +26209,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26477,7 +26477,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26495,7 +26495,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26723,7 +26723,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_type__U8Array__U8Array__StringBuffer__i32
+    call pars_type__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26816,7 +26816,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26916,7 +26916,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a5, 24(sp)
     lw   a6, 20(sp)
     lw   a7, 16(sp)
-    call emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__U8Array__i32__StringBuffer__i32
+    call emit_struct_ctor__U8Array__i32__U8Array__I32Array__I32Array__i32__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 48
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27050,7 +27050,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a5, 48(sp)
     lw   a6, 44(sp)
     lw   a7, 40(sp)
-    call emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32
+    call emit_struct_getter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 72
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27201,7 +27201,7 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   a5, 48(sp)
     lw   a6, 44(sp)
     lw   a7, 40(sp)
-    call emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__U8Array__i32__StringBuffer__i32
+    call emit_struct_setter__U8Array__i32__U8Array__i32__i32__U8Array__i32__i32__i32__StringBuffer__i32__StringBuffer__i32
     addi sp, sp, 72
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27296,11 +27296,11 @@ pars_struct_decl__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_struct_decl__U8Array__U8Array__StringBuffer__i32
+    # end of pars_struct_decl__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_import__U8Array__U8Array__StringBuffer__i32
-    .type  pars_import__U8Array__U8Array__StringBuffer__i32, @function
-pars_import__U8Array__U8Array__StringBuffer__i32:
+    .globl pars_import__StringBuffer__U8Array__StringBuffer__i32
+    .type  pars_import__StringBuffer__U8Array__StringBuffer__i32, @function
+pars_import__StringBuffer__U8Array__StringBuffer__i32:
     # prologue: frame_size=32, params=4, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -27323,7 +27323,7 @@ pars_import__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27415,7 +27415,7 @@ pars_import__U8Array__U8Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27434,7 +27434,7 @@ pars_import__U8Array__U8Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call expect_tok__i32__U8Array__U8Array
+    call expect_tok__i32__StringBuffer__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27462,11 +27462,11 @@ pars_import__U8Array__U8Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_import__U8Array__U8Array__StringBuffer__i32
+    # end of pars_import__StringBuffer__U8Array__StringBuffer__i32
 
-    .globl pars_program__U8Array__U8Array__StringBuffer
-    .type  pars_program__U8Array__U8Array__StringBuffer, @function
-pars_program__U8Array__U8Array__StringBuffer:
+    .globl pars_program__StringBuffer__U8Array__StringBuffer
+    .type  pars_program__StringBuffer__U8Array__StringBuffer, @function
+pars_program__StringBuffer__U8Array__StringBuffer:
     # prologue: frame_size=32, params=3, locals=0
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -27562,7 +27562,7 @@ pars_program__U8Array__U8Array__StringBuffer:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_import__U8Array__U8Array__StringBuffer__i32
+    call pars_import__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27639,7 +27639,7 @@ pars_program__U8Array__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27664,7 +27664,7 @@ pars_program__U8Array__U8Array__StringBuffer:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32
+    call pars_fn_decl__StringBuffer__U8Array__StringBuffer__i32__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27709,7 +27709,7 @@ pars_program__U8Array__U8Array__StringBuffer:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call pars_fn_decl__U8Array__U8Array__StringBuffer__i32__i32
+    call pars_fn_decl__StringBuffer__U8Array__StringBuffer__i32__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27750,7 +27750,7 @@ pars_program__U8Array__U8Array__StringBuffer:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_struct_decl__U8Array__U8Array__StringBuffer__i32
+    call pars_struct_decl__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27791,7 +27791,7 @@ pars_program__U8Array__U8Array__StringBuffer:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call pars_var_decl__U8Array__U8Array__StringBuffer__i32
+    call pars_var_decl__StringBuffer__U8Array__StringBuffer__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27860,7 +27860,7 @@ pars_program__U8Array__U8Array__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of pars_program__U8Array__U8Array__StringBuffer
+    # end of pars_program__StringBuffer__U8Array__StringBuffer
 
     .globl main
     .type  main, @function
@@ -27876,12 +27876,7 @@ main:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
-    li   t0, 524288
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    call __tc_U8Array
-    addi sp, sp, 4
+    call sb_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -27941,7 +27936,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-  .L_f51_pc18:
+  .L_f51_pc17:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -27956,52 +27951,14 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f51_pc30
-    la   t1, g_len
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -28(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 524288
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    slt  t0, t1, t0
-    xori t0, t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f51_pc30
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    j    .L_f51_pc31
-  .L_f51_pc30:
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-  .L_f51_pc31:
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    beqz t0, .L_f51_pc60
+    beqz t0, .L_f51_pc48
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-  .L_f51_pc34:
+  .L_f51_pc23:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28016,12 +27973,8 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f51_pc54
+    beqz t0, .L_f51_pc42
     lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t1, g_len
-    lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -24(s0)
@@ -28036,11 +27989,10 @@ main:
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call __tc_set
-    addi sp, sp, 12
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -28076,8 +28028,8 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-    j    .L_f51_pc34
-  .L_f51_pc54:
+    j    .L_f51_pc23
+  .L_f51_pc42:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28097,8 +28049,8 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-    j    .L_f51_pc18
-  .L_f51_pc60:
+    j    .L_f51_pc17
+  .L_f51_pc48:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28130,7 +28082,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call lex_tok__U8Array__U8Array
+    call lex_tok__StringBuffer__U8Array
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28147,7 +28099,7 @@ main:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call pars_program__U8Array__U8Array__StringBuffer
+    call pars_program__StringBuffer__U8Array__StringBuffer
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28169,7 +28121,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call __tc_delete
+    call sb_delete__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

@@ -1318,7 +1318,7 @@
   (fn src_char
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
     )
     (ret
@@ -1337,9 +1337,9 @@
           )
         )
       )
-      (comment "return get(src, g_pos);")
+      (comment "return sb_get(src, g_pos);")
       (return
-        (call get
+        (call sb_get
 (var src)
 (var g_pos))
       )
@@ -1348,7 +1348,7 @@
   (fn next_tok
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -1397,7 +1397,7 @@
               )
             )
             (block
-              (comment "if c == '/' && g_pos + 1 < g_len && get(src, (g_pos+1)) == '/' {")
+              (comment "if c == '/' && g_pos + 1 < g_len && sb_get(src, (g_pos+1)) == '/' {")
               (if
                 (binop &&
 (binop &&
@@ -1410,7 +1410,7 @@
 (int 1))
 (var g_len)))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (binop +
 (var g_pos)
@@ -1492,7 +1492,7 @@
   (fn skip_ws_and_comments
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
     )
     (ret
@@ -1514,10 +1514,10 @@
 (var g_pos)
 (var g_len)))
         (block
-          (comment "var c: u8 = get(src, g_pos);")
+          (comment "var c: u8 = sb_get(src, g_pos);")
           (var_decl c
             (type u8)
-            (call get
+            (call sb_get
 (var src)
 (var g_pos))
           )
@@ -1548,7 +1548,7 @@
               )
             )
             (block
-              (comment "if c == '/' && g_pos + 1 < g_len && get(src, (g_pos+1)) == '/' {")
+              (comment "if c == '/' && g_pos + 1 < g_len && sb_get(src, (g_pos+1)) == '/' {")
               (if
                 (binop &&
 (binop &&
@@ -1561,21 +1561,21 @@
 (int 1))
 (var g_len)))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (binop +
 (var g_pos)
 (int 1)))
 (int:u8 47)))
                 (block
-                  (comment "while g_pos < g_len && get(src, g_pos) != 10u8 {")
+                  (comment "while g_pos < g_len && sb_get(src, g_pos) != 10u8 {")
                   (while
                     (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop !=
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 10)))
@@ -1608,7 +1608,7 @@
   (fn lex_tok
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -1645,10 +1645,10 @@
           )
         )
       )
-      (comment "var c: u8 = get(src, g_pos);")
+      (comment "var c: u8 = sb_get(src, g_pos);")
       (var_decl c
         (type u8)
-        (call get
+        (call sb_get
 (var src)
 (var g_pos))
       )
@@ -1662,14 +1662,14 @@
             (type i32)
             (var g_pos)
           )
-          (comment "while g_pos < g_len && is_alnum(get(src, g_pos)) {")
+          (comment "while g_pos < g_len && is_alnum(sb_get(src, g_pos)) {")
           (while
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (call is_alnum
-(call get
+(call sb_get
 (var src)
 (var g_pos))))
             (block
@@ -1699,11 +1699,11 @@
 (var i)
 (var tlen))
             (block
-              (comment "set(tok, i, get(src, (start + i)));")
+              (comment "set(tok, i, sb_get(src, (start + i)));")
               (call_stmt set
                 (var tok)
                 (var i)
-                (call get
+                (call sb_get
 (var src)
 (binop +
 (var start)
@@ -1742,18 +1742,18 @@
             (type i32)
             (int 0)
           )
-          (comment "while g_pos < g_len && is_digit(get(src, g_pos)) {")
+          (comment "while g_pos < g_len && is_digit(sb_get(src, g_pos)) {")
           (while
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (call is_digit
-(call get
+(call sb_get
 (var src)
 (var g_pos))))
             (block
-              (comment "ival = ival * 10 + (get(src, g_pos) as i32 - 48);")
+              (comment "ival = ival * 10 + (sb_get(src, g_pos) as i32 - 48);")
               (assign ival
                 (binop +
 (binop *
@@ -1761,7 +1761,7 @@
 (int 10))
 (binop -
 (cast
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (type i32))
@@ -1775,14 +1775,14 @@
               )
             )
           )
-          (comment "if g_pos < g_len && is_alpha(get(src, g_pos)) {")
+          (comment "if g_pos < g_len && is_alpha(sb_get(src, g_pos)) {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (call is_alpha
-(call get
+(call sb_get
 (var src)
 (var g_pos))))
             (block
@@ -1791,14 +1791,14 @@
                 (type i32)
                 (var g_pos)
               )
-              (comment "while g_pos < g_len && is_alnum(get(src, g_pos)) {")
+              (comment "while g_pos < g_len && is_alnum(sb_get(src, g_pos)) {")
               (while
                 (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (call is_alnum
-(call get
+(call sb_get
 (var src)
 (var g_pos))))
                 (block
@@ -1828,11 +1828,11 @@
 (var i)
 (var slen))
                 (block
-                  (comment "set(tok, i, get(src, (sstart + i)));")
+                  (comment "set(tok, i, sb_get(src, (sstart + i)));")
                   (call_stmt set
                     (var tok)
                     (var i)
-                    (call get
+                    (call sb_get
 (var src)
 (binop +
 (var sstart)
@@ -1888,22 +1888,22 @@
             (type i32)
             (int 0)
           )
-          (comment "while g_pos < g_len && get(src, g_pos) != '\"' {")
+          (comment "while g_pos < g_len && sb_get(src, g_pos) != '\"' {")
           (while
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop !=
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 34)))
             (block
-              (comment "var ch: u8 = get(src, g_pos);")
+              (comment "var ch: u8 = sb_get(src, g_pos);")
               (var_decl ch
                 (type u8)
-                (call get
+                (call sb_get
 (var src)
 (var g_pos))
               )
@@ -1925,10 +1925,10 @@
 (var g_pos)
 (int 1))
                   )
-                  (comment "var esc: u8 = get(src, g_pos);")
+                  (comment "var esc: u8 = sb_get(src, g_pos);")
                   (var_decl esc
                     (type u8)
-                    (call get
+                    (call sb_get
 (var src)
 (var g_pos))
                   )
@@ -2095,10 +2095,10 @@
             (type i32)
             (int 0)
           )
-          (comment "var ch2: u8 = get(src, g_pos);")
+          (comment "var ch2: u8 = sb_get(src, g_pos);")
           (var_decl ch2
             (type u8)
-            (call get
+            (call sb_get
 (var src)
 (var g_pos))
           )
@@ -2120,10 +2120,10 @@
 (var g_pos)
 (int 1))
               )
-              (comment "var esc: u8 = get(src, g_pos);")
+              (comment "var esc: u8 = sb_get(src, g_pos);")
               (var_decl esc
                 (type u8)
-                (call get
+                (call sb_get
 (var src)
 (var g_pos))
               )
@@ -2264,19 +2264,19 @@
               )
             )
           )
-          (comment "if g_pos < g_len && get(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 39)))
             (block
-              (comment "if g_pos < g_len && get(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
+              (comment "if g_pos < g_len && sb_get(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
               (assign g_pos
                 (binop +
 (var g_pos)
@@ -2325,14 +2325,14 @@
 (var c)
 (int:u8 43))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2367,14 +2367,14 @@
 (var c)
 (int:u8 37))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2529,14 +2529,14 @@
 (var c)
 (int:u8 42))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2571,14 +2571,14 @@
 (var c)
 (int:u8 47))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2613,14 +2613,14 @@
 (var c)
 (int:u8 38))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '&' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '&' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 38)))
@@ -2655,14 +2655,14 @@
 (var c)
 (int:u8 124))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '|' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '|' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 124)))
@@ -2697,14 +2697,14 @@
 (var c)
 (int:u8 33))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2739,14 +2739,14 @@
 (var c)
 (int:u8 61))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2781,14 +2781,14 @@
 (var c)
 (int:u8 60))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2808,14 +2808,14 @@
               )
             )
           )
-          (comment "if g_pos < g_len && get(src, g_pos) == '<' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '<' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 60)))
@@ -2850,14 +2850,14 @@
 (var c)
 (int:u8 62))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2877,14 +2877,14 @@
               )
             )
           )
-          (comment "if g_pos < g_len && get(src, g_pos) == '>' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '>' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 62)))
@@ -2919,14 +2919,14 @@
 (var c)
 (int:u8 45))
         (block
-          (comment "if g_pos < g_len && get(src, g_pos) == '>' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '>' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 62)))
@@ -2946,14 +2946,14 @@
               )
             )
           )
-          (comment "if g_pos < g_len && get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
           (if
             (binop &&
 (binop <
 (var g_pos)
 (var g_len))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var g_pos))
 (int:u8 61)))
@@ -2997,7 +2997,7 @@
         (type i32)
       )
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -3165,7 +3165,7 @@
         (type i32)
       )
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -3223,7 +3223,7 @@
   (fn pars_primary
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -3762,7 +3762,7 @@
   (fn pars_postfix
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -3866,7 +3866,7 @@
   (fn pars_unary
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -3997,7 +3997,7 @@
   (fn pars_mul
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -4137,7 +4137,7 @@
   (fn pars_add
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -4273,7 +4273,7 @@
   (fn pars_shift
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -4409,7 +4409,7 @@
   (fn pars_bitand
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -4536,7 +4536,7 @@
   (fn pars_bitxor
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -4663,7 +4663,7 @@
   (fn pars_bitor
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -4790,7 +4790,7 @@
   (fn pars_compare
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -4936,7 +4936,7 @@
   (fn pars_logic_and
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5063,7 +5063,7 @@
   (fn pars_expr
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5190,7 +5190,7 @@
   (fn pars_type
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5277,7 +5277,7 @@
   (fn pars_var_decl
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5458,7 +5458,7 @@
   (fn pars_break_stmt
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5509,7 +5509,7 @@
   (fn pars_continue_stmt
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5560,7 +5560,7 @@
   (fn pars_return_stmt
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5647,7 +5647,7 @@
   (fn pars_if_stmt
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5794,7 +5794,7 @@
   (fn pars_while_stmt
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -5888,7 +5888,7 @@
   (fn pars_ident_stmt
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -6380,7 +6380,7 @@
   (fn emit_stmt_comment
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param line
         (type i32)
@@ -6413,15 +6413,15 @@
 (var pos)
 (var g_len)))
         (block
-          (comment "if get(src, pos) == 10u8 { cur_line = cur_line + 1; }")
+          (comment "if sb_get(src, pos) == 10u8 { cur_line = cur_line + 1; }")
           (if
             (binop ==
-(call get
+(call sb_get
 (var src)
 (var pos))
 (int:u8 10))
             (block
-              (comment "if get(src, pos) == 10u8 { cur_line = cur_line + 1; }")
+              (comment "if sb_get(src, pos) == 10u8 { cur_line = cur_line + 1; }")
               (assign cur_line
                 (binop +
 (var cur_line)
@@ -6437,7 +6437,7 @@
           )
         )
       )
-      (comment "while pos < g_len && (get(src, pos) == ' ' || get(src, pos) == 9u8) {")
+      (comment "while pos < g_len && (sb_get(src, pos) == ' ' || sb_get(src, pos) == 9u8) {")
       (while
         (binop &&
 (binop <
@@ -6445,12 +6445,12 @@
 (var g_len))
 (binop ||
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var pos))
 (int:u8 32))
 (binop ==
-(call get
+(call sb_get
 (var src)
 (var pos))
 (int:u8 9))))
@@ -6474,10 +6474,10 @@
           )
         )
       )
-      (comment "var first: u8 = get(src, pos);")
+      (comment "var first: u8 = sb_get(src, pos);")
       (var_decl first
         (type u8)
-        (call get
+        (call sb_get
 (var src)
 (var pos))
       )
@@ -6516,7 +6516,7 @@
         (var sb)
         (int:u8 34)
       )
-      (comment "while pos < g_len && get(src, pos) != 10u8 && get(src, pos) != 13u8 {")
+      (comment "while pos < g_len && sb_get(src, pos) != 10u8 && sb_get(src, pos) != 13u8 {")
       (while
         (binop &&
 (binop &&
@@ -6524,20 +6524,20 @@
 (var pos)
 (var g_len))
 (binop !=
-(call get
+(call sb_get
 (var src)
 (var pos))
 (int:u8 10)))
 (binop !=
-(call get
+(call sb_get
 (var src)
 (var pos))
 (int:u8 13)))
         (block
-          (comment "var ch: u8 = get(src, pos);")
+          (comment "var ch: u8 = sb_get(src, pos);")
           (var_decl ch
             (type u8)
-            (call get
+            (call sb_get
 (var src)
 (var pos))
           )
@@ -6612,7 +6612,7 @@
   (fn pars_stmt
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -6766,7 +6766,7 @@
   (fn pars_block
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -6883,7 +6883,7 @@
   (fn pars_fn_decl
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -8141,7 +8141,7 @@
   (fn emit_stmt_comment_line
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param line
         (type i32)
@@ -8199,7 +8199,7 @@
         (type i32)
       )
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param sline
         (type i32)
@@ -9157,7 +9157,7 @@
         (type i32)
       )
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param sline
         (type i32)
@@ -9720,7 +9720,7 @@
         (type i32)
       )
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param sline
         (type i32)
@@ -10275,7 +10275,7 @@
   (fn pars_struct_decl
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -10858,7 +10858,7 @@
   (fn pars_import
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -10934,7 +10934,7 @@
   (fn pars_program
     (params
       (param src
-        (type U8Array)
+        (type StringBuffer)
       )
       (param tok
         (type U8Array)
@@ -11106,11 +11106,10 @@
       (type i32)
     )
     (block
-      (comment "var src_buf: U8Array = U8Array(524288);  // 512KB for source")
+      (comment "var src_buf: StringBuffer = sb_new();")
       (var_decl src_buf
-        (type U8Array)
-        (call U8Array
-(int 524288))
+        (type StringBuffer)
+        (call sb_new)
       )
       (comment "var tok_buf: U8Array = U8Array(4096);    // token string buffer")
       (var_decl tok_buf
@@ -11141,17 +11140,11 @@
 (var read_tmp)
 (int 4096))
       )
-      (comment "while chunk > 0 && g_len + chunk <= 524288 {")
+      (comment "while chunk > 0 {")
       (while
-        (binop &&
-(binop >
+        (binop >
 (var chunk)
 (int 0))
-(binop <=
-(binop +
-(var g_len)
-(var chunk))
-(int 524288)))
         (block
           (comment "var ci: i32 = 0;")
           (var_decl ci
@@ -11164,10 +11157,9 @@
 (var ci)
 (var chunk))
             (block
-              (comment "set(src_buf, g_len, get(read_tmp, ci));")
-              (call_stmt set
+              (comment "emit_char(src_buf, get(read_tmp, ci));")
+              (call_stmt emit_char
                 (var src_buf)
-                (var g_len)
                 (call get
 (var read_tmp)
 (var ci))
@@ -11223,8 +11215,8 @@
         (var sb)
         (int 1)
       )
-      (comment "delete(src_buf);")
-      (call_stmt delete
+      (comment "sb_delete(src_buf);")
+      (call_stmt sb_delete
         (var src_buf)
       )
       (comment "delete(tok_buf);")
