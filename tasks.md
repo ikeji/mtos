@@ -41,7 +41,13 @@
       - ob_new/ob_delete/ob_peek のラッパー関数も追加（import 先で struct 自動
         生成関数が使えないため）。
 - [x] parse.tcで、ob_set_posで巻き戻さず、別なobを定義しそこに出し、確定したらメインの物に移動させる方針で書き直し、ob_set_posを削除したい。
-- [ ] ob.tc の各関数はob_プリフィックスをつけない。
-- [ ] heap_mark/heap_resetを廃止し、倍々サイズのプールアロケータを導入する。
-      - 事前調査: docs/task/pool_allocator.md（完了）
+- [ ] string_buffer.tc の sb_ プリフィックスを除去する。
+      - 組み込み関数のオーバーロード対応が先（下記）
+      - リネーム案: sb_delete→destroy, sb_append→append, sb_len→length,
+        sb_get→char_at, sb_write→write, sb_new→StringBuffer_new,
+        sb_new_output→StringBuffer_new_output
+- [ ] 組み込み関数（get/set/len/delete/append/equals）をオーバーロード対応にする。
+      - 詳細: docs/task/builtin_overload.md
+- [x] heap_mark/heap_resetを廃止し、倍々サイズのプールアロケータを導入する。
+      - 事前調査: docs/task/pool_allocator.md
       - 実装: bootstrap/runtime_syscall.c の bump allocator を置き換え
