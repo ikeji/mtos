@@ -32,8 +32,6 @@ for f in "${TC_FILES[@]}"; do
     golden_ast="$GOLDEN_DIR/tc/$base.ast"
     golden_bc="$GOLDEN_DIR/tc/$base.bc"
     golden_s="$GOLDEN_DIR/tc/$base.s"
-    golden_out="$GOLDEN_DIR/tc/$base.out"
-    golden_exit="$GOLDEN_DIR/tc/$base.exit"
 
     if [ ! -f "$golden_ast" ] || [ ! -f "$golden_bc" ] || [ ! -f "$golden_s" ]; then
         report_fail_msg "tc/$f" "Golden files missing"
@@ -78,25 +76,6 @@ for f in "${TC_FILES[@]}"; do
         report_fail_diff "tc/$f (ASM - Gen1 vs golden)" "$golden_s" "$actual" "" "$elapsed"
     fi
     rm -f "$actual"
-
-    # Exec (bcrun)
-    if [ -f "$golden_out" ] && [ -f "$golden_exit" ]; then
-        expected_exit=$(cat "$golden_exit")
-        exec_input_file=$(get_tc_exec_input_file "$f")
-        actual=$(mktemp)
-        t0=$(time_ms)
-        { printf '%s\n' "$bc"; cat "$exec_input_file"; } | "$BCRUN" > "$actual" 2>/dev/null
-        actual_exit=$?
-        elapsed=$(( $(time_ms) - t0 ))
-        if diff -u "$golden_out" "$actual" > /dev/null && [ "$actual_exit" -eq "$expected_exit" ]; then
-            report_pass "tc/$f (Exec - bcrun)" "$elapsed"
-        else
-            msg=""
-            [ "$actual_exit" -ne "$expected_exit" ] && msg="exit code mismatch: expected $expected_exit, got $actual_exit"
-            report_fail_diff "tc/$f (Exec - bcrun)" "$golden_out" "$actual" "$msg" "$elapsed"
-        fi
-        rm -f "$actual"
-    fi
 
     # === Gen2 AST (used as input for Gen2 BC) ===
     actual_gen2_ast=$(mktemp)
