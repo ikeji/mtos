@@ -1,0 +1,261 @@
+#!/bin/bash
+# test_common.sh — shared utilities for test scripts
+# Usage: source this file from test scripts.
+
+# ===== Paths =====
+if [ -z "$SCRIPT_DIR" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
+fi
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+GOLDEN_DIR="$SCRIPT_DIR/golden"
+TC_DIR="$ROOT_DIR/compiler"
+COMPILER_DIR="$ROOT_DIR/bootstrap"
+
+INTERP="$ROOT_DIR/interp"
+PARSE="$ROOT_DIR/parse"
+TYPECHECK="$ROOT_DIR/typecheck"
+CODEGEN="$ROOT_DIR/codegen"
+BCRUN="$ROOT_DIR/bcrun"
+BC2ASM="$ROOT_DIR/bc2asm"
+
+RISCV_CC="riscv64-unknown-elf-gcc"
+RISCV_FLAGS="-march=rv32im -mabi=ilp32 -static -nostdlib -lgcc -Wl,-Ttext-segment=0x10000"
+RUNTIME="$COMPILER_DIR/runtime_syscall.c"
+CRT0="$COMPILER_DIR/crt0.s"
+QEMU="qemu-riscv32"
+
+# ===== Counters =====
+PASS=0
+FAIL=0
+
+# ===== Utilities =====
+time_ms() { date +%s%3N; }
+
+require_tools() {
+    for tool in "$@"; do
+        local path="$ROOT_DIR/$tool"
+        if [ ! -x "$path" ]; then
+            echo "Error: $tool not found. Build first (make)." >&2
+            exit 1
+        fi
+    done
+}
+
+# ===== Test helpers =====
+
+# check_output "name" "expected" "actual"
+check_output() {
+    local name="$1" expected="$2" actual="$3"
+    if [ "$actual" = "$expected" ]; then
+        echo "PASS: $name"
+        PASS=$((PASS + 1))
+    else
+        echo "FAIL: $name"
+        echo "  expected: $(echo "$expected" | head -3)"
+        echo "  actual:   $(echo "$actual" | head -3)"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
+# check_contains "name" "actual" "substring"
+check_contains() {
+    local name="$1" actual="$2" expected="$3"
+    if echo "$actual" | grep -qF "$expected"; then
+        echo "PASS: $name"
+        PASS=$((PASS + 1))
+    else
+        echo "FAIL: $name"
+        echo "  expected to contain: $expected"
+        echo "  actual: $(echo "$actual" | head -3)"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
+# report_pass "name" elapsed_ms
+report_pass() {
+    local name="$1" elapsed="${2:-}"
+    echo "PASS: $name${elapsed:+ [${elapsed}ms]}"
+    PASS=$((PASS + 1))
+}
+
+# report_fail_diff "name" expected_file actual_file [msg] [elapsed_ms]
+report_fail_diff() {
+    local name="$1" expected="$2" actual="$3" msg="${4:-}" elapsed="${5:-}"
+    echo "FAIL: $name${elapsed:+ [${elapsed}ms]}"
+    [ -n "$msg" ] && echo "  $msg"
+    echo "  --- diff (showing first 5 lines) ---"
+    diff -u "$expected" "$actual" | head -n 10
+    echo "  ------------------------------------"
+    FAIL=$((FAIL + 1))
+}
+
+# report_fail_msg "name" "message"
+report_fail_msg() {
+    local name="$1" msg="$2"
+    echo "FAIL: $name"
+    [ -n "$msg" ] && echo "  $msg"
+    FAIL=$((FAIL + 1))
+}
+
+# print_results — prints summary line, returns 0 if all passed
+print_results() {
+    echo ""
+    echo "Results: $PASS passed, $FAIL failed"
+    [ "$FAIL" -eq 0 ]
+}
+
+# ===== compile_tc_to_bc (import-resolving BC compilation) =====
+
+compile_tc_to_bc() {
+    local tc_file="$1"
+    local tc_dir
+    tc_dir=$(dirname "$tc_file")
+
+    local imports=()
+    while IFS= read -r imp; do
+        imports+=("$tc_dir/$imp")
+    done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
+
+    local all_bcs=()
+    for imp_file in "${imports[@]}"; do
+        if [ -f "$imp_file" ]; then
+            all_bcs+=("$("$CODEGEN" "$imp_file" 2>/dev/null)")
+        fi
+    done
+    all_bcs+=("$("$CODEGEN" "$tc_file" 2>/dev/null)")
+
+    for bc in "${all_bcs[@]}"; do
+        printf '%s\n' "$bc" | grep -v '^\.\(bc\|endbc\)$'
+    done
+    echo ".endbc"
+}
+
+# ===== Gen2 RISC-V native tools =====
+
+_GEN2_TMP=""
+_GEN2_READY=false
+
+# build_gen2_tool "name" — compiles compiler/$name.tc to RISC-V ELF
+build_gen2_tool() {
+    local name="$1"
+    local tc_file="$TC_DIR/$name.tc"
+    local tc_dir
+    tc_dir=$(dirname "$tc_file")
+    local imports=() asm_files=()
+    while IFS= read -r imp; do
+        imports+=("$tc_dir/$imp")
+    done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
+    for imp_file in "${imports[@]}"; do
+        local base=$(basename "$imp_file" .tc)
+        "$CODEGEN" "$imp_file" 2>/dev/null | "$BC2ASM" > "$_GEN2_TMP/${name}_dep_${base}.s" 2>/dev/null
+        asm_files+=("$_GEN2_TMP/${name}_dep_${base}.s")
+    done
+    "$CODEGEN" "$tc_file" 2>/dev/null | "$BC2ASM" > "$_GEN2_TMP/$name.s" 2>/dev/null
+    asm_files+=("$_GEN2_TMP/$name.s")
+    $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "${asm_files[@]}" -o "$_GEN2_TMP/$name" 2>/dev/null
+}
+
+# ensure_gen2_tools — builds Gen2 RISC-V binaries (once), sets USE_NATIVE
+ensure_gen2_tools() {
+    if [ "$_GEN2_READY" = true ]; then return; fi
+    _GEN2_READY=true
+    USE_NATIVE=false
+    if command -v "$RISCV_CC" >/dev/null 2>&1 && command -v "$QEMU" >/dev/null 2>&1; then
+        _GEN2_TMP=$(mktemp -d)
+        build_gen2_tool "parse"
+        build_gen2_tool "typecheck"
+        build_gen2_tool "codegen"
+        build_gen2_tool "bc2asm"
+        if [ -x "$_GEN2_TMP/parse" ] && [ -x "$_GEN2_TMP/typecheck" ] && \
+           [ -x "$_GEN2_TMP/codegen" ] && [ -x "$_GEN2_TMP/bc2asm" ]; then
+            USE_NATIVE=true
+        fi
+    fi
+}
+
+cleanup_gen2_tools() {
+    [ -n "$_GEN2_TMP" ] && rm -rf "$_GEN2_TMP"
+}
+
+# ===== Gen2 tool execution helpers (native or bcrun fallback) =====
+
+_TC_BCS_READY=false
+PARSE_TC_BC=""
+TYPECHECK_TC_BC=""
+CODEGEN_TC_BC=""
+BC2ASM_TC_BC=""
+
+# ensure_tc_bcs — compile Gen2 BCs for bcrun fallback
+ensure_tc_bcs() {
+    if [ "$_TC_BCS_READY" = true ]; then return; fi
+    _TC_BCS_READY=true
+    PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
+    TYPECHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/typecheck.tc")
+    CODEGEN_TC_BC=$(compile_tc_to_bc "$TC_DIR/codegen.tc")
+    BC2ASM_TC_BC=$(compile_tc_to_bc "$TC_DIR/bc2asm.tc")
+}
+
+run_parse_tc() {
+    local input="$1"
+    if [ "$USE_NATIVE" = true ]; then
+        "$QEMU" "$_GEN2_TMP/parse" < "$input" 2>/dev/null
+    else
+        ensure_tc_bcs
+        { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" 2>/dev/null
+    fi
+}
+
+run_typecheck_tc() {
+    if [ "$USE_NATIVE" = true ]; then
+        "$QEMU" "$_GEN2_TMP/typecheck" 2>/dev/null
+    else
+        ensure_tc_bcs
+        { printf '%s\n' "$TYPECHECK_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
+    fi
+}
+
+run_codegen_tc() {
+    if [ "$USE_NATIVE" = true ]; then
+        "$QEMU" "$_GEN2_TMP/codegen" 2>/dev/null
+    else
+        ensure_tc_bcs
+        { printf '%s\n' "$CODEGEN_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
+    fi
+}
+
+run_bc2asm_tc() {
+    if [ "$USE_NATIVE" = true ]; then
+        "$QEMU" "$_GEN2_TMP/bc2asm" 2>/dev/null
+    else
+        ensure_tc_bcs
+        { printf '%s\n' "$BC2ASM_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
+    fi
+}
+
+# ===== Common test file lists =====
+
+EXAMPLE_FILES=(
+    "hello.tc" "hello2.tc" "fib.tc" "fizzbuzz.tc" "calc.tc"
+    "elseif_test.tc" "charliteral_test.tc"
+    "break_test.tc" "continue_test.tc" "nested_break_test.tc"
+    "type_test.tc" "struct_basic.tc"
+)
+
+TC_FILES=("parse.tc" "codegen.tc" "bc2asm.tc" "bcrun.tc")
+
+get_stdin() {
+    case "$1" in
+        "calc.tc") echo -n "12 + 34 * 56" ;;
+        *) echo -n "" ;;
+    esac
+}
+
+get_tc_exec_input_file() {
+    case "$1" in
+        "parse.tc") echo "$SCRIPT_DIR/hello.tc" ;;
+        "codegen.tc") echo "$GOLDEN_DIR/hello.ast" ;;
+        "bc2asm.tc") echo "$GOLDEN_DIR/hello.bc" ;;
+        "bcrun.tc") echo "$GOLDEN_DIR/hello.bc" ;;
+        *) echo "/dev/null" ;;
+    esac
+}
