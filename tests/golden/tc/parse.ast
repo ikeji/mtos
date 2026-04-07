@@ -3248,6 +3248,44 @@
       (return)
     )
   )
+  (fn print_error
+    (params
+      (param msg
+        (type StringLiteral)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "var eb: StringBuffer = StringBuffer_new();")
+      (var_decl eb
+        (type StringBuffer)
+        (call StringBuffer_new)
+      )
+      (comment "emit_string(eb, msg);")
+      (call_stmt emit_string
+        (var eb)
+        (var msg)
+      )
+      (comment "emit_char(eb, 10u8);")
+      (call_stmt emit_char
+        (var eb)
+        (int:u8 10)
+      )
+      (comment "write(eb, 2);")
+      (call_stmt write
+        (var eb)
+        (int 2)
+      )
+      (comment "destroy(eb);")
+      (call_stmt destroy
+        (var eb)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
   (fn expect_tok
     (params
       (param kind
@@ -3271,130 +3309,9 @@
           (var kind)
         )
         (block
-          (comment "var errbuf: U8Array = U8Array(32);")
-          (var_decl errbuf
-            (type U8Array)
-            (call U8Array
-              (int 32)
-            )
-          )
-          (comment "set(errbuf, 0, 'p'); set(errbuf, 1, 'a'); set(errbuf, 2, 'r');")
-          (call_stmt set
-            (var errbuf)
-            (int 0)
-            (int:u8 112)
-          )
-          (comment "set(errbuf, 0, 'p'); set(errbuf, 1, 'a'); set(errbuf, 2, 'r');")
-          (call_stmt set
-            (var errbuf)
-            (int 1)
-            (int:u8 97)
-          )
-          (comment "set(errbuf, 0, 'p'); set(errbuf, 1, 'a'); set(errbuf, 2, 'r');")
-          (call_stmt set
-            (var errbuf)
-            (int 2)
-            (int:u8 114)
-          )
-          (comment "set(errbuf, 3, 's'); set(errbuf, 4, 'e'); set(errbuf, 5, ':');")
-          (call_stmt set
-            (var errbuf)
-            (int 3)
-            (int:u8 115)
-          )
-          (comment "set(errbuf, 3, 's'); set(errbuf, 4, 'e'); set(errbuf, 5, ':');")
-          (call_stmt set
-            (var errbuf)
-            (int 4)
-            (int:u8 101)
-          )
-          (comment "set(errbuf, 3, 's'); set(errbuf, 4, 'e'); set(errbuf, 5, ':');")
-          (call_stmt set
-            (var errbuf)
-            (int 5)
-            (int:u8 58)
-          )
-          (comment "set(errbuf, 6, ' '); set(errbuf, 7, 'u'); set(errbuf, 8, 'n');")
-          (call_stmt set
-            (var errbuf)
-            (int 6)
-            (int:u8 32)
-          )
-          (comment "set(errbuf, 6, ' '); set(errbuf, 7, 'u'); set(errbuf, 8, 'n');")
-          (call_stmt set
-            (var errbuf)
-            (int 7)
-            (int:u8 117)
-          )
-          (comment "set(errbuf, 6, ' '); set(errbuf, 7, 'u'); set(errbuf, 8, 'n');")
-          (call_stmt set
-            (var errbuf)
-            (int 8)
-            (int:u8 110)
-          )
-          (comment "set(errbuf, 9, 'e'); set(errbuf, 10, 'x'); set(errbuf, 11, 'p');")
-          (call_stmt set
-            (var errbuf)
-            (int 9)
-            (int:u8 101)
-          )
-          (comment "set(errbuf, 9, 'e'); set(errbuf, 10, 'x'); set(errbuf, 11, 'p');")
-          (call_stmt set
-            (var errbuf)
-            (int 10)
-            (int:u8 120)
-          )
-          (comment "set(errbuf, 9, 'e'); set(errbuf, 10, 'x'); set(errbuf, 11, 'p');")
-          (call_stmt set
-            (var errbuf)
-            (int 11)
-            (int:u8 112)
-          )
-          (comment "set(errbuf, 12, 'e'); set(errbuf, 13, 'c'); set(errbuf, 14, 't');")
-          (call_stmt set
-            (var errbuf)
-            (int 12)
-            (int:u8 101)
-          )
-          (comment "set(errbuf, 12, 'e'); set(errbuf, 13, 'c'); set(errbuf, 14, 't');")
-          (call_stmt set
-            (var errbuf)
-            (int 13)
-            (int:u8 99)
-          )
-          (comment "set(errbuf, 12, 'e'); set(errbuf, 13, 'c'); set(errbuf, 14, 't');")
-          (call_stmt set
-            (var errbuf)
-            (int 14)
-            (int:u8 116)
-          )
-          (comment "set(errbuf, 15, 'e'); set(errbuf, 16, 'd'); set(errbuf, 17, 10u8);")
-          (call_stmt set
-            (var errbuf)
-            (int 15)
-            (int:u8 101)
-          )
-          (comment "set(errbuf, 15, 'e'); set(errbuf, 16, 'd'); set(errbuf, 17, 10u8);")
-          (call_stmt set
-            (var errbuf)
-            (int 16)
-            (int:u8 100)
-          )
-          (comment "set(errbuf, 15, 'e'); set(errbuf, 16, 'd'); set(errbuf, 17, 10u8);")
-          (call_stmt set
-            (var errbuf)
-            (int 17)
-            (int:u8 10)
-          )
-          (comment "sys_write(2, errbuf, 18);")
-          (call_stmt sys_write
-            (int 2)
-            (var errbuf)
-            (int 18)
-          )
-          (comment "delete(errbuf);")
-          (call_stmt delete
-            (var errbuf)
+          (comment "print_error(\"parse: unexpected\");")
+          (call_stmt print_error
+            (str "parse: unexpected")
           )
           (comment "sys_exit(1);")
           (call_stmt sys_exit
