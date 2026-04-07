@@ -444,13 +444,13 @@
       )
     )
   )
-  (fn sb_op
+  (fn emit_op
     (params
-      (param kind
-        (type i32)
-      )
       (param sb
         (type StringBuffer)
+      )
+      (param kind
+        (type i32)
       )
     )
     (ret
@@ -766,13 +766,13 @@
       )
     )
   )
-  (fn sb_type_kw
+  (fn emit_type_kw
     (params
-      (param kind
-        (type i32)
-      )
       (param sb
         (type StringBuffer)
+      )
+      (param kind
+        (type i32)
       )
     )
     (ret
@@ -3112,10 +3112,10 @@
         (var sb)
         (int:u8 32)
       )
-      (comment "sb_op(op, sb);")
-      (call_stmt sb_op
-        (var op)
+      (comment "emit_op(sb, op);")
+      (call_stmt emit_op
         (var sb)
+        (var op)
       )
       (comment "emit_char(sb, 10u8);  // newline (for readability, downstream ignores whitespace)")
       (call_stmt emit_char
@@ -3980,27 +3980,27 @@
             (type StringBuffer)
             (call StringBuffer_new)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
-          (call_stmt sb_op
-            (var op)
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
+          (call_stmt emit_op
             (var combined)
+            (var op)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4116,27 +4116,27 @@
             (type StringBuffer)
             (call StringBuffer_new)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
-          (call_stmt sb_op
-            (var op)
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
+          (call_stmt emit_op
             (var combined)
+            (var op)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4252,27 +4252,27 @@
             (type StringBuffer)
             (call StringBuffer_new)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
-          (call_stmt sb_op
-            (var op)
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
+          (call_stmt emit_op
             (var combined)
+            (var op)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
+          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4780,27 +4780,27 @@
             (var tok)
             (var right_sb)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); sb_op(k, sb); emit_char(sb, 10u8);")
+          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); sb_op(k, sb); emit_char(sb, 10u8);")
+          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
           (call_stmt emit_string
             (var sb)
             (str "binop")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); sb_op(k, sb); emit_char(sb, 10u8);")
+          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); sb_op(k, sb); emit_char(sb, 10u8);")
-          (call_stmt sb_op
-            (var k)
+          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
+          (call_stmt emit_op
             (var sb)
+            (var k)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); sb_op(k, sb); emit_char(sb, 10u8);")
+          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -5149,10 +5149,10 @@
 (var g_tok)
 (var TK_IDENT)))
         (block
-          (comment "sb_type_kw(g_tok, sb);")
-          (call_stmt sb_type_kw
-            (var g_tok)
+          (comment "emit_type_kw(sb, g_tok);")
+          (call_stmt emit_type_kw
             (var sb)
+            (var g_tok)
           )
           (comment "lex_tok(src, tok);")
           (call_stmt lex_tok

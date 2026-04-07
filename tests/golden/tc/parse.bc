@@ -291,9 +291,9 @@ __L20:
   return_void
 .endfn
 
-.fn sb_op i32 StringBuffer void
-.param kind i32
+.fn emit_op StringBuffer i32 void
 .param sb StringBuffer
+.param kind i32
   load kind
   load TK_PLUS
   eq
@@ -488,9 +488,9 @@ __L40:
   return_void
 .endfn
 
-.fn sb_type_kw i32 StringBuffer void
-.param kind i32
+.fn emit_type_kw StringBuffer i32 void
 .param sb StringBuffer
+.param kind i32
   load kind
   load TK_U8
   eq
@@ -2195,9 +2195,9 @@ __L242:
   push_int 32
   call emit_char StringBuffer u8
   pop
-  load op
   load sb
-  call sb_op i32 StringBuffer
+  load op
+  call emit_op StringBuffer i32
   pop
   load sb
   push_int 10
@@ -2839,9 +2839,9 @@ __L276:
   push_int 32
   call emit_char StringBuffer u8
   pop
-  load op
   load combined
-  call sb_op i32 StringBuffer
+  load op
+  call emit_op StringBuffer i32
   pop
   load combined
   push_int 10
@@ -2941,9 +2941,9 @@ __L282:
   push_int 32
   call emit_char StringBuffer u8
   pop
-  load op
   load combined
-  call sb_op i32 StringBuffer
+  load op
+  call emit_op StringBuffer i32
   pop
   load combined
   push_int 10
@@ -3043,9 +3043,9 @@ __L286:
   push_int 32
   call emit_char StringBuffer u8
   pop
-  load op
   load combined
-  call sb_op i32 StringBuffer
+  load op
+  call emit_op StringBuffer i32
   pop
   load combined
   push_int 10
@@ -3448,9 +3448,9 @@ __L295:
   push_int 32
   call emit_char StringBuffer u8
   pop
-  load k
   load sb
-  call sb_op i32 StringBuffer
+  load k
+  call emit_op StringBuffer i32
   pop
   load sb
   push_int 10
@@ -3699,9 +3699,9 @@ __L310:
   push_int 0
 __L311:
   jump_ifnot __L308
-  load g_tok
   load sb
-  call sb_type_kw i32 StringBuffer
+  load g_tok
+  call emit_type_kw StringBuffer i32
   pop
   load src
   load tok

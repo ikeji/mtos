@@ -52,7 +52,7 @@
       - 事前調査: docs/task/pool_allocator.md
       - 実装: bootstrap/runtime_syscall.c の bump allocator を置き換え
 - [x] parse.tcのexpect_tokで、errorbufを使ってるのが汚ない。print_errorみたいな関数を定義してくくり出して。
-- [ ] parse.tcのsb_op関数は、emit_op(sb, op)の方がいいかな。
+- [x] parse.tcのsb_op関数は、emit_op(sb, op)の方がいいかな。
 - [ ] parse.tcのtype_tok_name用に、set(buf, bstart, "void")みたいな事ができる関数を定義しよう。
 - [ ] parse.tcで、emit_typeなどの、emit_ではじまる関数は、StringBuffer(出力先)を最初の引数にしよう。
 - [ ] parse.tcのpars_struct_declは、field infoを構造体にして、それの配列を持つ事にしよう。

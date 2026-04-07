@@ -100,7 +100,7 @@ fn tok_cmp(tok: U8Array, tlen: i32, target: StringLiteral) -> bool {
 }
 
 // Write operator string for binary/unary ops
-fn sb_op(kind: i32, sb: StringBuffer) -> void {
+fn emit_op(sb: StringBuffer, kind: i32) -> void {
     if kind == TK_PLUS     { emit_char(sb, '+'); return; }
     if kind == TK_MINUS    { emit_char(sb, '-'); return; }
     if kind == TK_STAR     { emit_char(sb, '*'); return; }
@@ -124,7 +124,7 @@ fn sb_op(kind: i32, sb: StringBuffer) -> void {
 }
 
 // Write type keyword string for type tokens
-fn sb_type_kw(kind: i32, sb: StringBuffer) -> void {
+fn emit_type_kw(sb: StringBuffer, kind: i32) -> void {
     if kind == TK_U8   { emit_string(sb, "u8"); return; }
     if kind == TK_U16  { emit_string(sb, "u16"); return; }
     if kind == TK_U32  { emit_string(sb, "u32"); return; }
@@ -484,7 +484,7 @@ fn wrap_binop(left_buf: U8Array, left_len: i32, op: i32,
               src: StringBuffer, tok: U8Array, sb: StringBuffer) -> void {
     // (binop OP LEFT RIGHT)
     emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' ');
-    sb_op(op, sb);
+    emit_op(sb, op);
     emit_char(sb, 10u8);  // newline (for readability, downstream ignores whitespace)
     emit_n(sb, left_buf, 0, left_len);
     emit_char(sb, 10u8);
@@ -642,7 +642,7 @@ fn pars_mul(src: StringBuffer, tok: U8Array, sb: StringBuffer) -> void {
         var right_sb: StringBuffer = StringBuffer_new();
         pars_unary(src, tok, right_sb);
         var combined: StringBuffer = StringBuffer_new();
-        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);
         append(combined, left_sb); emit_char(combined, 10u8);
         append(combined, right_sb);
         emit_char(combined, ')');
@@ -663,7 +663,7 @@ fn pars_add(src: StringBuffer, tok: U8Array, sb: StringBuffer) -> void {
         var right_sb: StringBuffer = StringBuffer_new();
         pars_mul(src, tok, right_sb);
         var combined: StringBuffer = StringBuffer_new();
-        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);
         append(combined, left_sb); emit_char(combined, 10u8);
         append(combined, right_sb);
         emit_char(combined, ')');
@@ -684,7 +684,7 @@ fn pars_shift(src: StringBuffer, tok: U8Array, sb: StringBuffer) -> void {
         var right_sb: StringBuffer = StringBuffer_new();
         pars_add(src, tok, right_sb);
         var combined: StringBuffer = StringBuffer_new();
-        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);
+        emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);
         append(combined, left_sb); emit_char(combined, 10u8);
         append(combined, right_sb);
         emit_char(combined, ')');
@@ -764,7 +764,7 @@ fn pars_compare(src: StringBuffer, tok: U8Array, sb: StringBuffer) -> void {
         lex_tok(src, tok);
         var right_sb: StringBuffer = StringBuffer_new();
         pars_bitor(src, tok, right_sb);
-        emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' '); sb_op(k, sb); emit_char(sb, 10u8);
+        emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);
         append(sb, left_sb); emit_char(sb, 10u8);
         append(sb, right_sb);
         emit_char(sb, ')');
@@ -821,7 +821,7 @@ fn pars_type(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i32) -> 
     // Outputs: (type TYPENAME)
     emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
     if is_type_tok(g_tok) && g_tok != TK_IDENT {
-        sb_type_kw(g_tok, sb);
+        emit_type_kw(sb, g_tok);
         lex_tok(src, tok);
     } else {
         if g_tok == TK_IDENT {
