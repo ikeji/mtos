@@ -77,7 +77,15 @@ case "$METHOD" in
         ;;
 
     pipeline)
-        source "$ROOT_DIR/tests/compile_tc.sh"
+        compile_tc_to_bc() {
+            local tc_file="$1" tc_dir; tc_dir=$(dirname "$tc_file")
+            local imports=() all_bcs=()
+            while IFS= read -r imp; do imports+=("$tc_dir/$imp"); done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
+            for imp_file in "${imports[@]}"; do [ -f "$imp_file" ] && all_bcs+=("$("$CODEGEN" "$imp_file" 2>/dev/null)"); done
+            all_bcs+=("$("$CODEGEN" "$tc_file" 2>/dev/null)")
+            for bc in "${all_bcs[@]}"; do printf '%s\n' "$bc" | grep -v '^\.\(bc\|endbc\)$'; done
+            echo ".endbc"
+        }
         PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
         TYPECHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/typecheck.tc")
         CODEGEN_TC_BC=$(compile_tc_to_bc "$TC_DIR/codegen.tc")
@@ -88,7 +96,15 @@ case "$METHOD" in
         ;;
 
     bc2asm_tc)
-        source "$ROOT_DIR/tests/compile_tc.sh"
+        compile_tc_to_bc() {
+            local tc_file="$1" tc_dir; tc_dir=$(dirname "$tc_file")
+            local imports=() all_bcs=()
+            while IFS= read -r imp; do imports+=("$tc_dir/$imp"); done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
+            for imp_file in "${imports[@]}"; do [ -f "$imp_file" ] && all_bcs+=("$("$CODEGEN" "$imp_file" 2>/dev/null)"); done
+            all_bcs+=("$("$CODEGEN" "$tc_file" 2>/dev/null)")
+            for bc in "${all_bcs[@]}"; do printf '%s\n' "$bc" | grep -v '^\.\(bc\|endbc\)$'; done
+            echo ".endbc"
+        }
         BC2ASM_TC_BC=$(compile_tc_to_bc "$TC_DIR/bc2asm.tc")
         ASM=$(mktemp /tmp/tc_XXXXXX.s)
         ELF=$(mktemp /tmp/tc_XXXXXX)

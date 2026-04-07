@@ -31,7 +31,7 @@ clean:
 	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o parse typecheck interp codegen bcrun bc2asm
 
 test: all
-	./tests/run_tests.sh
+	./tests/test_all.sh
 
 update-golden: all
 	./tests/update_golden.sh
