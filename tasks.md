@@ -41,13 +41,22 @@
       - ob_new/ob_delete/ob_peek のラッパー関数も追加（import 先で struct 自動
         生成関数が使えないため）。
 - [x] parse.tcで、ob_set_posで巻き戻さず、別なobを定義しそこに出し、確定したらメインの物に移動させる方針で書き直し、ob_set_posを削除したい。
-- [ ] string_buffer.tc の sb_ プリフィックスを除去する。
+- [x] string_buffer.tc の sb_ プリフィックスを除去する。
       - リネーム案: sb_delete→destroy, sb_append→append, sb_len→length,
         sb_get→char_at, sb_write→write, sb_new→StringBuffer_new,
-        sb_new_output→StringBuffer_new_output
+        sb_new_output→StringBuffer_new
 - [x] 組み込み関数（get/set/len/delete/append/equals）をオーバーロード対応にする。
       - 詳細: docs/task/builtin_overload.md
       - is_builtin を廃止、全 call をマングル名で統一
 - [x] heap_mark/heap_resetを廃止し、倍々サイズのプールアロケータを導入する。
       - 事前調査: docs/task/pool_allocator.md
       - 実装: bootstrap/runtime_syscall.c の bump allocator を置き換え
+- [ ] parse.tcのexpect_tokで、errorbufを使ってるのが汚ない。print_errorみたいな関数を定義してくくり出して。
+- [ ] parse.tcのsb_op関数は、emit_op(sb, op)の方がいいかな。
+- [ ] parse.tcのtype_tok_name用に、set(buf, bstart, "void")みたいな事ができる関数を定義しよう。
+- [ ] parse.tcで、emit_typeなどの、emit_ではじまる関数は、StringBuffer(出力先)を最初の引数にしよう。
+- [ ] parse.tcのpars_struct_declは、field infoを構造体にして、それの配列を持つ事にしよう。
+- [ ] gen2でgen3コンパイラをコンパイルした時にどれぐらいの時間とメモリを使ったか知りたい。時間はすでにあるから、ピークメモリも表示して。
+- [ ] スクリプトが増えすぎて把握できなくなった。それぞれの意味、どれがどれを呼ぶか、などをドキュメントにまとめて。
+- [ ] 実装が多すぎる。2つを残して消していいかな。
+- [ ] update_golden.sh が遅すぎる。rv32版のコンパイラを使ったら早くならないかな？

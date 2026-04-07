@@ -888,7 +888,7 @@ __L91:
 __L93:
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   return
   return_void
 .endfn
@@ -943,7 +943,7 @@ __L104:
   load g_pos
   push_int 1
   add
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 47
   eq
   jump_ifnot __L101
@@ -1033,7 +1033,7 @@ __L113:
   jump_ifnot __L111
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   store c
   load c
   call is_wspace u8
@@ -1073,7 +1073,7 @@ __L122:
   load g_pos
   push_int 1
   add
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 47
   eq
   jump_ifnot __L119
@@ -1090,7 +1090,7 @@ __L123:
   jump_ifnot __L125
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 10
   ne
   jump_ifnot __L125
@@ -1151,7 +1151,7 @@ __L111:
 __L127:
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   store c
   load c
   call is_alpha u8
@@ -1165,7 +1165,7 @@ __L129:
   jump_ifnot __L131
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   call is_alnum u8
   jump_ifnot __L131
   push_int 1
@@ -1197,7 +1197,7 @@ __L133:
   load start
   load i
   add
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   call set U8Array i32 u8
   pop
   load i
@@ -1226,7 +1226,7 @@ __L136:
   jump_ifnot __L138
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   call is_digit u8
   jump_ifnot __L138
   push_int 1
@@ -1240,7 +1240,7 @@ __L139:
   mul
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   cast i32
   push_int 48
   sub
@@ -1258,7 +1258,7 @@ __L137:
   jump_ifnot __L142
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   call is_alpha u8
   jump_ifnot __L142
   push_int 1
@@ -1276,7 +1276,7 @@ __L144:
   jump_ifnot __L146
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   call is_alnum u8
   jump_ifnot __L146
   push_int 1
@@ -1308,7 +1308,7 @@ __L148:
   load sstart
   load i
   add
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   call set U8Array i32 u8
   pop
   load i
@@ -1347,7 +1347,7 @@ __L151:
   jump_ifnot __L153
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 34
   ne
   jump_ifnot __L153
@@ -1359,7 +1359,7 @@ __L154:
   jump_ifnot __L152
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   store ch
   load ch
   push_int 92
@@ -1383,7 +1383,7 @@ __L158:
   store g_pos
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   store esc
   load esc
   store out
@@ -1487,7 +1487,7 @@ __L150:
   store cval
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   store ch2
   load ch2
   push_int 92
@@ -1511,7 +1511,7 @@ __L170:
   store g_pos
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   store esc
   push_int 0
   store handled
@@ -1597,7 +1597,7 @@ __L168:
   jump_ifnot __L179
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 39
   eq
   jump_ifnot __L179
@@ -1644,7 +1644,7 @@ __L166:
   jump_ifnot __L183
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L183
@@ -1676,7 +1676,7 @@ __L181:
   jump_ifnot __L187
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L187
@@ -1772,7 +1772,7 @@ __L196:
   jump_ifnot __L199
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L199
@@ -1804,7 +1804,7 @@ __L197:
   jump_ifnot __L203
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L203
@@ -1836,7 +1836,7 @@ __L201:
   jump_ifnot __L207
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 38
   eq
   jump_ifnot __L207
@@ -1868,7 +1868,7 @@ __L205:
   jump_ifnot __L211
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 124
   eq
   jump_ifnot __L211
@@ -1900,7 +1900,7 @@ __L209:
   jump_ifnot __L215
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L215
@@ -1932,7 +1932,7 @@ __L213:
   jump_ifnot __L219
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L219
@@ -1964,7 +1964,7 @@ __L217:
   jump_ifnot __L223
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L223
@@ -1988,7 +1988,7 @@ __L222:
   jump_ifnot __L226
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 60
   eq
   jump_ifnot __L226
@@ -2020,7 +2020,7 @@ __L221:
   jump_ifnot __L230
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L230
@@ -2044,7 +2044,7 @@ __L229:
   jump_ifnot __L233
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 62
   eq
   jump_ifnot __L233
@@ -2076,7 +2076,7 @@ __L228:
   jump_ifnot __L237
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 62
   eq
   jump_ifnot __L237
@@ -2100,7 +2100,7 @@ __L236:
   jump_ifnot __L240
   load src
   load g_pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 61
   eq
   jump_ifnot __L240
@@ -2689,7 +2689,7 @@ __L259:
 .param sb StringBuffer
 .local inner StringBuffer
 .local wrapped StringBuffer
-  call sb_new
+  call StringBuffer_new
   store inner
   load src
   load tok
@@ -2705,7 +2705,7 @@ __L269:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store wrapped
   load wrapped
   push_int 40
@@ -2721,7 +2721,7 @@ __L269:
   pop
   load wrapped
   load inner
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load wrapped
   push_int 10
@@ -2738,7 +2738,7 @@ __L269:
   call emit_char StringBuffer u8
   pop
   load inner
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load wrapped
   store inner
@@ -2746,10 +2746,10 @@ __L269:
 __L270:
   load sb
   load inner
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load inner
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -2854,7 +2854,7 @@ __L272:
 .local op i32
 .local right_sb StringBuffer
 .local combined StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -2892,14 +2892,14 @@ __L276:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
   load right_sb
   call pars_unary StringBuffer U8Array StringBuffer
   pop
-  call sb_new
+  call StringBuffer_new
   store combined
   load combined
   push_int 40
@@ -2923,7 +2923,7 @@ __L276:
   pop
   load combined
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 10
@@ -2931,17 +2931,17 @@ __L276:
   pop
   load combined
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load combined
   store left_sb
@@ -2949,10 +2949,10 @@ __L276:
 __L274:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -2966,7 +2966,7 @@ __L274:
 .local op i32
 .local right_sb StringBuffer
 .local combined StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -2994,14 +2994,14 @@ __L282:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
   load right_sb
   call pars_mul StringBuffer U8Array StringBuffer
   pop
-  call sb_new
+  call StringBuffer_new
   store combined
   load combined
   push_int 40
@@ -3025,7 +3025,7 @@ __L282:
   pop
   load combined
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 10
@@ -3033,17 +3033,17 @@ __L282:
   pop
   load combined
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load combined
   store left_sb
@@ -3051,10 +3051,10 @@ __L282:
 __L280:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -3068,7 +3068,7 @@ __L280:
 .local op i32
 .local right_sb StringBuffer
 .local combined StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -3096,14 +3096,14 @@ __L286:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
   load right_sb
   call pars_add StringBuffer U8Array StringBuffer
   pop
-  call sb_new
+  call StringBuffer_new
   store combined
   load combined
   push_int 40
@@ -3127,7 +3127,7 @@ __L286:
   pop
   load combined
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 10
@@ -3135,17 +3135,17 @@ __L286:
   pop
   load combined
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load combined
   store left_sb
@@ -3153,10 +3153,10 @@ __L286:
 __L284:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -3169,7 +3169,7 @@ __L284:
 .local left_sb StringBuffer
 .local right_sb StringBuffer
 .local combined StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -3185,14 +3185,14 @@ __L287:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
   load right_sb
   call pars_shift StringBuffer U8Array StringBuffer
   pop
-  call sb_new
+  call StringBuffer_new
   store combined
   load combined
   push_int 40
@@ -3216,7 +3216,7 @@ __L287:
   pop
   load combined
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 10
@@ -3224,17 +3224,17 @@ __L287:
   pop
   load combined
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load combined
   store left_sb
@@ -3242,10 +3242,10 @@ __L287:
 __L288:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -3258,7 +3258,7 @@ __L288:
 .local left_sb StringBuffer
 .local right_sb StringBuffer
 .local combined StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -3274,14 +3274,14 @@ __L289:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
   load right_sb
   call pars_bitand StringBuffer U8Array StringBuffer
   pop
-  call sb_new
+  call StringBuffer_new
   store combined
   load combined
   push_int 40
@@ -3305,7 +3305,7 @@ __L289:
   pop
   load combined
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 10
@@ -3313,17 +3313,17 @@ __L289:
   pop
   load combined
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load combined
   store left_sb
@@ -3331,10 +3331,10 @@ __L289:
 __L290:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -3347,7 +3347,7 @@ __L290:
 .local left_sb StringBuffer
 .local right_sb StringBuffer
 .local combined StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -3363,14 +3363,14 @@ __L291:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
   load right_sb
   call pars_bitxor StringBuffer U8Array StringBuffer
   pop
-  call sb_new
+  call StringBuffer_new
   store combined
   load combined
   push_int 40
@@ -3394,7 +3394,7 @@ __L291:
   pop
   load combined
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 10
@@ -3402,17 +3402,17 @@ __L291:
   pop
   load combined
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load combined
   store left_sb
@@ -3420,10 +3420,10 @@ __L291:
 __L292:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -3436,7 +3436,7 @@ __L292:
 .local left_sb StringBuffer
 .local k i32
 .local right_sb StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -3503,7 +3503,7 @@ __L295:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
@@ -3532,7 +3532,7 @@ __L295:
   pop
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load sb
   push_int 10
@@ -3540,26 +3540,26 @@ __L295:
   pop
   load sb
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
 __L293:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -3572,7 +3572,7 @@ __L293:
 .local left_sb StringBuffer
 .local right_sb StringBuffer
 .local combined StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -3588,14 +3588,14 @@ __L304:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
   load right_sb
   call pars_compare StringBuffer U8Array StringBuffer
   pop
-  call sb_new
+  call StringBuffer_new
   store combined
   load combined
   push_int 40
@@ -3619,7 +3619,7 @@ __L304:
   pop
   load combined
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 10
@@ -3627,17 +3627,17 @@ __L304:
   pop
   load combined
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load combined
   store left_sb
@@ -3645,10 +3645,10 @@ __L304:
 __L305:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -3661,7 +3661,7 @@ __L305:
 .local left_sb StringBuffer
 .local right_sb StringBuffer
 .local combined StringBuffer
-  call sb_new
+  call StringBuffer_new
   store left_sb
   load src
   load tok
@@ -3677,14 +3677,14 @@ __L306:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-  call sb_new
+  call StringBuffer_new
   store right_sb
   load src
   load tok
   load right_sb
   call pars_logic_and StringBuffer U8Array StringBuffer
   pop
-  call sb_new
+  call StringBuffer_new
   store combined
   load combined
   push_int 40
@@ -3708,7 +3708,7 @@ __L306:
   pop
   load combined
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 10
@@ -3716,17 +3716,17 @@ __L306:
   pop
   load combined
   load right_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load combined
   push_int 41
   call emit_char StringBuffer u8
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load right_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load combined
   store left_sb
@@ -3734,10 +3734,10 @@ __L306:
 __L307:
   load sb
   load left_sb
-  call sb_append StringBuffer StringBuffer
+  call append StringBuffer StringBuffer
   pop
   load left_sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   return_void
   return_void
@@ -4667,7 +4667,7 @@ __L349:
   jump_ifnot __L347
   load src
   load pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 10
   eq
   jump_ifnot __L350
@@ -4689,13 +4689,13 @@ __L351:
   jump_ifnot __L353
   load src
   load pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 32
   eq
   jump_if __L355
   load src
   load pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 9
   eq
   jump_if __L355
@@ -4725,7 +4725,7 @@ __L352:
 __L357:
   load src
   load pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   store first
   load first
   push_int 10
@@ -4766,7 +4766,7 @@ __L361:
   jump_ifnot __L365
   load src
   load pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 10
   ne
   jump_ifnot __L365
@@ -4778,7 +4778,7 @@ __L366:
   jump_ifnot __L363
   load src
   load pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   push_int 13
   ne
   jump_ifnot __L363
@@ -4790,7 +4790,7 @@ __L364:
   jump_ifnot __L362
   load src
   load pos
-  call sb_get StringBuffer i32
+  call char_at StringBuffer i32
   store ch
   load ch
   push_int 34
@@ -8633,13 +8633,13 @@ __L431:
 .local read_tmp U8Array
 .local chunk i32
 .local ci i32
-  call sb_new
+  call StringBuffer_new
   store src_buf
   push_int 4096
   call U8Array i32
   store tok_buf
   push_int 1
-  call sb_new_output i32
+  call StringBuffer_new i32
   store sb
   push_int 4096
   call U8Array i32
@@ -8704,16 +8704,16 @@ __L441:
   pop
   load sb
   push_int 1
-  call sb_write StringBuffer i32
+  call write StringBuffer i32
   pop
   load src_buf
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   load tok_buf
   call delete U8Array
   pop
   load sb
-  call sb_delete StringBuffer
+  call destroy StringBuffer
   pop
   push_int 0
   return

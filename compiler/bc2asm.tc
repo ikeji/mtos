@@ -1025,7 +1025,7 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
 fn main() -> i32 {
     var src:          U8Array  = U8Array(524288);
     var strtab:       U8Array  = U8Array(262144);
-    var ob:           StringBuffer = sb_new_output(1);
+    var ob:           StringBuffer = StringBuffer_new(1);
     var string_lits:  I32Array = I32Array(512);
     var global_vars:  I32Array = I32Array(1024);
     var global_inits: I32Array = I32Array(256);
@@ -1059,6 +1059,6 @@ fn main() -> i32 {
 
     emit_program(strtab,string_lits,global_vars,global_inits,
                  fns,params_pool,locals_pool,instrs,ob);
-    sb_write(ob, 1);
+    write(ob, 1);
     return 0;
 }

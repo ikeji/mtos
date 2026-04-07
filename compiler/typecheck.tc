@@ -1127,7 +1127,7 @@ fn main() -> i32 {
     var strtab: U8Array = U8Array(524288);
     var in_buf: U8Array = U8Array(524288);
     var atom_buf: U8Array = U8Array(1024);
-    var ob: StringBuffer = sb_new_output(1);
+    var ob: StringBuffer = StringBuffer_new(1);
 
     // fntab: 600 entries * 47 fields = 28200
     var fntab: I32Array = I32Array(28200);
@@ -1157,9 +1157,9 @@ fn main() -> i32 {
 
     write_node(nodes, strtab, ob, 0, root);
     emit_char(ob, 10u8);
-    sb_write(ob, 1);
+    write(ob, 1);
 
-    delete(nodes); delete(strtab); delete(in_buf); delete(atom_buf); sb_delete(ob);
+    delete(nodes); delete(strtab); delete(in_buf); delete(atom_buf); destroy(ob);
     delete(fntab); delete(vartab);
     return 0;
 }

@@ -1019,7 +1019,7 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
 fn main() -> i32 {
     var in_buf: U8Array = U8Array(524288);   // 512KB input
     var atom_buf: U8Array = U8Array(1024);   // atom scratch buffer
-    var out_buf: StringBuffer = sb_new_output(1);
+    var out_buf: StringBuffer = StringBuffer_new(1);
     var nodes: I32Array = I32Array(131072);  // 16384 nodes × 8 ints
     var strtab: U8Array = U8Array(262144);   // string table
     var slits: I32Array = I32Array(512);     // 256 string literals × 2
@@ -1037,9 +1037,9 @@ fn main() -> i32 {
     if root < 0 { sys_exit(1); }
 
     cg_program(nodes, strtab, slits, locals, out_buf, root);
-    sb_write(out_buf, 1);
+    write(out_buf, 1);
 
-    delete(in_buf); delete(atom_buf); sb_delete(out_buf);
+    delete(in_buf); delete(atom_buf); destroy(out_buf);
     delete(nodes); delete(strtab); delete(slits); delete(locals);
     return 0;
 }

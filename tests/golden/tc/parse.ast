@@ -1410,9 +1410,9 @@
           )
         )
       )
-      (comment "return sb_get(src, g_pos);")
+      (comment "return char_at(src, g_pos);")
       (return
-        (call sb_get
+        (call char_at
           (var src)
           (var g_pos)
         )
@@ -1477,7 +1477,7 @@
               )
             )
             (block
-              (comment "if c == '/' && g_pos + 1 < g_len && sb_get(src, (g_pos+1)) == '/' {")
+              (comment "if c == '/' && g_pos + 1 < g_len && char_at(src, (g_pos+1)) == '/' {")
               (if
                 (binop &&
                   (binop &&
@@ -1494,7 +1494,7 @@
                     )
                   )
                   (binop ==
-                    (call sb_get
+                    (call char_at
                       (var src)
                       (binop +
                         (var g_pos)
@@ -1614,10 +1614,10 @@
           )
         )
         (block
-          (comment "var c: u8 = sb_get(src, g_pos);")
+          (comment "var c: u8 = char_at(src, g_pos);")
           (var_decl c
             (type u8)
-            (call sb_get
+            (call char_at
               (var src)
               (var g_pos)
             )
@@ -1653,7 +1653,7 @@
               )
             )
             (block
-              (comment "if c == '/' && g_pos + 1 < g_len && sb_get(src, (g_pos+1)) == '/' {")
+              (comment "if c == '/' && g_pos + 1 < g_len && char_at(src, (g_pos+1)) == '/' {")
               (if
                 (binop &&
                   (binop &&
@@ -1670,7 +1670,7 @@
                     )
                   )
                   (binop ==
-                    (call sb_get
+                    (call char_at
                       (var src)
                       (binop +
                         (var g_pos)
@@ -1681,7 +1681,7 @@
                   )
                 )
                 (block
-                  (comment "while g_pos < g_len && sb_get(src, g_pos) != 10u8 {")
+                  (comment "while g_pos < g_len && char_at(src, g_pos) != 10u8 {")
                   (while
                     (binop &&
                       (binop <
@@ -1689,7 +1689,7 @@
                         (var g_len)
                       )
                       (binop !=
-                        (call sb_get
+                        (call char_at
                           (var src)
                           (var g_pos)
                         )
@@ -1762,10 +1762,10 @@
           (return)
         )
       )
-      (comment "var c: u8 = sb_get(src, g_pos);")
+      (comment "var c: u8 = char_at(src, g_pos);")
       (var_decl c
         (type u8)
-        (call sb_get
+        (call char_at
           (var src)
           (var g_pos)
         )
@@ -1781,7 +1781,7 @@
             (type i32)
             (var g_pos)
           )
-          (comment "while g_pos < g_len && is_alnum(sb_get(src, g_pos)) {")
+          (comment "while g_pos < g_len && is_alnum(char_at(src, g_pos)) {")
           (while
             (binop &&
               (binop <
@@ -1789,7 +1789,7 @@
                 (var g_len)
               )
               (call is_alnum
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -1825,11 +1825,11 @@
               (var tlen)
             )
             (block
-              (comment "set(tok, i, sb_get(src, (start + i)));")
+              (comment "set(tok, i, char_at(src, (start + i)));")
               (call_stmt set
                 (var tok)
                 (var i)
-                (call sb_get
+                (call char_at
                   (var src)
                   (binop +
                     (var start)
@@ -1872,7 +1872,7 @@
             (type i32)
             (int 0)
           )
-          (comment "while g_pos < g_len && is_digit(sb_get(src, g_pos)) {")
+          (comment "while g_pos < g_len && is_digit(char_at(src, g_pos)) {")
           (while
             (binop &&
               (binop <
@@ -1880,14 +1880,14 @@
                 (var g_len)
               )
               (call is_digit
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
               )
             )
             (block
-              (comment "ival = ival * 10 + (sb_get(src, g_pos) as i32 - 48);")
+              (comment "ival = ival * 10 + (char_at(src, g_pos) as i32 - 48);")
               (assign ival
                 (binop +
                   (binop *
@@ -1896,7 +1896,7 @@
                   )
                   (binop -
                     (cast
-                      (call sb_get
+                      (call char_at
                         (var src)
                         (var g_pos)
                       )
@@ -1915,7 +1915,7 @@
               )
             )
           )
-          (comment "if g_pos < g_len && is_alpha(sb_get(src, g_pos)) {")
+          (comment "if g_pos < g_len && is_alpha(char_at(src, g_pos)) {")
           (if
             (binop &&
               (binop <
@@ -1923,7 +1923,7 @@
                 (var g_len)
               )
               (call is_alpha
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -1935,7 +1935,7 @@
                 (type i32)
                 (var g_pos)
               )
-              (comment "while g_pos < g_len && is_alnum(sb_get(src, g_pos)) {")
+              (comment "while g_pos < g_len && is_alnum(char_at(src, g_pos)) {")
               (while
                 (binop &&
                   (binop <
@@ -1943,7 +1943,7 @@
                     (var g_len)
                   )
                   (call is_alnum
-                    (call sb_get
+                    (call char_at
                       (var src)
                       (var g_pos)
                     )
@@ -1979,11 +1979,11 @@
                   (var slen)
                 )
                 (block
-                  (comment "set(tok, i, sb_get(src, (sstart + i)));")
+                  (comment "set(tok, i, char_at(src, (sstart + i)));")
                   (call_stmt set
                     (var tok)
                     (var i)
-                    (call sb_get
+                    (call char_at
                       (var src)
                       (binop +
                         (var sstart)
@@ -2043,7 +2043,7 @@
             (type i32)
             (int 0)
           )
-          (comment "while g_pos < g_len && sb_get(src, g_pos) != '\"' {")
+          (comment "while g_pos < g_len && char_at(src, g_pos) != '\"' {")
           (while
             (binop &&
               (binop <
@@ -2051,7 +2051,7 @@
                 (var g_len)
               )
               (binop !=
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2059,10 +2059,10 @@
               )
             )
             (block
-              (comment "var ch: u8 = sb_get(src, g_pos);")
+              (comment "var ch: u8 = char_at(src, g_pos);")
               (var_decl ch
                 (type u8)
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2090,10 +2090,10 @@
                       (int 1)
                     )
                   )
-                  (comment "var esc: u8 = sb_get(src, g_pos);")
+                  (comment "var esc: u8 = char_at(src, g_pos);")
                   (var_decl esc
                     (type u8)
-                    (call sb_get
+                    (call char_at
                       (var src)
                       (var g_pos)
                     )
@@ -2274,10 +2274,10 @@
             (type i32)
             (int 0)
           )
-          (comment "var ch2: u8 = sb_get(src, g_pos);")
+          (comment "var ch2: u8 = char_at(src, g_pos);")
           (var_decl ch2
             (type u8)
-            (call sb_get
+            (call char_at
               (var src)
               (var g_pos)
             )
@@ -2305,10 +2305,10 @@
                   (int 1)
                 )
               )
-              (comment "var esc: u8 = sb_get(src, g_pos);")
+              (comment "var esc: u8 = char_at(src, g_pos);")
               (var_decl esc
                 (type u8)
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2461,7 +2461,7 @@
               )
             )
           )
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
           (if
             (binop &&
               (binop <
@@ -2469,7 +2469,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2477,7 +2477,7 @@
               )
             )
             (block
-              (comment "if g_pos < g_len && sb_get(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
+              (comment "if g_pos < g_len && char_at(src, g_pos) == '\\'' { g_pos = g_pos + 1; }  // closing '")
               (assign g_pos
                 (binop +
                   (var g_pos)
@@ -2528,7 +2528,7 @@
           (int:u8 43)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -2536,7 +2536,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2574,7 +2574,7 @@
           (int:u8 37)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -2582,7 +2582,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2740,7 +2740,7 @@
           (int:u8 42)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -2748,7 +2748,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2786,7 +2786,7 @@
           (int:u8 47)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -2794,7 +2794,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2832,7 +2832,7 @@
           (int:u8 38)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '&' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '&' {")
           (if
             (binop &&
               (binop <
@@ -2840,7 +2840,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2878,7 +2878,7 @@
           (int:u8 124)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '|' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '|' {")
           (if
             (binop &&
               (binop <
@@ -2886,7 +2886,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2924,7 +2924,7 @@
           (int:u8 33)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -2932,7 +2932,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -2970,7 +2970,7 @@
           (int:u8 61)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -2978,7 +2978,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -3016,7 +3016,7 @@
           (int:u8 60)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -3024,7 +3024,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -3047,7 +3047,7 @@
               (return)
             )
           )
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '<' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '<' {")
           (if
             (binop &&
               (binop <
@@ -3055,7 +3055,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -3093,7 +3093,7 @@
           (int:u8 62)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -3101,7 +3101,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -3124,7 +3124,7 @@
               (return)
             )
           )
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '>' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '>' {")
           (if
             (binop &&
               (binop <
@@ -3132,7 +3132,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -3170,7 +3170,7 @@
           (int:u8 45)
         )
         (block
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '>' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '>' {")
           (if
             (binop &&
               (binop <
@@ -3178,7 +3178,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -3201,7 +3201,7 @@
               (return)
             )
           )
-          (comment "if g_pos < g_len && sb_get(src, g_pos) == '=' {")
+          (comment "if g_pos < g_len && char_at(src, g_pos) == '=' {")
           (if
             (binop &&
               (binop <
@@ -3209,7 +3209,7 @@
                 (var g_len)
               )
               (binop ==
-                (call sb_get
+                (call char_at
                   (var src)
                   (var g_pos)
                 )
@@ -4048,10 +4048,10 @@
       (type void)
     )
     (block
-      (comment "var inner: StringBuffer = sb_new();")
+      (comment "var inner: StringBuffer = StringBuffer_new();")
       (var_decl inner
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_primary(src, tok, inner);")
       (call_stmt pars_primary
@@ -4071,10 +4071,10 @@
             (var src)
             (var tok)
           )
-          (comment "var wrapped: StringBuffer = sb_new();")
+          (comment "var wrapped: StringBuffer = StringBuffer_new();")
           (var_decl wrapped
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(wrapped, '('); emit_string(wrapped, \"cast\"); emit_char(wrapped, 10u8);")
           (call_stmt emit_char
@@ -4091,8 +4091,8 @@
             (var wrapped)
             (int:u8 10)
           )
-          (comment "sb_append(wrapped, inner);")
-          (call_stmt sb_append
+          (comment "append(wrapped, inner);")
+          (call_stmt append
             (var wrapped)
             (var inner)
           )
@@ -4113,8 +4113,8 @@
             (var wrapped)
             (int:u8 41)
           )
-          (comment "sb_delete(inner);")
-          (call_stmt sb_delete
+          (comment "destroy(inner);")
+          (call_stmt destroy
             (var inner)
           )
           (comment "inner = wrapped;")
@@ -4123,13 +4123,13 @@
           )
         )
       )
-      (comment "sb_append(sb, inner);")
-      (call_stmt sb_append
+      (comment "append(sb, inner);")
+      (call_stmt append
         (var sb)
         (var inner)
       )
-      (comment "sb_delete(inner);")
-      (call_stmt sb_delete
+      (comment "destroy(inner);")
+      (call_stmt destroy
         (var inner)
       )
       (comment "return;")
@@ -4282,10 +4282,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_unary(src, tok, left_sb);")
       (call_stmt pars_unary
@@ -4322,10 +4322,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_unary(src, tok, right_sb);")
           (call_stmt pars_unary
@@ -4333,10 +4333,10 @@
             (var tok)
             (var right_sb)
           )
-          (comment "var combined: StringBuffer = sb_new();")
+          (comment "var combined: StringBuffer = StringBuffer_new();")
           (var_decl combined
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
           (call_stmt emit_char
@@ -4363,18 +4363,18 @@
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
-          (call_stmt sb_append
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
+          (call_stmt append
             (var combined)
             (var left_sb)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, right_sb);")
-          (call_stmt sb_append
+          (comment "append(combined, right_sb);")
+          (call_stmt append
             (var combined)
             (var right_sb)
           )
@@ -4383,12 +4383,12 @@
             (var combined)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "left_sb = combined;")
@@ -4397,13 +4397,13 @@
           )
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -4426,10 +4426,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_mul(src, tok, left_sb);")
       (call_stmt pars_mul
@@ -4460,10 +4460,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_mul(src, tok, right_sb);")
           (call_stmt pars_mul
@@ -4471,10 +4471,10 @@
             (var tok)
             (var right_sb)
           )
-          (comment "var combined: StringBuffer = sb_new();")
+          (comment "var combined: StringBuffer = StringBuffer_new();")
           (var_decl combined
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
           (call_stmt emit_char
@@ -4501,18 +4501,18 @@
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
-          (call_stmt sb_append
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
+          (call_stmt append
             (var combined)
             (var left_sb)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, right_sb);")
-          (call_stmt sb_append
+          (comment "append(combined, right_sb);")
+          (call_stmt append
             (var combined)
             (var right_sb)
           )
@@ -4521,12 +4521,12 @@
             (var combined)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "left_sb = combined;")
@@ -4535,13 +4535,13 @@
           )
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -4564,10 +4564,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_add(src, tok, left_sb);")
       (call_stmt pars_add
@@ -4598,10 +4598,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_add(src, tok, right_sb);")
           (call_stmt pars_add
@@ -4609,10 +4609,10 @@
             (var tok)
             (var right_sb)
           )
-          (comment "var combined: StringBuffer = sb_new();")
+          (comment "var combined: StringBuffer = StringBuffer_new();")
           (var_decl combined
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); sb_op(op, combined); emit_char(combined, 10u8);")
           (call_stmt emit_char
@@ -4639,18 +4639,18 @@
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
-          (call_stmt sb_append
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
+          (call_stmt append
             (var combined)
             (var left_sb)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, right_sb);")
-          (call_stmt sb_append
+          (comment "append(combined, right_sb);")
+          (call_stmt append
             (var combined)
             (var right_sb)
           )
@@ -4659,12 +4659,12 @@
             (var combined)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "left_sb = combined;")
@@ -4673,13 +4673,13 @@
           )
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -4702,10 +4702,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_shift(src, tok, left_sb);")
       (call_stmt pars_shift
@@ -4725,10 +4725,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_shift(src, tok, right_sb);")
           (call_stmt pars_shift
@@ -4736,10 +4736,10 @@
             (var tok)
             (var right_sb)
           )
-          (comment "var combined: StringBuffer = sb_new();")
+          (comment "var combined: StringBuffer = StringBuffer_new();")
           (var_decl combined
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '&'); emit_char(combined, 10u8);")
           (call_stmt emit_char
@@ -4766,18 +4766,18 @@
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
-          (call_stmt sb_append
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
+          (call_stmt append
             (var combined)
             (var left_sb)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, right_sb);")
-          (call_stmt sb_append
+          (comment "append(combined, right_sb);")
+          (call_stmt append
             (var combined)
             (var right_sb)
           )
@@ -4786,12 +4786,12 @@
             (var combined)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "left_sb = combined;")
@@ -4800,13 +4800,13 @@
           )
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -4829,10 +4829,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_bitand(src, tok, left_sb);")
       (call_stmt pars_bitand
@@ -4852,10 +4852,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_bitand(src, tok, right_sb);")
           (call_stmt pars_bitand
@@ -4863,10 +4863,10 @@
             (var tok)
             (var right_sb)
           )
-          (comment "var combined: StringBuffer = sb_new();")
+          (comment "var combined: StringBuffer = StringBuffer_new();")
           (var_decl combined
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '^'); emit_char(combined, 10u8);")
           (call_stmt emit_char
@@ -4893,18 +4893,18 @@
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
-          (call_stmt sb_append
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
+          (call_stmt append
             (var combined)
             (var left_sb)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, right_sb);")
-          (call_stmt sb_append
+          (comment "append(combined, right_sb);")
+          (call_stmt append
             (var combined)
             (var right_sb)
           )
@@ -4913,12 +4913,12 @@
             (var combined)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "left_sb = combined;")
@@ -4927,13 +4927,13 @@
           )
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -4956,10 +4956,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_bitxor(src, tok, left_sb);")
       (call_stmt pars_bitxor
@@ -4979,10 +4979,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_bitxor(src, tok, right_sb);")
           (call_stmt pars_bitxor
@@ -4990,10 +4990,10 @@
             (var tok)
             (var right_sb)
           )
-          (comment "var combined: StringBuffer = sb_new();")
+          (comment "var combined: StringBuffer = StringBuffer_new();")
           (var_decl combined
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '|'); emit_char(combined, 10u8);")
           (call_stmt emit_char
@@ -5020,18 +5020,18 @@
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
-          (call_stmt sb_append
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
+          (call_stmt append
             (var combined)
             (var left_sb)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, right_sb);")
-          (call_stmt sb_append
+          (comment "append(combined, right_sb);")
+          (call_stmt append
             (var combined)
             (var right_sb)
           )
@@ -5040,12 +5040,12 @@
             (var combined)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "left_sb = combined;")
@@ -5054,13 +5054,13 @@
           )
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -5083,10 +5083,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_bitor(src, tok, left_sb);")
       (call_stmt pars_bitor
@@ -5141,10 +5141,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_bitor(src, tok, right_sb);")
           (call_stmt pars_bitor
@@ -5177,18 +5177,18 @@
             (var sb)
             (int:u8 10)
           )
-          (comment "sb_append(sb, left_sb); emit_char(sb, 10u8);")
-          (call_stmt sb_append
+          (comment "append(sb, left_sb); emit_char(sb, 10u8);")
+          (call_stmt append
             (var sb)
             (var left_sb)
           )
-          (comment "sb_append(sb, left_sb); emit_char(sb, 10u8);")
+          (comment "append(sb, left_sb); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
           )
-          (comment "sb_append(sb, right_sb);")
-          (call_stmt sb_append
+          (comment "append(sb, right_sb);")
+          (call_stmt append
             (var sb)
             (var right_sb)
           )
@@ -5197,25 +5197,25 @@
             (var sb)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "return;")
           (return)
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -5238,10 +5238,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_compare(src, tok, left_sb);")
       (call_stmt pars_compare
@@ -5261,10 +5261,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_compare(src, tok, right_sb);")
           (call_stmt pars_compare
@@ -5272,10 +5272,10 @@
             (var tok)
             (var right_sb)
           )
-          (comment "var combined: StringBuffer = sb_new();")
+          (comment "var combined: StringBuffer = StringBuffer_new();")
           (var_decl combined
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"&&\"); emit_char(combined, 10u8);")
           (call_stmt emit_char
@@ -5302,18 +5302,18 @@
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
-          (call_stmt sb_append
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
+          (call_stmt append
             (var combined)
             (var left_sb)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, right_sb);")
-          (call_stmt sb_append
+          (comment "append(combined, right_sb);")
+          (call_stmt append
             (var combined)
             (var right_sb)
           )
@@ -5322,12 +5322,12 @@
             (var combined)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "left_sb = combined;")
@@ -5336,13 +5336,13 @@
           )
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -5365,10 +5365,10 @@
       (type void)
     )
     (block
-      (comment "var left_sb: StringBuffer = sb_new();")
+      (comment "var left_sb: StringBuffer = StringBuffer_new();")
       (var_decl left_sb
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "pars_logic_and(src, tok, left_sb);")
       (call_stmt pars_logic_and
@@ -5388,10 +5388,10 @@
             (var src)
             (var tok)
           )
-          (comment "var right_sb: StringBuffer = sb_new();")
+          (comment "var right_sb: StringBuffer = StringBuffer_new();")
           (var_decl right_sb
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "pars_logic_and(src, tok, right_sb);")
           (call_stmt pars_logic_and
@@ -5399,10 +5399,10 @@
             (var tok)
             (var right_sb)
           )
-          (comment "var combined: StringBuffer = sb_new();")
+          (comment "var combined: StringBuffer = StringBuffer_new();")
           (var_decl combined
             (type StringBuffer)
-            (call sb_new)
+            (call StringBuffer_new)
           )
           (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"||\"); emit_char(combined, 10u8);")
           (call_stmt emit_char
@@ -5429,18 +5429,18 @@
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
-          (call_stmt sb_append
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
+          (call_stmt append
             (var combined)
             (var left_sb)
           )
-          (comment "sb_append(combined, left_sb); emit_char(combined, 10u8);")
+          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
           )
-          (comment "sb_append(combined, right_sb);")
-          (call_stmt sb_append
+          (comment "append(combined, right_sb);")
+          (call_stmt append
             (var combined)
             (var right_sb)
           )
@@ -5449,12 +5449,12 @@
             (var combined)
             (int:u8 41)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var left_sb)
           )
-          (comment "sb_delete(left_sb); sb_delete(right_sb);")
-          (call_stmt sb_delete
+          (comment "destroy(left_sb); destroy(right_sb);")
+          (call_stmt destroy
             (var right_sb)
           )
           (comment "left_sb = combined;")
@@ -5463,13 +5463,13 @@
           )
         )
       )
-      (comment "sb_append(sb, left_sb);")
-      (call_stmt sb_append
+      (comment "append(sb, left_sb);")
+      (call_stmt append
         (var sb)
         (var left_sb)
       )
-      (comment "sb_delete(left_sb);")
-      (call_stmt sb_delete
+      (comment "destroy(left_sb);")
+      (call_stmt destroy
         (var left_sb)
       )
       (comment "return;")
@@ -6750,17 +6750,17 @@
           )
         )
         (block
-          (comment "if sb_get(src, pos) == 10u8 { cur_line = cur_line + 1; }")
+          (comment "if char_at(src, pos) == 10u8 { cur_line = cur_line + 1; }")
           (if
             (binop ==
-              (call sb_get
+              (call char_at
                 (var src)
                 (var pos)
               )
               (int:u8 10)
             )
             (block
-              (comment "if sb_get(src, pos) == 10u8 { cur_line = cur_line + 1; }")
+              (comment "if char_at(src, pos) == 10u8 { cur_line = cur_line + 1; }")
               (assign cur_line
                 (binop +
                   (var cur_line)
@@ -6778,7 +6778,7 @@
           )
         )
       )
-      (comment "while pos < g_len && (sb_get(src, pos) == ' ' || sb_get(src, pos) == 9u8) {")
+      (comment "while pos < g_len && (char_at(src, pos) == ' ' || char_at(src, pos) == 9u8) {")
       (while
         (binop &&
           (binop <
@@ -6787,14 +6787,14 @@
           )
           (binop ||
             (binop ==
-              (call sb_get
+              (call char_at
                 (var src)
                 (var pos)
               )
               (int:u8 32)
             )
             (binop ==
-              (call sb_get
+              (call char_at
                 (var src)
                 (var pos)
               )
@@ -6823,10 +6823,10 @@
           (return)
         )
       )
-      (comment "var first: u8 = sb_get(src, pos);")
+      (comment "var first: u8 = char_at(src, pos);")
       (var_decl first
         (type u8)
-        (call sb_get
+        (call char_at
           (var src)
           (var pos)
         )
@@ -6868,7 +6868,7 @@
         (var sb)
         (int:u8 34)
       )
-      (comment "while pos < g_len && sb_get(src, pos) != 10u8 && sb_get(src, pos) != 13u8 {")
+      (comment "while pos < g_len && char_at(src, pos) != 10u8 && char_at(src, pos) != 13u8 {")
       (while
         (binop &&
           (binop &&
@@ -6877,7 +6877,7 @@
               (var g_len)
             )
             (binop !=
-              (call sb_get
+              (call char_at
                 (var src)
                 (var pos)
               )
@@ -6885,7 +6885,7 @@
             )
           )
           (binop !=
-            (call sb_get
+            (call char_at
               (var src)
               (var pos)
             )
@@ -6893,10 +6893,10 @@
           )
         )
         (block
-          (comment "var ch: u8 = sb_get(src, pos);")
+          (comment "var ch: u8 = char_at(src, pos);")
           (var_decl ch
             (type u8)
-            (call sb_get
+            (call char_at
               (var src)
               (var pos)
             )
@@ -12129,10 +12129,10 @@
       (type i32)
     )
     (block
-      (comment "var src_buf: StringBuffer = sb_new();")
+      (comment "var src_buf: StringBuffer = StringBuffer_new();")
       (var_decl src_buf
         (type StringBuffer)
-        (call sb_new)
+        (call StringBuffer_new)
       )
       (comment "var tok_buf: U8Array = U8Array(4096);    // token string buffer")
       (var_decl tok_buf
@@ -12141,10 +12141,10 @@
           (int 4096)
         )
       )
-      (comment "var sb: StringBuffer = sb_new_output(1);")
+      (comment "var sb: StringBuffer = StringBuffer_new(1);")
       (var_decl sb
         (type StringBuffer)
-        (call sb_new_output
+        (call StringBuffer_new
           (int 1)
         )
       )
@@ -12244,21 +12244,21 @@
         (var tok_buf)
         (var sb)
       )
-      (comment "sb_write(sb, 1);")
-      (call_stmt sb_write
+      (comment "write(sb, 1);")
+      (call_stmt write
         (var sb)
         (int 1)
       )
-      (comment "sb_delete(src_buf);")
-      (call_stmt sb_delete
+      (comment "destroy(src_buf);")
+      (call_stmt destroy
         (var src_buf)
       )
       (comment "delete(tok_buf);")
       (call_stmt delete
         (var tok_buf)
       )
-      (comment "sb_delete(sb);")
-      (call_stmt sb_delete
+      (comment "destroy(sb);")
+      (call_stmt destroy
         (var sb)
       )
       (comment "return 0;")

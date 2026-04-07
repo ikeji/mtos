@@ -3285,7 +3285,7 @@ src_char__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3480,7 +3480,7 @@ next_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3769,7 +3769,7 @@ skip_ws_and_comments__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3912,7 +3912,7 @@ skip_ws_and_comments__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3968,7 +3968,7 @@ skip_ws_and_comments__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4127,7 +4127,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4179,7 +4179,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4283,7 +4283,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4385,7 +4385,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4430,7 +4430,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4501,7 +4501,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4559,7 +4559,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4663,7 +4663,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4796,7 +4796,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4834,7 +4834,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -4921,7 +4921,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5279,7 +5279,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5366,7 +5366,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5653,7 +5653,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5821,7 +5821,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -5937,7 +5937,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6293,7 +6293,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6409,7 +6409,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6525,7 +6525,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6641,7 +6641,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6757,7 +6757,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6873,7 +6873,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -6989,7 +6989,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7075,7 +7075,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7191,7 +7191,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7277,7 +7277,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7393,7 +7393,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7479,7 +7479,7 @@ lex_tok__StringBuffer__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9397,7 +9397,7 @@ pars_postfix__StringBuffer__U8Array__StringBuffer:
     sw   a2, -20(s0)
     sw   zero, -24(s0)
     sw   zero, -28(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9452,7 +9452,7 @@ pars_postfix__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -9505,7 +9505,7 @@ pars_postfix__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9561,7 +9561,7 @@ pars_postfix__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9582,7 +9582,7 @@ pars_postfix__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9591,7 +9591,7 @@ pars_postfix__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9927,7 +9927,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     sw   zero, -28(s0)
     sw   zero, -32(s0)
     sw   zero, -36(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10049,7 +10049,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10072,7 +10072,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10151,7 +10151,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10177,7 +10177,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10199,7 +10199,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10208,7 +10208,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10229,7 +10229,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10238,7 +10238,7 @@ pars_mul__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10270,7 +10270,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     sw   zero, -28(s0)
     sw   zero, -32(s0)
     sw   zero, -36(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10362,7 +10362,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10385,7 +10385,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10464,7 +10464,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10490,7 +10490,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10512,7 +10512,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10521,7 +10521,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10542,7 +10542,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10551,7 +10551,7 @@ pars_add__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10583,7 +10583,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     sw   zero, -28(s0)
     sw   zero, -32(s0)
     sw   zero, -36(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10675,7 +10675,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10698,7 +10698,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10777,7 +10777,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10803,7 +10803,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10825,7 +10825,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10834,7 +10834,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10855,7 +10855,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10864,7 +10864,7 @@ pars_shift__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10895,7 +10895,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10950,7 +10950,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -10973,7 +10973,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11052,7 +11052,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11078,7 +11078,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11100,7 +11100,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11109,7 +11109,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11130,7 +11130,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11139,7 +11139,7 @@ pars_bitand__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11170,7 +11170,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11225,7 +11225,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11248,7 +11248,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11327,7 +11327,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11353,7 +11353,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11375,7 +11375,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11384,7 +11384,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11405,7 +11405,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11414,7 +11414,7 @@ pars_bitxor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11445,7 +11445,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11500,7 +11500,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11523,7 +11523,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11602,7 +11602,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11628,7 +11628,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11650,7 +11650,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11659,7 +11659,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11680,7 +11680,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11689,7 +11689,7 @@ pars_bitor__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11720,7 +11720,7 @@ pars_compare__StringBuffer__U8Array__StringBuffer:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -11925,7 +11925,7 @@ pars_compare__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12021,7 +12021,7 @@ pars_compare__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12047,7 +12047,7 @@ pars_compare__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12069,7 +12069,7 @@ pars_compare__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12078,7 +12078,7 @@ pars_compare__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12097,7 +12097,7 @@ pars_compare__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12106,7 +12106,7 @@ pars_compare__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12137,7 +12137,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12192,7 +12192,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12215,7 +12215,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12294,7 +12294,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12320,7 +12320,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12342,7 +12342,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12351,7 +12351,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12372,7 +12372,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12381,7 +12381,7 @@ pars_logic_and__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12412,7 +12412,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12467,7 +12467,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12490,7 +12490,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -12569,7 +12569,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12595,7 +12595,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12617,7 +12617,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12626,7 +12626,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12647,7 +12647,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_append__StringBuffer__StringBuffer
+    call append__StringBuffer__StringBuffer
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12656,7 +12656,7 @@ pars_expr__StringBuffer__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15689,7 +15689,7 @@ emit_stmt_comment__StringBuffer__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15763,7 +15763,7 @@ emit_stmt_comment__StringBuffer__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15788,7 +15788,7 @@ emit_stmt_comment__StringBuffer__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15877,7 +15877,7 @@ emit_stmt_comment__StringBuffer__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16011,7 +16011,7 @@ emit_stmt_comment__StringBuffer__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16048,7 +16048,7 @@ emit_stmt_comment__StringBuffer__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16085,7 +16085,7 @@ emit_stmt_comment__StringBuffer__i32__StringBuffer:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_get__StringBuffer__i32
+    call char_at__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28967,7 +28967,7 @@ main:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
-    call sb_new
+    call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
@@ -28988,7 +28988,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_new_output__i32
+    call StringBuffer_new__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -29208,7 +29208,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sb_write__StringBuffer__i32
+    call write__StringBuffer__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -29217,7 +29217,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -29235,7 +29235,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call sb_delete__StringBuffer
+    call destroy__StringBuffer
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

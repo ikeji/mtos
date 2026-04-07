@@ -7,24 +7,24 @@ struct StringBuffer {
 }
 
 // Create a growable StringBuffer with initial capacity 128.
-export fn sb_new() -> StringBuffer {
+export fn StringBuffer_new() -> StringBuffer {
     return StringBuffer(U8Array(128), 0, 0 - 1);
 }
 
 // Create a streaming StringBuffer that flushes to fd when full.
-export fn sb_new_output(out_fd: i32) -> StringBuffer {
+export fn StringBuffer_new(out_fd: i32) -> StringBuffer {
     return StringBuffer(U8Array(1024), 0, out_fd);
 }
 
 // Free a StringBuffer and its underlying byte buffer.
-export fn sb_delete(sb: StringBuffer) -> void {
+export fn destroy(sb: StringBuffer) -> void {
     delete(buf(sb));
     delete(sb);
     return;
 }
 
 // Grow the buffer by doubling its capacity.
-fn sb_grow(sb: StringBuffer) -> void {
+fn grow(sb: StringBuffer) -> void {
     var old_buf: U8Array = buf(sb);
     var old_cap: i32 = len(old_buf);
     var new_cap: i32 = old_cap * 2;
@@ -48,7 +48,7 @@ export fn emit_char(sb: StringBuffer, c: u8) -> void {
             sys_write(fd(sb), buf(sb), pos(sb));
             pos(sb, 0);
         } else {
-            sb_grow(sb);
+            grow(sb);
         }
     }
     set(buf(sb), pos(sb), c);
@@ -126,7 +126,7 @@ export fn emit_indent(sb: StringBuffer, level: i32) -> void {
 }
 
 // Append all bytes from src into dst.
-export fn sb_append(dst: StringBuffer, src: StringBuffer) -> void {
+export fn append(dst: StringBuffer, src: StringBuffer) -> void {
     var n: i32 = pos(src);
     var i: i32 = 0;
     while i < n {
@@ -137,17 +137,17 @@ export fn sb_append(dst: StringBuffer, src: StringBuffer) -> void {
 }
 
 // Return the current length (number of bytes written).
-export fn sb_len(sb: StringBuffer) -> i32 {
+export fn length(sb: StringBuffer) -> i32 {
     return pos(sb);
 }
 
 // Return the byte at the given index.
-export fn sb_get(sb: StringBuffer, idx: i32) -> u8 {
+export fn char_at(sb: StringBuffer, idx: i32) -> u8 {
     return get(buf(sb), idx);
 }
 
 // Write the buffer contents to the given file descriptor.
-export fn sb_write(sb: StringBuffer, fd: i32) -> void {
+export fn write(sb: StringBuffer, fd: i32) -> void {
     sys_write(fd, buf(sb), pos(sb));
     return;
 }
