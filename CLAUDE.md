@@ -17,7 +17,7 @@ compiler/   自作TinyC製の自己ホスト型コンパイラ
   codegen.tc    コード生成（型付きAST→バイトコード）
   bc2asm.tc     アセンブラ（バイトコード→RISC-V asm）
   bcrun.tc      バイトコードインタープリタ
-  ob.tc         output buffer ライブラリ（parse.tc から import）
+  string_buffer.tc  伸長バッファライブラリ（parse.tc から import）
 tests/      テストスイート
   golden/         C実装の基準出力（.ast .bc .s .out .exit）
   golden/tc/      compiler/コンパイラソース自体の基準出力
