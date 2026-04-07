@@ -4,25 +4,21 @@
 
 ```
 make test
-  └── tests/run_tests.sh          ← メインテストランナー
-        ├── (直接テスト: unit/pipeline/bc2asm/tc_run_all)
-        └── tests/run_golden_tests.sh   ← Golden テストスイート
-              ├── tests/run_example_tests.sh   ← サンプル .tc の Golden
-              ├── tests/run_compiler_tests.sh  ← compiler/ ソースの Golden
-              ├── tests/run_gen3_tests.sh      ← Gen2==Gen3 自己ホスト検証
-              └── tests/run_import_tests.sh    ← import/export テスト
+  └── tests/test_all.sh              ← メインエントリポイント
+        ├── tests/test_unit.sh             ← 単体テスト (parse/typecheck/codegen/interp/bcrun/rv32)
+        ├── tests/test_pipeline.sh         ← 自己ホスト版パイプラインテスト
+        ├── tests/test_consistency.sh      ← tc_run_all 全メソッド一致テスト
+        ├── tests/test_golden_examples.sh  ← サンプル .tc の Golden テスト
+        ├── tests/test_golden_compiler.sh  ← compiler/ ソースの Golden テスト
+        ├── tests/test_gen3.sh             ← Gen2==Gen3 自己ホスト検証
+        └── tests/test_import.sh           ← import/export テスト
 
 make update-golden
-  └── tests/update_golden.sh      ← Golden ファイル再生成
-
-(ユーザー直接実行)
-  tc_run.sh        ← .tc ファイルを指定メソッドで実行
-  tc_run_all.sh    ← 全メソッドで実行して出力を比較
-  tc_build.sh      ← 複数 .tc ファイルのコンパイル＋リンク
+  └── tests/update_golden.sh         ← Golden ファイル再生成
 ```
 
-`tests/compile_tc.sh` は共通ライブラリ（`source` で読み込み）。
-`compile_tc_to_bc` 関数を提供し、import を解決して BC をマージする。
+`tests/test_common.sh` は共通ライブラリ（`source` で読み込み）。
+ツールパス、カウンタ、report 関数、`compile_tc_to_bc`、Gen2 ツールビルド等を提供。
 
 ---
 
@@ -48,34 +44,23 @@ make update-golden
 
 ### テストスクリプト（tests/）
 
-| スクリプト | 説明 | 呼ばれ方 |
-|-----------|------|---------|
-| `run_tests.sh` | メインテストランナー。単体テスト + golden テストを実行 | `make test` |
-| `run_golden_tests.sh` | 4つの golden テストサブスイートを束ねるラッパー | `run_tests.sh` から |
-| `run_example_tests.sh` | サンプル .tc ファイルの golden テスト（Gen1 vs Gen2） | `run_golden_tests.sh` から |
-| `run_compiler_tests.sh` | compiler/ ソース自体の golden テスト（Gen1 vs Gen2）。RISC-V toolchain があれば rv32 ネイティブ実行で高速化 | `run_golden_tests.sh` から |
-| `run_gen3_tests.sh` | Gen2 == Gen3 の自己ホスト検証（RISC-V qemu）。ピークメモリも表示 | `run_golden_tests.sh` から |
-| `run_import_tests.sh` | import/export 機能のテスト | `run_golden_tests.sh` から |
-| `update_golden.sh` | Golden ファイル（.ast, .bc, .s, .out, .exit）を再生成。RISC-V toolchain があれば rv32 ネイティブ実行で高速化 | `make update-golden` |
-| `compile_tc.sh` | 共通ライブラリ。`compile_tc_to_bc` 関数を提供 | `source` で読み込み |
+| スクリプト | 説明 |
+|-----------|------|
+| `test_all.sh` | 全7スイートを順に実行し、結果を集計するエントリポイント |
+| `test_common.sh` | 共通ライブラリ。パス定義、カウンタ、report 関数、Gen2 ツールビルド、`compile_tc_to_bc` |
+| `test_unit.sh` | 単体テスト: parse/typecheck/codegen 出力チェック、interp/bcrun/rv32 実行テスト |
+| `test_pipeline.sh` | 自己ホスト版コンパイラでのコンパイル＋実行テスト |
+| `test_consistency.sh` | tc_run_all による全メソッドの出力一致テスト |
+| `test_golden_examples.sh` | サンプル .tc ファイルの Golden テスト（Gen1 vs Gen2） |
+| `test_golden_compiler.sh` | compiler/ ソース自体の Golden テスト。rv32 ネイティブ実行で高速化 |
+| `test_gen3.sh` | Gen2 == Gen3 自己ホスト検証（RISC-V qemu）。ピークメモリも表示 |
+| `test_import.sh` | import/export 機能のテスト |
+| `update_golden.sh` | Golden ファイル再生成。rv32 ネイティブ実行で高速化 |
 
-### run_tests.sh の内部構成
+### test_common.sh の提供する機能
 
-`run_tests.sh` は以下を順に実行:
-
-1. **単体テスト** — parse/typecheck/codegen の基本出力チェック
-2. **実行テスト** — interp/bcrun/rv32 でのサンプルプログラム実行
-3. **パイプラインテスト** — 自己ホスト版コンパイラでのコンパイル＋実行
-4. **bc2asm.tc テスト** — 自己ホスト版 bc2asm でのアセンブリ生成＋実行
-5. **tc_run_all 整合性テスト** — 全メソッドの出力一致確認
-6. **Golden テスト** — `run_golden_tests.sh` 経由で全サブスイート実行
-
-### compile_tc.sh の仕組み
-
-`compile_tc_to_bc <file.tc>` は以下を行う:
-
-1. .tc ファイルから `import "xxx.tc"` を抽出
-2. 各 import ファイルを `$CODEGEN` で BC に変換
-3. メインファイルも BC に変換
-4. 全 BC から `.bc`/`.endbc` ヘッダを除去してマージ
-5. 末尾に `.endbc` を付加して出力
+- **ツールパス**: PARSE, CODEGEN, BCRUN, BC2ASM, INTERP, RISCV_CC, QEMU 等
+- **カウンタ・report**: PASS/FAIL, `report_pass`, `report_fail_diff`, `report_fail_msg`, `check_output`, `check_contains`, `print_results`
+- **compile_tc_to_bc**: import を解決して BC をマージ
+- **Gen2 ツール**: `ensure_gen2_tools` (RISC-V ネイティブビルド), `run_parse_tc`/`run_typecheck_tc`/`run_codegen_tc`/`run_bc2asm_tc` (native or bcrun fallback)
+- **共通データ**: `EXAMPLE_FILES`, `TC_FILES`, `get_stdin`, `get_tc_exec_input_file`
