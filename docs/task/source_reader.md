@@ -24,8 +24,7 @@ struct SourceReader {
     buf_pos: i32,      // buf 内の現在位置
     buf_len: i32,      // buf 内の有効バイト数
     eof: i32,          // EOF に達したか (0 or 1)
-    line_buf: U8Array, // 現在の行テキスト (最大行長分、grow 可能)
-    line_pos: i32,     // line_buf 内の書き込み位置
+    line: StringBuffer, // 現在の行テキスト（StringBuffer の grow に任せる）
     line_num: i32      // 現在の行番号 (1-origin)
 }
 ```
@@ -48,18 +47,18 @@ fn current_line(r: SourceReader, sb: StringBuffer) -> void
   buf_pos >= buf_len なら sys_read で 4KB 読み込み。
 - `next` が改行 (0x0A) を返すとき:
   - `line_num` をインクリメント
-  - `line_buf` をリセット（line_pos = 0）
+  - `pos(line(r), 0)` で StringBuffer をリセット（メモリ解放不要）
 - `next` が改行以外を返すとき:
-  - `line_buf[line_pos++] = c` で現在行のテキストを蓄積
-  - line_buf が溢れたら grow（StringBuffer と同じダブリング）
-- `current_line`: line_buf の内容を sb に emit
+  - `emit_char(line(r), c)` で現在行のテキストを蓄積
+  - StringBuffer が自動で grow を管理
+- `current_line`: `line(r)` の内容を sb に emit
 
 ### メモリ
 
 | 項目 | 現在 | 変更後 |
 |------|------|--------|
 | ソースバッファ | 124B → grow → 最大 64KB | 4KB 固定 (読み込みバッファ) |
-| 行バッファ | なし | 124B → grow（最長行分、通常数百バイト） |
+| 行バッファ | なし | StringBuffer (124B 初期、最長行分まで grow) |
 | read_tmp | 4KB | 不要（buf が兼ねる） |
 | tok_buf | 4KB | そのまま（トークン用バッファ） |
 
