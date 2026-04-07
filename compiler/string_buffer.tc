@@ -6,9 +6,10 @@ struct StringBuffer {
     fd: i32
 }
 
-// Create a growable StringBuffer with initial capacity 128.
+// Create a growable StringBuffer with initial capacity 124.
+// (124 + 4 byte count prefix = 128, fits in 128B pool bucket)
 export fn StringBuffer_new() -> StringBuffer {
-    return StringBuffer(U8Array(128), 0, 0 - 1);
+    return StringBuffer(U8Array(124), 0, 0 - 1);
 }
 
 // Create a streaming StringBuffer that flushes to fd when full.

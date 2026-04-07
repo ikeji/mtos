@@ -107,7 +107,7 @@
 .endfn
 
 .fn StringBuffer_new StringBuffer
-  push_int 128
+  push_int 124
   call U8Array i32
   push_int 0
   push_int 0
