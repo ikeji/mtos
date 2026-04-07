@@ -9,21 +9,18 @@ __tc_strdata2:
     .align 4
 __tc_strobj0:
     .word 1
-    .word 0
     .word 8
     .word 1
     .word __tc_strdata0
     .align 4
 __tc_strobj1:
     .word 1
-    .word 0
     .word 4
     .word 1
     .word __tc_strdata1
     .align 4
 __tc_strobj2:
     .word 1
-    .word 0
     .word 4
     .word 1
     .word __tc_strdata2

@@ -151,10 +151,9 @@ static void pool_free_blk(void *ptr) {
 
 typedef struct {
     int      kind;
-    int      size;
-    int      len;
+    int      count;      /* element count (arrays) or byte length (strings) */
     int      is_literal;
-    void    *data;     /* int32_t* for arrays, uint8_t* for strings */
+    void    *data;
 } HeapObj;
 
 static HeapObj *new_obj(int kind) {
@@ -182,7 +181,7 @@ void print_bool__bool(int32_t v) {
 
 void print_str__String(HeapObj *s) {
     if (s && s->kind == OBJ_STRING && s->data)
-        do_write(1, (char*)s->data, s->len);
+        do_write(1, (char*)s->data, s->count);
     do_write(1, "\n", 1);
 }
 
@@ -191,7 +190,7 @@ void print_str__String(HeapObj *s) {
 /* Typed array constructor: allocates sz * elem_bytes for the data buffer. */
 static HeapObj *new_typed_array(int sz, int elem_bytes) {
     HeapObj *o = new_obj(OBJ_ARRAY);
-    o->size = sz;
+    o->count = sz;
     o->data = pool_alloc(sz > 0 ? sz * elem_bytes : 4);
     return o;
 }
@@ -208,7 +207,7 @@ HeapObj *StringArray__i32(int32_t sz) { return new_typed_array(sz, 4); } /* ptrs
 /* len — all array/string types share the same implementation */
 static int32_t len_impl(HeapObj *o) {
     if (!o) return 0;
-    return o->kind == OBJ_ARRAY ? o->size : o->len;
+    return o->count;
 }
 #define LEN_ALIAS(T) int32_t len__##T(HeapObj *o) { return len_impl(o); }
 LEN_ALIAS(U8Array)   LEN_ALIAS(U16Array)  LEN_ALIAS(U32Array)
@@ -220,7 +219,7 @@ static void get_null_check(HeapObj *o) {
     if (!o) { do_write(2, "get: null\n", 10); __syscall1(SYS_exit, 1); }
 }
 static void get_bounds_check(HeapObj *o, int32_t idx) {
-    if (idx < 0 || idx >= o->size) {
+    if (idx < 0 || idx >= o->count) {
         do_write(2, "get: out of bounds\n", 19); __syscall1(SYS_exit, 1);
     }
 }
@@ -234,13 +233,13 @@ int32_t get__I32Array__i32(HeapObj *o, int32_t i) { get_null_check(o); get_bound
 int32_t get__StringArray__i32(HeapObj *o, int32_t i) { get_null_check(o); get_bounds_check(o,i); return ((int32_t *)o->data)[i]; }
 int32_t get__String__i32(HeapObj *o, int32_t i) {
     get_null_check(o);
-    if (i < 0 || i >= o->len) return 0;
+    if (i < 0 || i >= o->count) return 0;
     return ((uint8_t*)o->data)[i];
 }
 
 /* set — typed per element size */
 static void set_bounds_check(HeapObj *o, int32_t idx) {
-    if (!o || idx < 0 || idx >= o->size) {
+    if (!o || idx < 0 || idx >= o->count) {
         do_write(2, "set: out of bounds\n", 19); __syscall1(SYS_exit, 1);
     }
 }
@@ -272,37 +271,37 @@ void heap_reset__i32(int32_t mark) { (void)mark; }
 /* ===== String operations ===== */
 
 HeapObj *append__String__u8(HeapObj *s, int32_t c) {
-    int sl = s ? s->len : 0;
+    int sl = s ? s->count : 0;
     uint8_t *sb = s ? (uint8_t*)s->data : 0;
     HeapObj *ns = new_obj(OBJ_STRING);
-    ns->len = sl + 1;
-    uint8_t *nb = pool_alloc(ns->len + 1);
+    ns->count = sl + 1;
+    uint8_t *nb = pool_alloc(ns->count + 1);
     for (int i = 0; i < sl; i++) nb[i] = sb[i];
     nb[sl] = (uint8_t)c;
-    nb[ns->len] = 0;
+    nb[ns->count] = 0;
     ns->data = nb;
     return ns;
 }
 
 HeapObj *append__String__String(HeapObj *s, HeapObj *t) {
-    int sl = s ? s->len : 0, tl = t ? t->len : 0;
+    int sl = s ? s->count : 0, tl = t ? t->count : 0;
     uint8_t *sb = s ? (uint8_t*)s->data : 0;
     uint8_t *tb = t ? (uint8_t*)t->data : 0;
     HeapObj *ns = new_obj(OBJ_STRING);
-    ns->len = sl + tl;
-    uint8_t *nb = pool_alloc(ns->len + 1);
+    ns->count = sl + tl;
+    uint8_t *nb = pool_alloc(ns->count + 1);
     for (int i = 0; i < sl; i++) nb[i] = sb[i];
     for (int i = 0; i < tl; i++) nb[sl+i] = tb[i];
-    nb[ns->len] = 0;
+    nb[ns->count] = 0;
     ns->data = nb;
     return ns;
 }
 
 int32_t equals__String__String(HeapObj *s, HeapObj *t) {
     if (!s || !t) return s == t;
-    if (s->len != t->len) return 0;
+    if (s->count != t->count) return 0;
     uint8_t *sb = (uint8_t*)s->data, *tb = (uint8_t*)t->data;
-    for (int i = 0; i < s->len; i++)
+    for (int i = 0; i < s->count; i++)
         if (sb[i] != tb[i]) return 0;
     return 1;
 }
@@ -321,7 +320,7 @@ void poke32__u32__u32(uint32_t a, uint32_t v) { *(uint32_t *)a = v; }
 /* sys_write/read: U8Array is now 1 byte per element — direct I/O. */
 int32_t sys_write__i32__U8Array__i32(int32_t fd, HeapObj *buf, int32_t len) {
     if (!buf || buf->kind != OBJ_ARRAY) return -1;
-    int n = len < buf->size ? len : buf->size;
+    int n = len < buf->count ? len : buf->count;
     uint8_t *p = (uint8_t*)buf->data;
     int total = 0;
     while (total < n) {
@@ -334,7 +333,7 @@ int32_t sys_write__i32__U8Array__i32(int32_t fd, HeapObj *buf, int32_t len) {
 
 int32_t sys_read__i32__U8Array__i32(int32_t fd, HeapObj *buf, int32_t len) {
     if (!buf || buf->kind != OBJ_ARRAY) return -1;
-    int n = len < buf->size ? len : buf->size;
+    int n = len < buf->count ? len : buf->count;
     uint8_t *p = (uint8_t*)buf->data;
     int total = 0;
     while (total < n) {

@@ -5,7 +5,6 @@ __tc_strdata0:
     .align 4
 __tc_strobj0:
     .word 1
-    .word 0
     .word 13
     .word 1
     .word __tc_strdata0

@@ -1025,10 +1025,7 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
             // "    .word 1\n"  (kind = OBJ_STRING)
             e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
             ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
-            // "    .word 0\n"  (size = 0)
-            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-            ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
-            // "    .word LEN\n"  (len)
+            // "    .word LEN\n"  (count = byte length)
             e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
             ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);
             // "    .word 1\n"  (is_literal = 1)

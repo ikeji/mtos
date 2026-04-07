@@ -9624,50 +9624,6 @@ __L499:
   load ob
   call ob_char u8 U8Array
   pop
-; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
-  push_int 32
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
-  push_int 48
-  load ob
-  call ob_char u8 U8Array
-  pop
-; ob_char(' ',ob);ob_char('0',ob);ob_char(10u8,ob);
-  push_int 10
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-  load ob
-  call e4 U8Array
-  pop
-; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-  push_int 46
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-  push_int 119
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-  push_int 111
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-  push_int 114
-  load ob
-  call ob_char u8 U8Array
-  pop
-; e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-  push_int 100
-  load ob
-  call ob_char u8 U8Array
-  pop
 ; ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);
   push_int 32
   load ob
