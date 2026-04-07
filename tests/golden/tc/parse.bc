@@ -5326,6 +5326,42 @@ __L393:
   return_void
 .endfn
 
+.fn buf_set_str U8Array i32 StringLiteral i32
+.param buf U8Array
+.param start i32
+.param s StringLiteral
+.local i i32
+.local n i32
+  push_int 0
+  store i
+  load s
+  call len StringLiteral
+  store n
+__L394:
+  load i
+  load n
+  lt
+  jump_ifnot __L395
+  load buf
+  load start
+  load i
+  add
+  load s
+  load i
+  call get StringLiteral i32
+  call set U8Array i32 u8
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L394
+__L395:
+  load n
+  return
+  return_void
+.endfn
+
 .fn type_tok_name U8Array U8Array i32 i32
 .param tok U8Array
 .param buf U8Array
@@ -5337,238 +5373,94 @@ __L393:
   load k
   load TK_U8
   eq
-  jump_ifnot __L394
-  load buf
-  load bstart
-  push_int 0
-  add
-  push_int 117
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 1
-  add
-  push_int 56
-  call set U8Array i32 u8
-  pop
-  push_int 2
-  return
-__L394:
-  load k
-  load TK_I8
-  eq
-  jump_ifnot __L395
-  load buf
-  load bstart
-  push_int 0
-  add
-  push_int 105
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 1
-  add
-  push_int 56
-  call set U8Array i32 u8
-  pop
-  push_int 2
-  return
-__L395:
-  load k
-  load TK_U16
-  eq
   jump_ifnot __L396
   load buf
   load bstart
-  push_int 0
-  add
-  push_int 117
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 1
-  add
-  push_int 49
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 2
-  add
-  push_int 54
-  call set U8Array i32 u8
-  pop
-  push_int 3
+  push_str 8
+  call buf_set_str U8Array i32 StringLiteral
   return
 __L396:
   load k
-  load TK_U32
+  load TK_I8
   eq
   jump_ifnot __L397
   load buf
   load bstart
-  push_int 0
-  add
-  push_int 117
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 1
-  add
-  push_int 51
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 2
-  add
-  push_int 50
-  call set U8Array i32 u8
-  pop
-  push_int 3
+  push_str 11
+  call buf_set_str U8Array i32 StringLiteral
   return
 __L397:
   load k
-  load TK_I16
+  load TK_U16
   eq
   jump_ifnot __L398
   load buf
   load bstart
-  push_int 0
-  add
-  push_int 105
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 1
-  add
-  push_int 49
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 2
-  add
-  push_int 54
-  call set U8Array i32 u8
-  pop
-  push_int 3
+  push_str 9
+  call buf_set_str U8Array i32 StringLiteral
   return
 __L398:
   load k
-  load TK_I32
+  load TK_U32
   eq
   jump_ifnot __L399
   load buf
   load bstart
-  push_int 0
-  add
-  push_int 105
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 1
-  add
-  push_int 51
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 2
-  add
-  push_int 50
-  call set U8Array i32 u8
-  pop
-  push_int 3
+  push_str 10
+  call buf_set_str U8Array i32 StringLiteral
   return
 __L399:
   load k
-  load TK_BOOL
+  load TK_I16
   eq
   jump_ifnot __L400
   load buf
   load bstart
-  push_int 0
-  add
-  push_int 98
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 1
-  add
-  push_int 111
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 2
-  add
-  push_int 111
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 3
-  add
-  push_int 108
-  call set U8Array i32 u8
-  pop
-  push_int 4
+  push_str 12
+  call buf_set_str U8Array i32 StringLiteral
   return
 __L400:
   load k
-  load TK_VOID
+  load TK_I32
   eq
   jump_ifnot __L401
   load buf
   load bstart
-  push_int 0
-  add
-  push_int 118
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 1
-  add
-  push_int 111
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 2
-  add
-  push_int 105
-  call set U8Array i32 u8
-  pop
-  load buf
-  load bstart
-  push_int 3
-  add
-  push_int 100
-  call set U8Array i32 u8
-  pop
-  push_int 4
+  push_str 13
+  call buf_set_str U8Array i32 StringLiteral
   return
 __L401:
   load k
-  load TK_IDENT
+  load TK_BOOL
   eq
   jump_ifnot __L402
+  load buf
+  load bstart
+  push_str 14
+  call buf_set_str U8Array i32 StringLiteral
+  return
+__L402:
+  load k
+  load TK_VOID
+  eq
+  jump_ifnot __L403
+  load buf
+  load bstart
+  push_str 15
+  call buf_set_str U8Array i32 StringLiteral
+  return
+__L403:
+  load k
+  load TK_IDENT
+  eq
+  jump_ifnot __L404
   push_int 0
   store i
-__L403:
+__L405:
   load i
   load g_tok_slen
   lt
-  jump_ifnot __L404
+  jump_ifnot __L406
   load buf
   load bstart
   load i
@@ -5582,11 +5474,11 @@ __L403:
   push_int 1
   add
   store i
-  jump __L403
-__L404:
+  jump __L405
+__L406:
   load g_tok_slen
   return
-__L402:
+__L404:
   push_int 0
   return
   return_void
@@ -5969,11 +5861,11 @@ __L402:
   pop
   push_int 0
   store i
-__L405:
+__L407:
   load i
   load nfields
   lt
-  jump_ifnot __L406
+  jump_ifnot __L408
   load sb
   load indent
   push_int 2
@@ -6042,8 +5934,8 @@ __L405:
   push_int 1
   add
   store i
-  jump __L405
-__L406:
+  jump __L407
+__L408:
   load sb
   load indent
   push_int 1
@@ -6290,11 +6182,11 @@ __L406:
   pop
   push_int 0
   store k
-__L407:
+__L409:
   load k
   load nfields
   lt
-  jump_ifnot __L408
+  jump_ifnot __L410
   load src
   load sline
   load sb
@@ -6503,8 +6395,8 @@ __L407:
   push_int 1
   add
   store k
-  jump __L407
-__L408:
+  jump __L409
+__L410:
   load src
   load sline
   load sb
@@ -7596,11 +7488,11 @@ __L408:
   store snlen
   push_int 0
   store ci
-__L409:
+__L411:
   load ci
   load snlen
   lt
-  jump_ifnot __L410
+  jump_ifnot __L412
   load sname_buf
   load ci
   load tok
@@ -7612,8 +7504,8 @@ __L409:
   push_int 1
   add
   store ci
-  jump __L409
-__L410:
+  jump __L411
+__L412:
   load TK_IDENT
   load src
   load tok
@@ -7668,45 +7560,45 @@ __L410:
   pop
   push_int 1
   store first
-__L411:
+__L413:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L413
+  jump_ifnot __L415
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L413
+  jump_ifnot __L415
   push_int 1
-  jump __L414
-__L413:
+  jump __L416
+__L415:
   push_int 0
-__L414:
-  jump_ifnot __L412
+__L416:
+  jump_ifnot __L414
   load first
   push_int 0
   eq
-  jump_ifnot __L415
+  jump_ifnot __L417
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L416
+  jump_ifnot __L418
   load src
   load tok
   call lex_tok StringBuffer U8Array
   pop
-__L416:
-__L415:
+__L418:
+__L417:
   push_int 0
   store first
   load g_tok
   load TK_RBRACE
   eq
-  jump_ifnot __L417
+  jump_ifnot __L419
   load g_tok
   store g_tok
-  jump __L418
-__L417:
+  jump __L420
+__L419:
   load g_tok_slen
   store fname_len
   load fname_len
@@ -7716,11 +7608,11 @@ __L417:
   store fname_buf
   push_int 0
   store j
-__L419:
+__L421:
   load j
   load fname_len
   lt
-  jump_ifnot __L420
+  jump_ifnot __L422
   load fname_buf
   load j
   load tok
@@ -7732,8 +7624,8 @@ __L419:
   push_int 1
   add
   store j
-  jump __L419
-__L420:
+  jump __L421
+__L422:
   load fnoffs
   load nfields
   load fnpos
@@ -7746,11 +7638,11 @@ __L420:
   pop
   push_int 0
   store j
-__L421:
+__L423:
   load j
   load fname_len
   lt
-  jump_ifnot __L422
+  jump_ifnot __L424
   load fnames
   load fnpos
   load j
@@ -7764,8 +7656,8 @@ __L421:
   push_int 1
   add
   store j
-  jump __L421
-__L422:
+  jump __L423
+__L424:
   load fnpos
   load fname_len
   add
@@ -7866,9 +7758,9 @@ __L422:
   push_int 1
   add
   store nfields
-__L418:
-  jump __L411
-__L412:
+__L420:
+  jump __L413
+__L414:
   load TK_RBRACE
   load src
   load tok
@@ -7904,11 +7796,11 @@ __L412:
   pop
   push_int 0
   store gi
-__L423:
+__L425:
   load gi
   load nfields
   lt
-  jump_ifnot __L424
+  jump_ifnot __L426
   load sb
   push_int 10
   call emit_char StringBuffer u8
@@ -7940,15 +7832,15 @@ __L423:
   push_int 1
   add
   store gi
-  jump __L423
-__L424:
+  jump __L425
+__L426:
   push_int 0
   store si
-__L425:
+__L427:
   load si
   load nfields
   lt
-  jump_ifnot __L426
+  jump_ifnot __L428
   load sb
   push_int 10
   call emit_char StringBuffer u8
@@ -7980,8 +7872,8 @@ __L425:
   push_int 1
   add
   store si
-  jump __L425
-__L426:
+  jump __L427
+__L428:
   load sb
   push_int 10
   call emit_char StringBuffer u8
@@ -8402,7 +8294,7 @@ __L426:
   load g_tok
   load TK_STR_LIT
   eq
-  jump_ifnot __L427
+  jump_ifnot __L429
   load sb
   load tok
   push_int 0
@@ -8413,7 +8305,7 @@ __L426:
   load tok
   call lex_tok StringBuffer U8Array
   pop
-__L427:
+__L429:
   load TK_SEMI
   load src
   load tok
@@ -8439,11 +8331,11 @@ __L427:
   push_str 54
   call emit_string StringBuffer StringLiteral
   pop
-__L428:
+__L430:
   load g_tok
   load TK_IMPORT
   eq
-  jump_ifnot __L429
+  jump_ifnot __L431
   load sb
   push_int 10
   call emit_char StringBuffer u8
@@ -8458,13 +8350,13 @@ __L428:
   push_int 1
   call pars_import StringBuffer U8Array StringBuffer i32
   pop
-  jump __L428
-__L429:
-__L430:
+  jump __L430
+__L431:
+__L432:
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L431
+  jump_ifnot __L433
   load sb
   push_int 10
   call emit_char StringBuffer u8
@@ -8476,7 +8368,7 @@ __L430:
   load g_tok
   load TK_EXPORT
   eq
-  jump_ifnot __L432
+  jump_ifnot __L434
   load src
   load tok
   call lex_tok StringBuffer U8Array
@@ -8488,12 +8380,12 @@ __L430:
   push_int 1
   call pars_fn_decl StringBuffer U8Array StringBuffer i32 i32
   pop
-  jump __L433
-__L432:
+  jump __L435
+__L434:
   load g_tok
   load TK_FN
   eq
-  jump_ifnot __L434
+  jump_ifnot __L436
   load src
   load tok
   load sb
@@ -8501,41 +8393,41 @@ __L432:
   push_int 0
   call pars_fn_decl StringBuffer U8Array StringBuffer i32 i32
   pop
-  jump __L435
-__L434:
-  load g_tok
-  load TK_STRUCT
-  eq
-  jump_ifnot __L436
-  load src
-  load tok
-  load sb
-  push_int 1
-  call pars_struct_decl StringBuffer U8Array StringBuffer i32
-  pop
   jump __L437
 __L436:
   load g_tok
-  load TK_VAR
+  load TK_STRUCT
   eq
   jump_ifnot __L438
   load src
   load tok
   load sb
   push_int 1
-  call pars_var_decl StringBuffer U8Array StringBuffer i32
+  call pars_struct_decl StringBuffer U8Array StringBuffer i32
   pop
   jump __L439
 __L438:
+  load g_tok
+  load TK_VAR
+  eq
+  jump_ifnot __L440
+  load src
+  load tok
+  load sb
+  push_int 1
+  call pars_var_decl StringBuffer U8Array StringBuffer i32
+  pop
+  jump __L441
+__L440:
   push_int 1
   call sys_exit i32
   pop
+__L441:
 __L439:
 __L437:
 __L435:
+  jump __L432
 __L433:
-  jump __L430
-__L431:
   load sb
   push_int 10
   call emit_char StringBuffer u8
@@ -8577,18 +8469,18 @@ __L431:
   push_int 4096
   call sys_read i32 U8Array i32
   store chunk
-__L440:
+__L442:
   load chunk
   push_int 0
   gt
-  jump_ifnot __L441
+  jump_ifnot __L443
   push_int 0
   store ci
-__L442:
+__L444:
   load ci
   load chunk
   lt
-  jump_ifnot __L443
+  jump_ifnot __L445
   load src_buf
   load read_tmp
   load ci
@@ -8603,15 +8495,15 @@ __L442:
   push_int 1
   add
   store ci
-  jump __L442
-__L443:
+  jump __L444
+__L445:
   push_int 0
   load read_tmp
   push_int 4096
   call sys_read i32 U8Array i32
   store chunk
-  jump __L440
-__L441:
+  jump __L442
+__L443:
   load read_tmp
   call delete U8Array
   pop

@@ -1173,16 +1173,23 @@ fn pars_fn_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i32, 
 // ===== Synthetic function generation for struct =====
 // Emit the name of the current type token into a buffer and return length.
 // Does not advance the lexer.
+fn buf_set_str(buf: U8Array, start: i32, s: StringLiteral) -> i32 {
+    var i: i32 = 0;
+    var n: i32 = len(s);
+    while i < n { set(buf, (start + i), get(s, i)); i = i + 1; }
+    return n;
+}
+
 fn type_tok_name(tok: U8Array, buf: U8Array, bstart: i32) -> i32 {
     var k: i32 = g_tok;
-    if k == TK_U8   { set(buf,(bstart+0),'u'); set(buf,(bstart+1),'8');  return 2; }
-    if k == TK_I8   { set(buf,(bstart+0),'i'); set(buf,(bstart+1),'8');  return 2; }
-    if k == TK_U16  { set(buf,(bstart+0),'u'); set(buf,(bstart+1),'1'); set(buf,(bstart+2),'6'); return 3; }
-    if k == TK_U32  { set(buf,(bstart+0),'u'); set(buf,(bstart+1),'3'); set(buf,(bstart+2),'2'); return 3; }
-    if k == TK_I16  { set(buf,(bstart+0),'i'); set(buf,(bstart+1),'1'); set(buf,(bstart+2),'6'); return 3; }
-    if k == TK_I32  { set(buf,(bstart+0),'i'); set(buf,(bstart+1),'3'); set(buf,(bstart+2),'2'); return 3; }
-    if k == TK_BOOL { set(buf,(bstart+0),'b'); set(buf,(bstart+1),'o'); set(buf,(bstart+2),'o'); set(buf,(bstart+3),'l'); return 4; }
-    if k == TK_VOID { set(buf,(bstart+0),'v'); set(buf,(bstart+1),'o'); set(buf,(bstart+2),'i'); set(buf,(bstart+3),'d'); return 4; }
+    if k == TK_U8   { return buf_set_str(buf, bstart, "u8"); }
+    if k == TK_I8   { return buf_set_str(buf, bstart, "i8"); }
+    if k == TK_U16  { return buf_set_str(buf, bstart, "u16"); }
+    if k == TK_U32  { return buf_set_str(buf, bstart, "u32"); }
+    if k == TK_I16  { return buf_set_str(buf, bstart, "i16"); }
+    if k == TK_I32  { return buf_set_str(buf, bstart, "i32"); }
+    if k == TK_BOOL { return buf_set_str(buf, bstart, "bool"); }
+    if k == TK_VOID { return buf_set_str(buf, bstart, "void"); }
     if k == TK_IDENT {
         var i: i32 = 0;
         while i < g_tok_slen { set(buf,(bstart+i),get(tok,i)); i = i + 1; }
