@@ -53,10 +53,10 @@ make update-golden
 | `run_tests.sh` | メインテストランナー。単体テスト + golden テストを実行 | `make test` |
 | `run_golden_tests.sh` | 4つの golden テストサブスイートを束ねるラッパー | `run_tests.sh` から |
 | `run_example_tests.sh` | サンプル .tc ファイルの golden テスト（Gen1 vs Gen2） | `run_golden_tests.sh` から |
-| `run_compiler_tests.sh` | compiler/ ソース自体の golden テスト（Gen1 vs Gen2） | `run_golden_tests.sh` から |
-| `run_gen3_tests.sh` | Gen2 == Gen3 の自己ホスト検証（RISC-V qemu） | `run_golden_tests.sh` から |
+| `run_compiler_tests.sh` | compiler/ ソース自体の golden テスト（Gen1 vs Gen2）。RISC-V toolchain があれば rv32 ネイティブ実行で高速化 | `run_golden_tests.sh` から |
+| `run_gen3_tests.sh` | Gen2 == Gen3 の自己ホスト検証（RISC-V qemu）。ピークメモリも表示 | `run_golden_tests.sh` から |
 | `run_import_tests.sh` | import/export 機能のテスト | `run_golden_tests.sh` から |
-| `update_golden.sh` | Golden ファイル（.ast, .bc, .s, .out, .exit）を C ツールで再生成 | `make update-golden` |
+| `update_golden.sh` | Golden ファイル（.ast, .bc, .s, .out, .exit）を再生成。RISC-V toolchain があれば rv32 ネイティブ実行で高速化 | `make update-golden` |
 | `compile_tc.sh` | 共通ライブラリ。`compile_tc_to_bc` 関数を提供 | `source` で読み込み |
 
 ### run_tests.sh の内部構成
