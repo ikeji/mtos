@@ -1,4 +1,4 @@
-# String 型の分離: StrLit (rodata) と String (heap)
+# String 型の分離: StringLiteral (rodata) と String (heap)
 
 ## 動機
 
@@ -10,7 +10,6 @@ HeapObj を経由して扱われている。しかし:
 - 動的文字列（`append` で構築）はヒープ HeapObj で、delete 可能
 - `is_literal` フラグのためだけに HeapObj に 4 バイトのフィールドがある
 - 型を分ければ `is_literal` フィールドが不要になり、HeapObj が 16B → 12B に
-- コンパイル時に静的 vs 動的が判別でき、不正な delete をコンパイルエラーにできる
 
 ## 設計
 
@@ -18,10 +17,10 @@ HeapObj を経由して扱われている。しかし:
 
 | 型名 | 表現 | 生成元 | delete |
 |------|------|--------|--------|
-| `StrLit` | .rodata 上の HeapObj（kind + count + data） | `push_str` （文字列リテラル） | 不可（コンパイルエラー） |
-| `String` | ヒープ HeapObj（kind + count + data） | `append` で構築 | 可 |
+| `StringLiteral` | .rodata 上の HeapObj | `push_str`（文字列リテラル） | no-op（安全に呼べる） |
+| `String` | ヒープ上の HeapObj | `append` で構築 | ヒープを free |
 
-両方とも同じ HeapObj レイアウトを共有（`is_literal` フィールド削除）:
+両方とも同じ HeapObj レイアウト（`is_literal` フィールド削除）:
 ```c
 typedef struct {
     int   kind;   // OBJ_ARRAY=0, OBJ_STRING=1
@@ -30,94 +29,122 @@ typedef struct {
 } HeapObj;  // 12 bytes
 ```
 
-### 型の互換性
+### 型の関係
 
-- `StrLit` は `String` を受け取る関数に暗黙変換可能（read-only アクセスのみ）
-- `String` は `StrLit` に変換不可
-- `get(StrLit, i32) -> u8` と `get(String, i32) -> u8` を両方登録
-- `len(StrLit) -> i32` と `len(String) -> i32` を両方登録
-- `append(StrLit, u8) -> String`, `append(StrLit, StrLit) -> String` 等
-- `equals(StrLit, StrLit) -> bool` 等の全組み合わせ
-- `print_str(StrLit)` と `print_str(String)` を両方登録
-- `delete(String)` のみ登録、`delete(StrLit)` は未登録（コンパイルエラー）
+- **暗黙変換なし** — `StringLiteral` と `String` は別々の型
+- 操作はそれぞれの型ごとにオーバーロードを用意
+- ユーザーが `fn foo(s: StringLiteral)` や `fn foo(s: String)` と
+  明示的に書き分ける
+
+### 組み込み関数の登録（全オーバーロード一覧）
+
+#### len
+- `len(StringLiteral) -> i32`
+- `len(String) -> i32`
+
+#### get
+- `get(StringLiteral, i32) -> u8`
+- `get(String, i32) -> u8`
+
+#### delete
+- `delete(StringLiteral) -> void` — **no-op**（.rodata は free しない）
+- `delete(String) -> void` — ヒープを free
+
+#### append（全 2×2 組み合わせ + char 版）
+- `append(StringLiteral, u8) -> String`
+- `append(StringLiteral, StringLiteral) -> String`
+- `append(StringLiteral, String) -> String`
+- `append(String, u8) -> String`
+- `append(String, StringLiteral) -> String`
+- `append(String, String) -> String`
+
+#### equals（全 2×2 組み合わせ）
+- `equals(StringLiteral, StringLiteral) -> bool`
+- `equals(StringLiteral, String) -> bool`
+- `equals(String, StringLiteral) -> bool`
+- `equals(String, String) -> bool`
+
+#### print
+- `print_str(StringLiteral) -> void`
+- `print_str(String) -> void`
 
 ### 変更箇所
 
 #### 1. typecheck（C 版 + 自己ホスト版）
 
-- `StrLit` 型を組み込み型として登録
-- `push_str` の結果型を `String` → `StrLit` に変更
-- `StrLit` 引数を `String` パラメータに渡す際の暗黙変換ルールを追加
-  - オーバーロード解決で `StrLit` を `String` として扱う
-  - または `StrLit` 用のオーバーロードを全て登録
-- 組み込み関数を StrLit 対応で登録:
-  - `len(StrLit) -> i32`
-  - `get(StrLit, i32) -> u8`
-  - `append(StrLit, u8) -> String`
-  - `append(StrLit, String) -> String`
-  - `append(StrLit, StrLit) -> String`
-  - `append(String, StrLit) -> String`
-  - `equals(StrLit, StrLit) -> bool`
-  - `equals(StrLit, String) -> bool`
-  - `equals(String, StrLit) -> bool`
-  - `print_str(StrLit) -> void`
+- `StringLiteral` 型を組み込み型として認識
+- `push_str` の結果型を `String` → `StringLiteral` に変更
+- 上記の全オーバーロードを登録
+- `StringArray` は変更なし（要素型は String のまま）
 
 #### 2. codegen（C 版 + 自己ホスト版）
 
-- `push_str` の型アノテーションを `String` → `StrLit` に変更
-  （BC に `push_str N` の型情報が付く場合）
+- `push_str` で値をスタックに積む際の型注釈を `StringLiteral` に変更
 
 #### 3. bc2asm（C 版 + 自己ホスト版）
 
 - .rodata 上の HeapObj を 3 word に変更（is_literal 削除）:
   ```asm
   __tc_strobj0:
-      .word 1            ; kind = OBJ_STRING
-      .word 5            ; count
-      .word __tc_strdata0 ; data
+      .word 1              ; kind = OBJ_STRING
+      .word 5              ; count
+      .word __tc_strdata0  ; data
   ```
 
 #### 4. runtime_syscall.c
 
 - HeapObj から `is_literal` フィールドを削除（12 バイトに）
-- `delete_impl`: `is_literal` チェック不要に。`StrLit` の delete は
-  コンパイル時に弾かれるため、ランタイムに到達しない
-- `StrLit` 版の組み込み関数を追加（マングル名）:
-  - `len__StrLit`, `get__StrLit__i32`
-  - `append__StrLit__u8`, `append__StrLit__String` 等
-  - `equals__StrLit__StrLit` 等
-  - `print_str__StrLit`
-  - 内部実装は String 版と共通
+- `delete__String` はヒープを free（現在の delete_impl）
+- `delete__StringLiteral` は no-op
+- StringLiteral 版の組み込み関数をマングル名で追加:
+  ```c
+  int32_t len__StringLiteral(HeapObj *o) { return len_impl(o); }
+  int32_t get__StringLiteral__i32(HeapObj *o, int32_t i) { ... }
+  HeapObj *append__StringLiteral__u8(HeapObj *s, int32_t c) { ... }
+  HeapObj *append__StringLiteral__StringLiteral(HeapObj *s, HeapObj *t) { ... }
+  HeapObj *append__StringLiteral__String(HeapObj *s, HeapObj *t) { ... }
+  HeapObj *append__String__StringLiteral(HeapObj *s, HeapObj *t) { ... }
+  int32_t equals__StringLiteral__StringLiteral(HeapObj *s, HeapObj *t) { ... }
+  int32_t equals__StringLiteral__String(HeapObj *s, HeapObj *t) { ... }
+  int32_t equals__String__StringLiteral(HeapObj *s, HeapObj *t) { ... }
+  void print_str__StringLiteral(HeapObj *s) { ... }
+  void delete__StringLiteral(HeapObj *o) { /* no-op */ }
+  ```
+  全て内部実装は String 版と共通（delete__StringLiteral のみ例外）。
 
 #### 5. bcrun / interp
 
-- `push_str` の値に StrLit タグを付ける（またはしない — bcrun/interp は
-  StrLit と String を区別せず同じ HeapObj で扱っても問題ない。delete は
-  bcrun では元々 no-op）
+- `push_str` の結果型を `StringLiteral` として記録
+- bcrun の `call_builtin` は base_name でディスパッチするため、
+  StringLiteral のオーバーロードは自動的に処理される
+- interp は型を区別しないので変更不要
 
 #### 6. parser（C 版 + 自己ホスト版）
 
-- `.tc` ソース中の `String` 型注釈はそのまま（ユーザーが `StrLit` を
-  明示する必要はない — リテラルは自動的に `StrLit` 型になる）
-- `fn foo(s: String)` は `StrLit` 引数も受け入れる
+- パーサー自体の変更なし
+- `.tc` ソースで `StringLiteral` 型を引数型として使えるようにする
+  （typecheck で型として認識されれば自動的に使える）
 
-### 段階的実装
+### 既存 .tc コードへの影響
 
-1. **Phase 1**: runtime_syscall.c で `is_literal` を削除、HeapObj を 12B に。
-   `delete_impl` は無条件 free。bc2asm の .rodata HeapObj を 3 word に。
-   - StrLit の delete 防止はまだコンパイル時チェックなし
-   - delete(StrLit) がランタイムに到達すると .rodata を free → bad free
-   - → pool_free_blk でアドレス範囲チェック済みなので安全に無視できる
-     （pool 外のポインタは何もしない設計に変更）
+- `fn tok_cmp(tok: U8Array, tlen: i32, target: String)` のような関数は
+  `target: StringLiteral` に変更が必要（リテラルを渡しているため）
+- または `StringLiteral` 版のオーバーロードを追加
+- `emit_string(sb: StringBuffer, s: String)` も同様
 
-2. **Phase 2**: typecheck で `StrLit` 型を導入。`push_str` を `StrLit` に。
-   暗黙変換ルールを追加。`delete(StrLit)` をコンパイルエラーに。
+### 実装順
 
-3. **Phase 3**: runtime にマングル名エイリアス追加（`len__StrLit` 等）。
+1. runtime_syscall.c: `is_literal` 削除、HeapObj 12B 化、
+   StringLiteral 版マングル名追加
+2. bc2asm.c / bc2asm.tc: .rodata HeapObj を 3 word に
+3. typecheck.c / typecheck.tc: StringLiteral 型登録、push_str 型変更、
+   オーバーロード登録
+4. codegen.c / codegen.tc: push_str 型注釈変更
+5. bcrun.c: push_str 結果型を StringLiteral に
+6. compiler/*.tc: 必要に応じて引数型を StringLiteral に変更
+7. golden ファイル更新
 
 ### メモリ改善
 
-HeapObj: 16B → **12B**。全 HeapObj（配列含む）が恩恵を受ける。
-ただし 12B は 16B pool バケットに入るため、pool 単位では変化なし
-（16B バケットのまま）。実際の改善は `.rodata` の静的 HeapObj が
-4 バイト小さくなること。
+HeapObj: 16B → **12B**。pool バケットは 16B のまま（12B が収まる最小バケット）。
+.rodata 上の静的 HeapObj は 4 word → 3 word (16B → 12B) に縮小。
