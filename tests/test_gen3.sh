@@ -52,10 +52,11 @@ for f in "${TC_FILES[@]}"; do
     fi
     rm -f "$actual"
 
-    # BC
+    # BC (using compile_tc_to_bc for import resolution)
+    bc=$(compile_tc_to_bc "$input")
     actual=$(mktemp)
     t0=$(time_ms)
-    "$CODEGEN" "$input" > "$actual" 2>/dev/null
+    printf '%s\n' "$bc" > "$actual"
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_bc" "$actual" > /dev/null; then
         report_pass "tc/$f (BC - Gen1 vs golden)" "$elapsed"
@@ -66,7 +67,6 @@ for f in "${TC_FILES[@]}"; do
 
     # ASM
     actual=$(mktemp)
-    bc=$("$CODEGEN" "$input" 2>/dev/null)
     t0=$(time_ms)
     printf '%s\n' "$bc" | "$BC2ASM" > "$actual" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
@@ -76,6 +76,27 @@ for f in "${TC_FILES[@]}"; do
         report_fail_diff "tc/$f (ASM - Gen1 vs golden)" "$golden_s" "$actual" "" "$elapsed"
     fi
     rm -f "$actual"
+
+    # Exec (bcrun with merged BC)
+    golden_out="$GOLDEN_DIR/tc/$base.out"
+    golden_exit="$GOLDEN_DIR/tc/$base.exit"
+    if [ -f "$golden_out" ] && [ -f "$golden_exit" ]; then
+        expected_exit=$(cat "$golden_exit")
+        exec_input_file=$(get_tc_exec_input_file "$f")
+        actual=$(mktemp)
+        t0=$(time_ms)
+        { printf '%s\n' "$bc"; cat "$exec_input_file"; } | "$BCRUN" > "$actual" 2>/dev/null
+        actual_exit=$?
+        elapsed=$(( $(time_ms) - t0 ))
+        if diff -u "$golden_out" "$actual" > /dev/null && [ "$actual_exit" -eq "$expected_exit" ]; then
+            report_pass "tc/$f (Exec - bcrun)" "$elapsed"
+        else
+            msg=""
+            [ "$actual_exit" -ne "$expected_exit" ] && msg="exit code mismatch: expected $expected_exit, got $actual_exit"
+            report_fail_diff "tc/$f (Exec - bcrun)" "$golden_out" "$actual" "$msg" "$elapsed"
+        fi
+        rm -f "$actual"
+    fi
 
     # === Gen2 AST (used as input for Gen2 BC) ===
     actual_gen2_ast=$(mktemp)

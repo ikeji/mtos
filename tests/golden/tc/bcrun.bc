@@ -1,4 +1,3 @@
-.bc
 ; globals
 .global OP_PUSH_INT i32 1
 .global OP_PUSH_STR i32 2

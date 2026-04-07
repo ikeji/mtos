@@ -1,4 +1,528 @@
-.bc
+.fn StringBuffer U8Array i32 i32 StringBuffer
+.param __a0 U8Array
+.param __a1 i32
+.param __a2 i32
+.local __p U32Array
+  push_int 3
+  call U32Array i32
+  store __p
+  load __p
+  push_int 0
+  load __a0
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 1
+  load __a1
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 2
+  load __a2
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  return
+  return_void
+.endfn
+
+.fn buf StringBuffer U8Array
+.param __p StringBuffer
+  load __p
+  push_int 0
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn pos StringBuffer i32
+.param __p StringBuffer
+  load __p
+  push_int 1
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn fd StringBuffer i32
+.param __p StringBuffer
+  load __p
+  push_int 2
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn buf StringBuffer U8Array void
+.param __p StringBuffer
+.param __v U8Array
+  load __p
+  push_int 0
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn pos StringBuffer i32 void
+.param __p StringBuffer
+.param __v i32
+  load __p
+  push_int 1
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn fd StringBuffer i32 void
+.param __p StringBuffer
+.param __v i32
+  load __p
+  push_int 2
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete StringBuffer void
+.param __p StringBuffer
+  load __p
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn StringBuffer_new StringBuffer
+  push_int 128
+  call U8Array i32
+  push_int 0
+  push_int 0
+  push_int 1
+  sub
+  call StringBuffer U8Array i32 i32
+  return
+  return_void
+.endfn
+
+.fn StringBuffer_new i32 StringBuffer
+.param out_fd i32
+  push_int 1024
+  call U8Array i32
+  push_int 0
+  load out_fd
+  call StringBuffer U8Array i32 i32
+  return
+  return_void
+.endfn
+
+.fn destroy StringBuffer void
+.param sb StringBuffer
+  load sb
+  call buf StringBuffer
+  call delete U8Array
+  pop
+  load sb
+  call delete StringBuffer
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn grow StringBuffer void
+.param sb StringBuffer
+.local old_buf U8Array
+.local old_cap i32
+.local new_cap i32
+.local new_buf U8Array
+.local i i32
+  load sb
+  call buf StringBuffer
+  store old_buf
+  load old_buf
+  call len U8Array
+  store old_cap
+  load old_cap
+  push_int 2
+  mul
+  store new_cap
+  load new_cap
+  call U8Array i32
+  store new_buf
+  push_int 0
+  store i
+__L0:
+  load i
+  load old_cap
+  lt
+  jump_ifnot __L1
+  load new_buf
+  load i
+  load old_buf
+  load i
+  call get U8Array i32
+  call set U8Array i32 u8
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L0
+__L1:
+  load sb
+  load new_buf
+  call buf StringBuffer U8Array
+  pop
+  load old_buf
+  call delete U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_char StringBuffer u8 void
+.param sb StringBuffer
+.param c u8
+  load sb
+  call pos StringBuffer
+  load sb
+  call buf StringBuffer
+  call len U8Array
+  ge
+  jump_ifnot __L2
+  load sb
+  call fd StringBuffer
+  push_int 0
+  ge
+  jump_ifnot __L3
+  load sb
+  call fd StringBuffer
+  load sb
+  call buf StringBuffer
+  load sb
+  call pos StringBuffer
+  call sys_write i32 U8Array i32
+  pop
+  load sb
+  push_int 0
+  call pos StringBuffer i32
+  pop
+  jump __L4
+__L3:
+  load sb
+  call grow StringBuffer
+  pop
+__L4:
+__L2:
+  load sb
+  call buf StringBuffer
+  load sb
+  call pos StringBuffer
+  load c
+  call set U8Array i32 u8
+  pop
+  load sb
+  load sb
+  call pos StringBuffer
+  push_int 1
+  add
+  call pos StringBuffer i32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_string StringBuffer StringLiteral void
+.param sb StringBuffer
+.param s StringLiteral
+.local i i32
+.local slen i32
+  push_int 0
+  store i
+  load s
+  call len StringLiteral
+  store slen
+__L5:
+  load i
+  load slen
+  lt
+  jump_ifnot __L6
+  load sb
+  load s
+  load i
+  call get StringLiteral i32
+  call emit_char StringBuffer u8
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L5
+__L6:
+  return_void
+  return_void
+.endfn
+
+.fn emit_string StringBuffer String void
+.param sb StringBuffer
+.param s String
+.local i i32
+.local slen i32
+  push_int 0
+  store i
+  load s
+  call len String
+  store slen
+__L7:
+  load i
+  load slen
+  lt
+  jump_ifnot __L8
+  load sb
+  load s
+  load i
+  call get String i32
+  call emit_char StringBuffer u8
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L7
+__L8:
+  return_void
+  return_void
+.endfn
+
+.fn emit_int StringBuffer i32 void
+.param sb StringBuffer
+.param val i32
+.local tmp U8Array
+.local dlen i32
+.local v i32
+.local i i32
+  load val
+  push_int 0
+  lt
+  jump_ifnot __L9
+  load sb
+  push_int 45
+  call emit_char StringBuffer u8
+  pop
+  push_int 0
+  load val
+  sub
+  store val
+__L9:
+  load val
+  push_int 0
+  eq
+  jump_ifnot __L10
+  load sb
+  push_int 48
+  call emit_char StringBuffer u8
+  pop
+  return_void
+__L10:
+  push_int 12
+  call U8Array i32
+  store tmp
+  push_int 0
+  store dlen
+  load val
+  store v
+__L11:
+  load v
+  push_int 0
+  gt
+  jump_ifnot __L12
+  load tmp
+  load dlen
+  push_int 48
+  load v
+  push_int 10
+  mod
+  add
+  cast u8
+  call set U8Array i32 u8
+  pop
+  load dlen
+  push_int 1
+  add
+  store dlen
+  load v
+  push_int 10
+  div
+  store v
+  jump __L11
+__L12:
+  load dlen
+  push_int 1
+  sub
+  store i
+__L13:
+  load i
+  push_int 0
+  ge
+  jump_ifnot __L14
+  load sb
+  load tmp
+  load i
+  call get U8Array i32
+  call emit_char StringBuffer u8
+  pop
+  load i
+  push_int 1
+  sub
+  store i
+  jump __L13
+__L14:
+  load tmp
+  call delete U8Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_n StringBuffer U8Array i32 i32 void
+.param sb StringBuffer
+.param src U8Array
+.param start i32
+.param n i32
+.local i i32
+  push_int 0
+  store i
+__L15:
+  load i
+  load n
+  lt
+  jump_ifnot __L16
+  load sb
+  load src
+  load start
+  load i
+  add
+  call get U8Array i32
+  call emit_char StringBuffer u8
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L15
+__L16:
+  return_void
+  return_void
+.endfn
+
+.fn emit_indent StringBuffer i32 void
+.param sb StringBuffer
+.param level i32
+.local spaces i32
+.local i i32
+  load level
+  push_int 2
+  mul
+  store spaces
+  push_int 0
+  store i
+__L17:
+  load i
+  load spaces
+  lt
+  jump_ifnot __L18
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L17
+__L18:
+  return_void
+  return_void
+.endfn
+
+.fn append StringBuffer StringBuffer void
+.param dst StringBuffer
+.param src StringBuffer
+.local n i32
+.local i i32
+  load src
+  call pos StringBuffer
+  store n
+  push_int 0
+  store i
+__L19:
+  load i
+  load n
+  lt
+  jump_ifnot __L20
+  load dst
+  load src
+  call buf StringBuffer
+  load i
+  call get U8Array i32
+  call emit_char StringBuffer u8
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L19
+__L20:
+  return_void
+  return_void
+.endfn
+
+.fn length StringBuffer i32
+.param sb StringBuffer
+  load sb
+  call pos StringBuffer
+  return
+  return_void
+.endfn
+
+.fn char_at StringBuffer i32 u8
+.param sb StringBuffer
+.param idx i32
+  load sb
+  call buf StringBuffer
+  load idx
+  call get U8Array i32
+  return
+  return_void
+.endfn
+
+.fn write StringBuffer i32 void
+.param sb StringBuffer
+.param fd i32
+  load fd
+  load sb
+  call buf StringBuffer
+  load sb
+  call pos StringBuffer
+  call sys_write i32 U8Array i32
+  pop
+  return_void
+  return_void
+.endfn
+
 ; string table
 .string 0 "    "
 .string 1 ", "

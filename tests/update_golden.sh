@@ -33,9 +33,13 @@ for f in "${TC_FILES[@]}"; do
     echo "Processing tc/$f..."
 
     "$PARSE" "$input" > "$GOLDEN_DIR/tc/$base.ast" 2>/dev/null
-    "$CODEGEN" "$input" > "$GOLDEN_DIR/tc/$base.bc" 2>/dev/null
-    bc=$(cat "$GOLDEN_DIR/tc/$base.bc")
+    bc=$(compile_tc_to_bc "$input")
+    printf '%s\n' "$bc" > "$GOLDEN_DIR/tc/$base.bc"
     printf '%s\n' "$bc" | "$BC2ASM" > "$GOLDEN_DIR/tc/$base.s" 2>/dev/null
+
+    exec_input=$(get_tc_exec_input_file "$f")
+    { printf '%s\n' "$bc"; cat "$exec_input"; } | "$BCRUN" > "$GOLDEN_DIR/tc/$base.out" 2>/dev/null
+    echo $? > "$GOLDEN_DIR/tc/$base.exit"
 done
 
 echo "Done."
