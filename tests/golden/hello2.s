@@ -1,11 +1,8 @@
     .section .rodata
-__tc_strdata0:
-    .string "Hello, World\n"
-
     .align 4
 __tc_strobj0:
     .word 13
-    .word __tc_strdata0
+    .string "Hello, World\n"
 
     .text
 

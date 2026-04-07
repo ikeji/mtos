@@ -945,43 +945,17 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
         while si<g_nstrings {
             var ss: i32=get(string_lits,(si*2+0));
             var sl: i32=get(string_lits,(si*2+1));
-            // "__tc_strdataN:\n"
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
-            emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'd');emit_char(ob, 'a');
-            emit_char(ob, 't');emit_char(ob, 'a');
+            // "    .align 4\n"
+            e4(ob);emit_string(ob, ".align 4");emit_char(ob, 10u8);
+            // "__tc_strobjN:\n"
+            emit_string(ob, "__tc_strobj");
             emit_int(ob, si); emit_char(ob, ':');emit_char(ob, 10u8);
-            // "    .string \"...\"\n"
-            e4(ob);
-            emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');
-            emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');
+            // "    .word LEN\n"  (count)
+            e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_char(ob, 10u8);
+            // "    .string \"...\"\n"  (data follows inline)
+            e4(ob);emit_string(ob, ".string ");
             emit_strdata(strtab,ss,sl,ob); emit_char(ob, 10u8);
             si=si+1;
-        }
-        emit_char(ob, 10u8);
-        // Static HeapObj for each string literal
-        var si2: i32=0;
-        while si2<g_nstrings {
-            var ss2: i32=get(string_lits,(si2*2+0));
-            var sl2: i32=get(string_lits,(si2*2+1));
-            // "    .align 4\n"
-            e4(ob);emit_char(ob, '.');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'i');
-            emit_char(ob, 'g');emit_char(ob, 'n');emit_char(ob, ' ');emit_char(ob, '4');emit_char(ob, 10u8);
-            // "__tc_strobjN:\n"
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
-            emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'b');
-            emit_char(ob, 'j');
-            emit_int(ob, si2); emit_char(ob, ':');emit_char(ob, 10u8);
-            // "    .word LEN\n"  (count = byte length)
-            e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
-            emit_char(ob, ' ');emit_int(ob, sl2);emit_char(ob, 10u8);
-            // "    .word __tc_strdataN\n"  (data)
-            e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
-            emit_char(ob, ' ');
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
-            emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'd');emit_char(ob, 'a');
-            emit_char(ob, 't');emit_char(ob, 'a');
-            emit_int(ob, si2);emit_char(ob, 10u8);
-            si2=si2+1;
         }
         emit_char(ob, 10u8);
     }

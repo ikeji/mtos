@@ -539,6 +539,10 @@ __L20:
 .string 12 "    lw   "
 .string 13 "    li   "
 .string 14 "    la   "
+.string 15 ".align 4"
+.string 16 "__tc_strobj"
+.string 17 ".word "
+.string 18 ".string "
 
 ; globals
 .global OP_PUSH_INT i32 1
@@ -7881,9 +7885,6 @@ __L424:
 .local si i32
 .local ss i32
 .local sl i32
-.local si2 i32
-.local ss2 i32
-.local sl2 i32
 .local gi i32
 .local nm_ss i32
 .local nm_sl i32
@@ -7988,52 +7989,19 @@ __L487:
   call get I32Array i32
   store sl
   load ob
-  push_int 95
+  call e4 StringBuffer
+  pop
+  load ob
+  push_str 15
+  call emit_string StringBuffer StringLiteral
+  pop
+  load ob
+  push_int 10
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
+  push_str 16
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load si
@@ -8051,36 +8019,23 @@ __L487:
   call e4 StringBuffer
   pop
   load ob
-  push_int 46
+  push_str 17
+  call emit_string StringBuffer StringLiteral
+  pop
+  load ob
+  load sl
+  call emit_int StringBuffer i32
+  pop
+  load ob
+  push_int 10
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 115
-  call emit_char StringBuffer u8
+  call e4 StringBuffer
   pop
   load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 18
+  call emit_string StringBuffer StringLiteral
   pop
   load strtab
   load ss
@@ -8102,257 +8057,11 @@ __L488:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  push_int 0
-  store si2
-__L489:
-  load si2
-  load g_nstrings
-  lt
-  jump_ifnot __L490
-  load string_lits
-  load si2
-  push_int 2
-  mul
-  push_int 0
-  add
-  call get I32Array i32
-  store ss2
-  load string_lits
-  load si2
-  push_int 2
-  mul
-  push_int 1
-  add
-  call get I32Array i32
-  store sl2
-  load ob
-  call e4 StringBuffer
-  pop
-  load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 52
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 98
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  load si2
-  call emit_int StringBuffer i32
-  pop
-  load ob
-  push_int 58
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  call e4 StringBuffer
-  pop
-  load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 119
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  load sl2
-  call emit_int StringBuffer i32
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  call e4 StringBuffer
-  pop
-  load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 119
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  load si2
-  call emit_int StringBuffer i32
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-  load si2
-  push_int 1
-  add
-  store si2
-  jump __L489
-__L490:
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
 __L486:
   load g_nglobals
   push_int 0
   gt
-  jump_ifnot __L491
+  jump_ifnot __L489
   load ob
   call e4 StringBuffer
   pop
@@ -8382,11 +8091,11 @@ __L486:
   pop
   push_int 0
   store gi
-__L492:
+__L490:
   load gi
   load g_nglobals
   lt
-  jump_ifnot __L493
+  jump_ifnot __L491
   load global_vars
   load gi
   push_int 4
@@ -8501,13 +8210,13 @@ __L492:
   push_int 1
   add
   store gi
-  jump __L492
-__L493:
+  jump __L490
+__L491:
   load ob
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L491:
+__L489:
   load ob
   call e4 StringBuffer
   pop
@@ -8541,11 +8250,11 @@ __L491:
   pop
   push_int 0
   store fi
-__L494:
+__L492:
   load fi
   load g_nfuncs
   lt
-  jump_ifnot __L495
+  jump_ifnot __L493
   load strtab
   load fns
   load params_pool
@@ -8560,8 +8269,8 @@ __L494:
   push_int 1
   add
   store fi
-  jump __L494
-__L495:
+  jump __L492
+__L493:
   return_void
   return_void
 .endfn
@@ -8622,21 +8331,21 @@ __L495:
   store chunk_buf
   push_int 0
   store rdone
-__L496:
+__L494:
   load rdone
   push_int 0
   eq
-  jump_ifnot __L498
+  jump_ifnot __L496
   load g_in_len
   push_int 524000
   lt
-  jump_ifnot __L498
+  jump_ifnot __L496
   push_int 1
-  jump __L499
-__L498:
+  jump __L497
+__L496:
   push_int 0
-__L499:
-  jump_ifnot __L497
+__L497:
+  jump_ifnot __L495
   push_int 0
   load chunk_buf
   push_int 65536
@@ -8645,21 +8354,21 @@ __L499:
   load chunk
   push_int 0
   le
-  jump_ifnot __L500
+  jump_ifnot __L498
   push_int 1
   store rdone
-__L500:
+__L498:
   load chunk
   push_int 0
   gt
-  jump_ifnot __L501
+  jump_ifnot __L499
   push_int 0
   store ci
-__L502:
+__L500:
   load ci
   load chunk
   lt
-  jump_ifnot __L503
+  jump_ifnot __L501
   load src
   load g_in_len
   load ci
@@ -8673,25 +8382,25 @@ __L502:
   push_int 1
   add
   store ci
-  jump __L502
-__L503:
+  jump __L500
+__L501:
   load g_in_len
   load chunk
   add
   store g_in_len
-__L501:
-  jump __L496
-__L497:
+__L499:
+  jump __L494
+__L495:
   load chunk_buf
   call delete U8Array
   pop
   load g_in_len
   push_int 0
   le
-  jump_ifnot __L504
+  jump_ifnot __L502
   push_int 1
   return
-__L504:
+__L502:
   load src
   load strtab
   load string_lits

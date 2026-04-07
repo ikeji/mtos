@@ -536,22 +536,15 @@ static void emit_strdata(FILE *f, const char *s) {
 static void emit_program(BcProg *prog) {
     out = stdout;
 
-    /* --- .rodata: string literal data + static HeapObj --- */
+    /* --- .rodata: string literals as count-prefixed objects --- */
     if (prog->nstrings > 0) {
         E("    .section .rodata\n");
         for (int i = 0; i < prog->nstrings; i++) {
             const char *s = prog->strings[i] ? prog->strings[i] : "";
-            E("__tc_strdata%d:\n", i);
-            E("    .string "); emit_strdata(out, s); E("\n");
-        }
-        E("\n");
-        /* Static HeapObj for each string literal (immutable, no alloc needed) */
-        for (int i = 0; i < prog->nstrings; i++) {
-            const char *s = prog->strings[i] ? prog->strings[i] : "";
             E("    .align 4\n");
             E("__tc_strobj%d:\n", i);
-            E("    .word %d\n", (int)strlen(s));    /* count (byte length) */
-            E("    .word __tc_strdata%d\n", i);     /* data */
+            E("    .word %d\n", (int)strlen(s));    /* count */
+            E("    .string "); emit_strdata(out, s); E("\n");  /* data follows inline */
         }
         E("\n");
     }

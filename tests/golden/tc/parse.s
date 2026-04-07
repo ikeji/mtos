@@ -1,335 +1,224 @@
     .section .rodata
-__tc_strdata0:
-    .string "<<"
-__tc_strdata1:
-    .string ">>"
-__tc_strdata2:
-    .string "&&"
-__tc_strdata3:
-    .string "||"
-__tc_strdata4:
-    .string "=="
-__tc_strdata5:
-    .string "!="
-__tc_strdata6:
-    .string "<="
-__tc_strdata7:
-    .string ">="
-__tc_strdata8:
-    .string "u8"
-__tc_strdata9:
-    .string "u16"
-__tc_strdata10:
-    .string "u32"
-__tc_strdata11:
-    .string "i8"
-__tc_strdata12:
-    .string "i16"
-__tc_strdata13:
-    .string "i32"
-__tc_strdata14:
-    .string "bool"
-__tc_strdata15:
-    .string "void"
-__tc_strdata16:
-    .string "fn"
-__tc_strdata17:
-    .string "as"
-__tc_strdata18:
-    .string "if"
-__tc_strdata19:
-    .string "var"
-__tc_strdata20:
-    .string "else"
-__tc_strdata21:
-    .string "true"
-__tc_strdata22:
-    .string "while"
-__tc_strdata23:
-    .string "false"
-__tc_strdata24:
-    .string "break"
-__tc_strdata25:
-    .string "return"
-__tc_strdata26:
-    .string "struct"
-__tc_strdata27:
-    .string "import"
-__tc_strdata28:
-    .string "export"
-__tc_strdata29:
-    .string "continue"
-__tc_strdata30:
-    .string "parse: unexpected"
-__tc_strdata31:
-    .string "binop"
-__tc_strdata32:
-    .string "int"
-__tc_strdata33:
-    .string "str"
-__tc_strdata34:
-    .string "call"
-__tc_strdata35:
-    .string "cast"
-__tc_strdata36:
-    .string "unary"
-__tc_strdata37:
-    .string "type"
-__tc_strdata38:
-    .string "var_decl"
-__tc_strdata39:
-    .string "assign"
-__tc_strdata40:
-    .string "call_stmt"
-__tc_strdata41:
-    .string "comment"
-__tc_strdata42:
-    .string "block"
-__tc_strdata43:
-    .string "params"
-__tc_strdata44:
-    .string "param"
-__tc_strdata45:
-    .string "ret"
-__tc_strdata46:
-    .string "__a"
-__tc_strdata47:
-    .string "__p"
-__tc_strdata48:
-    .string "U32Array"
-__tc_strdata49:
-    .string "set"
-__tc_strdata50:
-    .string "get"
-__tc_strdata51:
-    .string "__v"
-__tc_strdata52:
-    .string "field"
-__tc_strdata53:
-    .string "delete"
-__tc_strdata54:
-    .string "program"
-
     .align 4
 __tc_strobj0:
     .word 2
-    .word __tc_strdata0
+    .string "<<"
     .align 4
 __tc_strobj1:
     .word 2
-    .word __tc_strdata1
+    .string ">>"
     .align 4
 __tc_strobj2:
     .word 2
-    .word __tc_strdata2
+    .string "&&"
     .align 4
 __tc_strobj3:
     .word 2
-    .word __tc_strdata3
+    .string "||"
     .align 4
 __tc_strobj4:
     .word 2
-    .word __tc_strdata4
+    .string "=="
     .align 4
 __tc_strobj5:
     .word 2
-    .word __tc_strdata5
+    .string "!="
     .align 4
 __tc_strobj6:
     .word 2
-    .word __tc_strdata6
+    .string "<="
     .align 4
 __tc_strobj7:
     .word 2
-    .word __tc_strdata7
+    .string ">="
     .align 4
 __tc_strobj8:
     .word 2
-    .word __tc_strdata8
+    .string "u8"
     .align 4
 __tc_strobj9:
     .word 3
-    .word __tc_strdata9
+    .string "u16"
     .align 4
 __tc_strobj10:
     .word 3
-    .word __tc_strdata10
+    .string "u32"
     .align 4
 __tc_strobj11:
     .word 2
-    .word __tc_strdata11
+    .string "i8"
     .align 4
 __tc_strobj12:
     .word 3
-    .word __tc_strdata12
+    .string "i16"
     .align 4
 __tc_strobj13:
     .word 3
-    .word __tc_strdata13
+    .string "i32"
     .align 4
 __tc_strobj14:
     .word 4
-    .word __tc_strdata14
+    .string "bool"
     .align 4
 __tc_strobj15:
     .word 4
-    .word __tc_strdata15
+    .string "void"
     .align 4
 __tc_strobj16:
     .word 2
-    .word __tc_strdata16
+    .string "fn"
     .align 4
 __tc_strobj17:
     .word 2
-    .word __tc_strdata17
+    .string "as"
     .align 4
 __tc_strobj18:
     .word 2
-    .word __tc_strdata18
+    .string "if"
     .align 4
 __tc_strobj19:
     .word 3
-    .word __tc_strdata19
+    .string "var"
     .align 4
 __tc_strobj20:
     .word 4
-    .word __tc_strdata20
+    .string "else"
     .align 4
 __tc_strobj21:
     .word 4
-    .word __tc_strdata21
+    .string "true"
     .align 4
 __tc_strobj22:
     .word 5
-    .word __tc_strdata22
+    .string "while"
     .align 4
 __tc_strobj23:
     .word 5
-    .word __tc_strdata23
+    .string "false"
     .align 4
 __tc_strobj24:
     .word 5
-    .word __tc_strdata24
+    .string "break"
     .align 4
 __tc_strobj25:
     .word 6
-    .word __tc_strdata25
+    .string "return"
     .align 4
 __tc_strobj26:
     .word 6
-    .word __tc_strdata26
+    .string "struct"
     .align 4
 __tc_strobj27:
     .word 6
-    .word __tc_strdata27
+    .string "import"
     .align 4
 __tc_strobj28:
     .word 6
-    .word __tc_strdata28
+    .string "export"
     .align 4
 __tc_strobj29:
     .word 8
-    .word __tc_strdata29
+    .string "continue"
     .align 4
 __tc_strobj30:
     .word 17
-    .word __tc_strdata30
+    .string "parse: unexpected"
     .align 4
 __tc_strobj31:
     .word 5
-    .word __tc_strdata31
+    .string "binop"
     .align 4
 __tc_strobj32:
     .word 3
-    .word __tc_strdata32
+    .string "int"
     .align 4
 __tc_strobj33:
     .word 3
-    .word __tc_strdata33
+    .string "str"
     .align 4
 __tc_strobj34:
     .word 4
-    .word __tc_strdata34
+    .string "call"
     .align 4
 __tc_strobj35:
     .word 4
-    .word __tc_strdata35
+    .string "cast"
     .align 4
 __tc_strobj36:
     .word 5
-    .word __tc_strdata36
+    .string "unary"
     .align 4
 __tc_strobj37:
     .word 4
-    .word __tc_strdata37
+    .string "type"
     .align 4
 __tc_strobj38:
     .word 8
-    .word __tc_strdata38
+    .string "var_decl"
     .align 4
 __tc_strobj39:
     .word 6
-    .word __tc_strdata39
+    .string "assign"
     .align 4
 __tc_strobj40:
     .word 9
-    .word __tc_strdata40
+    .string "call_stmt"
     .align 4
 __tc_strobj41:
     .word 7
-    .word __tc_strdata41
+    .string "comment"
     .align 4
 __tc_strobj42:
     .word 5
-    .word __tc_strdata42
+    .string "block"
     .align 4
 __tc_strobj43:
     .word 6
-    .word __tc_strdata43
+    .string "params"
     .align 4
 __tc_strobj44:
     .word 5
-    .word __tc_strdata44
+    .string "param"
     .align 4
 __tc_strobj45:
     .word 3
-    .word __tc_strdata45
+    .string "ret"
     .align 4
 __tc_strobj46:
     .word 3
-    .word __tc_strdata46
+    .string "__a"
     .align 4
 __tc_strobj47:
     .word 3
-    .word __tc_strdata47
+    .string "__p"
     .align 4
 __tc_strobj48:
     .word 8
-    .word __tc_strdata48
+    .string "U32Array"
     .align 4
 __tc_strobj49:
     .word 3
-    .word __tc_strdata49
+    .string "set"
     .align 4
 __tc_strobj50:
     .word 3
-    .word __tc_strdata50
+    .string "get"
     .align 4
 __tc_strobj51:
     .word 3
-    .word __tc_strdata51
+    .string "__v"
     .align 4
 __tc_strobj52:
     .word 5
-    .word __tc_strdata52
+    .string "field"
     .align 4
 __tc_strobj53:
     .word 6
-    .word __tc_strdata53
+    .string "delete"
     .align 4
 __tc_strobj54:
     .word 7
-    .word __tc_strdata54
+    .string "program"
 
     .data
     .globl TK_FN

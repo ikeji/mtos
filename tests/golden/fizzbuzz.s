@@ -1,23 +1,16 @@
     .section .rodata
-__tc_strdata0:
-    .string "FizzBuzz"
-__tc_strdata1:
-    .string "Fizz"
-__tc_strdata2:
-    .string "Buzz"
-
     .align 4
 __tc_strobj0:
     .word 8
-    .word __tc_strdata0
+    .string "FizzBuzz"
     .align 4
 __tc_strobj1:
     .word 4
-    .word __tc_strdata1
+    .string "Fizz"
     .align 4
 __tc_strobj2:
     .word 4
-    .word __tc_strdata2
+    .string "Buzz"
 
     .text
 
