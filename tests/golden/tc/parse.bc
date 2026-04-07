@@ -4564,10 +4564,10 @@ __L323:
   return_void
 .endfn
 
-.fn emit_stmt_comment StringBuffer i32 StringBuffer void
+.fn emit_stmt_comment StringBuffer StringBuffer i32 void
+.param sb StringBuffer
 .param src StringBuffer
 .param line i32
-.param sb StringBuffer
 .local pos i32
 .local cur_line i32
 .local first u8
@@ -4912,10 +4912,10 @@ __L381:
   add
   call emit_indent StringBuffer i32
   pop
+  load sb
   load src
   load stmt_line
-  load sb
-  call emit_stmt_comment StringBuffer i32 StringBuffer
+  call emit_stmt_comment StringBuffer StringBuffer i32
   pop
   load sb
   push_int 10
@@ -5484,13 +5484,13 @@ __L404:
   return_void
 .endfn
 
-.fn emit_param StringLiteral U8Array i32 i32 StringBuffer i32 void
+.fn emit_param StringBuffer i32 StringLiteral U8Array i32 i32 void
+.param sb StringBuffer
+.param indent i32
 .param name StringLiteral
 .param tbuf U8Array
 .param tstart i32
 .param tlen i32
-.param sb StringBuffer
-.param indent i32
   load sb
   load indent
   call emit_indent StringBuffer i32
@@ -5559,11 +5559,11 @@ __L404:
   return_void
 .endfn
 
-.fn emit_type U8Array i32 i32 StringBuffer void
+.fn emit_type StringBuffer U8Array i32 i32 void
+.param sb StringBuffer
 .param tbuf U8Array
 .param tstart i32
 .param tlen i32
-.param sb StringBuffer
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -5590,11 +5590,11 @@ __L404:
   return_void
 .endfn
 
-.fn emit_cast_var StringLiteral StringLiteral StringBuffer i32 void
-.param name StringLiteral
-.param tname StringLiteral
+.fn emit_cast_var StringBuffer i32 StringLiteral StringLiteral void
 .param sb StringBuffer
 .param indent i32
+.param name StringLiteral
+.param tname StringLiteral
   load sb
   load indent
   call emit_indent StringBuffer i32
@@ -5683,13 +5683,13 @@ __L404:
   return_void
 .endfn
 
-.fn emit_cast_var_tbuf StringLiteral U8Array i32 i32 StringBuffer i32 void
+.fn emit_cast_var_tbuf StringBuffer i32 StringLiteral U8Array i32 i32 void
+.param sb StringBuffer
+.param indent i32
 .param name StringLiteral
 .param tbuf U8Array
 .param tstart i32
 .param tlen i32
-.param sb StringBuffer
-.param indent i32
   load sb
   load indent
   call emit_indent StringBuffer i32
@@ -5781,18 +5781,18 @@ __L404:
 .endfn
 
 .fn emit_stmt_comment_line StringBuffer i32 StringBuffer i32 void
-.param src StringBuffer
-.param line i32
 .param sb StringBuffer
 .param indent i32
+.param src StringBuffer
+.param line i32
   load sb
   load indent
   call emit_indent StringBuffer i32
   pop
+  load sb
   load src
   load line
-  load sb
-  call emit_stmt_comment StringBuffer i32 StringBuffer
+  call emit_stmt_comment StringBuffer StringBuffer i32
   pop
   load sb
   push_int 10
@@ -5802,17 +5802,17 @@ __L404:
   return_void
 .endfn
 
-.fn emit_struct_ctor U8Array i32 U8Array I32Array I32Array i32 StringBuffer i32 StringBuffer i32 void
+.fn emit_struct_ctor StringBuffer i32 StringBuffer i32 U8Array i32 U8Array I32Array I32Array i32 void
+.param sb StringBuffer
+.param indent i32
+.param src StringBuffer
+.param sline i32
 .param sbuf U8Array
 .param snlen i32
 .param ftypes U8Array
 .param ftoffs I32Array
 .param ftlens I32Array
 .param nfields i32
-.param src StringBuffer
-.param sline i32
-.param sb StringBuffer
-.param indent i32
 .local i i32
 .local k i32
   load sb
@@ -5902,6 +5902,7 @@ __L407:
   add
   call emit_indent StringBuffer i32
   pop
+  load sb
   load ftypes
   load ftoffs
   load i
@@ -5909,8 +5910,7 @@ __L407:
   load ftlens
   load i
   call get I32Array i32
-  load sb
-  call emit_type U8Array i32 i32 StringBuffer
+  call emit_type StringBuffer U8Array i32 i32
   pop
   load sb
   push_int 10
@@ -6032,12 +6032,12 @@ __L408:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  load src
-  load sline
   load sb
   load indent
   push_int 2
   add
+  load src
+  load sline
   call emit_stmt_comment_line StringBuffer i32 StringBuffer i32
   pop
   load sb
@@ -6187,12 +6187,12 @@ __L409:
   load nfields
   lt
   jump_ifnot __L410
-  load src
-  load sline
   load sb
   load indent
   push_int 2
   add
+  load src
+  load sline
   call emit_stmt_comment_line StringBuffer i32 StringBuffer i32
   pop
   load sb
@@ -6397,12 +6397,12 @@ __L409:
   store k
   jump __L409
 __L410:
-  load src
-  load sline
   load sb
   load indent
   push_int 2
   add
+  load src
+  load sline
   call emit_stmt_comment_line StringBuffer i32 StringBuffer i32
   pop
   load sb
@@ -6557,7 +6557,11 @@ __L410:
   return_void
 .endfn
 
-.fn emit_struct_getter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 StringBuffer i32 StringBuffer i32 void
+.fn emit_struct_getter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 void
+.param sb StringBuffer
+.param indent i32
+.param src StringBuffer
+.param sline i32
 .param sbuf U8Array
 .param snlen i32
 .param fnames U8Array
@@ -6567,10 +6571,6 @@ __L410:
 .param ftoff i32
 .param ftlen i32
 .param fidx i32
-.param src StringBuffer
-.param sline i32
-.param sb StringBuffer
-.param indent i32
   load sb
   load indent
   call emit_indent StringBuffer i32
@@ -6783,12 +6783,12 @@ __L410:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  load src
-  load sline
   load sb
   load indent
   push_int 2
   add
+  load src
+  load sline
   call emit_stmt_comment_line StringBuffer i32 StringBuffer i32
   pop
   load sb
@@ -6853,13 +6853,13 @@ __L410:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  push_str 47
-  push_str 48
   load sb
   load indent
   push_int 5
   add
-  call emit_cast_var StringLiteral StringLiteral StringBuffer i32
+  push_str 47
+  push_str 48
+  call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
   push_int 10
@@ -6995,7 +6995,11 @@ __L410:
   return_void
 .endfn
 
-.fn emit_struct_setter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 StringBuffer i32 StringBuffer i32 void
+.fn emit_struct_setter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 void
+.param sb StringBuffer
+.param indent i32
+.param src StringBuffer
+.param sline i32
 .param sbuf U8Array
 .param snlen i32
 .param fnames U8Array
@@ -7005,10 +7009,6 @@ __L410:
 .param ftoff i32
 .param ftlen i32
 .param fidx i32
-.param src StringBuffer
-.param sline i32
-.param sb StringBuffer
-.param indent i32
   load sb
   load indent
   call emit_indent StringBuffer i32
@@ -7291,12 +7291,12 @@ __L410:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  load src
-  load sline
   load sb
   load indent
   push_int 2
   add
+  load src
+  load sline
   call emit_stmt_comment_line StringBuffer i32 StringBuffer i32
   pop
   load sb
@@ -7325,13 +7325,13 @@ __L410:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  push_str 47
-  push_str 48
   load sb
   load indent
   push_int 3
   add
-  call emit_cast_var StringLiteral StringLiteral StringBuffer i32
+  push_str 47
+  push_str 48
+  call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
   push_int 10
@@ -7367,13 +7367,13 @@ __L410:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  push_str 51
-  push_str 10
   load sb
   load indent
   push_int 3
   add
-  call emit_cast_var StringLiteral StringLiteral StringBuffer i32
+  push_str 51
+  push_str 10
+  call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
   push_int 10
@@ -7393,12 +7393,12 @@ __L410:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  load src
-  load sline
   load sb
   load indent
   push_int 2
   add
+  load src
+  load sline
   call emit_stmt_comment_line StringBuffer i32 StringBuffer i32
   pop
   load sb
@@ -7782,17 +7782,17 @@ __L414:
   push_int 10
   call emit_char StringBuffer u8
   pop
+  load sb
+  load indent
+  load src
+  load struct_line
   load sname_buf
   load snlen
   load ftypes
   load ftoffs
   load ftlens
   load nfields
-  load src
-  load struct_line
-  load sb
-  load indent
-  call emit_struct_ctor U8Array i32 U8Array I32Array I32Array i32 StringBuffer i32 StringBuffer i32
+  call emit_struct_ctor StringBuffer i32 StringBuffer i32 U8Array i32 U8Array I32Array I32Array i32
   pop
   push_int 0
   store gi
@@ -7805,6 +7805,10 @@ __L425:
   push_int 10
   call emit_char StringBuffer u8
   pop
+  load sb
+  load indent
+  load src
+  load struct_line
   load sname_buf
   load snlen
   load fnames
@@ -7822,11 +7826,7 @@ __L425:
   load gi
   call get I32Array i32
   load gi
-  load src
-  load struct_line
-  load sb
-  load indent
-  call emit_struct_getter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 StringBuffer i32 StringBuffer i32
+  call emit_struct_getter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array i32 i32 U8Array i32 i32 i32
   pop
   load gi
   push_int 1
@@ -7845,6 +7845,10 @@ __L427:
   push_int 10
   call emit_char StringBuffer u8
   pop
+  load sb
+  load indent
+  load src
+  load struct_line
   load sname_buf
   load snlen
   load fnames
@@ -7862,11 +7866,7 @@ __L427:
   load si
   call get I32Array i32
   load si
-  load src
-  load struct_line
-  load sb
-  load indent
-  call emit_struct_setter U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 StringBuffer i32 StringBuffer i32
+  call emit_struct_setter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array i32 i32 U8Array i32 i32 i32
   pop
   load si
   push_int 1
@@ -7878,10 +7878,10 @@ __L428:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  load src
-  load struct_line
   load sb
   load indent
+  load src
+  load struct_line
   call emit_stmt_comment_line StringBuffer i32 StringBuffer i32
   pop
   load sb

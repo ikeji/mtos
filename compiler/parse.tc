@@ -1019,7 +1019,7 @@ fn pars_ident_stmt(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i3
     return;
 }
 
-fn emit_stmt_comment(src: StringBuffer, line: i32, sb: StringBuffer) -> void {
+fn emit_stmt_comment(sb: StringBuffer, src: StringBuffer, line: i32) -> void {
     // Find start of line `line` in src
     var pos: i32 = 0;
     var cur_line: i32 = 1;
@@ -1069,7 +1069,7 @@ fn pars_block(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i32) ->
         var stmt_line: i32 = g_tok_line;
         emit_char(sb, 10u8);
         emit_indent(sb, indent + 1);
-        emit_stmt_comment(src, stmt_line, sb);
+        emit_stmt_comment(sb, src, stmt_line);
         emit_char(sb, 10u8);
         emit_indent(sb, indent + 1);
         pars_stmt(src, tok, sb, indent + 1);
@@ -1199,7 +1199,7 @@ fn type_tok_name(tok: U8Array, buf: U8Array, bstart: i32) -> i32 {
 }
 
 // Emit a (param __aN (type T)) node.
-fn emit_param(name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer, indent: i32) -> void {
+fn emit_param(sb: StringBuffer, indent: i32, name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
     emit_string(sb, name); emit_char(sb, 10u8);
@@ -1213,7 +1213,7 @@ fn emit_param(name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32, sb: St
 }
 
 // Emit a (type T) node at current indent.
-fn emit_type(tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer) -> void {
+fn emit_type(sb: StringBuffer, tbuf: U8Array, tstart: i32, tlen: i32) -> void {
     emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
     emit_n(sb, tbuf, tstart, tlen);
     emit_char(sb, ')');
@@ -1221,7 +1221,7 @@ fn emit_type(tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer) -> void {
 }
 
 // Emit (cast (var NAME) (type T)) — NAME is a String literal.
-fn emit_cast_var(name: StringLiteral, tname: StringLiteral, sb: StringBuffer, indent: i32) -> void {
+fn emit_cast_var(sb: StringBuffer, indent: i32, name: StringLiteral, tname: StringLiteral) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
     emit_indent(sb, indent + 1);
@@ -1236,7 +1236,7 @@ fn emit_cast_var(name: StringLiteral, tname: StringLiteral, sb: StringBuffer, in
 }
 
 // Emit (cast (var NAME) (type T)) where T comes from tbuf[tstart..].
-fn emit_cast_var_tbuf(name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer, indent: i32) -> void {
+fn emit_cast_var_tbuf(sb: StringBuffer, indent: i32, name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
     emit_indent(sb, indent + 1);
@@ -1252,9 +1252,9 @@ fn emit_cast_var_tbuf(name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32
 }
 
 // Emit a (comment "...") node at current indent for a given source line.
-fn emit_stmt_comment_line(src: StringBuffer, line: i32, sb: StringBuffer, indent: i32) -> void {
+fn emit_stmt_comment_line(sb: StringBuffer, indent: i32, src: StringBuffer, line: i32) -> void {
     emit_indent(sb, indent);
-    emit_stmt_comment(src, line, sb);
+    emit_stmt_comment(sb, src, line);
     emit_char(sb, 10u8);
     return;
 }
@@ -1267,11 +1267,11 @@ fn emit_stmt_comment_line(src: StringBuffer, line: i32, sb: StringBuffer, indent
 //       return __p as StructName;
 //   }
 fn emit_struct_ctor(
+    sb: StringBuffer, indent: i32,
+    src: StringBuffer, sline: i32,
     sbuf: U8Array, snlen: i32,
     ftypes: U8Array, ftoffs: I32Array, ftlens: I32Array,
-    nfields: i32,
-    src: StringBuffer, sline: i32,
-    sb: StringBuffer, indent: i32
+    nfields: i32
 ) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
@@ -1286,7 +1286,7 @@ fn emit_struct_ctor(
         emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
         emit_string(sb, "__a"); emit_int(sb, i); emit_char(sb, 10u8);
         emit_indent(sb, indent + 3);
-        emit_type(ftypes, get(ftoffs, i), get(ftlens, i), sb); emit_char(sb, 10u8);
+        emit_type(sb, ftypes, get(ftoffs, i), get(ftlens, i)); emit_char(sb, 10u8);
         emit_indent(sb, indent + 2);
         emit_char(sb, ')'); emit_char(sb, 10u8);
         i = i + 1;
@@ -1303,7 +1303,7 @@ fn emit_struct_ctor(
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
     // comment for var_decl
-    emit_stmt_comment_line(src, sline, sb, indent + 2);
+    emit_stmt_comment_line(sb, indent + 2, src, sline);
     // var_decl __p (type U32Array) (call U32Array (int N))
     emit_indent(sb, indent + 2);
     emit_char(sb, '('); emit_string(sb, "var_decl"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, 10u8);
@@ -1318,7 +1318,7 @@ fn emit_struct_ctor(
     // set(__p, i, __ai as u32) for each field
     var k: i32 = 0;
     while k < nfields {
-        emit_stmt_comment_line(src, sline, sb, indent + 2);
+        emit_stmt_comment_line(sb, indent + 2, src, sline);
         emit_indent(sb, indent + 2);
         emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' '); emit_string(sb, "set"); emit_char(sb, 10u8);
         emit_indent(sb, indent + 3);
@@ -1336,7 +1336,7 @@ fn emit_struct_ctor(
         k = k + 1;
     }
     // comment for return
-    emit_stmt_comment_line(src, sline, sb, indent + 2);
+    emit_stmt_comment_line(sb, indent + 2, src, sline);
     // return (cast (var __p) (type StructName))
     emit_indent(sb, indent + 2);
     emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
@@ -1353,12 +1353,12 @@ fn emit_struct_ctor(
 
 // Emit a getter fn: field_name(__p: StructName) -> field_type { return get(__p as U32Array, i) as field_type; }
 fn emit_struct_getter(
+    sb: StringBuffer, indent: i32,
+    src: StringBuffer, sline: i32,
     sbuf: U8Array, snlen: i32,
     fnames: U8Array, fnoff: i32, fnlen: i32,
     ftypes: U8Array, ftoff: i32, ftlen: i32,
-    fidx: i32,
-    src: StringBuffer, sline: i32,
-    sb: StringBuffer, indent: i32
+    fidx: i32
 ) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
@@ -1377,13 +1377,13 @@ fn emit_struct_getter(
     emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     // block { return get(__p as U32Array, i) as field_type; }
     emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
-    emit_stmt_comment_line(src, sline, sb, indent + 2);
+    emit_stmt_comment_line(sb, indent + 2, src, sline);
     emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
     // outer cast: get(...) as field_type
     emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
     // call get (cast __p U32Array) (int i)
     emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "get"); emit_char(sb, 10u8);
-    emit_cast_var("__p", "U32Array", sb, indent + 5); emit_char(sb, 10u8);
+    emit_cast_var(sb, indent + 5, "__p", "U32Array"); emit_char(sb, 10u8);
     emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);
     emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
     // (type field_type)
@@ -1398,12 +1398,12 @@ fn emit_struct_getter(
 
 // Emit a setter fn: field_name(__p: StructName, __v: field_type) -> void { set(__p as U32Array, i, __v as u32); return; }
 fn emit_struct_setter(
+    sb: StringBuffer, indent: i32,
+    src: StringBuffer, sline: i32,
     sbuf: U8Array, snlen: i32,
     fnames: U8Array, fnoff: i32, fnlen: i32,
     ftypes: U8Array, ftoff: i32, ftlen: i32,
-    fidx: i32,
-    src: StringBuffer, sline: i32,
-    sb: StringBuffer, indent: i32
+    fidx: i32
 ) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
@@ -1425,13 +1425,13 @@ fn emit_struct_setter(
     emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     // block { set(__p as U32Array, i, __v as u32); return; }
     emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
-    emit_stmt_comment_line(src, sline, sb, indent + 2);
+    emit_stmt_comment_line(sb, indent + 2, src, sline);
     emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' '); emit_string(sb, "set"); emit_char(sb, 10u8);
-    emit_cast_var("__p", "U32Array", sb, indent + 3); emit_char(sb, 10u8);
+    emit_cast_var(sb, indent + 3, "__p", "U32Array"); emit_char(sb, 10u8);
     emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);
-    emit_cast_var("__v", "u32", sb, indent + 3); emit_char(sb, 10u8);
+    emit_cast_var(sb, indent + 3, "__v", "u32"); emit_char(sb, 10u8);
     emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
-    emit_stmt_comment_line(src, sline, sb, indent + 2);
+    emit_stmt_comment_line(sb, indent + 2, src, sline);
     emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
     emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
     emit_indent(sb, indent); emit_char(sb, ')');
@@ -1513,16 +1513,17 @@ fn pars_struct_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i
 
     // Emit synthetic functions: constructor, getters, setters
     emit_char(sb, 10u8);
-    emit_struct_ctor(sname_buf, snlen, ftypes, ftoffs, ftlens, nfields, src, struct_line, sb, indent);
+    emit_struct_ctor(sb, indent, src, struct_line, sname_buf, snlen, ftypes, ftoffs, ftlens, nfields);
 
     var gi: i32 = 0;
     while gi < nfields {
         emit_char(sb, 10u8);
         emit_struct_getter(
+            sb, indent, src, struct_line,
             sname_buf, snlen,
             fnames, get(fnoffs, gi), get(fnlens, gi),
             ftypes, get(ftoffs, gi), get(ftlens, gi),
-            gi, src, struct_line, sb, indent);
+            gi);
         gi = gi + 1;
     }
 
@@ -1530,17 +1531,18 @@ fn pars_struct_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i
     while si < nfields {
         emit_char(sb, 10u8);
         emit_struct_setter(
+            sb, indent, src, struct_line,
             sname_buf, snlen,
             fnames, get(fnoffs, si), get(fnlens, si),
             ftypes, get(ftoffs, si), get(ftlens, si),
-            si, src, struct_line, sb, indent);
+            si);
         si = si + 1;
     }
 
     // Generate delete(StructName) -> void
     // fn delete(__p: StructName) -> void { delete(__p as U32Array); return; }
     emit_char(sb, 10u8);
-    emit_stmt_comment_line(src, struct_line, sb, indent);
+    emit_stmt_comment_line(sb, indent, src, struct_line);
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
     emit_string(sb, "delete"); emit_char(sb, 10u8);

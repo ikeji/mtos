@@ -6630,14 +6630,14 @@
   )
   (fn emit_stmt_comment
     (params
+      (param sb
+        (type StringBuffer)
+      )
       (param src
         (type StringBuffer)
       )
       (param line
         (type i32)
-      )
-      (param sb
-        (type StringBuffer)
       )
     )
     (ret
@@ -7107,11 +7107,11 @@
               (int 1)
             )
           )
-          (comment "emit_stmt_comment(src, stmt_line, sb);")
+          (comment "emit_stmt_comment(sb, src, stmt_line);")
           (call_stmt emit_stmt_comment
+            (var sb)
             (var src)
             (var stmt_line)
-            (var sb)
           )
           (comment "emit_char(sb, 10u8);")
           (call_stmt emit_char
@@ -7940,6 +7940,12 @@
   )
   (fn emit_param
     (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
       (param name
         (type StringLiteral)
       )
@@ -7950,12 +7956,6 @@
         (type i32)
       )
       (param tlen
-        (type i32)
-      )
-      (param sb
-        (type StringBuffer)
-      )
-      (param indent
         (type i32)
       )
     )
@@ -8049,6 +8049,9 @@
   )
   (fn emit_type
     (params
+      (param sb
+        (type StringBuffer)
+      )
       (param tbuf
         (type U8Array)
       )
@@ -8057,9 +8060,6 @@
       )
       (param tlen
         (type i32)
-      )
-      (param sb
-        (type StringBuffer)
       )
     )
     (ret
@@ -8099,17 +8099,17 @@
   )
   (fn emit_cast_var
     (params
-      (param name
-        (type StringLiteral)
-      )
-      (param tname
-        (type StringLiteral)
-      )
       (param sb
         (type StringBuffer)
       )
       (param indent
         (type i32)
+      )
+      (param name
+        (type StringLiteral)
+      )
+      (param tname
+        (type StringLiteral)
       )
     )
     (ret
@@ -8228,6 +8228,12 @@
   )
   (fn emit_cast_var_tbuf
     (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
       (param name
         (type StringLiteral)
       )
@@ -8238,12 +8244,6 @@
         (type i32)
       )
       (param tlen
-        (type i32)
-      )
-      (param sb
-        (type StringBuffer)
-      )
-      (param indent
         (type i32)
       )
     )
@@ -8365,16 +8365,16 @@
   )
   (fn emit_stmt_comment_line
     (params
-      (param src
-        (type StringBuffer)
-      )
-      (param line
-        (type i32)
-      )
       (param sb
         (type StringBuffer)
       )
       (param indent
+        (type i32)
+      )
+      (param src
+        (type StringBuffer)
+      )
+      (param line
         (type i32)
       )
     )
@@ -8387,11 +8387,11 @@
         (var sb)
         (var indent)
       )
-      (comment "emit_stmt_comment(src, line, sb);")
+      (comment "emit_stmt_comment(sb, src, line);")
       (call_stmt emit_stmt_comment
+        (var sb)
         (var src)
         (var line)
-        (var sb)
       )
       (comment "emit_char(sb, 10u8);")
       (call_stmt emit_char
@@ -8404,6 +8404,18 @@
   )
   (fn emit_struct_ctor
     (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param src
+        (type StringBuffer)
+      )
+      (param sline
+        (type i32)
+      )
       (param sbuf
         (type U8Array)
       )
@@ -8420,18 +8432,6 @@
         (type I32Array)
       )
       (param nfields
-        (type i32)
-      )
-      (param src
-        (type StringBuffer)
-      )
-      (param sline
-        (type i32)
-      )
-      (param sb
-        (type StringBuffer)
-      )
-      (param indent
         (type i32)
       )
     )
@@ -8552,8 +8552,9 @@
               (int 3)
             )
           )
-          (comment "emit_type(ftypes, get(ftoffs, i), get(ftlens, i), sb); emit_char(sb, 10u8);")
+          (comment "emit_type(sb, ftypes, get(ftoffs, i), get(ftlens, i)); emit_char(sb, 10u8);")
           (call_stmt emit_type
+            (var sb)
             (var ftypes)
             (call get
               (var ftoffs)
@@ -8563,9 +8564,8 @@
               (var ftlens)
               (var i)
             )
-            (var sb)
           )
-          (comment "emit_type(ftypes, get(ftoffs, i), get(ftlens, i), sb); emit_char(sb, 10u8);")
+          (comment "emit_type(sb, ftypes, get(ftoffs, i), get(ftlens, i)); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8719,15 +8719,15 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_stmt_comment_line(src, sline, sb, indent + 2);")
+      (comment "emit_stmt_comment_line(sb, indent + 2, src, sline);")
       (call_stmt emit_stmt_comment_line
-        (var src)
-        (var sline)
         (var sb)
         (binop +
           (var indent)
           (int 2)
         )
+        (var src)
+        (var sline)
       )
       (comment "emit_indent(sb, indent + 2);")
       (call_stmt emit_indent
@@ -8919,15 +8919,15 @@
           (var nfields)
         )
         (block
-          (comment "emit_stmt_comment_line(src, sline, sb, indent + 2);")
+          (comment "emit_stmt_comment_line(sb, indent + 2, src, sline);")
           (call_stmt emit_stmt_comment_line
-            (var src)
-            (var sline)
             (var sb)
             (binop +
               (var indent)
               (int 2)
             )
+            (var src)
+            (var sline)
           )
           (comment "emit_indent(sb, indent + 2);")
           (call_stmt emit_indent
@@ -9187,15 +9187,15 @@
           )
         )
       )
-      (comment "emit_stmt_comment_line(src, sline, sb, indent + 2);")
+      (comment "emit_stmt_comment_line(sb, indent + 2, src, sline);")
       (call_stmt emit_stmt_comment_line
-        (var src)
-        (var sline)
         (var sb)
         (binop +
           (var indent)
           (int 2)
         )
+        (var src)
+        (var sline)
       )
       (comment "emit_indent(sb, indent + 2);")
       (call_stmt emit_indent
@@ -9391,6 +9391,18 @@
   )
   (fn emit_struct_getter
     (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param src
+        (type StringBuffer)
+      )
+      (param sline
+        (type i32)
+      )
       (param sbuf
         (type U8Array)
       )
@@ -9416,18 +9428,6 @@
         (type i32)
       )
       (param fidx
-        (type i32)
-      )
-      (param src
-        (type StringBuffer)
-      )
-      (param sline
-        (type i32)
-      )
-      (param sb
-        (type StringBuffer)
-      )
-      (param indent
         (type i32)
       )
     )
@@ -9703,15 +9703,15 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_stmt_comment_line(src, sline, sb, indent + 2);")
+      (comment "emit_stmt_comment_line(sb, indent + 2, src, sline);")
       (call_stmt emit_stmt_comment_line
-        (var src)
-        (var sline)
         (var sb)
         (binop +
           (var indent)
           (int 2)
         )
+        (var src)
+        (var sline)
       )
       (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
       (call_stmt emit_indent
@@ -9792,17 +9792,17 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_cast_var(\"__p\", \"U32Array\", sb, indent + 5); emit_char(sb, 10u8);")
+      (comment "emit_cast_var(sb, indent + 5, \"__p\", \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_cast_var
-        (str "__p")
-        (str "U32Array")
         (var sb)
         (binop +
           (var indent)
           (int 5)
         )
+        (str "__p")
+        (str "U32Array")
       )
-      (comment "emit_cast_var(\"__p\", \"U32Array\", sb, indent + 5); emit_char(sb, 10u8);")
+      (comment "emit_cast_var(sb, indent + 5, \"__p\", \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9973,6 +9973,18 @@
   )
   (fn emit_struct_setter
     (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param src
+        (type StringBuffer)
+      )
+      (param sline
+        (type i32)
+      )
       (param sbuf
         (type U8Array)
       )
@@ -9998,18 +10010,6 @@
         (type i32)
       )
       (param fidx
-        (type i32)
-      )
-      (param src
-        (type StringBuffer)
-      )
-      (param sline
-        (type i32)
-      )
-      (param sb
-        (type StringBuffer)
-      )
-      (param indent
         (type i32)
       )
     )
@@ -10374,15 +10374,15 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_stmt_comment_line(src, sline, sb, indent + 2);")
+      (comment "emit_stmt_comment_line(sb, indent + 2, src, sline);")
       (call_stmt emit_stmt_comment_line
-        (var src)
-        (var sline)
         (var sb)
         (binop +
           (var indent)
           (int 2)
         )
+        (var src)
+        (var sline)
       )
       (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
       (call_stmt emit_indent
@@ -10417,17 +10417,17 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_cast_var(\"__p\", \"U32Array\", sb, indent + 3); emit_char(sb, 10u8);")
+      (comment "emit_cast_var(sb, indent + 3, \"__p\", \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_cast_var
-        (str "__p")
-        (str "U32Array")
         (var sb)
         (binop +
           (var indent)
           (int 3)
         )
+        (str "__p")
+        (str "U32Array")
       )
-      (comment "emit_cast_var(\"__p\", \"U32Array\", sb, indent + 3); emit_char(sb, 10u8);")
+      (comment "emit_cast_var(sb, indent + 3, \"__p\", \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10470,17 +10470,17 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_cast_var(\"__v\", \"u32\", sb, indent + 3); emit_char(sb, 10u8);")
+      (comment "emit_cast_var(sb, indent + 3, \"__v\", \"u32\"); emit_char(sb, 10u8);")
       (call_stmt emit_cast_var
-        (str "__v")
-        (str "u32")
         (var sb)
         (binop +
           (var indent)
           (int 3)
         )
+        (str "__v")
+        (str "u32")
       )
-      (comment "emit_cast_var(\"__v\", \"u32\", sb, indent + 3); emit_char(sb, 10u8);")
+      (comment "emit_cast_var(sb, indent + 3, \"__v\", \"u32\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10503,15 +10503,15 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_stmt_comment_line(src, sline, sb, indent + 2);")
+      (comment "emit_stmt_comment_line(sb, indent + 2, src, sline);")
       (call_stmt emit_stmt_comment_line
-        (var src)
-        (var sline)
         (var sb)
         (binop +
           (var indent)
           (int 2)
         )
+        (var src)
+        (var sline)
       )
       (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_indent
@@ -11047,18 +11047,18 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_struct_ctor(sname_buf, snlen, ftypes, ftoffs, ftlens, nfields, src, struct_line, sb, indent);")
+      (comment "emit_struct_ctor(sb, indent, src, struct_line, sname_buf, snlen, ftypes, ftoffs, ftlens, nfields);")
       (call_stmt emit_struct_ctor
+        (var sb)
+        (var indent)
+        (var src)
+        (var struct_line)
         (var sname_buf)
         (var snlen)
         (var ftypes)
         (var ftoffs)
         (var ftlens)
         (var nfields)
-        (var src)
-        (var struct_line)
-        (var sb)
-        (var indent)
       )
       (comment "var gi: i32 = 0;")
       (var_decl gi
@@ -11079,6 +11079,10 @@
           )
           (comment "emit_struct_getter(")
           (call_stmt emit_struct_getter
+            (var sb)
+            (var indent)
+            (var src)
+            (var struct_line)
             (var sname_buf)
             (var snlen)
             (var fnames)
@@ -11100,10 +11104,6 @@
               (var gi)
             )
             (var gi)
-            (var src)
-            (var struct_line)
-            (var sb)
-            (var indent)
           )
           (comment "gi = gi + 1;")
           (assign gi
@@ -11133,6 +11133,10 @@
           )
           (comment "emit_struct_setter(")
           (call_stmt emit_struct_setter
+            (var sb)
+            (var indent)
+            (var src)
+            (var struct_line)
             (var sname_buf)
             (var snlen)
             (var fnames)
@@ -11154,10 +11158,6 @@
               (var si)
             )
             (var si)
-            (var src)
-            (var struct_line)
-            (var sb)
-            (var indent)
           )
           (comment "si = si + 1;")
           (assign si
@@ -11173,12 +11173,12 @@
         (var sb)
         (int:u8 10)
       )
-      (comment "emit_stmt_comment_line(src, struct_line, sb, indent);")
+      (comment "emit_stmt_comment_line(sb, indent, src, struct_line);")
       (call_stmt emit_stmt_comment_line
-        (var src)
-        (var struct_line)
         (var sb)
         (var indent)
+        (var src)
+        (var struct_line)
       )
       (comment "emit_indent(sb, indent);")
       (call_stmt emit_indent
