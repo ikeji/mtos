@@ -112,277 +112,222 @@ __tc_strdata54:
 
     .align 4
 __tc_strobj0:
-    .word 1
     .word 2
     .word __tc_strdata0
     .align 4
 __tc_strobj1:
-    .word 1
     .word 2
     .word __tc_strdata1
     .align 4
 __tc_strobj2:
-    .word 1
     .word 2
     .word __tc_strdata2
     .align 4
 __tc_strobj3:
-    .word 1
     .word 2
     .word __tc_strdata3
     .align 4
 __tc_strobj4:
-    .word 1
     .word 2
     .word __tc_strdata4
     .align 4
 __tc_strobj5:
-    .word 1
     .word 2
     .word __tc_strdata5
     .align 4
 __tc_strobj6:
-    .word 1
     .word 2
     .word __tc_strdata6
     .align 4
 __tc_strobj7:
-    .word 1
     .word 2
     .word __tc_strdata7
     .align 4
 __tc_strobj8:
-    .word 1
     .word 2
     .word __tc_strdata8
     .align 4
 __tc_strobj9:
-    .word 1
     .word 3
     .word __tc_strdata9
     .align 4
 __tc_strobj10:
-    .word 1
     .word 3
     .word __tc_strdata10
     .align 4
 __tc_strobj11:
-    .word 1
     .word 2
     .word __tc_strdata11
     .align 4
 __tc_strobj12:
-    .word 1
     .word 3
     .word __tc_strdata12
     .align 4
 __tc_strobj13:
-    .word 1
     .word 3
     .word __tc_strdata13
     .align 4
 __tc_strobj14:
-    .word 1
     .word 4
     .word __tc_strdata14
     .align 4
 __tc_strobj15:
-    .word 1
     .word 4
     .word __tc_strdata15
     .align 4
 __tc_strobj16:
-    .word 1
     .word 2
     .word __tc_strdata16
     .align 4
 __tc_strobj17:
-    .word 1
     .word 2
     .word __tc_strdata17
     .align 4
 __tc_strobj18:
-    .word 1
     .word 2
     .word __tc_strdata18
     .align 4
 __tc_strobj19:
-    .word 1
     .word 3
     .word __tc_strdata19
     .align 4
 __tc_strobj20:
-    .word 1
     .word 4
     .word __tc_strdata20
     .align 4
 __tc_strobj21:
-    .word 1
     .word 4
     .word __tc_strdata21
     .align 4
 __tc_strobj22:
-    .word 1
     .word 5
     .word __tc_strdata22
     .align 4
 __tc_strobj23:
-    .word 1
     .word 5
     .word __tc_strdata23
     .align 4
 __tc_strobj24:
-    .word 1
     .word 5
     .word __tc_strdata24
     .align 4
 __tc_strobj25:
-    .word 1
     .word 6
     .word __tc_strdata25
     .align 4
 __tc_strobj26:
-    .word 1
     .word 6
     .word __tc_strdata26
     .align 4
 __tc_strobj27:
-    .word 1
     .word 6
     .word __tc_strdata27
     .align 4
 __tc_strobj28:
-    .word 1
     .word 6
     .word __tc_strdata28
     .align 4
 __tc_strobj29:
-    .word 1
     .word 8
     .word __tc_strdata29
     .align 4
 __tc_strobj30:
-    .word 1
     .word 17
     .word __tc_strdata30
     .align 4
 __tc_strobj31:
-    .word 1
     .word 5
     .word __tc_strdata31
     .align 4
 __tc_strobj32:
-    .word 1
     .word 3
     .word __tc_strdata32
     .align 4
 __tc_strobj33:
-    .word 1
     .word 3
     .word __tc_strdata33
     .align 4
 __tc_strobj34:
-    .word 1
     .word 4
     .word __tc_strdata34
     .align 4
 __tc_strobj35:
-    .word 1
     .word 4
     .word __tc_strdata35
     .align 4
 __tc_strobj36:
-    .word 1
     .word 5
     .word __tc_strdata36
     .align 4
 __tc_strobj37:
-    .word 1
     .word 4
     .word __tc_strdata37
     .align 4
 __tc_strobj38:
-    .word 1
     .word 8
     .word __tc_strdata38
     .align 4
 __tc_strobj39:
-    .word 1
     .word 6
     .word __tc_strdata39
     .align 4
 __tc_strobj40:
-    .word 1
     .word 9
     .word __tc_strdata40
     .align 4
 __tc_strobj41:
-    .word 1
     .word 7
     .word __tc_strdata41
     .align 4
 __tc_strobj42:
-    .word 1
     .word 5
     .word __tc_strdata42
     .align 4
 __tc_strobj43:
-    .word 1
     .word 6
     .word __tc_strdata43
     .align 4
 __tc_strobj44:
-    .word 1
     .word 5
     .word __tc_strdata44
     .align 4
 __tc_strobj45:
-    .word 1
     .word 3
     .word __tc_strdata45
     .align 4
 __tc_strobj46:
-    .word 1
     .word 3
     .word __tc_strdata46
     .align 4
 __tc_strobj47:
-    .word 1
     .word 3
     .word __tc_strdata47
     .align 4
 __tc_strobj48:
-    .word 1
     .word 8
     .word __tc_strdata48
     .align 4
 __tc_strobj49:
-    .word 1
     .word 3
     .word __tc_strdata49
     .align 4
 __tc_strobj50:
-    .word 1
     .word 3
     .word __tc_strdata50
     .align 4
 __tc_strobj51:
-    .word 1
     .word 3
     .word __tc_strdata51
     .align 4
 __tc_strobj52:
-    .word 1
     .word 5
     .word __tc_strdata52
     .align 4
 __tc_strobj53:
-    .word 1
     .word 6
     .word __tc_strdata53
     .align 4
 __tc_strobj54:
-    .word 1
     .word 7
     .word __tc_strdata54
 

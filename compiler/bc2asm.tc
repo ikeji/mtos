@@ -971,9 +971,6 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
             emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'b');
             emit_char(ob, 'j');
             emit_int(ob, si2); emit_char(ob, ':');emit_char(ob, 10u8);
-            // "    .word 1\n"  (kind = OBJ_STRING)
-            e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
-            emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);
             // "    .word LEN\n"  (count = byte length)
             e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
             emit_char(ob, ' ');emit_int(ob, sl2);emit_char(ob, 10u8);

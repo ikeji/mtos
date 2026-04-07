@@ -54,8 +54,6 @@ static int u32_to_str(uint32_t v, char *buf) {
 
 /* ===== HeapObj (minimal — arrays and strings) ===== */
 
-#define OBJ_ARRAY  0
-#define OBJ_STRING 1
 
 /* Power-of-2 pool allocator with 19 size classes.
  * Each bucket holds a fixed set of pre-linked slots; alloc/free are O(1)
@@ -150,15 +148,12 @@ static void pool_free_blk(void *ptr) {
 }
 
 typedef struct {
-    int      kind;
     int      count;      /* element count (arrays) or byte length (strings) */
     void    *data;
 } HeapObj;
 
-static HeapObj *new_obj(int kind) {
-    HeapObj *o = pool_alloc(sizeof(HeapObj));
-    o->kind = kind;
-    return o;
+static HeapObj *new_obj(void) {
+    return pool_alloc(sizeof(HeapObj));
 }
 
 /* ===== Print helpers ===== */
@@ -179,7 +174,7 @@ void print_bool__bool(int32_t v) {
 }
 
 void print_str__String(HeapObj *s) {
-    if (s && s->kind == OBJ_STRING && s->data)
+    if (s && s->data)
         do_write(1, (char*)s->data, s->count);
     do_write(1, "\n", 1);
 }
@@ -192,7 +187,7 @@ void print_str__StringLiteral(HeapObj *s) {
 
 /* Typed array constructor: allocates sz * elem_bytes for the data buffer. */
 static HeapObj *new_typed_array(int sz, int elem_bytes) {
-    HeapObj *o = new_obj(OBJ_ARRAY);
+    HeapObj *o = new_obj();
     o->count = sz;
     o->data = pool_alloc(sz > 0 ? sz * elem_bytes : 4);
     return o;
@@ -280,7 +275,7 @@ void heap_reset__i32(int32_t mark) { (void)mark; }
 HeapObj *append__String__u8(HeapObj *s, int32_t c) {
     int sl = s ? s->count : 0;
     uint8_t *sb = s ? (uint8_t*)s->data : 0;
-    HeapObj *ns = new_obj(OBJ_STRING);
+    HeapObj *ns = new_obj();
     ns->count = sl + 1;
     uint8_t *nb = pool_alloc(ns->count + 1);
     for (int i = 0; i < sl; i++) nb[i] = sb[i];
@@ -294,7 +289,7 @@ HeapObj *append__String__String(HeapObj *s, HeapObj *t) {
     int sl = s ? s->count : 0, tl = t ? t->count : 0;
     uint8_t *sb = s ? (uint8_t*)s->data : 0;
     uint8_t *tb = t ? (uint8_t*)t->data : 0;
-    HeapObj *ns = new_obj(OBJ_STRING);
+    HeapObj *ns = new_obj();
     ns->count = sl + tl;
     uint8_t *nb = pool_alloc(ns->count + 1);
     for (int i = 0; i < sl; i++) nb[i] = sb[i];
@@ -337,7 +332,7 @@ void poke32__u32__u32(uint32_t a, uint32_t v) { *(uint32_t *)a = v; }
 
 /* sys_write/read: U8Array is now 1 byte per element — direct I/O. */
 int32_t sys_write__i32__U8Array__i32(int32_t fd, HeapObj *buf, int32_t len) {
-    if (!buf || buf->kind != OBJ_ARRAY) return -1;
+    if (!buf) return -1;
     int n = len < buf->count ? len : buf->count;
     uint8_t *p = (uint8_t*)buf->data;
     int total = 0;
@@ -350,7 +345,7 @@ int32_t sys_write__i32__U8Array__i32(int32_t fd, HeapObj *buf, int32_t len) {
 }
 
 int32_t sys_read__i32__U8Array__i32(int32_t fd, HeapObj *buf, int32_t len) {
-    if (!buf || buf->kind != OBJ_ARRAY) return -1;
+    if (!buf) return -1;
     int n = len < buf->count ? len : buf->count;
     uint8_t *p = (uint8_t*)buf->data;
     int total = 0;

@@ -8248,41 +8248,6 @@ __L489:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 49
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  call e4 StringBuffer
-  pop
-  load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 119
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
   load sl2
   call emit_int StringBuffer i32
   pop

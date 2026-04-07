@@ -550,7 +550,6 @@ static void emit_program(BcProg *prog) {
             const char *s = prog->strings[i] ? prog->strings[i] : "";
             E("    .align 4\n");
             E("__tc_strobj%d:\n", i);
-            E("    .word 1\n");                     /* kind = OBJ_STRING */
             E("    .word %d\n", (int)strlen(s));    /* count (byte length) */
             E("    .word __tc_strdata%d\n", i);     /* data */
         }

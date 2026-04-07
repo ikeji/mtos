@@ -10595,50 +10595,6 @@
                 (var ob)
                 (int:u8 100)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 32)
-              )
-              (comment "emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 49)
-              )
-              (comment "emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 10)
-              )
-              (comment "e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');")
-              (call_stmt e4
-                (var ob)
-              )
-              (comment "e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 46)
-              )
-              (comment "e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 119)
-              )
-              (comment "e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 111)
-              )
-              (comment "e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 114)
-              )
-              (comment "e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 100)
-              )
               (comment "emit_char(ob, ' ');emit_int(ob, sl2);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
