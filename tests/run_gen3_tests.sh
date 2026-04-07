@@ -81,13 +81,28 @@ else
 
         # Gen3: parse → typecheck → codegen, all with Gen2 RISC-V binaries
         t0=$(time_ms)
-        "$QEMU" "$GEN2_TMP/parse_gen2" < "$input" > "$GEN2_TMP/gen3_ast" 2>/dev/null
-        "$QEMU" "$GEN2_TMP/typecheck_gen2" < "$GEN2_TMP/gen3_ast" > "$GEN2_TMP/gen3_tast" 2>/dev/null
-        "$QEMU" "$GEN2_TMP/codegen_gen2" < "$GEN2_TMP/gen3_tast" > "$GEN2_TMP/gen3_bc" 2>/dev/null
+        "$QEMU" "$GEN2_TMP/parse_gen2" < "$input" > "$GEN2_TMP/gen3_ast" 2>"$GEN2_TMP/parse_stderr"
+        "$QEMU" "$GEN2_TMP/typecheck_gen2" < "$GEN2_TMP/gen3_ast" > "$GEN2_TMP/gen3_tast" 2>"$GEN2_TMP/typecheck_stderr"
+        "$QEMU" "$GEN2_TMP/codegen_gen2" < "$GEN2_TMP/gen3_tast" > "$GEN2_TMP/gen3_bc" 2>"$GEN2_TMP/codegen_stderr"
         elapsed=$(( $(time_ms) - t0 ))
 
+        # Extract peak memory from pool stats (sum of peak * bucket_size)
+        extract_peak_mem() {
+            local stderr_file="$1"
+            awk '$1 ~ /^[0-9]+$/ && $3 ~ /\// { split($3,a,"/"); total += a[1] * $1 } END { if (total>0) printf "%dKB", total/1024 }' "$stderr_file"
+        }
+        mem_parse=$(extract_peak_mem "$GEN2_TMP/parse_stderr")
+        mem_tc=$(extract_peak_mem "$GEN2_TMP/typecheck_stderr")
+        mem_cg=$(extract_peak_mem "$GEN2_TMP/codegen_stderr")
+        mem_parts=""
+        [ -n "$mem_parse" ] && mem_parts="parse=${mem_parse}"
+        [ -n "$mem_tc" ] && mem_parts="${mem_parts:+$mem_parts }tc=${mem_tc}"
+        [ -n "$mem_cg" ] && mem_parts="${mem_parts:+$mem_parts }cg=${mem_cg}"
+        mem_info=""
+        [ -n "$mem_parts" ] && mem_info=" (mem: ${mem_parts})"
+
         if diff -u "$gen2_bc_file" "$GEN2_TMP/gen3_bc" > /dev/null; then
-            echo "PASS: tc/$f (Gen2 == Gen3) [${elapsed}ms]"
+            echo "PASS: tc/$f (Gen2 == Gen3) [${elapsed}ms]${mem_info}"
             PASS=$((PASS + 1))
         else
             echo "FAIL: tc/$f (Gen2 != Gen3) [${elapsed}ms]"
