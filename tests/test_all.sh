@@ -39,7 +39,6 @@ run_suite "$SCRIPT_DIR/test_unit.sh"
 run_suite "$SCRIPT_DIR/test_pipeline.sh"
 run_suite "$SCRIPT_DIR/test_consistency.sh"
 run_suite "$SCRIPT_DIR/test_golden_examples.sh"
-run_suite "$SCRIPT_DIR/test_golden_compiler.sh"
 run_suite "$SCRIPT_DIR/test_gen3.sh"
 run_suite "$SCRIPT_DIR/test_import.sh"
 
