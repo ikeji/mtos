@@ -1,48 +1,83 @@
 #!/bin/bash
-# test_unit.sh — unit-level tests: parse, typecheck, codegen, interp, bcrun, rv32
+# test_unit.sh — unit-level tests
+# Tools: Gen1 (C) parse, typecheck, codegen, interp, bcrun, bc2asm, riscv-gcc, qemu
+# Tests: output contains-checks, execution output/exit-code checks
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test_common.sh"
 require_tools parse typecheck codegen bcrun bc2asm interp
 
-echo "=== Unit Tests ==="
+echo "=== Unit Tests (Gen1 tools: parse/typecheck/codegen/interp/bcrun/rv32) ==="
 echo ""
 
-# Helper: run command, compare output
+# Helper: run command, compare output, show time
 run_test() {
     local name="$1" cmd="$2" expected="$3"
-    local actual
+    local t0 actual elapsed
+    t0=$(time_ms)
     actual=$(eval "$cmd" 2>&1)
-    check_output "$name" "$expected" "$actual"
+    elapsed=$(( $(time_ms) - t0 ))
+    if [ "$actual" = "$expected" ]; then
+        report_pass "$name" "$elapsed"
+    else
+        echo "FAIL: $name [${elapsed}ms]"
+        echo "  expected: $(echo "$expected" | head -3)"
+        echo "  actual:   $(echo "$actual" | head -3)"
+        FAIL=$((FAIL + 1))
+    fi
 }
 
 run_test_exit() {
     local name="$1" cmd="$2" expected_exit="$3"
+    local t0 elapsed
+    t0=$(time_ms)
     eval "$cmd" > /dev/null 2>&1
     local actual_exit=$?
+    elapsed=$(( $(time_ms) - t0 ))
     if [ "$actual_exit" = "$expected_exit" ]; then
-        echo "PASS: $name"; PASS=$((PASS + 1))
+        report_pass "$name" "$elapsed"
     else
-        report_fail_msg "$name" "expected exit: $expected_exit, got: $actual_exit"
+        report_fail_msg "$name [${elapsed}ms]" "expected exit: $expected_exit, got: $actual_exit"
     fi
 }
 
 run_test_contains() {
     local name="$1" cmd="$2" expected="$3"
-    local actual
+    local t0 actual elapsed
+    t0=$(time_ms)
     actual=$(eval "$cmd" 2>&1)
-    check_contains "$name" "$actual" "$expected"
+    elapsed=$(( $(time_ms) - t0 ))
+    if echo "$actual" | grep -qF "$expected"; then
+        report_pass "$name" "$elapsed"
+    else
+        echo "FAIL: $name [${elapsed}ms]"
+        echo "  expected to contain: $expected"
+        echo "  actual: $(echo "$actual" | head -3)"
+        FAIL=$((FAIL + 1))
+    fi
 }
 
-# Helper: compile .tc → rv32 ELF and run with qemu
+# Helper: compile .tc → rv32 ELF and run with qemu, show time + memory
 run_rv32() {
     local name="$1" tc="$2" expected="$3"
     local asm="/tmp/tc_rv32_$$.s" elf="/tmp/tc_rv32_$$"
-    $BC2ASM <($CODEGEN "$tc") > "$asm" 2>/dev/null || { report_fail_msg "$name" "codegen/bc2asm failed"; return; }
-    $RISCV_CC $RISCV_FLAGS "$CRT0" "$asm" "$RUNTIME" -o "$elf" 2>/dev/null || { report_fail_msg "$name" "compile failed"; rm -f "$asm" "$elf"; return; }
-    actual=$($QEMU "$elf" 2>/dev/null)
-    rm -f "$asm" "$elf"
-    check_output "$name" "$expected" "$actual"
+    local t0 elapsed
+    t0=$(time_ms)
+    $BC2ASM <($CODEGEN "$tc") > "$asm" 2>/dev/null || { elapsed=$(( $(time_ms) - t0 )); report_fail_msg "$name [${elapsed}ms]" "codegen/bc2asm failed"; return; }
+    $RISCV_CC $RISCV_FLAGS "$CRT0" "$asm" "$RUNTIME" -o "$elf" 2>/dev/null || { elapsed=$(( $(time_ms) - t0 )); report_fail_msg "$name [${elapsed}ms]" "compile failed"; rm -f "$asm" "$elf"; return; }
+    actual=$($QEMU "$elf" 2>/tmp/tc_rv32_stderr_$$ )
+    elapsed=$(( $(time_ms) - t0 ))
+    local mem
+    mem=$(awk '$1 ~ /^[0-9]+$/ && $3 ~ /\// { split($3,a,"/"); total += a[1] * $1 } END { if (total>0) printf "%dKB", total/1024 }' /tmp/tc_rv32_stderr_$$)
+    rm -f "$asm" "$elf" /tmp/tc_rv32_stderr_$$
+    if [ "$actual" = "$expected" ]; then
+        report_pass "$name${mem:+ (mem: $mem)}" "$elapsed"
+    else
+        echo "FAIL: $name [${elapsed}ms]"
+        echo "  expected: $(echo "$expected" | head -3)"
+        echo "  actual:   $(echo "$actual" | head -3)"
+        FAIL=$((FAIL + 1))
+    fi
 }
 
 # --- Parse tests ---

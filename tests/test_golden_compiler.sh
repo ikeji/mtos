@@ -12,7 +12,7 @@ else
     ensure_tc_bcs
 fi
 
-echo "=== Golden Tests: tc/ Compiler Source Files ==="
+echo "=== Golden Tests: tc/ Compiler Sources (Gen1 C vs Gen2${USE_NATIVE:+, rv32 native}) ==="
 
 for f in "${TC_FILES[@]}"; do
     input="$TC_DIR/$f"

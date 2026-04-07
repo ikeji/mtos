@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test_common.sh"
 require_tools parse codegen bcrun bc2asm
 
-echo "=== Gen2 vs Gen3 Verification (True Self-Hosting Check, RISC-V) ==="
+echo "=== Gen2 vs Gen3 (Gen2 rv32 compiles compiler/ → Gen3 BC must match Gen2 BC) ==="
 
 if ! command -v "$RISCV_CC" >/dev/null 2>&1 || ! command -v "$QEMU" >/dev/null 2>&1; then
     echo "SKIP: Gen2 vs Gen3 assembly check (RISC-V toolchain not found)"

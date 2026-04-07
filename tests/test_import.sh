@@ -32,7 +32,7 @@ link_and_run() {
     return 0
 }
 
-echo "=== Import Tests ==="
+echo "=== Import Tests (multi-file import/export via rv32) ==="
 
 # --- Test 1: Basic import (export fn) ---
 if [ "$HAS_RV" = true ]; then

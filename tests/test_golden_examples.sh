@@ -7,7 +7,7 @@ require_tools parse codegen bcrun bc2asm
 
 ensure_tc_bcs
 
-echo "=== Golden Tests: Example Files ==="
+echo "=== Golden Tests: Example Files (Gen1 C vs Gen2 self-hosted, golden diff) ==="
 
 for f in "${EXAMPLE_FILES[@]}"; do
     input="$SCRIPT_DIR/$f"
