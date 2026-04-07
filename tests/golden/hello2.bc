@@ -2,14 +2,14 @@
 ; string table
 .string 0 "Hello, World\n"
 
-.fn to_buf String void
-.param str String
+.fn to_buf StringLiteral void
+.param str StringLiteral
 .local len i32
 .local buf U8Array
 .local i i32
 ; var len: i32 = len(str);
   load str
-  call len String
+  call len StringLiteral
   store len
 ; var buf: U8Array = U8Array(13);
   push_int 13
@@ -29,7 +29,7 @@ __L0:
   load i
   load str
   load i
-  call get String i32
+  call get StringLiteral i32
   call set U8Array i32 u8
   pop
 ; i = i + 1;
@@ -49,7 +49,7 @@ __L1:
 .local buf U8Array
 ; var buf: U8Array = to_buf("Hello, World\n");
   push_str 0
-  call to_buf String
+  call to_buf StringLiteral
   store buf
 ; sys_write(1, buf, 13);
   push_int 1

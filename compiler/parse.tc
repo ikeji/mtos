@@ -89,7 +89,7 @@ fn is_wspace(c: u8) -> bool {
     return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8;
 }
 
-fn tok_cmp(tok: U8Array, tlen: i32, target: String) -> bool {
+fn tok_cmp(tok: U8Array, tlen: i32, target: StringLiteral) -> bool {
     if tlen != len(target) { return false; }
     var i: i32 = 0;
     while i < tlen {
@@ -1192,7 +1192,7 @@ fn type_tok_name(tok: U8Array, buf: U8Array, bstart: i32) -> i32 {
 }
 
 // Emit a (param __aN (type T)) node.
-fn emit_param(name: String, tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer, indent: i32) -> void {
+fn emit_param(name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer, indent: i32) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
     emit_string(sb, name); emit_char(sb, 10u8);
@@ -1214,7 +1214,7 @@ fn emit_type(tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer) -> void {
 }
 
 // Emit (cast (var NAME) (type T)) — NAME is a String literal.
-fn emit_cast_var(name: String, tname: String, sb: StringBuffer, indent: i32) -> void {
+fn emit_cast_var(name: StringLiteral, tname: StringLiteral, sb: StringBuffer, indent: i32) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
     emit_indent(sb, indent + 1);
@@ -1229,7 +1229,7 @@ fn emit_cast_var(name: String, tname: String, sb: StringBuffer, indent: i32) -> 
 }
 
 // Emit (cast (var NAME) (type T)) where T comes from tbuf[tstart..].
-fn emit_cast_var_tbuf(name: String, tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer, indent: i32) -> void {
+fn emit_cast_var_tbuf(name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32, sb: StringBuffer, indent: i32) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
     emit_indent(sb, indent + 1);

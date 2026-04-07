@@ -398,6 +398,18 @@ fn strtab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
     return true;
 }
 
+fn st_add_str(strtab: U8Array, s: StringLiteral) -> i32 {
+    var start: i32 = g_sp;
+    var i: i32 = 0;
+    var n: i32 = len(s);
+    while i < n {
+        set(strtab, g_sp, get(s, i) as u8);
+        g_sp = g_sp + 1;
+        i = i + 1;
+    }
+    return start;
+}
+
 fn st_add_str(strtab: U8Array, s: String) -> i32 {
     var start: i32 = g_sp;
     var i: i32 = 0;
@@ -486,7 +498,7 @@ fn set_annot(nodes: I32Array, n: i32, tss: i32, tsl: i32) -> void {
     return;
 }
 
-fn set_annot_lit(nodes: I32Array, strtab: U8Array, n: i32, ty: String) -> void {
+fn set_annot_lit(nodes: I32Array, strtab: U8Array, n: i32, ty: StringLiteral) -> void {
     var start: i32 = st_add_str(strtab, ty);
     var slen: i32 = len(ty);
     set_annot(nodes, n, start, slen);
@@ -496,7 +508,7 @@ fn set_annot_lit(nodes: I32Array, strtab: U8Array, n: i32, ty: String) -> void {
 }
 
 // ===== Register builtins =====
-fn reg_fn(strtab: U8Array, fntab: I32Array, name: String, pts: StringArray, np: i32, ret: String) -> void {
+fn reg_fn(strtab: U8Array, fntab: I32Array, name: StringLiteral, pts: StringArray, np: i32, ret: StringLiteral) -> void {
     var fi: i32 = g_fn_count;
     g_fn_count = g_fn_count + 1;
     var nstart: i32 = st_add_str(strtab, name);
@@ -517,14 +529,14 @@ fn reg_fn(strtab: U8Array, fntab: I32Array, name: String, pts: StringArray, np: 
     return;
 }
 
-fn reg_fn0(strtab: U8Array, fntab: I32Array, name: String, ret: String) -> void {
+fn reg_fn0(strtab: U8Array, fntab: I32Array, name: StringLiteral, ret: StringLiteral) -> void {
     var pts: StringArray = StringArray(1);
     reg_fn(strtab, fntab, name, pts, 0, ret);
     delete(pts);
     return;
 }
 
-fn reg_fn1(strtab: U8Array, fntab: I32Array, name: String, p0: String, ret: String) -> void {
+fn reg_fn1(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, ret: StringLiteral) -> void {
     var pts: StringArray = StringArray(1);
     set(pts, 0, p0);
     reg_fn(strtab, fntab, name, pts, 1, ret);
@@ -532,7 +544,7 @@ fn reg_fn1(strtab: U8Array, fntab: I32Array, name: String, p0: String, ret: Stri
     return;
 }
 
-fn reg_fn2(strtab: U8Array, fntab: I32Array, name: String, p0: String, p1: String, ret: String) -> void {
+fn reg_fn2(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, p1: StringLiteral, ret: StringLiteral) -> void {
     var pts: StringArray = StringArray(2);
     set(pts, 0, p0);
     set(pts, 1, p1);
@@ -541,7 +553,7 @@ fn reg_fn2(strtab: U8Array, fntab: I32Array, name: String, p0: String, p1: Strin
     return;
 }
 
-fn reg_fn3(strtab: U8Array, fntab: I32Array, name: String, p0: String, p1: String, p2: String, ret: String) -> void {
+fn reg_fn3(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, p1: StringLiteral, p2: StringLiteral, ret: StringLiteral) -> void {
     var pts: StringArray = StringArray(3);
     set(pts, 0, p0);
     set(pts, 1, p1);
@@ -551,7 +563,7 @@ fn reg_fn3(strtab: U8Array, fntab: I32Array, name: String, p0: String, p1: Strin
     return;
 }
 
-fn reg_array_builtins(strtab: U8Array, fntab: I32Array, arr_type: String, elem_type: String) -> void {
+fn reg_array_builtins(strtab: U8Array, fntab: I32Array, arr_type: StringLiteral, elem_type: StringLiteral) -> void {
     reg_fn1(strtab, fntab, arr_type, "i32", arr_type);
     reg_fn1(strtab, fntab, "len", arr_type, "i32");
     reg_fn2(strtab, fntab, "get", arr_type, "i32", elem_type);
@@ -582,7 +594,19 @@ fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
     reg_fn2(strtab, fntab, "append", "String", "String", "String");
     reg_fn2(strtab, fntab, "equals", "String", "String", "bool");
 
+    reg_fn1(strtab, fntab, "delete", "StringLiteral", "void");
+    reg_fn1(strtab, fntab, "len", "StringLiteral", "i32");
+    reg_fn2(strtab, fntab, "get", "StringLiteral", "i32", "u8");
+    reg_fn2(strtab, fntab, "append", "StringLiteral", "u8", "String");
+    reg_fn2(strtab, fntab, "append", "StringLiteral", "StringLiteral", "String");
+    reg_fn2(strtab, fntab, "append", "StringLiteral", "String", "String");
+    reg_fn2(strtab, fntab, "append", "String", "StringLiteral", "String");
+    reg_fn2(strtab, fntab, "equals", "StringLiteral", "StringLiteral", "bool");
+    reg_fn2(strtab, fntab, "equals", "StringLiteral", "String", "bool");
+    reg_fn2(strtab, fntab, "equals", "String", "StringLiteral", "bool");
+
     reg_array_builtins(strtab, fntab, "StringArray", "String");
+    reg_fn3(strtab, fntab, "set", "StringArray", "i32", "StringLiteral", "void");
 
     reg_fn3(strtab, fntab, "sys_write", "i32", "U8Array", "i32", "i32");
     reg_fn3(strtab, fntab, "sys_read", "i32", "U8Array", "i32", "i32");
@@ -595,6 +619,7 @@ fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
     reg_fn1(strtab, fntab, "print_u32", "u32", "void");
     reg_fn1(strtab, fntab, "print_bool", "bool", "void");
     reg_fn1(strtab, fntab, "print_str", "String", "void");
+    reg_fn1(strtab, fntab, "print_str", "StringLiteral", "void");
     return;
 }
 
@@ -654,7 +679,7 @@ fn check_expr(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Arra
     }
 
     if k == NK_STR {
-        set_annot_lit(nodes, strtab, n, "String");
+        set_annot_lit(nodes, strtab, n, "StringLiteral");
         return;
     }
 

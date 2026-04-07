@@ -8159,41 +8159,6 @@ __L499:
   load ob
   call ob_char u8 U8Array
   pop
-  push_int 49
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 10
-  load ob
-  call ob_char u8 U8Array
-  pop
-  load ob
-  call e4 U8Array
-  pop
-  push_int 46
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 119
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 111
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 114
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 100
-  load ob
-  call ob_char u8 U8Array
-  pop
-  push_int 32
-  load ob
-  call ob_char u8 U8Array
-  pop
   push_int 95
   load ob
   call ob_char u8 U8Array

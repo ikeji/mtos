@@ -152,7 +152,6 @@ static void pool_free_blk(void *ptr) {
 typedef struct {
     int      kind;
     int      count;      /* element count (arrays) or byte length (strings) */
-    int      is_literal;
     void    *data;
 } HeapObj;
 
@@ -185,6 +184,10 @@ void print_str__String(HeapObj *s) {
     do_write(1, "\n", 1);
 }
 
+void print_str__StringLiteral(HeapObj *s) {
+    print_str__String(s);
+}
+
 /* ===== Array operations ===== */
 
 /* Typed array constructor: allocates sz * elem_bytes for the data buffer. */
@@ -212,7 +215,7 @@ static int32_t len_impl(HeapObj *o) {
 #define LEN_ALIAS(T) int32_t len__##T(HeapObj *o) { return len_impl(o); }
 LEN_ALIAS(U8Array)   LEN_ALIAS(U16Array)  LEN_ALIAS(U32Array)
 LEN_ALIAS(I8Array)   LEN_ALIAS(I16Array)  LEN_ALIAS(I32Array)
-LEN_ALIAS(StringArray) LEN_ALIAS(String)
+LEN_ALIAS(StringArray) LEN_ALIAS(String) LEN_ALIAS(StringLiteral)
 
 /* get — typed per element size */
 static void get_null_check(HeapObj *o) {
@@ -236,6 +239,9 @@ int32_t get__String__i32(HeapObj *o, int32_t i) {
     if (i < 0 || i >= o->count) return 0;
     return ((uint8_t*)o->data)[i];
 }
+int32_t get__StringLiteral__i32(HeapObj *o, int32_t i) {
+    return get__String__i32(o, i);
+}
 
 /* set — typed per element size */
 static void set_bounds_check(HeapObj *o, int32_t idx) {
@@ -251,11 +257,11 @@ void set__I8Array__i32__i8    (HeapObj *o, int32_t i, int32_t v) { set_bounds_ch
 void set__I16Array__i32__i16  (HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int16_t *)o->data)[i] = (int16_t)v; }
 void set__I32Array__i32__i32  (HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int32_t *)o->data)[i] = v; }
 void set__StringArray__i32__String(HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int32_t *)o->data)[i] = v; }
+void set__StringArray__i32__StringLiteral(HeapObj *o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int32_t *)o->data)[i] = v; }
 
 /* delete — all types share the same implementation */
 static void delete_impl(HeapObj *o) {
     if (!o) return;
-    if (o->is_literal) return;
     if (o->data) pool_free_blk(o->data);
     pool_free_blk(o);
 }
@@ -263,6 +269,7 @@ static void delete_impl(HeapObj *o) {
 DELETE_ALIAS(U8Array)   DELETE_ALIAS(U16Array)  DELETE_ALIAS(U32Array)
 DELETE_ALIAS(I8Array)   DELETE_ALIAS(I16Array)  DELETE_ALIAS(I32Array)
 DELETE_ALIAS(StringArray) DELETE_ALIAS(String)
+void delete__StringLiteral(HeapObj *o) { (void)o; /* no-op: .rodata */ }
 
 /* Mark/reset are no-ops now that the pool allocator supports free(). */
 int32_t heap_mark(void) { return 0; }
@@ -297,6 +304,12 @@ HeapObj *append__String__String(HeapObj *s, HeapObj *t) {
     return ns;
 }
 
+/* StringLiteral append overloads — all delegate to String versions */
+HeapObj *append__StringLiteral__u8(HeapObj *s, int32_t c) { return append__String__u8(s, c); }
+HeapObj *append__StringLiteral__StringLiteral(HeapObj *s, HeapObj *t) { return append__String__String(s, t); }
+HeapObj *append__StringLiteral__String(HeapObj *s, HeapObj *t) { return append__String__String(s, t); }
+HeapObj *append__String__StringLiteral(HeapObj *s, HeapObj *t) { return append__String__String(s, t); }
+
 int32_t equals__String__String(HeapObj *s, HeapObj *t) {
     if (!s || !t) return s == t;
     if (s->count != t->count) return 0;
@@ -305,6 +318,11 @@ int32_t equals__String__String(HeapObj *s, HeapObj *t) {
         if (sb[i] != tb[i]) return 0;
     return 1;
 }
+
+/* StringLiteral equals overloads */
+int32_t equals__StringLiteral__StringLiteral(HeapObj *s, HeapObj *t) { return equals__String__String(s, t); }
+int32_t equals__StringLiteral__String(HeapObj *s, HeapObj *t) { return equals__String__String(s, t); }
+int32_t equals__String__StringLiteral(HeapObj *s, HeapObj *t) { return equals__String__String(s, t); }
 
 /* ===== peek / poke ===== */
 

@@ -405,7 +405,7 @@
         (type i32)
       )
       (param target
-        (type String)
+        (type StringLiteral)
       )
     )
     (ret
@@ -8146,7 +8146,7 @@
   (fn emit_param
     (params
       (param name
-        (type String)
+        (type StringLiteral)
       )
       (param tbuf
         (type U8Array)
@@ -8305,10 +8305,10 @@
   (fn emit_cast_var
     (params
       (param name
-        (type String)
+        (type StringLiteral)
       )
       (param tname
-        (type String)
+        (type StringLiteral)
       )
       (param sb
         (type StringBuffer)
@@ -8434,7 +8434,7 @@
   (fn emit_cast_var_tbuf
     (params
       (param name
-        (type String)
+        (type StringLiteral)
       )
       (param tbuf
         (type U8Array)

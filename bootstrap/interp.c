@@ -33,7 +33,6 @@ struct HeapObj {
     char *type_name;
     int size;
     int len;
-    int is_literal;
     Value *fields;
     uint8_t *bytes;
     int ref_count;
@@ -65,7 +64,7 @@ static HeapObj *heap_alloc(ObjKind kind, const char *type_name) {
 
 static void heap_obj_free(HeapObj *o) {
     if (!o) return;
-    if (!o->is_literal) {
+    if (o->type_name && strcmp(o->type_name, "StringLiteral") != 0) {
         free(o->bytes);
         free(o->fields);
     }
@@ -487,14 +486,13 @@ static Value eval_expr(Interp *ip, AstNode *node) {
     }
 
     if (strcmp(k, "str") == 0) {
-        HeapObj *s = heap_alloc(OBJ_STRING, "String");
+        HeapObj *s = heap_alloc(OBJ_STRING, "StringLiteral");
         const char *txt = node->sval ? node->sval : "";
         s->len = (int)strlen(txt);
         s->size = s->len + 1;
         s->bytes = malloc(s->size);
         memcpy(s->bytes, txt, s->len);
         s->bytes[s->len] = '\0';
-        s->is_literal = 1;
         return val_ref(s);
     }
 

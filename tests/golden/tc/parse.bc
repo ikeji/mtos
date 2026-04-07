@@ -248,14 +248,14 @@ __L13:
   return_void
 .endfn
 
-.fn tok_cmp U8Array i32 String bool
+.fn tok_cmp U8Array i32 StringLiteral bool
 .param tok U8Array
 .param tlen i32
-.param target String
+.param target StringLiteral
 .local i i32
   load tlen
   load target
-  call len String
+  call len StringLiteral
   ne
   jump_ifnot __L18
   push_int 0
@@ -273,7 +273,7 @@ __L19:
   call get U8Array i32
   load target
   load i
-  call get String i32
+  call get StringLiteral i32
   ne
   jump_ifnot __L21
   push_int 0
@@ -379,7 +379,7 @@ __L29:
   jump_ifnot __L30
   load sb
   push_str 0
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L30:
@@ -389,7 +389,7 @@ __L30:
   jump_ifnot __L31
   load sb
   push_str 1
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L31:
@@ -399,7 +399,7 @@ __L31:
   jump_ifnot __L32
   load sb
   push_str 2
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L32:
@@ -409,7 +409,7 @@ __L32:
   jump_ifnot __L33
   load sb
   push_str 3
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L33:
@@ -429,7 +429,7 @@ __L34:
   jump_ifnot __L35
   load sb
   push_str 4
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L35:
@@ -439,7 +439,7 @@ __L35:
   jump_ifnot __L36
   load sb
   push_str 5
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L36:
@@ -459,7 +459,7 @@ __L37:
   jump_ifnot __L38
   load sb
   push_str 6
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L38:
@@ -479,7 +479,7 @@ __L39:
   jump_ifnot __L40
   load sb
   push_str 7
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L40:
@@ -496,7 +496,7 @@ __L40:
   jump_ifnot __L41
   load sb
   push_str 8
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L41:
@@ -506,7 +506,7 @@ __L41:
   jump_ifnot __L42
   load sb
   push_str 9
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L42:
@@ -516,7 +516,7 @@ __L42:
   jump_ifnot __L43
   load sb
   push_str 10
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L43:
@@ -526,7 +526,7 @@ __L43:
   jump_ifnot __L44
   load sb
   push_str 11
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L44:
@@ -536,7 +536,7 @@ __L44:
   jump_ifnot __L45
   load sb
   push_str 12
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L45:
@@ -546,7 +546,7 @@ __L45:
   jump_ifnot __L46
   load sb
   push_str 13
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L46:
@@ -556,7 +556,7 @@ __L46:
   jump_ifnot __L47
   load sb
   push_str 14
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L47:
@@ -566,7 +566,7 @@ __L47:
   jump_ifnot __L48
   load sb
   push_str 15
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   return_void
 __L48:
@@ -673,7 +673,7 @@ __L50:
   load tok
   load tlen
   push_str 16
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L66
   load TK_FN
   return
@@ -681,7 +681,7 @@ __L66:
   load tok
   load tlen
   push_str 17
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L67
   load TK_AS
   return
@@ -689,7 +689,7 @@ __L67:
   load tok
   load tlen
   push_str 18
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L68
   load TK_IF
   return
@@ -697,7 +697,7 @@ __L68:
   load tok
   load tlen
   push_str 8
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L69
   load TK_U8
   return
@@ -705,7 +705,7 @@ __L69:
   load tok
   load tlen
   push_str 11
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L70
   load TK_I8
   return
@@ -718,7 +718,7 @@ __L65:
   load tok
   load tlen
   push_str 19
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L72
   load TK_VAR
   return
@@ -726,7 +726,7 @@ __L72:
   load tok
   load tlen
   push_str 9
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L73
   load TK_U16
   return
@@ -734,7 +734,7 @@ __L73:
   load tok
   load tlen
   push_str 10
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L74
   load TK_U32
   return
@@ -742,7 +742,7 @@ __L74:
   load tok
   load tlen
   push_str 12
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L75
   load TK_I16
   return
@@ -750,7 +750,7 @@ __L75:
   load tok
   load tlen
   push_str 13
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L76
   load TK_I32
   return
@@ -763,7 +763,7 @@ __L71:
   load tok
   load tlen
   push_str 20
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L78
   load TK_ELSE
   return
@@ -771,7 +771,7 @@ __L78:
   load tok
   load tlen
   push_str 14
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L79
   load TK_BOOL
   return
@@ -779,7 +779,7 @@ __L79:
   load tok
   load tlen
   push_str 15
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L80
   load TK_VOID
   return
@@ -787,7 +787,7 @@ __L80:
   load tok
   load tlen
   push_str 21
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L81
   load TK_TRUE
   return
@@ -800,7 +800,7 @@ __L77:
   load tok
   load tlen
   push_str 22
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L83
   load TK_WHILE
   return
@@ -808,7 +808,7 @@ __L83:
   load tok
   load tlen
   push_str 23
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L84
   load TK_FALSE
   return
@@ -816,7 +816,7 @@ __L84:
   load tok
   load tlen
   push_str 24
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L85
   load TK_BREAK
   return
@@ -829,7 +829,7 @@ __L82:
   load tok
   load tlen
   push_str 25
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L87
   load TK_RETURN
   return
@@ -837,7 +837,7 @@ __L87:
   load tok
   load tlen
   push_str 26
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L88
   load TK_STRUCT
   return
@@ -845,7 +845,7 @@ __L88:
   load tok
   load tlen
   push_str 27
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L89
   load TK_IMPORT
   return
@@ -853,7 +853,7 @@ __L89:
   load tok
   load tlen
   push_str 28
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L90
   load TK_EXPORT
   return
@@ -866,7 +866,7 @@ __L86:
   load tok
   load tlen
   push_str 29
-  call tok_cmp U8Array i32 String
+  call tok_cmp U8Array i32 StringLiteral
   jump_ifnot __L92
   load TK_CONTINUE
   return
@@ -2263,7 +2263,7 @@ __L242:
   pop
   load sb
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -2310,7 +2310,7 @@ __L242:
   pop
   load sb
   push_str 31
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load g_tok_slen
   push_int 0
@@ -2355,7 +2355,7 @@ __L243:
   pop
   load sb
   push_str 32
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -2470,7 +2470,7 @@ __L245:
   pop
   load sb
   push_str 14
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -2478,7 +2478,7 @@ __L245:
   pop
   load sb
   push_str 21
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -2500,7 +2500,7 @@ __L256:
   pop
   load sb
   push_str 14
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -2508,7 +2508,7 @@ __L256:
   pop
   load sb
   push_str 23
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -2589,7 +2589,7 @@ __L261:
   pop
   load sb
   push_str 33
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -2654,7 +2654,7 @@ __L262:
   pop
   load sb
   push_str 19
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -2713,7 +2713,7 @@ __L269:
   pop
   load wrapped
   push_str 34
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load wrapped
   push_int 10
@@ -2773,7 +2773,7 @@ __L270:
   pop
   load sb
   push_str 35
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -2812,7 +2812,7 @@ __L271:
   pop
   load sb
   push_str 35
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -2907,7 +2907,7 @@ __L276:
   pop
   load combined
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 32
@@ -3009,7 +3009,7 @@ __L282:
   pop
   load combined
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 32
@@ -3111,7 +3111,7 @@ __L286:
   pop
   load combined
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 32
@@ -3200,7 +3200,7 @@ __L287:
   pop
   load combined
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 32
@@ -3289,7 +3289,7 @@ __L289:
   pop
   load combined
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 32
@@ -3378,7 +3378,7 @@ __L291:
   pop
   load combined
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 32
@@ -3516,7 +3516,7 @@ __L295:
   pop
   load sb
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -3603,7 +3603,7 @@ __L304:
   pop
   load combined
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 32
@@ -3611,7 +3611,7 @@ __L304:
   pop
   load combined
   push_str 2
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 10
@@ -3692,7 +3692,7 @@ __L306:
   pop
   load combined
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 32
@@ -3700,7 +3700,7 @@ __L306:
   pop
   load combined
   push_str 3
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load combined
   push_int 10
@@ -3754,7 +3754,7 @@ __L307:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -3863,7 +3863,7 @@ __L314:
   pop
   load sb
   push_str 37
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -3962,7 +3962,7 @@ __L315:
   pop
   load sb
   push_str 24
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -3993,7 +3993,7 @@ __L315:
   pop
   load sb
   push_str 29
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -4019,7 +4019,7 @@ __L315:
   pop
   load sb
   push_str 25
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load g_tok
   load TK_SEMI
@@ -4078,7 +4078,7 @@ __L316:
   pop
   load sb
   push_str 18
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -4187,7 +4187,7 @@ __L317:
   pop
   load sb
   push_str 22
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -4294,7 +4294,7 @@ __L321:
   pop
   load sb
   push_str 38
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -4396,7 +4396,7 @@ __L327:
   pop
   load sb
   push_str 38
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -4424,7 +4424,7 @@ __L327:
   pop
   load sb
   push_str 30
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -4485,7 +4485,7 @@ __L338:
   pop
   load sb
   push_str 19
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -4547,7 +4547,7 @@ __L324:
   pop
   load sb
   push_str 39
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -4749,7 +4749,7 @@ __L358:
   pop
   load sb
   push_str 40
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -4957,7 +4957,7 @@ __L377:
   pop
   load sb
   push_str 41
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
 __L378:
   load g_tok
@@ -5093,7 +5093,7 @@ __L383:
   pop
   load sb
   push_str 16
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load is_export
   push_int 1
@@ -5105,7 +5105,7 @@ __L383:
   pop
   load sb
   push_str 28
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
 __L384:
   load sb
@@ -5137,7 +5137,7 @@ __L384:
   pop
   load sb
   push_str 42
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load g_tok
   load TK_RPAREN
@@ -5203,7 +5203,7 @@ __L389:
   pop
   load sb
   push_str 43
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -5301,7 +5301,7 @@ __L385:
   pop
   load sb
   push_str 44
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -5337,7 +5337,7 @@ __L392:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -5345,7 +5345,7 @@ __L392:
   pop
   load sb
   push_str 15
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -5666,8 +5666,8 @@ __L402:
   return_void
 .endfn
 
-.fn emit_param String U8Array i32 i32 StringBuffer i32 void
-.param name String
+.fn emit_param StringLiteral U8Array i32 i32 StringBuffer i32 void
+.param name StringLiteral
 .param tbuf U8Array
 .param tstart i32
 .param tlen i32
@@ -5683,7 +5683,7 @@ __L402:
   pop
   load sb
   push_str 43
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -5691,7 +5691,7 @@ __L402:
   pop
   load sb
   load name
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -5709,7 +5709,7 @@ __L402:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -5752,7 +5752,7 @@ __L402:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -5772,9 +5772,9 @@ __L402:
   return_void
 .endfn
 
-.fn emit_cast_var String String StringBuffer i32 void
-.param name String
-.param tname String
+.fn emit_cast_var StringLiteral StringLiteral StringBuffer i32 void
+.param name StringLiteral
+.param tname StringLiteral
 .param sb StringBuffer
 .param indent i32
   load sb
@@ -5787,7 +5787,7 @@ __L402:
   pop
   load sb
   push_str 34
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -5805,7 +5805,7 @@ __L402:
   pop
   load sb
   push_str 19
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -5813,7 +5813,7 @@ __L402:
   pop
   load sb
   load name
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -5835,7 +5835,7 @@ __L402:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -5843,7 +5843,7 @@ __L402:
   pop
   load sb
   load tname
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -5865,8 +5865,8 @@ __L402:
   return_void
 .endfn
 
-.fn emit_cast_var_tbuf String U8Array i32 i32 StringBuffer i32 void
-.param name String
+.fn emit_cast_var_tbuf StringLiteral U8Array i32 i32 StringBuffer i32 void
+.param name StringLiteral
 .param tbuf U8Array
 .param tstart i32
 .param tlen i32
@@ -5882,7 +5882,7 @@ __L402:
   pop
   load sb
   push_str 34
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -5900,7 +5900,7 @@ __L402:
   pop
   load sb
   push_str 19
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -5908,7 +5908,7 @@ __L402:
   pop
   load sb
   load name
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -5930,7 +5930,7 @@ __L402:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6007,7 +6007,7 @@ __L402:
   pop
   load sb
   push_str 16
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6035,7 +6035,7 @@ __L402:
   pop
   load sb
   push_str 42
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6060,7 +6060,7 @@ __L405:
   pop
   load sb
   push_str 43
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6068,7 +6068,7 @@ __L405:
   pop
   load sb
   push_str 45
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   load i
@@ -6144,7 +6144,7 @@ __L406:
   pop
   load sb
   push_str 44
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6162,7 +6162,7 @@ __L406:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6208,7 +6208,7 @@ __L406:
   pop
   load sb
   push_str 41
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6234,7 +6234,7 @@ __L406:
   pop
   load sb
   push_str 37
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6242,7 +6242,7 @@ __L406:
   pop
   load sb
   push_str 46
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6260,7 +6260,7 @@ __L406:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6268,7 +6268,7 @@ __L406:
   pop
   load sb
   push_str 47
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -6290,7 +6290,7 @@ __L406:
   pop
   load sb
   push_str 33
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6298,7 +6298,7 @@ __L406:
   pop
   load sb
   push_str 47
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6316,7 +6316,7 @@ __L406:
   pop
   load sb
   push_str 31
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6389,7 +6389,7 @@ __L407:
   pop
   load sb
   push_str 39
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6397,7 +6397,7 @@ __L407:
   pop
   load sb
   push_str 48
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6415,7 +6415,7 @@ __L407:
   pop
   load sb
   push_str 19
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6423,7 +6423,7 @@ __L407:
   pop
   load sb
   push_str 46
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -6445,7 +6445,7 @@ __L407:
   pop
   load sb
   push_str 31
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6475,7 +6475,7 @@ __L407:
   pop
   load sb
   push_str 34
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6493,7 +6493,7 @@ __L407:
   pop
   load sb
   push_str 19
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6501,7 +6501,7 @@ __L407:
   pop
   load sb
   push_str 45
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   load k
@@ -6527,7 +6527,7 @@ __L407:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6535,7 +6535,7 @@ __L407:
   pop
   load sb
   push_str 10
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -6599,7 +6599,7 @@ __L408:
   pop
   load sb
   push_str 25
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6617,7 +6617,7 @@ __L408:
   pop
   load sb
   push_str 34
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6635,7 +6635,7 @@ __L408:
   pop
   load sb
   push_str 19
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6643,7 +6643,7 @@ __L408:
   pop
   load sb
   push_str 46
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -6665,7 +6665,7 @@ __L408:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6763,7 +6763,7 @@ __L408:
   pop
   load sb
   push_str 16
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6791,7 +6791,7 @@ __L408:
   pop
   load sb
   push_str 42
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6809,7 +6809,7 @@ __L408:
   pop
   load sb
   push_str 43
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6817,7 +6817,7 @@ __L408:
   pop
   load sb
   push_str 46
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6835,7 +6835,7 @@ __L408:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6895,7 +6895,7 @@ __L408:
   pop
   load sb
   push_str 44
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6913,7 +6913,7 @@ __L408:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -6959,7 +6959,7 @@ __L408:
   pop
   load sb
   push_str 41
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -6985,7 +6985,7 @@ __L408:
   pop
   load sb
   push_str 25
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7003,7 +7003,7 @@ __L408:
   pop
   load sb
   push_str 34
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7021,7 +7021,7 @@ __L408:
   pop
   load sb
   push_str 33
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7029,7 +7029,7 @@ __L408:
   pop
   load sb
   push_str 49
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7041,7 +7041,7 @@ __L408:
   load indent
   push_int 5
   add
-  call emit_cast_var String String StringBuffer i32
+  call emit_cast_var StringLiteral StringLiteral StringBuffer i32
   pop
   load sb
   push_int 10
@@ -7059,7 +7059,7 @@ __L408:
   pop
   load sb
   push_str 31
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7103,7 +7103,7 @@ __L408:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7201,7 +7201,7 @@ __L408:
   pop
   load sb
   push_str 16
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7229,7 +7229,7 @@ __L408:
   pop
   load sb
   push_str 42
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7247,7 +7247,7 @@ __L408:
   pop
   load sb
   push_str 43
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7255,7 +7255,7 @@ __L408:
   pop
   load sb
   push_str 46
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7273,7 +7273,7 @@ __L408:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7319,7 +7319,7 @@ __L408:
   pop
   load sb
   push_str 43
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7327,7 +7327,7 @@ __L408:
   pop
   load sb
   push_str 50
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7345,7 +7345,7 @@ __L408:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7405,7 +7405,7 @@ __L408:
   pop
   load sb
   push_str 44
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7423,7 +7423,7 @@ __L408:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7431,7 +7431,7 @@ __L408:
   pop
   load sb
   push_str 15
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -7467,7 +7467,7 @@ __L408:
   pop
   load sb
   push_str 41
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7493,7 +7493,7 @@ __L408:
   pop
   load sb
   push_str 39
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7501,7 +7501,7 @@ __L408:
   pop
   load sb
   push_str 48
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -7513,7 +7513,7 @@ __L408:
   load indent
   push_int 3
   add
-  call emit_cast_var String String StringBuffer i32
+  call emit_cast_var StringLiteral StringLiteral StringBuffer i32
   pop
   load sb
   push_int 10
@@ -7531,7 +7531,7 @@ __L408:
   pop
   load sb
   push_str 31
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7555,7 +7555,7 @@ __L408:
   load indent
   push_int 3
   add
-  call emit_cast_var String String StringBuffer i32
+  call emit_cast_var StringLiteral StringLiteral StringBuffer i32
   pop
   load sb
   push_int 10
@@ -7595,7 +7595,7 @@ __L408:
   pop
   load sb
   push_str 25
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -7728,7 +7728,7 @@ __L410:
   pop
   load sb
   push_str 26
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -7889,7 +7889,7 @@ __L422:
   pop
   load sb
   push_str 51
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8076,7 +8076,7 @@ __L426:
   pop
   load sb
   push_str 16
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8084,7 +8084,7 @@ __L426:
   pop
   load sb
   push_str 52
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -8102,7 +8102,7 @@ __L426:
   pop
   load sb
   push_str 42
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -8120,7 +8120,7 @@ __L426:
   pop
   load sb
   push_str 43
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8128,7 +8128,7 @@ __L426:
   pop
   load sb
   push_str 46
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -8146,7 +8146,7 @@ __L426:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8206,7 +8206,7 @@ __L426:
   pop
   load sb
   push_str 44
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -8224,7 +8224,7 @@ __L426:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8232,7 +8232,7 @@ __L426:
   pop
   load sb
   push_str 15
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -8268,7 +8268,7 @@ __L426:
   pop
   load sb
   push_str 41
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -8286,7 +8286,7 @@ __L426:
   pop
   load sb
   push_str 39
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8294,7 +8294,7 @@ __L426:
   pop
   load sb
   push_str 52
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -8312,7 +8312,7 @@ __L426:
   pop
   load sb
   push_str 34
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 10
@@ -8330,7 +8330,7 @@ __L426:
   pop
   load sb
   push_str 19
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8338,7 +8338,7 @@ __L426:
   pop
   load sb
   push_str 46
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -8360,7 +8360,7 @@ __L426:
   pop
   load sb
   push_str 36
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8368,7 +8368,7 @@ __L426:
   pop
   load sb
   push_str 47
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -8394,7 +8394,7 @@ __L426:
   pop
   load sb
   push_str 25
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 41
@@ -8467,7 +8467,7 @@ __L426:
   pop
   load sb
   push_str 27
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
   load sb
   push_int 32
@@ -8511,7 +8511,7 @@ __L427:
   pop
   load sb
   push_str 53
-  call emit_string StringBuffer String
+  call emit_string StringBuffer StringLiteral
   pop
 __L428:
   load g_tok

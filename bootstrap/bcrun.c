@@ -28,7 +28,6 @@ struct HeapObj {
     char    *type_name;
     int      size;   /* capacity / element count for arrays */
     int      len;    /* used length for strings */
-    int      is_literal;
     Value   *fields; /* array elements or struct fields */
     uint8_t *bytes;  /* raw bytes for strings */
     struct HeapObj *next;
@@ -684,11 +683,10 @@ static Value vm_exec(VM *vm, BcFunc *fn, Value *args, int nargs) {
             int idx = (int)ins->ival;
             const char *txt = (idx>=0 && idx<vm->prog->nstrings && vm->prog->strings[idx])
                               ? vm->prog->strings[idx] : "";
-            HeapObj *s = heap_alloc(OBJ_STRING, "String");
+            HeapObj *s = heap_alloc(OBJ_STRING, "StringLiteral");
             s->len = strlen(txt); s->size = s->len+1;
             s->bytes = malloc(s->size);
             memcpy(s->bytes, txt, s->len); s->bytes[s->len] = '\0';
-            s->is_literal = 1;
             vm_push(vm, val_ref(s));
             break;
         }

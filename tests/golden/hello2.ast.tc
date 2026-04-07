@@ -2,7 +2,7 @@
   (fn to_buf
     (params
       (param str
-        (type String)
+        (type StringLiteral)
       )
     )
     (ret

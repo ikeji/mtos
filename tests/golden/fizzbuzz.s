@@ -10,19 +10,16 @@ __tc_strdata2:
 __tc_strobj0:
     .word 1
     .word 8
-    .word 1
     .word __tc_strdata0
     .align 4
 __tc_strobj1:
     .word 1
     .word 4
-    .word 1
     .word __tc_strdata1
     .align 4
 __tc_strobj2:
     .word 1
     .word 4
-    .word 1
     .word __tc_strdata2
 
     .text
@@ -89,7 +86,7 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call print_str__String
+    call print_str__StringLiteral
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -125,7 +122,7 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call print_str__String
+    call print_str__StringLiteral
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -161,7 +158,7 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call print_str__String
+    call print_str__StringLiteral
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

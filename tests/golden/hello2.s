@@ -6,14 +6,13 @@ __tc_strdata0:
 __tc_strobj0:
     .word 1
     .word 13
-    .word 1
     .word __tc_strdata0
 
     .text
 
-    .globl to_buf__String
-    .type  to_buf__String, @function
-to_buf__String:
+    .globl to_buf__StringLiteral
+    .type  to_buf__StringLiteral, @function
+to_buf__StringLiteral:
     # prologue: frame_size=32, params=1, locals=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -27,7 +26,7 @@ to_buf__String:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call len__String
+    call len__StringLiteral
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -81,7 +80,7 @@ to_buf__String:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call get__String__i32
+    call get__StringLiteral__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -126,7 +125,7 @@ to_buf__String:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of to_buf__String
+    # end of to_buf__StringLiteral
 
     .globl main
     .type  main, @function
@@ -141,7 +140,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call to_buf__String
+    call to_buf__StringLiteral
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

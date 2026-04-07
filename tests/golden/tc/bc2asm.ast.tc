@@ -10426,50 +10426,6 @@
                 (int:u8 100)
                 (var ob)
               )
-              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 32)
-                (var ob)
-              )
-              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 49)
-                (var ob)
-              )
-              (comment "ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);")
-              (call_stmt ob_char
-                (int:u8 10)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
-              (call_stmt e4
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
-              (call_stmt ob_char
-                (int:u8 46)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
-              (call_stmt ob_char
-                (int:u8 119)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
-              (call_stmt ob_char
-                (int:u8 111)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
-              (call_stmt ob_char
-                (int:u8 114)
-                (var ob)
-              )
-              (comment "e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);")
-              (call_stmt ob_char
-                (int:u8 100)
-                (var ob)
-              )
               (comment "ob_char(' ',ob);")
               (call_stmt ob_char
                 (int:u8 32)

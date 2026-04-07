@@ -14,7 +14,7 @@ static int is_int_type(const char *t) {
 
 static int is_ref_type(const char *t) {
     if (!t) return 0;
-    if (strcmp(t,"String")==0 || strcmp(t,"StringArray")==0) return 1;
+    if (strcmp(t,"String")==0 || strcmp(t,"StringLiteral")==0 || strcmp(t,"StringArray")==0) return 1;
     /* ends in Array */
     int len = strlen(t);
     if (len > 5 && strcmp(t + len - 5, "Array") == 0) return 1;
@@ -220,8 +220,30 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "append", ps_s, 2, "String");
     register_fn(e, "equals", ps_s, 2, "bool");
 
-    /* StringArray */
+    /* StringLiteral */
+    const char *psl[] = {"StringLiteral"};
+    const char *psl_i32[] = {"StringLiteral","i32"};
+    const char *psl_u8[] = {"StringLiteral","u8"};
+    const char *psl_sl[] = {"StringLiteral","StringLiteral"};
+    const char *psl_s[] = {"StringLiteral","String"};
+    const char *ps_sl[] = {"String","StringLiteral"};
+    register_fn(e, "delete", psl, 1, "void");
+    register_fn(e, "len", psl, 1, "i32");
+    register_fn(e, "get", psl_i32, 2, "u8");
+    register_fn(e, "append", psl_u8, 2, "String");
+    register_fn(e, "append", psl_sl, 2, "String");
+    register_fn(e, "append", psl_s, 2, "String");
+    register_fn(e, "append", ps_sl, 2, "String");
+    register_fn(e, "equals", psl_sl, 2, "bool");
+    register_fn(e, "equals", psl_s, 2, "bool");
+    register_fn(e, "equals", ps_sl, 2, "bool");
+
+    /* StringArray — also allow storing StringLiteral */
     register_array_builtins(e, "StringArray", "String");
+    {
+        const char *sa_sl[] = {"StringArray", "i32", "StringLiteral"};
+        register_fn(e, "set", sa_sl, 3, "void");
+    }
 
     /* sys calls */
     const char *sys_w[] = {"i32","U8Array","i32"};
@@ -241,10 +263,12 @@ static void register_builtins(TypeEnv *e) {
     const char *pu[] = {"u32"};
     const char *pb[] = {"bool"};
     const char *pstr[] = {"String"};
+    const char *pstrl[] = {"StringLiteral"};
     register_fn(e, "print_i32", pi, 1, "void");
     register_fn(e, "print_u32", pu, 1, "void");
     register_fn(e, "print_bool", pb, 1, "void");
     register_fn(e, "print_str", pstr, 1, "void");
+    register_fn(e, "print_str", pstrl, 1, "void");
 }
 
 /* ---- forward pass: collect all function/struct/global signatures ---- */
@@ -371,8 +395,8 @@ static const char *check_expr(TypeEnv *e, AstNode *node) {
     }
 
     if (strcmp(k, "str") == 0) {
-        set_annot(node, "String");
-        return "String";
+        set_annot(node, "StringLiteral");
+        return "StringLiteral";
     }
 
     if (strcmp(k, "var") == 0) {

@@ -57,6 +57,16 @@ export fn emit_char(sb: StringBuffer, c: u8) -> void {
 }
 
 // Emit all characters of a string into the buffer.
+export fn emit_string(sb: StringBuffer, s: StringLiteral) -> void {
+    var i: i32 = 0;
+    var slen: i32 = len(s);
+    while i < slen {
+        emit_char(sb, get(s, i));
+        i = i + 1;
+    }
+    return;
+}
+
 export fn emit_string(sb: StringBuffer, s: String) -> void {
     var i: i32 = 0;
     var slen: i32 = len(s);
