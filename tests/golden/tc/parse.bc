@@ -124,6 +124,7 @@
 .global g_tok_slen i32 0
 .global g_tok_neg i32 0
 .global g_tok_line i32 1
+.global FI_STRIDE i32 4
 
 .fn is_digit u8 bool
 .param c u8
@@ -5802,16 +5803,115 @@ __L404:
   return_void
 .endfn
 
-.fn emit_struct_ctor StringBuffer i32 StringBuffer i32 U8Array i32 U8Array I32Array I32Array i32 void
+.fn fi_name_off I32Array i32 i32
+.param fi I32Array
+.param idx i32
+  load fi
+  load idx
+  push_int 4
+  mul
+  call get I32Array i32
+  return
+  return_void
+.endfn
+
+.fn fi_name_len I32Array i32 i32
+.param fi I32Array
+.param idx i32
+  load fi
+  load idx
+  push_int 4
+  mul
+  push_int 1
+  add
+  call get I32Array i32
+  return
+  return_void
+.endfn
+
+.fn fi_type_off I32Array i32 i32
+.param fi I32Array
+.param idx i32
+  load fi
+  load idx
+  push_int 4
+  mul
+  push_int 2
+  add
+  call get I32Array i32
+  return
+  return_void
+.endfn
+
+.fn fi_type_len I32Array i32 i32
+.param fi I32Array
+.param idx i32
+  load fi
+  load idx
+  push_int 4
+  mul
+  push_int 3
+  add
+  call get I32Array i32
+  return
+  return_void
+.endfn
+
+.fn fi_set I32Array i32 i32 i32 i32 i32 void
+.param fi I32Array
+.param idx i32
+.param noff i32
+.param nlen i32
+.param toff i32
+.param tlen i32
+  load fi
+  load idx
+  push_int 4
+  mul
+  load noff
+  call set I32Array i32 i32
+  pop
+  load fi
+  load idx
+  push_int 4
+  mul
+  push_int 1
+  add
+  load nlen
+  call set I32Array i32 i32
+  pop
+  load fi
+  load idx
+  push_int 4
+  mul
+  push_int 2
+  add
+  load toff
+  call set I32Array i32 i32
+  pop
+  load fi
+  load idx
+  push_int 4
+  mul
+  push_int 3
+  add
+  load tlen
+  call set I32Array i32 i32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_struct_ctor StringBuffer i32 StringBuffer i32 U8Array i32 U8Array U8Array I32Array i32 void
 .param sb StringBuffer
 .param indent i32
 .param src StringBuffer
 .param sline i32
 .param sbuf U8Array
 .param snlen i32
+.param fnames U8Array
 .param ftypes U8Array
-.param ftoffs I32Array
-.param ftlens I32Array
+.param fields I32Array
 .param nfields i32
 .local i i32
 .local k i32
@@ -5904,12 +6004,12 @@ __L407:
   pop
   load sb
   load ftypes
-  load ftoffs
+  load fields
   load i
-  call get I32Array i32
-  load ftlens
+  call fi_type_off I32Array i32
+  load fields
   load i
-  call get I32Array i32
+  call fi_type_len I32Array i32
   call emit_type StringBuffer U8Array i32 i32
   pop
   load sb
@@ -6557,7 +6657,7 @@ __L410:
   return_void
 .endfn
 
-.fn emit_struct_getter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 void
+.fn emit_struct_getter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array U8Array I32Array i32 void
 .param sb StringBuffer
 .param indent i32
 .param src StringBuffer
@@ -6565,12 +6665,29 @@ __L410:
 .param sbuf U8Array
 .param snlen i32
 .param fnames U8Array
-.param fnoff i32
-.param fnlen i32
 .param ftypes U8Array
-.param ftoff i32
-.param ftlen i32
+.param fields I32Array
 .param fidx i32
+.local fnoff i32
+.local fnlen i32
+.local ftoff i32
+.local ftlen i32
+  load fields
+  load fidx
+  call fi_name_off I32Array i32
+  store fnoff
+  load fields
+  load fidx
+  call fi_name_len I32Array i32
+  store fnlen
+  load fields
+  load fidx
+  call fi_type_off I32Array i32
+  store ftoff
+  load fields
+  load fidx
+  call fi_type_len I32Array i32
+  store ftlen
   load sb
   load indent
   call emit_indent StringBuffer i32
@@ -6995,7 +7112,7 @@ __L410:
   return_void
 .endfn
 
-.fn emit_struct_setter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array i32 i32 U8Array i32 i32 i32 void
+.fn emit_struct_setter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array U8Array I32Array i32 void
 .param sb StringBuffer
 .param indent i32
 .param src StringBuffer
@@ -7003,12 +7120,29 @@ __L410:
 .param sbuf U8Array
 .param snlen i32
 .param fnames U8Array
-.param fnoff i32
-.param fnlen i32
 .param ftypes U8Array
-.param ftoff i32
-.param ftlen i32
+.param fields I32Array
 .param fidx i32
+.local fnoff i32
+.local fnlen i32
+.local ftoff i32
+.local ftlen i32
+  load fields
+  load fidx
+  call fi_name_off I32Array i32
+  store fnoff
+  load fields
+  load fidx
+  call fi_name_len I32Array i32
+  store fnlen
+  load fields
+  load fidx
+  call fi_type_off I32Array i32
+  store ftoff
+  load fields
+  load fidx
+  call fi_type_len I32Array i32
+  store ftlen
   load sb
   load indent
   call emit_indent StringBuffer i32
@@ -7459,11 +7593,8 @@ __L410:
 .local snlen i32
 .local ci i32
 .local fnames U8Array
-.local fnoffs I32Array
-.local fnlens I32Array
 .local ftypes U8Array
-.local ftoffs I32Array
-.local ftlens I32Array
+.local fields I32Array
 .local nfields i32
 .local fnpos i32
 .local ftpos i32
@@ -7519,21 +7650,12 @@ __L412:
   push_int 1024
   call U8Array i32
   store fnames
-  push_int 17
-  call I32Array i32
-  store fnoffs
-  push_int 16
-  call I32Array i32
-  store fnlens
   push_int 1024
   call U8Array i32
   store ftypes
-  push_int 17
+  push_int 64
   call I32Array i32
-  store ftoffs
-  push_int 16
-  call I32Array i32
-  store ftlens
+  store fields
   push_int 0
   store nfields
   push_int 0
@@ -7626,16 +7748,6 @@ __L421:
   store j
   jump __L421
 __L422:
-  load fnoffs
-  load nfields
-  load fnpos
-  call set I32Array i32 i32
-  pop
-  load fnlens
-  load nfields
-  load fname_len
-  call set I32Array i32 i32
-  pop
   push_int 0
   store j
 __L423:
@@ -7658,10 +7770,6 @@ __L423:
   store j
   jump __L423
 __L424:
-  load fnpos
-  load fname_len
-  add
-  store fnpos
   load TK_IDENT
   load src
   load tok
@@ -7672,21 +7780,23 @@ __L424:
   load tok
   call expect_tok i32 StringBuffer U8Array
   pop
-  load ftoffs
-  load nfields
-  load ftpos
-  call set I32Array i32 i32
-  pop
   load tok
   load ftypes
   load ftpos
   call type_tok_name U8Array U8Array i32
   store ftl
-  load ftlens
+  load fields
   load nfields
+  load fnpos
+  load fname_len
+  load ftpos
   load ftl
-  call set I32Array i32 i32
+  call fi_set I32Array i32 i32 i32 i32 i32
   pop
+  load fnpos
+  load fname_len
+  add
+  store fnpos
   load ftpos
   load ftl
   add
@@ -7788,11 +7898,11 @@ __L414:
   load struct_line
   load sname_buf
   load snlen
+  load fnames
   load ftypes
-  load ftoffs
-  load ftlens
+  load fields
   load nfields
-  call emit_struct_ctor StringBuffer i32 StringBuffer i32 U8Array i32 U8Array I32Array I32Array i32
+  call emit_struct_ctor StringBuffer i32 StringBuffer i32 U8Array i32 U8Array U8Array I32Array i32
   pop
   push_int 0
   store gi
@@ -7812,21 +7922,10 @@ __L425:
   load sname_buf
   load snlen
   load fnames
-  load fnoffs
-  load gi
-  call get I32Array i32
-  load fnlens
-  load gi
-  call get I32Array i32
   load ftypes
-  load ftoffs
+  load fields
   load gi
-  call get I32Array i32
-  load ftlens
-  load gi
-  call get I32Array i32
-  load gi
-  call emit_struct_getter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array i32 i32 U8Array i32 i32 i32
+  call emit_struct_getter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array U8Array I32Array i32
   pop
   load gi
   push_int 1
@@ -7852,21 +7951,10 @@ __L427:
   load sname_buf
   load snlen
   load fnames
-  load fnoffs
-  load si
-  call get I32Array i32
-  load fnlens
-  load si
-  call get I32Array i32
   load ftypes
-  load ftoffs
+  load fields
   load si
-  call get I32Array i32
-  load ftlens
-  load si
-  call get I32Array i32
-  load si
-  call emit_struct_setter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array i32 i32 U8Array i32 i32 i32
+  call emit_struct_setter StringBuffer i32 StringBuffer i32 U8Array i32 U8Array U8Array I32Array i32
   pop
   load si
   push_int 1
@@ -8250,19 +8338,10 @@ __L428:
   load fnames
   call delete U8Array
   pop
-  load fnoffs
-  call delete I32Array
-  pop
-  load fnlens
-  call delete I32Array
-  pop
   load ftypes
   call delete U8Array
   pop
-  load ftoffs
-  call delete I32Array
-  pop
-  load ftlens
+  load fields
   call delete I32Array
   pop
   return_void

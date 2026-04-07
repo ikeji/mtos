@@ -1266,11 +1266,28 @@ fn emit_stmt_comment_line(sb: StringBuffer, indent: i32, src: StringBuffer, line
 //       ...
 //       return __p as StructName;
 //   }
+// ===== Field info table: I32Array with stride 4 =====
+// Layout per field: [name_off, name_len, type_off, type_len]
+var FI_STRIDE: i32 = 4;
+
+fn fi_name_off(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4)); }
+fn fi_name_len(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 1)); }
+fn fi_type_off(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 2)); }
+fn fi_type_len(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 3)); }
+
+fn fi_set(fi: I32Array, idx: i32, noff: i32, nlen: i32, toff: i32, tlen: i32) -> void {
+    set(fi, (idx * 4), noff);
+    set(fi, (idx * 4 + 1), nlen);
+    set(fi, (idx * 4 + 2), toff);
+    set(fi, (idx * 4 + 3), tlen);
+    return;
+}
+
 fn emit_struct_ctor(
     sb: StringBuffer, indent: i32,
     src: StringBuffer, sline: i32,
     sbuf: U8Array, snlen: i32,
-    ftypes: U8Array, ftoffs: I32Array, ftlens: I32Array,
+    fnames: U8Array, ftypes: U8Array, fields: I32Array,
     nfields: i32
 ) -> void {
     emit_indent(sb, indent);
@@ -1286,7 +1303,7 @@ fn emit_struct_ctor(
         emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
         emit_string(sb, "__a"); emit_int(sb, i); emit_char(sb, 10u8);
         emit_indent(sb, indent + 3);
-        emit_type(sb, ftypes, get(ftoffs, i), get(ftlens, i)); emit_char(sb, 10u8);
+        emit_type(sb, ftypes, fi_type_off(fields, i), fi_type_len(fields, i)); emit_char(sb, 10u8);
         emit_indent(sb, indent + 2);
         emit_char(sb, ')'); emit_char(sb, 10u8);
         i = i + 1;
@@ -1356,10 +1373,13 @@ fn emit_struct_getter(
     sb: StringBuffer, indent: i32,
     src: StringBuffer, sline: i32,
     sbuf: U8Array, snlen: i32,
-    fnames: U8Array, fnoff: i32, fnlen: i32,
-    ftypes: U8Array, ftoff: i32, ftlen: i32,
+    fnames: U8Array, ftypes: U8Array, fields: I32Array,
     fidx: i32
 ) -> void {
+    var fnoff: i32 = fi_name_off(fields, fidx);
+    var fnlen: i32 = fi_name_len(fields, fidx);
+    var ftoff: i32 = fi_type_off(fields, fidx);
+    var ftlen: i32 = fi_type_len(fields, fidx);
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
     emit_n(sb, fnames, fnoff, fnlen); emit_char(sb, 10u8);
@@ -1401,10 +1421,13 @@ fn emit_struct_setter(
     sb: StringBuffer, indent: i32,
     src: StringBuffer, sline: i32,
     sbuf: U8Array, snlen: i32,
-    fnames: U8Array, fnoff: i32, fnlen: i32,
-    ftypes: U8Array, ftoff: i32, ftlen: i32,
+    fnames: U8Array, ftypes: U8Array, fields: I32Array,
     fidx: i32
 ) -> void {
+    var fnoff: i32 = fi_name_off(fields, fidx);
+    var fnlen: i32 = fi_name_len(fields, fidx);
+    var ftoff: i32 = fi_type_off(fields, fidx);
+    var ftlen: i32 = fi_type_len(fields, fidx);
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
     emit_n(sb, fnames, fnoff, fnlen); emit_char(sb, 10u8);
@@ -1449,13 +1472,10 @@ fn pars_struct_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i
     expect_tok(TK_IDENT, src, tok);
     expect_tok(TK_LBRACE, src, tok);
 
-    // Buffers for field info (max 16 fields, ~64 bytes per name/type)
+    // Buffers for field info (max 16 fields)
     var fnames: U8Array = U8Array(1024);
-    var fnoffs: I32Array = I32Array(17);
-    var fnlens: I32Array = I32Array(16);
     var ftypes: U8Array = U8Array(1024);
-    var ftoffs: I32Array = I32Array(17);
-    var ftlens: I32Array = I32Array(16);
+    var fields: I32Array = I32Array(64);  // 16 fields * 4 ints
     var nfields: i32 = 0;
     var fnpos: i32 = 0;
     var ftpos: i32 = 0;
@@ -1480,17 +1500,14 @@ fn pars_struct_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i
                 j = j + 1;
             }
             // Record field name in fnames buffer
-            set(fnoffs, nfields, fnpos);
-            set(fnlens, nfields, fname_len);
             j = 0;
             while j < fname_len { set(fnames, (fnpos+j), get(fname_buf, j)); j = j + 1; }
-            fnpos = fnpos + fname_len;
             expect_tok(TK_IDENT, src, tok);
             expect_tok(TK_COLON, src, tok);
             // Capture type name (peek current token BEFORE pars_type advances)
-            set(ftoffs, nfields, ftpos);
             var ftl: i32 = type_tok_name(tok, ftypes, ftpos);
-            set(ftlens, nfields, ftl);
+            fi_set(fields, nfields, fnpos, fname_len, ftpos, ftl);
+            fnpos = fnpos + fname_len;
             ftpos = ftpos + ftl;
             emit_char(sb, 10u8);
             emit_indent(sb, indent + 1);
@@ -1513,7 +1530,7 @@ fn pars_struct_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i
 
     // Emit synthetic functions: constructor, getters, setters
     emit_char(sb, 10u8);
-    emit_struct_ctor(sb, indent, src, struct_line, sname_buf, snlen, ftypes, ftoffs, ftlens, nfields);
+    emit_struct_ctor(sb, indent, src, struct_line, sname_buf, snlen, fnames, ftypes, fields, nfields);
 
     var gi: i32 = 0;
     while gi < nfields {
@@ -1521,9 +1538,7 @@ fn pars_struct_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i
         emit_struct_getter(
             sb, indent, src, struct_line,
             sname_buf, snlen,
-            fnames, get(fnoffs, gi), get(fnlens, gi),
-            ftypes, get(ftoffs, gi), get(ftlens, gi),
-            gi);
+            fnames, ftypes, fields, gi);
         gi = gi + 1;
     }
 
@@ -1533,9 +1548,7 @@ fn pars_struct_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i
         emit_struct_setter(
             sb, indent, src, struct_line,
             sname_buf, snlen,
-            fnames, get(fnoffs, si), get(fnlens, si),
-            ftypes, get(ftoffs, si), get(ftlens, si),
-            si);
+            fnames, ftypes, fields, si);
         si = si + 1;
     }
 
@@ -1588,8 +1601,7 @@ fn pars_struct_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, indent: i
     emit_char(sb, ')');
 
     delete(sname_buf);
-    delete(fnames); delete(fnoffs); delete(fnlens);
-    delete(ftypes); delete(ftoffs); delete(ftlens);
+    delete(fnames); delete(ftypes); delete(fields);
     return;
 }
 

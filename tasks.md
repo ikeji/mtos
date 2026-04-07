@@ -55,7 +55,7 @@
 - [x] parse.tcのsb_op関数は、emit_op(sb, op)の方がいいかな。
 - [x] parse.tcのtype_tok_name用に、set(buf, bstart, "void")みたいな事ができる関数を定義しよう。
 - [x] parse.tcで、emit_typeなどの、emit_ではじまる関数は、StringBuffer(出力先)を最初の引数にしよう。
-- [ ] parse.tcのpars_struct_declは、field infoを構造体にして、それの配列を持つ事にしよう。
+- [x] parse.tcのpars_struct_declは、field infoを構造体にして、それの配列を持つ事にしよう。
 - [ ] gen2でgen3コンパイラをコンパイルした時にどれぐらいの時間とメモリを使ったか知りたい。時間はすでにあるから、ピークメモリも表示して。
 - [ ] スクリプトが増えすぎて把握できなくなった。それぞれの意味、どれがどれを呼ぶか、などをドキュメントにまとめて。
 - [ ] 実装が多すぎる。2つを残して消していいかな。
