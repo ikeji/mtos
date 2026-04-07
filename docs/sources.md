@@ -86,13 +86,21 @@ docs/       ドキュメント
 
 ## スクリプト・テストインフラ
 
+詳細は `docs/scripts.md` を参照。
+
 | ファイル | 説明 |
 |----------|------|
 | `tc_run.sh` | 指定メソッド（interp/bcrun/rv32/pipeline/bc2asm_tc）で .tc ファイルを実行するヘルパー |
 | `tc_run_all.sh` | 全5メソッドで実行し、出力が一致するか確認する |
+| `tc_build.sh` | 複数 .tc ファイルをコンパイル＋リンクして RISC-V ELF を生成する |
 | `tests/run_tests.sh` | メインテストスイート。全テストを実行して PASS/FAIL を報告する |
-| `tests/run_golden_tests.sh` | ゴールデンテスト。C実装と自己ホスト実装の出力を期待値ファイルと比較する |
+| `tests/run_golden_tests.sh` | ゴールデンテスト。4つのサブスイートを束ねるラッパー |
+| `tests/run_example_tests.sh` | サンプル .tc ファイルのゴールデンテスト |
+| `tests/run_compiler_tests.sh` | compiler/ ソース自体のゴールデンテスト |
+| `tests/run_gen3_tests.sh` | Gen2==Gen3 自己ホスト検証（RISC-V qemu） |
+| `tests/run_import_tests.sh` | import/export 機能のテスト |
 | `tests/update_golden.sh` | ゴールデンファイル（`.ast`, `.bc`, `.s`, `.out`, `.exit`）を C ツールで再生成する |
+| `tests/compile_tc.sh` | 共通ライブラリ。import 解決つき BC 生成関数を提供 |
 
 ---
 
