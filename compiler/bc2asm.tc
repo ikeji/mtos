@@ -1,6 +1,8 @@
 // bc2asm.tc — RISC-V 32-bit assembly generator from .bc bytecode
 // Target: RV32IM, GAS syntax
 
+import "string_buffer.tc";
+
 // ===== Opcodes =====
 var OP_PUSH_INT: i32 = 1;
 var OP_PUSH_STR: i32 = 2;
@@ -43,154 +45,101 @@ var g_nlocals: i32 = 0;
 var g_ninstrs: i32 = 0;
 var g_nglobals: i32 = 0;
 var g_nstrings: i32 = 0;
-var g_ob_pos: i32 = 0;
-
-// ===== Output buffer =====
-fn ob_flush(ob: U8Array) -> void {
-    if g_ob_pos > 0 { sys_write(1, ob, g_ob_pos); g_ob_pos = 0; }
-    return;
-}
-fn ob_char(c: u8, ob: U8Array) -> void {
-    set(ob, g_ob_pos, c);
-    g_ob_pos = g_ob_pos + 1;
-    if g_ob_pos >= 8192 { ob_flush(ob); }
-    return;
-}
-fn ob_n(src: U8Array, start: i32, n: i32, ob: U8Array) -> void {
-    var i: i32 = 0;
-    while i < n { ob_char(get(src,(start+i)), ob); i = i + 1; }
-    return;
-}
-fn ob_int(n: i32, ob: U8Array) -> void {
-    if n == 0 { ob_char('0', ob); return; }
-    if n < 0 { ob_char('-', ob); n = 0 - n; }
-    var tmp: U8Array = U8Array(12);
-    var len: i32 = 0; var v: i32 = n;
-    while v > 0 { set(tmp,len,(48+v%10) as u8); len=len+1; v=v/10; }
-    var i: i32 = len - 1;
-    while i >= 0 { ob_char(get(tmp,i),ob); i=i-1; }
-    delete(tmp);
-    return;
-}
 
 // ===== Common emit helpers =====
-fn e4(ob: U8Array) -> void {
-    ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
+fn e4(ob: StringBuffer) -> void { emit_string(ob, "    "); return; }
+fn ecomma(ob: StringBuffer) -> void { emit_string(ob, ", "); return; }
+fn eNspnl(n: i32, ob: StringBuffer) -> void {
+    emit_int(ob, n); emit_string(ob, "(sp)\n"); return;
 }
-fn ecomma(ob: U8Array) -> void { ob_char(',',ob);ob_char(' ',ob); return; }
-// "N(sp)\n"
-fn eNspnl(n: i32, ob: U8Array) -> void {
-    ob_int(n,ob);ob_char('(',ob);ob_char('s',ob);ob_char('p',ob);ob_char(')',ob);ob_char(10u8,ob);
-    return;
+fn eNs0nl(n: i32, ob: StringBuffer) -> void {
+    emit_int(ob, n); emit_string(ob, "(s0)\n"); return;
 }
-// "N(s0)\n"
-fn eNs0nl(n: i32, ob: U8Array) -> void {
-    ob_int(n,ob);ob_char('(',ob);ob_char('s',ob);ob_char('0',ob);ob_char(')',ob);ob_char(10u8,ob);
-    return;
+fn eNt0nl(n: i32, ob: StringBuffer) -> void {
+    emit_int(ob, n); emit_string(ob, "(t0)\n"); return;
 }
-// "N(t0)\n"
-fn eNt0nl(n: i32, ob: U8Array) -> void {
-    ob_int(n,ob);ob_char('(',ob);ob_char('t',ob);ob_char('0',ob);ob_char(')',ob);ob_char(10u8,ob);
-    return;
-}
-// register name + ", " shorthands
-fn eregsp(ob: U8Array) -> void { ob_char('s',ob);ob_char('p',ob);ob_char(',',ob);ob_char(' ',ob); return; }
-fn eregs0(ob: U8Array) -> void { ob_char('s',ob);ob_char('0',ob);ob_char(',',ob);ob_char(' ',ob); return; }
-fn eregt0(ob: U8Array) -> void { ob_char('t',ob);ob_char('0',ob);ob_char(',',ob);ob_char(' ',ob); return; }
-fn eregt1(ob: U8Array) -> void { ob_char('t',ob);ob_char('1',ob);ob_char(',',ob);ob_char(' ',ob); return; }
-fn eregra(ob: U8Array) -> void { ob_char('r',ob);ob_char('a',ob);ob_char(',',ob);ob_char(' ',ob); return; }
-// "    addi "
-fn e_addi(ob: U8Array) -> void {
-    e4(ob);ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char('i',ob);ob_char(' ',ob); return;
-}
-// "    sw   "
-fn e_sw(ob: U8Array) -> void {
-    e4(ob);ob_char('s',ob);ob_char('w',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
-}
-// "    lw   "
-fn e_lw(ob: U8Array) -> void {
-    e4(ob);ob_char('l',ob);ob_char('w',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
-}
-// "    li   "
-fn e_li(ob: U8Array) -> void {
-    e4(ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
-}
-// "    la   "
-fn e_la(ob: U8Array) -> void {
-    e4(ob);ob_char('l',ob);ob_char('a',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob); return;
-}
+fn eregsp(ob: StringBuffer) -> void { emit_string(ob, "sp, "); return; }
+fn eregs0(ob: StringBuffer) -> void { emit_string(ob, "s0, "); return; }
+fn eregt0(ob: StringBuffer) -> void { emit_string(ob, "t0, "); return; }
+fn eregt1(ob: StringBuffer) -> void { emit_string(ob, "t1, "); return; }
+fn eregra(ob: StringBuffer) -> void { emit_string(ob, "ra, "); return; }
+fn e_addi(ob: StringBuffer) -> void { emit_string(ob, "    addi "); return; }
+fn e_sw(ob: StringBuffer) -> void { emit_string(ob, "    sw   "); return; }
+fn e_lw(ob: StringBuffer) -> void { emit_string(ob, "    lw   "); return; }
+fn e_li(ob: StringBuffer) -> void { emit_string(ob, "    li   "); return; }
+fn e_la(ob: StringBuffer) -> void { emit_string(ob, "    la   "); return; }
 // push_t0 / pop_t0 / pop_t1_t0
-fn asm_push_t0(ob: U8Array) -> void {
+fn asm_push_t0(ob: StringBuffer) -> void {
     // addi sp, sp, -4
-    e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
+    e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
     // sw t0, 0(sp)
     e_sw(ob); eregt0(ob); eNspnl(0,ob);
     return;
 }
-fn asm_pop_t0(ob: U8Array) -> void {
+fn asm_pop_t0(ob: StringBuffer) -> void {
     // lw t0, 0(sp)
     e_lw(ob); eregt0(ob); eNspnl(0,ob);
     // addi sp, sp, 4
-    e_addi(ob); eregsp(ob); eregsp(ob); ob_char('4',ob);ob_char(10u8,ob);
+    e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
     return;
 }
-fn asm_pop_t1_t0(ob: U8Array) -> void {
+fn asm_pop_t1_t0(ob: StringBuffer) -> void {
     // lw t1, 0(sp)   — t1 = right operand
     e_lw(ob); eregt1(ob); eNspnl(0,ob);
     // lw t0, 4(sp)   — t0 = left operand
     e_lw(ob); eregt0(ob); eNspnl(4,ob);
     // addi sp, sp, 8
-    e_addi(ob); eregsp(ob); eregsp(ob); ob_char('8',ob);ob_char(10u8,ob);
+    e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '8');emit_char(ob, 10u8);
     return;
 }
 // Epilogue: mv t0,s0; lw ra,-4(t0); lw s0,-8(t0); addi sp,t0,0; ret
-fn asm_epilogue(ob: U8Array) -> void {
+fn asm_epilogue(ob: StringBuffer) -> void {
     // mv t0, s0
-    e4(ob);ob_char('m',ob);ob_char('v',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
-    eregt0(ob);ob_char('s',ob);ob_char('0',ob);ob_char(10u8,ob);
+    e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
+    eregt0(ob);emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, 10u8);
     // lw ra, -4(t0)
     e_lw(ob); eregra(ob); eNt0nl(0-4,ob);
     // lw s0, -8(t0)
     e_lw(ob); eregs0(ob); eNt0nl(0-8,ob);
     // addi sp, t0, 0
     e_addi(ob); eregsp(ob);
-    ob_char('t',ob);ob_char('0',ob);ob_char(',',ob);ob_char(' ',ob); // "t0, "
-    ob_char('0',ob);ob_char(10u8,ob);
+    emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, ',');emit_char(ob, ' '); // "t0, "
+    emit_char(ob, '0');emit_char(ob, 10u8);
     // ret
-    e4(ob);ob_char('r',ob);ob_char('e',ob);ob_char('t',ob);ob_char(10u8,ob);
+    e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 10u8);
     return;
 }
 // "  .L_fFI_pcN:\n"  (fi = function index, avoids duplicate labels)
-fn asm_pc_label(fi: i32, pc: i32, ob: U8Array) -> void {
-    ob_char(' ',ob);ob_char(' ',ob);
-    ob_char('.',ob);ob_char('L',ob);ob_char('_',ob);ob_char('f',ob);
-    ob_int(fi,ob);ob_char('_',ob);
-    ob_char('p',ob);ob_char('c',ob);ob_int(pc,ob);ob_char(':',ob);ob_char(10u8,ob);
+fn asm_pc_label(fi: i32, pc: i32, ob: StringBuffer) -> void {
+    emit_char(ob, ' ');emit_char(ob, ' ');
+    emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
+    emit_int(ob, fi);emit_char(ob, '_');
+    emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);emit_char(ob, ':');emit_char(ob, 10u8);
     return;
 }
 // ".L_fFI_pcN" (without newline, used in jump targets)
-fn e_pcref(fi: i32, pc: i32, ob: U8Array) -> void {
-    ob_char('.',ob);ob_char('L',ob);ob_char('_',ob);ob_char('f',ob);
-    ob_int(fi,ob);ob_char('_',ob);
-    ob_char('p',ob);ob_char('c',ob);ob_int(pc,ob);
+fn e_pcref(fi: i32, pc: i32, ob: StringBuffer) -> void {
+    emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
+    emit_int(ob, fi);emit_char(ob, '_');
+    emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);
     return;
 }
 // "    j    .L_fFI_pcN\n"
-fn asm_jump(fi: i32, target: i32, ob: U8Array) -> void {
-    e4(ob);ob_char('j',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
-    e_pcref(fi,target,ob);ob_char(10u8,ob);
+fn asm_jump(fi: i32, target: i32, ob: StringBuffer) -> void {
+    e4(ob);emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
+    e_pcref(fi,target,ob);emit_char(ob, 10u8);
     return;
 }
 // "    bnez t0, .L_fFI_pcN\n" or "    beqz t0, .L_fFI_pcN\n"
-fn asm_branch(fi: i32, cond_ne: i32, target: i32, ob: U8Array) -> void {
+fn asm_branch(fi: i32, cond_ne: i32, target: i32, ob: StringBuffer) -> void {
     e4(ob);
     if cond_ne == 1 {
-        ob_char('b',ob);ob_char('n',ob);ob_char('e',ob);ob_char('z',ob);ob_char(' ',ob);
+        emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
     } else {
-        ob_char('b',ob);ob_char('e',ob);ob_char('q',ob);ob_char('z',ob);ob_char(' ',ob);
+        emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
     }
-    ob_char('t',ob);ob_char('0',ob);ecomma(ob);
-    e_pcref(fi,target,ob);ob_char(10u8,ob);
+    emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
+    e_pcref(fi,target,ob);emit_char(ob, 10u8);
     return;
 }
 // Return length of base name (before first "__" separator in mangled name)
@@ -203,44 +152,44 @@ fn base_name_len(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     return sl;
 }
 // "    call NAME\n"  (all calls use full mangled name directly)
-fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: U8Array) -> void {
-    e4(ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);
-    ob_n(strtab, nm_ss, nm_sl, ob);
-    ob_char(10u8,ob);
+fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: StringBuffer) -> void {
+    e4(ob);emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
+    emit_n(ob, strtab, nm_ss, nm_sl);
+    emit_char(ob, 10u8);
     return;
 }
 // "    seqz t0, t0\n"
-fn asm_seqz_t0(ob: U8Array) -> void {
-    e4(ob);ob_char('s',ob);ob_char('e',ob);ob_char('q',ob);ob_char('z',ob);ob_char(' ',ob);
-    eregt0(ob);ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob);
+fn asm_seqz_t0(ob: StringBuffer) -> void {
+    e4(ob);emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
+    eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
     return;
 }
 // "    snez t0, t0\n"
-fn asm_snez_t0(ob: U8Array) -> void {
-    e4(ob);ob_char('s',ob);ob_char('n',ob);ob_char('e',ob);ob_char('z',ob);ob_char(' ',ob);
-    eregt0(ob);ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob);
+fn asm_snez_t0(ob: StringBuffer) -> void {
+    e4(ob);emit_char(ob, 's');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
+    eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
     return;
 }
 // "    xori t0, t0, 1\n"
-fn asm_xori_t0_1(ob: U8Array) -> void {
-    e4(ob);ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char('i',ob);ob_char(' ',ob);
-    eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char(10u8,ob);
+fn asm_xori_t0_1(ob: StringBuffer) -> void {
+    e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, ' ');
+    eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, 10u8);
     return;
 }
 // "    sub  t0, t0, t1\n"
-fn asm_sub_t0_t0_t1(ob: U8Array) -> void {
-    e4(ob);ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(' ',ob);ob_char(' ',ob);
-    eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+fn asm_sub_t0_t0_t1(ob: StringBuffer) -> void {
+    e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
+    eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
     return;
 }
 // "    slt  t0, A, B\n" (A and B are 't0' or 't1')
-fn asm_slt(swap: i32, ob: U8Array) -> void {
+fn asm_slt(swap: i32, ob: StringBuffer) -> void {
     // swap=0: slt t0, t0, t1   (t0 < t1)
     // swap=1: slt t0, t1, t0   (t1 < t0 i.e. t0 > t1)
-    e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('t',ob);ob_char(' ',ob);ob_char(' ',ob);
+    e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, ' ');
     eregt0(ob);
-    if swap == 0 { eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob); }
-    else         { eregt1(ob);ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob); }
+    if swap == 0 { eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8); }
+    else         { eregt1(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8); }
     return;
 }
 
@@ -658,34 +607,34 @@ fn is_jump_target(instrs: I32Array, ibase: i32, ni: i32, pc: i32) -> i32 {
 }
 
 // ===== Emit string literal content (GAS .string escaping) =====
-fn emit_strdata(strtab: U8Array, ss: i32, sl: i32, ob: U8Array) -> void {
-    ob_char('"',ob);
+fn emit_strdata(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer) -> void {
+    emit_char(ob, '"');
     var i: i32=0;
     while i<sl {
         var c: u8=get(strtab,(ss+i));
         var handled: i32=0;
-        if c=='"'  { ob_char('\\',ob);ob_char('"',ob); handled=1; }
-        if handled==0&&c=='\\'  { ob_char('\\',ob);ob_char('\\',ob); handled=1; }
-        if handled==0&&c==10u8  { ob_char('\\',ob);ob_char('n',ob); handled=1; }
-        if handled==0&&c==13u8  { ob_char('\\',ob);ob_char('r',ob); handled=1; }
-        if handled==0&&c==9u8   { ob_char('\\',ob);ob_char('t',ob); handled=1; }
+        if c=='"'  { emit_char(ob, '\\');emit_char(ob, '"'); handled=1; }
+        if handled==0&&c=='\\'  { emit_char(ob, '\\');emit_char(ob, '\\'); handled=1; }
+        if handled==0&&c==10u8  { emit_char(ob, '\\');emit_char(ob, 'n'); handled=1; }
+        if handled==0&&c==13u8  { emit_char(ob, '\\');emit_char(ob, 'r'); handled=1; }
+        if handled==0&&c==9u8   { emit_char(ob, '\\');emit_char(ob, 't'); handled=1; }
         if handled==0&&(c<' '||c==127u8) {
-            ob_char('\\',ob);
-            ob_char((48+(c as i32>>6&7)) as u8,ob);
-            ob_char((48+(c as i32>>3&7)) as u8,ob);
-            ob_char((48+(c as i32&7)) as u8,ob);
+            emit_char(ob, '\\');
+            emit_char(ob, (48+(c as i32>>6&7)) as u8);
+            emit_char(ob, (48+(c as i32>>3&7)) as u8);
+            emit_char(ob, (48+(c as i32&7)) as u8);
             handled=1;
         }
-        if handled==0 { ob_char(c,ob); }
+        if handled==0 { emit_char(ob, c); }
         i=i+1;
     }
-    ob_char('"',ob);
+    emit_char(ob, '"');
     return;
 }
 
 // ===== Emit one function =====
 fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
-           instrs: I32Array, string_lits: I32Array, fi: i32, ob: U8Array) -> void {
+           instrs: I32Array, string_lits: I32Array, fi: i32, ob: StringBuffer) -> void {
     var nm_ss: i32=fn_name_ss(fns,fi);
     var nm_sl: i32=fn_name_sl(fns,fi);
     var np: i32=fn_nparam(fns,fi);
@@ -699,42 +648,42 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
 
     // "    .globl NAME\n"
     e4(ob);
-    ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('l',ob);
-    ob_char(' ',ob); ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
+    emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
+    emit_char(ob, ' '); emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);
     // "    .type  NAME, @function\n"
     e4(ob);
-    ob_char('.',ob);ob_char('t',ob);ob_char('y',ob);ob_char('p',ob);ob_char('e',ob);
-    ob_char(' ',ob);ob_char(' ',ob);
-    ob_n(strtab,nm_ss,nm_sl,ob);
-    ob_char(',',ob);ob_char(' ',ob);ob_char('@',ob);ob_char('f',ob);ob_char('u',ob);
-    ob_char('n',ob);ob_char('c',ob);ob_char('t',ob);ob_char('i',ob);ob_char('o',ob);
-    ob_char('n',ob);ob_char(10u8,ob);
+    emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'y');emit_char(ob, 'p');emit_char(ob, 'e');
+    emit_char(ob, ' ');emit_char(ob, ' ');
+    emit_n(ob, strtab,nm_ss,nm_sl);
+    emit_char(ob, ',');emit_char(ob, ' ');emit_char(ob, '@');emit_char(ob, 'f');emit_char(ob, 'u');
+    emit_char(ob, 'n');emit_char(ob, 'c');emit_char(ob, 't');emit_char(ob, 'i');emit_char(ob, 'o');
+    emit_char(ob, 'n');emit_char(ob, 10u8);
     // "NAME:\n"
-    ob_n(strtab,nm_ss,nm_sl,ob); ob_char(':',ob);ob_char(10u8,ob);
+    emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_char(ob, 10u8);
 
     // Prologue
     // "    # prologue: frame_size=X, params=Y, locals=Z\n"
-    e4(ob); ob_char('#',ob);ob_char(' ',ob);
-    ob_char('p',ob);ob_char('r',ob);ob_char('o',ob);ob_char('l',ob);ob_char('o',ob);ob_char('g',ob);ob_char('u',ob);ob_char('e',ob);ob_char(':',ob);ob_char(' ',ob);
-    ob_char('f',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char('e',ob);ob_char('_',ob);ob_char('s',ob);ob_char('i',ob);ob_char('z',ob);ob_char('e',ob);ob_char('=',ob);ob_int(frame_size,ob);
-    ob_char(',',ob);ob_char(' ',ob);
-    ob_char('p',ob);ob_char('a',ob);ob_char('r',ob);ob_char('a',ob);ob_char('m',ob);ob_char('s',ob);ob_char('=',ob);ob_int(np,ob);
-    ob_char(',',ob);ob_char(' ',ob);
-    ob_char('l',ob);ob_char('o',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);ob_char('s',ob);ob_char('=',ob);ob_int(nl,ob);ob_char(10u8,ob);
+    e4(ob); emit_char(ob, '#');emit_char(ob, ' ');
+    emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
+    emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
+    emit_char(ob, ',');emit_char(ob, ' ');
+    emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, np);
+    emit_char(ob, ',');emit_char(ob, ' ');
+    emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
     // "    addi sp, sp, -FRAME_SIZE\n"
-    e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob); ob_int(frame_size,ob); ob_char(10u8,ob);
+    e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-'); emit_int(ob, frame_size); emit_char(ob, 10u8);
     // "    sw   ra, (frame_size-4)(sp)\n"
     e_sw(ob); eregra(ob); eNspnl(frame_size-4,ob);
     // "    sw   s0, (frame_size-8)(sp)\n"
     e_sw(ob); eregs0(ob); eNspnl(frame_size-8,ob);
     // "    addi s0, sp, frame_size\n"
-    e_addi(ob); eregs0(ob); eregsp(ob); ob_int(frame_size,ob); ob_char(10u8,ob);
+    e_addi(ob); eregs0(ob); eregsp(ob); emit_int(ob, frame_size); emit_char(ob, 10u8);
     // Save params from a0-a7 to frame slots
     var pi: i32=0;
     while pi<np && pi<8 {
         // "    sw   aI, (-12-4*pi)(s0)\n"
         e_sw(ob);
-        ob_char('a',ob); ob_char((48+pi) as u8,ob); ecomma(ob);
+        emit_char(ob, 'a'); emit_char(ob, (48+pi) as u8); ecomma(ob);
         eNs0nl(0-12-4*pi,ob);
         pi=pi+1;
     }
@@ -743,16 +692,16 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
     var oi: i32=8;
     while oi<np {
         // "    lw   t0, 4*(oi-8)(s0)\n"
-        ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
-        ob_char('l',ob);ob_char('w',ob);
-        ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
-        ob_char('t',ob);ob_char('0',ob);ecomma(ob);
-        ob_int(4*(oi-8),ob);
-        ob_char('(',ob);ob_char('s',ob);ob_char('0',ob);ob_char(')',ob);
-        ob_char(10u8,ob);
+        emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
+        emit_char(ob, 'l');emit_char(ob, 'w');
+        emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
+        emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
+        emit_int(ob, 4*(oi-8));
+        emit_char(ob, '(');emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, ')');
+        emit_char(ob, 10u8);
         // "    sw   t0, (-12-4*oi)(s0)\n"
         e_sw(ob);
-        ob_char('t',ob);ob_char('0',ob);ecomma(ob);
+        emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
         eNs0nl(0-12-4*oi,ob);
         oi=oi+1;
     }
@@ -761,7 +710,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
     while li<nl {
         // "    sw   zero, (-12-4*np-4*li)(s0)\n"
         e_sw(ob);
-        ob_char('z',ob);ob_char('e',ob);ob_char('r',ob);ob_char('o',ob); // "zero"
+        emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, 'r');emit_char(ob, 'o'); // "zero"
         ecomma(ob);
         eNs0nl(0-12-4*np-4*li,ob);
         li=li+1;
@@ -778,16 +727,16 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
 
         if op==OP_PUSH_INT {
             // "    li   t0, N\n"
-            e_li(ob); eregt0(ob); ob_int(ival,ob); ob_char(10u8,ob);
+            e_li(ob); eregt0(ob); emit_int(ob, ival); emit_char(ob, 10u8);
             asm_push_t0(ob);
         }
         if op==OP_PUSH_STR {
             // la t0, __tc_strobjN
             e_la(ob); eregt0(ob);
-            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
-            ob_char('j',ob);
-            ob_int(ival,ob); ob_char(10u8,ob);
+            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
+            emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'b');
+            emit_char(ob, 'j');
+            emit_int(ob, ival); emit_char(ob, 10u8);
             asm_push_t0(ob);
         }
         if op==OP_LOAD {
@@ -796,10 +745,10 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
                 e_lw(ob); eregt0(ob); eNs0nl(off,ob);
             } else {
                 // "    la   t1, NAME\n"
-                e_la(ob); eregt1(ob); ob_n(strtab,sss,ssl,ob); ob_char(10u8,ob);
+                e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_char(ob, 10u8);
                 // "    lw   t0, 0(t1)\n"
                 e_lw(ob); eregt0(ob);
-                ob_char('0',ob);ob_char('(',ob);ob_char('t',ob);ob_char('1',ob);ob_char(')',ob);ob_char(10u8,ob);
+                emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
             }
             asm_push_t0(ob);
         }
@@ -810,10 +759,10 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
                 e_sw(ob); eregt0(ob); eNs0nl(off,ob);
             } else {
                 // "    la   t1, NAME\n"
-                e_la(ob); eregt1(ob); ob_n(strtab,sss,ssl,ob); ob_char(10u8,ob);
+                e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_char(ob, 10u8);
                 // "    sw   t0, 0(t1)\n"
                 e_sw(ob); eregt0(ob);
-                ob_char('0',ob);ob_char('(',ob);ob_char('t',ob);ob_char('1',ob);ob_char(')',ob);ob_char(10u8,ob);
+                emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
             }
         }
         if op==OP_CALL {
@@ -822,7 +771,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             var noverflow: i32=nargs-nreg;
             // Allocate space below expression stack for overflow args copy
             if noverflow>0 {
-                e_addi(ob); eregsp(ob); eregsp(ob); ob_int(0-4*noverflow,ob); ob_char(10u8,ob);
+                e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 0-4*noverflow); emit_char(ob, 10u8);
                 // Copy overflow args to new area (no overlap guaranteed)
                 var ci: i32=8;
                 while ci<nargs {
@@ -835,87 +784,87 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             var ai: i32=0;
             while ai<nreg {
                 e_lw(ob);
-                ob_char('a',ob); ob_char((48+ai) as u8,ob); ecomma(ob);
+                emit_char(ob, 'a'); emit_char(ob, (48+ai) as u8); ecomma(ob);
                 eNspnl(4*noverflow+4*(nargs-1-ai),ob);
                 ai=ai+1;
             }
             if is_sys_exit(strtab,sss,ssl)==1 {
                 // inline: li a7, 93; ecall
                 e_li(ob);
-                ob_char('a',ob);ob_char('7',ob); ecomma(ob); // "a7, "
-                ob_char('9',ob);ob_char('3',ob);ob_char(10u8,ob); // "93\n"
-                e4(ob);ob_char('e',ob);ob_char('c',ob);ob_char('a',ob);ob_char('l',ob);
-                ob_char('l',ob);ob_char(10u8,ob);
+                emit_char(ob, 'a');emit_char(ob, '7'); ecomma(ob); // "a7, "
+                emit_char(ob, '9');emit_char(ob, '3');emit_char(ob, 10u8); // "93\n"
+                e4(ob);emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');
+                emit_char(ob, 'l');emit_char(ob, 10u8);
             } else {
                 asm_call_fn(strtab,sss,ssl,ob);
             }
             // Pop overflow args + expression stack
             if noverflow>0 {
-                e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*noverflow+4*nargs,ob); ob_char(10u8,ob);
+                e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*noverflow+4*nargs); emit_char(ob, 10u8);
             } else {
                 if nargs>0 {
-                    e_addi(ob); eregsp(ob); eregsp(ob); ob_int(4*nargs,ob); ob_char(10u8,ob);
+                    e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*nargs); emit_char(ob, 10u8);
                 }
             }
             // push return value (a0) onto expression stack
-            e_addi(ob); eregsp(ob); eregsp(ob); ob_char('-',ob);ob_char('4',ob);ob_char(10u8,ob);
+            e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
             e_sw(ob);
-            ob_char('a',ob);ob_char('0',ob); ecomma(ob); eNspnl(0,ob);
+            emit_char(ob, 'a');emit_char(ob, '0'); ecomma(ob); eNspnl(0,ob);
         }
         if op==OP_RETURN {
             asm_pop_t0(ob);
             // mv a0, t0
-            e4(ob);ob_char('m',ob);ob_char('v',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
-            ob_char('a',ob);ob_char('0',ob); ecomma(ob);
-            ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
+            emit_char(ob, 'a');emit_char(ob, '0'); ecomma(ob);
+            emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
             asm_epilogue(ob);
         }
         if op==OP_RETURN_VOID {
             asm_epilogue(ob);
         }
         if op==OP_POP {
-            e_addi(ob); eregsp(ob); eregsp(ob); ob_char('4',ob);ob_char(10u8,ob);
+            e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
         }
         // Binary arithmetic/bitwise ops
         if op==OP_ADD { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('a',ob);ob_char('d',ob);ob_char('d',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_SUB { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('s',ob);ob_char('u',ob);ob_char('b',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_MUL { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('m',ob);ob_char('u',ob);ob_char('l',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_DIV { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('d',ob);ob_char('i',ob);ob_char('v',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_MOD { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('r',ob);ob_char('e',ob);ob_char('m',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_AND { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_OR { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('o',ob);ob_char('r',ob);ob_char(' ',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_XOR { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('x',ob);ob_char('o',ob);ob_char('r',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_SHL { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('l',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_SHR { asm_pop_t1_t0(ob);
-            e4(ob);ob_char('s',ob);ob_char('r',ob);ob_char('a',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);eregt0(ob);ob_char('t',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         // Comparisons
         if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
@@ -926,8 +875,8 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
         if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
         if op==OP_NEG {
             asm_pop_t0(ob);
-            e4(ob);ob_char('n',ob);ob_char('e',ob);ob_char('g',ob);ob_char(' ',ob);ob_char(' ',ob);
-            eregt0(ob);ob_char('t',ob);ob_char('0',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
             asm_push_t0(ob);
         }
         if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
@@ -937,27 +886,27 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             if ssl>0 { ta=get(strtab,sss); }
             if ssl>1 { tb=get(strtab,(sss+1)); }
             if ta=='u'&&tb=='8' { // u8: andi t0,t0,0xff
-                e4(ob);ob_char('a',ob);ob_char('n',ob);ob_char('d',ob);ob_char('i',ob);ob_char(' ',ob);
+                e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, ' ');
                 eregt0(ob);eregt0(ob);
-                ob_char('0',ob);ob_char('x',ob);ob_char('f',ob);ob_char('f',ob);ob_char(10u8,ob);
+                emit_char(ob, '0');emit_char(ob, 'x');emit_char(ob, 'f');emit_char(ob, 'f');emit_char(ob, 10u8);
             }
             if ta=='u'&&tb=='1' { // u16: slli 16; srli 16
-                e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);
-                eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char('6',ob);ob_char(10u8,ob);
-                e4(ob);ob_char('s',ob);ob_char('r',ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);
-                eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char('6',ob);ob_char(10u8,ob);
+                e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
+                eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
+                e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
+                eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
             }
             if ta=='i'&&tb=='8' { // i8: slli 24; srai 24
-                e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);
-                eregt0(ob);eregt0(ob);ob_char('2',ob);ob_char('4',ob);ob_char(10u8,ob);
-                e4(ob);ob_char('s',ob);ob_char('r',ob);ob_char('a',ob);ob_char('i',ob);ob_char(' ',ob);
-                eregt0(ob);eregt0(ob);ob_char('2',ob);ob_char('4',ob);ob_char(10u8,ob);
+                e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
+                eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
+                e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
+                eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
             }
             if ta=='i'&&tb=='1' { // i16: slli 16; srai 16
-                e4(ob);ob_char('s',ob);ob_char('l',ob);ob_char('l',ob);ob_char('i',ob);ob_char(' ',ob);
-                eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char('6',ob);ob_char(10u8,ob);
-                e4(ob);ob_char('s',ob);ob_char('r',ob);ob_char('a',ob);ob_char('i',ob);ob_char(' ',ob);
-                eregt0(ob);eregt0(ob);ob_char('1',ob);ob_char('6',ob);ob_char(10u8,ob);
+                e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
+                eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
+                e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
+                eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
             }
             if ta=='b' { // bool: snez t0,t0
                 asm_snez_t0(ob);
@@ -973,10 +922,10 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
     }
 
     // "    # end of NAME\n\n"
-    e4(ob); ob_char('#',ob); ob_char(' ',ob);
-    ob_char('e',ob);ob_char('n',ob);ob_char('d',ob);ob_char(' ',ob);ob_char('o',ob);ob_char('f',ob);ob_char(' ',ob);
-    ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
-    ob_char(10u8,ob);
+    e4(ob); emit_char(ob, '#'); emit_char(ob, ' ');
+    emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, 'o');emit_char(ob, 'f');emit_char(ob, ' ');
+    emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);
+    emit_char(ob, 10u8);
     return;
 }
 
@@ -984,65 +933,65 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
 fn emit_program(strtab: U8Array, string_lits: I32Array,
                 global_vars: I32Array, global_inits: I32Array,
                 fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
-                instrs: I32Array, ob: U8Array) -> void {
+                instrs: I32Array, ob: StringBuffer) -> void {
     // .rodata: string literals
     if g_nstrings > 0 {
         e4(ob);
-        ob_char('.',ob);ob_char('s',ob);ob_char('e',ob);ob_char('c',ob);ob_char('t',ob);
-        ob_char('i',ob);ob_char('o',ob);ob_char('n',ob);ob_char(' ',ob);
-        ob_char('.',ob);ob_char('r',ob);ob_char('o',ob);ob_char('d',ob);ob_char('a',ob);
-        ob_char('t',ob);ob_char('a',ob);ob_char(10u8,ob);
+        emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 't');
+        emit_char(ob, 'i');emit_char(ob, 'o');emit_char(ob, 'n');emit_char(ob, ' ');
+        emit_char(ob, '.');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 'a');
+        emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
         var si: i32=0;
         while si<g_nstrings {
             var ss: i32=get(string_lits,(si*2+0));
             var sl: i32=get(string_lits,(si*2+1));
             // "__tc_strdataN:\n"
-            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
-            ob_char('t',ob);ob_char('a',ob);
-            ob_int(si,ob); ob_char(':',ob);ob_char(10u8,ob);
+            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
+            emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'd');emit_char(ob, 'a');
+            emit_char(ob, 't');emit_char(ob, 'a');
+            emit_int(ob, si); emit_char(ob, ':');emit_char(ob, 10u8);
             // "    .string \"...\"\n"
             e4(ob);
-            ob_char('.',ob);ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('i',ob);
-            ob_char('n',ob);ob_char('g',ob);ob_char(' ',ob);
-            emit_strdata(strtab,ss,sl,ob); ob_char(10u8,ob);
+            emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');
+            emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');
+            emit_strdata(strtab,ss,sl,ob); emit_char(ob, 10u8);
             si=si+1;
         }
-        ob_char(10u8,ob);
+        emit_char(ob, 10u8);
         // Static HeapObj for each string literal
         var si2: i32=0;
         while si2<g_nstrings {
             var ss2: i32=get(string_lits,(si2*2+0));
             var sl2: i32=get(string_lits,(si2*2+1));
             // "    .align 4\n"
-            e4(ob);ob_char('.',ob);ob_char('a',ob);ob_char('l',ob);ob_char('i',ob);
-            ob_char('g',ob);ob_char('n',ob);ob_char(' ',ob);ob_char('4',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, '.');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'i');
+            emit_char(ob, 'g');emit_char(ob, 'n');emit_char(ob, ' ');emit_char(ob, '4');emit_char(ob, 10u8);
             // "__tc_strobjN:\n"
-            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('o',ob);ob_char('b',ob);
-            ob_char('j',ob);
-            ob_int(si2,ob); ob_char(':',ob);ob_char(10u8,ob);
+            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
+            emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'b');
+            emit_char(ob, 'j');
+            emit_int(ob, si2); emit_char(ob, ':');emit_char(ob, 10u8);
             // "    .word 1\n"  (kind = OBJ_STRING)
-            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-            ob_char(' ',ob);ob_char('1',ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
+            emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);
             // "    .word LEN\n"  (count = byte length)
-            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-            ob_char(' ',ob);ob_int(sl2,ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
+            emit_char(ob, ' ');emit_int(ob, sl2);emit_char(ob, 10u8);
             // "    .word __tc_strdataN\n"  (data)
-            e4(ob);ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-            ob_char(' ',ob);
-            ob_char('_',ob);ob_char('_',ob);ob_char('t',ob);ob_char('c',ob);ob_char('_',ob);
-            ob_char('s',ob);ob_char('t',ob);ob_char('r',ob);ob_char('d',ob);ob_char('a',ob);
-            ob_char('t',ob);ob_char('a',ob);
-            ob_int(si2,ob);ob_char(10u8,ob);
+            e4(ob);emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
+            emit_char(ob, ' ');
+            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
+            emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'd');emit_char(ob, 'a');
+            emit_char(ob, 't');emit_char(ob, 'a');
+            emit_int(ob, si2);emit_char(ob, 10u8);
             si2=si2+1;
         }
-        ob_char(10u8,ob);
+        emit_char(ob, 10u8);
     }
     // .data: globals
     if g_nglobals > 0 {
         e4(ob);
-        ob_char('.',ob);ob_char('d',ob);ob_char('a',ob);ob_char('t',ob);ob_char('a',ob);ob_char(10u8,ob);
+        emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
         var gi: i32=0;
         while gi<g_nglobals {
             var nm_ss: i32=get(global_vars,(gi*4+0));
@@ -1050,21 +999,21 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
             var initval: i32=get(global_inits,gi);
             // "    .globl NAME\n"
             e4(ob);
-            ob_char('.',ob);ob_char('g',ob);ob_char('l',ob);ob_char('o',ob);ob_char('b',ob);ob_char('l',ob);
-            ob_char(' ',ob); ob_n(strtab,nm_ss,nm_sl,ob); ob_char(10u8,ob);
+            emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
+            emit_char(ob, ' '); emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);
             // "NAME:\n    .word INITVAL\n"
-            ob_n(strtab,nm_ss,nm_sl,ob); ob_char(':',ob);ob_char(10u8,ob);
+            emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_char(ob, 10u8);
             e4(ob);
-            ob_char('.',ob);ob_char('w',ob);ob_char('o',ob);ob_char('r',ob);ob_char('d',ob);
-            ob_char(' ',ob); ob_int(initval,ob); ob_char(10u8,ob);
+            emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
+            emit_char(ob, ' '); emit_int(ob, initval); emit_char(ob, 10u8);
             gi=gi+1;
         }
-        ob_char(10u8,ob);
+        emit_char(ob, 10u8);
     }
     // .text: functions
     e4(ob);
-    ob_char('.',ob);ob_char('t',ob);ob_char('e',ob);ob_char('x',ob);ob_char('t',ob);ob_char(10u8,ob);
-    ob_char(10u8,ob);
+    emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);
+    emit_char(ob, 10u8);
     var fi: i32=0;
     while fi<g_nfuncs {
         emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);
@@ -1076,7 +1025,7 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
 fn main() -> i32 {
     var src:          U8Array  = U8Array(524288);
     var strtab:       U8Array  = U8Array(262144);
-    var ob:           U8Array  = U8Array(16384);
+    var ob:           StringBuffer = sb_new_output(1);
     var string_lits:  I32Array = I32Array(512);
     var global_vars:  I32Array = I32Array(1024);
     var global_inits: I32Array = I32Array(256);
@@ -1110,6 +1059,6 @@ fn main() -> i32 {
 
     emit_program(strtab,string_lits,global_vars,global_inits,
                  fns,params_pool,locals_pool,instrs,ob);
-    ob_flush(ob);
+    sb_write(ob, 1);
     return 0;
 }

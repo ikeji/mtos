@@ -315,7 +315,8 @@ check_output "pipeline[3]: continue sums odd 1-9 = 25" "25" "$?"
 echo "=== bc2asm.tc Pipeline Tests ==="
 echo ""
 
-BC2ASM_TC_BC=$({ "$CODEGEN" "$ROOT_DIR/compiler/bc2asm.tc"; } 2>/dev/null)
+source "$SCRIPT_DIR/compile_tc.sh"
+BC2ASM_TC_BC=$(compile_tc_to_bc "$ROOT_DIR/compiler/bc2asm.tc" 2>/dev/null)
 
 # bc2asm.tc で fib.tc バイトコードを RISC-V アセンブリに変換して実行
 FIB_ASM_S=$( { printf '%s\n' "$BC2ASM_TC_BC"; "$CODEGEN" "$SCRIPT_DIR/fib.tc"; } | "$BCRUN" 2>/dev/null )
