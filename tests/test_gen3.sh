@@ -116,16 +116,15 @@ for f in "${TC_FILES[@]}"; do
     actual_gen2_bc=$(mktemp)
 
     if [ "$has_import" -eq 0 ]; then
-        # Gen2 BC
-        gen2_ast=$(cat "$actual_gen2_ast")
+        # Gen2 BC (use Gen1 AST as input to ensure comparable output)
+        gen1_ast=$("$PARSE" "$input" 2>/dev/null)
         t0=$(time_ms)
-        printf '%s\n' "$gen2_ast" | run_typecheck_tc | run_codegen_tc > "$actual_gen2_bc"
+        printf '%s\n' "$gen1_ast" | run_typecheck_tc | run_codegen_tc > "$actual_gen2_bc"
         elapsed=$(( $(time_ms) - t0 ))
-        gen2_bc_size=$(wc -c < "$actual_gen2_bc")
-        if [ "$gen2_bc_size" -gt 10 ]; then
-            report_pass "tc/$f (BC - Gen2) [${gen2_bc_size}B]" "$elapsed"
+        if diff -u "$golden_bc" "$actual_gen2_bc" > /dev/null; then
+            report_pass "tc/$f (BC - Gen2 vs golden)" "$elapsed"
         else
-            report_fail_msg "tc/$f (BC - Gen2) [${elapsed}ms]" "empty or too small (${gen2_bc_size}B)"
+            report_fail_diff "tc/$f (BC - Gen2 vs golden)" "$golden_bc" "$actual_gen2_bc" "" "$elapsed"
         fi
 
         # Gen2 ASM
@@ -143,10 +142,11 @@ for f in "${TC_FILES[@]}"; do
 
     # === Gen3 == Gen2 (BC) ===
     if [ "$HAS_GEN3" = true ] && [ "$has_import" -eq 0 ]; then
+        # Gen3: Gen1 AST → Gen2 typecheck → Gen2 codegen (same input as Gen2 BC)
         gen3_bc=$(mktemp)
         t0=$(time_ms)
-        "$QEMU" "$_GEN2_TMP/parse" < "$input" 2>/tmp/tc_gen3_parse_stderr_$$ | \
-        "$QEMU" "$_GEN2_TMP/typecheck" 2>/dev/null | \
+        printf '%s\n' "$gen1_ast" | \
+        "$QEMU" "$_GEN2_TMP/typecheck" 2>/tmp/tc_gen3_parse_stderr_$$ | \
         "$QEMU" "$_GEN2_TMP/codegen" > "$gen3_bc" 2>/dev/null
         elapsed=$(( $(time_ms) - t0 ))
 
