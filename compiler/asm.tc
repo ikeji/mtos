@@ -240,11 +240,58 @@ fn parse_reg_op(op_idx: i32) -> i32 {
 }
 
 // ===== Parse immediate from operand =====
+// Parse %hi(label) or %hi(label+offset)
+fn parse_hilo(off: i32, len: i32, is_hi: i32) -> i32 {
+    // Skip "%hi(" or "%lo(" prefix (4 chars)
+    off = off + 4; len = len - 4;
+    // Strip trailing ')'
+    if len > 0 && get(g_line_buf, (off + len - 1)) == ')' { len = len - 1; }
+    // Check for label+offset
+    var plus_pos: i32 = 0 - 1;
+    var i: i32 = 0;
+    while i < len {
+        if get(g_line_buf, (off + i)) == '+' { plus_pos = i; i = len; }
+        else { i = i + 1; }
+    }
+    var label_len: i32 = len;
+    var add_offset: i32 = 0;
+    if plus_pos >= 0 {
+        label_len = plus_pos;
+        // Parse offset after '+'
+        var ostart: i32 = off + plus_pos + 1;
+        var olen: i32 = len - plus_pos - 1;
+        var ov: i32 = 0;
+        while olen > 0 {
+            var c: u8 = get(g_line_buf, ostart);
+            if c >= '0' && c <= '9' { ov = ov * 10 + (c as i32 - 48); }
+            ostart = ostart + 1; olen = olen - 1;
+        }
+        add_offset = ov;
+    }
+    var tmp: U8Array = U8Array(label_len);
+    i = 0;
+    while i < label_len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
+    var addr: i32 = 0;
+    if g_pass == 2 { addr = label_addr(tmp, label_len) + add_offset; }
+    delete(tmp);
+    if is_hi == 1 { return hi20(addr); }
+    return lo12(addr);
+}
+
 fn parse_imm_op(op_idx: i32) -> i32 {
     var off: i32 = get(g_ops, (op_idx * 2));
     var len: i32 = get(g_ops, (op_idx * 2 + 1));
     while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
         off = off + 1; len = len - 1;
+    }
+    // Check for %hi(label) or %lo(label)
+    if len >= 4 && get(g_line_buf, off) == '%' {
+        if get(g_line_buf, (off+1)) == 'h' && get(g_line_buf, (off+2)) == 'i' && get(g_line_buf, (off+3)) == '(' {
+            return parse_hilo(off, len, 1);
+        }
+        if get(g_line_buf, (off+1)) == 'l' && get(g_line_buf, (off+2)) == 'o' && get(g_line_buf, (off+3)) == '(' {
+            return parse_hilo(off, len, 0);
+        }
     }
     var neg: i32 = 0;
     if len > 0 && get(g_line_buf, off) == '-' { neg = 1; off = off + 1; len = len - 1; }
@@ -298,12 +345,12 @@ fn parse_label_op(op_idx: i32) -> i32 {
 fn parse_mem_off(op_idx: i32) -> i32 {
     var off: i32 = get(g_ops, (op_idx * 2));
     var len: i32 = get(g_ops, (op_idx * 2 + 1));
-    // Find '('
+    // Find LAST '(' (handles %lo(label)(reg) pattern)
     var paren: i32 = 0;
-    var i: i32 = 0;
-    while i < len {
-        if get(g_line_buf, (off + i)) == '(' { paren = i; i = len; }
-        else { i = i + 1; }
+    var i: i32 = len - 1;
+    while i >= 0 {
+        if get(g_line_buf, (off + i)) == '(' { paren = i; i = 0 - 1; }
+        else { i = i - 1; }
     }
     // Parse offset (before paren)
     // Temporarily adjust ops to point to offset part
@@ -635,7 +682,21 @@ fn process_line(line_idx: i32) -> void {
         if mnem_eq(".bss") { return; }
         if mnem_eq(".globl") || mnem_eq(".type") || mnem_eq(".size") ||
            mnem_eq(".option") || mnem_eq(".attribute") || mnem_eq(".file") ||
-           mnem_eq(".ident") || mnem_eq(".p2align") || mnem_eq(".set") { return; }
+           mnem_eq(".ident") || mnem_eq(".p2align") { return; }
+        if mnem_eq(".set") {
+            // .set label, . + N  (define label at current position + offset)
+            // For now, just define at current position
+            if g_nops >= 1 {
+                var op_off: i32 = get(g_ops, 0);
+                var op_len: i32 = get(g_ops, 1);
+                var lname: U8Array = U8Array(op_len);
+                i = 0;
+                while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
+                if g_pass == 1 { define_label(lname, op_len, TEXT_BASE + g_pos); }
+                delete(lname);
+            }
+            return;
+        }
         if mnem_eq(".align") {
             var n: i32 = 1;
             var shift: i32 = parse_imm_op(0);
