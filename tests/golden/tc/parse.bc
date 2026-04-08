@@ -936,6 +936,163 @@ __L2:
   return_void
 .endfn
 
+.fn compact_and_fill SourceReader void
+.param r SourceReader
+.local remaining i32
+.local i i32
+.local space i32
+.local tmp U8Array
+.local n i32
+.local j i32
+; if is_eof(r) == 1 { return; }
+  load r
+  call is_eof SourceReader
+  push_int 1
+  eq
+  jump_ifnot __L3
+  return_void
+__L3:
+; var remaining: i32 = buf_len(r) - buf_pos(r);
+  load r
+  call buf_len SourceReader
+  load r
+  call buf_pos SourceReader
+  sub
+  store remaining
+; if remaining > 0 && buf_pos(r) > 0 {
+  load remaining
+  push_int 0
+  gt
+  jump_ifnot __L5
+  load r
+  call buf_pos SourceReader
+  push_int 0
+  gt
+  jump_ifnot __L5
+  push_int 1
+  jump __L6
+__L5:
+  push_int 0
+__L6:
+  jump_ifnot __L4
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < remaining {
+__L7:
+  load i
+  load remaining
+  lt
+  jump_ifnot __L8
+; set(buf(r), i, get(buf(r), (buf_pos(r) + i)));
+  load r
+  call buf SourceReader
+  load i
+  load r
+  call buf SourceReader
+  load r
+  call buf_pos SourceReader
+  load i
+  add
+  call get U8Array i32
+  call set U8Array i32 u8
+  pop
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L7
+__L8:
+__L4:
+; buf_pos(r, 0);
+  load r
+  push_int 0
+  call buf_pos SourceReader i32
+  pop
+; buf_len(r, remaining);
+  load r
+  load remaining
+  call buf_len SourceReader i32
+  pop
+; var space: i32 = 4092 - remaining;
+  push_int 4092
+  load remaining
+  sub
+  store space
+; if space > 0 {
+  load space
+  push_int 0
+  gt
+  jump_ifnot __L9
+; var tmp: U8Array = U8Array(space);
+  load space
+  call U8Array i32
+  store tmp
+; var n: i32 = sys_read(rfd(r), tmp, space);
+  load r
+  call rfd SourceReader
+  load tmp
+  load space
+  call sys_read i32 U8Array i32
+  store n
+; if n > 0 {
+  load n
+  push_int 0
+  gt
+  jump_ifnot __L10
+; var j: i32 = 0;
+  push_int 0
+  store j
+; while j < n {
+__L12:
+  load j
+  load n
+  lt
+  jump_ifnot __L13
+; set(buf(r), (remaining + j), get(tmp, j));
+  load r
+  call buf SourceReader
+  load remaining
+  load j
+  add
+  load tmp
+  load j
+  call get U8Array i32
+  call set U8Array i32 u8
+  pop
+; j = j + 1;
+  load j
+  push_int 1
+  add
+  store j
+  jump __L12
+__L13:
+; buf_len(r, remaining + n);
+  load r
+  load remaining
+  load n
+  add
+  call buf_len SourceReader i32
+  pop
+  jump __L11
+__L10:
+; is_eof(r, 1);
+  load r
+  push_int 1
+  call is_eof SourceReader i32
+  pop
+__L11:
+; delete(tmp);
+  load tmp
+  call delete U8Array
+  pop
+__L9:
+; return;
+  return_void
+  return_void
+.endfn
+
 .fn peek SourceReader u8
 .param r SourceReader
 ; if fill(r) == 1 { return 0u8; }
@@ -943,10 +1100,10 @@ __L2:
   call fill SourceReader
   push_int 1
   eq
-  jump_ifnot __L3
+  jump_ifnot __L14
   push_int 0
   return
-__L3:
+__L14:
 ; return get(buf(r), buf_pos(r));
   load r
   call buf SourceReader
@@ -965,10 +1122,10 @@ __L3:
   call fill SourceReader
   push_int 1
   eq
-  jump_ifnot __L4
+  jump_ifnot __L15
   push_int 0
   return
-__L4:
+__L15:
 ; var c: u8 = get(buf(r), buf_pos(r));
   load r
   call buf SourceReader
@@ -988,7 +1145,7 @@ __L4:
   load c
   push_int 10
   eq
-  jump_ifnot __L5
+  jump_ifnot __L16
 ; lnum(r, lnum(r) + 1);
   load r
   load r
@@ -1002,15 +1159,15 @@ __L4:
   call line SourceReader
   call reset StringBuffer
   pop
-  jump __L6
-__L5:
+  jump __L17
+__L16:
 ; emit_char(line(r), c);
   load r
   call line SourceReader
   load c
   call emit_char StringBuffer u8
   pop
-__L6:
+__L17:
 ; return c;
   load c
   return
@@ -1071,11 +1228,11 @@ __L6:
   push_int 0
   store i
 ; while i < n {
-__L7:
+__L18:
   load i
   load n
   lt
-  jump_ifnot __L8
+  jump_ifnot __L19
 ; emit_char(sb, char_at(lb, i));
   load sb
   load lb
@@ -1088,14 +1245,12 @@ __L7:
   push_int 1
   add
   store i
-  jump __L7
-__L8:
-; if fill(r) == 0 {
+  jump __L18
+__L19:
+; compact_and_fill(r);
   load r
-  call fill SourceReader
-  push_int 0
-  eq
-  jump_ifnot __L9
+  call compact_and_fill SourceReader
+  pop
 ; var p: i32 = buf_pos(r);
   load r
   call buf_pos SourceReader
@@ -1108,21 +1263,21 @@ __L8:
   push_int 0
   store done
 ; while p < lim && done == 0 {
-__L10:
+__L20:
   load p
   load lim
   lt
-  jump_ifnot __L12
+  jump_ifnot __L22
   load done
   push_int 0
   eq
-  jump_ifnot __L12
+  jump_ifnot __L22
   push_int 1
-  jump __L13
-__L12:
+  jump __L23
+__L22:
   push_int 0
-__L13:
-  jump_ifnot __L11
+__L23:
+  jump_ifnot __L21
 ; var c: u8 = get(buf(r), p);
   load r
   call buf SourceReader
@@ -1133,20 +1288,20 @@ __L13:
   load c
   push_int 10
   eq
-  jump_ifnot __L14
+  jump_ifnot __L24
   push_int 1
   store done
-  jump __L15
-__L14:
+  jump __L25
+__L24:
   load c
   push_int 13
   eq
-  jump_ifnot __L16
+  jump_ifnot __L26
 ; else if c == 13u8 { done = 1; }
   push_int 1
   store done
-  jump __L17
-__L16:
+  jump __L27
+__L26:
 ; else { emit_char(sb, c); p = p + 1; }
   load sb
   load c
@@ -1156,11 +1311,10 @@ __L16:
   push_int 1
   add
   store p
-__L17:
-__L15:
-  jump __L10
-__L11:
-__L9:
+__L27:
+__L25:
+  jump __L20
+__L21:
 ; return;
   return_void
   return_void
