@@ -4,6 +4,7 @@
 
 import "string_buffer.tc";
 import "source_reader.tc";
+import "strlib.tc";
 
 // ===== Token kind constants =====
 var TK_FN: i32 = 0;
@@ -74,20 +75,6 @@ var g_tok_slen: i32 = 0;  // length of current token string in tok buf
 var g_tok_neg: i32 = 0;   // 1 if int literal is negative
 var g_tok_line: i32 = 1;  // line number of current token
 var g_last_comment_line: i32 = 0; // suppress duplicate comments
-
-// ===== Character classification =====
-fn is_digit(c: u8) -> bool {
-    return c >= '0' && c <= '9';
-}
-fn is_alpha(c: u8) -> bool {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-}
-fn is_alnum(c: u8) -> bool {
-    return is_alpha(c) || is_digit(c);
-}
-fn is_wspace(c: u8) -> bool {
-    return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8;
-}
 
 fn tok_cmp(tok: U8Array, tlen: i32, target: StringLiteral) -> bool {
     if tlen != len(target) { return false; }
@@ -381,14 +368,6 @@ fn lex_tok(src: SourceReader, tok: U8Array) -> void {
     return;
 }
 
-fn print_error(msg: StringLiteral) -> void {
-    var eb: StringBuffer = StringBuffer_new();
-    emit_string(eb, msg);
-    emit_char(eb, 10u8);
-    write(eb, 2);
-    destroy(eb);
-    return;
-}
 
 fn expect_tok(kind: i32, src: SourceReader, tok: U8Array) -> void {
     if g_tok != kind {
@@ -1101,13 +1080,6 @@ fn pars_fn_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32, 
 // ===== Synthetic function generation for struct =====
 // Emit the name of the current type token into a buffer and return length.
 // Does not advance the lexer.
-fn buf_set_str(buf: U8Array, start: i32, s: StringLiteral) -> i32 {
-    var i: i32 = 0;
-    var n: i32 = len(s);
-    while i < n { set(buf, (start + i), get(s, i)); i = i + 1; }
-    return n;
-}
-
 fn type_tok_name(tok: U8Array, buf: U8Array, bstart: i32) -> i32 {
     var k: i32 = g_tok;
     if k == TK_U8   { return buf_set_str(buf, bstart, "u8"); }

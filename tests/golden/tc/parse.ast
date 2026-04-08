@@ -1,6 +1,7 @@
 (program
   (import string_buffer.tc)
   (import source_reader.tc)
+  (import strlib.tc)
   (var_decl TK_FN
     (type i32)
     (int 0)
@@ -264,134 +265,6 @@
   (var_decl g_last_comment_line
     (type i32)
     (int 0)
-  )
-  (fn is_digit
-    (params
-      (param c
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return c >= '0' && c <= '9';")
-      (return
-        (binop &&
-          (binop >=
-            (var c)
-            (int:u8 48)
-          )
-          (binop <=
-            (var c)
-            (int:u8 57)
-          )
-        )
-      )
-    )
-  )
-  (fn is_alpha
-    (params
-      (param c
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';")
-      (return
-        (binop ||
-          (binop ||
-            (binop &&
-              (binop >=
-                (var c)
-                (int:u8 97)
-              )
-              (binop <=
-                (var c)
-                (int:u8 122)
-              )
-            )
-            (binop &&
-              (binop >=
-                (var c)
-                (int:u8 65)
-              )
-              (binop <=
-                (var c)
-                (int:u8 90)
-              )
-            )
-          )
-          (binop ==
-            (var c)
-            (int:u8 95)
-          )
-        )
-      )
-    )
-  )
-  (fn is_alnum
-    (params
-      (param c
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return is_alpha(c) || is_digit(c);")
-      (return
-        (binop ||
-          (call is_alpha
-            (var c)
-          )
-          (call is_digit
-            (var c)
-          )
-        )
-      )
-    )
-  )
-  (fn is_wspace
-    (params
-      (param c
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8;")
-      (return
-        (binop ||
-          (binop ||
-            (binop ||
-              (binop ==
-                (var c)
-                (int:u8 32)
-              )
-              (binop ==
-                (var c)
-                (int:u8 9)
-              )
-            )
-            (binop ==
-              (var c)
-              (int:u8 10)
-            )
-          )
-          (binop ==
-            (var c)
-            (int:u8 13)
-          )
-        )
-      )
-    )
   )
   (fn tok_cmp
     (params
@@ -2750,44 +2623,6 @@
       (comment "g_tok = TK_EOF;")
       (assign g_tok
         (var TK_EOF)
-      )
-      (comment "return;")
-      (return)
-    )
-  )
-  (fn print_error
-    (params
-      (param msg
-        (type StringLiteral)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "var eb: StringBuffer = StringBuffer_new();")
-      (var_decl eb
-        (type StringBuffer)
-        (call StringBuffer_new)
-      )
-      (comment "emit_string(eb, msg);")
-      (call_stmt emit_string
-        (var eb)
-        (var msg)
-      )
-      (comment "emit_char(eb, 10u8);")
-      (call_stmt emit_char
-        (var eb)
-        (int:u8 10)
-      )
-      (comment "write(eb, 2);")
-      (call_stmt write
-        (var eb)
-        (int 2)
-      )
-      (comment "destroy(eb);")
-      (call_stmt destroy
-        (var eb)
       )
       (comment "return;")
       (return)
@@ -7006,66 +6841,6 @@
       )
       (comment "return;")
       (return)
-    )
-  )
-  (fn buf_set_str
-    (params
-      (param buf
-        (type U8Array)
-      )
-      (param start
-        (type i32)
-      )
-      (param s
-        (type StringLiteral)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "var i: i32 = 0;")
-      (var_decl i
-        (type i32)
-        (int 0)
-      )
-      (comment "var n: i32 = len(s);")
-      (var_decl n
-        (type i32)
-        (call len
-          (var s)
-        )
-      )
-      (comment "while i < n { set(buf, (start + i), get(s, i)); i = i + 1; }")
-      (while
-        (binop <
-          (var i)
-          (var n)
-        )
-        (block
-          (call_stmt set
-            (var buf)
-            (binop +
-              (var start)
-              (var i)
-            )
-            (call get
-              (var s)
-              (var i)
-            )
-          )
-          (assign i
-            (binop +
-              (var i)
-              (int 1)
-            )
-          )
-        )
-      )
-      (comment "return n;")
-      (return
-        (var n)
-      )
     )
   )
   (fn type_tok_name

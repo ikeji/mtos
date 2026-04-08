@@ -1,0 +1,37 @@
+// strlib.tc — shared string/character utility functions
+
+import "string_buffer.tc";
+
+export fn is_digit(c: u8) -> bool {
+    return c >= '0' && c <= '9';
+}
+
+export fn is_alpha(c: u8) -> bool {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+}
+
+export fn is_alnum(c: u8) -> bool {
+    return is_alpha(c) || is_digit(c);
+}
+
+export fn is_wspace(c: u8) -> bool {
+    return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8;
+}
+
+// Copy a StringLiteral into a U8Array at offset. Returns number of bytes copied.
+export fn buf_set_str(buf: U8Array, start: i32, s: StringLiteral) -> i32 {
+    var i: i32 = 0;
+    var n: i32 = len(s);
+    while i < n { set(buf, (start + i), get(s, i)); i = i + 1; }
+    return n;
+}
+
+// Print an error message to stderr.
+export fn print_error(msg: StringLiteral) -> void {
+    var eb: StringBuffer = StringBuffer_new();
+    emit_string(eb, msg);
+    emit_char(eb, 10u8);
+    write(eb, 2);
+    destroy(eb);
+    return;
+}

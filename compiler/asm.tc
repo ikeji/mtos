@@ -4,6 +4,7 @@
 
 import "string_buffer.tc";
 import "source_reader.tc";
+import "strlib.tc";
 
 // ===== Constants =====
 var TEXT_BASE: i32 = 65536;  // 0x10000
@@ -22,6 +23,11 @@ var g_lab_lens: I32Array = 0 as I32Array;   // name length
 var g_lab_addrs: I32Array = 0 as I32Array;  // address
 var g_nlabels: i32 = 0;
 var g_lab_name_pos: i32 = 0;
+
+// Numeric labels: 10 digits x 256 entries each
+// g_numlab[digit * 256 + count] = address
+var g_numlab: I32Array = 0 as I32Array;
+var g_numlab_count: I32Array = 0 as I32Array;  // count per digit (10 entries)
 
 // Line storage for 2-pass: store all lines in a big U8Array
 var g_lines: U8Array = 0 as U8Array;    // packed line data
@@ -111,6 +117,40 @@ fn label_addr(name: U8Array, nlen: i32) -> i32 {
         sys_exit(1);
     }
     return get(g_lab_addrs, idx);
+}
+
+// ===== Numeric label support =====
+fn define_numlab(digit: i32, addr: i32) -> void {
+    var cnt: i32 = get(g_numlab_count, digit);
+    set(g_numlab, (digit * 256 + cnt), addr);
+    set(g_numlab_count, digit, cnt + 1);
+    return;
+}
+
+// Nb: backward reference — last definition at or before current pc
+fn numlab_back(digit: i32, pc: i32) -> i32 {
+    var cnt: i32 = get(g_numlab_count, digit);
+    var result: i32 = 0;
+    var i: i32 = cnt - 1;
+    var found: i32 = 0;
+    while i >= 0 && found == 0 {
+        var addr: i32 = get(g_numlab, (digit * 256 + i));
+        if addr <= pc { result = addr; found = 1; }
+        else { i = i - 1; }
+    }
+    return result;
+}
+
+// Nf: forward reference — first definition after current pc
+fn numlab_fwd(digit: i32, pc: i32) -> i32 {
+    var cnt: i32 = get(g_numlab_count, digit);
+    var i: i32 = 0;
+    while i < cnt {
+        var addr: i32 = get(g_numlab, (digit * 256 + i));
+        if addr > pc { return addr; }
+        i = i + 1;
+    }
+    return 0;
 }
 
 // ===== Register parser =====
@@ -232,7 +272,15 @@ fn parse_label_op(op_idx: i32) -> i32 {
     while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
         off = off + 1; len = len - 1;
     }
-    // Copy to temp buf for label_addr
+    // Check for numeric label reference: Nb or Nf
+    if len == 2 && is_digit(get(g_line_buf, off)) {
+        var digit: i32 = get(g_line_buf, off) as i32 - 48;
+        var dir: u8 = get(g_line_buf, (off + 1));
+        var pc: i32 = TEXT_BASE + g_pos;
+        if dir == 'b' { return numlab_back(digit, pc); }
+        if dir == 'f' { return numlab_fwd(digit, pc); }
+    }
+    // Named label
     var tmp: U8Array = U8Array(len);
     var i: i32 = 0;
     while i < len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
@@ -545,12 +593,21 @@ fn process_line(line_idx: i32) -> void {
         else { i = i + 1; }
     }
     if colon_pos >= 0 {
-        // Label definition
-        var lname: U8Array = U8Array(colon_pos);
-        i = 0;
-        while i < colon_pos { set(lname, i, get(g_line_buf, i)); i = i + 1; }
-        if g_pass == 1 { define_label(lname, colon_pos, TEXT_BASE + g_pos); }
-        delete(lname);
+        // Check if numeric label (single digit before colon)
+        var is_numlab: i32 = 0;
+        if colon_pos == 1 && is_digit(get(g_line_buf, 0)) {
+            is_numlab = 1;
+            var digit: i32 = get(g_line_buf, 0) as i32 - 48;
+            define_numlab(digit, TEXT_BASE + g_pos);
+        }
+        if is_numlab == 0 {
+            // Named label
+            var lname: U8Array = U8Array(colon_pos);
+            i = 0;
+            while i < colon_pos { set(lname, i, get(g_line_buf, i)); i = i + 1; }
+            if g_pass == 1 { define_label(lname, colon_pos, TEXT_BASE + g_pos); }
+            delete(lname);
+        }
         // Process remainder after colon
         var rest_start: i32 = colon_pos + 1;
         while rest_start < len && (get(g_line_buf, rest_start) == ' ' || get(g_line_buf, rest_start) == 9u8) { rest_start = rest_start + 1; }
@@ -763,6 +820,8 @@ fn main() -> i32 {
     g_mnem = U8Array(64);
     g_ops = I32Array(8);  // 4 ops x 2 (off, len)
     g_line_buf = U8Array(4092);
+    g_numlab = I32Array(2560);       // 10 digits x 256
+    g_numlab_count = I32Array(10);
 
     // Read all input lines
     read_all_lines();
@@ -773,14 +832,9 @@ fn main() -> i32 {
     g_nlabels = 0;
     g_lab_name_pos = 0;
     // Pre-define linker symbols
-    var gp_sym: U8Array = U8Array(17);
-    set(gp_sym, 0, '_'); set(gp_sym, 1, '_'); set(gp_sym, 2, 'g');
-    set(gp_sym, 3, 'l'); set(gp_sym, 4, 'o'); set(gp_sym, 5, 'b');
-    set(gp_sym, 6, 'a'); set(gp_sym, 7, 'l'); set(gp_sym, 8, '_');
-    set(gp_sym, 9, 'p'); set(gp_sym, 10, 'o'); set(gp_sym, 11, 'i');
-    set(gp_sym, 12, 'n'); set(gp_sym, 13, 't'); set(gp_sym, 14, 'e');
-    set(gp_sym, 15, 'r'); set(gp_sym, 16, '$');
-    define_label(gp_sym, 17, 0);
+    var gp_sym: U8Array = U8Array(20);
+    var gp_len: i32 = buf_set_str(gp_sym, 0, "__global_pointer$");
+    define_label(gp_sym, gp_len, 0);
     delete(gp_sym);
     var i: i32 = 0;
     while i < g_nlines { process_line(i); i = i + 1; }
@@ -789,6 +843,9 @@ fn main() -> i32 {
     // Pass 2: encode
     g_pass = 2;
     g_pos = 0;
+    // Reset numeric label counters for pass 2
+    i = 0;
+    while i < 10 { set(g_numlab_count, i, 0); i = i + 1; }
     i = 0;
     while i < g_nlines { process_line(i); i = i + 1; }
 
