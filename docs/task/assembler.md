@@ -13,15 +13,15 @@ riscv-gcc の役割:
 2. `runtime_syscall.c` → `.s` へのコンパイル
 3. 複数 `.s` + `crt0.s` のリンク → ELF 生成
 
-自作アセンブラを作り、runtime は事前に `.s` 化して保持することで
-riscv-gcc を不要にする。
+自作アセンブラを作り、riscv-gcc のリンカ機能を不要にする。
 
 ## 方針
 
-- **runtime_syscall.c** を `riscv-gcc -S` で `.s` に変換し、
-  `bootstrap/runtime_syscall.s` として保持する（1回だけ GCC を使用）
+- **runtime_syscall.c** は毎回 `riscv-gcc -S` で `.s` に変換する
+  （GCC はコンパイラとしてのみ使用、リンカ/アセンブラは不要に）
 - **自作アセンブラ** が `.s` ファイルを読み、ELF バイナリを出力する
 - crt0.s + runtime_syscall.s + ユーザーコード.s を1つの ELF にまとめる
+- 将来的に runtime を .tc で書き直せば GCC 完全不要になる
 
 ## サポートする命令
 
@@ -119,16 +119,7 @@ riscv-gcc を不要にする。
 
 ## 実装計画
 
-### ステップ 1: runtime を .s 化して保持
-
-```bash
-riscv64-unknown-elf-gcc -S -march=rv32im -mabi=ilp32 -O2 \
-    bootstrap/runtime_syscall.c -o bootstrap/runtime_syscall.s
-```
-
-このファイルをリポジトリにコミットし、以降は GCC なしでアセンブル可能にする。
-
-### ステップ 2: アセンブラの実装 (bootstrap/asm.c)
+### ステップ 1: アセンブラの実装 (bootstrap/asm.c)
 
 C で書く（Gen1 ツール）。入力: 複数 `.s` ファイル → 出力: ELF バイナリ
 
@@ -137,13 +128,19 @@ C で書く（Gen1 ツール）。入力: 複数 `.s` ファイル → 出力: E
 3. パス2: 命令エンコード + ラベル解決
 4. ELF 出力: ヘッダ + セクション + プログラムヘッダ
 
-### ステップ 3: テスト
+### ステップ 2: テスト
 
-- `./asm crt0.s runtime_syscall.s user.s -o output.elf`
-- qemu-riscv32 で実行、riscv-gcc 版と同じ結果を確認
+```bash
+riscv64-unknown-elf-gcc -S -march=rv32im -mabi=ilp32 -O2 \
+    bootstrap/runtime_syscall.c -o /tmp/runtime.s
+./asm bootstrap/crt0.s /tmp/runtime.s user.s -o output.elf
+qemu-riscv32 output.elf
+```
+
+- riscv-gcc 版と同じ実行結果を確認
 - Gen2/Gen3 テストを asm 版でも実行
 
-### ステップ 4: 自己ホスト版アセンブラ (compiler/asm.tc)
+### ステップ 3: 自己ホスト版アセンブラ (compiler/asm.tc)
 
 C 版を TinyC で書き直し。これにより:
 ```
