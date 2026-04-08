@@ -121,17 +121,14 @@ for f in "${TC_FILES[@]}"; do
         t0=$(time_ms)
         printf '%s\n' "$gen2_ast" | run_typecheck_tc | run_codegen_tc > "$actual_gen2_bc"
         elapsed=$(( $(time_ms) - t0 ))
-        # Compare ignoring comment lines (Gen2 parse produces slightly different comments)
-        golden_bc_nocomment=$(mktemp)
-        actual_bc_nocomment=$(mktemp)
-        grep -v "^;" "$golden_bc" > "$golden_bc_nocomment"
-        grep -v "^;" "$actual_gen2_bc" > "$actual_bc_nocomment"
-        if diff -u "$golden_bc_nocomment" "$actual_bc_nocomment" > /dev/null; then
+        if diff -u "$golden_bc" "$actual_gen2_bc" > /dev/null; then
             report_pass "tc/$f (BC - Gen2 vs golden)" "$elapsed"
         else
-            report_fail_diff "tc/$f (BC - Gen2 vs golden)" "$golden_bc_nocomment" "$actual_bc_nocomment" "" "$elapsed"
+            diff_file="/tmp/tc_gen2_bc_diff_${base}.txt"
+            diff -U3 "$golden_bc" "$actual_gen2_bc" > "$diff_file"
+            echo "FAIL: tc/$f (BC - Gen2 vs golden) [${elapsed}ms] (diff: $diff_file)"
+            FAIL=$((FAIL + 1))
         fi
-        rm -f "$golden_bc_nocomment" "$actual_bc_nocomment"
 
         # Gen2 ASM
         actual_gen2_s=$(mktemp)
@@ -141,7 +138,10 @@ for f in "${TC_FILES[@]}"; do
         if diff -u "$golden_s" "$actual_gen2_s" > /dev/null; then
             report_pass "tc/$f (ASM - Gen2 vs golden)" "$elapsed"
         else
-            report_fail_diff "tc/$f (ASM - Gen2 vs golden)" "$golden_s" "$actual_gen2_s" "" "$elapsed"
+            diff_file="/tmp/tc_gen2_asm_diff_${base}.txt"
+            diff -U3 "$golden_s" "$actual_gen2_s" > "$diff_file"
+            echo "FAIL: tc/$f (ASM - Gen2 vs golden) [${elapsed}ms] (diff: $diff_file)"
+            FAIL=$((FAIL + 1))
         fi
         rm -f "$actual_gen2_s"
     fi
@@ -162,10 +162,9 @@ for f in "${TC_FILES[@]}"; do
         if diff -u "$actual_gen2_bc" "$gen3_bc" > /dev/null; then
             report_pass "tc/$f (Gen2 == Gen3)${mem:+ (mem: parse=$mem)}" "$elapsed"
         else
-            echo "FAIL: tc/$f (Gen2 != Gen3) [${elapsed}ms]"
-            echo "  --- diff (showing first 10 lines) ---"
-            diff -u "$actual_gen2_bc" "$gen3_bc" | head -n 12
-            echo "  ------------------------------------"
+            diff_file="/tmp/tc_gen3_bc_diff_${base}.txt"
+            diff -U3 "$actual_gen2_bc" "$gen3_bc" > "$diff_file"
+            echo "FAIL: tc/$f (Gen2 != Gen3) [${elapsed}ms] (diff: $diff_file)"
             FAIL=$((FAIL + 1))
         fi
         rm -f "$gen3_bc"
