@@ -797,85 +797,55 @@ fn read_all_lines() -> void {
 }
 
 // ===== Write ELF =====
+fn write_le32(buf: U8Array, off: i32, v: i32) -> void {
+    set(buf, off, (v & 255) as u8);
+    set(buf, (off+1), ((v >> 8) & 255) as u8);
+    set(buf, (off+2), ((v >> 16) & 255) as u8);
+    set(buf, (off+3), ((v >> 24) & 255) as u8);
+    return;
+}
+
 fn write_elf(code_size: i32, mem_size: i32) -> void {
-    var out: U8Array = U8Array(4096);  // ELF header + phdr + padding to page
+    var out: U8Array = U8Array(4096);
     var entry: i32 = 0;
-    // Find _start label
     var tmp: U8Array = U8Array(6);
     set(tmp, 0, '_'); set(tmp, 1, 's'); set(tmp, 2, 't');
     set(tmp, 3, 'a'); set(tmp, 4, 'r'); set(tmp, 5, 't');
     entry = label_addr(tmp, 6);
     delete(tmp);
 
-    var hdr_size: i32 = 4096;  // pad to page boundary
     var vaddr: i32 = TEXT_BASE;
+    var bss_vaddr: i32 = vaddr + code_size;
+    bss_vaddr = (bss_vaddr + 4095) & (0 - 4096);
+    var bss_size: i32 = mem_size - code_size;
 
-    // Zero fill header page
     var i: i32 = 0;
     while i < 4096 { set(out, i, 0u8); i = i + 1; }
 
     // ELF header
     set(out, 0, 127u8); set(out, 1, 'E'); set(out, 2, 'L'); set(out, 3, 'F');
-    set(out, 4, 1u8);   // 32-bit
-    set(out, 5, 1u8);   // little-endian
-    set(out, 6, 1u8);   // ELF version
+    set(out, 4, 1u8); set(out, 5, 1u8); set(out, 6, 1u8);
+    set(out, 16, 2u8);    // ET_EXEC
+    set(out, 18, 243u8);  // EM_RISCV
+    write_le32(out, 20, 1);
+    write_le32(out, 24, entry);
+    write_le32(out, 28, 52);   // e_phoff
+    set(out, 40, 52u8);        // e_ehsize
+    set(out, 42, 32u8);        // e_phentsize
+    set(out, 44, 1u8);         // e_phnum = 1
 
-    // e_type = ET_EXEC (2)
-    set(out, 16, 2u8);
-    // e_machine = EM_RISCV (0xf3)
-    set(out, 18, 243u8);
-    // e_version = 1
-    set(out, 20, 1u8);
-    // e_entry (4 bytes LE)
-    set(out, 24, (entry & 255) as u8);
-    set(out, 25, ((entry >> 8) & 255) as u8);
-    set(out, 26, ((entry >> 16) & 255) as u8);
-    set(out, 27, ((entry >> 24) & 255) as u8);
-    // e_phoff = 52
-    set(out, 28, 52u8);
-    // e_ehsize = 52
-    set(out, 40, 52u8);
-    // e_phentsize = 32
-    set(out, 42, 32u8);
-    // e_phnum = 1
-    set(out, 44, 1u8);
+    // Single LOAD segment: text+rodata+bss (RWE)
+    write_le32(out, 52, 1);            // PT_LOAD
+    write_le32(out, 56, 4096);         // p_offset = 0x1000
+    write_le32(out, 60, vaddr);        // p_vaddr = 0x10000
+    write_le32(out, 64, vaddr);        // p_paddr
+    write_le32(out, 68, code_size);    // p_filesz
+    write_le32(out, 72, mem_size);     // p_memsz (includes BSS)
+    write_le32(out, 76, 7);            // p_flags = RWE
+    write_le32(out, 80, 4096);         // p_align
 
-    // Program header (at offset 52)
-    // p_type = PT_LOAD (1)
-    set(out, 52, 1u8);
-    // p_offset = 0x1000 (page-aligned, matches vaddr alignment)
-    set(out, 56, 0u8); set(out, 57, 16u8);
-    // p_vaddr, p_paddr = TEXT_BASE
-    set(out, 60, (vaddr & 255) as u8);
-    set(out, 61, ((vaddr >> 8) & 255) as u8);
-    set(out, 62, ((vaddr >> 16) & 255) as u8);
-    set(out, 63, ((vaddr >> 24) & 255) as u8);
-    set(out, 64, (vaddr & 255) as u8);
-    set(out, 65, ((vaddr >> 8) & 255) as u8);
-    set(out, 66, ((vaddr >> 16) & 255) as u8);
-    set(out, 67, ((vaddr >> 24) & 255) as u8);
-    // p_filesz, p_memsz = code_size (code starts at offset 0x1000)
-    // p_filesz = code_size
-    set(out, 68, (code_size & 255) as u8);
-    set(out, 69, ((code_size >> 8) & 255) as u8);
-    set(out, 70, ((code_size >> 16) & 255) as u8);
-    set(out, 71, ((code_size >> 24) & 255) as u8);
-    // p_memsz = total memory including BSS
-    set(out, 72, (mem_size & 255) as u8);
-    set(out, 73, ((mem_size >> 8) & 255) as u8);
-    set(out, 74, ((mem_size >> 16) & 255) as u8);
-    set(out, 75, ((mem_size >> 24) & 255) as u8);
-    // p_flags = RWX (7)
-    set(out, 76, 7u8);
-    // p_align = 0x1000
-    set(out, 81, 16u8);
-
-    // Write header page (4096 bytes, padded with zeros)
     sys_write(1, out, 4096);
-
-    // Write code
     sys_write(1, g_code, code_size);
-
     delete(out);
     return;
 }
