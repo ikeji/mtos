@@ -83,7 +83,7 @@ if [ -n "$FIB_ASM_S" ]; then
     asm_file="/tmp/tc_bc2asm_fib_$$.s"
     elf_file="/tmp/tc_bc2asm_fib_$$"
     printf '%s\n' "$FIB_ASM_S" > "$asm_file"
-    if $RISCV_CC $RISCV_FLAGS "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
+    if $RISCV_CC "${RISCV_FLAGS[@]}" "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
         actual=$($QEMU "$elf_file" 2>/tmp/tc_bc2asm_stderr_$$)
         elapsed=$(( $(time_ms) - t0 ))
         mem=$(awk '$1 ~ /^[0-9]+$/ && $3 ~ /\// { split($3,a,"/"); total += a[1] * $1 } END { if (total>0) printf "%dKB", total/1024 }' /tmp/tc_bc2asm_stderr_$$)
@@ -105,7 +105,7 @@ if [ -n "$FIZZ_ASM_S" ]; then
     asm_file="/tmp/tc_bc2asm_fizz_$$.s"
     elf_file="/tmp/tc_bc2asm_fizz_$$"
     printf '%s\n' "$FIZZ_ASM_S" > "$asm_file"
-    if $RISCV_CC $RISCV_FLAGS "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
+    if $RISCV_CC "${RISCV_FLAGS[@]}" "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
         actual=$($QEMU "$elf_file" 2>/tmp/tc_bc2asm_stderr_$$)
         elapsed=$(( $(time_ms) - t0 ))
         mem=$(awk '$1 ~ /^[0-9]+$/ && $3 ~ /\// { split($3,a,"/"); total += a[1] * $1 } END { if (total>0) printf "%dKB", total/1024 }' /tmp/tc_bc2asm_stderr_$$)

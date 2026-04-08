@@ -19,7 +19,7 @@ BCRUN="$ROOT_DIR/bcrun"
 BC2ASM="$ROOT_DIR/bc2asm"
 
 RISCV_CC="riscv64-unknown-elf-gcc"
-RISCV_FLAGS="-march=rv32im -mabi=ilp32 -static -nostdlib -lgcc -Wl,-Ttext-segment=0x10000"
+RISCV_FLAGS=(-march=rv32im -mabi=ilp32 -static -nostdlib -lgcc -Wl,-Ttext-segment=0x10000)
 RUNTIME="$COMPILER_DIR/runtime_syscall.c"
 CRT0="$COMPILER_DIR/crt0.s"
 QEMU="qemu-riscv32"
@@ -104,24 +104,47 @@ print_results() {
     [ "$FAIL" -eq 0 ]
 }
 
-# ===== compile_tc_to_bc (import-resolving BC compilation) =====
+# ===== Recursive import collection =====
 
-compile_tc_to_bc() {
+# _collect_imports file.tc — recursively collect all import file paths (deduped)
+# Results appended to _COLLECTED_IMPORTS (newline-separated)
+_COLLECTED_IMPORTS=""
+_collect_imports() {
     local tc_file="$1"
     local tc_dir
     tc_dir=$(dirname "$tc_file")
-
-    local imports=()
     while IFS= read -r imp; do
-        imports+=("$tc_dir/$imp")
-    done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
-
-    local all_bcs=()
-    for imp_file in "${imports[@]}"; do
-        if [ -f "$imp_file" ]; then
-            all_bcs+=("$("$CODEGEN" "$imp_file" 2>/dev/null)")
+        local full="$tc_dir/$imp"
+        if [ -f "$full" ]; then
+            local b
+            b=$(basename "$full")
+            if ! echo "$_COLLECTED_IMPORTS" | grep -qF "$b"; then
+                _collect_imports "$full"
+                _COLLECTED_IMPORTS="${_COLLECTED_IMPORTS}${full}
+"
+            fi
         fi
-    done
+    done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
+}
+
+# collect_imports file.tc — returns newline-separated list of all import files
+collect_imports() {
+    _COLLECTED_IMPORTS=""
+    _collect_imports "$1"
+    printf '%s' "$_COLLECTED_IMPORTS"
+}
+
+# ===== compile_tc_to_bc (recursive import-resolving BC compilation) =====
+
+compile_tc_to_bc() {
+    local tc_file="$1"
+    local all_bcs=()
+
+    while IFS= read -r imp_file; do
+        [ -z "$imp_file" ] && continue
+        all_bcs+=("$("$CODEGEN" "$imp_file" 2>/dev/null)")
+    done < <(collect_imports "$tc_file")
+
     all_bcs+=("$("$CODEGEN" "$tc_file" 2>/dev/null)")
 
     for bc in "${all_bcs[@]}"; do
@@ -139,20 +162,17 @@ _GEN2_READY=false
 build_gen2_tool() {
     local name="$1"
     local tc_file="$TC_DIR/$name.tc"
-    local tc_dir
-    tc_dir=$(dirname "$tc_file")
-    local imports=() asm_files=()
-    while IFS= read -r imp; do
-        imports+=("$tc_dir/$imp")
-    done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
-    for imp_file in "${imports[@]}"; do
+    local asm_files=()
+    local imp_file
+    while IFS= read -r imp_file; do
+        [ -z "$imp_file" ] && continue
         local base=$(basename "$imp_file" .tc)
         "$CODEGEN" "$imp_file" 2>/dev/null | "$BC2ASM" > "$_GEN2_TMP/${name}_dep_${base}.s" 2>/dev/null
         asm_files+=("$_GEN2_TMP/${name}_dep_${base}.s")
-    done
+    done < <(collect_imports "$tc_file")
     "$CODEGEN" "$tc_file" 2>/dev/null | "$BC2ASM" > "$_GEN2_TMP/$name.s" 2>/dev/null
     asm_files+=("$_GEN2_TMP/$name.s")
-    $RISCV_CC $RISCV_FLAGS "$CRT0" "$RUNTIME" "${asm_files[@]}" -o "$_GEN2_TMP/$name" 2>/dev/null
+    "$RISCV_CC" "${RISCV_FLAGS[@]}" "$CRT0" "$RUNTIME" "${asm_files[@]}" -o "$_GEN2_TMP/$name" 2>/dev/null
 }
 
 # ensure_gen2_tools — builds Gen2 RISC-V binaries (once), sets USE_NATIVE

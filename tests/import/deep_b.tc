@@ -1,0 +1,5 @@
+import "deep_c.tc";
+
+export fn deep_add(x: i32) -> i32 {
+    return x + deep_val();
+}

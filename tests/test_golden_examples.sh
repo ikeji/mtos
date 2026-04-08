@@ -87,7 +87,7 @@ for f in "${EXAMPLE_FILES[@]}"; do
         elf_file=$(mktemp)
         bc=$("$CODEGEN" "$input" 2>/dev/null)
         printf '%s\n' "$bc" | "$BC2ASM" > "$asm_file" 2>/dev/null
-        if "$RISCV_CC" $RISCV_FLAGS "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
+        if "$RISCV_CC" "${RISCV_FLAGS[@]}" "$CRT0" "$asm_file" "$RUNTIME" -o "$elf_file" 2>/dev/null; then
             actual=$(mktemp)
             t0=$(time_ms)
             echo -n "$stdin" | "$QEMU" "$elf_file" > "$actual" 2>/tmp/tc_golden_rv32_stderr_$$

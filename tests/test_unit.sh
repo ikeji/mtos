@@ -64,7 +64,7 @@ run_rv32() {
     local t0 elapsed
     t0=$(time_ms)
     $BC2ASM <($CODEGEN "$tc") > "$asm" 2>/dev/null || { elapsed=$(( $(time_ms) - t0 )); report_fail_msg "$name [${elapsed}ms]" "codegen/bc2asm failed"; return; }
-    $RISCV_CC $RISCV_FLAGS "$CRT0" "$asm" "$RUNTIME" -o "$elf" 2>/dev/null || { elapsed=$(( $(time_ms) - t0 )); report_fail_msg "$name [${elapsed}ms]" "compile failed"; rm -f "$asm" "$elf"; return; }
+    $RISCV_CC "${RISCV_FLAGS[@]}" "$CRT0" "$asm" "$RUNTIME" -o "$elf" 2>/dev/null || { elapsed=$(( $(time_ms) - t0 )); report_fail_msg "$name [${elapsed}ms]" "compile failed"; rm -f "$asm" "$elf"; return; }
     actual=$($QEMU "$elf" 2>/tmp/tc_rv32_stderr_$$ )
     elapsed=$(( $(time_ms) - t0 ))
     local mem

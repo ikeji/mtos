@@ -21,7 +21,7 @@ link_and_run() {
     local out_file="$1"; shift
     local exit_file="$1"; shift
     local elf=$(mktemp)
-    if ! "$RISCV_CC" $RISCV_FLAGS "$CRT0" "$RUNTIME" "$@" -o "$elf" 2>/dev/null; then
+    if ! "$RISCV_CC" "${RISCV_FLAGS[@]}" "$CRT0" "$RUNTIME" "$@" -o "$elf" 2>/dev/null; then
         echo "link failed" > "$exit_file"
         rm -f "$elf"
         return 1
@@ -118,6 +118,41 @@ if [ "$result" -ne 0 ]; then
     report_pass "struct auto-generated fn rejected" "$elapsed"
 else
     report_fail_msg "struct auto-generated fn rejected" "expected compile error but codegen succeeded"
+fi
+
+# --- Test 7: Deep import (A → B → C, compile + run via bcrun) ---
+t0=$(time_ms)
+BC=$(compile_tc_to_bc "$IMPORT_DIR/main_deep.tc")
+actual=$(printf '%s\n' "$BC" | "$BCRUN" 2>/dev/null)
+elapsed=$(( $(time_ms) - t0 ))
+if [ "$actual" = "15" ]; then
+    report_pass "deep import (A→B→C via bcrun)" "$elapsed"
+else
+    report_fail_msg "deep import (A→B→C via bcrun)" "expected '15', got '$actual'"
+fi
+
+# --- Test 8: Deep import (A → B → C, compile + run via rv32) ---
+if [ "$HAS_RV" = true ]; then
+    TMP=$(mktemp -d)
+    t0=$(time_ms)
+    compile_tc "$IMPORT_DIR/deep_c.tc" "$TMP/deep_c.s"
+    compile_tc "$IMPORT_DIR/deep_b.tc" "$TMP/deep_b.s"
+    compile_tc "$IMPORT_DIR/main_deep.tc" "$TMP/main.s"
+    if link_and_run "$TMP/out" "$TMP/exit" "$TMP/deep_c.s" "$TMP/deep_b.s" "$TMP/main.s"; then
+        elapsed=$(( $(time_ms) - t0 ))
+        out=$(cat "$TMP/out"); ex=$(cat "$TMP/exit")
+        if [ "$out" = "15" ] && [ "$ex" = "0" ]; then
+            report_pass "deep import (A→B→C via rv32)" "$elapsed"
+        else
+            report_fail_msg "deep import (A→B→C via rv32)" "expected output '15' exit 0, got '$out' exit $ex"
+        fi
+    else
+        elapsed=$(( $(time_ms) - t0 ))
+        report_fail_msg "deep import (A→B→C via rv32)" "link failed"
+    fi
+    rm -rf "$TMP"
+else
+    echo "SKIP: deep import rv32 (RISC-V toolchain not found)"
 fi
 
 print_results
