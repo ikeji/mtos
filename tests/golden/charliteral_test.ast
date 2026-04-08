@@ -5,37 +5,31 @@
       (type i32)
     )
     (block
-      (comment var a: u8 = 'A';)
       (comment "var a: u8 = 'A';")
       (var_decl a
         (type u8)
         (int:u8 65)
       )
-      (comment var z: u8 = 'Z';)
       (comment "var z: u8 = 'Z';")
       (var_decl z
         (type u8)
         (int:u8 90)
       )
-      (comment var n: u8 = '\n';)
       (comment "var n: u8 = '\\n';")
       (var_decl n
         (type u8)
         (int:u8 10)
       )
-      (comment var t: u8 = '\t';)
       (comment "var t: u8 = '\\t';")
       (var_decl t
         (type u8)
         (int:u8 9)
       )
-      (comment var q: u8 = '\'';)
       (comment "var q: u8 = '\\'';")
       (var_decl q
         (type u8)
         (int:u8 39)
       )
-      (comment print_i32(a as i32);)
       (comment "print_i32(a as i32);")
       (call_stmt print_i32
         (cast
@@ -43,7 +37,6 @@
           (type i32)
         )
       )
-      (comment print_i32(z as i32);)
       (comment "print_i32(z as i32);")
       (call_stmt print_i32
         (cast
@@ -51,7 +44,6 @@
           (type i32)
         )
       )
-      (comment print_i32(n as i32);)
       (comment "print_i32(n as i32);")
       (call_stmt print_i32
         (cast
@@ -59,7 +51,6 @@
           (type i32)
         )
       )
-      (comment print_i32(t as i32);)
       (comment "print_i32(t as i32);")
       (call_stmt print_i32
         (cast
@@ -67,7 +58,6 @@
           (type i32)
         )
       )
-      (comment print_i32(q as i32);)
       (comment "print_i32(q as i32);")
       (call_stmt print_i32
         (cast
@@ -75,7 +65,6 @@
           (type i32)
         )
       )
-      (comment return 0;)
       (comment "return 0;")
       (return
         (int 0)

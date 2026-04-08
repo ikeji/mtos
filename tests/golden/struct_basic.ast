@@ -20,14 +20,12 @@
       (type Point)
     )
     (block
-      (comment "struct Point { x: i32, y: i32 }")
       (var_decl __p
         (type U32Array)
         (call U32Array
           (int 2)
         )
       )
-      (comment "struct Point { x: i32, y: i32 }")
       (call_stmt set
         (var __p)
         (int 0)
@@ -36,7 +34,6 @@
           (type u32)
         )
       )
-      (comment "struct Point { x: i32, y: i32 }")
       (call_stmt set
         (var __p)
         (int 1)
@@ -45,7 +42,6 @@
           (type u32)
         )
       )
-      (comment "struct Point { x: i32, y: i32 }")
       (return
         (cast
           (var __p)
@@ -64,7 +60,6 @@
       (type i32)
     )
     (block
-      (comment "struct Point { x: i32, y: i32 }")
       (return
         (cast
           (call get
@@ -89,7 +84,6 @@
       (type i32)
     )
     (block
-      (comment "struct Point { x: i32, y: i32 }")
       (return
         (cast
           (call get
@@ -117,7 +111,6 @@
       (type void)
     )
     (block
-      (comment "struct Point { x: i32, y: i32 }")
       (call_stmt set
         (cast
           (var __p)
@@ -129,7 +122,6 @@
           (type u32)
         )
       )
-      (comment "struct Point { x: i32, y: i32 }")
       (return)
     )
   )
@@ -146,7 +138,6 @@
       (type void)
     )
     (block
-      (comment "struct Point { x: i32, y: i32 }")
       (call_stmt set
         (cast
           (var __p)
@@ -158,7 +149,6 @@
           (type u32)
         )
       )
-      (comment "struct Point { x: i32, y: i32 }")
       (return)
     )
   )
@@ -172,14 +162,12 @@
       (type void)
     )
     (block
-      (comment "struct Point { x: i32, y: i32 }")
       (call_stmt delete
         (cast
           (var __p)
           (type U32Array)
         )
       )
-      (comment "struct Point { x: i32, y: i32 }")
       (return)
     )
   )
@@ -189,7 +177,6 @@
       (type i32)
     )
     (block
-      (comment var p: Point = Point(3, 4);)
       (comment "var p: Point = Point(3, 4);")
       (var_decl p
         (type Point)
@@ -198,33 +185,28 @@
           (int 4)
         )
       )
-      (comment print_i32(x(p));)
       (comment "print_i32(x(p));")
       (call_stmt print_i32
         (call x
           (var p)
         )
       )
-      (comment print_i32(y(p));)
       (comment "print_i32(y(p));")
       (call_stmt print_i32
         (call y
           (var p)
         )
       )
-      (comment x(p, 10);)
       (comment "x(p, 10);")
       (call_stmt x
         (var p)
         (int 10)
       )
-      (comment y(p, 20);)
       (comment "y(p, 20);")
       (call_stmt y
         (var p)
         (int 20)
       )
-      (comment print_i32(x(p) + y(p));)
       (comment "print_i32(x(p) + y(p));")
       (call_stmt print_i32
         (binop +
@@ -236,12 +218,10 @@
           )
         )
       )
-      (comment delete(p);)
       (comment "delete(p);")
       (call_stmt delete
         (var p)
       )
-      (comment return 0;)
       (comment "return 0;")
       (return
         (int 0)

@@ -9,7 +9,6 @@
       (type i32)
     )
     (block
-      (comment if n <= 1 {)
       (comment "if n <= 1 {")
       (if
         (binop <=
@@ -17,14 +16,12 @@
           (int 1)
         )
         (block
-          (comment return n;)
           (comment "return n;")
           (return
             (var n)
           )
         )
       )
-      (comment return fib(n - 1) + fib(n - 2);)
       (comment "return fib(n - 1) + fib(n - 2);")
       (return
         (binop +
@@ -50,7 +47,6 @@
       (type i32)
     )
     (block
-      (comment var result: i32 = fib(10);)
       (comment "var result: i32 = fib(10);")
       (var_decl result
         (type i32)
@@ -58,12 +54,10 @@
           (int 10)
         )
       )
-      (comment print_i32(result);)
       (comment "print_i32(result);")
       (call_stmt print_i32
         (var result)
       )
-      (comment return result;)
       (comment "return result;")
       (return
         (var result)

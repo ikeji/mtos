@@ -145,7 +145,7 @@ void ast_print(AstNode *node, int indent) {
             fputs(node->sval, stdout);
         }
         printf(" %ld", node->ival);
-    } else if (strcmp(node->kind, "str") == 0 && node->sval) {
+    } else if ((strcmp(node->kind, "str") == 0 || strcmp(node->kind, "comment") == 0) && node->sval) {
         putchar(' ');
         print_escaped_str(node->sval);
     } else if (node->sval) {

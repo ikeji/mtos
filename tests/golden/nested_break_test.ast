@@ -5,19 +5,16 @@
       (type i32)
     )
     (block
-      (comment var result: i32 = 0;)
       (comment "var result: i32 = 0;")
       (var_decl result
         (type i32)
         (int 0)
       )
-      (comment var i: i32 = 0;)
       (comment "var i: i32 = 0;")
       (var_decl i
         (type i32)
         (int 0)
       )
-      (comment while i < 3 {)
       (comment "while i < 3 {")
       (while
         (binop <
@@ -25,13 +22,11 @@
           (int 3)
         )
         (block
-          (comment var j: i32 = 0;)
           (comment "var j: i32 = 0;")
           (var_decl j
             (type i32)
             (int 0)
           )
-          (comment while j < 10 {)
           (comment "while j < 10 {")
           (while
             (binop <
@@ -39,7 +34,6 @@
               (int 10)
             )
             (block
-              (comment if j == 2 { break; })
               (comment "if j == 2 { break; }")
               (if
                 (binop ==
@@ -47,12 +41,10 @@
                   (int 2)
                 )
                 (block
-                  (comment if j == 2 { break; })
                   (comment "if j == 2 { break; }")
                   (break)
                 )
               )
-              (comment result = result + 1;)
               (comment "result = result + 1;")
               (assign result
                 (binop +
@@ -60,7 +52,6 @@
                   (int 1)
                 )
               )
-              (comment j = j + 1;)
               (comment "j = j + 1;")
               (assign j
                 (binop +
@@ -70,7 +61,6 @@
               )
             )
           )
-          (comment i = i + 1;)
           (comment "i = i + 1;")
           (assign i
             (binop +
@@ -80,7 +70,6 @@
           )
         )
       )
-      (comment return result;)
       (comment "return result;")
       (return
         (var result)

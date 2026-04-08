@@ -17,7 +17,6 @@
       (type bool)
     )
     (block
-      (comment return c >= 48u8 && c <= 57u8;)
       (comment "return c >= 48u8 && c <= 57u8;")
       (return
         (binop &&
@@ -43,7 +42,6 @@
       (type bool)
     )
     (block
-      (comment return c == 32u8 || c == 9u8;)
       (comment "return c == 32u8 || c == 9u8;")
       (return
         (binop ||
@@ -69,7 +67,6 @@
       (type u8)
     )
     (block
-      (comment if g_pos >= g_len {)
       (comment "if g_pos >= g_len {")
       (if
         (binop >=
@@ -77,14 +74,12 @@
           (var g_len)
         )
         (block
-          (comment return 0u8;)
           (comment "return 0u8;")
           (return
             (int:u8 0)
           )
         )
       )
-      (comment return get(buf, g_pos);)
       (comment "return get(buf, g_pos);")
       (return
         (call get
@@ -104,7 +99,6 @@
       (type void)
     )
     (block
-      (comment while g_pos < g_len && is_space(cur_char(buf)) {)
       (comment "while g_pos < g_len && is_space(cur_char(buf)) {")
       (while
         (binop &&
@@ -119,7 +113,6 @@
           )
         )
         (block
-          (comment g_pos = g_pos + 1;)
           (comment "g_pos = g_pos + 1;")
           (assign g_pos
             (binop +
@@ -129,7 +122,6 @@
           )
         )
       )
-      (comment return;)
       (comment "return;")
       (return)
     )
@@ -144,18 +136,15 @@
       (type i32)
     )
     (block
-      (comment skip_spaces(buf);)
       (comment "skip_spaces(buf);")
       (call_stmt skip_spaces
         (var buf)
       )
-      (comment var result: i32 = 0;)
       (comment "var result: i32 = 0;")
       (var_decl result
         (type i32)
         (int 0)
       )
-      (comment while g_pos < g_len && is_digit(cur_char(buf)) {)
       (comment "while g_pos < g_len && is_digit(cur_char(buf)) {")
       (while
         (binop &&
@@ -170,7 +159,6 @@
           )
         )
         (block
-          (comment result = result * 10 + (cur_char(buf) as i32 - 48);)
           (comment "result = result * 10 + (cur_char(buf) as i32 - 48);")
           (assign result
             (binop +
@@ -189,7 +177,6 @@
               )
             )
           )
-          (comment g_pos = g_pos + 1;)
           (comment "g_pos = g_pos + 1;")
           (assign g_pos
             (binop +
@@ -199,7 +186,6 @@
           )
         )
       )
-      (comment return result;)
       (comment "return result;")
       (return
         (var result)
@@ -216,7 +202,6 @@
       (type i32)
     )
     (block
-      (comment var left: i32 = parse_num(buf);)
       (comment "var left: i32 = parse_num(buf);")
       (var_decl left
         (type i32)
@@ -224,12 +209,10 @@
           (var buf)
         )
       )
-      (comment skip_spaces(buf);)
       (comment "skip_spaces(buf);")
       (call_stmt skip_spaces
         (var buf)
       )
-      (comment while g_pos < g_len && (cur_char(buf) == 42u8 || cur_char(buf) == 47u8) {)
       (comment "while g_pos < g_len && (cur_char(buf) == 42u8 || cur_char(buf) == 47u8) {")
       (while
         (binop &&
@@ -253,7 +236,6 @@
           )
         )
         (block
-          (comment var op: u8 = cur_char(buf);)
           (comment "var op: u8 = cur_char(buf);")
           (var_decl op
             (type u8)
@@ -261,7 +243,6 @@
               (var buf)
             )
           )
-          (comment g_pos = g_pos + 1;)
           (comment "g_pos = g_pos + 1;")
           (assign g_pos
             (binop +
@@ -269,7 +250,6 @@
               (int 1)
             )
           )
-          (comment var right: i32 = parse_num(buf);)
           (comment "var right: i32 = parse_num(buf);")
           (var_decl right
             (type i32)
@@ -277,7 +257,6 @@
               (var buf)
             )
           )
-          (comment if op == 42u8 {)
           (comment "if op == 42u8 {")
           (if
             (binop ==
@@ -285,7 +264,6 @@
               (int:u8 42)
             )
             (block
-              (comment left = left * right;)
               (comment "left = left * right;")
               (assign left
                 (binop *
@@ -295,7 +273,6 @@
               )
             )
             (block
-              (comment left = left / right;)
               (comment "left = left / right;")
               (assign left
                 (binop /
@@ -305,14 +282,12 @@
               )
             )
           )
-          (comment skip_spaces(buf);)
           (comment "skip_spaces(buf);")
           (call_stmt skip_spaces
             (var buf)
           )
         )
       )
-      (comment return left;)
       (comment "return left;")
       (return
         (var left)
@@ -329,7 +304,6 @@
       (type i32)
     )
     (block
-      (comment var left: i32 = parse_mul(buf);)
       (comment "var left: i32 = parse_mul(buf);")
       (var_decl left
         (type i32)
@@ -337,12 +311,10 @@
           (var buf)
         )
       )
-      (comment skip_spaces(buf);)
       (comment "skip_spaces(buf);")
       (call_stmt skip_spaces
         (var buf)
       )
-      (comment while g_pos < g_len && (cur_char(buf) == 43u8 || cur_char(buf) == 45u8) {)
       (comment "while g_pos < g_len && (cur_char(buf) == 43u8 || cur_char(buf) == 45u8) {")
       (while
         (binop &&
@@ -366,7 +338,6 @@
           )
         )
         (block
-          (comment var op: u8 = cur_char(buf);)
           (comment "var op: u8 = cur_char(buf);")
           (var_decl op
             (type u8)
@@ -374,7 +345,6 @@
               (var buf)
             )
           )
-          (comment g_pos = g_pos + 1;)
           (comment "g_pos = g_pos + 1;")
           (assign g_pos
             (binop +
@@ -382,7 +352,6 @@
               (int 1)
             )
           )
-          (comment var right: i32 = parse_mul(buf);)
           (comment "var right: i32 = parse_mul(buf);")
           (var_decl right
             (type i32)
@@ -390,7 +359,6 @@
               (var buf)
             )
           )
-          (comment if op == 43u8 {)
           (comment "if op == 43u8 {")
           (if
             (binop ==
@@ -398,7 +366,6 @@
               (int:u8 43)
             )
             (block
-              (comment left = left + right;)
               (comment "left = left + right;")
               (assign left
                 (binop +
@@ -408,7 +375,6 @@
               )
             )
             (block
-              (comment left = left - right;)
               (comment "left = left - right;")
               (assign left
                 (binop -
@@ -418,14 +384,12 @@
               )
             )
           )
-          (comment skip_spaces(buf);)
           (comment "skip_spaces(buf);")
           (call_stmt skip_spaces
             (var buf)
           )
         )
       )
-      (comment return left;)
       (comment "return left;")
       (return
         (var left)
@@ -438,7 +402,6 @@
       (type i32)
     )
     (block
-      (comment var buf: U8Array = U8Array(256);)
       (comment "var buf: U8Array = U8Array(256);")
       (var_decl buf
         (type U8Array)
@@ -446,7 +409,6 @@
           (int 256)
         )
       )
-      (comment g_len = sys_read(0, buf, 256);)
       (comment "g_len = sys_read(0, buf, 256);")
       (assign g_len
         (call sys_read
@@ -455,7 +417,6 @@
           (int 256)
         )
       )
-      (comment var result: i32 = parse_add(buf);)
       (comment "var result: i32 = parse_add(buf);")
       (var_decl result
         (type i32)
@@ -463,17 +424,14 @@
           (var buf)
         )
       )
-      (comment print_i32(result);)
       (comment "print_i32(result);")
       (call_stmt print_i32
         (var result)
       )
-      (comment delete(buf);)
       (comment "delete(buf);")
       (call_stmt delete
         (var buf)
       )
-      (comment return 0;)
       (comment "return 0;")
       (return
         (int 0)

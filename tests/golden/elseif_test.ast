@@ -9,7 +9,6 @@
       (type i32)
     )
     (block
-      (comment if x < 0 {)
       (comment "if x < 0 {")
       (if
         (binop <
@@ -17,7 +16,6 @@
           (int 0)
         )
         (block
-          (comment return 0;)
           (comment "return 0;")
           (return
             (int 0)
@@ -29,7 +27,6 @@
             (int 0)
           )
           (block
-            (comment return 1;)
             (comment "return 1;")
             (return
               (int 1)
@@ -41,14 +38,12 @@
               (int 10)
             )
             (block
-              (comment return 2;)
               (comment "return 2;")
               (return
                 (int 2)
               )
             )
             (block
-              (comment return 3;)
               (comment "return 3;")
               (return
                 (int 3)
@@ -65,7 +60,6 @@
       (type i32)
     )
     (block
-      (comment var a: i32 = classify(0 - 5);)
       (comment "var a: i32 = classify(0 - 5);")
       (var_decl a
         (type i32)
@@ -76,7 +70,6 @@
           )
         )
       )
-      (comment var b: i32 = classify(0);)
       (comment "var b: i32 = classify(0);")
       (var_decl b
         (type i32)
@@ -84,7 +77,6 @@
           (int 0)
         )
       )
-      (comment var c: i32 = classify(7);)
       (comment "var c: i32 = classify(7);")
       (var_decl c
         (type i32)
@@ -92,7 +84,6 @@
           (int 7)
         )
       )
-      (comment var d: i32 = classify(42);)
       (comment "var d: i32 = classify(42);")
       (var_decl d
         (type i32)
@@ -100,27 +91,22 @@
           (int 42)
         )
       )
-      (comment print_i32(a);)
       (comment "print_i32(a);")
       (call_stmt print_i32
         (var a)
       )
-      (comment print_i32(b);)
       (comment "print_i32(b);")
       (call_stmt print_i32
         (var b)
       )
-      (comment print_i32(c);)
       (comment "print_i32(c);")
       (call_stmt print_i32
         (var c)
       )
-      (comment print_i32(d);)
       (comment "print_i32(d);")
       (call_stmt print_i32
         (var d)
       )
-      (comment return 0;)
       (comment "return 0;")
       (return
         (int 0)
