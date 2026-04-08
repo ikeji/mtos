@@ -1,5 +1,6 @@
 (program
   (import string_buffer.tc)
+  (import source_reader.tc)
   (var_decl NK_PROGRAM
     (type i32)
     (int 0)
@@ -112,13 +113,12 @@
     (type i32)
     (int 99)
   )
-  (var_decl g_in_pos
-    (type i32)
-    (int 0)
-  )
-  (var_decl g_in_len
-    (type i32)
-    (int 0)
+  (var_decl g_reader
+    (type SourceReader)
+    (cast
+      (int 0)
+      (type SourceReader)
+    )
   )
   (var_decl g_nc
     (type i32)
@@ -300,32 +300,15 @@
     )
   )
   (fn peek_in
-    (params
-      (param in
-        (type U8Array)
-      )
-    )
+    (params)
     (ret
       (type u8)
     )
     (block
-      (comment "if g_in_pos >= g_in_len { return 0u8; }")
-      (if
-        (binop >=
-          (var g_in_pos)
-          (var g_in_len)
-        )
-        (block
-          (return
-            (int:u8 0)
-          )
-        )
-      )
-      (comment "return get(in, g_in_pos);")
+      (comment "return peek(g_reader);")
       (return
-        (call get
-          (var in)
-          (var g_in_pos)
+        (call peek
+          (var g_reader)
         )
       )
     )
@@ -386,64 +369,60 @@
     )
   )
   (fn skip_ws_in
-    (params
-      (param in
-        (type U8Array)
-      )
-    )
+    (params)
     (ret
       (type void)
     )
     (block
-      (comment "var c: u8 = peek_in(in);")
-      (var_decl c
-        (type u8)
-        (call peek_in
-          (var in)
-        )
-      )
-      (comment "while (c == ' ' || c == 9u8 || c == 10u8 || c == 13u8) && g_in_pos < g_in_len {")
+      (comment "while at_eof(g_reader) == false {")
       (while
-        (binop &&
-          (binop ||
+        (binop ==
+          (call at_eof
+            (var g_reader)
+          )
+          (bool false)
+        )
+        (block
+          (comment "var c: u8 = peek(g_reader);")
+          (var_decl c
+            (type u8)
+            (call peek
+              (var g_reader)
+            )
+          )
+          (comment "if c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 {")
+          (if
             (binop ||
               (binop ||
-                (binop ==
-                  (var c)
-                  (int:u8 32)
+                (binop ||
+                  (binop ==
+                    (var c)
+                    (int:u8 32)
+                  )
+                  (binop ==
+                    (var c)
+                    (int:u8 9)
+                  )
                 )
                 (binop ==
                   (var c)
-                  (int:u8 9)
+                  (int:u8 10)
                 )
               )
               (binop ==
                 (var c)
-                (int:u8 10)
+                (int:u8 13)
               )
             )
-            (binop ==
-              (var c)
-              (int:u8 13)
+            (block
+              (comment "next(g_reader);")
+              (call_stmt next
+                (var g_reader)
+              )
             )
-          )
-          (binop <
-            (var g_in_pos)
-            (var g_in_len)
-          )
-        )
-        (block
-          (comment "g_in_pos = g_in_pos + 1;")
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
-              (int 1)
-            )
-          )
-          (comment "c = peek_in(in);")
-          (assign c
-            (call peek_in
-              (var in)
+            (block
+              (comment "} else { return; }")
+              (return)
             )
           )
         )
@@ -454,9 +433,6 @@
   )
   (fn read_atom_in
     (params
-      (param in
-        (type U8Array)
-      )
       (param atom
         (type U8Array)
       )
@@ -465,57 +441,49 @@
       (type i32)
     )
     (block
-      (comment "var len: i32 = 0;")
-      (var_decl len
+      (comment "var alen: i32 = 0;")
+      (var_decl alen
         (type i32)
         (int 0)
       )
-      (comment "var c: u8 = peek_in(in);")
-      (var_decl c
-        (type u8)
-        (call peek_in
-          (var in)
-        )
-      )
-      (comment "while !is_atom_end(c) {")
+      (comment "while at_eof(g_reader) == false && !is_atom_end(peek(g_reader)) {")
       (while
-        (unary !
-          (call is_atom_end
-            (var c)
+        (binop &&
+          (binop ==
+            (call at_eof
+              (var g_reader)
+            )
+            (bool false)
+          )
+          (unary !
+            (call is_atom_end
+              (call peek
+                (var g_reader)
+              )
+            )
           )
         )
         (block
-          (comment "set(atom, len, c);")
+          (comment "set(atom, alen, next(g_reader));")
           (call_stmt set
             (var atom)
-            (var len)
-            (var c)
-          )
-          (comment "len = len + 1;")
-          (assign len
-            (binop +
-              (var len)
-              (int 1)
+            (var alen)
+            (call next
+              (var g_reader)
             )
           )
-          (comment "g_in_pos = g_in_pos + 1;")
-          (assign g_in_pos
+          (comment "alen = alen + 1;")
+          (assign alen
             (binop +
-              (var g_in_pos)
+              (var alen)
               (int 1)
-            )
-          )
-          (comment "c = peek_in(in);")
-          (assign c
-            (call peek_in
-              (var in)
             )
           )
         )
       )
-      (comment "return len;")
+      (comment "return alen;")
       (return
-        (var len)
+        (var alen)
       )
     )
   )
@@ -2195,9 +2163,6 @@
   )
   (fn read_node
     (params
-      (param in
-        (type U8Array)
-      )
       (param atom
         (type U8Array)
       )
@@ -2212,15 +2177,12 @@
       (type i32)
     )
     (block
-      (comment "skip_ws_in(in);")
-      (call_stmt skip_ws_in
-        (var in)
-      )
-      (comment "if g_in_pos >= g_in_len { return -1; }")
+      (comment "skip_ws_in();")
+      (call_stmt skip_ws_in)
+      (comment "if at_eof(g_reader) { return -1; }")
       (if
-        (binop >=
-          (var g_in_pos)
-          (var g_in_len)
+        (call at_eof
+          (var g_reader)
         )
         (block
           (return
@@ -2230,12 +2192,10 @@
           )
         )
       )
-      (comment "if peek_in(in) != '(' { return -1; }  // not '('")
+      (comment "if peek_in() != '(' { return -1; }  // not '('")
       (if
         (binop !=
-          (call peek_in
-            (var in)
-          )
+          (call peek_in)
           (int:u8 40)
         )
         (block
@@ -2246,22 +2206,16 @@
           )
         )
       )
-      (comment "g_in_pos = g_in_pos + 1;")
-      (assign g_in_pos
-        (binop +
-          (var g_in_pos)
-          (int 1)
-        )
+      (comment "next(g_reader);")
+      (call_stmt next
+        (var g_reader)
       )
-      (comment "skip_ws_in(in);")
-      (call_stmt skip_ws_in
-        (var in)
-      )
-      (comment "var klen: i32 = read_atom_in(in, atom);")
+      (comment "skip_ws_in();")
+      (call_stmt skip_ws_in)
+      (comment "var klen: i32 = read_atom_in(atom);")
       (var_decl klen
         (type i32)
         (call read_atom_in
-          (var in)
           (var atom)
         )
       )
@@ -2402,16 +2356,12 @@
           )
         )
       )
-      (comment "skip_ws_in(in);")
-      (call_stmt skip_ws_in
-        (var in)
-      )
-      (comment "var c: u8 = peek_in(in);")
+      (comment "skip_ws_in();")
+      (call_stmt skip_ws_in)
+      (comment "var c: u8 = peek_in();")
       (var_decl c
         (type u8)
-        (call peek_in
-          (var in)
-        )
+        (call peek_in)
       )
       (comment "if (kind_code == NK_STR || kind_code == NK_COMMENT) && c == '\"' {")
       (if
@@ -2432,24 +2382,19 @@
           )
         )
         (block
-          (comment "g_in_pos = g_in_pos + 1; // consume opening '\"'")
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
-              (int 1)
-            )
+          (comment "next(g_reader); // consume opening '\"'")
+          (call_stmt next
+            (var g_reader)
           )
           (comment "var ss: i32 = g_sp;")
           (var_decl ss
             (type i32)
             (var g_sp)
           )
-          (comment "var ch: u8 = peek_in(in);")
+          (comment "var ch: u8 = peek_in();")
           (var_decl ch
             (type u8)
-            (call peek_in
-              (var in)
-            )
+            (call peek_in)
           )
           (comment "while ch != '\"' && ch != 0u8 {")
           (while
@@ -2471,19 +2416,14 @@
                   (int:u8 92)
                 )
                 (block
-                  (comment "g_in_pos = g_in_pos + 1;")
-                  (assign g_in_pos
-                    (binop +
-                      (var g_in_pos)
-                      (int 1)
-                    )
+                  (comment "next(g_reader);")
+                  (call_stmt next
+                    (var g_reader)
                   )
-                  (comment "var esc: u8 = peek_in(in);")
+                  (comment "var esc: u8 = peek_in();")
                   (var_decl esc
                     (type u8)
-                    (call peek_in
-                      (var in)
-                    )
+                    (call peek_in)
                   )
                   (comment "if esc == 'n'  { ch = 10u8; }")
                   (if
@@ -2596,33 +2536,25 @@
                   (int 1)
                 )
               )
-              (comment "g_in_pos = g_in_pos + 1;")
-              (assign g_in_pos
-                (binop +
-                  (var g_in_pos)
-                  (int 1)
-                )
+              (comment "next(g_reader);")
+              (call_stmt next
+                (var g_reader)
               )
-              (comment "ch = peek_in(in);")
+              (comment "ch = peek_in();")
               (assign ch
-                (call peek_in
-                  (var in)
-                )
+                (call peek_in)
               )
             )
           )
-          (comment "if ch == '\"' { g_in_pos = g_in_pos + 1; } // consume closing '\"'")
+          (comment "if ch == '\"' { next(g_reader); } // consume closing '\"'")
           (if
             (binop ==
               (var ch)
               (int:u8 34)
             )
             (block
-              (assign g_in_pos
-                (binop +
-                  (var g_in_pos)
-                  (int 1)
-                )
+              (call_stmt next
+                (var g_reader)
               )
             )
           )
@@ -2647,10 +2579,8 @@
               (var ss)
             )
           )
-          (comment "skip_ws_in(in);")
-          (call_stmt skip_ws_in
-            (var in)
-          )
+          (comment "skip_ws_in();")
+          (call_stmt skip_ws_in)
         )
         (if
           (binop &&
@@ -2670,11 +2600,10 @@
             )
           )
           (block
-            (comment "var vlen: i32 = read_atom_in(in, atom);")
+            (comment "var vlen: i32 = read_atom_in(atom);")
             (var_decl vlen
               (type i32)
               (call read_atom_in
-                (var in)
                 (var atom)
               )
             )
@@ -2817,18 +2746,14 @@
                 )
               )
             )
-            (comment "skip_ws_in(in);")
-            (call_stmt skip_ws_in
-              (var in)
-            )
+            (comment "skip_ws_in();")
+            (call_stmt skip_ws_in)
           )
         )
       )
-      (comment "c = peek_in(in);")
+      (comment "c = peek_in();")
       (assign c
-        (call peek_in
-          (var in)
-        )
+        (call peek_in)
       )
       (comment "var last_child: i32 = -1;")
       (var_decl last_child
@@ -2844,11 +2769,10 @@
           (int:u8 40)
         )
         (block
-          (comment "var child: i32 = read_node(in, atom, nodes, strtab);")
+          (comment "var child: i32 = read_node(atom, nodes, strtab);")
           (var_decl child
             (type i32)
             (call read_node
-              (var in)
               (var atom)
               (var nodes)
               (var strtab)
@@ -2893,32 +2817,23 @@
               )
             )
           )
-          (comment "skip_ws_in(in);")
-          (call_stmt skip_ws_in
-            (var in)
-          )
-          (comment "c = peek_in(in);")
+          (comment "skip_ws_in();")
+          (call_stmt skip_ws_in)
+          (comment "c = peek_in();")
           (assign c
-            (call peek_in
-              (var in)
-            )
+            (call peek_in)
           )
         )
       )
-      (comment "if peek_in(in) == ')' { g_in_pos = g_in_pos + 1; }")
+      (comment "if peek_in() == ')' { next(g_reader); }")
       (if
         (binop ==
-          (call peek_in
-            (var in)
-          )
+          (call peek_in)
           (int:u8 41)
         )
         (block
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
-              (int 1)
-            )
+          (call_stmt next
+            (var g_reader)
           )
         )
       )
@@ -8987,13 +8902,6 @@
       (type i32)
     )
     (block
-      (comment "var in_buf: U8Array = U8Array(524288);   // 512KB input")
-      (var_decl in_buf
-        (type U8Array)
-        (call U8Array
-          (int 524288)
-        )
-      )
       (comment "var atom_buf: U8Array = U8Array(1024);   // atom scratch buffer")
       (var_decl atom_buf
         (type U8Array)
@@ -9036,17 +8944,11 @@
           (int 2048)
         )
       )
-      (comment "g_in_len = sys_read(0, in_buf, 524288);")
-      (assign g_in_len
-        (call sys_read
+      (comment "g_reader = SourceReader_new(0);")
+      (assign g_reader
+        (call SourceReader_new
           (int 0)
-          (var in_buf)
-          (int 524288)
         )
-      )
-      (comment "g_in_pos = 0;")
-      (assign g_in_pos
-        (int 0)
       )
       (comment "g_nc = 0;")
       (assign g_nc
@@ -9068,11 +8970,10 @@
       (assign g_locc
         (int 0)
       )
-      (comment "var root: i32 = read_node(in_buf, atom_buf, nodes, strtab);")
+      (comment "var root: i32 = read_node(atom_buf, nodes, strtab);")
       (var_decl root
         (type i32)
         (call read_node
-          (var in_buf)
           (var atom_buf)
           (var nodes)
           (var strtab)
@@ -9104,9 +9005,9 @@
         (var out_buf)
         (int 1)
       )
-      (comment "delete(in_buf); delete(atom_buf); destroy(out_buf);")
-      (call_stmt delete
-        (var in_buf)
+      (comment "close(g_reader); delete(atom_buf); destroy(out_buf);")
+      (call_stmt close
+        (var g_reader)
       )
       (call_stmt delete
         (var atom_buf)
