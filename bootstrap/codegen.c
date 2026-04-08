@@ -31,15 +31,8 @@ static int cg_add_string(CG *cg, const char *s) {
 
 static int cg_new_label(CG *cg) { return cg->label_counter++; }
 
-/* ---- String collection pass ---- */
-
-static void collect_strings(CG *cg, AstNode *node) {
-    if (!node) return;
-    if (strcmp(node->kind, "str") == 0)
-        cg_add_string(cg, node->sval ? node->sval : "");
-    for (int i = 0; i < node->nchildren; i++)
-        collect_strings(cg, node->children[i]);
-}
+/* String literals are now collected on-the-fly in cg_expr (cg_add_string)
+   and emitted at the end of the .bc output. */
 
 /* ---- Local variable collection ---- */
 
@@ -387,20 +380,6 @@ void codegen(AstNode *program) {
     /* emit header */
     fprintf(cg.out, ".bc\n");
 
-    /* collect all string literals in one pass */
-    collect_strings(&cg, program);
-
-    /* emit string table */
-    if (cg.nstrings > 0) {
-        fprintf(cg.out, "; string table\n");
-        for (int i = 0; i < cg.nstrings; i++) {
-            fprintf(cg.out, ".string %d \"", i);
-            print_escaped(cg.out, cg.strings[i]);
-            fprintf(cg.out, "\"\n");
-        }
-        fprintf(cg.out, "\n");
-    }
-
     /* emit global variable declarations */
     int has_global = 0;
     for (int i = 0; i < program->nchildren; i++) {
@@ -416,11 +395,22 @@ void codegen(AstNode *program) {
     }
     if (has_global) fprintf(cg.out, "\n");
 
-    /* emit functions */
+    /* emit functions (string literals collected on-the-fly by cg_add_string) */
     for (int i = 0; i < program->nchildren; i++) {
         AstNode *d = program->children[i];
         if (strcmp(d->kind, "fn") == 0)
             cg_fn(&cg, d);
+    }
+
+    /* emit string table at end */
+    if (cg.nstrings > 0) {
+        fprintf(cg.out, "; string table\n");
+        for (int i = 0; i < cg.nstrings; i++) {
+            fprintf(cg.out, ".string %d \"", i);
+            print_escaped(cg.out, cg.strings[i]);
+            fprintf(cg.out, "\"\n");
+        }
+        fprintf(cg.out, "\n");
     }
 
     /* mark end of bytecode so bcrun can detect where program stdin begins */

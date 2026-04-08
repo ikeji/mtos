@@ -38,6 +38,6 @@ update-golden: all
 
 update-golden-and-run-test: all
 	./tests/update_golden.sh
-	./tests/run_tests.sh
+	./tests/test_all.sh
 
 .PHONY: all clean test update-golden update-golden-and-run-test

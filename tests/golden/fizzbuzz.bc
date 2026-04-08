@@ -1,9 +1,4 @@
 .bc
-; string table
-.string 0 "FizzBuzz"
-.string 1 "Fizz"
-.string 2 "Buzz"
-
 .fn fizzbuzz i32 i32
 .param n i32
 .local i i32
@@ -82,5 +77,10 @@ __L1:
   return
   return_void
 .endfn
+
+; string table
+.string 0 "FizzBuzz"
+.string 1 "Fizz"
+.string 2 "Buzz"
 
 .endbc

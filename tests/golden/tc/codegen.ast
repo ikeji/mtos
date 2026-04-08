@@ -3259,97 +3259,6 @@
       )
     )
   )
-  (fn collect_strings
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param strtab
-        (type U8Array)
-      )
-      (param slits
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "if n < 0 { return; }")
-      (if
-        (binop <
-          (var n)
-          (int 0)
-        )
-        (block
-          (return)
-        )
-      )
-      (comment "if n_kind(nodes, n) == NK_STR {")
-      (if
-        (binop ==
-          (call n_kind
-            (var nodes)
-            (var n)
-          )
-          (var NK_STR)
-        )
-        (block
-          (comment "slit_add(strtab, slits, n_ss(nodes, n), n_sl(nodes, n));")
-          (call_stmt slit_add
-            (var strtab)
-            (var slits)
-            (call n_ss
-              (var nodes)
-              (var n)
-            )
-            (call n_sl
-              (var nodes)
-              (var n)
-            )
-          )
-          (comment "return;")
-          (return)
-        )
-      )
-      (comment "var c: i32 = n_child(nodes, n);")
-      (var_decl c
-        (type i32)
-        (call n_child
-          (var nodes)
-          (var n)
-        )
-      )
-      (comment "while c >= 0 {")
-      (while
-        (binop >=
-          (var c)
-          (int 0)
-        )
-        (block
-          (comment "collect_strings(nodes, strtab, slits, c);")
-          (call_stmt collect_strings
-            (var nodes)
-            (var strtab)
-            (var slits)
-            (var c)
-          )
-          (comment "c = n_sib(nodes, c);")
-          (assign c
-            (call n_sib
-              (var nodes)
-              (var c)
-            )
-          )
-        )
-      )
-      (comment "return;")
-      (return)
-    )
-  )
   (fn locals_find
     (params
       (param strtab
@@ -6111,10 +6020,10 @@
           (var NK_STR)
         )
         (block
-          (comment "var idx: i32 = slit_find(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));")
+          (comment "var idx: i32 = slit_add(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));")
           (var_decl idx
             (type i32)
-            (call slit_find
+            (call slit_add
               (var strtab)
               (var slits)
               (call n_ss
@@ -8356,59 +8265,22 @@
       (return)
     )
   )
-  (fn cg_program
+  (fn emit_string_table
     (params
-      (param nodes
-        (type I32Array)
-      )
       (param strtab
         (type U8Array)
       )
       (param slits
         (type I32Array)
       )
-      (param locals
-        (type I32Array)
-      )
       (param ob
         (type StringBuffer)
-      )
-      (param root
-        (type i32)
       )
     )
     (ret
       (type void)
     )
     (block
-      (comment "emit_char(ob, '.');emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);")
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 46)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 98)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 99)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 10)
-      )
-      (comment "g_slc = 0;")
-      (assign g_slc
-        (int 0)
-      )
-      (comment "collect_strings(nodes, strtab, slits, root);")
-      (call_stmt collect_strings
-        (var nodes)
-        (var strtab)
-        (var slits)
-        (var root)
-      )
       (comment "if g_slc > 0 {")
       (if
         (binop >
@@ -8595,303 +8467,6 @@
           )
         )
       )
-      (comment "var has_global: i32 = 0;")
-      (var_decl has_global
-        (type i32)
-        (int 0)
-      )
-      (comment "var c: i32 = n_child(nodes, root);")
-      (var_decl c
-        (type i32)
-        (call n_child
-          (var nodes)
-          (var root)
-        )
-      )
-      (comment "while c >= 0 {")
-      (while
-        (binop >=
-          (var c)
-          (int 0)
-        )
-        (block
-          (comment "if n_kind(nodes, c) == NK_VAR_DECL {")
-          (if
-            (binop ==
-              (call n_kind
-                (var nodes)
-                (var c)
-              )
-              (var NK_VAR_DECL)
-            )
-            (block
-              (comment "if has_global == 0 {")
-              (if
-                (binop ==
-                  (var has_global)
-                  (int 0)
-                )
-                (block
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 59)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 32)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 103)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 108)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 111)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 98)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 97)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 108)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 115)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 10)
-                  )
-                  (comment "has_global = 1;")
-                  (assign has_global
-                    (int 1)
-                  )
-                )
-              )
-              (comment "var type_n: i32 = n_child(nodes, c);")
-              (var_decl type_n
-                (type i32)
-                (call n_child
-                  (var nodes)
-                  (var c)
-                )
-              )
-              (comment "var init_n: i32 = n_sib(nodes, type_n);")
-              (var_decl init_n
-                (type i32)
-                (call n_sib
-                  (var nodes)
-                  (var type_n)
-                )
-              )
-              (comment "var initval: i32 = 0;")
-              (var_decl initval
-                (type i32)
-                (int 0)
-              )
-              (comment "if init_n >= 0 { initval = n_ival(nodes, init_n); }")
-              (if
-                (binop >=
-                  (var init_n)
-                  (int 0)
-                )
-                (block
-                  (assign initval
-                    (call n_ival
-                      (var nodes)
-                      (var init_n)
-                    )
-                  )
-                )
-              )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 46)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 103)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 108)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 111)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 98)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 97)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 108)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 32)
-              )
-              (comment "emit_n(ob, strtab, n_ss(nodes,c), n_sl(nodes,c));")
-              (call_stmt emit_n
-                (var ob)
-                (var strtab)
-                (call n_ss
-                  (var nodes)
-                  (var c)
-                )
-                (call n_sl
-                  (var nodes)
-                  (var c)
-                )
-              )
-              (comment "emit_char(ob, ' ');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 32)
-              )
-              (comment "emit_n(ob, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));")
-              (call_stmt emit_n
-                (var ob)
-                (var strtab)
-                (call n_ss
-                  (var nodes)
-                  (var type_n)
-                )
-                (call n_sl
-                  (var nodes)
-                  (var type_n)
-                )
-              )
-              (comment "emit_char(ob, ' ');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 32)
-              )
-              (comment "emit_int(ob, initval);")
-              (call_stmt emit_int
-                (var ob)
-                (var initval)
-              )
-              (comment "emit_char(ob, 10u8);")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 10)
-              )
-            )
-          )
-          (comment "c = n_sib(nodes, c);")
-          (assign c
-            (call n_sib
-              (var nodes)
-              (var c)
-            )
-          )
-        )
-      )
-      (comment "if has_global == 1 { emit_char(ob, 10u8); }")
-      (if
-        (binop ==
-          (var has_global)
-          (int 1)
-        )
-        (block
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 10)
-          )
-        )
-      )
-      (comment "c = n_child(nodes, root);")
-      (assign c
-        (call n_child
-          (var nodes)
-          (var root)
-        )
-      )
-      (comment "while c >= 0 {")
-      (while
-        (binop >=
-          (var c)
-          (int 0)
-        )
-        (block
-          (comment "if n_kind(nodes, c) == NK_FN {")
-          (if
-            (binop ==
-              (call n_kind
-                (var nodes)
-                (var c)
-              )
-              (var NK_FN)
-            )
-            (block
-              (comment "cg_fn(nodes, strtab, slits, locals, ob, c);")
-              (call_stmt cg_fn
-                (var nodes)
-                (var strtab)
-                (var slits)
-                (var locals)
-                (var ob)
-                (var c)
-              )
-            )
-          )
-          (comment "c = n_sib(nodes, c);")
-          (assign c
-            (call n_sib
-              (var nodes)
-              (var c)
-            )
-          )
-        )
-      )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');")
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 46)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 101)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 110)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 100)
-      )
-      (comment "emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);")
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 98)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 99)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 10)
-      )
       (comment "return;")
       (return)
     )
@@ -8916,11 +8491,11 @@
           (int 1)
         )
       )
-      (comment "var nodes: I32Array = I32Array(131072);  // 16384 nodes × 8 ints")
+      (comment "var nodes: I32Array = I32Array(32768);   // 4096 nodes per function (streaming)")
       (var_decl nodes
         (type I32Array)
         (call I32Array
-          (int 131072)
+          (int 32768)
         )
       )
       (comment "var strtab: U8Array = U8Array(262144);   // string table")
@@ -8970,20 +8545,30 @@
       (assign g_locc
         (int 0)
       )
-      (comment "var root: i32 = read_node(atom_buf, nodes, strtab);")
-      (var_decl root
-        (type i32)
-        (call read_node
-          (var atom_buf)
-          (var nodes)
-          (var strtab)
-        )
+      (comment "emit_char(out_buf, '.');emit_char(out_buf, 'b');emit_char(out_buf, 'c');emit_char(out_buf, 10u8);")
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 46)
       )
-      (comment "if root < 0 { sys_exit(1); }")
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 98)
+      )
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 99)
+      )
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 10)
+      )
+      (comment "skip_ws_in();")
+      (call_stmt skip_ws_in)
+      (comment "if peek_in() != '(' { sys_exit(1); }")
       (if
-        (binop <
-          (var root)
-          (int 0)
+        (binop !=
+          (call peek_in)
+          (int:u8 40)
         )
         (block
           (call_stmt sys_exit
@@ -8991,14 +8576,339 @@
           )
         )
       )
-      (comment "cg_program(nodes, strtab, slits, locals, out_buf, root);")
-      (call_stmt cg_program
-        (var nodes)
+      (comment "next(g_reader);")
+      (call_stmt next
+        (var g_reader)
+      )
+      (comment "skip_ws_in();")
+      (call_stmt skip_ws_in)
+      (comment "var klen: i32 = read_atom_in(atom_buf);")
+      (var_decl klen
+        (type i32)
+        (call read_atom_in
+          (var atom_buf)
+        )
+      )
+      (comment "skip_ws_in();")
+      (call_stmt skip_ws_in)
+      (comment "var has_global: i32 = 0;")
+      (var_decl has_global
+        (type i32)
+        (int 0)
+      )
+      (comment "while peek_in() == '(' {")
+      (while
+        (binop ==
+          (call peek_in)
+          (int:u8 40)
+        )
+        (block
+          (comment "g_nc = 0;")
+          (assign g_nc
+            (int 0)
+          )
+          (comment "var n: i32 = read_node(atom_buf, nodes, strtab);")
+          (var_decl n
+            (type i32)
+            (call read_node
+              (var atom_buf)
+              (var nodes)
+              (var strtab)
+            )
+          )
+          (comment "if n >= 0 {")
+          (if
+            (binop >=
+              (var n)
+              (int 0)
+            )
+            (block
+              (comment "var k: i32 = n_kind(nodes, n);")
+              (var_decl k
+                (type i32)
+                (call n_kind
+                  (var nodes)
+                  (var n)
+                )
+              )
+              (comment "if k == NK_VAR_DECL {")
+              (if
+                (binop ==
+                  (var k)
+                  (var NK_VAR_DECL)
+                )
+                (block
+                  (comment "if has_global == 0 {")
+                  (if
+                    (binop ==
+                      (var has_global)
+                      (int 0)
+                    )
+                    (block
+                      (comment "emit_char(out_buf, ';');emit_char(out_buf, ' ');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, 's');emit_char(out_buf, 10u8);")
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 59)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 32)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 103)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 108)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 111)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 98)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 97)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 108)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 115)
+                      )
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 10)
+                      )
+                      (comment "has_global = 1;")
+                      (assign has_global
+                        (int 1)
+                      )
+                    )
+                  )
+                  (comment "var type_n: i32 = n_child(nodes, n);")
+                  (var_decl type_n
+                    (type i32)
+                    (call n_child
+                      (var nodes)
+                      (var n)
+                    )
+                  )
+                  (comment "var init_n: i32 = n_sib(nodes, type_n);")
+                  (var_decl init_n
+                    (type i32)
+                    (call n_sib
+                      (var nodes)
+                      (var type_n)
+                    )
+                  )
+                  (comment "var initval: i32 = 0;")
+                  (var_decl initval
+                    (type i32)
+                    (int 0)
+                  )
+                  (comment "if init_n >= 0 { initval = n_ival(nodes, init_n); }")
+                  (if
+                    (binop >=
+                      (var init_n)
+                      (int 0)
+                    )
+                    (block
+                      (assign initval
+                        (call n_ival
+                          (var nodes)
+                          (var init_n)
+                        )
+                      )
+                    )
+                  )
+                  (comment "emit_char(out_buf, '.');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, ' ');")
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 46)
+                  )
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 103)
+                  )
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 108)
+                  )
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 111)
+                  )
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 98)
+                  )
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 97)
+                  )
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 108)
+                  )
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 32)
+                  )
+                  (comment "emit_n(out_buf, strtab, n_ss(nodes,n), n_sl(nodes,n));")
+                  (call_stmt emit_n
+                    (var out_buf)
+                    (var strtab)
+                    (call n_ss
+                      (var nodes)
+                      (var n)
+                    )
+                    (call n_sl
+                      (var nodes)
+                      (var n)
+                    )
+                  )
+                  (comment "emit_char(out_buf, ' ');")
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 32)
+                  )
+                  (comment "emit_n(out_buf, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));")
+                  (call_stmt emit_n
+                    (var out_buf)
+                    (var strtab)
+                    (call n_ss
+                      (var nodes)
+                      (var type_n)
+                    )
+                    (call n_sl
+                      (var nodes)
+                      (var type_n)
+                    )
+                  )
+                  (comment "emit_char(out_buf, ' ');")
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 32)
+                  )
+                  (comment "emit_int(out_buf, initval);")
+                  (call_stmt emit_int
+                    (var out_buf)
+                    (var initval)
+                  )
+                  (comment "emit_char(out_buf, 10u8);")
+                  (call_stmt emit_char
+                    (var out_buf)
+                    (int:u8 10)
+                  )
+                )
+              )
+              (comment "if k == NK_FN {")
+              (if
+                (binop ==
+                  (var k)
+                  (var NK_FN)
+                )
+                (block
+                  (comment "if has_global == 1 { emit_char(out_buf, 10u8); has_global = 2; }")
+                  (if
+                    (binop ==
+                      (var has_global)
+                      (int 1)
+                    )
+                    (block
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 10)
+                      )
+                      (assign has_global
+                        (int 2)
+                      )
+                    )
+                  )
+                  (comment "cg_fn(nodes, strtab, slits, locals, out_buf, n);")
+                  (call_stmt cg_fn
+                    (var nodes)
+                    (var strtab)
+                    (var slits)
+                    (var locals)
+                    (var out_buf)
+                    (var n)
+                  )
+                )
+              )
+            )
+          )
+          (comment "skip_ws_in();")
+          (call_stmt skip_ws_in)
+        )
+      )
+      (comment "if has_global == 1 { emit_char(out_buf, 10u8); }")
+      (if
+        (binop ==
+          (var has_global)
+          (int 1)
+        )
+        (block
+          (call_stmt emit_char
+            (var out_buf)
+            (int:u8 10)
+          )
+        )
+      )
+      (comment "if peek_in() == ')' { next(g_reader); }")
+      (if
+        (binop ==
+          (call peek_in)
+          (int:u8 41)
+        )
+        (block
+          (call_stmt next
+            (var g_reader)
+          )
+        )
+      )
+      (comment "emit_string_table(strtab, slits, out_buf);")
+      (call_stmt emit_string_table
         (var strtab)
         (var slits)
-        (var locals)
         (var out_buf)
-        (var root)
+      )
+      (comment "emit_char(out_buf, '.');emit_char(out_buf, 'e');emit_char(out_buf, 'n');emit_char(out_buf, 'd');")
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 46)
+      )
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 101)
+      )
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 110)
+      )
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 100)
+      )
+      (comment "emit_char(out_buf, 'b');emit_char(out_buf, 'c');emit_char(out_buf, 10u8);")
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 98)
+      )
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 99)
+      )
+      (call_stmt emit_char
+        (var out_buf)
+        (int:u8 10)
       )
       (comment "write(out_buf, 1);")
       (call_stmt write

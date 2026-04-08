@@ -393,19 +393,8 @@ fn slit_add(strtab: U8Array, slits: I32Array, ss: i32, sl: i32) -> i32 {
     return idx;
 }
 
-fn collect_strings(nodes: I32Array, strtab: U8Array, slits: I32Array, n: i32) -> void {
-    if n < 0 { return; }
-    if n_kind(nodes, n) == NK_STR {
-        slit_add(strtab, slits, n_ss(nodes, n), n_sl(nodes, n));
-        return;
-    }
-    var c: i32 = n_child(nodes, n);
-    while c >= 0 {
-        collect_strings(nodes, strtab, slits, c);
-        c = n_sib(nodes, c);
-    }
-    return;
-}
+// String literals are now collected on-the-fly in cg_expr (slit_add)
+// and emitted at the end of the .bc output.
 
 // ===== Local variable collection =====
 // locals: 4 ints per entry (name_ss, name_sl, type_ss, type_sl)
@@ -710,7 +699,7 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: StringBuffer, 
     }
 
     if k == NK_STR {
-        var idx: i32 = slit_find(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));
+        var idx: i32 = slit_add(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));
         emit_char(ob, ' ');emit_char(ob, ' ');
         emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
         emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, ' ');
@@ -945,15 +934,7 @@ fn cg_fn(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob
     return;
 }
 
-fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Array, ob: StringBuffer, root: i32) -> void {
-    // ".bc\n" header
-    emit_char(ob, '.');emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);
-
-    // Collect string literals
-    g_slc = 0;
-    collect_strings(nodes, strtab, slits, root);
-
-    // Emit string table
+fn emit_string_table(strtab: U8Array, slits: I32Array, ob: StringBuffer) -> void {
     if g_slc > 0 {
         // "; string table\n"
         emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);
@@ -972,51 +953,13 @@ fn cg_program(nodes: I32Array, strtab: U8Array, slits: I32Array, locals: I32Arra
         }
         emit_char(ob, 10u8);
     }
-
-    // Emit global var_decls
-    var has_global: i32 = 0;
-    var c: i32 = n_child(nodes, root);
-    while c >= 0 {
-        if n_kind(nodes, c) == NK_VAR_DECL {
-            if has_global == 0 {
-                emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);
-                has_global = 1;
-            }
-            var type_n: i32 = n_child(nodes, c);
-            var init_n: i32 = n_sib(nodes, type_n);
-            var initval: i32 = 0;
-            if init_n >= 0 { initval = n_ival(nodes, init_n); }
-            // ".global NAME TYPE INITVAL\n"
-            emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');
-            emit_n(ob, strtab, n_ss(nodes,c), n_sl(nodes,c));
-            emit_char(ob, ' ');
-            emit_n(ob, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));
-            emit_char(ob, ' ');
-            emit_int(ob, initval);
-            emit_char(ob, 10u8);
-        }
-        c = n_sib(nodes, c);
-    }
-    if has_global == 1 { emit_char(ob, 10u8); }
-
-    // Emit functions
-    c = n_child(nodes, root);
-    while c >= 0 {
-        if n_kind(nodes, c) == NK_FN {
-            cg_fn(nodes, strtab, slits, locals, ob, c);
-        }
-        c = n_sib(nodes, c);
-    }
-    // ".endbc\n" - marks end of bytecode so bcrun knows where program stdin starts
-    emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');
-    emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);
     return;
 }
 
 fn main() -> i32 {
     var atom_buf: U8Array = U8Array(1024);   // atom scratch buffer
     var out_buf: StringBuffer = StringBuffer_new(1);
-    var nodes: I32Array = I32Array(131072);  // 16384 nodes × 8 ints
+    var nodes: I32Array = I32Array(32768);   // 4096 nodes per function (streaming)
     var strtab: U8Array = U8Array(262144);   // string table
     var slits: I32Array = I32Array(512);     // 256 string literals × 2
     var locals: I32Array = I32Array(2048);   // 512 locals × 4
@@ -1028,10 +971,60 @@ fn main() -> i32 {
     g_slc = 0;
     g_locc = 0;
 
-    var root: i32 = read_node(atom_buf, nodes, strtab);
-    if root < 0 { sys_exit(1); }
+    // ".bc\n" header
+    emit_char(out_buf, '.');emit_char(out_buf, 'b');emit_char(out_buf, 'c');emit_char(out_buf, 10u8);
 
-    cg_program(nodes, strtab, slits, locals, out_buf, root);
+    // Read "(program" header
+    skip_ws_in();
+    if peek_in() != '(' { sys_exit(1); }
+    next(g_reader);
+    skip_ws_in();
+    var klen: i32 = read_atom_in(atom_buf);
+    skip_ws_in();
+
+    // Stream top-level children one at a time
+    var has_global: i32 = 0;
+    while peek_in() == '(' {
+        g_nc = 0;
+        var n: i32 = read_node(atom_buf, nodes, strtab);
+        if n >= 0 {
+            var k: i32 = n_kind(nodes, n);
+            if k == NK_VAR_DECL {
+                if has_global == 0 {
+                    emit_char(out_buf, ';');emit_char(out_buf, ' ');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, 's');emit_char(out_buf, 10u8);
+                    has_global = 1;
+                }
+                var type_n: i32 = n_child(nodes, n);
+                var init_n: i32 = n_sib(nodes, type_n);
+                var initval: i32 = 0;
+                if init_n >= 0 { initval = n_ival(nodes, init_n); }
+                emit_char(out_buf, '.');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, ' ');
+                emit_n(out_buf, strtab, n_ss(nodes,n), n_sl(nodes,n));
+                emit_char(out_buf, ' ');
+                emit_n(out_buf, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));
+                emit_char(out_buf, ' ');
+                emit_int(out_buf, initval);
+                emit_char(out_buf, 10u8);
+            }
+            if k == NK_FN {
+                if has_global == 1 { emit_char(out_buf, 10u8); has_global = 2; }
+                cg_fn(nodes, strtab, slits, locals, out_buf, n);
+            }
+        }
+        skip_ws_in();
+    }
+    if has_global == 1 { emit_char(out_buf, 10u8); }
+
+    // Consume closing ')'
+    if peek_in() == ')' { next(g_reader); }
+
+    // Emit string table at end
+    emit_string_table(strtab, slits, out_buf);
+
+    // ".endbc\n"
+    emit_char(out_buf, '.');emit_char(out_buf, 'e');emit_char(out_buf, 'n');emit_char(out_buf, 'd');
+    emit_char(out_buf, 'b');emit_char(out_buf, 'c');emit_char(out_buf, 10u8);
+
     write(out_buf, 1);
 
     close(g_reader); delete(atom_buf); destroy(out_buf);

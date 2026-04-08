@@ -612,27 +612,6 @@ __L20:
   return_void
 .endfn
 
-; string table
-.string 0 "    "
-.string 1 ", "
-.string 2 "(sp)\n"
-.string 3 "(s0)\n"
-.string 4 "(t0)\n"
-.string 5 "sp, "
-.string 6 "s0, "
-.string 7 "t0, "
-.string 8 "t1, "
-.string 9 "ra, "
-.string 10 "    addi "
-.string 11 "    sw   "
-.string 12 "    lw   "
-.string 13 "    li   "
-.string 14 "    la   "
-.string 15 ".align 4"
-.string 16 "__tc_strobj"
-.string 17 ".word "
-.string 18 ".string "
-
 ; globals
 .global OP_PUSH_INT i32 1
 .global OP_PUSH_STR i32 2
@@ -9153,5 +9132,26 @@ __L500:
   return
   return_void
 .endfn
+
+; string table
+.string 0 "    "
+.string 1 ", "
+.string 2 "(sp)\n"
+.string 3 "(s0)\n"
+.string 4 "(t0)\n"
+.string 5 "sp, "
+.string 6 "s0, "
+.string 7 "t0, "
+.string 8 "t1, "
+.string 9 "ra, "
+.string 10 "    addi "
+.string 11 "    sw   "
+.string 12 "    lw   "
+.string 13 "    li   "
+.string 14 "    la   "
+.string 15 ".align 4"
+.string 16 "__tc_strobj"
+.string 17 ".word "
+.string 18 ".string "
 
 .endbc

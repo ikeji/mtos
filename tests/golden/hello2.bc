@@ -1,7 +1,4 @@
 .bc
-; string table
-.string 0 "Hello, World\n"
-
 .fn to_buf StringLiteral void
 .param str StringLiteral
 .local len i32
@@ -66,5 +63,8 @@ __L1:
   return
   return_void
 .endfn
+
+; string table
+.string 0 "Hello, World\n"
 
 .endbc
