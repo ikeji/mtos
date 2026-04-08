@@ -9,12 +9,13 @@ import "strlib.tc";
 // ===== Constants =====
 var TEXT_BASE: i32 = 65536;  // 0x10000
 var MAX_LABELS: i32 = 16384;
-var MAX_CODE: i32 = 4194304; // 4MB
+var MAX_CODE: i32 = 67108864; // 64MB
 
 // ===== Global state =====
 var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in main
 var g_pos: i32 = 0;                  // current write position
 var g_pass: i32 = 0;                 // 1 or 2
+var g_code_end: i32 = 0;             // highest position written to g_code
 
 // Label table: parallel arrays
 var g_lab_names: U8Array = 0 as U8Array;   // name storage (packed)
@@ -46,7 +47,10 @@ var g_line_buf_len: i32 = 0;
 
 // ===== Emit helpers =====
 fn emit8(v: i32) -> void {
-    if g_pass == 2 && g_pos < MAX_CODE { set(g_code, g_pos, v as u8); }
+    if g_pass == 2 && g_pos < MAX_CODE {
+        set(g_code, g_pos, v as u8);
+        if g_pos >= g_code_end { g_code_end = g_pos + 1; }
+    }
     g_pos = g_pos + 1;
     return;
 }
@@ -857,11 +861,8 @@ fn main() -> i32 {
     while i < 10 { set(g_numlab_count, i, 0); i = i + 1; }
     i = 0;
     while i < g_nlines { process_line(i); i = i + 1; }
-    var actual_code: i32 = g_pos;
-    if actual_code > MAX_CODE { actual_code = MAX_CODE; }
-
-    // Write ELF (filesz = actual code written, memsz = total including BSS)
-    write_elf(actual_code, total_memsz);
+    // Write ELF (filesz = code actually written, memsz = total including BSS)
+    write_elf(g_code_end, total_memsz);
 
     return 0;
 }
