@@ -1,4 +1,5 @@
 (program
+  (import runtime.tc)
   (import string_buffer.tc)
   (import source_reader.tc)
   (import strlib.tc)

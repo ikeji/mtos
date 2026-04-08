@@ -1,4 +1,5 @@
 (program
+  (import ../compiler/runtime.tc)
   (fn main
     (params)
     (ret

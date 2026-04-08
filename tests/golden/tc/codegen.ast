@@ -1,4 +1,5 @@
 (program
+  (import runtime.tc)
   (import string_buffer.tc)
   (var_decl NK_PROGRAM
     (type i32)

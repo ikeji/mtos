@@ -188,7 +188,11 @@ static void register_array_builtins(TypeEnv *e, const char *arr_type,
 }
 
 static void register_builtins(TypeEnv *e) {
-    /* peek/poke */
+    /* Only low-level primitives remain as builtins.
+     * Everything else (arrays, strings, sys calls, print) is provided
+     * by runtime.tc via import. */
+
+    /* peek/poke — direct memory access */
     const char *p32[] = {"u32"};
     register_fn(e, "peek8", p32, 1, "u8");
     register_fn(e, "peek16", p32, 1, "u16");
@@ -200,83 +204,13 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "poke16", p32_u16, 2, "void");
     register_fn(e, "poke32", p32_u32, 2, "void");
 
-    /* typed arrays */
-    register_array_builtins(e, "U8Array", "u8");
-    register_array_builtins(e, "U16Array", "u16");
-    register_array_builtins(e, "U32Array", "u32");
-    register_array_builtins(e, "I8Array", "i8");
-    register_array_builtins(e, "I16Array", "i16");
-    register_array_builtins(e, "I32Array", "i32");
-
-    /* String */
-    const char *ps[] = {"String"};
-    const char *ps_i32[] = {"String","i32"};
-    const char *ps_u8[] = {"String","u8"};
-    const char *ps_s[] = {"String","String"};
-    register_fn(e, "delete", ps, 1, "void");
-    register_fn(e, "len", ps, 1, "i32");
-    register_fn(e, "get", ps_i32, 2, "u8");
-    register_fn(e, "append", ps_u8, 2, "String");
-    register_fn(e, "append", ps_s, 2, "String");
-    register_fn(e, "equals", ps_s, 2, "bool");
-
-    /* StringLiteral */
-    const char *psl[] = {"StringLiteral"};
-    const char *psl_i32[] = {"StringLiteral","i32"};
-    const char *psl_u8[] = {"StringLiteral","u8"};
-    const char *psl_sl[] = {"StringLiteral","StringLiteral"};
-    const char *psl_s[] = {"StringLiteral","String"};
-    const char *ps_sl[] = {"String","StringLiteral"};
-    register_fn(e, "delete", psl, 1, "void");
-    register_fn(e, "len", psl, 1, "i32");
-    register_fn(e, "get", psl_i32, 2, "u8");
-    register_fn(e, "append", psl_u8, 2, "String");
-    register_fn(e, "append", psl_sl, 2, "String");
-    register_fn(e, "append", psl_s, 2, "String");
-    register_fn(e, "append", ps_sl, 2, "String");
-    register_fn(e, "equals", psl_sl, 2, "bool");
-    register_fn(e, "equals", psl_s, 2, "bool");
-    register_fn(e, "equals", ps_sl, 2, "bool");
-
-    /* StringArray — also allow storing StringLiteral */
-    register_array_builtins(e, "StringArray", "String");
-    {
-        const char *sa_sl[] = {"StringArray", "i32", "StringLiteral"};
-        register_fn(e, "set", sa_sl, 3, "void");
-    }
-
-    /* sys calls */
-    const char *sys_w[] = {"i32","U8Array","i32"};
-    const char *sys_r[] = {"i32","U8Array","i32"};
-    const char *sys_e[] = {"i32"};
-    register_fn(e, "sys_write", sys_w, 3, "i32");
-    register_fn(e, "sys_read", sys_r, 3, "i32");
-    register_fn(e, "sys_exit", sys_e, 1, "void");
-
-    /* raw syscall stubs (implemented in crt0.s) */
+    /* raw ecall stubs (implemented in crt0.s) */
     const char *dw[] = {"i32","u32","i32"};
     const char *dr[] = {"i32","u32","i32"};
     const char *de[] = {"i32"};
     register_fn(e, "do_write", dw, 3, "i32");
     register_fn(e, "do_read", dr, 3, "i32");
     register_fn(e, "do_exit", de, 1, "void");
-
-    /* Heap scope management */
-    register_fn(e, "heap_mark", NULL, 0, "i32");
-    const char *hm_args[] = {"i32"};
-    register_fn(e, "heap_reset", hm_args, 1, "void");
-
-    /* print helpers */
-    const char *pi[] = {"i32"};
-    const char *pu[] = {"u32"};
-    const char *pb[] = {"bool"};
-    const char *pstr[] = {"String"};
-    const char *pstrl[] = {"StringLiteral"};
-    register_fn(e, "print_i32", pi, 1, "void");
-    register_fn(e, "print_u32", pu, 1, "void");
-    register_fn(e, "print_bool", pb, 1, "void");
-    register_fn(e, "print_str", pstr, 1, "void");
-    register_fn(e, "print_str", pstrl, 1, "void");
 }
 
 /* ---- forward pass: collect all function/struct/global signatures ---- */

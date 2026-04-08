@@ -1,4 +1,5 @@
 (program
+  (import ../compiler/runtime.tc)
   (struct Point
     (field x
       (type i32)

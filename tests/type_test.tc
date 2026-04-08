@@ -1,3 +1,4 @@
+import "../compiler/runtime.tc";
 // Type test: verify exact type matching with overloaded functions
 
 fn double_val(x: i32) -> i32 {

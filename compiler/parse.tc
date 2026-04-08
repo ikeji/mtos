@@ -1,3 +1,4 @@
+import "runtime.tc";
 // parse.tc — tinyc source parser (Phase 2)
 // Reads tinyc source from stdin, outputs text AST to stdout.
 // Expressions are output flat; statements/blocks are indented.

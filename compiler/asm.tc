@@ -1,3 +1,4 @@
+import "runtime.tc";
 // asm.tc — RISC-V 32-bit assembler
 // Reads .s assembly from stdin, writes ELF32 binary to stdout.
 // 2-pass: pass 1 collects labels, pass 2 encodes instructions.
