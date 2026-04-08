@@ -125,7 +125,7 @@ for f in "${TC_FILES[@]}"; do
             report_pass "tc/$f (BC - Gen2 vs golden)" "$elapsed"
         else
             diff_file="/tmp/tc_gen2_bc_diff_${base}.txt"
-            diff -U3 "$golden_bc" "$actual_gen2_bc" > "$diff_file"
+            diff -U10 "$golden_bc" "$actual_gen2_bc" > "$diff_file"
             echo "FAIL: tc/$f (BC - Gen2 vs golden) [${elapsed}ms] (diff: $diff_file)"
             FAIL=$((FAIL + 1))
         fi
@@ -139,7 +139,7 @@ for f in "${TC_FILES[@]}"; do
             report_pass "tc/$f (ASM - Gen2 vs golden)" "$elapsed"
         else
             diff_file="/tmp/tc_gen2_asm_diff_${base}.txt"
-            diff -U3 "$golden_s" "$actual_gen2_s" > "$diff_file"
+            diff -U10 "$golden_s" "$actual_gen2_s" > "$diff_file"
             echo "FAIL: tc/$f (ASM - Gen2 vs golden) [${elapsed}ms] (diff: $diff_file)"
             FAIL=$((FAIL + 1))
         fi
@@ -163,7 +163,7 @@ for f in "${TC_FILES[@]}"; do
             report_pass "tc/$f (Gen2 == Gen3)${mem:+ (mem: parse=$mem)}" "$elapsed"
         else
             diff_file="/tmp/tc_gen3_bc_diff_${base}.txt"
-            diff -U3 "$actual_gen2_bc" "$gen3_bc" > "$diff_file"
+            diff -U10 "$actual_gen2_bc" "$gen3_bc" > "$diff_file"
             echo "FAIL: tc/$f (Gen2 != Gen3) [${elapsed}ms] (diff: $diff_file)"
             FAIL=$((FAIL + 1))
         fi
