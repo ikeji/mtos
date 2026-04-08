@@ -111,7 +111,8 @@ for f in "${TC_FILES[@]}"; do
     fi
 
     # === Gen2 BC/ASM and Gen3 (only for files without imports) ===
-    has_import=$(grep -c '^import ' "$input" 2>/dev/null || echo 0)
+    has_import=$(grep -c '^import ' "$input" 2>/dev/null)
+    [ -z "$has_import" ] && has_import=0
     actual_gen2_bc=$(mktemp)
 
     if [ "$has_import" -eq 0 ]; then
