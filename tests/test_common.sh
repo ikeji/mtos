@@ -147,8 +147,9 @@ compile_tc_to_bc() {
 
     all_bcs+=("$("$CODEGEN" "$tc_file" 2>/dev/null)")
 
+    echo ".bc"
     for bc in "${all_bcs[@]}"; do
-        printf '%s\n' "$bc" | grep -v '^\.\(bc\|endbc\)$'
+        printf '%s\n' "$bc" | sed '/^\.bc$/d; /^\.endbc$/d'
     done
     echo ".endbc"
 }

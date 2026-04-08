@@ -1,3 +1,4 @@
+.bc
 .fn StringBuffer U8Array i32 i32 StringBuffer
 .param __a0 U8Array
 .param __a1 i32
