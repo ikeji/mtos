@@ -1,0 +1,402 @@
+// runtime.tc — TinyC runtime library for RISC-V bare-metal
+// Implements pool allocator, array/string builtins, and I/O.
+// Syscalls are via do_write/do_read/do_exit stubs in crt0.s.
+
+// ===== Pool allocator =====
+// Power-of-2 size classes. Arena is a global U8Array.
+
+var NPOOLS: i32 = 16;
+// Pool sizes: 16, 32, 64, 128, 256, 512, 1K, 2K, 4K, 8K, 16K, 32K, 64K, 128K, 256K, 512K
+var g_pool_size: I32Array = 0 as I32Array;
+var g_pool_count: I32Array = 0 as I32Array;
+var g_pool_free: I32Array = 0 as I32Array;  // free list heads (as u32 addresses)
+var g_pool_base: I32Array = 0 as I32Array;  // base address of each pool
+var g_pool_end: I32Array = 0 as I32Array;   // end address of each pool
+var g_pools_ready: i32 = 0;
+var g_arena: U8Array = 0 as U8Array;
+
+fn pool_init() -> void {
+    g_pool_size = I32Array(NPOOLS);
+    g_pool_count = I32Array(NPOOLS);
+    g_pool_free = I32Array(NPOOLS);
+    g_pool_base = I32Array(NPOOLS);
+    g_pool_end = I32Array(NPOOLS);
+
+    // Define sizes
+    set(g_pool_size, 0, 16); set(g_pool_size, 1, 32); set(g_pool_size, 2, 64);
+    set(g_pool_size, 3, 128); set(g_pool_size, 4, 256); set(g_pool_size, 5, 512);
+    set(g_pool_size, 6, 1024); set(g_pool_size, 7, 2048); set(g_pool_size, 8, 4096);
+    set(g_pool_size, 9, 8192); set(g_pool_size, 10, 16384); set(g_pool_size, 11, 32768);
+    set(g_pool_size, 12, 65536); set(g_pool_size, 13, 131072); set(g_pool_size, 14, 262144);
+    set(g_pool_size, 15, 524288);
+
+    // Define counts
+    set(g_pool_count, 0, 256); set(g_pool_count, 1, 4096); set(g_pool_count, 2, 128);
+    set(g_pool_count, 3, 64); set(g_pool_count, 4, 32); set(g_pool_count, 5, 128);
+    set(g_pool_count, 6, 32); set(g_pool_count, 7, 32); set(g_pool_count, 8, 16);
+    set(g_pool_count, 9, 8); set(g_pool_count, 10, 4); set(g_pool_count, 11, 2);
+    set(g_pool_count, 12, 2); set(g_pool_count, 13, 1); set(g_pool_count, 14, 1);
+    set(g_pool_count, 15, 1);
+
+    // Allocate arena: sum of all pool sizes
+    // ~1MB total
+    var total: i32 = 0;
+    var i: i32 = 0;
+    while i < NPOOLS {
+        total = total + get(g_pool_size, i) * get(g_pool_count, i);
+        i = i + 1;
+    }
+    g_arena = U8Array(total);
+
+    // Get arena base address
+    var arena_addr: u32 = g_arena as u32;
+    var data_addr: u32 = peek32(arena_addr + 4u32);
+    var p: u32 = data_addr;
+
+    // Initialize free lists
+    i = 0;
+    while i < NPOOLS {
+        var sz: i32 = get(g_pool_size, i);
+        var n: i32 = get(g_pool_count, i);
+        set(g_pool_base, i, p as i32);
+        set(g_pool_free, i, p as i32);
+        var j: i32 = 0;
+        while j < n - 1 {
+            poke32(p, (p + sz as u32));
+            p = p + sz as u32;
+            j = j + 1;
+        }
+        poke32(p, 0u32);  // last slot: next = NULL
+        p = p + sz as u32;
+        set(g_pool_end, i, p as i32);
+        i = i + 1;
+    }
+    g_pools_ready = 1;
+    return;
+}
+
+fn bucket_of(size: i32) -> i32 {
+    var i: i32 = 0;
+    while i < NPOOLS {
+        if get(g_pool_size, i) >= size { return i; }
+        i = i + 1;
+    }
+    return NPOOLS - 1;
+}
+
+fn pool_alloc(size: i32) -> u32 {
+    if g_pools_ready == 0 { pool_init(); }
+    if size <= 0 { size = 1; }
+    var i: i32 = bucket_of(size);
+    var slot: u32 = get(g_pool_free, i) as u32;
+    if slot == 0u32 {
+        do_write(2, "OOM" as u32, 3);
+        do_exit(1);
+    }
+    var next: u32 = peek32(slot);
+    set(g_pool_free, i, next as i32);
+    // Zero-fill the slot
+    var sz: i32 = get(g_pool_size, i);
+    var k: i32 = 0;
+    while k < sz {
+        poke8(slot + k as u32, 0u32);
+        k = k + 1;
+    }
+    return slot;
+}
+
+fn pool_free_blk(ptr: u32) -> void {
+    if ptr == 0u32 { return; }
+    var i: i32 = 0;
+    while i < NPOOLS {
+        if ptr as i32 >= get(g_pool_base, i) && (ptr as i32) < get(g_pool_end, i) {
+            poke32(ptr, get(g_pool_free, i) as u32);
+            set(g_pool_free, i, ptr as i32);
+            return;
+        }
+        i = i + 1;
+    }
+    return;
+}
+
+// ===== HeapObj: count-prefixed allocation =====
+// Layout: [count (4 bytes) | data ...]
+// HeapObj pointer = address of count field
+
+fn new_array(count: i32, data_bytes: i32) -> u32 {
+    var total: i32 = 4 + data_bytes;
+    if total < 4 { total = 4; }
+    var addr: u32 = pool_alloc(total);
+    poke32(addr, count as u32);
+    return addr;
+}
+
+// ===== Array constructors =====
+export fn U8Array__i32(sz: i32) -> U8Array {
+    var addr: u32 = new_array(sz, sz);
+    return addr as U8Array;
+}
+export fn U16Array__i32(sz: i32) -> U16Array {
+    var addr: u32 = new_array(sz, sz * 2);
+    return addr as U16Array;
+}
+export fn U32Array__i32(sz: i32) -> U32Array {
+    var addr: u32 = new_array(sz, sz * 4);
+    return addr as U32Array;
+}
+export fn I8Array__i32(sz: i32) -> I8Array {
+    var addr: u32 = new_array(sz, sz);
+    return addr as I8Array;
+}
+export fn I16Array__i32(sz: i32) -> I16Array {
+    var addr: u32 = new_array(sz, sz * 2);
+    return addr as I16Array;
+}
+export fn I32Array__i32(sz: i32) -> I32Array {
+    var addr: u32 = new_array(sz, sz * 4);
+    return addr as I32Array;
+}
+export fn StringArray__i32(sz: i32) -> StringArray {
+    var addr: u32 = new_array(sz, sz * 4);
+    return addr as StringArray;
+}
+
+// ===== len =====
+export fn len(o: U8Array) -> i32 {
+    if o as u32 == 0u32 { return 0; }
+    return peek32(o as u32) as i32;
+}
+export fn len(o: U16Array) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
+export fn len(o: U32Array) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
+export fn len(o: I8Array) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
+export fn len(o: I16Array) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
+export fn len(o: I32Array) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
+export fn len(o: StringArray) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
+export fn len(o: String) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
+export fn len(o: StringLiteral) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
+
+// ===== get =====
+export fn get(o: U8Array, i: i32) -> u8 {
+    return peek8(o as u32 + 4u32 + i as u32) as u8;
+}
+export fn get(o: U16Array, i: i32) -> u16 {
+    return peek16(o as u32 + 4u32 + (i * 2) as u32) as u16;
+}
+export fn get(o: U32Array, i: i32) -> u32 {
+    return peek32(o as u32 + 4u32 + (i * 4) as u32);
+}
+export fn get(o: I8Array, i: i32) -> i8 {
+    return peek8(o as u32 + 4u32 + i as u32) as i8;
+}
+export fn get(o: I16Array, i: i32) -> i16 {
+    return peek16(o as u32 + 4u32 + (i * 2) as u32) as i16;
+}
+export fn get(o: I32Array, i: i32) -> i32 {
+    return peek32(o as u32 + 4u32 + (i * 4) as u32) as i32;
+}
+export fn get(o: StringArray, i: i32) -> String {
+    return peek32(o as u32 + 4u32 + (i * 4) as u32) as String;
+}
+export fn get(o: String, i: i32) -> u8 {
+    return peek8(o as u32 + 4u32 + i as u32) as u8;
+}
+export fn get(o: StringLiteral, i: i32) -> u8 {
+    return peek8(o as u32 + 4u32 + i as u32) as u8;
+}
+
+// ===== set =====
+export fn set(o: U8Array, i: i32, v: u8) -> void {
+    poke8(o as u32 + 4u32 + i as u32, v as u32); return;
+}
+export fn set(o: U16Array, i: i32, v: u16) -> void {
+    poke16(o as u32 + 4u32 + (i*2) as u32, v as u32); return;
+}
+export fn set(o: U32Array, i: i32, v: u32) -> void {
+    poke32(o as u32 + 4u32 + (i*4) as u32, v); return;
+}
+export fn set(o: I8Array, i: i32, v: i8) -> void {
+    poke8(o as u32 + 4u32 + i as u32, v as u32); return;
+}
+export fn set(o: I16Array, i: i32, v: i16) -> void {
+    poke16(o as u32 + 4u32 + (i*2) as u32, v as u32); return;
+}
+export fn set(o: I32Array, i: i32, v: i32) -> void {
+    poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return;
+}
+export fn set(o: StringArray, i: i32, v: String) -> void {
+    poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return;
+}
+export fn set(o: StringArray, i: i32, v: StringLiteral) -> void {
+    poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return;
+}
+
+// ===== delete =====
+fn delete_impl(o: u32) -> void {
+    if o == 0u32 { return; }
+    pool_free_blk(o);
+    return;
+}
+export fn delete(o: U8Array) -> void { delete_impl(o as u32); return; }
+export fn delete(o: U16Array) -> void { delete_impl(o as u32); return; }
+export fn delete(o: U32Array) -> void { delete_impl(o as u32); return; }
+export fn delete(o: I8Array) -> void { delete_impl(o as u32); return; }
+export fn delete(o: I16Array) -> void { delete_impl(o as u32); return; }
+export fn delete(o: I32Array) -> void { delete_impl(o as u32); return; }
+export fn delete(o: StringArray) -> void { delete_impl(o as u32); return; }
+export fn delete(o: String) -> void { delete_impl(o as u32); return; }
+export fn delete(o: StringLiteral) -> void { return; }  // no-op for rodata
+
+// ===== heap_mark / heap_reset (no-ops) =====
+export fn heap_mark() -> i32 { return 0; }
+export fn heap_reset(mark: i32) -> void { return; }
+
+// ===== sys_write / sys_read / sys_exit =====
+export fn sys_write(fd: i32, buf: U8Array, len: i32) -> i32 {
+    if buf as u32 == 0u32 { return 0 - 1; }
+    var count: i32 = len(buf);
+    if len < count { count = len; }
+    var data: u32 = buf as u32 + 4u32;
+    return do_write(fd, data, count);
+}
+
+export fn sys_read(fd: i32, buf: U8Array, len: i32) -> i32 {
+    if buf as u32 == 0u32 { return 0 - 1; }
+    var count: i32 = len(buf);
+    if len < count { count = len; }
+    var data: u32 = buf as u32 + 4u32;
+    var total: i32 = 0;
+    while total < count {
+        var r: i32 = do_read(fd, data + total as u32, count - total);
+        if r <= 0 { return total; }
+        total = total + r;
+    }
+    return total;
+}
+
+export fn sys_exit(code: i32) -> void {
+    do_exit(code);
+    return;
+}
+
+// ===== Print helpers =====
+export fn print_i32(v: i32) -> void {
+    var buf: U8Array = U8Array(16);
+    var neg: i32 = 0;
+    if v < 0 { neg = 1; v = 0 - v; }
+    if v == 0 {
+        set(buf, 0, '0'); set(buf, 1, 10u8);
+        sys_write(1, buf, 2);
+        delete(buf);
+        return;
+    }
+    var tmp: U8Array = U8Array(12);
+    var i: i32 = 0;
+    while v > 0 {
+        set(tmp, i, (48 + v % 10) as u8);
+        i = i + 1;
+        v = v / 10;
+    }
+    var pos: i32 = 0;
+    if neg == 1 { set(buf, pos, '-'); pos = pos + 1; }
+    var j: i32 = i - 1;
+    while j >= 0 {
+        set(buf, pos, get(tmp, j));
+        pos = pos + 1;
+        j = j - 1;
+    }
+    set(buf, pos, 10u8);
+    pos = pos + 1;
+    sys_write(1, buf, pos);
+    delete(tmp);
+    delete(buf);
+    return;
+}
+
+export fn print_u32(v: u32) -> void {
+    print_i32(v as i32);
+    return;
+}
+
+export fn print_bool(v: bool) -> void {
+    if v { print_i32(1); }
+    else { print_i32(0); }
+    return;
+}
+
+export fn print_str(s: String) -> void {
+    if s as u32 != 0u32 {
+        var slen: i32 = len(s);
+        var data: u32 = s as u32 + 4u32;
+        do_write(1, data, slen);
+    }
+    // Print newline
+    var nl: U8Array = U8Array(1);
+    set(nl, 0, 10u8);
+    sys_write(1, nl, 1);
+    delete(nl);
+    return;
+}
+
+export fn print_str(s: StringLiteral) -> void {
+    print_str(s as String);
+    return;
+}
+
+// ===== String operations =====
+export fn append(s: String, c: u8) -> String {
+    var sl: i32 = 0;
+    if s as u32 != 0u32 { sl = len(s); }
+    var addr: u32 = new_array(sl + 1, sl + 2);
+    var i: i32 = 0;
+    while i < sl {
+        poke8(addr + 4u32 + i as u32, peek8(s as u32 + 4u32 + i as u32));
+        i = i + 1;
+    }
+    poke8(addr + 4u32 + sl as u32, c as u32);
+    poke8(addr + 4u32 + (sl + 1) as u32, 0u32);
+    return addr as String;
+}
+
+export fn append(s: String, t: String) -> String {
+    var sl: i32 = 0;
+    var tl: i32 = 0;
+    if s as u32 != 0u32 { sl = len(s); }
+    if t as u32 != 0u32 { tl = len(t); }
+    var addr: u32 = new_array(sl + tl, sl + tl + 1);
+    var i: i32 = 0;
+    while i < sl {
+        poke8(addr + 4u32 + i as u32, peek8(s as u32 + 4u32 + i as u32));
+        i = i + 1;
+    }
+    i = 0;
+    while i < tl {
+        poke8(addr + 4u32 + (sl + i) as u32, peek8(t as u32 + 4u32 + i as u32));
+        i = i + 1;
+    }
+    poke8(addr + 4u32 + (sl + tl) as u32, 0u32);
+    return addr as String;
+}
+
+// StringLiteral overloads
+export fn append(s: StringLiteral, c: u8) -> String { return append(s as String, c); }
+export fn append(s: StringLiteral, t: StringLiteral) -> String { return append(s as String, t as String); }
+export fn append(s: StringLiteral, t: String) -> String { return append(s as String, t); }
+export fn append(s: String, t: StringLiteral) -> String { return append(s, t as String); }
+
+export fn equals(s: String, t: String) -> bool {
+    if s as u32 == 0u32 || t as u32 == 0u32 { return s as u32 == t as u32; }
+    if len(s) != len(t) { return false; }
+    var i: i32 = 0;
+    while i < len(s) {
+        if get(s, i) != get(t, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+export fn equals(s: StringLiteral, t: StringLiteral) -> bool { return equals(s as String, t as String); }
+export fn equals(s: StringLiteral, t: String) -> bool { return equals(s as String, t); }
+export fn equals(s: String, t: StringLiteral) -> bool { return equals(s, t as String); }
+
+// ===== peek / poke (already builtins, but re-export for completeness) =====
+// peek8, peek16, peek32, poke8, poke16, poke32 are already builtins
