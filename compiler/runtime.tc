@@ -3,7 +3,7 @@
 // Syscalls via do_write/do_read/do_exit stubs in crt0.s.
 // Pool metadata is in crt0.s (.data/.bss labels).
 
-var NPOOLS: i32 = 16;
+var NPOOLS: i32 = 17;
 
 // Addresses of pool metadata (resolved by linker from crt0.s labels)
 // We access these via peek32/poke32 using global variables set at init time.
@@ -152,10 +152,10 @@ fn pool_alloc(size: i32) -> u32 {
     }
     var next: u32 = peek32(slot);
     ps_set(g_pool_free_addr, i, next as i32);
-    // Zero-fill
+    // Zero-fill (4 bytes at a time)
     var sz: i32 = ps_get(g_pool_sizes_addr, i);
     var k: i32 = 0;
-    while k < sz { poke8(slot + k as u32, 0u8); k = k + 1; }
+    while k < sz { poke32(slot + k as u32, 0u32); k = k + 4; }
     return slot;
 }
 

@@ -15,6 +15,10 @@ RUNTIME="$ROOT_DIR/compiler/runtime.tc"
 SCRIPT_DIR="$ROOT_DIR/tests"
 source "$ROOT_DIR/tests/test_common.sh"
 
+# Re-set after sourcing test_common.sh (which overwrites RUNTIME/CRT0)
+CRT0="$ROOT_DIR/bootstrap/crt0_tc.s"
+RUNTIME="$ROOT_DIR/compiler/runtime.tc"
+
 OUTFILE="a.out"
 TC_FILE=""
 
@@ -34,14 +38,21 @@ fi
 # Compile runtime.tc (--no-builtins)
 RUNTIME_BC=$("$CODEGEN" --no-builtins "$RUNTIME" 2>/dev/null)
 
-# Compile user .tc file
-USER_BC=$("$CODEGEN" "$TC_FILE" 2>/dev/null)
+# Compile user .tc file with import resolution (same as compile_tc_to_bc)
+ALL_USER_BCS=()
+while IFS= read -r imp_file; do
+    [ -z "$imp_file" ] && continue
+    ALL_USER_BCS+=("$("$CODEGEN" "$imp_file" 2>/dev/null)")
+done < <(collect_imports "$TC_FILE")
+ALL_USER_BCS+=("$("$CODEGEN" "$TC_FILE" 2>/dev/null)")
 
-# Merge BCs and convert to assembly
+# Merge all BCs (runtime + imports + main) and convert to assembly
 MERGED_S=$(
     echo ".bc"
     printf '%s\n' "$RUNTIME_BC" | sed '/^\.bc$/d; /^\.endbc$/d'
-    printf '%s\n' "$USER_BC" | sed '/^\.bc$/d; /^\.endbc$/d'
+    for bc in "${ALL_USER_BCS[@]}"; do
+        printf '%s\n' "$bc" | sed '/^\.bc$/d; /^\.endbc$/d'
+    done
     echo ".endbc"
 )
 USER_S=$(printf '%s\n' "$MERGED_S" | "$BC2ASM" 2>/dev/null)

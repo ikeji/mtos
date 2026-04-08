@@ -85,6 +85,7 @@ __pool_sizes:
     .word 131072
     .word 262144
     .word 524288
+    .word 1048576
 
     .globl __pool_counts
 __pool_counts:
@@ -101,27 +102,28 @@ __pool_counts:
     .word 4
     .word 2
     .word 2
-    .word 1
-    .word 1
-    .word 1
+    .word 2
+    .word 2
+    .word 2
+    .word 2
 
 #
     .bss
     .align 4
     .globl __pool_free
 __pool_free:
-    .space 64
+    .space 68
     .globl __pool_base
 __pool_base:
-    .space 64
+    .space 68
     .globl __pool_end
 __pool_end:
-    .space 64
+    .space 68
     .globl __pools_ready
 __pools_ready:
     .space 4
     .globl __arena
 __arena:
-    .space 1634304
-    .space 8192
+    .space 4648960
+    .space 65536
 __stack_end:
