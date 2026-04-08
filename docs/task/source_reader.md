@@ -19,39 +19,113 @@ SourceReader を導入し、4KB バッファでストリーミング読み込み
 
 ```tinyc
 struct SourceReader {
-    fd: i32,           // 入力ファイルディスクリプタ (0 = stdin)
-    buf: U8Array,      // 読み込みバッファ (4092B = 4096B バケットに収まる)
+    rfd: i32,          // 入力ファイルディスクリプタ (0 = stdin)
+    buf: U8Array,      // 読み込みバッファ (4092B = 4096 バケットに収まる)
     buf_pos: i32,      // buf 内の現在位置
     buf_len: i32,      // buf 内の有効バイト数
-    eof: i32,          // EOF に達したか (0 or 1)
-    line: StringBuffer, // 現在の行テキスト（StringBuffer の grow に任せる）
-    line_num: i32      // 現在の行番号 (1-origin)
+    is_eof: i32,       // EOF に達したか (0 or 1)
+    line: StringBuffer, // 行テキスト蓄積用
+    lnum: i32          // 現在の行番号 (1-origin)
 }
 ```
 
 ### API
 
 ```tinyc
+// コンストラクタ・デストラクタ
 fn SourceReader_new(fd: i32) -> SourceReader
-fn peek(r: SourceReader) -> u8         // 次の1バイトを見る（消費しない）、EOF時は 0
-fn next(r: SourceReader) -> u8         // 1バイト読んで進める
-fn at_eof(r: SourceReader) -> bool     // EOF に達したか
-fn line_num(r: SourceReader) -> i32    // 現在の行番号
-fn current_line(r: SourceReader, sb: StringBuffer) -> void
-    // 現在の行テキストを sb に emit（先頭空白を除去、末尾改行なし）
+fn close(r: SourceReader) -> void
+
+// 読み込み
+fn peek(r: SourceReader) -> u8       // 次の1バイトを見る（消費しない）、EOF時は 0
+fn next(r: SourceReader) -> u8       // 1バイト読んで進める、line に蓄積
+fn at_eof(r: SourceReader) -> bool   // EOF に達したか
+fn line_num(r: SourceReader) -> i32  // 現在の行番号
+
+// 行テキスト管理
+fn line_buf_reset(r: SourceReader) -> void
+    // line バッファをリセット。次の改行まで蓄積を開始する。
+fn line_buf(r: SourceReader, sb: StringBuffer) -> void
+    // line_buf_reset 以降に蓄積されたテキストを sb に emit
+    // （先頭空白は除去しない — 呼び出し側の責任）
 ```
 
 ### 内部動作
 
 - `peek` / `next`: buf_pos < buf_len なら buf から返す。
   buf_pos >= buf_len なら sys_read で 4KB 読み込み。
-- `next` が改行 (0x0A) を返すとき:
-  - `line_num` をインクリメント
-  - `pos(line(r), 0)` で StringBuffer をリセット（メモリ解放不要）
-- `next` が改行以外を返すとき:
-  - `emit_char(line(r), c)` で現在行のテキストを蓄積
-  - StringBuffer が自動で grow を管理
-- `current_line`: `line(r)` の内容を sb に emit
+- `next` は毎回 `emit_char(line(r), c)` で行テキストを蓄積。
+  改行 (0x0A) を読んだら `line_num` をインクリメント。
+- `line_buf_reset`: StringBuffer の pos を 0 にリセット。
+  次の `next` 呼び出しから蓄積が始まる。
+- `line_buf`: line の内容を sb にコピー。
+
+### emit_stmt_comment の変更
+
+現在の方式（ソース全体をランダムアクセス）:
+```
+emit_stmt_comment(sb, src, line_number):
+    ソース全体を先頭から走査して line_number 行目を見つける
+    その行テキストを sb に emit
+```
+
+変更後の方式（line_buf を使う）:
+```
+// pars_block 内のループ:
+line_buf_reset(src);              // 蓄積開始
+// → この後 lex_tok が skip_ws + トークン読み取りで next を呼ぶ
+// → next が line に文字を蓄積
+// → lex_tok 完了時点で、空白スキップ後〜トークン末尾まで line に入っている
+// → ただし行の残り（まだ読んでいない部分）は含まれない
+emit_stmt_comment(sb, src);       // line_buf の内容をコメントとして出力
+pars_stmt(src, tok, sb, indent);  // 文をパース
+```
+
+これは元の parse.tc で `g_pos` ベースで行を検索していたのと同じ情報。
+ただし「行全体」ではなく「読んだ分まで」になる。
+C版は行全体を出すが、self-hosted 版は部分行でも実用上問題ない。
+
+### 変更パターン
+
+```tinyc
+// 現在:
+fn emit_stmt_comment(sb: StringBuffer, src: StringBuffer, line: i32) -> void {
+    // src 全体から line 行目を検索...
+}
+fn pars_block(src: StringBuffer, ...) {
+    while g_tok != TK_RBRACE {
+        var stmt_line: i32 = g_tok_line;
+        emit_stmt_comment(sb, src, stmt_line);
+        pars_stmt(src, ...);
+    }
+}
+
+// 変更後:
+fn emit_stmt_comment(sb: StringBuffer, src: SourceReader) -> void {
+    // line_buf の内容をコメントとして出力
+    line_buf(src, comment_sb);
+}
+fn pars_block(src: SourceReader, ...) {
+    while g_tok != TK_RBRACE {
+        line_buf_reset(src);           // ← 追加
+        // この後の lex_tok/skip_ws が next を呼び、line に蓄積
+        emit_stmt_comment(sb, src);    // line → "stmt_line まで" ではなく "今の line_buf"
+        pars_stmt(src, ...);
+    }
+}
+```
+
+struct の合成関数用には、struct 宣言のパース開始時に line_buf の中身を
+StringBuffer にコピーして保存しておく:
+```tinyc
+fn pars_struct_decl(src: SourceReader, ...) {
+    var struct_cmt: StringBuffer = StringBuffer_new();
+    line_buf(src, struct_cmt);  // struct 行のテキストをコピー
+    ...
+    // 合成関数の emit 時に struct_cmt を使う
+    destroy(struct_cmt);
+}
+```
 
 ### メモリ
 
@@ -60,93 +134,44 @@ fn current_line(r: SourceReader, sb: StringBuffer) -> void
 | ソースバッファ | 124B → grow → 最大 64KB | 4KB 固定 (読み込みバッファ) |
 | 行バッファ | なし | StringBuffer (124B 初期、最長行分まで grow) |
 | read_tmp | 4KB | 不要（buf が兼ねる） |
-| tok_buf | 4KB | そのまま（トークン用バッファ） |
+| tok_buf | 4KB | そのまま |
 
-予想削減: 65536 + 32768 + 16384 + 8192 バケットの大部分 → 4096 バケット1つ。
-
-## emit_stmt_comment の変更
-
-### 現在の方式
-
-```
-emit_stmt_comment(sb, src, line):
-    ソース全体を先頭から走査して line 行目を見つける
-    その行テキストを sb に emit
-```
-
-### 変更後の方式
-
-lex_tok でトークンを読むたびに、トークンの行番号を記録している（g_tok_line）。
-文の先頭で lex_tok が呼ばれたとき、SourceReader の current_line で
-その行のテキストを別バッファにキャプチャしておく。
-
-```
-// 文の解析開始時:
-var stmt_line: i32 = g_tok_line;
-var comment_sb: StringBuffer = StringBuffer_new();
-current_line(reader, comment_sb);
-
-// AST 出力時:
-emit_stmt_comment_from_buf(sb, comment_sb);
-destroy(comment_sb);
-```
-
-問題: 現在のコードでは `emit_stmt_comment` を AST 出力の途中で呼ぶ。
-つまりソース読み込みと AST 出力が交互に行われる。
-SourceReader の current_line は「今読んでいる行」なので、
-文の先頭トークンを読んだ時点でキャプチャする必要がある。
-
-### 具体的な変更パターン
-
-現在:
-```tinyc
-fn pars_var_decl(src: StringBuffer, tok: U8Array, sb: StringBuffer, ...) {
-    var stmt_line: i32 = g_tok_line;
-    ...パース...
-    emit_stmt_comment_line(sb, indent, src, stmt_line);  // src全体を参照
-}
-```
-
-変更後:
-```tinyc
-fn pars_var_decl(reader: SourceReader, tok: U8Array, sb: StringBuffer, ...) {
-    var stmt_line: i32 = g_tok_line;
-    var comment_text: StringBuffer = capture_current_line(reader);
-    ...パース...
-    emit_comment_from(sb, indent, comment_text);  // キャプチャ済みテキストを使用
-    destroy(comment_text);
-}
-```
-
-### 注意点
-
-- `emit_stmt_comment_line` は struct の合成関数（getter/setter/ctor/delete）
-  でも使われている。struct パース時は全フィールドを読み終わった後に
-  合成関数を出力するので、struct 宣言の行テキストを保持しておく必要がある。
-  現在も `struct_line` 変数で行番号を保存しているので、
-  同じタイミングでテキストもキャプチャすればよい。
-
-- 複数行にまたがる式（改行を含む引数リストなど）では、
-  コメントは最初の行のみ出力される。これは現在と同じ動作。
-
-- `tok_buf` (4096B) は SourceReader とは独立。
-  トークン文字列用のバッファなので変更不要。
-  ただし 4096B は大きすぎるので、将来的には縮小可能
-  （最長の識別子/文字列リテラル分あれば十分）。
+予想削減: 65536 + 32768 + 16384 + 8192 バケット → 4096 バケット1つ。
 
 ## 実装順
 
-1. `SourceReader` 構造体と `peek`/`next`/`at_eof`/`line_num`/`current_line` を
-   `compiler/source_reader.tc` に定義
-2. parse.tc の lexer (`src_char`, `skip_ws`, `lex_tok`) を
-   SourceReader ベースに変更
-3. `emit_stmt_comment` を current_line キャプチャ方式に変更
-4. main から StringBuffer ソースバッファと read_tmp を削除
-5. golden ファイル更新・テスト
+1. `compiler/source_reader.tc` を作成
+   - SourceReader struct
+   - SourceReader_new, close
+   - peek, next, at_eof, line_num
+   - line_buf_reset, line_buf
+2. テスト (`tests/source_reader_test.tc`) で API を検証
+3. parse.tc の lexer を SourceReader ベースに変更
+   - `src: StringBuffer` → `src: SourceReader`
+   - `char_at(src, g_pos)` → `peek(src)`, `g_pos++` → `next(src)`
+   - `g_pos`, `g_len` を削除
+   - skip_ws_and_comments: peek で先読みして `/` を消費しない
+4. emit_stmt_comment を line_buf 方式に変更
+   - pars_block で line_buf_reset + line_buf
+   - pars_struct_decl で line_buf コピー
+5. main を変更: StringBuffer src_buf + read_tmp → SourceReader_new(0)
+6. golden ファイル更新・テスト
+
+## 注意: zsh と RISCV_FLAGS
+
+test_common.sh の `RISCV_FLAGS` は文字列として定義されているが、
+zsh では `$RISCV_FLAGS` が word split されない。
+配列 `RISCV_FLAGS=(...)` + `"${RISCV_FLAGS[@]}"` に変更する必要がある。
+
+test_common.sh の `build_gen2_tool` は shallow import のみ対応。
+source_reader.tc → string_buffer.tc の再帰的 import を解決するため、
+`collect_imports` を再帰的に実装する必要がある。
 
 ## 影響範囲
 
-- `compiler/parse.tc` — lexer + emit_stmt_comment + main
 - `compiler/source_reader.tc` — 新規ファイル
-- C版 `bootstrap/parser.c` — 変更不要（C版は独自の読み込み方式）
-- テスト — golden 更新のみ（AST 出力は同一になるはず）
+- `compiler/string_buffer.tc` — `reset()` 関数を追加（line_buf_reset 用）
+- `compiler/parse.tc` — lexer + emit_stmt_comment + main
+- `tests/test_common.sh` — RISCV_FLAGS 配列化、collect_imports 再帰化
+- C版 `bootstrap/parser.c` — 変更不要
+- テスト — golden 更新（コメント内容が部分行になる差分あり）
