@@ -1,4 +1,3 @@
-import "../compiler/runtime.tc";
 // source_reader_test.tc — test SourceReader
 import "../compiler/string_buffer.tc";
 import "../compiler/source_reader.tc";

@@ -1,5 +1,4 @@
 (program
-  (import runtime.tc)
   (import string_buffer.tc)
   (var_decl OP_PUSH_INT
     (type i32)

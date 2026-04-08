@@ -1,4 +1,3 @@
-import "../compiler/runtime.tc";
 fn main() -> i32 {
     var buf: U8Array = U8Array(13);
     set(buf, 0, 72u8);   // H

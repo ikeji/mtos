@@ -1,4 +1,3 @@
-import "../compiler/runtime.tc";
 // Simple expression calculator: supports +, -, *, / with correct precedence
 // Input: expression like "12 + 34 * 56" from stdin
 // Output: result (e.g. 1916)

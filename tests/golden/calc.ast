@@ -1,5 +1,4 @@
 (program
-  (import ../compiler/runtime.tc)
   (var_decl g_pos
     (type i32)
     (int 0)

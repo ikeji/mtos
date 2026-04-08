@@ -1,4 +1,3 @@
-import "runtime.tc";
 // bcrun.tc - bytecode interpreter for tinyc stack-machine bytecode
 
 // ===== Opcodes =====

@@ -1,5 +1,4 @@
 (program
-  (import ../compiler/runtime.tc)
   (fn classify
     (params
       (param x
