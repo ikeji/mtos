@@ -119,34 +119,36 @@ riscv-gcc の役割:
 
 ## 実装計画
 
-### ステップ 1: アセンブラの実装 (bootstrap/asm.c)
+### ステップ 1: アセンブラの実装 (compiler/asm.tc)
 
-C で書く（Gen1 ツール）。入力: 複数 `.s` ファイル → 出力: ELF バイナリ
+TinyC で書く。Gen1 (C codegen + bcrun) でコンパイル・実行。
+入力: stdin から `.s` テキスト（複数ファイルは cat で結合）
+出力: stdout に ELF バイナリ
 
-1. パーサー: `.s` テキストをトークン化、命令・ディレクティブ・ラベルを認識
-2. パス1: アドレス割り当て（.text, .rodata, .data, .bss のサイズ計算）
+1. パーサー: `.s` テキストを SourceReader で読み、命令・ディレクティブ・ラベルを認識
+2. パス1: アドレス割り当て（全体のサイズ計算）
 3. パス2: 命令エンコード + ラベル解決
-4. ELF 出力: ヘッダ + セクション + プログラムヘッダ
+4. ELF 出力: ヘッダ + セクション
 
-### ステップ 2: テスト
-
+stdin から読むので、使い方は:
 ```bash
 riscv64-unknown-elf-gcc -S -march=rv32im -mabi=ilp32 -O2 \
     bootstrap/runtime_syscall.c -o /tmp/runtime.s
-./asm bootstrap/crt0.s /tmp/runtime.s user.s -o output.elf
+cat bootstrap/crt0.s /tmp/runtime.s user.s | ./tc_run.sh bcrun compiler/asm.tc > output.elf
 qemu-riscv32 output.elf
 ```
 
+### ステップ 2: テスト
+
 - riscv-gcc 版と同じ実行結果を確認
-- Gen2/Gen3 テストを asm 版でも実行
+- Gen2/Gen3 テストを asm.tc 版でも実行
 
-### ステップ 3: 自己ホスト版アセンブラ (compiler/asm.tc)
+### ステップ 3: フルパイプライン
 
-C 版を TinyC で書き直し。これにより:
 ```
 .tc → parse.tc → typecheck.tc → codegen.tc → bc2asm.tc → asm.tc → ELF
 ```
-GCC 完全不要のフルパイプラインが完成。
+GCC は runtime_syscall.c → .s 変換のみ。リンク・アセンブルは全て自前。
 
 ## メモリレイアウト
 
