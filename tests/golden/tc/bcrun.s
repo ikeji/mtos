@@ -16230,8 +16230,7 @@ vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    li   a7, 93
-    ecall
+    call sys_exit__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

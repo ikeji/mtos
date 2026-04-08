@@ -7046,74 +7046,6 @@ __L439:
   store ai
   jump __L439
 __L440:
-; if is_sys_exit(strtab,sss,ssl)==1 {
-  load strtab
-  load sss
-  load ssl
-  call is_sys_exit U8Array i32 i32
-  push_int 1
-  eq
-  jump_ifnot __L441
-; e_li(ob);
-  load ob
-  call e_li StringBuffer
-  pop
-; emit_char(ob, 'a');emit_char(ob, '7'); ecomma(ob); // "a7, "
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 55
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  call ecomma StringBuffer
-  pop
-; emit_char(ob, '9');emit_char(ob, '3');emit_char(ob, 10u8); // "93\n"
-  load ob
-  push_int 57
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 51
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-; e4(ob);emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');
-  load ob
-  call e4 StringBuffer
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'l');emit_char(ob, 10u8);
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-  jump __L442
-__L441:
 ; asm_call_fn(strtab,sss,ssl,ob);
   load strtab
   load sss
@@ -7121,12 +7053,11 @@ __L441:
   load ob
   call asm_call_fn U8Array i32 i32 StringBuffer
   pop
-__L442:
 ; if noverflow>0 {
   load noverflow
   push_int 0
   gt
-  jump_ifnot __L443
+  jump_ifnot __L441
 ; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*noverflow+4*nargs); emit_char(ob, 10u8);
   load ob
   call e_addi StringBuffer
@@ -7151,13 +7082,13 @@ __L442:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  jump __L444
-__L443:
+  jump __L442
+__L441:
 ; if nargs>0 {
   load nargs
   push_int 0
   gt
-  jump_ifnot __L445
+  jump_ifnot __L443
 ; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*nargs); emit_char(ob, 10u8);
   load ob
   call e_addi StringBuffer
@@ -7178,8 +7109,8 @@ __L443:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L445:
-__L444:
+__L443:
+__L442:
 ; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call e_addi StringBuffer
@@ -7227,7 +7158,7 @@ __L434:
   load op
   load OP_RETURN
   eq
-  jump_ifnot __L446
+  jump_ifnot __L444
 ; asm_pop_t0(ob);
   load ob
   call asm_pop_t0 StringBuffer
@@ -7285,22 +7216,22 @@ __L434:
   load ob
   call asm_epilogue StringBuffer
   pop
-__L446:
+__L444:
 ; if op==OP_RETURN_VOID {
   load op
   load OP_RETURN_VOID
   eq
-  jump_ifnot __L447
+  jump_ifnot __L445
 ; asm_epilogue(ob);
   load ob
   call asm_epilogue StringBuffer
   pop
-__L447:
+__L445:
 ; if op==OP_POP {
   load op
   load OP_POP
   eq
-  jump_ifnot __L448
+  jump_ifnot __L446
 ; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call e_addi StringBuffer
@@ -7319,12 +7250,12 @@ __L447:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L448:
+__L446:
 ; if op==OP_ADD { asm_pop_t1_t0(ob);
   load op
   load OP_ADD
   eq
-  jump_ifnot __L449
+  jump_ifnot __L447
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7375,12 +7306,12 @@ __L448:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L449:
+__L447:
 ; if op==OP_SUB { asm_pop_t1_t0(ob);
   load op
   load OP_SUB
   eq
-  jump_ifnot __L450
+  jump_ifnot __L448
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7431,12 +7362,12 @@ __L449:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L450:
+__L448:
 ; if op==OP_MUL { asm_pop_t1_t0(ob);
   load op
   load OP_MUL
   eq
-  jump_ifnot __L451
+  jump_ifnot __L449
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7487,12 +7418,12 @@ __L450:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L451:
+__L449:
 ; if op==OP_DIV { asm_pop_t1_t0(ob);
   load op
   load OP_DIV
   eq
-  jump_ifnot __L452
+  jump_ifnot __L450
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7543,12 +7474,12 @@ __L451:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L452:
+__L450:
 ; if op==OP_MOD { asm_pop_t1_t0(ob);
   load op
   load OP_MOD
   eq
-  jump_ifnot __L453
+  jump_ifnot __L451
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7599,12 +7530,12 @@ __L452:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L453:
+__L451:
 ; if op==OP_AND { asm_pop_t1_t0(ob);
   load op
   load OP_AND
   eq
-  jump_ifnot __L454
+  jump_ifnot __L452
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7655,12 +7586,12 @@ __L453:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L454:
+__L452:
 ; if op==OP_OR { asm_pop_t1_t0(ob);
   load op
   load OP_OR
   eq
-  jump_ifnot __L455
+  jump_ifnot __L453
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7711,12 +7642,12 @@ __L454:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L455:
+__L453:
 ; if op==OP_XOR { asm_pop_t1_t0(ob);
   load op
   load OP_XOR
   eq
-  jump_ifnot __L456
+  jump_ifnot __L454
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7767,12 +7698,12 @@ __L455:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L456:
+__L454:
 ; if op==OP_SHL { asm_pop_t1_t0(ob);
   load op
   load OP_SHL
   eq
-  jump_ifnot __L457
+  jump_ifnot __L455
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7823,12 +7754,12 @@ __L456:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L457:
+__L455:
 ; if op==OP_SHR { asm_pop_t1_t0(ob);
   load op
   load OP_SHR
   eq
-  jump_ifnot __L458
+  jump_ifnot __L456
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7879,12 +7810,12 @@ __L457:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L458:
+__L456:
 ; if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load op
   load OP_EQ
   eq
-  jump_ifnot __L459
+  jump_ifnot __L457
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7897,12 +7828,12 @@ __L458:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L459:
+__L457:
 ; if op==OP_NE { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_snez_t0(ob); asm_push_t0(ob); }
   load op
   load OP_NE
   eq
-  jump_ifnot __L460
+  jump_ifnot __L458
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7915,12 +7846,12 @@ __L459:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L460:
+__L458:
 ; if op==OP_LT { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_push_t0(ob); }           // slt t0,t0,t1
   load op
   load OP_LT
   eq
-  jump_ifnot __L461
+  jump_ifnot __L459
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7931,16 +7862,51 @@ __L460:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L461:
+__L459:
 ; if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
   load op
   load OP_LE
+  eq
+  jump_ifnot __L460
+  load ob
+  call asm_pop_t1_t0 StringBuffer
+  pop
+  push_int 1
+  load ob
+  call asm_slt i32 StringBuffer
+  pop
+  load ob
+  call asm_xori_t0_1 StringBuffer
+  pop
+  load ob
+  call asm_push_t0 StringBuffer
+  pop
+__L460:
+; if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
+  load op
+  load OP_GT
+  eq
+  jump_ifnot __L461
+  load ob
+  call asm_pop_t1_t0 StringBuffer
+  pop
+  push_int 1
+  load ob
+  call asm_slt i32 StringBuffer
+  pop
+  load ob
+  call asm_push_t0 StringBuffer
+  pop
+__L461:
+; if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
+  load op
+  load OP_GE
   eq
   jump_ifnot __L462
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
-  push_int 1
+  push_int 0
   load ob
   call asm_slt i32 StringBuffer
   pop
@@ -7951,46 +7917,11 @@ __L461:
   call asm_push_t0 StringBuffer
   pop
 __L462:
-; if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
-  load op
-  load OP_GT
-  eq
-  jump_ifnot __L463
-  load ob
-  call asm_pop_t1_t0 StringBuffer
-  pop
-  push_int 1
-  load ob
-  call asm_slt i32 StringBuffer
-  pop
-  load ob
-  call asm_push_t0 StringBuffer
-  pop
-__L463:
-; if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
-  load op
-  load OP_GE
-  eq
-  jump_ifnot __L464
-  load ob
-  call asm_pop_t1_t0 StringBuffer
-  pop
-  push_int 0
-  load ob
-  call asm_slt i32 StringBuffer
-  pop
-  load ob
-  call asm_xori_t0_1 StringBuffer
-  pop
-  load ob
-  call asm_push_t0 StringBuffer
-  pop
-__L464:
 ; if op==OP_NEG {
   load op
   load OP_NEG
   eq
-  jump_ifnot __L465
+  jump_ifnot __L463
 ; asm_pop_t0(ob);
   load ob
   call asm_pop_t0 StringBuffer
@@ -8039,12 +7970,12 @@ __L464:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L465:
+__L463:
 ; if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load op
   load OP_LNOT
   eq
-  jump_ifnot __L466
+  jump_ifnot __L464
   load ob
   call asm_pop_t0 StringBuffer
   pop
@@ -8054,12 +7985,12 @@ __L465:
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L466:
+__L464:
 ; if op==OP_CAST {
   load op
   load OP_CAST
   eq
-  jump_ifnot __L467
+  jump_ifnot __L465
 ; asm_pop_t0(ob);
   load ob
   call asm_pop_t0 StringBuffer
@@ -8073,39 +8004,39 @@ __L466:
   load ssl
   push_int 0
   gt
-  jump_ifnot __L468
+  jump_ifnot __L466
   load strtab
   load sss
   call get U8Array i32
   store ta
-__L468:
+__L466:
 ; if ssl>1 { tb=get(strtab,(sss+1)); }
   load ssl
   push_int 1
   gt
-  jump_ifnot __L469
+  jump_ifnot __L467
   load strtab
   load sss
   push_int 1
   add
   call get U8Array i32
   store tb
-__L469:
+__L467:
 ; if ta=='u'&&tb=='8' { // u8: andi t0,t0,0xff
   load ta
   push_int 117
   eq
-  jump_ifnot __L471
+  jump_ifnot __L469
   load tb
   push_int 56
   eq
-  jump_ifnot __L471
+  jump_ifnot __L469
   push_int 1
-  jump __L472
-__L471:
+  jump __L470
+__L469:
   push_int 0
-__L472:
-  jump_ifnot __L470
+__L470:
+  jump_ifnot __L468
 ; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   call e4 StringBuffer
@@ -8158,22 +8089,22 @@ __L472:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L470:
+__L468:
 ; if ta=='u'&&tb=='1' { // u16: slli 16; srli 16
   load ta
   push_int 117
   eq
-  jump_ifnot __L474
+  jump_ifnot __L472
   load tb
   push_int 49
   eq
-  jump_ifnot __L474
+  jump_ifnot __L472
   push_int 1
-  jump __L475
-__L474:
+  jump __L473
+__L472:
   push_int 0
-__L475:
-  jump_ifnot __L473
+__L473:
+  jump_ifnot __L471
 ; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   call e4 StringBuffer
@@ -8260,22 +8191,22 @@ __L475:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L473:
+__L471:
 ; if ta=='i'&&tb=='8' { // i8: slli 24; srai 24
   load ta
   push_int 105
   eq
-  jump_ifnot __L477
+  jump_ifnot __L475
   load tb
   push_int 56
   eq
-  jump_ifnot __L477
+  jump_ifnot __L475
   push_int 1
-  jump __L478
-__L477:
+  jump __L476
+__L475:
   push_int 0
-__L478:
-  jump_ifnot __L476
+__L476:
+  jump_ifnot __L474
 ; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   call e4 StringBuffer
@@ -8362,22 +8293,22 @@ __L478:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L476:
+__L474:
 ; if ta=='i'&&tb=='1' { // i16: slli 16; srai 16
   load ta
   push_int 105
   eq
-  jump_ifnot __L480
+  jump_ifnot __L478
   load tb
   push_int 49
   eq
-  jump_ifnot __L480
+  jump_ifnot __L478
   push_int 1
-  jump __L481
-__L480:
+  jump __L479
+__L478:
   push_int 0
-__L481:
-  jump_ifnot __L479
+__L479:
+  jump_ifnot __L477
 ; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   call e4 StringBuffer
@@ -8464,38 +8395,38 @@ __L481:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L479:
+__L477:
 ; if ta=='b' { // bool: snez t0,t0
   load ta
   push_int 98
   eq
-  jump_ifnot __L482
+  jump_ifnot __L480
 ; asm_snez_t0(ob);
   load ob
   call asm_snez_t0 StringBuffer
   pop
-__L482:
+__L480:
 ; asm_push_t0(ob);
   load ob
   call asm_push_t0 StringBuffer
   pop
-__L467:
+__L465:
 ; if op==OP_JUMP { asm_jump(fi,ival,ob); }
   load op
   load OP_JUMP
   eq
-  jump_ifnot __L483
+  jump_ifnot __L481
   load fi
   load ival
   load ob
   call asm_jump i32 i32 StringBuffer
   pop
-__L483:
+__L481:
 ; if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(fi,1,ival,ob); }
   load op
   load OP_JUMP_IF
   eq
-  jump_ifnot __L484
+  jump_ifnot __L482
   load ob
   call asm_pop_t0 StringBuffer
   pop
@@ -8505,12 +8436,12 @@ __L483:
   load ob
   call asm_branch i32 i32 i32 StringBuffer
   pop
-__L484:
+__L482:
 ; if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(fi,0,ival,ob); }
   load op
   load OP_JUMP_IFNOT
   eq
-  jump_ifnot __L485
+  jump_ifnot __L483
   load ob
   call asm_pop_t0 StringBuffer
   pop
@@ -8520,7 +8451,7 @@ __L484:
   load ob
   call asm_branch i32 i32 i32 StringBuffer
   pop
-__L485:
+__L483:
 ; pc=pc+1;
   load pc
   push_int 1
@@ -8612,7 +8543,7 @@ __L424:
   load g_nstrings
   push_int 0
   gt
-  jump_ifnot __L486
+  jump_ifnot __L484
 ; e4(ob);
   load ob
   call e4 StringBuffer
@@ -8693,11 +8624,11 @@ __L424:
   push_int 0
   store si
 ; while si<g_nstrings {
-__L487:
+__L485:
   load si
   load g_nstrings
   lt
-  jump_ifnot __L488
+  jump_ifnot __L486
 ; var ss: i32=get(string_lits,(si*2+0));
   load string_lits
   load si
@@ -8786,19 +8717,19 @@ __L487:
   push_int 1
   add
   store si
-  jump __L487
-__L488:
+  jump __L485
+__L486:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L486:
+__L484:
 ; if g_nglobals > 0 {
   load g_nglobals
   push_int 0
   gt
-  jump_ifnot __L489
+  jump_ifnot __L487
 ; e4(ob);
   load ob
   call e4 StringBuffer
@@ -8832,11 +8763,11 @@ __L486:
   push_int 0
   store gi
 ; while gi<g_nglobals {
-__L490:
+__L488:
   load gi
   load g_nglobals
   lt
-  jump_ifnot __L491
+  jump_ifnot __L489
 ; var nm_ss: i32=get(global_vars,(gi*4+0));
   load global_vars
   load gi
@@ -8962,14 +8893,14 @@ __L490:
   push_int 1
   add
   store gi
-  jump __L490
-__L491:
+  jump __L488
+__L489:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L489:
+__L487:
 ; e4(ob);
   load ob
   call e4 StringBuffer
@@ -9008,11 +8939,11 @@ __L489:
   push_int 0
   store fi
 ; while fi<g_nfuncs {
-__L492:
+__L490:
   load fi
   load g_nfuncs
   lt
-  jump_ifnot __L493
+  jump_ifnot __L491
 ; emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);
   load strtab
   load fns
@@ -9029,8 +8960,8 @@ __L492:
   push_int 1
   add
   store fi
-  jump __L492
-__L493:
+  jump __L490
+__L491:
 ; return;
   return_void
   return_void
@@ -9107,21 +9038,21 @@ __L493:
   push_int 0
   store rdone
 ; while rdone==0&&g_in_len<524000 {
-__L494:
+__L492:
   load rdone
   push_int 0
   eq
-  jump_ifnot __L496
+  jump_ifnot __L494
   load g_in_len
   push_int 524000
   lt
-  jump_ifnot __L496
+  jump_ifnot __L494
   push_int 1
-  jump __L497
-__L496:
+  jump __L495
+__L494:
   push_int 0
-__L497:
-  jump_ifnot __L495
+__L495:
+  jump_ifnot __L493
 ; var chunk: i32=sys_read(0,chunk_buf,65536);
   push_int 0
   load chunk_buf
@@ -9132,24 +9063,24 @@ __L497:
   load chunk
   push_int 0
   le
-  jump_ifnot __L498
+  jump_ifnot __L496
   push_int 1
   store rdone
-__L498:
+__L496:
 ; if chunk>0 {
   load chunk
   push_int 0
   gt
-  jump_ifnot __L499
+  jump_ifnot __L497
 ; var ci: i32=0;
   push_int 0
   store ci
 ; while ci<chunk {
-__L500:
+__L498:
   load ci
   load chunk
   lt
-  jump_ifnot __L501
+  jump_ifnot __L499
 ; set(src,(g_in_len+ci),get(chunk_buf,ci));
   load src
   load g_in_len
@@ -9165,16 +9096,16 @@ __L500:
   push_int 1
   add
   store ci
-  jump __L500
-__L501:
+  jump __L498
+__L499:
 ; g_in_len=g_in_len+chunk;
   load g_in_len
   load chunk
   add
   store g_in_len
-__L499:
-  jump __L494
-__L495:
+__L497:
+  jump __L492
+__L493:
 ; delete(chunk_buf);
   load chunk_buf
   call delete U8Array
@@ -9183,10 +9114,10 @@ __L495:
   load g_in_len
   push_int 0
   le
-  jump_ifnot __L502
+  jump_ifnot __L500
   push_int 1
   return
-__L502:
+__L500:
 ; parse_bc(src,strtab,string_lits,global_vars,global_inits,
   load src
   load strtab

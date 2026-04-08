@@ -7751,85 +7751,12 @@
                   )
                 )
               )
-              (comment "if is_sys_exit(strtab,sss,ssl)==1 {")
-              (if
-                (binop ==
-                  (call is_sys_exit
-                    (var strtab)
-                    (var sss)
-                    (var ssl)
-                  )
-                  (int 1)
-                )
-                (block
-                  (comment "e_li(ob);")
-                  (call_stmt e_li
-                    (var ob)
-                  )
-                  (comment "emit_char(ob, 'a');emit_char(ob, '7'); ecomma(ob); // \"a7, \"")
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 97)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 55)
-                  )
-                  (call_stmt ecomma
-                    (var ob)
-                  )
-                  (comment "emit_char(ob, '9');emit_char(ob, '3');emit_char(ob, 10u8); // \"93\\n\"")
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 57)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 51)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 10)
-                  )
-                  (comment "e4(ob);emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');")
-                  (call_stmt e4
-                    (var ob)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 101)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 99)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 97)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 108)
-                  )
-                  (comment "emit_char(ob, 'l');emit_char(ob, 10u8);")
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 108)
-                  )
-                  (call_stmt emit_char
-                    (var ob)
-                    (int:u8 10)
-                  )
-                )
-                (block
-                  (comment "asm_call_fn(strtab,sss,ssl,ob);")
-                  (call_stmt asm_call_fn
-                    (var strtab)
-                    (var sss)
-                    (var ssl)
-                    (var ob)
-                  )
-                )
+              (comment "asm_call_fn(strtab,sss,ssl,ob);")
+              (call_stmt asm_call_fn
+                (var strtab)
+                (var sss)
+                (var ssl)
+                (var ob)
               )
               (comment "if noverflow>0 {")
               (if

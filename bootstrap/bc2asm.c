@@ -387,13 +387,7 @@ static void emit_fn(BcFunc *fn, int fi) {
                 E("    lw   %s, %d(sp)\n", areg[i],
                   4*noverflow + 4*(nargs-1-i));
 
-            /* Inline sys_exit as ecall; everything else is a normal call */
-            if (!strncmp(ins->sarg, "sys_exit", 8)) {
-                E("    li   a7, 93\n");   /* __NR_exit (Linux riscv) */
-                E("    ecall\n");
-            } else {
-                E("    call %s\n", ins->sarg);
-            }
+            E("    call %s\n", ins->sarg);
 
             /* pop overflow args + expression stack */
             if (noverflow > 0)

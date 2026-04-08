@@ -788,16 +788,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
                 eNspnl(4*noverflow+4*(nargs-1-ai),ob);
                 ai=ai+1;
             }
-            if is_sys_exit(strtab,sss,ssl)==1 {
-                // inline: li a7, 93; ecall
-                e_li(ob);
-                emit_char(ob, 'a');emit_char(ob, '7'); ecomma(ob); // "a7, "
-                emit_char(ob, '9');emit_char(ob, '3');emit_char(ob, 10u8); // "93\n"
-                e4(ob);emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');
-                emit_char(ob, 'l');emit_char(ob, 10u8);
-            } else {
-                asm_call_fn(strtab,sss,ssl,ob);
-            }
+            asm_call_fn(strtab,sss,ssl,ob);
             // Pop overflow args + expression stack
             if noverflow>0 {
                 e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*noverflow+4*nargs); emit_char(ob, 10u8);

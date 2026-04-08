@@ -10786,8 +10786,7 @@ expect_tok__i32__SourceReader__U8Array:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    li   a7, 93
-    ecall
+    call sys_exit__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -12203,8 +12202,7 @@ pars_primary__SourceReader__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    li   a7, 93
-    ecall
+    call sys_exit__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -18419,8 +18417,7 @@ pars_ident_stmt__SourceReader__U8Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    li   a7, 93
-    ecall
+    call sys_exit__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19309,8 +19306,7 @@ pars_stmt__SourceReader__U8Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    li   a7, 93
-    ecall
+    call sys_exit__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -31337,8 +31333,7 @@ pars_program__SourceReader__U8Array__StringBuffer:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    li   a7, 93
-    ecall
+    call sys_exit__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

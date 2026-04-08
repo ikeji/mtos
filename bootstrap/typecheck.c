@@ -253,6 +253,14 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "sys_read", sys_r, 3, "i32");
     register_fn(e, "sys_exit", sys_e, 1, "void");
 
+    /* raw syscall stubs (implemented in crt0.s) */
+    const char *dw[] = {"i32","u32","i32"};
+    const char *dr[] = {"i32","u32","i32"};
+    const char *de[] = {"i32"};
+    register_fn(e, "do_write", dw, 3, "i32");
+    register_fn(e, "do_read", dr, 3, "i32");
+    register_fn(e, "do_exit", de, 1, "void");
+
     /* Heap scope management */
     register_fn(e, "heap_mark", NULL, 0, "i32");
     const char *hm_args[] = {"i32"};

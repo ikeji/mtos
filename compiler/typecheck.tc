@@ -572,6 +572,10 @@ fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
     reg_fn3(strtab, fntab, "sys_read", "i32", "U8Array", "i32", "i32");
     reg_fn1(strtab, fntab, "sys_exit", "i32", "void");
 
+    reg_fn3(strtab, fntab, "do_write", "i32", "u32", "i32", "i32");
+    reg_fn3(strtab, fntab, "do_read", "i32", "u32", "i32", "i32");
+    reg_fn1(strtab, fntab, "do_exit", "i32", "void");
+
     reg_fn0(strtab, fntab, "heap_mark", "i32");
     reg_fn1(strtab, fntab, "heap_reset", "i32", "void");
 
