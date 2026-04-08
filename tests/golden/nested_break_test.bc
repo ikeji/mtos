@@ -29,7 +29,6 @@ __L2:
   push_int 2
   eq
   jump_ifnot __L4
-; if j == 2 { break; }
   jump __L3
 __L4:
 ; result = result + 1;

@@ -261,6 +261,10 @@
     (type i32)
     (int 1)
   )
+  (var_decl g_last_comment_line
+    (type i32)
+    (int 0)
+  )
   (fn is_digit
     (params
       (param c
@@ -414,7 +418,6 @@
           )
         )
         (block
-          (comment "if tlen != len(target) { return false; }")
           (return
             (bool false)
           )
@@ -445,7 +448,6 @@
               )
             )
             (block
-              (comment "if get(tok, i) != get(target, i) { return false; }")
               (return
                 (bool false)
               )
@@ -486,12 +488,10 @@
           (var TK_PLUS)
         )
         (block
-          (comment "if kind == TK_PLUS     { emit_char(sb, '+'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 43)
           )
-          (comment "if kind == TK_PLUS     { emit_char(sb, '+'); return; }")
           (return)
         )
       )
@@ -502,12 +502,10 @@
           (var TK_MINUS)
         )
         (block
-          (comment "if kind == TK_MINUS    { emit_char(sb, '-'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 45)
           )
-          (comment "if kind == TK_MINUS    { emit_char(sb, '-'); return; }")
           (return)
         )
       )
@@ -518,12 +516,10 @@
           (var TK_STAR)
         )
         (block
-          (comment "if kind == TK_STAR     { emit_char(sb, '*'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 42)
           )
-          (comment "if kind == TK_STAR     { emit_char(sb, '*'); return; }")
           (return)
         )
       )
@@ -534,12 +530,10 @@
           (var TK_SLASH)
         )
         (block
-          (comment "if kind == TK_SLASH    { emit_char(sb, '/'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 47)
           )
-          (comment "if kind == TK_SLASH    { emit_char(sb, '/'); return; }")
           (return)
         )
       )
@@ -550,12 +544,10 @@
           (var TK_PERCENT)
         )
         (block
-          (comment "if kind == TK_PERCENT  { emit_char(sb, '%'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 37)
           )
-          (comment "if kind == TK_PERCENT  { emit_char(sb, '%'); return; }")
           (return)
         )
       )
@@ -566,12 +558,10 @@
           (var TK_AMP)
         )
         (block
-          (comment "if kind == TK_AMP      { emit_char(sb, '&'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 38)
           )
-          (comment "if kind == TK_AMP      { emit_char(sb, '&'); return; }")
           (return)
         )
       )
@@ -582,12 +572,10 @@
           (var TK_PIPE)
         )
         (block
-          (comment "if kind == TK_PIPE     { emit_char(sb, '|'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 124)
           )
-          (comment "if kind == TK_PIPE     { emit_char(sb, '|'); return; }")
           (return)
         )
       )
@@ -598,12 +586,10 @@
           (var TK_CARET)
         )
         (block
-          (comment "if kind == TK_CARET    { emit_char(sb, '^'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 94)
           )
-          (comment "if kind == TK_CARET    { emit_char(sb, '^'); return; }")
           (return)
         )
       )
@@ -614,12 +600,10 @@
           (var TK_LSHIFT)
         )
         (block
-          (comment "if kind == TK_LSHIFT   { emit_string(sb, \"<<\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "<<")
           )
-          (comment "if kind == TK_LSHIFT   { emit_string(sb, \"<<\"); return; }")
           (return)
         )
       )
@@ -630,12 +614,10 @@
           (var TK_RSHIFT)
         )
         (block
-          (comment "if kind == TK_RSHIFT   { emit_string(sb, \">>\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str ">>")
           )
-          (comment "if kind == TK_RSHIFT   { emit_string(sb, \">>\"); return; }")
           (return)
         )
       )
@@ -646,12 +628,10 @@
           (var TK_AMPAMP)
         )
         (block
-          (comment "if kind == TK_AMPAMP   { emit_string(sb, \"&&\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "&&")
           )
-          (comment "if kind == TK_AMPAMP   { emit_string(sb, \"&&\"); return; }")
           (return)
         )
       )
@@ -662,12 +642,10 @@
           (var TK_PIPEPIPE)
         )
         (block
-          (comment "if kind == TK_PIPEPIPE { emit_string(sb, \"||\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "||")
           )
-          (comment "if kind == TK_PIPEPIPE { emit_string(sb, \"||\"); return; }")
           (return)
         )
       )
@@ -678,12 +656,10 @@
           (var TK_BANG)
         )
         (block
-          (comment "if kind == TK_BANG     { emit_char(sb, '!'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 33)
           )
-          (comment "if kind == TK_BANG     { emit_char(sb, '!'); return; }")
           (return)
         )
       )
@@ -694,12 +670,10 @@
           (var TK_EQEQ)
         )
         (block
-          (comment "if kind == TK_EQEQ     { emit_string(sb, \"==\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "==")
           )
-          (comment "if kind == TK_EQEQ     { emit_string(sb, \"==\"); return; }")
           (return)
         )
       )
@@ -710,12 +684,10 @@
           (var TK_BANGEQ)
         )
         (block
-          (comment "if kind == TK_BANGEQ   { emit_string(sb, \"!=\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "!=")
           )
-          (comment "if kind == TK_BANGEQ   { emit_string(sb, \"!=\"); return; }")
           (return)
         )
       )
@@ -726,12 +698,10 @@
           (var TK_LT)
         )
         (block
-          (comment "if kind == TK_LT       { emit_char(sb, '<'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 60)
           )
-          (comment "if kind == TK_LT       { emit_char(sb, '<'); return; }")
           (return)
         )
       )
@@ -742,12 +712,10 @@
           (var TK_LTEQ)
         )
         (block
-          (comment "if kind == TK_LTEQ     { emit_string(sb, \"<=\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "<=")
           )
-          (comment "if kind == TK_LTEQ     { emit_string(sb, \"<=\"); return; }")
           (return)
         )
       )
@@ -758,12 +726,10 @@
           (var TK_GT)
         )
         (block
-          (comment "if kind == TK_GT       { emit_char(sb, '>'); return; }")
           (call_stmt emit_char
             (var sb)
             (int:u8 62)
           )
-          (comment "if kind == TK_GT       { emit_char(sb, '>'); return; }")
           (return)
         )
       )
@@ -774,12 +740,10 @@
           (var TK_GTEQ)
         )
         (block
-          (comment "if kind == TK_GTEQ     { emit_string(sb, \">=\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str ">=")
           )
-          (comment "if kind == TK_GTEQ     { emit_string(sb, \">=\"); return; }")
           (return)
         )
       )
@@ -807,12 +771,10 @@
           (var TK_U8)
         )
         (block
-          (comment "if kind == TK_U8   { emit_string(sb, \"u8\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "u8")
           )
-          (comment "if kind == TK_U8   { emit_string(sb, \"u8\"); return; }")
           (return)
         )
       )
@@ -823,12 +785,10 @@
           (var TK_U16)
         )
         (block
-          (comment "if kind == TK_U16  { emit_string(sb, \"u16\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "u16")
           )
-          (comment "if kind == TK_U16  { emit_string(sb, \"u16\"); return; }")
           (return)
         )
       )
@@ -839,12 +799,10 @@
           (var TK_U32)
         )
         (block
-          (comment "if kind == TK_U32  { emit_string(sb, \"u32\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "u32")
           )
-          (comment "if kind == TK_U32  { emit_string(sb, \"u32\"); return; }")
           (return)
         )
       )
@@ -855,12 +813,10 @@
           (var TK_I8)
         )
         (block
-          (comment "if kind == TK_I8   { emit_string(sb, \"i8\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "i8")
           )
-          (comment "if kind == TK_I8   { emit_string(sb, \"i8\"); return; }")
           (return)
         )
       )
@@ -871,12 +827,10 @@
           (var TK_I16)
         )
         (block
-          (comment "if kind == TK_I16  { emit_string(sb, \"i16\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "i16")
           )
-          (comment "if kind == TK_I16  { emit_string(sb, \"i16\"); return; }")
           (return)
         )
       )
@@ -887,12 +841,10 @@
           (var TK_I32)
         )
         (block
-          (comment "if kind == TK_I32  { emit_string(sb, \"i32\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "i32")
           )
-          (comment "if kind == TK_I32  { emit_string(sb, \"i32\"); return; }")
           (return)
         )
       )
@@ -903,12 +855,10 @@
           (var TK_BOOL)
         )
         (block
-          (comment "if kind == TK_BOOL { emit_string(sb, \"bool\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "bool")
           )
-          (comment "if kind == TK_BOOL { emit_string(sb, \"bool\"); return; }")
           (return)
         )
       )
@@ -919,12 +869,10 @@
           (var TK_VOID)
         )
         (block
-          (comment "if kind == TK_VOID { emit_string(sb, \"void\"); return; }")
           (call_stmt emit_string
             (var sb)
             (str "void")
           )
-          (comment "if kind == TK_VOID { emit_string(sb, \"void\"); return; }")
           (return)
         )
       )
@@ -1027,7 +975,6 @@
               (str "fn")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"fn\") { return TK_FN; }     // fn")
               (return
                 (var TK_FN)
               )
@@ -1041,7 +988,6 @@
               (str "as")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"as\")  { return TK_AS; }     // as")
               (return
                 (var TK_AS)
               )
@@ -1055,7 +1001,6 @@
               (str "if")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"if\") { return TK_IF; }     // if")
               (return
                 (var TK_IF)
               )
@@ -1069,7 +1014,6 @@
               (str "u8")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"u8\")  { return TK_U8; }     // u8")
               (return
                 (var TK_U8)
               )
@@ -1083,7 +1027,6 @@
               (str "i8")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"i8\")  { return TK_I8; }     // i8")
               (return
                 (var TK_I8)
               )
@@ -1106,7 +1049,6 @@
               (str "var")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"var\")   { return TK_VAR; }   // var")
               (return
                 (var TK_VAR)
               )
@@ -1120,7 +1062,6 @@
               (str "u16")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"u16\")    { return TK_U16; }   // u16")
               (return
                 (var TK_U16)
               )
@@ -1134,7 +1075,6 @@
               (str "u32")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"u32\")    { return TK_U32; }   // u32")
               (return
                 (var TK_U32)
               )
@@ -1148,7 +1088,6 @@
               (str "i16")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"i16\")    { return TK_I16; }   // i16")
               (return
                 (var TK_I16)
               )
@@ -1162,7 +1101,6 @@
               (str "i32")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"i32\")    { return TK_I32; }   // i32")
               (return
                 (var TK_I32)
               )
@@ -1185,7 +1123,6 @@
               (str "else")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"else\") { return TK_ELSE; }  // else")
               (return
                 (var TK_ELSE)
               )
@@ -1199,7 +1136,6 @@
               (str "bool")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"bool\")  { return TK_BOOL; }  // bool")
               (return
                 (var TK_BOOL)
               )
@@ -1213,7 +1149,6 @@
               (str "void")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"void\") { return TK_VOID; }  // void")
               (return
                 (var TK_VOID)
               )
@@ -1227,7 +1162,6 @@
               (str "true")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"true\") { return TK_TRUE; }  // true")
               (return
                 (var TK_TRUE)
               )
@@ -1250,7 +1184,6 @@
               (str "while")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"while\")  { return TK_WHILE; }  // while")
               (return
                 (var TK_WHILE)
               )
@@ -1264,7 +1197,6 @@
               (str "false")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"false\")   { return TK_FALSE; }  // false")
               (return
                 (var TK_FALSE)
               )
@@ -1278,7 +1210,6 @@
               (str "break")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"break\")    { return TK_BREAK; }  // break")
               (return
                 (var TK_BREAK)
               )
@@ -1301,7 +1232,6 @@
               (str "return")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"return\") { return TK_RETURN; } // return")
               (return
                 (var TK_RETURN)
               )
@@ -1315,7 +1245,6 @@
               (str "struct")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"struct\")  { return TK_STRUCT; } // struct")
               (return
                 (var TK_STRUCT)
               )
@@ -1329,7 +1258,6 @@
               (str "import")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"import\") { return TK_IMPORT; } // import")
               (return
                 (var TK_IMPORT)
               )
@@ -1343,7 +1271,6 @@
               (str "export")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"export\") { return TK_EXPORT; } // export")
               (return
                 (var TK_EXPORT)
               )
@@ -1366,7 +1293,6 @@
               (str "continue")
             )
             (block
-              (comment "if tok_cmp(tok, tlen, \"continue\") { return TK_CONTINUE; }")
               (return
                 (var TK_CONTINUE)
               )
@@ -1567,7 +1493,6 @@
                       (call_stmt next
                         (var src)
                       )
-                      (comment "next(src); g_tok = TK_SLASH_EQ;")
                       (assign g_tok
                         (var TK_SLASH_EQ)
                       )
@@ -1880,7 +1805,6 @@
                       (int:u8 110)
                     )
                     (block
-                      (comment "if esc == 'n' { out = 10u8; }")
                       (assign out
                         (int:u8 10)
                       )
@@ -1893,7 +1817,6 @@
                       (int:u8 116)
                     )
                     (block
-                      (comment "if esc == 't' { out = 9u8; }")
                       (assign out
                         (int:u8 9)
                       )
@@ -1906,7 +1829,6 @@
                       (int:u8 114)
                     )
                     (block
-                      (comment "if esc == 'r' { out = 13u8; }")
                       (assign out
                         (int:u8 13)
                       )
@@ -1919,7 +1841,6 @@
                       (int:u8 34)
                     )
                     (block
-                      (comment "if esc == '\"'  { out = '\"'; }")
                       (assign out
                         (int:u8 34)
                       )
@@ -1932,7 +1853,6 @@
                       (int:u8 92)
                     )
                     (block
-                      (comment "if esc == '\\\\'  { out = '\\\\'; }")
                       (assign out
                         (int:u8 92)
                       )
@@ -1945,7 +1865,6 @@
                       (int:u8 48)
                     )
                     (block
-                      (comment "if esc == '0'  { out = 0u8; }")
                       (assign out
                         (int:u8 0)
                       )
@@ -1992,7 +1911,6 @@
               (bool false)
             )
             (block
-              (comment "if at_eof(src) == false { next(src); }  // skip closing \"")
               (call_stmt next
                 (var src)
               )
@@ -2075,11 +1993,9 @@
                       (int:u8 110)
                     )
                     (block
-                      (comment "if esc == 'n' { cval = 10; handled = 1; }")
                       (assign cval
                         (int 10)
                       )
-                      (comment "if esc == 'n' { cval = 10; handled = 1; }")
                       (assign handled
                         (int 1)
                       )
@@ -2092,11 +2008,9 @@
                       (int:u8 116)
                     )
                     (block
-                      (comment "if esc == 't' { cval = 9; handled = 1; }")
                       (assign cval
                         (int 9)
                       )
-                      (comment "if esc == 't' { cval = 9; handled = 1; }")
                       (assign handled
                         (int 1)
                       )
@@ -2109,11 +2023,9 @@
                       (int:u8 114)
                     )
                     (block
-                      (comment "if esc == 'r' { cval = 13; handled = 1; }")
                       (assign cval
                         (int 13)
                       )
-                      (comment "if esc == 'r' { cval = 13; handled = 1; }")
                       (assign handled
                         (int 1)
                       )
@@ -2126,11 +2038,9 @@
                       (int:u8 92)
                     )
                     (block
-                      (comment "if esc == '\\\\'  { cval = 92; handled = 1; }")
                       (assign cval
                         (int 92)
                       )
-                      (comment "if esc == '\\\\'  { cval = 92; handled = 1; }")
                       (assign handled
                         (int 1)
                       )
@@ -2143,11 +2053,9 @@
                       (int:u8 39)
                     )
                     (block
-                      (comment "if esc == '\\''  { cval = 39; handled = 1; }")
                       (assign cval
                         (int 39)
                       )
-                      (comment "if esc == '\\''  { cval = 39; handled = 1; }")
                       (assign handled
                         (int 1)
                       )
@@ -2160,11 +2068,9 @@
                       (int:u8 48)
                     )
                     (block
-                      (comment "if esc == '0'  { cval = 0; handled = 1; }")
                       (assign cval
                         (int 0)
                       )
-                      (comment "if esc == '0'  { cval = 0; handled = 1; }")
                       (assign handled
                         (int 1)
                       )
@@ -2177,7 +2083,6 @@
                       (int 0)
                     )
                     (block
-                      (comment "if handled == 0 { cval = esc as i32; }")
                       (assign cval
                         (cast
                           (var esc)
@@ -2199,7 +2104,6 @@
                   (bool false)
                 )
                 (block
-                  (comment "if at_eof(src) == false { cval = next(src) as i32; }")
                   (assign cval
                     (cast
                       (call next
@@ -2229,7 +2133,6 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '\\'' { next(src); }")
               (call_stmt next
                 (var src)
               )
@@ -2241,7 +2144,6 @@
             (int 0)
             (int:u8 117)
           )
-          (comment "set(tok, 0, 'u'); set(tok, 1, '8');")
           (call_stmt set
             (var tok)
             (int 1)
@@ -2291,15 +2193,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_PLUS_EQ; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_PLUS_EQ; return; }")
               (assign g_tok
                 (var TK_PLUS_EQ)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_PLUS_EQ; return; }")
               (return)
             )
           )
@@ -2307,7 +2206,6 @@
           (assign g_tok
             (var TK_PLUS)
           )
-          (comment "g_tok = TK_PLUS; return;")
           (return)
         )
       )
@@ -2335,15 +2233,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_PERCENT_EQ; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_PERCENT_EQ; return; }")
               (assign g_tok
                 (var TK_PERCENT_EQ)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_PERCENT_EQ; return; }")
               (return)
             )
           )
@@ -2351,7 +2246,6 @@
           (assign g_tok
             (var TK_PERCENT)
           )
-          (comment "g_tok = TK_PERCENT; return;")
           (return)
         )
       )
@@ -2362,11 +2256,9 @@
           (int:u8 94)
         )
         (block
-          (comment "if c == '^' { g_tok = TK_CARET; return; }")
           (assign g_tok
             (var TK_CARET)
           )
-          (comment "if c == '^' { g_tok = TK_CARET; return; }")
           (return)
         )
       )
@@ -2377,11 +2269,9 @@
           (int:u8 40)
         )
         (block
-          (comment "if c == '(' { g_tok = TK_LPAREN; return; }")
           (assign g_tok
             (var TK_LPAREN)
           )
-          (comment "if c == '(' { g_tok = TK_LPAREN; return; }")
           (return)
         )
       )
@@ -2392,11 +2282,9 @@
           (int:u8 41)
         )
         (block
-          (comment "if c == ')' { g_tok = TK_RPAREN; return; }")
           (assign g_tok
             (var TK_RPAREN)
           )
-          (comment "if c == ')' { g_tok = TK_RPAREN; return; }")
           (return)
         )
       )
@@ -2407,11 +2295,9 @@
           (int:u8 123)
         )
         (block
-          (comment "if c == '{' { g_tok = TK_LBRACE; return; }")
           (assign g_tok
             (var TK_LBRACE)
           )
-          (comment "if c == '{' { g_tok = TK_LBRACE; return; }")
           (return)
         )
       )
@@ -2422,11 +2308,9 @@
           (int:u8 125)
         )
         (block
-          (comment "if c == '}' { g_tok = TK_RBRACE; return; }")
           (assign g_tok
             (var TK_RBRACE)
           )
-          (comment "if c == '}' { g_tok = TK_RBRACE; return; }")
           (return)
         )
       )
@@ -2437,11 +2321,9 @@
           (int:u8 44)
         )
         (block
-          (comment "if c == ',' { g_tok = TK_COMMA; return; }")
           (assign g_tok
             (var TK_COMMA)
           )
-          (comment "if c == ',' { g_tok = TK_COMMA; return; }")
           (return)
         )
       )
@@ -2452,11 +2334,9 @@
           (int:u8 59)
         )
         (block
-          (comment "if c == ';' { g_tok = TK_SEMI; return; }")
           (assign g_tok
             (var TK_SEMI)
           )
-          (comment "if c == ';' { g_tok = TK_SEMI; return; }")
           (return)
         )
       )
@@ -2467,11 +2347,9 @@
           (int:u8 58)
         )
         (block
-          (comment "if c == ':' { g_tok = TK_COLON; return; }")
           (assign g_tok
             (var TK_COLON)
           )
-          (comment "if c == ':' { g_tok = TK_COLON; return; }")
           (return)
         )
       )
@@ -2499,15 +2377,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_STAR_EQ; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_STAR_EQ; return; }")
               (assign g_tok
                 (var TK_STAR_EQ)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_STAR_EQ; return; }")
               (return)
             )
           )
@@ -2515,7 +2390,6 @@
           (assign g_tok
             (var TK_STAR)
           )
-          (comment "g_tok = TK_STAR; return;")
           (return)
         )
       )
@@ -2543,15 +2417,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '&' { next(src); g_tok = TK_AMPAMP; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '&' { next(src); g_tok = TK_AMPAMP; return; }")
               (assign g_tok
                 (var TK_AMPAMP)
               )
-              (comment "if at_eof(src) == false && peek(src) == '&' { next(src); g_tok = TK_AMPAMP; return; }")
               (return)
             )
           )
@@ -2559,7 +2430,6 @@
           (assign g_tok
             (var TK_AMP)
           )
-          (comment "g_tok = TK_AMP; return;")
           (return)
         )
       )
@@ -2587,15 +2457,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '|' { next(src); g_tok = TK_PIPEPIPE; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '|' { next(src); g_tok = TK_PIPEPIPE; return; }")
               (assign g_tok
                 (var TK_PIPEPIPE)
               )
-              (comment "if at_eof(src) == false && peek(src) == '|' { next(src); g_tok = TK_PIPEPIPE; return; }")
               (return)
             )
           )
@@ -2603,7 +2470,6 @@
           (assign g_tok
             (var TK_PIPE)
           )
-          (comment "g_tok = TK_PIPE; return;")
           (return)
         )
       )
@@ -2631,15 +2497,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_BANGEQ; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_BANGEQ; return; }")
               (assign g_tok
                 (var TK_BANGEQ)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_BANGEQ; return; }")
               (return)
             )
           )
@@ -2647,7 +2510,6 @@
           (assign g_tok
             (var TK_BANG)
           )
-          (comment "g_tok = TK_BANG; return;")
           (return)
         )
       )
@@ -2675,15 +2537,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_EQEQ; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_EQEQ; return; }")
               (assign g_tok
                 (var TK_EQEQ)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_EQEQ; return; }")
               (return)
             )
           )
@@ -2691,7 +2550,6 @@
           (assign g_tok
             (var TK_EQ)
           )
-          (comment "g_tok = TK_EQ; return;")
           (return)
         )
       )
@@ -2719,15 +2577,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_LTEQ; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_LTEQ; return; }")
               (assign g_tok
                 (var TK_LTEQ)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_LTEQ; return; }")
               (return)
             )
           )
@@ -2748,15 +2603,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '<' { next(src); g_tok = TK_LSHIFT; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '<' { next(src); g_tok = TK_LSHIFT; return; }")
               (assign g_tok
                 (var TK_LSHIFT)
               )
-              (comment "if at_eof(src) == false && peek(src) == '<' { next(src); g_tok = TK_LSHIFT; return; }")
               (return)
             )
           )
@@ -2764,7 +2616,6 @@
           (assign g_tok
             (var TK_LT)
           )
-          (comment "g_tok = TK_LT; return;")
           (return)
         )
       )
@@ -2792,15 +2643,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_GTEQ; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_GTEQ; return; }")
               (assign g_tok
                 (var TK_GTEQ)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_GTEQ; return; }")
               (return)
             )
           )
@@ -2821,15 +2669,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '>' { next(src); g_tok = TK_RSHIFT; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '>' { next(src); g_tok = TK_RSHIFT; return; }")
               (assign g_tok
                 (var TK_RSHIFT)
               )
-              (comment "if at_eof(src) == false && peek(src) == '>' { next(src); g_tok = TK_RSHIFT; return; }")
               (return)
             )
           )
@@ -2837,7 +2682,6 @@
           (assign g_tok
             (var TK_GT)
           )
-          (comment "g_tok = TK_GT; return;")
           (return)
         )
       )
@@ -2865,15 +2709,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '>' { next(src); g_tok = TK_ARROW; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '>' { next(src); g_tok = TK_ARROW; return; }")
               (assign g_tok
                 (var TK_ARROW)
               )
-              (comment "if at_eof(src) == false && peek(src) == '>' { next(src); g_tok = TK_ARROW; return; }")
               (return)
             )
           )
@@ -2894,15 +2735,12 @@
               )
             )
             (block
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_MINUS_EQ; return; }")
               (call_stmt next
                 (var src)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_MINUS_EQ; return; }")
               (assign g_tok
                 (var TK_MINUS_EQ)
               )
-              (comment "if at_eof(src) == false && peek(src) == '=' { next(src); g_tok = TK_MINUS_EQ; return; }")
               (return)
             )
           )
@@ -2910,7 +2748,6 @@
           (assign g_tok
             (var TK_MINUS)
           )
-          (comment "g_tok = TK_MINUS; return;")
           (return)
         )
       )
@@ -3032,12 +2869,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "binop")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -3096,7 +2931,6 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"int\");")
           (call_stmt emit_string
             (var sb)
             (str "int")
@@ -3158,17 +2992,14 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"str\"); emit_char(sb, ' '); emit_char(sb, '\"');")
           (call_stmt emit_string
             (var sb)
             (str "str")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"str\"); emit_char(sb, ' '); emit_char(sb, '\"');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"str\"); emit_char(sb, ' '); emit_char(sb, '\"');")
           (call_stmt emit_char
             (var sb)
             (int:u8 34)
@@ -3200,12 +3031,10 @@
                   (int:u8 34)
                 )
                 (block
-                  (comment "if ch == '\"' { emit_char(sb, '\\\\'); emit_char(sb, '\"'); }")
                   (call_stmt emit_char
                     (var sb)
                     (int:u8 92)
                   )
-                  (comment "if ch == '\"' { emit_char(sb, '\\\\'); emit_char(sb, '\"'); }")
                   (call_stmt emit_char
                     (var sb)
                     (int:u8 34)
@@ -3219,12 +3048,10 @@
                       (int:u8 92)
                     )
                     (block
-                      (comment "if ch == '\\\\' { emit_char(sb, '\\\\'); emit_char(sb, '\\\\'); }")
                       (call_stmt emit_char
                         (var sb)
                         (int:u8 92)
                       )
-                      (comment "if ch == '\\\\' { emit_char(sb, '\\\\'); emit_char(sb, '\\\\'); }")
                       (call_stmt emit_char
                         (var sb)
                         (int:u8 92)
@@ -3238,12 +3065,10 @@
                           (int:u8 10)
                         )
                         (block
-                          (comment "if ch == 10u8 { emit_char(sb, '\\\\'); emit_char(sb, 'n'); }")
                           (call_stmt emit_char
                             (var sb)
                             (int:u8 92)
                           )
-                          (comment "if ch == 10u8 { emit_char(sb, '\\\\'); emit_char(sb, 'n'); }")
                           (call_stmt emit_char
                             (var sb)
                             (int:u8 110)
@@ -3257,12 +3082,10 @@
                               (int:u8 9)
                             )
                             (block
-                              (comment "else { if ch == 9u8 { emit_char(sb, '\\\\'); emit_char(sb, 't'); }")
                               (call_stmt emit_char
                                 (var sb)
                                 (int:u8 92)
                               )
-                              (comment "else { if ch == 9u8 { emit_char(sb, '\\\\'); emit_char(sb, 't'); }")
                               (call_stmt emit_char
                                 (var sb)
                                 (int:u8 116)
@@ -3296,7 +3119,6 @@
             (var sb)
             (int:u8 34)
           )
-          (comment "emit_char(sb, '\"'); emit_char(sb, ')');  // \")")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
@@ -3322,22 +3144,18 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"bool\"); emit_char(sb, ' '); emit_string(sb, \"true\"); emit_char(sb, ')');")
           (call_stmt emit_string
             (var sb)
             (str "bool")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"bool\"); emit_char(sb, ' '); emit_string(sb, \"true\"); emit_char(sb, ')');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"bool\"); emit_char(sb, ' '); emit_string(sb, \"true\"); emit_char(sb, ')');")
           (call_stmt emit_string
             (var sb)
             (str "true")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"bool\"); emit_char(sb, ' '); emit_string(sb, \"true\"); emit_char(sb, ')');")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
@@ -3363,22 +3181,18 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"bool\"); emit_char(sb, ' '); emit_string(sb, \"false\"); emit_char(sb, ')');")
           (call_stmt emit_string
             (var sb)
             (str "bool")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"bool\"); emit_char(sb, ' '); emit_string(sb, \"false\"); emit_char(sb, ')');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"bool\"); emit_char(sb, ' '); emit_string(sb, \"false\"); emit_char(sb, ')');")
           (call_stmt emit_string
             (var sb)
             (str "false")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"bool\"); emit_char(sb, ' '); emit_string(sb, \"false\"); emit_char(sb, ')');")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
@@ -3494,12 +3308,10 @@
                 (var sb)
                 (int:u8 40)
               )
-              (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' ');")
               (call_stmt emit_string
                 (var sb)
                 (str "call")
               )
-              (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' ');")
               (call_stmt emit_char
                 (var sb)
                 (int:u8 32)
@@ -3583,12 +3395,10 @@
                 (var sb)
                 (int:u8 40)
               )
-              (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
               (call_stmt emit_string
                 (var sb)
                 (str "var")
               )
-              (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
               (call_stmt emit_char
                 (var sb)
                 (int:u8 32)
@@ -3672,12 +3482,10 @@
             (var wrapped)
             (int:u8 40)
           )
-          (comment "emit_char(wrapped, '('); emit_string(wrapped, \"cast\"); emit_char(wrapped, 10u8);")
           (call_stmt emit_string
             (var wrapped)
             (str "cast")
           )
-          (comment "emit_char(wrapped, '('); emit_string(wrapped, \"cast\"); emit_char(wrapped, 10u8);")
           (call_stmt emit_char
             (var wrapped)
             (int:u8 10)
@@ -3760,17 +3568,14 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"unary\"); emit_char(sb, ' '); emit_char(sb, '!');")
           (call_stmt emit_string
             (var sb)
             (str "unary")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"unary\"); emit_char(sb, ' '); emit_char(sb, '!');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"unary\"); emit_char(sb, ' '); emit_char(sb, '!');")
           (call_stmt emit_char
             (var sb)
             (int:u8 33)
@@ -3812,17 +3617,14 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"unary\"); emit_char(sb, ' '); emit_char(sb, '-');")
           (call_stmt emit_string
             (var sb)
             (str "unary")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"unary\"); emit_char(sb, ' '); emit_char(sb, '-');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"unary\"); emit_char(sb, ' '); emit_char(sb, '-');")
           (call_stmt emit_char
             (var sb)
             (int:u8 45)
@@ -3934,22 +3736,18 @@
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_op
             (var combined)
             (var op)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -3959,7 +3757,6 @@
             (var combined)
             (var left_sb)
           )
-          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -3978,7 +3775,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -4072,22 +3868,18 @@
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_op
             (var combined)
             (var op)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4097,7 +3889,6 @@
             (var combined)
             (var left_sb)
           )
-          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4116,7 +3907,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -4210,22 +4000,18 @@
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_op
             (var combined)
             (var op)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4235,7 +4021,6 @@
             (var combined)
             (var left_sb)
           )
-          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4254,7 +4039,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -4337,22 +4121,18 @@
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '&'); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '&'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '&'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 38)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '&'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4362,7 +4142,6 @@
             (var combined)
             (var left_sb)
           )
-          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4381,7 +4160,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -4464,22 +4242,18 @@
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '^'); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '^'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '^'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 94)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '^'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4489,7 +4263,6 @@
             (var combined)
             (var left_sb)
           )
-          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4508,7 +4281,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -4591,22 +4363,18 @@
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '|'); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '|'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '|'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 124)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_char(combined, '|'); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4616,7 +4384,6 @@
             (var combined)
             (var left_sb)
           )
-          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4635,7 +4402,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -4748,22 +4514,18 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
           (call_stmt emit_string
             (var sb)
             (str "binop")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
           (call_stmt emit_op
             (var sb)
             (var k)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -4773,7 +4535,6 @@
             (var sb)
             (var left_sb)
           )
-          (comment "append(sb, left_sb); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -4792,7 +4553,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -4873,22 +4633,18 @@
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"&&\"); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"&&\"); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"&&\"); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "&&")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"&&\"); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4898,7 +4654,6 @@
             (var combined)
             (var left_sb)
           )
-          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -4917,7 +4672,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -5000,22 +4754,18 @@
             (var combined)
             (int:u8 40)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"||\"); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "binop")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"||\"); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 32)
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"||\"); emit_char(combined, 10u8);")
           (call_stmt emit_string
             (var combined)
             (str "||")
           )
-          (comment "emit_char(combined, '('); emit_string(combined, \"binop\"); emit_char(combined, ' '); emit_string(combined, \"||\"); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -5025,7 +4775,6 @@
             (var combined)
             (var left_sb)
           )
-          (comment "append(combined, left_sb); emit_char(combined, 10u8);")
           (call_stmt emit_char
             (var combined)
             (int:u8 10)
@@ -5044,7 +4793,6 @@
           (call_stmt destroy
             (var left_sb)
           )
-          (comment "destroy(left_sb); destroy(right_sb);")
           (call_stmt destroy
             (var right_sb)
           )
@@ -5091,12 +4839,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -5244,12 +4990,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var_decl\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "var_decl")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var_decl\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -5382,12 +5126,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"break\"); emit_char(sb, ')');")
       (call_stmt emit_string
         (var sb)
         (str "break")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"break\"); emit_char(sb, ')');")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
@@ -5432,12 +5174,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"continue\"); emit_char(sb, ')');")
       (call_stmt emit_string
         (var sb)
         (str "continue")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"continue\"); emit_char(sb, ')');")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
@@ -5476,7 +5216,6 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"return\");")
       (call_stmt emit_string
         (var sb)
         (str "return")
@@ -5564,7 +5303,6 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"if\");")
       (call_stmt emit_string
         (var sb)
         (str "if")
@@ -5718,7 +5456,6 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"while\");")
       (call_stmt emit_string
         (var sb)
         (str "while")
@@ -5871,12 +5608,10 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"assign\"); emit_char(sb, ' ');")
           (call_stmt emit_string
             (var sb)
             (str "assign")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"assign\"); emit_char(sb, ' ');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
@@ -5974,12 +5709,10 @@
               (var sb)
               (int:u8 40)
             )
-            (comment "emit_char(sb, '('); emit_string(sb, \"assign\"); emit_char(sb, ' ');")
             (call_stmt emit_string
               (var sb)
               (str "assign")
             )
-            (comment "emit_char(sb, '('); emit_string(sb, \"assign\"); emit_char(sb, ' ');")
             (call_stmt emit_char
               (var sb)
               (int:u8 32)
@@ -6009,12 +5742,10 @@
               (var sb)
               (int:u8 40)
             )
-            (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' ');")
             (call_stmt emit_string
               (var sb)
               (str "binop")
             )
-            (comment "emit_char(sb, '('); emit_string(sb, \"binop\"); emit_char(sb, ' ');")
             (call_stmt emit_char
               (var sb)
               (int:u8 32)
@@ -6026,7 +5757,6 @@
                 (var TK_PLUS_EQ)
               )
               (block
-                (comment "if the_op == TK_PLUS_EQ    { emit_char(sb, '+'); }")
                 (call_stmt emit_char
                   (var sb)
                   (int:u8 43)
@@ -6040,7 +5770,6 @@
                 (var TK_MINUS_EQ)
               )
               (block
-                (comment "if the_op == TK_MINUS_EQ   { emit_char(sb, '-'); }")
                 (call_stmt emit_char
                   (var sb)
                   (int:u8 45)
@@ -6054,7 +5783,6 @@
                 (var TK_STAR_EQ)
               )
               (block
-                (comment "if the_op == TK_STAR_EQ    { emit_char(sb, '*'); }")
                 (call_stmt emit_char
                   (var sb)
                   (int:u8 42)
@@ -6068,7 +5796,6 @@
                 (var TK_SLASH_EQ)
               )
               (block
-                (comment "if the_op == TK_SLASH_EQ   { emit_char(sb, '/'); }")
                 (call_stmt emit_char
                   (var sb)
                   (int:u8 47)
@@ -6082,7 +5809,6 @@
                 (var TK_PERCENT_EQ)
               )
               (block
-                (comment "if the_op == TK_PERCENT_EQ { emit_char(sb, '%'); }")
                 (call_stmt emit_char
                   (var sb)
                   (int:u8 37)
@@ -6099,12 +5825,10 @@
               (var sb)
               (int:u8 40)
             )
-            (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
             (call_stmt emit_string
               (var sb)
               (str "var")
             )
-            (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
             (call_stmt emit_char
               (var sb)
               (int:u8 32)
@@ -6116,12 +5840,10 @@
               (int 0)
               (var name_len)
             )
-            (comment "emit_n(sb, name_buf, 0, name_len); emit_char(sb, ')'); emit_char(sb, 10u8);")
             (call_stmt emit_char
               (var sb)
               (int:u8 41)
             )
-            (comment "emit_n(sb, name_buf, 0, name_len); emit_char(sb, ')'); emit_char(sb, 10u8);")
             (call_stmt emit_char
               (var sb)
               (int:u8 10)
@@ -6177,12 +5899,10 @@
                   (var sb)
                   (int:u8 40)
                 )
-                (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
                 (call_stmt emit_string
                   (var sb)
                   (str "call_stmt")
                 )
-                (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
                 (call_stmt emit_char
                   (var sb)
                   (int:u8 32)
@@ -6366,7 +6086,6 @@
               )
             )
             (block
-              (comment "if ch != ' ' && ch != 9u8 { found = 1; }")
               (assign found
                 (int 1)
               )
@@ -6390,7 +6109,6 @@
           (var n)
         )
         (block
-          (comment "if start >= n { return; }")
           (return)
         )
       )
@@ -6399,17 +6117,14 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"comment\"); emit_char(sb, ' '); emit_char(sb, '\"');")
       (call_stmt emit_string
         (var sb)
         (str "comment")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"comment\"); emit_char(sb, ' '); emit_char(sb, '\"');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"comment\"); emit_char(sb, ' '); emit_char(sb, '\"');")
       (call_stmt emit_char
         (var sb)
         (int:u8 34)
@@ -6441,12 +6156,10 @@
               (int:u8 34)
             )
             (block
-              (comment "if ch == '\"' { emit_char(sb, '\\\\'); emit_char(sb, '\"'); }")
               (call_stmt emit_char
                 (var sb)
                 (int:u8 92)
               )
-              (comment "if ch == '\"' { emit_char(sb, '\\\\'); emit_char(sb, '\"'); }")
               (call_stmt emit_char
                 (var sb)
                 (int:u8 34)
@@ -6460,12 +6173,10 @@
                   (int:u8 92)
                 )
                 (block
-                  (comment "if ch == '\\\\' { emit_char(sb, '\\\\'); emit_char(sb, '\\\\'); }")
                   (call_stmt emit_char
                     (var sb)
                     (int:u8 92)
                   )
-                  (comment "if ch == '\\\\' { emit_char(sb, '\\\\'); emit_char(sb, '\\\\'); }")
                   (call_stmt emit_char
                     (var sb)
                     (int:u8 92)
@@ -6495,7 +6206,6 @@
         (var sb)
         (int:u8 34)
       )
-      (comment "emit_char(sb, '\"'); emit_char(sb, ')');")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
@@ -6517,6 +6227,20 @@
       (type void)
     )
     (block
+      (comment "if g_tok_line == g_last_comment_line { return; }")
+      (if
+        (binop ==
+          (var g_tok_line)
+          (var g_last_comment_line)
+        )
+        (block
+          (return)
+        )
+      )
+      (comment "g_last_comment_line = g_tok_line;")
+      (assign g_last_comment_line
+        (var g_tok_line)
+      )
       (comment "var text: StringBuffer = StringBuffer_new();")
       (var_decl text
         (type StringBuffer)
@@ -6566,14 +6290,12 @@
           (var TK_VAR)
         )
         (block
-          (comment "if g_tok == TK_VAR    { pars_var_decl(src, tok, sb, indent); return; }")
           (call_stmt pars_var_decl
             (var src)
             (var tok)
             (var sb)
             (var indent)
           )
-          (comment "if g_tok == TK_VAR    { pars_var_decl(src, tok, sb, indent); return; }")
           (return)
         )
       )
@@ -6584,14 +6306,12 @@
           (var TK_IF)
         )
         (block
-          (comment "if g_tok == TK_IF     { pars_if_stmt(src, tok, sb, indent); return; }")
           (call_stmt pars_if_stmt
             (var src)
             (var tok)
             (var sb)
             (var indent)
           )
-          (comment "if g_tok == TK_IF     { pars_if_stmt(src, tok, sb, indent); return; }")
           (return)
         )
       )
@@ -6602,14 +6322,12 @@
           (var TK_WHILE)
         )
         (block
-          (comment "if g_tok == TK_WHILE    { pars_while_stmt(src, tok, sb, indent); return; }")
           (call_stmt pars_while_stmt
             (var src)
             (var tok)
             (var sb)
             (var indent)
           )
-          (comment "if g_tok == TK_WHILE    { pars_while_stmt(src, tok, sb, indent); return; }")
           (return)
         )
       )
@@ -6620,14 +6338,12 @@
           (var TK_RETURN)
         )
         (block
-          (comment "if g_tok == TK_RETURN   { pars_return_stmt(src, tok, sb, indent); return; }")
           (call_stmt pars_return_stmt
             (var src)
             (var tok)
             (var sb)
             (var indent)
           )
-          (comment "if g_tok == TK_RETURN   { pars_return_stmt(src, tok, sb, indent); return; }")
           (return)
         )
       )
@@ -6638,14 +6354,12 @@
           (var TK_BREAK)
         )
         (block
-          (comment "if g_tok == TK_BREAK    { pars_break_stmt(src, tok, sb, indent); return; }")
           (call_stmt pars_break_stmt
             (var src)
             (var tok)
             (var sb)
             (var indent)
           )
-          (comment "if g_tok == TK_BREAK    { pars_break_stmt(src, tok, sb, indent); return; }")
           (return)
         )
       )
@@ -6656,14 +6370,12 @@
           (var TK_CONTINUE)
         )
         (block
-          (comment "if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, sb, indent); return; }")
           (call_stmt pars_continue_stmt
             (var src)
             (var tok)
             (var sb)
             (var indent)
           )
-          (comment "if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, sb, indent); return; }")
           (return)
         )
       )
@@ -6674,14 +6386,12 @@
           (var TK_IDENT)
         )
         (block
-          (comment "if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, sb, indent); return; }")
           (call_stmt pars_ident_stmt
             (var src)
             (var tok)
             (var sb)
             (var indent)
           )
-          (comment "if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, sb, indent); return; }")
           (return)
         )
       )
@@ -6723,7 +6433,6 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"block\");")
       (call_stmt emit_string
         (var sb)
         (str "block")
@@ -6899,7 +6608,6 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\");")
       (call_stmt emit_string
         (var sb)
         (str "fn")
@@ -6916,7 +6624,6 @@
             (var sb)
             (int:u8 58)
           )
-          (comment "emit_char(sb, ':'); emit_string(sb, \"export\");")
           (call_stmt emit_string
             (var sb)
             (str "export")
@@ -6957,7 +6664,6 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"params\");")
       (call_stmt emit_string
         (var sb)
         (str "params")
@@ -7056,12 +6762,10 @@
                 (var sb)
                 (int:u8 40)
               )
-              (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
               (call_stmt emit_string
                 (var sb)
                 (str "param")
               )
-              (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
               (call_stmt emit_char
                 (var sb)
                 (int:u8 32)
@@ -7184,7 +6888,6 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"ret\");")
       (call_stmt emit_string
         (var sb)
         (str "ret")
@@ -7231,22 +6934,18 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')');")
           (call_stmt emit_string
             (var sb)
             (str "type")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')');")
           (call_stmt emit_string
             (var sb)
             (str "void")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')');")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
@@ -7348,7 +7047,6 @@
           (var n)
         )
         (block
-          (comment "while i < n { set(buf, (start + i), get(s, i)); i = i + 1; }")
           (call_stmt set
             (var buf)
             (binop +
@@ -7360,7 +7058,6 @@
               (var i)
             )
           )
-          (comment "while i < n { set(buf, (start + i), get(s, i)); i = i + 1; }")
           (assign i
             (binop +
               (var i)
@@ -7403,7 +7100,6 @@
           (var TK_U8)
         )
         (block
-          (comment "if k == TK_U8   { return buf_set_str(buf, bstart, \"u8\"); }")
           (return
             (call buf_set_str
               (var buf)
@@ -7420,7 +7116,6 @@
           (var TK_I8)
         )
         (block
-          (comment "if k == TK_I8   { return buf_set_str(buf, bstart, \"i8\"); }")
           (return
             (call buf_set_str
               (var buf)
@@ -7437,7 +7132,6 @@
           (var TK_U16)
         )
         (block
-          (comment "if k == TK_U16  { return buf_set_str(buf, bstart, \"u16\"); }")
           (return
             (call buf_set_str
               (var buf)
@@ -7454,7 +7148,6 @@
           (var TK_U32)
         )
         (block
-          (comment "if k == TK_U32  { return buf_set_str(buf, bstart, \"u32\"); }")
           (return
             (call buf_set_str
               (var buf)
@@ -7471,7 +7164,6 @@
           (var TK_I16)
         )
         (block
-          (comment "if k == TK_I16  { return buf_set_str(buf, bstart, \"i16\"); }")
           (return
             (call buf_set_str
               (var buf)
@@ -7488,7 +7180,6 @@
           (var TK_I32)
         )
         (block
-          (comment "if k == TK_I32  { return buf_set_str(buf, bstart, \"i32\"); }")
           (return
             (call buf_set_str
               (var buf)
@@ -7505,7 +7196,6 @@
           (var TK_BOOL)
         )
         (block
-          (comment "if k == TK_BOOL { return buf_set_str(buf, bstart, \"bool\"); }")
           (return
             (call buf_set_str
               (var buf)
@@ -7522,7 +7212,6 @@
           (var TK_VOID)
         )
         (block
-          (comment "if k == TK_VOID { return buf_set_str(buf, bstart, \"void\"); }")
           (return
             (call buf_set_str
               (var buf)
@@ -7551,7 +7240,6 @@
               (var g_tok_slen)
             )
             (block
-              (comment "while i < g_tok_slen { set(buf,(bstart+i),get(tok,i)); i = i + 1; }")
               (call_stmt set
                 (var buf)
                 (binop +
@@ -7563,7 +7251,6 @@
                   (var i)
                 )
               )
-              (comment "while i < g_tok_slen { set(buf,(bstart+i),get(tok,i)); i = i + 1; }")
               (assign i
                 (binop +
                   (var i)
@@ -7619,12 +7306,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "param")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -7634,7 +7319,6 @@
         (var sb)
         (var name)
       )
-      (comment "emit_string(sb, name); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -7652,12 +7336,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -7674,7 +7356,6 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -7717,12 +7398,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -7772,12 +7451,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "cast")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -7795,12 +7472,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "var")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -7810,12 +7485,10 @@
         (var sb)
         (var name)
       )
-      (comment "emit_string(sb, name); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_string(sb, name); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -7833,12 +7506,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -7848,12 +7519,10 @@
         (var sb)
         (var tname)
       )
-      (comment "emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -7907,12 +7576,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "cast")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -7930,12 +7597,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "var")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -7945,12 +7610,10 @@
         (var sb)
         (var name)
       )
-      (comment "emit_string(sb, name); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_string(sb, name); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -7968,12 +7631,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -7990,7 +7651,6 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8275,12 +7935,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "fn")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -8292,7 +7950,6 @@
         (int 0)
         (var snlen)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8310,12 +7967,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "params")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8345,12 +8000,10 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
           (call_stmt emit_string
             (var sb)
             (str "param")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
@@ -8360,12 +8013,10 @@
             (var sb)
             (str "__a")
           )
-          (comment "emit_string(sb, \"__a\"); emit_int(sb, i); emit_char(sb, 10u8);")
           (call_stmt emit_int
             (var sb)
             (var i)
           )
-          (comment "emit_string(sb, \"__a\"); emit_int(sb, i); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8391,7 +8042,6 @@
               (var i)
             )
           )
-          (comment "emit_type(sb, ftypes, fi_type_off(fields, i), fi_type_len(fields, i)); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8409,7 +8059,6 @@
             (var sb)
             (int:u8 41)
           )
-          (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8431,12 +8080,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8454,12 +8101,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "ret")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8477,12 +8122,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -8494,12 +8137,10 @@
         (int 0)
         (var snlen)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8512,12 +8153,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8535,12 +8174,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "block")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8567,22 +8204,18 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var_decl\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "var_decl")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var_decl\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var_decl\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "__p")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var_decl\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8600,27 +8233,22 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "U32Array")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8638,22 +8266,18 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "call")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "U32Array")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8671,27 +8295,22 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "int")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_int
         (var sb)
         (var nfields)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8704,12 +8323,10 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8722,12 +8339,10 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -8766,22 +8381,18 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
           (call_stmt emit_string
             (var sb)
             (str "call_stmt")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
           (call_stmt emit_string
             (var sb)
             (str "set")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8799,27 +8410,22 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_string
             (var sb)
             (str "var")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_string
             (var sb)
             (str "__p")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8837,27 +8443,22 @@
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_string
             (var sb)
             (str "int")
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_int
             (var sb)
             (var k)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
           )
-          (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8870,17 +8471,14 @@
               (int 3)
             )
           )
-          (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
           (call_stmt emit_string
             (var sb)
             (str "cast")
           )
-          (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8893,17 +8491,14 @@
               (int 4)
             )
           )
-          (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
           (call_stmt emit_char
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
           (call_stmt emit_string
             (var sb)
             (str "var")
           )
-          (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
@@ -8913,17 +8508,14 @@
             (var sb)
             (str "__a")
           )
-          (comment "emit_string(sb, \"__a\"); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_int
             (var sb)
             (var k)
           )
-          (comment "emit_string(sb, \"__a\"); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
           )
-          (comment "emit_string(sb, \"__a\"); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8936,17 +8528,14 @@
               (int 4)
             )
           )
-          (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
           (call_stmt emit_char
             (var sb)
             (int:u8 40)
           )
-          (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
           (call_stmt emit_string
             (var sb)
             (str "type")
           )
-          (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
           (call_stmt emit_char
             (var sb)
             (int:u8 32)
@@ -8956,12 +8545,10 @@
             (var sb)
             (str "u32")
           )
-          (comment "emit_string(sb, \"u32\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
           )
-          (comment "emit_string(sb, \"u32\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8974,12 +8561,10 @@
               (int 3)
             )
           )
-          (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
           )
-          (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -8992,12 +8577,10 @@
               (int 2)
             )
           )
-          (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 41)
           )
-          (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
           (call_stmt emit_char
             (var sb)
             (int:u8 10)
@@ -9033,12 +8616,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "return")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9051,17 +8632,14 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "cast")
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9074,32 +8652,26 @@
           (int 4)
         )
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "var")
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "__p")
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9112,17 +8684,14 @@
           (int 4)
         )
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -9134,12 +8703,10 @@
         (int 0)
         (var snlen)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9152,12 +8719,10 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9170,12 +8735,10 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9188,12 +8751,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9203,7 +8764,6 @@
         (var sb)
         (var indent)
       )
-      (comment "emit_indent(sb, indent); emit_char(sb, ')');")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
@@ -9288,12 +8848,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "fn")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -9305,7 +8863,6 @@
         (var fnoff)
         (var fnlen)
       )
-      (comment "emit_n(sb, fnames, fnoff, fnlen); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9318,17 +8875,14 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "params")
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9341,27 +8895,22 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "param")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "__p")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9374,17 +8923,14 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -9396,12 +8942,10 @@
         (int 0)
         (var snlen)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9414,12 +8958,10 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9432,12 +8974,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9450,17 +8990,14 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "ret")
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9473,17 +9010,14 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -9495,12 +9029,10 @@
         (var ftoff)
         (var ftlen)
       )
-      (comment "emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9513,12 +9045,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9531,17 +9061,14 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "block")
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9563,17 +9090,14 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "return")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9586,17 +9110,14 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "cast")
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9609,27 +9130,22 @@
           (int 4)
         )
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"get\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"get\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "call")
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"get\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"get\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "get")
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"get\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9644,7 +9160,6 @@
         (str "__p")
         (str "U32Array")
       )
-      (comment "emit_cast_var(sb, indent + 5, \"__p\", \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9657,32 +9172,26 @@
           (int 5)
         )
       )
-      (comment "emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "int")
       )
-      (comment "emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_int
         (var sb)
         (var fidx)
       )
-      (comment "emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9695,12 +9204,10 @@
           (int 4)
         )
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9713,17 +9220,14 @@
           (int 4)
         )
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -9735,12 +9239,10 @@
         (var ftoff)
         (var ftlen)
       )
-      (comment "emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9753,12 +9255,10 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9771,12 +9271,10 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9789,12 +9287,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9804,7 +9300,6 @@
         (var sb)
         (var indent)
       )
-      (comment "emit_indent(sb, indent); emit_char(sb, ')');")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
@@ -9889,12 +9384,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "fn")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -9906,7 +9399,6 @@
         (var fnoff)
         (var fnlen)
       )
-      (comment "emit_n(sb, fnames, fnoff, fnlen); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9919,17 +9411,14 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "params")
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9942,27 +9431,22 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "param")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "__p")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -9975,17 +9459,14 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -9997,12 +9478,10 @@
         (int 0)
         (var snlen)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10015,12 +9494,10 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10033,27 +9510,22 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__v\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__v\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "param")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__v\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__v\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "__v")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' '); emit_string(sb, \"__v\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10066,17 +9538,14 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -10088,12 +9557,10 @@
         (var ftoff)
         (var ftlen)
       )
-      (comment "emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10106,12 +9573,10 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10124,12 +9589,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10142,17 +9605,14 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "ret")
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10165,32 +9625,26 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "void")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' '); emit_string(sb, \"void\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10203,12 +9657,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10221,17 +9673,14 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "block")
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10253,27 +9702,22 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "call_stmt")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "set")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' '); emit_string(sb, \"set\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10288,7 +9732,6 @@
         (str "__p")
         (str "U32Array")
       )
-      (comment "emit_cast_var(sb, indent + 3, \"__p\", \"U32Array\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10301,32 +9744,26 @@
           (int 3)
         )
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "int")
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_int
         (var sb)
         (var fidx)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10341,7 +9778,6 @@
         (str "__v")
         (str "u32")
       )
-      (comment "emit_cast_var(sb, indent + 3, \"__v\", \"u32\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10354,12 +9790,10 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10381,22 +9815,18 @@
           (int 2)
         )
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "return")
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10409,12 +9839,10 @@
           (int 1)
         )
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -10424,7 +9852,6 @@
         (var sb)
         (var indent)
       )
-      (comment "emit_indent(sb, indent); emit_char(sb, ')');")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
@@ -10492,7 +9919,6 @@
           (var snlen)
         )
         (block
-          (comment "while ci < snlen { set(sname_buf, ci, get(tok, ci)); ci = ci + 1; }")
           (call_stmt set
             (var sname_buf)
             (var ci)
@@ -10501,7 +9927,6 @@
               (var ci)
             )
           )
-          (comment "while ci < snlen { set(sname_buf, ci, get(tok, ci)); ci = ci + 1; }")
           (assign ci
             (binop +
               (var ci)
@@ -10563,12 +9988,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"struct\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "struct")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"struct\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -10612,7 +10035,6 @@
                   (var TK_COMMA)
                 )
                 (block
-                  (comment "if g_tok == TK_COMMA { lex_tok(src, tok); }")
                   (call_stmt lex_tok
                     (var src)
                     (var tok)
@@ -10632,7 +10054,6 @@
               (var TK_RBRACE)
             )
             (block
-              (comment "if g_tok == TK_RBRACE { g_tok = g_tok; }  // do nothing, will exit loop")
               (assign g_tok
                 (var g_tok)
               )
@@ -10694,7 +10115,6 @@
                   (var fname_len)
                 )
                 (block
-                  (comment "while j < fname_len { set(fnames, (fnpos+j), get(fname_buf, j)); j = j + 1; }")
                   (call_stmt set
                     (var fnames)
                     (binop +
@@ -10706,7 +10126,6 @@
                       (var j)
                     )
                   )
-                  (comment "while j < fname_len { set(fnames, (fnpos+j), get(fname_buf, j)); j = j + 1; }")
                   (assign j
                     (binop +
                       (var j)
@@ -10777,12 +10196,10 @@
                 (var sb)
                 (int:u8 40)
               )
-              (comment "emit_char(sb, '('); emit_string(sb, \"field\"); emit_char(sb, ' ');")
               (call_stmt emit_string
                 (var sb)
                 (str "field")
               )
-              (comment "emit_char(sb, '('); emit_string(sb, \"field\"); emit_char(sb, ' ');")
               (call_stmt emit_char
                 (var sb)
                 (int:u8 32)
@@ -10985,12 +10402,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "fn")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -11000,7 +10415,6 @@
         (var sb)
         (str "delete")
       )
-      (comment "emit_string(sb, \"delete\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11018,12 +10432,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "params")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11041,12 +10453,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "param")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -11056,7 +10466,6 @@
         (var sb)
         (str "__p")
       )
-      (comment "emit_string(sb, \"__p\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11074,12 +10483,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -11096,7 +10503,6 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11114,7 +10520,6 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11132,7 +10537,6 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11150,12 +10554,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "ret")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11173,12 +10575,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -11193,7 +10593,6 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11211,7 +10610,6 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11229,12 +10627,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "block")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11252,12 +10648,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "call_stmt")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -11267,7 +10661,6 @@
         (var sb)
         (str "delete")
       )
-      (comment "emit_string(sb, \"delete\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11285,12 +10678,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "cast")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11308,12 +10699,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "var")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -11323,12 +10712,10 @@
         (var sb)
         (str "__p")
       )
-      (comment "emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_string(sb, \"__p\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11346,12 +10733,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "type")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -11361,17 +10746,14 @@
         (var sb)
         (str "U32Array")
       )
-      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11389,17 +10771,14 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "return")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11417,7 +10796,6 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 10)
@@ -11440,11 +10818,9 @@
       (call_stmt delete
         (var fnames)
       )
-      (comment "delete(fnames); delete(ftypes); delete(fields);")
       (call_stmt delete
         (var ftypes)
       )
-      (comment "delete(fnames); delete(ftypes); delete(fields);")
       (call_stmt delete
         (var fields)
       )
@@ -11486,12 +10862,10 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"import\"); emit_char(sb, ' ');")
       (call_stmt emit_string
         (var sb)
         (str "import")
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"import\"); emit_char(sb, ' ');")
       (call_stmt emit_char
         (var sb)
         (int:u8 32)
@@ -11553,7 +10927,6 @@
         (var sb)
         (int:u8 40)
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"program\");")
       (call_stmt emit_string
         (var sb)
         (str "program")

@@ -193,12 +193,10 @@
               (int:u8 34)
             )
             (block
-              (comment "if c == '\"'  { emit_char(ob, '\\\\'); emit_char(ob, '\"'); }")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 92)
               )
-              (comment "if c == '\"'  { emit_char(ob, '\\\\'); emit_char(ob, '\"'); }")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 34)
@@ -212,12 +210,10 @@
                   (int:u8 92)
                 )
                 (block
-                  (comment "else { if c == '\\\\' { emit_char(ob, '\\\\'); emit_char(ob, '\\\\'); }")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 92)
                   )
-                  (comment "else { if c == '\\\\' { emit_char(ob, '\\\\'); emit_char(ob, '\\\\'); }")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 92)
@@ -231,12 +227,10 @@
                       (int:u8 10)
                     )
                     (block
-                      (comment "else { if c == 10u8 { emit_char(ob, '\\\\'); emit_char(ob, 'n'); }")
                       (call_stmt emit_char
                         (var ob)
                         (int:u8 92)
                       )
-                      (comment "else { if c == 10u8 { emit_char(ob, '\\\\'); emit_char(ob, 'n'); }")
                       (call_stmt emit_char
                         (var ob)
                         (int:u8 110)
@@ -250,12 +244,10 @@
                           (int:u8 13)
                         )
                         (block
-                          (comment "else { if c == 13u8 { emit_char(ob, '\\\\'); emit_char(ob, 'r'); }")
                           (call_stmt emit_char
                             (var ob)
                             (int:u8 92)
                           )
-                          (comment "else { if c == 13u8 { emit_char(ob, '\\\\'); emit_char(ob, 'r'); }")
                           (call_stmt emit_char
                             (var ob)
                             (int:u8 114)
@@ -269,12 +261,10 @@
                               (int:u8 9)
                             )
                             (block
-                              (comment "else { if c == 9u8  { emit_char(ob, '\\\\'); emit_char(ob, 't'); }")
                               (call_stmt emit_char
                                 (var ob)
                                 (int:u8 92)
                               )
-                              (comment "else { if c == 9u8  { emit_char(ob, '\\\\'); emit_char(ob, 't'); }")
                               (call_stmt emit_char
                                 (var ob)
                                 (int:u8 116)
@@ -326,7 +316,6 @@
           (var g_in_len)
         )
         (block
-          (comment "if g_in_pos >= g_in_len { return 0u8; }")
           (return
             (int:u8 0)
           )
@@ -1077,14 +1066,12 @@
           (int 0)
         )
         (block
-          (comment "while c >= 0 { count = count + 1; c = n_sib(nodes, c); }")
           (assign count
             (binop +
               (var count)
               (int 1)
             )
           )
-          (comment "while c >= 0 { count = count + 1; c = n_sib(nodes, c); }")
           (assign c
             (call n_sib
               (var nodes)
@@ -1141,14 +1128,12 @@
           )
         )
         (block
-          (comment "while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }")
           (assign c
             (call n_sib
               (var nodes)
               (var c)
             )
           )
-          (comment "while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }")
           (assign i
             (binop +
               (var i)
@@ -1212,7 +1197,6 @@
               (int 0)
             )
             (block
-              (comment "while n_sib(nodes, c) >= 0 { c = n_sib(nodes, c); }")
               (assign c
                 (call n_sib
                   (var nodes)
@@ -1627,7 +1611,6 @@
               (int:u8 110)
             )
             (block
-              (comment "if cmp2(atom,0, 'f','n')  { return NK_FN; }     // fn")
               (return
                 (var NK_FN)
               )
@@ -1642,7 +1625,6 @@
               (int:u8 102)
             )
             (block
-              (comment "if cmp2(atom,0, 'i','f')  { return NK_IF; }     // if")
               (return
                 (var NK_IF)
               )
@@ -1667,7 +1649,6 @@
               (int:u8 116)
             )
             (block
-              (comment "if cmp3(atom,0, 'r','e','t') { return NK_RET; }   // ret")
               (return
                 (var NK_RET)
               )
@@ -1683,7 +1664,6 @@
               (int:u8 116)
             )
             (block
-              (comment "if cmp3(atom,0, 'i','n','t') { return NK_INT; }   // int")
               (return
                 (var NK_INT)
               )
@@ -1699,7 +1679,6 @@
               (int:u8 114)
             )
             (block
-              (comment "if cmp3(atom,0, 's','t','r') { return NK_STR; }   // str")
               (return
                 (var NK_STR)
               )
@@ -1715,7 +1694,6 @@
               (int:u8 114)
             )
             (block
-              (comment "if cmp3(atom,0, 'v','a','r')  { return NK_VAR; }   // var")
               (return
                 (var NK_VAR)
               )
@@ -1741,7 +1719,6 @@
               (int:u8 108)
             )
             (block
-              (comment "if cmp4(atom,0, 'b','o','o','l') { return NK_BOOL; }   // bool")
               (return
                 (var NK_BOOL)
               )
@@ -1758,7 +1735,6 @@
               (int:u8 101)
             )
             (block
-              (comment "if cmp4(atom,0, 't','y','p','e') { return NK_TYPE; }  // type")
               (return
                 (var NK_TYPE)
               )
@@ -1775,7 +1751,6 @@
               (int:u8 116)
             )
             (block
-              (comment "if cmp4(atom,0, 'c','a','s','t')   { return NK_CAST; }  // cast")
               (return
                 (var NK_CAST)
               )
@@ -1792,7 +1767,6 @@
               (int:u8 108)
             )
             (block
-              (comment "if cmp4(atom,0, 'c','a','l','l')   { return NK_CALL; }  // call")
               (return
                 (var NK_CALL)
               )
@@ -1819,7 +1793,6 @@
               (int:u8 107)
             )
             (block
-              (comment "if cmp5(atom,0, 'b','l','o','c','k')   { return NK_BLOCK; }  // block")
               (return
                 (var NK_BLOCK)
               )
@@ -1837,7 +1810,6 @@
               (int:u8 109)
             )
             (block
-              (comment "if cmp5(atom,0, 'p','a','r','a','m')   { return NK_PARAM; }  // param")
               (return
                 (var NK_PARAM)
               )
@@ -1855,7 +1827,6 @@
               (int:u8 101)
             )
             (block
-              (comment "if cmp5(atom,0, 'w','h','i','l','e') { return NK_WHILE; }  // while")
               (return
                 (var NK_WHILE)
               )
@@ -1873,7 +1844,6 @@
               (int:u8 112)
             )
             (block
-              (comment "if cmp5(atom,0, 'b','i','n','o','p')  { return NK_BINOP; }  // binop")
               (return
                 (var NK_BINOP)
               )
@@ -1891,7 +1861,6 @@
               (int:u8 121)
             )
             (block
-              (comment "if cmp5(atom,0, 'u','n','a','r','y')  { return NK_UNARY; }  // unary")
               (return
                 (var NK_UNARY)
               )
@@ -1909,7 +1878,6 @@
               (int:u8 100)
             )
             (block
-              (comment "if cmp5(atom,0, 'f','i','e','l','d') { return NK_FIELD; }  // field")
               (return
                 (var NK_FIELD)
               )
@@ -1927,7 +1895,6 @@
               (int:u8 107)
             )
             (block
-              (comment "if cmp5(atom,0, 'b','r','e','a','k')   { return NK_BREAK; }  // break")
               (return
                 (var NK_BREAK)
               )
@@ -1955,7 +1922,6 @@
               (int:u8 115)
             )
             (block
-              (comment "if cmp6(atom,0, 'p','a','r','a','m','s')  { return NK_PARAMS; }  // params")
               (return
                 (var NK_PARAMS)
               )
@@ -1974,7 +1940,6 @@
               (int:u8 110)
             )
             (block
-              (comment "if cmp6(atom,0, 'r','e','t','u','r','n'){ return NK_RETURN; }  // return")
               (return
                 (var NK_RETURN)
               )
@@ -1993,7 +1958,6 @@
               (int:u8 116)
             )
             (block
-              (comment "if cmp6(atom,0, 's','t','r','u','c','t') { return NK_STRUCT; }  // struct")
               (return
                 (var NK_STRUCT)
               )
@@ -2012,7 +1976,6 @@
               (int:u8 110)
             )
             (block
-              (comment "if cmp6(atom,0, 'a','s','s','i','g','n') { return NK_ASSIGN; }  // assign")
               (return
                 (var NK_ASSIGN)
               )
@@ -2031,7 +1994,6 @@
               (int:u8 116)
             )
             (block
-              (comment "if cmp6(atom,0, 'i','m','p','o','r','t'){ return NK_IMPORT; }  // import")
               (return
                 (var NK_IMPORT)
               )
@@ -2261,7 +2223,6 @@
           (var g_in_len)
         )
         (block
-          (comment "if g_in_pos >= g_in_len { return -1; }")
           (return
             (unary -
               (int 1)
@@ -2278,7 +2239,6 @@
           (int:u8 40)
         )
         (block
-          (comment "if peek_in(in) != '(' { return -1; }  // not '('")
           (return
             (unary -
               (int 1)
@@ -2532,7 +2492,6 @@
                       (int:u8 110)
                     )
                     (block
-                      (comment "if esc == 'n'  { ch = 10u8; }")
                       (assign ch
                         (int:u8 10)
                       )
@@ -2545,7 +2504,6 @@
                       (int:u8 116)
                     )
                     (block
-                      (comment "if esc == 't'  { ch = 9u8; }")
                       (assign ch
                         (int:u8 9)
                       )
@@ -2558,7 +2516,6 @@
                       (int:u8 114)
                     )
                     (block
-                      (comment "if esc == 'r'  { ch = 13u8; }")
                       (assign ch
                         (int:u8 13)
                       )
@@ -2571,7 +2528,6 @@
                       (int:u8 92)
                     )
                     (block
-                      (comment "if esc == '\\\\' { ch = '\\\\'; }")
                       (assign ch
                         (int:u8 92)
                       )
@@ -2584,7 +2540,6 @@
                       (int:u8 34)
                     )
                     (block
-                      (comment "if esc == '\"'  { ch = '\"'; }")
                       (assign ch
                         (int:u8 34)
                       )
@@ -2621,7 +2576,6 @@
                       )
                     )
                     (block
-                      (comment "if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\\\' && esc != '\"' { ch = esc; }")
                       (assign ch
                         (var esc)
                       )
@@ -2664,7 +2618,6 @@
               (int:u8 34)
             )
             (block
-              (comment "if ch == '\"' { g_in_pos = g_in_pos + 1; } // consume closing '\"'")
               (assign g_in_pos
                 (binop +
                   (var g_in_pos)
@@ -2961,7 +2914,6 @@
           (int:u8 41)
         )
         (block
-          (comment "if peek_in(in) == ')' { g_in_pos = g_in_pos + 1; }")
           (assign g_in_pos
             (binop +
               (var g_in_pos)
@@ -3005,7 +2957,6 @@
           (var bl)
         )
         (block
-          (comment "if sl != bl { return false; }")
           (return
             (bool false)
           )
@@ -3039,7 +2990,6 @@
               )
             )
             (block
-              (comment "if get(strtab, (ss+i)) != get(b, i) { return false; }")
               (return
                 (bool false)
               )
@@ -3086,7 +3036,6 @@
           (int 1)
         )
         (block
-          (comment "if sl != 1 { return false; }")
           (return
             (bool false)
           )
@@ -3133,7 +3082,6 @@
           (int 2)
         )
         (block
-          (comment "if sl != 2 { return false; }")
           (return
             (bool false)
           )
@@ -3270,7 +3218,6 @@
                       )
                     )
                     (block
-                      (comment "if get(strtab,(ss+j)) != get(strtab,(es+j)) { match = 0; }")
                       (assign match
                         (int 0)
                       )
@@ -3292,7 +3239,6 @@
                   (int 1)
                 )
                 (block
-                  (comment "if match == 1 { return i; }")
                   (return
                     (var i)
                   )
@@ -3353,7 +3299,6 @@
           (int 0)
         )
         (block
-          (comment "if idx >= 0 { return idx; }")
           (return
             (var idx)
           )
@@ -3425,7 +3370,6 @@
           (int 0)
         )
         (block
-          (comment "if n < 0 { return; }")
           (return)
         )
       )
@@ -3598,7 +3542,6 @@
                       )
                     )
                     (block
-                      (comment "if get(strtab,(nss+j)) != get(strtab,(es+j)) { match = 0; }")
                       (assign match
                         (int 0)
                       )
@@ -3620,7 +3563,6 @@
                   (int 1)
                 )
                 (block
-                  (comment "if match == 1 { return i; }")
                   (return
                     (var i)
                   )
@@ -3682,7 +3624,6 @@
           (int 0)
         )
         (block
-          (comment "if locals_find(strtab, locals, nss, nsl) >= 0 { return; }")
           (return)
         )
       )
@@ -4069,7 +4010,6 @@
             (var ob)
             (int:u8 59)
           )
-          (comment "emit_char(ob, ';'); emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -4134,7 +4074,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -4144,22 +4083,18 @@
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 115)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 104)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -4169,27 +4104,22 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 48)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -4201,7 +4131,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -4211,27 +4140,22 @@
             (var ob)
             (int:u8 115)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 114)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 101)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -4249,7 +4173,6 @@
               (var n)
             )
           )
-          (comment "emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -4281,7 +4204,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -4291,27 +4213,22 @@
             (var ob)
             (int:u8 115)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 114)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 101)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -4329,7 +4246,6 @@
               (var n)
             )
           )
-          (comment "emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -4412,7 +4328,6 @@
               (var nargs)
             )
             (block
-              (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
               (call_stmt cg_expr
                 (var nodes)
                 (var strtab)
@@ -4423,7 +4338,6 @@
                   (var ai)
                 )
               )
-              (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
               (assign ai
                 (binop +
                   (var ai)
@@ -4441,7 +4355,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -4451,22 +4364,18 @@
             (var ob)
             (int:u8 99)
           )
-          (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -4556,27 +4465,22 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, 'p');emit_char(ob, 'o');emit_char(ob, 'p');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, 'p');emit_char(ob, 'o');emit_char(ob, 'p');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 112)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, 'p');emit_char(ob, 'o');emit_char(ob, 'p');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, 'p');emit_char(ob, 'o');emit_char(ob, 'p');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 112)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, 'p');emit_char(ob, 'o');emit_char(ob, 'p');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -4612,7 +4516,6 @@
                 (type i32)
                 (var g_lc)
               )
-              (comment "var lelse: i32 = g_lc; g_lc = g_lc + 1;")
               (assign g_lc
                 (binop +
                   (var g_lc)
@@ -4624,7 +4527,6 @@
                 (type i32)
                 (var g_lc)
               )
-              (comment "var lend: i32 = g_lc; g_lc = g_lc + 1;")
               (assign g_lc
                 (binop +
                   (var g_lc)
@@ -4648,7 +4550,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -4658,22 +4559,18 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -4683,22 +4580,18 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 102)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 111)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
@@ -4708,27 +4601,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lelse)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -4751,7 +4639,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -4761,17 +4648,14 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
@@ -4781,27 +4665,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lend)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -4811,27 +4690,22 @@
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lelse)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 58)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -4882,27 +4756,22 @@
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lend)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 58)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -4914,7 +4783,6 @@
                 (type i32)
                 (var g_lc)
               )
-              (comment "var lend: i32 = g_lc; g_lc = g_lc + 1;")
               (assign g_lc
                 (binop +
                   (var g_lc)
@@ -4938,7 +4806,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -4948,22 +4815,18 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -4973,22 +4836,18 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 102)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 111)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
@@ -4998,27 +4857,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lend)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -5041,27 +4895,22 @@
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lend)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 58)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -5084,7 +4933,6 @@
             (type i32)
             (var g_lc)
           )
-          (comment "var lloop: i32 = g_lc; g_lc = g_lc + 1;")
           (assign g_lc
             (binop +
               (var g_lc)
@@ -5096,7 +4944,6 @@
             (type i32)
             (var g_lc)
           )
-          (comment "var lend: i32 = g_lc; g_lc = g_lc + 1;")
           (assign g_lc
             (binop +
               (var g_lc)
@@ -5136,27 +4983,22 @@
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 76)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_int
             (var ob)
             (var lloop)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 58)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -5178,7 +5020,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -5188,22 +5029,18 @@
             (var ob)
             (int:u8 106)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 109)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 112)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
@@ -5213,22 +5050,18 @@
             (var ob)
             (int:u8 105)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
           (call_stmt emit_char
             (var ob)
             (int:u8 102)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
           (call_stmt emit_char
             (var ob)
             (int:u8 110)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
@@ -5238,27 +5071,22 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 76)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_int
             (var ob)
             (var lend)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -5281,7 +5109,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -5291,17 +5118,14 @@
             (var ob)
             (int:u8 106)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 109)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 112)
@@ -5311,27 +5135,22 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 76)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_int
             (var ob)
             (var lloop)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -5341,27 +5160,22 @@
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 76)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_int
             (var ob)
             (var lend)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 58)
           )
-          (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -5403,7 +5217,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -5413,17 +5226,14 @@
             (var ob)
             (int:u8 106)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 109)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 112)
@@ -5433,27 +5243,22 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 76)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_int
             (var ob)
             (var lend)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -5488,7 +5293,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -5498,17 +5302,14 @@
             (var ob)
             (int:u8 106)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 109)
           )
-          (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
           (call_stmt emit_char
             (var ob)
             (int:u8 112)
@@ -5518,27 +5319,22 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 76)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_int
             (var ob)
             (var lloop)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -5582,7 +5378,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -5592,32 +5387,26 @@
                 (var ob)
                 (int:u8 114)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 101)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 114)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -5629,7 +5418,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -5639,27 +5427,22 @@
                 (var ob)
                 (int:u8 114)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 101)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 114)
               )
-              (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
@@ -5669,27 +5452,22 @@
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 118)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 111)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 100)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -5728,7 +5506,6 @@
         (var ob)
         (int:u8 32)
       )
-      (comment "emit_char(ob, ' '); emit_char(ob, ' ');")
       (call_stmt emit_char
         (var ob)
         (int:u8 32)
@@ -5742,27 +5519,22 @@
           (int:u8 43)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add")
           (call_stmt emit_char
             (var ob)
             (int:u8 100)
           )
-          (comment "if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add")
           (call_stmt emit_char
             (var ob)
             (int:u8 100)
           )
-          (comment "if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add")
           (return)
         )
       )
@@ -5775,27 +5547,22 @@
           (int:u8 45)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub")
           (call_stmt emit_char
             (var ob)
             (int:u8 115)
           )
-          (comment "if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub")
           (call_stmt emit_char
             (var ob)
             (int:u8 98)
           )
-          (comment "if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub")
           (return)
         )
       )
@@ -5808,27 +5575,22 @@
           (int:u8 42)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul")
           (call_stmt emit_char
             (var ob)
             (int:u8 109)
           )
-          (comment "if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul")
           (return)
         )
       )
@@ -5841,27 +5603,22 @@
           (int:u8 47)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '/') { emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 10u8); return; }  // div")
           (call_stmt emit_char
             (var ob)
             (int:u8 100)
           )
-          (comment "if sv1(strtab,ss,sl, '/') { emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 10u8); return; }  // div")
           (call_stmt emit_char
             (var ob)
             (int:u8 105)
           )
-          (comment "if sv1(strtab,ss,sl, '/') { emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 10u8); return; }  // div")
           (call_stmt emit_char
             (var ob)
             (int:u8 118)
           )
-          (comment "if sv1(strtab,ss,sl, '/') { emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 10u8); return; }  // div")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '/') { emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 10u8); return; }  // div")
           (return)
         )
       )
@@ -5874,27 +5631,22 @@
           (int:u8 37)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '%') { emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // mod")
           (call_stmt emit_char
             (var ob)
             (int:u8 109)
           )
-          (comment "if sv1(strtab,ss,sl, '%') { emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // mod")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "if sv1(strtab,ss,sl, '%') { emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // mod")
           (call_stmt emit_char
             (var ob)
             (int:u8 100)
           )
-          (comment "if sv1(strtab,ss,sl, '%') { emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // mod")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '%') { emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // mod")
           (return)
         )
       )
@@ -5907,27 +5659,22 @@
           (int:u8 38)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and")
           (call_stmt emit_char
             (var ob)
             (int:u8 110)
           )
-          (comment "if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and")
           (call_stmt emit_char
             (var ob)
             (int:u8 100)
           )
-          (comment "if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and")
           (return)
         )
       )
@@ -5940,22 +5687,18 @@
           (int:u8 124)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or")
           (call_stmt emit_char
             (var ob)
             (int:u8 114)
           )
-          (comment "if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or")
           (return)
         )
       )
@@ -5968,27 +5711,22 @@
           (int:u8 94)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor")
           (call_stmt emit_char
             (var ob)
             (int:u8 120)
           )
-          (comment "if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor")
           (call_stmt emit_char
             (var ob)
             (int:u8 114)
           )
-          (comment "if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor")
           (return)
         )
       )
@@ -6001,22 +5739,18 @@
           (int:u8 60)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '<') { emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // lt")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "if sv1(strtab,ss,sl, '<') { emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // lt")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "if sv1(strtab,ss,sl, '<') { emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // lt")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '<') { emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // lt")
           (return)
         )
       )
@@ -6029,22 +5763,18 @@
           (int:u8 62)
         )
         (block
-          (comment "if sv1(strtab,ss,sl, '>') { emit_char(ob, 'g');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // gt")
           (call_stmt emit_char
             (var ob)
             (int:u8 103)
           )
-          (comment "if sv1(strtab,ss,sl, '>') { emit_char(ob, 'g');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // gt")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "if sv1(strtab,ss,sl, '>') { emit_char(ob, 'g');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // gt")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv1(strtab,ss,sl, '>') { emit_char(ob, 'g');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // gt")
           (return)
         )
       )
@@ -6058,27 +5788,22 @@
           (int:u8 60)
         )
         (block
-          (comment "if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl")
           (call_stmt emit_char
             (var ob)
             (int:u8 115)
           )
-          (comment "if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl")
           (call_stmt emit_char
             (var ob)
             (int:u8 104)
           )
-          (comment "if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl")
           (return)
         )
       )
@@ -6092,27 +5817,22 @@
           (int:u8 62)
         )
         (block
-          (comment "if sv2(strtab,ss,sl, '>','>') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // shr")
           (call_stmt emit_char
             (var ob)
             (int:u8 115)
           )
-          (comment "if sv2(strtab,ss,sl, '>','>') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // shr")
           (call_stmt emit_char
             (var ob)
             (int:u8 104)
           )
-          (comment "if sv2(strtab,ss,sl, '>','>') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // shr")
           (call_stmt emit_char
             (var ob)
             (int:u8 114)
           )
-          (comment "if sv2(strtab,ss,sl, '>','>') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // shr")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv2(strtab,ss,sl, '>','>') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // shr")
           (return)
         )
       )
@@ -6126,22 +5846,18 @@
           (int:u8 61)
         )
         (block
-          (comment "if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq")
           (call_stmt emit_char
             (var ob)
             (int:u8 101)
           )
-          (comment "if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq")
           (call_stmt emit_char
             (var ob)
             (int:u8 113)
           )
-          (comment "if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq")
           (return)
         )
       )
@@ -6155,22 +5871,18 @@
           (int:u8 61)
         )
         (block
-          (comment "if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne")
           (call_stmt emit_char
             (var ob)
             (int:u8 110)
           )
-          (comment "if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne")
           (call_stmt emit_char
             (var ob)
             (int:u8 101)
           )
-          (comment "if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne")
           (return)
         )
       )
@@ -6184,22 +5896,18 @@
           (int:u8 61)
         )
         (block
-          (comment "if sv2(strtab,ss,sl, '<','=') { emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // le")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "if sv2(strtab,ss,sl, '<','=') { emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // le")
           (call_stmt emit_char
             (var ob)
             (int:u8 101)
           )
-          (comment "if sv2(strtab,ss,sl, '<','=') { emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // le")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv2(strtab,ss,sl, '<','=') { emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // le")
           (return)
         )
       )
@@ -6213,22 +5921,18 @@
           (int:u8 61)
         )
         (block
-          (comment "if sv2(strtab,ss,sl, '>','=') { emit_char(ob, 'g');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ge")
           (call_stmt emit_char
             (var ob)
             (int:u8 103)
           )
-          (comment "if sv2(strtab,ss,sl, '>','=') { emit_char(ob, 'g');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ge")
           (call_stmt emit_char
             (var ob)
             (int:u8 101)
           )
-          (comment "if sv2(strtab,ss,sl, '>','=') { emit_char(ob, 'g');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ge")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
-          (comment "if sv2(strtab,ss,sl, '>','=') { emit_char(ob, 'g');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ge")
           (return)
         )
       )
@@ -6283,7 +5987,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6293,22 +5996,18 @@
             (var ob)
             (int:u8 112)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 115)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 104)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
@@ -6318,17 +6017,14 @@
             (var ob)
             (int:u8 105)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 110)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6341,7 +6037,6 @@
               (var n)
             )
           )
-          (comment "emit_int(ob, n_ival(nodes,n)); emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -6362,7 +6057,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6372,22 +6066,18 @@
             (var ob)
             (int:u8 112)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 115)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 104)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
@@ -6397,17 +6087,14 @@
             (var ob)
             (int:u8 105)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 110)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6494,7 +6181,6 @@
             (var ob)
             (var is_true)
           )
-          (comment "emit_int(ob, is_true); emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -6531,7 +6217,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6541,22 +6226,18 @@
             (var ob)
             (int:u8 112)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 117)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 115)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 104)
           )
-          (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
           (call_stmt emit_char
             (var ob)
             (int:u8 95)
@@ -6566,17 +6247,14 @@
             (var ob)
             (int:u8 115)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 114)
           )
-          (comment "emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6586,7 +6264,6 @@
             (var ob)
             (var idx)
           )
-          (comment "emit_int(ob, idx); emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -6607,7 +6284,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6617,22 +6293,18 @@
             (var ob)
             (int:u8 108)
           )
-          (comment "emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 100)
           )
-          (comment "emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6650,7 +6322,6 @@
               (var n)
             )
           )
-          (comment "emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -6733,7 +6404,6 @@
               (var nargs)
             )
             (block
-              (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
               (call_stmt cg_expr
                 (var nodes)
                 (var strtab)
@@ -6744,7 +6414,6 @@
                   (var ai)
                 )
               )
-              (comment "while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }")
               (assign ai
                 (binop +
                   (var ai)
@@ -6762,7 +6431,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6772,22 +6440,18 @@
             (var ob)
             (int:u8 99)
           )
-          (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6899,7 +6563,6 @@
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -6934,17 +6597,14 @@
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, 10u8);  // neg")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 101)
               )
-              (comment "emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, 10u8);  // neg")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 103)
               )
-              (comment "emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, 10u8);  // neg")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -6956,22 +6616,18 @@
                 (var ob)
                 (int:u8 108)
               )
-              (comment "emit_char(ob, 'l');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');emit_char(ob, 10u8);  // lnot")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'l');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');emit_char(ob, 10u8);  // lnot")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 111)
               )
-              (comment "emit_char(ob, 'l');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');emit_char(ob, 10u8);  // lnot")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'l');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');emit_char(ob, 10u8);  // lnot")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7038,7 +6694,6 @@
                 (type i32)
                 (var g_lc)
               )
-              (comment "var lf: i32 = g_lc; g_lc = g_lc + 1;")
               (assign g_lc
                 (binop +
                   (var g_lc)
@@ -7050,7 +6705,6 @@
                 (type i32)
                 (var g_lc)
               )
-              (comment "var le: i32 = g_lc; g_lc = g_lc + 1;")
               (assign g_lc
                 (binop +
                   (var g_lc)
@@ -7070,7 +6724,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7080,22 +6733,18 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -7105,22 +6754,18 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 102)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 111)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
@@ -7130,27 +6775,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lf)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7168,7 +6808,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7178,22 +6817,18 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -7203,22 +6838,18 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 102)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 111)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
@@ -7228,27 +6859,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lf)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7258,7 +6884,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7268,22 +6893,18 @@
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 115)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 104)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -7293,27 +6914,22 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 49)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7323,7 +6939,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7333,17 +6948,14 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
@@ -7353,27 +6965,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var le)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7383,27 +6990,22 @@
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lf)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 58)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7413,7 +7015,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7423,22 +7024,18 @@
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 115)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 104)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -7448,27 +7045,22 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 48)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7478,27 +7070,22 @@
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var le)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 58)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7522,7 +7109,6 @@
                 (type i32)
                 (var g_lc)
               )
-              (comment "var lt: i32 = g_lc; g_lc = g_lc + 1;")
               (assign g_lc
                 (binop +
                   (var g_lc)
@@ -7534,7 +7120,6 @@
                 (type i32)
                 (var g_lc)
               )
-              (comment "var le: i32 = g_lc; g_lc = g_lc + 1;")
               (assign g_lc
                 (binop +
                   (var g_lc)
@@ -7554,7 +7139,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7564,22 +7148,18 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -7589,7 +7169,6 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 102)
@@ -7599,27 +7178,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lt)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7637,7 +7211,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7647,22 +7220,18 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -7672,7 +7241,6 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'f');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 102)
@@ -7682,27 +7250,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lt)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7712,7 +7275,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7722,22 +7284,18 @@
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 115)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 104)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -7747,27 +7305,22 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 48)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7777,7 +7330,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7787,17 +7339,14 @@
                 (var ob)
                 (int:u8 106)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 109)
               )
-              (comment "emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 112)
@@ -7807,27 +7356,22 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var le)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7837,27 +7381,22 @@
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var lt)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 58)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7867,7 +7406,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -7877,22 +7415,18 @@
                 (var ob)
                 (int:u8 112)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 117)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 115)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 104)
               )
-              (comment "emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
@@ -7902,27 +7436,22 @@
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 49)
               )
-              (comment "emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -7932,27 +7461,22 @@
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 95)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 76)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_int
                 (var ob)
                 (var le)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 58)
               )
-              (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -8047,7 +7571,6 @@
               (int:u8 56)
             )
             (block
-              (comment "if sv2(strtab, tss, tsl, 'u','8') { is_prim = true; }")
               (assign is_prim
                 (bool true)
               )
@@ -8063,7 +7586,6 @@
               (int:u8 56)
             )
             (block
-              (comment "if sv2(strtab, tss, tsl, 'i','8') { is_prim = true; }")
               (assign is_prim
                 (bool true)
               )
@@ -8110,7 +7632,6 @@
                   )
                 )
                 (block
-                  (comment "if get(strtab,tss)=='u' && get(strtab,(tss+1))=='1' && get(strtab,(tss+2))=='6' { is_prim = true; }")
                   (assign is_prim
                     (bool true)
                   )
@@ -8150,7 +7671,6 @@
                   )
                 )
                 (block
-                  (comment "if get(strtab,tss)=='u' && get(strtab,(tss+1))=='3' && get(strtab,(tss+2))=='2' { is_prim = true; }")
                   (assign is_prim
                     (bool true)
                   )
@@ -8190,7 +7710,6 @@
                   )
                 )
                 (block
-                  (comment "if get(strtab,tss)=='i' && get(strtab,(tss+1))=='1' && get(strtab,(tss+2))=='6' { is_prim = true; }")
                   (assign is_prim
                     (bool true)
                   )
@@ -8230,7 +7749,6 @@
                   )
                 )
                 (block
-                  (comment "if get(strtab,tss)=='i' && get(strtab,(tss+1))=='3' && get(strtab,(tss+2))=='2' { is_prim = true; }")
                   (assign is_prim
                     (bool true)
                   )
@@ -8291,7 +7809,6 @@
                   )
                 )
                 (block
-                  (comment "if get(strtab,tss)=='b' && get(strtab,(tss+1))=='o' && get(strtab,(tss+2))=='o' && get(strtab,(tss+3))=='l' { is_prim = true; }")
                   (assign is_prim
                     (bool true)
                   )
@@ -8308,7 +7825,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -8318,22 +7834,18 @@
                 (var ob)
                 (int:u8 99)
               )
-              (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 97)
               )
-              (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 115)
               )
-              (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -8345,7 +7857,6 @@
                 (var tss)
                 (var tsl)
               )
-              (comment "emit_n(ob, strtab, tss, tsl); emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -8458,17 +7969,14 @@
         (var ob)
         (int:u8 46)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, ' ');")
       (call_stmt emit_char
         (var ob)
         (int:u8 102)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, ' ');")
       (call_stmt emit_char
         (var ob)
         (int:u8 110)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, ' ');")
       (call_stmt emit_char
         (var ob)
         (int:u8 32)
@@ -8553,17 +8061,14 @@
             (var ob)
             (int:u8 118)
           )
-          (comment "emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');")
           (call_stmt emit_char
             (var ob)
             (int:u8 105)
           )
-          (comment "emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');")
           (call_stmt emit_char
             (var ob)
             (int:u8 100)
@@ -8612,32 +8117,26 @@
             (var ob)
             (int:u8 46)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 112)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 114)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 109)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -8764,32 +8263,26 @@
             (var ob)
             (int:u8 46)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 111)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 99)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "emit_char(ob, '.');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
@@ -8856,7 +8349,6 @@
         (var ob)
         (int:u8 32)
       )
-      (comment "emit_char(ob, ' ');emit_char(ob, ' ');")
       (call_stmt emit_char
         (var ob)
         (int:u8 32)
@@ -8866,27 +8358,22 @@
         (var ob)
         (int:u8 114)
       )
-      (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
       (call_stmt emit_char
         (var ob)
         (int:u8 101)
       )
-      (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
       (call_stmt emit_char
         (var ob)
         (int:u8 116)
       )
-      (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
       (call_stmt emit_char
         (var ob)
         (int:u8 117)
       )
-      (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
       (call_stmt emit_char
         (var ob)
         (int:u8 114)
       )
-      (comment "emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');")
       (call_stmt emit_char
         (var ob)
         (int:u8 110)
@@ -8896,27 +8383,22 @@
         (var ob)
         (int:u8 95)
       )
-      (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 118)
       )
-      (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 111)
       )
-      (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 105)
       )
-      (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 100)
       )
-      (comment "emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 10)
@@ -8926,32 +8408,26 @@
         (var ob)
         (int:u8 46)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 101)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 110)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 100)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 102)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 110)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 10)
@@ -8995,17 +8471,14 @@
         (var ob)
         (int:u8 46)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 98)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 99)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 10)
@@ -9033,72 +8506,58 @@
             (var ob)
             (int:u8 59)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 115)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 114)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 105)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 110)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 103)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 32)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 116)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 97)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 98)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 108)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 101)
           )
-          (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -9147,37 +8606,30 @@
                 (var ob)
                 (int:u8 46)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 115)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 116)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 114)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 105)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 110)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 103)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -9192,7 +8644,6 @@
                 (var ob)
                 (int:u8 32)
               )
-              (comment "emit_char(ob, ' ');emit_char(ob, '\"');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 34)
@@ -9209,7 +8660,6 @@
                 (var ob)
                 (int:u8 34)
               )
-              (comment "emit_char(ob, '\"');emit_char(ob, 10u8);")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 10)
@@ -9272,47 +8722,38 @@
                     (var ob)
                     (int:u8 59)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 32)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 103)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 108)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 111)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 98)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 97)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 108)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 115)
                   )
-                  (comment "emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, 10u8);")
                   (call_stmt emit_char
                     (var ob)
                     (int:u8 10)
@@ -9351,7 +8792,6 @@
                   (int 0)
                 )
                 (block
-                  (comment "if init_n >= 0 { initval = n_ival(nodes, init_n); }")
                   (assign initval
                     (call n_ival
                       (var nodes)
@@ -9365,37 +8805,30 @@
                 (var ob)
                 (int:u8 46)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 103)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 108)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 111)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 98)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 97)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 108)
               )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');")
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
@@ -9464,7 +8897,6 @@
           (int 1)
         )
         (block
-          (comment "if has_global == 1 { emit_char(ob, 10u8); }")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
@@ -9520,17 +8952,14 @@
         (var ob)
         (int:u8 46)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');")
       (call_stmt emit_char
         (var ob)
         (int:u8 101)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');")
       (call_stmt emit_char
         (var ob)
         (int:u8 110)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');")
       (call_stmt emit_char
         (var ob)
         (int:u8 100)
@@ -9540,12 +8969,10 @@
         (var ob)
         (int:u8 98)
       )
-      (comment "emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 99)
       )
-      (comment "emit_char(ob, 'b');emit_char(ob, 'c');emit_char(ob, 10u8);")
       (call_stmt emit_char
         (var ob)
         (int:u8 10)
@@ -9658,7 +9085,6 @@
           (int 0)
         )
         (block
-          (comment "if root < 0 { sys_exit(1); }")
           (call_stmt sys_exit
             (int 1)
           )
@@ -9682,11 +9108,9 @@
       (call_stmt delete
         (var in_buf)
       )
-      (comment "delete(in_buf); delete(atom_buf); destroy(out_buf);")
       (call_stmt delete
         (var atom_buf)
       )
-      (comment "delete(in_buf); delete(atom_buf); destroy(out_buf);")
       (call_stmt destroy
         (var out_buf)
       )
@@ -9694,15 +9118,12 @@
       (call_stmt delete
         (var nodes)
       )
-      (comment "delete(nodes); delete(strtab); delete(slits); delete(locals);")
       (call_stmt delete
         (var strtab)
       )
-      (comment "delete(nodes); delete(strtab); delete(slits); delete(locals);")
       (call_stmt delete
         (var slits)
       )
-      (comment "delete(nodes); delete(strtab); delete(slits); delete(locals);")
       (call_stmt delete
         (var locals)
       )

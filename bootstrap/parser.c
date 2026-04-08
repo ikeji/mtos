@@ -9,6 +9,7 @@ typedef struct {
     int pos;
     const char *filename;
     const char *source;  /* original source text (for comment generation) */
+    int last_comment_line; /* suppress duplicate comments for same line */
 } Parser;
 
 static Token *cur_tok(Parser *p) {
@@ -51,6 +52,8 @@ static int match(Parser *p, TokenKind k) {
 /* Generate a (comment "...") node for the given source line number */
 static AstNode *make_comment(Parser *p, int line) {
     if (!p->source) return NULL;
+    if (line == p->last_comment_line) return NULL;
+    p->last_comment_line = line;
     const char *s = p->source;
     int cur = 1;
     while (*s && cur < line) { if (*s == '\n') cur++; s++; }
@@ -795,6 +798,7 @@ AstNode *parse(Token *tokens, int ntokens, const char *filename, const char *sou
     p.pos = 0;
     p.filename = filename;
     p.source = source;
+    p.last_comment_line = 0;
 
     AstNode *prog = ast_node("program", 1);
 

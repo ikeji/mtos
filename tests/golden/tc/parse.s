@@ -416,6 +416,9 @@ g_tok_neg:
     .globl g_tok_line
 g_tok_line:
     .word 1
+    .globl g_last_comment_line
+g_last_comment_line:
+    .word 0
     .globl FI_STRIDE
 FI_STRIDE:
     .word 4
@@ -18296,6 +18299,38 @@ emit_comment_src__StringBuffer__SourceReader:
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
+    la   t1, g_tok_line
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, g_last_comment_line
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, .L_f84_pc5
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_f84_pc5:
+    la   t1, g_tok_line
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    la   t1, g_last_comment_line
+    sw   t0, 0(t1)
     call StringBuffer_new
     addi sp, sp, -4
     sw   a0, 0(sp)

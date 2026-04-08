@@ -15,7 +15,6 @@ __L0:
   push_int 5
   eq
   jump_ifnot __L2
-; if i == 5 { break; }
   jump __L1
 __L2:
 ; i = i + 1;

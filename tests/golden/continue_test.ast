@@ -39,7 +39,6 @@
               (int 0)
             )
             (block
-              (comment "if i % 2 == 0 { continue; }")
               (continue)
             )
           )

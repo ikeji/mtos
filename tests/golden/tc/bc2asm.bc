@@ -681,7 +681,6 @@ __L20:
   push_str 0
   call emit_string StringBuffer StringLiteral
   pop
-; fn e4(ob: StringBuffer) -> void { emit_string(ob, "    "); return; }
   return_void
   return_void
 .endfn
@@ -693,7 +692,6 @@ __L20:
   push_str 1
   call emit_string StringBuffer StringLiteral
   pop
-; fn ecomma(ob: StringBuffer) -> void { emit_string(ob, ", "); return; }
   return_void
   return_void
 .endfn
@@ -706,12 +704,10 @@ __L20:
   load n
   call emit_int StringBuffer i32
   pop
-; emit_int(ob, n); emit_string(ob, "(sp)\n"); return;
   load ob
   push_str 2
   call emit_string StringBuffer StringLiteral
   pop
-; emit_int(ob, n); emit_string(ob, "(sp)\n"); return;
   return_void
   return_void
 .endfn
@@ -724,12 +720,10 @@ __L20:
   load n
   call emit_int StringBuffer i32
   pop
-; emit_int(ob, n); emit_string(ob, "(s0)\n"); return;
   load ob
   push_str 3
   call emit_string StringBuffer StringLiteral
   pop
-; emit_int(ob, n); emit_string(ob, "(s0)\n"); return;
   return_void
   return_void
 .endfn
@@ -742,12 +736,10 @@ __L20:
   load n
   call emit_int StringBuffer i32
   pop
-; emit_int(ob, n); emit_string(ob, "(t0)\n"); return;
   load ob
   push_str 4
   call emit_string StringBuffer StringLiteral
   pop
-; emit_int(ob, n); emit_string(ob, "(t0)\n"); return;
   return_void
   return_void
 .endfn
@@ -759,7 +751,6 @@ __L20:
   push_str 5
   call emit_string StringBuffer StringLiteral
   pop
-; fn eregsp(ob: StringBuffer) -> void { emit_string(ob, "sp, "); return; }
   return_void
   return_void
 .endfn
@@ -771,7 +762,6 @@ __L20:
   push_str 6
   call emit_string StringBuffer StringLiteral
   pop
-; fn eregs0(ob: StringBuffer) -> void { emit_string(ob, "s0, "); return; }
   return_void
   return_void
 .endfn
@@ -783,7 +773,6 @@ __L20:
   push_str 7
   call emit_string StringBuffer StringLiteral
   pop
-; fn eregt0(ob: StringBuffer) -> void { emit_string(ob, "t0, "); return; }
   return_void
   return_void
 .endfn
@@ -795,7 +784,6 @@ __L20:
   push_str 8
   call emit_string StringBuffer StringLiteral
   pop
-; fn eregt1(ob: StringBuffer) -> void { emit_string(ob, "t1, "); return; }
   return_void
   return_void
 .endfn
@@ -807,7 +795,6 @@ __L20:
   push_str 9
   call emit_string StringBuffer StringLiteral
   pop
-; fn eregra(ob: StringBuffer) -> void { emit_string(ob, "ra, "); return; }
   return_void
   return_void
 .endfn
@@ -819,7 +806,6 @@ __L20:
   push_str 10
   call emit_string StringBuffer StringLiteral
   pop
-; fn e_addi(ob: StringBuffer) -> void { emit_string(ob, "    addi "); return; }
   return_void
   return_void
 .endfn
@@ -831,7 +817,6 @@ __L20:
   push_str 11
   call emit_string StringBuffer StringLiteral
   pop
-; fn e_sw(ob: StringBuffer) -> void { emit_string(ob, "    sw   "); return; }
   return_void
   return_void
 .endfn
@@ -843,7 +828,6 @@ __L20:
   push_str 12
   call emit_string StringBuffer StringLiteral
   pop
-; fn e_lw(ob: StringBuffer) -> void { emit_string(ob, "    lw   "); return; }
   return_void
   return_void
 .endfn
@@ -855,7 +839,6 @@ __L20:
   push_str 13
   call emit_string StringBuffer StringLiteral
   pop
-; fn e_li(ob: StringBuffer) -> void { emit_string(ob, "    li   "); return; }
   return_void
   return_void
 .endfn
@@ -867,7 +850,6 @@ __L20:
   push_str 14
   call emit_string StringBuffer StringLiteral
   pop
-; fn e_la(ob: StringBuffer) -> void { emit_string(ob, "    la   "); return; }
   return_void
   return_void
 .endfn
@@ -878,25 +860,20 @@ __L20:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 45
   call emit_char StringBuffer u8
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 52
   call emit_char StringBuffer u8
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -905,11 +882,9 @@ __L20:
   load ob
   call e_sw StringBuffer
   pop
-; e_sw(ob); eregt0(ob); eNspnl(0,ob);
   load ob
   call eregt0 StringBuffer
   pop
-; e_sw(ob); eregt0(ob); eNspnl(0,ob);
   push_int 0
   load ob
   call eNspnl i32 StringBuffer
@@ -925,11 +900,9 @@ __L20:
   load ob
   call e_lw StringBuffer
   pop
-; e_lw(ob); eregt0(ob); eNspnl(0,ob);
   load ob
   call eregt0 StringBuffer
   pop
-; e_lw(ob); eregt0(ob); eNspnl(0,ob);
   push_int 0
   load ob
   call eNspnl i32 StringBuffer
@@ -938,20 +911,16 @@ __L20:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 52
   call emit_char StringBuffer u8
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -967,11 +936,9 @@ __L20:
   load ob
   call e_lw StringBuffer
   pop
-; e_lw(ob); eregt1(ob); eNspnl(0,ob);
   load ob
   call eregt1 StringBuffer
   pop
-; e_lw(ob); eregt1(ob); eNspnl(0,ob);
   push_int 0
   load ob
   call eNspnl i32 StringBuffer
@@ -980,11 +947,9 @@ __L20:
   load ob
   call e_lw StringBuffer
   pop
-; e_lw(ob); eregt0(ob); eNspnl(4,ob);
   load ob
   call eregt0 StringBuffer
   pop
-; e_lw(ob); eregt0(ob); eNspnl(4,ob);
   push_int 4
   load ob
   call eNspnl i32 StringBuffer
@@ -993,20 +958,16 @@ __L20:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '8');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '8');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '8');emit_char(ob, 10u8);
   load ob
   push_int 56
   call emit_char StringBuffer u8
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '8');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1022,27 +983,22 @@ __L20:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 109
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 118
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1051,17 +1007,14 @@ __L20:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1070,11 +1023,9 @@ __L20:
   load ob
   call e_lw StringBuffer
   pop
-; e_lw(ob); eregra(ob); eNt0nl(0-4,ob);
   load ob
   call eregra StringBuffer
   pop
-; e_lw(ob); eregra(ob); eNt0nl(0-4,ob);
   push_int 0
   push_int 4
   sub
@@ -1085,11 +1036,9 @@ __L20:
   load ob
   call e_lw StringBuffer
   pop
-; e_lw(ob); eregs0(ob); eNt0nl(0-8,ob);
   load ob
   call eregs0 StringBuffer
   pop
-; e_lw(ob); eregs0(ob); eNt0nl(0-8,ob);
   push_int 0
   push_int 8
   sub
@@ -1100,7 +1049,6 @@ __L20:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob);
   load ob
   call eregsp StringBuffer
   pop
@@ -1109,17 +1057,14 @@ __L20:
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, ',');emit_char(ob, ' '); // "t0, "
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, ',');emit_char(ob, ' '); // "t0, "
   load ob
   push_int 44
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, ',');emit_char(ob, ' '); // "t0, "
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1129,7 +1074,6 @@ __L20:
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1138,22 +1082,18 @@ __L20:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1172,7 +1112,6 @@ __L20:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1182,17 +1121,14 @@ __L20:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
   load ob
   push_int 76
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
   load ob
   push_int 95
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
   load ob
   push_int 102
   call emit_char StringBuffer u8
@@ -1202,7 +1138,6 @@ __L20:
   load fi
   call emit_int StringBuffer i32
   pop
-; emit_int(ob, fi);emit_char(ob, '_');
   load ob
   push_int 95
   call emit_char StringBuffer u8
@@ -1212,22 +1147,18 @@ __L20:
   push_int 112
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 99
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   load pc
   call emit_int StringBuffer i32
   pop
-; emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 58
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1246,17 +1177,14 @@ __L20:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
   load ob
   push_int 76
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
   load ob
   push_int 95
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
   load ob
   push_int 102
   call emit_char StringBuffer u8
@@ -1266,7 +1194,6 @@ __L20:
   load fi
   call emit_int StringBuffer i32
   pop
-; emit_int(ob, fi);emit_char(ob, '_');
   load ob
   push_int 95
   call emit_char StringBuffer u8
@@ -1276,12 +1203,10 @@ __L20:
   push_int 112
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);
   load ob
   push_int 99
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);
   load ob
   load pc
   call emit_int StringBuffer i32
@@ -1299,27 +1224,22 @@ __L20:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 106
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1330,7 +1250,6 @@ __L20:
   load ob
   call e_pcref i32 i32 StringBuffer
   pop
-; e_pcref(fi,target,ob);emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1359,22 +1278,18 @@ __L20:
   push_int 98
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 110
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 122
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1386,22 +1301,18 @@ __L0:
   push_int 98
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 113
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 122
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1412,12 +1323,10 @@ __L1:
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
   load ob
   call ecomma StringBuffer
   pop
@@ -1427,7 +1336,6 @@ __L1:
   load ob
   call e_pcref i32 i32 StringBuffer
   pop
-; e_pcref(fi,target,ob);emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1478,7 +1386,6 @@ __L5:
   push_int 0
 __L6:
   jump_ifnot __L4
-; if get(strtab,(ss+i))==95u8 && get(strtab,(ss+i+1))==95u8 { return i; }
   load i
   return
 __L4:
@@ -1504,27 +1411,22 @@ __L3:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
   load ob
   push_int 99
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1552,27 +1454,22 @@ __L3:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 113
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 122
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1581,17 +1478,14 @@ __L3:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1607,27 +1501,22 @@ __L3:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 110
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 122
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1636,17 +1525,14 @@ __L3:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1662,27 +1548,22 @@ __L3:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 120
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1691,16 +1572,13 @@ __L3:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1716,27 +1594,22 @@ __L3:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 117
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 98
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1745,21 +1618,17 @@ __L3:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1776,27 +1645,22 @@ __L3:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -1810,21 +1674,17 @@ __L3:
   push_int 0
   eq
   jump_ifnot __L7
-; if swap == 0 { eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8); }
   load ob
   call eregt0 StringBuffer
   pop
-; if swap == 0 { eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8); }
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; if swap == 0 { eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8); }
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; if swap == 0 { eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8); }
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1835,17 +1695,14 @@ __L7:
   load ob
   call eregt1 StringBuffer
   pop
-; else         { eregt1(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8); }
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; else         { eregt1(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8); }
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; else         { eregt1(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8); }
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -1868,7 +1725,6 @@ __L8:
   load sl2
   ne
   jump_ifnot __L9
-; if sl1 != sl2 { return false; }
   push_int 0
   return
 __L9:
@@ -1894,7 +1750,6 @@ __L10:
   call get U8Array i32
   ne
   jump_ifnot __L12
-; if get(strtab,(ss1+i))!=get(strtab,(ss2+i)) { return false; }
   push_int 0
   return
 __L12:
@@ -1918,7 +1773,6 @@ __L11:
   load g_in_len
   ge
   jump_ifnot __L13
-; if g_in_pos >= g_in_len { return 0u8; }
   push_int 0
   return
 __L13:
@@ -2000,7 +1854,6 @@ __L22:
   push_int 0
 __L23:
   jump_ifnot __L21
-; while g_in_pos < g_in_len && (in_cur(src)==' '||in_cur(src)==9u8) { g_in_pos=g_in_pos+1; }
   load g_in_pos
   push_int 1
   add
@@ -2031,7 +1884,6 @@ __L28:
   push_int 0
 __L29:
   jump_ifnot __L27
-; while g_in_pos < g_in_len && in_cur(src)!=10u8 { g_in_pos=g_in_pos+1; }
   load g_in_pos
   push_int 1
   add
@@ -2043,7 +1895,6 @@ __L27:
   load g_in_len
   lt
   jump_ifnot __L30
-; if g_in_pos < g_in_len { g_in_pos=g_in_pos+1; }
   load g_in_pos
   push_int 1
   add
@@ -2094,7 +1945,6 @@ __L34:
   push_int 1
   add
   store g_stab_pos
-; g_stab_pos=g_stab_pos+1; g_in_pos=g_in_pos+1;
   load g_in_pos
   push_int 1
   add
@@ -2122,7 +1972,6 @@ __L32:
 ; fn discard_tok(start: i32) -> void { g_stab_pos = start; return; }
   load start
   store g_stab_pos
-; fn discard_tok(start: i32) -> void { g_stab_pos = start; return; }
   return_void
   return_void
 .endfn
@@ -2138,7 +1987,6 @@ __L32:
 ; var neg: i32=0; var i: i32=0;
   push_int 0
   store neg
-; var neg: i32=0; var i: i32=0;
   push_int 0
   store i
 ; if sl>0&&get(strtab,ss)=='-' { neg=1; i=1; }
@@ -2158,10 +2006,8 @@ __L36:
   push_int 0
 __L37:
   jump_ifnot __L35
-; if sl>0&&get(strtab,ss)=='-' { neg=1; i=1; }
   push_int 1
   store neg
-; if sl>0&&get(strtab,ss)=='-' { neg=1; i=1; }
   push_int 1
   store i
 __L35:
@@ -2196,7 +2042,6 @@ __L41:
   push_int 0
 __L42:
   jump_ifnot __L40
-; if c>='0'&&c<='9' { r=r*10+(c as i32-48); }
   load r
   push_int 10
   mul
@@ -2219,7 +2064,6 @@ __L39:
   push_int 1
   eq
   jump_ifnot __L43
-; if neg==1 { return 0-r; }
   push_int 0
   load r
   sub
@@ -2263,7 +2107,6 @@ __L45:
   push_int 0
 __L46:
   jump_ifnot __L44
-; if g_in_pos<g_in_len&&in_cur(src)=='"' { g_in_pos=g_in_pos+1; }
   load g_in_pos
   push_int 1
   add
@@ -2292,7 +2135,6 @@ __L50:
   load src
   call in_cur U8Array
   store c
-; var c: u8=in_cur(src); g_in_pos=g_in_pos+1;
   load g_in_pos
   push_int 1
   add
@@ -2305,10 +2147,8 @@ __L50:
   push_int 34
   eq
   jump_ifnot __L51
-; if c=='"' { done=1; handled=1; }
   push_int 1
   store done
-; if c=='"' { done=1; handled=1; }
   push_int 1
   store handled
 __L51:
@@ -2331,7 +2171,6 @@ __L54:
   load src
   call in_cur U8Array
   store e
-; var e: u8=in_cur(src); g_in_pos=g_in_pos+1;
   load g_in_pos
   push_int 1
   add
@@ -2344,7 +2183,6 @@ __L54:
   push_int 110
   eq
   jump_ifnot __L55
-; if e=='n' { out=10u8; }
   push_int 10
   store out
 __L55:
@@ -2353,7 +2191,6 @@ __L55:
   push_int 114
   eq
   jump_ifnot __L56
-; if e=='r' { out=13u8; }
   push_int 13
   store out
 __L56:
@@ -2362,7 +2199,6 @@ __L56:
   push_int 116
   eq
   jump_ifnot __L57
-; if e=='t' { out=9u8; }
   push_int 9
   store out
 __L57:
@@ -2375,7 +2211,6 @@ __L57:
   load src
   call in_cur U8Array
   store h1
-; var h1: u8=in_cur(src); g_in_pos=g_in_pos+1;
   load g_in_pos
   push_int 1
   add
@@ -2384,7 +2219,6 @@ __L57:
   load src
   call in_cur U8Array
   store h2
-; var h2: u8=in_cur(src); g_in_pos=g_in_pos+1;
   load g_in_pos
   push_int 1
   add
@@ -2392,7 +2226,6 @@ __L57:
 ; var v1: i32=0; var v2: i32=0;
   push_int 0
   store v1
-; var v1: i32=0; var v2: i32=0;
   push_int 0
   store v2
 ; if h1>='0'&&h1<='9' { v1=h1 as i32-48; }
@@ -2410,7 +2243,6 @@ __L60:
   push_int 0
 __L61:
   jump_ifnot __L59
-; if h1>='0'&&h1<='9' { v1=h1 as i32-48; }
   load h1
   cast i32
   push_int 48
@@ -2432,7 +2264,6 @@ __L63:
   push_int 0
 __L64:
   jump_ifnot __L62
-; if h1>='A'&&h1<='F' { v1=h1 as i32-55; }
   load h1
   cast i32
   push_int 55
@@ -2454,7 +2285,6 @@ __L66:
   push_int 0
 __L67:
   jump_ifnot __L65
-; if h1>='a'&&h1<='f' { v1=h1 as i32-87; }
   load h1
   cast i32
   push_int 87
@@ -2476,7 +2306,6 @@ __L69:
   push_int 0
 __L70:
   jump_ifnot __L68
-; if h2>='0'&&h2<='9' { v2=h2 as i32-48; }
   load h2
   cast i32
   push_int 48
@@ -2498,7 +2327,6 @@ __L72:
   push_int 0
 __L73:
   jump_ifnot __L71
-; if h2>='A'&&h2<='F' { v2=h2 as i32-55; }
   load h2
   cast i32
   push_int 55
@@ -2520,7 +2348,6 @@ __L75:
   push_int 0
 __L76:
   jump_ifnot __L74
-; if h2>='a'&&h2<='f' { v2=h2 as i32-87; }
   load h2
   cast i32
   push_int 87
@@ -2542,12 +2369,10 @@ __L58:
   load out
   call set U8Array i32 u8
   pop
-; set(strtab,g_stab_pos,out); g_stab_pos=g_stab_pos+1; handled=1;
   load g_stab_pos
   push_int 1
   add
   store g_stab_pos
-; set(strtab,g_stab_pos,out); g_stab_pos=g_stab_pos+1; handled=1;
   push_int 1
   store handled
 __L52:
@@ -2556,13 +2381,11 @@ __L52:
   push_int 0
   eq
   jump_ifnot __L77
-; if handled==0 { set(strtab,g_stab_pos,c); g_stab_pos=g_stab_pos+1; }
   load strtab
   load g_stab_pos
   load c
   call set U8Array i32 u8
   pop
-; if handled==0 { set(strtab,g_stab_pos,c); g_stab_pos=g_stab_pos+1; }
   load g_stab_pos
   push_int 1
   add
@@ -2589,16 +2412,12 @@ __L48:
 ; var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
   push_int 0
   store a
-; var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
   push_int 0
   store b
-; var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
   push_int 0
   store c
-; var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
   push_int 0
   store d
-; var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
   push_int 0
   store e
 ; if sl>0 { a=get(strtab,ss); }
@@ -2606,7 +2425,6 @@ __L48:
   push_int 0
   gt
   jump_ifnot __L78
-; if sl>0 { a=get(strtab,ss); }
   load strtab
   load ss
   call get U8Array i32
@@ -2617,7 +2435,6 @@ __L78:
   push_int 1
   gt
   jump_ifnot __L79
-; if sl>1 { b=get(strtab,(ss+1)); }
   load strtab
   load ss
   push_int 1
@@ -2630,7 +2447,6 @@ __L79:
   push_int 2
   gt
   jump_ifnot __L80
-; if sl>2 { c=get(strtab,(ss+2)); }
   load strtab
   load ss
   push_int 2
@@ -2643,7 +2459,6 @@ __L80:
   push_int 3
   gt
   jump_ifnot __L81
-; if sl>3 { d=get(strtab,(ss+3)); }
   load strtab
   load ss
   push_int 3
@@ -2656,7 +2471,6 @@ __L81:
   push_int 4
   gt
   jump_ifnot __L82
-; if sl>4 { e=get(strtab,(ss+4)); }
   load strtab
   load ss
   push_int 4
@@ -2684,7 +2498,6 @@ __L85:
   push_int 0
 __L86:
   jump_ifnot __L84
-; if a=='o'&&b=='r' { return OP_OR; }
   load OP_OR
   return
 __L84:
@@ -2703,7 +2516,6 @@ __L88:
   push_int 0
 __L89:
   jump_ifnot __L87
-; if a=='e'&&b=='q' { return OP_EQ; }
   load OP_EQ
   return
 __L87:
@@ -2722,7 +2534,6 @@ __L91:
   push_int 0
 __L92:
   jump_ifnot __L90
-; if a=='n'&&b=='e' { return OP_NE; }
   load OP_NE
   return
 __L90:
@@ -2741,7 +2552,6 @@ __L94:
   push_int 0
 __L95:
   jump_ifnot __L93
-; if a=='l'&&b=='t' { return OP_LT; }
   load OP_LT
   return
 __L93:
@@ -2760,7 +2570,6 @@ __L97:
   push_int 0
 __L98:
   jump_ifnot __L96
-; if a=='l'&&b=='e' { return OP_LE; }
   load OP_LE
   return
 __L96:
@@ -2779,7 +2588,6 @@ __L100:
   push_int 0
 __L101:
   jump_ifnot __L99
-; if a=='g'&&b=='t' { return OP_GT; }
   load OP_GT
   return
 __L99:
@@ -2798,7 +2606,6 @@ __L103:
   push_int 0
 __L104:
   jump_ifnot __L102
-; if a=='g'&&b=='e' { return OP_GE; }
   load OP_GE
   return
 __L102:
@@ -2833,7 +2640,6 @@ __L107:
   push_int 0
 __L108:
   jump_ifnot __L106
-; if a=='a'&&b=='d'&&c=='d'  { return OP_ADD; }
   load OP_ADD
   return
 __L106:
@@ -2862,7 +2668,6 @@ __L112:
   push_int 0
 __L113:
   jump_ifnot __L111
-; if a=='s'&&b=='u'&&c=='b'  { return OP_SUB; }
   load OP_SUB
   return
 __L111:
@@ -2891,7 +2696,6 @@ __L117:
   push_int 0
 __L118:
   jump_ifnot __L116
-; if a=='m'&&b=='u'&&c=='l' { return OP_MUL; }
   load OP_MUL
   return
 __L116:
@@ -2920,7 +2724,6 @@ __L122:
   push_int 0
 __L123:
   jump_ifnot __L121
-; if a=='d'&&b=='i'&&c=='v' { return OP_DIV; }
   load OP_DIV
   return
 __L121:
@@ -2949,7 +2752,6 @@ __L127:
   push_int 0
 __L128:
   jump_ifnot __L126
-; if a=='m'&&b=='o'&&c=='d' { return OP_MOD; }
   load OP_MOD
   return
 __L126:
@@ -2978,7 +2780,6 @@ __L132:
   push_int 0
 __L133:
   jump_ifnot __L131
-; if a=='a'&&b=='n'&&c=='d'  { return OP_AND; }
   load OP_AND
   return
 __L131:
@@ -3007,7 +2808,6 @@ __L137:
   push_int 0
 __L138:
   jump_ifnot __L136
-; if a=='x'&&b=='o'&&c=='r' { return OP_XOR; }
   load OP_XOR
   return
 __L136:
@@ -3036,7 +2836,6 @@ __L142:
   push_int 0
 __L143:
   jump_ifnot __L141
-; if a=='s'&&b=='h'&&c=='l' { return OP_SHL; }
   load OP_SHL
   return
 __L141:
@@ -3065,7 +2864,6 @@ __L147:
   push_int 0
 __L148:
   jump_ifnot __L146
-; if a=='s'&&b=='h'&&c=='r' { return OP_SHR; }
   load OP_SHR
   return
 __L146:
@@ -3094,7 +2892,6 @@ __L152:
   push_int 0
 __L153:
   jump_ifnot __L151
-; if a=='p'&&b=='o'&&c=='p' { return OP_POP; }
   load OP_POP
   return
 __L151:
@@ -3123,7 +2920,6 @@ __L157:
   push_int 0
 __L158:
   jump_ifnot __L156
-; if a=='n'&&b=='e'&&c=='g' { return OP_NEG; }
   load OP_NEG
   return
 __L156:
@@ -3168,7 +2964,6 @@ __L163:
   push_int 0
 __L164:
   jump_ifnot __L162
-; if a=='l'&&b=='n'&&c=='o'&&d=='t' { return OP_LNOT; }
   load OP_LNOT
   return
 __L162:
@@ -3207,7 +3002,6 @@ __L170:
   push_int 0
 __L171:
   jump_ifnot __L169
-; if a=='c'&&b=='a'&&c=='s'&&d=='t'   { return OP_CAST; }
   load OP_CAST
   return
 __L169:
@@ -3246,7 +3040,6 @@ __L177:
   push_int 0
 __L178:
   jump_ifnot __L176
-; if a=='l'&&b=='o'&&c=='a'&&d=='d'  { return OP_LOAD; }
   load OP_LOAD
   return
 __L176:
@@ -3285,7 +3078,6 @@ __L184:
   push_int 0
 __L185:
   jump_ifnot __L183
-; if a=='j'&&b=='u'&&c=='m'&&d=='p' { return OP_JUMP; }
   load OP_JUMP
   return
 __L183:
@@ -3324,7 +3116,6 @@ __L191:
   push_int 0
 __L192:
   jump_ifnot __L190
-; if a=='c'&&b=='a'&&c=='l'&&d=='l'   { return OP_CALL; }
   load OP_CALL
   return
 __L190:
@@ -3334,7 +3125,6 @@ __L161:
   push_int 5
   eq
   jump_ifnot __L197
-; if sl==5 { if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; } }
   load a
   push_int 115
   eq
@@ -3379,7 +3169,6 @@ __L199:
   push_int 0
 __L200:
   jump_ifnot __L198
-; if sl==5 { if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; } }
   load OP_STORE
   return
 __L198:
@@ -3389,7 +3178,6 @@ __L197:
   push_int 6
   eq
   jump_ifnot __L207
-; if sl==6 { if a=='r'&&b=='e'&&c=='t' { return OP_RETURN; } }
   load a
   push_int 114
   eq
@@ -3414,7 +3202,6 @@ __L209:
   push_int 0
 __L210:
   jump_ifnot __L208
-; if sl==6 { if a=='r'&&b=='e'&&c=='t' { return OP_RETURN; } }
   load OP_RETURN
   return
 __L208:
@@ -3481,7 +3268,6 @@ __L216:
   push_int 105
   eq
   jump_ifnot __L223
-; if f=='i' { return OP_JUMP_IF; }
   load OP_JUMP_IF
   return
 __L223:
@@ -3549,7 +3335,6 @@ __L227:
   push_int 105
   eq
   jump_ifnot __L234
-; if f=='i' { return OP_PUSH_INT; }
   load OP_PUSH_INT
   return
 __L234:
@@ -3558,7 +3343,6 @@ __L234:
   push_int 115
   eq
   jump_ifnot __L235
-; if f=='s' { return OP_PUSH_STR; }
   load OP_PUSH_STR
   return
 __L235:
@@ -3569,12 +3353,10 @@ __L224:
   push_int 10
   eq
   jump_ifnot __L236
-; if sl==10 { if a=='j' { return OP_JUMP_IFNOT; } }
   load a
   push_int 106
   eq
   jump_ifnot __L237
-; if sl==10 { if a=='j' { return OP_JUMP_IFNOT; } }
   load OP_JUMP_IFNOT
   return
 __L237:
@@ -3584,7 +3366,6 @@ __L236:
   push_int 11
   eq
   jump_ifnot __L238
-; if sl==11 { if a=='r'&&b=='e' { return OP_RETURN_VOID; } }
   load a
   push_int 114
   eq
@@ -3599,7 +3380,6 @@ __L240:
   push_int 0
 __L241:
   jump_ifnot __L239
-; if sl==11 { if a=='r'&&b=='e' { return OP_RETURN_VOID; } }
   load OP_RETURN_VOID
   return
 __L239:
@@ -3746,7 +3526,6 @@ __L238:
   load v
   call set I32Array i32 i32
   pop
-; fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns,(fi*10+f),v); return; }
   return_void
   return_void
 .endfn
@@ -3796,7 +3575,6 @@ __L238:
   load v
   call set I32Array i32 i32
   pop
-; fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool,(i*4+f),v); return; }
   return_void
   return_void
 .endfn
@@ -3891,7 +3669,6 @@ __L238:
   load v
   call set I32Array i32 i32
   pop
-; set(instrs,((base+pc)*4+f),v); return;
   return_void
   return_void
 .endfn
@@ -3906,7 +3683,6 @@ __L238:
 ; var r: i32=0; var i: i32=from+3;
   push_int 0
   store r
-; var r: i32=0; var i: i32=from+3;
   load from
   push_int 3
   add
@@ -3917,12 +3693,10 @@ __L242:
   load to
   lt
   jump_ifnot __L243
-; while i<to { var c: u8=get(src,i); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }
   load src
   load i
   call get U8Array i32
   store c
-; while i<to { var c: u8=get(src,i); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }
   load c
   push_int 48
   ge
@@ -3937,7 +3711,6 @@ __L245:
   push_int 0
 __L246:
   jump_ifnot __L244
-; while i<to { var c: u8=get(src,i); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }
   load r
   push_int 10
   mul
@@ -3948,7 +3721,6 @@ __L246:
   add
   store r
 __L244:
-; while i<to { var c: u8=get(src,i); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }
   load i
   push_int 1
   add
@@ -4013,7 +3785,6 @@ __L243:
   push_int 1
   neg
   store cur_fn
-; var cur_fn: i32=-1; var done: i32=0;
   push_int 0
   store done
 ; while done==0&&g_in_pos<g_in_len {
@@ -4041,7 +3812,6 @@ __L250:
   load g_in_len
   ge
   jump_ifnot __L251
-; if g_in_pos>=g_in_len { done=1; }
   push_int 1
   store done
 __L251:
@@ -4069,7 +3839,6 @@ __L254:
   push_int 1
 __L255:
   jump_ifnot __L253
-; if c==10u8||c==13u8 { g_in_pos=g_in_pos+1; }
   load g_in_pos
   push_int 1
   add
@@ -4100,7 +3869,6 @@ __L257:
   push_int 0
 __L258:
   jump_ifnot __L256
-; if c!=10u8&&c!=13u8&&c==';' { skip_line(src); }
   load src
   call skip_line U8Array
   pop
@@ -4157,7 +3925,6 @@ __L263:
 ; var d0: u8=0u8; var d1: u8=0u8;
   push_int 0
   store d0
-; var d0: u8=0u8; var d1: u8=0u8;
   push_int 0
   store d1
 ; if dir_sl>0 { d0=get(strtab,dir_ss); }
@@ -4165,7 +3932,6 @@ __L263:
   push_int 0
   gt
   jump_ifnot __L268
-; if dir_sl>0 { d0=get(strtab,dir_ss); }
   load strtab
   load dir_ss
   call get U8Array i32
@@ -4176,7 +3942,6 @@ __L268:
   push_int 1
   gt
   jump_ifnot __L269
-; if dir_sl>1 { d1=get(strtab,(dir_ss+1)); }
   load strtab
   load dir_ss
   push_int 1
@@ -4219,7 +3984,6 @@ __L272:
   load idx_ss
   call discard_tok i32
   pop
-; discard_tok(idx_ss); skip_spaces(src);
   load src
   call skip_spaces U8Array
   pop
@@ -4260,7 +4024,6 @@ __L272:
   load g_nstrings
   gt
   jump_ifnot __L273
-; if idx+1>g_nstrings { g_nstrings=idx+1; }
   load idx
   push_int 1
   add
@@ -4295,7 +4058,6 @@ __L276:
   load strtab
   call next_tok U8Array U8Array
   store nm_ss
-; var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
   load nm_ss
   call tok_len i32
   store nm_sl
@@ -4304,7 +4066,6 @@ __L276:
   load strtab
   call next_tok U8Array U8Array
   store ty_ss
-; var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
   load ty_ss
   call discard_tok i32
   pop
@@ -4313,7 +4074,6 @@ __L276:
   load strtab
   call next_tok U8Array U8Array
   store iv_ss
-; var iv_ss: i32=next_tok(src,strtab); var iv_sl: i32=tok_len(iv_ss);
   load iv_ss
   call tok_len i32
   store iv_sl
@@ -4323,7 +4083,6 @@ __L276:
   load iv_sl
   call int_from_stab U8Array i32 i32
   store iv
-; var iv: i32=int_from_stab(strtab,iv_ss,iv_sl); discard_tok(iv_ss);
   load iv_ss
   call discard_tok i32
   pop
@@ -4361,7 +4120,6 @@ __L276:
   push_int 1
   add
   store g_nglobals
-; g_nglobals=g_nglobals+1; skip_line(src);
   load src
   call skip_line U8Array
   pop
@@ -4423,7 +4181,6 @@ __L283:
   push_int 95
   call set U8Array i32 u8
   pop
-; set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
   load g_stab_pos
   push_int 1
   add
@@ -4434,7 +4191,6 @@ __L283:
   push_int 95
   call set U8Array i32 u8
   pop
-; set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
   load g_stab_pos
   push_int 1
   add
@@ -4468,7 +4224,6 @@ __L281:
   load nm_ss
   call fn_set I32Array i32 i32 i32
   pop
-; fn_set(fns,cur_fn,0,nm_ss); fn_set(fns,cur_fn,1,nm_sl);
   load fns
   load cur_fn
   push_int 1
@@ -4482,7 +4237,6 @@ __L281:
   load g_nparams
   call fn_set I32Array i32 i32 i32
   pop
-; fn_set(fns,cur_fn,4,g_nparams); fn_set(fns,cur_fn,5,0);
   load fns
   load cur_fn
   push_int 5
@@ -4496,7 +4250,6 @@ __L281:
   load g_nlocals
   call fn_set I32Array i32 i32 i32
   pop
-; fn_set(fns,cur_fn,6,g_nlocals); fn_set(fns,cur_fn,7,0);
   load fns
   load cur_fn
   push_int 7
@@ -4510,7 +4263,6 @@ __L281:
   load g_ninstrs
   call fn_set I32Array i32 i32 i32
   pop
-; fn_set(fns,cur_fn,8,g_ninstrs); fn_set(fns,cur_fn,9,0);
   load fns
   load cur_fn
   push_int 9
@@ -4522,7 +4274,6 @@ __L281:
   push_int 1
   add
   store g_nfuncs
-; g_nfuncs=g_nfuncs+1; skip_line(src);
   load src
   call skip_line U8Array
   pop
@@ -4551,7 +4302,6 @@ __L286:
   load strtab
   call next_tok U8Array U8Array
   store nm_ss
-; var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
   load nm_ss
   call tok_len i32
   store nm_sl
@@ -4560,7 +4310,6 @@ __L286:
   load strtab
   call next_tok U8Array U8Array
   store ty_ss
-; var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
   load ty_ss
   call discard_tok i32
   pop
@@ -4571,7 +4320,6 @@ __L286:
   load nm_ss
   call pl_set I32Array i32 i32 i32
   pop
-; pl_set(params_pool,g_nparams,0,nm_ss); pl_set(params_pool,g_nparams,1,nm_sl);
   load params_pool
   load g_nparams
   push_int 1
@@ -4588,7 +4336,6 @@ __L286:
   push_int 0
   ge
   jump_ifnot __L287
-; if cur_fn>=0 { fn_set(fns,cur_fn,5,fn_nparam(fns,cur_fn)+1); }
   load fns
   load cur_fn
   push_int 5
@@ -4629,7 +4376,6 @@ __L290:
   load strtab
   call next_tok U8Array U8Array
   store nm_ss
-; var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
   load nm_ss
   call tok_len i32
   store nm_sl
@@ -4638,7 +4384,6 @@ __L290:
   load strtab
   call next_tok U8Array U8Array
   store ty_ss
-; var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
   load ty_ss
   call discard_tok i32
   pop
@@ -4649,7 +4394,6 @@ __L290:
   load nm_ss
   call pl_set I32Array i32 i32 i32
   pop
-; pl_set(locals_pool,g_nlocals,0,nm_ss); pl_set(locals_pool,g_nlocals,1,nm_sl);
   load locals_pool
   load g_nlocals
   push_int 1
@@ -4666,7 +4410,6 @@ __L290:
   push_int 0
   ge
   jump_ifnot __L291
-; if cur_fn>=0 { fn_set(fns,cur_fn,7,fn_nlocal(fns,cur_fn)+1); }
   load fns
   load cur_fn
   push_int 7
@@ -4691,7 +4434,6 @@ __L288:
   push_int 3
   gt
   jump_ifnot __L292
-; if dir_sl>3 { d3b=get(strtab,(dir_ss+3)); }
   load strtab
   load dir_ss
   push_int 3
@@ -4718,7 +4460,6 @@ __L295:
   load dir_ss
   call discard_tok i32
   pop
-; discard_tok(dir_ss); done=1;
   push_int 1
   store done
 __L293:
@@ -4825,7 +4566,6 @@ __L299:
   push_int 1
   neg
   store cur_fn
-; cur_fn=-1; skip_line(src);
   load src
   call skip_line U8Array
   pop
@@ -4889,7 +4629,6 @@ __L309:
   load dir_ss
   call discard_tok i32
   pop
-; discard_tok(dir_ss); skip_line(src);
   load src
   call skip_line U8Array
   pop
@@ -4971,7 +4710,6 @@ __L329:
   push_int 0
 __L330:
   jump_ifnot __L328
-; while g_in_pos<g_in_len&&in_cur(src)!=':'&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
   load g_in_pos
   push_int 1
   add
@@ -5010,7 +4748,6 @@ __L335:
   push_int 0
   ge
   jump_ifnot __L336
-; if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-fn_instr_base(fns,cur_fn)); }
   load label_pcs
   load lnum3
   load g_ninstrs
@@ -5222,7 +4959,6 @@ __L353:
   load strtab
   call next_tok U8Array U8Array
   store nm_ss
-; var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
   load nm_ss
   call tok_len i32
   store nm_sl
@@ -5234,7 +4970,6 @@ __L353:
   load nm_ss
   call ins_set I32Array i32 i32 i32 i32
   pop
-; ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
   load instrs
   load ib3
   load iidx
@@ -5286,7 +5021,6 @@ __L358:
   push_int 95
   call set U8Array i32 u8
   pop
-; set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
   load g_stab_pos
   push_int 1
   add
@@ -5297,7 +5031,6 @@ __L358:
   push_int 95
   call set U8Array i32 u8
   pop
-; set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
   load g_stab_pos
   push_int 1
   add
@@ -5342,7 +5075,6 @@ __L356:
   load nm_ss
   call ins_set I32Array i32 i32 i32 i32
   pop
-; ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
   load instrs
   load ib3
   load iidx
@@ -5361,7 +5093,6 @@ __L354:
   load strtab
   call next_tok U8Array U8Array
   store ty_ss
-; var ty_ss: i32=next_tok(src,strtab); var ty_sl: i32=tok_len(ty_ss);
   load ty_ss
   call tok_len i32
   store ty_sl
@@ -5373,7 +5104,6 @@ __L354:
   load ty_ss
   call ins_set I32Array i32 i32 i32 i32
   pop
-; ins_set(instrs,ib3,iidx,2,ty_ss); ins_set(instrs,ib3,iidx,3,ty_sl);
   load instrs
   load ib3
   load iidx
@@ -5431,7 +5161,6 @@ __L367:
   push_int 0
 __L368:
   jump_ifnot __L366
-; while g_in_pos<g_in_len&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
   load g_in_pos
   push_int 1
   add
@@ -5496,7 +5225,6 @@ __L248:
   load fi
   call fn_param_base I32Array i32
   store pb
-; var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);
   load fns
   load fi
   call fn_nparam I32Array i32
@@ -5506,7 +5234,6 @@ __L248:
   load fi
   call fn_local_base I32Array i32
   store lb
-; var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);
   load fns
   load fi
   call fn_nlocal I32Array i32
@@ -5536,7 +5263,6 @@ __L369:
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
   jump_ifnot __L371
-; if stab_eq(strtab,pl_name_ss(params_pool,pb+i),pl_name_sl(params_pool,pb+i),nm_ss,nm_sl) { return 1; }
   push_int 1
   return
 __L371:
@@ -5572,7 +5298,6 @@ __L372:
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
   jump_ifnot __L374
-; if stab_eq(strtab,pl_name_ss(locals_pool,lb+i),pl_name_sl(locals_pool,lb+i),nm_ss,nm_sl) { return 1; }
   push_int 1
   return
 __L374:
@@ -5607,7 +5332,6 @@ __L373:
   load fi
   call fn_param_base I32Array i32
   store pb
-; var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);
   load fns
   load fi
   call fn_nparam I32Array i32
@@ -5617,7 +5341,6 @@ __L373:
   load fi
   call fn_local_base I32Array i32
   store lb
-; var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);
   load fns
   load fi
   call fn_nlocal I32Array i32
@@ -5732,7 +5455,6 @@ __L379:
   push_int 8
   ne
   jump_ifnot __L381
-; if bsl!=8 { return 0; }
   push_int 0
   return
 __L381:
@@ -5743,7 +5465,6 @@ __L381:
   push_int 115
   ne
   jump_ifnot __L382
-; if get(strtab,ss)!='s' { return 0; }
   push_int 0
   return
 __L382:
@@ -5756,7 +5477,6 @@ __L382:
   push_int 101
   ne
   jump_ifnot __L383
-; if get(strtab,(ss+4))!='e' { return 0; }
   push_int 0
   return
 __L383:
@@ -5769,7 +5489,6 @@ __L383:
   push_int 120
   ne
   jump_ifnot __L384
-; if get(strtab,(ss+5))!='x' { return 0; }
   push_int 0
   return
 __L384:
@@ -5834,7 +5553,6 @@ __L389:
   load pc
   eq
   jump_ifnot __L392
-; if ins_ival(instrs,ibase,j)==pc { return 1; }
   push_int 1
   return
 __L392:
@@ -5889,17 +5607,14 @@ __L393:
   push_int 34
   eq
   jump_ifnot __L395
-; if c=='"'  { emit_char(ob, '\\');emit_char(ob, '"'); handled=1; }
   load ob
   push_int 92
   call emit_char StringBuffer u8
   pop
-; if c=='"'  { emit_char(ob, '\\');emit_char(ob, '"'); handled=1; }
   load ob
   push_int 34
   call emit_char StringBuffer u8
   pop
-; if c=='"'  { emit_char(ob, '\\');emit_char(ob, '"'); handled=1; }
   push_int 1
   store handled
 __L395:
@@ -5918,17 +5633,14 @@ __L397:
   push_int 0
 __L398:
   jump_ifnot __L396
-; if handled==0&&c=='\\'  { emit_char(ob, '\\');emit_char(ob, '\\'); handled=1; }
   load ob
   push_int 92
   call emit_char StringBuffer u8
   pop
-; if handled==0&&c=='\\'  { emit_char(ob, '\\');emit_char(ob, '\\'); handled=1; }
   load ob
   push_int 92
   call emit_char StringBuffer u8
   pop
-; if handled==0&&c=='\\'  { emit_char(ob, '\\');emit_char(ob, '\\'); handled=1; }
   push_int 1
   store handled
 __L396:
@@ -5947,17 +5659,14 @@ __L400:
   push_int 0
 __L401:
   jump_ifnot __L399
-; if handled==0&&c==10u8  { emit_char(ob, '\\');emit_char(ob, 'n'); handled=1; }
   load ob
   push_int 92
   call emit_char StringBuffer u8
   pop
-; if handled==0&&c==10u8  { emit_char(ob, '\\');emit_char(ob, 'n'); handled=1; }
   load ob
   push_int 110
   call emit_char StringBuffer u8
   pop
-; if handled==0&&c==10u8  { emit_char(ob, '\\');emit_char(ob, 'n'); handled=1; }
   push_int 1
   store handled
 __L399:
@@ -5976,17 +5685,14 @@ __L403:
   push_int 0
 __L404:
   jump_ifnot __L402
-; if handled==0&&c==13u8  { emit_char(ob, '\\');emit_char(ob, 'r'); handled=1; }
   load ob
   push_int 92
   call emit_char StringBuffer u8
   pop
-; if handled==0&&c==13u8  { emit_char(ob, '\\');emit_char(ob, 'r'); handled=1; }
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; if handled==0&&c==13u8  { emit_char(ob, '\\');emit_char(ob, 'r'); handled=1; }
   push_int 1
   store handled
 __L402:
@@ -6005,17 +5711,14 @@ __L406:
   push_int 0
 __L407:
   jump_ifnot __L405
-; if handled==0&&c==9u8   { emit_char(ob, '\\');emit_char(ob, 't'); handled=1; }
   load ob
   push_int 92
   call emit_char StringBuffer u8
   pop
-; if handled==0&&c==9u8   { emit_char(ob, '\\');emit_char(ob, 't'); handled=1; }
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; if handled==0&&c==9u8   { emit_char(ob, '\\');emit_char(ob, 't'); handled=1; }
   push_int 1
   store handled
 __L405:
@@ -6095,7 +5798,6 @@ __L408:
   push_int 0
   eq
   jump_ifnot __L413
-; if handled==0 { emit_char(ob, c); }
   load ob
   load c
   call emit_char StringBuffer u8
@@ -6204,7 +5906,6 @@ __L394:
   push_int 0
   ne
   jump_ifnot __L414
-; if pad!=0 { frame_size=frame_size+(16-pad); }
   load frame_size
   push_int 16
   load pad
@@ -6221,27 +5922,22 @@ __L414:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 103
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 98
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 108
   call emit_char StringBuffer u8
@@ -6251,14 +5947,12 @@ __L414:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' '); emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);
   load ob
   load strtab
   load nm_ss
   load nm_sl
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(ob, ' '); emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -6272,22 +5966,18 @@ __L414:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'y');emit_char(ob, 'p');emit_char(ob, 'e');
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'y');emit_char(ob, 'p');emit_char(ob, 'e');
   load ob
   push_int 121
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'y');emit_char(ob, 'p');emit_char(ob, 'e');
   load ob
   push_int 112
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'y');emit_char(ob, 'p');emit_char(ob, 'e');
   load ob
   push_int 101
   call emit_char StringBuffer u8
@@ -6297,7 +5987,6 @@ __L414:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -6314,22 +6003,18 @@ __L414:
   push_int 44
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ',');emit_char(ob, ' ');emit_char(ob, '@');emit_char(ob, 'f');emit_char(ob, 'u');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ',');emit_char(ob, ' ');emit_char(ob, '@');emit_char(ob, 'f');emit_char(ob, 'u');
   load ob
   push_int 64
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ',');emit_char(ob, ' ');emit_char(ob, '@');emit_char(ob, 'f');emit_char(ob, 'u');
   load ob
   push_int 102
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ',');emit_char(ob, ' ');emit_char(ob, '@');emit_char(ob, 'f');emit_char(ob, 'u');
   load ob
   push_int 117
   call emit_char StringBuffer u8
@@ -6339,22 +6024,18 @@ __L414:
   push_int 110
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'n');emit_char(ob, 'c');emit_char(ob, 't');emit_char(ob, 'i');emit_char(ob, 'o');
   load ob
   push_int 99
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'n');emit_char(ob, 'c');emit_char(ob, 't');emit_char(ob, 'i');emit_char(ob, 'o');
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'n');emit_char(ob, 'c');emit_char(ob, 't');emit_char(ob, 'i');emit_char(ob, 'o');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'n');emit_char(ob, 'c');emit_char(ob, 't');emit_char(ob, 'i');emit_char(ob, 'o');
   load ob
   push_int 111
   call emit_char StringBuffer u8
@@ -6364,7 +6045,6 @@ __L414:
   push_int 110
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'n');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -6376,12 +6056,10 @@ __L414:
   load nm_sl
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 58
   call emit_char StringBuffer u8
   pop
-; emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -6390,12 +6068,10 @@ __L414:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob); emit_char(ob, '#');emit_char(ob, ' ');
   load ob
   push_int 35
   call emit_char StringBuffer u8
   pop
-; e4(ob); emit_char(ob, '#');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -6405,47 +6081,38 @@ __L414:
   push_int 112
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 103
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 117
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 58
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'g');emit_char(ob, 'u');emit_char(ob, 'e');emit_char(ob, ':');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -6455,57 +6122,46 @@ __L414:
   push_int 102
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 109
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 95
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 122
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   push_int 61
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'f');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 'e');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'i');emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, '=');emit_int(ob, frame_size);
   load ob
   load frame_size
   call emit_int StringBuffer i32
@@ -6515,7 +6171,6 @@ __L414:
   push_int 44
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ',');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -6525,37 +6180,30 @@ __L414:
   push_int 112
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, np);
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, np);
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, np);
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, np);
   load ob
   push_int 109
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, np);
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, np);
   load ob
   push_int 61
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, np);
   load ob
   load np
   call emit_int StringBuffer i32
@@ -6565,7 +6213,6 @@ __L414:
   push_int 44
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ',');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -6575,42 +6222,34 @@ __L414:
   push_int 108
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
   load ob
   push_int 99
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
   load ob
   push_int 61
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
   load ob
   load nl
   call emit_int StringBuffer i32
   pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -6619,25 +6258,20 @@ __L414:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-'); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-'); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-'); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   push_int 45
   call emit_char StringBuffer u8
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-'); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   load frame_size
   call emit_int StringBuffer i32
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-'); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -6646,11 +6280,9 @@ __L414:
   load ob
   call e_sw StringBuffer
   pop
-; e_sw(ob); eregra(ob); eNspnl(frame_size-4,ob);
   load ob
   call eregra StringBuffer
   pop
-; e_sw(ob); eregra(ob); eNspnl(frame_size-4,ob);
   load frame_size
   push_int 4
   sub
@@ -6661,11 +6293,9 @@ __L414:
   load ob
   call e_sw StringBuffer
   pop
-; e_sw(ob); eregs0(ob); eNspnl(frame_size-8,ob);
   load ob
   call eregs0 StringBuffer
   pop
-; e_sw(ob); eregs0(ob); eNspnl(frame_size-8,ob);
   load frame_size
   push_int 8
   sub
@@ -6676,20 +6306,16 @@ __L414:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregs0(ob); eregsp(ob); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   call eregs0 StringBuffer
   pop
-; e_addi(ob); eregs0(ob); eregsp(ob); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregs0(ob); eregsp(ob); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   load frame_size
   call emit_int StringBuffer i32
   pop
-; e_addi(ob); eregs0(ob); eregsp(ob); emit_int(ob, frame_size); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -6722,7 +6348,6 @@ __L418:
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a'); emit_char(ob, (48+pi) as u8); ecomma(ob);
   load ob
   push_int 48
   load pi
@@ -6730,7 +6355,6 @@ __L418:
   cast u8
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a'); emit_char(ob, (48+pi) as u8); ecomma(ob);
   load ob
   call ecomma StringBuffer
   pop
@@ -6766,17 +6390,14 @@ __L419:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -6786,7 +6407,6 @@ __L419:
   push_int 108
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 'w');
   load ob
   push_int 119
   call emit_char StringBuffer u8
@@ -6796,12 +6416,10 @@ __L419:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -6811,12 +6429,10 @@ __L419:
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
   load ob
   call ecomma StringBuffer
   pop
@@ -6834,17 +6450,14 @@ __L419:
   push_int 40
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '(');emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, ')');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '(');emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, ')');
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '(');emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, ')');
   load ob
   push_int 41
   call emit_char StringBuffer u8
@@ -6863,12 +6476,10 @@ __L419:
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
   load ob
   call ecomma StringBuffer
   pop
@@ -6908,17 +6519,14 @@ __L421:
   push_int 122
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, 'r');emit_char(ob, 'o'); // "zero"
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, 'r');emit_char(ob, 'o'); // "zero"
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'z');emit_char(ob, 'e');emit_char(ob, 'r');emit_char(ob, 'o'); // "zero"
   load ob
   push_int 111
   call emit_char StringBuffer u8
@@ -6967,7 +6575,6 @@ __L423:
   push_int 1
   eq
   jump_ifnot __L425
-; if is_jump_target(instrs,ibase,ni,pc)==1 { asm_pc_label(fi,pc,ob); }
   load fi
   load pc
   load ob
@@ -7007,16 +6614,13 @@ __L425:
   load ob
   call e_li StringBuffer
   pop
-; e_li(ob); eregt0(ob); emit_int(ob, ival); emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; e_li(ob); eregt0(ob); emit_int(ob, ival); emit_char(ob, 10u8);
   load ob
   load ival
   call emit_int StringBuffer i32
   pop
-; e_li(ob); eregt0(ob); emit_int(ob, ival); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7035,7 +6639,6 @@ __L426:
   load ob
   call e_la StringBuffer
   pop
-; e_la(ob); eregt0(ob);
   load ob
   call eregt0 StringBuffer
   pop
@@ -7044,22 +6647,18 @@ __L426:
   push_int 95
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
   load ob
   push_int 95
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
   load ob
   push_int 99
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 't');emit_char(ob, 'c');emit_char(ob, '_');
   load ob
   push_int 95
   call emit_char StringBuffer u8
@@ -7069,22 +6668,18 @@ __L426:
   push_int 115
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'b');
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'b');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'b');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'b');
   load ob
   push_int 98
   call emit_char StringBuffer u8
@@ -7099,7 +6694,6 @@ __L426:
   load ival
   call emit_int StringBuffer i32
   pop
-; emit_int(ob, ival); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7140,11 +6734,9 @@ __L427:
   load ob
   call e_lw StringBuffer
   pop
-; e_lw(ob); eregt0(ob); eNs0nl(off,ob);
   load ob
   call eregt0 StringBuffer
   pop
-; e_lw(ob); eregt0(ob); eNs0nl(off,ob);
   load off
   load ob
   call eNs0nl i32 StringBuffer
@@ -7155,18 +6747,15 @@ __L429:
   load ob
   call e_la StringBuffer
   pop
-; e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_char(ob, 10u8);
   load ob
   call eregt1 StringBuffer
   pop
-; e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_char(ob, 10u8);
   load ob
   load strtab
   load sss
   load ssl
   call emit_n StringBuffer U8Array i32 i32
   pop
-; e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7175,7 +6764,6 @@ __L429:
   load ob
   call e_lw StringBuffer
   pop
-; e_lw(ob); eregt0(ob);
   load ob
   call eregt0 StringBuffer
   pop
@@ -7184,27 +6772,22 @@ __L429:
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 40
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7250,11 +6833,9 @@ __L428:
   load ob
   call e_sw StringBuffer
   pop
-; e_sw(ob); eregt0(ob); eNs0nl(off,ob);
   load ob
   call eregt0 StringBuffer
   pop
-; e_sw(ob); eregt0(ob); eNs0nl(off,ob);
   load off
   load ob
   call eNs0nl i32 StringBuffer
@@ -7265,18 +6846,15 @@ __L432:
   load ob
   call e_la StringBuffer
   pop
-; e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_char(ob, 10u8);
   load ob
   call eregt1 StringBuffer
   pop
-; e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_char(ob, 10u8);
   load ob
   load strtab
   load sss
   load ssl
   call emit_n StringBuffer U8Array i32 i32
   pop
-; e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7285,7 +6863,6 @@ __L432:
   load ob
   call e_sw StringBuffer
   pop
-; e_sw(ob); eregt0(ob);
   load ob
   call eregt0 StringBuffer
   pop
@@ -7294,27 +6871,22 @@ __L432:
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 40
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, '(');emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, ')');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7332,12 +6904,10 @@ __L431:
 ; var nreg: i32=nargs; if nreg>8 { nreg=8; }
   load nargs
   store nreg
-; var nreg: i32=nargs; if nreg>8 { nreg=8; }
   load nreg
   push_int 8
   gt
   jump_ifnot __L435
-; var nreg: i32=nargs; if nreg>8 { nreg=8; }
   push_int 8
   store nreg
 __L435:
@@ -7355,15 +6925,12 @@ __L435:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 0-4*noverflow); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 0-4*noverflow); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 0-4*noverflow); emit_char(ob, 10u8);
   load ob
   push_int 0
   push_int 4
@@ -7372,7 +6939,6 @@ __L435:
   sub
   call emit_int StringBuffer i32
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 0-4*noverflow); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7390,11 +6956,9 @@ __L437:
   load ob
   call e_lw StringBuffer
   pop
-; e_lw(ob); eregt0(ob); eNspnl(4*noverflow+4*(nargs-1-ci),ob);
   load ob
   call eregt0 StringBuffer
   pop
-; e_lw(ob); eregt0(ob); eNspnl(4*noverflow+4*(nargs-1-ci),ob);
   push_int 4
   load noverflow
   mul
@@ -7413,11 +6977,9 @@ __L437:
   load ob
   call e_sw StringBuffer
   pop
-; e_sw(ob); eregt0(ob); eNspnl(4*(ci-8),ob);
   load ob
   call eregt0 StringBuffer
   pop
-; e_sw(ob); eregt0(ob); eNspnl(4*(ci-8),ob);
   push_int 4
   load ci
   push_int 8
@@ -7452,7 +7014,6 @@ __L439:
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a'); emit_char(ob, (48+ai) as u8); ecomma(ob);
   load ob
   push_int 48
   load ai
@@ -7460,7 +7021,6 @@ __L439:
   cast u8
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a'); emit_char(ob, (48+ai) as u8); ecomma(ob);
   load ob
   call ecomma StringBuffer
   pop
@@ -7503,12 +7063,10 @@ __L440:
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a');emit_char(ob, '7'); ecomma(ob); // "a7, "
   load ob
   push_int 55
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a');emit_char(ob, '7'); ecomma(ob); // "a7, "
   load ob
   call ecomma StringBuffer
   pop
@@ -7517,12 +7075,10 @@ __L440:
   push_int 57
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '9');emit_char(ob, '3');emit_char(ob, 10u8); // "93\n"
   load ob
   push_int 51
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '9');emit_char(ob, '3');emit_char(ob, 10u8); // "93\n"
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7531,22 +7087,18 @@ __L440:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');
   load ob
   push_int 99
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');
   load ob
   push_int 108
   call emit_char StringBuffer u8
@@ -7556,7 +7108,6 @@ __L440:
   push_int 108
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'l');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7580,15 +7131,12 @@ __L442:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*noverflow+4*nargs); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*noverflow+4*nargs); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*noverflow+4*nargs); emit_char(ob, 10u8);
   load ob
   push_int 4
   load noverflow
@@ -7599,7 +7147,6 @@ __L442:
   add
   call emit_int StringBuffer i32
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*noverflow+4*nargs); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7615,22 +7162,18 @@ __L443:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*nargs); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*nargs); emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*nargs); emit_char(ob, 10u8);
   load ob
   push_int 4
   load nargs
   mul
   call emit_int StringBuffer i32
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*nargs); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7641,25 +7184,20 @@ __L444:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 45
   call emit_char StringBuffer u8
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 52
   call emit_char StringBuffer u8
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7673,16 +7211,13 @@ __L444:
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a');emit_char(ob, '0'); ecomma(ob); eNspnl(0,ob);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a');emit_char(ob, '0'); ecomma(ob); eNspnl(0,ob);
   load ob
   call ecomma StringBuffer
   pop
-; emit_char(ob, 'a');emit_char(ob, '0'); ecomma(ob); eNspnl(0,ob);
   push_int 0
   load ob
   call eNspnl i32 StringBuffer
@@ -7701,27 +7236,22 @@ __L434:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 109
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 118
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -7731,12 +7261,10 @@ __L434:
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a');emit_char(ob, '0'); ecomma(ob);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'a');emit_char(ob, '0'); ecomma(ob);
   load ob
   call ecomma StringBuffer
   pop
@@ -7745,12 +7273,10 @@ __L434:
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7779,20 +7305,16 @@ __L447:
   load ob
   call e_addi StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregsp StringBuffer
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 52
   call emit_char StringBuffer u8
   pop
-; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7803,7 +7325,6 @@ __L448:
   load OP_ADD
   eq
   jump_ifnot __L449
-; if op==OP_ADD { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7811,27 +7332,22 @@ __L448:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 100
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 100
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -7840,21 +7356,17 @@ __L448:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7869,7 +7381,6 @@ __L449:
   load OP_SUB
   eq
   jump_ifnot __L450
-; if op==OP_SUB { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7877,27 +7388,22 @@ __L449:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 117
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 98
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -7906,21 +7412,17 @@ __L449:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -7935,7 +7437,6 @@ __L450:
   load OP_MUL
   eq
   jump_ifnot __L451
-; if op==OP_MUL { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -7943,27 +7444,22 @@ __L450:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 109
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 117
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -7972,21 +7468,17 @@ __L450:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8001,7 +7493,6 @@ __L451:
   load OP_DIV
   eq
   jump_ifnot __L452
-; if op==OP_DIV { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -8009,27 +7500,22 @@ __L451:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 100
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 118
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8038,21 +7524,17 @@ __L451:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8067,7 +7549,6 @@ __L452:
   load OP_MOD
   eq
   jump_ifnot __L453
-; if op==OP_MOD { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -8075,27 +7556,22 @@ __L452:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 109
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8104,21 +7580,17 @@ __L452:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8133,7 +7605,6 @@ __L453:
   load OP_AND
   eq
   jump_ifnot __L454
-; if op==OP_AND { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -8141,27 +7612,22 @@ __L453:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 110
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 100
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8170,21 +7636,17 @@ __L453:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8199,7 +7661,6 @@ __L454:
   load OP_OR
   eq
   jump_ifnot __L455
-; if op==OP_OR { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -8207,27 +7668,22 @@ __L454:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8236,21 +7692,17 @@ __L454:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8265,7 +7717,6 @@ __L455:
   load OP_XOR
   eq
   jump_ifnot __L456
-; if op==OP_XOR { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -8273,27 +7724,22 @@ __L455:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 120
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8302,21 +7748,17 @@ __L455:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8331,7 +7773,6 @@ __L456:
   load OP_SHL
   eq
   jump_ifnot __L457
-; if op==OP_SHL { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -8339,27 +7780,22 @@ __L456:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8368,21 +7804,17 @@ __L456:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8397,7 +7829,6 @@ __L457:
   load OP_SHR
   eq
   jump_ifnot __L458
-; if op==OP_SHR { asm_pop_t1_t0(ob);
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
@@ -8405,27 +7836,22 @@ __L457:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8434,21 +7860,17 @@ __L457:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8463,19 +7885,15 @@ __L458:
   load OP_EQ
   eq
   jump_ifnot __L459
-; if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
-; if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_sub_t0_t0_t1 StringBuffer
   pop
-; if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_seqz_t0 StringBuffer
   pop
-; if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_push_t0 StringBuffer
   pop
@@ -8485,19 +7903,15 @@ __L459:
   load OP_NE
   eq
   jump_ifnot __L460
-; if op==OP_NE { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_snez_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
-; if op==OP_NE { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_snez_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_sub_t0_t0_t1 StringBuffer
   pop
-; if op==OP_NE { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_snez_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_snez_t0 StringBuffer
   pop
-; if op==OP_NE { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_snez_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_push_t0 StringBuffer
   pop
@@ -8507,16 +7921,13 @@ __L460:
   load OP_LT
   eq
   jump_ifnot __L461
-; if op==OP_LT { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_push_t0(ob); }           // slt t0,t0,t1
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
-; if op==OP_LT { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_push_t0(ob); }           // slt t0,t0,t1
   push_int 0
   load ob
   call asm_slt i32 StringBuffer
   pop
-; if op==OP_LT { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_push_t0(ob); }           // slt t0,t0,t1
   load ob
   call asm_push_t0 StringBuffer
   pop
@@ -8526,20 +7937,16 @@ __L461:
   load OP_LE
   eq
   jump_ifnot __L462
-; if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
-; if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
   push_int 1
   load ob
   call asm_slt i32 StringBuffer
   pop
-; if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
   load ob
   call asm_xori_t0_1 StringBuffer
   pop
-; if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
   load ob
   call asm_push_t0 StringBuffer
   pop
@@ -8549,16 +7956,13 @@ __L462:
   load OP_GT
   eq
   jump_ifnot __L463
-; if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
-; if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
   push_int 1
   load ob
   call asm_slt i32 StringBuffer
   pop
-; if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
   load ob
   call asm_push_t0 StringBuffer
   pop
@@ -8568,20 +7972,16 @@ __L463:
   load OP_GE
   eq
   jump_ifnot __L464
-; if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
   load ob
   call asm_pop_t1_t0 StringBuffer
   pop
-; if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
   push_int 0
   load ob
   call asm_slt i32 StringBuffer
   pop
-; if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
   load ob
   call asm_xori_t0_1 StringBuffer
   pop
-; if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
   load ob
   call asm_push_t0 StringBuffer
   pop
@@ -8599,27 +7999,22 @@ __L464:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 110
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 103
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8628,17 +8023,14 @@ __L464:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 48
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8653,15 +8045,12 @@ __L465:
   load OP_LNOT
   eq
   jump_ifnot __L466
-; if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_pop_t0 StringBuffer
   pop
-; if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_seqz_t0 StringBuffer
   pop
-; if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load ob
   call asm_push_t0 StringBuffer
   pop
@@ -8678,7 +8067,6 @@ __L466:
 ; var ta: u8=0u8; var tb: u8=0u8;
   push_int 0
   store ta
-; var ta: u8=0u8; var tb: u8=0u8;
   push_int 0
   store tb
 ; if ssl>0 { ta=get(strtab,sss); }
@@ -8686,7 +8074,6 @@ __L466:
   push_int 0
   gt
   jump_ifnot __L468
-; if ssl>0 { ta=get(strtab,sss); }
   load strtab
   load sss
   call get U8Array i32
@@ -8697,7 +8084,6 @@ __L468:
   push_int 1
   gt
   jump_ifnot __L469
-; if ssl>1 { tb=get(strtab,(sss+1)); }
   load strtab
   load sss
   push_int 1
@@ -8724,27 +8110,22 @@ __L472:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 110
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 100
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8753,7 +8134,6 @@ __L472:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);
   load ob
   call eregt0 StringBuffer
   pop
@@ -8762,22 +8142,18 @@ __L472:
   push_int 48
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, 'x');emit_char(ob, 'f');emit_char(ob, 'f');emit_char(ob, 10u8);
   load ob
   push_int 120
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, 'x');emit_char(ob, 'f');emit_char(ob, 'f');emit_char(ob, 10u8);
   load ob
   push_int 102
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, 'x');emit_char(ob, 'f');emit_char(ob, 'f');emit_char(ob, 10u8);
   load ob
   push_int 102
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '0');emit_char(ob, 'x');emit_char(ob, 'f');emit_char(ob, 'f');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8802,27 +8178,22 @@ __L475:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8831,21 +8202,17 @@ __L475:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 54
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8854,27 +8221,22 @@ __L475:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8883,21 +8245,17 @@ __L475:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 54
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8922,27 +8280,22 @@ __L478:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -8951,21 +8304,17 @@ __L478:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 50
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 52
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -8974,27 +8323,22 @@ __L478:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -9003,21 +8347,17 @@ __L478:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 50
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 52
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '2');emit_char(ob, '4');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9042,27 +8382,22 @@ __L481:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -9071,21 +8406,17 @@ __L481:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 54
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9094,27 +8425,22 @@ __L481:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 105
   call emit_char StringBuffer u8
   pop
-; e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'i');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -9123,21 +8449,17 @@ __L481:
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   call eregt0 StringBuffer
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 49
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 54
   call emit_char StringBuffer u8
   pop
-; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_char(ob, '6');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9163,7 +8485,6 @@ __L467:
   load OP_JUMP
   eq
   jump_ifnot __L483
-; if op==OP_JUMP { asm_jump(fi,ival,ob); }
   load fi
   load ival
   load ob
@@ -9175,11 +8496,9 @@ __L483:
   load OP_JUMP_IF
   eq
   jump_ifnot __L484
-; if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(fi,1,ival,ob); }
   load ob
   call asm_pop_t0 StringBuffer
   pop
-; if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(fi,1,ival,ob); }
   load fi
   push_int 1
   load ival
@@ -9192,11 +8511,9 @@ __L484:
   load OP_JUMP_IFNOT
   eq
   jump_ifnot __L485
-; if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(fi,0,ival,ob); }
   load ob
   call asm_pop_t0 StringBuffer
   pop
-; if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(fi,0,ival,ob); }
   load fi
   push_int 0
   load ival
@@ -9215,12 +8532,10 @@ __L424:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob); emit_char(ob, '#'); emit_char(ob, ' ');
   load ob
   push_int 35
   call emit_char StringBuffer u8
   pop
-; e4(ob); emit_char(ob, '#'); emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -9230,32 +8545,26 @@ __L424:
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, 'o');emit_char(ob, 'f');emit_char(ob, ' ');
   load ob
   push_int 110
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, 'o');emit_char(ob, 'f');emit_char(ob, ' ');
   load ob
   push_int 100
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, 'o');emit_char(ob, 'f');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, 'o');emit_char(ob, 'f');emit_char(ob, ' ');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, 'o');emit_char(ob, 'f');emit_char(ob, ' ');
   load ob
   push_int 102
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, ' ');emit_char(ob, 'o');emit_char(ob, 'f');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -9267,7 +8576,6 @@ __L424:
   load nm_sl
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9314,22 +8622,18 @@ __L424:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 't');
   load ob
   push_int 115
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 't');
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 't');
   load ob
   push_int 99
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 't');
   load ob
   push_int 116
   call emit_char StringBuffer u8
@@ -9339,17 +8643,14 @@ __L424:
   push_int 105
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'i');emit_char(ob, 'o');emit_char(ob, 'n');emit_char(ob, ' ');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'i');emit_char(ob, 'o');emit_char(ob, 'n');emit_char(ob, ' ');
   load ob
   push_int 110
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 'i');emit_char(ob, 'o');emit_char(ob, 'n');emit_char(ob, ' ');
   load ob
   push_int 32
   call emit_char StringBuffer u8
@@ -9359,22 +8660,18 @@ __L424:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 'a');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 'a');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 'a');
   load ob
   push_int 100
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 'a');
   load ob
   push_int 97
   call emit_char StringBuffer u8
@@ -9384,12 +8681,10 @@ __L424:
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9425,12 +8720,10 @@ __L487:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_string(ob, ".align 4");emit_char(ob, 10u8);
   load ob
   push_str 15
   call emit_string StringBuffer StringLiteral
   pop
-; e4(ob);emit_string(ob, ".align 4");emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9445,12 +8738,10 @@ __L487:
   load si
   call emit_int StringBuffer i32
   pop
-; emit_int(ob, si); emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 58
   call emit_char StringBuffer u8
   pop
-; emit_int(ob, si); emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9459,17 +8750,14 @@ __L487:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_char(ob, 10u8);
   load ob
   push_str 17
   call emit_string StringBuffer StringLiteral
   pop
-; e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_char(ob, 10u8);
   load ob
   load sl
   call emit_int StringBuffer i32
   pop
-; e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9478,7 +8766,6 @@ __L487:
   load ob
   call e4 StringBuffer
   pop
-; e4(ob);emit_string(ob, ".string ");
   load ob
   push_str 18
   call emit_string StringBuffer StringLiteral
@@ -9490,7 +8777,6 @@ __L487:
   load ob
   call emit_strdata U8Array i32 i32 StringBuffer
   pop
-; emit_strdata(strtab,ss,sl,ob); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9522,27 +8808,22 @@ __L486:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
   load ob
   push_int 100
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
   load ob
   push_int 97
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9588,27 +8869,22 @@ __L490:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 103
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 108
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 98
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');
   load ob
   push_int 108
   call emit_char StringBuffer u8
@@ -9618,14 +8894,12 @@ __L490:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' '); emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);
   load ob
   load strtab
   load nm_ss
   load nm_sl
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(ob, ' '); emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9637,12 +8911,10 @@ __L490:
   load nm_sl
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 58
   call emit_char StringBuffer u8
   pop
-; emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9656,22 +8928,18 @@ __L490:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
   load ob
   push_int 119
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
   load ob
   push_int 111
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
   load ob
   push_int 114
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');
   load ob
   push_int 100
   call emit_char StringBuffer u8
@@ -9681,12 +8949,10 @@ __L490:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, ' '); emit_int(ob, initval); emit_char(ob, 10u8);
   load ob
   load initval
   call emit_int StringBuffer i32
   pop
-; emit_char(ob, ' '); emit_int(ob, initval); emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9713,27 +8979,22 @@ __L489:
   push_int 46
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 101
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 120
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 116
   call emit_char StringBuffer u8
   pop
-; emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
@@ -9872,7 +9133,6 @@ __L497:
   push_int 0
   le
   jump_ifnot __L498
-; if chunk<=0 { rdone=1; }
   push_int 1
   store rdone
 __L498:
@@ -9924,7 +9184,6 @@ __L495:
   push_int 0
   le
   jump_ifnot __L502
-; if g_in_len<=0 { return 1; }
   push_int 1
   return
 __L502:

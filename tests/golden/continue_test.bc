@@ -26,7 +26,6 @@ __L0:
   push_int 0
   eq
   jump_ifnot __L2
-; if i % 2 == 0 { continue; }
   jump __L0
 __L2:
 ; sum = sum + i;

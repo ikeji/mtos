@@ -73,6 +73,7 @@ var g_tok_ival: i32 = 0;
 var g_tok_slen: i32 = 0;  // length of current token string in tok buf
 var g_tok_neg: i32 = 0;   // 1 if int literal is negative
 var g_tok_line: i32 = 1;  // line number of current token
+var g_last_comment_line: i32 = 0; // suppress duplicate comments
 
 // ===== Character classification =====
 fn is_digit(c: u8) -> bool {
@@ -970,6 +971,8 @@ fn emit_comment_sb(sb: StringBuffer, text: StringBuffer) -> void {
 
 // Emit (comment "...") from SourceReader's line_buf (with peek-ahead)
 fn emit_comment_src(sb: StringBuffer, src: SourceReader) -> void {
+    if g_tok_line == g_last_comment_line { return; }
+    g_last_comment_line = g_tok_line;
     var text: StringBuffer = StringBuffer_new();
     line_buf(src, text);
     emit_comment_sb(sb, text);

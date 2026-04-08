@@ -41,7 +41,6 @@
                   (int 2)
                 )
                 (block
-                  (comment "if j == 2 { break; }")
                   (break)
                 )
               )

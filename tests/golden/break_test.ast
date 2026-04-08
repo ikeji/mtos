@@ -24,7 +24,6 @@
               (int 5)
             )
             (block
-              (comment "if i == 5 { break; }")
               (break)
             )
           )
