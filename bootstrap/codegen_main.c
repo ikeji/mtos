@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
         Lexer lex;
         lexer_init(&lex, source, filename);
         lexer_tokenize(&lex);
-        prog = parse(lex.tokens, lex.ntokens, filename);
+        prog = parse(lex.tokens, lex.ntokens, filename, source);
         lexer_free(&lex);
         free(source);
         typecheck(prog, filename);

@@ -8,6 +8,7 @@ typedef struct {
     int ntokens;
     int pos;
     const char *filename;
+    const char *source;  /* original source text (for comment generation) */
 } Parser;
 
 static Token *cur_tok(Parser *p) {
@@ -45,6 +46,24 @@ static int check(Parser *p, TokenKind k) {
 static int match(Parser *p, TokenKind k) {
     if (check(p, k)) { advance_p(p); return 1; }
     return 0;
+}
+
+/* Generate a (comment "...") node for the given source line number */
+static AstNode *make_comment(Parser *p, int line) {
+    if (!p->source) return NULL;
+    const char *s = p->source;
+    int cur = 1;
+    while (*s && cur < line) { if (*s == '\n') cur++; s++; }
+    /* skip leading whitespace */
+    while (*s == ' ' || *s == '\t') s++;
+    if (!*s || *s == '\n' || *s == '\r') return NULL;
+    /* find end of line */
+    const char *end = s;
+    while (*end && *end != '\n' && *end != '\r') end++;
+    int len = (int)(end - s);
+    AstNode *node = ast_node("comment", line);
+    node->sval = strndup(s, len);
+    return node;
 }
 
 /* forward declarations */
@@ -470,6 +489,8 @@ static AstNode *parse_block(Parser *p) {
     expect(p, TK_LBRACE);
     AstNode *block = ast_node("block", line);
     while (!check(p, TK_RBRACE) && !check(p, TK_EOF)) {
+        AstNode *cmt = make_comment(p, cur_tok(p)->line);
+        if (cmt) ast_add_child(block, cmt);
         AstNode *s = parse_stmt(p);
         ast_add_child(block, s);
     }
@@ -767,12 +788,13 @@ static AstNode *parse_import(Parser *p) {
     return n;
 }
 
-AstNode *parse(Token *tokens, int ntokens, const char *filename) {
+AstNode *parse(Token *tokens, int ntokens, const char *filename, const char *source) {
     Parser p;
     p.tokens = tokens;
     p.ntokens = ntokens;
     p.pos = 0;
     p.filename = filename;
+    p.source = source;
 
     AstNode *prog = ast_node("program", 1);
 

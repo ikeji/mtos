@@ -3,25 +3,21 @@
 .param __a0 i32
 .param __a1 i32
 .local __p U32Array
-; struct Point { x: i32, y: i32 }
   push_int 2
   call U32Array i32
   store __p
-; struct Point { x: i32, y: i32 }
   load __p
   push_int 0
   load __a0
   cast u32
   call set U32Array i32 u32
   pop
-; struct Point { x: i32, y: i32 }
   load __p
   push_int 1
   load __a1
   cast u32
   call set U32Array i32 u32
   pop
-; struct Point { x: i32, y: i32 }
   load __p
   return
   return_void
@@ -29,7 +25,6 @@
 
 .fn x Point i32
 .param __p Point
-; struct Point { x: i32, y: i32 }
   load __p
   push_int 0
   call get U32Array i32
@@ -40,7 +35,6 @@
 
 .fn y Point i32
 .param __p Point
-; struct Point { x: i32, y: i32 }
   load __p
   push_int 1
   call get U32Array i32
@@ -52,14 +46,12 @@
 .fn x Point i32 void
 .param __p Point
 .param __v i32
-; struct Point { x: i32, y: i32 }
   load __p
   push_int 0
   load __v
   cast u32
   call set U32Array i32 u32
   pop
-; struct Point { x: i32, y: i32 }
   return_void
   return_void
 .endfn
@@ -67,25 +59,21 @@
 .fn y Point i32 void
 .param __p Point
 .param __v i32
-; struct Point { x: i32, y: i32 }
   load __p
   push_int 1
   load __v
   cast u32
   call set U32Array i32 u32
   pop
-; struct Point { x: i32, y: i32 }
   return_void
   return_void
 .endfn
 
 .fn delete Point void
 .param __p Point
-; struct Point { x: i32, y: i32 }
   load __p
   call delete U32Array
   pop
-; struct Point { x: i32, y: i32 }
   return_void
   return_void
 .endfn

@@ -14,7 +14,7 @@ for f in "${EXAMPLE_FILES[@]}"; do
     echo "Processing $f..."
 
     "$PARSE" "$input" > "$GOLDEN_DIR/$base.ast" 2>/dev/null
-    bc=$("$PARSE" "$input" 2>/dev/null | "$CODEGEN" 2>/dev/null)
+    bc=$("$CODEGEN" "$input" 2>/dev/null)
     printf '%s\n' "$bc" > "$GOLDEN_DIR/$base.bc"
     printf '%s\n' "$bc" | "$BC2ASM" > "$GOLDEN_DIR/$base.s" 2>/dev/null
 

@@ -603,7 +603,7 @@ static void process_import(TypeEnv *e, const char *import_path) {
     Lexer lex;
     lexer_init(&lex, src, import_path);
     lexer_tokenize(&lex);
-    AstNode *prog = parse(lex.tokens, lex.ntokens, import_path);
+    AstNode *prog = parse(lex.tokens, lex.ntokens, import_path, NULL);
     lexer_free(&lex);
     free(src);
 

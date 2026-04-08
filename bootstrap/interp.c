@@ -659,6 +659,8 @@ static void exec_stmt(Interp *ip, AstNode *node) {
         return;
     }
 
+    if (strcmp(k, "comment") == 0) return;  /* skip comment nodes */
+
     fprintf(stderr, "unknown stmt kind '%s'\n", k);
     exit(1);
 }

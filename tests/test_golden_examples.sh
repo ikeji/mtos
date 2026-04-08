@@ -41,7 +41,7 @@ for f in "${EXAMPLE_FILES[@]}"; do
     # --- BC ---
     actual=$(mktemp)
     t0=$(time_ms)
-    "$PARSE" "$input" 2>/dev/null | "$CODEGEN" > "$actual" 2>/dev/null
+    "$CODEGEN" "$input" > "$actual" 2>/dev/null
     elapsed=$(( $(time_ms) - t0 ))
     if diff -u "$golden_bc" "$actual" > /dev/null; then
         report_pass "$f (BC)" "$elapsed"
