@@ -11,34 +11,19 @@ var TEXT_BASE: i32 = 65536;  // 0x10000
 var MAX_LABELS: i32 = 16384;
 var MAX_CODE: i32 = 67108864; // 64MB
 
-// Section IDs
-var SEC_TEXT: i32 = 0;
-var SEC_RODATA: i32 = 1;
-var SEC_DATA: i32 = 2;
-var SEC_BSS: i32 = 3;
-var NUM_SECS: i32 = 4;
-
 // ===== Global state =====
 var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in main
-var g_pos: i32 = 0;                  // current write position in current section
+var g_pos: i32 = 0;                  // current write position
 var g_pass: i32 = 0;                 // 1 or 2
 var g_code_end: i32 = 0;             // highest position written to g_code
-var g_cur_sec: i32 = 0;              // current section (SEC_TEXT etc)
-
-// Per-section sizes (computed in pass 1)
-var g_sec_size: I32Array = 0 as I32Array;   // size of each section
-var g_sec_base: I32Array = 0 as I32Array;   // virtual address base of each section
-var g_sec_pos: I32Array = 0 as I32Array;    // current position within each section
-
-// Per-line section assignment
-var g_line_sec: I32Array = 0 as I32Array;   // section ID for each line
+var g_bss_pos: i32 = 0;              // BSS size (accumulated from .comm directives)
 
 // Label table: parallel arrays
 var g_lab_names: U8Array = 0 as U8Array;   // name storage (packed)
 var g_lab_offs: I32Array = 0 as I32Array;   // name offset into g_lab_names
 var g_lab_lens: I32Array = 0 as I32Array;   // name length
-var g_lab_addrs: I32Array = 0 as I32Array;  // address (or sec-offset in pass 1)
-var g_lab_secs: I32Array = 0 as I32Array;   // section ID (for pass 1 → layout fixup)
+var g_lab_addrs: I32Array = 0 as I32Array;  // address
+var g_lab_is_bss: I32Array = 0 as I32Array; // 1 if .comm label
 var g_nlabels: i32 = 0;
 var g_lab_name_pos: i32 = 0;
 
@@ -64,13 +49,9 @@ var g_line_buf_len: i32 = 0;
 
 // ===== Emit helpers =====
 fn emit8(v: i32) -> void {
-    if g_pass == 2 {
-        // Write at section base + section position
-        var abs_pos: i32 = get(g_sec_base, g_cur_sec) - TEXT_BASE + g_pos;
-        if abs_pos >= 0 && abs_pos < MAX_CODE {
-            set(g_code, abs_pos, v as u8);
-            if abs_pos >= g_code_end { g_code_end = abs_pos + 1; }
-        }
+    if g_pass == 2 && g_pos < MAX_CODE {
+        set(g_code, g_pos, v as u8);
+        if g_pos >= g_code_end { g_code_end = g_pos + 1; }
     }
     g_pos = g_pos + 1;
     return;
@@ -118,7 +99,6 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
         g_nlabels = g_nlabels + 1;
         set(g_lab_offs, idx, g_lab_name_pos);
         set(g_lab_lens, idx, nlen);
-        set(g_lab_secs, idx, g_cur_sec);
         var i: i32 = 0;
         while i < nlen {
             set(g_lab_names, (g_lab_name_pos + i), get(name, i));
@@ -349,7 +329,7 @@ fn parse_label_op(op_idx: i32) -> i32 {
     if len == 2 && is_digit(get(g_line_buf, off)) {
         var digit: i32 = get(g_line_buf, off) as i32 - 48;
         var dir: u8 = get(g_line_buf, (off + 1));
-        var pc: i32 = get(g_sec_base, g_cur_sec) + g_pos;
+        var pc: i32 = TEXT_BASE + g_pos;
         if dir == 'b' { return numlab_back(digit, pc); }
         if dir == 'f' { return numlab_fwd(digit, pc); }
     }
@@ -444,7 +424,7 @@ fn mnem_eq(name: StringLiteral) -> bool {
 
 // ===== Process instruction: returns byte count =====
 fn asm_instr() -> i32 {
-    var pc: i32 = get(g_sec_base, g_cur_sec) + g_pos;
+    var pc: i32 = TEXT_BASE + g_pos;
 
     // R-type
     if mnem_eq("add")   { if g_pass==2 { emit32(enc_r(51,0,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
@@ -671,14 +651,14 @@ fn process_line(line_idx: i32) -> void {
         if colon_pos == 1 && is_digit(get(g_line_buf, 0)) {
             is_numlab = 1;
             var digit: i32 = get(g_line_buf, 0) as i32 - 48;
-            define_numlab(digit, get(g_sec_base, g_cur_sec) + g_pos);
+            define_numlab(digit, TEXT_BASE + g_pos);
         }
         if is_numlab == 0 {
             // Named label
             var lname: U8Array = U8Array(colon_pos);
             i = 0;
             while i < colon_pos { set(lname, i, get(g_line_buf, i)); i = i + 1; }
-            if g_pass == 1 { define_label(lname, colon_pos, get(g_sec_base, g_cur_sec) + g_pos); }
+            if g_pass == 1 { define_label(lname, colon_pos, TEXT_BASE + g_pos); }
             delete(lname);
         }
         // Process remainder after colon
@@ -699,54 +679,9 @@ fn process_line(line_idx: i32) -> void {
 
     // Directives
     if get(g_mnem, 0) == '.' {
-        if mnem_eq(".text") {
-            // Save current section pos, switch to text
-            set(g_sec_pos, g_cur_sec, g_pos);
-            g_cur_sec = SEC_TEXT;
-            g_pos = get(g_sec_pos, g_cur_sec);
-            return;
-        }
-        if mnem_eq(".section") {
-            set(g_sec_pos, g_cur_sec, g_pos);
-            if g_nops > 0 {
-                var op_off: i32 = get(g_ops, 0);
-                var op_len: i32 = get(g_ops, 1);
-                // Check section name for rodata/data/bss/sbss
-                var found_sec: i32 = SEC_TEXT;
-                // Search for "rodata" in section name
-                var j: i32 = 0;
-                while j < op_len - 5 {
-                    if get(g_line_buf, (op_off+j)) == 'r' && get(g_line_buf, (op_off+j+1)) == 'o' &&
-                       get(g_line_buf, (op_off+j+2)) == 'd' && get(g_line_buf, (op_off+j+3)) == 'a' &&
-                       get(g_line_buf, (op_off+j+4)) == 't' && get(g_line_buf, (op_off+j+5)) == 'a' {
-                        found_sec = SEC_RODATA; j = op_len;
-                    } else { j = j + 1; }
-                }
-                // Search for "bss" in section name
-                j = 0;
-                while j < op_len - 2 {
-                    if get(g_line_buf, (op_off+j)) == 'b' && get(g_line_buf, (op_off+j+1)) == 's' &&
-                       get(g_line_buf, (op_off+j+2)) == 's' {
-                        found_sec = SEC_BSS; j = op_len;
-                    } else { j = j + 1; }
-                }
-                g_cur_sec = found_sec;
-            }
-            g_pos = get(g_sec_pos, g_cur_sec);
-            return;
-        }
-        if mnem_eq(".data") {
-            set(g_sec_pos, g_cur_sec, g_pos);
-            g_cur_sec = SEC_DATA;
-            g_pos = get(g_sec_pos, g_cur_sec);
-            return;
-        }
-        if mnem_eq(".bss") {
-            set(g_sec_pos, g_cur_sec, g_pos);
-            g_cur_sec = SEC_BSS;
-            g_pos = get(g_sec_pos, g_cur_sec);
-            return;
-        }
+        if mnem_eq(".text") || mnem_eq(".section") { return; }
+        if mnem_eq(".data") { return; }
+        if mnem_eq(".bss") { return; }
         if mnem_eq(".globl") || mnem_eq(".type") || mnem_eq(".size") ||
            mnem_eq(".option") || mnem_eq(".attribute") || mnem_eq(".file") ||
            mnem_eq(".ident") || mnem_eq(".p2align") { return; }
@@ -759,8 +694,35 @@ fn process_line(line_idx: i32) -> void {
                 var lname: U8Array = U8Array(op_len);
                 i = 0;
                 while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
-                if g_pass == 1 { define_label(lname, op_len, get(g_sec_base, g_cur_sec) + g_pos); }
+                if g_pass == 1 { define_label(lname, op_len, TEXT_BASE + g_pos); }
                 delete(lname);
+            }
+            return;
+        }
+        if mnem_eq(".local") { return; }  // ignore
+        if mnem_eq(".comm") {
+            // .comm symbol,size,align — allocate BSS space
+            if g_nops >= 2 {
+                var op_off: i32 = get(g_ops, 0);
+                var op_len: i32 = get(g_ops, 1);
+                var size: i32 = parse_imm_op(1);
+                var align: i32 = 4;
+                if g_nops >= 3 { align = parse_imm_op(2); }
+                // Align BSS position
+                while g_bss_pos % align != 0 { g_bss_pos = g_bss_pos + 1; }
+                // Define label at BSS base + current BSS offset
+                // BSS base will be code_end (set after pass 1)
+                var lname: U8Array = U8Array(op_len);
+                i = 0;
+                while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
+                if g_pass == 1 {
+                    define_label(lname, op_len, g_bss_pos);
+                    // Mark as BSS label for fixup
+                    var idx: i32 = find_label(lname, op_len);
+                    if idx >= 0 { set(g_lab_is_bss, idx, 1); }
+                }
+                delete(lname);
+                g_bss_pos = g_bss_pos + size;
             }
             return;
         }
@@ -925,7 +887,7 @@ fn main() -> i32 {
     g_lab_offs = I32Array(MAX_LABELS);
     g_lab_lens = I32Array(MAX_LABELS);
     g_lab_addrs = I32Array(MAX_LABELS);
-    g_lab_secs = I32Array(MAX_LABELS);
+    g_lab_is_bss = I32Array(MAX_LABELS);
     g_lines = U8Array(MAX_CODE);
     g_line_offs = I32Array(131072);
     g_line_lens = I32Array(131072);
@@ -935,101 +897,50 @@ fn main() -> i32 {
     g_numlab = I32Array(2560);       // 10 digits x 256
     g_numlab_count = I32Array(10);
 
-    g_sec_size = I32Array(NUM_SECS);
-    g_sec_base = I32Array(NUM_SECS);
-    g_sec_pos = I32Array(NUM_SECS);
-    g_line_sec = I32Array(131072);
-
     // Read all input lines
     read_all_lines();
 
-    // Pass 1: compute per-section sizes and collect labels
+    // Pass 1: collect labels, compute sizes
     g_pass = 1;
+    g_pos = 0;
     g_nlabels = 0;
     g_lab_name_pos = 0;
-    g_cur_sec = SEC_TEXT;
-    g_pos = 0;
-    var i: i32 = 0;
-    while i < NUM_SECS { set(g_sec_pos, i, 0); set(g_sec_base, i, 0); i = i + 1; }
-
-    // Pre-define linker symbols (address 0, will be updated if needed)
+    // Pre-define linker symbols
     var gp_sym: U8Array = U8Array(20);
     var gp_len: i32 = buf_set_str(gp_sym, 0, "__global_pointer$");
     define_label(gp_sym, gp_len, 0);
     delete(gp_sym);
-
-    i = 0;
+    g_bss_pos = 0;
+    var i: i32 = 0;
     while i < g_nlines { process_line(i); i = i + 1; }
-    // Save final section position
-    set(g_sec_pos, g_cur_sec, g_pos);
+    var code_total: i32 = g_pos;
 
-    // Record section sizes
-    i = 0;
-    while i < NUM_SECS { set(g_sec_size, i, get(g_sec_pos, i)); i = i + 1; }
+    // BSS starts after code, aligned to 4
+    var bss_base: i32 = TEXT_BASE + code_total;
+    bss_base = (bss_base + 3) & (0 - 4);
 
-    // Compute section layout: text → rodata → data → bss
-    var addr: i32 = TEXT_BASE;
-    set(g_sec_base, SEC_TEXT, addr);
-    addr = addr + get(g_sec_size, SEC_TEXT);
-    // Align rodata to 4
-    addr = (addr + 3) & (0 - 4);
-    set(g_sec_base, SEC_RODATA, addr);
-    addr = addr + get(g_sec_size, SEC_RODATA);
-    // Align data to 4
-    addr = (addr + 3) & (0 - 4);
-    set(g_sec_base, SEC_DATA, addr);
-    addr = addr + get(g_sec_size, SEC_DATA);
-    // Align bss to 4
-    addr = (addr + 3) & (0 - 4);
-    set(g_sec_base, SEC_BSS, addr);
-    addr = addr + get(g_sec_size, SEC_BSS);
-
-    var total_memsz: i32 = addr - TEXT_BASE;
-    var filesz: i32 = get(g_sec_base, SEC_BSS) - TEXT_BASE;
-
-    // Fixup label addresses: pass 1 stored sec-local offset, now add sec_base
-    // Labels have addr = section_offset (relative to section start)
-    // Convert to: addr = g_sec_base[sec] + section_offset
-    // But pass 1 stored addr = g_sec_base[sec] + g_pos where g_sec_base was 0
-    // Actually pass 1 used get(g_sec_base, g_cur_sec) + g_pos which was 0 + g_pos = g_pos
-    // So labels have addr = section-local offset. Need to add g_sec_base[sec].
+    // Fixup .comm labels: add bss_base to BSS-relative offset
     i = 0;
     while i < g_nlabels {
-        var sec: i32 = get(g_lab_secs, i);
-        var old_addr: i32 = get(g_lab_addrs, i);
-        set(g_lab_addrs, i, get(g_sec_base, sec) + old_addr);
-        i = i + 1;
-    }
-    // Fixup numeric labels too
-    i = 0;
-    while i < 10 {
-        var cnt: i32 = get(g_numlab_count, i);
-        var j: i32 = 0;
-        while j < cnt {
-            // Numeric labels were defined with sec_base=0, need fixup
-            // But we don't track which section each numlab is in...
-            // For now, skip — numeric labels are rare and usually in .text
-            j = j + 1;
+        if get(g_lab_is_bss, i) == 1 {
+            set(g_lab_addrs, i, bss_base + get(g_lab_addrs, i));
         }
         i = i + 1;
     }
 
-    // Pass 2: encode with correct addresses
+    var total_memsz: i32 = (bss_base - TEXT_BASE) + g_bss_pos;
+
+    // Pass 2: encode
     g_pass = 2;
-    g_cur_sec = SEC_TEXT;
     g_pos = 0;
-    g_code_end = 0;
-    i = 0;
-    while i < NUM_SECS { set(g_sec_pos, i, 0); i = i + 1; }
+    g_bss_pos = 0;
     // Reset numeric label counters for pass 2
     i = 0;
     while i < 10 { set(g_numlab_count, i, 0); i = i + 1; }
-
     i = 0;
     while i < g_nlines { process_line(i); i = i + 1; }
-
-    // Write ELF
-    write_elf(filesz, total_memsz);
+    // Write ELF (filesz = code written, memsz = code + BSS)
+    write_elf(g_code_end, total_memsz);
 
     return 0;
 }
