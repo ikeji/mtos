@@ -1,0 +1,799 @@
+// asm.tc — RISC-V 32-bit assembler
+// Reads .s assembly from stdin, writes ELF32 binary to stdout.
+// 2-pass: pass 1 collects labels, pass 2 encodes instructions.
+
+import "string_buffer.tc";
+import "source_reader.tc";
+
+// ===== Constants =====
+var TEXT_BASE: i32 = 65536;  // 0x10000
+var MAX_LABELS: i32 = 16384;
+var MAX_CODE: i32 = 4194304; // 4MB
+
+// ===== Global state =====
+var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in main
+var g_pos: i32 = 0;                  // current write position
+var g_pass: i32 = 0;                 // 1 or 2
+
+// Label table: parallel arrays
+var g_lab_names: U8Array = 0 as U8Array;   // name storage (packed)
+var g_lab_offs: I32Array = 0 as I32Array;   // name offset into g_lab_names
+var g_lab_lens: I32Array = 0 as I32Array;   // name length
+var g_lab_addrs: I32Array = 0 as I32Array;  // address
+var g_nlabels: i32 = 0;
+var g_lab_name_pos: i32 = 0;
+
+// Line storage for 2-pass: store all lines in a big U8Array
+var g_lines: U8Array = 0 as U8Array;    // packed line data
+var g_line_offs: I32Array = 0 as I32Array; // offset of each line
+var g_line_lens: I32Array = 0 as I32Array; // length of each line
+var g_nlines: i32 = 0;
+var g_line_pos: i32 = 0;
+
+// Current line parse state
+var g_mnem: U8Array = 0 as U8Array;  // mnemonic buffer (64 bytes)
+var g_mnem_len: i32 = 0;
+var g_ops: I32Array = 0 as I32Array;  // operand offsets into line (4 entries x 2: off, len)
+var g_nops: i32 = 0;
+var g_line_buf: U8Array = 0 as U8Array; // current line buffer (4096 bytes)
+var g_line_buf_len: i32 = 0;
+
+// ===== Emit helpers =====
+fn emit8(v: i32) -> void {
+    if g_pass == 2 { set(g_code, g_pos, v as u8); }
+    g_pos = g_pos + 1;
+    return;
+}
+
+fn emit32(v: i32) -> void {
+    emit8(v & 255);
+    emit8((v >> 8) & 255);
+    emit8((v >> 16) & 255);
+    emit8((v >> 24) & 255);
+    return;
+}
+
+fn align_to(n: i32) -> void {
+    while g_pos % n != 0 { emit8(0); }
+    return;
+}
+
+// ===== Label management =====
+fn lab_name_eq(idx: i32, name: U8Array, nlen: i32) -> bool {
+    var ll: i32 = get(g_lab_lens, idx);
+    if ll != nlen { return false; }
+    var off: i32 = get(g_lab_offs, idx);
+    var i: i32 = 0;
+    while i < nlen {
+        if get(g_lab_names, (off + i)) != get(name, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn find_label(name: U8Array, nlen: i32) -> i32 {
+    var i: i32 = 0;
+    while i < g_nlabels {
+        if lab_name_eq(i, name, nlen) { return i; }
+        i = i + 1;
+    }
+    return 0 - 1;
+}
+
+fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
+    var idx: i32 = find_label(name, nlen);
+    if idx < 0 {
+        idx = g_nlabels;
+        g_nlabels = g_nlabels + 1;
+        set(g_lab_offs, idx, g_lab_name_pos);
+        set(g_lab_lens, idx, nlen);
+        var i: i32 = 0;
+        while i < nlen {
+            set(g_lab_names, (g_lab_name_pos + i), get(name, i));
+            i = i + 1;
+        }
+        g_lab_name_pos = g_lab_name_pos + nlen;
+    }
+    set(g_lab_addrs, idx, addr);
+    return;
+}
+
+fn label_addr(name: U8Array, nlen: i32) -> i32 {
+    var idx: i32 = find_label(name, nlen);
+    if idx < 0 {
+        // Error: undefined label
+        var eb: StringBuffer = StringBuffer_new();
+        emit_string(eb, "asm: undefined label '");
+        emit_n(eb, name, 0, nlen);
+        emit_string(eb, "'\n");
+        write(eb, 2);
+        destroy(eb);
+        sys_exit(1);
+    }
+    return get(g_lab_addrs, idx);
+}
+
+// ===== Register parser =====
+fn reg_eq(s: U8Array, off: i32, len: i32, name: StringLiteral) -> bool {
+    var nlen: i32 = len(name);
+    if len != nlen { return false; }
+    var i: i32 = 0;
+    while i < len {
+        if get(s, (off + i)) != get(name, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn parse_reg(s: U8Array, off: i32, len: i32) -> i32 {
+    // Strip leading whitespace and trailing comma/paren/space
+    while len > 0 && (get(s, off) == ' ' || get(s, off) == 9u8) { off = off + 1; len = len - 1; }
+    while len > 0 {
+        var last: u8 = get(s, (off + len - 1));
+        if last == ',' || last == ')' || last == ' ' || last == 9u8 { len = len - 1; }
+        else { last = 0u8; len = len + 0; }  // break
+        if last == 0u8 { len = len + 0; }     // tinyc: no break
+        else { len = len + 0; }
+    }
+    // Actually, let's simplify: just strip known trailing chars
+    // Re-read with proper logic
+    return 0 - 1; // TODO
+}
+
+// Simpler: parse register from a NUL-separated buffer position
+// We'll use g_line_buf and operand offsets
+fn parse_reg_op(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    // Skip leading whitespace
+    while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; len = len - 1;
+    }
+    // Strip trailing comma, paren, space
+    var stripping: i32 = 1;
+    while len > 0 && stripping == 1 {
+        var last: u8 = get(g_line_buf, (off + len - 1));
+        if last == ',' || last == ')' || last == '(' || last == ' ' || last == 9u8 {
+            len = len - 1;
+        } else {
+            stripping = 0;
+        }
+    }
+    // Match register names
+    if reg_eq(g_line_buf, off, len, "zero") || reg_eq(g_line_buf, off, len, "x0") { return 0; }
+    if reg_eq(g_line_buf, off, len, "ra") { return 1; }
+    if reg_eq(g_line_buf, off, len, "sp") { return 2; }
+    if reg_eq(g_line_buf, off, len, "gp") { return 3; }
+    if reg_eq(g_line_buf, off, len, "tp") { return 4; }
+    if reg_eq(g_line_buf, off, len, "t0") { return 5; }
+    if reg_eq(g_line_buf, off, len, "t1") { return 6; }
+    if reg_eq(g_line_buf, off, len, "t2") { return 7; }
+    if reg_eq(g_line_buf, off, len, "s0") || reg_eq(g_line_buf, off, len, "fp") { return 8; }
+    if reg_eq(g_line_buf, off, len, "s1") { return 9; }
+    if reg_eq(g_line_buf, off, len, "a0") { return 10; }
+    if reg_eq(g_line_buf, off, len, "a1") { return 11; }
+    if reg_eq(g_line_buf, off, len, "a2") { return 12; }
+    if reg_eq(g_line_buf, off, len, "a3") { return 13; }
+    if reg_eq(g_line_buf, off, len, "a4") { return 14; }
+    if reg_eq(g_line_buf, off, len, "a5") { return 15; }
+    if reg_eq(g_line_buf, off, len, "a6") { return 16; }
+    if reg_eq(g_line_buf, off, len, "a7") { return 17; }
+    if reg_eq(g_line_buf, off, len, "s2") { return 18; }
+    if reg_eq(g_line_buf, off, len, "s3") { return 19; }
+    if reg_eq(g_line_buf, off, len, "s4") { return 20; }
+    if reg_eq(g_line_buf, off, len, "s5") { return 21; }
+    if reg_eq(g_line_buf, off, len, "s6") { return 22; }
+    if reg_eq(g_line_buf, off, len, "s7") { return 23; }
+    if reg_eq(g_line_buf, off, len, "s8") { return 24; }
+    if reg_eq(g_line_buf, off, len, "s9") { return 25; }
+    if reg_eq(g_line_buf, off, len, "s10") { return 26; }
+    if reg_eq(g_line_buf, off, len, "s11") { return 27; }
+    if reg_eq(g_line_buf, off, len, "t3") { return 28; }
+    if reg_eq(g_line_buf, off, len, "t4") { return 29; }
+    if reg_eq(g_line_buf, off, len, "t5") { return 30; }
+    if reg_eq(g_line_buf, off, len, "t6") { return 31; }
+    return 0 - 1;
+}
+
+// ===== Parse immediate from operand =====
+fn parse_imm_op(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; len = len - 1;
+    }
+    var neg: i32 = 0;
+    if len > 0 && get(g_line_buf, off) == '-' { neg = 1; off = off + 1; len = len - 1; }
+    var v: i32 = 0;
+    if len >= 2 && get(g_line_buf, off) == '0' && (get(g_line_buf, (off+1)) == 'x' || get(g_line_buf, (off+1)) == 'X') {
+        off = off + 2; len = len - 2;
+        while len > 0 {
+            var c: u8 = get(g_line_buf, off);
+            if c >= '0' && c <= '9' { v = v * 16 + (c as i32 - 48); }
+            else if c >= 'a' && c <= 'f' { v = v * 16 + (c as i32 - 87); }
+            else if c >= 'A' && c <= 'F' { v = v * 16 + (c as i32 - 55); }
+            off = off + 1; len = len - 1;
+        }
+    } else {
+        while len > 0 {
+            var c: u8 = get(g_line_buf, off);
+            if c >= '0' && c <= '9' { v = v * 10 + (c as i32 - 48); }
+            off = off + 1; len = len - 1;
+        }
+    }
+    if neg == 1 { v = 0 - v; }
+    return v;
+}
+
+// Parse label name from operand, return address
+fn parse_label_op(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; len = len - 1;
+    }
+    // Copy to temp buf for label_addr
+    var tmp: U8Array = U8Array(len);
+    var i: i32 = 0;
+    while i < len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
+    var addr: i32 = 0;
+    if g_pass == 2 { addr = label_addr(tmp, len); }
+    delete(tmp);
+    return addr;
+}
+
+// Parse memory operand "offset(reg)" — returns offset and sets reg via op_idx+1
+fn parse_mem_off(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    // Find '('
+    var paren: i32 = 0;
+    var i: i32 = 0;
+    while i < len {
+        if get(g_line_buf, (off + i)) == '(' { paren = i; i = len; }
+        else { i = i + 1; }
+    }
+    // Parse offset (before paren)
+    // Temporarily adjust ops to point to offset part
+    var saved_off: i32 = get(g_ops, (op_idx * 2));
+    var saved_len: i32 = get(g_ops, (op_idx * 2 + 1));
+    set(g_ops, (op_idx * 2), off);
+    set(g_ops, (op_idx * 2 + 1), paren);
+    var imm: i32 = parse_imm_op(op_idx);
+    // Parse reg (after paren, before ')')
+    set(g_ops, (op_idx * 2), off + paren + 1);
+    var rlen: i32 = len - paren - 1;
+    if rlen > 0 && get(g_line_buf, (off + paren + 1 + rlen - 1)) == ')' { rlen = rlen - 1; }
+    set(g_ops, (op_idx * 2 + 1), rlen);
+    // Restore for caller to read reg via same op_idx
+    // Actually, we need a way to return both. Let's use a global.
+    g_mem_reg = parse_reg_op(op_idx);
+    // Restore
+    set(g_ops, (op_idx * 2), saved_off);
+    set(g_ops, (op_idx * 2 + 1), saved_len);
+    return imm;
+}
+var g_mem_reg: i32 = 0;
+
+// ===== Instruction encoding =====
+fn enc_r(op: i32, f3: i32, f7: i32, rd: i32, rs1: i32, rs2: i32) -> i32 {
+    return (f7 << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op;
+}
+fn enc_i(op: i32, f3: i32, rd: i32, rs1: i32, imm: i32) -> i32 {
+    return ((imm & 4095) << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op;
+}
+fn enc_s(f3: i32, rs1: i32, rs2: i32, imm: i32) -> i32 {
+    return (((imm >> 5) & 127) << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | ((imm & 31) << 7) | 35;
+}
+fn enc_b(f3: i32, rs1: i32, rs2: i32, off: i32) -> i32 {
+    return (((off >> 12) & 1) << 31) | (((off >> 5) & 63) << 25) |
+           (rs2 << 20) | (rs1 << 15) | (f3 << 12) |
+           (((off >> 1) & 15) << 8) | (((off >> 11) & 1) << 7) | 99;
+}
+fn enc_u(op: i32, rd: i32, imm: i32) -> i32 {
+    return (imm & (0 - 4096)) | (rd << 7) | op;
+}
+fn enc_j(rd: i32, off: i32) -> i32 {
+    return (((off >> 20) & 1) << 31) | (((off >> 1) & 1023) << 21) |
+           (((off >> 11) & 1) << 20) | (((off >> 12) & 255) << 12) |
+           (rd << 7) | 111;
+}
+
+fn hi20(v: i32) -> i32 {
+    if (v & 2048) != 0 { return ((v >> 12) + 1) & 1048575; }
+    return (v >> 12) & 1048575;
+}
+fn lo12(v: i32) -> i32 {
+    var lo: i32 = v & 4095;
+    if (lo & 2048) != 0 { lo = lo | (0 - 4096); }
+    return lo;
+}
+
+// ===== Mnemonic comparison =====
+fn mnem_eq(name: StringLiteral) -> bool {
+    var nlen: i32 = len(name);
+    if g_mnem_len != nlen { return false; }
+    var i: i32 = 0;
+    while i < nlen {
+        if get(g_mnem, i) != get(name, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// ===== Process instruction: returns byte count =====
+fn asm_instr() -> i32 {
+    var pc: i32 = TEXT_BASE + g_pos;
+
+    // R-type
+    if mnem_eq("add")   { if g_pass==2 { emit32(enc_r(51,0,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("sub")   { if g_pass==2 { emit32(enc_r(51,0,32,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("and")   { if g_pass==2 { emit32(enc_r(51,7,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("or")    { if g_pass==2 { emit32(enc_r(51,6,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("xor")   { if g_pass==2 { emit32(enc_r(51,4,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("sll")   { if g_pass==2 { emit32(enc_r(51,1,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("srl")   { if g_pass==2 { emit32(enc_r(51,5,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("sra")   { if g_pass==2 { emit32(enc_r(51,5,32,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("slt")   { if g_pass==2 { emit32(enc_r(51,2,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("sltu")  { if g_pass==2 { emit32(enc_r(51,3,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("mul")   { if g_pass==2 { emit32(enc_r(51,0,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("mulhu") { if g_pass==2 { emit32(enc_r(51,3,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("div")   { if g_pass==2 { emit32(enc_r(51,4,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("rem")   { if g_pass==2 { emit32(enc_r(51,6,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+
+    // I-type ALU
+    if mnem_eq("addi")  { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("andi")  { if g_pass==2 { emit32(enc_i(19,7,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("ori")   { if g_pass==2 { emit32(enc_i(19,6,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("xori")  { if g_pass==2 { emit32(enc_i(19,4,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("slti")  { if g_pass==2 { emit32(enc_i(19,2,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("sltiu") { if g_pass==2 { emit32(enc_i(19,3,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("slli")  { if g_pass==2 { emit32(enc_i(19,1,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("srli")  { if g_pass==2 { emit32(enc_i(19,5,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("srai")  { if g_pass==2 { emit32(enc_i(19,5,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2) | 1024)); } return 4; }
+
+    // Load
+    if mnem_eq("lw")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,2,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+    if mnem_eq("lh")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,1,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+    if mnem_eq("lb")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,0,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+    if mnem_eq("lbu") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,4,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+    if mnem_eq("lhu") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,5,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+
+    // Store
+    if mnem_eq("sw") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(2,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+    if mnem_eq("sh") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(1,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+    if mnem_eq("sb") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(0,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+
+    // U-type
+    if mnem_eq("lui") { if g_pass==2 { emit32(enc_u(55,parse_reg_op(0),parse_imm_op(1)<<12)); } return 4; }
+
+    // Branch
+    if mnem_eq("beq") { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bne") { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("blt") { if g_pass==2 { emit32(enc_b(4,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bge") { if g_pass==2 { emit32(enc_b(5,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bltu"){ if g_pass==2 { emit32(enc_b(6,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bgeu"){ if g_pass==2 { emit32(enc_b(7,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+
+    // Pseudo: ble/bgt/bleu/bgtu (swap operands)
+    if mnem_eq("ble")  { if g_pass==2 { emit32(enc_b(5,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bgt")  { if g_pass==2 { emit32(enc_b(4,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bleu") { if g_pass==2 { emit32(enc_b(7,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bgtu") { if g_pass==2 { emit32(enc_b(6,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("beqz") { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
+    if mnem_eq("bnez") { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
+
+    // Pseudo: li
+    if mnem_eq("li") {
+        var imm: i32 = parse_imm_op(1);
+        var rd: i32 = parse_reg_op(0);
+        if imm >= 0 - 2048 && imm < 2048 {
+            if g_pass==2 { emit32(enc_i(19,0,rd,0,imm)); }
+            return 4;
+        }
+        if g_pass==2 {
+            emit32(enc_u(55,rd,hi20(imm)<<12));
+            emit32(enc_i(19,0,rd,rd,lo12(imm)));
+        }
+        return 8;
+    }
+
+    // Pseudo: mv, ret, nop, neg, not, seqz, snez
+    if mnem_eq("mv")   { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),0)); } return 4; }
+    if mnem_eq("ret")  { if g_pass==2 { emit32(enc_i(103,0,0,1,0)); } return 4; }
+    if mnem_eq("nop")  { if g_pass==2 { emit32(enc_i(19,0,0,0,0)); } return 4; }
+    if mnem_eq("neg")  { if g_pass==2 { emit32(enc_r(51,0,32,parse_reg_op(0),0,parse_reg_op(1))); } return 4; }
+    if mnem_eq("not")  { if g_pass==2 { emit32(enc_i(19,4,parse_reg_op(0),parse_reg_op(1),0-1)); } return 4; }
+    if mnem_eq("seqz") { if g_pass==2 { emit32(enc_i(19,3,parse_reg_op(0),parse_reg_op(1),1)); } return 4; }
+    if mnem_eq("snez") { if g_pass==2 { emit32(enc_r(51,3,0,parse_reg_op(0),0,parse_reg_op(1))); } return 4; }
+
+    // Pseudo: j, jr, call, tail, la
+    if mnem_eq("j") {
+        var off: i32 = 0;
+        if g_pass==2 { off = parse_label_op(0) - pc; emit32(enc_j(0,off)); }
+        return 4;
+    }
+    if mnem_eq("jr") { if g_pass==2 { emit32(enc_i(103,0,0,parse_reg_op(0),0)); } return 4; }
+    if mnem_eq("call") || mnem_eq("tail") {
+        var rd: i32 = 1;
+        if mnem_eq("tail") { rd = 0; }
+        if g_pass==2 {
+            var off: i32 = parse_label_op(0) - pc;
+            emit32(enc_u(23,rd,hi20(off)<<12));
+            emit32(enc_i(103,0,rd,rd,lo12(off)));
+        }
+        return 8;
+    }
+    if mnem_eq("la") {
+        var rd: i32 = parse_reg_op(0);
+        if g_pass==2 {
+            var off: i32 = parse_label_op(1) - pc;
+            emit32(enc_u(23,rd,hi20(off)<<12));
+            emit32(enc_i(19,0,rd,rd,lo12(off)));
+        }
+        return 8;
+    }
+
+    // ecall
+    if mnem_eq("ecall") { if g_pass==2 { emit32(115); } return 4; }
+
+    // Unknown instruction
+    var eb: StringBuffer = StringBuffer_new();
+    emit_string(eb, "asm: unknown instruction '");
+    emit_n(eb, g_mnem, 0, g_mnem_len);
+    emit_string(eb, "'\n");
+    write(eb, 2);
+    destroy(eb);
+    sys_exit(1);
+    return 0;
+}
+
+// ===== Line parser =====
+// Parse a line stored in g_line_buf[0..g_line_buf_len] into g_mnem and g_ops
+fn parse_asm_line() -> void {
+    g_mnem_len = 0;
+    g_nops = 0;
+    var pos: i32 = 0;
+    var len: i32 = g_line_buf_len;
+    // Skip leading whitespace
+    while pos < len && (get(g_line_buf, pos) == ' ' || get(g_line_buf, pos) == 9u8) { pos = pos + 1; }
+    if pos >= len { return; }
+    var c: u8 = get(g_line_buf, pos);
+    if c == '#' || c == ';' { return; }
+    if c == '/' && pos + 1 < len && get(g_line_buf, (pos+1)) == '*' { return; }
+    // Read mnemonic
+    var mstart: i32 = pos;
+    while pos < len && get(g_line_buf, pos) != ' ' && get(g_line_buf, pos) != 9u8 && get(g_line_buf, pos) != 10u8 {
+        pos = pos + 1;
+    }
+    g_mnem_len = pos - mstart;
+    var i: i32 = 0;
+    while i < g_mnem_len { set(g_mnem, i, get(g_line_buf, (mstart + i))); i = i + 1; }
+    // Skip whitespace after mnemonic
+    while pos < len && (get(g_line_buf, pos) == ' ' || get(g_line_buf, pos) == 9u8) { pos = pos + 1; }
+    // Read operands
+    while pos < len && get(g_line_buf, pos) != '#' && get(g_line_buf, pos) != 10u8 && g_nops < 4 {
+        // Skip separators
+        while pos < len && (get(g_line_buf, pos) == ',' || get(g_line_buf, pos) == ' ' || get(g_line_buf, pos) == 9u8) { pos = pos + 1; }
+        if pos >= len || get(g_line_buf, pos) == '#' || get(g_line_buf, pos) == 10u8 { return; }
+        // Handle quoted strings
+        if get(g_line_buf, pos) == '"' {
+            var qstart: i32 = pos;
+            pos = pos + 1;
+            while pos < len && get(g_line_buf, pos) != 10u8 {
+                if get(g_line_buf, pos) == '\\' && pos + 1 < len { pos = pos + 2; }
+                else if get(g_line_buf, pos) == '"' { pos = pos + 1; pos = len + 1; }  // break
+                else { pos = pos + 1; }
+            }
+            if pos > len { pos = pos - len - 1 + len; }  // undo break trick
+            set(g_ops, (g_nops * 2), qstart);
+            set(g_ops, (g_nops * 2 + 1), pos - qstart);
+            g_nops = g_nops + 1;
+            return;  // string is always last operand
+        }
+        // Regular operand (may include parens for memory ops)
+        var ostart: i32 = pos;
+        var paren: i32 = 0;
+        var odone: i32 = 0;
+        while pos < len && odone == 0 {
+            var ch: u8 = get(g_line_buf, pos);
+            if ch == '(' { paren = paren + 1; pos = pos + 1; }
+            else if ch == ')' { pos = pos + 1; paren = paren - 1; if paren <= 0 { odone = 1; } }
+            else if (ch == ',' || ch == ' ' || ch == 9u8) && paren == 0 { odone = 1; }
+            else if ch == '#' || ch == 10u8 { odone = 1; }
+            else { pos = pos + 1; }
+        }
+        var olen: i32 = pos - ostart;
+        if olen > 0 {
+            set(g_ops, (g_nops * 2), ostart);
+            set(g_ops, (g_nops * 2 + 1), olen);
+            g_nops = g_nops + 1;
+        }
+    }
+    return;
+}
+
+// ===== Process one stored line =====
+fn process_line(line_idx: i32) -> void {
+    // Load line into g_line_buf
+    var off: i32 = get(g_line_offs, line_idx);
+    var len: i32 = get(g_line_lens, line_idx);
+    var i: i32 = 0;
+    while i < len { set(g_line_buf, i, get(g_lines, (off + i))); i = i + 1; }
+    g_line_buf_len = len;
+
+    // Strip leading/trailing whitespace
+    var start: i32 = 0;
+    while start < len && (get(g_line_buf, start) == ' ' || get(g_line_buf, start) == 9u8) { start = start + 1; }
+    while len > start && (get(g_line_buf, (len-1)) == ' ' || get(g_line_buf, (len-1)) == 9u8 || get(g_line_buf, (len-1)) == 10u8 || get(g_line_buf, (len-1)) == 13u8) { len = len - 1; }
+    if start > 0 {
+        i = 0;
+        while i < len - start { set(g_line_buf, i, get(g_line_buf, (start + i))); i = i + 1; }
+        len = len - start;
+    }
+    g_line_buf_len = len;
+    if len == 0 { return; }
+    if get(g_line_buf, 0) == '#' || get(g_line_buf, 0) == ';' { return; }
+
+    // Check for label (colon not inside quotes)
+    var colon_pos: i32 = 0 - 1;
+    var in_quote: i32 = 0;
+    i = 0;
+    while i < len {
+        if get(g_line_buf, i) == '"' { in_quote = 1 - in_quote; }
+        if get(g_line_buf, i) == ':' && in_quote == 0 { colon_pos = i; i = len; }  // break
+        else { i = i + 1; }
+    }
+    if colon_pos >= 0 {
+        // Label definition
+        var lname: U8Array = U8Array(colon_pos);
+        i = 0;
+        while i < colon_pos { set(lname, i, get(g_line_buf, i)); i = i + 1; }
+        if g_pass == 1 { define_label(lname, colon_pos, TEXT_BASE + g_pos); }
+        delete(lname);
+        // Process remainder after colon
+        var rest_start: i32 = colon_pos + 1;
+        while rest_start < len && (get(g_line_buf, rest_start) == ' ' || get(g_line_buf, rest_start) == 9u8) { rest_start = rest_start + 1; }
+        if rest_start < len {
+            // Shift remainder to start of buffer
+            i = 0;
+            while i < len - rest_start { set(g_line_buf, i, get(g_line_buf, (rest_start + i))); i = i + 1; }
+            g_line_buf_len = len - rest_start;
+        } else {
+            return;
+        }
+    }
+
+    parse_asm_line();
+    if g_mnem_len == 0 { return; }
+
+    // Directives
+    if get(g_mnem, 0) == '.' {
+        if mnem_eq(".text") || mnem_eq(".section") { return; }
+        if mnem_eq(".data") { return; }
+        if mnem_eq(".bss") { return; }
+        if mnem_eq(".globl") || mnem_eq(".type") || mnem_eq(".size") ||
+           mnem_eq(".option") || mnem_eq(".attribute") || mnem_eq(".file") ||
+           mnem_eq(".ident") || mnem_eq(".p2align") { return; }
+        if mnem_eq(".align") {
+            var n: i32 = 1;
+            var shift: i32 = parse_imm_op(0);
+            i = 0;
+            while i < shift { n = n * 2; i = i + 1; }
+            align_to(n);
+            return;
+        }
+        if mnem_eq(".word") {
+            if g_nops > 0 {
+                // Try as label first, then as number
+                var op_off: i32 = get(g_ops, 0);
+                var op_len: i32 = get(g_ops, 1);
+                var c0: u8 = get(g_line_buf, op_off);
+                if (c0 >= '0' && c0 <= '9') || c0 == '-' {
+                    emit32(parse_imm_op(0));
+                } else {
+                    // Label
+                    if g_pass == 2 { emit32(parse_label_op(0)); }
+                    else { g_pos = g_pos + 4; }
+                }
+            }
+            return;
+        }
+        if mnem_eq(".string") {
+            if g_nops > 0 {
+                var op_off: i32 = get(g_ops, 0);
+                var op_len: i32 = get(g_ops, 1);
+                // Skip opening quote
+                var s: i32 = op_off + 1;
+                var e: i32 = op_off + op_len;
+                if e > s && get(g_line_buf, (e - 1)) == '"' { e = e - 1; }
+                i = s;
+                while i < e {
+                    if get(g_line_buf, i) == '\\' && i + 1 < e {
+                        i = i + 1;
+                        var esc: u8 = get(g_line_buf, i);
+                        if esc == 'n' { emit8(10); }
+                        else if esc == 't' { emit8(9); }
+                        else if esc == 'r' { emit8(13); }
+                        else if esc == '0' { emit8(0); }
+                        else if esc == '\\' { emit8(92); }
+                        else if esc == '"' { emit8(34); }
+                        else { emit8(esc as i32); }
+                    } else {
+                        emit8(get(g_line_buf, i) as i32);
+                    }
+                    i = i + 1;
+                }
+                emit8(0);  // NUL terminator
+            }
+            return;
+        }
+        if mnem_eq(".space") {
+            var n: i32 = parse_imm_op(0);
+            i = 0;
+            while i < n { emit8(0); i = i + 1; }
+            return;
+        }
+        // Unknown directive: ignore
+        return;
+    }
+
+    // Instructions
+    var sz: i32 = asm_instr();
+    if g_pass == 1 { g_pos = g_pos + sz; }
+    return;
+}
+
+// ===== Read all lines from stdin =====
+fn read_all_lines() -> void {
+    var src: SourceReader = SourceReader_new(0);
+    while at_eof(src) == false {
+        var lstart: i32 = g_line_pos;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(src) == false {
+            var c: u8 = next(src);
+            set(g_lines, g_line_pos, c);
+            g_line_pos = g_line_pos + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        var llen: i32 = g_line_pos - lstart;
+        if llen > 0 {
+            set(g_line_offs, g_nlines, lstart);
+            set(g_line_lens, g_nlines, llen);
+            g_nlines = g_nlines + 1;
+        }
+    }
+    close(src);
+    return;
+}
+
+// ===== Write ELF =====
+fn write_elf(code_size: i32) -> void {
+    var out: U8Array = U8Array(84 + code_size);  // ELF header (52) + phdr (32) + code
+    var entry: i32 = 0;
+    // Find _start label
+    var tmp: U8Array = U8Array(6);
+    set(tmp, 0, '_'); set(tmp, 1, 's'); set(tmp, 2, 't');
+    set(tmp, 3, 'a'); set(tmp, 4, 'r'); set(tmp, 5, 't');
+    entry = label_addr(tmp, 6);
+    delete(tmp);
+
+    var vaddr: i32 = TEXT_BASE;
+    var file_code_off: i32 = 84;  // 52 (ehdr) + 32 (phdr)
+
+    // Zero fill
+    var i: i32 = 0;
+    while i < 84 { set(out, i, 0u8); i = i + 1; }
+
+    // ELF header
+    set(out, 0, 127u8); set(out, 1, 'E'); set(out, 2, 'L'); set(out, 3, 'F');
+    set(out, 4, 1u8);   // 32-bit
+    set(out, 5, 1u8);   // little-endian
+    set(out, 6, 1u8);   // ELF version
+
+    // e_type = ET_EXEC (2)
+    set(out, 16, 2u8);
+    // e_machine = EM_RISCV (0xf3)
+    set(out, 18, 243u8);
+    // e_version = 1
+    set(out, 20, 1u8);
+    // e_entry (4 bytes LE)
+    set(out, 24, (entry & 255) as u8);
+    set(out, 25, ((entry >> 8) & 255) as u8);
+    set(out, 26, ((entry >> 16) & 255) as u8);
+    set(out, 27, ((entry >> 24) & 255) as u8);
+    // e_phoff = 52
+    set(out, 28, 52u8);
+    // e_ehsize = 52
+    set(out, 40, 52u8);
+    // e_phentsize = 32
+    set(out, 42, 32u8);
+    // e_phnum = 1
+    set(out, 44, 1u8);
+
+    // Program header (at offset 52)
+    // p_type = PT_LOAD (1)
+    set(out, 52, 1u8);
+    // p_offset = 84
+    set(out, 56, 84u8);
+    // p_vaddr, p_paddr = TEXT_BASE
+    set(out, 60, (vaddr & 255) as u8);
+    set(out, 61, ((vaddr >> 8) & 255) as u8);
+    set(out, 62, ((vaddr >> 16) & 255) as u8);
+    set(out, 63, ((vaddr >> 24) & 255) as u8);
+    set(out, 64, (vaddr & 255) as u8);
+    set(out, 65, ((vaddr >> 8) & 255) as u8);
+    set(out, 66, ((vaddr >> 16) & 255) as u8);
+    set(out, 67, ((vaddr >> 24) & 255) as u8);
+    // p_filesz, p_memsz = code_size
+    set(out, 68, (code_size & 255) as u8);
+    set(out, 69, ((code_size >> 8) & 255) as u8);
+    set(out, 70, ((code_size >> 16) & 255) as u8);
+    set(out, 71, ((code_size >> 24) & 255) as u8);
+    set(out, 72, (code_size & 255) as u8);
+    set(out, 73, ((code_size >> 8) & 255) as u8);
+    set(out, 74, ((code_size >> 16) & 255) as u8);
+    set(out, 75, ((code_size >> 24) & 255) as u8);
+    // p_flags = RWX (7)
+    set(out, 76, 7u8);
+    // p_align = 0x1000
+    set(out, 80, 0u8); set(out, 81, 16u8);
+
+    // Write header
+    sys_write(1, out, 84);
+
+    // Write code
+    sys_write(1, g_code, code_size);
+
+    delete(out);
+    return;
+}
+
+// ===== Main =====
+fn main() -> i32 {
+    // Allocate buffers
+    g_code = U8Array(MAX_CODE);
+    g_lab_names = U8Array(262144);
+    g_lab_offs = I32Array(MAX_LABELS);
+    g_lab_lens = I32Array(MAX_LABELS);
+    g_lab_addrs = I32Array(MAX_LABELS);
+    g_lines = U8Array(MAX_CODE);
+    g_line_offs = I32Array(131072);
+    g_line_lens = I32Array(131072);
+    g_mnem = U8Array(64);
+    g_ops = I32Array(8);  // 4 ops x 2 (off, len)
+    g_line_buf = U8Array(4092);
+
+    // Read all input lines
+    read_all_lines();
+
+    // Pass 1: collect labels, compute sizes
+    g_pass = 1;
+    g_pos = 0;
+    g_nlabels = 0;
+    g_lab_name_pos = 0;
+    // Pre-define linker symbols
+    var gp_sym: U8Array = U8Array(17);
+    set(gp_sym, 0, '_'); set(gp_sym, 1, '_'); set(gp_sym, 2, 'g');
+    set(gp_sym, 3, 'l'); set(gp_sym, 4, 'o'); set(gp_sym, 5, 'b');
+    set(gp_sym, 6, 'a'); set(gp_sym, 7, 'l'); set(gp_sym, 8, '_');
+    set(gp_sym, 9, 'p'); set(gp_sym, 10, 'o'); set(gp_sym, 11, 'i');
+    set(gp_sym, 12, 'n'); set(gp_sym, 13, 't'); set(gp_sym, 14, 'e');
+    set(gp_sym, 15, 'r'); set(gp_sym, 16, '$');
+    define_label(gp_sym, 17, 0);
+    delete(gp_sym);
+    var i: i32 = 0;
+    while i < g_nlines { process_line(i); i = i + 1; }
+    var total_size: i32 = g_pos;
+
+    // Pass 2: encode
+    g_pass = 2;
+    g_pos = 0;
+    i = 0;
+    while i < g_nlines { process_line(i); i = i + 1; }
+
+    // Write ELF
+    write_elf(total_size);
+
+    return 0;
+}
