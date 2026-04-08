@@ -147,6 +147,12 @@ export fn char_at(sb: StringBuffer, idx: i32) -> u8 {
     return get(buf(sb), idx);
 }
 
+// Reset the buffer position to 0 (reuse without reallocation).
+export fn reset(sb: StringBuffer) -> void {
+    pos(sb, 0);
+    return;
+}
+
 // Write the buffer contents to the given file descriptor.
 export fn write(sb: StringBuffer, fd: i32) -> void {
     sys_write(fd, buf(sb), pos(sb));

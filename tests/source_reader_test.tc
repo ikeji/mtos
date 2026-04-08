@@ -1,0 +1,52 @@
+// source_reader_test.tc — test SourceReader
+import "../compiler/string_buffer.tc";
+import "../compiler/source_reader.tc";
+
+fn assert_eq(name: StringLiteral, actual: i32, expected: i32) -> void {
+    if actual == expected {
+        print_i32(1);
+    } else {
+        print_i32(0);
+        // print actual for debugging
+        print_i32(actual);
+    }
+    return;
+}
+
+fn main() -> i32 {
+    var r: SourceReader = SourceReader_new(0);
+
+    // Test 1: peek returns first byte without consuming
+    assert_eq("peek1", peek(r) as i32, 65);
+    assert_eq("peek2", peek(r) as i32, 65);
+
+    // Test 2: next returns and consumes
+    assert_eq("next1", next(r) as i32, 65);
+    // peek should now be 'B'
+    assert_eq("peek3", peek(r) as i32, 66);
+
+    // Test 3: read rest of first line "B\n"
+    next(r); next(r);  // consume 'B' and '\n'
+    // line_num should be 2
+    assert_eq("lnum", line_num(r), 2);
+
+    // Test 4: line_buf_reset + line_buf
+    line_buf_reset(r);
+    // Read "CD" (next line is "CD\n")
+    next(r); next(r);  // 'C', 'D'
+    // line_buf should contain "CD" + peek ahead to EOL
+    var sb: StringBuffer = StringBuffer_new();
+    line_buf(r, sb);
+    // sb should be "CD" (since \n is next but not included)
+    assert_eq("lbuf_len", length(sb), 2);
+    assert_eq("lbuf_0", char_at(sb, 0) as i32, 67);  // 'C'
+    assert_eq("lbuf_1", char_at(sb, 1) as i32, 68);  // 'D'
+    destroy(sb);
+
+    // Test 5: read to EOF
+    while at_eof(r) == false { next(r); }
+    assert_eq("eof_lnum", line_num(r), 3);
+
+    close(r);
+    return 0;
+}
