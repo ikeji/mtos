@@ -116,16 +116,22 @@ for f in "${TC_FILES[@]}"; do
     actual_gen2_bc=$(mktemp)
 
     if [ "$has_import" -eq 0 ]; then
-        # Gen2 BC (use Gen1 AST as input to ensure comparable output)
-        gen1_ast=$("$PARSE" "$input" 2>/dev/null)
+        # Gen2 BC: Gen2 parse → Gen2 typecheck → Gen2 codegen
+        gen2_ast=$(cat "$actual_gen2_ast")
         t0=$(time_ms)
-        printf '%s\n' "$gen1_ast" | run_typecheck_tc | run_codegen_tc > "$actual_gen2_bc"
+        printf '%s\n' "$gen2_ast" | run_typecheck_tc | run_codegen_tc > "$actual_gen2_bc"
         elapsed=$(( $(time_ms) - t0 ))
-        if diff -u "$golden_bc" "$actual_gen2_bc" > /dev/null; then
+        # Compare ignoring comment lines (Gen2 parse produces slightly different comments)
+        golden_bc_nocomment=$(mktemp)
+        actual_bc_nocomment=$(mktemp)
+        grep -v "^;" "$golden_bc" > "$golden_bc_nocomment"
+        grep -v "^;" "$actual_gen2_bc" > "$actual_bc_nocomment"
+        if diff -u "$golden_bc_nocomment" "$actual_bc_nocomment" > /dev/null; then
             report_pass "tc/$f (BC - Gen2 vs golden)" "$elapsed"
         else
-            report_fail_diff "tc/$f (BC - Gen2 vs golden)" "$golden_bc" "$actual_gen2_bc" "" "$elapsed"
+            report_fail_diff "tc/$f (BC - Gen2 vs golden)" "$golden_bc_nocomment" "$actual_bc_nocomment" "" "$elapsed"
         fi
+        rm -f "$golden_bc_nocomment" "$actual_bc_nocomment"
 
         # Gen2 ASM
         actual_gen2_s=$(mktemp)
@@ -142,11 +148,11 @@ for f in "${TC_FILES[@]}"; do
 
     # === Gen3 == Gen2 (BC) ===
     if [ "$HAS_GEN3" = true ] && [ "$has_import" -eq 0 ]; then
-        # Gen3: Gen1 AST → Gen2 typecheck → Gen2 codegen (same input as Gen2 BC)
+        # Gen3: Gen2 parse → Gen2 typecheck → Gen2 codegen (from source)
         gen3_bc=$(mktemp)
         t0=$(time_ms)
-        printf '%s\n' "$gen1_ast" | \
-        "$QEMU" "$_GEN2_TMP/typecheck" 2>/tmp/tc_gen3_parse_stderr_$$ | \
+        "$QEMU" "$_GEN2_TMP/parse" < "$input" 2>/tmp/tc_gen3_parse_stderr_$$ | \
+        "$QEMU" "$_GEN2_TMP/typecheck" 2>/dev/null | \
         "$QEMU" "$_GEN2_TMP/codegen" > "$gen3_bc" 2>/dev/null
         elapsed=$(( $(time_ms) - t0 ))
 
