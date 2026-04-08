@@ -509,6 +509,16 @@ __L20:
   return_void
 .endfn
 
+.fn reset StringBuffer void
+.param sb StringBuffer
+  load sb
+  push_int 0
+  call pos StringBuffer i32
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn write StringBuffer i32 void
 .param sb StringBuffer
 .param fd i32
