@@ -3,7 +3,7 @@
     .globl main
     .type  main, @function
 main:
-    # prologue: frame_size=32, params=0, locals=5
+    # prologue: frame_size=32, params=0, locals=5, eval_depth=1
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)

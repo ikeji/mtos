@@ -11,11 +11,11 @@ g_len:
     .globl is_digit__u8
     .type  is_digit__u8, @function
 is_digit__u8:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -76,11 +76,11 @@ is_digit__u8:
     .globl is_space__u8
     .type  is_space__u8, @function
 is_space__u8:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -141,11 +141,11 @@ is_space__u8:
     .globl cur_char__U8Array
     .type  cur_char__U8Array, @function
 cur_char__U8Array:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     la   t1, g_pos
     lw   t0, 0(t1)
@@ -208,11 +208,11 @@ cur_char__U8Array:
     .globl skip_spaces__U8Array
     .type  skip_spaces__U8Array, @function
 skip_spaces__U8Array:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
   .L_f3_pc0:
     la   t1, g_pos
@@ -294,11 +294,11 @@ skip_spaces__U8Array:
     .globl parse_num__U8Array
     .type  parse_num__U8Array, @function
 parse_num__U8Array:
-    # prologue: frame_size=16, params=1, locals=1
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=1, eval_depth=4
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   zero, -16(s0)
     lw   t0, -12(s0)
@@ -444,11 +444,11 @@ parse_num__U8Array:
     .globl parse_mul__U8Array
     .type  parse_mul__U8Array, @function
 parse_mul__U8Array:
-    # prologue: frame_size=32, params=1, locals=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=1, locals=3, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   zero, -16(s0)
     sw   zero, -20(s0)
@@ -677,11 +677,11 @@ parse_mul__U8Array:
     .globl parse_add__U8Array
     .type  parse_add__U8Array, @function
 parse_add__U8Array:
-    # prologue: frame_size=32, params=1, locals=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=1, locals=3, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   zero, -16(s0)
     sw   zero, -20(s0)
@@ -910,11 +910,11 @@ parse_add__U8Array:
     .globl main
     .type  main, @function
 main:
-    # prologue: frame_size=16, params=0, locals=2
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=0, locals=2, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   zero, -12(s0)
     sw   zero, -16(s0)
     li   t0, 256

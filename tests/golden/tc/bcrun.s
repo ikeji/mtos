@@ -191,11 +191,11 @@ g_heap_obj_count:
     .globl stab_eq__U8Array__i32__i32__i32__i32
     .type  stab_eq__U8Array__i32__i32__i32__i32, @function
 stab_eq__U8Array__i32__i32__i32__i32:
-    # prologue: frame_size=32, params=5, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=5, locals=1, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -354,11 +354,11 @@ stab_eq__U8Array__i32__i32__i32__i32:
     .globl in_cur__U8Array
     .type  in_cur__U8Array, @function
 in_cur__U8Array:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     la   t1, g_in_pos
     lw   t0, 0(t1)
@@ -421,11 +421,11 @@ in_cur__U8Array:
     .globl is_ws__u8
     .type  is_ws__u8, @function
 is_ws__u8:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=4
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -542,11 +542,11 @@ is_ws__u8:
     .globl skip_spaces__U8Array
     .type  skip_spaces__U8Array, @function
 skip_spaces__U8Array:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=4
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
   .L_f3_pc0:
     la   t1, g_in_pos
@@ -666,11 +666,11 @@ skip_spaces__U8Array:
     .globl skip_line__U8Array
     .type  skip_line__U8Array, @function
 skip_line__U8Array:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
   .L_f4_pc0:
     la   t1, g_in_pos
@@ -792,11 +792,11 @@ skip_line__U8Array:
     .globl next_tok__U8Array__U8Array
     .type  next_tok__U8Array__U8Array, @function
 next_tok__U8Array__U8Array:
-    # prologue: frame_size=32, params=2, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=2, locals=1, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -947,11 +947,11 @@ next_tok__U8Array__U8Array:
     .globl tok_len__i32
     .type  tok_len__i32, @function
 tok_len__i32:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     la   t1, g_stab_pos
     lw   t0, 0(t1)
@@ -984,7 +984,7 @@ tok_len__i32:
     .globl discard_tok__i32
     .type  discard_tok__i32, @function
 discard_tok__i32:
-    # prologue: frame_size=16, params=1, locals=0
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
     addi sp, sp, -16
     sw   ra, 12(sp)
     sw   s0, 8(sp)
@@ -1012,11 +1012,11 @@ discard_tok__i32:
     .globl int_from_stab__U8Array__i32__i32
     .type  int_from_stab__U8Array__i32__i32, @function
 int_from_stab__U8Array__i32__i32:
-    # prologue: frame_size=48, params=3, locals=4
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
+    # prologue: frame_size=64, params=3, locals=4, eval_depth=5
+    addi sp, sp, -64
+    sw   ra, 60(sp)
+    sw   s0, 56(sp)
+    addi s0, sp, 64
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -1304,11 +1304,11 @@ int_from_stab__U8Array__i32__i32:
     .globl read_strlit__U8Array__U8Array
     .type  read_strlit__U8Array__U8Array, @function
 read_strlit__U8Array__U8Array:
-    # prologue: frame_size=64, params=2, locals=10
-    addi sp, sp, -64
-    sw   ra, 60(sp)
-    sw   s0, 56(sp)
-    addi s0, sp, 64
+    # prologue: frame_size=112, params=2, locals=10, eval_depth=12
+    addi sp, sp, -112
+    sw   ra, 108(sp)
+    sw   s0, 104(sp)
+    addi s0, sp, 112
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -2273,11 +2273,11 @@ read_strlit__U8Array__U8Array:
     .globl classify_op__U8Array__i32__i32
     .type  classify_op__U8Array__i32__i32, @function
 classify_op__U8Array__i32__i32:
-    # prologue: frame_size=48, params=3, locals=6
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
+    # prologue: frame_size=288, params=3, locals=6, eval_depth=61
+    addi sp, sp, -288
+    sw   ra, 284(sp)
+    sw   s0, 280(sp)
+    addi s0, sp, 288
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -5280,11 +5280,11 @@ classify_op__U8Array__i32__i32:
     .globl fn_name_ss__I32Array__i32
     .type  fn_name_ss__I32Array__i32, @function
 fn_name_ss__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5335,11 +5335,11 @@ fn_name_ss__I32Array__i32:
     .globl fn_name_sl__I32Array__i32
     .type  fn_name_sl__I32Array__i32, @function
 fn_name_sl__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5390,11 +5390,11 @@ fn_name_sl__I32Array__i32:
     .globl fn_param_base__I32Array__i32
     .type  fn_param_base__I32Array__i32, @function
 fn_param_base__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5445,11 +5445,11 @@ fn_param_base__I32Array__i32:
     .globl fn_nparam__I32Array__i32
     .type  fn_nparam__I32Array__i32, @function
 fn_nparam__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5500,11 +5500,11 @@ fn_nparam__I32Array__i32:
     .globl fn_local_base__I32Array__i32
     .type  fn_local_base__I32Array__i32, @function
 fn_local_base__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5555,11 +5555,11 @@ fn_local_base__I32Array__i32:
     .globl fn_nlocal__I32Array__i32
     .type  fn_nlocal__I32Array__i32, @function
 fn_nlocal__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5610,11 +5610,11 @@ fn_nlocal__I32Array__i32:
     .globl fn_instr_base__I32Array__i32
     .type  fn_instr_base__I32Array__i32, @function
 fn_instr_base__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5665,11 +5665,11 @@ fn_instr_base__I32Array__i32:
     .globl fn_ninstr__I32Array__i32
     .type  fn_ninstr__I32Array__i32, @function
 fn_ninstr__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5720,11 +5720,11 @@ fn_ninstr__I32Array__i32:
     .globl fn_set__I32Array__i32__i32__i32
     .type  fn_set__I32Array__i32__i32__i32, @function
 fn_set__I32Array__i32__i32__i32:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -5779,11 +5779,11 @@ fn_set__I32Array__i32__i32__i32:
     .globl pl_name_ss__I32Array__i32
     .type  pl_name_ss__I32Array__i32, @function
 pl_name_ss__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5834,11 +5834,11 @@ pl_name_ss__I32Array__i32:
     .globl pl_name_sl__I32Array__i32
     .type  pl_name_sl__I32Array__i32, @function
 pl_name_sl__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -5889,11 +5889,11 @@ pl_name_sl__I32Array__i32:
     .globl pl_set__I32Array__i32__i32__i32
     .type  pl_set__I32Array__i32__i32__i32, @function
 pl_set__I32Array__i32__i32__i32:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -5948,7 +5948,7 @@ pl_set__I32Array__i32__i32__i32:
     .globl ins_op__I32Array__i32__i32
     .type  ins_op__I32Array__i32__i32, @function
 ins_op__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -6013,7 +6013,7 @@ ins_op__I32Array__i32__i32:
     .globl ins_ival__I32Array__i32__i32
     .type  ins_ival__I32Array__i32__i32, @function
 ins_ival__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -6078,7 +6078,7 @@ ins_ival__I32Array__i32__i32:
     .globl ins_ss__I32Array__i32__i32
     .type  ins_ss__I32Array__i32__i32, @function
 ins_ss__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -6143,7 +6143,7 @@ ins_ss__I32Array__i32__i32:
     .globl ins_sl__I32Array__i32__i32
     .type  ins_sl__I32Array__i32__i32, @function
 ins_sl__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -6208,11 +6208,11 @@ ins_sl__I32Array__i32__i32:
     .globl ins_set__I32Array__i32__i32__i32__i32
     .type  ins_set__I32Array__i32__i32__i32__i32, @function
 ins_set__I32Array__i32__i32__i32__i32:
-    # prologue: frame_size=32, params=5, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=5, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -6277,11 +6277,11 @@ ins_set__I32Array__i32__i32__i32__i32:
     .globl hm_kind__I32Array__i32
     .type  hm_kind__I32Array__i32, @function
 hm_kind__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -6332,11 +6332,11 @@ hm_kind__I32Array__i32:
     .globl hm_base__I32Array__i32
     .type  hm_base__I32Array__i32, @function
 hm_base__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -6387,11 +6387,11 @@ hm_base__I32Array__i32:
     .globl hm_size__I32Array__i32
     .type  hm_size__I32Array__i32, @function
 hm_size__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -6442,7 +6442,7 @@ hm_size__I32Array__i32:
     .globl heap_new_u8__I32Array__i32
     .type  heap_new_u8__I32Array__i32, @function
 heap_new_u8__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=1
+    # prologue: frame_size=32, params=2, locals=1, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -6618,7 +6618,7 @@ heap_new_u8__I32Array__i32:
     .globl heap_new_i32__I32Array__i32
     .type  heap_new_i32__I32Array__i32, @function
 heap_new_i32__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=1
+    # prologue: frame_size=32, params=2, locals=1, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -6794,11 +6794,11 @@ heap_new_i32__I32Array__i32:
     .globl heap_new_str__I32Array__U8Array__U8Array__i32__i32
     .type  heap_new_str__I32Array__U8Array__U8Array__i32__i32, @function
 heap_new_str__I32Array__U8Array__U8Array__i32__i32:
-    # prologue: frame_size=48, params=5, locals=2
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
+    # prologue: frame_size=64, params=5, locals=2, eval_depth=5
+    addi sp, sp, -64
+    sw   ra, 60(sp)
+    sw   s0, 56(sp)
+    addi s0, sp, 64
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -7058,11 +7058,11 @@ heap_new_str__I32Array__U8Array__U8Array__i32__i32:
     .globl heap_getu8__I32Array__U8Array__i32__i32
     .type  heap_getu8__I32Array__U8Array__i32__i32, @function
 heap_getu8__I32Array__U8Array__i32__i32:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -7119,11 +7119,11 @@ heap_getu8__I32Array__U8Array__i32__i32:
     .globl heap_setu8__I32Array__U8Array__i32__i32__i32
     .type  heap_setu8__I32Array__U8Array__i32__i32__i32, @function
 heap_setu8__I32Array__U8Array__i32__i32__i32:
-    # prologue: frame_size=32, params=5, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=5, locals=0, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -7193,11 +7193,11 @@ heap_setu8__I32Array__U8Array__i32__i32__i32:
     .globl heap_geti32__I32Array__I32Array__i32__i32
     .type  heap_geti32__I32Array__I32Array__i32__i32, @function
 heap_geti32__I32Array__I32Array__i32__i32:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -7250,11 +7250,11 @@ heap_geti32__I32Array__I32Array__i32__i32:
     .globl heap_seti32__I32Array__I32Array__i32__i32__i32
     .type  heap_seti32__I32Array__I32Array__i32__i32__i32, @function
 heap_seti32__I32Array__I32Array__i32__i32__i32:
-    # prologue: frame_size=32, params=5, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=5, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -7310,11 +7310,11 @@ heap_seti32__I32Array__I32Array__i32__i32__i32:
     .globl parse_lnum__U8Array__i32__i32
     .type  parse_lnum__U8Array__i32__i32, @function
 parse_lnum__U8Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=3, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -7493,11 +7493,11 @@ parse_lnum__U8Array__i32__i32:
     .globl parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array
     .type  parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array, @function
 parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array:
-    # prologue: frame_size=208, params=10, locals=39
-    addi sp, sp, -208
-    sw   ra, 204(sp)
-    sw   s0, 200(sp)
-    addi s0, sp, 208
+    # prologue: frame_size=384, params=10, locals=39, eval_depth=44
+    addi sp, sp, -384
+    sw   ra, 380(sp)
+    sw   s0, 376(sp)
+    addi s0, sp, 384
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -12006,11 +12006,11 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     .globl var_find_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32
     .type  var_find_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32, @function
 var_find_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
-    # prologue: frame_size=64, params=7, locals=5
-    addi sp, sp, -64
-    sw   ra, 60(sp)
-    sw   s0, 56(sp)
-    addi s0, sp, 64
+    # prologue: frame_size=80, params=7, locals=5, eval_depth=5
+    addi sp, sp, -80
+    sw   ra, 76(sp)
+    sw   s0, 72(sp)
+    addi s0, sp, 80
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -12346,11 +12346,11 @@ var_find_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     .globl global_find__U8Array__I32Array__i32__i32
     .type  global_find__U8Array__I32Array__i32__i32, @function
 global_find__U8Array__I32Array__i32__i32:
-    # prologue: frame_size=32, params=4, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=1, eval_depth=5
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -12515,11 +12515,11 @@ global_find__U8Array__I32Array__i32__i32:
     .globl func_find__U8Array__I32Array__i32__i32
     .type  func_find__U8Array__I32Array__i32__i32, @function
 func_find__U8Array__I32Array__i32__i32:
-    # prologue: frame_size=32, params=4, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=1, eval_depth=5
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -12648,11 +12648,11 @@ func_find__U8Array__I32Array__i32__i32:
     .globl stk_push__I32Array__I32Array__i32__i32
     .type  stk_push__I32Array__I32Array__i32__i32, @function
 stk_push__I32Array__I32Array__i32__i32:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -12725,11 +12725,11 @@ stk_push__I32Array__I32Array__i32__i32:
     .globl stk_pop__I32Array__I32Array
     .type  stk_pop__I32Array__I32Array, @function
 stk_pop__I32Array__I32Array:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     la   t1, g_sp
@@ -12798,7 +12798,7 @@ stk_pop__I32Array__I32Array:
     .globl cs_push__I32Array__i32__i32__i32__i32__i32
     .type  cs_push__I32Array__i32__i32__i32__i32__i32, @function
 cs_push__I32Array__i32__i32__i32__i32__i32:
-    # prologue: frame_size=48, params=6, locals=1
+    # prologue: frame_size=48, params=6, locals=1, eval_depth=3
     addi sp, sp, -48
     sw   ra, 44(sp)
     sw   s0, 40(sp)
@@ -12988,11 +12988,11 @@ cs_push__I32Array__i32__i32__i32__i32__i32:
     .globl cs_pop__I32Array
     .type  cs_pop__I32Array, @function
 cs_pop__I32Array:
-    # prologue: frame_size=16, params=1, locals=1
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=1, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   zero, -16(s0)
     la   t1, g_csp
@@ -13168,11 +13168,11 @@ cs_pop__I32Array:
     .globl vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__U8Array
     .type  vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__U8Array, @function
 vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__U8Array:
-    # prologue: frame_size=384, params=21, locals=73
-    addi sp, sp, -384
-    sw   ra, 380(sp)
-    sw   s0, 376(sp)
-    addi s0, sp, 384
+    # prologue: frame_size=592, params=21, locals=73, eval_depth=52
+    addi sp, sp, -592
+    sw   ra, 588(sp)
+    sw   s0, 584(sp)
+    addi s0, sp, 592
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -21268,11 +21268,11 @@ vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32
     .globl main
     .type  main, @function
 main:
-    # prologue: frame_size=128, params=0, locals=30
-    addi sp, sp, -128
-    sw   ra, 124(sp)
-    sw   s0, 120(sp)
-    addi s0, sp, 128
+    # prologue: frame_size=224, params=0, locals=30, eval_depth=22
+    addi sp, sp, -224
+    sw   ra, 220(sp)
+    sw   s0, 216(sp)
+    addi s0, sp, 224
     sw   zero, -12(s0)
     sw   zero, -16(s0)
     sw   zero, -20(s0)

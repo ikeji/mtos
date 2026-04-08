@@ -9,11 +9,11 @@ __tc_strobj0:
     .globl to_buf__StringLiteral
     .type  to_buf__StringLiteral, @function
 to_buf__StringLiteral:
-    # prologue: frame_size=32, params=1, locals=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=1, locals=3, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   zero, -16(s0)
     sw   zero, -20(s0)
@@ -126,11 +126,11 @@ to_buf__StringLiteral:
     .globl main
     .type  main, @function
 main:
-    # prologue: frame_size=16, params=0, locals=1
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=0, locals=1, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   zero, -12(s0)
     la   t0, __tc_strobj0
     addi sp, sp, -4

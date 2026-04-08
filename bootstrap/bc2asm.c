@@ -282,9 +282,41 @@ static int is_jump_target(BcFunc *fn, int i) {
     return 0;
 }
 
+/* Compute the maximum eval-stack depth (in slots) for a function.
+   This is needed to reserve frame space so that pushed values don't
+   collide with callee frames. */
+static int max_eval_depth(BcFunc *fn) {
+    int depth = 0, max_d = 0;
+    for (int i = 0; i < fn->ninstrs; i++) {
+        Instr *ins = &fn->instrs[i];
+        switch (ins->op) {
+        case OP_PUSH_INT: case OP_PUSH_STR: case OP_LOAD:
+            depth++; break;
+        case OP_STORE: case OP_POP: case OP_RETURN:
+        case OP_JUMP_IF: case OP_JUMP_IFNOT:
+            depth--; break;
+        case OP_RETURN_VOID: case OP_JUMP:
+            break;
+        case OP_ADD: case OP_SUB: case OP_MUL: case OP_DIV: case OP_MOD:
+        case OP_AND: case OP_OR:  case OP_XOR: case OP_SHL: case OP_SHR:
+        case OP_EQ:  case OP_NE:  case OP_LT:  case OP_LE:  case OP_GT: case OP_GE:
+            depth--; break; /* pop 2, push 1 */
+        case OP_NEG: case OP_LNOT: case OP_CAST:
+            break; /* pop 1, push 1 */
+        case OP_CALL:
+            depth -= ((int)ins->ival - 1); /* pop nargs, push 1 */
+            break;
+        }
+        if (depth > max_d) max_d = depth;
+        if (depth < 0) depth = 0; /* reset at branch targets */
+    }
+    return max_d;
+}
+
 static void emit_fn(BcFunc *fn, int fi) {
     int nvars      = fn->nparams + fn->nlocals;
-    int frame_size = 8 + 4 * nvars;
+    int eval_slots = max_eval_depth(fn);
+    int frame_size = 8 + 4 * nvars + 4 * eval_slots;
     /* round up to 16-byte boundary */
     frame_size = (frame_size + 15) & ~15;
 
@@ -294,8 +326,8 @@ static void emit_fn(BcFunc *fn, int fi) {
     E("%s:\n", fn->name);
 
     /* --- prologue --- */
-    E("    # prologue: frame_size=%d, params=%d, locals=%d\n",
-      frame_size, fn->nparams, fn->nlocals);
+    E("    # prologue: frame_size=%d, params=%d, locals=%d, eval_depth=%d\n",
+      frame_size, fn->nparams, fn->nlocals, eval_slots);
     E("    addi sp, sp, -%d\n", frame_size);
     E("    sw   ra, %d(sp)\n",  frame_size - 4);
     E("    sw   s0, %d(sp)\n",  frame_size - 8);

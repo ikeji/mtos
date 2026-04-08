@@ -200,11 +200,11 @@ g_nstrings:
     .globl StringBuffer__U8Array__i32__i32
     .type  StringBuffer__U8Array__i32__i32, @function
 StringBuffer__U8Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=1, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -304,11 +304,11 @@ StringBuffer__U8Array__i32__i32:
     .globl buf__StringBuffer
     .type  buf__StringBuffer, @function
 buf__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -340,11 +340,11 @@ buf__StringBuffer:
     .globl pos__StringBuffer
     .type  pos__StringBuffer, @function
 pos__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -380,11 +380,11 @@ pos__StringBuffer:
     .globl fd__StringBuffer
     .type  fd__StringBuffer, @function
 fd__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -420,11 +420,11 @@ fd__StringBuffer:
     .globl buf__StringBuffer__U8Array
     .type  buf__StringBuffer__U8Array, @function
 buf__StringBuffer__U8Array:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -463,11 +463,11 @@ buf__StringBuffer__U8Array:
     .globl pos__StringBuffer__i32
     .type  pos__StringBuffer__i32, @function
 pos__StringBuffer__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -506,11 +506,11 @@ pos__StringBuffer__i32:
     .globl fd__StringBuffer__i32
     .type  fd__StringBuffer__i32, @function
 fd__StringBuffer__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -549,7 +549,7 @@ fd__StringBuffer__i32:
     .globl delete__StringBuffer
     .type  delete__StringBuffer, @function
 delete__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
     addi sp, sp, -16
     sw   ra, 12(sp)
     sw   s0, 8(sp)
@@ -579,11 +579,11 @@ delete__StringBuffer:
     .globl StringBuffer_new
     .type  StringBuffer_new, @function
 StringBuffer_new:
-    # prologue: frame_size=16, params=0, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=0, locals=0, eval_depth=4
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     li   t0, 124
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -632,11 +632,11 @@ StringBuffer_new:
     .globl StringBuffer_new__i32
     .type  StringBuffer_new__i32, @function
 StringBuffer_new__i32:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     li   t0, 1024
     addi sp, sp, -4
@@ -677,7 +677,7 @@ StringBuffer_new__i32:
     .globl destroy__StringBuffer
     .type  destroy__StringBuffer, @function
 destroy__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
     addi sp, sp, -16
     sw   ra, 12(sp)
     sw   s0, 8(sp)
@@ -721,11 +721,11 @@ destroy__StringBuffer:
     .globl grow__StringBuffer
     .type  grow__StringBuffer, @function
 grow__StringBuffer:
-    # prologue: frame_size=32, params=1, locals=5
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=1, locals=5, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   zero, -16(s0)
     sw   zero, -20(s0)
@@ -882,11 +882,11 @@ grow__StringBuffer:
     .globl emit_char__StringBuffer__u8
     .type  emit_char__StringBuffer__u8, @function
 emit_char__StringBuffer__u8:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -1067,11 +1067,11 @@ emit_char__StringBuffer__u8:
     .globl emit_string__StringBuffer__StringLiteral
     .type  emit_string__StringBuffer__StringLiteral, @function
 emit_string__StringBuffer__StringLiteral:
-    # prologue: frame_size=32, params=2, locals=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=2, locals=2, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -1163,11 +1163,11 @@ emit_string__StringBuffer__StringLiteral:
     .globl emit_string__StringBuffer__String
     .type  emit_string__StringBuffer__String, @function
 emit_string__StringBuffer__String:
-    # prologue: frame_size=32, params=2, locals=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=2, locals=2, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -1259,11 +1259,11 @@ emit_string__StringBuffer__String:
     .globl emit_int__StringBuffer__i32
     .type  emit_int__StringBuffer__i32, @function
 emit_int__StringBuffer__i32:
-    # prologue: frame_size=32, params=2, locals=4
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=64, params=2, locals=4, eval_depth=5
+    addi sp, sp, -64
+    sw   ra, 60(sp)
+    sw   s0, 56(sp)
+    addi s0, sp, 64
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -1555,11 +1555,11 @@ emit_int__StringBuffer__i32:
     .globl emit_n__StringBuffer__U8Array__i32__i32
     .type  emit_n__StringBuffer__U8Array__i32__i32, @function
 emit_n__StringBuffer__U8Array__i32__i32:
-    # prologue: frame_size=32, params=4, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=1, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -1650,7 +1650,7 @@ emit_n__StringBuffer__U8Array__i32__i32:
     .globl emit_indent__StringBuffer__i32
     .type  emit_indent__StringBuffer__i32, @function
 emit_indent__StringBuffer__i32:
-    # prologue: frame_size=32, params=2, locals=2
+    # prologue: frame_size=32, params=2, locals=2, eval_depth=2
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -1741,11 +1741,11 @@ emit_indent__StringBuffer__i32:
     .globl append__StringBuffer__StringBuffer
     .type  append__StringBuffer__StringBuffer, @function
 append__StringBuffer__StringBuffer:
-    # prologue: frame_size=32, params=2, locals=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=2, locals=2, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -1842,7 +1842,7 @@ append__StringBuffer__StringBuffer:
     .globl length__StringBuffer
     .type  length__StringBuffer, @function
 length__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
     addi sp, sp, -16
     sw   ra, 12(sp)
     sw   s0, 8(sp)
@@ -1874,11 +1874,11 @@ length__StringBuffer:
     .globl char_at__StringBuffer__i32
     .type  char_at__StringBuffer__i32, @function
 char_at__StringBuffer__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -1916,11 +1916,11 @@ char_at__StringBuffer__i32:
     .globl reset__StringBuffer
     .type  reset__StringBuffer, @function
 reset__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -1950,11 +1950,11 @@ reset__StringBuffer:
     .globl write__StringBuffer__i32
     .type  write__StringBuffer__i32, @function
 write__StringBuffer__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -16(s0)
@@ -1999,11 +1999,11 @@ write__StringBuffer__i32:
     .globl e4__StringBuffer
     .type  e4__StringBuffer, @function
 e4__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2033,11 +2033,11 @@ e4__StringBuffer:
     .globl ecomma__StringBuffer
     .type  ecomma__StringBuffer, @function
 ecomma__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2067,11 +2067,11 @@ ecomma__StringBuffer:
     .globl eNspnl__i32__StringBuffer
     .type  eNspnl__i32__StringBuffer, @function
 eNspnl__i32__StringBuffer:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -16(s0)
@@ -2115,11 +2115,11 @@ eNspnl__i32__StringBuffer:
     .globl eNs0nl__i32__StringBuffer
     .type  eNs0nl__i32__StringBuffer, @function
 eNs0nl__i32__StringBuffer:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -16(s0)
@@ -2163,11 +2163,11 @@ eNs0nl__i32__StringBuffer:
     .globl eNt0nl__i32__StringBuffer
     .type  eNt0nl__i32__StringBuffer, @function
 eNt0nl__i32__StringBuffer:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -16(s0)
@@ -2211,11 +2211,11 @@ eNt0nl__i32__StringBuffer:
     .globl eregsp__StringBuffer
     .type  eregsp__StringBuffer, @function
 eregsp__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2245,11 +2245,11 @@ eregsp__StringBuffer:
     .globl eregs0__StringBuffer
     .type  eregs0__StringBuffer, @function
 eregs0__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2279,11 +2279,11 @@ eregs0__StringBuffer:
     .globl eregt0__StringBuffer
     .type  eregt0__StringBuffer, @function
 eregt0__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2313,11 +2313,11 @@ eregt0__StringBuffer:
     .globl eregt1__StringBuffer
     .type  eregt1__StringBuffer, @function
 eregt1__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2347,11 +2347,11 @@ eregt1__StringBuffer:
     .globl eregra__StringBuffer
     .type  eregra__StringBuffer, @function
 eregra__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2381,11 +2381,11 @@ eregra__StringBuffer:
     .globl e_addi__StringBuffer
     .type  e_addi__StringBuffer, @function
 e_addi__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2415,11 +2415,11 @@ e_addi__StringBuffer:
     .globl e_sw__StringBuffer
     .type  e_sw__StringBuffer, @function
 e_sw__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2449,11 +2449,11 @@ e_sw__StringBuffer:
     .globl e_lw__StringBuffer
     .type  e_lw__StringBuffer, @function
 e_lw__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2483,11 +2483,11 @@ e_lw__StringBuffer:
     .globl e_li__StringBuffer
     .type  e_li__StringBuffer, @function
 e_li__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2517,11 +2517,11 @@ e_li__StringBuffer:
     .globl e_la__StringBuffer
     .type  e_la__StringBuffer, @function
 e_la__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2551,11 +2551,11 @@ e_la__StringBuffer:
     .globl asm_push_t0__StringBuffer
     .type  asm_push_t0__StringBuffer, @function
 asm_push_t0__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2669,11 +2669,11 @@ asm_push_t0__StringBuffer:
     .globl asm_pop_t0__StringBuffer
     .type  asm_pop_t0__StringBuffer, @function
 asm_pop_t0__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2774,11 +2774,11 @@ asm_pop_t0__StringBuffer:
     .globl asm_pop_t1_t0__StringBuffer
     .type  asm_pop_t1_t0__StringBuffer, @function
 asm_pop_t1_t0__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -2910,11 +2910,11 @@ asm_pop_t1_t0__StringBuffer:
     .globl asm_epilogue__StringBuffer
     .type  asm_epilogue__StringBuffer, @function
 asm_epilogue__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -3290,7 +3290,7 @@ asm_epilogue__StringBuffer:
     .globl asm_pc_label__i32__i32__StringBuffer
     .type  asm_pc_label__i32__i32__StringBuffer, @function
 asm_pc_label__i32__i32__StringBuffer:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -3482,7 +3482,7 @@ asm_pc_label__i32__i32__StringBuffer:
     .globl e_pcref__i32__i32__StringBuffer
     .type  e_pcref__i32__i32__StringBuffer, @function
 e_pcref__i32__i32__StringBuffer:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -3622,7 +3622,7 @@ e_pcref__i32__i32__StringBuffer:
     .globl asm_jump__i32__i32__StringBuffer
     .type  asm_jump__i32__i32__StringBuffer, @function
 asm_jump__i32__i32__StringBuffer:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -3749,11 +3749,11 @@ asm_jump__i32__i32__StringBuffer:
     .globl asm_branch__i32__i32__i32__StringBuffer
     .type  asm_branch__i32__i32__i32__StringBuffer, @function
 asm_branch__i32__i32__i32__StringBuffer:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -3996,11 +3996,11 @@ asm_branch__i32__i32__i32__StringBuffer:
     .globl base_name_len__U8Array__i32__i32
     .type  base_name_len__U8Array__i32__i32, @function
 base_name_len__U8Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=1, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -4175,11 +4175,11 @@ base_name_len__U8Array__i32__i32:
     .globl asm_call_fn__U8Array__i32__i32__StringBuffer
     .type  asm_call_fn__U8Array__i32__i32__StringBuffer, @function
 asm_call_fn__U8Array__i32__i32__StringBuffer:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -4307,11 +4307,11 @@ asm_call_fn__U8Array__i32__i32__StringBuffer:
     .globl asm_seqz_t0__StringBuffer
     .type  asm_seqz_t0__StringBuffer, @function
 asm_seqz_t0__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -4450,11 +4450,11 @@ asm_seqz_t0__StringBuffer:
     .globl asm_snez_t0__StringBuffer
     .type  asm_snez_t0__StringBuffer, @function
 asm_snez_t0__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -4593,11 +4593,11 @@ asm_snez_t0__StringBuffer:
     .globl asm_xori_t0_1__StringBuffer
     .type  asm_xori_t0_1__StringBuffer, @function
 asm_xori_t0_1__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -4732,11 +4732,11 @@ asm_xori_t0_1__StringBuffer:
     .globl asm_sub_t0_t0_t1__StringBuffer
     .type  asm_sub_t0_t0_t1__StringBuffer, @function
 asm_sub_t0_t0_t1__StringBuffer:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -4884,11 +4884,11 @@ asm_sub_t0_t0_t1__StringBuffer:
     .globl asm_slt__i32__StringBuffer
     .type  asm_slt__i32__StringBuffer, @function
 asm_slt__i32__StringBuffer:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -16(s0)
@@ -5104,11 +5104,11 @@ asm_slt__i32__StringBuffer:
     .globl stab_eq__U8Array__i32__i32__i32__i32
     .type  stab_eq__U8Array__i32__i32__i32__i32, @function
 stab_eq__U8Array__i32__i32__i32__i32:
-    # prologue: frame_size=32, params=5, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=5, locals=1, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -5267,11 +5267,11 @@ stab_eq__U8Array__i32__i32__i32__i32:
     .globl in_cur__U8Array
     .type  in_cur__U8Array, @function
 in_cur__U8Array:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     la   t1, g_in_pos
     lw   t0, 0(t1)
@@ -5334,11 +5334,11 @@ in_cur__U8Array:
     .globl is_ws__u8
     .type  is_ws__u8, @function
 is_ws__u8:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=4
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -5455,11 +5455,11 @@ is_ws__u8:
     .globl skip_spaces__U8Array
     .type  skip_spaces__U8Array, @function
 skip_spaces__U8Array:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=4
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
   .L_f56_pc0:
     la   t1, g_in_pos
@@ -5579,11 +5579,11 @@ skip_spaces__U8Array:
     .globl skip_line__U8Array
     .type  skip_line__U8Array, @function
 skip_line__U8Array:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
   .L_f57_pc0:
     la   t1, g_in_pos
@@ -5705,11 +5705,11 @@ skip_line__U8Array:
     .globl next_tok__U8Array__U8Array
     .type  next_tok__U8Array__U8Array, @function
 next_tok__U8Array__U8Array:
-    # prologue: frame_size=32, params=2, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=2, locals=1, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -5860,11 +5860,11 @@ next_tok__U8Array__U8Array:
     .globl tok_len__i32
     .type  tok_len__i32, @function
 tok_len__i32:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     la   t1, g_stab_pos
     lw   t0, 0(t1)
@@ -5897,7 +5897,7 @@ tok_len__i32:
     .globl discard_tok__i32
     .type  discard_tok__i32, @function
 discard_tok__i32:
-    # prologue: frame_size=16, params=1, locals=0
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
     addi sp, sp, -16
     sw   ra, 12(sp)
     sw   s0, 8(sp)
@@ -5925,11 +5925,11 @@ discard_tok__i32:
     .globl int_from_stab__U8Array__i32__i32
     .type  int_from_stab__U8Array__i32__i32, @function
 int_from_stab__U8Array__i32__i32:
-    # prologue: frame_size=48, params=3, locals=4
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
+    # prologue: frame_size=64, params=3, locals=4, eval_depth=5
+    addi sp, sp, -64
+    sw   ra, 60(sp)
+    sw   s0, 56(sp)
+    addi s0, sp, 64
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -6217,11 +6217,11 @@ int_from_stab__U8Array__i32__i32:
     .globl read_strlit__U8Array__U8Array
     .type  read_strlit__U8Array__U8Array, @function
 read_strlit__U8Array__U8Array:
-    # prologue: frame_size=64, params=2, locals=10
-    addi sp, sp, -64
-    sw   ra, 60(sp)
-    sw   s0, 56(sp)
-    addi s0, sp, 64
+    # prologue: frame_size=112, params=2, locals=10, eval_depth=12
+    addi sp, sp, -112
+    sw   ra, 108(sp)
+    sw   s0, 104(sp)
+    addi s0, sp, 112
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -7186,11 +7186,11 @@ read_strlit__U8Array__U8Array:
     .globl classify_op__U8Array__i32__i32
     .type  classify_op__U8Array__i32__i32, @function
 classify_op__U8Array__i32__i32:
-    # prologue: frame_size=48, params=3, locals=6
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
+    # prologue: frame_size=288, params=3, locals=6, eval_depth=61
+    addi sp, sp, -288
+    sw   ra, 284(sp)
+    sw   s0, 280(sp)
+    addi s0, sp, 288
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -10193,11 +10193,11 @@ classify_op__U8Array__i32__i32:
     .globl fn_name_ss__I32Array__i32
     .type  fn_name_ss__I32Array__i32, @function
 fn_name_ss__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10248,11 +10248,11 @@ fn_name_ss__I32Array__i32:
     .globl fn_name_sl__I32Array__i32
     .type  fn_name_sl__I32Array__i32, @function
 fn_name_sl__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10303,11 +10303,11 @@ fn_name_sl__I32Array__i32:
     .globl fn_param_base__I32Array__i32
     .type  fn_param_base__I32Array__i32, @function
 fn_param_base__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10358,11 +10358,11 @@ fn_param_base__I32Array__i32:
     .globl fn_nparam__I32Array__i32
     .type  fn_nparam__I32Array__i32, @function
 fn_nparam__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10413,11 +10413,11 @@ fn_nparam__I32Array__i32:
     .globl fn_local_base__I32Array__i32
     .type  fn_local_base__I32Array__i32, @function
 fn_local_base__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10468,11 +10468,11 @@ fn_local_base__I32Array__i32:
     .globl fn_nlocal__I32Array__i32
     .type  fn_nlocal__I32Array__i32, @function
 fn_nlocal__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10523,11 +10523,11 @@ fn_nlocal__I32Array__i32:
     .globl fn_instr_base__I32Array__i32
     .type  fn_instr_base__I32Array__i32, @function
 fn_instr_base__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10578,11 +10578,11 @@ fn_instr_base__I32Array__i32:
     .globl fn_ninstr__I32Array__i32
     .type  fn_ninstr__I32Array__i32, @function
 fn_ninstr__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10633,11 +10633,11 @@ fn_ninstr__I32Array__i32:
     .globl fn_set__I32Array__i32__i32__i32
     .type  fn_set__I32Array__i32__i32__i32, @function
 fn_set__I32Array__i32__i32__i32:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -10692,11 +10692,11 @@ fn_set__I32Array__i32__i32__i32:
     .globl pl_name_ss__I32Array__i32
     .type  pl_name_ss__I32Array__i32, @function
 pl_name_ss__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10747,11 +10747,11 @@ pl_name_ss__I32Array__i32:
     .globl pl_name_sl__I32Array__i32
     .type  pl_name_sl__I32Array__i32, @function
 pl_name_sl__I32Array__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -10802,11 +10802,11 @@ pl_name_sl__I32Array__i32:
     .globl pl_set__I32Array__i32__i32__i32
     .type  pl_set__I32Array__i32__i32__i32, @function
 pl_set__I32Array__i32__i32__i32:
-    # prologue: frame_size=32, params=4, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=4, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -10861,7 +10861,7 @@ pl_set__I32Array__i32__i32__i32:
     .globl ins_op__I32Array__i32__i32
     .type  ins_op__I32Array__i32__i32, @function
 ins_op__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -10926,7 +10926,7 @@ ins_op__I32Array__i32__i32:
     .globl ins_ival__I32Array__i32__i32
     .type  ins_ival__I32Array__i32__i32, @function
 ins_ival__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -10991,7 +10991,7 @@ ins_ival__I32Array__i32__i32:
     .globl ins_ss__I32Array__i32__i32
     .type  ins_ss__I32Array__i32__i32, @function
 ins_ss__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -11056,7 +11056,7 @@ ins_ss__I32Array__i32__i32:
     .globl ins_sl__I32Array__i32__i32
     .type  ins_sl__I32Array__i32__i32, @function
 ins_sl__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -11121,11 +11121,11 @@ ins_sl__I32Array__i32__i32:
     .globl ins_set__I32Array__i32__i32__i32__i32
     .type  ins_set__I32Array__i32__i32__i32__i32, @function
 ins_set__I32Array__i32__i32__i32__i32:
-    # prologue: frame_size=32, params=5, locals=0
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=5, locals=0, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -11190,11 +11190,11 @@ ins_set__I32Array__i32__i32__i32__i32:
     .globl parse_lnum__U8Array__i32__i32
     .type  parse_lnum__U8Array__i32__i32, @function
 parse_lnum__U8Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=3, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -11373,11 +11373,11 @@ parse_lnum__U8Array__i32__i32:
     .globl parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array
     .type  parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array, @function
 parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array:
-    # prologue: frame_size=208, params=10, locals=37
-    addi sp, sp, -208
-    sw   ra, 204(sp)
-    sw   s0, 200(sp)
-    addi s0, sp, 208
+    # prologue: frame_size=384, params=10, locals=37, eval_depth=46
+    addi sp, sp, -384
+    sw   ra, 380(sp)
+    sw   s0, 376(sp)
+    addi s0, sp, 384
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -15693,11 +15693,11 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     .globl is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32
     .type  is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32, @function
 is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
-    # prologue: frame_size=64, params=7, locals=5
-    addi sp, sp, -64
-    sw   ra, 60(sp)
-    sw   s0, 56(sp)
-    addi s0, sp, 64
+    # prologue: frame_size=80, params=7, locals=5, eval_depth=5
+    addi sp, sp, -80
+    sw   ra, 76(sp)
+    sw   s0, 72(sp)
+    addi s0, sp, 80
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -16019,11 +16019,11 @@ is_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     .globl var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32
     .type  var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32, @function
 var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
-    # prologue: frame_size=64, params=7, locals=5
-    addi sp, sp, -64
-    sw   ra, 60(sp)
-    sw   s0, 56(sp)
-    addi s0, sp, 64
+    # prologue: frame_size=80, params=7, locals=5, eval_depth=5
+    addi sp, sp, -80
+    sw   ra, 76(sp)
+    sw   s0, 72(sp)
+    addi s0, sp, 80
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -16417,11 +16417,11 @@ var_offset__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     .globl is_sys_exit__U8Array__i32__i32
     .type  is_sys_exit__U8Array__i32__i32, @function
 is_sys_exit__U8Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=1
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=1, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -16623,11 +16623,11 @@ is_sys_exit__U8Array__i32__i32:
     .globl is_jump_target__I32Array__i32__i32__i32
     .type  is_jump_target__I32Array__i32__i32__i32, @function
 is_jump_target__I32Array__i32__i32__i32:
-    # prologue: frame_size=32, params=4, locals=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=64, params=4, locals=2, eval_depth=5
+    addi sp, sp, -64
+    sw   ra, 60(sp)
+    sw   s0, 56(sp)
+    addi s0, sp, 64
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -16829,11 +16829,11 @@ is_jump_target__I32Array__i32__i32__i32:
     .globl emit_strdata__U8Array__i32__i32__StringBuffer
     .type  emit_strdata__U8Array__i32__i32__StringBuffer, @function
 emit_strdata__U8Array__i32__i32__StringBuffer:
-    # prologue: frame_size=48, params=4, locals=3
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
+    # prologue: frame_size=80, params=4, locals=3, eval_depth=10
+    addi sp, sp, -80
+    sw   ra, 76(sp)
+    sw   s0, 72(sp)
+    addi s0, sp, 80
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -17567,11 +17567,11 @@ emit_strdata__U8Array__i32__i32__StringBuffer:
     .globl emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__StringBuffer
     .type  emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__StringBuffer, @function
 emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__StringBuffer:
-    # prologue: frame_size=144, params=8, locals=25
-    addi sp, sp, -144
-    sw   ra, 140(sp)
-    sw   s0, 136(sp)
-    addi s0, sp, 144
+    # prologue: frame_size=176, params=8, locals=25, eval_depth=9
+    addi sp, sp, -176
+    sw   ra, 172(sp)
+    sw   s0, 168(sp)
+    addi s0, sp, 176
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -25626,11 +25626,11 @@ emit_fn__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__i32__StringB
     .globl emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__StringBuffer
     .type  emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__StringBuffer, @function
 emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__StringBuffer:
-    # prologue: frame_size=80, params=9, locals=8
-    addi sp, sp, -80
-    sw   ra, 76(sp)
-    sw   s0, 72(sp)
-    addi s0, sp, 80
+    # prologue: frame_size=112, params=9, locals=8, eval_depth=8
+    addi sp, sp, -112
+    sw   ra, 108(sp)
+    sw   s0, 104(sp)
+    addi s0, sp, 112
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
@@ -26930,11 +26930,11 @@ emit_program__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Arra
     .globl main
     .type  main, @function
 main:
-    # prologue: frame_size=80, params=0, locals=15
-    addi sp, sp, -80
-    sw   ra, 76(sp)
-    sw   s0, 72(sp)
-    addi s0, sp, 80
+    # prologue: frame_size=112, params=0, locals=15, eval_depth=11
+    addi sp, sp, -112
+    sw   ra, 108(sp)
+    sw   s0, 104(sp)
+    addi s0, sp, 112
     sw   zero, -12(s0)
     sw   zero, -16(s0)
     sw   zero, -20(s0)

@@ -3,7 +3,7 @@
     .globl Point__i32__i32
     .type  Point__i32__i32, @function
 Point__i32__i32:
-    # prologue: frame_size=32, params=2, locals=1
+    # prologue: frame_size=32, params=2, locals=1, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
@@ -85,11 +85,11 @@ Point__i32__i32:
     .globl x__Point
     .type  x__Point, @function
 x__Point:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -125,11 +125,11 @@ x__Point:
     .globl y__Point
     .type  y__Point, @function
 y__Point:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -165,11 +165,11 @@ y__Point:
     .globl x__Point__i32
     .type  x__Point__i32, @function
 x__Point__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -208,11 +208,11 @@ x__Point__i32:
     .globl y__Point__i32
     .type  y__Point__i32, @function
 y__Point__i32:
-    # prologue: frame_size=16, params=2, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     lw   t0, -12(s0)
@@ -251,7 +251,7 @@ y__Point__i32:
     .globl delete__Point
     .type  delete__Point, @function
 delete__Point:
-    # prologue: frame_size=16, params=1, locals=0
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
     addi sp, sp, -16
     sw   ra, 12(sp)
     sw   s0, 8(sp)
@@ -281,11 +281,11 @@ delete__Point:
     .globl main
     .type  main, @function
 main:
-    # prologue: frame_size=16, params=0, locals=1
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=0, locals=1, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   zero, -12(s0)
     li   t0, 3
     addi sp, sp, -4

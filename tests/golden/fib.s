@@ -3,11 +3,11 @@
     .globl fib__i32
     .type  fib__i32, @function
 fib__i32:
-    # prologue: frame_size=16, params=1, locals=0
-    addi sp, sp, -16
-    sw   ra, 12(sp)
-    sw   s0, 8(sp)
-    addi s0, sp, 16
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
     sw   a0, -12(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -95,7 +95,7 @@ fib__i32:
     .globl main
     .type  main, @function
 main:
-    # prologue: frame_size=16, params=0, locals=1
+    # prologue: frame_size=16, params=0, locals=1, eval_depth=1
     addi sp, sp, -16
     sw   ra, 12(sp)
     sw   s0, 8(sp)
