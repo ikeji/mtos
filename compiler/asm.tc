@@ -46,7 +46,7 @@ var g_line_buf_len: i32 = 0;
 
 // ===== Emit helpers =====
 fn emit8(v: i32) -> void {
-    if g_pass == 2 { set(g_code, g_pos, v as u8); }
+    if g_pass == 2 && g_pos < MAX_CODE { set(g_code, g_pos, v as u8); }
     g_pos = g_pos + 1;
     return;
 }
@@ -631,7 +631,7 @@ fn process_line(line_idx: i32) -> void {
         if mnem_eq(".bss") { return; }
         if mnem_eq(".globl") || mnem_eq(".type") || mnem_eq(".size") ||
            mnem_eq(".option") || mnem_eq(".attribute") || mnem_eq(".file") ||
-           mnem_eq(".ident") || mnem_eq(".p2align") { return; }
+           mnem_eq(".ident") || mnem_eq(".p2align") || mnem_eq(".set") { return; }
         if mnem_eq(".align") {
             var n: i32 = 1;
             var shift: i32 = parse_imm_op(0);
@@ -685,10 +685,17 @@ fn process_line(line_idx: i32) -> void {
             }
             return;
         }
-        if mnem_eq(".space") {
+        if mnem_eq(".space") || mnem_eq(".zero") {
             var n: i32 = parse_imm_op(0);
-            i = 0;
-            while i < n { emit8(0); i = i + 1; }
+            // Advance position; only write to g_code if within buffer
+            if g_pass == 2 {
+                var end: i32 = g_pos + n;
+                var write_end: i32 = end;
+                if write_end > MAX_CODE { write_end = MAX_CODE; }
+                i = g_pos;
+                while i < write_end { set(g_code, i, 0u8); i = i + 1; }
+            }
+            g_pos = g_pos + n;
             return;
         }
         // Unknown directive: ignore
@@ -725,8 +732,8 @@ fn read_all_lines() -> void {
 }
 
 // ===== Write ELF =====
-fn write_elf(code_size: i32) -> void {
-    var out: U8Array = U8Array(84 + code_size);  // ELF header (52) + phdr (32) + code
+fn write_elf(code_size: i32, mem_size: i32) -> void {
+    var out: U8Array = U8Array(4096);  // ELF header + phdr + padding to page
     var entry: i32 = 0;
     // Find _start label
     var tmp: U8Array = U8Array(6);
@@ -735,12 +742,12 @@ fn write_elf(code_size: i32) -> void {
     entry = label_addr(tmp, 6);
     delete(tmp);
 
+    var hdr_size: i32 = 4096;  // pad to page boundary
     var vaddr: i32 = TEXT_BASE;
-    var file_code_off: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 
-    // Zero fill
+    // Zero fill header page
     var i: i32 = 0;
-    while i < 84 { set(out, i, 0u8); i = i + 1; }
+    while i < 4096 { set(out, i, 0u8); i = i + 1; }
 
     // ELF header
     set(out, 0, 127u8); set(out, 1, 'E'); set(out, 2, 'L'); set(out, 3, 'F');
@@ -771,8 +778,8 @@ fn write_elf(code_size: i32) -> void {
     // Program header (at offset 52)
     // p_type = PT_LOAD (1)
     set(out, 52, 1u8);
-    // p_offset = 84
-    set(out, 56, 84u8);
+    // p_offset = 0x1000 (page-aligned, matches vaddr alignment)
+    set(out, 56, 0u8); set(out, 57, 16u8);
     // p_vaddr, p_paddr = TEXT_BASE
     set(out, 60, (vaddr & 255) as u8);
     set(out, 61, ((vaddr >> 8) & 255) as u8);
@@ -782,22 +789,24 @@ fn write_elf(code_size: i32) -> void {
     set(out, 65, ((vaddr >> 8) & 255) as u8);
     set(out, 66, ((vaddr >> 16) & 255) as u8);
     set(out, 67, ((vaddr >> 24) & 255) as u8);
-    // p_filesz, p_memsz = code_size
+    // p_filesz, p_memsz = code_size (code starts at offset 0x1000)
+    // p_filesz = code_size
     set(out, 68, (code_size & 255) as u8);
     set(out, 69, ((code_size >> 8) & 255) as u8);
     set(out, 70, ((code_size >> 16) & 255) as u8);
     set(out, 71, ((code_size >> 24) & 255) as u8);
-    set(out, 72, (code_size & 255) as u8);
-    set(out, 73, ((code_size >> 8) & 255) as u8);
-    set(out, 74, ((code_size >> 16) & 255) as u8);
-    set(out, 75, ((code_size >> 24) & 255) as u8);
+    // p_memsz = total memory including BSS
+    set(out, 72, (mem_size & 255) as u8);
+    set(out, 73, ((mem_size >> 8) & 255) as u8);
+    set(out, 74, ((mem_size >> 16) & 255) as u8);
+    set(out, 75, ((mem_size >> 24) & 255) as u8);
     // p_flags = RWX (7)
     set(out, 76, 7u8);
     // p_align = 0x1000
-    set(out, 80, 0u8); set(out, 81, 16u8);
+    set(out, 81, 16u8);
 
-    // Write header
-    sys_write(1, out, 84);
+    // Write header page (4096 bytes, padded with zeros)
+    sys_write(1, out, 4096);
 
     // Write code
     sys_write(1, g_code, code_size);
@@ -838,7 +847,7 @@ fn main() -> i32 {
     delete(gp_sym);
     var i: i32 = 0;
     while i < g_nlines { process_line(i); i = i + 1; }
-    var total_size: i32 = g_pos;
+    var total_memsz: i32 = g_pos;
 
     // Pass 2: encode
     g_pass = 2;
@@ -848,9 +857,11 @@ fn main() -> i32 {
     while i < 10 { set(g_numlab_count, i, 0); i = i + 1; }
     i = 0;
     while i < g_nlines { process_line(i); i = i + 1; }
+    var actual_code: i32 = g_pos;
+    if actual_code > MAX_CODE { actual_code = MAX_CODE; }
 
-    // Write ELF
-    write_elf(total_size);
+    // Write ELF (filesz = actual code written, memsz = total including BSS)
+    write_elf(actual_code, total_memsz);
 
     return 0;
 }
