@@ -984,12 +984,6 @@ __L4:
   add
   call buf_pos SourceReader i32
   pop
-; emit_char(line(r), c);
-  load r
-  call line SourceReader
-  load c
-  call emit_char StringBuffer u8
-  pop
 ; if c == 10u8 {
   load c
   push_int 10
@@ -1003,7 +997,20 @@ __L4:
   add
   call lnum SourceReader i32
   pop
+; reset(line(r));
+  load r
+  call line SourceReader
+  call reset StringBuffer
+  pop
+  jump __L6
 __L5:
+; emit_char(line(r), c);
+  load r
+  call line SourceReader
+  load c
+  call emit_char StringBuffer u8
+  pop
+__L6:
 ; return c;
   load c
   return
@@ -1050,6 +1057,7 @@ __L5:
 .local i i32
 .local p i32
 .local lim i32
+.local done i32
 .local c u8
 ; var lb: StringBuffer = line(r);
   load r
@@ -1063,11 +1071,11 @@ __L5:
   push_int 0
   store i
 ; while i < n {
-__L6:
+__L7:
   load i
   load n
   lt
-  jump_ifnot __L7
+  jump_ifnot __L8
 ; emit_char(sb, char_at(lb, i));
   load sb
   load lb
@@ -1080,14 +1088,14 @@ __L6:
   push_int 1
   add
   store i
-  jump __L6
-__L7:
+  jump __L7
+__L8:
 ; if fill(r) == 0 {
   load r
   call fill SourceReader
   push_int 0
   eq
-  jump_ifnot __L8
+  jump_ifnot __L9
 ; var p: i32 = buf_pos(r);
   load r
   call buf_pos SourceReader
@@ -1096,36 +1104,49 @@ __L7:
   load r
   call buf_len SourceReader
   store lim
-; while p < lim {
-__L9:
+; var done: i32 = 0;
+  push_int 0
+  store done
+; while p < lim && done == 0 {
+__L10:
   load p
   load lim
   lt
-  jump_ifnot __L10
+  jump_ifnot __L12
+  load done
+  push_int 0
+  eq
+  jump_ifnot __L12
+  push_int 1
+  jump __L13
+__L12:
+  push_int 0
+__L13:
+  jump_ifnot __L11
 ; var c: u8 = get(buf(r), p);
   load r
   call buf SourceReader
   load p
   call get U8Array i32
   store c
-; if c == 10u8 { p = lim; }
+; if c == 10u8 { done = 1; }
   load c
   push_int 10
   eq
-  jump_ifnot __L11
-  load lim
-  store p
-  jump __L12
-__L11:
+  jump_ifnot __L14
+  push_int 1
+  store done
+  jump __L15
+__L14:
   load c
   push_int 13
   eq
-  jump_ifnot __L13
-; else if c == 13u8 { p = lim; }
-  load lim
-  store p
-  jump __L14
-__L13:
+  jump_ifnot __L16
+; else if c == 13u8 { done = 1; }
+  push_int 1
+  store done
+  jump __L17
+__L16:
 ; else { emit_char(sb, c); p = p + 1; }
   load sb
   load c
@@ -1135,11 +1156,11 @@ __L13:
   push_int 1
   add
   store p
-__L14:
-__L12:
-  jump __L9
-__L10:
-__L8:
+__L17:
+__L15:
+  jump __L10
+__L11:
+__L9:
 ; return;
   return_void
   return_void
@@ -2183,10 +2204,6 @@ __L101:
 ; skip_ws(src);
   load src
   call skip_ws SourceReader
-  pop
-; line_buf_reset(src);
-  load src
-  call line_buf_reset SourceReader
   pop
 ; if at_eof(src) == false && peek(src) == '/' {
   load src

@@ -203,7 +203,6 @@ fn lex_tok(src: SourceReader, tok: U8Array) -> void {
     var skipping: i32 = 1;
     while skipping == 1 {
         skip_ws(src);
-        line_buf_reset(src);
         if at_eof(src) == false && peek(src) == '/' {
             next(src);  // consume first '/'
             if at_eof(src) == false && peek(src) == '/' {

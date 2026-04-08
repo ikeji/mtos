@@ -1414,10 +1414,6 @@
           (call_stmt skip_ws
             (var src)
           )
-          (comment "line_buf_reset(src);")
-          (call_stmt line_buf_reset
-            (var src)
-          )
           (comment "if at_eof(src) == false && peek(src) == '/' {")
           (if
             (binop &&
