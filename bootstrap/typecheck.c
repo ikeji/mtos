@@ -187,8 +187,10 @@ static void register_array_builtins(TypeEnv *e, const char *arr_type,
     register_fn(e, "delete", pt_arr, 1, "void");
 }
 
+int typecheck_no_builtins = 0;
+
 static void register_builtins(TypeEnv *e) {
-    /* peek/poke */
+    /* peek/poke — always registered (low-level primitives) */
     const char *p32[] = {"u32"};
     register_fn(e, "peek8", p32, 1, "u8");
     register_fn(e, "peek16", p32, 1, "u16");
@@ -199,6 +201,18 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "poke8", p32_u8, 2, "void");
     register_fn(e, "poke16", p32_u16, 2, "void");
     register_fn(e, "poke32", p32_u32, 2, "void");
+
+    /* raw ecall stubs (always registered — implemented in crt0.s) */
+    const char *dw[] = {"i32","u32","i32"};
+    const char *dr[] = {"i32","u32","i32"};
+    const char *de[] = {"i32"};
+    register_fn(e, "do_write", dw, 3, "i32");
+    register_fn(e, "do_read", dr, 3, "i32");
+    register_fn(e, "do_exit", de, 1, "void");
+
+    if (typecheck_no_builtins) return;
+
+    /* Everything below is skipped when compiling runtime.tc (--no-builtins) */
 
     /* typed arrays */
     register_array_builtins(e, "U8Array", "u8");
@@ -252,14 +266,6 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "sys_write", sys_w, 3, "i32");
     register_fn(e, "sys_read", sys_r, 3, "i32");
     register_fn(e, "sys_exit", sys_e, 1, "void");
-
-    /* raw syscall stubs (implemented in crt0.s) */
-    const char *dw[] = {"i32","u32","i32"};
-    const char *dr[] = {"i32","u32","i32"};
-    const char *de[] = {"i32"};
-    register_fn(e, "do_write", dw, 3, "i32");
-    register_fn(e, "do_read", dr, 3, "i32");
-    register_fn(e, "do_exit", de, 1, "void");
 
     /* Heap scope management */
     register_fn(e, "heap_mark", NULL, 0, "i32");

@@ -33,6 +33,17 @@ static int ends_with(const char *s, const char *suf) {
 }
 
 int main(int argc, char *argv[]) {
+    /* Check for --no-builtins flag */
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--no-builtins") == 0) {
+            typecheck_no_builtins = 1;
+            /* remove from argv */
+            for (int j = i; j < argc - 1; j++) argv[j] = argv[j+1];
+            argc--;
+            break;
+        }
+    }
+
     const char *filename = argc > 1 ? argv[1] : "<stdin>";
     AstNode *prog = NULL;
 
