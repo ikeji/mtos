@@ -34,6 +34,7 @@ var NK_BREAK: i32 = 24;
 var NK_CONTINUE: i32 = 25;
 var NK_COMMENT: i32 = 26;
 var NK_UNKNOWN: i32 = 99;
+var NK_IMPORTS: i32 = 100;
 
 // ===== Global state =====
 var g_reader: SourceReader = 0 as SourceReader;  // set in main
@@ -214,6 +215,9 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
     if len == 7 {
         if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {
             return NK_PROGRAM;
+        }
+        if cmp4(atom,0, 'i','m','p','o') && cmp3(atom,4, 'r','t','s') {
+            return NK_IMPORTS;
         }
         if cmp4(atom,0, 'c','o','m','m') && cmp3(atom,4, 'e','n','t') {
             return NK_COMMENT;
@@ -993,6 +997,31 @@ fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i
     return;
 }
 
+// Collect exported declarations from .th imports node
+// The imports node contains program sub-nodes, each from a .th file.
+// Only export fn signatures and struct type names are collected.
+fn collect_imports_th(nodes: I32Array, strtab: U8Array, fntab: I32Array, imports_n: i32) -> void {
+    // Each child of imports is a (program ...) from a .th file
+    var prog: i32 = n_child(nodes, imports_n);
+    while prog >= 0 {
+        var c: i32 = n_child(nodes, prog);
+        while c >= 0 {
+            var ck: i32 = n_kind(nodes, c);
+            if ck == NK_FN {
+                collect_fn(nodes, strtab, fntab, c);
+            }
+            if ck == NK_STRUCT {
+                // Register struct type name only (no constructor needed for imports)
+                // collect_struct with no children registers a 0-arg constructor — harmless
+                collect_struct(nodes, strtab, fntab, c);
+            }
+            c = n_sib(nodes, c);
+        }
+        prog = n_sib(nodes, prog);
+    }
+    return;
+}
+
 fn collect_decls(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
     var c: i32 = n_child(nodes, root);
     while c >= 0 {
@@ -1058,6 +1087,7 @@ fn emit_kind(k: i32, ob: StringBuffer) -> void {
     if k == NK_VAR      { emit_string(ob, "var"); return; }
     if k == NK_CAST     { emit_string(ob, "cast"); return; }
     if k == NK_IMPORT   { emit_string(ob, "import"); return; }
+    if k == NK_IMPORTS  { emit_string(ob, "imports"); return; }
     if k == NK_FIELD    { emit_string(ob, "field"); return; }
     if k == NK_BREAK    { emit_string(ob, "break"); return; }
     if k == NK_CONTINUE { emit_string(ob, "continue"); return; }
@@ -1152,6 +1182,13 @@ fn main() -> i32 {
 
     var root: i32 = read_node(atom_buf, nodes, strtab);
     if root < 0 { sys_exit(1); }
+
+    // If first node is (imports ...), collect .th signatures, then read main AST
+    if n_kind(nodes, root) == NK_IMPORTS {
+        collect_imports_th(nodes, strtab, fntab, root);
+        root = read_node(atom_buf, nodes, strtab);
+        if root < 0 { sys_exit(1); }
+    }
 
     collect_decls(nodes, strtab, fntab, vartab, root);
     check_program(nodes, strtab, fntab, vartab, root);

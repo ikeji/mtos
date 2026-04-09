@@ -52,6 +52,20 @@ int main(int argc, char *argv[]) {
         fclose(f);
     } else {
         prog = ast_read(stdin);
+        /* If first node is (imports ...), process .th headers then read main AST */
+        if (prog && strcmp(prog->kind, "imports") == 0) {
+            AstNode *imports = prog;
+            prog = ast_read(stdin);
+            /* Register exported signatures from .th into typecheck env */
+            /* (handled below via typecheck_imports) */
+            if (!prog) { fprintf(stderr, "failed to read AST after imports\n"); exit(1); }
+            typecheck_with_imports(prog, filename, imports);
+            ast_print(prog, 0);
+            putchar('\n');
+            ast_free(imports);
+            ast_free(prog);
+            return 0;
+        }
     }
 
     if (!prog) { fprintf(stderr, "failed to read AST\n"); exit(1); }

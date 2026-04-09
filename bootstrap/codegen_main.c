@@ -66,7 +66,14 @@ int main(int argc, char *argv[]) {
     } else {
         /* stdin: read AST then typecheck */
         prog = ast_read(stdin);
-        typecheck(prog, filename);
+        if (prog && strcmp(prog->kind, "imports") == 0) {
+            AstNode *imports = prog;
+            prog = ast_read(stdin);
+            typecheck_with_imports(prog, filename, imports);
+            ast_free(imports);
+        } else {
+            typecheck(prog, filename);
+        }
     }
 
     if (!prog) { fprintf(stderr, "failed to read program\n"); exit(1); }

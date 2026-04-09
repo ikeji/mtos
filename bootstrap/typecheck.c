@@ -672,3 +672,58 @@ AstNode *typecheck(AstNode *program, const char *filename) {
 
     return program;
 }
+
+/* Process (imports (program ...) (program ...) ...) node:
+   each sub-program is a .th file — collect export fn sigs and struct type names */
+static void process_imports_th(TypeEnv *e, AstNode *imports) {
+    for (int i = 0; i < imports->nchildren; i++) {
+        AstNode *prog = imports->children[i];
+        if (strcmp(prog->kind, "program") != 0) continue;
+        for (int j = 0; j < prog->nchildren; j++) {
+            AstNode *d = prog->children[j];
+            if (strcmp(d->kind, "fn") == 0 &&
+                d->type_annot && strcmp(d->type_annot, "export") == 0) {
+                collect_fn(e, d);
+            } else if (strcmp(d->kind, "struct") == 0) {
+                collect_struct_type_only(e, d);
+            }
+        }
+    }
+}
+
+AstNode *typecheck_with_imports(AstNode *program, const char *filename, AstNode *imports) {
+    TypeEnv e;
+    env_init(&e, filename);
+    register_builtins(&e);
+
+    /* Register .th signatures first */
+    process_imports_th(&e, imports);
+
+    /* first pass: collect all top-level declarations */
+    for (int i = 0; i < program->nchildren; i++) {
+        AstNode *d = program->children[i];
+        if (strcmp(d->kind, "import") == 0) {
+            /* import already resolved via .th — skip file reading */
+        } else if (strcmp(d->kind, "struct") == 0) {
+            collect_struct(&e, d);
+        } else if (strcmp(d->kind, "fn") == 0) {
+            collect_fn(&e, d);
+        } else if (strcmp(d->kind, "var_decl") == 0) {
+            register_var_global(&e, d->sval, d->children[0]->sval);
+        }
+    }
+
+    /* second pass: typecheck bodies */
+    for (int i = 0; i < program->nchildren; i++) {
+        AstNode *d = program->children[i];
+        if (strcmp(d->kind, "fn") == 0) {
+            check_fn(&e, d);
+        } else if (strcmp(d->kind, "var_decl") == 0) {
+            if (d->nchildren > 1) {
+                check_expr(&e, d->children[1]);
+            }
+        }
+    }
+
+    return program;
+}
