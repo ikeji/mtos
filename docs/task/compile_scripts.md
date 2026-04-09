@@ -181,12 +181,18 @@ AST と同じ S式フォーマットのサブセット。typecheck.tc の既存 
 ## 実装順序
 
 1. [x] compile-gen1.sh 作成
-2. [ ] compile-gen2.sh 雛形作成（import なしファイルのみ）
-3. [ ] シグネチャフォーマット確定
-4. [ ] C版 extract-sigs 作成（Gen1 用）
-5. [ ] typecheck.tc にシグネチャ読み込み追加
-6. [ ] TC版 extract-sigs 作成（Gen2 用）
-7. [ ] compile-gen2.sh を import 対応に拡張
-8. [ ] compile-gen3.sh 作成（compile-gen2.sh と同構造）
-9. [ ] test_common.sh を compile-gen1.sh / compile-gen2.sh ベースに更新
-10. [ ] CLAUDE.md 更新
+2. [x] compile-gen2.sh 雛形作成（import なしファイルのみ）
+3. [x] シグネチャフォーマット確定（.th、AST サブセット）
+4. [x] C版 extract-sigs 作成（Gen1 用）
+5. [x] typecheck.tc / typecheck.c にシグネチャ読み込み追加
+6. [x] TC版 extract-sigs 作成（Gen2 用）
+7. [x] compile-gen2.sh を import 対応に拡張
+8. [x] compile-gen3.sh 作成（compile-gen2.sh と同構造）
+9. [x] test_common.sh を compile-gen1.sh / compile-gen2.sh ベースに更新
+10. [x] CLAUDE.md 更新
+
+## 既知の制限
+
+- compile-gen2.sh / gen3.sh の .th 生成は Gen1 parse + Gen1 extract-sigs を使用
+  （Gen2 parse にコメントノードの括弧バランス問題があるため）
+- 将来 Gen2 parse が修正されれば、完全に Gen2 ツールだけで .th 生成が可能になる
