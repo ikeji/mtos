@@ -1,4 +1,5 @@
     .text
+    .align 2
 
     .globl main
     .type  main, @function
@@ -30,9 +31,9 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_0
+    bnez t0, __skip_0
     j    .L_f0_pc16
-__skipn_0:
+__skip_0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -48,9 +49,9 @@ __skipn_0:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_1
+    bnez t0, __skip_1
     j    .L_f0_pc11
-__skipn_1:
+__skip_1:
     j    .L_f0_pc16
   .L_f0_pc11:
     lw   t0, -12(s0)

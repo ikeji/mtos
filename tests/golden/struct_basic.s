@@ -1,4 +1,5 @@
     .text
+    .align 2
 
     .globl Point__i32__i32
     .type  Point__i32__i32, @function

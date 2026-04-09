@@ -248,6 +248,7 @@ static int is_local(BcFunc *fn, const char *name) {
 /* ===== Code generation ===== */
 
 static FILE *out;
+static int g_skip_id = 0;
 
 /* Macro-like helpers to emit common idioms */
 #define E(...) fprintf(out, __VA_ARGS__)
@@ -526,28 +527,24 @@ static void emit_fn(BcFunc *fn, int fi) {
         case OP_JUMP:
             E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
             break;
-        case OP_JUMP_IF: {
+        case OP_JUMP_IF:
             /* jump_if: jump when t0 != 0
                → skip j if t0 == 0, else fall through to j */
-            static int skip_id = 0;
             pop_t0();
-            E("    beqz t0, __skip_%d\n", skip_id);
+            E("    beqz t0, __skip_%d\n", g_skip_id);
             E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
-            E("__skip_%d:\n", skip_id);
-            skip_id++;
+            E("__skip_%d:\n", g_skip_id);
+            g_skip_id++;
             break;
-        }
-        case OP_JUMP_IFNOT: {
+        case OP_JUMP_IFNOT:
             /* jump_ifnot: jump when t0 == 0
                → skip j if t0 != 0, else fall through to j */
-            static int skip_id2 = 0;
             pop_t0();
-            E("    bnez t0, __skipn_%d\n", skip_id2);
+            E("    bnez t0, __skip_%d\n", g_skip_id);
             E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
-            E("__skipn_%d:\n", skip_id2);
-            skip_id2++;
+            E("__skip_%d:\n", g_skip_id);
+            g_skip_id++;
             break;
-        }
 
         } /* switch */
     }
@@ -600,7 +597,8 @@ static void emit_program(BcProg *prog) {
     }
 
     /* --- .text: functions --- */
-    E("    .text\n\n");
+    E("    .text\n");
+    E("    .align 2\n\n");
     for (int i = 0; i < prog->nfuncs; i++)
         emit_fn(&prog->funcs[i], i);
 }

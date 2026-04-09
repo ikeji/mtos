@@ -1,4 +1,5 @@
     .text
+    .align 2
 
     .globl fib__i32
     .type  fib__i32, @function
@@ -24,9 +25,9 @@ fib__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_0
+    bnez t0, __skip_0
     j    .L_f0_pc6
-__skipn_0:
+__skip_0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

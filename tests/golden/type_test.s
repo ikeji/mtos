@@ -1,4 +1,5 @@
     .text
+    .align 2
 
     .globl double_val__i32
     .type  double_val__i32, @function

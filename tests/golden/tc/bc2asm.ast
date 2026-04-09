@@ -6497,6 +6497,225 @@
       (return)
     )
   )
+  (fn max_eval_depth
+    (params
+      (param fns
+        (type I32Array)
+      )
+      (param instrs
+        (type I32Array)
+      )
+      (param fi
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "var ibase: i32 = fn_instr_base(fns, fi);")
+      (var_decl ibase
+        (type i32)
+        (call fn_instr_base
+          (var fns)
+          (var fi)
+        )
+      )
+      (comment "var ni: i32 = fn_ninstr(fns, fi);")
+      (var_decl ni
+        (type i32)
+        (call fn_ninstr
+          (var fns)
+          (var fi)
+        )
+      )
+      (comment "var depth: i32 = 0;")
+      (var_decl depth
+        (type i32)
+        (int 0)
+      )
+      (comment "var max_d: i32 = 0;")
+      (var_decl max_d
+        (type i32)
+        (int 0)
+      )
+      (comment "var i: i32 = 0;")
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (comment "while i < ni {")
+      (while
+        (binop <
+          (var i)
+          (var ni)
+        )
+        (block
+          (comment "var op: i32 = ins_op(instrs, ibase, i);")
+          (var_decl op
+            (type i32)
+            (call ins_op
+              (var instrs)
+              (var ibase)
+              (var i)
+            )
+          )
+          (comment "if op == OP_PUSH_INT || op == OP_PUSH_STR || op == OP_LOAD {")
+          (if
+            (binop ||
+              (binop ||
+                (binop ==
+                  (var op)
+                  (var OP_PUSH_INT)
+                )
+                (binop ==
+                  (var op)
+                  (var OP_PUSH_STR)
+                )
+              )
+              (binop ==
+                (var op)
+                (var OP_LOAD)
+              )
+            )
+            (block
+              (comment "depth = depth + 1;")
+              (assign depth
+                (binop +
+                  (var depth)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "if op == OP_STORE || op == OP_POP || op == OP_RETURN ||")
+          (if
+            (binop ||
+              (binop ||
+                (binop ||
+                  (binop ||
+                    (binop ==
+                      (var op)
+                      (var OP_STORE)
+                    )
+                    (binop ==
+                      (var op)
+                      (var OP_POP)
+                    )
+                  )
+                  (binop ==
+                    (var op)
+                    (var OP_RETURN)
+                  )
+                )
+                (binop ==
+                  (var op)
+                  (var OP_JUMP_IF)
+                )
+              )
+              (binop ==
+                (var op)
+                (var OP_JUMP_IFNOT)
+              )
+            )
+            (block
+              (comment "depth = depth - 1;")
+              (assign depth
+                (binop -
+                  (var depth)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "if op >= OP_ADD && op <= OP_GE { depth = depth - 1; }")
+          (if
+            (binop &&
+              (binop >=
+                (var op)
+                (var OP_ADD)
+              )
+              (binop <=
+                (var op)
+                (var OP_GE)
+              )
+            )
+            (block
+              (assign depth
+                (binop -
+                  (var depth)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "if op == OP_CALL {")
+          (if
+            (binop ==
+              (var op)
+              (var OP_CALL)
+            )
+            (block
+              (comment "var nargs: i32 = ins_ival(instrs, ibase, i);")
+              (var_decl nargs
+                (type i32)
+                (call ins_ival
+                  (var instrs)
+                  (var ibase)
+                  (var i)
+                )
+              )
+              (comment "depth = depth - (nargs - 1);")
+              (assign depth
+                (binop -
+                  (var depth)
+                  (binop -
+                    (var nargs)
+                    (int 1)
+                  )
+                )
+              )
+            )
+          )
+          (comment "if depth > max_d { max_d = depth; }")
+          (if
+            (binop >
+              (var depth)
+              (var max_d)
+            )
+            (block
+              (assign max_d
+                (var depth)
+              )
+            )
+          )
+          (comment "if depth < 0 { depth = 0; }")
+          (if
+            (binop <
+              (var depth)
+              (int 0)
+            )
+            (block
+              (assign depth
+                (int 0)
+              )
+            )
+          )
+          (comment "i = i + 1;")
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "return max_d;")
+      (return
+        (var max_d)
+      )
+    )
+  )
   (fn emit_fn
     (params
       (param strtab
@@ -6576,6 +6795,15 @@
           (var fi)
         )
       )
+      (comment "var eval_slots: i32 = max_eval_depth(fns, instrs, fi);")
+      (var_decl eval_slots
+        (type i32)
+        (call max_eval_depth
+          (var fns)
+          (var instrs)
+          (var fi)
+        )
+      )
       (comment "var nvars: i32=np+nl;")
       (var_decl nvars
         (type i32)
@@ -6584,14 +6812,20 @@
           (var nl)
         )
       )
-      (comment "var frame_size: i32=8+4*nvars;")
+      (comment "var frame_size: i32=8+4*nvars+4*eval_slots;")
       (var_decl frame_size
         (type i32)
         (binop +
-          (int 8)
+          (binop +
+            (int 8)
+            (binop *
+              (int 4)
+              (var nvars)
+            )
+          )
           (binop *
             (int 4)
-            (var nvars)
+            (var eval_slots)
           )
         )
       )
@@ -6925,7 +7159,7 @@
         (var ob)
         (int:u8 32)
       )
-      (comment "emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);emit_char(ob, 10u8);")
+      (comment "emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 's');emit_char(ob, '=');emit_int(ob, nl);")
       (call_stmt emit_char
         (var ob)
         (int:u8 108)
@@ -6957,6 +7191,65 @@
       (call_stmt emit_int
         (var ob)
         (var nl)
+      )
+      (comment "emit_char(ob, ',');emit_char(ob, ' ');")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 44)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 32)
+      )
+      (comment "emit_char(ob, 'e');emit_char(ob, 'v');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, '_');")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 101)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 118)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 97)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 108)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (comment "emit_char(ob, 'd');emit_char(ob, 'e');emit_char(ob, 'p');emit_char(ob, 't');emit_char(ob, 'h');emit_char(ob, '=');emit_int(ob, eval_slots);emit_char(ob, 10u8);")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 100)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 101)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 112)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 116)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 104)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 61)
+      )
+      (call_stmt emit_int
+        (var ob)
+        (var eval_slots)
       )
       (call_stmt emit_char
         (var ob)
@@ -9906,6 +10199,18 @@
       (call_stmt emit_char
         (var ob)
         (int:u8 116)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 10)
+      )
+      (comment "e4(ob);emit_string(ob, \".align 2\");emit_char(ob, 10u8);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str ".align 2")
       )
       (call_stmt emit_char
         (var ob)

@@ -1,4 +1,5 @@
     .text
+    .align 2
 
     .globl classify__i32
     .type  classify__i32, @function
@@ -23,9 +24,9 @@ classify__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_0
+    bnez t0, __skip_0
     j    .L_f0_pc7
-__skipn_0:
+__skip_0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -54,9 +55,9 @@ __skipn_0:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_1
+    bnez t0, __skip_1
     j    .L_f0_pc14
-__skipn_1:
+__skip_1:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -84,9 +85,9 @@ __skipn_1:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_2
+    bnez t0, __skip_2
     j    .L_f0_pc21
-__skipn_2:
+__skip_2:
     li   t0, 2
     addi sp, sp, -4
     sw   t0, 0(sp)

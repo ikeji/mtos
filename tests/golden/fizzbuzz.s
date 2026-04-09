@@ -13,6 +13,7 @@ __tc_strobj2:
     .string "Buzz"
 
     .text
+    .align 2
 
     .globl fizzbuzz__i32
     .type  fizzbuzz__i32, @function
@@ -46,9 +47,9 @@ fizzbuzz__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_0
+    bnez t0, __skip_0
     j    .L_f0_pc44
-__skipn_0:
+__skip_0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -73,9 +74,9 @@ __skipn_0:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_1
+    bnez t0, __skip_1
     j    .L_f0_pc16
-__skipn_1:
+__skip_1:
     la   t0, __tc_strobj0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -111,9 +112,9 @@ __skipn_1:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_2
+    bnez t0, __skip_2
     j    .L_f0_pc26
-__skipn_2:
+__skip_2:
     la   t0, __tc_strobj1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -149,9 +150,9 @@ __skipn_2:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skipn_3
+    bnez t0, __skip_3
     j    .L_f0_pc36
-__skipn_3:
+__skip_3:
     la   t0, __tc_strobj2
     addi sp, sp, -4
     sw   t0, 0(sp)
