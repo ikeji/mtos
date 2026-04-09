@@ -36,7 +36,6 @@ var OP_JUMP_IF: i32 = 29;
 var OP_JUMP_IFNOT: i32 = 30;
 
 // ===== Global state =====
-var g_skip_id: i32 = 0;     // unique label counter for branch-over-jump pattern
 var g_in_pos: i32 = 0;
 var g_in_len: i32 = 0;
 var g_stab_pos: i32 = 0;
@@ -145,21 +144,16 @@ fn asm_branch(fi: i32, cond_ne: i32, target: i32, ob: StringBuffer) -> void {
         emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
     }
     emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
-    // __skip_N label
-    emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');
-    emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');
-    emit_int(ob, g_skip_id);
+    // 0f (forward numeric label)
+    emit_char(ob, '0');emit_char(ob, 'f');
     emit_char(ob, 10u8);
     // j target
     e4(ob);
     emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
     e_pcref(fi,target,ob);emit_char(ob, 10u8);
-    // __skip_N:
-    emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');
-    emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');
-    emit_int(ob, g_skip_id);
+    // 0:
+    emit_char(ob, '0');
     emit_char(ob, ':');emit_char(ob, 10u8);
-    g_skip_id = g_skip_id + 1;
     return;
 }
 // Return length of base name (before first "__" separator in mangled name)
@@ -977,32 +971,17 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
                 global_vars: I32Array, global_inits: I32Array,
                 fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
                 instrs: I32Array, ob: StringBuffer) -> void {
-    // .rodata: string literals
-    if g_nstrings > 0 {
-        e4(ob);
-        emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 't');
-        emit_char(ob, 'i');emit_char(ob, 'o');emit_char(ob, 'n');emit_char(ob, ' ');
-        emit_char(ob, '.');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 'a');
-        emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
-        var si: i32=0;
-        while si<g_nstrings {
-            var ss: i32=get(string_lits,(si*2+0));
-            var sl: i32=get(string_lits,(si*2+1));
-            // "    .align 4\n"
-            e4(ob);emit_string(ob, ".align 4");emit_char(ob, 10u8);
-            // "__tc_strobjN:\n"
-            emit_string(ob, "__tc_strobj");
-            emit_int(ob, si); emit_char(ob, ':');emit_char(ob, 10u8);
-            // "    .word LEN\n"  (count)
-            e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_char(ob, 10u8);
-            // "    .string \"...\"\n"  (data follows inline)
-            e4(ob);emit_string(ob, ".string ");
-            emit_strdata(strtab,ss,sl,ob); emit_char(ob, 10u8);
-            si=si+1;
-        }
-        emit_char(ob, 10u8);
+    // .text: functions first (asm.tc treats all sections as flat stream)
+    e4(ob);
+    emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);
+    e4(ob);emit_string(ob, ".align 2");emit_char(ob, 10u8);
+    emit_char(ob, 10u8);
+    var fi: i32=0;
+    while fi<g_nfuncs {
+        emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);
+        fi=fi+1;
     }
-    // .data: globals
+    // .data: globals (after .text for asm.tc compatibility)
     if g_nglobals > 0 {
         e4(ob);
         emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
@@ -1024,15 +1003,26 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
         }
         emit_char(ob, 10u8);
     }
-    // .text: functions (align to 4-byte boundary for asm.tc)
-    e4(ob);
-    emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);
-    e4(ob);emit_string(ob, ".align 2");emit_char(ob, 10u8);
-    emit_char(ob, 10u8);
-    var fi: i32=0;
-    while fi<g_nfuncs {
-        emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);
-        fi=fi+1;
+    // .rodata: string literals (after .data)
+    if g_nstrings > 0 {
+        e4(ob);
+        emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 'e');emit_char(ob, 'c');emit_char(ob, 't');
+        emit_char(ob, 'i');emit_char(ob, 'o');emit_char(ob, 'n');emit_char(ob, ' ');
+        emit_char(ob, '.');emit_char(ob, 'r');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 'a');
+        emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);
+        var si: i32=0;
+        while si<g_nstrings {
+            var ss: i32=get(string_lits,(si*2+0));
+            var sl: i32=get(string_lits,(si*2+1));
+            e4(ob);emit_string(ob, ".align 4");emit_char(ob, 10u8);
+            emit_string(ob, "__tc_strobj");
+            emit_int(ob, si); emit_char(ob, ':');emit_char(ob, 10u8);
+            e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_char(ob, 10u8);
+            e4(ob);emit_string(ob, ".string ");
+            emit_strdata(strtab,ss,sl,ob); emit_char(ob, 10u8);
+            si=si+1;
+        }
+        emit_char(ob, 10u8);
     }
     return;
 }

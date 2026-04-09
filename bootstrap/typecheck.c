@@ -164,7 +164,24 @@ static FnSig *resolve_overload(TypeEnv *e, const char *name,
         if (ok) { matched = s; nmatch++; }
     }
     if (nmatch == 1) return matched;
-    if (nmatch > 1) return NULL; /* ambiguous */
+    if (nmatch > 1) {
+        /* Check if all matches have the same signature (duplicate declarations).
+           If so, treat as a single match. Otherwise ambiguous. */
+        FnSig *first = NULL;
+        int all_same = 1;
+        for (FnSig *s = e->fns; s; s = s->next) {
+            if (strcmp(s->name, name) != 0 || s->nparam != nargs) continue;
+            int ok = 1;
+            for (int i = 0; i < nargs; i++) {
+                if (strcmp(s->param_types[i], arg_types[i]) != 0) { ok = 0; break; }
+            }
+            if (!ok) continue;
+            if (!first) { first = s; }
+            else if (strcmp(first->ret_type, s->ret_type) != 0) { all_same = 0; break; }
+        }
+        if (all_same && first) return first;
+        return NULL; /* ambiguous */
+    }
     return NULL;
 }
 

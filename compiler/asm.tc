@@ -7,9 +7,10 @@ import "source_reader.tc";
 import "strlib.tc";
 
 // ===== Constants =====
-var TEXT_BASE: i32 = 65536;  // 0x10000
+var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
+var TEXT_BASE: i32 = 65620;  // 0x10000 + 84 (code starts after ELF headers)
 var MAX_LABELS: i32 = 16384;
-var MAX_CODE: i32 = 67108864; // 64MB
+var MAX_CODE: i32 = 4194300; // ~4MB (4MB minus HeapObj header)
 
 // ===== Global state =====
 var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in main
@@ -651,7 +652,7 @@ fn process_line(line_idx: i32) -> void {
         if colon_pos == 1 && is_digit(get(g_line_buf, 0)) {
             is_numlab = 1;
             var digit: i32 = get(g_line_buf, 0) as i32 - 48;
-            define_numlab(digit, TEXT_BASE + g_pos);
+            if g_pass == 1 { define_numlab(digit, TEXT_BASE + g_pos); }
         }
         if is_numlab == 0 {
             // Named label
@@ -843,13 +844,14 @@ fn write_elf(code_size: i32, mem_size: i32) -> void {
     entry = label_addr(tmp, 6);
     delete(tmp);
 
-    var vaddr: i32 = TEXT_BASE;
-    var bss_vaddr: i32 = vaddr + code_size;
+    var load_vaddr: i32 = 65536;   // 0x10000 — page-aligned load address
+    var bss_vaddr: i32 = TEXT_BASE + code_size;
     bss_vaddr = (bss_vaddr + 4095) & (0 - 4096);
-    var bss_size: i32 = mem_size - code_size;
+    var total_filesz: i32 = ELF_HDR_SIZE + code_size;
+    var total_memsz: i32 = ELF_HDR_SIZE + mem_size;
 
     var i: i32 = 0;
-    while i < 4096 { set(out, i, 0u8); i = i + 1; }
+    while i < ELF_HDR_SIZE { set(out, i, 0u8); i = i + 1; }
 
     // ELF header
     set(out, 0, 127u8); set(out, 1, 'E'); set(out, 2, 'L'); set(out, 3, 'F');
@@ -863,17 +865,17 @@ fn write_elf(code_size: i32, mem_size: i32) -> void {
     set(out, 42, 32u8);        // e_phentsize
     set(out, 44, 1u8);         // e_phnum = 1
 
-    // Single LOAD segment: text+rodata+bss (RWE)
+    // Single LOAD segment: headers+text+rodata+bss (RWE)
     write_le32(out, 52, 1);            // PT_LOAD
-    write_le32(out, 56, 4096);         // p_offset = 0x1000
-    write_le32(out, 60, vaddr);        // p_vaddr = 0x10000
-    write_le32(out, 64, vaddr);        // p_paddr
-    write_le32(out, 68, code_size);    // p_filesz
-    write_le32(out, 72, mem_size);     // p_memsz (includes BSS)
+    write_le32(out, 56, 0);            // p_offset = 0
+    write_le32(out, 60, load_vaddr);   // p_vaddr = 0x10000
+    write_le32(out, 64, load_vaddr);   // p_paddr
+    write_le32(out, 68, total_filesz); // p_filesz (headers + code)
+    write_le32(out, 72, total_memsz);  // p_memsz (headers + code + bss)
     write_le32(out, 76, 7);            // p_flags = RWE
     write_le32(out, 80, 4096);         // p_align
 
-    sys_write(1, out, 4096);
+    sys_write(1, out, ELF_HDR_SIZE);
     sys_write(1, g_code, code_size);
     delete(out);
     return;
@@ -934,9 +936,7 @@ fn main() -> i32 {
     g_pass = 2;
     g_pos = 0;
     g_bss_pos = 0;
-    // Reset numeric label counters for pass 2
-    i = 0;
-    while i < 10 { set(g_numlab_count, i, 0); i = i + 1; }
+    // NOTE: do NOT reset g_numlab_count — pass 2 uses labels collected in pass 1
     i = 0;
     while i < g_nlines { process_line(i); i = i + 1; }
     // Write ELF (filesz = code written, memsz = code + BSS)

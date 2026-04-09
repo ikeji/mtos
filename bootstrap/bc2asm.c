@@ -248,7 +248,6 @@ static int is_local(BcFunc *fn, const char *name) {
 /* ===== Code generation ===== */
 
 static FILE *out;
-static int g_skip_id = 0;
 
 /* Macro-like helpers to emit common idioms */
 #define E(...) fprintf(out, __VA_ARGS__)
@@ -531,19 +530,17 @@ static void emit_fn(BcFunc *fn, int fi) {
             /* jump_if: jump when t0 != 0
                → skip j if t0 == 0, else fall through to j */
             pop_t0();
-            E("    beqz t0, __skip_%d\n", g_skip_id);
+            E("    beqz t0, 0f\n");
             E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
-            E("__skip_%d:\n", g_skip_id);
-            g_skip_id++;
+            E("0:\n");
             break;
         case OP_JUMP_IFNOT:
             /* jump_ifnot: jump when t0 == 0
                → skip j if t0 != 0, else fall through to j */
             pop_t0();
-            E("    bnez t0, __skip_%d\n", g_skip_id);
+            E("    bnez t0, 0f\n");
             E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
-            E("__skip_%d:\n", g_skip_id);
-            g_skip_id++;
+            E("0:\n");
             break;
 
         } /* switch */
@@ -573,7 +570,23 @@ static void emit_strdata(FILE *f, const char *s) {
 static void emit_program(BcProg *prog) {
     out = stdout;
 
-    /* --- .rodata: string literals as count-prefixed objects --- */
+    /* --- .text: functions first (asm.tc treats all sections as flat stream) --- */
+    E("    .text\n");
+    E("    .align 2\n\n");
+    for (int i = 0; i < prog->nfuncs; i++)
+        emit_fn(&prog->funcs[i], i);
+
+    /* --- .data: global variables (after .text) --- */
+    if (prog->nglobals > 0) {
+        E("    .data\n");
+        for (int i = 0; i < prog->nglobals; i++) {
+            E("    .globl %s\n", prog->global_names[i]);
+            E("%s:\n    .word %d\n", prog->global_names[i], prog->global_inits[i]);
+        }
+        E("\n");
+    }
+
+    /* --- .rodata: string literals as count-prefixed objects (after .data) --- */
     if (prog->nstrings > 0) {
         E("    .section .rodata\n");
         for (int i = 0; i < prog->nstrings; i++) {
@@ -585,22 +598,6 @@ static void emit_program(BcProg *prog) {
         }
         E("\n");
     }
-
-    /* --- .data: global variables --- */
-    if (prog->nglobals > 0) {
-        E("    .data\n");
-        for (int i = 0; i < prog->nglobals; i++) {
-            E("    .globl %s\n", prog->global_names[i]);
-            E("%s:\n    .word %d\n", prog->global_names[i], prog->global_inits[i]);
-        }
-        E("\n");
-    }
-
-    /* --- .text: functions --- */
-    E("    .text\n");
-    E("    .align 2\n\n");
-    for (int i = 0; i < prog->nfuncs; i++)
-        emit_fn(&prog->funcs[i], i);
 }
 
 int main(int argc, char *argv[]) {
