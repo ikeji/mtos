@@ -159,10 +159,10 @@ compile_tc_to_bc() {
 _GEN2_TMP=""
 _GEN2_READY=false
 
-# build_gen2_tool "name" — compiles compiler/$name.tc to RISC-V ELF via tc_asm.sh
+# build_gen2_tool "name" — compiles compiler/$name.tc to RISC-V ELF via compile-gen1.sh
 build_gen2_tool() {
     local name="$1"
-    "$ROOT_DIR/tc_asm.sh" -o "$_GEN2_TMP/$name" "$TC_DIR/$name.tc" 2>/dev/null
+    "$ROOT_DIR/compile-gen1.sh" -o "$_GEN2_TMP/$name" "$TC_DIR/$name.tc" 2>/dev/null
 }
 
 # ensure_gen2_tools — builds Gen2 RISC-V binaries (once), sets USE_NATIVE
@@ -170,7 +170,7 @@ ensure_gen2_tools() {
     if [ "$_GEN2_READY" = true ]; then return; fi
     _GEN2_READY=true
     USE_NATIVE=false
-    if command -v "$QEMU" >/dev/null 2>&1; then
+    if command -v "$QEMU" >/dev/null 2>&1 && command -v "$RISCV_CC" >/dev/null 2>&1; then
         _GEN2_TMP=$(mktemp -d)
         build_gen2_tool "parse"
         build_gen2_tool "typecheck"
@@ -187,59 +187,23 @@ cleanup_gen2_tools() {
     [ -n "$_GEN2_TMP" ] && rm -rf "$_GEN2_TMP"
 }
 
-# ===== Gen2 tool execution helpers (native or bcrun fallback) =====
-
-_TC_BCS_READY=false
-PARSE_TC_BC=""
-TYPECHECK_TC_BC=""
-CODEGEN_TC_BC=""
-BC2ASM_TC_BC=""
-
-# ensure_tc_bcs — compile Gen2 BCs for bcrun fallback
-ensure_tc_bcs() {
-    if [ "$_TC_BCS_READY" = true ]; then return; fi
-    _TC_BCS_READY=true
-    PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
-    TYPECHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/typecheck.tc")
-    CODEGEN_TC_BC=$(compile_tc_to_bc "$TC_DIR/codegen.tc")
-    BC2ASM_TC_BC=$(compile_tc_to_bc "$TC_DIR/bc2asm.tc")
-}
+# ===== Gen2 tool execution helpers =====
 
 run_parse_tc() {
     local input="$1"
-    if [ "$USE_NATIVE" = true ]; then
-        "$QEMU" "$_GEN2_TMP/parse" < "$input" 2>/dev/null
-    else
-        ensure_tc_bcs
-        { printf '%s\n' "$PARSE_TC_BC"; cat "$input"; } | "$BCRUN" 2>/dev/null
-    fi
+    "$QEMU" "$_GEN2_TMP/parse" < "$input" 2>/dev/null
 }
 
 run_typecheck_tc() {
-    if [ "$USE_NATIVE" = true ]; then
-        "$QEMU" "$_GEN2_TMP/typecheck" 2>/dev/null
-    else
-        ensure_tc_bcs
-        { printf '%s\n' "$TYPECHECK_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
-    fi
+    "$QEMU" "$_GEN2_TMP/typecheck" 2>/dev/null
 }
 
 run_codegen_tc() {
-    if [ "$USE_NATIVE" = true ]; then
-        "$QEMU" "$_GEN2_TMP/codegen" 2>/dev/null
-    else
-        ensure_tc_bcs
-        { printf '%s\n' "$CODEGEN_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
-    fi
+    "$QEMU" "$_GEN2_TMP/codegen" 2>/dev/null
 }
 
 run_bc2asm_tc() {
-    if [ "$USE_NATIVE" = true ]; then
-        "$QEMU" "$_GEN2_TMP/bc2asm" 2>/dev/null
-    else
-        ensure_tc_bcs
-        { printf '%s\n' "$BC2ASM_TC_BC"; cat; } | "$BCRUN" 2>/dev/null
-    fi
+    "$QEMU" "$_GEN2_TMP/bc2asm" 2>/dev/null
 }
 
 # ===== Common test file lists =====

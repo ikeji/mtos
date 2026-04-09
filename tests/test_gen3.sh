@@ -5,15 +5,14 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test_common.sh"
-require_tools parse codegen bcrun bc2asm
+require_tools parse codegen bc2asm
 
 # Build Gen2 tools
 ensure_gen2_tools
 if [ "$USE_NATIVE" = true ]; then
     echo "=== Compiler Source Tests (Gen1 vs golden, Gen2 vs Gen3, rv32 native) ==="
 else
-    ensure_tc_bcs
-    echo "=== Compiler Source Tests (Gen1 vs golden, Gen2 vs Gen3, bcrun fallback) ==="
+    echo "=== Compiler Source Tests (Gen1 vs golden, skipping Gen2/Gen3 — need qemu + riscv-gcc) ==="
 fi
 echo ""
 
