@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -g -I bootstrap
 SRCS = bootstrap/lexer.c bootstrap/ast.c bootstrap/parser.c bootstrap/typecheck.c bootstrap/interp.c bootstrap/codegen.c
 OBJS = $(SRCS:.c=.o)
 
-all: parse typecheck interp codegen bcrun bc2asm
+all: parse typecheck interp codegen bcrun bc2asm extract-sigs
 
 parse: $(OBJS) bootstrap/parse_main.o
 	$(CC) -o $@ $^
@@ -24,11 +24,14 @@ bcrun: bootstrap/bcrun.c
 bc2asm: bootstrap/bc2asm.c
 	$(CC) $(CFLAGS) -o bc2asm bootstrap/bc2asm.c
 
+extract-sigs: bootstrap/extract_sigs.c bootstrap/ast.o
+	$(CC) $(CFLAGS) -o extract-sigs bootstrap/extract_sigs.c bootstrap/ast.o
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o parse typecheck interp codegen bcrun bc2asm
+	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o parse typecheck interp codegen bcrun bc2asm extract-sigs
 
 test: all
 	./tests/test_all.sh
