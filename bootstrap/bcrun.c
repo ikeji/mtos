@@ -750,12 +750,21 @@ static Value vm_exec(VM *vm, BcFunc *fn, Value *args, int nargs) {
 
         case OP_CAST: {
             Value a = vm_pop(vm);
-            /* Preserve references: `ref as u32` etc. must not lose the
-               HeapObj pointer. Struct fields can store refs through a
-               U32Array, so refs flow through cast instructions. */
-            if (a.kind == VAL_REF) { vm_push(vm, a); break; }
-            int32_t v = a.ival;
             const char *t = ins->sarg;
+            if (a.kind == VAL_REF) {
+                /* ref → i32/bool: convert to nonzero integer for null checks.
+                   ref → anything else: preserve as ref (struct ↔ U32Array etc.) */
+                if (!strcmp(t,"i32")) {
+                    vm_push(vm, val_int(a.ref ? (int32_t)(intptr_t)a.ref : 0));
+                    break;
+                }
+                if (!strcmp(t,"bool")) {
+                    vm_push(vm, val_int(a.ref ? 1 : 0));
+                    break;
+                }
+                vm_push(vm, a); break;
+            }
+            int32_t v = a.ival;
             if      (!strcmp(t,"u8"))   v=(uint8_t)v;
             else if (!strcmp(t,"u16"))  v=(uint16_t)v;
             else if (!strcmp(t,"u32"))  v=(int32_t)(uint32_t)v;
