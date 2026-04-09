@@ -143,7 +143,30 @@ pc=0x10090 (peek32)  ra=0x12340 (get+188)  sp=0x4af314  s0=0x4af338  a0=0x8  a1=
 cg_stmt のフレームでは ob = 0x30570 が保持されているが、
 emit_char に渡される時点で sb = 0 になっている。
 
-## 次に試すこと
+### 9. 根本原因特定: B-type分岐オフセットオーバーフロー
+
+GDBでcg_stmtのk=14(NK_RETURN)確認後、100命令ステップで0x227D8（NK_ASSIGNブロック内）に到達。
+ステップ95で `beqz t0, 0x227C8` が実行され、NK_IFチェックの `jump_ifnot` がNK_ASSIGNブロック内にジャンプ。
+
+```
+0x23328: beqz t0, 0x227c8   ← target WRONG! (should be 0x247c8)
+```
+
+- 正しいターゲット: __L236 = .L_f161_pc744 = 0x247C8
+- 実際のターゲット: 0x227C8 (差 0x2000 = 8192)
+- B-type即値は13ビット符号付き（±4096バイト）
+- オフセット 5280 > 4094 → 切り詰められて -2912 → 後方の0x227C8にジャンプ
+
+### 10. 修正完了
+
+bc2asm (C版・TC版) の `jump_if`/`jump_ifnot` 出力を修正:
+- Before: `beqz t0, label` (B-type, ±4KB)
+- After: `bnez t0, __skip_N; j label; __skip_N:` (J-type, ±1MB)
+
+全4ツール (parse/typecheck/codegen/bc2asm) が tc_asm.sh で正常動作。
+test_common.sh の build_gen2_tool を tc_asm.sh ベースに切り替え。
+
+## 解決済み
 
 1. **bc2asm に .data セクション出力を追加**
    - グローバル変数の `.word` を `.text` ではなく `.data` セクションに出力
