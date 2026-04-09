@@ -10512,7 +10512,7 @@
         (var sb)
         (int:u8 32)
       )
-      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_string
         (var sb)
         (str "U32Array")
@@ -10521,6 +10521,36 @@
         (var sb)
         (int:u8 41)
       )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (comment "emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 41)

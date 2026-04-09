@@ -6,3 +6,4 @@ codegen
 bcrun
 bc2asm
 .claude/
+extract-sigs
