@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gen3.sh — compiler source golden tests + Gen2==Gen3 self-hosting verification
-# Tools: Gen1 (C) + Gen2 (rv32 native or bcrun fallback)
+# Tools: Gen1 (C) + Gen2 (rv32 native via qemu)
 # Tests: Gen1 output vs golden, Gen2 AST/BC/ASM vs Gen1, Gen2==Gen3 BC
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -76,23 +76,23 @@ for f in "${TC_FILES[@]}"; do
     fi
     rm -f "$actual"
 
-    # Exec (bcrun with merged BC)
+    # Exec (Gen2 rv32 via qemu)
     golden_out="$GOLDEN_DIR/tc/$base.out"
     golden_exit="$GOLDEN_DIR/tc/$base.exit"
-    if [ -f "$golden_out" ] && [ -f "$golden_exit" ]; then
+    if [ -f "$golden_out" ] && [ -f "$golden_exit" ] && [ "$USE_NATIVE" = true ]; then
         expected_exit=$(cat "$golden_exit")
         exec_input_file=$(get_tc_exec_input_file "$f")
         actual=$(mktemp)
         t0=$(time_ms)
-        { printf '%s\n' "$bc"; cat "$exec_input_file"; } | "$BCRUN" > "$actual" 2>/dev/null
+        "$QEMU" "$_GEN2_TMP/$base" < "$exec_input_file" > "$actual" 2>/dev/null
         actual_exit=$?
         elapsed=$(( $(time_ms) - t0 ))
         if diff -u "$golden_out" "$actual" > /dev/null && [ "$actual_exit" -eq "$expected_exit" ]; then
-            report_pass "tc/$f (Exec - bcrun)" "$elapsed"
+            report_pass "tc/$f (Exec - rv32)" "$elapsed"
         else
             msg=""
             [ "$actual_exit" -ne "$expected_exit" ] && msg="exit code mismatch: expected $expected_exit, got $actual_exit"
-            report_fail_diff "tc/$f (Exec - bcrun)" "$golden_out" "$actual" "$msg" "$elapsed"
+            report_fail_diff "tc/$f (Exec - rv32)" "$golden_out" "$actual" "$msg" "$elapsed"
         fi
         rm -f "$actual"
     fi

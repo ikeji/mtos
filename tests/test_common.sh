@@ -176,8 +176,10 @@ ensure_gen2_tools() {
         build_gen2_tool "typecheck"
         build_gen2_tool "codegen"
         build_gen2_tool "bc2asm"
+        build_gen2_tool "bcrun"
         if [ -x "$_GEN2_TMP/parse" ] && [ -x "$_GEN2_TMP/typecheck" ] && \
-           [ -x "$_GEN2_TMP/codegen" ] && [ -x "$_GEN2_TMP/bc2asm" ]; then
+           [ -x "$_GEN2_TMP/codegen" ] && [ -x "$_GEN2_TMP/bc2asm" ] && \
+           [ -x "$_GEN2_TMP/bcrun" ]; then
             USE_NATIVE=true
         fi
     fi
