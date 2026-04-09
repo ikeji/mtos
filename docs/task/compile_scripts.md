@@ -194,5 +194,4 @@ AST と同じ S式フォーマットのサブセット。typecheck.tc の既存 
 ## 既知の制限
 
 - compile-gen2.sh / gen3.sh の .th 生成は Gen1 parse + Gen1 extract-sigs を使用
-  （Gen2 parse にコメントノードの括弧バランス問題があるため）
-- 将来 Gen2 parse が修正されれば、完全に Gen2 ツールだけで .th 生成が可能になる
+  （Gen2 parse の括弧バグは修正済みだが、スクリプトは未更新）
