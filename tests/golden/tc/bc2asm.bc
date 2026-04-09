@@ -643,6 +643,7 @@ __L20:
 .global OP_JUMP i32 28
 .global OP_JUMP_IF i32 29
 .global OP_JUMP_IFNOT i32 30
+.global g_skip_id i32 0
 .global g_in_pos i32 0
 .global g_in_len i32 0
 .global g_stab_pos i32 0
@@ -1252,17 +1253,17 @@ __L20:
   push_int 1
   eq
   jump_ifnot __L0
-; emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
+; emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 98
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 110
+  push_int 101
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 101
+  push_int 113
   call emit_char StringBuffer u8
   pop
   load ob
@@ -1275,17 +1276,17 @@ __L20:
   pop
   jump __L1
 __L0:
-; emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
+; emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
   load ob
   push_int 98
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 101
+  push_int 110
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 113
+  push_int 101
   call emit_char StringBuffer u8
   pop
   load ob
@@ -1309,6 +1310,71 @@ __L1:
   load ob
   call ecomma StringBuffer
   pop
+; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');
+  load ob
+  push_int 95
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 95
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 115
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 107
+  call emit_char StringBuffer u8
+  pop
+; emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');
+  load ob
+  push_int 105
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 112
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 95
+  call emit_char StringBuffer u8
+  pop
+; emit_int(ob, g_skip_id);
+  load ob
+  load g_skip_id
+  call emit_int StringBuffer i32
+  pop
+; emit_char(ob, 10u8);
+  load ob
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; e4(ob);
+  load ob
+  call e4 StringBuffer
+  pop
+; emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
+  load ob
+  push_int 106
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
 ; e_pcref(fi,target,ob);emit_char(ob, 10u8);
   load fi
   load target
@@ -1319,6 +1385,55 @@ __L1:
   push_int 10
   call emit_char StringBuffer u8
   pop
+; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');
+  load ob
+  push_int 95
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 95
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 115
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 107
+  call emit_char StringBuffer u8
+  pop
+; emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');
+  load ob
+  push_int 105
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 112
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 95
+  call emit_char StringBuffer u8
+  pop
+; emit_int(ob, g_skip_id);
+  load ob
+  load g_skip_id
+  call emit_int StringBuffer i32
+  pop
+; emit_char(ob, ':');emit_char(ob, 10u8);
+  load ob
+  push_int 58
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; g_skip_id = g_skip_id + 1;
+  load g_skip_id
+  push_int 1
+  add
+  store g_skip_id
 ; return;
   return_void
   return_void

@@ -36,6 +36,7 @@ var OP_JUMP_IF: i32 = 29;
 var OP_JUMP_IFNOT: i32 = 30;
 
 // ===== Global state =====
+var g_skip_id: i32 = 0;     // unique label counter for branch-over-jump pattern
 var g_in_pos: i32 = 0;
 var g_in_len: i32 = 0;
 var g_stab_pos: i32 = 0;
@@ -130,16 +131,35 @@ fn asm_jump(fi: i32, target: i32, ob: StringBuffer) -> void {
     e_pcref(fi,target,ob);emit_char(ob, 10u8);
     return;
 }
-// "    bnez t0, .L_fFI_pcN\n" or "    beqz t0, .L_fFI_pcN\n"
+// Emit conditional jump using inverted-branch + j pattern to avoid
+// B-type ±4KB range limit. cond_ne=1 means "jump if true" (jump_if),
+// cond_ne=0 means "jump if false" (jump_ifnot).
 fn asm_branch(fi: i32, cond_ne: i32, target: i32, ob: StringBuffer) -> void {
+    // Invert condition for short skip branch
     e4(ob);
     if cond_ne == 1 {
-        emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
-    } else {
+        // jump_if: jump when t0!=0 → skip j when t0==0
         emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');
+    } else {
+        // jump_ifnot: jump when t0==0 → skip j when t0!=0
+        emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');
     }
     emit_char(ob, 't');emit_char(ob, '0');ecomma(ob);
+    // __skip_N label
+    emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');
+    emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');
+    emit_int(ob, g_skip_id);
+    emit_char(ob, 10u8);
+    // j target
+    e4(ob);
+    emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
     e_pcref(fi,target,ob);emit_char(ob, 10u8);
+    // __skip_N:
+    emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');
+    emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');
+    emit_int(ob, g_skip_id);
+    emit_char(ob, ':');emit_char(ob, 10u8);
+    g_skip_id = g_skip_id + 1;
     return;
 }
 // Return length of base name (before first "__" separator in mangled name)

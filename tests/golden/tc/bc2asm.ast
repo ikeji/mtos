@@ -120,6 +120,10 @@
     (type i32)
     (int 30)
   )
+  (var_decl g_skip_id
+    (type i32)
+    (int 0)
+  )
   (var_decl g_in_pos
     (type i32)
     (int 0)
@@ -945,29 +949,6 @@
           (int 1)
         )
         (block
-          (comment "emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');")
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 98)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 110)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 101)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 122)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 32)
-          )
-        )
-        (block
           (comment "emit_char(ob, 'b');emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 'z');emit_char(ob, ' ');")
           (call_stmt emit_char
             (var ob)
@@ -980,6 +961,29 @@
           (call_stmt emit_char
             (var ob)
             (int:u8 113)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 122)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 32)
+          )
+        )
+        (block
+          (comment "emit_char(ob, 'b');emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'z');emit_char(ob, ' ');")
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 98)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 110)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 101)
           )
           (call_stmt emit_char
             (var ob)
@@ -1003,6 +1007,71 @@
       (call_stmt ecomma
         (var ob)
       )
+      (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 115)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 107)
+      )
+      (comment "emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 105)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 112)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (comment "emit_int(ob, g_skip_id);")
+      (call_stmt emit_int
+        (var ob)
+        (var g_skip_id)
+      )
+      (comment "emit_char(ob, 10u8);")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 10)
+      )
+      (comment "e4(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (comment "emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 106)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 32)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 32)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 32)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 32)
+      )
       (comment "e_pcref(fi,target,ob);emit_char(ob, 10u8);")
       (call_stmt e_pcref
         (var fi)
@@ -1012,6 +1081,57 @@
       (call_stmt emit_char
         (var ob)
         (int:u8 10)
+      )
+      (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 115)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 107)
+      )
+      (comment "emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 105)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 112)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (comment "emit_int(ob, g_skip_id);")
+      (call_stmt emit_int
+        (var ob)
+        (var g_skip_id)
+      )
+      (comment "emit_char(ob, ':');emit_char(ob, 10u8);")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 58)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 10)
+      )
+      (comment "g_skip_id = g_skip_id + 1;")
+      (assign g_skip_id
+        (binop +
+          (var g_skip_id)
+          (int 1)
+        )
       )
       (comment "return;")
       (return)
