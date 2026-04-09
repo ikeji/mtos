@@ -29,7 +29,7 @@ var g_nlabels: i32 = 0;
 var g_lab_name_pos: i32 = 0;
 
 // Numeric labels: 10 digits x 256 entries each
-// g_numlab[digit * 256 + count] = address
+// g_numlab[digit * 1024 +count] = address
 var g_numlab: I32Array = 0 as I32Array;
 var g_numlab_count: I32Array = 0 as I32Array;  // count per digit (10 entries)
 
@@ -129,7 +129,7 @@ fn label_addr(name: U8Array, nlen: i32) -> i32 {
 // ===== Numeric label support =====
 fn define_numlab(digit: i32, addr: i32) -> void {
     var cnt: i32 = get(g_numlab_count, digit);
-    set(g_numlab, (digit * 256 + cnt), addr);
+    set(g_numlab, (digit * 1024 +cnt), addr);
     set(g_numlab_count, digit, cnt + 1);
     return;
 }
@@ -141,7 +141,7 @@ fn numlab_back(digit: i32, pc: i32) -> i32 {
     var i: i32 = cnt - 1;
     var found: i32 = 0;
     while i >= 0 && found == 0 {
-        var addr: i32 = get(g_numlab, (digit * 256 + i));
+        var addr: i32 = get(g_numlab, (digit * 1024 +i));
         if addr <= pc { result = addr; found = 1; }
         else { i = i - 1; }
     }
@@ -153,7 +153,7 @@ fn numlab_fwd(digit: i32, pc: i32) -> i32 {
     var cnt: i32 = get(g_numlab_count, digit);
     var i: i32 = 0;
     while i < cnt {
-        var addr: i32 = get(g_numlab, (digit * 256 + i));
+        var addr: i32 = get(g_numlab, (digit * 1024 +i));
         if addr > pc { return addr; }
         i = i + 1;
     }
@@ -896,7 +896,7 @@ fn main() -> i32 {
     g_mnem = U8Array(64);
     g_ops = I32Array(8);  // 4 ops x 2 (off, len)
     g_line_buf = U8Array(4092);
-    g_numlab = I32Array(2560);       // 10 digits x 256
+    g_numlab = I32Array(10240);      // 10 digits x 1024
     g_numlab_count = I32Array(10);
 
     // Read all input lines

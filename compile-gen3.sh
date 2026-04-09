@@ -93,20 +93,27 @@ fi
 
 # Compile helper: .tc → .s using Gen3 pipeline
 # Uses Gen1 parse for AST, Gen3 typecheck/codegen/bc2asm
+# Adds file-specific prefix to .L_ labels to avoid collisions when linking
+_FILE_IDX=0
 compile_one() {
     local tc="$1" out_s="$2"
+    local raw_s="$out_s.raw"
     if [ -f "$TMP/imports.th" ]; then
         "$PARSE" "$tc" | \
             { cat "$TMP/imports.th"; cat; } | \
             "$QEMU" "$GEN3_DIR/typecheck" 2>/dev/null | \
             "$QEMU" "$GEN3_DIR/codegen" 2>/dev/null | \
-            "$QEMU" "$GEN3_DIR/bc2asm" > "$out_s" 2>/dev/null
+            "$QEMU" "$GEN3_DIR/bc2asm" > "$raw_s" 2>/dev/null
     else
         "$PARSE" "$tc" | \
             "$QEMU" "$GEN3_DIR/typecheck" 2>/dev/null | \
             "$QEMU" "$GEN3_DIR/codegen" 2>/dev/null | \
-            "$QEMU" "$GEN3_DIR/bc2asm" > "$out_s" 2>/dev/null
+            "$QEMU" "$GEN3_DIR/bc2asm" > "$raw_s" 2>/dev/null
     fi
+    # Prefix .L_ labels with file index to avoid cross-file collisions
+    sed "s/\.L_/.L${_FILE_IDX}_/g" "$raw_s" > "$out_s"
+    rm -f "$raw_s"
+    _FILE_IDX=$((_FILE_IDX + 1))
 }
 
 # Compile runtime.tc (no imports needed)
