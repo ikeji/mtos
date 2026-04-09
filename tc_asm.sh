@@ -62,7 +62,7 @@ USER_S=$(printf '%s\n' "$MERGED_S" | "$BC2ASM" 2>/dev/null)
 CRT0_DATA="$ROOT_DIR/bootstrap/crt0_tc_data.s"
 ASM_BC=$(compile_tc_to_bc "$ROOT_DIR/compiler/asm.tc")
 { cat "$CRT0"; printf '%s\n' "$USER_S"; cat "$CRT0_DATA"; } | \
-    { printf '%s\n' "$ASM_BC"; cat; } | "$BCRUN" > "$OUTFILE" 2>/dev/null
+    { printf '%s\n' "$ASM_BC"; cat; } | "$BCRUN" > "$OUTFILE"
 
 chmod +x "$OUTFILE"
 echo "Output: $OUTFILE"
