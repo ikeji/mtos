@@ -24,7 +24,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-  .L_f0_pc4:
+  .L_main_pc4:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -40,7 +40,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc33
+    j    .L_main_pc33
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -48,7 +48,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -20(s0)
-  .L_f0_pc10:
+  .L_main_pc10:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -64,7 +64,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc28
+    j    .L_main_pc28
 0:
     lw   t0, -20(s0)
     addi sp, sp, -4
@@ -82,10 +82,10 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc19
+    j    .L_main_pc19
 0:
-    j    .L_f0_pc28
-  .L_f0_pc19:
+    j    .L_main_pc28
+  .L_main_pc19:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -116,8 +116,8 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -20(s0)
-    j    .L_f0_pc10
-  .L_f0_pc28:
+    j    .L_main_pc10
+  .L_main_pc28:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -133,8 +133,8 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-    j    .L_f0_pc4
-  .L_f0_pc33:
+    j    .L_main_pc4
+  .L_main_pc33:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

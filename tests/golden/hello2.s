@@ -41,7 +41,7 @@ to_buf__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -24(s0)
-  .L_f0_pc8:
+  .L_to_buf__StringLiteral_pc8:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -57,7 +57,7 @@ to_buf__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc24
+    j    .L_to_buf__StringLiteral_pc24
 0:
     lw   t0, -20(s0)
     addi sp, sp, -4
@@ -100,8 +100,8 @@ to_buf__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -24(s0)
-    j    .L_f0_pc8
-  .L_f0_pc24:
+    j    .L_to_buf__StringLiteral_pc8
+  .L_to_buf__StringLiteral_pc24:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

@@ -314,6 +314,7 @@ static int max_eval_depth(BcFunc *fn) {
 }
 
 static void emit_fn(BcFunc *fn, int fi) {
+    (void)fi;  /* fi unused — labels now use fn->name */
     int nvars      = fn->nparams + fn->nlocals;
     int eval_slots = max_eval_depth(fn);
     int frame_size = 8 + 4 * nvars + 4 * eval_slots;
@@ -354,7 +355,7 @@ static void emit_fn(BcFunc *fn, int fi) {
     for (int pc = 0; pc < fn->ninstrs; pc++) {
         /* emit label if this pc is a jump target */
         if (is_jump_target(fn, pc))
-            E("  .L_f%d_pc%d:\n", fi, pc);
+            E("  .L_%s_pc%d:\n", fn->name, pc);
 
         Instr *ins = &fn->instrs[pc];
 
@@ -524,14 +525,14 @@ static void emit_fn(BcFunc *fn, int fi) {
         }
 
         case OP_JUMP:
-            E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
+            E("    j    .L_%s_pc%ld\n", fn->name, ins->ival);
             break;
         case OP_JUMP_IF:
             /* jump_if: jump when t0 != 0
                → skip j if t0 == 0, else fall through to j */
             pop_t0();
             E("    beqz t0, 0f\n");
-            E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
+            E("    j    .L_%s_pc%ld\n", fn->name, ins->ival);
             E("0:\n");
             break;
         case OP_JUMP_IFNOT:
@@ -539,7 +540,7 @@ static void emit_fn(BcFunc *fn, int fi) {
                → skip j if t0 != 0, else fall through to j */
             pop_t0();
             E("    bnez t0, 0f\n");
-            E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
+            E("    j    .L_%s_pc%ld\n", fn->name, ins->ival);
             E("0:\n");
             break;
 

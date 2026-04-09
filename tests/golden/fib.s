@@ -26,7 +26,7 @@ fib__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc6
+    j    .L_fib__i32_pc6
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -39,7 +39,7 @@ fib__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f0_pc6:
+  .L_fib__i32_pc6:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

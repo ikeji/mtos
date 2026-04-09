@@ -26,7 +26,7 @@ is_digit__u8:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc10
+    j    .L_is_digit__u8_pc10
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -44,17 +44,17 @@ is_digit__u8:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc10
+    j    .L_is_digit__u8_pc10
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f0_pc11
-  .L_f0_pc10:
+    j    .L_is_digit__u8_pc11
+  .L_is_digit__u8_pc10:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f0_pc11:
+  .L_is_digit__u8_pc11:
     lw   t0, 0(sp)
     addi sp, sp, 4
     mv   a0, t0
@@ -95,7 +95,7 @@ is_space__u8:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_f1_pc10
+    j    .L_is_space__u8_pc10
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -113,17 +113,17 @@ is_space__u8:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_f1_pc10
+    j    .L_is_space__u8_pc10
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f1_pc11
-  .L_f1_pc10:
+    j    .L_is_space__u8_pc11
+  .L_is_space__u8_pc10:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f1_pc11:
+  .L_is_space__u8_pc11:
     lw   t0, 0(sp)
     addi sp, sp, 4
     mv   a0, t0
@@ -166,7 +166,7 @@ cur_char__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f2_pc6
+    j    .L_cur_char__U8Array_pc6
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -179,7 +179,7 @@ cur_char__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f2_pc6:
+  .L_cur_char__U8Array_pc6:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -217,7 +217,7 @@ skip_spaces__U8Array:
     sw   s0, 24(sp)
     addi s0, sp, 32
     sw   a0, -12(s0)
-  .L_f3_pc0:
+  .L_skip_spaces__U8Array_pc0:
     la   t1, g_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -235,7 +235,7 @@ skip_spaces__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f3_pc10
+    j    .L_skip_spaces__U8Array_pc10
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -253,21 +253,21 @@ skip_spaces__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f3_pc10
+    j    .L_skip_spaces__U8Array_pc10
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f3_pc11
-  .L_f3_pc10:
+    j    .L_skip_spaces__U8Array_pc11
+  .L_skip_spaces__U8Array_pc10:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f3_pc11:
+  .L_skip_spaces__U8Array_pc11:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f3_pc17
+    j    .L_skip_spaces__U8Array_pc17
 0:
     la   t1, g_pos
     lw   t0, 0(t1)
@@ -286,8 +286,8 @@ skip_spaces__U8Array:
     addi sp, sp, 4
     la   t1, g_pos
     sw   t0, 0(t1)
-    j    .L_f3_pc0
-  .L_f3_pc17:
+    j    .L_skip_spaces__U8Array_pc0
+  .L_skip_spaces__U8Array_pc17:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -325,7 +325,7 @@ parse_num__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-  .L_f4_pc5:
+  .L_parse_num__U8Array_pc5:
     la   t1, g_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -343,7 +343,7 @@ parse_num__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f4_pc15
+    j    .L_parse_num__U8Array_pc15
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -361,21 +361,21 @@ parse_num__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f4_pc15
+    j    .L_parse_num__U8Array_pc15
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f4_pc16
-  .L_f4_pc15:
+    j    .L_parse_num__U8Array_pc16
+  .L_parse_num__U8Array_pc15:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f4_pc16:
+  .L_parse_num__U8Array_pc16:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f4_pc32
+    j    .L_parse_num__U8Array_pc32
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -436,8 +436,8 @@ parse_num__U8Array:
     addi sp, sp, 4
     la   t1, g_pos
     sw   t0, 0(t1)
-    j    .L_f4_pc5
-  .L_f4_pc32:
+    j    .L_parse_num__U8Array_pc5
+  .L_parse_num__U8Array_pc32:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -488,7 +488,7 @@ parse_mul__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f5_pc6:
+  .L_parse_mul__U8Array_pc6:
     la   t1, g_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -506,7 +506,7 @@ parse_mul__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f5_pc26
+    j    .L_parse_mul__U8Array_pc26
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -529,7 +529,7 @@ parse_mul__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_f5_pc22
+    j    .L_parse_mul__U8Array_pc22
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -552,35 +552,35 @@ parse_mul__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_f5_pc22
+    j    .L_parse_mul__U8Array_pc22
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f5_pc23
-  .L_f5_pc22:
+    j    .L_parse_mul__U8Array_pc23
+  .L_parse_mul__U8Array_pc22:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f5_pc23:
+  .L_parse_mul__U8Array_pc23:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f5_pc26
+    j    .L_parse_mul__U8Array_pc26
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f5_pc27
-  .L_f5_pc26:
+    j    .L_parse_mul__U8Array_pc27
+  .L_parse_mul__U8Array_pc26:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f5_pc27:
+  .L_parse_mul__U8Array_pc27:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f5_pc55
+    j    .L_parse_mul__U8Array_pc55
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -637,7 +637,7 @@ parse_mul__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f5_pc47
+    j    .L_parse_mul__U8Array_pc47
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -654,8 +654,8 @@ parse_mul__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-    j    .L_f5_pc51
-  .L_f5_pc47:
+    j    .L_parse_mul__U8Array_pc51
+  .L_parse_mul__U8Array_pc47:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -671,7 +671,7 @@ parse_mul__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-  .L_f5_pc51:
+  .L_parse_mul__U8Array_pc51:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -681,8 +681,8 @@ parse_mul__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f5_pc6
-  .L_f5_pc55:
+    j    .L_parse_mul__U8Array_pc6
+  .L_parse_mul__U8Array_pc55:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -733,7 +733,7 @@ parse_add__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f6_pc6:
+  .L_parse_add__U8Array_pc6:
     la   t1, g_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -751,7 +751,7 @@ parse_add__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f6_pc26
+    j    .L_parse_add__U8Array_pc26
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -774,7 +774,7 @@ parse_add__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_f6_pc22
+    j    .L_parse_add__U8Array_pc22
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -797,35 +797,35 @@ parse_add__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_f6_pc22
+    j    .L_parse_add__U8Array_pc22
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f6_pc23
-  .L_f6_pc22:
+    j    .L_parse_add__U8Array_pc23
+  .L_parse_add__U8Array_pc22:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f6_pc23:
+  .L_parse_add__U8Array_pc23:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f6_pc26
+    j    .L_parse_add__U8Array_pc26
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_f6_pc27
-  .L_f6_pc26:
+    j    .L_parse_add__U8Array_pc27
+  .L_parse_add__U8Array_pc26:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_f6_pc27:
+  .L_parse_add__U8Array_pc27:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f6_pc55
+    j    .L_parse_add__U8Array_pc55
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -882,7 +882,7 @@ parse_add__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f6_pc47
+    j    .L_parse_add__U8Array_pc47
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -899,8 +899,8 @@ parse_add__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-    j    .L_f6_pc51
-  .L_f6_pc47:
+    j    .L_parse_add__U8Array_pc51
+  .L_parse_add__U8Array_pc47:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -916,7 +916,7 @@ parse_add__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-  .L_f6_pc51:
+  .L_parse_add__U8Array_pc51:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -926,8 +926,8 @@ parse_add__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f6_pc6
-  .L_f6_pc55:
+    j    .L_parse_add__U8Array_pc6
+  .L_parse_add__U8Array_pc55:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

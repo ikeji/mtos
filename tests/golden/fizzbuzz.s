@@ -17,7 +17,7 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-  .L_f0_pc2:
+  .L_fizzbuzz__i32_pc2:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -34,7 +34,7 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc44
+    j    .L_fizzbuzz__i32_pc44
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -61,7 +61,7 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc16
+    j    .L_fizzbuzz__i32_pc16
 0:
     la   t0, __tc_strobj0
     addi sp, sp, -4
@@ -72,8 +72,8 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f0_pc39
-  .L_f0_pc16:
+    j    .L_fizzbuzz__i32_pc39
+  .L_fizzbuzz__i32_pc16:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -99,7 +99,7 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc26
+    j    .L_fizzbuzz__i32_pc26
 0:
     la   t0, __tc_strobj1
     addi sp, sp, -4
@@ -110,8 +110,8 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f0_pc39
-  .L_f0_pc26:
+    j    .L_fizzbuzz__i32_pc39
+  .L_fizzbuzz__i32_pc26:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -137,7 +137,7 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc36
+    j    .L_fizzbuzz__i32_pc36
 0:
     la   t0, __tc_strobj2
     addi sp, sp, -4
@@ -148,8 +148,8 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_f0_pc39
-  .L_f0_pc36:
+    j    .L_fizzbuzz__i32_pc39
+  .L_fizzbuzz__i32_pc36:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -159,7 +159,7 @@ fizzbuzz__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_f0_pc39:
+  .L_fizzbuzz__i32_pc39:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -175,8 +175,8 @@ fizzbuzz__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-    j    .L_f0_pc2
-  .L_f0_pc44:
+    j    .L_fizzbuzz__i32_pc2
+  .L_fizzbuzz__i32_pc44:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)

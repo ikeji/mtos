@@ -728,7 +728,13 @@
   )
   (fn asm_pc_label
     (params
-      (param fi
+      (param strtab
+        (type U8Array)
+      )
+      (param nm_ss
+        (type i32)
+      )
+      (param nm_sl
         (type i32)
       )
       (param pc
@@ -751,7 +757,7 @@
         (var ob)
         (int:u8 32)
       )
-      (comment "emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');")
+      (comment "emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');")
       (call_stmt emit_char
         (var ob)
         (int:u8 46)
@@ -764,14 +770,12 @@
         (var ob)
         (int:u8 95)
       )
-      (call_stmt emit_char
+      (comment "emit_n(ob, strtab, nm_ss, nm_sl);emit_char(ob, '_');")
+      (call_stmt emit_n
         (var ob)
-        (int:u8 102)
-      )
-      (comment "emit_int(ob, fi);emit_char(ob, '_');")
-      (call_stmt emit_int
-        (var ob)
-        (var fi)
+        (var strtab)
+        (var nm_ss)
+        (var nm_sl)
       )
       (call_stmt emit_char
         (var ob)
@@ -804,7 +808,13 @@
   )
   (fn e_pcref
     (params
-      (param fi
+      (param strtab
+        (type U8Array)
+      )
+      (param nm_ss
+        (type i32)
+      )
+      (param nm_sl
         (type i32)
       )
       (param pc
@@ -818,7 +828,7 @@
       (type void)
     )
     (block
-      (comment "emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');")
+      (comment "emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');")
       (call_stmt emit_char
         (var ob)
         (int:u8 46)
@@ -831,14 +841,12 @@
         (var ob)
         (int:u8 95)
       )
-      (call_stmt emit_char
+      (comment "emit_n(ob, strtab, nm_ss, nm_sl);emit_char(ob, '_');")
+      (call_stmt emit_n
         (var ob)
-        (int:u8 102)
-      )
-      (comment "emit_int(ob, fi);emit_char(ob, '_');")
-      (call_stmt emit_int
-        (var ob)
-        (var fi)
+        (var strtab)
+        (var nm_ss)
+        (var nm_sl)
       )
       (call_stmt emit_char
         (var ob)
@@ -863,7 +871,13 @@
   )
   (fn asm_jump
     (params
-      (param fi
+      (param strtab
+        (type U8Array)
+      )
+      (param nm_ss
+        (type i32)
+      )
+      (param nm_sl
         (type i32)
       )
       (param target
@@ -901,9 +915,11 @@
         (var ob)
         (int:u8 32)
       )
-      (comment "e_pcref(fi,target,ob);emit_char(ob, 10u8);")
+      (comment "e_pcref(strtab,nm_ss,nm_sl,target,ob);emit_char(ob, 10u8);")
       (call_stmt e_pcref
-        (var fi)
+        (var strtab)
+        (var nm_ss)
+        (var nm_sl)
         (var target)
         (var ob)
       )
@@ -917,7 +933,13 @@
   )
   (fn asm_branch
     (params
-      (param fi
+      (param strtab
+        (type U8Array)
+      )
+      (param nm_ss
+        (type i32)
+      )
+      (param nm_sl
         (type i32)
       )
       (param cond_ne
@@ -1042,9 +1064,11 @@
         (var ob)
         (int:u8 32)
       )
-      (comment "e_pcref(fi,target,ob);emit_char(ob, 10u8);")
+      (comment "e_pcref(strtab,nm_ss,nm_sl,target,ob);emit_char(ob, 10u8);")
       (call_stmt e_pcref
-        (var fi)
+        (var strtab)
+        (var nm_ss)
+        (var nm_sl)
         (var target)
         (var ob)
       )
@@ -7532,7 +7556,7 @@
           (var ni)
         )
         (block
-          (comment "if is_jump_target(instrs,ibase,ni,pc)==1 { asm_pc_label(fi,pc,ob); }")
+          (comment "if is_jump_target(instrs,ibase,ni,pc)==1 { asm_pc_label(strtab,nm_ss,nm_sl,pc,ob); }")
           (if
             (binop ==
               (call is_jump_target
@@ -7545,7 +7569,9 @@
             )
             (block
               (call_stmt asm_pc_label
-                (var fi)
+                (var strtab)
+                (var nm_ss)
+                (var nm_sl)
                 (var pc)
                 (var ob)
               )
@@ -9553,7 +9579,7 @@
               )
             )
           )
-          (comment "if op==OP_JUMP { asm_jump(fi,ival,ob); }")
+          (comment "if op==OP_JUMP { asm_jump(strtab,nm_ss,nm_sl,ival,ob); }")
           (if
             (binop ==
               (var op)
@@ -9561,13 +9587,15 @@
             )
             (block
               (call_stmt asm_jump
-                (var fi)
+                (var strtab)
+                (var nm_ss)
+                (var nm_sl)
                 (var ival)
                 (var ob)
               )
             )
           )
-          (comment "if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(fi,1,ival,ob); }")
+          (comment "if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(strtab,nm_ss,nm_sl,1,ival,ob); }")
           (if
             (binop ==
               (var op)
@@ -9578,14 +9606,16 @@
                 (var ob)
               )
               (call_stmt asm_branch
-                (var fi)
+                (var strtab)
+                (var nm_ss)
+                (var nm_sl)
                 (int 1)
                 (var ival)
                 (var ob)
               )
             )
           )
-          (comment "if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(fi,0,ival,ob); }")
+          (comment "if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(strtab,nm_ss,nm_sl,0,ival,ob); }")
           (if
             (binop ==
               (var op)
@@ -9596,7 +9626,9 @@
                 (var ob)
               )
               (call_stmt asm_branch
-                (var fi)
+                (var strtab)
+                (var nm_ss)
+                (var nm_sl)
                 (int 0)
                 (var ival)
                 (var ob)

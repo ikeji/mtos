@@ -25,7 +25,7 @@ classify__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc7
+    j    .L_classify__i32_pc7
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -38,8 +38,8 @@ classify__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    j    .L_f0_pc23
-  .L_f0_pc7:
+    j    .L_classify__i32_pc23
+  .L_classify__i32_pc7:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -56,7 +56,7 @@ classify__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc14
+    j    .L_classify__i32_pc14
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -69,8 +69,8 @@ classify__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    j    .L_f0_pc23
-  .L_f0_pc14:
+    j    .L_classify__i32_pc23
+  .L_classify__i32_pc14:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -86,7 +86,7 @@ classify__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_f0_pc21
+    j    .L_classify__i32_pc21
 0:
     li   t0, 2
     addi sp, sp, -4
@@ -99,8 +99,8 @@ classify__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    j    .L_f0_pc23
-  .L_f0_pc21:
+    j    .L_classify__i32_pc23
+  .L_classify__i32_pc21:
     li   t0, 3
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -112,7 +112,7 @@ classify__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_f0_pc23:
+  .L_classify__i32_pc23:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)

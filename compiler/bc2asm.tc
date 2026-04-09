@@ -109,31 +109,31 @@ fn asm_epilogue(ob: StringBuffer) -> void {
     e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 10u8);
     return;
 }
-// "  .L_fFI_pcN:\n"  (fi = function index, avoids duplicate labels)
-fn asm_pc_label(fi: i32, pc: i32, ob: StringBuffer) -> void {
+// "  .L_FNAME_pcN:\n"  (uses mangled function name for globally unique labels)
+fn asm_pc_label(strtab: U8Array, nm_ss: i32, nm_sl: i32, pc: i32, ob: StringBuffer) -> void {
     emit_char(ob, ' ');emit_char(ob, ' ');
-    emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
-    emit_int(ob, fi);emit_char(ob, '_');
+    emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');
+    emit_n(ob, strtab, nm_ss, nm_sl);emit_char(ob, '_');
     emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);emit_char(ob, ':');emit_char(ob, 10u8);
     return;
 }
-// ".L_fFI_pcN" (without newline, used in jump targets)
-fn e_pcref(fi: i32, pc: i32, ob: StringBuffer) -> void {
-    emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');emit_char(ob, 'f');
-    emit_int(ob, fi);emit_char(ob, '_');
+// ".L_FNAME_pcN" (without newline, used in jump targets)
+fn e_pcref(strtab: U8Array, nm_ss: i32, nm_sl: i32, pc: i32, ob: StringBuffer) -> void {
+    emit_char(ob, '.');emit_char(ob, 'L');emit_char(ob, '_');
+    emit_n(ob, strtab, nm_ss, nm_sl);emit_char(ob, '_');
     emit_char(ob, 'p');emit_char(ob, 'c');emit_int(ob, pc);
     return;
 }
-// "    j    .L_fFI_pcN\n"
-fn asm_jump(fi: i32, target: i32, ob: StringBuffer) -> void {
+// "    j    .L_FNAME_pcN\n"
+fn asm_jump(strtab: U8Array, nm_ss: i32, nm_sl: i32, target: i32, ob: StringBuffer) -> void {
     e4(ob);emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
-    e_pcref(fi,target,ob);emit_char(ob, 10u8);
+    e_pcref(strtab,nm_ss,nm_sl,target,ob);emit_char(ob, 10u8);
     return;
 }
 // Emit conditional jump using inverted-branch + j pattern to avoid
 // B-type ±4KB range limit. cond_ne=1 means "jump if true" (jump_if),
 // cond_ne=0 means "jump if false" (jump_ifnot).
-fn asm_branch(fi: i32, cond_ne: i32, target: i32, ob: StringBuffer) -> void {
+fn asm_branch(strtab: U8Array, nm_ss: i32, nm_sl: i32, cond_ne: i32, target: i32, ob: StringBuffer) -> void {
     // Invert condition for short skip branch
     e4(ob);
     if cond_ne == 1 {
@@ -150,7 +150,7 @@ fn asm_branch(fi: i32, cond_ne: i32, target: i32, ob: StringBuffer) -> void {
     // j target
     e4(ob);
     emit_char(ob, 'j');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
-    e_pcref(fi,target,ob);emit_char(ob, 10u8);
+    e_pcref(strtab,nm_ss,nm_sl,target,ob);emit_char(ob, 10u8);
     // 0:
     emit_char(ob, '0');
     emit_char(ob, ':');emit_char(ob, 10u8);
@@ -765,7 +765,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
     // Instruction loop
     var pc: i32=0;
     while pc<ni {
-        if is_jump_target(instrs,ibase,ni,pc)==1 { asm_pc_label(fi,pc,ob); }
+        if is_jump_target(instrs,ibase,ni,pc)==1 { asm_pc_label(strtab,nm_ss,nm_sl,pc,ob); }
         var op: i32=ins_op(instrs,ibase,pc);
         var ival: i32=ins_ival(instrs,ibase,pc);
         var sss: i32=ins_ss(instrs,ibase,pc);
@@ -951,9 +951,9 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             // u32, i32: no-op
             asm_push_t0(ob);
         }
-        if op==OP_JUMP { asm_jump(fi,ival,ob); }
-        if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(fi,1,ival,ob); }
-        if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(fi,0,ival,ob); }
+        if op==OP_JUMP { asm_jump(strtab,nm_ss,nm_sl,ival,ob); }
+        if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(strtab,nm_ss,nm_sl,1,ival,ob); }
+        if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(strtab,nm_ss,nm_sl,0,ival,ob); }
 
         pc=pc+1;
     }
