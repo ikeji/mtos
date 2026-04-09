@@ -1494,7 +1494,11 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
     emit_string(sb, "__p"); emit_char(sb, ')'); emit_char(sb, 10u8);
     emit_indent(sb, indent + 3);
     emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
-    emit_string(sb, "U32Array"); emit_char(sb, ')'); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_string(sb, "U32Array"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3);
+    emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, ')'); emit_char(sb, 10u8);
     emit_indent(sb, indent + 2);
     emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
     emit_indent(sb, indent + 1);
