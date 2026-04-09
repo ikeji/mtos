@@ -97,17 +97,23 @@ for f in "${TC_FILES[@]}"; do
         rm -f "$actual"
     fi
 
-    # === Gen2 AST (used as input for Gen2 BC) ===
+    # === Gen2 AST vs Gen1 AST (ignoring comment nodes and whitespace) ===
     actual_gen2_ast=$(mktemp)
     t0=$(time_ms)
     run_parse_tc "$input" > "$actual_gen2_ast"
     elapsed=$(( $(time_ms) - t0 ))
     gen2_ast_size=$(wc -c < "$actual_gen2_ast")
-    if [ "$gen2_ast_size" -gt 10 ]; then
-        report_pass "tc/$f (AST - Gen2) [${gen2_ast_size}B]" "$elapsed"
+    # Normalize S-expression: strip comments, collapse whitespace around parens
+    gen1_norm=$(mktemp)
+    gen2_norm=$(mktemp)
+    sed 's/(comment [^)]*)//' "$golden_ast" | tr -s ' \t\n' ' ' | sed 's/ )/)/g; s/( /(/g' > "$gen1_norm"
+    sed 's/(comment [^)]*)//' "$actual_gen2_ast" | tr -s ' \t\n' ' ' | sed 's/ )/)/g; s/( /(/g' > "$gen2_norm"
+    if diff -u "$gen1_norm" "$gen2_norm" > /dev/null 2>&1; then
+        report_pass "tc/$f (AST - Gen2 vs Gen1) [${gen2_ast_size}B]" "$elapsed"
     else
-        report_fail_msg "tc/$f (AST - Gen2) [${elapsed}ms]" "empty or too small (${gen2_ast_size}B)"
+        report_fail_msg "tc/$f (AST - Gen2 vs Gen1) [${elapsed}ms]" "structure mismatch"
     fi
+    rm -f "$gen1_norm" "$gen2_norm"
 
     # === Gen2 BC/ASM and Gen3 (only for files without imports) ===
     has_import=$(grep -c '^import ' "$input" 2>/dev/null)
