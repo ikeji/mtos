@@ -23,7 +23,9 @@ classify__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f0_pc7
+    bnez t0, __skipn_0
+    j    .L_f0_pc7
+__skipn_0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -52,7 +54,9 @@ classify__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f0_pc14
+    bnez t0, __skipn_1
+    j    .L_f0_pc14
+__skipn_1:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -80,7 +84,9 @@ classify__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f0_pc21
+    bnez t0, __skipn_2
+    j    .L_f0_pc21
+__skipn_2:
     li   t0, 2
     addi sp, sp, -4
     sw   t0, 0(sp)

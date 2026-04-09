@@ -526,14 +526,28 @@ static void emit_fn(BcFunc *fn, int fi) {
         case OP_JUMP:
             E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
             break;
-        case OP_JUMP_IF:
+        case OP_JUMP_IF: {
+            /* jump_if: jump when t0 != 0
+               → skip j if t0 == 0, else fall through to j */
+            static int skip_id = 0;
             pop_t0();
-            E("    bnez t0, .L_f%d_pc%ld\n", fi, ins->ival);
+            E("    beqz t0, __skip_%d\n", skip_id);
+            E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
+            E("__skip_%d:\n", skip_id);
+            skip_id++;
             break;
-        case OP_JUMP_IFNOT:
+        }
+        case OP_JUMP_IFNOT: {
+            /* jump_ifnot: jump when t0 == 0
+               → skip j if t0 != 0, else fall through to j */
+            static int skip_id2 = 0;
             pop_t0();
-            E("    beqz t0, .L_f%d_pc%ld\n", fi, ins->ival);
+            E("    bnez t0, __skipn_%d\n", skip_id2);
+            E("    j    .L_f%d_pc%ld\n", fi, ins->ival);
+            E("__skipn_%d:\n", skip_id2);
+            skip_id2++;
             break;
+        }
 
         } /* switch */
     }

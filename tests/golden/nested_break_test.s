@@ -38,7 +38,9 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f0_pc33
+    bnez t0, __skipn_0
+    j    .L_f0_pc33
+__skipn_0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -60,7 +62,9 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f0_pc28
+    bnez t0, __skipn_1
+    j    .L_f0_pc28
+__skipn_1:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -76,7 +80,9 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, .L_f0_pc19
+    bnez t0, __skipn_2
+    j    .L_f0_pc19
+__skipn_2:
     j    .L_f0_pc28
   .L_f0_pc19:
     lw   t0, -12(s0)
