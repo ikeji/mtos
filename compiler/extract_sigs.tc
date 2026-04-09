@@ -17,6 +17,7 @@ var NK_RET: i32 = 5;
 var NK_TYPE: i32 = 6;
 var NK_BLOCK: i32 = 7;
 var NK_FIELD: i32 = 23;
+var NK_COMMENT: i32 = 26;
 var NK_UNKNOWN: i32 = 99;
 
 // Global state
@@ -119,6 +120,9 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
     if len == 7 {
         if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {
             return NK_PROGRAM;
+        }
+        if cmp4(atom,0, 'c','o','m','m') && cmp3(atom,4, 'e','n','t') {
+            return NK_COMMENT;
         }
     }
     return NK_UNKNOWN;
