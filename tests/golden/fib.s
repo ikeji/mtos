@@ -25,9 +25,9 @@ fib__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_0
+    bnez t0, 0f
     j    .L_f0_pc6
-__skip_0:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

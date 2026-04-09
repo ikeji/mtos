@@ -120,10 +120,6 @@
     (type i32)
     (int 30)
   )
-  (var_decl g_skip_id
-    (type i32)
-    (int 0)
-  )
   (var_decl g_in_pos
     (type i32)
     (int 0)
@@ -1007,40 +1003,14 @@
       (call_stmt ecomma
         (var ob)
       )
-      (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');")
+      (comment "emit_char(ob, '0');emit_char(ob, 'f');")
       (call_stmt emit_char
         (var ob)
-        (int:u8 95)
+        (int:u8 48)
       )
       (call_stmt emit_char
         (var ob)
-        (int:u8 95)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 115)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 107)
-      )
-      (comment "emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');")
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 105)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 112)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 95)
-      )
-      (comment "emit_int(ob, g_skip_id);")
-      (call_stmt emit_int
-        (var ob)
-        (var g_skip_id)
+        (int:u8 102)
       )
       (comment "emit_char(ob, 10u8);")
       (call_stmt emit_char
@@ -1082,40 +1052,10 @@
         (var ob)
         (int:u8 10)
       )
-      (comment "emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 's');emit_char(ob, 'k');")
+      (comment "emit_char(ob, '0');")
       (call_stmt emit_char
         (var ob)
-        (int:u8 95)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 95)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 115)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 107)
-      )
-      (comment "emit_char(ob, 'i');emit_char(ob, 'p');emit_char(ob, '_');")
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 105)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 112)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 95)
-      )
-      (comment "emit_int(ob, g_skip_id);")
-      (call_stmt emit_int
-        (var ob)
-        (var g_skip_id)
+        (int:u8 48)
       )
       (comment "emit_char(ob, ':');emit_char(ob, 10u8);")
       (call_stmt emit_char
@@ -1125,13 +1065,6 @@
       (call_stmt emit_char
         (var ob)
         (int:u8 10)
-      )
-      (comment "g_skip_id = g_skip_id + 1;")
-      (assign g_skip_id
-        (binop +
-          (var g_skip_id)
-          (int 1)
-        )
       )
       (comment "return;")
       (return)
@@ -9774,6 +9707,281 @@
       (type void)
     )
     (block
+      (comment "e4(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (comment "emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 46)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 116)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 101)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 120)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 116)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 10)
+      )
+      (comment "e4(ob);emit_string(ob, \".align 2\");emit_char(ob, 10u8);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str ".align 2")
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 10)
+      )
+      (comment "emit_char(ob, 10u8);")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 10)
+      )
+      (comment "var fi: i32=0;")
+      (var_decl fi
+        (type i32)
+        (int 0)
+      )
+      (comment "while fi<g_nfuncs {")
+      (while
+        (binop <
+          (var fi)
+          (var g_nfuncs)
+        )
+        (block
+          (comment "emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);")
+          (call_stmt emit_fn
+            (var strtab)
+            (var fns)
+            (var params_pool)
+            (var locals_pool)
+            (var instrs)
+            (var string_lits)
+            (var fi)
+            (var ob)
+          )
+          (comment "fi=fi+1;")
+          (assign fi
+            (binop +
+              (var fi)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "if g_nglobals > 0 {")
+      (if
+        (binop >
+          (var g_nglobals)
+          (int 0)
+        )
+        (block
+          (comment "e4(ob);")
+          (call_stmt e4
+            (var ob)
+          )
+          (comment "emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);")
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 46)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 100)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 97)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 116)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 97)
+          )
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 10)
+          )
+          (comment "var gi: i32=0;")
+          (var_decl gi
+            (type i32)
+            (int 0)
+          )
+          (comment "while gi<g_nglobals {")
+          (while
+            (binop <
+              (var gi)
+              (var g_nglobals)
+            )
+            (block
+              (comment "var nm_ss: i32=get(global_vars,(gi*4+0));")
+              (var_decl nm_ss
+                (type i32)
+                (call get
+                  (var global_vars)
+                  (binop +
+                    (binop *
+                      (var gi)
+                      (int 4)
+                    )
+                    (int 0)
+                  )
+                )
+              )
+              (comment "var nm_sl: i32=get(global_vars,(gi*4+1));")
+              (var_decl nm_sl
+                (type i32)
+                (call get
+                  (var global_vars)
+                  (binop +
+                    (binop *
+                      (var gi)
+                      (int 4)
+                    )
+                    (int 1)
+                  )
+                )
+              )
+              (comment "var initval: i32=get(global_inits,gi);")
+              (var_decl initval
+                (type i32)
+                (call get
+                  (var global_inits)
+                  (var gi)
+                )
+              )
+              (comment "e4(ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');")
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 46)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 103)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 108)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 111)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 98)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 108)
+              )
+              (comment "emit_char(ob, ' '); emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);")
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 32)
+              )
+              (call_stmt emit_n
+                (var ob)
+                (var strtab)
+                (var nm_ss)
+                (var nm_sl)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 10)
+              )
+              (comment "emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_char(ob, 10u8);")
+              (call_stmt emit_n
+                (var ob)
+                (var strtab)
+                (var nm_ss)
+                (var nm_sl)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 58)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 10)
+              )
+              (comment "e4(ob);")
+              (call_stmt e4
+                (var ob)
+              )
+              (comment "emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');")
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 46)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 119)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 111)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 114)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 100)
+              )
+              (comment "emit_char(ob, ' '); emit_int(ob, initval); emit_char(ob, 10u8);")
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 32)
+              )
+              (call_stmt emit_int
+                (var ob)
+                (var initval)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 10)
+              )
+              (comment "gi=gi+1;")
+              (assign gi
+                (binop +
+                  (var gi)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "emit_char(ob, 10u8);")
+          (call_stmt emit_char
+            (var ob)
+            (int:u8 10)
+          )
+        )
+      )
       (comment "if g_nstrings > 0 {")
       (if
         (binop >
@@ -9975,281 +10183,6 @@
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
-          )
-        )
-      )
-      (comment "if g_nglobals > 0 {")
-      (if
-        (binop >
-          (var g_nglobals)
-          (int 0)
-        )
-        (block
-          (comment "e4(ob);")
-          (call_stmt e4
-            (var ob)
-          )
-          (comment "emit_char(ob, '.');emit_char(ob, 'd');emit_char(ob, 'a');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 10u8);")
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 46)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 100)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 97)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 116)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 97)
-          )
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 10)
-          )
-          (comment "var gi: i32=0;")
-          (var_decl gi
-            (type i32)
-            (int 0)
-          )
-          (comment "while gi<g_nglobals {")
-          (while
-            (binop <
-              (var gi)
-              (var g_nglobals)
-            )
-            (block
-              (comment "var nm_ss: i32=get(global_vars,(gi*4+0));")
-              (var_decl nm_ss
-                (type i32)
-                (call get
-                  (var global_vars)
-                  (binop +
-                    (binop *
-                      (var gi)
-                      (int 4)
-                    )
-                    (int 0)
-                  )
-                )
-              )
-              (comment "var nm_sl: i32=get(global_vars,(gi*4+1));")
-              (var_decl nm_sl
-                (type i32)
-                (call get
-                  (var global_vars)
-                  (binop +
-                    (binop *
-                      (var gi)
-                      (int 4)
-                    )
-                    (int 1)
-                  )
-                )
-              )
-              (comment "var initval: i32=get(global_inits,gi);")
-              (var_decl initval
-                (type i32)
-                (call get
-                  (var global_inits)
-                  (var gi)
-                )
-              )
-              (comment "e4(ob);")
-              (call_stmt e4
-                (var ob)
-              )
-              (comment "emit_char(ob, '.');emit_char(ob, 'g');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'b');emit_char(ob, 'l');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 46)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 103)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 108)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 111)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 98)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 108)
-              )
-              (comment "emit_char(ob, ' '); emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, 10u8);")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 32)
-              )
-              (call_stmt emit_n
-                (var ob)
-                (var strtab)
-                (var nm_ss)
-                (var nm_sl)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 10)
-              )
-              (comment "emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_char(ob, 10u8);")
-              (call_stmt emit_n
-                (var ob)
-                (var strtab)
-                (var nm_ss)
-                (var nm_sl)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 58)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 10)
-              )
-              (comment "e4(ob);")
-              (call_stmt e4
-                (var ob)
-              )
-              (comment "emit_char(ob, '.');emit_char(ob, 'w');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'd');")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 46)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 119)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 111)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 114)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 100)
-              )
-              (comment "emit_char(ob, ' '); emit_int(ob, initval); emit_char(ob, 10u8);")
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 32)
-              )
-              (call_stmt emit_int
-                (var ob)
-                (var initval)
-              )
-              (call_stmt emit_char
-                (var ob)
-                (int:u8 10)
-              )
-              (comment "gi=gi+1;")
-              (assign gi
-                (binop +
-                  (var gi)
-                  (int 1)
-                )
-              )
-            )
-          )
-          (comment "emit_char(ob, 10u8);")
-          (call_stmt emit_char
-            (var ob)
-            (int:u8 10)
-          )
-        )
-      )
-      (comment "e4(ob);")
-      (call_stmt e4
-        (var ob)
-      )
-      (comment "emit_char(ob, '.');emit_char(ob, 't');emit_char(ob, 'e');emit_char(ob, 'x');emit_char(ob, 't');emit_char(ob, 10u8);")
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 46)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 116)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 101)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 120)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 116)
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 10)
-      )
-      (comment "e4(ob);emit_string(ob, \".align 2\");emit_char(ob, 10u8);")
-      (call_stmt e4
-        (var ob)
-      )
-      (call_stmt emit_string
-        (var ob)
-        (str ".align 2")
-      )
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 10)
-      )
-      (comment "emit_char(ob, 10u8);")
-      (call_stmt emit_char
-        (var ob)
-        (int:u8 10)
-      )
-      (comment "var fi: i32=0;")
-      (var_decl fi
-        (type i32)
-        (int 0)
-      )
-      (comment "while fi<g_nfuncs {")
-      (while
-        (binop <
-          (var fi)
-          (var g_nfuncs)
-        )
-        (block
-          (comment "emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);")
-          (call_stmt emit_fn
-            (var strtab)
-            (var fns)
-            (var params_pool)
-            (var locals_pool)
-            (var instrs)
-            (var string_lits)
-            (var fi)
-            (var ob)
-          )
-          (comment "fi=fi+1;")
-          (assign fi
-            (binop +
-              (var fi)
-              (int 1)
-            )
           )
         )
       )

@@ -1,11 +1,3 @@
-    .data
-    .globl g_pos
-g_pos:
-    .word 0
-    .globl g_len
-g_len:
-    .word 0
-
     .text
     .align 2
 
@@ -33,9 +25,9 @@ is_digit__u8:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_0
+    bnez t0, 0f
     j    .L_f0_pc10
-__skip_0:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -51,9 +43,9 @@ __skip_0:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_1
+    bnez t0, 0f
     j    .L_f0_pc10
-__skip_1:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -102,9 +94,9 @@ is_space__u8:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_2
+    beqz t0, 0f
     j    .L_f1_pc10
-__skip_2:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -120,9 +112,9 @@ __skip_2:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_3
+    beqz t0, 0f
     j    .L_f1_pc10
-__skip_3:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -173,9 +165,9 @@ cur_char__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_4
+    bnez t0, 0f
     j    .L_f2_pc6
-__skip_4:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -242,9 +234,9 @@ skip_spaces__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_5
+    bnez t0, 0f
     j    .L_f3_pc10
-__skip_5:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -260,9 +252,9 @@ __skip_5:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_6
+    bnez t0, 0f
     j    .L_f3_pc10
-__skip_6:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -274,9 +266,9 @@ __skip_6:
   .L_f3_pc11:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_7
+    bnez t0, 0f
     j    .L_f3_pc17
-__skip_7:
+0:
     la   t1, g_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -350,9 +342,9 @@ parse_num__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_8
+    bnez t0, 0f
     j    .L_f4_pc15
-__skip_8:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -368,9 +360,9 @@ __skip_8:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_9
+    bnez t0, 0f
     j    .L_f4_pc15
-__skip_9:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -382,9 +374,9 @@ __skip_9:
   .L_f4_pc16:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_10
+    bnez t0, 0f
     j    .L_f4_pc32
-__skip_10:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -513,9 +505,9 @@ parse_mul__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_11
+    bnez t0, 0f
     j    .L_f5_pc26
-__skip_11:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -536,9 +528,9 @@ __skip_11:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_12
+    beqz t0, 0f
     j    .L_f5_pc22
-__skip_12:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -559,9 +551,9 @@ __skip_12:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_13
+    beqz t0, 0f
     j    .L_f5_pc22
-__skip_13:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -573,9 +565,9 @@ __skip_13:
   .L_f5_pc23:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_14
+    bnez t0, 0f
     j    .L_f5_pc26
-__skip_14:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -587,9 +579,9 @@ __skip_14:
   .L_f5_pc27:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_15
+    bnez t0, 0f
     j    .L_f5_pc55
-__skip_15:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -644,9 +636,9 @@ __skip_15:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_16
+    bnez t0, 0f
     j    .L_f5_pc47
-__skip_16:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -758,9 +750,9 @@ parse_add__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_17
+    bnez t0, 0f
     j    .L_f6_pc26
-__skip_17:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -781,9 +773,9 @@ __skip_17:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_18
+    beqz t0, 0f
     j    .L_f6_pc22
-__skip_18:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -804,9 +796,9 @@ __skip_18:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_19
+    beqz t0, 0f
     j    .L_f6_pc22
-__skip_19:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -818,9 +810,9 @@ __skip_19:
   .L_f6_pc23:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_20
+    bnez t0, 0f
     j    .L_f6_pc26
-__skip_20:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -832,9 +824,9 @@ __skip_20:
   .L_f6_pc27:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_21
+    bnez t0, 0f
     j    .L_f6_pc55
-__skip_21:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -889,9 +881,9 @@ __skip_21:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_22
+    bnez t0, 0f
     j    .L_f6_pc47
-__skip_22:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1041,4 +1033,12 @@ main:
     addi sp, t0, 0
     ret
     # end of main
+
+    .data
+    .globl g_pos
+g_pos:
+    .word 0
+    .globl g_len
+g_len:
+    .word 0
 

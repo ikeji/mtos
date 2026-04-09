@@ -1,9 +1,3 @@
-    .section .rodata
-    .align 4
-__tc_strobj0:
-    .word 13
-    .string "Hello, World\n"
-
     .text
     .align 2
 
@@ -62,9 +56,9 @@ to_buf__StringLiteral:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_0
+    bnez t0, 0f
     j    .L_f0_pc24
-__skip_0:
+0:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -189,4 +183,10 @@ main:
     addi sp, t0, 0
     ret
     # end of main
+
+    .section .rodata
+    .align 4
+__tc_strobj0:
+    .word 13
+    .string "Hello, World\n"
 

@@ -1,191 +1,3 @@
-    .data
-    .globl OP_PUSH_INT
-OP_PUSH_INT:
-    .word 1
-    .globl OP_PUSH_STR
-OP_PUSH_STR:
-    .word 2
-    .globl OP_LOAD
-OP_LOAD:
-    .word 3
-    .globl OP_STORE
-OP_STORE:
-    .word 4
-    .globl OP_CALL
-OP_CALL:
-    .word 5
-    .globl OP_RETURN
-OP_RETURN:
-    .word 6
-    .globl OP_RETURN_VOID
-OP_RETURN_VOID:
-    .word 7
-    .globl OP_POP
-OP_POP:
-    .word 8
-    .globl OP_ADD
-OP_ADD:
-    .word 9
-    .globl OP_SUB
-OP_SUB:
-    .word 10
-    .globl OP_MUL
-OP_MUL:
-    .word 11
-    .globl OP_DIV
-OP_DIV:
-    .word 12
-    .globl OP_MOD
-OP_MOD:
-    .word 13
-    .globl OP_AND
-OP_AND:
-    .word 14
-    .globl OP_OR
-OP_OR:
-    .word 15
-    .globl OP_XOR
-OP_XOR:
-    .word 16
-    .globl OP_SHL
-OP_SHL:
-    .word 17
-    .globl OP_SHR
-OP_SHR:
-    .word 18
-    .globl OP_EQ
-OP_EQ:
-    .word 19
-    .globl OP_NE
-OP_NE:
-    .word 20
-    .globl OP_LT
-OP_LT:
-    .word 21
-    .globl OP_LE
-OP_LE:
-    .word 22
-    .globl OP_GT
-OP_GT:
-    .word 23
-    .globl OP_GE
-OP_GE:
-    .word 24
-    .globl OP_NEG
-OP_NEG:
-    .word 25
-    .globl OP_LNOT
-OP_LNOT:
-    .word 26
-    .globl OP_CAST
-OP_CAST:
-    .word 27
-    .globl OP_JUMP
-OP_JUMP:
-    .word 28
-    .globl OP_JUMP_IF
-OP_JUMP_IF:
-    .word 29
-    .globl OP_JUMP_IFNOT
-OP_JUMP_IFNOT:
-    .word 30
-    .globl HK_U8
-HK_U8:
-    .word 1
-    .globl HK_I32
-HK_I32:
-    .word 2
-    .globl HK_STR
-HK_STR:
-    .word 3
-    .globl TAG_INT
-TAG_INT:
-    .word 0
-    .globl TAG_REF
-TAG_REF:
-    .word 1
-    .globl g_cur_func
-g_cur_func:
-    .word 0
-    .globl g_cur_pc
-g_cur_pc:
-    .word 0
-    .globl g_sp
-g_sp:
-    .word 0
-    .globl g_csp
-g_csp:
-    .word 0
-    .globl g_frame_base
-g_frame_base:
-    .word 0
-    .globl g_vp
-g_vp:
-    .word 0
-    .globl g_pop_ival
-g_pop_ival:
-    .word 0
-    .globl g_pop_tag
-g_pop_tag:
-    .word 0
-    .globl g_cs_func
-g_cs_func:
-    .word 0
-    .globl g_cs_pc
-g_cs_pc:
-    .word 0
-    .globl g_cs_fbase
-g_cs_fbase:
-    .word 0
-    .globl g_cs_vp
-g_cs_vp:
-    .word 0
-    .globl g_cs_sp
-g_cs_sp:
-    .word 0
-    .globl g_prog_stdin_pos
-g_prog_stdin_pos:
-    .word 0
-    .globl g_prog_stdin_len
-g_prog_stdin_len:
-    .word 0
-    .globl g_nfuncs
-g_nfuncs:
-    .word 0
-    .globl g_nparams
-g_nparams:
-    .word 0
-    .globl g_nlocals
-g_nlocals:
-    .word 0
-    .globl g_ninstrs
-g_ninstrs:
-    .word 0
-    .globl g_nglobals
-g_nglobals:
-    .word 0
-    .globl g_nstrings
-g_nstrings:
-    .word 0
-    .globl g_stab_pos
-g_stab_pos:
-    .word 0
-    .globl g_in_pos
-g_in_pos:
-    .word 0
-    .globl g_in_len
-g_in_len:
-    .word 0
-    .globl g_heap_bytes_top
-g_heap_bytes_top:
-    .word 0
-    .globl g_heap_i32s_top
-g_heap_i32s_top:
-    .word 0
-    .globl g_heap_obj_count
-g_heap_obj_count:
-    .word 0
-
     .text
     .align 2
 
@@ -218,9 +30,9 @@ stab_eq__U8Array__i32__i32__i32__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_0
+    bnez t0, 0f
     j    .L_f0_pc6
-__skip_0:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -254,9 +66,9 @@ __skip_0:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_1
+    bnez t0, 0f
     j    .L_f0_pc31
-__skip_1:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -308,9 +120,9 @@ __skip_1:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_2
+    bnez t0, 0f
     j    .L_f0_pc26
-__skip_2:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -384,9 +196,9 @@ in_cur__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_3
+    bnez t0, 0f
     j    .L_f1_pc6
-__skip_3:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -451,9 +263,9 @@ is_ws__u8:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_4
+    beqz t0, 0f
     j    .L_f2_pc10
-__skip_4:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -469,9 +281,9 @@ __skip_4:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_5
+    beqz t0, 0f
     j    .L_f2_pc10
-__skip_5:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -483,9 +295,9 @@ __skip_5:
   .L_f2_pc11:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_6
+    beqz t0, 0f
     j    .L_f2_pc18
-__skip_6:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -501,9 +313,9 @@ __skip_6:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_7
+    beqz t0, 0f
     j    .L_f2_pc18
-__skip_7:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -515,9 +327,9 @@ __skip_7:
   .L_f2_pc19:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_8
+    beqz t0, 0f
     j    .L_f2_pc26
-__skip_8:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -533,9 +345,9 @@ __skip_8:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_9
+    beqz t0, 0f
     j    .L_f2_pc26
-__skip_9:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -586,9 +398,9 @@ skip_spaces__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_10
+    bnez t0, 0f
     j    .L_f3_pc20
-__skip_10:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -609,9 +421,9 @@ __skip_10:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_11
+    beqz t0, 0f
     j    .L_f3_pc16
-__skip_11:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -632,9 +444,9 @@ __skip_11:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_12
+    beqz t0, 0f
     j    .L_f3_pc16
-__skip_12:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -646,9 +458,9 @@ __skip_12:
   .L_f3_pc17:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_13
+    bnez t0, 0f
     j    .L_f3_pc20
-__skip_13:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -660,9 +472,9 @@ __skip_13:
   .L_f3_pc21:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_14
+    bnez t0, 0f
     j    .L_f3_pc27
-__skip_14:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -720,9 +532,9 @@ skip_line__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_15
+    bnez t0, 0f
     j    .L_f4_pc11
-__skip_15:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -743,9 +555,9 @@ __skip_15:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_16
+    bnez t0, 0f
     j    .L_f4_pc11
-__skip_16:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -757,9 +569,9 @@ __skip_16:
   .L_f4_pc12:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_17
+    bnez t0, 0f
     j    .L_f4_pc18
-__skip_17:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -795,9 +607,9 @@ __skip_17:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_18
+    bnez t0, 0f
     j    .L_f4_pc26
-__skip_18:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -872,9 +684,9 @@ next_tok__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_19
+    bnez t0, 0f
     j    .L_f5_pc16
-__skip_19:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -895,9 +707,9 @@ __skip_19:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_20
+    bnez t0, 0f
     j    .L_f5_pc16
-__skip_20:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -909,9 +721,9 @@ __skip_20:
   .L_f5_pc17:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_21
+    bnez t0, 0f
     j    .L_f5_pc33
-__skip_21:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1095,9 +907,9 @@ int_from_stab__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_22
+    bnez t0, 0f
     j    .L_f8_pc16
-__skip_22:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1122,9 +934,9 @@ __skip_22:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_23
+    bnez t0, 0f
     j    .L_f8_pc16
-__skip_23:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1136,9 +948,9 @@ __skip_23:
   .L_f8_pc17:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_24
+    bnez t0, 0f
     j    .L_f8_pc22
-__skip_24:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1173,9 +985,9 @@ __skip_24:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_25
+    bnez t0, 0f
     j    .L_f8_pc60
-__skip_25:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1215,9 +1027,9 @@ __skip_25:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_26
+    bnez t0, 0f
     j    .L_f8_pc44
-__skip_26:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1233,9 +1045,9 @@ __skip_26:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_27
+    bnez t0, 0f
     j    .L_f8_pc44
-__skip_27:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1247,9 +1059,9 @@ __skip_27:
   .L_f8_pc45:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_28
+    bnez t0, 0f
     j    .L_f8_pc55
-__skip_28:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1320,9 +1132,9 @@ __skip_28:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_29
+    bnez t0, 0f
     j    .L_f8_pc68
-__skip_29:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1405,9 +1217,9 @@ read_strlit__U8Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_30
+    bnez t0, 0f
     j    .L_f9_pc13
-__skip_30:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1428,9 +1240,9 @@ __skip_30:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_31
+    bnez t0, 0f
     j    .L_f9_pc13
-__skip_31:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1442,9 +1254,9 @@ __skip_31:
   .L_f9_pc14:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_32
+    bnez t0, 0f
     j    .L_f9_pc19
-__skip_32:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -1485,9 +1297,9 @@ __skip_32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_33
+    bnez t0, 0f
     j    .L_f9_pc31
-__skip_33:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -1504,9 +1316,9 @@ __skip_33:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_34
+    bnez t0, 0f
     j    .L_f9_pc31
-__skip_34:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1518,9 +1330,9 @@ __skip_34:
   .L_f9_pc32:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_35
+    bnez t0, 0f
     j    .L_f9_pc245
-__skip_35:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1570,9 +1382,9 @@ __skip_35:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_36
+    bnez t0, 0f
     j    .L_f9_pc50
-__skip_36:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1601,9 +1413,9 @@ __skip_36:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_37
+    bnez t0, 0f
     j    .L_f9_pc60
-__skip_37:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1619,9 +1431,9 @@ __skip_37:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_38
+    bnez t0, 0f
     j    .L_f9_pc60
-__skip_38:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1633,9 +1445,9 @@ __skip_38:
   .L_f9_pc61:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_39
+    bnez t0, 0f
     j    .L_f9_pc231
-__skip_39:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1685,9 +1497,9 @@ __skip_39:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_40
+    bnez t0, 0f
     j    .L_f9_pc77
-__skip_40:
+0:
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1710,9 +1522,9 @@ __skip_40:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_41
+    bnez t0, 0f
     j    .L_f9_pc83
-__skip_41:
+0:
     li   t0, 13
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1735,9 +1547,9 @@ __skip_41:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_42
+    bnez t0, 0f
     j    .L_f9_pc89
-__skip_42:
+0:
     li   t0, 9
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1760,9 +1572,9 @@ __skip_42:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_43
+    bnez t0, 0f
     j    .L_f9_pc220
-__skip_43:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1846,9 +1658,9 @@ __skip_43:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_44
+    bnez t0, 0f
     j    .L_f9_pc121
-__skip_44:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1864,9 +1676,9 @@ __skip_44:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_45
+    bnez t0, 0f
     j    .L_f9_pc121
-__skip_45:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1878,9 +1690,9 @@ __skip_45:
   .L_f9_pc122:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_46
+    bnez t0, 0f
     j    .L_f9_pc128
-__skip_46:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1916,9 +1728,9 @@ __skip_46:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_47
+    bnez t0, 0f
     j    .L_f9_pc138
-__skip_47:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1934,9 +1746,9 @@ __skip_47:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_48
+    bnez t0, 0f
     j    .L_f9_pc138
-__skip_48:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1948,9 +1760,9 @@ __skip_48:
   .L_f9_pc139:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_49
+    bnez t0, 0f
     j    .L_f9_pc145
-__skip_49:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1986,9 +1798,9 @@ __skip_49:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_50
+    bnez t0, 0f
     j    .L_f9_pc155
-__skip_50:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2004,9 +1816,9 @@ __skip_50:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_51
+    bnez t0, 0f
     j    .L_f9_pc155
-__skip_51:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2018,9 +1830,9 @@ __skip_51:
   .L_f9_pc156:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_52
+    bnez t0, 0f
     j    .L_f9_pc162
-__skip_52:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2056,9 +1868,9 @@ __skip_52:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_53
+    bnez t0, 0f
     j    .L_f9_pc172
-__skip_53:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2074,9 +1886,9 @@ __skip_53:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_54
+    bnez t0, 0f
     j    .L_f9_pc172
-__skip_54:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2088,9 +1900,9 @@ __skip_54:
   .L_f9_pc173:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_55
+    bnez t0, 0f
     j    .L_f9_pc179
-__skip_55:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2126,9 +1938,9 @@ __skip_55:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_56
+    bnez t0, 0f
     j    .L_f9_pc189
-__skip_56:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2144,9 +1956,9 @@ __skip_56:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_57
+    bnez t0, 0f
     j    .L_f9_pc189
-__skip_57:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2158,9 +1970,9 @@ __skip_57:
   .L_f9_pc190:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_58
+    bnez t0, 0f
     j    .L_f9_pc196
-__skip_58:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2196,9 +2008,9 @@ __skip_58:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_59
+    bnez t0, 0f
     j    .L_f9_pc206
-__skip_59:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2214,9 +2026,9 @@ __skip_59:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_60
+    bnez t0, 0f
     j    .L_f9_pc206
-__skip_60:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2228,9 +2040,9 @@ __skip_60:
   .L_f9_pc207:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_61
+    bnez t0, 0f
     j    .L_f9_pc213
-__skip_61:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2338,9 +2150,9 @@ __skip_61:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_62
+    bnez t0, 0f
     j    .L_f9_pc244
-__skip_62:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2458,9 +2270,9 @@ classify_op__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_63
+    bnez t0, 0f
     j    .L_f10_pc18
-__skip_63:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2491,9 +2303,9 @@ __skip_63:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_64
+    bnez t0, 0f
     j    .L_f10_pc28
-__skip_64:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2533,9 +2345,9 @@ __skip_64:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_65
+    bnez t0, 0f
     j    .L_f10_pc38
-__skip_65:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2575,9 +2387,9 @@ __skip_65:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_66
+    bnez t0, 0f
     j    .L_f10_pc48
-__skip_66:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2617,9 +2429,9 @@ __skip_66:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_67
+    bnez t0, 0f
     j    .L_f10_pc58
-__skip_67:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2660,9 +2472,9 @@ __skip_67:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_68
+    bnez t0, 0f
     j    .L_f10_pc160
-__skip_68:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2678,9 +2490,9 @@ __skip_68:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_69
+    bnez t0, 0f
     j    .L_f10_pc72
-__skip_69:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2696,9 +2508,9 @@ __skip_69:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_70
+    bnez t0, 0f
     j    .L_f10_pc72
-__skip_70:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2710,9 +2522,9 @@ __skip_70:
   .L_f10_pc73:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_71
+    bnez t0, 0f
     j    .L_f10_pc76
-__skip_71:
+0:
     la   t1, OP_OR
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -2741,9 +2553,9 @@ __skip_71:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_72
+    bnez t0, 0f
     j    .L_f10_pc86
-__skip_72:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2759,9 +2571,9 @@ __skip_72:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_73
+    bnez t0, 0f
     j    .L_f10_pc86
-__skip_73:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2773,9 +2585,9 @@ __skip_73:
   .L_f10_pc87:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_74
+    bnez t0, 0f
     j    .L_f10_pc90
-__skip_74:
+0:
     la   t1, OP_EQ
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -2804,9 +2616,9 @@ __skip_74:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_75
+    bnez t0, 0f
     j    .L_f10_pc100
-__skip_75:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2822,9 +2634,9 @@ __skip_75:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_76
+    bnez t0, 0f
     j    .L_f10_pc100
-__skip_76:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2836,9 +2648,9 @@ __skip_76:
   .L_f10_pc101:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_77
+    bnez t0, 0f
     j    .L_f10_pc104
-__skip_77:
+0:
     la   t1, OP_NE
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -2867,9 +2679,9 @@ __skip_77:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_78
+    bnez t0, 0f
     j    .L_f10_pc114
-__skip_78:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2885,9 +2697,9 @@ __skip_78:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_79
+    bnez t0, 0f
     j    .L_f10_pc114
-__skip_79:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2899,9 +2711,9 @@ __skip_79:
   .L_f10_pc115:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_80
+    bnez t0, 0f
     j    .L_f10_pc118
-__skip_80:
+0:
     la   t1, OP_LT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -2930,9 +2742,9 @@ __skip_80:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_81
+    bnez t0, 0f
     j    .L_f10_pc128
-__skip_81:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2948,9 +2760,9 @@ __skip_81:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_82
+    bnez t0, 0f
     j    .L_f10_pc128
-__skip_82:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -2962,9 +2774,9 @@ __skip_82:
   .L_f10_pc129:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_83
+    bnez t0, 0f
     j    .L_f10_pc132
-__skip_83:
+0:
     la   t1, OP_LE
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -2993,9 +2805,9 @@ __skip_83:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_84
+    bnez t0, 0f
     j    .L_f10_pc142
-__skip_84:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3011,9 +2823,9 @@ __skip_84:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_85
+    bnez t0, 0f
     j    .L_f10_pc142
-__skip_85:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3025,9 +2837,9 @@ __skip_85:
   .L_f10_pc143:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_86
+    bnez t0, 0f
     j    .L_f10_pc146
-__skip_86:
+0:
     la   t1, OP_GT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3056,9 +2868,9 @@ __skip_86:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_87
+    bnez t0, 0f
     j    .L_f10_pc156
-__skip_87:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3074,9 +2886,9 @@ __skip_87:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_88
+    bnez t0, 0f
     j    .L_f10_pc156
-__skip_88:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3088,9 +2900,9 @@ __skip_88:
   .L_f10_pc157:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_89
+    bnez t0, 0f
     j    .L_f10_pc160
-__skip_89:
+0:
     la   t1, OP_GE
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3119,9 +2931,9 @@ __skip_89:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_90
+    bnez t0, 0f
     j    .L_f10_pc406
-__skip_90:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3137,9 +2949,9 @@ __skip_90:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_91
+    bnez t0, 0f
     j    .L_f10_pc174
-__skip_91:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3155,9 +2967,9 @@ __skip_91:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_92
+    bnez t0, 0f
     j    .L_f10_pc174
-__skip_92:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3169,9 +2981,9 @@ __skip_92:
   .L_f10_pc175:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_93
+    bnez t0, 0f
     j    .L_f10_pc182
-__skip_93:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3187,9 +2999,9 @@ __skip_93:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_94
+    bnez t0, 0f
     j    .L_f10_pc182
-__skip_94:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3201,9 +3013,9 @@ __skip_94:
   .L_f10_pc183:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_95
+    bnez t0, 0f
     j    .L_f10_pc186
-__skip_95:
+0:
     la   t1, OP_ADD
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3232,9 +3044,9 @@ __skip_95:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_96
+    bnez t0, 0f
     j    .L_f10_pc196
-__skip_96:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3250,9 +3062,9 @@ __skip_96:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_97
+    bnez t0, 0f
     j    .L_f10_pc196
-__skip_97:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3264,9 +3076,9 @@ __skip_97:
   .L_f10_pc197:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_98
+    bnez t0, 0f
     j    .L_f10_pc204
-__skip_98:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3282,9 +3094,9 @@ __skip_98:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_99
+    bnez t0, 0f
     j    .L_f10_pc204
-__skip_99:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3296,9 +3108,9 @@ __skip_99:
   .L_f10_pc205:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_100
+    bnez t0, 0f
     j    .L_f10_pc208
-__skip_100:
+0:
     la   t1, OP_SUB
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3327,9 +3139,9 @@ __skip_100:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_101
+    bnez t0, 0f
     j    .L_f10_pc218
-__skip_101:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3345,9 +3157,9 @@ __skip_101:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_102
+    bnez t0, 0f
     j    .L_f10_pc218
-__skip_102:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3359,9 +3171,9 @@ __skip_102:
   .L_f10_pc219:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_103
+    bnez t0, 0f
     j    .L_f10_pc226
-__skip_103:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3377,9 +3189,9 @@ __skip_103:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_104
+    bnez t0, 0f
     j    .L_f10_pc226
-__skip_104:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3391,9 +3203,9 @@ __skip_104:
   .L_f10_pc227:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_105
+    bnez t0, 0f
     j    .L_f10_pc230
-__skip_105:
+0:
     la   t1, OP_MUL
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3422,9 +3234,9 @@ __skip_105:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_106
+    bnez t0, 0f
     j    .L_f10_pc240
-__skip_106:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3440,9 +3252,9 @@ __skip_106:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_107
+    bnez t0, 0f
     j    .L_f10_pc240
-__skip_107:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3454,9 +3266,9 @@ __skip_107:
   .L_f10_pc241:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_108
+    bnez t0, 0f
     j    .L_f10_pc248
-__skip_108:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3472,9 +3284,9 @@ __skip_108:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_109
+    bnez t0, 0f
     j    .L_f10_pc248
-__skip_109:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3486,9 +3298,9 @@ __skip_109:
   .L_f10_pc249:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_110
+    bnez t0, 0f
     j    .L_f10_pc252
-__skip_110:
+0:
     la   t1, OP_DIV
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3517,9 +3329,9 @@ __skip_110:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_111
+    bnez t0, 0f
     j    .L_f10_pc262
-__skip_111:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3535,9 +3347,9 @@ __skip_111:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_112
+    bnez t0, 0f
     j    .L_f10_pc262
-__skip_112:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3549,9 +3361,9 @@ __skip_112:
   .L_f10_pc263:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_113
+    bnez t0, 0f
     j    .L_f10_pc270
-__skip_113:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3567,9 +3379,9 @@ __skip_113:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_114
+    bnez t0, 0f
     j    .L_f10_pc270
-__skip_114:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3581,9 +3393,9 @@ __skip_114:
   .L_f10_pc271:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_115
+    bnez t0, 0f
     j    .L_f10_pc274
-__skip_115:
+0:
     la   t1, OP_MOD
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3612,9 +3424,9 @@ __skip_115:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_116
+    bnez t0, 0f
     j    .L_f10_pc284
-__skip_116:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3630,9 +3442,9 @@ __skip_116:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_117
+    bnez t0, 0f
     j    .L_f10_pc284
-__skip_117:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3644,9 +3456,9 @@ __skip_117:
   .L_f10_pc285:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_118
+    bnez t0, 0f
     j    .L_f10_pc292
-__skip_118:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3662,9 +3474,9 @@ __skip_118:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_119
+    bnez t0, 0f
     j    .L_f10_pc292
-__skip_119:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3676,9 +3488,9 @@ __skip_119:
   .L_f10_pc293:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_120
+    bnez t0, 0f
     j    .L_f10_pc296
-__skip_120:
+0:
     la   t1, OP_AND
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3707,9 +3519,9 @@ __skip_120:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_121
+    bnez t0, 0f
     j    .L_f10_pc306
-__skip_121:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3725,9 +3537,9 @@ __skip_121:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_122
+    bnez t0, 0f
     j    .L_f10_pc306
-__skip_122:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3739,9 +3551,9 @@ __skip_122:
   .L_f10_pc307:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_123
+    bnez t0, 0f
     j    .L_f10_pc314
-__skip_123:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3757,9 +3569,9 @@ __skip_123:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_124
+    bnez t0, 0f
     j    .L_f10_pc314
-__skip_124:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3771,9 +3583,9 @@ __skip_124:
   .L_f10_pc315:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_125
+    bnez t0, 0f
     j    .L_f10_pc318
-__skip_125:
+0:
     la   t1, OP_XOR
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3802,9 +3614,9 @@ __skip_125:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_126
+    bnez t0, 0f
     j    .L_f10_pc328
-__skip_126:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3820,9 +3632,9 @@ __skip_126:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_127
+    bnez t0, 0f
     j    .L_f10_pc328
-__skip_127:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3834,9 +3646,9 @@ __skip_127:
   .L_f10_pc329:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_128
+    bnez t0, 0f
     j    .L_f10_pc336
-__skip_128:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3852,9 +3664,9 @@ __skip_128:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_129
+    bnez t0, 0f
     j    .L_f10_pc336
-__skip_129:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3866,9 +3678,9 @@ __skip_129:
   .L_f10_pc337:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_130
+    bnez t0, 0f
     j    .L_f10_pc340
-__skip_130:
+0:
     la   t1, OP_SHL
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3897,9 +3709,9 @@ __skip_130:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_131
+    bnez t0, 0f
     j    .L_f10_pc350
-__skip_131:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3915,9 +3727,9 @@ __skip_131:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_132
+    bnez t0, 0f
     j    .L_f10_pc350
-__skip_132:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3929,9 +3741,9 @@ __skip_132:
   .L_f10_pc351:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_133
+    bnez t0, 0f
     j    .L_f10_pc358
-__skip_133:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3947,9 +3759,9 @@ __skip_133:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_134
+    bnez t0, 0f
     j    .L_f10_pc358
-__skip_134:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3961,9 +3773,9 @@ __skip_134:
   .L_f10_pc359:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_135
+    bnez t0, 0f
     j    .L_f10_pc362
-__skip_135:
+0:
     la   t1, OP_SHR
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -3992,9 +3804,9 @@ __skip_135:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_136
+    bnez t0, 0f
     j    .L_f10_pc372
-__skip_136:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4010,9 +3822,9 @@ __skip_136:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_137
+    bnez t0, 0f
     j    .L_f10_pc372
-__skip_137:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4024,9 +3836,9 @@ __skip_137:
   .L_f10_pc373:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_138
+    bnez t0, 0f
     j    .L_f10_pc380
-__skip_138:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4042,9 +3854,9 @@ __skip_138:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_139
+    bnez t0, 0f
     j    .L_f10_pc380
-__skip_139:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4056,9 +3868,9 @@ __skip_139:
   .L_f10_pc381:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_140
+    bnez t0, 0f
     j    .L_f10_pc384
-__skip_140:
+0:
     la   t1, OP_POP
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -4087,9 +3899,9 @@ __skip_140:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_141
+    bnez t0, 0f
     j    .L_f10_pc394
-__skip_141:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4105,9 +3917,9 @@ __skip_141:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_142
+    bnez t0, 0f
     j    .L_f10_pc394
-__skip_142:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4119,9 +3931,9 @@ __skip_142:
   .L_f10_pc395:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_143
+    bnez t0, 0f
     j    .L_f10_pc402
-__skip_143:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4137,9 +3949,9 @@ __skip_143:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_144
+    bnez t0, 0f
     j    .L_f10_pc402
-__skip_144:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4151,9 +3963,9 @@ __skip_144:
   .L_f10_pc403:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_145
+    bnez t0, 0f
     j    .L_f10_pc406
-__skip_145:
+0:
     la   t1, OP_NEG
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -4182,9 +3994,9 @@ __skip_145:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_146
+    bnez t0, 0f
     j    .L_f10_pc560
-__skip_146:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4200,9 +4012,9 @@ __skip_146:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_147
+    bnez t0, 0f
     j    .L_f10_pc420
-__skip_147:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4218,9 +4030,9 @@ __skip_147:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_148
+    bnez t0, 0f
     j    .L_f10_pc420
-__skip_148:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4232,9 +4044,9 @@ __skip_148:
   .L_f10_pc421:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_149
+    bnez t0, 0f
     j    .L_f10_pc428
-__skip_149:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4250,9 +4062,9 @@ __skip_149:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_150
+    bnez t0, 0f
     j    .L_f10_pc428
-__skip_150:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4264,9 +4076,9 @@ __skip_150:
   .L_f10_pc429:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_151
+    bnez t0, 0f
     j    .L_f10_pc436
-__skip_151:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4282,9 +4094,9 @@ __skip_151:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_152
+    bnez t0, 0f
     j    .L_f10_pc436
-__skip_152:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4296,9 +4108,9 @@ __skip_152:
   .L_f10_pc437:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_153
+    bnez t0, 0f
     j    .L_f10_pc440
-__skip_153:
+0:
     la   t1, OP_LNOT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -4327,9 +4139,9 @@ __skip_153:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_154
+    bnez t0, 0f
     j    .L_f10_pc450
-__skip_154:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4345,9 +4157,9 @@ __skip_154:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_155
+    bnez t0, 0f
     j    .L_f10_pc450
-__skip_155:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4359,9 +4171,9 @@ __skip_155:
   .L_f10_pc451:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_156
+    bnez t0, 0f
     j    .L_f10_pc458
-__skip_156:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4377,9 +4189,9 @@ __skip_156:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_157
+    bnez t0, 0f
     j    .L_f10_pc458
-__skip_157:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4391,9 +4203,9 @@ __skip_157:
   .L_f10_pc459:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_158
+    bnez t0, 0f
     j    .L_f10_pc466
-__skip_158:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4409,9 +4221,9 @@ __skip_158:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_159
+    bnez t0, 0f
     j    .L_f10_pc466
-__skip_159:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4423,9 +4235,9 @@ __skip_159:
   .L_f10_pc467:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_160
+    bnez t0, 0f
     j    .L_f10_pc470
-__skip_160:
+0:
     la   t1, OP_CAST
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -4454,9 +4266,9 @@ __skip_160:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_161
+    bnez t0, 0f
     j    .L_f10_pc480
-__skip_161:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4472,9 +4284,9 @@ __skip_161:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_162
+    bnez t0, 0f
     j    .L_f10_pc480
-__skip_162:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4486,9 +4298,9 @@ __skip_162:
   .L_f10_pc481:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_163
+    bnez t0, 0f
     j    .L_f10_pc488
-__skip_163:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4504,9 +4316,9 @@ __skip_163:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_164
+    bnez t0, 0f
     j    .L_f10_pc488
-__skip_164:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4518,9 +4330,9 @@ __skip_164:
   .L_f10_pc489:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_165
+    bnez t0, 0f
     j    .L_f10_pc496
-__skip_165:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4536,9 +4348,9 @@ __skip_165:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_166
+    bnez t0, 0f
     j    .L_f10_pc496
-__skip_166:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4550,9 +4362,9 @@ __skip_166:
   .L_f10_pc497:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_167
+    bnez t0, 0f
     j    .L_f10_pc500
-__skip_167:
+0:
     la   t1, OP_LOAD
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -4581,9 +4393,9 @@ __skip_167:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_168
+    bnez t0, 0f
     j    .L_f10_pc510
-__skip_168:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4599,9 +4411,9 @@ __skip_168:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_169
+    bnez t0, 0f
     j    .L_f10_pc510
-__skip_169:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4613,9 +4425,9 @@ __skip_169:
   .L_f10_pc511:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_170
+    bnez t0, 0f
     j    .L_f10_pc518
-__skip_170:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4631,9 +4443,9 @@ __skip_170:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_171
+    bnez t0, 0f
     j    .L_f10_pc518
-__skip_171:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4645,9 +4457,9 @@ __skip_171:
   .L_f10_pc519:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_172
+    bnez t0, 0f
     j    .L_f10_pc526
-__skip_172:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4663,9 +4475,9 @@ __skip_172:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_173
+    bnez t0, 0f
     j    .L_f10_pc526
-__skip_173:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4677,9 +4489,9 @@ __skip_173:
   .L_f10_pc527:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_174
+    bnez t0, 0f
     j    .L_f10_pc530
-__skip_174:
+0:
     la   t1, OP_JUMP
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -4708,9 +4520,9 @@ __skip_174:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_175
+    bnez t0, 0f
     j    .L_f10_pc540
-__skip_175:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4726,9 +4538,9 @@ __skip_175:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_176
+    bnez t0, 0f
     j    .L_f10_pc540
-__skip_176:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4740,9 +4552,9 @@ __skip_176:
   .L_f10_pc541:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_177
+    bnez t0, 0f
     j    .L_f10_pc548
-__skip_177:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4758,9 +4570,9 @@ __skip_177:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_178
+    bnez t0, 0f
     j    .L_f10_pc548
-__skip_178:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4772,9 +4584,9 @@ __skip_178:
   .L_f10_pc549:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_179
+    bnez t0, 0f
     j    .L_f10_pc556
-__skip_179:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4790,9 +4602,9 @@ __skip_179:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_180
+    bnez t0, 0f
     j    .L_f10_pc556
-__skip_180:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4804,9 +4616,9 @@ __skip_180:
   .L_f10_pc557:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_181
+    bnez t0, 0f
     j    .L_f10_pc560
-__skip_181:
+0:
     la   t1, OP_CALL
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -4835,9 +4647,9 @@ __skip_181:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_182
+    bnez t0, 0f
     j    .L_f10_pc602
-__skip_182:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4853,9 +4665,9 @@ __skip_182:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_183
+    bnez t0, 0f
     j    .L_f10_pc574
-__skip_183:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4871,9 +4683,9 @@ __skip_183:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_184
+    bnez t0, 0f
     j    .L_f10_pc574
-__skip_184:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4885,9 +4697,9 @@ __skip_184:
   .L_f10_pc575:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_185
+    bnez t0, 0f
     j    .L_f10_pc582
-__skip_185:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4903,9 +4715,9 @@ __skip_185:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_186
+    bnez t0, 0f
     j    .L_f10_pc582
-__skip_186:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4917,9 +4729,9 @@ __skip_186:
   .L_f10_pc583:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_187
+    bnez t0, 0f
     j    .L_f10_pc590
-__skip_187:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4935,9 +4747,9 @@ __skip_187:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_188
+    bnez t0, 0f
     j    .L_f10_pc590
-__skip_188:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4949,9 +4761,9 @@ __skip_188:
   .L_f10_pc591:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_189
+    bnez t0, 0f
     j    .L_f10_pc598
-__skip_189:
+0:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4967,9 +4779,9 @@ __skip_189:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_190
+    bnez t0, 0f
     j    .L_f10_pc598
-__skip_190:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4981,9 +4793,9 @@ __skip_190:
   .L_f10_pc599:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_191
+    bnez t0, 0f
     j    .L_f10_pc602
-__skip_191:
+0:
     la   t1, OP_STORE
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -5012,9 +4824,9 @@ __skip_191:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_192
+    bnez t0, 0f
     j    .L_f10_pc628
-__skip_192:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5030,9 +4842,9 @@ __skip_192:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_193
+    bnez t0, 0f
     j    .L_f10_pc616
-__skip_193:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5048,9 +4860,9 @@ __skip_193:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_194
+    bnez t0, 0f
     j    .L_f10_pc616
-__skip_194:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5062,9 +4874,9 @@ __skip_194:
   .L_f10_pc617:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_195
+    bnez t0, 0f
     j    .L_f10_pc624
-__skip_195:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5080,9 +4892,9 @@ __skip_195:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_196
+    bnez t0, 0f
     j    .L_f10_pc624
-__skip_196:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5094,9 +4906,9 @@ __skip_196:
   .L_f10_pc625:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_197
+    bnez t0, 0f
     j    .L_f10_pc628
-__skip_197:
+0:
     la   t1, OP_RETURN
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -5125,9 +4937,9 @@ __skip_197:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_198
+    bnez t0, 0f
     j    .L_f10_pc680
-__skip_198:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5143,9 +4955,9 @@ __skip_198:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_199
+    bnez t0, 0f
     j    .L_f10_pc642
-__skip_199:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5161,9 +4973,9 @@ __skip_199:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_200
+    bnez t0, 0f
     j    .L_f10_pc642
-__skip_200:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5175,9 +4987,9 @@ __skip_200:
   .L_f10_pc643:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_201
+    bnez t0, 0f
     j    .L_f10_pc650
-__skip_201:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5193,9 +5005,9 @@ __skip_201:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_202
+    bnez t0, 0f
     j    .L_f10_pc650
-__skip_202:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5207,9 +5019,9 @@ __skip_202:
   .L_f10_pc651:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_203
+    bnez t0, 0f
     j    .L_f10_pc658
-__skip_203:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5225,9 +5037,9 @@ __skip_203:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_204
+    bnez t0, 0f
     j    .L_f10_pc658
-__skip_204:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5239,9 +5051,9 @@ __skip_204:
   .L_f10_pc659:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_205
+    bnez t0, 0f
     j    .L_f10_pc666
-__skip_205:
+0:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5257,9 +5069,9 @@ __skip_205:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_206
+    bnez t0, 0f
     j    .L_f10_pc666
-__skip_206:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5271,9 +5083,9 @@ __skip_206:
   .L_f10_pc667:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_207
+    bnez t0, 0f
     j    .L_f10_pc680
-__skip_207:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5313,9 +5125,9 @@ __skip_207:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_208
+    bnez t0, 0f
     j    .L_f10_pc680
-__skip_208:
+0:
     la   t1, OP_JUMP_IF
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -5344,9 +5156,9 @@ __skip_208:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_209
+    bnez t0, 0f
     j    .L_f10_pc738
-__skip_209:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5362,9 +5174,9 @@ __skip_209:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_210
+    bnez t0, 0f
     j    .L_f10_pc694
-__skip_210:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5380,9 +5192,9 @@ __skip_210:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_211
+    bnez t0, 0f
     j    .L_f10_pc694
-__skip_211:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5394,9 +5206,9 @@ __skip_211:
   .L_f10_pc695:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_212
+    bnez t0, 0f
     j    .L_f10_pc702
-__skip_212:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5412,9 +5224,9 @@ __skip_212:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_213
+    bnez t0, 0f
     j    .L_f10_pc702
-__skip_213:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5426,9 +5238,9 @@ __skip_213:
   .L_f10_pc703:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_214
+    bnez t0, 0f
     j    .L_f10_pc710
-__skip_214:
+0:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5444,9 +5256,9 @@ __skip_214:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_215
+    bnez t0, 0f
     j    .L_f10_pc710
-__skip_215:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5458,9 +5270,9 @@ __skip_215:
   .L_f10_pc711:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_216
+    bnez t0, 0f
     j    .L_f10_pc718
-__skip_216:
+0:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5476,9 +5288,9 @@ __skip_216:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_217
+    bnez t0, 0f
     j    .L_f10_pc718
-__skip_217:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5490,9 +5302,9 @@ __skip_217:
   .L_f10_pc719:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_218
+    bnez t0, 0f
     j    .L_f10_pc738
-__skip_218:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5532,9 +5344,9 @@ __skip_218:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_219
+    bnez t0, 0f
     j    .L_f10_pc732
-__skip_219:
+0:
     la   t1, OP_PUSH_INT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -5563,9 +5375,9 @@ __skip_219:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_220
+    bnez t0, 0f
     j    .L_f10_pc738
-__skip_220:
+0:
     la   t1, OP_PUSH_STR
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -5594,9 +5406,9 @@ __skip_220:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_221
+    bnez t0, 0f
     j    .L_f10_pc748
-__skip_221:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5612,9 +5424,9 @@ __skip_221:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_222
+    bnez t0, 0f
     j    .L_f10_pc748
-__skip_222:
+0:
     la   t1, OP_JUMP_IFNOT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -5643,9 +5455,9 @@ __skip_222:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_223
+    bnez t0, 0f
     j    .L_f10_pc766
-__skip_223:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5661,9 +5473,9 @@ __skip_223:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_224
+    bnez t0, 0f
     j    .L_f10_pc762
-__skip_224:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5679,9 +5491,9 @@ __skip_224:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_225
+    bnez t0, 0f
     j    .L_f10_pc762
-__skip_225:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5693,9 +5505,9 @@ __skip_225:
   .L_f10_pc763:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_226
+    bnez t0, 0f
     j    .L_f10_pc766
-__skip_226:
+0:
     la   t1, OP_RETURN_VOID
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -7395,9 +7207,9 @@ heap_new_str__I32Array__U8Array__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_227
+    bnez t0, 0f
     j    .L_f33_pc51
-__skip_227:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7814,9 +7626,9 @@ parse_lnum__U8Array__i32__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_228
+    bnez t0, 0f
     j    .L_f38_pc40
-__skip_228:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7847,9 +7659,9 @@ __skip_228:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_229
+    bnez t0, 0f
     j    .L_f38_pc24
-__skip_229:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7865,9 +7677,9 @@ __skip_229:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_230
+    bnez t0, 0f
     j    .L_f38_pc24
-__skip_230:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7879,9 +7691,9 @@ __skip_230:
   .L_f38_pc25:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_231
+    bnez t0, 0f
     j    .L_f38_pc35
-__skip_231:
+0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8047,9 +7859,9 @@ parse_bc__U8Array__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I3
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_232
+    bnez t0, 0f
     j    .L_f39_pc15
-__skip_232:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -8066,9 +7878,9 @@ __skip_232:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_233
+    bnez t0, 0f
     j    .L_f39_pc15
-__skip_233:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8080,9 +7892,9 @@ __skip_233:
   .L_f39_pc16:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_234
+    bnez t0, 0f
     j    .L_f39_pc1202
-__skip_234:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8109,9 +7921,9 @@ __skip_234:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_235
+    bnez t0, 0f
     j    .L_f39_pc26
-__skip_235:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8134,9 +7946,9 @@ __skip_235:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_236
+    bnez t0, 0f
     j    .L_f39_pc1201
-__skip_236:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8163,9 +7975,9 @@ __skip_236:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_237
+    beqz t0, 0f
     j    .L_f39_pc43
-__skip_237:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8181,9 +7993,9 @@ __skip_237:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_238
+    beqz t0, 0f
     j    .L_f39_pc43
-__skip_238:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8195,9 +8007,9 @@ __skip_238:
   .L_f39_pc44:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_239
+    bnez t0, 0f
     j    .L_f39_pc49
-__skip_239:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -8231,9 +8043,9 @@ __skip_239:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_240
+    bnez t0, 0f
     j    .L_f39_pc59
-__skip_240:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8249,9 +8061,9 @@ __skip_240:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_241
+    bnez t0, 0f
     j    .L_f39_pc59
-__skip_241:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8263,9 +8075,9 @@ __skip_241:
   .L_f39_pc60:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_242
+    bnez t0, 0f
     j    .L_f39_pc67
-__skip_242:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8281,9 +8093,9 @@ __skip_242:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_243
+    bnez t0, 0f
     j    .L_f39_pc67
-__skip_243:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8295,9 +8107,9 @@ __skip_243:
   .L_f39_pc68:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_244
+    bnez t0, 0f
     j    .L_f39_pc72
-__skip_244:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8323,9 +8135,9 @@ __skip_244:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_245
+    bnez t0, 0f
     j    .L_f39_pc82
-__skip_245:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8341,9 +8153,9 @@ __skip_245:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_246
+    bnez t0, 0f
     j    .L_f39_pc82
-__skip_246:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8355,9 +8167,9 @@ __skip_246:
   .L_f39_pc83:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_247
+    bnez t0, 0f
     j    .L_f39_pc90
-__skip_247:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8373,9 +8185,9 @@ __skip_247:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_248
+    bnez t0, 0f
     j    .L_f39_pc90
-__skip_248:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8387,9 +8199,9 @@ __skip_248:
   .L_f39_pc91:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_249
+    bnez t0, 0f
     j    .L_f39_pc98
-__skip_249:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8405,9 +8217,9 @@ __skip_249:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_250
+    bnez t0, 0f
     j    .L_f39_pc98
-__skip_250:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8419,9 +8231,9 @@ __skip_250:
   .L_f39_pc99:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_251
+    bnez t0, 0f
     j    .L_f39_pc738
-__skip_251:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -8491,9 +8303,9 @@ __skip_251:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_252
+    bnez t0, 0f
     j    .L_f39_pc123
-__skip_252:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8524,9 +8336,9 @@ __skip_252:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_253
+    bnez t0, 0f
     j    .L_f39_pc133
-__skip_253:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8567,9 +8379,9 @@ __skip_253:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_254
+    bnez t0, 0f
     j    .L_f39_pc143
-__skip_254:
+0:
     lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8585,9 +8397,9 @@ __skip_254:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_255
+    bnez t0, 0f
     j    .L_f39_pc143
-__skip_255:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8599,9 +8411,9 @@ __skip_255:
   .L_f39_pc144:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_256
+    bnez t0, 0f
     j    .L_f39_pc203
-__skip_256:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8793,9 +8605,9 @@ __skip_256:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_257
+    bnez t0, 0f
     j    .L_f39_pc200
-__skip_257:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8838,9 +8650,9 @@ __skip_257:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_258
+    bnez t0, 0f
     j    .L_f39_pc213
-__skip_258:
+0:
     lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8856,9 +8668,9 @@ __skip_258:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_259
+    bnez t0, 0f
     j    .L_f39_pc213
-__skip_259:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8870,9 +8682,9 @@ __skip_259:
   .L_f39_pc214:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_260
+    bnez t0, 0f
     j    .L_f39_pc297
-__skip_260:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9194,9 +9006,9 @@ __skip_260:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_261
+    bnez t0, 0f
     j    .L_f39_pc307
-__skip_261:
+0:
     lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9212,9 +9024,9 @@ __skip_261:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_262
+    bnez t0, 0f
     j    .L_f39_pc307
-__skip_262:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9226,9 +9038,9 @@ __skip_262:
   .L_f39_pc308:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_263
+    bnez t0, 0f
     j    .L_f39_pc425
-__skip_263:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9290,9 +9102,9 @@ __skip_263:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_264
+    bnez t0, 0f
     j    .L_f39_pc332
-__skip_264:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -9309,9 +9121,9 @@ __skip_264:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_265
+    bnez t0, 0f
     j    .L_f39_pc332
-__skip_265:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9323,9 +9135,9 @@ __skip_265:
   .L_f39_pc333:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_266
+    bnez t0, 0f
     j    .L_f39_pc362
-__skip_266:
+0:
     la   t1, g_stab_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -9670,9 +9482,9 @@ __skip_266:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_267
+    bnez t0, 0f
     j    .L_f39_pc435
-__skip_267:
+0:
     lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9688,9 +9500,9 @@ __skip_267:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_268
+    bnez t0, 0f
     j    .L_f39_pc435
-__skip_268:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9702,9 +9514,9 @@ __skip_268:
   .L_f39_pc436:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_269
+    bnez t0, 0f
     j    .L_f39_pc499
-__skip_269:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9886,9 +9698,9 @@ __skip_269:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_270
+    bnez t0, 0f
     j    .L_f39_pc496
-__skip_270:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9954,9 +9766,9 @@ __skip_270:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_271
+    bnez t0, 0f
     j    .L_f39_pc509
-__skip_271:
+0:
     lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9972,9 +9784,9 @@ __skip_271:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_272
+    bnez t0, 0f
     j    .L_f39_pc509
-__skip_272:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9986,9 +9798,9 @@ __skip_272:
   .L_f39_pc510:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_273
+    bnez t0, 0f
     j    .L_f39_pc573
-__skip_273:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10170,9 +9982,9 @@ __skip_273:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_274
+    bnez t0, 0f
     j    .L_f39_pc570
-__skip_274:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10243,9 +10055,9 @@ __skip_274:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_275
+    bnez t0, 0f
     j    .L_f39_pc585
-__skip_275:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10286,9 +10098,9 @@ __skip_275:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_276
+    bnez t0, 0f
     j    .L_f39_pc595
-__skip_276:
+0:
     lw   t0, -132(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10304,9 +10116,9 @@ __skip_276:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_277
+    bnez t0, 0f
     j    .L_f39_pc595
-__skip_277:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10318,9 +10130,9 @@ __skip_277:
   .L_f39_pc596:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_278
+    bnez t0, 0f
     j    .L_f39_pc605
-__skip_278:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10361,9 +10173,9 @@ __skip_278:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_279
+    bnez t0, 0f
     j    .L_f39_pc615
-__skip_279:
+0:
     lw   t0, -132(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10379,9 +10191,9 @@ __skip_279:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_280
+    bnez t0, 0f
     j    .L_f39_pc615
-__skip_280:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10393,9 +10205,9 @@ __skip_280:
   .L_f39_pc616:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_281
+    bnez t0, 0f
     j    .L_f39_pc688
-__skip_281:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10420,9 +10232,9 @@ __skip_281:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_282
+    bnez t0, 0f
     j    .L_f39_pc682
-__skip_282:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10474,9 +10286,9 @@ __skip_282:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_283
+    bnez t0, 0f
     j    .L_f39_pc682
-__skip_283:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10512,9 +10324,9 @@ __skip_283:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_284
+    beqz t0, 0f
     j    .L_f39_pc653
-__skip_284:
+0:
     lw   t0, -148(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10531,9 +10343,9 @@ __skip_284:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_285
+    beqz t0, 0f
     j    .L_f39_pc653
-__skip_285:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10545,9 +10357,9 @@ __skip_285:
   .L_f39_pc654:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_286
+    beqz t0, 0f
     j    .L_f39_pc661
-__skip_286:
+0:
     lw   t0, -148(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10564,9 +10376,9 @@ __skip_286:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_287
+    beqz t0, 0f
     j    .L_f39_pc661
-__skip_287:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10578,9 +10390,9 @@ __skip_287:
   .L_f39_pc662:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_288
+    bnez t0, 0f
     j    .L_f39_pc677
-__skip_288:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10688,9 +10500,9 @@ __skip_288:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_289
+    bnez t0, 0f
     j    .L_f39_pc698
-__skip_289:
+0:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10706,9 +10518,9 @@ __skip_289:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_290
+    bnez t0, 0f
     j    .L_f39_pc698
-__skip_290:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10720,9 +10532,9 @@ __skip_290:
   .L_f39_pc699:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_291
+    bnez t0, 0f
     j    .L_f39_pc706
-__skip_291:
+0:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10738,9 +10550,9 @@ __skip_291:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_292
+    bnez t0, 0f
     j    .L_f39_pc706
-__skip_292:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10752,9 +10564,9 @@ __skip_292:
   .L_f39_pc707:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_293
+    bnez t0, 0f
     j    .L_f39_pc714
-__skip_293:
+0:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10770,9 +10582,9 @@ __skip_293:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_294
+    bnez t0, 0f
     j    .L_f39_pc714
-__skip_294:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10784,9 +10596,9 @@ __skip_294:
   .L_f39_pc715:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_295
+    bnez t0, 0f
     j    .L_f39_pc722
-__skip_295:
+0:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10802,9 +10614,9 @@ __skip_295:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_296
+    bnez t0, 0f
     j    .L_f39_pc722
-__skip_296:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10816,9 +10628,9 @@ __skip_296:
   .L_f39_pc723:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_297
+    bnez t0, 0f
     j    .L_f39_pc730
-__skip_297:
+0:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10834,9 +10646,9 @@ __skip_297:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_298
+    bnez t0, 0f
     j    .L_f39_pc730
-__skip_298:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10848,9 +10660,9 @@ __skip_298:
   .L_f39_pc731:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_299
+    bnez t0, 0f
     j    .L_f39_pc738
-__skip_299:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10885,9 +10697,9 @@ __skip_299:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_300
+    bnez t0, 0f
     j    .L_f39_pc748
-__skip_300:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10903,9 +10715,9 @@ __skip_300:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_301
+    bnez t0, 0f
     j    .L_f39_pc748
-__skip_301:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10917,9 +10729,9 @@ __skip_301:
   .L_f39_pc749:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_302
+    bnez t0, 0f
     j    .L_f39_pc756
-__skip_302:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10935,9 +10747,9 @@ __skip_302:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_303
+    bnez t0, 0f
     j    .L_f39_pc756
-__skip_303:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10949,9 +10761,9 @@ __skip_303:
   .L_f39_pc757:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_304
+    bnez t0, 0f
     j    .L_f39_pc764
-__skip_304:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10967,9 +10779,9 @@ __skip_304:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_305
+    bnez t0, 0f
     j    .L_f39_pc764
-__skip_305:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10981,9 +10793,9 @@ __skip_305:
   .L_f39_pc765:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_306
+    bnez t0, 0f
     j    .L_f39_pc772
-__skip_306:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10999,9 +10811,9 @@ __skip_306:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_307
+    bnez t0, 0f
     j    .L_f39_pc772
-__skip_307:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11013,9 +10825,9 @@ __skip_307:
   .L_f39_pc773:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_308
+    bnez t0, 0f
     j    .L_f39_pc841
-__skip_308:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -11040,9 +10852,9 @@ __skip_308:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_309
+    bnez t0, 0f
     j    .L_f39_pc787
-__skip_309:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11063,9 +10875,9 @@ __skip_309:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_310
+    bnez t0, 0f
     j    .L_f39_pc787
-__skip_310:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11077,9 +10889,9 @@ __skip_310:
   .L_f39_pc788:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_311
+    bnez t0, 0f
     j    .L_f39_pc796
-__skip_311:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11100,9 +10912,9 @@ __skip_311:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_312
+    bnez t0, 0f
     j    .L_f39_pc796
-__skip_312:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11114,9 +10926,9 @@ __skip_312:
   .L_f39_pc797:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_313
+    bnez t0, 0f
     j    .L_f39_pc803
-__skip_313:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -11152,9 +10964,9 @@ __skip_313:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_314
+    bnez t0, 0f
     j    .L_f39_pc814
-__skip_314:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11175,9 +10987,9 @@ __skip_314:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_315
+    bnez t0, 0f
     j    .L_f39_pc814
-__skip_315:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11189,9 +11001,9 @@ __skip_315:
   .L_f39_pc815:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_316
+    bnez t0, 0f
     j    .L_f39_pc838
-__skip_316:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11244,9 +11056,9 @@ __skip_316:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_317
+    bnez t0, 0f
     j    .L_f39_pc838
-__skip_317:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11309,9 +11121,9 @@ __skip_317:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_318
+    bnez t0, 0f
     j    .L_f39_pc851
-__skip_318:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11327,9 +11139,9 @@ __skip_318:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_319
+    bnez t0, 0f
     j    .L_f39_pc851
-__skip_319:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11341,9 +11153,9 @@ __skip_319:
   .L_f39_pc852:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_320
+    bnez t0, 0f
     j    .L_f39_pc859
-__skip_320:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11359,9 +11171,9 @@ __skip_320:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_321
+    bnez t0, 0f
     j    .L_f39_pc859
-__skip_321:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11373,9 +11185,9 @@ __skip_321:
   .L_f39_pc860:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_322
+    bnez t0, 0f
     j    .L_f39_pc867
-__skip_322:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11391,9 +11203,9 @@ __skip_322:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_323
+    bnez t0, 0f
     j    .L_f39_pc867
-__skip_323:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11405,9 +11217,9 @@ __skip_323:
   .L_f39_pc868:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_324
+    bnez t0, 0f
     j    .L_f39_pc875
-__skip_324:
+0:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11423,9 +11235,9 @@ __skip_324:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_325
+    bnez t0, 0f
     j    .L_f39_pc875
-__skip_325:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11437,9 +11249,9 @@ __skip_325:
   .L_f39_pc876:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_326
+    bnez t0, 0f
     j    .L_f39_pc1201
-__skip_326:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11509,9 +11321,9 @@ __skip_326:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_327
+    bnez t0, 0f
     j    .L_f39_pc902
-__skip_327:
+0:
     lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11527,9 +11339,9 @@ __skip_327:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_328
+    bnez t0, 0f
     j    .L_f39_pc902
-__skip_328:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11541,9 +11353,9 @@ __skip_328:
   .L_f39_pc903:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_329
+    bnez t0, 0f
     j    .L_f39_pc1198
-__skip_329:
+0:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11690,9 +11502,9 @@ __skip_329:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_330
+    bnez t0, 0f
     j    .L_f39_pc964
-__skip_330:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11783,9 +11595,9 @@ __skip_330:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_331
+    bnez t0, 0f
     j    .L_f39_pc988
-__skip_331:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11876,9 +11688,9 @@ __skip_331:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_332
+    beqz t0, 0f
     j    .L_f39_pc998
-__skip_332:
+0:
     lw   t0, -172(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11895,9 +11707,9 @@ __skip_332:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_333
+    beqz t0, 0f
     j    .L_f39_pc998
-__skip_333:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11909,9 +11721,9 @@ __skip_333:
   .L_f39_pc999:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_334
+    bnez t0, 0f
     j    .L_f39_pc1021
-__skip_334:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12005,9 +11817,9 @@ __skip_334:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_335
+    bnez t0, 0f
     j    .L_f39_pc1106
-__skip_335:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12066,9 +11878,9 @@ __skip_335:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_336
+    bnez t0, 0f
     j    .L_f39_pc1047
-__skip_336:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -12085,9 +11897,9 @@ __skip_336:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_337
+    bnez t0, 0f
     j    .L_f39_pc1047
-__skip_337:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12099,9 +11911,9 @@ __skip_337:
   .L_f39_pc1048:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_338
+    bnez t0, 0f
     j    .L_f39_pc1081
-__skip_338:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12325,9 +12137,9 @@ __skip_338:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_339
+    bnez t0, 0f
     j    .L_f39_pc1131
-__skip_339:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12421,9 +12233,9 @@ __skip_339:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_340
+    beqz t0, 0f
     j    .L_f39_pc1141
-__skip_340:
+0:
     lw   t0, -172(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12440,9 +12252,9 @@ __skip_340:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_341
+    beqz t0, 0f
     j    .L_f39_pc1141
-__skip_341:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12454,9 +12266,9 @@ __skip_341:
   .L_f39_pc1142:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_342
+    beqz t0, 0f
     j    .L_f39_pc1149
-__skip_342:
+0:
     lw   t0, -172(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12473,9 +12285,9 @@ __skip_342:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_343
+    beqz t0, 0f
     j    .L_f39_pc1149
-__skip_343:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12487,9 +12299,9 @@ __skip_343:
   .L_f39_pc1150:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_344
+    bnez t0, 0f
     j    .L_f39_pc1186
-__skip_344:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12523,9 +12335,9 @@ __skip_344:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_345
+    bnez t0, 0f
     j    .L_f39_pc1167
-__skip_345:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12546,9 +12358,9 @@ __skip_345:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_346
+    bnez t0, 0f
     j    .L_f39_pc1167
-__skip_346:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12560,9 +12372,9 @@ __skip_346:
   .L_f39_pc1168:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_347
+    bnez t0, 0f
     j    .L_f39_pc1174
-__skip_347:
+0:
     la   t1, g_in_pos
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -12801,9 +12613,9 @@ var_find_local__U8Array__I32Array__I32Array__I32Array__i32__i32__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_348
+    bnez t0, 0f
     j    .L_f40_pc44
-__skip_348:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12866,9 +12678,9 @@ __skip_348:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_349
+    bnez t0, 0f
     j    .L_f40_pc39
-__skip_349:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12919,9 +12731,9 @@ __skip_349:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_350
+    bnez t0, 0f
     j    .L_f40_pc74
-__skip_350:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -12984,9 +12796,9 @@ __skip_350:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_351
+    bnez t0, 0f
     j    .L_f40_pc69
-__skip_351:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13083,9 +12895,9 @@ global_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_352
+    bnez t0, 0f
     j    .L_f41_pc32
-__skip_352:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13166,9 +12978,9 @@ __skip_352:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_353
+    bnez t0, 0f
     j    .L_f41_pc27
-__skip_353:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13256,9 +13068,9 @@ func_find__U8Array__I32Array__i32__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_354
+    bnez t0, 0f
     j    .L_f42_pc24
-__skip_354:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13303,9 +13115,9 @@ __skip_354:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_355
+    bnez t0, 0f
     j    .L_f42_pc19
-__skip_355:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14184,9 +13996,9 @@ vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_356
+    bnez t0, 0f
     j    .L_f47_pc52
-__skip_356:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14221,9 +14033,9 @@ __skip_356:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_357
+    bnez t0, 0f
     j    .L_f47_pc83
-__skip_357:
+0:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14394,9 +14206,9 @@ __skip_357:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_358
+    bnez t0, 0f
     j    .L_f47_pc118
-__skip_358:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14546,9 +14358,9 @@ __skip_358:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_359
+    bnez t0, 0f
     j    .L_f47_pc2092
-__skip_359:
+0:
     la   t1, g_cur_func
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -14564,9 +14376,9 @@ __skip_359:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_360
+    bnez t0, 0f
     j    .L_f47_pc150
-__skip_360:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14589,9 +14401,9 @@ __skip_360:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_361
+    bnez t0, 0f
     j    .L_f47_pc2091
-__skip_361:
+0:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14640,9 +14452,9 @@ __skip_361:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_362
+    bnez t0, 0f
     j    .L_f47_pc185
-__skip_362:
+0:
     lw   t0, -80(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14730,9 +14542,9 @@ __skip_362:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_363
+    bnez t0, 0f
     j    .L_f47_pc195
-__skip_363:
+0:
     la   t1, g_cur_pc
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -14748,9 +14560,9 @@ __skip_363:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_364
+    bnez t0, 0f
     j    .L_f47_pc195
-__skip_364:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14762,9 +14574,9 @@ __skip_364:
   .L_f47_pc196:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_365
+    bnez t0, 0f
     j    .L_f47_pc2091
-__skip_365:
+0:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14878,9 +14690,9 @@ __skip_365:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_366
+    bnez t0, 0f
     j    .L_f47_pc231
-__skip_366:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14920,9 +14732,9 @@ __skip_366:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_367
+    bnez t0, 0f
     j    .L_f47_pc262
-__skip_367:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15049,9 +14861,9 @@ __skip_367:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_368
+    bnez t0, 0f
     j    .L_f47_pc335
-__skip_368:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15103,9 +14915,9 @@ __skip_368:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_369
+    bnez t0, 0f
     j    .L_f47_pc293
-__skip_369:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15180,9 +14992,9 @@ __skip_369:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_370
+    bnez t0, 0f
     j    .L_f47_pc335
-__skip_370:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15221,9 +15033,9 @@ __skip_370:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_371
+    bnez t0, 0f
     j    .L_f47_pc325
-__skip_371:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15314,9 +15126,9 @@ __skip_371:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_372
+    bnez t0, 0f
     j    .L_f47_pc335
-__skip_372:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15356,9 +15168,9 @@ __skip_372:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_373
+    bnez t0, 0f
     j    .L_f47_pc406
-__skip_373:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15437,9 +15249,9 @@ __skip_373:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_374
+    bnez t0, 0f
     j    .L_f47_pc374
-__skip_374:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15509,9 +15321,9 @@ __skip_374:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_375
+    bnez t0, 0f
     j    .L_f47_pc406
-__skip_375:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15550,9 +15362,9 @@ __skip_375:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_376
+    bnez t0, 0f
     j    .L_f47_pc406
-__skip_376:
+0:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15640,9 +15452,9 @@ __skip_376:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_377
+    bnez t0, 0f
     j    .L_f47_pc1625
-__skip_377:
+0:
     lw   t0, -136(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15680,9 +15492,9 @@ __skip_377:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_378
+    bnez t0, 0f
     j    .L_f47_pc439
-__skip_378:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15812,9 +15624,9 @@ __skip_378:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_379
+    bnez t0, 0f
     j    .L_f47_pc463
-__skip_379:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15845,9 +15657,9 @@ __skip_379:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_380
+    bnez t0, 0f
     j    .L_f47_pc473
-__skip_380:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15887,9 +15699,9 @@ __skip_380:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_381
+    bnez t0, 0f
     j    .L_f47_pc483
-__skip_381:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15929,9 +15741,9 @@ __skip_381:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_382
+    bnez t0, 0f
     j    .L_f47_pc493
-__skip_382:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15971,9 +15783,9 @@ __skip_382:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_383
+    bnez t0, 0f
     j    .L_f47_pc503
-__skip_383:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16013,9 +15825,9 @@ __skip_383:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_384
+    bnez t0, 0f
     j    .L_f47_pc513
-__skip_384:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16055,9 +15867,9 @@ __skip_384:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_385
+    bnez t0, 0f
     j    .L_f47_pc523
-__skip_385:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16117,9 +15929,9 @@ __skip_385:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_386
+    bnez t0, 0f
     j    .L_f47_pc539
-__skip_386:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16135,9 +15947,9 @@ __skip_386:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_387
+    bnez t0, 0f
     j    .L_f47_pc539
-__skip_387:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16149,9 +15961,9 @@ __skip_387:
   .L_f47_pc540:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_388
+    bnez t0, 0f
     j    .L_f47_pc547
-__skip_388:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16167,9 +15979,9 @@ __skip_388:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_389
+    bnez t0, 0f
     j    .L_f47_pc547
-__skip_389:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16181,9 +15993,9 @@ __skip_389:
   .L_f47_pc548:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_390
+    bnez t0, 0f
     j    .L_f47_pc555
-__skip_390:
+0:
     lw   t0, -192(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16199,9 +16011,9 @@ __skip_390:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_391
+    bnez t0, 0f
     j    .L_f47_pc555
-__skip_391:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16213,9 +16025,9 @@ __skip_391:
   .L_f47_pc556:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_392
+    bnez t0, 0f
     j    .L_f47_pc563
-__skip_392:
+0:
     lw   t0, -196(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16231,9 +16043,9 @@ __skip_392:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_393
+    bnez t0, 0f
     j    .L_f47_pc563
-__skip_393:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16245,9 +16057,9 @@ __skip_393:
   .L_f47_pc564:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_394
+    bnez t0, 0f
     j    .L_f47_pc776
-__skip_394:
+0:
     lw   t0, -200(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16263,9 +16075,9 @@ __skip_394:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_395
+    bnez t0, 0f
     j    .L_f47_pc626
-__skip_395:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16355,9 +16167,9 @@ __skip_395:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_396
+    bnez t0, 0f
     j    .L_f47_pc595
-__skip_396:
+0:
     lw   t0, -240(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16397,9 +16209,9 @@ __skip_396:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_397
+    bnez t0, 0f
     j    .L_f47_pc618
-__skip_397:
+0:
     lw   t0, -244(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16496,9 +16308,9 @@ __skip_397:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_398
+    bnez t0, 0f
     j    .L_f47_pc765
-__skip_398:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16588,9 +16400,9 @@ __skip_398:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_399
+    bnez t0, 0f
     j    .L_f47_pc656
-__skip_399:
+0:
     lw   t0, -240(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16619,9 +16431,9 @@ __skip_399:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_400
+    bnez t0, 0f
     j    .L_f47_pc668
-__skip_400:
+0:
     lw   t0, -256(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16637,9 +16449,9 @@ __skip_400:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_401
+    bnez t0, 0f
     j    .L_f47_pc668
-__skip_401:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16651,9 +16463,9 @@ __skip_401:
   .L_f47_pc669:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_402
+    bnez t0, 0f
     j    .L_f47_pc714
-__skip_402:
+0:
     la   t1, g_prog_stdin_len
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -16685,9 +16497,9 @@ __skip_402:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_403
+    bnez t0, 0f
     j    .L_f47_pc712
-__skip_403:
+0:
     lw   t0, -252(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16702,9 +16514,9 @@ __skip_403:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_404
+    bnez t0, 0f
     j    .L_f47_pc684
-__skip_404:
+0:
     lw   t0, -260(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16733,9 +16545,9 @@ __skip_404:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_405
+    bnez t0, 0f
     j    .L_f47_pc706
-__skip_405:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16844,9 +16656,9 @@ __skip_405:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_406
+    bnez t0, 0f
     j    .L_f47_pc724
-__skip_406:
+0:
     lw   t0, -256(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16862,9 +16674,9 @@ __skip_406:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_407
+    bnez t0, 0f
     j    .L_f47_pc724
-__skip_407:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16876,9 +16688,9 @@ __skip_407:
   .L_f47_pc725:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_408
+    bnez t0, 0f
     j    .L_f47_pc765
-__skip_408:
+0:
     lw   t0, -252(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16923,9 +16735,9 @@ __skip_408:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_409
+    bnez t0, 0f
     j    .L_f47_pc758
-__skip_409:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16947,9 +16759,9 @@ __skip_409:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_410
+    bnez t0, 0f
     j    .L_f47_pc758
-__skip_410:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17039,9 +16851,9 @@ __skip_410:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_411
+    bnez t0, 0f
     j    .L_f47_pc774
-__skip_411:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17083,9 +16895,9 @@ __skip_411:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_412
+    bnez t0, 0f
     j    .L_f47_pc786
-__skip_412:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17101,9 +16913,9 @@ __skip_412:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_413
+    bnez t0, 0f
     j    .L_f47_pc786
-__skip_413:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17115,9 +16927,9 @@ __skip_413:
   .L_f47_pc787:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_414
+    bnez t0, 0f
     j    .L_f47_pc794
-__skip_414:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17133,9 +16945,9 @@ __skip_414:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_415
+    bnez t0, 0f
     j    .L_f47_pc794
-__skip_415:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17147,9 +16959,9 @@ __skip_415:
   .L_f47_pc795:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_416
+    bnez t0, 0f
     j    .L_f47_pc802
-__skip_416:
+0:
     lw   t0, -192(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17165,9 +16977,9 @@ __skip_416:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_417
+    bnez t0, 0f
     j    .L_f47_pc802
-__skip_417:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17179,9 +16991,9 @@ __skip_417:
   .L_f47_pc803:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_418
+    bnez t0, 0f
     j    .L_f47_pc892
-__skip_418:
+0:
     lw   t0, -208(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17197,9 +17009,9 @@ __skip_418:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_419
+    bnez t0, 0f
     j    .L_f47_pc813
-__skip_419:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17234,9 +17046,9 @@ __skip_419:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_420
+    bnez t0, 0f
     j    .L_f47_pc823
-__skip_420:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17275,9 +17087,9 @@ __skip_420:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_421
+    bnez t0, 0f
     j    .L_f47_pc834
-__skip_421:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17322,9 +17134,9 @@ __skip_421:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_422
+    bnez t0, 0f
     j    .L_f47_pc890
-__skip_422:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17411,9 +17223,9 @@ __skip_422:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_423
+    bnez t0, 0f
     j    .L_f47_pc875
-__skip_423:
+0:
     lw   t0, -244(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17541,9 +17353,9 @@ __skip_423:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_424
+    bnez t0, 0f
     j    .L_f47_pc902
-__skip_424:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17559,9 +17371,9 @@ __skip_424:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_425
+    bnez t0, 0f
     j    .L_f47_pc902
-__skip_425:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17573,9 +17385,9 @@ __skip_425:
   .L_f47_pc903:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_426
+    bnez t0, 0f
     j    .L_f47_pc910
-__skip_426:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17591,9 +17403,9 @@ __skip_426:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_427
+    bnez t0, 0f
     j    .L_f47_pc910
-__skip_427:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17605,9 +17417,9 @@ __skip_427:
   .L_f47_pc911:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_428
+    bnez t0, 0f
     j    .L_f47_pc918
-__skip_428:
+0:
     lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17623,9 +17435,9 @@ __skip_428:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_429
+    bnez t0, 0f
     j    .L_f47_pc918
-__skip_429:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17637,9 +17449,9 @@ __skip_429:
   .L_f47_pc919:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_430
+    bnez t0, 0f
     j    .L_f47_pc946
-__skip_430:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17670,9 +17482,9 @@ __skip_430:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_431
+    bnez t0, 0f
     j    .L_f47_pc934
-__skip_431:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17711,9 +17523,9 @@ __skip_431:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_432
+    bnez t0, 0f
     j    .L_f47_pc944
-__skip_432:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17759,9 +17571,9 @@ __skip_432:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_433
+    bnez t0, 0f
     j    .L_f47_pc972
-__skip_433:
+0:
     lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17777,9 +17589,9 @@ __skip_433:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_434
+    beqz t0, 0f
     j    .L_f47_pc968
-__skip_434:
+0:
     lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17794,9 +17606,9 @@ __skip_434:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_435
+    bnez t0, 0f
     j    .L_f47_pc964
-__skip_435:
+0:
     lw   t0, -196(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17812,9 +17624,9 @@ __skip_435:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_436
+    bnez t0, 0f
     j    .L_f47_pc964
-__skip_436:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17826,9 +17638,9 @@ __skip_436:
   .L_f47_pc965:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_437
+    beqz t0, 0f
     j    .L_f47_pc968
-__skip_437:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17840,9 +17652,9 @@ __skip_437:
   .L_f47_pc969:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_438
+    bnez t0, 0f
     j    .L_f47_pc972
-__skip_438:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17854,9 +17666,9 @@ __skip_438:
   .L_f47_pc973:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_439
+    bnez t0, 0f
     j    .L_f47_pc980
-__skip_439:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17872,9 +17684,9 @@ __skip_439:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_440
+    bnez t0, 0f
     j    .L_f47_pc980
-__skip_440:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17886,9 +17698,9 @@ __skip_440:
   .L_f47_pc981:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_441
+    bnez t0, 0f
     j    .L_f47_pc988
-__skip_441:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17904,9 +17716,9 @@ __skip_441:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_442
+    bnez t0, 0f
     j    .L_f47_pc988
-__skip_442:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17918,9 +17730,9 @@ __skip_442:
   .L_f47_pc989:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_443
+    bnez t0, 0f
     j    .L_f47_pc996
-__skip_443:
+0:
     lw   t0, -192(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17936,9 +17748,9 @@ __skip_443:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_444
+    bnez t0, 0f
     j    .L_f47_pc996
-__skip_444:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17950,9 +17762,9 @@ __skip_444:
   .L_f47_pc997:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_445
+    bnez t0, 0f
     j    .L_f47_pc1032
-__skip_445:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18008,9 +17820,9 @@ __skip_445:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_446
+    bnez t0, 0f
     j    .L_f47_pc1018
-__skip_446:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18060,9 +17872,9 @@ __skip_446:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_447
+    bnez t0, 0f
     j    .L_f47_pc1030
-__skip_447:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18109,9 +17921,9 @@ __skip_447:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_448
+    bnez t0, 0f
     j    .L_f47_pc1058
-__skip_448:
+0:
     lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18127,9 +17939,9 @@ __skip_448:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_449
+    beqz t0, 0f
     j    .L_f47_pc1054
-__skip_449:
+0:
     lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18144,9 +17956,9 @@ __skip_449:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_450
+    bnez t0, 0f
     j    .L_f47_pc1050
-__skip_450:
+0:
     lw   t0, -196(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18162,9 +17974,9 @@ __skip_450:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_451
+    bnez t0, 0f
     j    .L_f47_pc1050
-__skip_451:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18176,9 +17988,9 @@ __skip_451:
   .L_f47_pc1051:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_452
+    beqz t0, 0f
     j    .L_f47_pc1054
-__skip_452:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18190,9 +18002,9 @@ __skip_452:
   .L_f47_pc1055:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_453
+    bnez t0, 0f
     j    .L_f47_pc1058
-__skip_453:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18204,9 +18016,9 @@ __skip_453:
   .L_f47_pc1059:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_454
+    bnez t0, 0f
     j    .L_f47_pc1066
-__skip_454:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18222,9 +18034,9 @@ __skip_454:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_455
+    bnez t0, 0f
     j    .L_f47_pc1066
-__skip_455:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18236,9 +18048,9 @@ __skip_455:
   .L_f47_pc1067:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_456
+    bnez t0, 0f
     j    .L_f47_pc1074
-__skip_456:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18254,9 +18066,9 @@ __skip_456:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_457
+    bnez t0, 0f
     j    .L_f47_pc1074
-__skip_457:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18268,9 +18080,9 @@ __skip_457:
   .L_f47_pc1075:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_458
+    bnez t0, 0f
     j    .L_f47_pc1082
-__skip_458:
+0:
     lw   t0, -192(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18286,9 +18098,9 @@ __skip_458:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_459
+    bnez t0, 0f
     j    .L_f47_pc1082
-__skip_459:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18300,9 +18112,9 @@ __skip_459:
   .L_f47_pc1083:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_460
+    bnez t0, 0f
     j    .L_f47_pc1124
-__skip_460:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18373,9 +18185,9 @@ __skip_460:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_461
+    bnez t0, 0f
     j    .L_f47_pc1109
-__skip_461:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18427,9 +18239,9 @@ __skip_461:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_462
+    bnez t0, 0f
     j    .L_f47_pc1122
-__skip_462:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18478,9 +18290,9 @@ __skip_462:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_463
+    bnez t0, 0f
     j    .L_f47_pc1150
-__skip_463:
+0:
     lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18496,9 +18308,9 @@ __skip_463:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_464
+    beqz t0, 0f
     j    .L_f47_pc1146
-__skip_464:
+0:
     lw   t0, -144(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18513,9 +18325,9 @@ __skip_464:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_465
+    bnez t0, 0f
     j    .L_f47_pc1142
-__skip_465:
+0:
     lw   t0, -196(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18531,9 +18343,9 @@ __skip_465:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_466
+    bnez t0, 0f
     j    .L_f47_pc1142
-__skip_466:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18545,9 +18357,9 @@ __skip_466:
   .L_f47_pc1143:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_467
+    beqz t0, 0f
     j    .L_f47_pc1146
-__skip_467:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18559,9 +18371,9 @@ __skip_467:
   .L_f47_pc1147:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_468
+    bnez t0, 0f
     j    .L_f47_pc1150
-__skip_468:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18573,9 +18385,9 @@ __skip_468:
   .L_f47_pc1151:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_469
+    bnez t0, 0f
     j    .L_f47_pc1158
-__skip_469:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18591,9 +18403,9 @@ __skip_469:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_470
+    bnez t0, 0f
     j    .L_f47_pc1158
-__skip_470:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18605,9 +18417,9 @@ __skip_470:
   .L_f47_pc1159:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_471
+    bnez t0, 0f
     j    .L_f47_pc1166
-__skip_471:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18623,9 +18435,9 @@ __skip_471:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_472
+    bnez t0, 0f
     j    .L_f47_pc1166
-__skip_472:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18637,9 +18449,9 @@ __skip_472:
   .L_f47_pc1167:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_473
+    bnez t0, 0f
     j    .L_f47_pc1174
-__skip_473:
+0:
     lw   t0, -192(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18655,9 +18467,9 @@ __skip_473:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_474
+    bnez t0, 0f
     j    .L_f47_pc1174
-__skip_474:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18669,9 +18481,9 @@ __skip_474:
   .L_f47_pc1175:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_475
+    bnez t0, 0f
     j    .L_f47_pc1184
-__skip_475:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18718,9 +18530,9 @@ __skip_475:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_476
+    bnez t0, 0f
     j    .L_f47_pc1194
-__skip_476:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18736,9 +18548,9 @@ __skip_476:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_477
+    bnez t0, 0f
     j    .L_f47_pc1194
-__skip_477:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18750,9 +18562,9 @@ __skip_477:
   .L_f47_pc1195:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_478
+    bnez t0, 0f
     j    .L_f47_pc1202
-__skip_478:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18768,9 +18580,9 @@ __skip_478:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_479
+    bnez t0, 0f
     j    .L_f47_pc1202
-__skip_479:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18782,9 +18594,9 @@ __skip_479:
   .L_f47_pc1203:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_480
+    bnez t0, 0f
     j    .L_f47_pc1210
-__skip_480:
+0:
     lw   t0, -192(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18800,9 +18612,9 @@ __skip_480:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_481
+    bnez t0, 0f
     j    .L_f47_pc1210
-__skip_481:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18814,9 +18626,9 @@ __skip_481:
   .L_f47_pc1211:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_482
+    bnez t0, 0f
     j    .L_f47_pc1214
-__skip_482:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18839,9 +18651,9 @@ __skip_482:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_483
+    bnez t0, 0f
     j    .L_f47_pc1224
-__skip_483:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18857,9 +18669,9 @@ __skip_483:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_484
+    bnez t0, 0f
     j    .L_f47_pc1224
-__skip_484:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18871,9 +18683,9 @@ __skip_484:
   .L_f47_pc1225:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_485
+    bnez t0, 0f
     j    .L_f47_pc1232
-__skip_485:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18889,9 +18701,9 @@ __skip_485:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_486
+    bnez t0, 0f
     j    .L_f47_pc1232
-__skip_486:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18903,9 +18715,9 @@ __skip_486:
   .L_f47_pc1233:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_487
+    bnez t0, 0f
     j    .L_f47_pc1378
-__skip_487:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18997,9 +18809,9 @@ __skip_487:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_488
+    bnez t0, 0f
     j    .L_f47_pc1304
-__skip_488:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19060,9 +18872,9 @@ __skip_488:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_489
+    bnez t0, 0f
     j    .L_f47_pc1290
-__skip_489:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19194,9 +19006,9 @@ __skip_489:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_490
+    bnez t0, 0f
     j    .L_f47_pc1376
-__skip_490:
+0:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19287,9 +19099,9 @@ __skip_490:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_491
+    bnez t0, 0f
     j    .L_f47_pc1348
-__skip_491:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19372,9 +19184,9 @@ __skip_491:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_492
+    bnez t0, 0f
     j    .L_f47_pc1372
-__skip_492:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19481,9 +19293,9 @@ __skip_492:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_493
+    bnez t0, 0f
     j    .L_f47_pc1388
-__skip_493:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19499,9 +19311,9 @@ __skip_493:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_494
+    bnez t0, 0f
     j    .L_f47_pc1388
-__skip_494:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19513,9 +19325,9 @@ __skip_494:
   .L_f47_pc1389:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_495
+    bnez t0, 0f
     j    .L_f47_pc1396
-__skip_495:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19531,9 +19343,9 @@ __skip_495:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_496
+    bnez t0, 0f
     j    .L_f47_pc1396
-__skip_496:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19545,9 +19357,9 @@ __skip_496:
   .L_f47_pc1397:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_497
+    bnez t0, 0f
     j    .L_f47_pc1471
-__skip_497:
+0:
     lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19653,9 +19465,9 @@ __skip_497:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_498
+    bnez t0, 0f
     j    .L_f47_pc1428
-__skip_498:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19678,9 +19490,9 @@ __skip_498:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_499
+    bnez t0, 0f
     j    .L_f47_pc1469
-__skip_499:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19708,9 +19520,9 @@ __skip_499:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_500
+    bnez t0, 0f
     j    .L_f47_pc1446
-__skip_500:
+0:
     lw   t0, -336(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19726,9 +19538,9 @@ __skip_500:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_501
+    bnez t0, 0f
     j    .L_f47_pc1446
-__skip_501:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19740,9 +19552,9 @@ __skip_501:
   .L_f47_pc1447:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_502
+    bnez t0, 0f
     j    .L_f47_pc1467
-__skip_502:
+0:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19794,9 +19606,9 @@ __skip_502:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_503
+    bnez t0, 0f
     j    .L_f47_pc1462
-__skip_503:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19850,9 +19662,9 @@ __skip_503:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_504
+    bnez t0, 0f
     j    .L_f47_pc1481
-__skip_504:
+0:
     lw   t0, -184(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19868,9 +19680,9 @@ __skip_504:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_505
+    bnez t0, 0f
     j    .L_f47_pc1481
-__skip_505:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19882,9 +19694,9 @@ __skip_505:
   .L_f47_pc1482:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_506
+    bnez t0, 0f
     j    .L_f47_pc1497
-__skip_506:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19900,9 +19712,9 @@ __skip_506:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_507
+    beqz t0, 0f
     j    .L_f47_pc1493
-__skip_507:
+0:
     lw   t0, -188(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19918,9 +19730,9 @@ __skip_507:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    beqz t0, __skip_508
+    beqz t0, 0f
     j    .L_f47_pc1493
-__skip_508:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19932,9 +19744,9 @@ __skip_508:
   .L_f47_pc1494:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_509
+    bnez t0, 0f
     j    .L_f47_pc1497
-__skip_509:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19946,9 +19758,9 @@ __skip_509:
   .L_f47_pc1498:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_510
+    bnez t0, 0f
     j    .L_f47_pc1503
-__skip_510:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19977,9 +19789,9 @@ __skip_510:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_511
+    bnez t0, 0f
     j    .L_f47_pc1513
-__skip_511:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20017,9 +19829,9 @@ __skip_511:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_512
+    bnez t0, 0f
     j    .L_f47_pc1625
-__skip_512:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20057,9 +19869,9 @@ __skip_512:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_513
+    bnez t0, 0f
     j    .L_f47_pc1533
-__skip_513:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20098,9 +19910,9 @@ __skip_513:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_514
+    bnez t0, 0f
     j    .L_f47_pc1625
-__skip_514:
+0:
     lw   t0, -80(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20192,9 +20004,9 @@ __skip_514:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_515
+    bnez t0, 0f
     j    .L_f47_pc1584
-__skip_515:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20303,9 +20115,9 @@ __skip_515:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_516
+    bnez t0, 0f
     j    .L_f47_pc1613
-__skip_516:
+0:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20456,9 +20268,9 @@ __skip_516:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_517
+    bnez t0, 0f
     j    .L_f47_pc1656
-__skip_517:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20573,9 +20385,9 @@ __skip_517:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_518
+    bnez t0, 0f
     j    .L_f47_pc1679
-__skip_518:
+0:
     lw   t0, -80(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20664,9 +20476,9 @@ __skip_518:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_519
+    bnez t0, 0f
     j    .L_f47_pc1687
-__skip_519:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20697,9 +20509,9 @@ __skip_519:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_520
+    bnez t0, 0f
     j    .L_f47_pc1697
-__skip_520:
+0:
     lw   t0, -132(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20716,9 +20528,9 @@ __skip_520:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_521
+    bnez t0, 0f
     j    .L_f47_pc1697
-__skip_521:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20730,9 +20542,9 @@ __skip_521:
   .L_f47_pc1698:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_522
+    bnez t0, 0f
     j    .L_f47_pc1799
-__skip_522:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20795,9 +20607,9 @@ __skip_522:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_523
+    bnez t0, 0f
     j    .L_f47_pc1721
-__skip_523:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20830,9 +20642,9 @@ __skip_523:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_524
+    bnez t0, 0f
     j    .L_f47_pc1729
-__skip_524:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20865,9 +20677,9 @@ __skip_524:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_525
+    bnez t0, 0f
     j    .L_f47_pc1737
-__skip_525:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20900,9 +20712,9 @@ __skip_525:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_526
+    bnez t0, 0f
     j    .L_f47_pc1745
-__skip_526:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20935,9 +20747,9 @@ __skip_526:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_527
+    bnez t0, 0f
     j    .L_f47_pc1753
-__skip_527:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20970,9 +20782,9 @@ __skip_527:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_528
+    bnez t0, 0f
     j    .L_f47_pc1761
-__skip_528:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21005,9 +20817,9 @@ __skip_528:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_529
+    bnez t0, 0f
     j    .L_f47_pc1769
-__skip_529:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21040,9 +20852,9 @@ __skip_529:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_530
+    bnez t0, 0f
     j    .L_f47_pc1777
-__skip_530:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21075,9 +20887,9 @@ __skip_530:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_531
+    bnez t0, 0f
     j    .L_f47_pc1785
-__skip_531:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21110,9 +20922,9 @@ __skip_531:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_532
+    bnez t0, 0f
     j    .L_f47_pc1793
-__skip_532:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21168,9 +20980,9 @@ __skip_532:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_533
+    bnez t0, 0f
     j    .L_f47_pc1809
-__skip_533:
+0:
     lw   t0, -132(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21187,9 +20999,9 @@ __skip_533:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_534
+    bnez t0, 0f
     j    .L_f47_pc1809
-__skip_534:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21201,9 +21013,9 @@ __skip_534:
   .L_f47_pc1810:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_535
+    bnez t0, 0f
     j    .L_f47_pc1891
-__skip_535:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21266,9 +21078,9 @@ __skip_535:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_536
+    bnez t0, 0f
     j    .L_f47_pc1835
-__skip_536:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21284,9 +21096,9 @@ __skip_536:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_537
+    bnez t0, 0f
     j    .L_f47_pc1835
-__skip_537:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21310,9 +21122,9 @@ __skip_537:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_538
+    bnez t0, 0f
     j    .L_f47_pc1845
-__skip_538:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21328,9 +21140,9 @@ __skip_538:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_539
+    bnez t0, 0f
     j    .L_f47_pc1845
-__skip_539:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21354,9 +21166,9 @@ __skip_539:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_540
+    bnez t0, 0f
     j    .L_f47_pc1855
-__skip_540:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21371,9 +21183,9 @@ __skip_540:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_541
+    bnez t0, 0f
     j    .L_f47_pc1855
-__skip_541:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21397,9 +21209,9 @@ __skip_541:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_542
+    bnez t0, 0f
     j    .L_f47_pc1865
-__skip_542:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21415,9 +21227,9 @@ __skip_542:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_543
+    bnez t0, 0f
     j    .L_f47_pc1865
-__skip_543:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21441,9 +21253,9 @@ __skip_543:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_544
+    bnez t0, 0f
     j    .L_f47_pc1875
-__skip_544:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21458,9 +21270,9 @@ __skip_544:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_545
+    bnez t0, 0f
     j    .L_f47_pc1875
-__skip_545:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21484,9 +21296,9 @@ __skip_545:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_546
+    bnez t0, 0f
     j    .L_f47_pc1885
-__skip_546:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21502,9 +21314,9 @@ __skip_546:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_547
+    bnez t0, 0f
     j    .L_f47_pc1885
-__skip_547:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21551,9 +21363,9 @@ __skip_547:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_548
+    bnez t0, 0f
     j    .L_f47_pc1907
-__skip_548:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21616,9 +21428,9 @@ __skip_548:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_549
+    bnez t0, 0f
     j    .L_f47_pc1929
-__skip_549:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21654,9 +21466,9 @@ __skip_549:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_550
+    bnez t0, 0f
     j    .L_f47_pc1923
-__skip_550:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21703,9 +21515,9 @@ __skip_550:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_551
+    bnez t0, 0f
     j    .L_f47_pc2057
-__skip_551:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21752,9 +21564,9 @@ __skip_551:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_552
+    bnez t0, 0f
     j    .L_f47_pc1951
-__skip_552:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21785,9 +21597,9 @@ __skip_552:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_553
+    bnez t0, 0f
     j    .L_f47_pc1961
-__skip_553:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21828,9 +21640,9 @@ __skip_553:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_554
+    bnez t0, 0f
     j    .L_f47_pc1971
-__skip_554:
+0:
     lw   t0, -384(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21846,9 +21658,9 @@ __skip_554:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_555
+    bnez t0, 0f
     j    .L_f47_pc1971
-__skip_555:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21860,9 +21672,9 @@ __skip_555:
   .L_f47_pc1972:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_556
+    bnez t0, 0f
     j    .L_f47_pc1977
-__skip_556:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21894,9 +21706,9 @@ __skip_556:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_557
+    bnez t0, 0f
     j    .L_f47_pc1987
-__skip_557:
+0:
     lw   t0, -384(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21912,9 +21724,9 @@ __skip_557:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_558
+    bnez t0, 0f
     j    .L_f47_pc1987
-__skip_558:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21926,9 +21738,9 @@ __skip_558:
   .L_f47_pc1988:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_559
+    bnez t0, 0f
     j    .L_f47_pc1993
-__skip_559:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21960,9 +21772,9 @@ __skip_559:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_560
+    bnez t0, 0f
     j    .L_f47_pc2003
-__skip_560:
+0:
     lw   t0, -384(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21978,9 +21790,9 @@ __skip_560:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_561
+    bnez t0, 0f
     j    .L_f47_pc2003
-__skip_561:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21992,9 +21804,9 @@ __skip_561:
   .L_f47_pc2004:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_562
+    bnez t0, 0f
     j    .L_f47_pc2017
-__skip_562:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22025,9 +21837,9 @@ __skip_562:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_563
+    bnez t0, 0f
     j    .L_f47_pc2017
-__skip_563:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22059,9 +21871,9 @@ __skip_563:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_564
+    bnez t0, 0f
     j    .L_f47_pc2027
-__skip_564:
+0:
     lw   t0, -384(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22077,9 +21889,9 @@ __skip_564:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_565
+    bnez t0, 0f
     j    .L_f47_pc2027
-__skip_565:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22091,9 +21903,9 @@ __skip_565:
   .L_f47_pc2028:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_566
+    bnez t0, 0f
     j    .L_f47_pc2041
-__skip_566:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22124,9 +21936,9 @@ __skip_566:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_567
+    bnez t0, 0f
     j    .L_f47_pc2041
-__skip_567:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22158,9 +21970,9 @@ __skip_567:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_568
+    bnez t0, 0f
     j    .L_f47_pc2051
-__skip_568:
+0:
     lw   t0, -376(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22176,9 +21988,9 @@ __skip_568:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_569
+    bnez t0, 0f
     j    .L_f47_pc2051
-__skip_569:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22225,9 +22037,9 @@ __skip_569:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_570
+    bnez t0, 0f
     j    .L_f47_pc2063
-__skip_570:
+0:
     lw   t0, -136(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22252,9 +22064,9 @@ __skip_570:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_571
+    bnez t0, 0f
     j    .L_f47_pc2077
-__skip_571:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22284,9 +22096,9 @@ __skip_571:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_572
+    bnez t0, 0f
     j    .L_f47_pc2077
-__skip_572:
+0:
     lw   t0, -136(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22311,9 +22123,9 @@ __skip_572:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_573
+    bnez t0, 0f
     j    .L_f47_pc2091
-__skip_573:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22343,9 +22155,9 @@ __skip_573:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_574
+    bnez t0, 0f
     j    .L_f47_pc2091
-__skip_574:
+0:
     lw   t0, -136(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22371,9 +22183,9 @@ __skip_574:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_575
+    bnez t0, 0f
     j    .L_f47_pc2102
-__skip_575:
+0:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22738,9 +22550,9 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_576
+    bnez t0, 0f
     j    .L_f48_pc83
-__skip_576:
+0:
     la   t1, g_in_len
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -22756,9 +22568,9 @@ __skip_576:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_577
+    bnez t0, 0f
     j    .L_f48_pc83
-__skip_577:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22770,9 +22582,9 @@ __skip_577:
   .L_f48_pc84:
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_578
+    bnez t0, 0f
     j    .L_f48_pc125
-__skip_578:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22807,9 +22619,9 @@ __skip_578:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_579
+    bnez t0, 0f
     j    .L_f48_pc96
-__skip_579:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22831,9 +22643,9 @@ __skip_579:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_580
+    bnez t0, 0f
     j    .L_f48_pc124
-__skip_580:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22855,9 +22667,9 @@ __skip_580:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_581
+    bnez t0, 0f
     j    .L_f48_pc120
-__skip_581:
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22956,9 +22768,9 @@ __skip_581:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_582
+    bnez t0, 0f
     j    .L_f48_pc134
-__skip_582:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23077,9 +22889,9 @@ __skip_582:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_583
+    bnez t0, 0f
     j    .L_f48_pc175
-__skip_583:
+0:
     lw   t0, -120(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23269,4 +23081,192 @@ __skip_583:
     addi sp, t0, 0
     ret
     # end of main
+
+    .data
+    .globl OP_PUSH_INT
+OP_PUSH_INT:
+    .word 1
+    .globl OP_PUSH_STR
+OP_PUSH_STR:
+    .word 2
+    .globl OP_LOAD
+OP_LOAD:
+    .word 3
+    .globl OP_STORE
+OP_STORE:
+    .word 4
+    .globl OP_CALL
+OP_CALL:
+    .word 5
+    .globl OP_RETURN
+OP_RETURN:
+    .word 6
+    .globl OP_RETURN_VOID
+OP_RETURN_VOID:
+    .word 7
+    .globl OP_POP
+OP_POP:
+    .word 8
+    .globl OP_ADD
+OP_ADD:
+    .word 9
+    .globl OP_SUB
+OP_SUB:
+    .word 10
+    .globl OP_MUL
+OP_MUL:
+    .word 11
+    .globl OP_DIV
+OP_DIV:
+    .word 12
+    .globl OP_MOD
+OP_MOD:
+    .word 13
+    .globl OP_AND
+OP_AND:
+    .word 14
+    .globl OP_OR
+OP_OR:
+    .word 15
+    .globl OP_XOR
+OP_XOR:
+    .word 16
+    .globl OP_SHL
+OP_SHL:
+    .word 17
+    .globl OP_SHR
+OP_SHR:
+    .word 18
+    .globl OP_EQ
+OP_EQ:
+    .word 19
+    .globl OP_NE
+OP_NE:
+    .word 20
+    .globl OP_LT
+OP_LT:
+    .word 21
+    .globl OP_LE
+OP_LE:
+    .word 22
+    .globl OP_GT
+OP_GT:
+    .word 23
+    .globl OP_GE
+OP_GE:
+    .word 24
+    .globl OP_NEG
+OP_NEG:
+    .word 25
+    .globl OP_LNOT
+OP_LNOT:
+    .word 26
+    .globl OP_CAST
+OP_CAST:
+    .word 27
+    .globl OP_JUMP
+OP_JUMP:
+    .word 28
+    .globl OP_JUMP_IF
+OP_JUMP_IF:
+    .word 29
+    .globl OP_JUMP_IFNOT
+OP_JUMP_IFNOT:
+    .word 30
+    .globl HK_U8
+HK_U8:
+    .word 1
+    .globl HK_I32
+HK_I32:
+    .word 2
+    .globl HK_STR
+HK_STR:
+    .word 3
+    .globl TAG_INT
+TAG_INT:
+    .word 0
+    .globl TAG_REF
+TAG_REF:
+    .word 1
+    .globl g_cur_func
+g_cur_func:
+    .word 0
+    .globl g_cur_pc
+g_cur_pc:
+    .word 0
+    .globl g_sp
+g_sp:
+    .word 0
+    .globl g_csp
+g_csp:
+    .word 0
+    .globl g_frame_base
+g_frame_base:
+    .word 0
+    .globl g_vp
+g_vp:
+    .word 0
+    .globl g_pop_ival
+g_pop_ival:
+    .word 0
+    .globl g_pop_tag
+g_pop_tag:
+    .word 0
+    .globl g_cs_func
+g_cs_func:
+    .word 0
+    .globl g_cs_pc
+g_cs_pc:
+    .word 0
+    .globl g_cs_fbase
+g_cs_fbase:
+    .word 0
+    .globl g_cs_vp
+g_cs_vp:
+    .word 0
+    .globl g_cs_sp
+g_cs_sp:
+    .word 0
+    .globl g_prog_stdin_pos
+g_prog_stdin_pos:
+    .word 0
+    .globl g_prog_stdin_len
+g_prog_stdin_len:
+    .word 0
+    .globl g_nfuncs
+g_nfuncs:
+    .word 0
+    .globl g_nparams
+g_nparams:
+    .word 0
+    .globl g_nlocals
+g_nlocals:
+    .word 0
+    .globl g_ninstrs
+g_ninstrs:
+    .word 0
+    .globl g_nglobals
+g_nglobals:
+    .word 0
+    .globl g_nstrings
+g_nstrings:
+    .word 0
+    .globl g_stab_pos
+g_stab_pos:
+    .word 0
+    .globl g_in_pos
+g_in_pos:
+    .word 0
+    .globl g_in_len
+g_in_len:
+    .word 0
+    .globl g_heap_bytes_top
+g_heap_bytes_top:
+    .word 0
+    .globl g_heap_i32s_top
+g_heap_i32s_top:
+    .word 0
+    .globl g_heap_obj_count
+g_heap_obj_count:
+    .word 0
 

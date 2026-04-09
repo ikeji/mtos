@@ -24,9 +24,9 @@ classify__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_0
+    bnez t0, 0f
     j    .L_f0_pc7
-__skip_0:
+0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -55,9 +55,9 @@ __skip_0:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_1
+    bnez t0, 0f
     j    .L_f0_pc14
-__skip_1:
+0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -85,9 +85,9 @@ __skip_1:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_2
+    bnez t0, 0f
     j    .L_f0_pc21
-__skip_2:
+0:
     li   t0, 2
     addi sp, sp, -4
     sw   t0, 0(sp)

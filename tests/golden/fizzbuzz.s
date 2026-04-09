@@ -1,17 +1,3 @@
-    .section .rodata
-    .align 4
-__tc_strobj0:
-    .word 8
-    .string "FizzBuzz"
-    .align 4
-__tc_strobj1:
-    .word 4
-    .string "Fizz"
-    .align 4
-__tc_strobj2:
-    .word 4
-    .string "Buzz"
-
     .text
     .align 2
 
@@ -47,9 +33,9 @@ fizzbuzz__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_0
+    bnez t0, 0f
     j    .L_f0_pc44
-__skip_0:
+0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -74,9 +60,9 @@ __skip_0:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_1
+    bnez t0, 0f
     j    .L_f0_pc16
-__skip_1:
+0:
     la   t0, __tc_strobj0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -112,9 +98,9 @@ __skip_1:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_2
+    bnez t0, 0f
     j    .L_f0_pc26
-__skip_2:
+0:
     la   t0, __tc_strobj1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -150,9 +136,9 @@ __skip_2:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    bnez t0, __skip_3
+    bnez t0, 0f
     j    .L_f0_pc36
-__skip_3:
+0:
     la   t0, __tc_strobj2
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -239,4 +225,18 @@ main:
     addi sp, t0, 0
     ret
     # end of main
+
+    .section .rodata
+    .align 4
+__tc_strobj0:
+    .word 8
+    .string "FizzBuzz"
+    .align 4
+__tc_strobj1:
+    .word 4
+    .string "Fizz"
+    .align 4
+__tc_strobj2:
+    .word 4
+    .string "Buzz"
 
