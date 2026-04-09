@@ -159,21 +159,10 @@ compile_tc_to_bc() {
 _GEN2_TMP=""
 _GEN2_READY=false
 
-# build_gen2_tool "name" — compiles compiler/$name.tc to RISC-V ELF
+# build_gen2_tool "name" — compiles compiler/$name.tc to RISC-V ELF via tc_asm.sh
 build_gen2_tool() {
     local name="$1"
-    local tc_file="$TC_DIR/$name.tc"
-    local asm_files=()
-    local imp_file
-    while IFS= read -r imp_file; do
-        [ -z "$imp_file" ] && continue
-        local base=$(basename "$imp_file" .tc)
-        "$CODEGEN" "$imp_file" 2>/dev/null | "$BC2ASM" > "$_GEN2_TMP/${name}_dep_${base}.s" 2>/dev/null
-        asm_files+=("$_GEN2_TMP/${name}_dep_${base}.s")
-    done < <(collect_imports "$tc_file")
-    "$CODEGEN" "$tc_file" 2>/dev/null | "$BC2ASM" > "$_GEN2_TMP/$name.s" 2>/dev/null
-    asm_files+=("$_GEN2_TMP/$name.s")
-    "$RISCV_CC" "${RISCV_FLAGS[@]}" "$CRT0" "$RUNTIME" "${asm_files[@]}" -o "$_GEN2_TMP/$name" 2>/dev/null
+    "$ROOT_DIR/tc_asm.sh" -o "$_GEN2_TMP/$name" "$TC_DIR/$name.tc" 2>/dev/null
 }
 
 # ensure_gen2_tools — builds Gen2 RISC-V binaries (once), sets USE_NATIVE
@@ -181,7 +170,7 @@ ensure_gen2_tools() {
     if [ "$_GEN2_READY" = true ]; then return; fi
     _GEN2_READY=true
     USE_NATIVE=false
-    if command -v "$RISCV_CC" >/dev/null 2>&1 && command -v "$QEMU" >/dev/null 2>&1; then
+    if command -v "$QEMU" >/dev/null 2>&1; then
         _GEN2_TMP=$(mktemp -d)
         build_gen2_tool "parse"
         build_gen2_tool "typecheck"
