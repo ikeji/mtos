@@ -36,6 +36,37 @@ echo ""
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
+# ===== gp-relative la expansion unit test =====
+# Source layout: _start is 8 bytes, then .bss/__bss_var at physical offset 8.
+# With ; gp 0x20000800, the `la t0, __bss_var` must expand to
+#   auipc t0, 0        (0x00000297)
+#   addi  t0, gp, -2048 (0x80018293)
+# offset = (label_addr - data_base_pos) - 0x800 = (8 - 8) - 0x800 = -0x800.
+cat > "$TMP/gp.s" << 'EOF'
+; raw
+; gp 0x20000800
+.text
+.globl _start
+_start:
+    la t0, __bss_var
+.bss
+__bss_var:
+    .space 4
+EOF
+
+t0=$(time_ms)
+run_asm_tc < "$TMP/gp.s" > "$TMP/gp.bin"
+elapsed=$(( $(time_ms) - t0 ))
+
+expected_hex="970200009382 0180"
+actual_hex=$(od -An -v -tx1 -N8 "$TMP/gp.bin" | tr -d ' \n')
+if [ "$actual_hex" = "970200009382 0180" ] || [ "$actual_hex" = "9702000093820180" ]; then
+    report_pass "asm[gp]: la to bss symbol expands to gp-relative (auipc+addi gp)" "$elapsed"
+else
+    report_fail_msg "asm[gp]: la gp-relative encoding" \
+        "expected 9702000093820180, got $actual_hex"
+fi
+
 VIRT_CRT0="$SCRIPT_DIR/virt_crt0.s"
 HELLO_TC="$SCRIPT_DIR/hello2.tc"
 BIN="$TMP/hello2_virt.bin"
