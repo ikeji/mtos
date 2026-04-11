@@ -17,9 +17,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSE="$ROOT_DIR/parse"
 EXTRACT_SIGS="$ROOT_DIR/extract-sigs"
 QEMU="${QEMU:-qemu-riscv32}"
-CRT0="$ROOT_DIR/bootstrap/crt0_tc.s"
-CRT0_DATA="$ROOT_DIR/bootstrap/crt0_tc_data.s"
-RUNTIME_TC="$ROOT_DIR/compiler/runtime.tc"
+CRT0="${CRT0:-$ROOT_DIR/bootstrap/crt0_tc.s}"
+CRT0_DATA="${CRT0_DATA:-$ROOT_DIR/bootstrap/crt0_tc_data.s}"
+RUNTIME_TC="${RUNTIME_TC:-$ROOT_DIR/compiler/runtime.tc}"
+# Optional directive lines prepended to asm input (e.g. "; raw" for Pico 2 / virt).
+ASM_PROLOGUE="${ASM_PROLOGUE:-}"
 
 OUTFILE="a.out"
 TC_FILE=""
@@ -120,8 +122,13 @@ for tc in "${ALL_FILES[@]}"; do
     ASM_FILES+=("$TMP/$base.s")
 done
 
-# Assemble: crt0_tc.s + runtime.s + user .s files + crt0_tc_data.s → ELF via Gen2 asm
-{ cat "$CRT0"; cat "$TMP/runtime.s"; cat "${ASM_FILES[@]}"; cat "$CRT0_DATA"; } | \
-    "$QEMU" "$GEN2_DIR/asm" > "$OUTFILE" 2>/dev/null
+# Assemble: [prologue] + crt0 + runtime.s + user .s files + crt0_data → ELF/raw via Gen2 asm
+{
+    [ -n "$ASM_PROLOGUE" ] && printf '%s\n' "$ASM_PROLOGUE"
+    cat "$CRT0"
+    cat "$TMP/runtime.s"
+    cat "${ASM_FILES[@]}"
+    cat "$CRT0_DATA"
+} | "$QEMU" "$GEN2_DIR/asm" > "$OUTFILE" 2>/dev/null
 
 chmod +x "$OUTFILE"
