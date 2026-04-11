@@ -177,9 +177,10 @@ ensure_gen2_tools() {
         build_gen2_tool "codegen"
         build_gen2_tool "bc2asm"
         build_gen2_tool "bcrun"
+        build_gen2_tool "asm"
         if [ -x "$_GEN2_TMP/parse" ] && [ -x "$_GEN2_TMP/typecheck" ] && \
            [ -x "$_GEN2_TMP/codegen" ] && [ -x "$_GEN2_TMP/bc2asm" ] && \
-           [ -x "$_GEN2_TMP/bcrun" ]; then
+           [ -x "$_GEN2_TMP/bcrun" ] && [ -x "$_GEN2_TMP/asm" ]; then
             USE_NATIVE=true
         fi
     fi
@@ -206,6 +207,10 @@ run_codegen_tc() {
 
 run_bc2asm_tc() {
     "$QEMU" "$_GEN2_TMP/bc2asm" 2>/dev/null
+}
+
+run_asm_tc() {
+    "$QEMU" "$_GEN2_TMP/asm" 2>/dev/null
 }
 
 # ===== Common test file lists =====
