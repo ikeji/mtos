@@ -8,9 +8,14 @@ import "strlib.tc";
 
 // ===== Constants =====
 var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
-var TEXT_BASE: i32 = 65620;  // 0x10000 + 84 (code starts after ELF headers)
+// PIC: labels are stored as offsets from code start (0..code_size).
+// ELF output adds g_load_vaddr + ELF_HDR_SIZE for runtime addresses.
 var MAX_LABELS: i32 = 16384;
 var MAX_CODE: i32 = 4194300; // ~4MB (4MB minus HeapObj header)
+
+// ===== Output mode (set by ; raw / ; load_base directives) =====
+var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
+var g_raw_mode: i32 = 0;        // 1 = raw bin output (no ELF header)
 
 // ===== Global state =====
 var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in main
@@ -330,7 +335,7 @@ fn parse_label_op(op_idx: i32) -> i32 {
     if len == 2 && is_digit(get(g_line_buf, off)) {
         var digit: i32 = get(g_line_buf, off) as i32 - 48;
         var dir: u8 = get(g_line_buf, (off + 1));
-        var pc: i32 = TEXT_BASE + g_pos;
+        var pc: i32 = g_pos;
         if dir == 'b' { return numlab_back(digit, pc); }
         if dir == 'f' { return numlab_fwd(digit, pc); }
     }
@@ -425,7 +430,7 @@ fn mnem_eq(name: StringLiteral) -> bool {
 
 // ===== Process instruction: returns byte count =====
 fn asm_instr() -> i32 {
-    var pc: i32 = TEXT_BASE + g_pos;
+    var pc: i32 = g_pos;
 
     // R-type
     if mnem_eq("add")   { if g_pass==2 { emit32(enc_r(51,0,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
@@ -652,14 +657,14 @@ fn process_line(line_idx: i32) -> void {
         if colon_pos == 1 && is_digit(get(g_line_buf, 0)) {
             is_numlab = 1;
             var digit: i32 = get(g_line_buf, 0) as i32 - 48;
-            if g_pass == 1 { define_numlab(digit, TEXT_BASE + g_pos); }
+            if g_pass == 1 { define_numlab(digit, g_pos); }
         }
         if is_numlab == 0 {
             // Named label
             var lname: U8Array = U8Array(colon_pos);
             i = 0;
             while i < colon_pos { set(lname, i, get(g_line_buf, i)); i = i + 1; }
-            if g_pass == 1 { define_label(lname, colon_pos, TEXT_BASE + g_pos); }
+            if g_pass == 1 { define_label(lname, colon_pos, g_pos); }
             delete(lname);
         }
         // Process remainder after colon
@@ -695,7 +700,7 @@ fn process_line(line_idx: i32) -> void {
                 var lname: U8Array = U8Array(op_len);
                 i = 0;
                 while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
-                if g_pass == 1 { define_label(lname, op_len, TEXT_BASE + g_pos); }
+                if g_pass == 1 { define_label(lname, op_len, g_pos); }
                 delete(lname);
             }
             return;
@@ -803,6 +808,58 @@ fn process_line(line_idx: i32) -> void {
     return;
 }
 
+// Check whether a line starting with `; ` is a meta directive,
+// and if so update global state. Returns 1 if consumed, 0 otherwise.
+fn parse_meta_directive(lstart: i32, llen: i32) -> i32 {
+    if llen < 4 { return 0; }
+    if get(g_lines, lstart) != ';' { return 0; }
+    if get(g_lines, (lstart + 1)) != ' ' { return 0; }
+    var p: i32 = lstart + 2;
+    var end: i32 = lstart + llen;
+    // Skip trailing newline
+    if end > p && get(g_lines, (end - 1)) == 10u8 { end = end - 1; }
+    // ; raw
+    if (end - p) == 3
+       && get(g_lines, p)     == 'r'
+       && get(g_lines, (p+1)) == 'a'
+       && get(g_lines, (p+2)) == 'w' {
+        g_raw_mode = 1;
+        return 1;
+    }
+    // ; load_base 0xHHHHHHHH
+    if (end - p) >= 11
+       && get(g_lines, p)     == 'l'
+       && get(g_lines, (p+1)) == 'o'
+       && get(g_lines, (p+2)) == 'a'
+       && get(g_lines, (p+3)) == 'd'
+       && get(g_lines, (p+4)) == '_'
+       && get(g_lines, (p+5)) == 'b'
+       && get(g_lines, (p+6)) == 'a'
+       && get(g_lines, (p+7)) == 's'
+       && get(g_lines, (p+8)) == 'e'
+       && get(g_lines, (p+9)) == ' ' {
+        var q: i32 = p + 10;
+        // skip spaces
+        while q < end && get(g_lines, q) == ' ' { q = q + 1; }
+        // skip 0x prefix
+        if q + 1 < end && get(g_lines, q) == '0'
+           && (get(g_lines, (q + 1)) == 'x' || get(g_lines, (q + 1)) == 'X') {
+            q = q + 2;
+        }
+        var v: i32 = 0;
+        while q < end {
+            var c: u8 = get(g_lines, q);
+            if c >= '0' && c <= '9' { v = v * 16 + (c as i32 - 48); }
+            else if c >= 'a' && c <= 'f' { v = v * 16 + (c as i32 - 87); }
+            else if c >= 'A' && c <= 'F' { v = v * 16 + (c as i32 - 55); }
+            q = q + 1;
+        }
+        g_load_vaddr = v;
+        return 1;
+    }
+    return 0;
+}
+
 // ===== Read all lines from stdin =====
 fn read_all_lines() -> void {
     var src: SourceReader = SourceReader_new(0);
@@ -817,9 +874,14 @@ fn read_all_lines() -> void {
         }
         var llen: i32 = g_line_pos - lstart;
         if llen > 0 {
-            set(g_line_offs, g_nlines, lstart);
-            set(g_line_lens, g_nlines, llen);
-            g_nlines = g_nlines + 1;
+            if parse_meta_directive(lstart, llen) == 1 {
+                // Discard line bytes (don't store as instruction)
+                g_line_pos = lstart;
+            } else {
+                set(g_line_offs, g_nlines, lstart);
+                set(g_line_lens, g_nlines, llen);
+                g_nlines = g_nlines + 1;
+            }
         }
     }
     close(src);
@@ -836,17 +898,22 @@ fn write_le32(buf: U8Array, off: i32, v: i32) -> void {
 }
 
 fn write_elf(code_size: i32, mem_size: i32) -> void {
+    // Raw mode: just write the code, no ELF wrapper
+    if g_raw_mode == 1 {
+        sys_write(1, g_code, code_size);
+        return;
+    }
     var out: U8Array = U8Array(4096);
     var entry: i32 = 0;
     var tmp: U8Array = U8Array(6);
     set(tmp, 0, '_'); set(tmp, 1, 's'); set(tmp, 2, 't');
     set(tmp, 3, 'a'); set(tmp, 4, 'r'); set(tmp, 5, 't');
-    entry = label_addr(tmp, 6);
+    // PIC: label_addr returns offset from code start.
+    // Runtime addr = load_vaddr + ELF_HDR_SIZE + offset.
+    entry = label_addr(tmp, 6) + g_load_vaddr + ELF_HDR_SIZE;
     delete(tmp);
 
-    var load_vaddr: i32 = 65536;   // 0x10000 — page-aligned load address
-    var bss_vaddr: i32 = TEXT_BASE + code_size;
-    bss_vaddr = (bss_vaddr + 4095) & (0 - 4096);
+    var load_vaddr: i32 = g_load_vaddr;
     var total_filesz: i32 = ELF_HDR_SIZE + code_size;
     var total_memsz: i32 = ELF_HDR_SIZE + mem_size;
 
@@ -917,8 +984,8 @@ fn main() -> i32 {
     while i < g_nlines { process_line(i); i = i + 1; }
     var code_total: i32 = g_pos;
 
-    // BSS starts after code, aligned to 4
-    var bss_base: i32 = TEXT_BASE + code_total;
+    // BSS starts after code, aligned to 4 (offsets from code start)
+    var bss_base: i32 = code_total;
     bss_base = (bss_base + 3) & (0 - 4);
 
     // Fixup .comm labels: add bss_base to BSS-relative offset
@@ -930,7 +997,7 @@ fn main() -> i32 {
         i = i + 1;
     }
 
-    var total_memsz: i32 = (bss_base - TEXT_BASE) + g_bss_pos;
+    var total_memsz: i32 = bss_base + g_bss_pos;
 
     // Pass 2: encode
     g_pass = 2;
