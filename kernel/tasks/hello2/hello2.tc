@@ -2,6 +2,14 @@
 
 var g_char: u8 = 'B';
 var g_count: i32 = 5;
+var MTIME_LO: u32 = 0x0200BFF8u32;
+
+fn wait_ticks(ticks: u32) -> void {
+    var start: u32 = peek32(MTIME_LO);
+    while (peek32(MTIME_LO) - start) < ticks {
+    }
+    return;
+}
 
 fn main() -> i32 {
     var buf: U8Array = U8Array(1);
@@ -9,10 +17,7 @@ fn main() -> i32 {
     var i: i32 = 0;
     while i < g_count {
         sys_write(1, buf, 1);
-        var j: i32 = 0;
-        while j < 10000 {
-            j = j + 1;
-        }
+        wait_ticks(50000u32);
         i = i + 1;
     }
     delete(buf);
