@@ -1,12 +1,18 @@
-// hello.tc — guest task: print "HELLO" via sys_write (ecall)
-// Compiled as a standalone raw binary, embedded into the kernel via bin2s.
-// Uses only stack variables to avoid BSS/arena overlap with kernel memory.
+// hello.tc — guest task: prints "A" 5 times then exits
 
 fn main() -> i32 {
-    var buf: U8Array = U8Array(6);
-    set(buf, 0, 'H'); set(buf, 1, 'E'); set(buf, 2, 'L');
-    set(buf, 3, 'L'); set(buf, 4, 'O'); set(buf, 5, 10u8);
-    sys_write(1, buf, 6);
+    var buf: U8Array = U8Array(1);
+    set(buf, 0, 'A');
+    var i: i32 = 0;
+    while i < 5 {
+        sys_write(1, buf, 1);
+        // Busy wait to give timer a chance to preempt
+        var j: i32 = 0;
+        while j < 100000 {
+            j = j + 1;
+        }
+        i = i + 1;
+    }
     delete(buf);
     return 0;
 }

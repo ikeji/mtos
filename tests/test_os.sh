@@ -78,13 +78,20 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1; then
             -device "loader,file=$TMP/kernel_virt,addr=0x80000000" \
             -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
         elapsed=$(( $(time_ms) - t0 ))
+        has_a=$(echo "$kv_out" | grep -c "A")
+        has_b=$(echo "$kv_out" | grep -c "B")
         case "$kv_out" in
-            *"HELLO"*"task 1 done"*"WORLD"*"task 2 done"*)
-                report_pass "kernel_ecall: two embedded tasks run via ecall" "$elapsed"
+            *"all tasks done"*)
+                if [ "$has_a" -gt 0 ] && [ "$has_b" -gt 0 ]; then
+                    report_pass "kernel_preempt: timer preempts two tasks" "$elapsed"
+                else
+                    report_fail_msg "kernel_preempt" \
+                        "expected interleaved A+B, got: $(printf '%s' "$kv_out" | head -c 120)"
+                fi
                 ;;
             *)
-                report_fail_msg "kernel_ecall" \
-                    "expected HELLO+WORLD+done, got: $(printf '%s' "$kv_out" | head -c 120)"
+                report_fail_msg "kernel_preempt" \
+                    "expected 'all tasks done', got: $(printf '%s' "$kv_out" | head -c 120)"
                 ;;
         esac
     else

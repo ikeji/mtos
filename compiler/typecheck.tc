@@ -558,6 +558,14 @@ fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
     set(krt_pts, 4, "i32");
     reg_fn(strtab, fntab, "kern_run_task", krt_pts, 5, "i32");
     delete(krt_pts);
+    reg_fn1(strtab, fntab, "set_switch_frame", "u32", "void");
+    var itf_pts: StringArray = StringArray(6);
+    set(itf_pts, 0, "u32"); set(itf_pts, 1, "i32");
+    set(itf_pts, 2, "u32"); set(itf_pts, 3, "u32");
+    set(itf_pts, 4, "u32"); set(itf_pts, 5, "i32");
+    reg_fn(strtab, fntab, "init_task_frame", itf_pts, 6, "void");
+    delete(itf_pts);
+    reg_fn1(strtab, fntab, "sched_start", "u32", "void");
 
     reg_array_builtins(strtab, fntab, "U8Array", "u8");
     reg_array_builtins(strtab, fntab, "U16Array", "u16");

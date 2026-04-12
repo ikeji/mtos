@@ -1,7 +1,7 @@
 # kernel/crt0_virt.s — kernel crt0 for qemu-system-riscv32 -M virt
 #
 # Platform: 16550 UART @ 0x10000000, SiFive test exit @ 0x100000.
-# Trap handler: ecall (syscall) handled in assembly, interrupts in TC.
+# Supports per-task trap frames and preemptive context switching.
 
     .text
     .globl _start
@@ -11,12 +11,10 @@ _start:
     la   a0, __arena
     li   a1, 4648960
     call __runtime_init__u32__i32
-
     la   t0, _trap_frame
     csrw 0x340, t0
     la   t0, _trap_entry
     csrw 0x305, t0
-
     call main
 _park:
     li   t0, 0x100000
@@ -25,9 +23,6 @@ _park:
 1:  j    1b
 
 # ===== Trap entry =====
-# Saves all regs + mepc to _trap_frame, then dispatches:
-#   mcause == 11 (ecall) → assembly ecall handler
-#   otherwise            → TC trap_handler(cause, epc)
 _trap_entry:
     csrrw sp, 0x340, sp
     sw   ra,   4(sp)
@@ -65,12 +60,10 @@ _trap_entry:
     csrr t0, 0x341
     sw   t0, 128(sp)
     csrw 0x340, sp
-
     # Dispatch by mcause
     csrr t0, 0x342
     li   t1, 11
     beq  t0, t1, _handle_ecall
-
     # Not ecall: call TC trap_handler(cause, epc)
     mv   s0, sp
     la   gp, __global_pointer$
@@ -82,44 +75,61 @@ _trap_entry:
     mv   sp, s0
     j    _trap_restore
 
-# ===== ecall handler (in assembly) =====
+# ===== ecall handler =====
 _handle_ecall:
-    lw   t0, 68(sp)           # saved a7 = syscall number
+    lw   t0, 68(sp)
     li   t1, 64
     beq  t0, t1, _ecall_write
     li   t1, 93
     beq  t0, t1, _ecall_exit
-    # Unknown syscall: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
     sw   t0, 128(sp)
     j    _trap_restore
 
 _ecall_write:
-    # sys_write(fd, buf, len) → a0=fd, a1=buf, a2=len
-    mv   s0, sp               # s0 = trap frame base (callee-saved)
+    mv   s0, sp
     la   gp, __global_pointer$
     la   t0, _kern_save
-    lw   sp, 4(t0)            # kernel stack
-    lw   a0, 44(s0)           # saved a1 = buf
-    lw   a1, 48(s0)           # saved a2 = len
+    lw   sp, 4(t0)
+    lw   a0, 44(s0)
+    lw   a1, 48(s0)
     call do_uart_write__u32__i32
-    sw   a0, 40(s0)           # return value → saved a0
-    lw   t0, 128(s0)          # mepc
+    sw   a0, 40(s0)
+    lw   t0, 128(s0)
     addi t0, t0, 4
     sw   t0, 128(s0)
     mv   sp, s0
     j    _trap_restore
 
 _ecall_exit:
-    # sys_exit(code) — return to kernel via trampoline
-    # Set mepc to _task_exit_trampoline; mret will jump there
+    # Call TC sched_task_exit() to get next task frame (0 = all done)
+    mv   s0, sp
+    la   gp, __global_pointer$
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    call sched_task_exit
+    beqz a0, _all_tasks_done
+    # Switch to next task's frame
+    la   t0, _switch_frame
+    sw   a0, 0(t0)
+    mv   sp, s0
+    j    _trap_restore
+_all_tasks_done:
+    mv   sp, s0
     la   t0, _task_exit_trampoline
-    sw   t0, 128(sp)          # mepc = trampoline
+    sw   t0, 128(sp)
     j    _trap_restore
 
-# ===== Trap restore + mret =====
+# ===== Trap restore + context switch =====
 _trap_restore:
+    # Check _switch_frame: if non-zero, switch to that frame
+    la   t0, _switch_frame
+    lw   t1, 0(t0)
+    beqz t1, _no_switch
+    csrw 0x340, t1
+    sw   zero, 0(t0)
+_no_switch:
     csrr sp, 0x340
     lw   t0, 128(sp)
     csrw 0x341, t0
@@ -157,8 +167,6 @@ _trap_restore:
     mret
 
 # ===== Task exit trampoline =====
-# mret jumps here after ecall exit. a0 = exit code (from trap frame).
-# Restores kernel callee-saved regs from _kern_save and returns to kernel.
 _task_exit_trampoline:
     la   gp, __global_pointer$
     la   t0, _kern_save
@@ -179,18 +187,56 @@ _task_exit_trampoline:
     lw   gp, 56(t0)
     ret
 
-# ===== Default handlers =====
+# ===== Default handlers (overridden by TC) =====
     .globl trap_handler__u32__u32
 trap_handler__u32__u32:
     ret
+    .globl sched_task_exit
+sched_task_exit:
+    li   a0, 0
+    ret
 
+# ===== set_switch_frame(addr: u32) =====
+    .globl set_switch_frame__u32
+set_switch_frame__u32:
+    la   t0, _switch_frame
+    sw   a0, 0(t0)
+    ret
 
-# ===== kern_run_task(id: i32, sp: u32, gp: u32, arena: u32, arena_size: i32) -> i32 =====
-# Saves kernel context, sets up task sp/gp/a0/a1, jumps to task binary by ID.
-    .globl kern_run_task__i32__u32__u32__u32__i32
-kern_run_task__i32__u32__u32__u32__i32:
-    # a0 = task_id, a1 = task_sp, a2 = task_gp, a3 = arena_addr, a4 = arena_size
-    # Save kernel callee-saved regs FIRST, then use s-regs for args
+# ===== init_task_frame(frame, id, sp, gp, arena, arena_size) =====
+    .globl init_task_frame__u32__i32__u32__u32__u32__i32
+init_task_frame__u32__i32__u32__u32__u32__i32:
+    # a0=frame, a1=task_id, a2=sp, a3=gp, a4=arena, a5=arena_size
+    # Zero the frame (132 bytes = 33 words)
+    mv   t0, a0
+    li   t1, 132
+    add  t1, t0, t1
+1:  sw   zero, 0(t0)
+    addi t0, t0, 4
+    bltu t0, t1, 1b
+    # Set registers in frame
+    sw   a2,   8(a0)          # sp
+    sw   a3,  12(a0)          # gp
+    sw   a4,  40(a0)          # a0 = arena addr
+    sw   a5,  44(a0)          # a1 = arena size
+    # mepc = task entry (by task_id)
+    li   t0, 1
+    beq  a1, t0, 2f
+    li   t0, 2
+    beq  a1, t0, 3f
+    ret
+2:  la   t0, _task_hello_start
+    sw   t0, 128(a0)
+    ret
+3:  la   t0, _task_hello2_start
+    sw   t0, 128(a0)
+    ret
+
+# ===== sched_start(frame: u32) =====
+# Save kernel context, mret to first task. Returns when all tasks done.
+    .globl sched_start__u32
+sched_start__u32:
+    # a0 = initial task frame address
     la   t0, _kern_save
     sw   ra,  0(t0)
     sw   sp,  4(t0)
@@ -207,19 +253,44 @@ kern_run_task__i32__u32__u32__u32__i32:
     sw   s10, 48(t0)
     sw   s11, 52(t0)
     sw   gp, 56(t0)
-    # Now safe to use s-regs as temporaries
-    mv   s0, a0               # save task_id
-    # Set up task registers
-    mv   sp, a1               # task stack
-    mv   gp, a2               # task gp
-    mv   a0, a3               # a0 = arena_addr (for task _start)
-    mv   a1, a4               # a1 = arena_size
-    # Dispatch by task_id (s0)
+    # Set mscratch to task frame
+    csrw 0x340, a0
+    # Set MPP=M-mode (bits 12:11) + MPIE (bit 7) for mret
+    csrr t0, 0x300
+    li   t1, 0x1880           # MPP=11 (0x1800) | MPIE (0x80)
+    or   t0, t0, t1
+    csrw 0x300, t0
+    # Restore from frame via _trap_restore
+    j    _trap_restore
+
+# ===== kern_run_task (kept for backward compat) =====
+    .globl kern_run_task__i32__u32__u32__u32__i32
+kern_run_task__i32__u32__u32__u32__i32:
+    la   t0, _kern_save
+    sw   ra,  0(t0)
+    sw   sp,  4(t0)
+    sw   s0,  8(t0)
+    sw   s1, 12(t0)
+    sw   s2, 16(t0)
+    sw   s3, 20(t0)
+    sw   s4, 24(t0)
+    sw   s5, 28(t0)
+    sw   s6, 32(t0)
+    sw   s7, 36(t0)
+    sw   s8, 40(t0)
+    sw   s9, 44(t0)
+    sw   s10, 48(t0)
+    sw   s11, 52(t0)
+    sw   gp, 56(t0)
+    mv   s0, a0
+    mv   sp, a1
+    mv   gp, a2
+    mv   a0, a3
+    mv   a1, a4
     li   t0, 1
     beq  s0, t0, _run_task_1
     li   t0, 2
     beq  s0, t0, _run_task_2
-    # Unknown task: return -1
     la   t0, _kern_save
     lw   ra,  0(t0)
     lw   sp,  4(t0)
@@ -232,9 +303,8 @@ _run_task_1:
 _run_task_2:
     la   t0, _task_hello2_start
     jr   t0
-    # Never reaches here — task exits via ecall → _task_exit_trampoline
 
-# ===== UART output (kernel-internal) =====
+# ===== UART =====
     .globl do_uart_write__u32__i32
 do_uart_write__u32__i32:
     li   t0, 0x10000000
@@ -247,19 +317,15 @@ do_uart_write__u32__i32:
     j    1b
 2:  mv   a0, a1
     ret
-
-# Kernel runtime stubs (for kernel's own sys_write via runtime.tc)
     .globl do_write__i32__u32__i32
 do_write__i32__u32__i32:
     mv   a0, a1
     mv   a1, a2
     j    do_uart_write__u32__i32
-
     .globl do_read__i32__u32__i32
 do_read__i32__u32__i32:
     li   a0, 0
     ret
-
     .globl do_exit__i32
 do_exit__i32:
     j    _park
