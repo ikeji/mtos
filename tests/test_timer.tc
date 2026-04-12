@@ -1,0 +1,65 @@
+// test_timer.tc — timer interrupt test for qemu-system-riscv32 -M virt
+//
+// Sets mtimecmp via MMIO, enables timer interrupt, waits for it to fire.
+// The trap_handler (called from virt_crt0.s) sets a flag and disables
+// further timer interrupts. Main checks the flag and prints result.
+
+// CLINT MMIO addresses (qemu virt)
+var MTIMECMP_LO: u32 = 0x02004000u32;
+var MTIMECMP_HI: u32 = 0x02004004u32;
+var MTIME_LO: u32    = 0x0200BFF8u32;
+
+// Flag set by trap handler
+var g_timer_fired: i32 = 0;
+
+// Called from virt_crt0.s _trap_entry (overrides default handler)
+fn trap_handler(cause: u32, epc: u32) -> void {
+    // Machine timer interrupt: mcause bit 31 set, exception code 7
+    if cause == 0x80000007u32 {
+        g_timer_fired = 1;
+        // Disable further timer interrupts by setting mtimecmp to max
+        poke32(MTIMECMP_LO, 0xFFFFFFFFu32);
+        poke32(MTIMECMP_HI, 0xFFFFFFFFu32);
+    }
+    return;
+}
+
+fn main() -> i32 {
+    // Set mtimecmp = mtime + small delta to trigger soon
+    var mtime_lo: u32 = peek32(MTIME_LO);
+    var target: u32 = mtime_lo + 100000u32;
+    poke32(MTIMECMP_HI, 0u32);
+    poke32(MTIMECMP_LO, target);
+
+    // Enable interrupts: mstatus.MIE (bit 3) and mie.MTIE (bit 7)
+    var mstatus: u32 = csr_read_mstatus();
+    csr_write_mstatus(mstatus | 0x8u32);
+    var mie: u32 = csr_read_mie();
+    csr_write_mie(mie | 0x80u32);
+
+    // Spin until handler fires or timeout
+    var timeout: i32 = 10000000;
+    while g_timer_fired == 0 && timeout > 0 {
+        timeout = timeout - 1;
+    }
+
+    if g_timer_fired == 1 {
+        var msg: U8Array = U8Array(10);
+        // "TIMER_OK\n"
+        set(msg, 0, 'T'); set(msg, 1, 'I'); set(msg, 2, 'M');
+        set(msg, 3, 'E'); set(msg, 4, 'R'); set(msg, 5, '_');
+        set(msg, 6, 'O'); set(msg, 7, 'K'); set(msg, 8, 10u8);
+        sys_write(1, msg, 9);
+        delete(msg);
+    } else {
+        var msg: U8Array = U8Array(12);
+        // "TIMER_FAIL\n"
+        set(msg, 0, 'T'); set(msg, 1, 'I'); set(msg, 2, 'M');
+        set(msg, 3, 'E'); set(msg, 4, 'R'); set(msg, 5, '_');
+        set(msg, 6, 'F'); set(msg, 7, 'A'); set(msg, 8, 'I');
+        set(msg, 9, 'L'); set(msg, 10, 10u8);
+        sys_write(1, msg, 11);
+        delete(msg);
+    }
+    return 0;
+}

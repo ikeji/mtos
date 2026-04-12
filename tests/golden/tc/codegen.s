@@ -9176,7 +9176,7 @@ is_digit_c__u8:
     .globl read_node__U8Array__I32Array__U8Array
     .type  read_node__U8Array__I32Array__U8Array, @function
 read_node__U8Array__I32Array__U8Array:
-    # prologue: frame_size=160, params=3, locals=17, eval_depth=16
+    # prologue: frame_size=160, params=3, locals=18, eval_depth=17
     addi sp, sp, -160
     sw   ra, 156(sp)
     sw   s0, 152(sp)
@@ -9201,6 +9201,7 @@ read_node__U8Array__I32Array__U8Array:
     sw   zero, -80(s0)
     sw   zero, -84(s0)
     sw   zero, -88(s0)
+    sw   zero, -92(s0)
     call skip_ws_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10246,7 +10247,7 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_read_node__U8Array__I32Array__U8Array_pc383
+    j    .L_read_node__U8Array__I32Array__U8Array_pc413
   .L_read_node__U8Array__I32Array__U8Array_pc267:
     lw   t0, -56(s0)
     addi sp, sp, -4
@@ -10328,7 +10329,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc383
+    j    .L_read_node__U8Array__I32Array__U8Array_pc413
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10389,7 +10390,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc309
+    j    .L_read_node__U8Array__I32Array__U8Array_pc319
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10410,22 +10411,63 @@ read_node__U8Array__I32Array__U8Array:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_read_node__U8Array__I32Array__U8Array_pc315
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U8Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 45
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_read_node__U8Array__I32Array__U8Array_pc315
+0:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_read_node__U8Array__I32Array__U8Array_pc316
+  .L_read_node__U8Array__I32Array__U8Array_pc315:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_read_node__U8Array__I32Array__U8Array_pc316:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc309
+    j    .L_read_node__U8Array__I32Array__U8Array_pc319
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc310
-  .L_read_node__U8Array__I32Array__U8Array_pc309:
+    j    .L_read_node__U8Array__I32Array__U8Array_pc320
+  .L_read_node__U8Array__I32Array__U8Array_pc319:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc310:
+  .L_read_node__U8Array__I32Array__U8Array_pc320:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc343
+    j    .L_read_node__U8Array__I32Array__U8Array_pc373
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -10439,7 +10481,52 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -80(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc315:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -84(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U8Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 45
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_node__U8Array__I32Array__U8Array_pc337
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -84(s0)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -80(s0)
+  .L_read_node__U8Array__I32Array__U8Array_pc337:
     lw   t0, -80(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10455,7 +10542,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc335
+    j    .L_read_node__U8Array__I32Array__U8Array_pc357
 0:
     lw   t0, -76(s0)
     addi sp, sp, -4
@@ -10518,8 +10605,42 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -80(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc315
-  .L_read_node__U8Array__I32Array__U8Array_pc335:
+    j    .L_read_node__U8Array__I32Array__U8Array_pc337
+  .L_read_node__U8Array__I32Array__U8Array_pc357:
+    lw   t0, -84(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_node__U8Array__I32Array__U8Array_pc365
+0:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -76(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -76(s0)
+  .L_read_node__U8Array__I32Array__U8Array_pc365:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10546,8 +10667,8 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_read_node__U8Array__I32Array__U8Array_pc381
-  .L_read_node__U8Array__I32Array__U8Array_pc343:
+    j    .L_read_node__U8Array__I32Array__U8Array_pc411
+  .L_read_node__U8Array__I32Array__U8Array_pc373:
     la   t1, g_sp
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -10561,7 +10682,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -80(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc347:
+  .L_read_node__U8Array__I32Array__U8Array_pc377:
     lw   t0, -80(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10577,7 +10698,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc367
+    j    .L_read_node__U8Array__I32Array__U8Array_pc397
 0:
     lw   t0, -20(s0)
     addi sp, sp, -4
@@ -10638,8 +10759,8 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -80(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc347
-  .L_read_node__U8Array__I32Array__U8Array_pc367:
+    j    .L_read_node__U8Array__I32Array__U8Array_pc377
+  .L_read_node__U8Array__I32Array__U8Array_pc397:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10692,12 +10813,12 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc381:
+  .L_read_node__U8Array__I32Array__U8Array_pc411:
     call skip_ws_in
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc383:
+  .L_read_node__U8Array__I32Array__U8Array_pc413:
     call peek_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10714,8 +10835,8 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -84(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc388:
+    sw   t0, -88(s0)
+  .L_read_node__U8Array__I32Array__U8Array_pc418:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10732,7 +10853,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc425
+    j    .L_read_node__U8Array__I32Array__U8Array_pc455
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10752,8 +10873,8 @@ read_node__U8Array__I32Array__U8Array:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -88(s0)
-    lw   t0, -88(s0)
+    sw   t0, -92(s0)
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -10769,9 +10890,9 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc420
+    j    .L_read_node__U8Array__I32Array__U8Array_pc450
 0:
-    lw   t0, -84(s0)
+    lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -10786,7 +10907,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc413
+    j    .L_read_node__U8Array__I32Array__U8Array_pc443
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -10803,7 +10924,7 @@ read_node__U8Array__I32Array__U8Array:
     add  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -88(s0)
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
@@ -10814,15 +10935,15 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_read_node__U8Array__I32Array__U8Array_pc418
-  .L_read_node__U8Array__I32Array__U8Array_pc413:
+    j    .L_read_node__U8Array__I32Array__U8Array_pc448
+  .L_read_node__U8Array__I32Array__U8Array_pc443:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -84(s0)
+    lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -88(s0)
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
@@ -10833,14 +10954,14 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc418:
-    lw   t0, -88(s0)
+  .L_read_node__U8Array__I32Array__U8Array_pc448:
+    lw   t0, -92(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -84(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc420:
+    sw   t0, -88(s0)
+  .L_read_node__U8Array__I32Array__U8Array_pc450:
     call skip_ws_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10851,8 +10972,8 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc388
-  .L_read_node__U8Array__I32Array__U8Array_pc425:
+    j    .L_read_node__U8Array__I32Array__U8Array_pc418
+  .L_read_node__U8Array__I32Array__U8Array_pc455:
     call peek_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10869,7 +10990,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc432
+    j    .L_read_node__U8Array__I32Array__U8Array_pc462
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -10881,7 +11002,7 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc432:
+  .L_read_node__U8Array__I32Array__U8Array_pc462:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

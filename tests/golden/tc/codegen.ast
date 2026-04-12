@@ -2607,7 +2607,7 @@
                 (var atom)
               )
             )
-            (comment "if kind_code == NK_INT && vlen > 0 && is_digit_c(get(atom, 0)) {")
+            (comment "if kind_code == NK_INT && vlen > 0 && (is_digit_c(get(atom, 0)) || get(atom, 0) == '-') {")
             (if
               (binop &&
                 (binop &&
@@ -2620,10 +2620,19 @@
                     (int 0)
                   )
                 )
-                (call is_digit_c
-                  (call get
-                    (var atom)
-                    (int 0)
+                (binop ||
+                  (call is_digit_c
+                    (call get
+                      (var atom)
+                      (int 0)
+                    )
+                  )
+                  (binop ==
+                    (call get
+                      (var atom)
+                      (int 0)
+                    )
+                    (int:u8 45)
                   )
                 )
               )
@@ -2637,6 +2646,29 @@
                 (var_decl ii
                   (type i32)
                   (int 0)
+                )
+                (comment "var neg: i32 = 0;")
+                (var_decl neg
+                  (type i32)
+                  (int 0)
+                )
+                (comment "if get(atom, 0) == '-' { neg = 1; ii = 1; }")
+                (if
+                  (binop ==
+                    (call get
+                      (var atom)
+                      (int 0)
+                    )
+                    (int:u8 45)
+                  )
+                  (block
+                    (assign neg
+                      (int 1)
+                    )
+                    (assign ii
+                      (int 1)
+                    )
+                  )
                 )
                 (comment "while ii < vlen {")
                 (while
@@ -2669,6 +2701,21 @@
                       (binop +
                         (var ii)
                         (int 1)
+                      )
+                    )
+                  )
+                )
+                (comment "if neg == 1 { ival = 0 - ival; }")
+                (if
+                  (binop ==
+                    (var neg)
+                    (int 1)
+                  )
+                  (block
+                    (assign ival
+                      (binop -
+                        (int 0)
+                        (var ival)
                       )
                     )
                   )

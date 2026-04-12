@@ -219,6 +219,13 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "poke16", p32_u16, 2, "void");
     register_fn(e, "poke32", p32_u32, 2, "void");
 
+    /* CSR access stubs (implemented in virt_crt0.s / crt0_tc.s) */
+    register_fn(e, "csr_read_mstatus", NULL, 0, "u32");
+    register_fn(e, "csr_write_mstatus", p32, 1, "void");
+    register_fn(e, "csr_read_mie", NULL, 0, "u32");
+    register_fn(e, "csr_write_mie", p32, 1, "void");
+    register_fn(e, "csr_read_mcause", NULL, 0, "u32");
+
     /* raw ecall stubs (always registered — implemented in crt0.s) */
     const char *dw[] = {"i32","u32","i32"};
     const char *dr[] = {"i32","u32","i32"};

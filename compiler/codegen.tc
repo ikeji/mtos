@@ -295,13 +295,16 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
         // Now at ')'; no skip_ws needed
     } else if c != '(' && c != ')' && c != 0u8 {
         var vlen: i32 = read_atom_in(atom);
-        if kind_code == NK_INT && vlen > 0 && is_digit_c(get(atom, 0)) {
+        if kind_code == NK_INT && vlen > 0 && (is_digit_c(get(atom, 0)) || get(atom, 0) == '-') {
             var ival: i32 = 0;
             var ii: i32 = 0;
+            var neg: i32 = 0;
+            if get(atom, 0) == '-' { neg = 1; ii = 1; }
             while ii < vlen {
                 ival = ival * 10 + (get(atom, ii) as i32 - 48);
                 ii = ii + 1;
             }
+            if neg == 1 { ival = 0 - ival; }
             set(nodes, (base+3), ival);
         } else {
             var ss: i32 = g_sp;

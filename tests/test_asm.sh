@@ -131,4 +131,39 @@ case "$actual" in
         ;;
 esac
 
+# ===== Timer interrupt test =====
+TIMER_TC="$SCRIPT_DIR/test_timer.tc"
+TIMER_BIN="$TMP/test_timer.bin"
+
+t0=$(time_ms)
+CRT0="$VIRT_CRT0" \
+CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
+ASM_PROLOGUE="; raw" \
+GEN2_DIR="$_GEN2_TMP" \
+    "$ROOT_DIR/compile-gen2.sh" -o "$TIMER_BIN" "$TIMER_TC" 2>/dev/null
+compile_elapsed=$(( $(time_ms) - t0 ))
+
+if [ ! -s "$TIMER_BIN" ]; then
+    report_fail_msg "asm[virt]: compile test_timer.tc" "compile-gen2.sh produced no output"
+else
+    t0=$(time_ms)
+    timeout 5 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -device "loader,file=$TIMER_BIN,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" >"$TMP/timer_out.raw" 2>/dev/null
+    run_elapsed=$(( $(time_ms) - t0 ))
+    timer_actual=$(tr -d '\0' < "$TMP/timer_out.raw")
+    total=$((compile_elapsed + run_elapsed))
+    case "$timer_actual" in
+        *"TIMER_OK"*)
+            report_pass "asm[virt]: timer interrupt fires and TC handler runs (compile ${compile_elapsed}ms, run ${run_elapsed}ms)" "$total"
+            ;;
+        *)
+            report_fail_msg "asm[virt]: timer interrupt test" \
+                "expected 'TIMER_OK', got: $(printf '%s' "$timer_actual" | head -c 80)"
+            ;;
+    esac
+fi
+
 print_results

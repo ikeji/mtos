@@ -543,6 +543,13 @@ fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
     reg_fn2(strtab, fntab, "poke16", "u32", "u16", "void");
     reg_fn2(strtab, fntab, "poke32", "u32", "u32", "void");
 
+    // CSR access stubs (implemented in virt_crt0.s / crt0_tc.s)
+    reg_fn0(strtab, fntab, "csr_read_mstatus", "u32");
+    reg_fn1(strtab, fntab, "csr_write_mstatus", "u32", "void");
+    reg_fn0(strtab, fntab, "csr_read_mie", "u32");
+    reg_fn1(strtab, fntab, "csr_write_mie", "u32", "void");
+    reg_fn0(strtab, fntab, "csr_read_mcause", "u32");
+
     reg_array_builtins(strtab, fntab, "U8Array", "u8");
     reg_array_builtins(strtab, fntab, "U16Array", "u16");
     reg_array_builtins(strtab, fntab, "U32Array", "u32");
