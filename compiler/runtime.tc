@@ -173,10 +173,25 @@ fn large_free(blk: u32, bsz: i32) -> void {
     return;
 }
 
+// kmalloc — size バイトのメモリを確保し、ユーザポインタを返す。
+//
+// 1. size がバケット範囲内 (≤ 2048) の場合:
+//    a. 該当バケットのフリーリストにノードがあれば pop して O(1) で返す。
+//       ノードにはヘッダ (total_size) を書き込んでから返却する。
+//       これは kfree 時にバケット判定に使うため。
+//    b. フリーリストが空なら large_alloc でヒープから切り出す。
+//
+// 2. size がバケット範囲外 (> 2048) の場合:
+//    - size >= 4096: ユーザサイズを 4KB 粒度に切り上げ + ヘッダ
+//    - それ以外: 4 バイトアラインに切り上げ + ヘッダ (最小 8 バイト)
+//    large_alloc で確保する。
+//
+// 返却値: ユーザデータ先頭 (ヘッダの直後)。OOM なら 0。
 fn kmalloc(size: i32) -> u32 {
     if size <= 0 { size = 1; }
     var bkt: i32 = size_to_bucket(size);
     if bkt >= 0 {
+        // バケットフリーリストから O(1) で取得を試みる
         var head: u32 = bk_get(bkt);
         if head != 0u32 {
             bk_set(bkt, peek32(head));
@@ -184,9 +199,11 @@ fn kmalloc(size: i32) -> u32 {
             poke32(head, total as u32);
             return head + KM_HDR as u32;
         }
+        // バケット空 → ヒープから切り出し
         var total: i32 = bucket_user_size(bkt) + KM_HDR;
         return large_alloc(total);
     }
+    // バケット範囲外 → large_alloc
     var need: i32;
     if size >= KM_PAGE {
         need = km_align_page(size) + KM_HDR;
@@ -197,6 +214,13 @@ fn kmalloc(size: i32) -> u32 {
     return large_alloc(need);
 }
 
+// kfree — kmalloc で確保したポインタを解放する。
+//
+// 1. ptr の直前 4 バイト (ヘッダ) から total_size を読む。
+// 2. total_size - KM_HDR がバケットサイズと一致すれば、
+//    該当バケットのフリーリストに push して O(1) で完了。
+//    (ヘッダ領域を next ポインタとして再利用する)
+// 3. 一致しなければ large_free でヒープに返却 (隣接結合���り)。
 fn kfree(ptr: u32) -> void {
     if ptr == 0u32 { return; }
     var blk: u32 = ptr - KM_HDR as u32;
@@ -204,10 +228,12 @@ fn kfree(ptr: u32) -> void {
     var user: i32 = total - KM_HDR;
     var bkt: i32 = size_to_bucket(user);
     if bkt >= 0 && bucket_user_size(bkt) == user {
+        // バケットフリーリストに push (O(1))
         poke32(blk, bk_get(bkt));
         bk_set(bkt, blk);
         return;
     }
+    // 大ブロック → ヒープに返却 (隣接結合)
     large_free(blk, total);
     return;
 }
