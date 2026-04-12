@@ -1,20 +1,23 @@
-// kernel_pico2.tc — kernel for Pico 2 (sequential task execution, no timer)
+// kernel_pico2.tc — kernel for Pico 2 (sequential task execution)
 
-// Assembly-defined functions (crt0_pico2.s / bin2s)
 fn kern_run_task(entry: u32, sp: u32, gp: u32, arena: u32, arena_size: i32) -> i32;
 fn _task_hello_addr() -> u32;
 fn _task_hello2_addr() -> u32;
 
-fn kputs(s: StringLiteral) -> void {
-    var slen: i32 = len(s);
-    var buf: U8Array = U8Array(slen);
+fn uart_putc(c: u8) -> void {
+    var uart: u32 = 0x40070000u32;
+    while (peek32(uart + 0x18u32) & 0x20u32) != 0u32 {
+    }
+    poke32(uart, c as u32);
+    return;
+}
+
+fn uart_puts(s: StringLiteral) -> void {
     var i: i32 = 0;
-    while i < slen {
-        set(buf, i, get(s, i));
+    while i < len(s) {
+        uart_putc(get(s, i));
         i = i + 1;
     }
-    sys_write(1, buf, slen);
-    delete(buf);
     return;
 }
 
@@ -36,15 +39,15 @@ fn run_task(entry: u32) -> i32 {
 }
 
 fn main() -> i32 {
-    kputs("KERN: starting\r\n");
+    uart_puts("KERN: starting\r\n");
 
-    kputs("KERN: task 1\r\n");
+    uart_puts("KERN: task 1\r\n");
     run_task(_task_hello_addr());
-    kputs("KERN: task 1 done\r\n");
+    uart_puts("KERN: task 1 done\r\n");
 
-    kputs("KERN: task 2\r\n");
+    uart_puts("KERN: task 2\r\n");
     run_task(_task_hello2_addr());
-    kputs("KERN: task 2 done\r\n");
+    uart_puts("KERN: task 2 done\r\n");
 
     return 0;
 }
