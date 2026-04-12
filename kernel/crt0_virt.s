@@ -116,6 +116,12 @@ _ecall_exit:
     mv   sp, s0
     j    _trap_restore
 _all_tasks_done:
+    # Disable interrupts: clear MPIE so mret leaves MIE=0
+    csrr t0, 0x300
+    li   t1, 0x80
+    not  t1, t1
+    and  t0, t0, t1
+    csrw 0x300, t0
     mv   sp, s0
     la   t0, _task_exit_trampoline
     sw   t0, 128(sp)
