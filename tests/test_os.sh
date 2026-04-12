@@ -79,12 +79,12 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1; then
             -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
         elapsed=$(( $(time_ms) - t0 ))
         case "$kv_out" in
-            *"HELLO"*"KERN: task 1 done"*)
-                report_pass "kernel_ecall: embedded task runs via ecall" "$elapsed"
+            *"HELLO"*"task 1 done"*"WORLD"*"task 2 done"*)
+                report_pass "kernel_ecall: two embedded tasks run via ecall" "$elapsed"
                 ;;
             *)
                 report_fail_msg "kernel_ecall" \
-                    "expected HELLO + task done, got: $(printf '%s' "$kv_out" | head -c 120)"
+                    "expected HELLO+WORLD+done, got: $(printf '%s' "$kv_out" | head -c 120)"
                 ;;
         esac
     else

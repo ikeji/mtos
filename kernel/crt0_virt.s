@@ -217,6 +217,8 @@ kern_run_task__i32__u32__u32__u32__i32:
     # Dispatch by task_id (s0)
     li   t0, 1
     beq  s0, t0, _run_task_1
+    li   t0, 2
+    beq  s0, t0, _run_task_2
     # Unknown task: return -1
     la   t0, _kern_save
     lw   ra,  0(t0)
@@ -226,6 +228,9 @@ kern_run_task__i32__u32__u32__u32__i32:
     ret
 _run_task_1:
     la   t0, _task_hello_start
+    jr   t0
+_run_task_2:
+    la   t0, _task_hello2_start
     jr   t0
     # Never reaches here — task exits via ecall → _task_exit_trampoline
 

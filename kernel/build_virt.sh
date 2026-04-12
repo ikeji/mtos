@@ -46,14 +46,25 @@ if [ ! -s "$TMP/hello.bin" ]; then
     exit 1
 fi
 
+echo "Building task: hello2" >&2
+CRT0="$TASK_CRT0" \
+CRT0_DATA="$TASK_DATA" \
+ASM_PROLOGUE="; raw" \
+GEN2_DIR="$GEN2_DIR" \
+    "$ROOT_DIR/compile-gen2.sh" -o "$TMP/hello2.bin" \
+    "$KERN_DIR/tasks/hello2/hello2.tc" 2>/dev/null
+
+if [ ! -s "$TMP/hello2.bin" ]; then
+    echo "Error: hello2 task compilation failed" >&2
+    exit 1
+fi
+
 # --- Step 2: Convert to .s ---
 "$KERN_DIR/bin2s.sh" "$TMP/hello.bin" _task_hello > "$TMP/hello_task.s"
+"$KERN_DIR/bin2s.sh" "$TMP/hello2.bin" _task_hello2 > "$TMP/hello2_task.s"
 
 # --- Step 3: Build kernel with embedded tasks ---
-# We need to inject the task .s into the assembly stream.
-# compile-gen2.sh concatenates: CRT0 + runtime.s + user.s + CRT0_DATA
-# We put the task data in CRT0_DATA (before __arena).
-cat "$KERN_DIR/crt0_data.s" "$TMP/hello_task.s" > "$TMP/kern_data.s"
+cat "$KERN_DIR/crt0_data.s" "$TMP/hello_task.s" "$TMP/hello2_task.s" > "$TMP/kern_data.s"
 
 CRT0="$KERN_DIR/crt0_virt.s" \
 CRT0_DATA="$TMP/kern_data.s" \
