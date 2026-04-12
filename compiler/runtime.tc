@@ -1,185 +1,173 @@
 // runtime.tc — TinyC runtime for RISC-V bare-metal
-// Pool allocator + builtins. Uses peek/poke for low-level memory access.
+// kmalloc/kfree allocator + builtins. Uses peek/poke for low-level memory access.
 // Syscalls via do_write/do_read/do_exit stubs in crt0.s.
-// Pool metadata is in crt0.s (.data/.bss labels).
+//
+// Allocator design:
+//   10 small-size buckets (4,8,16,32,64,128,256,512,1024,2048) with per-bucket
+//   free lists for O(1) alloc/free. Buckets are NOT pre-populated; blocks are
+//   carved from the large free list on first use.
+//   Allocations > 2048: first-fit free list, address-ordered, coalescing on free.
+//   Allocations >= 4096: user size rounded up to 4KB granularity.
 
-var NPOOLS: i32 = 17;
+var KM_HDR: i32 = 4;
+var KM_MIN_BLK: i32 = 8;
+var KM_PAGE: i32 = 4096;
+var KM_NBUCKETS: i32 = 10;
 
-// Addresses of pool metadata (resolved by linker from crt0.s labels)
-// We access these via peek32/poke32 using global variables set at init time.
-var g_pool_sizes_addr: u32 = 0u32;
-var g_pool_counts_addr: u32 = 0u32;
-var g_pool_free_addr: u32 = 0u32;
-var g_pool_base_addr: u32 = 0u32;
-var g_pool_end_addr: u32 = 0u32;
-var g_pools_ready_addr: u32 = 0u32;
-var g_arena_addr: u32 = 0u32;
+var g_bucket_base: u32 = 0u32;
+var g_free_list: u32 = 0u32;
 
-// Helper: read/write i32 from pool metadata arrays
-fn ps_get(base: u32, i: i32) -> i32 { return peek32(base + (i * 4) as u32) as i32; }
-fn ps_set(base: u32, i: i32, v: i32) -> void { poke32(base + (i * 4) as u32, v as u32); return; }
+fn km_align4(n: i32) -> i32 { return (n + 3) & (0 - 4); }
+fn km_align_page(n: i32) -> i32 { return (n + 4095) & (0 - 4096); }
 
-fn pool_init() -> void {
-    // These addresses come from crt0.s labels. We need la (load address).
-    // Since we can't use la in TinyC, we use a trick: declare extern globals
-    // that the linker resolves. But TinyC doesn't have extern...
-    //
-    // Alternative: use peek/poke with known fixed offsets from a base.
-    // However, we don't know the absolute addresses at compile time.
-    //
-    // Simplest solution: hardcode that crt0.s puts these right after code.
-    // But addresses depend on code size...
-    //
-    // Actually: we can use a global var initialized by _start before main.
-    // But crt0.s can't set TinyC globals...
-    //
-    // Real solution: pass addresses as arguments to an init function
-    // called from crt0.s, or use the .word labels in .rodata from bc2asm.
-    //
-    // For now: use the simplest possible approach.
-    // The pool metadata addresses are at fixed labels in crt0.s.
-    // We need a way to get their addresses in TinyC.
-    //
-    // We can use: var addr: u32 = __pool_sizes as u32;
-    // But __pool_sizes is not a TinyC variable.
-    //
-    // The real simplest approach: don't use crt0.s labels.
-    // Allocate everything from a single large U8Array and compute offsets.
-    // But U8Array uses pool_alloc which isn't initialized yet...
-    //
-    // BOOTSTRAP PROBLEM. We need the pool to allocate arrays, but
-    // arrays need the pool. Solution: a bootstrap arena.
+fn bk_get(i: i32) -> u32 { return peek32(g_bucket_base + (i * 4) as u32); }
+fn bk_set(i: i32, v: u32) -> void { poke32(g_bucket_base + (i * 4) as u32, v); return; }
 
-    // Use a fixed-size bootstrap: peek/poke into a known memory region.
-    // crt0.s provides __arena at a fixed BSS location.
-    // _start can pass __arena address to main via a global...
-    // Actually let's try: bc2asm puts .data/.bss at known offsets.
-
-    // SIMPLEST: make pool metadata part of the arena.
-    // Arena layout: [free[16] | base[16] | end[16] | ready(1) | slots...]
-    // pool_sizes and pool_counts are in .data (crt0.s), addresses known via la.
-
-    // Let's just use the approach from the C version but with peek/poke.
-    // Arena is at __arena. Pool sizes/counts are at __pool_sizes/__pool_counts.
-
-    // Since TinyC can't do 'la', we pass arena address from crt0.s.
-    // For now, we just hardcode: arena is the last thing in BSS.
-    // We need a way to get its address...
-
-    // OK, let's use a completely different approach:
-    // The arena and metadata are ALL in one chunk, and we find them
-    // relative to a known variable. We use a global var whose address
-    // we can compute:
-    //   var marker: i32 = 0;
-    //   var arena_base: u32 = &marker + offset;
-    // But TinyC doesn't have address-of...
-
-    // FINAL SOLUTION: pool_init is called first, and it uses
-    // peek/poke to compute addresses from the __pool_sizes label
-    // which bc2asm will emit in .rodata as part of the program.
-    // We store pool_sizes as a string literal and parse it... no.
-
-    // THE ACTUAL SIMPLEST: hardcode the arena as a giant byte array
-    // created by writing zeros to memory starting from a known page.
-    // We use sys_read return value to get a safe address... no.
-
-    // Let me just use the variable addresses directly.
-    // TinyC stores globals as .data/.bss. We can poke the global address.
-    // The global g_arena_addr is at a known location.
-
-    // WAIT - we can use pool_alloc ONLY after pool_init.
-    // pool_init doesn't need pool_alloc. It just needs peek/poke
-    // on the arena memory which is in crt0.s BSS.
-    // The arena address is passed by crt0.s writing to a known global.
-
-    // ... This is getting circular. Let me take the simplest working approach:
-    // Make crt0.s call an init function before main, passing arena address.
-
-    return;
+fn size_to_bucket(size: i32) -> i32 {
+    if size <= 4 { return 0; }
+    if size <= 8 { return 1; }
+    if size <= 16 { return 2; }
+    if size <= 32 { return 3; }
+    if size <= 64 { return 4; }
+    if size <= 128 { return 5; }
+    if size <= 256 { return 6; }
+    if size <= 512 { return 7; }
+    if size <= 1024 { return 8; }
+    if size <= 2048 { return 9; }
+    return 0 - 1;
 }
 
-// This is called by crt0.s with the arena address
-export fn __runtime_init(arena: u32, sizes: u32, counts: u32,
-                          free_arr: u32, base_arr: u32, end_arr: u32,
-                          ready: u32) -> void {
-    g_arena_addr = arena;
-    g_pool_sizes_addr = sizes;
-    g_pool_counts_addr = counts;
-    g_pool_free_addr = free_arr;
-    g_pool_base_addr = base_arr;
-    g_pool_end_addr = end_arr;
-    g_pools_ready_addr = ready;
+fn bucket_user_size(b: i32) -> i32 {
+    if b == 0 { return 4; }
+    if b == 1 { return 8; }
+    if b == 2 { return 16; }
+    if b == 3 { return 32; }
+    if b == 4 { return 64; }
+    if b == 5 { return 128; }
+    if b == 6 { return 256; }
+    if b == 7 { return 512; }
+    if b == 8 { return 1024; }
+    return 2048;
+}
 
-    // Initialize free lists. Pools with count == 0 are treated as
-    // disabled: their free list is empty and they occupy no arena
-    // bytes, so allocation through bucket_of() can still fall through
-    // to a larger bucket (or OOM if none matches). This lets small
-    // targets like Pico 2 disable large-size buckets in __pool_counts
-    // without losing 1 MB+ of arena to a single unused pool slot.
-    var p: u32 = arena;
-    var i: i32 = 0;
-    while i < NPOOLS {
-        var sz: i32 = ps_get(sizes, i);
-        var n: i32 = ps_get(counts, i);
-        ps_set(base_arr, i, p as i32);
-        if n > 0 {
-            ps_set(free_arr, i, p as i32);
-            var j: i32 = 0;
-            while j < n - 1 {
-                poke32(p, p + sz as u32);
-                p = p + sz as u32;
-                j = j + 1;
+fn large_alloc(need: i32) -> u32 {
+    var prev: u32 = 0u32;
+    var cur: u32 = g_free_list;
+    while cur != 0u32 {
+        var bsz: i32 = peek32(cur) as i32;
+        if bsz >= need {
+            var remain: i32 = bsz - need;
+            if remain >= KM_MIN_BLK {
+                var nb: u32 = cur + need as u32;
+                poke32(nb, remain as u32);
+                poke32(nb + 4u32, peek32(cur + 4u32));
+                poke32(cur, need as u32);
+                if prev == 0u32 {
+                    g_free_list = nb;
+                } else {
+                    poke32(prev + 4u32, nb as u32);
+                }
+            } else {
+                var nxt: u32 = peek32(cur + 4u32);
+                if prev == 0u32 {
+                    g_free_list = nxt;
+                } else {
+                    poke32(prev + 4u32, nxt);
+                }
             }
-            poke32(p, 0u32);
-            p = p + sz as u32;
-        } else {
-            ps_set(free_arr, i, 0);
+            return cur + KM_HDR as u32;
         }
-        ps_set(end_arr, i, p as i32);
-        i = i + 1;
+        prev = cur;
+        cur = peek32(cur + 4u32);
     }
-    poke32(ready, 1u32);
+    return 0u32;
+}
+
+fn large_free(blk: u32, bsz: i32) -> void {
+    var bend: u32 = blk + bsz as u32;
+    var prev: u32 = 0u32;
+    var cur: u32 = g_free_list;
+    while cur != 0u32 && cur < blk {
+        prev = cur;
+        cur = peek32(cur + 4u32);
+    }
+    if cur != 0u32 && bend == cur {
+        var csz: i32 = peek32(cur) as i32;
+        var cnxt: u32 = peek32(cur + 4u32);
+        poke32(blk, (bsz + csz) as u32);
+        poke32(blk + 4u32, cnxt);
+    } else {
+        poke32(blk + 4u32, cur as u32);
+    }
+    if prev != 0u32 {
+        var psz: i32 = peek32(prev) as i32;
+        var pend: u32 = prev + psz as u32;
+        if pend == blk {
+            var msz: i32 = psz + peek32(blk) as i32;
+            poke32(prev, msz as u32);
+            poke32(prev + 4u32, peek32(blk + 4u32));
+        } else {
+            poke32(prev + 4u32, blk as u32);
+        }
+    } else {
+        g_free_list = blk;
+    }
     return;
 }
 
-fn bucket_of(size: i32) -> i32 {
-    var i: i32 = 0;
-    while i < NPOOLS {
-        if ps_get(g_pool_sizes_addr, i) >= size { return i; }
-        i = i + 1;
-    }
-    return NPOOLS - 1;
-}
-
-fn pool_alloc(size: i32) -> u32 {
+fn kmalloc(size: i32) -> u32 {
     if size <= 0 { size = 1; }
-    var i: i32 = bucket_of(size);
-    var slot: u32 = ps_get(g_pool_free_addr, i) as u32;
-    if slot == 0u32 {
-        // OOM - just exit
-        do_exit(1);
+    var bkt: i32 = size_to_bucket(size);
+    if bkt >= 0 {
+        var head: u32 = bk_get(bkt);
+        if head != 0u32 {
+            bk_set(bkt, peek32(head));
+            var total: i32 = bucket_user_size(bkt) + KM_HDR;
+            poke32(head, total as u32);
+            return head + KM_HDR as u32;
+        }
+        var total: i32 = bucket_user_size(bkt) + KM_HDR;
+        return large_alloc(total);
     }
-    var next: u32 = peek32(slot);
-    ps_set(g_pool_free_addr, i, next as i32);
-    // Zero-fill (4 bytes at a time)
-    var sz: i32 = ps_get(g_pool_sizes_addr, i);
-    var k: i32 = 0;
-    while k < sz { poke32(slot + k as u32, 0u32); k = k + 4; }
-    return slot;
+    var need: i32;
+    if size >= KM_PAGE {
+        need = km_align_page(size) + KM_HDR;
+    } else {
+        need = km_align4(size + KM_HDR);
+        if need < KM_MIN_BLK { need = KM_MIN_BLK; }
+    }
+    return large_alloc(need);
 }
 
-fn pool_free_blk(ptr: u32) -> void {
+fn kfree(ptr: u32) -> void {
     if ptr == 0u32 { return; }
+    var blk: u32 = ptr - KM_HDR as u32;
+    var total: i32 = peek32(blk) as i32;
+    var user: i32 = total - KM_HDR;
+    var bkt: i32 = size_to_bucket(user);
+    if bkt >= 0 && bucket_user_size(bkt) == user {
+        poke32(blk, bk_get(bkt));
+        bk_set(bkt, blk);
+        return;
+    }
+    large_free(blk, total);
+    return;
+}
+
+export fn __runtime_init(bss: u32, bss_size: i32) -> void {
+    g_bucket_base = bss;
     var i: i32 = 0;
-    while i < NPOOLS {
-        var base: i32 = ps_get(g_pool_base_addr, i);
-        var end: i32 = ps_get(g_pool_end_addr, i);
-        if ptr as i32 >= base && (ptr as i32) < end {
-            poke32(ptr, ps_get(g_pool_free_addr, i) as u32);
-            ps_set(g_pool_free_addr, i, ptr as i32);
-            return;
-        }
+    while i < KM_NBUCKETS {
+        poke32(bss + (i * 4) as u32, 0u32);
         i = i + 1;
+    }
+    var heap: u32 = bss + (KM_NBUCKETS * 4) as u32;
+    var hsz: i32 = bss_size - KM_NBUCKETS * 4;
+    hsz = hsz & (0 - 4);
+    if hsz >= KM_MIN_BLK {
+        poke32(heap, hsz as u32);
+        poke32(heap + 4u32, 0u32);
+        g_free_list = heap;
     }
     return;
 }
@@ -188,7 +176,11 @@ fn pool_free_blk(ptr: u32) -> void {
 fn new_array(count: i32, data_bytes: i32) -> u32 {
     var total: i32 = 4 + data_bytes;
     if total < 4 { total = 4; }
-    var addr: u32 = pool_alloc(total);
+    var addr: u32 = kmalloc(total);
+    if addr == 0u32 { do_exit(1); }
+    var ztotal: i32 = (total + 3) & (0 - 4);
+    var k: i32 = 0;
+    while k < ztotal { poke32(addr + k as u32, 0u32); k = k + 4; }
     poke32(addr, count as u32);
     return addr;
 }
@@ -235,7 +227,7 @@ export fn set(o: StringArray, i: i32, v: String) -> void { poke32(o as u32 + 4u3
 export fn set(o: StringArray, i: i32, v: StringLiteral) -> void { poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return; }
 
 // ===== delete =====
-fn delete_impl(o: u32) -> void { if o == 0u32 { return; } pool_free_blk(o); return; }
+fn delete_impl(o: u32) -> void { if o == 0u32 { return; } kfree(o); return; }
 export fn delete(o: U8Array) -> void { delete_impl(o as u32); return; }
 export fn delete(o: U16Array) -> void { delete_impl(o as u32); return; }
 export fn delete(o: U32Array) -> void { delete_impl(o as u32); return; }
@@ -308,8 +300,7 @@ export fn print_str(s: String) -> void {
         var slen: i32 = peek32(s as u32) as i32;
         do_write(1, s as u32 + 4u32, slen);
     }
-    do_write(1, 0u32, 0); // placeholder for newline
-    // Actually we need a newline byte in memory
+    do_write(1, 0u32, 0);
     var nl: U8Array = U8Array(1);
     poke8(nl as u32 + 4u32 + (0) as u32, (10u8) as u8);
     sys_write(1, nl, 1);

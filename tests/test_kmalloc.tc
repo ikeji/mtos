@@ -1,4 +1,5 @@
-import "../os/kmalloc.tc";
+// test_kmalloc.tc — exercise kmalloc/kfree via array operations
+// Compiled with compile-gen2.sh (uses runtime.tc's kmalloc allocator).
 
 fn assert(cond: bool, code: i32) -> void {
     if !cond {
@@ -9,61 +10,89 @@ fn assert(cond: bool, code: i32) -> void {
 }
 
 fn main() -> i32 {
-    var heap: U8Array = U8Array(65536);
-    var base: u32 = heap as u32 + 4u32;
-    km_init(base, 65536);
+    // 1: small allocs (bucket path)
+    var a: U8Array = U8Array(4);
+    assert(a as u32 != 0u32, 0 - 1);
+    set(a, 0, 42u8);
+    assert(get(a, 0) == 42u8, 0 - 2);
+    delete(a);
 
-    // 1: basic alloc
-    var p1: u32 = kmalloc(100);
-    assert(p1 != 0u32, 0 - 1);
+    // 2: various bucket sizes
+    var b8: U8Array = U8Array(8);
+    var b16: U8Array = U8Array(16);
+    var b32: U8Array = U8Array(32);
+    var b64: U8Array = U8Array(64);
+    var b128: U8Array = U8Array(128);
+    var b256: U8Array = U8Array(256);
+    var b512: U8Array = U8Array(512);
+    var b1k: U8Array = U8Array(1024);
+    var b2k: U8Array = U8Array(2048);
+    assert(b8 as u32 != 0u32, 0 - 10);
+    assert(b2k as u32 != 0u32, 0 - 11);
+    delete(b8);
+    delete(b16);
+    delete(b32);
+    delete(b64);
+    delete(b128);
+    delete(b256);
+    delete(b512);
+    delete(b1k);
+    delete(b2k);
 
-    // 2: write/read
-    poke32(p1, 12345u32);
-    assert(peek32(p1) as i32 == 12345, 0 - 2);
+    // 3: reuse after free (bucket free list)
+    var c1: U8Array = U8Array(32);
+    var addr1: u32 = c1 as u32;
+    delete(c1);
+    var c2: U8Array = U8Array(32);
+    var addr2: u32 = c2 as u32;
+    assert(addr1 == addr2, 0 - 20);
+    delete(c2);
 
-    // 3: multiple allocs don't overlap
-    var p2: u32 = kmalloc(200);
-    var p3: u32 = kmalloc(300);
-    assert(p2 != 0u32, 0 - 3);
-    assert(p3 != 0u32, 0 - 30);
-    assert(p2 != p1, 0 - 31);
-    assert(p3 != p2, 0 - 32);
+    // 4: large alloc (> 2048, free-list path)
+    var d: U8Array = U8Array(8192);
+    assert(d as u32 != 0u32, 0 - 30);
+    set(d, 0, 1u8);
+    set(d, 8191, 2u8);
+    assert(get(d, 0) == 1u8, 0 - 31);
+    assert(get(d, 8191) == 2u8, 0 - 32);
+    delete(d);
 
-    // 4: free middle, realloc fits
-    kfree(p2);
-    var p4: u32 = kmalloc(200);
-    assert(p4 != 0u32, 0 - 4);
+    // 5: page-aligned alloc (>= 4096 user, rounds to 4KB)
+    var e: U8Array = U8Array(9000);
+    assert(e as u32 != 0u32, 0 - 40);
+    delete(e);
 
-    // 5: free all, coalesce, alloc big
-    kfree(p1);
-    kfree(p3);
-    kfree(p4);
-    var p5: u32 = kmalloc(60000);
-    assert(p5 != 0u32, 0 - 5);
-    kfree(p5);
-
-    // 6: page-aligned alloc (>= 4096)
-    var p6: u32 = kmalloc(9000);
-    assert(p6 != 0u32, 0 - 6);
-    // 9000 rounds up to 12288 (3 pages)
-    // after free, remaining should be 65536 - 12288 - 4(hdr) = 53244
-    kfree(p6);
-
-    // 7: many small allocs
+    // 6: many allocs then frees (coalescing stress)
     var i: i32 = 0;
-    var ok: bool = true;
+    var ptrs: I32Array = I32Array(100);
     while i < 100 {
-        var p: u32 = kmalloc(32);
-        if p == 0u32 { ok = false; }
+        var p: U8Array = U8Array(64);
+        assert(p as u32 != 0u32, 0 - 50);
+        set(ptrs, i, p as u32 as i32);
         i = i + 1;
     }
-    assert(ok, 0 - 7);
+    i = 0;
+    while i < 100 {
+        var p: u32 = get(ptrs, i) as u32;
+        delete(p as U8Array);
+        i = i + 1;
+    }
+    delete(ptrs);
 
-    // 8: OOM returns 0
-    var big: u32 = kmalloc(100000);
-    assert(big == 0u32, 0 - 8);
+    // 7: after freeing all, a big alloc should succeed (coalescing worked)
+    var f: U8Array = U8Array(32768);
+    assert(f as u32 != 0u32, 0 - 60);
+    delete(f);
+
+    // 8: I32Array works too
+    var g: I32Array = I32Array(1000);
+    assert(g as u32 != 0u32, 0 - 70);
+    set(g, 0, 12345);
+    set(g, 999, 67890);
+    assert(get(g, 0) == 12345, 0 - 71);
+    assert(get(g, 999) == 67890, 0 - 72);
+    delete(g);
 
     print_i32(0);
-    delete(heap);
     return 0;
 }

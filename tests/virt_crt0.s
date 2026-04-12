@@ -2,8 +2,7 @@
 #
 # Used by tests/test_asm.sh to run TC programs end-to-end on the virt
 # machine. UART output goes to 16550 @ 0x10000000 (no THRE wait — qemu
-# is always ready). Pairs with compiler/crt0_tc_data.s for pool
-# metadata and __arena.
+# is always ready). Pairs with compiler/crt0_tc_data.s for __arena.
 
     .text
     .globl _start
@@ -13,13 +12,8 @@ _start:
     # Point sp at the top so stack grows downward through free RAM.
     li   sp, 0x88000000
     la   a0, __arena
-    la   a1, __pool_sizes
-    la   a2, __pool_counts
-    la   a3, __pool_free
-    la   a4, __pool_base
-    la   a5, __pool_end
-    la   a6, __pools_ready
-    call __runtime_init__u32__u32__u32__u32__u32__u32__u32
+    li   a1, 4648960
+    call __runtime_init__u32__i32
     call main
     # Shut qemu down via the SiFive test MMIO (virt machine only).
     # Writing 0x5555 to 0x100000 exits qemu with status 0.

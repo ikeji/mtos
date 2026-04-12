@@ -4,16 +4,8 @@
 # that the IMAGE_DEF picobin block lands at file offset 0 (= Flash
 # 0x10000000). _start follows immediately at offset 0x20.
 #
-# Uses compiler/crt0_tc_data.s style runtime interface (__runtime_init,
-# do_write, etc.) but:
-#   - UART output targets PL011 @ 0x40070000 (not ecall)
-#   - gp is set to 0x20000800 (SRAM data base + 0x800) directly
-#   - .bss region in SRAM is zero-initialised before any runtime call
-#   - NPOOLS (runtime global) is patched to 17 at startup so the .data
-#     section can be all zero (no Flash → SRAM data copy is needed)
-#
-# Pool metadata and __arena live in crt0_pico2_data.s (.rodata for the
-# const pool_sizes/counts, .bss for the rest).
+# Uses runtime.tc's kmalloc-based allocator. __runtime_init receives
+# (__arena, arena_size) where __arena is in SRAM after .bss.
 
     .text
     .globl __embedded_block
@@ -108,12 +100,11 @@ _start:
     li   t1, 33
     sw   t1, 0x28(t0)             # FBRD
     li   t1, 0x70                 # WLEN=11 (8 bits) | FEN
-    sw   t1, 0x2C(t0)             # LCR_H
+    sw   t1, 0x2C(t0)             # CR
     li   t1, 0x301                # UARTEN | TXE | RXE
     sw   t1, 0x30(t0)             # CR
 
     # ===== Zero SRAM data+bss region (0x20000000..0x20080000) =====
-    # Leaves the top 8 KB of SRAM for stack growth below sp=0x20082000.
     li   t0, 0x20000000
     li   t1, 0x20080000
 3:  sw   zero, 0(t0)
@@ -123,22 +114,10 @@ _start:
     # ===== gp = SRAM data base + 0x800 =====
     li   gp, 0x20000800
 
-    # ===== patch runtime global NPOOLS to 17 =====
-    # runtime.tc defines `var NPOOLS: i32 = 17`. We zeroed SRAM above,
-    # so the SRAM-resident copy is currently 0. Set it manually.
-    la   t0, NPOOLS
-    li   t1, 17
-    sw   t1, 0(t0)
-
-    # ===== __runtime_init(arena, sizes, counts, free, base, end, ready) =====
+    # ===== __runtime_init(arena, arena_size) =====
     la   a0, __arena
-    la   a1, __pool_sizes
-    la   a2, __pool_counts
-    la   a3, __pool_free
-    la   a4, __pool_base
-    la   a5, __pool_end
-    la   a6, __pools_ready
-    call __runtime_init__u32__u32__u32__u32__u32__u32__u32
+    li   a1, 262144
+    call __runtime_init__u32__i32
 
     call main
 

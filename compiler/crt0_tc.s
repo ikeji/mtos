@@ -7,17 +7,9 @@
     .globl _start
 _start:
     la   gp, __global_pointer$
-    # Leave sp unchanged — Linux hands _start a valid user stack top.
-    # Avoids depending on a __stack_end label that would land far
-    # outside gp's ±2KB range.
     la   a0, __arena
-    la   a1, __pool_sizes
-    la   a2, __pool_counts
-    la   a3, __pool_free
-    la   a4, __pool_base
-    la   a5, __pool_end
-    la   a6, __pools_ready
-    call __runtime_init__u32__u32__u32__u32__u32__u32__u32
+    li   a1, 4648960
+    call __runtime_init__u32__i32
     call main
     #
     li   a7, 93
