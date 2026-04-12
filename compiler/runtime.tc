@@ -68,6 +68,24 @@ fn bucket_user_size(b: i32) -> i32 {
     return 2048;
 }
 
+// large_alloc — first-fit allocator on an address-ordered free list.
+//
+// g_free_list はアドレス昇順に並んだフリーブロックの連結リスト。
+// 各フリーブロックの構造:  [total_size: u32] [next: u32] [unused ...]
+//
+// 1. リストを先頭から走査し、need バイト以上の最初のブロックを探す (first-fit)。
+// 2. 見つかったブロックが need + KM_MIN_BLK 以上なら分割:
+//    - ブロック前半 (need バイト) を確保用に切り出す
+//    - 後半を新しいフリーブロックとしてリストに残す
+//    見つかったブロックが分割するには小さすぎる場合、ブロック全体を使う。
+// 3. 確保したブロックのヘッダに total_size を書き込み、
+//    ヘッダ直後 (cur + KM_HDR) をユーザポインタとして返す。
+// 4. 見つからなければ 0 (OOM) を返す。
+//
+// 図 (分割の場合):
+//   before: [    bsz    |next|  ...  ]
+//   after:  [need|data..][remain|next| ...]
+//            ^返却         ^リストに残る
 fn large_alloc(need: i32) -> u32 {
     var prev: u32 = 0u32;
     var cur: u32 = g_free_list;
@@ -76,6 +94,7 @@ fn large_alloc(need: i32) -> u32 {
         if bsz >= need {
             var remain: i32 = bsz - need;
             if remain >= KM_MIN_BLK {
+                // 分割: 後半を新フリーブロックにしてリストに繋ぎ替え
                 var nb: u32 = cur + need as u32;
                 poke32(nb, remain as u32);
                 poke32(nb + 4u32, peek32(cur + 4u32));
@@ -86,6 +105,7 @@ fn large_alloc(need: i32) -> u32 {
                     poke32(prev + 4u32, nb as u32);
                 }
             } else {
+                // 分割不可: ブロック全体を使い、リストから外す
                 var nxt: u32 = peek32(cur + 4u32);
                 if prev == 0u32 {
                     g_free_list = nxt;
@@ -101,14 +121,33 @@ fn large_alloc(need: i32) -> u32 {
     return 0u32;
 }
 
+// large_free — アドレス順フリーリストにブロックを返却し、隣接結合する。
+//
+// 1. リストを走査して blk のアドレス順の挿入位置を探す。
+//    走査後: prev = blk より前のブロック (なければ 0)
+//            cur  = blk より後のブロック (なければ 0)
+//
+// 2. 後方結合: blk の末尾 (blk + bsz) が cur と一致すれば、
+//    blk と cur を 1 つのブロックに統合する。
+//    一致しなければ blk.next = cur としてリストに挿入。
+//
+// 3. 前方結合: prev の末尾 (prev + prev.size) が blk と一致すれば、
+//    prev と blk を 1 つのブロックに統合する。
+//    一致しなければ prev.next = blk としてリストに挿入。
+//
+// 図 (前後とも結合する場合):
+//   before: ... [prev|next] ... [blk] ... [cur|next] ...
+//   after:  ... [prev+blk+cur|next] ...
 fn large_free(blk: u32, bsz: i32) -> void {
     var bend: u32 = blk + bsz as u32;
     var prev: u32 = 0u32;
     var cur: u32 = g_free_list;
+    // 挿入位置を探す (アドレス昇順)
     while cur != 0u32 && cur < blk {
         prev = cur;
         cur = peek32(cur + 4u32);
     }
+    // 後方結合: blk の直後が cur なら統合
     if cur != 0u32 && bend == cur {
         var csz: i32 = peek32(cur) as i32;
         var cnxt: u32 = peek32(cur + 4u32);
@@ -117,6 +156,7 @@ fn large_free(blk: u32, bsz: i32) -> void {
     } else {
         poke32(blk + 4u32, cur as u32);
     }
+    // 前方結合: prev の直後が blk なら統合
     if prev != 0u32 {
         var psz: i32 = peek32(prev) as i32;
         var pend: u32 = prev + psz as u32;
