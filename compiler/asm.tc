@@ -577,23 +577,29 @@ fn asm_instr() -> i32 {
         if g_pass==2 {
             var target: i32 = parse_label_op(1);
             var tsec: i32 = parse_label_op_section(1);
-            // For data/bss labels, prefer gp-relative (required on Pico 2 where
-            // text=Flash and data=SRAM are in different memory regions).
-            // If the 12-bit signed offset doesn't fit, fall back to PC-relative
-            // (works on Linux / virt where text and data sit in the same LOAD
-            // segment; Pico 2 data region must be small enough to stay in range).
-            var use_gp: i32 = 0;
+            // data/bss labels are always addressed via gp-relative; on Pico 2
+            // the PC-relative form would give a Flash address, which is
+            // wrong (the memory actually lives in SRAM). If the label ends
+            // up outside gp's ±2KB window, that's a linker bug in the crt0
+            // layout and we fail hard with the label name.
             if tsec == 2 || tsec == 3 {
                 var gpoff: i32 = target - g_gp_abs;
-                if gpoff >= (0 - 2048) && gpoff <= 2047 {
-                    // auipc rd, 0 (rd = pc, overwritten by next addi)
-                    emit32(enc_u(23, rd, 0));
-                    // addi rd, gp, gpoff   (gp = x3)
-                    emit32(enc_i(19, 0, rd, 3, gpoff));
-                    use_gp = 1;
+                if gpoff < (0 - 2048) || gpoff > 2047 {
+                    var eb1: StringBuffer = StringBuffer_new(1);
+                    emit_string(eb1, "asm: gp-relative la out of 12-bit range for label '");
+                    var lop_off: i32 = get(g_ops, 2);
+                    var lop_len: i32 = get(g_ops, 3);
+                    emit_n(eb1, g_line_buf, lop_off, lop_len);
+                    emit_string(eb1, "'\n");
+                    write(eb1, 2);
+                    destroy(eb1);
+                    sys_exit(1);
                 }
-            }
-            if use_gp == 0 {
+                // auipc rd, 0 (rd = pc, overwritten by next addi)
+                emit32(enc_u(23, rd, 0));
+                // addi rd, gp, gpoff   (gp = x3)
+                emit32(enc_i(19, 0, rd, 3, gpoff));
+            } else {
                 var off: i32 = target - pc;
                 emit32(enc_u(23,rd,hi20(off)<<12));
                 emit32(enc_i(19,0,rd,rd,lo12(off)));

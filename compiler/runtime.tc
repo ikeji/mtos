@@ -110,22 +110,31 @@ export fn __runtime_init(arena: u32, sizes: u32, counts: u32,
     g_pool_end_addr = end_arr;
     g_pools_ready_addr = ready;
 
-    // Initialize free lists
+    // Initialize free lists. Pools with count == 0 are treated as
+    // disabled: their free list is empty and they occupy no arena
+    // bytes, so allocation through bucket_of() can still fall through
+    // to a larger bucket (or OOM if none matches). This lets small
+    // targets like Pico 2 disable large-size buckets in __pool_counts
+    // without losing 1 MB+ of arena to a single unused pool slot.
     var p: u32 = arena;
     var i: i32 = 0;
     while i < NPOOLS {
         var sz: i32 = ps_get(sizes, i);
         var n: i32 = ps_get(counts, i);
         ps_set(base_arr, i, p as i32);
-        ps_set(free_arr, i, p as i32);
-        var j: i32 = 0;
-        while j < n - 1 {
-            poke32(p, p + sz as u32);
+        if n > 0 {
+            ps_set(free_arr, i, p as i32);
+            var j: i32 = 0;
+            while j < n - 1 {
+                poke32(p, p + sz as u32);
+                p = p + sz as u32;
+                j = j + 1;
+            }
+            poke32(p, 0u32);
             p = p + sz as u32;
-            j = j + 1;
+        } else {
+            ps_set(free_arr, i, 0);
         }
-        poke32(p, 0u32);
-        p = p + sz as u32;
         ps_set(end_arr, i, p as i32);
         i = i + 1;
     }
