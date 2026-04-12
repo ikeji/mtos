@@ -164,7 +164,7 @@ _handle_ecall:
 
 _ecall_write:
     mv   s0, sp
-    la   gp, __global_pointer$
+    li   gp, 0x20000800
     la   t0, _kern_save
     lw   sp, 4(t0)
     lw   a0, 44(s0)
@@ -221,7 +221,7 @@ _trap_restore:
 
 # ===== Task exit trampoline =====
 _task_exit_trampoline:
-    la   gp, __global_pointer$
+    li   gp, 0x20000800
     la   t0, _kern_save
     lw   ra,  0(t0)
     lw   sp,  4(t0)
