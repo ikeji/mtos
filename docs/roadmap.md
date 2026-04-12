@@ -87,13 +87,13 @@ C言語でフルパイプラインを実装し、動作を検証する。
 ## フェーズ2.5: TC プログラムを Pico 2 実機で動かす
 
 目的: OS なしで TC プログラムがベアメタル Pico 2 で走る最小構成を先に
-通しておき、Flash/SRAM 分離、picobin IMAGE_DEF、UART、プールアロケータ
+通しておき、Flash/SRAM 分離、picobin IMAGE_DEF、UART、メモリアロケータ
 のどこに落とし穴があるかを洗い出す。
 
 - [x] picobin IMAGE_DEF ブロック (RP2350 RISC-V family ID 0xE48BFF5A)
 - [x] `pico2/crt0_pico2.s`: core1 park、XOSC/clk_peri/RESETS/GPIO/UART0 初期化
-- [x] SRAM ゼロクリア、gp=0x20000800、NPOOLS 手動 patch、runtime_init 呼び出し
-- [x] `pico2/crt0_pico2_data.s`: .rodata (__pool_sizes/counts) + .bss (pool metadata + __arena)
+- [x] SRAM ゼロクリア、gp 設定、runtime_init 呼び出し
+- [x] `pico2/crt0_pico2_data.s`: .bss (__arena)
 - [x] `compile-pico2.sh`: compile-gen2.sh に `ASM_PROLOGUE="; raw"` + crt0 差し替え
 - [x] `pico2/bin2uf2.py`: raw bin → UF2 (family_id=0xe48bff5a)
 - [x] `pico2/hello.tc` が実機 Pico 2 の UART0 に "Hello, Pico 2!\r\n" を出力
@@ -111,10 +111,10 @@ C言語でフルパイプラインを実装し、動作を検証する。
 
 - [x] ブートスタブ (crt0_pico2.s / virt_crt0.s: _start, SP/GP/SRAM 初期化)
 - [x] UARTドライバ (PL011 / 16550、bare-metal レベル)
+- [x] メモリアロケータ（runtime.tc に kmalloc/kfree 実装済み、free-list first-fit + 10-bucket 小ブロック高速化）
 - [ ] `print_*` / 文字列フォーマッタを runtime.tc から OS 向けに切り出し
 - [ ] タイマ割り込み（mtime / mtimecmp）
 - [ ] 例外・割り込みハンドラ枠組み（trap vector、コンテキスト保存）
-- [ ] シンプルなメモリアロケータ（kmalloc/kfree、ページ管理）
 - [ ] QEMU virt 上でタイマ割り込みハンドラが発火するところまで確認
 
 ## フェーズ4: プロセス管理（QEMUで開発・検証）
@@ -167,7 +167,7 @@ compiler/ 配下のツールをそのまま OS 上のプロセスとして起動
 |---|---|
 | インタプリタとコンパイラの挙動が一致しない | `tests/test_consistency.sh` / `tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
 | LL(1)で表現できない構文が欲しくなる | 文法制約を文書化し、設計段階で確認 |
-| メモリ不足（520KB SRAM） | `asm.tc` はセクション並べ替えで data/bss を最小化済み。`typecheck.tc` / `asm.tc` のラベル・行バッファは PSRAM 前提で拡張予定（フェーズ2.5） |
+| メモリ不足（520KB SRAM） | `asm.tc` はセクション並べ替えで data/bss を最小化済み。runtime.tc は kmalloc/kfree（free-list + bucket）に移行し pool 制約を解消。`typecheck.tc` / `asm.tc` のラベル・行バッファは PSRAM 前提で拡張予定（フェーズ2.5） |
 | gp 相対 `la` の 12-bit 制約 | hello レベルでは余裕。将来必要なら 12 byte 形式 (`lui+addi+add gp`) に拡張 |
 | QEMUと実機の挙動差異 | `pico2/hello.tc` で既に実機 Pico 2 上の挙動を検証。ペリフェラル依存は crt0_pico2.s に集約 |
 | Flash書き込みが遅い・壊れやすい | picotool UF2 経由の書き込みのみ使用。書き換え頻度は開発サイクルで問題ないレベル |

@@ -608,8 +608,21 @@ fn asm_instr() -> i32 {
         return 8;
     }
 
-    // ecall
+    // ecall / mret
     if mnem_eq("ecall") { if g_pass==2 { emit32(115); } return 4; }
+    if mnem_eq("mret")  { if g_pass==2 { emit32(807403635); } return 4; } // 0x30200073
+
+    // CSR instructions (opcode=115, I-type encoding)
+    // csrrw rd, csr, rs1  (funct3=1)
+    if mnem_eq("csrrw") { if g_pass==2 { emit32(enc_i(115,1,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+    // csrrs rd, csr, rs1  (funct3=2)
+    if mnem_eq("csrrs") { if g_pass==2 { emit32(enc_i(115,2,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+    // csrrc rd, csr, rs1  (funct3=3)
+    if mnem_eq("csrrc") { if g_pass==2 { emit32(enc_i(115,3,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+    // csrr rd, csr  -> csrrs rd, csr, x0  (pseudo)
+    if mnem_eq("csrr")  { if g_pass==2 { emit32(enc_i(115,2,parse_reg_op(0),0,parse_imm_op(1))); } return 4; }
+    // csrw csr, rs1 -> csrrw x0, csr, rs1 (pseudo)
+    if mnem_eq("csrw")  { if g_pass==2 { emit32(enc_i(115,1,0,parse_reg_op(1),parse_imm_op(0))); } return 4; }
 
     // Unknown instruction
     var eb: StringBuffer = StringBuffer_new();

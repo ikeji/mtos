@@ -67,6 +67,33 @@ else
         "expected 9702000093820180, got $actual_hex"
 fi
 
+# ===== CSR instruction encoding unit test =====
+# csrr t0, 0x342  -> csrrs t0, 0x342, x0 -> 0x342022f3
+# csrw 0x305, t0  -> csrrw x0, 0x305, t0 -> 0x30529073
+# mret            -> 0x30200073
+cat > "$TMP/csr.s" << 'EOF'
+; raw
+.text
+.globl _start
+_start:
+    csrr t0, 0x342
+    csrw 0x305, t0
+    mret
+EOF
+
+t0=$(time_ms)
+run_asm_tc < "$TMP/csr.s" > "$TMP/csr.bin"
+elapsed=$(( $(time_ms) - t0 ))
+
+actual_hex=$(od -An -v -tx1 -N12 "$TMP/csr.bin" | tr -d ' \n')
+expected_hex="f32220347390523073002030"
+if [ "$actual_hex" = "$expected_hex" ]; then
+    report_pass "asm[csr]: csrr/csrw/mret encode correctly" "$elapsed"
+else
+    report_fail_msg "asm[csr]: CSR encoding" \
+        "expected $expected_hex, got $actual_hex"
+fi
+
 VIRT_CRT0="$SCRIPT_DIR/virt_crt0.s"
 HELLO_TC="$SCRIPT_DIR/hello2.tc"
 BIN="$TMP/hello2_virt.bin"
