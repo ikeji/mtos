@@ -219,24 +219,6 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "poke16", p32_u16, 2, "void");
     register_fn(e, "poke32", p32_u32, 2, "void");
 
-    /* CSR access stubs (implemented in virt_crt0.s / crt0_tc.s) */
-    register_fn(e, "csr_read_mstatus", NULL, 0, "u32");
-    register_fn(e, "csr_write_mstatus", p32, 1, "void");
-    register_fn(e, "csr_read_mie", NULL, 0, "u32");
-    register_fn(e, "csr_write_mie", p32, 1, "void");
-    register_fn(e, "csr_read_mcause", NULL, 0, "u32");
-
-    /* Kernel primitives (implemented in crt0 assembly) */
-    const char *p32_i32[] = {"u32","i32"};
-    const char *i32_u32[] = {"i32","u32"};
-    register_fn(e, "kern_launch_task", p32_i32, 2, "void");
-    const char *kern_run_args[] = {"i32","u32","u32","u32","i32"};
-    register_fn(e, "kern_run_task", kern_run_args, 5, "i32");
-    register_fn(e, "set_switch_frame", p32, 1, "void");
-    const char *init_frame_args[] = {"u32","i32","u32","u32","u32","i32"};
-    register_fn(e, "init_task_frame", init_frame_args, 6, "void");
-    register_fn(e, "sched_start", p32, 1, "void");
-
     /* raw ecall stubs (always registered — implemented in crt0.s) */
     const char *dw[] = {"i32","u32","i32"};
     const char *dr[] = {"i32","u32","i32"};

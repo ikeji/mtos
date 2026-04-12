@@ -3,6 +3,9 @@
 // Kernel (main) allocates a stack for guest_task_1, launches it via
 // kern_launch_task, waits for it to complete, prints KERN_OK.
 
+// Assembly-defined function (virt_crt0.s)
+fn kern_launch_task(task_sp: u32, task_id: i32) -> void;
+
 fn guest_task_1() -> void {
     // Print "TASK1_OK\n" via UART
     var msg: U8Array = U8Array(10);

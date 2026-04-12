@@ -4,6 +4,12 @@
 // The trap_handler (called from virt_crt0.s) sets a flag and disables
 // further timer interrupts. Main checks the flag and prints result.
 
+// Assembly-defined functions (virt_crt0.s)
+fn csr_read_mstatus() -> u32;
+fn csr_write_mstatus(val: u32) -> void;
+fn csr_read_mie() -> u32;
+fn csr_write_mie(val: u32) -> void;
+
 // CLINT MMIO addresses (qemu virt)
 var MTIMECMP_LO: u32 = 0x02004000u32;
 var MTIMECMP_HI: u32 = 0x02004004u32;

@@ -3,6 +3,13 @@
 // Two tasks run concurrently, switched by timer interrupt.
 // Each task prints a character in a loop. Output should be interleaved.
 
+// Assembly-defined functions (crt0_virt.s)
+fn csr_read_mie() -> u32;
+fn csr_write_mie(val: u32) -> void;
+fn set_switch_frame(addr: u32) -> void;
+fn init_task_frame(frame: u32, id: i32, sp: u32, gp: u32, arena: u32, arena_size: i32) -> void;
+fn sched_start(frame: u32) -> void;
+
 // CLINT MMIO (qemu virt)
 var MTIMECMP_LO: u32 = 0x02004000u32;
 var MTIMECMP_HI: u32 = 0x02004004u32;
