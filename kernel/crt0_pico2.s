@@ -157,17 +157,27 @@ _trap_entry:
     csrr t0, 0x341
     sw   t0, 128(sp)
     csrw 0x340, sp
-    # Dispatch
+    # Dispatch by mcause
     csrr t0, 0x342
     li   t1, 11
     beq  t0, t1, _handle_ecall
-    # Unknown trap: just restore
+    # Not ecall: call TC trap_handler(cause, epc)
+    mv   s0, sp
+    li   gp, 0x20000800
+    la   t2, _kern_save
+    lw   sp, 4(t2)
+    mv   a0, t0
+    csrr a1, 0x341
+    call trap_handler__u32__u32
+    mv   sp, s0
     j    _trap_restore
 
 _handle_ecall:
     lw   t0, 68(sp)
     li   t1, 64
     beq  t0, t1, _ecall_write
+    li   t1, 63
+    beq  t0, t1, _ecall_read
     li   t1, 93
     beq  t0, t1, _ecall_exit
     # Unknown: advance mepc
@@ -191,12 +201,50 @@ _ecall_write:
     mv   sp, s0
     j    _trap_restore
 
+_ecall_read:
+    mv   s0, sp
+    li   gp, 0x20000800
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    lw   a0, 44(s0)
+    lw   a1, 48(s0)
+    call do_uart_read__u32__i32
+    sw   a0, 40(s0)
+    lw   t0, 128(s0)
+    addi t0, t0, 4
+    sw   t0, 128(s0)
+    mv   sp, s0
+    j    _trap_restore
+
 _ecall_exit:
+    mv   s0, sp
+    li   gp, 0x20000800
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    call sched_task_exit
+    beqz a0, _all_tasks_done
+    la   t0, _switch_frame
+    sw   a0, 0(t0)
+    mv   sp, s0
+    j    _trap_restore
+_all_tasks_done:
+    csrr t0, 0x300
+    li   t1, 0x80
+    not  t1, t1
+    and  t0, t0, t1
+    csrw 0x300, t0
+    mv   sp, s0
     la   t0, _task_exit_trampoline
     sw   t0, 128(sp)
     j    _trap_restore
 
 _trap_restore:
+    la   t0, _switch_frame
+    lw   t1, 0(t0)
+    beqz t1, _no_switch
+    csrw 0x340, t1
+    sw   zero, 0(t0)
+_no_switch:
     csrr sp, 0x340
     lw   t0, 128(sp)
     csrw 0x341, t0
@@ -303,10 +351,36 @@ do_write__i32__u32__i32:
     mv   a1, a2
     j    do_uart_write__u32__i32
 
+    .globl do_uart_read__u32__i32
+do_uart_read__u32__i32:
+    li   t0, 0x40070000
+    beqz a1, 8f
+    mv   t2, a1
+    mv   t3, a0
+6:  lw   t1, 0x18(t0)
+    andi t1, t1, 0x10
+    bnez t1, 6b
+    lbu  t1, 0(t0)
+    sb   t1, 0(t3)
+    addi t3, t3, 1
+    addi t2, t2, -1
+7:  beqz t2, 8f
+    lw   t1, 0x18(t0)
+    andi t1, t1, 0x10
+    bnez t1, 8f
+    lbu  t1, 0(t0)
+    sb   t1, 0(t3)
+    addi t3, t3, 1
+    addi t2, t2, -1
+    j    7b
+8:  sub  a0, a1, t2
+    ret
+
     .globl do_read__i32__u32__i32
 do_read__i32__u32__i32:
-    li   a0, 0
-    ret
+    mv   a0, a1
+    mv   a1, a2
+    j    do_uart_read__u32__i32
 
     .globl do_exit__i32
 do_exit__i32:
@@ -336,4 +410,84 @@ poke16__u32__u16:
     .globl poke32__u32__u32
 poke32__u32__u32:
     sw   a1, 0(a0)
+    ret
+
+# ===== Default handlers (overridden by TC) =====
+    .globl trap_handler__u32__u32
+trap_handler__u32__u32:
+    ret
+    .globl sched_task_exit
+sched_task_exit:
+    li   a0, 0
+    ret
+
+# ===== set_switch_frame(addr: u32) =====
+    .globl set_switch_frame__u32
+set_switch_frame__u32:
+    la   t0, _switch_frame
+    sw   a0, 0(t0)
+    ret
+
+# ===== init_task_frame(frame, entry, sp, gp, arena, arena_size) =====
+    .globl init_task_frame__u32__u32__u32__u32__u32__i32
+init_task_frame__u32__u32__u32__u32__u32__i32:
+    mv   t0, a0
+    li   t1, 132
+    add  t1, t0, t1
+1:  sw   zero, 0(t0)
+    addi t0, t0, 4
+    bltu t0, t1, 1b
+    sw   a1, 128(a0)
+    sw   a2,   8(a0)
+    sw   a3,  12(a0)
+    sw   a4,  40(a0)
+    sw   a5,  44(a0)
+    ret
+
+# ===== sched_start(frame: u32) =====
+    .globl sched_start__u32
+sched_start__u32:
+    la   t0, _kern_save
+    sw   ra,  0(t0)
+    sw   sp,  4(t0)
+    sw   s0,  8(t0)
+    sw   s1, 12(t0)
+    sw   s2, 16(t0)
+    sw   s3, 20(t0)
+    sw   s4, 24(t0)
+    sw   s5, 28(t0)
+    sw   s6, 32(t0)
+    sw   s7, 36(t0)
+    sw   s8, 40(t0)
+    sw   s9, 44(t0)
+    sw   s10, 48(t0)
+    sw   s11, 52(t0)
+    sw   gp, 56(t0)
+    csrw 0x340, a0
+    csrr t0, 0x300
+    li   t1, 0x1880
+    or   t0, t0, t1
+    csrw 0x300, t0
+    j    _trap_restore
+
+# ===== CSR helpers =====
+    .globl csr_read_mstatus
+csr_read_mstatus:
+    csrr a0, 0x300
+    ret
+    .globl csr_write_mstatus__u32
+csr_write_mstatus__u32:
+    csrw 0x300, a0
+    ret
+    .globl csr_read_mie
+csr_read_mie:
+    csrr a0, 0x304
+    ret
+    .globl csr_write_mie__u32
+csr_write_mie__u32:
+    csrw 0x304, a0
+    ret
+    .globl csr_read_mcause
+csr_read_mcause:
+    csrr a0, 0x342
     ret

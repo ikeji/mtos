@@ -12,6 +12,8 @@ _trap_frame:
     .space 132
 _kern_save:
     .space 60
+_switch_frame:
+    .space 4
     .globl __arena
 __arena:
     .space 262144

@@ -102,7 +102,7 @@ fn main() -> i32 {
     g_frames = U32Array(NUM_TASKS);
     g_states = I32Array(NUM_TASKS);
 
-    // Create tasks using bin2s-generated address functions
+    // Create tasks
     var frame0: u32 = make_task(_task_hello_addr());
     set(g_frames, 0, frame0);
     set(g_states, 0, 0);

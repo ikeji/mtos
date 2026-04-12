@@ -1,11 +1,15 @@
-// hello2.tc — Pico 2 guest task: prints "WORLD\r\n"
+// hello2.tc — guest task: prints "B" 5 times with busy wait
 
 fn main() -> i32 {
-    var buf: U8Array = U8Array(7);
-    set(buf, 0, 'W'); set(buf, 1, 'O'); set(buf, 2, 'R');
-    set(buf, 3, 'L'); set(buf, 4, 'D');
-    set(buf, 5, 13u8); set(buf, 6, 10u8);
-    sys_write(1, buf, 7);
+    var buf: U8Array = U8Array(1);
+    set(buf, 0, 'B');
+    var i: i32 = 0;
+    while i < 5 {
+        sys_write(1, buf, 1);
+        var j: i32 = 0;
+        while j < 50000 { j = j + 1; }
+        i = i + 1;
+    }
     delete(buf);
     return 0;
 }
