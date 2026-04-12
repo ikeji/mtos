@@ -1258,6 +1258,125 @@
       (return)
     )
   )
+  (fn is_hex_digit
+    (params
+      (param c
+        (type u8)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (comment "return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');")
+      (return
+        (binop ||
+          (binop ||
+            (binop &&
+              (binop >=
+                (var c)
+                (int:u8 48)
+              )
+              (binop <=
+                (var c)
+                (int:u8 57)
+              )
+            )
+            (binop &&
+              (binop >=
+                (var c)
+                (int:u8 97)
+              )
+              (binop <=
+                (var c)
+                (int:u8 102)
+              )
+            )
+          )
+          (binop &&
+            (binop >=
+              (var c)
+              (int:u8 65)
+            )
+            (binop <=
+              (var c)
+              (int:u8 70)
+            )
+          )
+        )
+      )
+    )
+  )
+  (fn hex_val
+    (params
+      (param c
+        (type u8)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "if c >= '0' && c <= '9' { return c as i32 - 48; }")
+      (if
+        (binop &&
+          (binop >=
+            (var c)
+            (int:u8 48)
+          )
+          (binop <=
+            (var c)
+            (int:u8 57)
+          )
+        )
+        (block
+          (return
+            (binop -
+              (cast
+                (var c)
+                (type i32)
+              )
+              (int 48)
+            )
+          )
+        )
+      )
+      (comment "if c >= 'a' && c <= 'f' { return c as i32 - 87; }")
+      (if
+        (binop &&
+          (binop >=
+            (var c)
+            (int:u8 97)
+          )
+          (binop <=
+            (var c)
+            (int:u8 102)
+          )
+        )
+        (block
+          (return
+            (binop -
+              (cast
+                (var c)
+                (type i32)
+              )
+              (int 87)
+            )
+          )
+        )
+      )
+      (comment "return c as i32 - 55; // A-F")
+      (return
+        (binop -
+          (cast
+            (var c)
+            (type i32)
+          )
+          (int 55)
+        )
+      )
+    )
+  )
   (fn lex_tok
     (params
       (param src
@@ -1486,37 +1605,236 @@
             (type i32)
             (int 0)
           )
-          (comment "while at_eof(src) == false && is_digit(peek(src)) {")
-          (while
+          (comment "if c == '0' && at_eof(src) == false {")
+          (if
             (binop &&
+              (binop ==
+                (var c)
+                (int:u8 48)
+              )
               (binop ==
                 (call at_eof
                   (var src)
                 )
                 (bool false)
               )
-              (call is_digit
-                (call peek
-                  (var src)
+            )
+            (block
+              (comment "next(src); // consume '0'")
+              (call_stmt next
+                (var src)
+              )
+              (comment "if at_eof(src) == false && (peek(src) == 'x' || peek(src) == 'X') {")
+              (if
+                (binop &&
+                  (binop ==
+                    (call at_eof
+                      (var src)
+                    )
+                    (bool false)
+                  )
+                  (binop ||
+                    (binop ==
+                      (call peek
+                        (var src)
+                      )
+                      (int:u8 120)
+                    )
+                    (binop ==
+                      (call peek
+                        (var src)
+                      )
+                      (int:u8 88)
+                    )
+                  )
+                )
+                (block
+                  (comment "next(src); // consume 'x'")
+                  (call_stmt next
+                    (var src)
+                  )
+                  (comment "while at_eof(src) == false && is_hex_digit(peek(src)) {")
+                  (while
+                    (binop &&
+                      (binop ==
+                        (call at_eof
+                          (var src)
+                        )
+                        (bool false)
+                      )
+                      (call is_hex_digit
+                        (call peek
+                          (var src)
+                        )
+                      )
+                    )
+                    (block
+                      (comment "ival = ival * 16 + hex_val(next(src));")
+                      (assign ival
+                        (binop +
+                          (binop *
+                            (var ival)
+                            (int 16)
+                          )
+                          (call hex_val
+                            (call next
+                              (var src)
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+                (if
+                  (binop &&
+                    (binop ==
+                      (call at_eof
+                        (var src)
+                      )
+                      (bool false)
+                    )
+                    (binop ||
+                      (binop ==
+                        (call peek
+                          (var src)
+                        )
+                        (int:u8 98)
+                      )
+                      (binop ==
+                        (call peek
+                          (var src)
+                        )
+                        (int:u8 66)
+                      )
+                    )
+                  )
+                  (block
+                    (comment "next(src); // consume 'b'")
+                    (call_stmt next
+                      (var src)
+                    )
+                    (comment "while at_eof(src) == false && (peek(src) == '0' || peek(src) == '1') {")
+                    (while
+                      (binop &&
+                        (binop ==
+                          (call at_eof
+                            (var src)
+                          )
+                          (bool false)
+                        )
+                        (binop ||
+                          (binop ==
+                            (call peek
+                              (var src)
+                            )
+                            (int:u8 48)
+                          )
+                          (binop ==
+                            (call peek
+                              (var src)
+                            )
+                            (int:u8 49)
+                          )
+                        )
+                      )
+                      (block
+                        (comment "ival = ival * 2 + (next(src) as i32 - 48);")
+                        (assign ival
+                          (binop +
+                            (binop *
+                              (var ival)
+                              (int 2)
+                            )
+                            (binop -
+                              (cast
+                                (call next
+                                  (var src)
+                                )
+                                (type i32)
+                              )
+                              (int 48)
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                  (block
+                    (comment "while at_eof(src) == false && is_digit(peek(src)) {")
+                    (while
+                      (binop &&
+                        (binop ==
+                          (call at_eof
+                            (var src)
+                          )
+                          (bool false)
+                        )
+                        (call is_digit
+                          (call peek
+                            (var src)
+                          )
+                        )
+                      )
+                      (block
+                        (comment "ival = ival * 10 + (next(src) as i32 - 48);")
+                        (assign ival
+                          (binop +
+                            (binop *
+                              (var ival)
+                              (int 10)
+                            )
+                            (binop -
+                              (cast
+                                (call next
+                                  (var src)
+                                )
+                                (type i32)
+                              )
+                              (int 48)
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
                 )
               )
             )
             (block
-              (comment "ival = ival * 10 + (next(src) as i32 - 48);")
-              (assign ival
-                (binop +
-                  (binop *
-                    (var ival)
-                    (int 10)
-                  )
-                  (binop -
-                    (cast
-                      (call next
-                        (var src)
-                      )
-                      (type i32)
+              (comment "while at_eof(src) == false && is_digit(peek(src)) {")
+              (while
+                (binop &&
+                  (binop ==
+                    (call at_eof
+                      (var src)
                     )
-                    (int 48)
+                    (bool false)
+                  )
+                  (call is_digit
+                    (call peek
+                      (var src)
+                    )
+                  )
+                )
+                (block
+                  (comment "ival = ival * 10 + (next(src) as i32 - 48);")
+                  (assign ival
+                    (binop +
+                      (binop *
+                        (var ival)
+                        (int 10)
+                      )
+                      (binop -
+                        (cast
+                          (call next
+                            (var src)
+                          )
+                          (type i32)
+                        )
+                        (int 48)
+                      )
+                    )
                   )
                 )
               )

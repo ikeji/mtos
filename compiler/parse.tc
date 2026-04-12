@@ -185,6 +185,16 @@ fn skip_line_comment(src: SourceReader) -> void {
     return;
 }
 
+fn is_hex_digit(c: u8) -> bool {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+fn hex_val(c: u8) -> i32 {
+    if c >= '0' && c <= '9' { return c as i32 - 48; }
+    if c >= 'a' && c <= 'f' { return c as i32 - 87; }
+    return c as i32 - 55; // A-F
+}
+
 fn lex_tok(src: SourceReader, tok: U8Array) -> void {
     // Skip whitespace and comments (// handled here to avoid consuming '/')
     var skipping: i32 = 1;
@@ -235,8 +245,30 @@ fn lex_tok(src: SourceReader, tok: U8Array) -> void {
     // Integer literal
     if is_digit(c) {
         var ival: i32 = 0;
-        while at_eof(src) == false && is_digit(peek(src)) {
-            ival = ival * 10 + (next(src) as i32 - 48);
+        if c == '0' && at_eof(src) == false {
+            next(src); // consume '0'
+            if at_eof(src) == false && (peek(src) == 'x' || peek(src) == 'X') {
+                // hex literal: 0x...
+                next(src); // consume 'x'
+                while at_eof(src) == false && is_hex_digit(peek(src)) {
+                    ival = ival * 16 + hex_val(next(src));
+                }
+            } else if at_eof(src) == false && (peek(src) == 'b' || peek(src) == 'B') {
+                // binary literal: 0b...
+                next(src); // consume 'b'
+                while at_eof(src) == false && (peek(src) == '0' || peek(src) == '1') {
+                    ival = ival * 2 + (next(src) as i32 - 48);
+                }
+            } else {
+                // plain '0' or '0'-prefixed decimal
+                while at_eof(src) == false && is_digit(peek(src)) {
+                    ival = ival * 10 + (next(src) as i32 - 48);
+                }
+            }
+        } else {
+            while at_eof(src) == false && is_digit(peek(src)) {
+                ival = ival * 10 + (next(src) as i32 - 48);
+            }
         }
         if at_eof(src) == false && is_alpha(peek(src)) {
             var slen: i32 = 0;

@@ -7315,14 +7315,401 @@ skip_line_comment__SourceReader:
     ret
     # end of skip_line_comment__SourceReader
 
+    .globl is_hex_digit__u8
+    .type  is_hex_digit__u8, @function
+is_hex_digit__u8:
+    # prologue: frame_size=48, params=1, locals=0, eval_depth=6
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_is_hex_digit__u8_pc10
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 57
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_is_hex_digit__u8_pc10
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_is_hex_digit__u8_pc11
+  .L_is_hex_digit__u8_pc10:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_is_hex_digit__u8_pc11:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_is_hex_digit__u8_pc26
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 97
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_is_hex_digit__u8_pc22
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 102
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_is_hex_digit__u8_pc22
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_is_hex_digit__u8_pc23
+  .L_is_hex_digit__u8_pc22:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_is_hex_digit__u8_pc23:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_is_hex_digit__u8_pc26
+0:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_is_hex_digit__u8_pc27
+  .L_is_hex_digit__u8_pc26:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_is_hex_digit__u8_pc27:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_is_hex_digit__u8_pc42
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_is_hex_digit__u8_pc38
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 70
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_is_hex_digit__u8_pc38
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_is_hex_digit__u8_pc39
+  .L_is_hex_digit__u8_pc38:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_is_hex_digit__u8_pc39:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_is_hex_digit__u8_pc42
+0:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_is_hex_digit__u8_pc43
+  .L_is_hex_digit__u8_pc42:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_is_hex_digit__u8_pc43:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of is_hex_digit__u8
+
+    .globl hex_val__u8
+    .type  hex_val__u8, @function
+hex_val__u8:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=4
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_hex_val__u8_pc10
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 57
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_hex_val__u8_pc10
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_hex_val__u8_pc11
+  .L_hex_val__u8_pc10:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_hex_val__u8_pc11:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_hex_val__u8_pc17
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_hex_val__u8_pc17:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 97
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_hex_val__u8_pc27
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 102
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_hex_val__u8_pc27
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_hex_val__u8_pc28
+  .L_hex_val__u8_pc27:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_hex_val__u8_pc28:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_hex_val__u8_pc34
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 87
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_hex_val__u8_pc34:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 55
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of hex_val__u8
+
     .globl lex_tok__SourceReader__U8Array
     .type  lex_tok__SourceReader__U8Array, @function
 lex_tok__SourceReader__U8Array:
-    # prologue: frame_size=160, params=2, locals=10, eval_depth=25
-    addi sp, sp, -160
-    sw   ra, 156(sp)
-    sw   s0, 152(sp)
-    addi s0, sp, 160
+    # prologue: frame_size=192, params=2, locals=10, eval_depth=34
+    addi sp, sp, -192
+    sw   ra, 188(sp)
+    sw   s0, 184(sp)
+    addi s0, sp, 192
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
@@ -7841,7 +8228,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc203
+    j    .L_lex_tok__SourceReader__U8Array_pc354
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -7849,7 +8236,24 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-  .L_lex_tok__SourceReader__U8Array_pc130:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc141
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7873,6 +8277,502 @@ lex_tok__SourceReader__U8Array:
     bnez t0, 0f
     j    .L_lex_tok__SourceReader__U8Array_pc141
 0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc142
+  .L_lex_tok__SourceReader__U8Array_pc141:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc142:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc281
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call at_eof__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc167
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 120
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc163
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 88
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc163
+0:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc164
+  .L_lex_tok__SourceReader__U8Array_pc163:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc164:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc167
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc168
+  .L_lex_tok__SourceReader__U8Array_pc167:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc168:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc195
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_lex_tok__SourceReader__U8Array_pc172:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call at_eof__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc183
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call is_hex_digit__u8
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc183
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc184
+  .L_lex_tok__SourceReader__U8Array_pc183:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc184:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc194
+0:
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call hex_val__u8
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -32(s0)
+    j    .L_lex_tok__SourceReader__U8Array_pc172
+  .L_lex_tok__SourceReader__U8Array_pc194:
+    j    .L_lex_tok__SourceReader__U8Array_pc280
+  .L_lex_tok__SourceReader__U8Array_pc195:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call at_eof__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc216
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 98
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc212
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 66
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc212
+0:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc213
+  .L_lex_tok__SourceReader__U8Array_pc212:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc213:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc216
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc217
+  .L_lex_tok__SourceReader__U8Array_pc216:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc217:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc256
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_lex_tok__SourceReader__U8Array_pc221:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call at_eof__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc242
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc238
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 49
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    beqz t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc238
+0:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc239
+  .L_lex_tok__SourceReader__U8Array_pc238:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc239:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc242
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc243
+  .L_lex_tok__SourceReader__U8Array_pc242:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc243:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc255
+0:
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -32(s0)
+    j    .L_lex_tok__SourceReader__U8Array_pc221
+  .L_lex_tok__SourceReader__U8Array_pc255:
+    j    .L_lex_tok__SourceReader__U8Array_pc280
+  .L_lex_tok__SourceReader__U8Array_pc256:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call at_eof__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc267
+0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7889,21 +8789,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc141
+    j    .L_lex_tok__SourceReader__U8Array_pc267
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc142
-  .L_lex_tok__SourceReader__U8Array_pc141:
+    j    .L_lex_tok__SourceReader__U8Array_pc268
+  .L_lex_tok__SourceReader__U8Array_pc267:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc142:
+  .L_lex_tok__SourceReader__U8Array_pc268:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc154
+    j    .L_lex_tok__SourceReader__U8Array_pc280
 0:
     lw   t0, -32(s0)
     addi sp, sp, -4
@@ -7947,8 +8847,10 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-    j    .L_lex_tok__SourceReader__U8Array_pc130
-  .L_lex_tok__SourceReader__U8Array_pc154:
+    j    .L_lex_tok__SourceReader__U8Array_pc256
+  .L_lex_tok__SourceReader__U8Array_pc280:
+    j    .L_lex_tok__SourceReader__U8Array_pc305
+  .L_lex_tok__SourceReader__U8Array_pc281:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7970,7 +8872,106 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc165
+    j    .L_lex_tok__SourceReader__U8Array_pc292
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call is_digit__u8
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc292
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_lex_tok__SourceReader__U8Array_pc293
+  .L_lex_tok__SourceReader__U8Array_pc292:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_lex_tok__SourceReader__U8Array_pc293:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc305
+0:
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 48
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -32(s0)
+    j    .L_lex_tok__SourceReader__U8Array_pc281
+  .L_lex_tok__SourceReader__U8Array_pc305:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call at_eof__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_lex_tok__SourceReader__U8Array_pc316
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -7988,21 +8989,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc165
+    j    .L_lex_tok__SourceReader__U8Array_pc316
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc166
-  .L_lex_tok__SourceReader__U8Array_pc165:
+    j    .L_lex_tok__SourceReader__U8Array_pc317
+  .L_lex_tok__SourceReader__U8Array_pc316:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc166:
+  .L_lex_tok__SourceReader__U8Array_pc317:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc196
+    j    .L_lex_tok__SourceReader__U8Array_pc347
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -8010,7 +9011,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-  .L_lex_tok__SourceReader__U8Array_pc169:
+  .L_lex_tok__SourceReader__U8Array_pc320:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8032,7 +9033,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc180
+    j    .L_lex_tok__SourceReader__U8Array_pc331
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8050,21 +9051,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc180
+    j    .L_lex_tok__SourceReader__U8Array_pc331
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc181
-  .L_lex_tok__SourceReader__U8Array_pc180:
+    j    .L_lex_tok__SourceReader__U8Array_pc332
+  .L_lex_tok__SourceReader__U8Array_pc331:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc181:
+  .L_lex_tok__SourceReader__U8Array_pc332:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc193
+    j    .L_lex_tok__SourceReader__U8Array_pc344
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -8103,8 +9104,8 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-    j    .L_lex_tok__SourceReader__U8Array_pc169
-  .L_lex_tok__SourceReader__U8Array_pc193:
+    j    .L_lex_tok__SourceReader__U8Array_pc320
+  .L_lex_tok__SourceReader__U8Array_pc344:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8112,8 +9113,8 @@ lex_tok__SourceReader__U8Array:
     addi sp, sp, 4
     la   t1, g_tok_slen
     sw   t0, 0(t1)
-    j    .L_lex_tok__SourceReader__U8Array_pc198
-  .L_lex_tok__SourceReader__U8Array_pc196:
+    j    .L_lex_tok__SourceReader__U8Array_pc349
+  .L_lex_tok__SourceReader__U8Array_pc347:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8121,7 +9122,7 @@ lex_tok__SourceReader__U8Array:
     addi sp, sp, 4
     la   t1, g_tok_slen
     sw   t0, 0(t1)
-  .L_lex_tok__SourceReader__U8Array_pc198:
+  .L_lex_tok__SourceReader__U8Array_pc349:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8142,7 +9143,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc203:
+  .L_lex_tok__SourceReader__U8Array_pc354:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8159,7 +9160,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc316
+    j    .L_lex_tok__SourceReader__U8Array_pc467
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8176,7 +9177,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-  .L_lex_tok__SourceReader__U8Array_pc212:
+  .L_lex_tok__SourceReader__U8Array_pc363:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8198,7 +9199,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc224
+    j    .L_lex_tok__SourceReader__U8Array_pc375
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8221,21 +9222,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc224
+    j    .L_lex_tok__SourceReader__U8Array_pc375
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc225
-  .L_lex_tok__SourceReader__U8Array_pc224:
+    j    .L_lex_tok__SourceReader__U8Array_pc376
+  .L_lex_tok__SourceReader__U8Array_pc375:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc225:
+  .L_lex_tok__SourceReader__U8Array_pc376:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc303
+    j    .L_lex_tok__SourceReader__U8Array_pc454
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8264,7 +9265,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc240
+    j    .L_lex_tok__SourceReader__U8Array_pc391
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8287,21 +9288,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc240
+    j    .L_lex_tok__SourceReader__U8Array_pc391
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc241
-  .L_lex_tok__SourceReader__U8Array_pc240:
+    j    .L_lex_tok__SourceReader__U8Array_pc392
+  .L_lex_tok__SourceReader__U8Array_pc391:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc241:
+  .L_lex_tok__SourceReader__U8Array_pc392:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc293
+    j    .L_lex_tok__SourceReader__U8Array_pc444
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8336,7 +9337,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc253
+    j    .L_lex_tok__SourceReader__U8Array_pc404
 0:
     li   t0, 10
     addi sp, sp, -4
@@ -8344,7 +9345,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_lex_tok__SourceReader__U8Array_pc253:
+  .L_lex_tok__SourceReader__U8Array_pc404:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8361,7 +9362,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc259
+    j    .L_lex_tok__SourceReader__U8Array_pc410
 0:
     li   t0, 9
     addi sp, sp, -4
@@ -8369,7 +9370,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_lex_tok__SourceReader__U8Array_pc259:
+  .L_lex_tok__SourceReader__U8Array_pc410:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8386,7 +9387,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc265
+    j    .L_lex_tok__SourceReader__U8Array_pc416
 0:
     li   t0, 13
     addi sp, sp, -4
@@ -8394,7 +9395,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_lex_tok__SourceReader__U8Array_pc265:
+  .L_lex_tok__SourceReader__U8Array_pc416:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8411,7 +9412,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc271
+    j    .L_lex_tok__SourceReader__U8Array_pc422
 0:
     li   t0, 34
     addi sp, sp, -4
@@ -8419,7 +9420,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_lex_tok__SourceReader__U8Array_pc271:
+  .L_lex_tok__SourceReader__U8Array_pc422:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8436,7 +9437,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc277
+    j    .L_lex_tok__SourceReader__U8Array_pc428
 0:
     li   t0, 92
     addi sp, sp, -4
@@ -8444,7 +9445,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_lex_tok__SourceReader__U8Array_pc277:
+  .L_lex_tok__SourceReader__U8Array_pc428:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8461,7 +9462,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc283
+    j    .L_lex_tok__SourceReader__U8Array_pc434
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -8469,7 +9470,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_lex_tok__SourceReader__U8Array_pc283:
+  .L_lex_tok__SourceReader__U8Array_pc434:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8502,8 +9503,8 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-    j    .L_lex_tok__SourceReader__U8Array_pc302
-  .L_lex_tok__SourceReader__U8Array_pc293:
+    j    .L_lex_tok__SourceReader__U8Array_pc453
+  .L_lex_tok__SourceReader__U8Array_pc444:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8536,9 +9537,9 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-  .L_lex_tok__SourceReader__U8Array_pc302:
-    j    .L_lex_tok__SourceReader__U8Array_pc212
-  .L_lex_tok__SourceReader__U8Array_pc303:
+  .L_lex_tok__SourceReader__U8Array_pc453:
+    j    .L_lex_tok__SourceReader__U8Array_pc363
+  .L_lex_tok__SourceReader__U8Array_pc454:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8560,7 +9561,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc311
+    j    .L_lex_tok__SourceReader__U8Array_pc462
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8571,7 +9572,7 @@ lex_tok__SourceReader__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_lex_tok__SourceReader__U8Array_pc311:
+  .L_lex_tok__SourceReader__U8Array_pc462:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8592,7 +9593,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc316:
+  .L_lex_tok__SourceReader__U8Array_pc467:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8609,7 +9610,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc451
+    j    .L_lex_tok__SourceReader__U8Array_pc602
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8647,7 +9648,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc337
+    j    .L_lex_tok__SourceReader__U8Array_pc488
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8670,21 +9671,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc337
+    j    .L_lex_tok__SourceReader__U8Array_pc488
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc338
-  .L_lex_tok__SourceReader__U8Array_pc337:
+    j    .L_lex_tok__SourceReader__U8Array_pc489
+  .L_lex_tok__SourceReader__U8Array_pc488:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc338:
+  .L_lex_tok__SourceReader__U8Array_pc489:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc408
+    j    .L_lex_tok__SourceReader__U8Array_pc559
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8716,7 +9717,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc407
+    j    .L_lex_tok__SourceReader__U8Array_pc558
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8751,7 +9752,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc360
+    j    .L_lex_tok__SourceReader__U8Array_pc511
 0:
     li   t0, 10
     addi sp, sp, -4
@@ -8765,7 +9766,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_lex_tok__SourceReader__U8Array_pc360:
+  .L_lex_tok__SourceReader__U8Array_pc511:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8782,7 +9783,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc368
+    j    .L_lex_tok__SourceReader__U8Array_pc519
 0:
     li   t0, 9
     addi sp, sp, -4
@@ -8796,7 +9797,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_lex_tok__SourceReader__U8Array_pc368:
+  .L_lex_tok__SourceReader__U8Array_pc519:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8813,7 +9814,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc376
+    j    .L_lex_tok__SourceReader__U8Array_pc527
 0:
     li   t0, 13
     addi sp, sp, -4
@@ -8827,7 +9828,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_lex_tok__SourceReader__U8Array_pc376:
+  .L_lex_tok__SourceReader__U8Array_pc527:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8844,7 +9845,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc384
+    j    .L_lex_tok__SourceReader__U8Array_pc535
 0:
     li   t0, 92
     addi sp, sp, -4
@@ -8858,7 +9859,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_lex_tok__SourceReader__U8Array_pc384:
+  .L_lex_tok__SourceReader__U8Array_pc535:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8875,7 +9876,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc392
+    j    .L_lex_tok__SourceReader__U8Array_pc543
 0:
     li   t0, 39
     addi sp, sp, -4
@@ -8889,7 +9890,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_lex_tok__SourceReader__U8Array_pc392:
+  .L_lex_tok__SourceReader__U8Array_pc543:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8906,7 +9907,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc400
+    j    .L_lex_tok__SourceReader__U8Array_pc551
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -8920,7 +9921,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_lex_tok__SourceReader__U8Array_pc400:
+  .L_lex_tok__SourceReader__U8Array_pc551:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8937,7 +9938,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc407
+    j    .L_lex_tok__SourceReader__U8Array_pc558
 0:
     lw   t0, -44(s0)
     addi sp, sp, -4
@@ -8949,9 +9950,9 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-  .L_lex_tok__SourceReader__U8Array_pc407:
-    j    .L_lex_tok__SourceReader__U8Array_pc417
-  .L_lex_tok__SourceReader__U8Array_pc408:
+  .L_lex_tok__SourceReader__U8Array_pc558:
+    j    .L_lex_tok__SourceReader__U8Array_pc568
+  .L_lex_tok__SourceReader__U8Array_pc559:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -8973,7 +9974,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc417
+    j    .L_lex_tok__SourceReader__U8Array_pc568
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -8990,7 +9991,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-  .L_lex_tok__SourceReader__U8Array_pc417:
+  .L_lex_tok__SourceReader__U8Array_pc568:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9012,7 +10013,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc429
+    j    .L_lex_tok__SourceReader__U8Array_pc580
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9035,21 +10036,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc429
+    j    .L_lex_tok__SourceReader__U8Array_pc580
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc430
-  .L_lex_tok__SourceReader__U8Array_pc429:
+    j    .L_lex_tok__SourceReader__U8Array_pc581
+  .L_lex_tok__SourceReader__U8Array_pc580:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc430:
+  .L_lex_tok__SourceReader__U8Array_pc581:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc434
+    j    .L_lex_tok__SourceReader__U8Array_pc585
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9060,7 +10061,7 @@ lex_tok__SourceReader__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_lex_tok__SourceReader__U8Array_pc434:
+  .L_lex_tok__SourceReader__U8Array_pc585:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9122,7 +10123,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc451:
+  .L_lex_tok__SourceReader__U8Array_pc602:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9148,7 +10149,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc481
+    j    .L_lex_tok__SourceReader__U8Array_pc632
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9171,7 +10172,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc470
+    j    .L_lex_tok__SourceReader__U8Array_pc621
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9194,21 +10195,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc470
+    j    .L_lex_tok__SourceReader__U8Array_pc621
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc471
-  .L_lex_tok__SourceReader__U8Array_pc470:
+    j    .L_lex_tok__SourceReader__U8Array_pc622
+  .L_lex_tok__SourceReader__U8Array_pc621:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc471:
+  .L_lex_tok__SourceReader__U8Array_pc622:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc478
+    j    .L_lex_tok__SourceReader__U8Array_pc629
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9232,7 +10233,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc478:
+  .L_lex_tok__SourceReader__U8Array_pc629:
     la   t1, TK_PLUS
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -9246,7 +10247,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc481:
+  .L_lex_tok__SourceReader__U8Array_pc632:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9263,7 +10264,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc508
+    j    .L_lex_tok__SourceReader__U8Array_pc659
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9286,7 +10287,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc497
+    j    .L_lex_tok__SourceReader__U8Array_pc648
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9309,21 +10310,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc497
+    j    .L_lex_tok__SourceReader__U8Array_pc648
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc498
-  .L_lex_tok__SourceReader__U8Array_pc497:
+    j    .L_lex_tok__SourceReader__U8Array_pc649
+  .L_lex_tok__SourceReader__U8Array_pc648:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc498:
+  .L_lex_tok__SourceReader__U8Array_pc649:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc505
+    j    .L_lex_tok__SourceReader__U8Array_pc656
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9347,7 +10348,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc505:
+  .L_lex_tok__SourceReader__U8Array_pc656:
     la   t1, TK_PERCENT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -9361,7 +10362,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc508:
+  .L_lex_tok__SourceReader__U8Array_pc659:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9378,7 +10379,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc515
+    j    .L_lex_tok__SourceReader__U8Array_pc666
 0:
     la   t1, TK_CARET
     lw   t0, 0(t1)
@@ -9393,7 +10394,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc515:
+  .L_lex_tok__SourceReader__U8Array_pc666:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9410,7 +10411,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc522
+    j    .L_lex_tok__SourceReader__U8Array_pc673
 0:
     la   t1, TK_LPAREN
     lw   t0, 0(t1)
@@ -9425,7 +10426,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc522:
+  .L_lex_tok__SourceReader__U8Array_pc673:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9442,7 +10443,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc529
+    j    .L_lex_tok__SourceReader__U8Array_pc680
 0:
     la   t1, TK_RPAREN
     lw   t0, 0(t1)
@@ -9457,7 +10458,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc529:
+  .L_lex_tok__SourceReader__U8Array_pc680:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9474,7 +10475,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc536
+    j    .L_lex_tok__SourceReader__U8Array_pc687
 0:
     la   t1, TK_LBRACE
     lw   t0, 0(t1)
@@ -9489,7 +10490,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc536:
+  .L_lex_tok__SourceReader__U8Array_pc687:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9506,7 +10507,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc543
+    j    .L_lex_tok__SourceReader__U8Array_pc694
 0:
     la   t1, TK_RBRACE
     lw   t0, 0(t1)
@@ -9521,7 +10522,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc543:
+  .L_lex_tok__SourceReader__U8Array_pc694:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9538,7 +10539,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc550
+    j    .L_lex_tok__SourceReader__U8Array_pc701
 0:
     la   t1, TK_COMMA
     lw   t0, 0(t1)
@@ -9553,7 +10554,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc550:
+  .L_lex_tok__SourceReader__U8Array_pc701:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9570,7 +10571,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc557
+    j    .L_lex_tok__SourceReader__U8Array_pc708
 0:
     la   t1, TK_SEMI
     lw   t0, 0(t1)
@@ -9585,7 +10586,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc557:
+  .L_lex_tok__SourceReader__U8Array_pc708:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9602,7 +10603,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc564
+    j    .L_lex_tok__SourceReader__U8Array_pc715
 0:
     la   t1, TK_COLON
     lw   t0, 0(t1)
@@ -9617,7 +10618,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc564:
+  .L_lex_tok__SourceReader__U8Array_pc715:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9634,7 +10635,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc591
+    j    .L_lex_tok__SourceReader__U8Array_pc742
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9657,7 +10658,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc580
+    j    .L_lex_tok__SourceReader__U8Array_pc731
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9680,21 +10681,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc580
+    j    .L_lex_tok__SourceReader__U8Array_pc731
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc581
-  .L_lex_tok__SourceReader__U8Array_pc580:
+    j    .L_lex_tok__SourceReader__U8Array_pc732
+  .L_lex_tok__SourceReader__U8Array_pc731:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc581:
+  .L_lex_tok__SourceReader__U8Array_pc732:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc588
+    j    .L_lex_tok__SourceReader__U8Array_pc739
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9718,7 +10719,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc588:
+  .L_lex_tok__SourceReader__U8Array_pc739:
     la   t1, TK_STAR
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -9732,7 +10733,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc591:
+  .L_lex_tok__SourceReader__U8Array_pc742:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9749,7 +10750,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc618
+    j    .L_lex_tok__SourceReader__U8Array_pc769
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9772,7 +10773,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc607
+    j    .L_lex_tok__SourceReader__U8Array_pc758
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9795,21 +10796,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc607
+    j    .L_lex_tok__SourceReader__U8Array_pc758
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc608
-  .L_lex_tok__SourceReader__U8Array_pc607:
+    j    .L_lex_tok__SourceReader__U8Array_pc759
+  .L_lex_tok__SourceReader__U8Array_pc758:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc608:
+  .L_lex_tok__SourceReader__U8Array_pc759:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc615
+    j    .L_lex_tok__SourceReader__U8Array_pc766
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9833,7 +10834,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc615:
+  .L_lex_tok__SourceReader__U8Array_pc766:
     la   t1, TK_AMP
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -9847,7 +10848,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc618:
+  .L_lex_tok__SourceReader__U8Array_pc769:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9864,7 +10865,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc645
+    j    .L_lex_tok__SourceReader__U8Array_pc796
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9887,7 +10888,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc634
+    j    .L_lex_tok__SourceReader__U8Array_pc785
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9910,21 +10911,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc634
+    j    .L_lex_tok__SourceReader__U8Array_pc785
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc635
-  .L_lex_tok__SourceReader__U8Array_pc634:
+    j    .L_lex_tok__SourceReader__U8Array_pc786
+  .L_lex_tok__SourceReader__U8Array_pc785:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc635:
+  .L_lex_tok__SourceReader__U8Array_pc786:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc642
+    j    .L_lex_tok__SourceReader__U8Array_pc793
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9948,7 +10949,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc642:
+  .L_lex_tok__SourceReader__U8Array_pc793:
     la   t1, TK_PIPE
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -9962,7 +10963,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc645:
+  .L_lex_tok__SourceReader__U8Array_pc796:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9979,7 +10980,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc672
+    j    .L_lex_tok__SourceReader__U8Array_pc823
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10002,7 +11003,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc661
+    j    .L_lex_tok__SourceReader__U8Array_pc812
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10025,21 +11026,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc661
+    j    .L_lex_tok__SourceReader__U8Array_pc812
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc662
-  .L_lex_tok__SourceReader__U8Array_pc661:
+    j    .L_lex_tok__SourceReader__U8Array_pc813
+  .L_lex_tok__SourceReader__U8Array_pc812:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc662:
+  .L_lex_tok__SourceReader__U8Array_pc813:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc669
+    j    .L_lex_tok__SourceReader__U8Array_pc820
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10063,7 +11064,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc669:
+  .L_lex_tok__SourceReader__U8Array_pc820:
     la   t1, TK_BANG
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -10077,7 +11078,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc672:
+  .L_lex_tok__SourceReader__U8Array_pc823:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10094,7 +11095,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc699
+    j    .L_lex_tok__SourceReader__U8Array_pc850
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10117,7 +11118,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc688
+    j    .L_lex_tok__SourceReader__U8Array_pc839
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10140,21 +11141,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc688
+    j    .L_lex_tok__SourceReader__U8Array_pc839
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc689
-  .L_lex_tok__SourceReader__U8Array_pc688:
+    j    .L_lex_tok__SourceReader__U8Array_pc840
+  .L_lex_tok__SourceReader__U8Array_pc839:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc689:
+  .L_lex_tok__SourceReader__U8Array_pc840:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc696
+    j    .L_lex_tok__SourceReader__U8Array_pc847
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10178,7 +11179,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc696:
+  .L_lex_tok__SourceReader__U8Array_pc847:
     la   t1, TK_EQ
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -10192,7 +11193,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc699:
+  .L_lex_tok__SourceReader__U8Array_pc850:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10209,7 +11210,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc746
+    j    .L_lex_tok__SourceReader__U8Array_pc897
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10232,7 +11233,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc715
+    j    .L_lex_tok__SourceReader__U8Array_pc866
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10255,21 +11256,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc715
+    j    .L_lex_tok__SourceReader__U8Array_pc866
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc716
-  .L_lex_tok__SourceReader__U8Array_pc715:
+    j    .L_lex_tok__SourceReader__U8Array_pc867
+  .L_lex_tok__SourceReader__U8Array_pc866:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc716:
+  .L_lex_tok__SourceReader__U8Array_pc867:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc723
+    j    .L_lex_tok__SourceReader__U8Array_pc874
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10293,7 +11294,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc723:
+  .L_lex_tok__SourceReader__U8Array_pc874:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10315,7 +11316,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc735
+    j    .L_lex_tok__SourceReader__U8Array_pc886
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10338,21 +11339,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc735
+    j    .L_lex_tok__SourceReader__U8Array_pc886
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc736
-  .L_lex_tok__SourceReader__U8Array_pc735:
+    j    .L_lex_tok__SourceReader__U8Array_pc887
+  .L_lex_tok__SourceReader__U8Array_pc886:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc736:
+  .L_lex_tok__SourceReader__U8Array_pc887:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc743
+    j    .L_lex_tok__SourceReader__U8Array_pc894
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10376,7 +11377,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc743:
+  .L_lex_tok__SourceReader__U8Array_pc894:
     la   t1, TK_LT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -10390,7 +11391,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc746:
+  .L_lex_tok__SourceReader__U8Array_pc897:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10407,7 +11408,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc793
+    j    .L_lex_tok__SourceReader__U8Array_pc944
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10430,7 +11431,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc762
+    j    .L_lex_tok__SourceReader__U8Array_pc913
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10453,21 +11454,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc762
+    j    .L_lex_tok__SourceReader__U8Array_pc913
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc763
-  .L_lex_tok__SourceReader__U8Array_pc762:
+    j    .L_lex_tok__SourceReader__U8Array_pc914
+  .L_lex_tok__SourceReader__U8Array_pc913:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc763:
+  .L_lex_tok__SourceReader__U8Array_pc914:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc770
+    j    .L_lex_tok__SourceReader__U8Array_pc921
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10491,7 +11492,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc770:
+  .L_lex_tok__SourceReader__U8Array_pc921:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10513,7 +11514,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc782
+    j    .L_lex_tok__SourceReader__U8Array_pc933
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10536,21 +11537,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc782
+    j    .L_lex_tok__SourceReader__U8Array_pc933
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc783
-  .L_lex_tok__SourceReader__U8Array_pc782:
+    j    .L_lex_tok__SourceReader__U8Array_pc934
+  .L_lex_tok__SourceReader__U8Array_pc933:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc783:
+  .L_lex_tok__SourceReader__U8Array_pc934:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc790
+    j    .L_lex_tok__SourceReader__U8Array_pc941
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10574,7 +11575,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc790:
+  .L_lex_tok__SourceReader__U8Array_pc941:
     la   t1, TK_GT
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -10588,7 +11589,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc793:
+  .L_lex_tok__SourceReader__U8Array_pc944:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10605,7 +11606,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc840
+    j    .L_lex_tok__SourceReader__U8Array_pc991
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10628,7 +11629,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc809
+    j    .L_lex_tok__SourceReader__U8Array_pc960
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10651,21 +11652,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc809
+    j    .L_lex_tok__SourceReader__U8Array_pc960
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc810
-  .L_lex_tok__SourceReader__U8Array_pc809:
+    j    .L_lex_tok__SourceReader__U8Array_pc961
+  .L_lex_tok__SourceReader__U8Array_pc960:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc810:
+  .L_lex_tok__SourceReader__U8Array_pc961:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc817
+    j    .L_lex_tok__SourceReader__U8Array_pc968
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10689,7 +11690,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc817:
+  .L_lex_tok__SourceReader__U8Array_pc968:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10711,7 +11712,7 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc829
+    j    .L_lex_tok__SourceReader__U8Array_pc980
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10734,21 +11735,21 @@ lex_tok__SourceReader__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc829
+    j    .L_lex_tok__SourceReader__U8Array_pc980
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_lex_tok__SourceReader__U8Array_pc830
-  .L_lex_tok__SourceReader__U8Array_pc829:
+    j    .L_lex_tok__SourceReader__U8Array_pc981
+  .L_lex_tok__SourceReader__U8Array_pc980:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_lex_tok__SourceReader__U8Array_pc830:
+  .L_lex_tok__SourceReader__U8Array_pc981:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_lex_tok__SourceReader__U8Array_pc837
+    j    .L_lex_tok__SourceReader__U8Array_pc988
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10772,7 +11773,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc837:
+  .L_lex_tok__SourceReader__U8Array_pc988:
     la   t1, TK_MINUS
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -10786,7 +11787,7 @@ lex_tok__SourceReader__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_lex_tok__SourceReader__U8Array_pc840:
+  .L_lex_tok__SourceReader__U8Array_pc991:
     la   t1, TK_EOF
     lw   t0, 0(t1)
     addi sp, sp, -4

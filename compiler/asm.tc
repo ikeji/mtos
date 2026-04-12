@@ -610,7 +610,7 @@ fn asm_instr() -> i32 {
 
     // ecall / mret
     if mnem_eq("ecall") { if g_pass==2 { emit32(115); } return 4; }
-    if mnem_eq("mret")  { if g_pass==2 { emit32(807403635); } return 4; } // 0x30200073
+    if mnem_eq("mret")  { if g_pass==2 { emit32(0x30200073); } return 4; }
 
     // CSR instructions (opcode=115, I-type encoding)
     // csrrw rd, csr, rs1  (funct3=1)

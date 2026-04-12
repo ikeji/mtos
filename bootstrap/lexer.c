@@ -164,9 +164,28 @@ void lexer_tokenize(Lexer *l) {
         /* integer literal */
         if (isdigit((unsigned char)cur(l))) {
             long val = 0;
-            while (isdigit((unsigned char)cur(l))) {
-                val = val * 10 + (cur(l) - '0');
-                advance(l);
+            if (cur(l) == '0' && (l->source[l->pos+1] == 'x' || l->source[l->pos+1] == 'X')) {
+                /* hex literal: 0x... */
+                advance(l); advance(l); /* skip '0x' */
+                while (isxdigit((unsigned char)cur(l))) {
+                    char c = cur(l);
+                    int d = (c >= '0' && c <= '9') ? c - '0' :
+                            (c >= 'a' && c <= 'f') ? c - 'a' + 10 : c - 'A' + 10;
+                    val = val * 16 + d;
+                    advance(l);
+                }
+            } else if (cur(l) == '0' && (l->source[l->pos+1] == 'b' || l->source[l->pos+1] == 'B')) {
+                /* binary literal: 0b... */
+                advance(l); advance(l); /* skip '0b' */
+                while (cur(l) == '0' || cur(l) == '1') {
+                    val = val * 2 + (cur(l) - '0');
+                    advance(l);
+                }
+            } else {
+                while (isdigit((unsigned char)cur(l))) {
+                    val = val * 10 + (cur(l) - '0');
+                    advance(l);
+                }
             }
             /* check for suffix */
             char *suffix = NULL;
