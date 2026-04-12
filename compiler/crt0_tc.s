@@ -7,8 +7,9 @@
     .globl _start
 _start:
     la   gp, __global_pointer$
-    la   sp, __stack_end
-    #
+    # Leave sp unchanged — Linux hands _start a valid user stack top.
+    # Avoids depending on a __stack_end label that would land far
+    # outside gp's ±2KB range.
     la   a0, __arena
     la   a1, __pool_sizes
     la   a2, __pool_counts

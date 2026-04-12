@@ -62,5 +62,9 @@ __pools_ready:
     .globl __arena
 __arena:
     .space 4648960
-    .space 65536
-__stack_end:
+    # No __stack_end here. Placing a label ~4.6 MB into bss would force
+    # a PC-relative fallback for any `la sp, __stack_end`, as that
+    # distance is far outside gp's ±2KB window. crt0_tc.s instead
+    # keeps Linux's kernel-provided sp unchanged, and virt_crt0.s uses
+    # a literal `li sp, ...`, so every data/bss label this toolchain
+    # exposes stays gp-reachable.

@@ -9,14 +9,14 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEGEN="$ROOT_DIR/codegen"
 BC2ASM="$ROOT_DIR/bc2asm"
 BCRUN="$ROOT_DIR/bcrun"
-CRT0="$ROOT_DIR/bootstrap/crt0_tc.s"
+CRT0="$ROOT_DIR/compiler/crt0_tc.s"
 RUNTIME="$ROOT_DIR/compiler/runtime.tc"
 
 SCRIPT_DIR="$ROOT_DIR/tests"
 source "$ROOT_DIR/tests/test_common.sh"
 
 # Re-set after sourcing test_common.sh (which overwrites RUNTIME/CRT0)
-CRT0="$ROOT_DIR/bootstrap/crt0_tc.s"
+CRT0="$ROOT_DIR/compiler/crt0_tc.s"
 RUNTIME="$ROOT_DIR/compiler/runtime.tc"
 
 OUTFILE="a.out"
@@ -59,7 +59,7 @@ USER_S=$(printf '%s\n' "$MERGED_S" | "$BC2ASM" 2>/dev/null)
 
 # Assemble: crt0_tc.s + user.s + crt0_tc_data.s → ELF via asm.tc
 # Data/BSS must come AFTER all code (asm.tc ignores section directives)
-CRT0_DATA="$ROOT_DIR/bootstrap/crt0_tc_data.s"
+CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s"
 ASM_BC=$(compile_tc_to_bc "$ROOT_DIR/compiler/asm.tc")
 { cat "$CRT0"; printf '%s\n' "$USER_S"; cat "$CRT0_DATA"; } | \
     { printf '%s\n' "$ASM_BC"; cat; } | "$BCRUN" > "$OUTFILE"

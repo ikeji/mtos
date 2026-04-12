@@ -2,14 +2,16 @@
 #
 # Used by tests/test_asm.sh to run TC programs end-to-end on the virt
 # machine. UART output goes to 16550 @ 0x10000000 (no THRE wait — qemu
-# is always ready). Pairs with bootstrap/crt0_tc_data.s for pool
+# is always ready). Pairs with compiler/crt0_tc_data.s for pool
 # metadata and __arena.
 
     .text
     .globl _start
 _start:
     la   gp, __global_pointer$
-    la   sp, __stack_end
+    # RAM on `-machine virt -m 128` is 0x80000000..0x88000000.
+    # Point sp at the top so stack grows downward through free RAM.
+    li   sp, 0x88000000
     la   a0, __arena
     la   a1, __pool_sizes
     la   a2, __pool_counts

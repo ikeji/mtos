@@ -4,7 +4,7 @@
 # that the IMAGE_DEF picobin block lands at file offset 0 (= Flash
 # 0x10000000). _start follows immediately at offset 0x20.
 #
-# Uses bootstrap/crt0_tc_data.s style runtime interface (__runtime_init,
+# Uses compiler/crt0_tc_data.s style runtime interface (__runtime_init,
 # do_write, etc.) but:
 #   - UART output targets PL011 @ 0x40070000 (not ecall)
 #   - gp is set to 0x20000800 (SRAM data base + 0x800) directly
