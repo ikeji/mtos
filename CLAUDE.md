@@ -36,11 +36,12 @@ compiler/   自作TinyC製の自己ホスト型コンパイラ（Gen2/Gen3）
   runtime.tc         TinyC製ランタイム（プールアロケータ等、compile-gen2/3.sh で使用）
   crt0_tc.s          asm.tcリンク用 Linux crt0（_start, syscall stub, peek/poke）
   crt0_tc_data.s     asm.tcリンク用プールメタデータ (`.data` + `.bss` + __arena)
-pico2/      Raspberry Pi Pico 2 (RP2350 RISC-V) 向けの成果物
-  hello.s / hello.ld / bin2uf2.py / build.sh  手書きアセンブリ hello world
-  hello.tc           TC 言語版の hello world
-  crt0_pico2.s       Pico 2 用 crt0 (IMAGE_DEF + UART 初期化 + UART syscall)
-  crt0_pico2_data.s  Pico 2 用 pool metadata / arena
+pico2/      Raspberry Pi Pico 2 (RP2350 RISC-V) 向け
+  hello.tc           TC 言語で書いた UART hello world
+  crt0_pico2.s       IMAGE_DEF + _start + XOSC/UART 初期化 + UART syscall
+  crt0_pico2_data.s  pool metadata / __arena (.rodata + .bss)
+  bin2uf2.py         raw bin → UF2 コンバータ
+  build.sh           hello.tc を hello.uf2 にビルド
 tests/      テストスイート
   golden/            Gen1 の基準出力（.ast .bc .s .out .exit）
   golden/tc/         compiler/ ソースの基準出力
@@ -76,18 +77,17 @@ make update-golden-and-run-test   # golden 再生成してからテスト実行
 ## Pico 2 (RP2350 RISC-V) ビルド
 
 ```bash
-./pico2/build.sh                  # hello.s + hello.tc 両方を UF2 化
-./pico2/build.sh hello            # 手書き hello.s だけ（要 riscv64-unknown-elf-gcc）
-./pico2/build.sh tc               # hello.tc だけ（要 qemu-riscv32）
+./pico2/build.sh                  # pico2/hello.tc → pico2/hello.uf2
 ```
 
-出力:
-- `pico2/hello.uf2`     — 手書きアセンブリ版
-- `pico2/hello_tc.uf2`  — TC言語版 (compile-pico2.sh 経由)
+内部では Gen1 parse + Gen2 (typecheck/codegen/bc2asm/asm, qemu-riscv32 経由)
++ `pico2/crt0_pico2.s` + `pico2/crt0_pico2_data.s` + `compile-pico2.sh` の
+パイプラインで raw bin を作り、`pico2/bin2uf2.py` で UF2 化する。
+Gen2 ツールは `/tmp/gen2_pico2/` にキャッシュされる。
 
 実機テスト:
 1. Pico 2 の BOOTSEL ボタンを押しながら USB 接続 → マスストレージとしてマウント
-2. `pico2/hello_tc.uf2` をドラッグ&ドロップ
+2. `pico2/hello.uf2` をドラッグ&ドロップ
 3. GPIO0 (TX) / GPIO1 (RX) / GND をシリアルアダプタに接続
 4. 115200 bps, 8N1 で `Hello, Pico 2!` を受信
 

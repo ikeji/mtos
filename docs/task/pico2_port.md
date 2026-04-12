@@ -1,5 +1,16 @@
 # Raspberry Pi Pico 2 (RP2350) への移植
 
+## ステータス: **hello world 完了**
+
+`pico2/hello.tc` が `./pico2/build.sh` でビルドでき、`pico2/hello.uf2` を
+BOOTSEL モードの Pico 2 に書き込むと GPIO0/1 の UART0 に
+"Hello, Pico 2!\r\n" を出力する。詳細な実装経緯は
+`docs/task/pico2_tc_runtime.md` 参照。
+
+次のマイルストーン: TinyC **コンパイラ自体** を Pico 2 (SRAM 520KB
++ PSRAM 8MB) で動かす。これには 8MB PSRAM の初期化と typecheck/
+asm.tc のメモリ要件解決が必要 (以下の議論を参照)。
+
 ## 背景
 
 TinyC コンパイラが生成する RV32IM ELF を Raspberry Pi Pico 2 上でベアメタル実行する。

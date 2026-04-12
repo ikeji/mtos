@@ -33,10 +33,10 @@
 ## フェーズ0: 言語仕様と環境整備
 
 - [ ] 独自言語の文法を確定（language.md を固める）
-- [ ] クロスコンパイル環境構築（riscv32-unknown-elf-gcc）
-- [ ] QEMU環境構築（`qemu-system-riscv32` または `qemu-system-riscv64`）
-- [ ] QEMUでHello World（ベアメタル、virt machine）
-- [ ] RP2350実機でもHello World（UART）
+- [x] クロスコンパイル環境構築（riscv64-unknown-elf-gcc, qemu-riscv32）
+- [x] QEMU環境構築（`qemu-system-riscv32 -M virt`、`tests/test_asm.sh` で CI 化）
+- [x] QEMUでHello World（virt、16550 UART、TC ソースから UART 出力確認）
+- [x] RP2350実機でもHello World（`pico2/hello.tc` → `pico2/build.sh` → `pico2/hello.uf2`、実機動作確認）
 
 ## フェーズ1: ツールチェーン基盤（ホストPC上、C実装）
 

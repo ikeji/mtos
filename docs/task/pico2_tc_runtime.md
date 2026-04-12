@@ -1,11 +1,16 @@
 # Pico 2 で TC ランタイムを動かす
 
+## ステータス: **完了** (実機で "Hello, Pico 2!" 出力確認済み)
+
+`pico2/hello.tc` を `pico2/build.sh` でビルドすると
+`pico2/hello.uf2` が生成される。BOOTSEL → ドラッグ&ドロップで実機が起動し、
+GPIO0/1 の UART0 に "Hello, Pico 2!\r\n" を出力する。以下は設計決定と
+実装時の議論の記録 (アーカイブ)。
+
 ## 目的
 
-`compile-gen2.sh` (または `compile-gen3.sh`) で `.tc` ソースを Pico 2 (RP2350 RISC-V)
-向けにビルドし、実機で動作させる。第一段階として `hello.tc` を UART に出力する。
-
-前提タスク: `pico2/hello.s` (素のアセンブリ hello world) は実機で動作確認済み。
+`compile-gen2.sh` で `.tc` ソースを Pico 2 (RP2350 RISC-V) 向けにビルドし、
+実機で動作させる。第一段階として `hello.tc` を UART に出力する。
 
 ## 設計方針
 
@@ -30,13 +35,14 @@
 - ELF 出力時のみ `e_entry` / `p_vaddr` に `load_vaddr` を加算してマップする
 
 **`.word symbol` のセマンティクス変更が安全な根拠**:
-コードベース全体で `.word symbol` (シンボル参照) を使っているのは `pico2/hello.s` だけ。
+コードベース全体で `.word symbol` (シンボル参照) を使うケースは残っていない。
 - bc2asm.tc が出す `.word` はすべて数値リテラル (`.word INITVAL`, `.word LENGTH`)
 - 文字列リテラルへの参照は `la rd, __tc_strobjN` で PC 相対
-- crt0_tc.s / crt0_tc_data.s も `.word symbol` を使わない
+- crt0_tc.s / crt0_tc_data.s / crt0_pico2.s いずれも `.word symbol` を使わない
+  (crt0_pico2.s は IMAGE_DEF の entry point を `.word 0x10000020` と
+  絶対値ベタ書きにしている)
 
-→ 常時 PIC 化しても既存テストは無傷。手書きの IMAGE_DEF だけが影響を受け、
-crt0_pico2.s の中で `.word 0x10000020` のように絶対値ベタ書きで対応する。
+→ 常時 PIC 化しても既存テストは無傷。
 
 ### 3. 出力フォーマットの切替
 
@@ -168,25 +174,25 @@ bss と動的 data コピー先は SRAM (0x20000000~) に確保される。
 
 - `gp` は crt0_pico2.s が `li gp, 0x20000800` で直接セット
   (`__global_pointer$` は Flash 側のアドレスを指すので Pico 2 では使わない)
-- `la sp, __stack_end` は gp 相対 (bss 内、offset が ±2KB に収まる前提)
+- `sp` は `li sp, 0x20082000` で SRAM 末尾に直接セット。
+  (`la sp, __stack_end` は gp 相対では届かないので使わない)
 - crt0_pico2.s は起動時に:
   1. core1 park (CPUID チェック)
   2. SP = 0x20082000 (固定)
-  3. XOSC / CLK_PERI / RESETS / GPIO / UART0 初期化 (hello.s と同じ)
-  4. gp = 0x20000800
-  5. `.data` の初期値を Flash (LMA) → SRAM (VMA) にコピー (asm.tc が提供する
-     `__data_lma_start` / `__data_start` / `__data_end` 記号を使う)
-  6. `.bss` を 0 クリア (`__bss_start` / `__bss_end`)
+  3. XOSC / CLK_PERI / RESETS / GPIO / UART0 初期化
+  4. SRAM 0x20000000..0x20080000 をゼロクリア (data + bss 初期化)
+  5. gp = 0x20000800
+  6. runtime.tc の NPOOLS グローバル (唯一の非ゼロ初期値) を手動で 17 にセット
+     → `.data` セクションの Flash→SRAM コピーを回避
   7. `__runtime_init` に pool metadata アドレスを渡す
   8. `main()` 呼び出し
 - `do_write` は UART0 に PL011 プロトコルでバイト送信
-- `do_exit` は無限ループ (Pico 2 に「qemu 終了」相当はない)
+- `do_exit` は無限ループ
 
-**Pico 2 固有の制約**: data/bss 全体のサイズは gp ±2KB に収まる必要がある
-(`la` が gp 相対で届く範囲)。hello.tc レベルなら data は数 KB、bss は ~260 KB
-だが、ラベル自体の位置 (`__arena`, `__pool_free` 等) は先頭付近に集中するので
-±2KB 内に収まる。大きなプログラム (parse.tc 等) を Pico 2 で動かすには将来
-`la` の 12 バイト形式 (`lui + addi + add gp`) への拡張が必要。
+**Pico 2 固有の制約**: data/bss 内の全ラベルの先頭位置が gp ±2KB に収まる
+必要がある (`la` が gp 相対で届く範囲)。hello.tc レベルなら余裕で収まる。
+大きなプログラム (parse.tc 等) を Pico 2 で動かすには将来
+`la` の 12 バイト形式 (`lui + addi + add gp`) への拡張が必要かもしれない。
 
 ### 6. ELF ヘッダなし raw bin → UF2
 
@@ -250,7 +256,7 @@ _start:
     li sp, 0x20082000
     li gp, 0x20000800
 
-    # XOSC + clk_peri + RESETS + GPIO + UART0 初期化 (hello.s と同じ)
+    # XOSC + clk_peri + RESETS + GPIO + UART0 初期化
     ...
 
     # __bss クリア (0x20000000 ~ __arena 末尾)
@@ -534,13 +540,20 @@ Pico 2 用には 7 に変えたい。選択肢:
 定数は `.rodata` (Flash)、変数はすべて zero-init (.bss)。これにより crt0 で
 Flash → SRAM の data コピーが不要。
 
-## 関連ファイル
+## 関連ファイル (完了後の実配置)
 
-- 既存: `compiler/asm.tc`, `compiler/runtime.tc`, `bootstrap/crt0_tc.s`,
-  `bootstrap/crt0_tc_data.s`, `compile-gen2.sh`, `pico2/hello.s`, `pico2/bin2uf2.py`
-- 新規: `pico2/crt0_pico2.s`, `pico2/crt0_pico2_data.s`, `pico2/hello.tc`,
-  `compile-pico2.sh`
-- 変更: `compiler/asm.tc` (PIC モード + gp 相対)
+- `compiler/asm.tc` — 常時 PIC + セクション並べ替えリンカ + gp 相対 la + 自動 `__global_pointer$`
+- `compiler/runtime.tc` — pool_init が count=0 プールをスキップ
+- `compiler/crt0_tc.s` / `compiler/crt0_tc_data.s` — Linux/virt 用 crt0 (gp 初期化, sp は Linux カーネル任せ)
+- `compile-gen2.sh` / `compile-gen3.sh` — `CRT0` / `CRT0_DATA` / `ASM_PROLOGUE` 環境変数対応
+- `compile-pico2.sh` — Pico 2 向け compile-gen2.sh 薄ラッパ + bin2uf2.py 呼び出し
+- `pico2/crt0_pico2.s` — IMAGE_DEF + _start (XOSC/UART/SRAM 初期化 + NPOOLS patch + runtime init)
+- `pico2/crt0_pico2_data.s` — `.rodata` の pool sizes/counts + `.bss` の pool metadata / __arena
+- `pico2/hello.tc` — `sys_write` 経由の UART hello world
+- `pico2/bin2uf2.py` — raw bin → UF2 コンバータ
+- `pico2/build.sh` — Gen2 ツールビルド + compile-pico2.sh 呼び出し
+- `tests/virt_crt0.s` — qemu-system-riscv32 -M virt 用 crt0 (16550 UART + SiFive test 終了)
+- `tests/test_asm.sh` — virt 上で hello2.tc を走らせる回帰テスト
 
 ## 関連ドキュメント
 
