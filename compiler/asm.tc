@@ -562,6 +562,8 @@ fn asm_instr() -> i32 {
         return 4;
     }
     if mnem_eq("jr") { if g_pass==2 { emit32(enc_i(103,0,0,parse_reg_op(0),0)); } return 4; }
+    // jalr rd, rs1, imm  (I-type, opcode=103, funct3=0)
+    if mnem_eq("jalr") { if g_pass==2 { emit32(enc_i(103,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
     if mnem_eq("call") || mnem_eq("tail") {
         var rd: i32 = 1;
         if mnem_eq("tail") { rd = 0; }
@@ -804,6 +806,7 @@ fn process_line(line_idx: i32) -> void {
             }
             return;
         }
+        if mnem_eq(".rodata") { g_current_section = 1; return; }
         if mnem_eq(".data") { g_current_section = 2; return; }
         if mnem_eq(".bss") { g_current_section = 3; return; }
         if mnem_eq(".globl") || mnem_eq(".type") || mnem_eq(".size") ||
@@ -872,6 +875,16 @@ fn process_line(line_idx: i32) -> void {
                     if g_pass == 2 { emit32(parse_label_op(0)); }
                     else { g_pos = g_pos + 4; }
                 }
+            }
+            return;
+        }
+        if mnem_eq(".byte") {
+            // Emit each comma-separated value as a single byte.
+            // Parse directly from g_line_buf to avoid g_nops limit.
+            var bi: i32 = 0;
+            while bi < g_nops {
+                emit8(parse_imm_op(bi) & 255);
+                bi = bi + 1;
             }
             return;
         }
