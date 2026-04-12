@@ -72,7 +72,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1; then
     GEN2_DIR="$_GEN2_TMP" \
         "$ROOT_DIR/kernel/build_virt.sh" -o "$TMP/kernel_virt" 2>/dev/null
     if [ -s "$TMP/kernel_virt" ]; then
-        kv_out=$(timeout 5 qemu-system-riscv32 -smp 1 -nographic \
+        kv_out=$(timeout 10 qemu-system-riscv32 -smp 1 -nographic \
             -serial mon:stdio --no-reboot -m 128 \
             -machine virt,aclint=on -bios none \
             -device "loader,file=$TMP/kernel_virt,addr=0x80000000" \

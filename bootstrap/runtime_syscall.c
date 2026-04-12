@@ -269,9 +269,6 @@ DELETE_ALIAS(I8Array)   DELETE_ALIAS(I16Array)  DELETE_ALIAS(I32Array)
 DELETE_ALIAS(StringArray) DELETE_ALIAS(String)
 void delete__StringLiteral(HeapObj o) { (void)o; /* no-op: .rodata */ }
 
-/* Mark/reset are no-ops now that the pool allocator supports free(). */
-int32_t heap_mark(void) { return 0; }
-void heap_reset__i32(int32_t mark) { (void)mark; }
 
 /* ===== String operations ===== */
 

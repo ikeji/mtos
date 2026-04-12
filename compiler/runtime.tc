@@ -372,9 +372,6 @@ export fn delete(o: StringArray) -> void { delete_impl(o as u32); return; }
 export fn delete(o: String) -> void { delete_impl(o as u32); return; }
 export fn delete(o: StringLiteral) -> void { return; }
 
-export fn heap_mark() -> i32 { return 0; }
-export fn heap_reset(mark: i32) -> void { return; }
-
 // ===== sys_write / sys_read / sys_exit =====
 export fn sys_write(fd: i32, buf: U8Array, slen: i32) -> i32 {
     if buf as u32 == 0u32 { return 0 - 1; }

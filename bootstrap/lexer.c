@@ -112,7 +112,6 @@ void lexer_tokenize(Lexer *l) {
         /* string literal */
         if (cur(l) == '"') {
             advance(l);
-            int start = l->pos;
             int cap = 64, len = 0;
             char *buf = malloc(cap);
             if (!buf) { fprintf(stderr, "out of memory\n"); exit(1); }
@@ -132,7 +131,6 @@ void lexer_tokenize(Lexer *l) {
                 buf[len++] = c;
                 advance(l);
             }
-            (void)start;
             if (cur(l) == '"') advance(l);
             buf[len] = '\0';
             Token t = make_token(TK_STR_LIT, line);

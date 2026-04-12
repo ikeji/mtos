@@ -7,22 +7,6 @@
 
 /* ---- type utilities ---- */
 
-static int is_int_type(const char *t) {
-    return t && (strcmp(t,"u8")==0 || strcmp(t,"u16")==0 || strcmp(t,"u32")==0 ||
-                 strcmp(t,"i8")==0 || strcmp(t,"i16")==0 || strcmp(t,"i32")==0);
-}
-
-static int is_ref_type(const char *t) {
-    if (!t) return 0;
-    if (strcmp(t,"String")==0 || strcmp(t,"StringLiteral")==0 || strcmp(t,"StringArray")==0) return 1;
-    /* ends in Array */
-    int len = strlen(t);
-    if (len > 5 && strcmp(t + len - 5, "Array") == 0) return 1;
-    /* if starts uppercase it could be a struct/array */
-    if (t[0] >= 'A' && t[0] <= 'Z') return 1;
-    return 0;
-}
-
 static void set_annot(AstNode *n, const char *ty) {
     free(n->type_annot);
     n->type_annot = ty ? strdup(ty) : NULL;
@@ -284,11 +268,6 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "sys_read", sys_r, 3, "i32");
     register_fn(e, "sys_exit", sys_e, 1, "void");
 
-    /* Heap scope management */
-    register_fn(e, "heap_mark", NULL, 0, "i32");
-    const char *hm_args[] = {"i32"};
-    register_fn(e, "heap_reset", hm_args, 1, "void");
-
     /* print helpers */
     const char *pi[] = {"i32"};
     const char *pu[] = {"u32"};
@@ -460,7 +439,7 @@ static const char *check_expr(TypeEnv *e, AstNode *node) {
     if (strcmp(k, "binop") == 0) {
         const char *op = node->sval;
         const char *lt = check_expr(e, node->children[0]);
-        const char *rt = check_expr(e, node->children[1]);
+        check_expr(e, node->children[1]);
         const char *ty;
 
         if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0 ||
@@ -471,7 +450,6 @@ static const char *check_expr(TypeEnv *e, AstNode *node) {
         } else {
             /* arithmetic/bitwise: use left type (no promotion) */
             ty = lt;
-            (void)rt;
         }
         set_annot(node, ty);
         return ty;
@@ -501,8 +479,7 @@ static void check_stmt(TypeEnv *e, AstNode *node) {
         /* children[0] = type node, children[1] = optional init expr */
         const char *ty = node->children[0]->sval;
         if (node->nchildren > 1) {
-            const char *init_ty = check_expr(e, node->children[1]);
-            (void)init_ty; /* allow some type flexibility */
+            check_expr(e, node->children[1]);
         }
         scope_add_var(e, node->sval, ty);
         set_annot(node, ty);

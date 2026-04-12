@@ -570,9 +570,6 @@ static Value call_builtin(const char *mangled, Value *args, int nargs) {
     }
     if (!strcmp(name,"sys_exit") && nargs==1) exit(args[0].ival);
 
-    /* heap scope management — no-ops in bcrun (uses malloc-backed heap) */
-    if (!strcmp(name,"heap_mark") && nargs==0) return val_int(0);
-    if (!strcmp(name,"heap_reset") && nargs==1) return val_void();
 
     /* print helpers */
     if (!strcmp(name,"print_i32"))  { printf("%d\n",  (int)args[0].ival);              return val_void(); }

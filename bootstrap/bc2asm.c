@@ -313,8 +313,7 @@ static int max_eval_depth(BcFunc *fn) {
     return max_d;
 }
 
-static void emit_fn(BcFunc *fn, int fi) {
-    (void)fi;  /* fi unused — labels now use fn->name */
+static void emit_fn(BcFunc *fn) {
     int nvars      = fn->nparams + fn->nlocals;
     int eval_slots = max_eval_depth(fn);
     int frame_size = 8 + 4 * nvars + 4 * eval_slots;
@@ -575,7 +574,7 @@ static void emit_program(BcProg *prog) {
     E("    .text\n");
     E("    .align 2\n\n");
     for (int i = 0; i < prog->nfuncs; i++)
-        emit_fn(&prog->funcs[i], i);
+        emit_fn(&prog->funcs[i]);
 
     /* --- .data: global variables (after .text) --- */
     if (prog->nglobals > 0) {

@@ -62,16 +62,6 @@ static HeapObj *heap_alloc(ObjKind kind, const char *type_name) {
     return o;
 }
 
-static void heap_obj_free(HeapObj *o) {
-    if (!o) return;
-    if (o->type_name && strcmp(o->type_name, "StringLiteral") != 0) {
-        free(o->bytes);
-        free(o->fields);
-    }
-    free(o->type_name);
-    free(o);
-}
-
 /* ---- fake memory for peek/poke ---- */
 #define FAKE_MEM_SIZE (1024*1024)
 static uint8_t fake_mem[FAKE_MEM_SIZE];
@@ -206,7 +196,6 @@ static AstNode *find_fn(Interp *ip, const char *name,
                    (String, XxxArray, struct types) is a compile-time
                    concern — mangled names already encode the distinction.
                    The interp accepts any ref for any ref-typed param. */
-                (void)av;
             }
         }
         if (ok) return d;
@@ -227,7 +216,6 @@ static int call_builtin_known(const char *name) {
         "sys_write","sys_read","sys_exit",
         "print_i32","print_u32","print_bool","print_str",
         "len","get","set","delete","append","equals",
-        "heap_mark","heap_reset",
         NULL
     };
     for (int i = 0; B[i]; i++)
@@ -236,7 +224,7 @@ static int call_builtin_known(const char *name) {
     return 0;
 }
 
-static Value call_builtin(Interp *ip, const char *name, Value *args, int nargs) {
+static Value call_builtin(const char *name, Value *args, int nargs) {
     /* peek/poke */
     if (strcmp(name, "peek8") == 0) {
         uint32_t addr = (uint32_t)args[0].ival;
@@ -311,10 +299,6 @@ static Value call_builtin(Interp *ip, const char *name, Value *args, int nargs) 
     if (strcmp(name, "sys_exit") == 0 && nargs == 1) {
         exit(args[0].ival);
     }
-
-    /* heap scope management — no-ops in interp (uses GC-like allocation) */
-    if (strcmp(name, "heap_mark") == 0 && nargs == 0) return val_int(0);
-    if (strcmp(name, "heap_reset") == 0 && nargs == 1) return val_void();
 
     /* print helpers */
     if (strcmp(name, "print_i32") == 0 && nargs == 1) {
@@ -465,11 +449,11 @@ static Value call_fn(Interp *ip, AstNode *fn_node, Value *args, int nargs) {
 static Value dispatch_call(Interp *ip, const char *name, Value *args, int nargs) {
     /* Builtin first (interp cannot distinguish ref types for overloads) */
     if (call_builtin_known(name))
-        return call_builtin(ip, name, args, nargs);
+        return call_builtin(name, args, nargs);
     /* User function fallback */
     AstNode *fn = find_fn(ip, name, args, nargs);
     if (fn) return call_fn(ip, fn, args, nargs);
-    return call_builtin(ip, name, args, nargs);
+    return call_builtin(name, args, nargs);
 }
 
 /* ---- evaluate expressions ---- */
