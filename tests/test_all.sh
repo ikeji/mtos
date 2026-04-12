@@ -37,7 +37,9 @@ run_suite() {
 
 run_suite "$SCRIPT_DIR/test_unit.sh"
 run_suite "$SCRIPT_DIR/test_pipeline.sh"
-run_suite "$SCRIPT_DIR/test_consistency.sh"
+if [ "${FULL_TEST:-0}" = "1" ]; then
+    run_suite "$SCRIPT_DIR/test_consistency.sh"
+fi
 run_suite "$SCRIPT_DIR/test_golden_examples.sh"
 run_suite "$SCRIPT_DIR/test_gen3.sh"
 run_suite "$SCRIPT_DIR/test_import.sh"

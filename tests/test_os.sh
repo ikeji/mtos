@@ -1,5 +1,6 @@
 #!/bin/bash
 # test_os.sh — tests for OS/runtime components (uses Gen2 pipeline)
+# FULL_TEST=1: also runs kmalloc and kernel1 (cooperative) tests
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test_common.sh"
@@ -13,30 +14,32 @@ if [ "$USE_NATIVE" != true ]; then
     exit $?
 fi
 
-# --- kmalloc: alloc/free/coalesce/buckets via array operations ---
 TMP=$(mktemp -d)
 trap "rm -rf '$TMP'" EXIT
 
-t0=$(time_ms)
-GEN2_DIR="$_GEN2_TMP" \
-    "$ROOT_DIR/compile-gen2.sh" -o "$TMP/test_kmalloc" \
-    "$SCRIPT_DIR/test_kmalloc.tc" 2>/dev/null
-if [ -x "$TMP/test_kmalloc" ]; then
-    out=$("$QEMU" "$TMP/test_kmalloc" 2>/dev/null)
-    ex=$?
-    elapsed=$(( $(time_ms) - t0 ))
-    if [ "$out" = "0" ] && [ "$ex" -eq 0 ]; then
-        report_pass "kmalloc (buckets + large + coalesce)" "$elapsed"
+# --- kmalloc (FULL_TEST only) ---
+if [ "${FULL_TEST:-0}" = "1" ]; then
+    t0=$(time_ms)
+    GEN2_DIR="$_GEN2_TMP" \
+        "$ROOT_DIR/compile-gen2.sh" -o "$TMP/test_kmalloc" \
+        "$SCRIPT_DIR/test_kmalloc.tc" 2>/dev/null
+    if [ -x "$TMP/test_kmalloc" ]; then
+        out=$("$QEMU" "$TMP/test_kmalloc" 2>/dev/null)
+        ex=$?
+        elapsed=$(( $(time_ms) - t0 ))
+        if [ "$out" = "0" ] && [ "$ex" -eq 0 ]; then
+            report_pass "kmalloc (buckets + large + coalesce)" "$elapsed"
+        else
+            report_fail_msg "kmalloc" "expected output '0' exit 0, got '$out' exit $ex"
+        fi
     else
-        report_fail_msg "kmalloc" "expected output '0' exit 0, got '$out' exit $ex"
+        elapsed=$(( $(time_ms) - t0 ))
+        report_fail_msg "kmalloc" "compile-gen2.sh failed"
     fi
-else
-    elapsed=$(( $(time_ms) - t0 ))
-    report_fail_msg "kmalloc" "compile-gen2.sh failed"
 fi
 
-# --- kernel1: single cooperative guest task on separate stack ---
-if command -v qemu-system-riscv32 >/dev/null 2>&1; then
+# --- kernel1: cooperative task (FULL_TEST only) ---
+if [ "${FULL_TEST:-0}" = "1" ] && command -v qemu-system-riscv32 >/dev/null 2>&1; then
     VIRT_CRT0="$SCRIPT_DIR/virt_crt0.s"
     t0=$(time_ms)
     CRT0="$VIRT_CRT0" \
@@ -66,7 +69,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1; then
     fi
 fi
 
-# --- kernel_ecall: embedded task binary with ecall syscalls ---
+# --- kernel_preempt: embedded tasks with timer preemption (always) ---
 if command -v qemu-system-riscv32 >/dev/null 2>&1; then
     t0=$(time_ms)
     GEN2_DIR="$_GEN2_TMP" \
@@ -96,7 +99,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1; then
         esac
     else
         elapsed=$(( $(time_ms) - t0 ))
-        report_fail_msg "kernel_ecall" "build failed"
+        report_fail_msg "kernel_preempt" "build failed"
     fi
 fi
 
