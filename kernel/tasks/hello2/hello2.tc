@@ -1,10 +1,13 @@
-// hello2.tc — guest task: prints "B" 5 times then exits
+// hello2.tc — guest task: prints character from initialized global variable
+
+var g_char: u8 = 'B';
+var g_count: i32 = 5;
 
 fn main() -> i32 {
     var buf: U8Array = U8Array(1);
-    set(buf, 0, 'B');
+    set(buf, 0, g_char);
     var i: i32 = 0;
-    while i < 5 {
+    while i < g_count {
         sys_write(1, buf, 1);
         var j: i32 = 0;
         while j < 100000 {

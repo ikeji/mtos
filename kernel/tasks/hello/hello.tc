@@ -1,12 +1,15 @@
-// hello.tc — guest task: prints "A" 5 times then exits
+// hello.tc — guest task: prints character from initialized global variable
+// Tests that .data section is correctly copied from binary to task RAM.
+
+var g_char: u8 = 'A';
+var g_count: i32 = 5;
 
 fn main() -> i32 {
     var buf: U8Array = U8Array(1);
-    set(buf, 0, 'A');
+    set(buf, 0, g_char);
     var i: i32 = 0;
-    while i < 5 {
+    while i < g_count {
         sys_write(1, buf, 1);
-        // Busy wait to give timer a chance to preempt
         var j: i32 = 0;
         while j < 100000 {
             j = j + 1;

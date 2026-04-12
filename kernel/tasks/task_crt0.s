@@ -2,19 +2,38 @@
 # task_crt0.s — startup for guest tasks running under the kernel
 #
 # Calling convention from kernel:
-#   sp = task stack top (set by kernel)
-#   a0, a1 = reserved for future use (arena addr/size)
+#   sp = task stack top
+#   gp = kernel-allocated RAM + 0x800
+#   a0 = arena addr, a1 = arena size
 #
-# gp is set by _start via PC-relative la (works because the task binary
-# is executed in-place from RAM on virt). For Pico 2 (Flash execution with
-# SRAM data), the kernel will need to set gp before jumping here.
-#
-# Uses ecall for syscalls (write/read/exit), handled by kernel trap handler.
+# _start copies .data from the binary to kernel RAM (gp-relative region),
+# then initializes the runtime and calls main.
 #
     .text
     .globl _start
 _start:
-    # Kernel sets: sp, gp, a0 (arena addr), a1 (arena size)
+    # Save arena args (a0/a1) across the data copy
+    mv   s0, a0
+    mv   s1, a1
+
+    # Copy .data from binary to kernel-allocated RAM.
+    # __global_pointer$ is a text-section label → PC-relative la.
+    # In the binary: gp_src = data_base + 0x800
+    # Kernel set:    gp     = ram_base  + 0x800
+    la   t0, __global_pointer$    # PC-relative: source gp (in binary)
+    addi t0, t0, -0x800           # t0 = source data_base
+    addi t1, gp, -0x800           # t1 = dest data_base (RAM)
+    la   t2, __data_end           # gp-relative: dest data_end
+    beq  t1, t2, 2f
+1:  lw   t3, 0(t0)
+    sw   t3, 0(t1)
+    addi t0, t0, 4
+    addi t1, t1, 4
+    bltu t1, t2, 1b
+2:
+    # Restore arena args and init runtime
+    mv   a0, s0
+    mv   a1, s1
     call __runtime_init__u32__i32
     call main
     # sys_exit(return value of main)
