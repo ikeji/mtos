@@ -5,15 +5,22 @@
 自己ホストを達成するには、以下の順序で処理系を育てる必要がある。
 
 ```
-ステップ1: インタプリタ（ホストPC上、Cで実装）
+ステップ1: インタプリタ（ホストPC上、Cで実装）  [完了]
            独自言語のソースを直接解釈して実行
 
-ステップ2: インタプリタ上でコンパイラを動かす
+ステップ2: インタプリタ上でコンパイラを動かす  [完了]
            コンパイラ自体を独自言語で書き、インタプリタで実行
            → RISC-Vアセンブリを出力できるコンパイラが誕生
 
-ステップ3: そのコンパイラで自分自身をコンパイル
+ステップ3: そのコンパイラで自分自身をコンパイル  [完了]
            独自言語製コンパイラ → ネイティブなコンパイラ実行ファイル
+           (Gen2==Gen3 の自己ホスト検証は tests/test_gen3.sh で CI 化)
+
+ステップ3.5: 独自言語製プログラムを実機 RP2350 で直接動かす  [hello 完了]
+           asm.tc をセクション並べ替えリンカ化し、gp 相対 la で
+           Flash/SRAM 分離に対応。pico2/hello.tc が実機で UART 出力
+           するところまで到達。コンパイラ自体を Pico 2 で動かすには
+           PSRAM 初期化と typecheck/asm.tc のメモリ削減が未着手。
 
 ステップ4: ネイティブコンパイラでOSをビルド
            OS全体を独自言語で記述し、ネイティブコンパイラでビルド
@@ -55,7 +62,7 @@ C言語でフルパイプラインを実装し、動作を検証する。
 - [x] `crt0.s`: ベアメタル起動スタブ
 - [x] FizzBuzz を `codegen | bc2asm | riscv64-elf-gcc | qemu-riscv32` で動作確認
 
-## フェーズ2: コンパイラ（独自言語で実装、インタプリタ上で動作）
+## フェーズ2: コンパイラ（独自言語で実装、自己ホスト）
 
 目的: ブートストラップ。コンパイラ自体を独自言語で書く。
 
@@ -63,26 +70,52 @@ C言語でフルパイプラインを実装し、動作を検証する。
 自作アセンブラ・リンカは GAS/GNU ld の出力と比較しながら開発し、
 同じ入力に対して同じオブジェクト・実行ファイルが生成されることを確認する。
 
-- [ ] `parse`: レキサ＋LL(1)パーサ（独自言語で実装）
-- [ ] `typecheck`: 意味解析・型検査・オーバーロード解決（独自言語で実装）
-- [ ] `codegen`: 型付きAST → バイトコード生成（独自言語で実装）
-- [ ] `bcrun`: バイトコードインタプリタ（独自言語で実装、デバッグ・検証用）
-- [ ] `bc2asm`: バイトコード → RISC-V アセンブリ生成（独自言語で実装）
-- [ ] インタプリタ上で各ツールを動かし、パイプラインを通してRISC-Vアセンブリを出力
-- [ ] 出力アセンブリを `riscv32-unknown-elf-as` でアセンブルして動作確認
-- [ ] アセンブラ（独自言語で実装）、GASの出力と照合しながら開発
-- [ ] リンカ（独自言語で実装）、GNU ldの出力と照合しながら開発
-- [ ] 自作アセンブラ＋リンカの出力がGAS+GNU ldと一致することを確認
-- [ ] コンパイラで自分自身をコンパイルして動作確認（自己コンパイル）
+- [x] `parse.tc`: レキサ＋LL(1)パーサ（独自言語で実装）
+- [x] `typecheck.tc`: 意味解析・型検査・オーバーロード解決（独自言語で実装）
+- [x] `codegen.tc`: 型付きAST → バイトコード生成（独自言語で実装、ストリーミング処理）
+- [x] `bcrun.tc`: バイトコードインタプリタ（独自言語で実装、デバッグ・検証用）
+- [x] `bc2asm.tc`: バイトコード → RISC-V アセンブリ生成（独自言語で実装）
+- [x] インタプリタ上で各ツールを動かし、パイプラインを通してRISC-Vアセンブリを出力
+- [x] 出力アセンブリを `riscv64-unknown-elf-gcc` でアセンブルして qemu-riscv32 で動作確認
+- [x] アセンブラ兼リンカ `asm.tc` を実装（セクション並べ替え、gp 相対 la、
+      PIC、`; raw` / `; load_base` ディレクティブ、自動 `__global_pointer$`）
+- [x] `compile-gen2.sh` (Gen1 parse + Gen2 via qemu) で TC ソースを RV32 ELF/raw に
+- [x] `compile-gen3.sh` で Gen3 (= Gen2 がコンパイルした Gen2) を生成
+- [x] 自己コンパイル検証 (`tests/test_gen3.sh` が Gen2 == Gen3 の BC/ASM 一致を CI で検証)
+- [x] `tests/test_asm.sh` で TC ソースから qemu-system-riscv32 -M virt での end-to-end 検証
+
+## フェーズ2.5: TC プログラムを Pico 2 実機で動かす
+
+目的: OS なしで TC プログラムがベアメタル Pico 2 で走る最小構成を先に
+通しておき、Flash/SRAM 分離、picobin IMAGE_DEF、UART、プールアロケータ
+のどこに落とし穴があるかを洗い出す。
+
+- [x] picobin IMAGE_DEF ブロック (RP2350 RISC-V family ID 0xE48BFF5A)
+- [x] `pico2/crt0_pico2.s`: core1 park、XOSC/clk_peri/RESETS/GPIO/UART0 初期化
+- [x] SRAM ゼロクリア、gp=0x20000800、NPOOLS 手動 patch、runtime_init 呼び出し
+- [x] `pico2/crt0_pico2_data.s`: .rodata (__pool_sizes/counts) + .bss (pool metadata + __arena)
+- [x] `compile-pico2.sh`: compile-gen2.sh に `ASM_PROLOGUE="; raw"` + crt0 差し替え
+- [x] `pico2/bin2uf2.py`: raw bin → UF2 (family_id=0xe48bff5a)
+- [x] `pico2/hello.tc` が実機 Pico 2 の UART0 に "Hello, Pico 2!\r\n" を出力
+- [ ] print_i32 / print_str / sys_read 等の runtime API を Pico 2 でも動作確認
+- [ ] 複数ファイル import (`import "lib.tc"`) を Pico 2 ビルドで動かす
+- [ ] PSRAM 初期化 (QMI CS1, 0x11000000〜) を crt0 に追加
+- [ ] typecheck.tc / asm.tc のメモリ使用量を PSRAM 上で回せるレベルに最適化
+      (ラベルテーブル・行バッファのストリーミング化、分割実行)
+- [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)
 
 ## フェーズ3: カーネル基盤（QEMUで開発・検証）
 
-- [ ] ブートスタブ（_start、スタック設定、BSS初期化）
-- [ ] UARTドライバ（printf相当）
-- [ ] タイマ割り込み（mtime）
-- [ ] 例外・割り込みハンドラ枠組み
-- [ ] シンプルなメモリアロケータ（kmalloc/kfree）
-- [ ] QEMUで動作確認
+フェーズ2.5 で作った `crt0_pico2.s` / `virt_crt0.s` 系のベアメタル起動
+コードを再利用しつつ、一般的な OS 機能を積み上げていく。
+
+- [x] ブートスタブ (crt0_pico2.s / virt_crt0.s: _start, SP/GP/SRAM 初期化)
+- [x] UARTドライバ (PL011 / 16550、bare-metal レベル)
+- [ ] `print_*` / 文字列フォーマッタを runtime.tc から OS 向けに切り出し
+- [ ] タイマ割り込み（mtime / mtimecmp）
+- [ ] 例外・割り込みハンドラ枠組み（trap vector、コンテキスト保存）
+- [ ] シンプルなメモリアロケータ（kmalloc/kfree、ページ管理）
+- [ ] QEMU virt 上でタイマ割り込みハンドラが発火するところまで確認
 
 ## フェーズ4: プロセス管理（QEMUで開発・検証）
 
@@ -111,7 +144,12 @@ C言語でフルパイプラインを実装し、動作を検証する。
 
 ## フェーズ7: ネイティブコンパイラをOS上で動かす
 
+フェーズ2.5 で Pico 2 ベアメタル上で動く TC プログラムの足場は確認済み。
+ここではその上に OS の syscall 層 (open/read/write 等) を乗せ、
+compiler/ 配下のツールをそのまま OS 上のプロセスとして起動できるようにする。
+
 - [ ] フェーズ2で作ったコンパイラ・アセンブラ・リンカをOS上に移植
+      (runtime.tc の do_write/do_read/do_exit を OS syscall に差し替え)
 - [ ] OS上でコンパイラが動作することを確認
 - [ ] OS上でHello Worldプログラムをコンパイル・実行
 
@@ -127,9 +165,10 @@ C言語でフルパイプラインを実装し、動作を検証する。
 
 | リスク | 対策 |
 |---|---|
-| インタプリタとコンパイラの挙動が一致しない | 同一テストスイートで常に両方を検証し、インタプリタをリファレンスとして差分を調査する |
+| インタプリタとコンパイラの挙動が一致しない | `tests/test_consistency.sh` / `tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
 | LL(1)で表現できない構文が欲しくなる | 文法制約を文書化し、設計段階で確認 |
-| メモリ不足（520KB） | コンパイラをストリーミング処理にする |
-| QEMUと実機の挙動差異 | ペリフェラル依存部分を抽象化レイヤで分離 |
-| Flash書き込みが遅い・壊れやすい | 開発中はQEMUのRAMディスクで代替 |
-| デバッグが困難 | UARTデバッグ出力を最初から充実させる |
+| メモリ不足（520KB SRAM） | `asm.tc` はセクション並べ替えで data/bss を最小化済み。`typecheck.tc` / `asm.tc` のラベル・行バッファは PSRAM 前提で拡張予定（フェーズ2.5） |
+| gp 相対 `la` の 12-bit 制約 | hello レベルでは余裕。将来必要なら 12 byte 形式 (`lui+addi+add gp`) に拡張 |
+| QEMUと実機の挙動差異 | `pico2/hello.tc` で既に実機 Pico 2 上の挙動を検証。ペリフェラル依存は crt0_pico2.s に集約 |
+| Flash書き込みが遅い・壊れやすい | picotool UF2 経由の書き込みのみ使用。書き換え頻度は開発サイクルで問題ないレベル |
+| デバッグが困難 | UART 出力 (Linux: syscall、virt: 16550、Pico 2: PL011) を `do_write` で統一、`asm.tc` は pass 2 でラベルマップを stderr に出す |
