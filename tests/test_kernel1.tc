@@ -1,0 +1,43 @@
+// test_kernel1.tc — minimal kernel: launch one guest task on a separate stack
+//
+// Kernel (main) allocates a stack for guest_task_1, launches it via
+// kern_launch_task, waits for it to complete, prints KERN_OK.
+
+fn guest_task_1() -> void {
+    // Print "TASK1_OK\n" via UART
+    var msg: U8Array = U8Array(10);
+    set(msg, 0, 'T'); set(msg, 1, 'A'); set(msg, 2, 'S');
+    set(msg, 3, 'K'); set(msg, 4, '1'); set(msg, 5, '_');
+    set(msg, 6, 'O'); set(msg, 7, 'K'); set(msg, 8, 10u8);
+    sys_write(1, msg, 9);
+    delete(msg);
+    return;
+}
+
+fn task_dispatch(id: i32) -> void {
+    if id == 1 { guest_task_1(); }
+    return;
+}
+
+fn main() -> i32 {
+    // Allocate a 4KB stack for task 1
+    var stack_size: i32 = 4096;
+    var task1_stack: U8Array = U8Array(stack_size);
+    // Stack top = array data base + size, aligned to 16 bytes
+    var stack_base: u32 = task1_stack as u32 + 4u32;
+    var task1_sp: u32 = (stack_base + stack_size as u32) & 0xFFFFFFF0u32;
+
+    // Launch task 1 (cooperative: runs to completion, returns here)
+    kern_launch_task(task1_sp, 1);
+
+    // Print "KERN_OK\n"
+    var msg: U8Array = U8Array(9);
+    set(msg, 0, 'K'); set(msg, 1, 'E'); set(msg, 2, 'R');
+    set(msg, 3, 'N'); set(msg, 4, '_'); set(msg, 5, 'O');
+    set(msg, 6, 'K'); set(msg, 7, 10u8);
+    sys_write(1, msg, 8);
+
+    delete(msg);
+    delete(task1_stack);
+    return 0;
+}

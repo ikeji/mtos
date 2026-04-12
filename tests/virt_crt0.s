@@ -125,9 +125,12 @@ _trap_entry:
     lw   sp,   8(sp)          # restore original sp (must be last)
     mret
 
-# ===== Default trap handler (overridden by TC if defined) =====
+# ===== Default handlers (overridden by TC if defined) =====
     .globl trap_handler__u32__u32
 trap_handler__u32__u32:
+    ret
+    .globl task_dispatch__i32
+task_dispatch__i32:
     ret
 
 # ===== Syscall stubs =====
@@ -214,8 +217,55 @@ csr_read_mcause:
     csrr a0, 0x342
     ret
 
-# ===== Trap frame (BSS) =====
+# ===== Kernel primitives =====
+# kern_launch_task(task_sp: u32, task_id: i32) -> void
+# Saves kernel callee-saved regs, switches to task stack, calls
+# task_dispatch(task_id), then restores kernel regs and returns.
+# a0 = task_sp (top of task stack), a1 = task_id
+    .globl kern_launch_task__u32__i32
+kern_launch_task__u32__i32:
+    # Save kernel callee-saved regs to _kern_save
+    la   t0, _kern_save
+    sw   ra,  0(t0)
+    sw   sp,  4(t0)
+    sw   s0,  8(t0)
+    sw   s1, 12(t0)
+    sw   s2, 16(t0)
+    sw   s3, 20(t0)
+    sw   s4, 24(t0)
+    sw   s5, 28(t0)
+    sw   s6, 32(t0)
+    sw   s7, 36(t0)
+    sw   s8, 40(t0)
+    sw   s9, 44(t0)
+    sw   s10, 48(t0)
+    sw   s11, 52(t0)
+    # Switch to task stack and call task_dispatch(task_id)
+    mv   sp, a0
+    mv   a0, a1
+    call task_dispatch__i32
+    # Restore kernel callee-saved regs
+    la   t0, _kern_save
+    lw   ra,  0(t0)
+    lw   sp,  4(t0)
+    lw   s0,  8(t0)
+    lw   s1, 12(t0)
+    lw   s2, 16(t0)
+    lw   s3, 20(t0)
+    lw   s4, 24(t0)
+    lw   s5, 28(t0)
+    lw   s6, 32(t0)
+    lw   s7, 36(t0)
+    lw   s8, 40(t0)
+    lw   s9, 44(t0)
+    lw   s10, 48(t0)
+    lw   s11, 52(t0)
+    ret
+
+# ===== Trap frame and kernel save area (BSS) =====
     .bss
     .align 4
 _trap_frame:
     .space 128
+_kern_save:
+    .space 56

@@ -226,6 +226,10 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "csr_write_mie", p32, 1, "void");
     register_fn(e, "csr_read_mcause", NULL, 0, "u32");
 
+    /* Kernel primitives (implemented in virt_crt0.s) */
+    const char *p32_i32[] = {"u32","i32"};
+    register_fn(e, "kern_launch_task", p32_i32, 2, "void");
+
     /* raw ecall stubs (always registered — implemented in crt0.s) */
     const char *dw[] = {"i32","u32","i32"};
     const char *dr[] = {"i32","u32","i32"};

@@ -112,10 +112,12 @@ C言語でフルパイプラインを実装し、動作を検証する。
 - [x] ブートスタブ (crt0_pico2.s / virt_crt0.s: _start, SP/GP/SRAM 初期化)
 - [x] UARTドライバ (PL011 / 16550、bare-metal レベル)
 - [x] メモリアロケータ（runtime.tc に kmalloc/kfree 実装済み、free-list first-fit + 10-bucket 小ブロック高速化）
+- [x] 例外・割り込みハンドラ枠組み（trap vector、コンテキスト保存/復元、mscratch swap）
+- [x] CSR 命令サポート（asm.tc に csrrw/csrrs/csrrc/csrr/csrw/mret 追加）
+- [x] CSR アクセス組み込み関数（csr_read/write_mstatus/mie/mcause）
+- [x] タイマ割り込み（mtime / mtimecmp、TC trap_handler で処理）
+- [x] QEMU virt 上でタイマ割り込みハンドラが発火するところまで確認
 - [ ] `print_*` / 文字列フォーマッタを runtime.tc から OS 向けに切り出し
-- [ ] タイマ割り込み（mtime / mtimecmp）
-- [ ] 例外・割り込みハンドラ枠組み（trap vector、コンテキスト保存）
-- [ ] QEMU virt 上でタイマ割り込みハンドラが発火するところまで確認
 
 ## フェーズ4: プロセス管理（QEMUで開発・検証）
 

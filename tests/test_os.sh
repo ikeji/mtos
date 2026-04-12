@@ -35,4 +35,35 @@ else
     report_fail_msg "kmalloc" "compile-gen2.sh failed"
 fi
 
+# --- kernel1: single cooperative guest task on separate stack ---
+if command -v qemu-system-riscv32 >/dev/null 2>&1; then
+    VIRT_CRT0="$SCRIPT_DIR/virt_crt0.s"
+    t0=$(time_ms)
+    CRT0="$VIRT_CRT0" \
+    ASM_PROLOGUE="; raw" \
+    GEN2_DIR="$_GEN2_TMP" \
+        "$ROOT_DIR/compile-gen2.sh" -o "$TMP/test_kernel1" \
+        "$SCRIPT_DIR/test_kernel1.tc" 2>/dev/null
+    if [ -s "$TMP/test_kernel1" ]; then
+        k1_out=$(timeout 5 qemu-system-riscv32 -smp 1 -nographic \
+            -serial mon:stdio --no-reboot -m 128 \
+            -machine virt,aclint=on -bios none \
+            -device "loader,file=$TMP/test_kernel1,addr=0x80000000" \
+            -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+        elapsed=$(( $(time_ms) - t0 ))
+        case "$k1_out" in
+            *"TASK1_OK"*"KERN_OK"*)
+                report_pass "kernel1: guest task runs on separate stack" "$elapsed"
+                ;;
+            *)
+                report_fail_msg "kernel1" \
+                    "expected TASK1_OK + KERN_OK, got: $(printf '%s' "$k1_out" | head -c 80)"
+                ;;
+        esac
+    else
+        elapsed=$(( $(time_ms) - t0 ))
+        report_fail_msg "kernel1" "compile failed"
+    fi
+fi
+
 print_results
