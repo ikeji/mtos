@@ -285,9 +285,122 @@ fn main() -> i32 {
 | 1 | `docs/task/pico2_tc_runtime.md` 追加 (本ファイル) | レビュー |
 | 2 | asm.tc を常時 PIC 化 (TEXT_BASE=0、ELF 出力時に load_vaddr 加算) + `; raw` / `; load_base` ディレクティブ追加 | 既存テスト合格、`; raw` モードで簡単な hello world (text のみ) を生 bin 出力 → qemu で動作確認 |
 | 3 | asm.tc にセクション追跡 + `; gp` ディレクティブ + gp 相対 la 展開を追加 | 既存テスト合格、`; gp` モードで data/bss を持つ簡単な .s をビルドして動作確認 |
+| 3.5 | asm.tc をセクション並べ替えリンカ化 + gp 常時有効化 + crt0_tc.s に gp 初期化追加 + `__global_pointer$` 自動定義。`; gp` ディレクティブ廃止。data/bss la の 12-bit 範囲外は PC 相対にフォールバック。 | 既存テスト合格 (139 pass, ~40s) |
 | 4 | `pico2/crt0_pico2.s` + `pico2/crt0_pico2_data.s` 作成 | asm.tc で .s を結合してアセンブル成功 (実機未確認) |
 | 5 | `compile-pico2.sh` 作成、`pico2/hello.tc` 作成 | UF2 生成成功、IMAGE_DEF バイト確認 |
 | 6 | 実機動作確認 (UART に "Hello, Pico 2!" 出力) | 実機 |
+
+## セクション並べ替えリンカ化 (ステップ 3.5)
+
+### 問題
+
+現状の asm.tc は入力 `.s` をフラットに配置する。複数ファイルを結合すると、
+セクションが interleave する:
+
+```
+g_pos=0      crt0_tc.s    .text
+g_pos=120    runtime.s    .text
+g_pos=4300   runtime.s    .data      ← ここで最初の .data
+g_pos=4400   hello2.s     .text      ← data の後ろに text が割り込む!
+g_pos=5000   hello2.s     .rodata
+g_pos=5200   crt0_tc_data.s .data
+g_pos=5340   crt0_tc_data.s .bss  (__pool_free など)
+```
+
+この状態で「最初の .data が出た g_pos」を `data_base_pos` として gp 相対 offset を
+計算すると、`offset = label_g_pos - data_base_pos - 0x800` が、間に挟まる
+hello2.s .text のサイズ分だけ水増しされる。結果として、__pool_free のような
+.bss ラベルの offset が `data_base` から数 KB 離れて、12-bit signed (-2048..2047)
+の範囲をすぐ超える。
+
+本質的に **data_base は text/rodata のサイズに依存するべきではない**。data section
+の内部 offset だけを見たい。
+
+### 解決
+
+asm.tc を「リンカ」として振る舞わせ、セクションを物理的に並べ替える。
+最終出力は常に:
+
+```
+[ text ][ rodata ][ data ][ bss ]
+ size=T  size=R    size=D   size=B (memsz only, filesz には含まれない)
+```
+
+- `text_base   = 0`
+- `rodata_base = T`
+- `data_base   = T + R`
+- `bss_base    = T + R + D`
+
+ラベルの最終 address = `section_base[label.section] + intra_offset`。
+gp 相対 offset = `intra_offset - 0x800` (text/rodata サイズに独立、常に小さい)。
+
+### 実装 (pass 数は 2 のまま、再帰や 4 回走査は不要)
+
+**pass 1** (サイズ確定 + ラベル intra 記録)
+- セクションごとに独立した cursor を持つ:
+  `g_sec_pos: I32Array(4)` (text/rodata/data/bss)
+- `g_line_section: U8Array(n_lines)` 各行のセクション ID を記録
+- 行を入力順に走査し、現在のセクション (`g_current_section`) に応じて対応する
+  cursor を進める。ラベル定義は `(section_id, intra_offset)` を
+  `(g_lab_section[idx], g_lab_addrs[idx])` に保存 (addr は一旦 intra のまま)
+- pass 1 終了時点で `g_sec_pos[*]` が各セクションのサイズ
+- 各セクション base を計算:
+  `rodata_base = g_sec_pos[TEXT]`
+  `data_base   = rodata_base + g_sec_pos[RODATA]`
+  `bss_base    = data_base   + g_sec_pos[DATA]`
+- 全ラベルを走査して fixup:
+  `g_lab_addrs[i] += section_base[g_lab_section[i]]`
+
+**pass 2** (1 回走査で emit、ただし g_pos を per-section に切り替える)
+- `g_sec_pos[*] = 0` に初期化 (各セクションの現在の intra emit 位置)
+- 各行 `idx` を入力順に走査:
+  1. `sec = g_line_section[idx]`
+  2. `g_pos = section_base[sec] + g_sec_pos[sec]`
+  3. `process_line(idx)` を呼ぶ。emit8 は `g_code[g_pos]` に書き、`g_pos` を進める
+  4. `g_sec_pos[sec] = g_pos - section_base[sec]`
+- 結果、`g_code[0..T]` に text、`g_code[T..T+R]` に rodata、... と並ぶ
+
+**pass 数は 2 回のまま**。セクションごとに走査を 4 回繰り返す必要はない。
+g_pos を行単位で適切な section 領域に切り替えるだけで、入力の interleave を
+物理的な並べ替えに変換できる。
+
+### ラベルアドレスの移動と PC 相対計算
+
+既存の `la` / `jal` / 分岐は PC 相対計算 (target - pc) で絶対値に依存しない。
+並べ替え後の pc (= emit 中の g_pos) と target (= 最終 label addr) はどちらも
+新しい統一アドレス空間にあるので、差分は正しい値になる。
+
+`.word symbol` は label.addr をそのまま埋め込むので、並べ替え後の値になる
+(コードベース全体で `.word symbol` を使っているのは手書き crt0 のみで、
+常に絶対アドレスが必要な IMAGE_DEF 等は即値で書くので影響なし)。
+
+### gp 常時有効化
+
+並べ替えリンカができると、data セクションは物理的に連続した小さな領域になる。
+data + bss の全ラベルが ±2KB に収まる限り、gp 相対 `la` は常に動作する。
+`; gp` ディレクティブは廃止し、以下の方針に切替える:
+
+- asm.tc が `__global_pointer$` を `data_base + 0x800` に自動定義
+- Linux/virt 用 crt0_tc.s に `la gp, __global_pointer$` を追加
+  (`la` 自体は text → text の PC 相対なので gp 不要で動く)
+- Pico 2 用 crt0_pico2.s は `li gp, 0x20000800` で SRAM 基点にセット
+- asm.tc の `la rd, sym` は sym が data/bss セクションなら常に gp 相対に展開
+
+### 12-bit 範囲の保証
+
+並べ替え後、data + bss セクションの全ラベルは `data_base` から `bss_end` までの
+範囲に収まる。この範囲が ±2KB (= 4KB) 以内であれば gp 相対は常に成功する。
+
+- 通常のプログラム (hello2, fib, fizzbuzz): data+bss ラベルは数百バイト以内
+- 中規模 (parse.tc + typecheck.tc + codegen.tc 相当): data+bss ラベル数が
+  増えても 1〜2KB 程度に収まる想定
+- 大規模 (__arena のような巨大配列): ラベル自身は先頭アドレスのみ ±2KB 内
+  に配置し、中身のサイズは制約されない
+
+4KB を超える場合の対応 (将来課題):
+- `la` を 12 バイト形式 (`lui + addi + add gp`) に拡張して ±2GB 範囲にする
+- もしくは複数の small-data pointer を使い分ける
+- 現時点の hello.tc ユースケースでは不要
 
 ## 検討事項
 

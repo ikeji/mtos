@@ -17,19 +17,27 @@ var MAX_CODE: i32 = 4194300; // ~4MB (4MB minus HeapObj header)
 var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
 var g_raw_mode: i32 = 0;        // 1 = raw bin output (no ELF header)
 
-// ===== Section tracking (for gp-relative la expansion via ; gp) =====
+// ===== Section-reordering linker =====
 // Sections: 0=text, 1=rodata, 2=data, 3=bss
-// text/rodata share the code LOAD segment (Flash, PC-relative).
-// data/bss form a separate logical region addressed via gp (SRAM on Pico 2).
-// When g_gp_addr != 0, `la rd, sym` where sym is in data/bss is expanded to
-// `auipc rd, 0; addi rd, gp, (sym_physical_offset - g_data_base_pos - 0x800)`.
-// The 12-bit range check rejects (-2048..2047) overflow at assemble time.
+// asm.tc is the linker in this toolchain: it sees every `.s` input as a
+// single stream with interleaved sections, and emits them physically
+// grouped in the output (text -> rodata -> data -> bss). Labels are first
+// recorded with their per-section intra offset (g_sec_pos at the time of
+// definition), then fixed up after pass 1 by adding g_sec_base[section].
+//
+// gp-relative la is always active for data/bss labels. `__global_pointer$`
+// is auto-defined at data_base + 0x800 (in the text address space, so
+// `la gp, __global_pointer$` used by crt0 is a plain PC-relative la).
+// Data/bss la offsets must fit in 12-bit signed (-2048..2047); out of range
+// is a fatal error with the label name.
 var g_current_section: i32 = 0;
-var g_data_base_pos: i32 = 0 - 1;  // -1 = first .data/.bss not yet seen
-var g_gp_addr: i32 = 0;            // non-zero enables gp-relative la
+var g_sec_pos: I32Array = 0 as I32Array;   // [text, rodata, data, bss] intra cursors
+var g_sec_base: I32Array = 0 as I32Array;  // final absolute base of each section
+var g_gp_abs: i32 = 0;                     // absolute value of __global_pointer$
 // Parallel to g_lab_addrs, but 1 byte per label (values 0..3) so the
 // allocation goes to a smaller bucket than the other label arrays.
 var g_lab_section: U8Array = 0 as U8Array;
+var g_line_section: U8Array = 0 as U8Array;
 
 // ===== Global state =====
 var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in main
@@ -569,25 +577,23 @@ fn asm_instr() -> i32 {
         if g_pass==2 {
             var target: i32 = parse_label_op(1);
             var tsec: i32 = parse_label_op_section(1);
-            // gp-relative expansion: sym is in data/bss and ; gp is active
-            if g_gp_addr != 0 && (tsec == 2 || tsec == 3) {
-                var gpoff: i32 = (target - g_data_base_pos) - 2048;
-                if gpoff < (0 - 2048) || gpoff > 2047 {
-                    var eb1: StringBuffer = StringBuffer_new(1);
-                    emit_string(eb1, "asm: gp-relative la out of 12-bit range for label '");
-                    var lop_off: i32 = get(g_ops, 2);
-                    var lop_len: i32 = get(g_ops, 3);
-                    emit_n(eb1, g_line_buf, lop_off, lop_len);
-                    emit_string(eb1, "'\n");
-                    write(eb1, 2);
-                    destroy(eb1);
-                    sys_exit(1);
+            // For data/bss labels, prefer gp-relative (required on Pico 2 where
+            // text=Flash and data=SRAM are in different memory regions).
+            // If the 12-bit signed offset doesn't fit, fall back to PC-relative
+            // (works on Linux / virt where text and data sit in the same LOAD
+            // segment; Pico 2 data region must be small enough to stay in range).
+            var use_gp: i32 = 0;
+            if tsec == 2 || tsec == 3 {
+                var gpoff: i32 = target - g_gp_abs;
+                if gpoff >= (0 - 2048) && gpoff <= 2047 {
+                    // auipc rd, 0 (rd = pc, overwritten by next addi)
+                    emit32(enc_u(23, rd, 0));
+                    // addi rd, gp, gpoff   (gp = x3)
+                    emit32(enc_i(19, 0, rd, 3, gpoff));
+                    use_gp = 1;
                 }
-                // auipc rd, 0 (rd = pc, will be overwritten)
-                emit32(enc_u(23, rd, 0));
-                // addi rd, gp, gpoff   (gp = x3)
-                emit32(enc_i(19, 0, rd, 3, gpoff));
-            } else {
+            }
+            if use_gp == 0 {
                 var off: i32 = target - pc;
                 emit32(enc_u(23,rd,hi20(off)<<12));
                 emit32(enc_i(19,0,rd,rd,lo12(off)));
@@ -772,22 +778,10 @@ fn process_line(line_idx: i32) -> void {
                     g_current_section = 3;
                 }
             }
-            if g_gp_addr != 0 && g_data_base_pos < 0 &&
-               (g_current_section == 2 || g_current_section == 3) {
-                g_data_base_pos = g_pos;
-            }
             return;
         }
-        if mnem_eq(".data") {
-            g_current_section = 2;
-            if g_gp_addr != 0 && g_data_base_pos < 0 { g_data_base_pos = g_pos; }
-            return;
-        }
-        if mnem_eq(".bss") {
-            g_current_section = 3;
-            if g_gp_addr != 0 && g_data_base_pos < 0 { g_data_base_pos = g_pos; }
-            return;
-        }
+        if mnem_eq(".data") { g_current_section = 2; return; }
+        if mnem_eq(".bss") { g_current_section = 3; return; }
         if mnem_eq(".globl") || mnem_eq(".type") || mnem_eq(".size") ||
            mnem_eq(".option") || mnem_eq(".attribute") || mnem_eq(".file") ||
            mnem_eq(".ident") || mnem_eq(".p2align") { return; }
@@ -807,28 +801,29 @@ fn process_line(line_idx: i32) -> void {
         }
         if mnem_eq(".local") { return; }  // ignore
         if mnem_eq(".comm") {
-            // .comm symbol,size,align — allocate BSS space
+            // .comm symbol,size,align — allocate BSS space via per-section
+            // cursor g_sec_pos[SEC_BSS=3]. The label is defined in the BSS
+            // section and fixed up (addr += bss_base) after pass 1.
             if g_nops >= 2 {
                 var op_off: i32 = get(g_ops, 0);
                 var op_len: i32 = get(g_ops, 1);
                 var size: i32 = parse_imm_op(1);
                 var align: i32 = 4;
                 if g_nops >= 3 { align = parse_imm_op(2); }
-                // Align BSS position
-                while g_bss_pos % align != 0 { g_bss_pos = g_bss_pos + 1; }
-                // Define label at BSS base + current BSS offset
-                // BSS base will be code_end (set after pass 1)
+                var bss_cursor: i32 = get(g_sec_pos, 3);
+                while bss_cursor % align != 0 { bss_cursor = bss_cursor + 1; }
                 var lname: U8Array = U8Array(op_len);
                 i = 0;
                 while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
                 if g_pass == 1 {
-                    define_label(lname, op_len, g_bss_pos);
-                    // Mark as BSS label for fixup
-                    var idx: i32 = find_label(lname, op_len);
-                    if idx >= 0 { set(g_lab_is_bss, idx, 1); }
+                    // Temporarily switch section so define_label records BSS
+                    var saved_sec: i32 = g_current_section;
+                    g_current_section = 3;
+                    define_label(lname, op_len, bss_cursor);
+                    g_current_section = saved_sec;
                 }
                 delete(lname);
-                g_bss_pos = g_bss_pos + size;
+                set(g_sec_pos, 3, bss_cursor + size);
             }
             return;
         }
@@ -955,28 +950,6 @@ fn parse_meta_directive(lstart: i32, llen: i32) -> i32 {
         g_load_vaddr = v;
         return 1;
     }
-    // ; gp 0xHHHHHHHH
-    if (end - p) >= 4
-       && get(g_lines, p)     == 'g'
-       && get(g_lines, (p+1)) == 'p'
-       && get(g_lines, (p+2)) == ' ' {
-        var gq: i32 = p + 3;
-        while gq < end && get(g_lines, gq) == ' ' { gq = gq + 1; }
-        if gq + 1 < end && get(g_lines, gq) == '0'
-           && (get(g_lines, (gq + 1)) == 'x' || get(g_lines, (gq + 1)) == 'X') {
-            gq = gq + 2;
-        }
-        var gv: i32 = 0;
-        while gq < end {
-            var gc: u8 = get(g_lines, gq);
-            if gc >= '0' && gc <= '9' { gv = gv * 16 + (gc as i32 - 48); }
-            else if gc >= 'a' && gc <= 'f' { gv = gv * 16 + (gc as i32 - 87); }
-            else if gc >= 'A' && gc <= 'F' { gv = gv * 16 + (gc as i32 - 55); }
-            gq = gq + 1;
-        }
-        g_gp_addr = gv;
-        return 1;
-    }
     return 0;
 }
 
@@ -1078,6 +1051,9 @@ fn main() -> i32 {
     g_lab_addrs = I32Array(MAX_LABELS);
     g_lab_is_bss = I32Array(MAX_LABELS);
     g_lab_section = U8Array(MAX_LABELS);
+    g_sec_pos = I32Array(4);
+    g_sec_base = I32Array(4);
+    g_line_section = U8Array(131072);
     g_lines = U8Array(MAX_CODE);
     g_line_offs = I32Array(131072);
     g_line_lens = I32Array(131072);
@@ -1090,48 +1066,87 @@ fn main() -> i32 {
     // Read all input lines
     read_all_lines();
 
-    // Pass 1: collect labels, compute sizes
+    // Pass 1: per-section intra sizing + label collection.
+    // Each line is processed with g_pos pointing at the intra offset of its
+    // section (0-based within text/rodata/data/bss). Labels get
+    // g_lab_addrs = intra offset at definition time; we fix them up
+    // after pass 1 by adding g_sec_base[section].
     g_pass = 1;
     g_pos = 0;
     g_nlabels = 0;
     g_lab_name_pos = 0;
     g_current_section = 0;
-    g_data_base_pos = 0 - 1;
-    // Pre-define linker symbols
+    set(g_sec_pos, 0, 0);
+    set(g_sec_pos, 1, 0);
+    set(g_sec_pos, 2, 0);
+    set(g_sec_pos, 3, 0);
+    // Pre-define __global_pointer$ in text section; its final value is
+    // patched to data_base + 0x800 after pass 1.
     var gp_sym: U8Array = U8Array(20);
     var gp_len: i32 = buf_set_str(gp_sym, 0, "__global_pointer$");
     define_label(gp_sym, gp_len, 0);
-    delete(gp_sym);
-    g_bss_pos = 0;
     var i: i32 = 0;
-    while i < g_nlines { process_line(i); i = i + 1; }
-    var code_total: i32 = g_pos;
-
-    // BSS starts after code, aligned to 4 (offsets from code start)
-    var bss_base: i32 = code_total;
-    bss_base = (bss_base + 3) & (0 - 4);
-
-    // Fixup .comm labels: add bss_base to BSS-relative offset
-    i = 0;
-    while i < g_nlabels {
-        if get(g_lab_is_bss, i) == 1 {
-            set(g_lab_addrs, i, bss_base + get(g_lab_addrs, i));
-        }
+    while i < g_nlines {
+        var sec_before: i32 = g_current_section;
+        set(g_line_section, i, sec_before as u8);
+        g_pos = get(g_sec_pos, sec_before);
+        process_line(i);
+        set(g_sec_pos, sec_before, g_pos);
         i = i + 1;
     }
 
-    var total_memsz: i32 = bss_base + g_bss_pos;
+    // Compute section bases: text | rodata | data | bss.
+    // We align each section's size (and therefore the next section's base)
+    // to 16 bytes so that align_to(shift=4) inside process_line sees a
+    // 16-aligned g_pos both in pass 1 (where g_pos starts at 0 per section)
+    // and pass 2 (where g_pos starts at section_base). Without this, a
+    // `.align 4` directive (which means 2^4 = 16-byte alignment in RISC-V
+    // GNU as) would pad 0 bytes in pass 1 but non-zero bytes in pass 2
+    // when section_base isn't 16-aligned, causing the two passes to drift.
+    var text_size: i32   = (get(g_sec_pos, 0) + 15) & (0 - 16);
+    var rodata_size: i32 = (get(g_sec_pos, 1) + 15) & (0 - 16);
+    var data_size: i32   = (get(g_sec_pos, 2) + 15) & (0 - 16);
+    var bss_size: i32    = (get(g_sec_pos, 3) + 15) & (0 - 16);
+    set(g_sec_base, 0, 0);
+    set(g_sec_base, 1, text_size);
+    set(g_sec_base, 2, text_size + rodata_size);
+    set(g_sec_base, 3, text_size + rodata_size + data_size);
+    g_gp_abs = get(g_sec_base, 2) + 2048;
 
-    // Pass 2: encode
-    g_pass = 2;
-    g_pos = 0;
-    g_bss_pos = 0;
-    g_current_section = 0;
-    // NOTE: do NOT reset g_numlab_count — pass 2 uses labels collected in pass 1
-    // NOTE: do NOT reset g_data_base_pos — it was fixed during pass 1 and
-    //       drives gp-relative la offset computation in pass 2.
+    // Fix up labels: addr += section_base[section].
     i = 0;
-    while i < g_nlines { process_line(i); i = i + 1; }
+    while i < g_nlabels {
+        var lsec: i32 = get(g_lab_section, i) as i32;
+        set(g_lab_addrs, i, get(g_lab_addrs, i) + get(g_sec_base, lsec));
+        i = i + 1;
+    }
+    // Patch __global_pointer$ to point at data_base + 0x800.
+    var gp_idx: i32 = find_label(gp_sym, gp_len);
+    if gp_idx >= 0 { set(g_lab_addrs, gp_idx, g_gp_abs); }
+    delete(gp_sym);
+
+    var total_code: i32  = text_size + rodata_size + data_size;
+    var total_memsz: i32 = total_code + bss_size;
+
+
+    // Pass 2: encode using per-section cursors mapped into g_code.
+    // For each line we set g_pos = section_base + current intra offset of
+    // that section, call process_line, then write the advanced g_pos back.
+    g_pass = 2;
+    g_current_section = 0;
+    set(g_sec_pos, 0, 0);
+    set(g_sec_pos, 1, 0);
+    set(g_sec_pos, 2, 0);
+    set(g_sec_pos, 3, 0);
+    // NOTE: do NOT reset g_numlab_count — pass 2 reuses labels from pass 1.
+    i = 0;
+    while i < g_nlines {
+        var lsec2: i32 = get(g_line_section, i) as i32;
+        g_pos = get(g_sec_base, lsec2) + get(g_sec_pos, lsec2);
+        process_line(i);
+        set(g_sec_pos, lsec2, g_pos - get(g_sec_base, lsec2));
+        i = i + 1;
+    }
     // Write ELF (filesz = code written, memsz = code + BSS)
     write_elf(g_code_end, total_memsz);
 

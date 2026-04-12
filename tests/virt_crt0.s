@@ -8,6 +8,7 @@
     .text
     .globl _start
 _start:
+    la   gp, __global_pointer$
     la   sp, __stack_end
     la   a0, __arena
     la   a1, __pool_sizes

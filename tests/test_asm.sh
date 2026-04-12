@@ -37,14 +37,14 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # ===== gp-relative la expansion unit test =====
-# Source layout: _start is 8 bytes, then .bss/__bss_var at physical offset 8.
-# With ; gp 0x20000800, the `la t0, __bss_var` must expand to
+# asm.tc is a section-reordering linker and always emits gp-relative la for
+# data/bss labels (with a PC-relative fallback when the 12-bit offset
+# overflows). With only `la t0, __bss_var` in text and nothing before
+# __bss_var in .bss, intra_bss = 0, so the encoded gp offset is -0x800:
 #   auipc t0, 0        (0x00000297)
 #   addi  t0, gp, -2048 (0x80018293)
-# offset = (label_addr - data_base_pos) - 0x800 = (8 - 8) - 0x800 = -0x800.
 cat > "$TMP/gp.s" << 'EOF'
 ; raw
-; gp 0x20000800
 .text
 .globl _start
 _start:
