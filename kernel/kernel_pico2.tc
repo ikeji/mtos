@@ -1,0 +1,50 @@
+// kernel_pico2.tc — kernel for Pico 2 (sequential task execution, no timer)
+
+// Assembly-defined functions (crt0_pico2.s / bin2s)
+fn kern_run_task(entry: u32, sp: u32, gp: u32, arena: u32, arena_size: i32) -> i32;
+fn _task_hello_addr() -> u32;
+fn _task_hello2_addr() -> u32;
+
+fn kputs(s: StringLiteral) -> void {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array(slen);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    sys_write(1, buf, slen);
+    delete(buf);
+    return;
+}
+
+fn run_task(entry: u32) -> i32 {
+    var task_ram: U8Array = U8Array(16384);
+    var ram_base: u32 = task_ram as u32 + 4u32;
+    var task_gp: u32 = ram_base + 0x800u32;
+    var arena_addr: u32 = ram_base + 4096u32;
+    var arena_size: i32 = 16384 - 4096;
+
+    var task_stack: U8Array = U8Array(8192);
+    var stack_top: u32 = (task_stack as u32 + 4u32 + 8192u32) & 0xFFFFFFF0u32;
+
+    var exit_code: i32 = kern_run_task(entry, stack_top, task_gp, arena_addr, arena_size);
+
+    delete(task_stack);
+    delete(task_ram);
+    return exit_code;
+}
+
+fn main() -> i32 {
+    kputs("KERN: starting\r\n");
+
+    kputs("KERN: task 1\r\n");
+    run_task(_task_hello_addr());
+    kputs("KERN: task 1 done\r\n");
+
+    kputs("KERN: task 2\r\n");
+    run_task(_task_hello2_addr());
+    kputs("KERN: task 2 done\r\n");
+
+    return 0;
+}

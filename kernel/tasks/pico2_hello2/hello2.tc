@@ -1,0 +1,11 @@
+// hello2.tc — Pico 2 guest task: prints "WORLD\r\n"
+
+fn main() -> i32 {
+    var buf: U8Array = U8Array(7);
+    set(buf, 0, 'W'); set(buf, 1, 'O'); set(buf, 2, 'R');
+    set(buf, 3, 'L'); set(buf, 4, 'D');
+    set(buf, 5, 13u8); set(buf, 6, 10u8);
+    sys_write(1, buf, 7);
+    delete(buf);
+    return 0;
+}

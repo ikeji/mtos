@@ -7,3 +7,4 @@ bcrun
 bc2asm
 .claude/
 extract-sigs
+kernel/kernel_pico2.uf2
