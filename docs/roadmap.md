@@ -121,12 +121,20 @@ C言語でフルパイプラインを実装し、動作を検証する。
 
 ## フェーズ4: プロセス管理（QEMUで開発・検証）
 
-- [ ] プロセス構造体・状態管理
-- [ ] コンテキストスイッチ（RISC-Vレジスタ保存/復元）
-- [ ] ラウンドロビンスケジューラ
-- [ ] システムコール（ecall）の枠組み
-- [ ] sys_exit, sys_write（UARTへ）の実装
-- [ ] QEMUで動作確認
+- [x] ゲストタスクを独立 raw バイナリとしてコンパイル（task_crt0.s + ecall ABI）
+- [x] bin2s.sh でタスクバイナリをカーネル .rodata に埋め込み
+- [x] ecall ハンドラ（アセンブリ）: sys_write(64) → UART、sys_exit(93) → タスク終了
+- [x] カーネルがタスク用 RAM (data+bss+arena) を確保し gp を設定
+- [x] per-task トラップフレーム（132B: 31レジスタ + mepc）
+- [x] kern_run_task: 単一タスク協調実行（カーネルコンテキスト保存/復元）
+- [x] 複数タスク逐次実行（タスク1完了→タスク2実行）
+- [x] sched_start + init_task_frame: mret でタスク起動（MPP=M-mode 設定必須）
+- [x] タイマ割り込みによるプリエンプティブ・ラウンドロビンスケジューラ
+- [x] _switch_frame によるコンテキストスイッチ（trap_restore で mscratch 切り替え）
+- [x] sched_task_exit: タスク終了時に次タスクへ切り替え、全完了でカーネル復帰
+- [x] QEMU virt で動作確認（2タスクが交互に A/B を出力）
+- [ ] Pico 2 向けカーネル crt0 (kernel/crt0_pico2.s)
+- [ ] タスクの初期化済みデータコピー（task crt0 で .data を RAM にコピー）
 
 ## フェーズ5: ファイルシステム（QEMUで開発・検証）
 
