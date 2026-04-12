@@ -80,6 +80,8 @@ _handle_ecall:
     lw   t0, 68(sp)
     li   t1, 64
     beq  t0, t1, _ecall_write
+    li   t1, 63
+    beq  t0, t1, _ecall_read
     li   t1, 93
     beq  t0, t1, _ecall_exit
     lw   t0, 128(sp)
@@ -96,6 +98,21 @@ _ecall_write:
     lw   a1, 48(s0)
     call do_uart_write__u32__i32
     sw   a0, 40(s0)
+    lw   t0, 128(s0)
+    addi t0, t0, 4
+    sw   t0, 128(s0)
+    mv   sp, s0
+    j    _trap_restore
+
+_ecall_read:
+    mv   s0, sp
+    la   gp, __global_pointer$
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    lw   a0, 44(s0)           # saved a1 = buf
+    lw   a1, 48(s0)           # saved a2 = len
+    call do_uart_read__u32__i32
+    sw   a0, 40(s0)           # return value → saved a0
     lw   t0, 128(s0)
     addi t0, t0, 4
     sw   t0, 128(s0)
@@ -299,6 +316,36 @@ do_uart_write__u32__i32:
     j    1b
 2:  mv   a0, a1
     ret
+# ===== UART read (16550 RX) =====
+# Blocks for first byte, then reads remaining non-blocking.
+    .globl do_uart_read__u32__i32
+do_uart_read__u32__i32:
+    # a0 = buf, a1 = max len. Returns bytes read.
+    li   t0, 0x10000000
+    beqz a1, 5f
+    mv   t2, a1
+    mv   t3, a0
+    # Block for first byte
+3:  lbu  t1, 5(t0)           # LSR
+    andi t1, t1, 1            # Data Ready
+    beqz t1, 3b
+    lbu  t1, 0(t0)           # RBR
+    sb   t1, 0(t3)
+    addi t3, t3, 1
+    addi t2, t2, -1
+    # Non-blocking for rest
+4:  beqz t2, 5f
+    lbu  t1, 5(t0)
+    andi t1, t1, 1
+    beqz t1, 5f
+    lbu  t1, 0(t0)
+    sb   t1, 0(t3)
+    addi t3, t3, 1
+    addi t2, t2, -1
+    j    4b
+5:  sub  a0, a1, t2
+    ret
+
     .globl do_write__i32__u32__i32
 do_write__i32__u32__i32:
     mv   a0, a1

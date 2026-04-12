@@ -150,7 +150,28 @@ do_write__i32__u32__i32:
 
     .globl do_read__i32__u32__i32
 do_read__i32__u32__i32:
-    li   a0, 0
+    # a0=fd (ignored), a1=buf, a2=len. Blocks for first byte.
+    li   t0, 0x10000000
+    beqz a2, 5f
+    mv   t2, a2
+    mv   t3, a1
+3:  lbu  t1, 5(t0)
+    andi t1, t1, 1
+    beqz t1, 3b
+    lbu  t1, 0(t0)
+    sb   t1, 0(t3)
+    addi t3, t3, 1
+    addi t2, t2, -1
+4:  beqz t2, 5f
+    lbu  t1, 5(t0)
+    andi t1, t1, 1
+    beqz t1, 5f
+    lbu  t1, 0(t0)
+    sb   t1, 0(t3)
+    addi t3, t3, 1
+    addi t2, t2, -1
+    j    4b
+5:  sub  a0, a2, t2
     ret
 
     .globl do_exit__i32

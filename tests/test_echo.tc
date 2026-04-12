@@ -1,0 +1,16 @@
+// test_echo.tc — reads 5 bytes from stdin, writes them to stdout
+// Used to test sys_read (UART input) on qemu virt.
+
+fn main() -> i32 {
+    var buf: U8Array = U8Array(5);
+    var total: i32 = 0;
+    while total < 5 {
+        var n: i32 = sys_read(0, buf, 5 - total);
+        if n > 0 {
+            sys_write(1, buf, n);
+            total = total + n;
+        }
+    }
+    delete(buf);
+    return 0;
+}

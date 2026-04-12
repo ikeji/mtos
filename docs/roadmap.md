@@ -133,8 +133,9 @@ C言語でフルパイプラインを実装し、動作を検証する。
 - [x] _switch_frame によるコンテキストスイッチ（trap_restore で mscratch 切り替え）
 - [x] sched_task_exit: タスク終了時に次タスクへ切り替え、全完了でカーネル復帰
 - [x] QEMU virt で動作確認（2タスクが交互に A/B を出力）
-- [ ] Pico 2 向けカーネル crt0 (kernel/crt0_pico2.s)
-- [ ] タスクの初期化済みデータコピー（task crt0 で .data を RAM にコピー）
+- [x] Pico 2 向けカーネル crt0 (kernel/crt0_pico2.s + build_pico2.sh → UF2)
+- [x] タスクの初期化済みデータコピー（task_crt0.s で PC 相対 la + gp 相対コピー）
+- [x] 本体なし関数宣言 (`fn foo() -> void;`) でアセンブリ関数を呼び出し可能に
 
 ## フェーズ5: ファイルシステム（QEMUで開発・検証）
 

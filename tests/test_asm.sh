@@ -166,4 +166,38 @@ else
     esac
 fi
 
+# ===== Echo test (sys_read) =====
+ECHO_TC="$SCRIPT_DIR/test_echo.tc"
+ECHO_BIN="$TMP/test_echo.bin"
+
+t0=$(time_ms)
+CRT0="$VIRT_CRT0" \
+CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
+ASM_PROLOGUE="; raw" \
+GEN2_DIR="$_GEN2_TMP" \
+    "$ROOT_DIR/compile-gen2.sh" -o "$ECHO_BIN" "$ECHO_TC" 2>/dev/null
+compile_elapsed=$(( $(time_ms) - t0 ))
+
+if [ -s "$ECHO_BIN" ]; then
+    t0=$(time_ms)
+    echo_actual=$(printf 'HELLO' | timeout 5 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -device "loader,file=$ECHO_BIN,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+    run_elapsed=$(( $(time_ms) - t0 ))
+    total=$((compile_elapsed + run_elapsed))
+    case "$echo_actual" in
+        *HELLO*)
+            report_pass "asm[virt]: echo (sys_read + sys_write)" "$total"
+            ;;
+        *)
+            report_fail_msg "asm[virt]: echo test" \
+                "expected 'HELLO', got: $(printf '%s' "$echo_actual" | head -c 80)"
+            ;;
+    esac
+else
+    report_fail_msg "asm[virt]: echo compile" "compile failed"
+fi
+
 print_results
