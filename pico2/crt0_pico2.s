@@ -72,7 +72,7 @@ _start:
     # ===== clk_peri → XOSC =====
     li   t0, 0x40010048           # CLK_PERI_CTRL
     sw   zero, 0(t0)
-    li   t1, 0x820                # ENABLE (1<<11) | AUXSRC=xosc (4<<5)
+    li   t1, 0x880                # ENABLE (1<<11) | AUXSRC=xosc (4<<5) = 0x800 | 0x80
     sw   t1, 0(t0)
 
     # ===== RESETS clear (IO_BANK0=6, PADS_BANK0=9, UART0=26) =====
