@@ -21991,6 +21991,41 @@ pars_fn_decl__SourceReader__U8Array__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
+    la   t1, g_tok
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, TK_SEMI
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_pars_fn_decl__SourceReader__U8Array__StringBuffer__i32__i32_pc318
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call lex_tok__SourceReader__U8Array
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    j    .L_pars_fn_decl__SourceReader__U8Array__StringBuffer__i32__i32_pc336
+  .L_pars_fn_decl__SourceReader__U8Array__StringBuffer__i32__i32_pc318:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22056,6 +22091,7 @@ pars_fn_decl__SourceReader__U8Array__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
+  .L_pars_fn_decl__SourceReader__U8Array__StringBuffer__i32__i32_pc336:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

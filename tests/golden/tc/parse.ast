@@ -7119,27 +7119,43 @@
         (var sb)
         (int:u8 41)
       )
-      (comment "emit_char(sb, 10u8);")
-      (call_stmt emit_char
-        (var sb)
-        (int:u8 10)
-      )
-      (comment "emit_indent(sb, indent + 1);")
-      (call_stmt emit_indent
-        (var sb)
-        (binop +
-          (var indent)
-          (int 1)
+      (comment "if g_tok == TK_SEMI {")
+      (if
+        (binop ==
+          (var g_tok)
+          (var TK_SEMI)
         )
-      )
-      (comment "pars_block(src, tok, sb, indent + 1);")
-      (call_stmt pars_block
-        (var src)
-        (var tok)
-        (var sb)
-        (binop +
-          (var indent)
-          (int 1)
+        (block
+          (comment "lex_tok(src, tok);")
+          (call_stmt lex_tok
+            (var src)
+            (var tok)
+          )
+        )
+        (block
+          (comment "emit_char(sb, 10u8);")
+          (call_stmt emit_char
+            (var sb)
+            (int:u8 10)
+          )
+          (comment "emit_indent(sb, indent + 1);")
+          (call_stmt emit_indent
+            (var sb)
+            (binop +
+              (var indent)
+              (int 1)
+            )
+          )
+          (comment "pars_block(src, tok, sb, indent + 1);")
+          (call_stmt pars_block
+            (var src)
+            (var tok)
+            (var sb)
+            (binop +
+              (var indent)
+              (int 1)
+            )
+          )
         )
       )
       (comment "emit_char(sb, 10u8);")

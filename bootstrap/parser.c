@@ -528,16 +528,18 @@ static AstNode *parse_fn_decl(Parser *p) {
         ret_ty->sval = strdup("void");
     }
 
-    AstNode *body = parse_block(p);
-
     AstNode *n = ast_node("fn", line);
     n->sval = strdup(name->sval);
-    /* children: params, ret_type, body */
     ast_add_child(n, params);
     AstNode *ret_wrapper = ast_node("ret", line);
     ast_add_child(ret_wrapper, ret_ty);
     ast_add_child(n, ret_wrapper);
-    ast_add_child(n, body);
+
+    /* body-less declaration: fn name(...) -> type; */
+    if (!match(p, TK_SEMI)) {
+        AstNode *body = parse_block(p);
+        ast_add_child(n, body);
+    }
     return n;
 }
 

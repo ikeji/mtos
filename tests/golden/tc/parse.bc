@@ -7371,6 +7371,18 @@ __L394:
   push_int 41
   call emit_char StringBuffer u8
   pop
+; if g_tok == TK_SEMI {
+  load g_tok
+  load TK_SEMI
+  eq
+  jump_ifnot __L395
+; lex_tok(src, tok);
+  load src
+  load tok
+  call lex_tok SourceReader U8Array
+  pop
+  jump __L396
+__L395:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -7392,6 +7404,7 @@ __L394:
   add
   call pars_block SourceReader U8Array StringBuffer i32
   pop
+__L396:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -7425,104 +7438,104 @@ __L394:
   load k
   load TK_U8
   eq
-  jump_ifnot __L395
+  jump_ifnot __L397
   load buf
   load bstart
   push_str 8
   call buf_set_str U8Array i32 StringLiteral
   return
-__L395:
+__L397:
 ; if k == TK_I8   { return buf_set_str(buf, bstart, "i8"); }
   load k
   load TK_I8
   eq
-  jump_ifnot __L396
+  jump_ifnot __L398
   load buf
   load bstart
   push_str 11
   call buf_set_str U8Array i32 StringLiteral
   return
-__L396:
+__L398:
 ; if k == TK_U16  { return buf_set_str(buf, bstart, "u16"); }
   load k
   load TK_U16
   eq
-  jump_ifnot __L397
+  jump_ifnot __L399
   load buf
   load bstart
   push_str 9
   call buf_set_str U8Array i32 StringLiteral
   return
-__L397:
+__L399:
 ; if k == TK_U32  { return buf_set_str(buf, bstart, "u32"); }
   load k
   load TK_U32
   eq
-  jump_ifnot __L398
+  jump_ifnot __L400
   load buf
   load bstart
   push_str 10
   call buf_set_str U8Array i32 StringLiteral
   return
-__L398:
+__L400:
 ; if k == TK_I16  { return buf_set_str(buf, bstart, "i16"); }
   load k
   load TK_I16
   eq
-  jump_ifnot __L399
+  jump_ifnot __L401
   load buf
   load bstart
   push_str 12
   call buf_set_str U8Array i32 StringLiteral
   return
-__L399:
+__L401:
 ; if k == TK_I32  { return buf_set_str(buf, bstart, "i32"); }
   load k
   load TK_I32
   eq
-  jump_ifnot __L400
+  jump_ifnot __L402
   load buf
   load bstart
   push_str 13
   call buf_set_str U8Array i32 StringLiteral
   return
-__L400:
+__L402:
 ; if k == TK_BOOL { return buf_set_str(buf, bstart, "bool"); }
   load k
   load TK_BOOL
   eq
-  jump_ifnot __L401
+  jump_ifnot __L403
   load buf
   load bstart
   push_str 14
   call buf_set_str U8Array i32 StringLiteral
   return
-__L401:
+__L403:
 ; if k == TK_VOID { return buf_set_str(buf, bstart, "void"); }
   load k
   load TK_VOID
   eq
-  jump_ifnot __L402
+  jump_ifnot __L404
   load buf
   load bstart
   push_str 15
   call buf_set_str U8Array i32 StringLiteral
   return
-__L402:
+__L404:
 ; if k == TK_IDENT {
   load k
   load TK_IDENT
   eq
-  jump_ifnot __L403
+  jump_ifnot __L405
 ; var i: i32 = 0;
   push_int 0
   store i
 ; while i < g_tok_slen { set(buf,(bstart+i),get(tok,i)); i = i + 1; }
-__L404:
+__L406:
   load i
   load g_tok_slen
   lt
-  jump_ifnot __L405
+  jump_ifnot __L407
   load buf
   load bstart
   load i
@@ -7536,12 +7549,12 @@ __L404:
   push_int 1
   add
   store i
-  jump __L404
-__L405:
+  jump __L406
+__L407:
 ; return g_tok_slen;
   load g_tok_slen
   return
-__L403:
+__L405:
 ; return 0;
   push_int 0
   return
@@ -8078,11 +8091,11 @@ __L403:
   push_int 0
   store i
 ; while i < nfields {
-__L406:
+__L408:
   load i
   load nfields
   lt
-  jump_ifnot __L407
+  jump_ifnot __L409
 ; emit_indent(sb, indent + 2);
   load sb
   load indent
@@ -8159,8 +8172,8 @@ __L406:
   push_int 1
   add
   store i
-  jump __L406
-__L407:
+  jump __L408
+__L409:
 ; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
   load sb
   load indent
@@ -8428,11 +8441,11 @@ __L407:
   push_int 0
   store k
 ; while k < nfields {
-__L408:
+__L410:
   load k
   load nfields
   lt
-  jump_ifnot __L409
+  jump_ifnot __L411
 ; emit_comment_line(sb, indent + 2, cmt);
   load sb
   load indent
@@ -8655,8 +8668,8 @@ __L408:
   push_int 1
   add
   store k
-  jump __L408
-__L409:
+  jump __L410
+__L411:
 ; emit_comment_line(sb, indent + 2, cmt);
   load sb
   load indent
@@ -9860,11 +9873,11 @@ __L409:
   push_int 0
   store ci
 ; while ci < snlen { set(sname_buf, ci, get(tok, ci)); ci = ci + 1; }
-__L410:
+__L412:
   load ci
   load snlen
   lt
-  jump_ifnot __L411
+  jump_ifnot __L413
   load sname_buf
   load ci
   load tok
@@ -9876,8 +9889,8 @@ __L410:
   push_int 1
   add
   store ci
-  jump __L410
-__L411:
+  jump __L412
+__L413:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -9935,37 +9948,37 @@ __L411:
   push_int 1
   store first
 ; while g_tok != TK_RBRACE && g_tok != TK_EOF {
-__L412:
+__L414:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L414
+  jump_ifnot __L416
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L414
+  jump_ifnot __L416
   push_int 1
-  jump __L415
-__L414:
+  jump __L417
+__L416:
   push_int 0
-__L415:
-  jump_ifnot __L413
+__L417:
+  jump_ifnot __L415
 ; if first == 0 {
   load first
   push_int 0
   eq
-  jump_ifnot __L416
+  jump_ifnot __L418
 ; if g_tok == TK_COMMA { lex_tok(src, tok); }
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L417
+  jump_ifnot __L419
   load src
   load tok
   call lex_tok SourceReader U8Array
   pop
-__L417:
-__L416:
+__L419:
+__L418:
 ; first = 0;
   push_int 0
   store first
@@ -9973,11 +9986,11 @@ __L416:
   load g_tok
   load TK_RBRACE
   eq
-  jump_ifnot __L418
+  jump_ifnot __L420
   load g_tok
   store g_tok
-  jump __L419
-__L418:
+  jump __L421
+__L420:
 ; var fname_len: i32 = g_tok_slen;
   load g_tok_slen
   store fname_len
@@ -9991,11 +10004,11 @@ __L418:
   push_int 0
   store j
 ; while j < fname_len {
-__L420:
+__L422:
   load j
   load fname_len
   lt
-  jump_ifnot __L421
+  jump_ifnot __L423
 ; set(fname_buf, j, get(tok, j));
   load fname_buf
   load j
@@ -10009,17 +10022,17 @@ __L420:
   push_int 1
   add
   store j
-  jump __L420
-__L421:
+  jump __L422
+__L423:
 ; j = 0;
   push_int 0
   store j
 ; while j < fname_len { set(fnames, (fnpos+j), get(fname_buf, j)); j = j + 1; }
-__L422:
+__L424:
   load j
   load fname_len
   lt
-  jump_ifnot __L423
+  jump_ifnot __L425
   load fnames
   load fnpos
   load j
@@ -10033,8 +10046,8 @@ __L422:
   push_int 1
   add
   store j
-  jump __L422
-__L423:
+  jump __L424
+__L425:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -10151,9 +10164,9 @@ __L423:
   push_int 1
   add
   store nfields
-__L419:
-  jump __L412
-__L413:
+__L421:
+  jump __L414
+__L415:
 ; expect_tok(TK_RBRACE, src, tok);
   load TK_RBRACE
   load src
@@ -10196,11 +10209,11 @@ __L413:
   push_int 0
   store gi
 ; while gi < nfields {
-__L424:
+__L426:
   load gi
   load nfields
   lt
-  jump_ifnot __L425
+  jump_ifnot __L427
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10223,17 +10236,17 @@ __L424:
   push_int 1
   add
   store gi
-  jump __L424
-__L425:
+  jump __L426
+__L427:
 ; var si: i32 = 0;
   push_int 0
   store si
 ; while si < nfields {
-__L426:
+__L428:
   load si
   load nfields
   lt
-  jump_ifnot __L427
+  jump_ifnot __L429
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10256,8 +10269,8 @@ __L426:
   push_int 1
   add
   store si
-  jump __L426
-__L427:
+  jump __L428
+__L429:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10751,7 +10764,7 @@ __L427:
   load g_tok
   load TK_STR_LIT
   eq
-  jump_ifnot __L428
+  jump_ifnot __L430
 ; emit_n(sb, tok, 0, g_tok_slen);
   load sb
   load tok
@@ -10764,7 +10777,7 @@ __L427:
   load tok
   call lex_tok SourceReader U8Array
   pop
-__L428:
+__L430:
 ; expect_tok(TK_SEMI, src, tok);
   load TK_SEMI
   load src
@@ -10795,11 +10808,11 @@ __L428:
   call emit_string StringBuffer StringLiteral
   pop
 ; while g_tok == TK_IMPORT {
-__L429:
+__L431:
   load g_tok
   load TK_IMPORT
   eq
-  jump_ifnot __L430
+  jump_ifnot __L432
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10817,14 +10830,14 @@ __L429:
   push_int 1
   call pars_import SourceReader U8Array StringBuffer i32
   pop
-  jump __L429
-__L430:
+  jump __L431
+__L432:
 ; while g_tok != TK_EOF {
-__L431:
+__L433:
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L432
+  jump_ifnot __L434
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10839,7 +10852,7 @@ __L431:
   load g_tok
   load TK_EXPORT
   eq
-  jump_ifnot __L433
+  jump_ifnot __L435
 ; lex_tok(src, tok);
   load src
   load tok
@@ -10853,13 +10866,13 @@ __L431:
   push_int 1
   call pars_fn_decl SourceReader U8Array StringBuffer i32 i32
   pop
-  jump __L434
-__L433:
+  jump __L436
+__L435:
 ; if g_tok == TK_FN {
   load g_tok
   load TK_FN
   eq
-  jump_ifnot __L435
+  jump_ifnot __L437
 ; pars_fn_decl(src, tok, sb, 1, 0);
   load src
   load tok
@@ -10868,13 +10881,13 @@ __L433:
   push_int 0
   call pars_fn_decl SourceReader U8Array StringBuffer i32 i32
   pop
-  jump __L436
-__L435:
+  jump __L438
+__L437:
 ; if g_tok == TK_STRUCT {
   load g_tok
   load TK_STRUCT
   eq
-  jump_ifnot __L437
+  jump_ifnot __L439
 ; pars_struct_decl(src, tok, sb, 1);
   load src
   load tok
@@ -10882,13 +10895,13 @@ __L435:
   push_int 1
   call pars_struct_decl SourceReader U8Array StringBuffer i32
   pop
-  jump __L438
-__L437:
+  jump __L440
+__L439:
 ; if g_tok == TK_VAR {
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L439
+  jump_ifnot __L441
 ; pars_var_decl(src, tok, sb, 1);
   load src
   load tok
@@ -10896,18 +10909,18 @@ __L437:
   push_int 1
   call pars_var_decl SourceReader U8Array StringBuffer i32
   pop
-  jump __L440
-__L439:
+  jump __L442
+__L441:
 ; sys_exit(1);
   push_int 1
   call sys_exit i32
   pop
+__L442:
 __L440:
 __L438:
 __L436:
+  jump __L433
 __L434:
-  jump __L431
-__L432:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10

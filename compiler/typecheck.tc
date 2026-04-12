@@ -1126,9 +1126,18 @@ fn write_indent(indent: i32, ob: StringBuffer) -> void {
 }
 
 fn write_node(nodes: I32Array, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
+    var k: i32 = n_kind(nodes, n);
+    // Skip body-less fn declarations (signature only, no codegen output)
+    if k == NK_FN {
+        var p: i32 = n_child(nodes, n);       // params
+        var r: i32 = -1;
+        if p >= 0 { r = n_sib(nodes, p); }    // ret
+        var b: i32 = -1;
+        if r >= 0 { b = n_sib(nodes, r); }    // body
+        if b < 0 { return; }
+    }
     write_indent(indent, ob);
     emit_char(ob, '(');
-    var k: i32 = n_kind(nodes, n);
     emit_kind(k, ob);
 
     var tass: i32 = n_tass(nodes, n);

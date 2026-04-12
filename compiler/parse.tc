@@ -1098,10 +1098,15 @@ fn pars_fn_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32, 
     emit_indent(sb, indent + 1);
     emit_char(sb, ')');  // close (ret)
 
-    // body block
-    emit_char(sb, 10u8);
-    emit_indent(sb, indent + 1);
-    pars_block(src, tok, sb, indent + 1);
+    // body block (or ; for declaration-only)
+    if g_tok == TK_SEMI {
+        lex_tok(src, tok);
+        // No body — declaration only (extern function in assembly)
+    } else {
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 1);
+        pars_block(src, tok, sb, indent + 1);
+    }
 
     emit_char(sb, 10u8);
     emit_indent(sb, indent);

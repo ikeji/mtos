@@ -597,6 +597,10 @@ static void check_block(TypeEnv *e, AstNode *block) {
 static void check_fn(TypeEnv *e, AstNode *node) {
     AstNode *params = node->children[0];
     AstNode *ret_node = node->children[1];
+
+    /* body-less declaration (fn name(...) -> type;) — signature only */
+    if (node->nchildren < 3) return;
+
     AstNode *body = node->children[2];
 
     const char *ret_type = "void";
@@ -705,6 +709,16 @@ AstNode *typecheck(AstNode *program, const char *filename) {
         }
     }
 
+    /* remove body-less fn declarations from output */
+    { int w = 0;
+      for (int i = 0; i < program->nchildren; i++) {
+          AstNode *d = program->children[i];
+          if (strcmp(d->kind, "fn") == 0 && d->nchildren < 3) continue;
+          program->children[w++] = d;
+      }
+      program->nchildren = w;
+    }
+
     return program;
 }
 
@@ -758,6 +772,16 @@ AstNode *typecheck_with_imports(AstNode *program, const char *filename, AstNode 
                 check_expr(&e, d->children[1]);
             }
         }
+    }
+
+    /* remove body-less fn declarations from output */
+    { int w = 0;
+      for (int i = 0; i < program->nchildren; i++) {
+          AstNode *d = program->children[i];
+          if (strcmp(d->kind, "fn") == 0 && d->nchildren < 3) continue;
+          program->children[w++] = d;
+      }
+      program->nchildren = w;
     }
 
     return program;
