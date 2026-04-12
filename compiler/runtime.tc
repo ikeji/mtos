@@ -6,7 +6,13 @@
 //
 //   bss_start
 //   +0     bucket_table[10]   40 bytes  — free list heads for 10 size classes
-//   +40    heap region                   — managed by large free list
+//   +40    stat_live[10]      40 bytes  — per-bucket current live count
+//   +80    stat_peak[10]      40 bytes  — per-bucket peak live count
+//   +120   stat_total[10]     40 bytes  — per-bucket cumulative alloc count
+//   +160   large_live          4 bytes  — large-block current live count
+//   +164   large_peak          4 bytes  — large-block peak live count
+//   +168   large_total         4 bytes  — large-block cumulative alloc count
+//   +172   heap region                  — managed by large free list
 //   ...
 //   bss_start + bss_size
 //
@@ -35,11 +41,47 @@ var KM_NBUCKETS: i32 = 10;
 var g_bucket_base: u32 = 0u32;
 var g_free_list: u32 = 0u32;
 
+var KM_STAT_OFFSET: i32 = 40;
+var KM_LARGE_STAT_OFFSET: i32 = 160;
+var KM_HEAP_OFFSET: i32 = 172;
+
 fn km_align4(n: i32) -> i32 { return (n + 3) & (0 - 4); }
 fn km_align_page(n: i32) -> i32 { return (n + 4095) & (0 - 4096); }
 
 fn bk_get(i: i32) -> u32 { return peek32(g_bucket_base + (i * 4) as u32); }
 fn bk_set(i: i32, v: u32) -> void { poke32(g_bucket_base + (i * 4) as u32, v); return; }
+
+fn stat_addr(bucket: i32, field: i32) -> u32 {
+    return g_bucket_base + (KM_STAT_OFFSET + field * 40 + bucket * 4) as u32;
+}
+fn stat_inc_bucket(bucket: i32) -> void {
+    var live_a: u32 = stat_addr(bucket, 0);
+    var peak_a: u32 = stat_addr(bucket, 1);
+    var total_a: u32 = stat_addr(bucket, 2);
+    var live: i32 = peek32(live_a) as i32 + 1;
+    poke32(live_a, live as u32);
+    poke32(total_a, (peek32(total_a) as i32 + 1) as u32);
+    if live > peek32(peak_a) as i32 { poke32(peak_a, live as u32); }
+    return;
+}
+fn stat_dec_bucket(bucket: i32) -> void {
+    var live_a: u32 = stat_addr(bucket, 0);
+    poke32(live_a, (peek32(live_a) as i32 - 1) as u32);
+    return;
+}
+fn stat_inc_large() -> void {
+    var base: u32 = g_bucket_base + KM_LARGE_STAT_OFFSET as u32;
+    var live: i32 = peek32(base) as i32 + 1;
+    poke32(base, live as u32);
+    poke32(base + 8u32, (peek32(base + 8u32) as i32 + 1) as u32);
+    if live > peek32(base + 4u32) as i32 { poke32(base + 4u32, live as u32); }
+    return;
+}
+fn stat_dec_large() -> void {
+    var base: u32 = g_bucket_base + KM_LARGE_STAT_OFFSET as u32;
+    poke32(base, (peek32(base) as i32 - 1) as u32);
+    return;
+}
 
 fn size_to_bucket(size: i32) -> i32 {
     if size <= 4 { return 0; }
@@ -197,11 +239,14 @@ fn kmalloc(size: i32) -> u32 {
             bk_set(bkt, peek32(head));
             var total: i32 = bucket_user_size(bkt) + KM_HDR;
             poke32(head, total as u32);
+            stat_inc_bucket(bkt);
             return head + KM_HDR as u32;
         }
         // バケット空 → ヒープから切り出し
         var total: i32 = bucket_user_size(bkt) + KM_HDR;
-        return large_alloc(total);
+        var ret: u32 = large_alloc(total);
+        if ret != 0u32 { stat_inc_bucket(bkt); }
+        return ret;
     }
     // バケット範囲外 → large_alloc
     var need: i32;
@@ -211,7 +256,9 @@ fn kmalloc(size: i32) -> u32 {
         need = km_align4(size + KM_HDR);
         if need < KM_MIN_BLK { need = KM_MIN_BLK; }
     }
-    return large_alloc(need);
+    var ret: u32 = large_alloc(need);
+    if ret != 0u32 { stat_inc_large(); }
+    return ret;
 }
 
 // kfree — kmalloc で確保したポインタを解放する。
@@ -231,22 +278,25 @@ fn kfree(ptr: u32) -> void {
         // バケットフリーリストに push (O(1))
         poke32(blk, bk_get(bkt));
         bk_set(bkt, blk);
+        stat_dec_bucket(bkt);
         return;
     }
     // 大ブロック → ヒープに返却 (隣接結合)
     large_free(blk, total);
+    stat_dec_large();
     return;
 }
 
 export fn __runtime_init(bss: u32, bss_size: i32) -> void {
     g_bucket_base = bss;
+    // bucket_table + stat tables + large stats をゼロ初期化
     var i: i32 = 0;
-    while i < KM_NBUCKETS {
-        poke32(bss + (i * 4) as u32, 0u32);
-        i = i + 1;
+    while i < KM_HEAP_OFFSET {
+        poke32(bss + i as u32, 0u32);
+        i = i + 4;
     }
-    var heap: u32 = bss + (KM_NBUCKETS * 4) as u32;
-    var hsz: i32 = bss_size - KM_NBUCKETS * 4;
+    var heap: u32 = bss + KM_HEAP_OFFSET as u32;
+    var hsz: i32 = bss_size - KM_HEAP_OFFSET;
     hsz = hsz & (0 - 4);
     if hsz >= KM_MIN_BLK {
         poke32(heap, hsz as u32);
@@ -348,7 +398,70 @@ export fn sys_read(fd: i32, buf: U8Array, slen: i32) -> i32 {
     return total;
 }
 
-export fn sys_exit(code: i32) -> void { do_exit(code); return; }
+// i32 を 10 進文字列に変換し stderr に書く (改行なし)
+fn write_i32_stderr(v: i32) -> void {
+    // 16 バイトのスタックバッファ (peek/poke で sp 付近に書く代わりに
+    // グローバル的に g_bucket_base 末尾の未使用域を借りる…のは危険なので
+    // ここでは小さい U8Array を使う。ダンプは終了直前なので問題ない)
+    if v == 0 {
+        do_write(2, "0" as u32 + 4u32, 1);
+        return;
+    }
+    var neg: i32 = 0;
+    if v < 0 { neg = 1; v = 0 - v; }
+    // 桁を逆順に抽出
+    var buf: U8Array = U8Array(16);
+    var n: i32 = 0;
+    while v > 0 {
+        poke8(buf as u32 + 4u32 + n as u32, (48 + v % 10) as u8);
+        n = n + 1;
+        v = v / 10;
+    }
+    if neg == 1 { do_write(2, "-" as u32 + 4u32, 1); }
+    var i: i32 = n - 1;
+    while i >= 0 {
+        do_write(2, buf as u32 + 4u32 + i as u32, 1);
+        i = i - 1;
+    }
+    delete_impl(buf as u32);
+    return;
+}
+
+fn write_str_stderr(s: StringLiteral) -> void {
+    do_write(2, s as u32 + 4u32, len(s));
+    return;
+}
+
+fn km_dump_stats() -> void {
+    write_str_stderr("\nkmalloc stats (bucket: peak/total):\n");
+    var i: i32 = 0;
+    while i < KM_NBUCKETS {
+        var peak: i32 = peek32(stat_addr(i, 1)) as i32;
+        var total: i32 = peek32(stat_addr(i, 2)) as i32;
+        if peak == 0 && total == 0 { i = i + 1; continue; }
+        write_str_stderr("  ");
+        write_i32_stderr(bucket_user_size(i));
+        write_str_stderr(": ");
+        write_i32_stderr(peak);
+        write_str_stderr("/");
+        write_i32_stderr(total);
+        write_str_stderr("\n");
+        i = i + 1;
+    }
+    var base: u32 = g_bucket_base + KM_LARGE_STAT_OFFSET as u32;
+    var lp: i32 = peek32(base + 4u32) as i32;
+    var lt: i32 = peek32(base + 8u32) as i32;
+    if lp > 0 || lt > 0 {
+        write_str_stderr("  large: ");
+        write_i32_stderr(lp);
+        write_str_stderr("/");
+        write_i32_stderr(lt);
+        write_str_stderr("\n");
+    }
+    return;
+}
+
+export fn sys_exit(code: i32) -> void { km_dump_stats(); do_exit(code); return; }
 
 // ===== Print helpers =====
 export fn print_i32(v: i32) -> void {
