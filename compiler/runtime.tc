@@ -2,6 +2,24 @@
 // kmalloc/kfree allocator + builtins. Uses peek/poke for low-level memory access.
 // Syscalls via do_write/do_read/do_exit stubs in crt0.s.
 //
+// BSS arena layout (__runtime_init receives bss_start and bss_size):
+//
+//   bss_start
+//   +0     bucket_table[10]   40 bytes  — free list heads for 10 size classes
+//   +40    heap region                   — managed by large free list
+//   ...
+//   bss_start + bss_size
+//
+//   bucket_table[i] (u32): head of singly-linked free list for bucket i.
+//   Each free node is an in-place block whose first 4 bytes point to next.
+//
+//   heap region: one or more free/allocated blocks, each prefixed by a
+//   4-byte header storing the block's total size (header + user data).
+//
+//   Allocated block:  [total_size: u32] [user data ...]
+//   Free block:       [total_size: u32] [next_free: u32] [unused ...]
+//   Bucket free node: [next_free: u32]  (size implicit from bucket index)
+//
 // Allocator design:
 //   10 small-size buckets (4,8,16,32,64,128,256,512,1024,2048) with per-bucket
 //   free lists for O(1) alloc/free. Buckets are NOT pre-populated; blocks are
