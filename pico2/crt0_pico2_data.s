@@ -76,5 +76,8 @@ __pools_ready:
     .globl __arena
 __arena:
     .space 262144                # 256 KB
-    .globl __stack_end
-__stack_end:
+
+    # NOTE: no __stack_end here. crt0_pico2.s sets sp with a literal
+    # `li sp, 0x20082000` (SRAM top) because stack lives above the
+    # zero-init region, far outside the gp-relative ±2KB window that
+    # any `la sp, __stack_end` would need.
