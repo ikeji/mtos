@@ -1,0 +1,69 @@
+import "../os/kmalloc.tc";
+
+fn assert(cond: bool, code: i32) -> void {
+    if !cond {
+        print_i32(code);
+        sys_exit(1);
+    }
+    return;
+}
+
+fn main() -> i32 {
+    var heap: U8Array = U8Array(65536);
+    var base: u32 = heap as u32 + 4u32;
+    km_init(base, 65536);
+
+    // 1: basic alloc
+    var p1: u32 = kmalloc(100);
+    assert(p1 != 0u32, 0 - 1);
+
+    // 2: write/read
+    poke32(p1, 12345u32);
+    assert(peek32(p1) as i32 == 12345, 0 - 2);
+
+    // 3: multiple allocs don't overlap
+    var p2: u32 = kmalloc(200);
+    var p3: u32 = kmalloc(300);
+    assert(p2 != 0u32, 0 - 3);
+    assert(p3 != 0u32, 0 - 30);
+    assert(p2 != p1, 0 - 31);
+    assert(p3 != p2, 0 - 32);
+
+    // 4: free middle, realloc fits
+    kfree(p2);
+    var p4: u32 = kmalloc(200);
+    assert(p4 != 0u32, 0 - 4);
+
+    // 5: free all, coalesce, alloc big
+    kfree(p1);
+    kfree(p3);
+    kfree(p4);
+    var p5: u32 = kmalloc(60000);
+    assert(p5 != 0u32, 0 - 5);
+    kfree(p5);
+
+    // 6: page-aligned alloc (>= 4096)
+    var p6: u32 = kmalloc(9000);
+    assert(p6 != 0u32, 0 - 6);
+    // 9000 rounds up to 12288 (3 pages)
+    // after free, remaining should be 65536 - 12288 - 4(hdr) = 53244
+    kfree(p6);
+
+    // 7: many small allocs
+    var i: i32 = 0;
+    var ok: bool = true;
+    while i < 100 {
+        var p: u32 = kmalloc(32);
+        if p == 0u32 { ok = false; }
+        i = i + 1;
+    }
+    assert(ok, 0 - 7);
+
+    // 8: OOM returns 0
+    var big: u32 = kmalloc(100000);
+    assert(big == 0u32, 0 - 8);
+
+    print_i32(0);
+    delete(heap);
+    return 0;
+}

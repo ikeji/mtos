@@ -42,6 +42,7 @@ run_suite "$SCRIPT_DIR/test_golden_examples.sh"
 run_suite "$SCRIPT_DIR/test_gen3.sh"
 run_suite "$SCRIPT_DIR/test_import.sh"
 run_suite "$SCRIPT_DIR/test_asm.sh"
+run_suite "$SCRIPT_DIR/test_os.sh"
 
 ELAPSED=$(( $(time_ms) - SUITE_TIME_START ))
 
