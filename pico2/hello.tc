@@ -1,0 +1,21 @@
+// pico2/hello.tc — minimal TC hello world for Pico 2.
+// Uses runtime.tc's sys_write → do_write; the Pico 2 crt0 routes
+// do_write bytes to UART0 (PL011 @ 0x40070000).
+
+fn to_buf(str: StringLiteral) -> U8Array {
+    var n: i32 = len(str);
+    var buf: U8Array = U8Array(n);
+    var i: i32 = 0;
+    while i < n {
+        set(buf, i, get(str, i));
+        i = i + 1;
+    }
+    return buf;
+}
+
+fn main() -> i32 {
+    var buf: U8Array = to_buf("Hello, Pico 2!\r\n");
+    sys_write(1, buf, 16);
+    delete(buf);
+    return 0;
+}

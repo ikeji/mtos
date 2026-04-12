@@ -703,13 +703,18 @@ fn process_line(line_idx: i32) -> void {
     if len == 0 { return; }
     if get(g_line_buf, 0) == '#' || get(g_line_buf, 0) == ';' { return; }
 
-    // Check for label (colon not inside quotes)
+    // Check for label (colon not inside quotes or a comment).
+    // Stop at '#' or ';' — both start end-of-line comments in the asm
+    // flavors we accept, and a colon inside the comment body must not
+    // be mistaken for a label delimiter.
     var colon_pos: i32 = 0 - 1;
     var in_quote: i32 = 0;
     i = 0;
     while i < len {
-        if get(g_line_buf, i) == '"' { in_quote = 1 - in_quote; }
-        if get(g_line_buf, i) == ':' && in_quote == 0 { colon_pos = i; i = len; }  // break
+        var cc: u8 = get(g_line_buf, i);
+        if cc == '"' { in_quote = 1 - in_quote; }
+        if in_quote == 0 && (cc == '#' || cc == ';') { i = len; }
+        else if cc == ':' && in_quote == 0 { colon_pos = i; i = len; }
         else { i = i + 1; }
     }
     if colon_pos >= 0 {
