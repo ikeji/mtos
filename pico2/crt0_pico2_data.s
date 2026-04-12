@@ -75,9 +75,13 @@ __pools_ready:
     .space 4
     .globl __arena
 __arena:
-    .space 262144                # 256 KB
-
-    # NOTE: no __stack_end here. crt0_pico2.s sets sp with a literal
-    # `li sp, 0x20082000` (SRAM top) because stack lives above the
-    # zero-init region, far outside the gp-relative ±2KB window that
-    # any `la sp, __stack_end` would need.
+    # No `.space` after __arena: nothing follows, so there's no label
+    # position that would depend on it. The arena's actual backing
+    # memory is the SRAM region crt0_pico2.s zeros (0x20000000..
+    # 0x20080000); pool_init grows the free list upward from __arena
+    # using __pool_sizes[]/__pool_counts[] and writes only into that
+    # already-zero SRAM, so asm.tc doesn't need to reserve bytes here.
+    #
+    # __stack_end is also omitted: crt0_pico2.s sets sp with a literal
+    # `li sp, 0x20082000` (SRAM top), which lives above the zero-init
+    # region and would be out of gp's ±2KB window anyway.
