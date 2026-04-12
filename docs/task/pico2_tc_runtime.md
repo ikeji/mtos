@@ -50,7 +50,7 @@ ELF 出力時の `load_vaddr` を Pico 2 用に 0x10000000 にできるように
 `load_vaddr` 自体は出力に現れないが、IMAGE_DEF の絶対値ベタ書きと合致させる
 ためのドキュメンタリ用途として保持。
 
-### 5. asm.tc に gp 相対参照を追加
+### 5a. asm.tc に gp 相対参照を追加
 
 セクション情報をラベルに持たせ、`la rd, sym` のうち `sym` が `.data` / `.bss` セクション
 にあるものは pass 2 で `addi rd, gp, (sym_addr - gp_addr)` に展開する。
@@ -62,7 +62,7 @@ ELF 出力時の `load_vaddr` を Pico 2 用に 0x10000000 にできるように
 配列の中身は a0 経由で渡された後はデータベース不要。よって la の先頭アドレスが gp 相対 12-bit
 に収まれば十分。
 
-### 4. SRAM レイアウト (crt0_pico2.s に固定アドレス定義)
+### 5b. SRAM レイアウト (crt0_pico2.s に固定アドレス定義)
 
 ```
 0x20000000 ── data セグメント先頭 ──
@@ -80,6 +80,113 @@ ELF 出力時の `load_vaddr` を Pico 2 用に 0x10000000 にできるように
 
 `__pool_sizes` / `__pool_counts` は不変の定数なので `.rodata` (Flash) に置いて
 `la` で PC 相対参照する (Pico 2 用にプール構成は縮小: 16/32/64/128/256/512/1024 など)。
+
+### 5c. 環境別メモリマップ
+
+asm.tc は常に text → rodata → data → bss の順にセクションを物理配置するが、
+その後のランタイム配置はターゲットごとに異なる。以下は hello2 相当をビルドした
+ときの典型的な配置。
+
+#### Linux (qemu-riscv32 user mode)
+
+ELF ローダが 1 つの LOAD セグメントとして全体を連続メモリにマップする。
+text/rodata/data/bss は物理的にも連続。
+
+```
+                           ┌────────────────────────────────────┐
+0x00010000 (load_vaddr) →  │ ELF header (84 B)                  │  filesz
+0x00010054                 │ text (code, PIC relative jumps)    │   +
+                           │ rodata (__tc_strobj…)              │  memsz
+                           │ data (runtime globals, NPOOLS…)    │
+                           │ bss (__pool_free … __arena …)      │
+                           │ __stack_end                        │ ← sp
+                           └────────────────────────────────────┘
+```
+
+- `p_vaddr` = 0x10000、`e_entry` = 0x10054 + offset(_start)
+- `la sp, __stack_end` は PC 相対フォールバック (data/bss span が広い)
+- `la gp, __global_pointer$` は text → text の PC 相対 (gp = 0x10054 + data_base + 0x800)
+- `do_write` は Linux syscall (a7=64 + ecall)、`do_exit` は a7=93
+
+#### qemu-system-riscv32 -M virt
+
+`-device loader,file=bin,addr=0x80000000` で raw bin を RAM 0x80000000 に
+直接ロード。CPU は 0x80000000 から実行開始。ELF ヘッダは無し。
+
+```
+                           ┌────────────────────────────────────┐
+0x80000000 ←ロード先      │ text (code)                         │ raw bin
+                           │ rodata                              │
+                           │ data                                │
+                           │ bss (filesz に含まれない、0 init)   │
+                           │ __stack_end                         │ ← sp
+                           └────────────────────────────────────┘
+                                …
+0x10000000 (MMIO)         │ 16550 UART (1 バイト書くと stdout)  │
+0x00100000 (MMIO)         │ SiFive test finisher (0x5555=exit0) │
+```
+
+- text 開始 = 0x80000000
+- `la gp, __global_pointer$` → gp = 0x80000000 + data_base + 0x800
+- `do_write` は `sb t1, 0(0x10000000)` で UART に出力
+- `do_exit(0)` は SiFive test MMIO に 0x5555 を書いて qemu 終了
+
+#### Pico 2 (RP2350, 実機 / picotool)
+
+text/rodata/data の initializer は Flash XIP (0x10000000~) に焼かれ、
+bss と動的 data コピー先は SRAM (0x20000000~) に確保される。
+
+```
+┌─ Flash (0x10000000, 4 MB) ──────────────┐
+│ 0x10000000  IMAGE_DEF block (32 B)       │ picobin ブロック (boot ROM が読む)
+│ 0x10000020  _start                       │ ← entry point
+│             crt0_pico2 text + user text  │
+│             rodata (__pool_sizes, …)     │
+│             data initializer (Flash LMA) │ ← crt0 が SRAM にコピー
+└──────────────────────────────────────────┘
+
+┌─ SRAM (0x20000000, 520 KB) ─────────────┐
+│ 0x20000000  data セクション (RW コピー先)│ ← __data_start
+│   data_size …                            │
+│ 0x200000xx  bss セクション               │ ← __bss_start
+│   __pool_free / __pool_base / __pool_end │
+│   __pools_ready / __arena (256 KB)       │
+│   …                                      │ ← __bss_end / __stack_end (== sp init)
+│ 0x20082000  (SRAM 末尾 = 初期 SP)        │
+└──────────────────────────────────────────┘
+
+┌─ MMIO ──────────────────────────────────┐
+│ 0x40048000  XOSC                         │
+│ 0x40010048  CLK_PERI_CTRL                │
+│ 0x40020000  RESETS                       │
+│ 0x40028000  IO_BANK0 (GPIO funcsel)      │
+│ 0x4003A000  PADS_BANK0                   │
+│ 0x40070000  UART0 (PL011)                │
+│ 0xD0000000  SIO (CPUID)                  │
+└──────────────────────────────────────────┘
+```
+
+- `gp` は crt0_pico2.s が `li gp, 0x20000800` で直接セット
+  (`__global_pointer$` は Flash 側のアドレスを指すので Pico 2 では使わない)
+- `la sp, __stack_end` は gp 相対 (bss 内、offset が ±2KB に収まる前提)
+- crt0_pico2.s は起動時に:
+  1. core1 park (CPUID チェック)
+  2. SP = 0x20082000 (固定)
+  3. XOSC / CLK_PERI / RESETS / GPIO / UART0 初期化 (hello.s と同じ)
+  4. gp = 0x20000800
+  5. `.data` の初期値を Flash (LMA) → SRAM (VMA) にコピー (asm.tc が提供する
+     `__data_lma_start` / `__data_start` / `__data_end` 記号を使う)
+  6. `.bss` を 0 クリア (`__bss_start` / `__bss_end`)
+  7. `__runtime_init` に pool metadata アドレスを渡す
+  8. `main()` 呼び出し
+- `do_write` は UART0 に PL011 プロトコルでバイト送信
+- `do_exit` は無限ループ (Pico 2 に「qemu 終了」相当はない)
+
+**Pico 2 固有の制約**: data/bss 全体のサイズは gp ±2KB に収まる必要がある
+(`la` が gp 相対で届く範囲)。hello.tc レベルなら data は数 KB、bss は ~260 KB
+だが、ラベル自体の位置 (`__arena`, `__pool_free` 等) は先頭付近に集中するので
+±2KB 内に収まる。大きなプログラム (parse.tc 等) を Pico 2 で動かすには将来
+`la` の 12 バイト形式 (`lui + addi + add gp`) への拡張が必要。
 
 ### 6. ELF ヘッダなし raw bin → UF2
 
