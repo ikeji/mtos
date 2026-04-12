@@ -50,3 +50,11 @@ echo "${PREFIX}_end:"
 echo "    .globl ${PREFIX}_size"
 echo "${PREFIX}_size:"
 echo "    .word $SIZE"
+
+# Assembly function returning the start address (callable from TC)
+# TC declaration: fn PREFIX_addr() -> u32;
+echo "    .text"
+echo "    .globl ${PREFIX}_addr"
+echo "${PREFIX}_addr:"
+echo "    la   a0, ${PREFIX}_start"
+echo "    ret"

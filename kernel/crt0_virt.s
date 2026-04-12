@@ -203,10 +203,10 @@ set_switch_frame__u32:
     sw   a0, 0(t0)
     ret
 
-# ===== init_task_frame(frame, id, sp, gp, arena, arena_size) =====
-    .globl init_task_frame__u32__i32__u32__u32__u32__i32
-init_task_frame__u32__i32__u32__u32__u32__i32:
-    # a0=frame, a1=task_id, a2=sp, a3=gp, a4=arena, a5=arena_size
+# ===== init_task_frame(frame, entry, sp, gp, arena, arena_size) =====
+    .globl init_task_frame__u32__u32__u32__u32__u32__i32
+init_task_frame__u32__u32__u32__u32__u32__i32:
+    # a0=frame, a1=entry, a2=sp, a3=gp, a4=arena, a5=arena_size
     # Zero the frame (132 bytes = 33 words)
     mv   t0, a0
     li   t1, 132
@@ -215,21 +215,11 @@ init_task_frame__u32__i32__u32__u32__u32__i32:
     addi t0, t0, 4
     bltu t0, t1, 1b
     # Set registers in frame
+    sw   a1, 128(a0)          # mepc = entry
     sw   a2,   8(a0)          # sp
     sw   a3,  12(a0)          # gp
     sw   a4,  40(a0)          # a0 = arena addr
     sw   a5,  44(a0)          # a1 = arena size
-    # mepc = task entry (by task_id)
-    li   t0, 1
-    beq  a1, t0, 2f
-    li   t0, 2
-    beq  a1, t0, 3f
-    ret
-2:  la   t0, _task_hello_start
-    sw   t0, 128(a0)
-    ret
-3:  la   t0, _task_hello2_start
-    sw   t0, 128(a0)
     ret
 
 # ===== sched_start(frame: u32) =====
@@ -263,9 +253,10 @@ sched_start__u32:
     # Restore from frame via _trap_restore
     j    _trap_restore
 
-# ===== kern_run_task (kept for backward compat) =====
-    .globl kern_run_task__i32__u32__u32__u32__i32
-kern_run_task__i32__u32__u32__u32__i32:
+# ===== kern_run_task(entry: u32, sp: u32, gp: u32, arena: u32, arena_size: i32) -> i32 =====
+    .globl kern_run_task__u32__u32__u32__u32__i32
+kern_run_task__u32__u32__u32__u32__i32:
+    # a0=entry, a1=sp, a2=gp, a3=arena, a4=arena_size
     la   t0, _kern_save
     sw   ra,  0(t0)
     sw   sp,  4(t0)
@@ -282,26 +273,11 @@ kern_run_task__i32__u32__u32__u32__i32:
     sw   s10, 48(t0)
     sw   s11, 52(t0)
     sw   gp, 56(t0)
-    mv   s0, a0
+    mv   t0, a0               # entry
     mv   sp, a1
     mv   gp, a2
     mv   a0, a3
     mv   a1, a4
-    li   t0, 1
-    beq  s0, t0, _run_task_1
-    li   t0, 2
-    beq  s0, t0, _run_task_2
-    la   t0, _kern_save
-    lw   ra,  0(t0)
-    lw   sp,  4(t0)
-    lw   gp, 56(t0)
-    li   a0, -1
-    ret
-_run_task_1:
-    la   t0, _task_hello_start
-    jr   t0
-_run_task_2:
-    la   t0, _task_hello2_start
     jr   t0
 
 # ===== UART =====
