@@ -66,4 +66,31 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1; then
     fi
 fi
 
+# --- kernel_ecall: embedded task binary with ecall syscalls ---
+if command -v qemu-system-riscv32 >/dev/null 2>&1; then
+    t0=$(time_ms)
+    GEN2_DIR="$_GEN2_TMP" \
+        "$ROOT_DIR/kernel/build_virt.sh" -o "$TMP/kernel_virt" 2>/dev/null
+    if [ -s "$TMP/kernel_virt" ]; then
+        kv_out=$(timeout 5 qemu-system-riscv32 -smp 1 -nographic \
+            -serial mon:stdio --no-reboot -m 128 \
+            -machine virt,aclint=on -bios none \
+            -device "loader,file=$TMP/kernel_virt,addr=0x80000000" \
+            -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+        elapsed=$(( $(time_ms) - t0 ))
+        case "$kv_out" in
+            *"HELLO"*"KERN: task 1 done"*)
+                report_pass "kernel_ecall: embedded task runs via ecall" "$elapsed"
+                ;;
+            *)
+                report_fail_msg "kernel_ecall" \
+                    "expected HELLO + task done, got: $(printf '%s' "$kv_out" | head -c 120)"
+                ;;
+        esac
+    else
+        elapsed=$(( $(time_ms) - t0 ))
+        report_fail_msg "kernel_ecall" "build failed"
+    fi
+fi
+
 print_results

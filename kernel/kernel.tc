@@ -1,0 +1,36 @@
+// kernel.tc — minimal kernel: run embedded task binary via ecall interface
+
+fn kputs(s: StringLiteral) -> void {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array(slen);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    sys_write(1, buf, slen);
+    delete(buf);
+    return;
+}
+
+fn main() -> i32 {
+    kputs("KERN: starting\n");
+
+    // Allocate stack + arena for task
+    var stack_size: i32 = 65536;
+    var arena_size: i32 = 65536;
+    var task_stack: U8Array = U8Array(stack_size);
+    var task_arena: U8Array = U8Array(arena_size);
+    var stack_base: u32 = task_stack as u32 + 4u32;
+    var task_sp: u32 = (stack_base + stack_size as u32) & 0xFFFFFFF0u32;
+    var arena_addr: u32 = task_arena as u32 + 4u32;
+
+    // Run task 1 (hello)
+    kputs("KERN: running task 1\n");
+    var exit_code: i32 = kern_run_task(1, task_sp, arena_addr, arena_size);
+    kputs("KERN: task 1 done\n");
+
+    delete(task_arena);
+    delete(task_stack);
+    return 0;
+}

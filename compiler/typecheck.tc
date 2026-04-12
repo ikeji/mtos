@@ -550,8 +550,13 @@ fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
     reg_fn1(strtab, fntab, "csr_write_mie", "u32", "void");
     reg_fn0(strtab, fntab, "csr_read_mcause", "u32");
 
-    // Kernel primitives (implemented in virt_crt0.s)
+    // Kernel primitives (implemented in crt0 assembly)
     reg_fn2(strtab, fntab, "kern_launch_task", "u32", "i32", "void");
+    var krt_pts: StringArray = StringArray(4);
+    set(krt_pts, 0, "i32"); set(krt_pts, 1, "u32");
+    set(krt_pts, 2, "u32"); set(krt_pts, 3, "i32");
+    reg_fn(strtab, fntab, "kern_run_task", krt_pts, 4, "i32");
+    delete(krt_pts);
 
     reg_array_builtins(strtab, fntab, "U8Array", "u8");
     reg_array_builtins(strtab, fntab, "U16Array", "u16");
