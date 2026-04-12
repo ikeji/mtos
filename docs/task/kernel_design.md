@@ -3,24 +3,25 @@
 ## 概要
 
 TC 言語で書かれたカーネルが、独立にコンパイルされたゲストタスク（raw バイナリ）
-を起動・管理する。カーネルは qemu virt と RP2350 (Pico 2) の両方で動作する。
+を起動・管理する。タイマ割り込みによるプリエンプティブ・ラウンドロビンスケジューラ
+で複数タスクを並行実行する。現在は qemu virt で動作確認済み。
 
 ## ディレクトリ構成
 
 ```
 kernel/
-  kernel.tc           カーネル本体（タスク管理、syscall ハンドラ、スケジューラ）
-  crt0_virt.s         virt 向け crt0（16550 UART、SiFive test exit）
-  crt0_pico2.s        Pico 2 向け crt0（XOSC/UART0 初期化、IMAGE_DEF）
-  crt0_data.s         共通 BSS（__arena、トラップフレーム等）
-  build_virt.sh       virt 向けビルドスクリプト
-  build_pico2.sh      Pico 2 向けビルドスクリプト
+  kernel.tc           カーネル本体（スケジューラ、trap handler、タスク管理）
+  crt0_virt.s         virt 向け crt0（UART、trap entry/exit、ecall handler、タスク起動）
+  crt0_data.s         共通 BSS（__arena、_trap_frame、_kern_save、_switch_frame）
+  build_virt.sh       virt 向けビルドスクリプト（タスクビルド → bin2s → カーネルビルド）
   bin2s.sh            raw バイナリ → .s データ変換スクリプト
   tasks/
+    task_crt0.s       タスク用 crt0（ecall ベース syscall）
+    task_data.s       タスク用 BSS（最小 __arena ラベルのみ）
     hello/
-      hello.tc         ゲストタスク: hello world
-      task_crt0.s      タスク用 crt0（ecall ベース syscall）
-      task_data.s      タスク用 BSS/data（最小限）
+      hello.tc        タスク1: "A" を5回出力
+    hello2/
+      hello2.tc       タスク2: "B" を5回出力
 ```
 
 ## アーキテクチャ
@@ -30,236 +31,162 @@ kernel/
 ```
 +--------------------------------------------------+
 |  カーネル (M-mode)                                 |
-|  - trap handler (割り込み + ecall)                  |
-|  - syscall dispatcher (write, exit)               |
-|  - タスク管理 (起動、停止)                          |
+|  - trap_handler (TC): タイマ割り込み → ラウンドロビン |
+|  - ecall handler (asm): sys_write → UART、         |
+|    sys_exit → sched_task_exit → 次タスク or 復帰   |
+|  - sched_start: mret でタスク起動                   |
 +--------------------------------------------------+
-|  ゲストタスク (M-mode、別スタック)                    |
-|  - ecall で syscall 発行                           |
+|  ゲストタスク (M-mode、別スタック・別 gp)             |
+|  - ecall で syscall 発行 (Linux 互換 ABI)          |
 |  - カーネルとは別の raw バイナリとしてコンパイル        |
-|  - bin2s でカーネルイメージに埋め込み                  |
+|  - bin2s でカーネルイメージの .rodata に埋め込み       |
 +--------------------------------------------------+
-|  プラットフォーム crt0                               |
-|  - ハードウェア初期化 (UART, クロック)               |
-|  - trap vector 設定                                |
-|  - do_uart_write / do_uart_read (カーネル内部用)     |
+|  プラットフォーム crt0 (crt0_virt.s)                 |
+|  - ハードウェア初期化 (16550 UART)                  |
+|  - trap vector (_trap_entry / _trap_restore)       |
+|  - ecall dispatcher、コンテキストスイッチ            |
 +--------------------------------------------------+
 ```
 
 全コードが M-mode で動作する（MMU/U-mode は将来対応）。
-タスクの「分離」は別スタック + 保存レジスタで実現する。
+タスクの「分離」は別スタック + 別 gp + per-task トラップフレームで実現。
 
 ### タスクのビルドフロー
 
 ```
 hello.tc
   → compile-gen2.sh (task_crt0.s + task_data.s, ; raw)
-  → hello.bin                         # raw バイナリ（text+rodata+data）
+  → hello.bin                           # raw バイナリ（text+rodata+data）
   → bin2s.sh hello.bin _task_hello
-  → hello_task.s                      # .byte データ + _task_hello_start/end/size
-```
-
-`bin2s.sh` の出力例:
-```asm
-    .section .rodata
-    .globl _task_hello_start
-    .align 4
-_task_hello_start:
-    .byte 0x97,0x02,0x00,0x00, ...    # raw バイナリの内容
-    .globl _task_hello_end
-_task_hello_end:
-    .globl _task_hello_size
-_task_hello_size:
-    .word _task_hello_end - _task_hello_start
+  → hello_task.s                        # .byte + _task_hello_start/end/size
 ```
 
 ### カーネルのビルドフロー
 
 ```
-kernel.tc + hello_task.s
-  → compile-gen2.sh (crt0_virt.s + crt0_data.s, ; raw)
+kernel.tc + hello_task.s + hello2_task.s
+  → compile-gen2.sh (crt0_virt.s + crt0_data.s + task .s, ; raw)
   → kernel_virt.bin
 ```
 
-compile-gen2.sh はアセンブリ連結時に hello_task.s も含める。
-カーネルの TC コードからは `_task_hello_start` を peek32 等で参照する。
+`build_virt.sh` がタスクビルド → bin2s → カーネルビルドを一括実行:
+```bash
+GEN2_DIR=/path/to/gen2 ./kernel/build_virt.sh -o kernel.bin
+```
 
 ### タスクバイナリ形式
 
-タスクは compile-gen2.sh の `; raw` モードで生成される。出力は：
+タスクは `; raw` モードで生成:
 
 | 領域    | 内容                              |
 |---------|-----------------------------------|
 | text    | 命令コード（_start がオフセット 0）  |
-| rodata  | 読み取り専用データ                  |
+| rodata  | 文字列リテラル等                    |
 | data    | 初期化済みグローバル変数             |
-| (bss)   | filesz に含まれない、実行時にゼロ化  |
+| (bss)   | filesz に含まれない、data+bss < 4KB |
 
-`_start` → `la gp, __global_pointer$` → `call main` → ecall exit。
+タスクコードは .rodata に埋め込まれ、in-place で実行される（virt では RAM 上）。
 
-asm.tc は PIC (Position Independent Code) を生成するので、
-ロードアドレスに依存しない。gp は `la gp, __global_pointer$`
-（PC 相対 fallback）で実行時に解決される。
+### タスク起動プロトコル
 
-### タスク用 crt0 (task_crt0.s)
+カーネルが `init_task_frame` で per-task トラップフレーム (132B) を初期化:
 
-```asm
-    .text
-    .globl _start
-_start:
-    # sp はカーネルが設定済み
-    la   gp, __global_pointer$   # PC 相対 (in-place 実行なので動作)
-    la   a0, __arena
-    li   a1, 65536               # 64KB arena
-    call __runtime_init__u32__i32
-    call main
-    # sys_exit(return value of main) — ecall でカーネルに戻る
-    li   a7, 93
-    ecall
-1:  j    1b
+| フレームオフセット | 設定値                           |
+|-------------------|----------------------------------|
+| 8 (sp)            | タスク用スタックトップ              |
+| 12 (gp)           | タスク用 RAM + 0x800              |
+| 40 (a0)           | arena アドレス                     |
+| 44 (a1)           | arena サイズ                       |
+| 128 (mepc)        | タスクの _start アドレス            |
 
-# syscall stubs (ecall ベース — カーネルの trap handler が処理)
-    .globl do_write__i32__u32__i32
-do_write__i32__u32__i32:
-    li   a7, 64
-    ecall
-    ret
+`sched_start(frame)` でフレームからレジスタを復元し、mret でタスク起動。
+**mstatus.MPP = M-mode (0x1800) と MPIE (0x80) のセットが必須**
+（未設定だと U-mode に落ちて PMP で命令フェッチフォールト）。
 
-    .globl do_read__i32__u32__i32
-do_read__i32__u32__i32:
-    li   a7, 63
-    ecall
-    ret
+### タスク用 gp とメモリ管理
 
-    .globl do_exit__i32
-do_exit__i32:
-    li   a7, 93
-    ecall
-    ret
+カーネルが各タスクに 64KB の RAM を確保:
 ```
+ram_base (64KB):
+  [0..4095]       data + bss 領域 (gp 相対アクセス先)
+  [4096..65535]   arena (kmalloc ヒープ)
+```
+- `gp = ram_base + 0x800` (asm.tc の `__global_pointer$ = data_base + 0x800` に対応)
+- タスクの gp 相対アクセスはこの RAM に向かう
+- タスクの .bss はバイナリに含まれない→ kmalloc の zero 初期化が代替
+- 初期化済みグローバル変数のコピーは将来 task_crt0 が担当
 
-これは既存の `compiler/crt0_tc.s` (Linux ユーザ空間用) と同じ ecall ABI。
+### ecall ハンドラ (アセンブリ)
 
-**カーネルからのタスク起動プロトコル** (現行 virt 版):
-カーネルの `kern_run_task` がタスク _start にジャンプする前に:
-- `sp` = タスク用スタックトップ
+`_handle_ecall` は `_trap_entry` 内でアセンブリ処理:
 
-タスク _start は自身で gp を PC 相対 la で初期化し、__arena を設定する。
-virt では RAM 上で in-place 実行するため PC 相対アドレッシングが動作する。
+| a7  | syscall   | 処理                                        |
+|-----|-----------|---------------------------------------------|
+| 64  | sys_write | トラップフレームの a1/a2 で `do_uart_write`   |
+| 93  | sys_exit  | TC `sched_task_exit()` を呼び次タスクへ切替  |
 
-**将来 (Pico 2 対応時)**: Flash 上のコードが SRAM 上のデータを参照する場合、
-タスク自身の PC 相対 la では正しい gp が得られない。カーネルがタスク起動前に
-gp, a0, a1 を設定し、タスク _start は gp 初期化をスキップする設計に変更する。
+sys_write: mepc += 4 して mret (タスクに復帰)。
+sys_exit: `sched_task_exit()` が次の ready タスクのフレームアドレスを返す。
+0 なら全タスク完了 → `_task_exit_trampoline` でカーネルに復帰。
 
-### カーネルの trap handler
+### コンテキストスイッチ
 
 ```
-trap_handler(cause, epc):
-    if cause == 0x80000007:    # M-mode timer interrupt
-        schedule_next()
-        rearm_timer()
-    elif cause == 11:          # Environment call from M-mode
-        handle_ecall(epc)
-    else:
-        panic()
+_trap_entry:
+  csrrw sp, mscratch, sp     # sp ↔ 現タスクのトラップフレーム
+  全31レジスタ + mepc を保存
+  mcause で ecall / タイマ を判別
+
+_trap_restore:
+  _switch_frame が非0なら mscratch を切り替え (コンテキストスイッチ)
+  mscratch のフレームから全レジスタ + mepc を復元
+  mret
 ```
 
-ecall のディスパッチ (a7 レジスタで syscall 番号を判定):
-
-| a7  | syscall   | 引数                    | 処理                    |
-|-----|-----------|-------------------------|-------------------------|
-| 64  | sys_write | a0=fd, a1=buf, a2=len   | UART に出力              |
-| 63  | sys_read  | a0=fd, a1=buf, a2=len   | UART から入力 (将来)      |
-| 93  | sys_exit  | a0=status               | タスク終了、カーネルに復帰 |
-
-ecall は mepc を ecall 命令のアドレスにセットするので、
-復帰時は mepc + 4 (次の命令) に戻す必要がある。
-
-### タスク起動シーケンス
-
-1. カーネルがタスクバイナリのアドレスを取得（`_task_hello_start`）
-2. タスク用スタックを kmalloc で確保
-3. タスクの BSS 領域をゼロクリア（必要に応じて）
-4. mscratch にタスクのトラップフレームをセット
-5. sp = スタックトップ、pc = タスクの `_start` に設定した状態を
-   トラップフレームに格納し、mret で起動
-   - または単純に: sp をセットしてタスクの _start を call
-     （最初は協調的実行で十分）
+TC の `trap_handler` がタイマ割り込みで `set_switch_frame(next_frame)` を呼ぶと、
+`_trap_restore` が mscratch を新フレームに切り替えてから mret する。
 
 ### プラットフォーム抽象化
 
-crt0 がプラットフォーム差異を吸収する:
-
-| 機能              | virt (crt0_virt.s)        | Pico 2 (crt0_pico2.s)    |
+| 機能              | virt (crt0_virt.s)        | Pico 2 (将来)            |
 |-------------------|--------------------------|---------------------------|
 | UART 出力         | 16550 @ 0x10000000       | PL011 UART0 @ 0x40070000 |
-| 終了              | SiFive test @ 0x100000   | j _park (無限ループ)       |
+| 終了              | SiFive test @ 0x100000   | j _park                   |
 | RAM               | 0x80000000 (128MB)       | SRAM 0x20000000 (520KB)  |
-| クロック初期化     | 不要                      | XOSC + clk_peri           |
 | タイマ (CLINT)    | 0x02004000               | 未調査                     |
-| trap vector       | _trap_entry (共通)        | _trap_entry (共通)         |
 
-カーネルの TC コードは `do_uart_write(buf, len)` のようなプラットフォーム
-非依存関数を呼ぶ。crt0 がこれを実際のハードウェア操作に変換する。
+### メモリレイアウト (virt)
 
-### メモリレイアウト
-
-**virt (qemu-system-riscv32 -M virt -m 128)**:
 ```
 0x80000000  +------------------+
-            | kernel code      |  text (crt0 + runtime + kernel.tc)
-            | kernel rodata    |
-            | task binaries    |  .rodata (bin2s で埋め込み)
+            | kernel text      |  crt0 + runtime + kernel.tc
+            | kernel rodata    |  タスクバイナリ (bin2s 埋め込み)
             | kernel data      |
             +------------------+
-            | kernel BSS       |  __arena (kmalloc ヒープ)
+            | BSS              |  _trap_frame, _kern_save, _switch_frame
+            | __arena          |  kmalloc ヒープ (~4.4MB)
             +------------------+
-            | タスクスタック     |  kmalloc で動的確保
+            | タスク RAM × N    |  各 64KB (kmalloc で確保)
+            | タスクスタック × N |  各 64KB (kmalloc で確保)
             +------------------+
             :                  :
-0x88000000  | kernel stack (top)|  sp 初期値
+0x88000000  | kernel stack top |
 ```
 
-**Pico 2 (RP2350 RISC-V)**:
-```
-0x10000000  +------------------+  Flash (読み取り専用)
-            | IMAGE_DEF        |
-            | kernel code      |
-            | task binaries    |  (Flashから直接実行可能)
-            +------------------+
-0x20000000  +------------------+  SRAM
-            | data + bss       |  (crt0 が Flash から SRAM にコピー、将来)
-            | __arena          |
-            | タスクスタック     |
-            +------------------+
-0x20082000  | stack (top)      |
-```
+## 組み込み関数 (カーネル向け)
 
-## 実装ステップ
+| 関数                                              | 説明                        |
+|---------------------------------------------------|-----------------------------|
+| `kern_run_task(id, sp, gp, arena, size) -> i32`   | 協調的タスク実行 (直接ジャンプ) |
+| `init_task_frame(frame, id, sp, gp, arena, size)` | トラップフレーム初期化         |
+| `sched_start(frame)`                              | mret でタスク起動             |
+| `set_switch_frame(addr)`                          | 次回 mret で復元するフレーム設定 |
+| `csr_read/write_mstatus/mie/mcause`               | CSR アクセス                  |
 
-### ステップ 1: 最小カーネル + ecall ハンドラ
+## 実装状況
 
-- `kernel/` ディレクトリ作成
-- `kernel/bin2s.sh`: raw → .s 変換スクリプト
-- `kernel/tasks/hello/`: 最小ゲストタスク (ecall で文字列出力 + exit)
-- `kernel/kernel.tc`: タスクを起動して ecall を処理するカーネル
-- `kernel/crt0_virt.s`: trap handler で ecall をディスパッチ
-- テスト: qemu virt で HELLO_OK + KERN_OK を確認
-
-### ステップ 2: 複数タスク + 協調的切り替え
-
-- 2つのタスクを埋め込み
-- sys_exit で次のタスクに切り替え
-- テスト: TASK1_OK + TASK2_OK + KERN_OK
-
-### ステップ 3: タイマ割り込みによるプリエンプション
-
-- per-task トラップフレーム
-- タイマ割り込みハンドラでコンテキストスイッチ
-- テスト: 2タスクが交互に実行される
-
-### ステップ 4: Pico 2 対応
-
-- `kernel/crt0_pico2.s` 作成
-- `kernel/build_pico2.sh` 作成
-- 実機テスト
+- [x] ステップ 1: 最小カーネル + ecall ハンドラ (1タスク、協調的)
+- [x] ステップ 2: 複数タスク逐次実行
+- [x] ステップ 3: タイマ割り込みによるプリエンプティブスケジューリング
+- [ ] ステップ 4: Pico 2 対応
+- [ ] タスクの .data セクション初期化コピー (task_crt0 で実装予定)
