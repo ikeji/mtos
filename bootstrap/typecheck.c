@@ -230,8 +230,8 @@ static void register_builtins(TypeEnv *e) {
     const char *p32_i32[] = {"u32","i32"};
     const char *i32_u32[] = {"i32","u32"};
     register_fn(e, "kern_launch_task", p32_i32, 2, "void");
-    const char *kern_run_args[] = {"i32","u32","u32","i32"};
-    register_fn(e, "kern_run_task", kern_run_args, 4, "i32");
+    const char *kern_run_args[] = {"i32","u32","u32","u32","i32"};
+    register_fn(e, "kern_run_task", kern_run_args, 5, "i32");
 
     /* raw ecall stubs (always registered — implemented in crt0.s) */
     const char *dw[] = {"i32","u32","i32"};

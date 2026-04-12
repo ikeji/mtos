@@ -14,8 +14,7 @@
     .text
     .globl _start
 _start:
-    # Kernel sets: sp = stack top, a0 = arena addr, a1 = arena size
-    la   gp, __global_pointer$
+    # Kernel sets: sp, gp, a0 (arena addr), a1 (arena size)
     call __runtime_init__u32__i32
     call main
     # sys_exit(return value of main)

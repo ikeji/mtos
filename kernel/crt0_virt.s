@@ -184,11 +184,12 @@ _task_exit_trampoline:
 trap_handler__u32__u32:
     ret
 
-# ===== kern_run_task(task_id: i32, task_sp: u32, arena: u32, arena_size: i32) -> i32 =====
-# Saves kernel context, sets up task sp/a0/a1, jumps to task binary by ID.
-    .globl kern_run_task__i32__u32__u32__i32
-kern_run_task__i32__u32__u32__i32:
-    # a0 = task_id, a1 = task_sp, a2 = arena_addr, a3 = arena_size
+
+# ===== kern_run_task(id: i32, sp: u32, gp: u32, arena: u32, arena_size: i32) -> i32 =====
+# Saves kernel context, sets up task sp/gp/a0/a1, jumps to task binary by ID.
+    .globl kern_run_task__i32__u32__u32__u32__i32
+kern_run_task__i32__u32__u32__u32__i32:
+    # a0 = task_id, a1 = task_sp, a2 = task_gp, a3 = arena_addr, a4 = arena_size
     # Save kernel callee-saved regs FIRST, then use s-regs for args
     la   t0, _kern_save
     sw   ra,  0(t0)
@@ -208,10 +209,11 @@ kern_run_task__i32__u32__u32__i32:
     sw   gp, 56(t0)
     # Now safe to use s-regs as temporaries
     mv   s0, a0               # save task_id
-    # Switch to task stack, pass arena in a0/a1
-    mv   sp, a1
-    mv   a0, a2               # a0 = arena_addr (for task _start)
-    mv   a1, a3               # a1 = arena_size
+    # Set up task registers
+    mv   sp, a1               # task stack
+    mv   gp, a2               # task gp
+    mv   a0, a3               # a0 = arena_addr (for task _start)
+    mv   a1, a4               # a1 = arena_size
     # Dispatch by task_id (s0)
     li   t0, 1
     beq  s0, t0, _run_task_1

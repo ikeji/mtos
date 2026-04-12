@@ -1,4 +1,8 @@
 // kernel.tc — minimal kernel: run embedded task binary via ecall interface
+//
+// Kernel allocates RAM for the task's data+bss+arena, sets gp, and jumps
+// to the task binary. The task binary runs in-place from .rodata.
+// Data section copy (if needed) is the task crt0's responsibility.
 
 fn kputs(s: StringLiteral) -> void {
     var slen: i32 = len(s);
@@ -16,21 +20,27 @@ fn kputs(s: StringLiteral) -> void {
 fn main() -> i32 {
     kputs("KERN: starting\n");
 
-    // Allocate stack + arena for task
-    var stack_size: i32 = 65536;
-    var arena_size: i32 = 65536;
-    var task_stack: U8Array = U8Array(stack_size);
-    var task_arena: U8Array = U8Array(arena_size);
-    var stack_base: u32 = task_stack as u32 + 4u32;
-    var task_sp: u32 = (stack_base + stack_size as u32) & 0xFFFFFFF0u32;
-    var arena_addr: u32 = task_arena as u32 + 4u32;
+    // Allocate 64KB RAM for task data+bss+arena (zeroed by kmalloc)
+    var ram_size: i32 = 65536;
+    var task_ram: U8Array = U8Array(ram_size);
+    var ram_base: u32 = task_ram as u32 + 4u32;
 
-    // Run task 1 (hello)
+    // gp = ram_base + 0x800
+    var task_gp: u32 = ram_base + 0x800u32;
+
+    // Arena: after 4KB reserved for data+bss
+    var arena_addr: u32 = ram_base + 4096u32;
+    var arena_size: i32 = ram_size - 4096;
+
+    // Allocate task stack (64KB)
+    var task_stack: U8Array = U8Array(65536);
+    var stack_top: u32 = (task_stack as u32 + 4u32 + 65536u32) & 0xFFFFFFF0u32;
+
     kputs("KERN: running task 1\n");
-    var exit_code: i32 = kern_run_task(1, task_sp, arena_addr, arena_size);
+    var exit_code: i32 = kern_run_task(1, stack_top, task_gp, arena_addr, arena_size);
     kputs("KERN: task 1 done\n");
 
-    delete(task_arena);
     delete(task_stack);
+    delete(task_ram);
     return 0;
 }
