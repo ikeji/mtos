@@ -1,7 +1,11 @@
 #
-# kernel/crt0_pico2_data.s — BSS for Pico 2 kernel
+# kernel/crt0_pico2_data.s — data/BSS for Pico 2 kernel
+# __data_end marks the .data/.bss boundary for Flash→SRAM copy.
 # Smaller arena (256KB) to fit in SRAM.
 #
+    .data
+    .globl __data_end
+__data_end:
     .bss
     .align 4
 _trap_frame:

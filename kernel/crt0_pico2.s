@@ -89,6 +89,20 @@ _start:
     # gp
     li   gp, 0x20000800
 
+    # Copy .data from Flash to SRAM
+    # Source: PC-relative __global_pointer$ gives Flash gp address
+    la   t0, __global_pointer$
+    addi t0, t0, -0x800           # t0 = Flash data_base (source)
+    addi t1, gp, -0x800           # t1 = SRAM data_base (dest = 0x20000000)
+    la   t2, __data_end           # gp-relative: SRAM data_end
+    beq  t1, t2, 5f
+4:  lw   t3, 0(t0)
+    sw   t3, 0(t1)
+    addi t0, t0, 4
+    addi t1, t1, 4
+    bltu t1, t2, 4b
+5:
+
     # runtime init
     la   a0, __arena
     li   a1, 262144
