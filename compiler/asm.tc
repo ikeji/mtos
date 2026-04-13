@@ -487,7 +487,9 @@ fn asm_instr() -> i32 {
     if mnem_eq("mul")   { if g_pass==2 { emit32(enc_r(51,0,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
     if mnem_eq("mulhu") { if g_pass==2 { emit32(enc_r(51,3,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
     if mnem_eq("div")   { if g_pass==2 { emit32(enc_r(51,4,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("divu")  { if g_pass==2 { emit32(enc_r(51,5,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
     if mnem_eq("rem")   { if g_pass==2 { emit32(enc_r(51,6,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("remu")  { if g_pass==2 { emit32(enc_r(51,7,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
 
     // I-type ALU
     if mnem_eq("addi")  { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }

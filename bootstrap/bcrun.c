@@ -61,6 +61,7 @@ typedef enum {
     OP_LOAD, OP_STORE,
     OP_CALL, OP_RETURN, OP_RETURN_VOID, OP_POP,
     OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
+    OP_DIV_U, OP_MOD_U,
     OP_AND, OP_OR,  OP_XOR, OP_SHL, OP_SHR, OP_SHR_U,
     OP_EQ,  OP_NE,  OP_LT,  OP_LE,  OP_GT,  OP_GE,
     OP_LT_U, OP_LE_U, OP_GT_U, OP_GE_U,
@@ -396,6 +397,8 @@ static BcProg *bc_parse(FILE *in) {
         else if (!strcmp(op, "mul"))         { ins.op = OP_MUL; }
         else if (!strcmp(op, "div"))         { ins.op = OP_DIV; }
         else if (!strcmp(op, "mod"))         { ins.op = OP_MOD; }
+        else if (!strcmp(op, "div_u"))       { ins.op = OP_DIV_U; }
+        else if (!strcmp(op, "mod_u"))       { ins.op = OP_MOD_U; }
         else if (!strcmp(op, "and"))         { ins.op = OP_AND; }
         else if (!strcmp(op, "or"))          { ins.op = OP_OR; }
         else if (!strcmp(op, "xor"))         { ins.op = OP_XOR; }
@@ -737,6 +740,12 @@ static Value vm_exec(VM *vm, BcFunc *fn, Value *args, int nargs) {
         case OP_MOD:  { Value b=vm_pop(vm),a=vm_pop(vm);
                         if(!b.ival){fprintf(stderr,"bcrun: mod by zero\n");exit(1);}
                         vm_push(vm,val_int(a.ival%b.ival)); break; }
+        case OP_DIV_U:{ Value b=vm_pop(vm),a=vm_pop(vm);
+                        if(!b.ival){fprintf(stderr,"bcrun: div_u by zero\n");exit(1);}
+                        vm_push(vm,val_int((int32_t)((uint32_t)a.ival/(uint32_t)b.ival))); break; }
+        case OP_MOD_U:{ Value b=vm_pop(vm),a=vm_pop(vm);
+                        if(!b.ival){fprintf(stderr,"bcrun: mod_u by zero\n");exit(1);}
+                        vm_push(vm,val_int((int32_t)((uint32_t)a.ival%(uint32_t)b.ival))); break; }
         case OP_AND:  { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival&b.ival)); break; }
         case OP_OR:   { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival|b.ival)); break; }
         case OP_XOR:  { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival^b.ival)); break; }

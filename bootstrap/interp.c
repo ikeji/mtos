@@ -522,10 +522,17 @@ static Value eval_expr(Interp *ip, AstNode *node) {
         if (strcmp(op, "*") == 0) return val_int(a * b);
         if (strcmp(op, "/") == 0) {
             if (b == 0) { fprintf(stderr, "division by zero\n"); exit(1); }
+            /* Unsigned LHS → compute as uint32_t. */
+            const char *lty = node->children[0]->type_annot;
+            if (lty && lty[0] == 'u')
+                return val_int((int32_t)((uint32_t)a / (uint32_t)b));
             return val_int(a / b);
         }
         if (strcmp(op, "%") == 0) {
             if (b == 0) { fprintf(stderr, "modulo by zero\n"); exit(1); }
+            const char *lty = node->children[0]->type_annot;
+            if (lty && lty[0] == 'u')
+                return val_int((int32_t)((uint32_t)a % (uint32_t)b));
             return val_int(a % b);
         }
         if (strcmp(op, "&") == 0) return val_int(a & b);

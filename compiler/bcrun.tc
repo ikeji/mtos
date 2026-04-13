@@ -36,6 +36,8 @@ var OP_LT_U: i32 = 32;
 var OP_LE_U: i32 = 33;
 var OP_GT_U: i32 = 34;
 var OP_GE_U: i32 = 35;
+var OP_DIV_U: i32 = 36;
+var OP_MOD_U: i32 = 37;
 
 // Heap object kinds
 var HK_U8: i32 = 1;
@@ -55,6 +57,8 @@ var g_frame_base: i32 = 0;
 var g_vp: i32 = 0;
 var g_pop_ival: i32 = 0;
 var g_pop_tag: i32 = 0;
+var g_udiv_q: i32 = 0;
+var g_udiv_r: i32 = 0;
 var g_cs_func: i32 = 0;
 var g_cs_pc: i32 = 0;
 var g_cs_fbase: i32 = 0;
@@ -76,6 +80,33 @@ var g_heap_i32s_top: i32 = 0;
 var g_heap_obj_count: i32 = 0;
 
 // ===== String table =====
+// Software unsigned divide. TC's own `/` is signed, so we can't delegate
+// to it directly when bcrun.tc itself is interpreting OP_DIV_U / OP_MOD_U.
+// Binary long division, 32 iterations — slow but always correct. Writes
+// quotient to g_udiv_q and remainder to g_udiv_r.
+fn udivmod32(a: i32, b: i32) -> void {
+    var q: i32 = 0;
+    var r: i32 = 0;
+    var sign_bit: i32 = 1 << 31;
+    var i: i32 = 31;
+    while i >= 0 {
+        r = r << 1;
+        var bit: i32 = 1 << i;
+        if (a & bit) != 0 { r = r | 1; }
+        // Compare r >= b as unsigned via sign-bit flip.
+        var rf: i32 = r ^ sign_bit;
+        var bf2: i32 = b ^ sign_bit;
+        if rf >= bf2 {
+            r = r - b;
+            q = q | bit;
+        }
+        i = i - 1;
+    }
+    g_udiv_q = q;
+    g_udiv_r = r;
+    return;
+}
+
 fn stab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
     if sl1 != sl2 { return false; }
     var i: i32 = 0;
@@ -237,6 +268,9 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
         if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; }
         // shr_u: s,h,r,_,u
         if a=='s'&&b=='h'&&c=='r'&&d=='_'&&e=='u' { return OP_SHR_U; }
+        // div_u / mod_u
+        if a=='d'&&b=='i'&&c=='v'&&d=='_'&&e=='u' { return OP_DIV_U; }
+        if a=='m'&&b=='o'&&c=='d'&&d=='_'&&e=='u' { return OP_MOD_U; }
     }
     if sl == 6 {
         // return: r,e,t,u,r,n = 114,101,116,117,114,110
@@ -979,6 +1013,16 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                     if op==OP_SHL { r2=a2<<b2; }
                     if op==OP_SHR { r2=a2>>b2; }
                     stk_push(stk_i,stk_t,r2,TAG_INT);
+                }
+                if op == OP_DIV_U || op == OP_MOD_U {
+                    // Software unsigned divide. Both operands are
+                    // interpreted as u32.
+                    stk_pop(stk_i,stk_t); var b5: i32=g_pop_ival;
+                    stk_pop(stk_i,stk_t); var a5: i32=g_pop_ival;
+                    udivmod32(a5, b5);
+                    var r5: i32 = g_udiv_q;
+                    if op == OP_MOD_U { r5 = g_udiv_r; }
+                    stk_push(stk_i,stk_t,r5,TAG_INT);
                 }
                 if op == OP_SHR_U {
                     // Logical right shift. TC's `>>` is arithmetic, so we

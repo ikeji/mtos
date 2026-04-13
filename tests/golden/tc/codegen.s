@@ -17814,7 +17814,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     .globl cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32
     .type  cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32, @function
 cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
-    # prologue: frame_size=80, params=6, locals=0, eval_depth=9
+    # prologue: frame_size=80, params=6, locals=0, eval_depth=11
     addi sp, sp, -80
     sw   ra, 76(sp)
     sw   s0, 72(sp)
@@ -18123,7 +18123,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc100
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc122
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18164,6 +18164,91 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc107
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U8Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc107
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc108
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc107:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc108:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc117
+0:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 95
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc117:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18182,7 +18267,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc100:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc122:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18206,7 +18291,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc123
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc167
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18247,6 +18332,91 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc152
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U8Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc152
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc153
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc152:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc153:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc162
+0:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 95
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc162:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18265,7 +18435,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc123:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc167:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18289,7 +18459,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc146
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc190
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18348,7 +18518,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc146:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc190:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18372,7 +18542,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc165
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc209
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18418,7 +18588,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc165:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc209:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18442,7 +18612,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc188
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc232
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18501,7 +18671,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc188:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc232:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18525,7 +18695,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc229
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc273
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18568,7 +18738,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc214
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc258
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -18595,21 +18765,21 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc214
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc258
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc215
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc214:
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc259
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc258:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc215:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc259:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc224
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc268
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18637,7 +18807,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc224:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc268:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18656,7 +18826,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc229:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc273:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18680,7 +18850,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc270
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc314
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18723,7 +18893,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc255
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc299
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -18750,21 +18920,21 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc255
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc299
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc256
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc255:
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc300
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc299:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc256:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc300:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc265
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc309
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18792,7 +18962,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc265:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc309:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18811,7 +18981,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc270:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc314:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18839,7 +19009,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc294
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc338
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18898,7 +19068,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc294:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc338:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18926,7 +19096,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc340
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc384
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18982,7 +19152,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc325
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc369
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -19009,21 +19179,21 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc325
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc369
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc326
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc325:
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc370
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc369:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc326:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc370:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc335
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc379
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19051,7 +19221,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc335:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc379:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19070,7 +19240,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc340:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc384:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19098,7 +19268,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc360
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc404
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19144,7 +19314,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc360:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc404:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19172,7 +19342,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc380
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc424
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19218,7 +19388,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc380:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc424:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19246,7 +19416,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc422
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc466
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19289,7 +19459,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc407
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc451
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -19316,21 +19486,21 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc407
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc451
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc408
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc407:
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc452
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc451:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc408:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc452:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc417
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc461
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19358,7 +19528,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc417:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc461:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19377,7 +19547,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc422:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc466:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19405,7 +19575,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc464
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc508
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19448,7 +19618,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc449
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc493
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -19475,21 +19645,21 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc449
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc493
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc450
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc449:
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc494
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc493:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc450:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc494:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc459
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc503
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19517,7 +19687,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc459:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc503:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19536,7 +19706,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc464:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc508:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)

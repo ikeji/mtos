@@ -140,6 +140,14 @@
     (type i32)
     (int 35)
   )
+  (var_decl OP_DIV_U
+    (type i32)
+    (int 36)
+  )
+  (var_decl OP_MOD_U
+    (type i32)
+    (int 37)
+  )
   (var_decl g_in_pos
     (type i32)
     (int 0)
@@ -3391,6 +3399,78 @@
             (block
               (return
                 (var OP_SHR_U)
+              )
+            )
+          )
+          (comment "if a=='d'&&b=='i'&&c=='v'&&d=='_'&&e=='u' { return OP_DIV_U; }")
+          (if
+            (binop &&
+              (binop &&
+                (binop &&
+                  (binop &&
+                    (binop ==
+                      (var a)
+                      (int:u8 100)
+                    )
+                    (binop ==
+                      (var b)
+                      (int:u8 105)
+                    )
+                  )
+                  (binop ==
+                    (var c)
+                    (int:u8 118)
+                  )
+                )
+                (binop ==
+                  (var d)
+                  (int:u8 95)
+                )
+              )
+              (binop ==
+                (var e)
+                (int:u8 117)
+              )
+            )
+            (block
+              (return
+                (var OP_DIV_U)
+              )
+            )
+          )
+          (comment "if a=='m'&&b=='o'&&c=='d'&&d=='_'&&e=='u' { return OP_MOD_U; }")
+          (if
+            (binop &&
+              (binop &&
+                (binop &&
+                  (binop &&
+                    (binop ==
+                      (var a)
+                      (int:u8 109)
+                    )
+                    (binop ==
+                      (var b)
+                      (int:u8 111)
+                    )
+                  )
+                  (binop ==
+                    (var c)
+                    (int:u8 100)
+                  )
+                )
+                (binop ==
+                  (var d)
+                  (int:u8 95)
+                )
+              )
+              (binop ==
+                (var e)
+                (int:u8 117)
+              )
+            )
+            (block
+              (return
+                (var OP_MOD_U)
               )
             )
           )
@@ -6876,6 +6956,27 @@
               )
             )
           )
+          (comment "if op == OP_DIV_U || op == OP_MOD_U { depth = depth - 1; }")
+          (if
+            (binop ||
+              (binop ==
+                (var op)
+                (var OP_DIV_U)
+              )
+              (binop ==
+                (var op)
+                (var OP_MOD_U)
+              )
+            )
+            (block
+              (assign depth
+                (binop -
+                  (var depth)
+                  (int 1)
+                )
+              )
+            )
+          )
           (comment "if op == OP_CALL {")
           (if
             (binop ==
@@ -8883,6 +8984,124 @@
               (call_stmt emit_char
                 (var ob)
                 (int:u8 32)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 32)
+              )
+              (comment "eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);")
+              (call_stmt eregt0
+                (var ob)
+              )
+              (call_stmt eregt0
+                (var ob)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 116)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 49)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 10)
+              )
+              (comment "asm_push_t0(ob); }")
+              (call_stmt asm_push_t0
+                (var ob)
+              )
+            )
+          )
+          (comment "if op==OP_DIV_U { asm_pop_t1_t0(ob);")
+          (if
+            (binop ==
+              (var op)
+              (var OP_DIV_U)
+            )
+            (block
+              (call_stmt asm_pop_t1_t0
+                (var ob)
+              )
+              (comment "e4(ob);emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 'u');emit_char(ob, ' ');")
+              (call_stmt e4
+                (var ob)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 100)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 105)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 118)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 117)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 32)
+              )
+              (comment "eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);")
+              (call_stmt eregt0
+                (var ob)
+              )
+              (call_stmt eregt0
+                (var ob)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 116)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 49)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 10)
+              )
+              (comment "asm_push_t0(ob); }")
+              (call_stmt asm_push_t0
+                (var ob)
+              )
+            )
+          )
+          (comment "if op==OP_MOD_U { asm_pop_t1_t0(ob);")
+          (if
+            (binop ==
+              (var op)
+              (var OP_MOD_U)
+            )
+            (block
+              (call_stmt asm_pop_t1_t0
+                (var ob)
+              )
+              (comment "e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, ' ');")
+              (call_stmt e4
+                (var ob)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 114)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 101)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 109)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 117)
               )
               (call_stmt emit_char
                 (var ob)

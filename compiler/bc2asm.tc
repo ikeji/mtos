@@ -39,6 +39,8 @@ var OP_LT_U: i32 = 32;
 var OP_LE_U: i32 = 33;
 var OP_GT_U: i32 = 34;
 var OP_GE_U: i32 = 35;
+var OP_DIV_U: i32 = 36;
+var OP_MOD_U: i32 = 37;
 
 // ===== Global state =====
 var g_in_pos: i32 = 0;
@@ -351,6 +353,8 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     if sl==5 {
         if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; }
         if a=='s'&&b=='h'&&c=='r'&&d=='_'&&e=='u' { return OP_SHR_U; }
+        if a=='d'&&b=='i'&&c=='v'&&d=='_'&&e=='u' { return OP_DIV_U; }
+        if a=='m'&&b=='o'&&c=='d'&&d=='_'&&e=='u' { return OP_MOD_U; }
     }
     if sl==6 { if a=='r'&&b=='e'&&c=='t' { return OP_RETURN; } }
     if sl==7 {
@@ -690,6 +694,7 @@ fn max_eval_depth(fns: I32Array, instrs: I32Array, fi: i32) -> i32 {
         if op >= OP_ADD && op <= OP_GE { depth = depth - 1; }
         if op == OP_SHR_U { depth = depth - 1; }
         if op >= OP_LT_U && op <= OP_GE_U { depth = depth - 1; }
+        if op == OP_DIV_U || op == OP_MOD_U { depth = depth - 1; }
         if op == OP_CALL {
             var nargs: i32 = ins_ival(instrs, ibase, i);
             depth = depth - (nargs - 1);
@@ -908,6 +913,14 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             asm_push_t0(ob); }
         if op==OP_MOD { asm_pop_t1_t0(ob);
             e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
+            asm_push_t0(ob); }
+        if op==OP_DIV_U { asm_pop_t1_t0(ob);
+            e4(ob);emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 'u');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
+            asm_push_t0(ob); }
+        if op==OP_MOD_U { asm_pop_t1_t0(ob);
+            e4(ob);emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, ' ');
             eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         if op==OP_AND { asm_pop_t1_t0(ob);

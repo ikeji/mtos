@@ -128,8 +128,10 @@ __L1:
 | `add` | 加算 |
 | `sub` | 減算 |
 | `mul` | 乗算 |
-| `div` | 除算 |
-| `mod` | 剰余 |
+| `div` | 除算（符号あり LHS、RISC-V `div`） |
+| `mod` | 剰余（符号あり、RISC-V `rem`） |
+| `div_u` | 除算（符号なし LHS、RISC-V `divu`） |
+| `mod_u` | 剰余（符号なし、RISC-V `remu`） |
 | `and` | ビット AND |
 | `or` | ビット OR |
 | `xor` | ビット XOR |

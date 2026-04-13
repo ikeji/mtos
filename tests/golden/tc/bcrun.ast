@@ -139,6 +139,14 @@
     (type i32)
     (int 35)
   )
+  (var_decl OP_DIV_U
+    (type i32)
+    (int 36)
+  )
+  (var_decl OP_MOD_U
+    (type i32)
+    (int 37)
+  )
   (var_decl HK_U8
     (type i32)
     (int 1)
@@ -190,6 +198,14 @@
     (int 0)
   )
   (var_decl g_pop_tag
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_udiv_q
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_udiv_r
     (type i32)
     (int 0)
   )
@@ -268,6 +284,142 @@
   (var_decl g_heap_obj_count
     (type i32)
     (int 0)
+  )
+  (fn udivmod32
+    (params
+      (param a
+        (type i32)
+      )
+      (param b
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "var q: i32 = 0;")
+      (var_decl q
+        (type i32)
+        (int 0)
+      )
+      (comment "var r: i32 = 0;")
+      (var_decl r
+        (type i32)
+        (int 0)
+      )
+      (comment "var sign_bit: i32 = 1 << 31;")
+      (var_decl sign_bit
+        (type i32)
+        (binop <<
+          (int 1)
+          (int 31)
+        )
+      )
+      (comment "var i: i32 = 31;")
+      (var_decl i
+        (type i32)
+        (int 31)
+      )
+      (comment "while i >= 0 {")
+      (while
+        (binop >=
+          (var i)
+          (int 0)
+        )
+        (block
+          (comment "r = r << 1;")
+          (assign r
+            (binop <<
+              (var r)
+              (int 1)
+            )
+          )
+          (comment "var bit: i32 = 1 << i;")
+          (var_decl bit
+            (type i32)
+            (binop <<
+              (int 1)
+              (var i)
+            )
+          )
+          (comment "if (a & bit) != 0 { r = r | 1; }")
+          (if
+            (binop !=
+              (binop &
+                (var a)
+                (var bit)
+              )
+              (int 0)
+            )
+            (block
+              (assign r
+                (binop |
+                  (var r)
+                  (int 1)
+                )
+              )
+            )
+          )
+          (comment "var rf: i32 = r ^ sign_bit;")
+          (var_decl rf
+            (type i32)
+            (binop ^
+              (var r)
+              (var sign_bit)
+            )
+          )
+          (comment "var bf2: i32 = b ^ sign_bit;")
+          (var_decl bf2
+            (type i32)
+            (binop ^
+              (var b)
+              (var sign_bit)
+            )
+          )
+          (comment "if rf >= bf2 {")
+          (if
+            (binop >=
+              (var rf)
+              (var bf2)
+            )
+            (block
+              (comment "r = r - b;")
+              (assign r
+                (binop -
+                  (var r)
+                  (var b)
+                )
+              )
+              (comment "q = q | bit;")
+              (assign q
+                (binop |
+                  (var q)
+                  (var bit)
+                )
+              )
+            )
+          )
+          (comment "i = i - 1;")
+          (assign i
+            (binop -
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "g_udiv_q = q;")
+      (assign g_udiv_q
+        (var q)
+      )
+      (comment "g_udiv_r = r;")
+      (assign g_udiv_r
+        (var r)
+      )
+      (comment "return;")
+      (return)
+    )
   )
   (fn stab_eq
     (params
@@ -2024,6 +2176,78 @@
             (block
               (return
                 (var OP_SHR_U)
+              )
+            )
+          )
+          (comment "if a=='d'&&b=='i'&&c=='v'&&d=='_'&&e=='u' { return OP_DIV_U; }")
+          (if
+            (binop &&
+              (binop &&
+                (binop &&
+                  (binop &&
+                    (binop ==
+                      (var a)
+                      (int:u8 100)
+                    )
+                    (binop ==
+                      (var b)
+                      (int:u8 105)
+                    )
+                  )
+                  (binop ==
+                    (var c)
+                    (int:u8 118)
+                  )
+                )
+                (binop ==
+                  (var d)
+                  (int:u8 95)
+                )
+              )
+              (binop ==
+                (var e)
+                (int:u8 117)
+              )
+            )
+            (block
+              (return
+                (var OP_DIV_U)
+              )
+            )
+          )
+          (comment "if a=='m'&&b=='o'&&c=='d'&&d=='_'&&e=='u' { return OP_MOD_U; }")
+          (if
+            (binop &&
+              (binop &&
+                (binop &&
+                  (binop &&
+                    (binop ==
+                      (var a)
+                      (int:u8 109)
+                    )
+                    (binop ==
+                      (var b)
+                      (int:u8 111)
+                    )
+                  )
+                  (binop ==
+                    (var c)
+                    (int:u8 100)
+                  )
+                )
+                (binop ==
+                  (var d)
+                  (int:u8 95)
+                )
+              )
+              (binop ==
+                (var e)
+                (int:u8 117)
+              )
+            )
+            (block
+              (return
+                (var OP_MOD_U)
               )
             )
           )
@@ -8523,6 +8747,68 @@
                         (var stk_i)
                         (var stk_t)
                         (var r2)
+                        (var TAG_INT)
+                      )
+                    )
+                  )
+                  (comment "if op == OP_DIV_U || op == OP_MOD_U {")
+                  (if
+                    (binop ||
+                      (binop ==
+                        (var op)
+                        (var OP_DIV_U)
+                      )
+                      (binop ==
+                        (var op)
+                        (var OP_MOD_U)
+                      )
+                    )
+                    (block
+                      (comment "stk_pop(stk_i,stk_t); var b5: i32=g_pop_ival;")
+                      (call_stmt stk_pop
+                        (var stk_i)
+                        (var stk_t)
+                      )
+                      (var_decl b5
+                        (type i32)
+                        (var g_pop_ival)
+                      )
+                      (comment "stk_pop(stk_i,stk_t); var a5: i32=g_pop_ival;")
+                      (call_stmt stk_pop
+                        (var stk_i)
+                        (var stk_t)
+                      )
+                      (var_decl a5
+                        (type i32)
+                        (var g_pop_ival)
+                      )
+                      (comment "udivmod32(a5, b5);")
+                      (call_stmt udivmod32
+                        (var a5)
+                        (var b5)
+                      )
+                      (comment "var r5: i32 = g_udiv_q;")
+                      (var_decl r5
+                        (type i32)
+                        (var g_udiv_q)
+                      )
+                      (comment "if op == OP_MOD_U { r5 = g_udiv_r; }")
+                      (if
+                        (binop ==
+                          (var op)
+                          (var OP_MOD_U)
+                        )
+                        (block
+                          (assign r5
+                            (var g_udiv_r)
+                          )
+                        )
+                      )
+                      (comment "stk_push(stk_i,stk_t,r5,TAG_INT);")
+                      (call_stmt stk_push
+                        (var stk_i)
+                        (var stk_t)
+                        (var r5)
                         (var TAG_INT)
                       )
                     )

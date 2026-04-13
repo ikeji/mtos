@@ -194,8 +194,15 @@ static void cg_expr(CG *cg, AstNode *node) {
         if      (strcmp(op, "+")  == 0) fprintf(cg->out, "  add\n");
         else if (strcmp(op, "-")  == 0) fprintf(cg->out, "  sub\n");
         else if (strcmp(op, "*")  == 0) fprintf(cg->out, "  mul\n");
-        else if (strcmp(op, "/")  == 0) fprintf(cg->out, "  div\n");
-        else if (strcmp(op, "%")  == 0) fprintf(cg->out, "  mod\n");
+        else if (strcmp(op, "/")  == 0 || strcmp(op, "%")  == 0) {
+            /* Unsigned LHS → div_u/mod_u; otherwise signed div/mod.
+               The binop's type annotation matches the LHS type. */
+            const char *ty = node->type_annot;
+            int is_u = (ty && ty[0] == 'u');
+            const char *suffix = is_u ? "_u" : "";
+            if (op[0] == '/') fprintf(cg->out, "  div%s\n", suffix);
+            else              fprintf(cg->out, "  mod%s\n", suffix);
+        }
         else if (strcmp(op, "&")  == 0) fprintf(cg->out, "  and\n");
         else if (strcmp(op, "|")  == 0) fprintf(cg->out, "  or\n");
         else if (strcmp(op, "^")  == 0) fprintf(cg->out, "  xor\n");

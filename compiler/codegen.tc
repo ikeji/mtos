@@ -656,8 +656,23 @@ fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer,
     if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add
     if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub
     if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul
-    if sv1(strtab,ss,sl, '/') { emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 10u8); return; }  // div
-    if sv1(strtab,ss,sl, '%') { emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // mod
+    // Unsigned LHS → div_u / mod_u; signed → div / mod.
+    if sv1(strtab,ss,sl, '/') {
+        emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');
+        if tasl > 0 && get(strtab, tass) == 'u' {
+            emit_char(ob, '_');emit_char(ob, 'u');
+        }
+        emit_char(ob, 10u8);
+        return;
+    }  // div / div_u
+    if sv1(strtab,ss,sl, '%') {
+        emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');
+        if tasl > 0 && get(strtab, tass) == 'u' {
+            emit_char(ob, '_');emit_char(ob, 'u');
+        }
+        emit_char(ob, 10u8);
+        return;
+    }  // mod / mod_u
     if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and
     if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or
     if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor

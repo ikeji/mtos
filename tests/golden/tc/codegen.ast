@@ -5471,7 +5471,7 @@
           (return)
         )
       )
-      (comment "if sv1(strtab,ss,sl, '/') { emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');emit_char(ob, 10u8); return; }  // div")
+      (comment "if sv1(strtab,ss,sl, '/') {")
       (if
         (call sv1
           (var strtab)
@@ -5480,6 +5480,7 @@
           (int:u8 47)
         )
         (block
+          (comment "emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');")
           (call_stmt emit_char
             (var ob)
             (int:u8 100)
@@ -5492,14 +5493,43 @@
             (var ob)
             (int:u8 118)
           )
+          (comment "if tasl > 0 && get(strtab, tass) == 'u' {")
+          (if
+            (binop &&
+              (binop >
+                (var tasl)
+                (int 0)
+              )
+              (binop ==
+                (call get
+                  (var strtab)
+                  (var tass)
+                )
+                (int:u8 117)
+              )
+            )
+            (block
+              (comment "emit_char(ob, '_');emit_char(ob, 'u');")
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 95)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 117)
+              )
+            )
+          )
+          (comment "emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
+          (comment "return;")
           (return)
         )
       )
-      (comment "if sv1(strtab,ss,sl, '%') { emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // mod")
+      (comment "if sv1(strtab,ss,sl, '%') {")
       (if
         (call sv1
           (var strtab)
@@ -5508,6 +5538,7 @@
           (int:u8 37)
         )
         (block
+          (comment "emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');")
           (call_stmt emit_char
             (var ob)
             (int:u8 109)
@@ -5520,10 +5551,39 @@
             (var ob)
             (int:u8 100)
           )
+          (comment "if tasl > 0 && get(strtab, tass) == 'u' {")
+          (if
+            (binop &&
+              (binop >
+                (var tasl)
+                (int 0)
+              )
+              (binop ==
+                (call get
+                  (var strtab)
+                  (var tass)
+                )
+                (int:u8 117)
+              )
+            )
+            (block
+              (comment "emit_char(ob, '_');emit_char(ob, 'u');")
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 95)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 117)
+              )
+            )
+          )
+          (comment "emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
+          (comment "return;")
           (return)
         )
       )
