@@ -15,10 +15,21 @@ fn init_task_frame(frame: u32, entry: u32, sp: u32, gp: u32, arena: u32, arena_s
 fn rearm_timer() -> void;
 
 // Scheduler state (private to this module)
+// State values:
+//   0 = ready    — scheduler may pick this slot
+//   1 = done     — task exited; slot can be reused by sched_spawn
+//   2 = unused   — never filled; slot can be reused by sched_spawn
+//   3 = waiting  — blocked in sys_wait; wakes when its target goes done
+var STATE_READY:   i32 = 0;
+var STATE_DONE:    i32 = 1;
+var STATE_UNUSED:  i32 = 2;
+var STATE_WAITING: i32 = 3;
+
 var g_num_tasks: i32 = 0;
 var g_current: i32 = 0;
-var g_frames: U32Array = 0 as U32Array;
-var g_states: I32Array = 0 as I32Array;  // 0=ready, 1=done
+var g_frames:  U32Array = 0 as U32Array;
+var g_states:  I32Array = 0 as I32Array;
+var g_wait_on: I32Array = 0 as I32Array;   // slot each waiting task is blocked on
 
 export fn kputs(s: StringLiteral) -> void {
     var slen: i32 = len(s);
@@ -50,17 +61,24 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
     return frame;
 }
 
-export fn sched_init(num: i32) -> void {
-    g_num_tasks = num;
-    g_frames = U32Array((num) as u32);
-    g_states = I32Array((num) as u32);
+export fn sched_init(max: i32) -> void {
+    g_num_tasks = max;
+    g_frames  = U32Array((max) as u32);
+    g_states  = I32Array((max) as u32);
+    g_wait_on = I32Array((max) as u32);
     g_current = 0;
+    var i: i32 = 0;
+    while i < max {
+        set(g_states,  i, STATE_UNUSED);
+        set(g_wait_on, i, -1);
+        i = i + 1;
+    }
     return;
 }
 
 export fn sched_register(idx: i32, frame: u32) -> void {
     set(g_frames, idx, frame);
-    set(g_states, idx, 0);
+    set(g_states, idx, STATE_READY);
     return;
 }
 
@@ -74,8 +92,48 @@ export fn sched_get_frame(idx: i32) -> u32 {
 // do not track per-task lifetimes yet.
 export fn sched_replace_current(frame: u32) -> void {
     set(g_frames, g_current, frame);
-    set(g_states, g_current, 0);
+    set(g_states, g_current, STATE_READY);
     return;
+}
+
+// Install `frame` in the first slot that is free (unused or done).
+// Returns the slot index, or -1 if the scheduler is full.
+export fn sched_spawn(frame: u32) -> i32 {
+    var i: i32 = 0;
+    while i < g_num_tasks {
+        var s: i32 = get(g_states, i);
+        if s == STATE_UNUSED || s == STATE_DONE {
+            set(g_frames,  i, frame);
+            set(g_states,  i, STATE_READY);
+            set(g_wait_on, i, -1);
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+// Block the current task until slot `target` enters STATE_DONE, then
+// return the next ready task's frame so the caller (assembly) can
+// context-switch to it. If the target is already done we return 0 to
+// signal "no switch needed" and leave the caller in STATE_READY.
+export fn sched_wait(target: i32) -> u32 {
+    if target < 0 || target >= g_num_tasks { return 0u32; }
+    if get(g_states, target) == STATE_DONE { return 0u32; }
+
+    set(g_states,  g_current, STATE_WAITING);
+    set(g_wait_on, g_current, target);
+
+    var i: i32 = 0;
+    while i < g_num_tasks {
+        var next: i32 = (g_current + 1 + i) % g_num_tasks;
+        if get(g_states, next) == STATE_READY {
+            g_current = next;
+            return get(g_frames, next) as u32;
+        }
+        i = i + 1;
+    }
+    return 0u32;
 }
 
 // Called from assembly _trap_entry on non-ecall traps
@@ -84,7 +142,7 @@ fn trap_handler(cause: u32, epc: u32) -> void {
         var i: i32 = 0;
         while i < g_num_tasks {
             var next: i32 = (g_current + 1 + i) % g_num_tasks;
-            if get(g_states, next) == 0 {
+            if get(g_states, next) == STATE_READY {
                 g_current = next;
                 set_switch_frame(get(g_frames, next) as u32);
                 i = g_num_tasks;
@@ -98,11 +156,22 @@ fn trap_handler(cause: u32, epc: u32) -> void {
 
 // Called from assembly _ecall_exit on sys_exit
 fn sched_task_exit() -> u32 {
-    set(g_states, g_current, 1);
+    set(g_states, g_current, STATE_DONE);
+
+    // Wake any tasks that were waiting on the one we just finished.
+    var w: i32 = 0;
+    while w < g_num_tasks {
+        if get(g_states, w) == STATE_WAITING && get(g_wait_on, w) == g_current {
+            set(g_states,  w, STATE_READY);
+            set(g_wait_on, w, -1);
+        }
+        w = w + 1;
+    }
+
     var i: i32 = 0;
     while i < g_num_tasks {
         var next: i32 = (g_current + 1 + i) % g_num_tasks;
-        if get(g_states, next) == 0 {
+        if get(g_states, next) == STATE_READY {
             g_current = next;
             return get(g_frames, next) as u32;
         }

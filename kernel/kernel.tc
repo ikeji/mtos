@@ -121,12 +121,11 @@ fn main() -> i32 {
 
     cat_hello_txt();
 
-    // Slot 2 runs /bin/sh, which reads one command from stdin (UART)
-    // and sys_execs it. The fs_virtio regression test pipes
-    // "catfile\n" so the shell ends up execing /bin/catfile — same
-    // observable output as the direct load path, plus coverage of
-    // sys_read + sys_exec end-to-end.
-    sched_init(3);
+    // 8 scheduler slots: slots 0..2 seed hello, hello2, and /bin/sh,
+    // the remaining 5 are reserved for sys_spawn children of the
+    // shell. The shell loops: prompt → do_spawn("/bin/<cmd>") →
+    // do_wait(slot) → prompt ... until it reads "quit".
+    sched_init(8);
     sched_register(0, load_task("/bin/hello",  65536, 65536));
     sched_register(1, load_task("/bin/hello2", 65536, 65536));
     sched_register(2, load_task("/bin/sh",     65536, 65536));

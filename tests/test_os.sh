@@ -87,7 +87,9 @@ fi
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$TMP/kernel_virt" ] && [ -s "$TMP/disk.img" ]; then
     t0=$(time_ms)
-    fs_out=$(printf 'catfile\n' | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+    # Shell loop: spawn catfile + wait for it, then prompt again and
+    # read "quit" to exit. Validates sys_spawn + sys_wait end to end.
+    fs_out=$(printf 'catfile\nquit\n' | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
         -drive "file=$TMP/disk.img,format=raw,if=none,id=blk0" \
@@ -106,15 +108,16 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_has_cat=$(echo "$fs_out" | grep -c "CAT:")
     fs_has_mtfs_msg=$(echo "$fs_out" | grep -c "hello, mtfs")
     fs_has_sh=$(echo "$fs_out" | grep -c "SH: ready")
+    fs_has_bye=$(echo "$fs_out" | grep -c "SH: bye")
     case "$fs_out" in
         *"BLOCK: virtio-blk detected"*"$expected"*"MTFS: mounted"*"FILE:hello, mtfs"*"all tasks done"*)
             if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
                 && [ "$fs_has_cat" -gt 0 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
-                && [ "$fs_has_sh" -gt 0 ]; then
-                report_pass "fs_virtio: mtfs mount + sh sys_exec + preempt (hello/hello2/sh→catfile)" "$elapsed"
+                && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ]; then
+                report_pass "fs_virtio: mtfs mount + sh spawn/wait loop (hello/hello2/sh→catfile→quit)" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "missing SH:/CAT:/A/B/mtfs contents, got: $(printf '%s' "$fs_out" | head -c 240)"
+                    "missing SH:/CAT:/A/B/mtfs/bye, got: $(printf '%s' "$fs_out" | head -c 240)"
             fi
             ;;
         *)

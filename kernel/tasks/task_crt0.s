@@ -78,6 +78,18 @@ do_exec__u32:
     ecall
     ret
 
+    .globl do_spawn__u32
+do_spawn__u32:
+    li   a7, 220
+    ecall
+    ret
+
+    .globl do_wait__i32
+do_wait__i32:
+    li   a7, 260
+    ecall
+    ret
+
 # peek/poke builtins
     .globl peek8__u32
 peek8__u32:

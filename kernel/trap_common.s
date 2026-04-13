@@ -83,6 +83,10 @@ _handle_ecall:
     beq  t0, t1, _ecall_exit
     li   t1, 221
     beq  t0, t1, _ecall_exec
+    li   t1, 220
+    beq  t0, t1, _ecall_spawn
+    li   t1, 260
+    beq  t0, t1, _ecall_wait
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -175,6 +179,48 @@ _exec_failed:
     lw   t0, 128(s0)
     addi t0, t0, 4
     sw   t0, 128(s0)
+    mv   sp, s0
+    j    _trap_restore
+
+# ===== sys_spawn (a7 = 220) =====
+# a0 = path_addr. Load the binary into a new slot via sys_spawn_handler,
+# write the new slot id (or -1) back to the task, advance mepc, and
+# return to the caller. No context switch: parent keeps running.
+_ecall_spawn:
+    mv   s0, sp
+    call _set_kern_gp
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    lw   a0, 40(s0)
+    call sys_spawn_handler__u32
+    sw   a0, 40(s0)
+    lw   t0, 128(s0)
+    addi t0, t0, 4
+    sw   t0, 128(s0)
+    mv   sp, s0
+    j    _trap_restore
+
+# ===== sys_wait (a7 = 260) =====
+# a0 = target slot. sys_wait_handler either returns 0 (target already
+# done — don't switch, caller stays READY) or a frame to switch to
+# (caller is now WAITING). Either way we write 0 as the return value
+# of sys_wait and advance mepc so the parent resumes just past ecall
+# once it becomes ready again.
+_ecall_wait:
+    mv   s0, sp
+    call _set_kern_gp
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    lw   a0, 40(s0)
+    call sys_wait_handler__i32
+    sw   zero, 40(s0)        # saved a0 = 0 (success)
+    lw   t0, 128(s0)
+    addi t0, t0, 4
+    sw   t0, 128(s0)
+    beqz a0, _wait_no_switch
+    la   t0, _switch_frame
+    sw   a0, 0(t0)
+_wait_no_switch:
     mv   sp, s0
     j    _trap_restore
 
@@ -279,6 +325,14 @@ sched_task_exit:
     ret
     .globl sys_exec_handler__u32
 sys_exec_handler__u32:
+    li   a0, 0
+    ret
+    .globl sys_spawn_handler__u32
+sys_spawn_handler__u32:
+    li   a0, -1
+    ret
+    .globl sys_wait_handler__i32
+sys_wait_handler__i32:
     li   a0, 0
     ret
 

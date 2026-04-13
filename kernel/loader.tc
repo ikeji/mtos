@@ -86,3 +86,22 @@ export fn sys_exec_handler(path_addr: u32) -> u32 {
     sched_replace_current(frame);
     return frame;
 }
+
+// Handler for sys_spawn (a7 = 220). Loads the given path into a new
+// scheduler slot and returns the slot index, or -1 on failure. Caller
+// keeps running.
+export fn sys_spawn_handler(path_addr: u32) -> i32 {
+    var fd: i32 = vfs_open(path_addr, 0);
+    if fd < 0 { return -1; }
+    var frame: u32 = load_fd(fd, 16384, 8192);
+    vfs_close(fd);
+    if frame == 0u32 { return -1; }
+    return sched_spawn(frame);
+}
+
+// Handler for sys_wait (a7 = 260). Blocks the current task until the
+// named slot enters STATE_DONE. Returns the next task frame to switch
+// to, or 0 if no switch is needed (target already done / invalid).
+export fn sys_wait_handler(slot: i32) -> u32 {
+    return sched_wait(slot);
+}

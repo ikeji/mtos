@@ -1,24 +1,24 @@
-// sh.tc — minimal interactive shell.
+// sh.tc — minimal interactive shell with sys_spawn + sys_wait.
 //
-// Reads one command from stdin (fd 0 → UART), resolves it as
-// /bin/<cmd>, and uses sys_exec (do_exec) to replace itself with
-// that binary. If the command is unknown we print an error and
-// exit — there is no fork/wait yet, so the shell cannot loop.
+// On each iteration: print "sh$ ", read a line from stdin (fd 0 →
+// UART), resolve it as "/bin/<cmd>", spawn it via do_spawn, then
+// block on do_wait until the child finishes. The loop exits on the
+// built-in command "quit".
 //
-// Used in virt as slot 2 of the kernel scheduler. Pico 2 keeps the
-// fixed launcher task because its hardware test has no keyboard
-// input pipe.
+// do_uart_read has no concept of EOF, so we cannot rely on closing
+// stdin to terminate the shell — a "quit" line is required.
 
 import "../libtc/libtc.tc";
 
-fn do_exec(path_addr: u32) -> i32;
+fn do_spawn(path_addr: u32) -> i32;
+fn do_wait(slot: i32) -> i32;
 
 var CMD_MAX:  i32 = 64;
 // "/bin/" (5) + CMD_MAX + NUL = 70
 var PATH_MAX: i32 = 70;
 
-// Read characters from stdin until LF / CR / EOF. Returns the number
-// of command bytes stored in buf (not counting the NUL terminator).
+// Read characters from stdin until LF / CR. Returns the number of
+// command bytes stored in buf (not counting the NUL terminator).
 // buf must have room for CMD_MAX bytes including NUL.
 fn read_line(buf: U8Array) -> i32 {
     var one: U8Array = U8Array(1u32);
@@ -43,20 +43,19 @@ fn read_line(buf: U8Array) -> i32 {
     return pos;
 }
 
-fn main() -> i32 {
-    puts("SH: ready\n");
-    puts("sh$ ");
-
-    var cmd: U8Array = U8Array(CMD_MAX as u32);
-    var n: i32 = read_line(cmd);
-    if n == 0 {
-        puts("SH: empty\n");
-        delete(cmd);
-        return 1;
+// Compare a NUL-terminated byte sequence in buf against a string
+// literal. Returns true iff they match exactly.
+fn eq_lit(buf: U8Array, s: StringLiteral) -> bool {
+    var slen: i32 = len(s);
+    var i: i32 = 0;
+    while i < slen {
+        if get(buf, i) != get(s, i) { return false; }
+        i = i + 1;
     }
+    return get(buf, slen) == 0u8;
+}
 
-    // Build "/bin/<cmd>".
-    var path: U8Array = U8Array(PATH_MAX as u32);
+fn build_path(path: U8Array, cmd: U8Array, n: i32) -> void {
     set(path, 0, '/' as u8);
     set(path, 1, 'b' as u8);
     set(path, 2, 'i' as u8);
@@ -68,11 +67,36 @@ fn main() -> i32 {
         i = i + 1;
     }
     set(path, 5 + n, 0u8);
-    delete(cmd);
+    return;
+}
 
-    do_exec(path as u32 + 4u32);
-    // Only reached if exec failed.
-    puts("SH: exec failed\n");
+fn main() -> i32 {
+    puts("SH: ready\n");
+
+    var cmd:  U8Array = U8Array(CMD_MAX  as u32);
+    var path: U8Array = U8Array(PATH_MAX as u32);
+
+    var running: i32 = 1;
+    while running == 1 {
+        puts("sh$ ");
+        var n: i32 = read_line(cmd);
+        if n == 0 {
+            // empty line, prompt again
+        } else if eq_lit(cmd, "quit") {
+            running = 0;
+        } else {
+            build_path(path, cmd, n);
+            var slot: i32 = do_spawn(path as u32 + 4u32);
+            if slot < 0 {
+                puts("sh: spawn failed\n");
+            } else {
+                do_wait(slot);
+            }
+        }
+    }
+
+    puts("SH: bye\n");
+    delete(cmd);
     delete(path);
-    return 1;
+    return 0;
 }

@@ -201,15 +201,23 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
       でコマンドをパイプ入力し、シェル経由の sys_exec → catfile 起動を
       end-to-end で検証。pico2 はハードテストに stdin がないので launcher
       を据え置き (build.sh が target 別にタスクリストを切り替える)。
-- [ ] Step 6.5 (オプション): `sys_spawn` + `sys_wait` による親子同期
-      - スケジューラに state (ready/done/unused/waiting) を追加
-      - `sched_spawn(frame)` が未使用スロットに新タスクを挿入
-      - `sched_wait(slot)` が呼び出し元を waiting にし、ready タスクに
-        切り替える。対象 slot が sys_exit で done になると、
-        wait 中の親を ready に戻して復帰させる
-      - 新 ecall `a7=220 (spawn)` / `a7=260 (wait)` を task_crt0.s に追加
-      - `/bin/sh` をループ化し、`quit` で終了するまで毎回プロンプト→
-        spawn→wait→次プロンプトを繰り返す
+- [x] Step 6.5: `sys_spawn` + `sys_wait` による親子同期
+      - スケジューラに state 4 種 (ready/done/unused/waiting) と
+        `g_wait_on` を追加。`sched_init(max)` で全スロットを unused に
+      - `sched_spawn(frame) -> i32` が unused / done スロットに挿入、
+        `sched_wait(target) -> u32` が呼び出し元を waiting にし、次の
+        ready フレームを返す
+      - `sched_task_exit` が target を done にしつつ、`wait_on == 自分`
+        の waiter を ready に戻す (ウェイクアップ)
+      - `trap_common.s` に `_ecall_spawn` (220) / `_ecall_wait` (260)、
+        `task_crt0.s` に `do_spawn` / `do_wait` スタブを追加
+      - `/bin/sh` をループ化: "quit" コマンドで終了するまで毎回
+        プロンプト→spawn→wait→次プロンプト
+      - virt は `sched_init(8)` で 3 スロット事前登録 + 5 スロット空き
+        (spawn 用)。pico2 も `sched_init(8)` でレイアウトを揃えたが
+        launcher 経路は変更なし
+      - `fs_virtio` が "catfile\nquit\n" をパイプしてシェルループ + 2
+        コマンド処理 (spawn/wait → exit) + SH: bye を検証
 
 ## フェーズ7: ネイティブコンパイラをOS上で動かす
 
