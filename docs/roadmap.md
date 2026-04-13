@@ -44,6 +44,12 @@
 - [x] QEMU環境構築（`qemu-system-riscv32 -M virt`、`tests/test_asm.sh` で CI 化）
 - [x] QEMUでHello World（virt、16550 UART、TC ソースから UART 出力確認）
 - [x] RP2350実機でもHello World（`pico2/hello.tc` → `pico2/build.sh` → `pico2/hello.uf2`、実機動作確認）
+- [x] hex / binary 整数リテラル (`0xFF`, `0b1010`) サポート
+- [x] `shr_u` 論理右シフト opcode 追加（`u32 >> n` が算術シフトになるバグ修正）
+- [x] Struct array (`XxxArray`) を parser 合成で完全サポート（asm リンカ経路込み）
+- [x] 配列コンストラクタを `u32` サイズに統一 (`XxxArray(n: u32)`)
+- [x] trailing comma (struct フィールド / fn パラメータ / 関数呼び出し) サポート
+- [x] 本体なし関数宣言 (`fn foo() -> void;`) でアセンブリ関数を呼び出し可能に
 
 ## フェーズ1: ツールチェーン基盤（ホストPC上、C実装）
 
@@ -133,8 +139,6 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 - [x] sched_task_exit: タスク終了時に次タスクへ切り替え、全完了でカーネル復帰
 - [x] QEMU virt で動作確認（2タスクが交互に A/B を出力）
 - [x] タスクの初期化済みデータコピー（task_crt0.s で PC 相対 la + gp 相対コピー）
-- [x] 本体なし関数宣言 (`fn foo() -> void;`) でアセンブリ関数を呼び出し可能に
-- [x] hex/binary 整数リテラル (`0xFF`, `0b1010`) のサポート
 - [x] sys_read (16550 UART / PL011 UART の RX)
 - [x] Pico 2 向けカーネル (kernel/platform_pico2.s + .data Flash→SRAM コピー)
 - [x] Pico 2 実機でプリエンプティブマルチタスク動作確認（SIO MTIME + 64-bit mtimecmp）
@@ -145,11 +149,18 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 
 ## フェーズ5: ファイルシステム（QEMUで開発・検証）
 
-- [ ] QEMUの仮想ブロックデバイス（virtio-blk）を使った開発・検証
-- [ ] 独自FSの実装（フォーマット、マウント）
-- [ ] fs_open/read/write/close の実装
-- [ ] sys_open/read/write/close の実装
-- [ ] RP2350用Flashドライバに差し替え
+全体設計は `docs/filesystem.md`。段階的に実装中（step 1..9）。
+
+- [x] 設計ドキュメント統合 (`docs/filesystem.md`, VFS + mtfs 層)
+- [x] virtio-mmio スキャン (`kernel/block_virtio.tc` block_init、legacy v1)
+- [x] virtio-blk queue 初期化 + sector 0 read (polling、split virtqueue)
+- [x] `tests/test_os.sh` fs_virtio: kernel が mkfs.py image の sector 0 を hex 出力
+- [x] `tools/mkfs.py`: MyTinyFS (mtfs) ディスクイメージ生成
+- [x] `kernel/mtfs.tc`: mount + lookup + open + read + close
+      (root 直下のみ、inode table 全キャッシュ、MtfsFDArray で fd 管理)
+- [ ] `kernel/vfs.tc` + syscall 追加（sys_openat/close + read/write 経路差し替え）
+- [ ] タスクから `/hello.txt` を open/read する catfile ゲストタスク
+- [ ] `kernel/block_flash.tc` (Pico 2 XIP memcpy) に差し替え
 
 ## フェーズ6: ユーザランド基盤
 
