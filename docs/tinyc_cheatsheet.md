@@ -1,84 +1,64 @@
 # tinyc (.tc) 開発チートシート
 
-tinyc は自己ホスト（セルフホスティング）を目標とした小型言語。
+tinyc は自己ホスト達成済みの小型言語。
 このドキュメントは **実装済みの機能** と **よくあるハマりポイント** を中心にまとめたもの。
+
+正式な言語仕様は `docs/language.md` を参照。
 
 ---
 
 ## ツールチェーン
 
-### ツール一覧
+### Gen1 ツール (C 実装、bootstrap/ 配下)
 
 | ツール | 入力 | 出力 | 説明 |
 |--------|------|------|------|
 | `./parse <file.tc>` | .tc ソース | AST（テキスト） | 構文解析 |
-| `./typecheck <file.tc>` | .tc ソース | 型注釈付きAST | 型検査 |
-| `./codegen <file.tc>` | .tc ソース | バイトコード (.bc) | コード生成 |
+| `./typecheck` | stdin: AST | 型注釈付きAST | 型検査 (stdin 経由) |
+| `./codegen <file.tc>` | .tc ソース | バイトコード (.bc) | parse+typecheck+codegen 一体 |
 | `./bcrun` | stdin: バイトコード | 実行結果 | バイトコード実行 |
 | `./interp <file.tc>` | .tc ソース (+ stdin) | 実行結果 | AST直接インタープリタ |
 | `./bc2asm` | stdin: バイトコード | RISC-V アセンブリ | ネイティブ変換 |
+| `./extract-sigs` | stdin: AST | .th (ヘッダ) | export シグネチャ抽出 |
 
 ### よく使うコマンド
 
 ```bash
-# 直接実行（インタープリタ経由）
-./interp tests/fib.tc
+# 直接実行（インタープリタ経由、最速）
+./tc_run.sh interp tests/fib.tc
 
-# C実装ツールでコンパイル→実行
-./codegen tests/fib.tc | ./bcrun
+# C実装ツールでコンパイル→バイトコード実行
+./tc_run.sh bcrun tests/fib.tc
 
-# stdin を与えるプログラム
-{ ./codegen tests/calc.tc; printf "12 + 34 * 56"; } | ./bcrun
+# RISC-V クロスコンパイル + qemu 実行
+./tc_run.sh rv32 tests/fib.tc
 
-# パースして AST を確認
-./parse tests/fib.tc
+# 自己ホスト版 (Gen2) でコンパイル
+./tc_run.sh pipeline  tests/fib.tc
+./tc_run.sh bc2asm_tc tests/fib.tc
 
-# RISC-V バイナリを生成して qemu で実行
-./codegen tests/fib.tc | ./bc2asm > /tmp/fib.s
-riscv64-unknown-elf-gcc -march=rv32im -mabi=ilp32 -static -nostdlib -lgcc \
-    -Wl,-Ttext-segment=0x10000 src/crt0.s /tmp/fib.s src/runtime_syscall.c -o /tmp/fib
-qemu-riscv32 /tmp/fib
+# stdin を渡す場合
+./tc_run.sh bcrun tests/calc.tc "12 + 34 * 56"
+./tc_run.sh bcrun tests/calc.tc @input.txt
 ```
 
----
-
-## tinyc パイプライン（セルフホスティング用）
-
-C実装ツールではなく tinyc 実装のパーサ／コードジェネレータを使ってコンパイルするパイプライン。
-
-```
-ソース.tc
-  → parse.tc (bcrun上で動作) → AST
-  → codegen.tc (bcrun上で動作) → バイトコード
-  → bcrun → 実行
-```
-
-### 実行方法
+### コンパイルスクリプト (RV32 ELF 生成)
 
 ```bash
-# Step 1: parse.tc を使って source.tc をパース
-{ ./parse src/parse.tc | ./codegen; cat source.tc; } | ./bcrun   # → AST テキスト
+# Gen1 ツール (GCC リンカ) で .tc → RV32 ELF
+./compile-gen1.sh -o output file.tc
 
-# Step 2: codegen.tc を使って AST からバイトコード生成
-AST=$(step1コマンド)
-{ ./parse src/codegen.tc | ./codegen; echo "$AST"; } | ./bcrun   # → バイトコード
-
-# Step 3: バイトコードを bcrun で実行
-{ step2コマンド; printf "stdin入力"; } | ./bcrun
-
-# 一発でコンパイル＆実行（fib.tcの例）
-PARSE_BC=$(./parse src/parse.tc | ./codegen)
-CODEGEN_BC=$(./parse src/codegen.tc | ./codegen)
-FIB_AST=$({ printf '%s\n' "$PARSE_BC"; cat tests/fib.tc; } | ./bcrun)
-FIB_BC=$({ printf '%s\n' "$CODEGEN_BC"; printf '%s\n' "$FIB_AST"; } | ./bcrun)
-printf '%s\n' "$FIB_BC" | ./bcrun
+# Gen2 ツール (qemu 経由 + asm.tc リンカ) で .tc → RV32 ELF
+GEN2_DIR=/path/to/gen2 ./compile-gen2.sh -o output file.tc
 ```
 
-### .endbc マーカー
+### 複数ファイル
 
-バイトコードの末尾に `.endbc` が出力される。
-`bcrun` は `.endbc` 以降の stdin バイトを、実行するプログラムの stdin として使う。
-これにより「バイトコード＋プログラム stdin」を1本のパイプで渡せる。
+```bash
+# import "lib.tc"; を再帰的に解決
+./tc_build.sh -o prog main.tc          # 単一ファイルでも import OK
+GEN2_DIR=/path/to/gen2 ./compile-gen2.sh -o prog main.tc  # 同上
+```
 
 ---
 
@@ -89,301 +69,294 @@ printf '%s\n' "$FIB_BC" | ./bcrun
 ```tinyc
 var x: i32 = 10;
 var flag: bool = true;
-var buf: U8Array = newU8Array(256);   // 参照型（グローバルには置けない）
+var c: u8 = 'A';
+
+// 参照型ローカル
+var buf: U8Array = U8Array(256);
+
+// 参照型グローバル (null 初期化のみ可、0 as XxxArray)
+var g_arr: U32Array = 0 as U32Array;
+
+fn init() -> void {
+    g_arr = U32Array(64);   // 関数内で確保
+}
 ```
 
 ### 関数
 
 ```tinyc
+// 通常の関数
 fn add(a: i32, b: i32) -> i32 {
     return a + b;
 }
 
+// void 関数 (末尾 return は省略可)
 fn greet() -> void {
-    // void関数の末尾 return は省略可
     return;
 }
+
+// 本体なし宣言 (アセンブリ関数や別モジュール関数を呼ぶ)
+fn _set_kern_gp() -> void;
+fn csr_read_mstatus() -> u32;
+
+// export — 別ファイルから import で呼べる
+export fn kputs(s: StringLiteral) -> void { ... }
 ```
 
-### 型と型キャスト
+### import
 
 ```tinyc
-// 整数リテラルのサフィックス
-var a: i32 = 42;       // デフォルトは i32
-var b: u8  = 65u8;     // u8 リテラル
-var c: u32 = 1024u32;
+import "kernel_common.tc";
+// import 先の export fn と struct シグネチャを取り込む
+// import は ファイル先頭 にのみ書ける
+```
 
-// 文字リテラル（型は u8）
-var ch: u8 = 'A';      // 65u8 と同じ
-var nl: u8 = '\n';     // 10u8
-var tb: u8 = '\t';     // 9u8
-var sq: u8 = '\'';     // 39u8
+### 整数リテラルと型キャスト
 
-// キャスト（明示的のみ、暗黙変換なし）
+```tinyc
+// 整数リテラル
+42        // i32 (デフォルト)
+42i8 42u8 42i16 42u16 42i32 42u32
+
+// hex / binary リテラル (任意のサフィックス可)
+0xFF      // 255 (i32)
+0xDEADBEEFu32
+0b1010    // 10 (i32)
+0b11111111u8
+
+// 文字リテラル (型は u8)
+'A'       // 65u8
+'\n' '\t' '\\' '\'' '\0'
+
+// キャスト (明示的のみ、暗黙変換なし)
 var d: i32 = b as i32;
-var e: u8  = (a & 255) as u8;
+var addr: u32 = task_buf as u32 + 4u32;
 ```
 
 ### 配列操作
 
 ```tinyc
-var arr: I32Array = newI32Array(64);
-set(arr, 0u32, 42);                  // arr[0] = 42
-var v: i32 = get(arr, 0u32);         // v = arr[0]
-var n: i32 = len(arr) as i32;        // 長さ
-delete(arr);                          // 解放
+var arr: I32Array = I32Array(64);
+set(arr, 0, 42);
+var v: i32 = get(arr, 0);
+var n: i32 = len(arr);
+delete(arr);
 
-// U8Array（バイト列）
-var buf: U8Array = newU8Array(256);
-set(buf, 0u32, 72u8);               // 'H'
-var c: u8 = get(buf, 0u32);
+// バイト列
+var buf: U8Array = U8Array(256);
+set(buf, 0, 'H');
+sys_write(1, buf, 1);
+delete(buf);
 ```
+
+### 構造体
+
+```tinyc
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+// 自動生成: コンストラクタ、ゲッター/セッター、delete
+fn main() -> i32 {
+    var p: Point = Point(3, 4);
+    var px: i32 = x(p);     // ゲッター
+    x(p, 10);                // セッター (オーバーロード)
+    delete(p);
+    return 0;
+}
+```
+
+詳細は `docs/language.md` の「構造体」セクション参照。
 
 ### 制御フロー
 
 ```tinyc
-// if / else
 if cond {
+    ...
+} else if cond2 {
     ...
 } else {
     ...
 }
 
-// while ループ
 while i < n {
+    if cond { break; }
+    if other { continue; }
     i = i + 1;
 }
+```
+
+### 直接メモリアクセス
+
+```tinyc
+// MMIO レジスタアクセス (ポインタ型なし)
+var v: u32 = peek32(0x40070000u32);
+poke32(0x40070000u32, 0x55u32);
+peek8 peek16 peek32 / poke8 poke16 poke32
 ```
 
 ---
 
-## ハマりポイント（制約一覧）
+## ハマりポイント
 
-### 1. `else if` は使える
+### 1. グローバル参照型の初期化は関数内で
 
-`else if` チェーンは通常通り書ける。
-
-```tinyc
-if x == 1 {
-    ...
-} else if x == 2 {
-    ...
-} else {
-    ...
-}
-```
-
-### 2. `break` / `continue` は使える
+参照型グローバルは `0 as XxxArray` で null 初期化のみ可。確保は関数内で:
 
 ```tinyc
-// break: ループを抜ける
-while i < n {
-    if get(arr, i as u32) == target { break; }
-    i = i + 1;
-}
-
-// continue: 次のイテレーションへ
-while i < n {
-    i = i + 1;
-    if i % 2 == 0 { continue; }
-    sum = sum + i;
-}
-
-// ネスト: break/continue は最内ループにのみ作用
-while i < rows {
-    var j: i32 = 0;
-    while j < cols {
-        if get(arr, j as u32) == 0 { break; }  // 内側だけ抜ける
-        j = j + 1;
-    }
-    i = i + 1;
-}
-```
-
-### 3. グローバル参照型の初期化は関数内で行う
-
-`I32Array`, `U8Array` などの参照型はグローバルに宣言できる（初期値は null）。
-ただし **初期化子に関数呼び出しは書けない**。codegen が整数定数しかバイトコードに出力しないため、
-`newU8Array(...)` などの呼び出しが実行されず null のままになる。
-
-```tinyc
-// NG: 初期化子の関数呼び出しが無視され、null のまま実行時エラー
-var g_buf: U8Array = newU8Array(256);
-
-// OK: 宣言だけして main で確保する
-var g_buf: U8Array;          // null で初期化される
-var g_buf_len: i32 = 0;
-
-fn process() -> void {
-    set(g_buf, 0u32, 72u8);  // main で代入済みであれば使える
-}
+// OK: null で宣言、main で確保
+var g_buf: U8Array = 0 as U8Array;
 
 fn main() -> i32 {
-    g_buf = newU8Array(256); // ← ここで確保・代入
-    g_buf_len = 256;
-    process();
+    g_buf = U8Array(256);   // ← ここで確保
+    set(g_buf, 0, 'H');
     delete(g_buf);
     return 0;
 }
 ```
 
-### 4. グローバル変数の初期値
+旧コンパイラ版で `var g_buf: U8Array = U8Array(256);` と書くと、初期化子の関数呼び出しが
+無視されて null のままになるので注意。
 
-グローバル変数には整数リテラルで初期値を与えられる。
-初期値なしの場合は 0 に初期化される。
+### 2. 前方宣言は不要
 
-```tinyc
-var g_count: i32 = 0;     // OK
-var TK_INT: i32 = 17;     // OK（定数として使う）
-var g_flag: bool = false;  // OK（0 として扱われる）
-```
+typechecker は2パスなので、関数の使用順序を気にしなくて OK。相互再帰もそのまま書ける。
 
-### 5. 前方宣言は不要
+### 3. `&&` / `||` のショートサーキット
 
-tinyc のタイプチェッカは2パスで動作するため、
-使用順序を気にせず関数を定義できる。相互再帰もそのまま書ける。
+左辺が確定したら右辺を評価しない。
 
 ```tinyc
-// OK（forward declaration 不要）
-fn foo() -> void { bar(); }
-fn bar() -> void { foo(); }
+// i < len が false なら get() は呼ばれない
+if i < len && get(buf, i) == 10u8 { ... }
 ```
 
-### 6. `&&` / `||` のショートサーキット
+### 4. 型キャストが必要な場面
 
-`&&` と `||` は左辺が確定したら右辺を評価しない（短絡評価）。
-条件式が副作用を持つ場合に注意。
+- `u8` と `i32` の混在演算
+- リファレンスをアドレスとして扱うとき (`buf as u32`)
+- リテラルとの比較 (型推論なし)
 
 ```tinyc
-// i < len が false なら get() は呼ばれない（安全）
-if i < len && get(buf, i as u32) == 10u8 {
-    ...
-}
+var c: u8 = get(buf, pos);
+var n: i32 = c as i32 - 48;
+set(buf, pos, (val & 255) as u8);
+var addr: u32 = arr as u32 + 4u32;  // U8Array データ部の先頭
 ```
 
-### 7. 型キャストが必要な場面
+### 5. `sys_read` の返り値
 
-- `u8` と `i32` の混在する演算
-- `i32` を配列インデックス（`u32`）に渡すとき
-- 比較の片方がリテラルと型が違うとき
-
-```tinyc
-var c: u8 = get(buf, pos as u32);         // i32 → u32
-var n: i32 = c as i32 - 48;              // u8 → i32
-set(buf, pos as u32, (val & 255) as u8); // i32 → u8
-```
-
-### 8. `sys_read` の返り値
-
-`sys_read(fd, buf, len)` は読んだバイト数（`i32`）を返す。
-ループで読み切る必要がある（パイプは一度で全バイトが届かない場合がある）。
+`sys_read(fd, buf, len)` は読んだバイト数を返す。一度に全部届くとは限らないので
+ループで読み切る:
 
 ```tinyc
 var total: i32 = 0;
-var done: i32 = 0;
-while done == 0 && total < BUF_SIZE {
-    var r: i32 = sys_read(0, buf, (BUF_SIZE - total) as u32);
-    if r <= 0 { done = 1; }
-    if r > 0  { total = total + r; }
+while total < BUF_SIZE {
+    var r: i32 = sys_read(0, buf, BUF_SIZE - total);
+    if r <= 0 { break; }
+    total = total + r;
 }
 ```
 
----
+### 6. 関数のオーバーロード解決
 
-## 組み込み関数（実装済み）
-
-### I/O
+引数の型で完全一致するものが選ばれる。暗黙の型変換はないので注意:
 
 ```tinyc
-sys_read(fd: i32, buf: U8Array, len: u32) -> i32
-sys_write(fd: i32, buf: U8Array, len: u32) -> i32
-sys_exit(code: i32)
-```
+fn f(x: i32) -> void { ... }
+fn f(x: u8)  -> void { ... }
 
-### デバッグ出力
-
-```tinyc
-print_i32(n: i32)     // 改行付きで標準出力
-print_u32(n: u32)
-print_bool(b: bool)
-print_str(s: String)  // interp のみ（bcrun では未サポート）
-```
-
-### 配列
-
-```tinyc
-newI32Array(size: u32) -> I32Array
-newU8Array(size: u32)  -> U8Array
-get(arr: I32Array, idx: u32) -> i32
-get(arr: U8Array,  idx: u32) -> u8
-set(arr: I32Array, idx: u32, val: i32)
-set(arr: U8Array,  idx: u32, val: u8)
-len(arr: I32Array) -> u32
-len(arr: U8Array)  -> u32
-delete(arr: I32Array)
-delete(arr: U8Array)
+f(42);       // → i32 版
+f(42u8);     // → u8 版
+f(c as u8);  // 明示キャスト
 ```
 
 ---
 
-## バイトコード形式（.bc）
+## 組み込み関数 (主要)
 
-スタックマシン形式のテキストフォーマット。
+### I/O / システムコール
+
+```tinyc
+fn sys_read(fd: i32, buf: U8Array, len: i32) -> i32
+fn sys_write(fd: i32, buf: U8Array, len: i32) -> i32
+fn sys_exit(code: i32) -> void
+
+fn print_i32(n: i32) -> void   // 改行付き
+fn print_u32(n: u32) -> void
+fn print_bool(b: bool) -> void
+```
+
+### 配列 (各 XxxArray 型に提供)
+
+```tinyc
+fn U8Array(size: i32)  -> U8Array
+fn I32Array(size: i32) -> I32Array
+// ... U16Array, U32Array, I8Array, I16Array
+fn get(arr: U8Array, idx: i32) -> u8
+fn set(arr: U8Array, idx: i32, val: u8) -> void
+fn len(arr: U8Array) -> i32
+fn delete(arr: U8Array) -> void
+```
+
+### 文字列
+
+```tinyc
+// String / StringLiteral
+fn len(s: String) -> i32
+fn get(s: String, idx: i32) -> u8
+fn append(s: String, t: String) -> String
+fn equals(s: String, t: String) -> bool
+fn delete(s: String) -> void           // リテラルには no-op
+```
+
+### 直接メモリ
+
+```tinyc
+fn peek8(addr: u32)  -> u8
+fn peek16(addr: u32) -> u16
+fn peek32(addr: u32) -> u32
+fn poke8(addr: u32, val: u8)   -> void
+fn poke16(addr: u32, val: u16) -> void
+fn poke32(addr: u32, val: u32) -> void
+```
+
+---
+
+## バイトコード形式 (.bc)
+
+スタックマシン形式のテキストフォーマット。詳細は `docs/bc_format.md`。
 
 ```
-; string table
+.bc
 .string 0 "hello"
-
-; globals
 .global g_count i32 0
-.global TK_INT  i32 17
 
-.fn func_name nparams return_type
-.param name type
-.local name type
+.fn main i32
+.param argc i32
+.local x i32
   push_int 42
-  load varname
-  store varname
-  call func_name nargs
+  store x
+  load x
   return
-  return_void
-  jump __L0
-  jump_if __L0
-  jump_ifnot __L0
-__L0:
 .endfn
 
 .endbc
 ```
 
-### 主要命令
-
-| 命令 | 動作 |
-|------|------|
-| `push_int N` | スタックに整数 N を積む |
-| `push_str N` | string table の N 番目の参照を積む |
-| `load NAME` | 変数 NAME の値をスタックへ |
-| `store NAME` | スタックトップを変数 NAME へ |
-| `call NAME N` | N 引数で関数 NAME を呼び出す |
-| `return` | 戻り値あり return |
-| `return_void` | 戻り値なし return |
-| `pop` | スタックトップを捨てる |
-| `add/sub/mul/div/mod` | 算術演算 |
-| `eq/ne/lt/le/gt/ge` | 比較（結果は 0 or 1） |
-| `and/or/xor/shl/shr` | ビット演算 |
-| `neg` / `lnot` | 単項マイナス / 論理 NOT |
-| `cast TYPE` | スタックトップを TYPE に変換 |
-| `jump L` | 無条件ジャンプ |
-| `jump_if L` | スタックトップが真なら |
-| `jump_ifnot L` | スタックトップが偽なら |
+主要命令: `push_int`, `push_str`, `load`, `store`, `call`, `return`, `pop`,
+`add/sub/mul/div/mod`, `eq/ne/lt/le/gt/ge`, `and/or/xor/shl/shr`,
+`jump`, `jump_if`, `jump_ifnot`, `cast`
 
 ---
 
 ## テスト実行
 
 ```bash
-bash tests/run_tests.sh
+make test          # 約50秒、上限60秒
+make full-test     # consistency + kmalloc/kernel1 含む全テスト (約63秒)
+make update-golden-and-run-test
 ```
 
-- C実装ツールのテスト（parse, codegen, bcrun, rv32）
-- **パイプラインテスト**: parse.tc / codegen.tc を bcrun 上で動かすテスト
+詳細は `tests/test_all.sh` 参照。
