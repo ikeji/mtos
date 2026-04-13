@@ -4,6 +4,7 @@
 
 import "kernel_common.tc";
 import "block_virtio.tc";
+import "mtfs.tc";
 
 // Assembly-defined functions
 fn csr_read_mie() -> u32;
@@ -66,12 +67,59 @@ fn dump_sector0() -> void {
     return;
 }
 
+// Copy a string literal into a freshly-allocated U8Array (caller deletes).
+fn str_u8(s: StringLiteral) -> U8Array {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array(slen);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    return buf;
+}
+
+fn cat_hello_txt() -> void {
+    if mtfs_mount() != 0 {
+        kputs("MTFS: mount failed\n");
+        return;
+    }
+    kputs("MTFS: mounted\n");
+
+    var name: U8Array = str_u8("hello.txt");
+    var ino: i32 = mtfs_lookup(0u32, name, len(name));
+    delete(name);
+    if ino < 0 {
+        kputs("MTFS: hello.txt not found\n");
+        return;
+    }
+
+    var fd: i32 = mtfs_open(ino as u32);
+    if fd < 0 {
+        kputs("MTFS: open failed\n");
+        return;
+    }
+
+    var buf: U8Array = U8Array(64);
+    var n: i32 = mtfs_read(fd, buf, 64);
+    if n > 0 {
+        kputs("FILE:");
+        sys_write(1, buf, n);
+    } else {
+        kputs("MTFS: read failed\n");
+    }
+    delete(buf);
+    mtfs_close(fd);
+    return;
+}
+
 fn main() -> i32 {
     kputs("KERN: starting\n");
 
     if block_init() == 0 {
         kputs("BLOCK: virtio-blk detected\n");
         dump_sector0();
+        cat_hello_txt();
     } else {
         kputs("BLOCK: no virtio-blk\n");
     }

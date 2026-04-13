@@ -966,6 +966,63 @@ fn collect_fn(nodes: I32Array, strtab: U8Array, fntab: I32Array, fn_n: i32) -> v
     return;
 }
 
+// Register auto-generated array builtins for a struct type, given
+// precomputed strtab offsets for "XxxArray" and "Xxx". Registers:
+//   XxxArray(i32) -> XxxArray
+//   len(XxxArray) -> i32
+//   get(XxxArray, i32) -> Xxx
+//   set(XxxArray, i32, Xxx) -> void
+//   delete(XxxArray) -> void
+fn reg_struct_array_builtins(strtab: U8Array, fntab: I32Array,
+                             arr_ss: i32, arr_sl: i32,
+                             elem_ss: i32, elem_sl: i32) -> void {
+    var i32_ss: i32 = st_add_str(strtab, "i32");
+    var void_ss: i32 = st_add_str(strtab, "void");
+    var len_ss: i32 = st_add_str(strtab, "len");
+    var get_ss: i32 = st_add_str(strtab, "get");
+    var set_ss: i32 = st_add_str(strtab, "set");
+    var del_ss: i32 = st_add_str(strtab, "delete");
+
+    // XxxArray(i32) -> XxxArray
+    var fi: i32 = g_fn_count; g_fn_count = g_fn_count + 1;
+    ft_set_nss(fntab, fi, arr_ss); ft_set_nsl(fntab, fi, arr_sl);
+    ft_set_rss(fntab, fi, arr_ss); ft_set_rsl(fntab, fi, arr_sl);
+    ft_set_np(fntab, fi, 1);
+    ft_set_pss(fntab, fi, 0, i32_ss); ft_set_psl(fntab, fi, 0, 3);
+
+    // len(XxxArray) -> i32
+    fi = g_fn_count; g_fn_count = g_fn_count + 1;
+    ft_set_nss(fntab, fi, len_ss); ft_set_nsl(fntab, fi, 3);
+    ft_set_rss(fntab, fi, i32_ss); ft_set_rsl(fntab, fi, 3);
+    ft_set_np(fntab, fi, 1);
+    ft_set_pss(fntab, fi, 0, arr_ss); ft_set_psl(fntab, fi, 0, arr_sl);
+
+    // get(XxxArray, i32) -> Xxx
+    fi = g_fn_count; g_fn_count = g_fn_count + 1;
+    ft_set_nss(fntab, fi, get_ss); ft_set_nsl(fntab, fi, 3);
+    ft_set_rss(fntab, fi, elem_ss); ft_set_rsl(fntab, fi, elem_sl);
+    ft_set_np(fntab, fi, 2);
+    ft_set_pss(fntab, fi, 0, arr_ss); ft_set_psl(fntab, fi, 0, arr_sl);
+    ft_set_pss(fntab, fi, 1, i32_ss); ft_set_psl(fntab, fi, 1, 3);
+
+    // set(XxxArray, i32, Xxx) -> void
+    fi = g_fn_count; g_fn_count = g_fn_count + 1;
+    ft_set_nss(fntab, fi, set_ss); ft_set_nsl(fntab, fi, 3);
+    ft_set_rss(fntab, fi, void_ss); ft_set_rsl(fntab, fi, 4);
+    ft_set_np(fntab, fi, 3);
+    ft_set_pss(fntab, fi, 0, arr_ss); ft_set_psl(fntab, fi, 0, arr_sl);
+    ft_set_pss(fntab, fi, 1, i32_ss); ft_set_psl(fntab, fi, 1, 3);
+    ft_set_pss(fntab, fi, 2, elem_ss); ft_set_psl(fntab, fi, 2, elem_sl);
+
+    // delete(XxxArray) -> void
+    fi = g_fn_count; g_fn_count = g_fn_count + 1;
+    ft_set_nss(fntab, fi, del_ss); ft_set_nsl(fntab, fi, 6);
+    ft_set_rss(fntab, fi, void_ss); ft_set_rsl(fntab, fi, 4);
+    ft_set_np(fntab, fi, 1);
+    ft_set_pss(fntab, fi, 0, arr_ss); ft_set_psl(fntab, fi, 0, arr_sl);
+    return;
+}
+
 fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i32) -> void {
     var sname_ss: i32 = n_ss(nodes, struct_n);
     var sname_sl: i32 = n_sl(nodes, struct_n);
@@ -989,6 +1046,24 @@ fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i
         fc2 = n_sib(nodes, fc2);
     }
     ft_set_np(fntab, fi2, nfp);
+
+    // Build "XxxArray" string in strtab (raw copy from the struct name)
+    var arr_ss: i32 = g_sp;
+    var ai: i32 = 0;
+    while ai < sname_sl {
+        set(strtab, g_sp, get(strtab, sname_ss + ai));
+        g_sp = g_sp + 1;
+        ai = ai + 1;
+    }
+    set(strtab, g_sp, 'A' as u8); g_sp = g_sp + 1;
+    set(strtab, g_sp, 'r' as u8); g_sp = g_sp + 1;
+    set(strtab, g_sp, 'r' as u8); g_sp = g_sp + 1;
+    set(strtab, g_sp, 'a' as u8); g_sp = g_sp + 1;
+    set(strtab, g_sp, 'y' as u8); g_sp = g_sp + 1;
+    var arr_sl: i32 = sname_sl + 5;
+
+    // Register auto-generated XxxArray builtins
+    reg_struct_array_builtins(strtab, fntab, arr_ss, arr_sl, sname_ss, sname_sl);
 
     // delete(StructName) is now generated as a synthetic fn by the parser
     return;

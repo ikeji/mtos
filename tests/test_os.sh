@@ -120,12 +120,12 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 && [ -s "$TMP/kernel_virt" ]; 
     # mkfs.py with one small file → total_blocks = 3 (sb + 1 inode block + 1 data block)
     expected="SECTOR0: 4d 54 46 53 01 00 00 00 00 02 00 00 03 00 00 00"
     case "$fs_out" in
-        *"BLOCK: virtio-blk detected"*"$expected"*)
-            report_pass "fs_virtio: sector 0 is valid mtfs superblock" "$elapsed"
+        *"BLOCK: virtio-blk detected"*"$expected"*"MTFS: mounted"*"FILE:hello, mtfs"*)
+            report_pass "fs_virtio: mtfs mount + read hello.txt" "$elapsed"
             ;;
         *)
             report_fail_msg "fs_virtio" \
-                "expected detected + '$expected', got: $(printf '%s' "$fs_out" | head -c 200)"
+                "expected detected + mtfs mounted + FILE:hello, got: $(printf '%s' "$fs_out" | head -c 240)"
             ;;
     esac
 fi
