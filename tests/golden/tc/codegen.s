@@ -17,7 +17,7 @@ StringBuffer__U8Array__i32__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U32Array__i32
+    call U32Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -380,6 +380,181 @@ delete__StringBuffer:
     ret
     # end of delete__StringBuffer
 
+    .globl StringBufferArray__u32
+    .type  StringBufferArray__u32, @function
+StringBufferArray__u32:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call U32Array__u32
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of StringBufferArray__u32
+
+    .globl len__StringBufferArray
+    .type  len__StringBufferArray, @function
+len__StringBufferArray:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call len__U32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of len__StringBufferArray
+
+    .globl get__StringBufferArray__i32
+    .type  get__StringBufferArray__i32, @function
+get__StringBufferArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of get__StringBufferArray__i32
+
+    .globl set__StringBufferArray__i32__StringBuffer
+    .type  set__StringBufferArray__i32__StringBuffer, @function
+set__StringBufferArray__i32__StringBuffer:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of set__StringBufferArray__i32__StringBuffer
+
+    .globl delete__StringBufferArray
+    .type  delete__StringBufferArray, @function
+delete__StringBufferArray:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call delete__U32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of delete__StringBufferArray
+
     .globl StringBuffer_new
     .type  StringBuffer_new, @function
 StringBuffer_new:
@@ -392,7 +567,7 @@ StringBuffer_new:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -446,7 +621,7 @@ StringBuffer_new__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -576,8 +751,12 @@ grow__StringBuffer:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -590,7 +769,7 @@ grow__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-  .L_grow__StringBuffer_pc15:
+  .L_grow__StringBuffer_pc16:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -606,7 +785,7 @@ grow__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_grow__StringBuffer_pc31
+    j    .L_grow__StringBuffer_pc32
 0:
     lw   t0, -28(s0)
     addi sp, sp, -4
@@ -649,8 +828,8 @@ grow__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-    j    .L_grow__StringBuffer_pc15
-  .L_grow__StringBuffer_pc31:
+    j    .L_grow__StringBuffer_pc16
+  .L_grow__StringBuffer_pc32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1171,7 +1350,7 @@ emit_int__StringBuffer__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -1844,7 +2023,7 @@ SourceReader__i32__U8Array__i32__i32__i32__StringBuffer__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U32Array__i32
+    call U32Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -2619,6 +2798,181 @@ delete__SourceReader:
     ret
     # end of delete__SourceReader
 
+    .globl SourceReaderArray__u32
+    .type  SourceReaderArray__u32, @function
+SourceReaderArray__u32:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call U32Array__u32
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of SourceReaderArray__u32
+
+    .globl len__SourceReaderArray
+    .type  len__SourceReaderArray, @function
+len__SourceReaderArray:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call len__U32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of len__SourceReaderArray
+
+    .globl get__SourceReaderArray__i32
+    .type  get__SourceReaderArray__i32, @function
+get__SourceReaderArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of get__SourceReaderArray__i32
+
+    .globl set__SourceReaderArray__i32__SourceReader
+    .type  set__SourceReaderArray__i32__SourceReader, @function
+set__SourceReaderArray__i32__SourceReader:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of set__SourceReaderArray__i32__SourceReader
+
+    .globl delete__SourceReaderArray
+    .type  delete__SourceReaderArray, @function
+delete__SourceReaderArray:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call delete__U32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of delete__SourceReaderArray
+
     .globl SourceReader_new__i32
     .type  SourceReader_new__i32, @function
 SourceReader_new__i32:
@@ -2635,7 +2989,7 @@ SourceReader_new__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3207,13 +3561,17 @@ compact_and_fill__SourceReader:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_compact_and_fill__SourceReader_pc112
+    j    .L_compact_and_fill__SourceReader_pc113
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -3259,7 +3617,7 @@ compact_and_fill__SourceReader:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_compact_and_fill__SourceReader_pc105
+    j    .L_compact_and_fill__SourceReader_pc106
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -3267,7 +3625,7 @@ compact_and_fill__SourceReader:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-  .L_compact_and_fill__SourceReader_pc79:
+  .L_compact_and_fill__SourceReader_pc80:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3283,7 +3641,7 @@ compact_and_fill__SourceReader:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_compact_and_fill__SourceReader_pc98
+    j    .L_compact_and_fill__SourceReader_pc99
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -3340,8 +3698,8 @@ compact_and_fill__SourceReader:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-    j    .L_compact_and_fill__SourceReader_pc79
-  .L_compact_and_fill__SourceReader_pc98:
+    j    .L_compact_and_fill__SourceReader_pc80
+  .L_compact_and_fill__SourceReader_pc99:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3364,8 +3722,8 @@ compact_and_fill__SourceReader:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_compact_and_fill__SourceReader_pc109
-  .L_compact_and_fill__SourceReader_pc105:
+    j    .L_compact_and_fill__SourceReader_pc110
+  .L_compact_and_fill__SourceReader_pc106:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3379,7 +3737,7 @@ compact_and_fill__SourceReader:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_compact_and_fill__SourceReader_pc109:
+  .L_compact_and_fill__SourceReader_pc110:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3389,7 +3747,7 @@ compact_and_fill__SourceReader:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_compact_and_fill__SourceReader_pc112:
+  .L_compact_and_fill__SourceReader_pc113:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -13800,7 +14158,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call I32Array__i32
+    call I32Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19773,7 +20131,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call I32Array__i32
+    call I32Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25337,7 +25695,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call I32Array__i32
+    call I32Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26245,7 +26603,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26267,7 +26625,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call I32Array__i32
+    call I32Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26278,7 +26636,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26289,7 +26647,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call I32Array__i32
+    call I32Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26300,7 +26658,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call I32Array__i32
+    call I32Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

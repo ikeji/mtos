@@ -198,13 +198,13 @@ static HeapObj new_typed_array(int sz, int elem_bytes) {
     return new_array(sz, sz > 0 ? sz * elem_bytes : 4);
 }
 
-HeapObj U8Array__i32 (int32_t sz) { return new_typed_array(sz, 1); }
-HeapObj U16Array__i32(int32_t sz) { return new_typed_array(sz, 2); }
-HeapObj U32Array__i32(int32_t sz) { return new_typed_array(sz, 4); }
-HeapObj I8Array__i32 (int32_t sz) { return new_typed_array(sz, 1); }
-HeapObj I16Array__i32(int32_t sz) { return new_typed_array(sz, 2); }
-HeapObj I32Array__i32(int32_t sz) { return new_typed_array(sz, 4); }
-HeapObj StringArray__i32(int32_t sz) { return new_typed_array(sz, 4); }
+HeapObj U8Array__u32 (uint32_t sz) { return new_typed_array((int32_t)sz, 1); }
+HeapObj U16Array__u32(uint32_t sz) { return new_typed_array((int32_t)sz, 2); }
+HeapObj U32Array__u32(uint32_t sz) { return new_typed_array((int32_t)sz, 4); }
+HeapObj I8Array__u32 (uint32_t sz) { return new_typed_array((int32_t)sz, 1); }
+HeapObj I16Array__u32(uint32_t sz) { return new_typed_array((int32_t)sz, 2); }
+HeapObj I32Array__u32(uint32_t sz) { return new_typed_array((int32_t)sz, 4); }
+HeapObj StringArray__u32(uint32_t sz) { return new_typed_array((int32_t)sz, 4); }
 
 /* len */
 static int32_t len_impl(HeapObj o) {

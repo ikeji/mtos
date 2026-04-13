@@ -29,7 +29,7 @@ fn rearm_timer() -> void {
 
 // Hex output helpers (used to dump sector 0 during bring-up)
 fn kputchar(c: u8) -> void {
-    var b: U8Array = U8Array(1);
+    var b: U8Array = U8Array(1u32);
     set(b, 0, c);
     sys_write(1, b, 1);
     delete(b);
@@ -49,7 +49,7 @@ fn kputs_hex8(x: u8) -> void {
 }
 
 fn dump_sector0() -> void {
-    var buf: U8Array = U8Array(512);
+    var buf: U8Array = U8Array(512u32);
     var n: i32 = block_read(0u32, buf);
     if n == 512 {
         kputs("SECTOR0:");
@@ -70,7 +70,7 @@ fn dump_sector0() -> void {
 // Copy a string literal into a freshly-allocated U8Array (caller deletes).
 fn str_u8(s: StringLiteral) -> U8Array {
     var slen: i32 = len(s);
-    var buf: U8Array = U8Array(slen);
+    var buf: U8Array = U8Array((slen) as u32);
     var i: i32 = 0;
     while i < slen {
         set(buf, i, get(s, i));
@@ -100,7 +100,7 @@ fn cat_hello_txt() -> void {
         return;
     }
 
-    var buf: U8Array = U8Array(64);
+    var buf: U8Array = U8Array(64u32);
     var n: i32 = mtfs_read(fd, buf, 64);
     if n > 0 {
         kputs("FILE:");

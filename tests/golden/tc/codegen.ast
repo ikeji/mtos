@@ -4132,11 +4132,11 @@
           (var NK_CALL_STMT)
         )
         (block
-          (comment "var args: I32Array = I32Array(24);")
+          (comment "var args: I32Array = I32Array(24u32);")
           (var_decl args
             (type I32Array)
             (call I32Array
-              (int 24)
+              (int:u32 24)
             )
           )
           (comment "var nargs: i32 = 0;")
@@ -6244,11 +6244,11 @@
           (var NK_CALL)
         )
         (block
-          (comment "var args: I32Array = I32Array(24);")
+          (comment "var args: I32Array = I32Array(24u32);")
           (var_decl args
             (type I32Array)
             (call I32Array
-              (int 24)
+              (int:u32 24)
             )
           )
           (comment "var nargs: i32 = 0;")
@@ -8239,11 +8239,11 @@
       (assign g_loop_depth
         (int 0)
       )
-      (comment "var loop_stk: I32Array = I32Array(32); // up to 16 nested while loops")
+      (comment "var loop_stk: I32Array = I32Array(32u32); // up to 16 nested while loops")
       (var_decl loop_stk
         (type I32Array)
         (call I32Array
-          (int 32)
+          (int:u32 32)
         )
       )
       (comment "cg_block(nodes, strtab, slits, ob, loop_stk, body_n);")
@@ -8568,11 +8568,11 @@
       (type i32)
     )
     (block
-      (comment "var atom_buf: U8Array = U8Array(1024);   // atom scratch buffer")
+      (comment "var atom_buf: U8Array = U8Array(1024u32);   // atom scratch buffer")
       (var_decl atom_buf
         (type U8Array)
         (call U8Array
-          (int 1024)
+          (int:u32 1024)
         )
       )
       (comment "var out_buf: StringBuffer = StringBuffer_new(1);")
@@ -8582,32 +8582,32 @@
           (int 1)
         )
       )
-      (comment "var nodes: I32Array = I32Array(32768);   // 4096 nodes per function (streaming)")
+      (comment "var nodes: I32Array = I32Array(32768u32);   // 4096 nodes per function (streaming)")
       (var_decl nodes
         (type I32Array)
         (call I32Array
-          (int 32768)
+          (int:u32 32768)
         )
       )
-      (comment "var strtab: U8Array = U8Array(262144);   // string table")
+      (comment "var strtab: U8Array = U8Array(262144u32);   // string table")
       (var_decl strtab
         (type U8Array)
         (call U8Array
-          (int 262144)
+          (int:u32 262144)
         )
       )
-      (comment "var slits: I32Array = I32Array(512);     // 256 string literals × 2")
+      (comment "var slits: I32Array = I32Array(512u32);     // 256 string literals × 2")
       (var_decl slits
         (type I32Array)
         (call I32Array
-          (int 512)
+          (int:u32 512)
         )
       )
-      (comment "var locals: I32Array = I32Array(2048);   // 512 locals × 4")
+      (comment "var locals: I32Array = I32Array(2048u32);   // 512 locals × 4")
       (var_decl locals
         (type I32Array)
         (call I32Array
-          (int 2048)
+          (int:u32 2048)
         )
       )
       (comment "g_reader = SourceReader_new(0);")

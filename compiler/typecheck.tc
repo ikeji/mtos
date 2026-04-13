@@ -493,14 +493,14 @@ fn reg_fn(strtab: U8Array, fntab: I32Array, name: StringLiteral, pts: StringArra
 }
 
 fn reg_fn0(strtab: U8Array, fntab: I32Array, name: StringLiteral, ret: StringLiteral) -> void {
-    var pts: StringArray = StringArray(1);
+    var pts: StringArray = StringArray(1u32);
     reg_fn(strtab, fntab, name, pts, 0, ret);
     delete(pts);
     return;
 }
 
 fn reg_fn1(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, ret: StringLiteral) -> void {
-    var pts: StringArray = StringArray(1);
+    var pts: StringArray = StringArray(1u32);
     set(pts, 0, p0);
     reg_fn(strtab, fntab, name, pts, 1, ret);
     delete(pts);
@@ -508,7 +508,7 @@ fn reg_fn1(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLite
 }
 
 fn reg_fn2(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, p1: StringLiteral, ret: StringLiteral) -> void {
-    var pts: StringArray = StringArray(2);
+    var pts: StringArray = StringArray(2u32);
     set(pts, 0, p0);
     set(pts, 1, p1);
     reg_fn(strtab, fntab, name, pts, 2, ret);
@@ -517,7 +517,7 @@ fn reg_fn2(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLite
 }
 
 fn reg_fn3(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, p1: StringLiteral, p2: StringLiteral, ret: StringLiteral) -> void {
-    var pts: StringArray = StringArray(3);
+    var pts: StringArray = StringArray(3u32);
     set(pts, 0, p0);
     set(pts, 1, p1);
     set(pts, 2, p2);
@@ -527,7 +527,7 @@ fn reg_fn3(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLite
 }
 
 fn reg_array_builtins(strtab: U8Array, fntab: I32Array, arr_type: StringLiteral, elem_type: StringLiteral) -> void {
-    reg_fn1(strtab, fntab, arr_type, "i32", arr_type);
+    reg_fn1(strtab, fntab, arr_type, "u32", arr_type);
     reg_fn1(strtab, fntab, "len", arr_type, "i32");
     reg_fn2(strtab, fntab, "get", arr_type, "i32", elem_type);
     reg_fn3(strtab, fntab, "set", arr_type, "i32", elem_type, "void");
@@ -749,8 +749,8 @@ fn check_expr(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Arra
 fn check_call_site(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array,
                    n: i32, fname_ss: i32, fname_sl: i32) -> void {
     var nargs: i32 = n_nchildren(nodes, n);
-    var arg_tss: I32Array = I32Array(24);
-    var arg_tsl: I32Array = I32Array(24);
+    var arg_tss: I32Array = I32Array(24u32);
+    var arg_tsl: I32Array = I32Array(24u32);
     var child: i32 = n_child(nodes, n);
     var ai: i32 = 0;
     while child >= 0 && ai < 24 {
@@ -766,7 +766,7 @@ fn check_call_site(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I3
     delete(arg_tsl);
 
     if fi < 0 {
-        var errbuf: U8Array = U8Array(64);
+        var errbuf: U8Array = U8Array(64u32);
         set(errbuf, 0, 'T'); set(errbuf, 1, 'y'); set(errbuf, 2, 'p'); set(errbuf, 3, 'e');
         set(errbuf, 4, ' '); set(errbuf, 5, 'e'); set(errbuf, 6, 'r'); set(errbuf, 7, 'r');
         set(errbuf, 8, 'o'); set(errbuf, 9, 'r'); set(errbuf, 10, 10u8);
@@ -966,63 +966,6 @@ fn collect_fn(nodes: I32Array, strtab: U8Array, fntab: I32Array, fn_n: i32) -> v
     return;
 }
 
-// Register auto-generated array builtins for a struct type, given
-// precomputed strtab offsets for "XxxArray" and "Xxx". Registers:
-//   XxxArray(i32) -> XxxArray
-//   len(XxxArray) -> i32
-//   get(XxxArray, i32) -> Xxx
-//   set(XxxArray, i32, Xxx) -> void
-//   delete(XxxArray) -> void
-fn reg_struct_array_builtins(strtab: U8Array, fntab: I32Array,
-                             arr_ss: i32, arr_sl: i32,
-                             elem_ss: i32, elem_sl: i32) -> void {
-    var i32_ss: i32 = st_add_str(strtab, "i32");
-    var void_ss: i32 = st_add_str(strtab, "void");
-    var len_ss: i32 = st_add_str(strtab, "len");
-    var get_ss: i32 = st_add_str(strtab, "get");
-    var set_ss: i32 = st_add_str(strtab, "set");
-    var del_ss: i32 = st_add_str(strtab, "delete");
-
-    // XxxArray(i32) -> XxxArray
-    var fi: i32 = g_fn_count; g_fn_count = g_fn_count + 1;
-    ft_set_nss(fntab, fi, arr_ss); ft_set_nsl(fntab, fi, arr_sl);
-    ft_set_rss(fntab, fi, arr_ss); ft_set_rsl(fntab, fi, arr_sl);
-    ft_set_np(fntab, fi, 1);
-    ft_set_pss(fntab, fi, 0, i32_ss); ft_set_psl(fntab, fi, 0, 3);
-
-    // len(XxxArray) -> i32
-    fi = g_fn_count; g_fn_count = g_fn_count + 1;
-    ft_set_nss(fntab, fi, len_ss); ft_set_nsl(fntab, fi, 3);
-    ft_set_rss(fntab, fi, i32_ss); ft_set_rsl(fntab, fi, 3);
-    ft_set_np(fntab, fi, 1);
-    ft_set_pss(fntab, fi, 0, arr_ss); ft_set_psl(fntab, fi, 0, arr_sl);
-
-    // get(XxxArray, i32) -> Xxx
-    fi = g_fn_count; g_fn_count = g_fn_count + 1;
-    ft_set_nss(fntab, fi, get_ss); ft_set_nsl(fntab, fi, 3);
-    ft_set_rss(fntab, fi, elem_ss); ft_set_rsl(fntab, fi, elem_sl);
-    ft_set_np(fntab, fi, 2);
-    ft_set_pss(fntab, fi, 0, arr_ss); ft_set_psl(fntab, fi, 0, arr_sl);
-    ft_set_pss(fntab, fi, 1, i32_ss); ft_set_psl(fntab, fi, 1, 3);
-
-    // set(XxxArray, i32, Xxx) -> void
-    fi = g_fn_count; g_fn_count = g_fn_count + 1;
-    ft_set_nss(fntab, fi, set_ss); ft_set_nsl(fntab, fi, 3);
-    ft_set_rss(fntab, fi, void_ss); ft_set_rsl(fntab, fi, 4);
-    ft_set_np(fntab, fi, 3);
-    ft_set_pss(fntab, fi, 0, arr_ss); ft_set_psl(fntab, fi, 0, arr_sl);
-    ft_set_pss(fntab, fi, 1, i32_ss); ft_set_psl(fntab, fi, 1, 3);
-    ft_set_pss(fntab, fi, 2, elem_ss); ft_set_psl(fntab, fi, 2, elem_sl);
-
-    // delete(XxxArray) -> void
-    fi = g_fn_count; g_fn_count = g_fn_count + 1;
-    ft_set_nss(fntab, fi, del_ss); ft_set_nsl(fntab, fi, 6);
-    ft_set_rss(fntab, fi, void_ss); ft_set_rsl(fntab, fi, 4);
-    ft_set_np(fntab, fi, 1);
-    ft_set_pss(fntab, fi, 0, arr_ss); ft_set_psl(fntab, fi, 0, arr_sl);
-    return;
-}
-
 fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i32) -> void {
     var sname_ss: i32 = n_ss(nodes, struct_n);
     var sname_sl: i32 = n_sl(nodes, struct_n);
@@ -1047,25 +990,9 @@ fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i
     }
     ft_set_np(fntab, fi2, nfp);
 
-    // Build "XxxArray" string in strtab (raw copy from the struct name)
-    var arr_ss: i32 = g_sp;
-    var ai: i32 = 0;
-    while ai < sname_sl {
-        set(strtab, g_sp, get(strtab, sname_ss + ai));
-        g_sp = g_sp + 1;
-        ai = ai + 1;
-    }
-    set(strtab, g_sp, 'A' as u8); g_sp = g_sp + 1;
-    set(strtab, g_sp, 'r' as u8); g_sp = g_sp + 1;
-    set(strtab, g_sp, 'r' as u8); g_sp = g_sp + 1;
-    set(strtab, g_sp, 'a' as u8); g_sp = g_sp + 1;
-    set(strtab, g_sp, 'y' as u8); g_sp = g_sp + 1;
-    var arr_sl: i32 = sname_sl + 5;
-
-    // Register auto-generated XxxArray builtins
-    reg_struct_array_builtins(strtab, fntab, arr_ss, arr_sl, sname_ss, sname_sl);
-
-    // delete(StructName) is now generated as a synthetic fn by the parser
+    // XxxArray constructor / len / get / set / delete are emitted as
+    // synthetic fn AST nodes by the parser (see compiler/parse.tc
+    // pars_struct_decl) and registered via collect_fn.
     return;
 }
 
@@ -1237,16 +1164,16 @@ fn write_node(nodes: I32Array, strtab: U8Array, ob: StringBuffer, indent: i32, n
 
 // ===== Main =====
 fn main() -> i32 {
-    var nodes: I32Array = I32Array(131072);
-    var strtab: U8Array = U8Array(524288);
-    var atom_buf: U8Array = U8Array(1024);
+    var nodes: I32Array = I32Array(131072u32);
+    var strtab: U8Array = U8Array(524288u32);
+    var atom_buf: U8Array = U8Array(1024u32);
     var ob: StringBuffer = StringBuffer_new(1);
 
     // fntab: 600 entries * 47 fields = 28200
-    var fntab: I32Array = I32Array(28200);
+    var fntab: I32Array = I32Array(28200u32);
 
     // vartab: 512 vars * 5 fields = 2560
-    var vartab: I32Array = I32Array(2560);
+    var vartab: I32Array = I32Array(2560u32);
 
     g_reader = SourceReader_new(0);
     g_nc = 0;

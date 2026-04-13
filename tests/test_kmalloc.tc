@@ -11,22 +11,22 @@ fn assert(cond: bool, code: i32) -> void {
 
 fn main() -> i32 {
     // 1: small allocs (bucket path)
-    var a: U8Array = U8Array(4);
+    var a: U8Array = U8Array(4u32);
     assert(a as u32 != 0u32, 0 - 1);
     set(a, 0, 42u8);
     assert(get(a, 0) == 42u8, 0 - 2);
     delete(a);
 
     // 2: various bucket sizes
-    var b8: U8Array = U8Array(8);
-    var b16: U8Array = U8Array(16);
-    var b32: U8Array = U8Array(32);
-    var b64: U8Array = U8Array(64);
-    var b128: U8Array = U8Array(128);
-    var b256: U8Array = U8Array(256);
-    var b512: U8Array = U8Array(512);
-    var b1k: U8Array = U8Array(1024);
-    var b2k: U8Array = U8Array(2048);
+    var b8: U8Array = U8Array(8u32);
+    var b16: U8Array = U8Array(16u32);
+    var b32: U8Array = U8Array(32u32);
+    var b64: U8Array = U8Array(64u32);
+    var b128: U8Array = U8Array(128u32);
+    var b256: U8Array = U8Array(256u32);
+    var b512: U8Array = U8Array(512u32);
+    var b1k: U8Array = U8Array(1024u32);
+    var b2k: U8Array = U8Array(2048u32);
     assert(b8 as u32 != 0u32, 0 - 10);
     assert(b2k as u32 != 0u32, 0 - 11);
     delete(b8);
@@ -40,16 +40,16 @@ fn main() -> i32 {
     delete(b2k);
 
     // 3: reuse after free (bucket free list)
-    var c1: U8Array = U8Array(32);
+    var c1: U8Array = U8Array(32u32);
     var addr1: u32 = c1 as u32;
     delete(c1);
-    var c2: U8Array = U8Array(32);
+    var c2: U8Array = U8Array(32u32);
     var addr2: u32 = c2 as u32;
     assert(addr1 == addr2, 0 - 20);
     delete(c2);
 
     // 4: large alloc (> 2048, free-list path)
-    var d: U8Array = U8Array(8192);
+    var d: U8Array = U8Array(8192u32);
     assert(d as u32 != 0u32, 0 - 30);
     set(d, 0, 1u8);
     set(d, 8191, 2u8);
@@ -58,15 +58,15 @@ fn main() -> i32 {
     delete(d);
 
     // 5: page-aligned alloc (>= 4096 user, rounds to 4KB)
-    var e: U8Array = U8Array(9000);
+    var e: U8Array = U8Array(9000u32);
     assert(e as u32 != 0u32, 0 - 40);
     delete(e);
 
     // 6: many allocs then frees (coalescing stress)
     var i: i32 = 0;
-    var ptrs: I32Array = I32Array(100);
+    var ptrs: I32Array = I32Array(100u32);
     while i < 100 {
-        var p: U8Array = U8Array(64);
+        var p: U8Array = U8Array(64u32);
         assert(p as u32 != 0u32, 0 - 50);
         set(ptrs, i, p as u32 as i32);
         i = i + 1;
@@ -80,12 +80,12 @@ fn main() -> i32 {
     delete(ptrs);
 
     // 7: after freeing all, a big alloc should succeed (coalescing worked)
-    var f: U8Array = U8Array(32768);
+    var f: U8Array = U8Array(32768u32);
     assert(f as u32 != 0u32, 0 - 60);
     delete(f);
 
     // 8: I32Array works too
-    var g: I32Array = I32Array(1000);
+    var g: I32Array = I32Array(1000u32);
     assert(g as u32 != 0u32, 0 - 70);
     set(g, 0, 12345);
     set(g, 999, 67890);

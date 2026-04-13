@@ -4,7 +4,7 @@
 .param __a1 i32
 .local __p U32Array
   push_int 2
-  call U32Array i32
+  call U32Array u32
   store __p
   load __p
   push_int 0
@@ -72,6 +72,55 @@
 .fn delete Point void
 .param __p Point
   load __p
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn PointArray u32 PointArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len PointArray i32
+.param __a PointArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get PointArray i32 Point
+.param __a PointArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set PointArray i32 Point void
+.param __a PointArray
+.param __i i32
+.param __v Point
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete PointArray void
+.param __a PointArray
+  load __a
   call delete U32Array
   pop
   return_void

@@ -99,7 +99,7 @@ fn scan_for_block() -> i32 {
 }
 
 fn alloc_queue_mem() -> void {
-    g_mem_buf = U8Array(MEM_RESERVE);
+    g_mem_buf = U8Array((MEM_RESERVE) as u32);
     var raw: u32 = (g_mem_buf as u32) + 4u32;
     g_mem_base = (raw + 0xFFFu32) & 0xFFFFF000u32;
     // Zero the queue region (just DESC/AVAIL/USED area)

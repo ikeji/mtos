@@ -135,18 +135,23 @@ var addr: u32 = task_buf as u32 + 4u32;
 
 ### 配列操作
 
+配列コンストラクタの size は `u32`。リテラルはサフィックス、変数は `as u32`。
+
 ```tinyc
-var arr: I32Array = I32Array(64);
+var arr: I32Array = I32Array(64u32);
 set(arr, 0, 42);
 var v: i32 = get(arr, 0);
 var n: i32 = len(arr);
 delete(arr);
 
 // バイト列
-var buf: U8Array = U8Array(256);
+var buf: U8Array = U8Array(256u32);
 set(buf, 0, 'H');
 sys_write(1, buf, 1);
 delete(buf);
+
+// 変数サイズ: as u32 でキャスト
+fn make_buf(n: i32) -> U8Array { return U8Array(n as u32); }
 ```
 
 ### 構造体

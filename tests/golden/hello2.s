@@ -28,7 +28,7 @@ to_buf__StringLiteral:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call U8Array__i32
+    call U8Array__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

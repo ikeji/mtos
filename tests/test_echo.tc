@@ -2,7 +2,7 @@
 // Used to test sys_read (UART input) on qemu virt.
 
 fn main() -> i32 {
-    var buf: U8Array = U8Array(5);
+    var buf: U8Array = U8Array(5u32);
     var total: i32 = 0;
     while total < 5 {
         var n: i32 = sys_read(0, buf, 5 - total);

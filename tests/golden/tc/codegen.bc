@@ -5,7 +5,7 @@
 .param __a2 i32
 .local __p U32Array
   push_int 3
-  call U32Array i32
+  call U32Array u32
   store __p
   load __p
   push_int 0
@@ -107,10 +107,59 @@
   return_void
 .endfn
 
+.fn StringBufferArray u32 StringBufferArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len StringBufferArray i32
+.param __a StringBufferArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get StringBufferArray i32 StringBuffer
+.param __a StringBufferArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set StringBufferArray i32 StringBuffer void
+.param __a StringBufferArray
+.param __i i32
+.param __v StringBuffer
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete StringBufferArray void
+.param __a StringBufferArray
+  load __a
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn StringBuffer_new StringBuffer
-; return StringBuffer(U8Array(124), 0, 0 - 1);
+; return StringBuffer(U8Array(124u32), 0, 0 - 1);
   push_int 124
-  call U8Array i32
+  call U8Array u32
   push_int 0
   push_int 0
   push_int 1
@@ -122,9 +171,9 @@
 
 .fn StringBuffer_new i32 StringBuffer
 .param out_fd i32
-; return StringBuffer(U8Array(1024), 0, out_fd);
+; return StringBuffer(U8Array(1024u32), 0, out_fd);
   push_int 1024
-  call U8Array i32
+  call U8Array u32
   push_int 0
   load out_fd
   call StringBuffer U8Array i32 i32
@@ -168,9 +217,10 @@
   push_int 2
   mul
   store new_cap
-; var new_buf: U8Array = U8Array(new_cap);
+; var new_buf: U8Array = U8Array((new_cap) as u32);
   load new_cap
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store new_buf
 ; var i: i32 = 0;
   push_int 0
@@ -380,9 +430,9 @@ __L9:
 ; return;
   return_void
 __L10:
-; var tmp: U8Array = U8Array(12);
+; var tmp: U8Array = U8Array(12u32);
   push_int 12
-  call U8Array i32
+  call U8Array u32
   store tmp
 ; var dlen: i32 = 0;
   push_int 0
@@ -622,7 +672,7 @@ __L20:
 .param __a6 i32
 .local __p U32Array
   push_int 7
-  call U32Array i32
+  call U32Array u32
   store __p
   load __p
   push_int 0
@@ -839,12 +889,61 @@ __L20:
   return_void
 .endfn
 
+.fn SourceReaderArray u32 SourceReaderArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len SourceReaderArray i32
+.param __a SourceReaderArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get SourceReaderArray i32 SourceReader
+.param __a SourceReaderArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set SourceReaderArray i32 SourceReader void
+.param __a SourceReaderArray
+.param __i i32
+.param __v SourceReader
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete SourceReaderArray void
+.param __a SourceReaderArray
+  load __a
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn SourceReader_new i32 SourceReader
 .param fd i32
-; return SourceReader(fd, U8Array(4092), 0, 0, 0, StringBuffer_new(), 1);
+; return SourceReader(fd, U8Array(4092u32), 0, 0, 0, StringBuffer_new(), 1);
   load fd
   push_int 4092
-  call U8Array i32
+  call U8Array u32
   push_int 0
   push_int 0
   push_int 0
@@ -1025,9 +1124,10 @@ __L4:
   push_int 0
   gt
   jump_ifnot __L9
-; var tmp: U8Array = U8Array(space);
+; var tmp: U8Array = U8Array((space) as u32);
   load space
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store tmp
 ; var n: i32 = sys_read(rfd(r), tmp, space);
   load r
@@ -4425,9 +4525,9 @@ __L228:
   load NK_CALL_STMT
   eq
   jump_ifnot __L229
-; var args: I32Array = I32Array(24);
+; var args: I32Array = I32Array(24u32);
   push_int 24
-  call I32Array i32
+  call I32Array u32
   store args
 ; var nargs: i32 = 0;
   push_int 0
@@ -6335,9 +6435,9 @@ __L281:
   load NK_CALL
   eq
   jump_ifnot __L282
-; var args: I32Array = I32Array(24);
+; var args: I32Array = I32Array(24u32);
   push_int 24
-  call I32Array i32
+  call I32Array u32
   store args
 ; var nargs: i32 = 0;
   push_int 0
@@ -8137,9 +8237,9 @@ __L340:
 ; g_loop_depth = 0;
   push_int 0
   store g_loop_depth
-; var loop_stk: I32Array = I32Array(32); // up to 16 nested while loops
+; var loop_stk: I32Array = I32Array(32u32); // up to 16 nested while loops
   push_int 32
-  call I32Array i32
+  call I32Array u32
   store loop_stk
 ; cg_block(nodes, strtab, slits, ob, loop_stk, body_n);
   load nodes
@@ -8447,29 +8547,29 @@ __L341:
 .local type_n i32
 .local init_n i32
 .local initval i32
-; var atom_buf: U8Array = U8Array(1024);   // atom scratch buffer
+; var atom_buf: U8Array = U8Array(1024u32);   // atom scratch buffer
   push_int 1024
-  call U8Array i32
+  call U8Array u32
   store atom_buf
 ; var out_buf: StringBuffer = StringBuffer_new(1);
   push_int 1
   call StringBuffer_new i32
   store out_buf
-; var nodes: I32Array = I32Array(32768);   // 4096 nodes per function (streaming)
+; var nodes: I32Array = I32Array(32768u32);   // 4096 nodes per function (streaming)
   push_int 32768
-  call I32Array i32
+  call I32Array u32
   store nodes
-; var strtab: U8Array = U8Array(262144);   // string table
+; var strtab: U8Array = U8Array(262144u32);   // string table
   push_int 262144
-  call U8Array i32
+  call U8Array u32
   store strtab
-; var slits: I32Array = I32Array(512);     // 256 string literals × 2
+; var slits: I32Array = I32Array(512u32);     // 256 string literals × 2
   push_int 512
-  call I32Array i32
+  call I32Array u32
   store slits
-; var locals: I32Array = I32Array(2048);   // 512 locals × 4
+; var locals: I32Array = I32Array(2048u32);   // 512 locals × 4
   push_int 2048
-  call I32Array i32
+  call I32Array u32
   store locals
 ; g_reader = SourceReader_new(0);
   push_int 0

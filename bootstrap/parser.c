@@ -149,12 +149,11 @@ static AstNode *parse_primary(Parser *p) {
             advance_p(p); /* consume '(' */
             AstNode *call = ast_node("call", line);
             call->sval = name;
-            /* parse arg_list */
-            if (!check(p, TK_RPAREN)) {
-                do {
-                    AstNode *arg = parse_expr(p);
-                    ast_add_child(call, arg);
-                } while (match(p, TK_COMMA));
+            /* parse arg_list (trailing comma allowed) */
+            while (!check(p, TK_RPAREN)) {
+                AstNode *arg = parse_expr(p);
+                ast_add_child(call, arg);
+                if (!match(p, TK_COMMA)) break;
             }
             expect(p, TK_RPAREN);
             return call;
@@ -450,11 +449,10 @@ static AstNode *parse_ident_stmt(Parser *p) {
         advance_p(p);
         AstNode *call = ast_node("call_stmt", line);
         call->sval = name;
-        if (!check(p, TK_RPAREN)) {
-            do {
-                AstNode *arg = parse_expr(p);
-                ast_add_child(call, arg);
-            } while (match(p, TK_COMMA));
+        while (!check(p, TK_RPAREN)) {
+            AstNode *arg = parse_expr(p);
+            ast_add_child(call, arg);
+            if (!match(p, TK_COMMA)) break;
         }
         expect(p, TK_RPAREN);
         expect(p, TK_SEMI);
@@ -507,16 +505,15 @@ static AstNode *parse_fn_decl(Parser *p) {
     Token *name = expect(p, TK_IDENT);
     expect(p, TK_LPAREN);
     AstNode *params = ast_node("params", line);
-    if (!check(p, TK_RPAREN)) {
-        do {
-            Token *pname = expect(p, TK_IDENT);
-            expect(p, TK_COLON);
-            AstNode *pty = parse_type(p);
-            AstNode *param = ast_node("param", pname->line);
-            param->sval = strdup(pname->sval);
-            ast_add_child(param, pty);
-            ast_add_child(params, param);
-        } while (match(p, TK_COMMA));
+    while (!check(p, TK_RPAREN)) {
+        Token *pname = expect(p, TK_IDENT);
+        expect(p, TK_COLON);
+        AstNode *pty = parse_type(p);
+        AstNode *param = ast_node("param", pname->line);
+        param->sval = strdup(pname->sval);
+        ast_add_child(param, pty);
+        ast_add_child(params, param);
+        if (!match(p, TK_COMMA)) break;
     }
     expect(p, TK_RPAREN);
 
@@ -574,6 +571,13 @@ static AstNode *mk_int(long v, int line) {
     return n;
 }
 
+/* Create a u32-typed int literal (used for array sizes). */
+static AstNode *mk_int_u32(long v, int line) {
+    AstNode *n = mk_int(v, line);
+    n->sval = strdup("u32");
+    return n;
+}
+
 /* Create a (cast expr (type T)) node. */
 static AstNode *mk_cast(AstNode *expr, const char *tname, int line) {
     AstNode *n = ast_node("cast", line);
@@ -624,9 +628,9 @@ static void gen_struct_synthetic_fns(AstNode *prog, AstNode *struct_node) {
 
         AstNode *block = ast_node("block", line);
 
-        /* var __p: U32Array = U32Array(nfields); */
+        /* var __p: U32Array = U32Array(nfields); (size is u32) */
         {
-            AstNode *sz = mk_int(nfields, line);
+            AstNode *sz = mk_int_u32(nfields, line);
             AstNode *args[] = {sz};
             AstNode *call = mk_call("call", "U32Array", line, 1, args);
             AstNode *vd = ast_node("var_decl", line);
@@ -753,6 +757,153 @@ static void gen_struct_synthetic_fns(AstNode *prog, AstNode *struct_node) {
         ast_add_child(fn, block);
         ast_add_child(prog, fn);
     }
+
+    /* ===== Struct array synthetic functions =====
+       Reference types all share the 32-bit representation, so every
+       XxxArray operation delegates to the U32Array builtin at runtime. */
+
+    char arr_type[128];
+    snprintf(arr_type, sizeof(arr_type), "%sArray", sname);
+
+    /* --- XxxArray(__n: u32) -> XxxArray --- */
+    {
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup(arr_type);
+
+        AstNode *params = ast_node("params", line);
+        ast_add_child(params, mk_param("__n", "u32", line));
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type(arr_type, line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+        /* return U32Array(__n) as XxxArray; */
+        AstNode *nvar = mk_var("__n", line);
+        AstNode *cargs[] = {nvar};
+        AstNode *ccall = mk_call("call", "U32Array", line, 1, cargs);
+        AstNode *casted = mk_cast(ccall, arr_type, line);
+        AstNode *ret_stmt = ast_node("return", line);
+        ast_add_child(ret_stmt, casted);
+        ast_add_child(block, ret_stmt);
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
+
+    /* --- len(__a: XxxArray) -> i32 --- */
+    {
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup("len");
+
+        AstNode *params = ast_node("params", line);
+        ast_add_child(params, mk_param("__a", arr_type, line));
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type("i32", line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+        /* return len(__a as U32Array); */
+        AstNode *a_as_arr = mk_cast(mk_var("__a", line), "U32Array", line);
+        AstNode *largs[] = {a_as_arr};
+        AstNode *lcall = mk_call("call", "len", line, 1, largs);
+        AstNode *ret_stmt = ast_node("return", line);
+        ast_add_child(ret_stmt, lcall);
+        ast_add_child(block, ret_stmt);
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
+
+    /* --- get(__a: XxxArray, __i: i32) -> Xxx --- */
+    {
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup("get");
+
+        AstNode *params = ast_node("params", line);
+        ast_add_child(params, mk_param("__a", arr_type, line));
+        ast_add_child(params, mk_param("__i", "i32", line));
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type(sname, line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+        /* return get(__a as U32Array, __i) as Xxx; */
+        AstNode *a_as_arr = mk_cast(mk_var("__a", line), "U32Array", line);
+        AstNode *ivar = mk_var("__i", line);
+        AstNode *gargs[] = {a_as_arr, ivar};
+        AstNode *gcall = mk_call("call", "get", line, 2, gargs);
+        AstNode *casted = mk_cast(gcall, sname, line);
+        AstNode *ret_stmt = ast_node("return", line);
+        ast_add_child(ret_stmt, casted);
+        ast_add_child(block, ret_stmt);
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
+
+    /* --- set(__a: XxxArray, __i: i32, __v: Xxx) -> void --- */
+    {
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup("set");
+
+        AstNode *params = ast_node("params", line);
+        ast_add_child(params, mk_param("__a", arr_type, line));
+        ast_add_child(params, mk_param("__i", "i32", line));
+        ast_add_child(params, mk_param("__v", sname, line));
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type("void", line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+        /* set(__a as U32Array, __i, __v as u32); */
+        AstNode *a_as_arr = mk_cast(mk_var("__a", line), "U32Array", line);
+        AstNode *ivar = mk_var("__i", line);
+        AstNode *v_as_u32 = mk_cast(mk_var("__v", line), "u32", line);
+        AstNode *sargs[] = {a_as_arr, ivar, v_as_u32};
+        AstNode *scall = mk_call("call_stmt", "set", line, 3, sargs);
+        ast_add_child(block, scall);
+
+        AstNode *ret_stmt = ast_node("return", line);
+        ast_add_child(block, ret_stmt);
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
+
+    /* --- delete(__a: XxxArray) -> void --- */
+    {
+        AstNode *fn = ast_node("fn", line);
+        fn->sval = strdup("delete");
+
+        AstNode *params = ast_node("params", line);
+        ast_add_child(params, mk_param("__a", arr_type, line));
+        ast_add_child(fn, params);
+
+        AstNode *ret = ast_node("ret", line);
+        ast_add_child(ret, mk_type("void", line));
+        ast_add_child(fn, ret);
+
+        AstNode *block = ast_node("block", line);
+        /* delete(__a as U32Array); */
+        AstNode *a_as_arr = mk_cast(mk_var("__a", line), "U32Array", line);
+        AstNode *dargs[] = {a_as_arr};
+        AstNode *dcall = mk_call("call_stmt", "delete", line, 1, dargs);
+        ast_add_child(block, dcall);
+
+        AstNode *ret_stmt = ast_node("return", line);
+        ast_add_child(block, ret_stmt);
+
+        ast_add_child(fn, block);
+        ast_add_child(prog, fn);
+    }
 }
 
 static AstNode *parse_struct_decl(Parser *p) {
@@ -762,16 +913,15 @@ static AstNode *parse_struct_decl(Parser *p) {
     expect(p, TK_LBRACE);
     AstNode *n = ast_node("struct", line);
     n->sval = strdup(name->sval);
-    if (!check(p, TK_RBRACE)) {
-        do {
-            Token *fname = expect(p, TK_IDENT);
-            expect(p, TK_COLON);
-            AstNode *fty = parse_type(p);
-            AstNode *field = ast_node("field", fname->line);
-            field->sval = strdup(fname->sval);
-            ast_add_child(field, fty);
-            ast_add_child(n, field);
-        } while (match(p, TK_COMMA));
+    while (!check(p, TK_RBRACE)) {
+        Token *fname = expect(p, TK_IDENT);
+        expect(p, TK_COLON);
+        AstNode *fty = parse_type(p);
+        AstNode *field = ast_node("field", fname->line);
+        field->sval = strdup(fname->sval);
+        ast_add_child(field, fty);
+        ast_add_child(n, field);
+        if (!match(p, TK_COMMA)) break;
     }
     expect(p, TK_RBRACE);
     return n;

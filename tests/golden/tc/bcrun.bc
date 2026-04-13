@@ -5204,9 +5204,10 @@ __L419:
   load osize
   store wlen
 __L427:
-; var tmp: U8Array = U8Array(wlen);
+; var tmp: U8Array = U8Array((wlen) as u32);
   load wlen
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store tmp
 ; var ti: i32 = 0;
   push_int 0
@@ -5373,9 +5374,10 @@ __L440:
   push_int 0
 __L441:
   jump_ifnot __L439
-; var tmp: U8Array = U8Array(rlen);
+; var tmp: U8Array = U8Array((rlen) as u32);
   load rlen
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store tmp
 ; var r2: i32 = sys_read(fd, tmp, rlen);
   load fd
@@ -5531,11 +5533,12 @@ __L455:
   load obj
   call hm_size I32Array i32
   store osize
-; var tmp: U8Array = U8Array(osize+1);
+; var tmp: U8Array = U8Array((osize+1) as u32);
   load osize
   push_int 1
   add
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store tmp
 ; var ti: i32 = 0;
   push_int 0
@@ -7187,100 +7190,100 @@ __L618:
 .local prog_stdin U8Array
 .local psi i32
 .local result i32
-; var src:         U8Array  = U8Array(524288);
+; var src:         U8Array  = U8Array(524288u32);
   push_int 524288
-  call U8Array i32
+  call U8Array u32
   store src
-; var strtab:      U8Array  = U8Array(262144);
+; var strtab:      U8Array  = U8Array(262144u32);
   push_int 262144
-  call U8Array i32
+  call U8Array u32
   store strtab
-; var string_lits: I32Array = I32Array(2048);
+; var string_lits: I32Array = I32Array(2048u32);
   push_int 2048
-  call I32Array i32
+  call I32Array u32
   store string_lits
-; var global_vars:  I32Array = I32Array(1024);
+; var global_vars:  I32Array = I32Array(1024u32);
   push_int 1024
-  call I32Array i32
+  call I32Array u32
   store global_vars
-; var global_inits: I32Array = I32Array(256);
+; var global_inits: I32Array = I32Array(256u32);
   push_int 256
-  call I32Array i32
+  call I32Array u32
   store global_inits
-; var fns:         I32Array = I32Array(2560);
+; var fns:         I32Array = I32Array(2560u32);
   push_int 2560
-  call I32Array i32
+  call I32Array u32
   store fns
-; var params_pool: I32Array = I32Array(4096);
+; var params_pool: I32Array = I32Array(4096u32);
   push_int 4096
-  call I32Array i32
+  call I32Array u32
   store params_pool
-; var locals_pool: I32Array = I32Array(4096);
+; var locals_pool: I32Array = I32Array(4096u32);
   push_int 4096
-  call I32Array i32
+  call I32Array u32
   store locals_pool
-; var instrs:      I32Array = I32Array(262144);
+; var instrs:      I32Array = I32Array(262144u32);
   push_int 262144
-  call I32Array i32
+  call I32Array u32
   store instrs
-; var label_pcs:   I32Array = I32Array(16384);
+; var label_pcs:   I32Array = I32Array(16384u32);
   push_int 16384
-  call I32Array i32
+  call I32Array u32
   store label_pcs
-; var hm:          I32Array = I32Array(2048);
+; var hm:          I32Array = I32Array(2048u32);
   push_int 2048
-  call I32Array i32
+  call I32Array u32
   store hm
-; var hb:          U8Array  = U8Array(524288);
+; var hb:          U8Array  = U8Array(524288u32);
   push_int 524288
-  call U8Array i32
+  call U8Array u32
   store hb
-; var hi:          I32Array = I32Array(131072);
+; var hi:          I32Array = I32Array(131072u32);
   push_int 131072
-  call I32Array i32
+  call I32Array u32
   store hi
-; var stk_i:       I32Array = I32Array(8192);
+; var stk_i:       I32Array = I32Array(8192u32);
   push_int 8192
-  call I32Array i32
+  call I32Array u32
   store stk_i
-; var stk_t:       I32Array = I32Array(8192);
+; var stk_t:       I32Array = I32Array(8192u32);
   push_int 8192
-  call I32Array i32
+  call I32Array u32
   store stk_t
-; var var_i:       I32Array = I32Array(65536);
+; var var_i:       I32Array = I32Array(65536u32);
   push_int 65536
-  call I32Array i32
+  call I32Array u32
   store var_i
-; var var_t:       I32Array = I32Array(65536);
+; var var_t:       I32Array = I32Array(65536u32);
   push_int 65536
-  call I32Array i32
+  call I32Array u32
   store var_t
-; var gv_i:        I32Array = I32Array(512);
+; var gv_i:        I32Array = I32Array(512u32);
   push_int 512
-  call I32Array i32
+  call I32Array u32
   store gv_i
-; var gv_t:        I32Array = I32Array(512);
+; var gv_t:        I32Array = I32Array(512u32);
   push_int 512
-  call I32Array i32
+  call I32Array u32
   store gv_t
-; var cs:          I32Array = I32Array(2560);
+; var cs:          I32Array = I32Array(2560u32);
   push_int 2560
-  call I32Array i32
+  call I32Array u32
   store cs
-; var arg_i:       I32Array = I32Array(64);
+; var arg_i:       I32Array = I32Array(64u32);
   push_int 64
-  call I32Array i32
+  call I32Array u32
   store arg_i
-; var arg_t:       I32Array = I32Array(64);
+; var arg_t:       I32Array = I32Array(64u32);
   push_int 64
-  call I32Array i32
+  call I32Array u32
   store arg_t
 ; g_in_len = 0;
   push_int 0
   store g_in_len
-; var chunk_buf: U8Array = U8Array(65536);
+; var chunk_buf: U8Array = U8Array(65536u32);
   push_int 65536
-  call U8Array i32
+  call U8Array u32
   store chunk_buf
 ; var rdone: i32 = 0;
   push_int 0
@@ -7384,11 +7387,12 @@ __L627:
   load g_in_pos
   sub
   store prog_stdin_len
-; var prog_stdin: U8Array = U8Array(prog_stdin_len + 1);
+; var prog_stdin: U8Array = U8Array((prog_stdin_len + 1) as u32);
   load prog_stdin_len
   push_int 1
   add
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store prog_stdin
 ; var psi: i32 = 0;
   push_int 0

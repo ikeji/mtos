@@ -9,12 +9,12 @@ struct StringBuffer {
 // Create a growable StringBuffer with initial capacity 124.
 // (124 + 4 byte count prefix = 128, fits in 128B pool bucket)
 export fn StringBuffer_new() -> StringBuffer {
-    return StringBuffer(U8Array(124), 0, 0 - 1);
+    return StringBuffer(U8Array(124u32), 0, 0 - 1);
 }
 
 // Create a streaming StringBuffer that flushes to fd when full.
 export fn StringBuffer_new(out_fd: i32) -> StringBuffer {
-    return StringBuffer(U8Array(1024), 0, out_fd);
+    return StringBuffer(U8Array(1024u32), 0, out_fd);
 }
 
 // Free a StringBuffer and its underlying byte buffer.
@@ -29,7 +29,7 @@ fn grow(sb: StringBuffer) -> void {
     var old_buf: U8Array = buf(sb);
     var old_cap: i32 = len(old_buf);
     var new_cap: i32 = old_cap * 2;
-    var new_buf: U8Array = U8Array(new_cap);
+    var new_buf: U8Array = U8Array((new_cap) as u32);
     var i: i32 = 0;
     while i < old_cap {
         set(new_buf, i, get(old_buf, i));
@@ -88,7 +88,7 @@ export fn emit_int(sb: StringBuffer, val: i32) -> void {
         emit_char(sb, '0');
         return;
     }
-    var tmp: U8Array = U8Array(12);
+    var tmp: U8Array = U8Array(12u32);
     var dlen: i32 = 0;
     var v: i32 = val;
     while v > 0 {

@@ -4,7 +4,7 @@ var g_char: u8 = 'B';
 var g_count: i32 = 5;
 
 fn main() -> i32 {
-    var buf: U8Array = U8Array(1);
+    var buf: U8Array = U8Array(1u32);
     set(buf, 0, g_char);
     var i: i32 = 0;
     while i < g_count {

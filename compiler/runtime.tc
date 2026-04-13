@@ -320,13 +320,13 @@ fn new_array(count: i32, data_bytes: i32) -> u32 {
 }
 
 // ===== Array constructors =====
-export fn U8Array(sz: i32) -> U8Array { return new_array(sz, sz) as U8Array; }
-export fn U16Array(sz: i32) -> U16Array { return new_array(sz, sz * 2) as U16Array; }
-export fn U32Array(sz: i32) -> U32Array { return new_array(sz, sz * 4) as U32Array; }
-export fn I8Array(sz: i32) -> I8Array { return new_array(sz, sz) as I8Array; }
-export fn I16Array(sz: i32) -> I16Array { return new_array(sz, sz * 2) as I16Array; }
-export fn I32Array(sz: i32) -> I32Array { return new_array(sz, sz * 4) as I32Array; }
-export fn StringArray(sz: i32) -> StringArray { return new_array(sz, sz * 4) as StringArray; }
+export fn U8Array(sz: u32) -> U8Array { var n: i32 = sz as i32; return new_array(n, n) as U8Array; }
+export fn U16Array(sz: u32) -> U16Array { var n: i32 = sz as i32; return new_array(n, n * 2) as U16Array; }
+export fn U32Array(sz: u32) -> U32Array { var n: i32 = sz as i32; return new_array(n, n * 4) as U32Array; }
+export fn I8Array(sz: u32) -> I8Array { var n: i32 = sz as i32; return new_array(n, n) as I8Array; }
+export fn I16Array(sz: u32) -> I16Array { var n: i32 = sz as i32; return new_array(n, n * 2) as I16Array; }
+export fn I32Array(sz: u32) -> I32Array { var n: i32 = sz as i32; return new_array(n, n * 4) as I32Array; }
+export fn StringArray(sz: u32) -> StringArray { var n: i32 = sz as i32; return new_array(n, n * 4) as StringArray; }
 
 // ===== len =====
 export fn len(o: U8Array) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
@@ -407,7 +407,7 @@ fn write_i32_stderr(v: i32) -> void {
     var neg: i32 = 0;
     if v < 0 { neg = 1; v = 0 - v; }
     // 桁を逆順に抽出
-    var buf: U8Array = U8Array(16);
+    var buf: U8Array = U8Array(16u32);
     var n: i32 = 0;
     while v > 0 {
         poke8(buf as u32 + 4u32 + n as u32, (48 + v % 10) as u8);
@@ -462,7 +462,7 @@ export fn sys_exit(code: i32) -> void { km_dump_stats(); do_exit(code); return; 
 
 // ===== Print helpers =====
 export fn print_i32(v: i32) -> void {
-    var buf: U8Array = U8Array(16);
+    var buf: U8Array = U8Array(16u32);
     var neg: i32 = 0;
     if v < 0 { neg = 1; v = 0 - v; }
     if v == 0 {
@@ -471,7 +471,7 @@ export fn print_i32(v: i32) -> void {
         delete_impl(buf as u32);
         return;
     }
-    var tmp: U8Array = U8Array(12);
+    var tmp: U8Array = U8Array(12u32);
     var i: i32 = 0;
     while v > 0 { poke8(tmp as u32 + 4u32 + (i) as u32, ((48 + v % 10) as u8) as u8); i = i + 1; v = v / 10; }
     var pos: i32 = 0;
@@ -495,7 +495,7 @@ export fn print_str(s: String) -> void {
         do_write(1, s as u32 + 4u32, slen);
     }
     do_write(1, 0u32, 0);
-    var nl: U8Array = U8Array(1);
+    var nl: U8Array = U8Array(1u32);
     poke8(nl as u32 + 4u32 + (0) as u32, (10u8) as u8);
     sys_write(1, nl, 1);
     delete_impl(nl as u32);

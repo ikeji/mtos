@@ -13,7 +13,7 @@ struct SourceReader {
 }
 
 export fn SourceReader_new(fd: i32) -> SourceReader {
-    return SourceReader(fd, U8Array(4092), 0, 0, 0, StringBuffer_new(), 1);
+    return SourceReader(fd, U8Array(4092u32), 0, 0, 0, StringBuffer_new(), 1);
 }
 
 export fn close(r: SourceReader) -> void {
@@ -55,7 +55,7 @@ fn compact_and_fill(r: SourceReader) -> void {
     // sys_read writes to buf[0..space], so we use a temp buffer
     var space: i32 = 4092 - remaining;
     if space > 0 {
-        var tmp: U8Array = U8Array(space);
+        var tmp: U8Array = U8Array((space) as u32);
         var n: i32 = sys_read(rfd(r), tmp, space);
         if n > 0 {
             var j: i32 = 0;

@@ -50,7 +50,7 @@ fn main() -> i32 {
     }
 
     if g_timer_fired == 1 {
-        var msg: U8Array = U8Array(10);
+        var msg: U8Array = U8Array(10u32);
         // "TIMER_OK\n"
         set(msg, 0, 'T'); set(msg, 1, 'I'); set(msg, 2, 'M');
         set(msg, 3, 'E'); set(msg, 4, 'R'); set(msg, 5, '_');
@@ -58,7 +58,7 @@ fn main() -> i32 {
         sys_write(1, msg, 9);
         delete(msg);
     } else {
-        var msg: U8Array = U8Array(12);
+        var msg: U8Array = U8Array(12u32);
         // "TIMER_FAIL\n"
         set(msg, 0, 'T'); set(msg, 1, 'I'); set(msg, 2, 'M');
         set(msg, 3, 'E'); set(msg, 4, 'R'); set(msg, 5, '_');

@@ -479,7 +479,7 @@ fn pars_primary(src: SourceReader, tok: U8Array, sb: StringBuffer) -> void {
     if g_tok == TK_IDENT {
         // Save the identifier name
         var name_len: i32 = g_tok_slen;
-        var name_buf: U8Array = U8Array(name_len + 1);
+        var name_buf: U8Array = U8Array((name_len + 1) as u32);
         var i: i32 = 0;
         while i < name_len {
             set(name_buf, i, get(tok, i));
@@ -492,18 +492,12 @@ fn pars_primary(src: SourceReader, tok: U8Array, sb: StringBuffer) -> void {
             lex_tok(src, tok);  // consume '('
             emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' ');
             emit_n(sb, name_buf, 0, name_len);
-            // Parse arguments
-            if g_tok != TK_RPAREN {
-                var going: i32 = 1;
-                while going == 1 {
-                    emit_char(sb, 10u8);
-                    pars_expr(src, tok, sb);
-                    if g_tok == TK_COMMA {
-                        lex_tok(src, tok);
-                    } else {
-                        going = 0;
-                    }
-                }
+            // Parse arguments (trailing comma allowed)
+            while g_tok != TK_RPAREN {
+                emit_char(sb, 10u8);
+                pars_expr(src, tok, sb);
+                if g_tok != TK_COMMA { break; }
+                lex_tok(src, tok);  // consume comma; next iteration handles trailing
             }
             expect_tok(TK_RPAREN, src, tok);
             emit_char(sb, ')');  // )
@@ -773,7 +767,7 @@ fn pars_var_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32)
     // 'var' already consumed, or we consume it here
     expect_tok(TK_VAR, src, tok);
     var name_len: i32 = g_tok_slen;
-    var name_buf: U8Array = U8Array(name_len + 1);
+    var name_buf: U8Array = U8Array((name_len + 1) as u32);
     var i: i32 = 0;
     while i < name_len {
         set(name_buf, i, get(tok, i));
@@ -876,7 +870,7 @@ fn pars_while_stmt(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i3
 
 fn pars_ident_stmt(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
     var name_len: i32 = g_tok_slen;
-    var name_buf: U8Array = U8Array(name_len + 1);
+    var name_buf: U8Array = U8Array((name_len + 1) as u32);
     var i: i32 = 0;
     while i < name_len {
         set(name_buf, i, get(tok, i));
@@ -926,18 +920,13 @@ fn pars_ident_stmt(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i3
             // (call_stmt NAME args...)
             emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' ');
             emit_n(sb, name_buf, 0, name_len);
-            if g_tok != TK_RPAREN {
-                var going: i32 = 1;
-                while going == 1 {
-                    emit_char(sb, 10u8);
-                    emit_indent(sb, indent + 1);
-                    pars_expr(src, tok, sb);
-                    if g_tok == TK_COMMA {
-                        lex_tok(src, tok);
-                    } else {
-                        going = 0;
-                    }
-                }
+            // Parse arguments (trailing comma allowed)
+            while g_tok != TK_RPAREN {
+                emit_char(sb, 10u8);
+                emit_indent(sb, indent + 1);
+                pars_expr(src, tok, sb);
+                if g_tok != TK_COMMA { break; }
+                lex_tok(src, tok);
             }
             expect_tok(TK_RPAREN, src, tok);
             expect_tok(TK_SEMI, src, tok);
@@ -1023,7 +1012,7 @@ fn pars_block(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32) ->
 fn pars_fn_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32, is_export: i32) -> void {
     expect_tok(TK_FN, src, tok);
     var name_len: i32 = g_tok_slen;
-    var name_buf: U8Array = U8Array(name_len + 1);
+    var name_buf: U8Array = U8Array((name_len + 1) as u32);
     var i: i32 = 0;
     while i < name_len {
         set(name_buf, i, get(tok, i));
@@ -1043,38 +1032,32 @@ fn pars_fn_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32, 
     emit_char(sb, 10u8);
     emit_indent(sb, indent + 1);
 
-    // (params ...)
+    // (params ...) — trailing comma allowed
     emit_char(sb, '('); emit_string(sb, "params");
-    if g_tok != TK_RPAREN {
-        var going: i32 = 1;
-        while going == 1 {
-            var pname_len: i32 = g_tok_slen;
-            var pname_buf: U8Array = U8Array(pname_len + 1);
-            var j: i32 = 0;
-            while j < pname_len {
-                set(pname_buf, j, get(tok, j));
-                j = j + 1;
-            }
-            expect_tok(TK_IDENT, src, tok);
-            expect_tok(TK_COLON, src, tok);
-            emit_char(sb, 10u8);
-            emit_indent(sb, indent + 2);
-            // (param NAME\n    (type T)\n  )
-            emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
-            emit_n(sb, pname_buf, 0, pname_len);
-            emit_char(sb, 10u8);
-            emit_indent(sb, indent + 3);
-            pars_type(src, tok, sb, indent + 3);
-            emit_char(sb, 10u8);
-            emit_indent(sb, indent + 2);
-            emit_char(sb, ')');
-            delete(pname_buf);
-            if g_tok == TK_COMMA {
-                lex_tok(src, tok);
-            } else {
-                going = 0;
-            }
+    while g_tok != TK_RPAREN {
+        var pname_len: i32 = g_tok_slen;
+        var pname_buf: U8Array = U8Array((pname_len + 1) as u32);
+        var j: i32 = 0;
+        while j < pname_len {
+            set(pname_buf, j, get(tok, j));
+            j = j + 1;
         }
+        expect_tok(TK_IDENT, src, tok);
+        expect_tok(TK_COLON, src, tok);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 2);
+        // (param NAME\n    (type T)\n  )
+        emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+        emit_n(sb, pname_buf, 0, pname_len);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 3);
+        pars_type(src, tok, sb, indent + 3);
+        emit_char(sb, 10u8);
+        emit_indent(sb, indent + 2);
+        emit_char(sb, ')');
+        delete(pname_buf);
+        if g_tok != TK_COMMA { break; }
+        lex_tok(src, tok);
     }
     expect_tok(TK_RPAREN, src, tok);
     emit_char(sb, 10u8);
@@ -1196,9 +1179,252 @@ fn emit_comment_line(sb: StringBuffer, indent: i32, text: StringBuffer) -> void 
     return;
 }
 
+// Emit a (type XxxArray) form where Xxx comes from sbuf[0..snlen].
+fn emit_type_arr(sb: StringBuffer, sbuf: U8Array, snlen: i32) -> void {
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen);
+    emit_string(sb, "Array");
+    emit_char(sb, ')');
+    return;
+}
+
+// Emit (param NAME (type T)) at indent, where T is a bare StringLiteral.
+fn emit_param_lit(sb: StringBuffer, indent: i32, name: StringLiteral, tname: StringLiteral) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+    emit_string(sb, name); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
+    return;
+}
+
+// Emit (param NAME (type XxxArray)).
+fn emit_param_arr(sb: StringBuffer, indent: i32, name: StringLiteral,
+                  sbuf: U8Array, snlen: i32) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+    emit_string(sb, name); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
+    return;
+}
+
+// Emit (param NAME (type StructName)).
+fn emit_param_struct(sb: StringBuffer, indent: i32, name: StringLiteral,
+                     sbuf: U8Array, snlen: i32) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+    emit_string(sb, name); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
+    return;
+}
+
+// Emit (ret (type T)) block.
+fn emit_ret_lit(sb: StringBuffer, indent: i32, tname: StringLiteral) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
+    return;
+}
+
+fn emit_ret_arr(sb: StringBuffer, indent: i32, sbuf: U8Array, snlen: i32) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
+    return;
+}
+
+fn emit_ret_struct(sb: StringBuffer, indent: i32, sbuf: U8Array, snlen: i32) -> void {
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');
+    return;
+}
+
+// ===== Synthetic fns for struct arrays =====
+//
+// For struct Xxx, emits five synthetic functions that delegate to the
+// U32Array builtins at runtime (all references share a 32-bit rep):
+//
+//   fn XxxArray(__n: u32) -> XxxArray { return U32Array((__n) as u32) as XxxArray; }
+//   fn len(__a: XxxArray) -> i32 { return len(__a as U32Array); }
+//   fn get(__a: XxxArray, __i: i32) -> Xxx { return get(__a as U32Array, __i) as Xxx; }
+//   fn set(__a: XxxArray, __i: i32, __v: Xxx) -> void { set(__a as U32Array, __i, __v as u32); return; }
+//   fn delete(__a: XxxArray) -> void { delete(__a as U32Array); return; }
+//
+// The struct constructor and its field getters/setters are generated
+// by emit_struct_{ctor,getter,setter}; this function adds the array ops.
+fn emit_struct_array_fns(sb: StringBuffer, indent: i32, cmt: StringBuffer,
+                         sbuf: U8Array, snlen: i32) -> void {
+    // --- XxxArray(__n: u32) -> XxxArray ---
+    emit_char(sb, 10u8);
+    emit_comment_line(sb, indent, cmt);
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_string(sb, "Array"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+    emit_param_lit(sb, indent + 2, "__n", "u32"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_ret_arr(sb, indent + 1, sbuf, snlen); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+    // inner: (call U32Array (var __n))
+    emit_indent(sb, indent + 4);
+    emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' ');
+    emit_string(sb, "U32Array"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 5);
+    emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+    emit_string(sb, "__n"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
+    // (type XxxArray)
+    emit_indent(sb, indent + 4); emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent); emit_char(sb, ')');
+
+    // --- len(__a: XxxArray) -> i32 ---
+    emit_char(sb, 10u8);
+    emit_comment_line(sb, indent, cmt);
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+    emit_string(sb, "len"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+    emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_ret_lit(sb, indent + 1, "i32"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+    // (call len (cast __a U32Array))
+    emit_indent(sb, indent + 3);
+    emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "len"); emit_char(sb, 10u8);
+    emit_cast_var(sb, indent + 4, "__a", "U32Array"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent); emit_char(sb, ')');
+
+    // --- get(__a: XxxArray, __i: i32) -> Xxx ---
+    emit_char(sb, 10u8);
+    emit_comment_line(sb, indent, cmt);
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+    emit_string(sb, "get"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+    emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+    emit_param_lit(sb, indent + 2, "__i", "i32"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_ret_struct(sb, indent + 1, sbuf, snlen); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+    // (cast (call get (cast __a U32Array) (var __i)) (type StructName))
+    emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+    // inner: (call get (cast __a U32Array) (var __i))
+    emit_indent(sb, indent + 4);
+    emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "get"); emit_char(sb, 10u8);
+    emit_cast_var(sb, indent + 5, "__a", "U32Array"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 5);
+    emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+    emit_string(sb, "__i"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
+    // (type StructName)
+    emit_indent(sb, indent + 4);
+    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+    emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent); emit_char(sb, ')');
+
+    // --- set(__a: XxxArray, __i: i32, __v: Xxx) -> void ---
+    emit_char(sb, 10u8);
+    emit_comment_line(sb, indent, cmt);
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+    emit_string(sb, "set"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+    emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+    emit_param_lit(sb, indent + 2, "__i", "i32"); emit_char(sb, 10u8);
+    emit_param_struct(sb, indent + 2, "__v", sbuf, snlen); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_ret_lit(sb, indent + 1, "void"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+    // (call_stmt set (cast __a U32Array) (var __i) (cast __v u32))
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' ');
+    emit_string(sb, "set"); emit_char(sb, 10u8);
+    emit_cast_var(sb, indent + 3, "__a", "U32Array"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 3);
+    emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+    emit_string(sb, "__i"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_cast_var(sb, indent + 3, "__v", "u32"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    // (return)
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent); emit_char(sb, ')');
+
+    // --- delete(__a: XxxArray) -> void ---
+    emit_char(sb, 10u8);
+    emit_comment_line(sb, indent, cmt);
+    emit_indent(sb, indent);
+    emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+    emit_string(sb, "delete"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+    emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_ret_lit(sb, indent + 1, "void"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1);
+    emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' ');
+    emit_string(sb, "delete"); emit_char(sb, 10u8);
+    emit_cast_var(sb, indent + 3, "__a", "U32Array"); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 2);
+    emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_indent(sb, indent); emit_char(sb, ')');
+    return;
+}
+
 // Emit the constructor fn for a struct.
 //   fn StructName(__a0: T0, __a1: T1, ...) -> StructName {
-//       var __p: U32Array = U32Array(N);
+//       var __p: U32Array = U32Array((N) as u32);
 //       set(__p, 0, __a0 as u32);
 //       ...
 //       return __p as StructName;
@@ -1266,7 +1492,7 @@ fn emit_struct_ctor(
     emit_indent(sb, indent + 3);
     emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "U32Array"); emit_char(sb, 10u8);
     emit_indent(sb, indent + 4);
-    emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);
+    emit_char(sb, '('); emit_string(sb, "int:u32"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);
     emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
     emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
     // set(__p, i, __ai as u32) for each field
@@ -1404,7 +1630,7 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
     line_buf(src, struct_cmt);
     expect_tok(TK_STRUCT, src, tok);
     // Capture struct name
-    var sname_buf: U8Array = U8Array(64);
+    var sname_buf: U8Array = U8Array(64u32);
     var snlen: i32 = g_tok_slen;
     var ci: i32 = 0;
     while ci < snlen { set(sname_buf, ci, get(tok, ci)); ci = ci + 1; }
@@ -1412,9 +1638,9 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
     expect_tok(TK_LBRACE, src, tok);
 
     // Buffers for field info (max 16 fields)
-    var fnames: U8Array = U8Array(1024);
-    var ftypes: U8Array = U8Array(1024);
-    var fields: I32Array = I32Array(64);  // 16 fields * 4 ints
+    var fnames: U8Array = U8Array(1024u32);
+    var ftypes: U8Array = U8Array(1024u32);
+    var fields: I32Array = I32Array(64u32);  // 16 fields * 4 ints
     var nfields: i32 = 0;
     var fnpos: i32 = 0;
     var ftpos: i32 = 0;
@@ -1432,7 +1658,7 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
         else {
             // Capture field name
             var fname_len: i32 = g_tok_slen;
-            var fname_buf: U8Array = U8Array(fname_len + 1);
+            var fname_buf: U8Array = U8Array((fname_len + 1) as u32);
             var j: i32 = 0;
             while j < fname_len {
                 set(fname_buf, j, get(tok, j));
@@ -1543,6 +1769,9 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
     emit_indent(sb, indent);
     emit_char(sb, ')');
 
+    // Array type synthetic fns: XxxArray ctor / len / get / set / delete
+    emit_struct_array_fns(sb, indent, struct_cmt, sname_buf, snlen);
+
     delete(sname_buf);
     delete(fnames); delete(ftypes); delete(fields);
     destroy(struct_cmt);
@@ -1600,7 +1829,7 @@ fn pars_program(src: SourceReader, tok: U8Array, sb: StringBuffer) -> void {
 
 fn main() -> i32 {
     var src: SourceReader = SourceReader_new(0);
-    var tok_buf: U8Array = U8Array(4092);
+    var tok_buf: U8Array = U8Array(4092u32);
     var sb: StringBuffer = StringBuffer_new(1);
 
     g_line = 1;

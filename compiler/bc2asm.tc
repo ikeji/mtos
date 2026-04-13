@@ -1037,21 +1037,21 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
 }
 
 fn main() -> i32 {
-    var src:          U8Array  = U8Array(524288);
-    var strtab:       U8Array  = U8Array(262144);
+    var src:          U8Array  = U8Array(524288u32);
+    var strtab:       U8Array  = U8Array(262144u32);
     var ob:           StringBuffer = StringBuffer_new(1);
-    var string_lits:  I32Array = I32Array(512);
-    var global_vars:  I32Array = I32Array(1024);
-    var global_inits: I32Array = I32Array(256);
-    var fns:          I32Array = I32Array(2560);
-    var params_pool:  I32Array = I32Array(4096);
-    var locals_pool:  I32Array = I32Array(4096);
-    var instrs:       I32Array = I32Array(262144);
-    var label_pcs:    I32Array = I32Array(16384);
+    var string_lits:  I32Array = I32Array(512u32);
+    var global_vars:  I32Array = I32Array(1024u32);
+    var global_inits: I32Array = I32Array(256u32);
+    var fns:          I32Array = I32Array(2560u32);
+    var params_pool:  I32Array = I32Array(4096u32);
+    var locals_pool:  I32Array = I32Array(4096u32);
+    var instrs:       I32Array = I32Array(262144u32);
+    var label_pcs:    I32Array = I32Array(16384u32);
 
     // Read all stdin
     g_in_len=0;
-    var chunk_buf: U8Array=U8Array(65536);
+    var chunk_buf: U8Array=U8Array(65536u32);
     var rdone: i32=0;
     while rdone==0&&g_in_len<524000 {
         var chunk: i32=sys_read(0,chunk_buf,65536);

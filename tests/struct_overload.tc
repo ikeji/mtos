@@ -12,7 +12,7 @@ fn get(mb: MyBuf, idx: i32) -> u8 {
 }
 
 fn main() -> i32 {
-    var mb: MyBuf = MyBuf(U8Array(10), 0);
+    var mb: MyBuf = MyBuf(U8Array(10u32), 0);
     set(data(mb), 0, 65 as u8);
     set(data(mb), 1, 66 as u8);
     pos(mb, 2);

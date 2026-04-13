@@ -5,7 +5,7 @@
 .param __a2 i32
 .local __p U32Array
   push_int 3
-  call U32Array i32
+  call U32Array u32
   store __p
   load __p
   push_int 0
@@ -107,10 +107,59 @@
   return_void
 .endfn
 
+.fn StringBufferArray u32 StringBufferArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len StringBufferArray i32
+.param __a StringBufferArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get StringBufferArray i32 StringBuffer
+.param __a StringBufferArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set StringBufferArray i32 StringBuffer void
+.param __a StringBufferArray
+.param __i i32
+.param __v StringBuffer
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete StringBufferArray void
+.param __a StringBufferArray
+  load __a
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn StringBuffer_new StringBuffer
-; return StringBuffer(U8Array(124), 0, 0 - 1);
+; return StringBuffer(U8Array(124u32), 0, 0 - 1);
   push_int 124
-  call U8Array i32
+  call U8Array u32
   push_int 0
   push_int 0
   push_int 1
@@ -122,9 +171,9 @@
 
 .fn StringBuffer_new i32 StringBuffer
 .param out_fd i32
-; return StringBuffer(U8Array(1024), 0, out_fd);
+; return StringBuffer(U8Array(1024u32), 0, out_fd);
   push_int 1024
-  call U8Array i32
+  call U8Array u32
   push_int 0
   load out_fd
   call StringBuffer U8Array i32 i32
@@ -168,9 +217,10 @@
   push_int 2
   mul
   store new_cap
-; var new_buf: U8Array = U8Array(new_cap);
+; var new_buf: U8Array = U8Array((new_cap) as u32);
   load new_cap
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store new_buf
 ; var i: i32 = 0;
   push_int 0
@@ -380,9 +430,9 @@ __L9:
 ; return;
   return_void
 __L10:
-; var tmp: U8Array = U8Array(12);
+; var tmp: U8Array = U8Array(12u32);
   push_int 12
-  call U8Array i32
+  call U8Array u32
   store tmp
 ; var dlen: i32 = 0;
   push_int 0
@@ -622,7 +672,7 @@ __L20:
 .param __a6 i32
 .local __p U32Array
   push_int 7
-  call U32Array i32
+  call U32Array u32
   store __p
   load __p
   push_int 0
@@ -839,12 +889,61 @@ __L20:
   return_void
 .endfn
 
+.fn SourceReaderArray u32 SourceReaderArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len SourceReaderArray i32
+.param __a SourceReaderArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get SourceReaderArray i32 SourceReader
+.param __a SourceReaderArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set SourceReaderArray i32 SourceReader void
+.param __a SourceReaderArray
+.param __i i32
+.param __v SourceReader
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete SourceReaderArray void
+.param __a SourceReaderArray
+  load __a
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn SourceReader_new i32 SourceReader
 .param fd i32
-; return SourceReader(fd, U8Array(4092), 0, 0, 0, StringBuffer_new(), 1);
+; return SourceReader(fd, U8Array(4092u32), 0, 0, 0, StringBuffer_new(), 1);
   load fd
   push_int 4092
-  call U8Array i32
+  call U8Array u32
   push_int 0
   push_int 0
   push_int 0
@@ -1025,9 +1124,10 @@ __L4:
   push_int 0
   gt
   jump_ifnot __L9
-; var tmp: U8Array = U8Array(space);
+; var tmp: U8Array = U8Array((space) as u32);
   load space
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store tmp
 ; var n: i32 = sys_read(rfd(r), tmp, space);
   load r
@@ -3846,7 +3946,6 @@ __L252:
 .local ch u8
 .local name_len i32
 .local name_buf U8Array
-.local going i32
 ; if g_tok == TK_INT_LIT {
   load g_tok
   load TK_INT_LIT
@@ -4132,11 +4231,12 @@ __L268:
 ; var name_len: i32 = g_tok_slen;
   load g_tok_slen
   store name_len
-; var name_buf: U8Array = U8Array(name_len + 1);
+; var name_buf: U8Array = U8Array((name_len + 1) as u32);
   load name_len
   push_int 1
   add
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store name_buf
 ; var i: i32 = 0;
   push_int 0
@@ -4197,20 +4297,12 @@ __L271:
   load name_len
   call emit_n StringBuffer U8Array i32 i32
   pop
-; if g_tok != TK_RPAREN {
+; while g_tok != TK_RPAREN {
+__L274:
   load g_tok
   load TK_RPAREN
   ne
-  jump_ifnot __L274
-; var going: i32 = 1;
-  push_int 1
-  store going
-; while going == 1 {
-__L275:
-  load going
-  push_int 1
-  eq
-  jump_ifnot __L276
+  jump_ifnot __L275
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -4222,25 +4314,20 @@ __L275:
   load sb
   call pars_expr SourceReader U8Array StringBuffer
   pop
-; if g_tok == TK_COMMA {
+; if g_tok != TK_COMMA { break; }
   load g_tok
   load TK_COMMA
-  eq
-  jump_ifnot __L277
-; lex_tok(src, tok);
+  ne
+  jump_ifnot __L276
+  jump __L275
+__L276:
+; lex_tok(src, tok);  // consume comma; next iteration handles trailing
   load src
   load tok
   call lex_tok SourceReader U8Array
   pop
-  jump __L278
-__L277:
-; going = 0;
-  push_int 0
-  store going
-__L278:
-  jump __L275
-__L276:
-__L274:
+  jump __L274
+__L275:
 ; expect_tok(TK_RPAREN, src, tok);
   load TK_RPAREN
   load src
@@ -4312,11 +4399,11 @@ __L269:
   call pars_primary SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_AS {
-__L279:
+__L277:
   load g_tok
   load TK_AS
   eq
-  jump_ifnot __L280
+  jump_ifnot __L278
 ; lex_tok(src, tok);  // consume 'as'
   load src
   load tok
@@ -4367,8 +4454,8 @@ __L279:
 ; inner = wrapped;
   load wrapped
   store inner
-  jump __L279
-__L280:
+  jump __L277
+__L278:
 ; append(sb, inner);
   load sb
   load inner
@@ -4391,7 +4478,7 @@ __L280:
   load g_tok
   load TK_BANG
   eq
-  jump_ifnot __L281
+  jump_ifnot __L279
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4432,12 +4519,12 @@ __L280:
   pop
 ; return;
   return_void
-__L281:
+__L279:
 ; if g_tok == TK_MINUS {
   load g_tok
   load TK_MINUS
   eq
-  jump_ifnot __L282
+  jump_ifnot __L280
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4478,7 +4565,7 @@ __L281:
   pop
 ; return;
   return_void
-__L282:
+__L280:
 ; pars_postfix(src, tok, sb);
   load src
   load tok
@@ -4508,23 +4595,13 @@ __L282:
   call pars_unary SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_STAR || g_tok == TK_SLASH || g_tok == TK_PERCENT {
-__L283:
+__L281:
   load g_tok
   load TK_STAR
   eq
-  jump_if __L287
-  load g_tok
-  load TK_SLASH
-  eq
-  jump_if __L287
-  push_int 0
-  jump __L288
-__L287:
-  push_int 1
-__L288:
   jump_if __L285
   load g_tok
-  load TK_PERCENT
+  load TK_SLASH
   eq
   jump_if __L285
   push_int 0
@@ -4532,7 +4609,17 @@ __L288:
 __L285:
   push_int 1
 __L286:
-  jump_ifnot __L284
+  jump_if __L283
+  load g_tok
+  load TK_PERCENT
+  eq
+  jump_if __L283
+  push_int 0
+  jump __L284
+__L283:
+  push_int 1
+__L284:
+  jump_ifnot __L282
 ; var op: i32 = g_tok;
   load g_tok
   store op
@@ -4603,8 +4690,8 @@ __L286:
 ; left_sb = combined;
   load combined
   store left_sb
-  jump __L283
-__L284:
+  jump __L281
+__L282:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -4637,21 +4724,21 @@ __L284:
   call pars_mul SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_PLUS || g_tok == TK_MINUS {
-__L289:
+__L287:
   load g_tok
   load TK_PLUS
   eq
-  jump_if __L291
+  jump_if __L289
   load g_tok
   load TK_MINUS
   eq
-  jump_if __L291
+  jump_if __L289
   push_int 0
-  jump __L292
-__L291:
+  jump __L290
+__L289:
   push_int 1
-__L292:
-  jump_ifnot __L290
+__L290:
+  jump_ifnot __L288
 ; var op: i32 = g_tok;
   load g_tok
   store op
@@ -4722,8 +4809,8 @@ __L292:
 ; left_sb = combined;
   load combined
   store left_sb
-  jump __L289
-__L290:
+  jump __L287
+__L288:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -4756,21 +4843,21 @@ __L290:
   call pars_add SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_LSHIFT || g_tok == TK_RSHIFT {
-__L293:
+__L291:
   load g_tok
   load TK_LSHIFT
   eq
-  jump_if __L295
+  jump_if __L293
   load g_tok
   load TK_RSHIFT
   eq
-  jump_if __L295
+  jump_if __L293
   push_int 0
-  jump __L296
-__L295:
+  jump __L294
+__L293:
   push_int 1
-__L296:
-  jump_ifnot __L294
+__L294:
+  jump_ifnot __L292
 ; var op: i32 = g_tok;
   load g_tok
   store op
@@ -4841,8 +4928,8 @@ __L296:
 ; left_sb = combined;
   load combined
   store left_sb
-  jump __L293
-__L294:
+  jump __L291
+__L292:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -4874,11 +4961,11 @@ __L294:
   call pars_shift SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_AMP {
-__L297:
+__L295:
   load g_tok
   load TK_AMP
   eq
-  jump_ifnot __L298
+  jump_ifnot __L296
 ; lex_tok(src, tok);
   load src
   load tok
@@ -4946,8 +5033,8 @@ __L297:
 ; left_sb = combined;
   load combined
   store left_sb
-  jump __L297
-__L298:
+  jump __L295
+__L296:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -4979,11 +5066,11 @@ __L298:
   call pars_bitand SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_CARET {
-__L299:
+__L297:
   load g_tok
   load TK_CARET
   eq
-  jump_ifnot __L300
+  jump_ifnot __L298
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5051,8 +5138,8 @@ __L299:
 ; left_sb = combined;
   load combined
   store left_sb
-  jump __L299
-__L300:
+  jump __L297
+__L298:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -5084,11 +5171,11 @@ __L300:
   call pars_bitxor SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_PIPE {
-__L301:
+__L299:
   load g_tok
   load TK_PIPE
   eq
-  jump_ifnot __L302
+  jump_ifnot __L300
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5156,8 +5243,8 @@ __L301:
 ; left_sb = combined;
   load combined
   store left_sb
-  jump __L301
-__L302:
+  jump __L299
+__L300:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -5195,19 +5282,9 @@ __L302:
   load k
   load TK_EQEQ
   eq
-  jump_if __L312
-  load k
-  load TK_BANGEQ
-  eq
-  jump_if __L312
-  push_int 0
-  jump __L313
-__L312:
-  push_int 1
-__L313:
   jump_if __L310
   load k
-  load TK_LT
+  load TK_BANGEQ
   eq
   jump_if __L310
   push_int 0
@@ -5217,7 +5294,7 @@ __L310:
 __L311:
   jump_if __L308
   load k
-  load TK_LTEQ
+  load TK_LT
   eq
   jump_if __L308
   push_int 0
@@ -5227,7 +5304,7 @@ __L308:
 __L309:
   jump_if __L306
   load k
-  load TK_GT
+  load TK_LTEQ
   eq
   jump_if __L306
   push_int 0
@@ -5237,7 +5314,7 @@ __L306:
 __L307:
   jump_if __L304
   load k
-  load TK_GTEQ
+  load TK_GT
   eq
   jump_if __L304
   push_int 0
@@ -5245,7 +5322,17 @@ __L307:
 __L304:
   push_int 1
 __L305:
-  jump_ifnot __L303
+  jump_if __L302
+  load k
+  load TK_GTEQ
+  eq
+  jump_if __L302
+  push_int 0
+  jump __L303
+__L302:
+  push_int 1
+__L303:
+  jump_ifnot __L301
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5309,7 +5396,7 @@ __L305:
   pop
 ; return;
   return_void
-__L303:
+__L301:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -5341,11 +5428,11 @@ __L303:
   call pars_compare SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_AMPAMP {
-__L314:
+__L312:
   load g_tok
   load TK_AMPAMP
   eq
-  jump_ifnot __L315
+  jump_ifnot __L313
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5413,8 +5500,8 @@ __L314:
 ; left_sb = combined;
   load combined
   store left_sb
-  jump __L314
-__L315:
+  jump __L312
+__L313:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -5446,11 +5533,11 @@ __L315:
   call pars_logic_and SourceReader U8Array StringBuffer
   pop
 ; while g_tok == TK_PIPEPIPE {
-__L316:
+__L314:
   load g_tok
   load TK_PIPEPIPE
   eq
-  jump_ifnot __L317
+  jump_ifnot __L315
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5518,8 +5605,8 @@ __L316:
 ; left_sb = combined;
   load combined
   store left_sb
-  jump __L316
-__L317:
+  jump __L314
+__L315:
 ; append(sb, left_sb);
   load sb
   load left_sb
@@ -5555,17 +5642,17 @@ __L317:
 ; if is_type_tok(g_tok) && g_tok != TK_IDENT {
   load g_tok
   call is_type_tok i32
-  jump_ifnot __L320
+  jump_ifnot __L318
   load g_tok
   load TK_IDENT
   ne
-  jump_ifnot __L320
-  push_int 1
-  jump __L321
-__L320:
-  push_int 0
-__L321:
   jump_ifnot __L318
+  push_int 1
+  jump __L319
+__L318:
+  push_int 0
+__L319:
+  jump_ifnot __L316
 ; emit_type_kw(sb, g_tok);
   load sb
   load g_tok
@@ -5576,13 +5663,13 @@ __L321:
   load tok
   call lex_tok SourceReader U8Array
   pop
-  jump __L319
-__L318:
+  jump __L317
+__L316:
 ; if g_tok == TK_IDENT {
   load g_tok
   load TK_IDENT
   eq
-  jump_ifnot __L322
+  jump_ifnot __L320
 ; emit_n(sb, tok, 0, g_tok_slen);
   load sb
   load tok
@@ -5595,8 +5682,8 @@ __L318:
   load tok
   call lex_tok SourceReader U8Array
   pop
-__L322:
-__L319:
+__L320:
+__L317:
 ; emit_char(sb, ')');
   load sb
   push_int 41
@@ -5624,21 +5711,22 @@ __L319:
 ; var name_len: i32 = g_tok_slen;
   load g_tok_slen
   store name_len
-; var name_buf: U8Array = U8Array(name_len + 1);
+; var name_buf: U8Array = U8Array((name_len + 1) as u32);
   load name_len
   push_int 1
   add
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store name_buf
 ; var i: i32 = 0;
   push_int 0
   store i
 ; while i < name_len {
-__L323:
+__L321:
   load i
   load name_len
   lt
-  jump_ifnot __L324
+  jump_ifnot __L322
 ; set(name_buf, i, get(tok, i));
   load name_buf
   load i
@@ -5652,8 +5740,8 @@ __L323:
   push_int 1
   add
   store i
-  jump __L323
-__L324:
+  jump __L321
+__L322:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -5715,7 +5803,7 @@ __L324:
   load g_tok
   load TK_EQ
   eq
-  jump_ifnot __L325
+  jump_ifnot __L323
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5739,7 +5827,7 @@ __L324:
   load sb
   call pars_expr SourceReader U8Array StringBuffer
   pop
-__L325:
+__L323:
 ; expect_tok(TK_SEMI, src, tok);
   load TK_SEMI
   load src
@@ -5860,7 +5948,7 @@ __L325:
   load g_tok
   load TK_SEMI
   ne
-  jump_ifnot __L326
+  jump_ifnot __L324
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -5879,7 +5967,7 @@ __L325:
   load sb
   call pars_expr SourceReader U8Array StringBuffer
   pop
-__L326:
+__L324:
 ; expect_tok(TK_SEMI, src, tok);
   load TK_SEMI
   load src
@@ -5969,7 +6057,7 @@ __L326:
   load g_tok
   load TK_ELSE
   eq
-  jump_ifnot __L327
+  jump_ifnot __L325
 ; lex_tok(src, tok);
   load src
   load tok
@@ -5991,7 +6079,7 @@ __L326:
   load g_tok
   load TK_IF
   eq
-  jump_ifnot __L328
+  jump_ifnot __L326
 ; pars_if_stmt(src, tok, sb, indent + 1);
   load src
   load tok
@@ -6001,8 +6089,8 @@ __L326:
   add
   call pars_if_stmt SourceReader U8Array StringBuffer i32
   pop
-  jump __L329
-__L328:
+  jump __L327
+__L326:
 ; pars_block(src, tok, sb, indent + 1);
   load src
   load tok
@@ -6012,8 +6100,8 @@ __L328:
   add
   call pars_block SourceReader U8Array StringBuffer i32
   pop
-__L329:
 __L327:
+__L325:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -6122,25 +6210,25 @@ __L327:
 .local name_buf U8Array
 .local i i32
 .local the_op i32
-.local going i32
 ; var name_len: i32 = g_tok_slen;
   load g_tok_slen
   store name_len
-; var name_buf: U8Array = U8Array(name_len + 1);
+; var name_buf: U8Array = U8Array((name_len + 1) as u32);
   load name_len
   push_int 1
   add
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store name_buf
 ; var i: i32 = 0;
   push_int 0
   store i
 ; while i < name_len {
-__L330:
+__L328:
   load i
   load name_len
   lt
-  jump_ifnot __L331
+  jump_ifnot __L329
 ; set(name_buf, i, get(tok, i));
   load name_buf
   load i
@@ -6154,8 +6242,8 @@ __L330:
   push_int 1
   add
   store i
-  jump __L330
-__L331:
+  jump __L328
+__L329:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -6166,7 +6254,7 @@ __L331:
   load g_tok
   load TK_EQ
   eq
-  jump_ifnot __L332
+  jump_ifnot __L330
 ; lex_tok(src, tok);
   load src
   load tok
@@ -6231,24 +6319,14 @@ __L331:
   push_int 41
   call emit_char StringBuffer u8
   pop
-  jump __L333
-__L332:
+  jump __L331
+__L330:
   load g_tok
   load TK_PLUS_EQ
   eq
-  jump_if __L342
-  load g_tok
-  load TK_MINUS_EQ
-  eq
-  jump_if __L342
-  push_int 0
-  jump __L343
-__L342:
-  push_int 1
-__L343:
   jump_if __L340
   load g_tok
-  load TK_STAR_EQ
+  load TK_MINUS_EQ
   eq
   jump_if __L340
   push_int 0
@@ -6258,7 +6336,7 @@ __L340:
 __L341:
   jump_if __L338
   load g_tok
-  load TK_SLASH_EQ
+  load TK_STAR_EQ
   eq
   jump_if __L338
   push_int 0
@@ -6268,7 +6346,7 @@ __L338:
 __L339:
   jump_if __L336
   load g_tok
-  load TK_PERCENT_EQ
+  load TK_SLASH_EQ
   eq
   jump_if __L336
   push_int 0
@@ -6276,7 +6354,17 @@ __L339:
 __L336:
   push_int 1
 __L337:
-  jump_ifnot __L334
+  jump_if __L334
+  load g_tok
+  load TK_PERCENT_EQ
+  eq
+  jump_if __L334
+  push_int 0
+  jump __L335
+__L334:
+  push_int 1
+__L335:
+  jump_ifnot __L332
 ; var the_op: i32 = g_tok;
   load g_tok
   store the_op
@@ -6334,52 +6422,52 @@ __L337:
   load the_op
   load TK_PLUS_EQ
   eq
-  jump_ifnot __L344
+  jump_ifnot __L342
   load sb
   push_int 43
   call emit_char StringBuffer u8
   pop
-__L344:
+__L342:
 ; if the_op == TK_MINUS_EQ   { emit_char(sb, '-'); }
   load the_op
   load TK_MINUS_EQ
   eq
-  jump_ifnot __L345
+  jump_ifnot __L343
   load sb
   push_int 45
   call emit_char StringBuffer u8
   pop
-__L345:
+__L343:
 ; if the_op == TK_STAR_EQ    { emit_char(sb, '*'); }
   load the_op
   load TK_STAR_EQ
   eq
-  jump_ifnot __L346
+  jump_ifnot __L344
   load sb
   push_int 42
   call emit_char StringBuffer u8
   pop
-__L346:
+__L344:
 ; if the_op == TK_SLASH_EQ   { emit_char(sb, '/'); }
   load the_op
   load TK_SLASH_EQ
   eq
-  jump_ifnot __L347
+  jump_ifnot __L345
   load sb
   push_int 47
   call emit_char StringBuffer u8
   pop
-__L347:
+__L345:
 ; if the_op == TK_PERCENT_EQ { emit_char(sb, '%'); }
   load the_op
   load TK_PERCENT_EQ
   eq
-  jump_ifnot __L348
+  jump_ifnot __L346
   load sb
   push_int 37
   call emit_char StringBuffer u8
   pop
-__L348:
+__L346:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -6445,13 +6533,13 @@ __L348:
   push_int 41
   call emit_char StringBuffer u8
   pop
-  jump __L335
-__L334:
+  jump __L333
+__L332:
 ; if g_tok == TK_LPAREN {
   load g_tok
   load TK_LPAREN
   eq
-  jump_ifnot __L349
+  jump_ifnot __L347
 ; lex_tok(src, tok);
   load src
   load tok
@@ -6477,20 +6565,12 @@ __L334:
   load name_len
   call emit_n StringBuffer U8Array i32 i32
   pop
-; if g_tok != TK_RPAREN {
+; while g_tok != TK_RPAREN {
+__L349:
   load g_tok
   load TK_RPAREN
   ne
-  jump_ifnot __L351
-; var going: i32 = 1;
-  push_int 1
-  store going
-; while going == 1 {
-__L352:
-  load going
-  push_int 1
-  eq
-  jump_ifnot __L353
+  jump_ifnot __L350
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -6509,25 +6589,20 @@ __L352:
   load sb
   call pars_expr SourceReader U8Array StringBuffer
   pop
-; if g_tok == TK_COMMA {
+; if g_tok != TK_COMMA { break; }
   load g_tok
   load TK_COMMA
-  eq
-  jump_ifnot __L354
+  ne
+  jump_ifnot __L351
+  jump __L350
+__L351:
 ; lex_tok(src, tok);
   load src
   load tok
   call lex_tok SourceReader U8Array
   pop
-  jump __L355
-__L354:
-; going = 0;
-  push_int 0
-  store going
-__L355:
-  jump __L352
-__L353:
-__L351:
+  jump __L349
+__L350:
 ; expect_tok(TK_RPAREN, src, tok);
   load TK_RPAREN
   load src
@@ -6555,15 +6630,15 @@ __L351:
   push_int 41
   call emit_char StringBuffer u8
   pop
-  jump __L350
-__L349:
+  jump __L348
+__L347:
 ; sys_exit(1);
   push_int 1
   call sys_exit i32
   pop
-__L350:
-__L335:
+__L348:
 __L333:
+__L331:
 ; delete(name_buf);
   load name_buf
   call delete U8Array
@@ -6592,21 +6667,21 @@ __L333:
   push_int 0
   store found
 ; while start < n && found == 0 {
-__L356:
+__L352:
   load start
   load n
   lt
-  jump_ifnot __L358
+  jump_ifnot __L354
   load found
   push_int 0
   eq
-  jump_ifnot __L358
+  jump_ifnot __L354
   push_int 1
-  jump __L359
-__L358:
+  jump __L355
+__L354:
   push_int 0
-__L359:
-  jump_ifnot __L357
+__L355:
+  jump_ifnot __L353
 ; var ch: u8 = char_at(text, start);
   load text
   load start
@@ -6616,36 +6691,36 @@ __L359:
   load ch
   push_int 32
   ne
-  jump_ifnot __L362
+  jump_ifnot __L358
   load ch
   push_int 9
   ne
-  jump_ifnot __L362
+  jump_ifnot __L358
   push_int 1
-  jump __L363
-__L362:
+  jump __L359
+__L358:
   push_int 0
-__L363:
-  jump_ifnot __L360
+__L359:
+  jump_ifnot __L356
   push_int 1
   store found
-  jump __L361
-__L360:
+  jump __L357
+__L356:
 ; else { start = start + 1; }
   load start
   push_int 1
   add
   store start
-__L361:
-  jump __L356
 __L357:
+  jump __L352
+__L353:
 ; if start >= n { return; }
   load start
   load n
   ge
-  jump_ifnot __L364
+  jump_ifnot __L360
   return_void
-__L364:
+__L360:
 ; emit_char(sb, '('); emit_string(sb, "comment"); emit_char(sb, ' '); emit_char(sb, '"');
   load sb
   push_int 40
@@ -6667,11 +6742,11 @@ __L364:
   load start
   store i
 ; while i < n {
-__L365:
+__L361:
   load i
   load n
   lt
-  jump_ifnot __L366
+  jump_ifnot __L362
 ; var ch: u8 = char_at(text, i);
   load text
   load i
@@ -6681,7 +6756,7 @@ __L365:
   load ch
   push_int 34
   eq
-  jump_ifnot __L367
+  jump_ifnot __L363
   load sb
   push_int 92
   call emit_char StringBuffer u8
@@ -6690,13 +6765,13 @@ __L365:
   push_int 34
   call emit_char StringBuffer u8
   pop
-  jump __L368
-__L367:
+  jump __L364
+__L363:
 ; if ch == '\\' { emit_char(sb, '\\'); emit_char(sb, '\\'); }
   load ch
   push_int 92
   eq
-  jump_ifnot __L369
+  jump_ifnot __L365
   load sb
   push_int 92
   call emit_char StringBuffer u8
@@ -6705,22 +6780,22 @@ __L367:
   push_int 92
   call emit_char StringBuffer u8
   pop
-  jump __L370
-__L369:
+  jump __L366
+__L365:
 ; else { emit_char(sb, ch); }
   load sb
   load ch
   call emit_char StringBuffer u8
   pop
-__L370:
-__L368:
+__L366:
+__L364:
 ; i = i + 1;
   load i
   push_int 1
   add
   store i
-  jump __L365
-__L366:
+  jump __L361
+__L362:
 ; emit_char(sb, '"'); emit_char(sb, ')');
   load sb
   push_int 34
@@ -6743,9 +6818,9 @@ __L366:
   load g_tok_line
   load g_last_comment_line
   eq
-  jump_ifnot __L371
+  jump_ifnot __L367
   return_void
-__L371:
+__L367:
 ; g_last_comment_line = g_tok_line;
   load g_tok_line
   store g_last_comment_line
@@ -6780,7 +6855,7 @@ __L371:
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L372
+  jump_ifnot __L368
   load src
   load tok
   load sb
@@ -6788,12 +6863,12 @@ __L371:
   call pars_var_decl SourceReader U8Array StringBuffer i32
   pop
   return_void
-__L372:
+__L368:
 ; if g_tok == TK_IF     { pars_if_stmt(src, tok, sb, indent); return; }
   load g_tok
   load TK_IF
   eq
-  jump_ifnot __L373
+  jump_ifnot __L369
   load src
   load tok
   load sb
@@ -6801,12 +6876,12 @@ __L372:
   call pars_if_stmt SourceReader U8Array StringBuffer i32
   pop
   return_void
-__L373:
+__L369:
 ; if g_tok == TK_WHILE    { pars_while_stmt(src, tok, sb, indent); return; }
   load g_tok
   load TK_WHILE
   eq
-  jump_ifnot __L374
+  jump_ifnot __L370
   load src
   load tok
   load sb
@@ -6814,12 +6889,12 @@ __L373:
   call pars_while_stmt SourceReader U8Array StringBuffer i32
   pop
   return_void
-__L374:
+__L370:
 ; if g_tok == TK_RETURN   { pars_return_stmt(src, tok, sb, indent); return; }
   load g_tok
   load TK_RETURN
   eq
-  jump_ifnot __L375
+  jump_ifnot __L371
   load src
   load tok
   load sb
@@ -6827,12 +6902,12 @@ __L374:
   call pars_return_stmt SourceReader U8Array StringBuffer i32
   pop
   return_void
-__L375:
+__L371:
 ; if g_tok == TK_BREAK    { pars_break_stmt(src, tok, sb, indent); return; }
   load g_tok
   load TK_BREAK
   eq
-  jump_ifnot __L376
+  jump_ifnot __L372
   load src
   load tok
   load sb
@@ -6840,12 +6915,12 @@ __L375:
   call pars_break_stmt SourceReader U8Array StringBuffer i32
   pop
   return_void
-__L376:
+__L372:
 ; if g_tok == TK_CONTINUE { pars_continue_stmt(src, tok, sb, indent); return; }
   load g_tok
   load TK_CONTINUE
   eq
-  jump_ifnot __L377
+  jump_ifnot __L373
   load src
   load tok
   load sb
@@ -6853,12 +6928,12 @@ __L376:
   call pars_continue_stmt SourceReader U8Array StringBuffer i32
   pop
   return_void
-__L377:
+__L373:
 ; if g_tok == TK_IDENT    { pars_ident_stmt(src, tok, sb, indent); return; }
   load g_tok
   load TK_IDENT
   eq
-  jump_ifnot __L378
+  jump_ifnot __L374
   load src
   load tok
   load sb
@@ -6866,7 +6941,7 @@ __L377:
   call pars_ident_stmt SourceReader U8Array StringBuffer i32
   pop
   return_void
-__L378:
+__L374:
 ; sys_exit(1);
   push_int 1
   call sys_exit i32
@@ -6897,21 +6972,21 @@ __L378:
   call emit_string StringBuffer StringLiteral
   pop
 ; while g_tok != TK_RBRACE && g_tok != TK_EOF {
-__L379:
+__L375:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L381
+  jump_ifnot __L377
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L381
+  jump_ifnot __L377
   push_int 1
-  jump __L382
-__L381:
+  jump __L378
+__L377:
   push_int 0
-__L382:
-  jump_ifnot __L380
+__L378:
+  jump_ifnot __L376
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -6950,8 +7025,8 @@ __L382:
   add
   call pars_stmt SourceReader U8Array StringBuffer i32
   pop
-  jump __L379
-__L380:
+  jump __L375
+__L376:
 ; expect_tok(TK_RBRACE, src, tok);
   load TK_RBRACE
   load src
@@ -6987,7 +7062,6 @@ __L380:
 .local name_len i32
 .local name_buf U8Array
 .local i i32
-.local going i32
 .local pname_len i32
 .local pname_buf U8Array
 .local j i32
@@ -7000,21 +7074,22 @@ __L380:
 ; var name_len: i32 = g_tok_slen;
   load g_tok_slen
   store name_len
-; var name_buf: U8Array = U8Array(name_len + 1);
+; var name_buf: U8Array = U8Array((name_len + 1) as u32);
   load name_len
   push_int 1
   add
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store name_buf
 ; var i: i32 = 0;
   push_int 0
   store i
 ; while i < name_len {
-__L383:
+__L379:
   load i
   load name_len
   lt
-  jump_ifnot __L384
+  jump_ifnot __L380
 ; set(name_buf, i, get(tok, i));
   load name_buf
   load i
@@ -7028,8 +7103,8 @@ __L383:
   push_int 1
   add
   store i
-  jump __L383
-__L384:
+  jump __L379
+__L380:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -7055,7 +7130,7 @@ __L384:
   load is_export
   push_int 1
   eq
-  jump_ifnot __L385
+  jump_ifnot __L381
 ; emit_char(sb, ':'); emit_string(sb, "export");
   load sb
   push_int 58
@@ -7065,7 +7140,7 @@ __L384:
   push_str 28
   call emit_string StringBuffer StringLiteral
   pop
-__L385:
+__L381:
 ; emit_char(sb, ' ');
   load sb
   push_int 32
@@ -7103,38 +7178,31 @@ __L385:
   push_str 43
   call emit_string StringBuffer StringLiteral
   pop
-; if g_tok != TK_RPAREN {
+; while g_tok != TK_RPAREN {
+__L382:
   load g_tok
   load TK_RPAREN
   ne
-  jump_ifnot __L386
-; var going: i32 = 1;
-  push_int 1
-  store going
-; while going == 1 {
-__L387:
-  load going
-  push_int 1
-  eq
-  jump_ifnot __L388
+  jump_ifnot __L383
 ; var pname_len: i32 = g_tok_slen;
   load g_tok_slen
   store pname_len
-; var pname_buf: U8Array = U8Array(pname_len + 1);
+; var pname_buf: U8Array = U8Array((pname_len + 1) as u32);
   load pname_len
   push_int 1
   add
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store pname_buf
 ; var j: i32 = 0;
   push_int 0
   store j
 ; while j < pname_len {
-__L389:
+__L384:
   load j
   load pname_len
   lt
-  jump_ifnot __L390
+  jump_ifnot __L385
 ; set(pname_buf, j, get(tok, j));
   load pname_buf
   load j
@@ -7148,8 +7216,8 @@ __L389:
   push_int 1
   add
   store j
-  jump __L389
-__L390:
+  jump __L384
+__L385:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -7236,25 +7304,20 @@ __L390:
   load pname_buf
   call delete U8Array
   pop
-; if g_tok == TK_COMMA {
+; if g_tok != TK_COMMA { break; }
   load g_tok
   load TK_COMMA
-  eq
-  jump_ifnot __L391
+  ne
+  jump_ifnot __L386
+  jump __L383
+__L386:
 ; lex_tok(src, tok);
   load src
   load tok
   call lex_tok SourceReader U8Array
   pop
-  jump __L392
-__L391:
-; going = 0;
-  push_int 0
-  store going
-__L392:
-  jump __L387
-__L388:
-__L386:
+  jump __L382
+__L383:
 ; expect_tok(TK_RPAREN, src, tok);
   load TK_RPAREN
   load src
@@ -7315,7 +7378,7 @@ __L386:
   load g_tok
   load TK_ARROW
   eq
-  jump_ifnot __L393
+  jump_ifnot __L387
 ; lex_tok(src, tok);
   load src
   load tok
@@ -7330,8 +7393,8 @@ __L386:
   add
   call pars_type SourceReader U8Array StringBuffer i32
   pop
-  jump __L394
-__L393:
+  jump __L388
+__L387:
 ; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' '); emit_string(sb, "void"); emit_char(sb, ')');
   load sb
   push_int 40
@@ -7353,7 +7416,7 @@ __L393:
   push_int 41
   call emit_char StringBuffer u8
   pop
-__L394:
+__L388:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -7375,14 +7438,14 @@ __L394:
   load g_tok
   load TK_SEMI
   eq
-  jump_ifnot __L395
+  jump_ifnot __L389
 ; lex_tok(src, tok);
   load src
   load tok
   call lex_tok SourceReader U8Array
   pop
-  jump __L396
-__L395:
+  jump __L390
+__L389:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -7404,7 +7467,7 @@ __L395:
   add
   call pars_block SourceReader U8Array StringBuffer i32
   pop
-__L396:
+__L390:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -7438,104 +7501,104 @@ __L396:
   load k
   load TK_U8
   eq
-  jump_ifnot __L397
+  jump_ifnot __L391
   load buf
   load bstart
   push_str 8
   call buf_set_str U8Array i32 StringLiteral
   return
-__L397:
+__L391:
 ; if k == TK_I8   { return buf_set_str(buf, bstart, "i8"); }
   load k
   load TK_I8
   eq
-  jump_ifnot __L398
+  jump_ifnot __L392
   load buf
   load bstart
   push_str 11
   call buf_set_str U8Array i32 StringLiteral
   return
-__L398:
+__L392:
 ; if k == TK_U16  { return buf_set_str(buf, bstart, "u16"); }
   load k
   load TK_U16
   eq
-  jump_ifnot __L399
+  jump_ifnot __L393
   load buf
   load bstart
   push_str 9
   call buf_set_str U8Array i32 StringLiteral
   return
-__L399:
+__L393:
 ; if k == TK_U32  { return buf_set_str(buf, bstart, "u32"); }
   load k
   load TK_U32
   eq
-  jump_ifnot __L400
+  jump_ifnot __L394
   load buf
   load bstart
   push_str 10
   call buf_set_str U8Array i32 StringLiteral
   return
-__L400:
+__L394:
 ; if k == TK_I16  { return buf_set_str(buf, bstart, "i16"); }
   load k
   load TK_I16
   eq
-  jump_ifnot __L401
+  jump_ifnot __L395
   load buf
   load bstart
   push_str 12
   call buf_set_str U8Array i32 StringLiteral
   return
-__L401:
+__L395:
 ; if k == TK_I32  { return buf_set_str(buf, bstart, "i32"); }
   load k
   load TK_I32
   eq
-  jump_ifnot __L402
+  jump_ifnot __L396
   load buf
   load bstart
   push_str 13
   call buf_set_str U8Array i32 StringLiteral
   return
-__L402:
+__L396:
 ; if k == TK_BOOL { return buf_set_str(buf, bstart, "bool"); }
   load k
   load TK_BOOL
   eq
-  jump_ifnot __L403
+  jump_ifnot __L397
   load buf
   load bstart
   push_str 14
   call buf_set_str U8Array i32 StringLiteral
   return
-__L403:
+__L397:
 ; if k == TK_VOID { return buf_set_str(buf, bstart, "void"); }
   load k
   load TK_VOID
   eq
-  jump_ifnot __L404
+  jump_ifnot __L398
   load buf
   load bstart
   push_str 15
   call buf_set_str U8Array i32 StringLiteral
   return
-__L404:
+__L398:
 ; if k == TK_IDENT {
   load k
   load TK_IDENT
   eq
-  jump_ifnot __L405
+  jump_ifnot __L399
 ; var i: i32 = 0;
   push_int 0
   store i
 ; while i < g_tok_slen { set(buf,(bstart+i),get(tok,i)); i = i + 1; }
-__L406:
+__L400:
   load i
   load g_tok_slen
   lt
-  jump_ifnot __L407
+  jump_ifnot __L401
   load buf
   load bstart
   load i
@@ -7549,12 +7612,12 @@ __L406:
   push_int 1
   add
   store i
-  jump __L406
-__L407:
+  jump __L400
+__L401:
 ; return g_tok_slen;
   load g_tok_slen
   return
-__L405:
+__L399:
 ; return 0;
   push_int 0
   return
@@ -7918,6 +7981,1898 @@ __L405:
   return_void
 .endfn
 
+.fn emit_type_arr StringBuffer U8Array i32 void
+.param sb StringBuffer
+.param sbuf U8Array
+.param snlen i32
+; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 37
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_n(sb, sbuf, 0, snlen);
+  load sb
+  load sbuf
+  push_int 0
+  load snlen
+  call emit_n StringBuffer U8Array i32 i32
+  pop
+; emit_string(sb, "Array");
+  load sb
+  push_str 46
+  call emit_string StringBuffer StringLiteral
+  pop
+; emit_char(sb, ')');
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_param_lit StringBuffer i32 StringLiteral StringLiteral void
+.param sb StringBuffer
+.param indent i32
+.param name StringLiteral
+.param tname StringLiteral
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 44
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, name); emit_char(sb, 10u8);
+  load sb
+  load name
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 37
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load tname
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, ')');
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_param_arr StringBuffer i32 StringLiteral U8Array i32 void
+.param sb StringBuffer
+.param indent i32
+.param name StringLiteral
+.param sbuf U8Array
+.param snlen i32
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 44
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, name); emit_char(sb, 10u8);
+  load sb
+  load name
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load sbuf
+  load snlen
+  call emit_type_arr StringBuffer U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, ')');
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_param_struct StringBuffer i32 StringLiteral U8Array i32 void
+.param sb StringBuffer
+.param indent i32
+.param name StringLiteral
+.param sbuf U8Array
+.param snlen i32
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 44
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, name); emit_char(sb, 10u8);
+  load sb
+  load name
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 37
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load sbuf
+  push_int 0
+  load snlen
+  call emit_n StringBuffer U8Array i32 i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, ')');
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_ret_lit StringBuffer i32 StringLiteral void
+.param sb StringBuffer
+.param indent i32
+.param tname StringLiteral
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 45
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 37
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load tname
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, ')');
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_ret_arr StringBuffer i32 U8Array i32 void
+.param sb StringBuffer
+.param indent i32
+.param sbuf U8Array
+.param snlen i32
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 45
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load sbuf
+  load snlen
+  call emit_type_arr StringBuffer U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, ')');
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_ret_struct StringBuffer i32 U8Array i32 void
+.param sb StringBuffer
+.param indent i32
+.param sbuf U8Array
+.param snlen i32
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 45
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 37
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load sbuf
+  push_int 0
+  load snlen
+  call emit_n StringBuffer U8Array i32 i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, ')');
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_struct_array_fns StringBuffer i32 StringBuffer U8Array i32 void
+.param sb StringBuffer
+.param indent i32
+.param cmt StringBuffer
+.param sbuf U8Array
+.param snlen i32
+; emit_char(sb, 10u8);
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_comment_line(sb, indent, cmt);
+  load sb
+  load indent
+  load cmt
+  call emit_comment_line StringBuffer i32 StringBuffer
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 16
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_n(sb, sbuf, 0, snlen); emit_string(sb, "Array"); emit_char(sb, 10u8);
+  load sb
+  load sbuf
+  push_int 0
+  load snlen
+  call emit_n StringBuffer U8Array i32 i32
+  pop
+  load sb
+  push_str 46
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 43
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_param_lit(sb, indent + 2, "__n", "u32"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  push_str 47
+  push_str 10
+  call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_ret_arr(sb, indent + 1, sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  load sbuf
+  load snlen
+  call emit_ret_arr StringBuffer i32 U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 42
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 25
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 35
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 4);
+  load sb
+  load indent
+  push_int 4
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 34
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "U32Array"); emit_char(sb, 10u8);
+  load sb
+  push_str 48
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 5);
+  load sb
+  load indent
+  push_int 5
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 19
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "__n"); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  push_str 47
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 4
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 4); emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 4
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  load sbuf
+  load snlen
+  call emit_type_arr StringBuffer U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent); emit_char(sb, ')');
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; emit_char(sb, 10u8);
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_comment_line(sb, indent, cmt);
+  load sb
+  load indent
+  load cmt
+  call emit_comment_line StringBuffer i32 StringBuffer
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 16
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "len"); emit_char(sb, 10u8);
+  load sb
+  push_str 49
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 43
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  push_str 50
+  load sbuf
+  load snlen
+  call emit_param_arr StringBuffer i32 StringLiteral U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_ret_lit(sb, indent + 1, "i32"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  push_str 13
+  call emit_ret_lit StringBuffer i32 StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 42
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 25
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 3);
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "len"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 34
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 49
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_cast_var(sb, indent + 4, "__a", "U32Array"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 4
+  add
+  push_str 50
+  push_str 48
+  call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent); emit_char(sb, ')');
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; emit_char(sb, 10u8);
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_comment_line(sb, indent, cmt);
+  load sb
+  load indent
+  load cmt
+  call emit_comment_line StringBuffer i32 StringBuffer
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 16
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "get"); emit_char(sb, 10u8);
+  load sb
+  push_str 51
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 43
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  push_str 50
+  load sbuf
+  load snlen
+  call emit_param_arr StringBuffer i32 StringLiteral U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_param_lit(sb, indent + 2, "__i", "i32"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  push_str 52
+  push_str 13
+  call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_ret_struct(sb, indent + 1, sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  load sbuf
+  load snlen
+  call emit_ret_struct StringBuffer i32 U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 42
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 25
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 35
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 4);
+  load sb
+  load indent
+  push_int 4
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "get"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 34
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 51
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_cast_var(sb, indent + 5, "__a", "U32Array"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 5
+  add
+  push_str 50
+  push_str 48
+  call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 5);
+  load sb
+  load indent
+  push_int 5
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 19
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "__i"); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  push_str 52
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 4
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 4);
+  load sb
+  load indent
+  push_int 4
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 37
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load sbuf
+  push_int 0
+  load snlen
+  call emit_n StringBuffer U8Array i32 i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent); emit_char(sb, ')');
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; emit_char(sb, 10u8);
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_comment_line(sb, indent, cmt);
+  load sb
+  load indent
+  load cmt
+  call emit_comment_line StringBuffer i32 StringBuffer
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 16
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "set"); emit_char(sb, 10u8);
+  load sb
+  push_str 53
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 43
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  push_str 50
+  load sbuf
+  load snlen
+  call emit_param_arr StringBuffer i32 StringLiteral U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_param_lit(sb, indent + 2, "__i", "i32"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  push_str 52
+  push_str 13
+  call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_param_struct(sb, indent + 2, "__v", sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  push_str 54
+  load sbuf
+  load snlen
+  call emit_param_struct StringBuffer i32 StringLiteral U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_ret_lit(sb, indent + 1, "void"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  push_str 15
+  call emit_ret_lit StringBuffer i32 StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 42
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 40
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "set"); emit_char(sb, 10u8);
+  load sb
+  push_str 53
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_cast_var(sb, indent + 3, "__a", "U32Array"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 3
+  add
+  push_str 50
+  push_str 48
+  call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 3);
+  load sb
+  load indent
+  push_int 3
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 19
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "__i"); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  push_str 52
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_cast_var(sb, indent + 3, "__v", "u32"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 3
+  add
+  push_str 54
+  push_str 10
+  call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 25
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent); emit_char(sb, ')');
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; emit_char(sb, 10u8);
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_comment_line(sb, indent, cmt);
+  load sb
+  load indent
+  load cmt
+  call emit_comment_line StringBuffer i32 StringBuffer
+  pop
+; emit_indent(sb, indent);
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 16
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "delete"); emit_char(sb, 10u8);
+  load sb
+  push_str 55
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 43
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  push_str 50
+  load sbuf
+  load snlen
+  call emit_param_arr StringBuffer i32 StringLiteral U8Array i32
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_ret_lit(sb, indent + 1, "void"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  push_str 15
+  call emit_ret_lit StringBuffer i32 StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 42
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' ');
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 40
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 32
+  call emit_char StringBuffer u8
+  pop
+; emit_string(sb, "delete"); emit_char(sb, 10u8);
+  load sb
+  push_str 55
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_cast_var(sb, indent + 3, "__a", "U32Array"); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 3
+  add
+  push_str 50
+  push_str 48
+  call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 2);
+  load sb
+  load indent
+  push_int 2
+  add
+  call emit_indent StringBuffer i32
+  pop
+; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  push_int 40
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_str 25
+  call emit_string StringBuffer StringLiteral
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+  load sb
+  load indent
+  push_int 1
+  add
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; emit_indent(sb, indent); emit_char(sb, ')');
+  load sb
+  load indent
+  call emit_indent StringBuffer i32
+  pop
+  load sb
+  push_int 41
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
 .fn fi_name_off I32Array i32 i32
 .param fi I32Array
 .param idx i32
@@ -8091,11 +10046,11 @@ __L405:
   push_int 0
   store i
 ; while i < nfields {
-__L408:
+__L402:
   load i
   load nfields
   lt
-  jump_ifnot __L409
+  jump_ifnot __L403
 ; emit_indent(sb, indent + 2);
   load sb
   load indent
@@ -8118,7 +10073,7 @@ __L408:
   pop
 ; emit_string(sb, "__a"); emit_int(sb, i); emit_char(sb, 10u8);
   load sb
-  push_str 46
+  push_str 50
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -8172,8 +10127,8 @@ __L408:
   push_int 1
   add
   store i
-  jump __L408
-__L409:
+  jump __L402
+__L403:
 ; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
   load sb
   load indent
@@ -8308,7 +10263,7 @@ __L409:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 47
+  push_str 56
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -8382,13 +10337,13 @@ __L409:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "int:u32"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);
   load sb
   push_int 40
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 32
+  push_str 57
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -8441,11 +10396,11 @@ __L409:
   push_int 0
   store k
 ; while k < nfields {
-__L410:
+__L404:
   load k
   load nfields
   lt
-  jump_ifnot __L411
+  jump_ifnot __L405
 ; emit_comment_line(sb, indent + 2, cmt);
   load sb
   load indent
@@ -8475,7 +10430,7 @@ __L410:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 49
+  push_str 53
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -8503,7 +10458,7 @@ __L410:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 47
+  push_str 56
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -8586,7 +10541,7 @@ __L410:
   pop
 ; emit_string(sb, "__a"); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);
   load sb
-  push_str 46
+  push_str 50
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -8668,8 +10623,8 @@ __L410:
   push_int 1
   add
   store k
-  jump __L410
-__L411:
+  jump __L404
+__L405:
 ; emit_comment_line(sb, indent + 2, cmt);
   load sb
   load indent
@@ -8737,7 +10692,7 @@ __L411:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 47
+  push_str 56
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -8943,7 +10898,7 @@ __L411:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 47
+  push_str 56
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -9167,7 +11122,7 @@ __L411:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 50
+  push_str 51
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -9179,7 +11134,7 @@ __L411:
   load indent
   push_int 5
   add
-  push_str 47
+  push_str 56
   push_str 48
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
@@ -9428,7 +11383,7 @@ __L411:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 47
+  push_str 56
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -9504,7 +11459,7 @@ __L411:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 51
+  push_str 54
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -9687,7 +11642,7 @@ __L411:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 49
+  push_str 53
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -9699,7 +11654,7 @@ __L411:
   load indent
   push_int 3
   add
-  push_str 47
+  push_str 56
   push_str 48
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
@@ -9743,7 +11698,7 @@ __L411:
   load indent
   push_int 3
   add
-  push_str 51
+  push_str 54
   push_str 10
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
@@ -9862,9 +11817,9 @@ __L411:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; var sname_buf: U8Array = U8Array(64);
+; var sname_buf: U8Array = U8Array(64u32);
   push_int 64
-  call U8Array i32
+  call U8Array u32
   store sname_buf
 ; var snlen: i32 = g_tok_slen;
   load g_tok_slen
@@ -9873,11 +11828,11 @@ __L411:
   push_int 0
   store ci
 ; while ci < snlen { set(sname_buf, ci, get(tok, ci)); ci = ci + 1; }
-__L412:
+__L406:
   load ci
   load snlen
   lt
-  jump_ifnot __L413
+  jump_ifnot __L407
   load sname_buf
   load ci
   load tok
@@ -9889,8 +11844,8 @@ __L412:
   push_int 1
   add
   store ci
-  jump __L412
-__L413:
+  jump __L406
+__L407:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -9903,17 +11858,17 @@ __L413:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; var fnames: U8Array = U8Array(1024);
+; var fnames: U8Array = U8Array(1024u32);
   push_int 1024
-  call U8Array i32
+  call U8Array u32
   store fnames
-; var ftypes: U8Array = U8Array(1024);
+; var ftypes: U8Array = U8Array(1024u32);
   push_int 1024
-  call U8Array i32
+  call U8Array u32
   store ftypes
-; var fields: I32Array = I32Array(64);  // 16 fields * 4 ints
+; var fields: I32Array = I32Array(64u32);  // 16 fields * 4 ints
   push_int 64
-  call I32Array i32
+  call I32Array u32
   store fields
 ; var nfields: i32 = 0;
   push_int 0
@@ -9948,37 +11903,37 @@ __L413:
   push_int 1
   store first
 ; while g_tok != TK_RBRACE && g_tok != TK_EOF {
-__L414:
+__L408:
   load g_tok
   load TK_RBRACE
   ne
-  jump_ifnot __L416
+  jump_ifnot __L410
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L416
+  jump_ifnot __L410
   push_int 1
-  jump __L417
-__L416:
+  jump __L411
+__L410:
   push_int 0
-__L417:
-  jump_ifnot __L415
+__L411:
+  jump_ifnot __L409
 ; if first == 0 {
   load first
   push_int 0
   eq
-  jump_ifnot __L418
+  jump_ifnot __L412
 ; if g_tok == TK_COMMA { lex_tok(src, tok); }
   load g_tok
   load TK_COMMA
   eq
-  jump_ifnot __L419
+  jump_ifnot __L413
   load src
   load tok
   call lex_tok SourceReader U8Array
   pop
-__L419:
-__L418:
+__L413:
+__L412:
 ; first = 0;
   push_int 0
   store first
@@ -9986,29 +11941,30 @@ __L418:
   load g_tok
   load TK_RBRACE
   eq
-  jump_ifnot __L420
+  jump_ifnot __L414
   load g_tok
   store g_tok
-  jump __L421
-__L420:
+  jump __L415
+__L414:
 ; var fname_len: i32 = g_tok_slen;
   load g_tok_slen
   store fname_len
-; var fname_buf: U8Array = U8Array(fname_len + 1);
+; var fname_buf: U8Array = U8Array((fname_len + 1) as u32);
   load fname_len
   push_int 1
   add
-  call U8Array i32
+  cast u32
+  call U8Array u32
   store fname_buf
 ; var j: i32 = 0;
   push_int 0
   store j
 ; while j < fname_len {
-__L422:
+__L416:
   load j
   load fname_len
   lt
-  jump_ifnot __L423
+  jump_ifnot __L417
 ; set(fname_buf, j, get(tok, j));
   load fname_buf
   load j
@@ -10022,17 +11978,17 @@ __L422:
   push_int 1
   add
   store j
-  jump __L422
-__L423:
+  jump __L416
+__L417:
 ; j = 0;
   push_int 0
   store j
 ; while j < fname_len { set(fnames, (fnpos+j), get(fname_buf, j)); j = j + 1; }
-__L424:
+__L418:
   load j
   load fname_len
   lt
-  jump_ifnot __L425
+  jump_ifnot __L419
   load fnames
   load fnpos
   load j
@@ -10046,8 +12002,8 @@ __L424:
   push_int 1
   add
   store j
-  jump __L424
-__L425:
+  jump __L418
+__L419:
 ; expect_tok(TK_IDENT, src, tok);
   load TK_IDENT
   load src
@@ -10103,7 +12059,7 @@ __L425:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 52
+  push_str 58
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -10164,9 +12120,9 @@ __L425:
   push_int 1
   add
   store nfields
-__L421:
-  jump __L414
 __L415:
+  jump __L408
+__L409:
 ; expect_tok(TK_RBRACE, src, tok);
   load TK_RBRACE
   load src
@@ -10209,11 +12165,11 @@ __L415:
   push_int 0
   store gi
 ; while gi < nfields {
-__L426:
+__L420:
   load gi
   load nfields
   lt
-  jump_ifnot __L427
+  jump_ifnot __L421
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10236,17 +12192,17 @@ __L426:
   push_int 1
   add
   store gi
-  jump __L426
-__L427:
+  jump __L420
+__L421:
 ; var si: i32 = 0;
   push_int 0
   store si
 ; while si < nfields {
-__L428:
+__L422:
   load si
   load nfields
   lt
-  jump_ifnot __L429
+  jump_ifnot __L423
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10269,8 +12225,8 @@ __L428:
   push_int 1
   add
   store si
-  jump __L428
-__L429:
+  jump __L422
+__L423:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10302,7 +12258,7 @@ __L429:
   pop
 ; emit_string(sb, "delete"); emit_char(sb, 10u8);
   load sb
-  push_str 53
+  push_str 55
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -10351,7 +12307,7 @@ __L429:
   pop
 ; emit_string(sb, "__p"); emit_char(sb, 10u8);
   load sb
-  push_str 47
+  push_str 56
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -10538,7 +12494,7 @@ __L429:
   pop
 ; emit_string(sb, "delete"); emit_char(sb, 10u8);
   load sb
-  push_str 53
+  push_str 55
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -10587,7 +12543,7 @@ __L429:
   pop
 ; emit_string(sb, "__p"); emit_char(sb, ')'); emit_char(sb, 10u8);
   load sb
-  push_str 47
+  push_str 56
   call emit_string StringBuffer StringLiteral
   pop
   load sb
@@ -10713,6 +12669,14 @@ __L429:
   push_int 41
   call emit_char StringBuffer u8
   pop
+; emit_struct_array_fns(sb, indent, struct_cmt, sname_buf, snlen);
+  load sb
+  load indent
+  load struct_cmt
+  load sname_buf
+  load snlen
+  call emit_struct_array_fns StringBuffer i32 StringBuffer U8Array i32
+  pop
 ; delete(sname_buf);
   load sname_buf
   call delete U8Array
@@ -10764,7 +12728,7 @@ __L429:
   load g_tok
   load TK_STR_LIT
   eq
-  jump_ifnot __L430
+  jump_ifnot __L424
 ; emit_n(sb, tok, 0, g_tok_slen);
   load sb
   load tok
@@ -10777,7 +12741,7 @@ __L429:
   load tok
   call lex_tok SourceReader U8Array
   pop
-__L430:
+__L424:
 ; expect_tok(TK_SEMI, src, tok);
   load TK_SEMI
   load src
@@ -10804,15 +12768,15 @@ __L430:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_str 54
+  push_str 59
   call emit_string StringBuffer StringLiteral
   pop
 ; while g_tok == TK_IMPORT {
-__L431:
+__L425:
   load g_tok
   load TK_IMPORT
   eq
-  jump_ifnot __L432
+  jump_ifnot __L426
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10830,14 +12794,14 @@ __L431:
   push_int 1
   call pars_import SourceReader U8Array StringBuffer i32
   pop
-  jump __L431
-__L432:
+  jump __L425
+__L426:
 ; while g_tok != TK_EOF {
-__L433:
+__L427:
   load g_tok
   load TK_EOF
   ne
-  jump_ifnot __L434
+  jump_ifnot __L428
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10852,7 +12816,7 @@ __L433:
   load g_tok
   load TK_EXPORT
   eq
-  jump_ifnot __L435
+  jump_ifnot __L429
 ; lex_tok(src, tok);
   load src
   load tok
@@ -10866,13 +12830,13 @@ __L433:
   push_int 1
   call pars_fn_decl SourceReader U8Array StringBuffer i32 i32
   pop
-  jump __L436
-__L435:
+  jump __L430
+__L429:
 ; if g_tok == TK_FN {
   load g_tok
   load TK_FN
   eq
-  jump_ifnot __L437
+  jump_ifnot __L431
 ; pars_fn_decl(src, tok, sb, 1, 0);
   load src
   load tok
@@ -10881,13 +12845,13 @@ __L435:
   push_int 0
   call pars_fn_decl SourceReader U8Array StringBuffer i32 i32
   pop
-  jump __L438
-__L437:
+  jump __L432
+__L431:
 ; if g_tok == TK_STRUCT {
   load g_tok
   load TK_STRUCT
   eq
-  jump_ifnot __L439
+  jump_ifnot __L433
 ; pars_struct_decl(src, tok, sb, 1);
   load src
   load tok
@@ -10895,13 +12859,13 @@ __L437:
   push_int 1
   call pars_struct_decl SourceReader U8Array StringBuffer i32
   pop
-  jump __L440
-__L439:
+  jump __L434
+__L433:
 ; if g_tok == TK_VAR {
   load g_tok
   load TK_VAR
   eq
-  jump_ifnot __L441
+  jump_ifnot __L435
 ; pars_var_decl(src, tok, sb, 1);
   load src
   load tok
@@ -10909,18 +12873,18 @@ __L439:
   push_int 1
   call pars_var_decl SourceReader U8Array StringBuffer i32
   pop
-  jump __L442
-__L441:
+  jump __L436
+__L435:
 ; sys_exit(1);
   push_int 1
   call sys_exit i32
   pop
-__L442:
-__L440:
-__L438:
 __L436:
-  jump __L433
 __L434:
+__L432:
+__L430:
+  jump __L427
+__L428:
 ; emit_char(sb, 10u8);
   load sb
   push_int 10
@@ -10949,9 +12913,9 @@ __L434:
   push_int 0
   call SourceReader_new i32
   store src
-; var tok_buf: U8Array = U8Array(4092);
+; var tok_buf: U8Array = U8Array(4092u32);
   push_int 4092
-  call U8Array i32
+  call U8Array u32
   store tok_buf
 ; var sb: StringBuffer = StringBuffer_new(1);
   push_int 1
@@ -11041,14 +13005,19 @@ __L434:
 .string 43 "params"
 .string 44 "param"
 .string 45 "ret"
-.string 46 "__a"
-.string 47 "__p"
+.string 46 "Array"
+.string 47 "__n"
 .string 48 "U32Array"
-.string 49 "set"
-.string 50 "get"
-.string 51 "__v"
-.string 52 "field"
-.string 53 "delete"
-.string 54 "program"
+.string 49 "len"
+.string 50 "__a"
+.string 51 "get"
+.string 52 "__i"
+.string 53 "set"
+.string 54 "__v"
+.string 55 "delete"
+.string 56 "__p"
+.string 57 "int:u32"
+.string 58 "field"
+.string 59 "program"
 
 .endbc

@@ -35,11 +35,14 @@ var g_mtfs_data_start:   u32 = 0u32;
 var g_mtfs_inodes: U8Array = 0 as U8Array;   // full inode table cache
 var g_mtfs_sector: U8Array = 0 as U8Array;   // scratch for block_read
 
-// ===== FD table (parallel arrays; struct arrays unsupported in asm pipeline) =====
-// g_mtfs_fd_ino[i] == -1 means "free slot", otherwise the inode number.
-// g_mtfs_fd_pos[i] is the current read offset in bytes.
-var g_mtfs_fd_ino: I32Array = 0 as I32Array;
-var g_mtfs_fd_pos: I32Array = 0 as I32Array;
+// ===== FD table =====
+// ino == -1 means free slot, otherwise holds the inode number.
+// pos is the current read offset in bytes.
+struct MtfsFD {
+    ino: i32,
+    pos: i32,
+}
+var g_mtfs_fds: MtfsFDArray = 0 as MtfsFDArray;
 
 // ===== Little-endian u32 helpers =====
 fn le_u32(buf: U8Array, off: i32) -> u32 {
@@ -65,8 +68,9 @@ fn inode_u32(inode: u32, off: i32) -> u32 {
 fn clear_fd_table() -> void {
     var i: i32 = 0;
     while i < MTFS_MAX_FDS {
-        set(g_mtfs_fd_ino, i, -1);
-        set(g_mtfs_fd_pos, i, 0);
+        var e: MtfsFD = get(g_mtfs_fds, i);
+        ino(e, -1);
+        pos(e, 0);
         i = i + 1;
     }
     return;
@@ -76,7 +80,7 @@ export fn mtfs_mount() -> i32 {
     g_mtfs_mounted = 0;
 
     // Scratch sector buffer, allocated once
-    g_mtfs_sector = U8Array(MTFS_BLOCK_SIZE);
+    g_mtfs_sector = U8Array((MTFS_BLOCK_SIZE) as u32);
 
     // Read superblock
     if block_read(0u32, g_mtfs_sector) != MTFS_BLOCK_SIZE {
@@ -94,7 +98,7 @@ export fn mtfs_mount() -> i32 {
 
     // Allocate inode cache and fill it one block at a time
     var cache_bytes: i32 = (g_mtfs_inode_count as i32) * MTFS_INODE_SIZE;
-    g_mtfs_inodes = U8Array(cache_bytes);
+    g_mtfs_inodes = U8Array((cache_bytes) as u32);
 
     var blocks: u32 = g_mtfs_data_start - g_mtfs_inode_start;
     var bi: u32 = 0u32;
@@ -111,9 +115,13 @@ export fn mtfs_mount() -> i32 {
         bi = bi + 1u32;
     }
 
-    // FD table: parallel arrays, all slots marked free
-    g_mtfs_fd_ino = I32Array(MTFS_MAX_FDS);
-    g_mtfs_fd_pos = I32Array(MTFS_MAX_FDS);
+    // FD table: allocate structs once, mark all slots free
+    g_mtfs_fds = MtfsFDArray(MTFS_MAX_FDS as u32);
+    var k: i32 = 0;
+    while k < MTFS_MAX_FDS {
+        set(g_mtfs_fds, k, MtfsFD(-1, 0));
+        k = k + 1;
+    }
     clear_fd_table();
 
     g_mtfs_mounted = 1;
@@ -151,9 +159,10 @@ export fn mtfs_open(inode_num: u32) -> i32 {
     if inode_num >= g_mtfs_inode_count { return -1; }
     var i: i32 = 0;
     while i < MTFS_MAX_FDS {
-        if get(g_mtfs_fd_ino, i) < 0 {
-            set(g_mtfs_fd_ino, i, inode_num as i32);
-            set(g_mtfs_fd_pos, i, 0);
+        var e: MtfsFD = get(g_mtfs_fds, i);
+        if ino(e) < 0 {
+            ino(e, inode_num as i32);
+            pos(e, 0);
             return i;
         }
         i = i + 1;
@@ -163,7 +172,8 @@ export fn mtfs_open(inode_num: u32) -> i32 {
 
 export fn mtfs_size(fd: i32) -> i32 {
     if fd < 0 || fd >= MTFS_MAX_FDS { return -1; }
-    var inum: i32 = get(g_mtfs_fd_ino, fd);
+    var e: MtfsFD = get(g_mtfs_fds, fd);
+    var inum: i32 = ino(e);
     if inum < 0 { return -1; }
     return inode_u32(inum as u32, INO_SIZE) as i32;
 }
@@ -171,12 +181,13 @@ export fn mtfs_size(fd: i32) -> i32 {
 export fn mtfs_read(fd: i32, buf: U8Array, n: i32) -> i32 {
     if g_mtfs_mounted == 0 { return -1; }
     if fd < 0 || fd >= MTFS_MAX_FDS { return -1; }
-    var inum: i32 = get(g_mtfs_fd_ino, fd);
+    var e: MtfsFD = get(g_mtfs_fds, fd);
+    var inum: i32 = ino(e);
     if inum < 0 { return -1; }
 
     var size: i32 = inode_u32(inum as u32, INO_SIZE) as i32;
     var start: u32 = inode_u32(inum as u32, INO_START);
-    var offset: i32 = get(g_mtfs_fd_pos, fd);
+    var offset: i32 = pos(e);
 
     var remaining: i32 = size - offset;
     if remaining <= 0 { return 0; }
@@ -202,13 +213,14 @@ export fn mtfs_read(fd: i32, buf: U8Array, n: i32) -> i32 {
         copied = copied + chunk;
     }
 
-    set(g_mtfs_fd_pos, fd, offset + copied);
+    pos(e, offset + copied);
     return copied;
 }
 
 export fn mtfs_close(fd: i32) -> i32 {
     if fd < 0 || fd >= MTFS_MAX_FDS { return -1; }
-    set(g_mtfs_fd_ino, fd, -1);
-    set(g_mtfs_fd_pos, fd, 0);
+    var e: MtfsFD = get(g_mtfs_fds, fd);
+    ino(e, -1);
+    pos(e, 0);
     return 0;
 }

@@ -23,7 +23,7 @@
       (var_decl __p
         (type U32Array)
         (call U32Array
-          (int 2)
+          (int:u32 2)
         )
       )
       (call_stmt set
@@ -165,6 +165,122 @@
       (call_stmt delete
         (cast
           (var __p)
+          (type U32Array)
+        )
+      )
+      (return)
+    )
+  )
+  (fn PointArray
+    (params
+      (param __n
+        (type u32)
+      )
+    )
+    (ret
+      (type PointArray)
+    )
+    (block
+      (return
+        (cast
+          (call U32Array
+            (var __n)
+          )
+          (type PointArray)
+        )
+      )
+    )
+  )
+  (fn len
+    (params
+      (param __a
+        (type PointArray)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call len
+          (cast
+            (var __a)
+            (type U32Array)
+          )
+        )
+      )
+    )
+  )
+  (fn get
+    (params
+      (param __a
+        (type PointArray)
+      )
+      (param __i
+        (type i32)
+      )
+    )
+    (ret
+      (type Point)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __a)
+              (type U32Array)
+            )
+            (var __i)
+          )
+          (type Point)
+        )
+      )
+    )
+  )
+  (fn set
+    (params
+      (param __a
+        (type PointArray)
+      )
+      (param __i
+        (type i32)
+      )
+      (param __v
+        (type Point)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+        (var __i)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __a
+        (type PointArray)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __a)
           (type U32Array)
         )
       )

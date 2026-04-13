@@ -3395,13 +3395,16 @@
             (type i32)
             (var g_tok_slen)
           )
-          (comment "var name_buf: U8Array = U8Array(name_len + 1);")
+          (comment "var name_buf: U8Array = U8Array((name_len + 1) as u32);")
           (var_decl name_buf
             (type U8Array)
             (call U8Array
-              (binop +
-                (var name_len)
-                (int 1)
+              (cast
+                (binop +
+                  (var name_len)
+                  (int 1)
+                )
+                (type u32)
               )
             )
           )
@@ -3472,57 +3475,38 @@
                 (int 0)
                 (var name_len)
               )
-              (comment "if g_tok != TK_RPAREN {")
-              (if
+              (comment "while g_tok != TK_RPAREN {")
+              (while
                 (binop !=
                   (var g_tok)
                   (var TK_RPAREN)
                 )
                 (block
-                  (comment "var going: i32 = 1;")
-                  (var_decl going
-                    (type i32)
-                    (int 1)
+                  (comment "emit_char(sb, 10u8);")
+                  (call_stmt emit_char
+                    (var sb)
+                    (int:u8 10)
                   )
-                  (comment "while going == 1 {")
-                  (while
-                    (binop ==
-                      (var going)
-                      (int 1)
+                  (comment "pars_expr(src, tok, sb);")
+                  (call_stmt pars_expr
+                    (var src)
+                    (var tok)
+                    (var sb)
+                  )
+                  (comment "if g_tok != TK_COMMA { break; }")
+                  (if
+                    (binop !=
+                      (var g_tok)
+                      (var TK_COMMA)
                     )
                     (block
-                      (comment "emit_char(sb, 10u8);")
-                      (call_stmt emit_char
-                        (var sb)
-                        (int:u8 10)
-                      )
-                      (comment "pars_expr(src, tok, sb);")
-                      (call_stmt pars_expr
-                        (var src)
-                        (var tok)
-                        (var sb)
-                      )
-                      (comment "if g_tok == TK_COMMA {")
-                      (if
-                        (binop ==
-                          (var g_tok)
-                          (var TK_COMMA)
-                        )
-                        (block
-                          (comment "lex_tok(src, tok);")
-                          (call_stmt lex_tok
-                            (var src)
-                            (var tok)
-                          )
-                        )
-                        (block
-                          (comment "going = 0;")
-                          (assign going
-                            (int 0)
-                          )
-                        )
-                      )
+                      (break)
                     )
+                  )
+                  (comment "lex_tok(src, tok);  // consume comma; next iteration handles trailing")
+                  (call_stmt lex_tok
+                    (var src)
+                    (var tok)
                   )
                 )
               )
@@ -5082,13 +5066,16 @@
         (type i32)
         (var g_tok_slen)
       )
-      (comment "var name_buf: U8Array = U8Array(name_len + 1);")
+      (comment "var name_buf: U8Array = U8Array((name_len + 1) as u32);")
       (var_decl name_buf
         (type U8Array)
         (call U8Array
-          (binop +
-            (var name_len)
-            (int 1)
+          (cast
+            (binop +
+              (var name_len)
+              (int 1)
+            )
+            (type u32)
           )
         )
       )
@@ -5694,13 +5681,16 @@
         (type i32)
         (var g_tok_slen)
       )
-      (comment "var name_buf: U8Array = U8Array(name_len + 1);")
+      (comment "var name_buf: U8Array = U8Array((name_len + 1) as u32);")
       (var_decl name_buf
         (type U8Array)
         (call U8Array
-          (binop +
-            (var name_len)
-            (int 1)
+          (cast
+            (binop +
+              (var name_len)
+              (int 1)
+            )
+            (type u32)
           )
         )
       )
@@ -6063,65 +6053,46 @@
                   (int 0)
                   (var name_len)
                 )
-                (comment "if g_tok != TK_RPAREN {")
-                (if
+                (comment "while g_tok != TK_RPAREN {")
+                (while
                   (binop !=
                     (var g_tok)
                     (var TK_RPAREN)
                   )
                   (block
-                    (comment "var going: i32 = 1;")
-                    (var_decl going
-                      (type i32)
-                      (int 1)
+                    (comment "emit_char(sb, 10u8);")
+                    (call_stmt emit_char
+                      (var sb)
+                      (int:u8 10)
                     )
-                    (comment "while going == 1 {")
-                    (while
-                      (binop ==
-                        (var going)
+                    (comment "emit_indent(sb, indent + 1);")
+                    (call_stmt emit_indent
+                      (var sb)
+                      (binop +
+                        (var indent)
                         (int 1)
                       )
-                      (block
-                        (comment "emit_char(sb, 10u8);")
-                        (call_stmt emit_char
-                          (var sb)
-                          (int:u8 10)
-                        )
-                        (comment "emit_indent(sb, indent + 1);")
-                        (call_stmt emit_indent
-                          (var sb)
-                          (binop +
-                            (var indent)
-                            (int 1)
-                          )
-                        )
-                        (comment "pars_expr(src, tok, sb);")
-                        (call_stmt pars_expr
-                          (var src)
-                          (var tok)
-                          (var sb)
-                        )
-                        (comment "if g_tok == TK_COMMA {")
-                        (if
-                          (binop ==
-                            (var g_tok)
-                            (var TK_COMMA)
-                          )
-                          (block
-                            (comment "lex_tok(src, tok);")
-                            (call_stmt lex_tok
-                              (var src)
-                              (var tok)
-                            )
-                          )
-                          (block
-                            (comment "going = 0;")
-                            (assign going
-                              (int 0)
-                            )
-                          )
-                        )
+                    )
+                    (comment "pars_expr(src, tok, sb);")
+                    (call_stmt pars_expr
+                      (var src)
+                      (var tok)
+                      (var sb)
+                    )
+                    (comment "if g_tok != TK_COMMA { break; }")
+                    (if
+                      (binop !=
+                        (var g_tok)
+                        (var TK_COMMA)
                       )
+                      (block
+                        (break)
+                      )
+                    )
+                    (comment "lex_tok(src, tok);")
+                    (call_stmt lex_tok
+                      (var src)
+                      (var tok)
                     )
                   )
                 )
@@ -6700,13 +6671,16 @@
         (type i32)
         (var g_tok_slen)
       )
-      (comment "var name_buf: U8Array = U8Array(name_len + 1);")
+      (comment "var name_buf: U8Array = U8Array((name_len + 1) as u32);")
       (var_decl name_buf
         (type U8Array)
         (call U8Array
-          (binop +
-            (var name_len)
-            (int 1)
+          (cast
+            (binop +
+              (var name_len)
+              (int 1)
+            )
+            (type u32)
           )
         )
       )
@@ -6817,181 +6791,165 @@
         (var sb)
         (str "params")
       )
-      (comment "if g_tok != TK_RPAREN {")
-      (if
+      (comment "while g_tok != TK_RPAREN {")
+      (while
         (binop !=
           (var g_tok)
           (var TK_RPAREN)
         )
         (block
-          (comment "var going: i32 = 1;")
-          (var_decl going
+          (comment "var pname_len: i32 = g_tok_slen;")
+          (var_decl pname_len
             (type i32)
-            (int 1)
+            (var g_tok_slen)
           )
-          (comment "while going == 1 {")
+          (comment "var pname_buf: U8Array = U8Array((pname_len + 1) as u32);")
+          (var_decl pname_buf
+            (type U8Array)
+            (call U8Array
+              (cast
+                (binop +
+                  (var pname_len)
+                  (int 1)
+                )
+                (type u32)
+              )
+            )
+          )
+          (comment "var j: i32 = 0;")
+          (var_decl j
+            (type i32)
+            (int 0)
+          )
+          (comment "while j < pname_len {")
           (while
-            (binop ==
-              (var going)
-              (int 1)
+            (binop <
+              (var j)
+              (var pname_len)
             )
             (block
-              (comment "var pname_len: i32 = g_tok_slen;")
-              (var_decl pname_len
-                (type i32)
-                (var g_tok_slen)
-              )
-              (comment "var pname_buf: U8Array = U8Array(pname_len + 1);")
-              (var_decl pname_buf
-                (type U8Array)
-                (call U8Array
-                  (binop +
-                    (var pname_len)
-                    (int 1)
-                  )
-                )
-              )
-              (comment "var j: i32 = 0;")
-              (var_decl j
-                (type i32)
-                (int 0)
-              )
-              (comment "while j < pname_len {")
-              (while
-                (binop <
+              (comment "set(pname_buf, j, get(tok, j));")
+              (call_stmt set
+                (var pname_buf)
+                (var j)
+                (call get
+                  (var tok)
                   (var j)
-                  (var pname_len)
-                )
-                (block
-                  (comment "set(pname_buf, j, get(tok, j));")
-                  (call_stmt set
-                    (var pname_buf)
-                    (var j)
-                    (call get
-                      (var tok)
-                      (var j)
-                    )
-                  )
-                  (comment "j = j + 1;")
-                  (assign j
-                    (binop +
-                      (var j)
-                      (int 1)
-                    )
-                  )
                 )
               )
-              (comment "expect_tok(TK_IDENT, src, tok);")
-              (call_stmt expect_tok
-                (var TK_IDENT)
-                (var src)
-                (var tok)
-              )
-              (comment "expect_tok(TK_COLON, src, tok);")
-              (call_stmt expect_tok
-                (var TK_COLON)
-                (var src)
-                (var tok)
-              )
-              (comment "emit_char(sb, 10u8);")
-              (call_stmt emit_char
-                (var sb)
-                (int:u8 10)
-              )
-              (comment "emit_indent(sb, indent + 2);")
-              (call_stmt emit_indent
-                (var sb)
+              (comment "j = j + 1;")
+              (assign j
                 (binop +
-                  (var indent)
-                  (int 2)
-                )
-              )
-              (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
-              (call_stmt emit_char
-                (var sb)
-                (int:u8 40)
-              )
-              (call_stmt emit_string
-                (var sb)
-                (str "param")
-              )
-              (call_stmt emit_char
-                (var sb)
-                (int:u8 32)
-              )
-              (comment "emit_n(sb, pname_buf, 0, pname_len);")
-              (call_stmt emit_n
-                (var sb)
-                (var pname_buf)
-                (int 0)
-                (var pname_len)
-              )
-              (comment "emit_char(sb, 10u8);")
-              (call_stmt emit_char
-                (var sb)
-                (int:u8 10)
-              )
-              (comment "emit_indent(sb, indent + 3);")
-              (call_stmt emit_indent
-                (var sb)
-                (binop +
-                  (var indent)
-                  (int 3)
-                )
-              )
-              (comment "pars_type(src, tok, sb, indent + 3);")
-              (call_stmt pars_type
-                (var src)
-                (var tok)
-                (var sb)
-                (binop +
-                  (var indent)
-                  (int 3)
-                )
-              )
-              (comment "emit_char(sb, 10u8);")
-              (call_stmt emit_char
-                (var sb)
-                (int:u8 10)
-              )
-              (comment "emit_indent(sb, indent + 2);")
-              (call_stmt emit_indent
-                (var sb)
-                (binop +
-                  (var indent)
-                  (int 2)
-                )
-              )
-              (comment "emit_char(sb, ')');")
-              (call_stmt emit_char
-                (var sb)
-                (int:u8 41)
-              )
-              (comment "delete(pname_buf);")
-              (call_stmt delete
-                (var pname_buf)
-              )
-              (comment "if g_tok == TK_COMMA {")
-              (if
-                (binop ==
-                  (var g_tok)
-                  (var TK_COMMA)
-                )
-                (block
-                  (comment "lex_tok(src, tok);")
-                  (call_stmt lex_tok
-                    (var src)
-                    (var tok)
-                  )
-                )
-                (block
-                  (comment "going = 0;")
-                  (assign going
-                    (int 0)
-                  )
+                  (var j)
+                  (int 1)
                 )
               )
             )
+          )
+          (comment "expect_tok(TK_IDENT, src, tok);")
+          (call_stmt expect_tok
+            (var TK_IDENT)
+            (var src)
+            (var tok)
+          )
+          (comment "expect_tok(TK_COLON, src, tok);")
+          (call_stmt expect_tok
+            (var TK_COLON)
+            (var src)
+            (var tok)
+          )
+          (comment "emit_char(sb, 10u8);")
+          (call_stmt emit_char
+            (var sb)
+            (int:u8 10)
+          )
+          (comment "emit_indent(sb, indent + 2);")
+          (call_stmt emit_indent
+            (var sb)
+            (binop +
+              (var indent)
+              (int 2)
+            )
+          )
+          (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
+          (call_stmt emit_char
+            (var sb)
+            (int:u8 40)
+          )
+          (call_stmt emit_string
+            (var sb)
+            (str "param")
+          )
+          (call_stmt emit_char
+            (var sb)
+            (int:u8 32)
+          )
+          (comment "emit_n(sb, pname_buf, 0, pname_len);")
+          (call_stmt emit_n
+            (var sb)
+            (var pname_buf)
+            (int 0)
+            (var pname_len)
+          )
+          (comment "emit_char(sb, 10u8);")
+          (call_stmt emit_char
+            (var sb)
+            (int:u8 10)
+          )
+          (comment "emit_indent(sb, indent + 3);")
+          (call_stmt emit_indent
+            (var sb)
+            (binop +
+              (var indent)
+              (int 3)
+            )
+          )
+          (comment "pars_type(src, tok, sb, indent + 3);")
+          (call_stmt pars_type
+            (var src)
+            (var tok)
+            (var sb)
+            (binop +
+              (var indent)
+              (int 3)
+            )
+          )
+          (comment "emit_char(sb, 10u8);")
+          (call_stmt emit_char
+            (var sb)
+            (int:u8 10)
+          )
+          (comment "emit_indent(sb, indent + 2);")
+          (call_stmt emit_indent
+            (var sb)
+            (binop +
+              (var indent)
+              (int 2)
+            )
+          )
+          (comment "emit_char(sb, ')');")
+          (call_stmt emit_char
+            (var sb)
+            (int:u8 41)
+          )
+          (comment "delete(pname_buf);")
+          (call_stmt delete
+            (var pname_buf)
+          )
+          (comment "if g_tok != TK_COMMA { break; }")
+          (if
+            (binop !=
+              (var g_tok)
+              (var TK_COMMA)
+            )
+            (block
+              (break)
+            )
+          )
+          (comment "lex_tok(src, tok);")
+          (call_stmt lex_tok
+            (var src)
+            (var tok)
           )
         )
       )
@@ -7809,6 +7767,2075 @@
       (return)
     )
   )
+  (fn emit_type_arr
+    (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param sbuf
+        (type U8Array)
+      )
+      (param snlen
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_n(sb, sbuf, 0, snlen);")
+      (call_stmt emit_n
+        (var sb)
+        (var sbuf)
+        (int 0)
+        (var snlen)
+      )
+      (comment "emit_string(sb, \"Array\");")
+      (call_stmt emit_string
+        (var sb)
+        (str "Array")
+      )
+      (comment "emit_char(sb, ')');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn emit_param_lit
+    (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param name
+        (type StringLiteral)
+      )
+      (param tname
+        (type StringLiteral)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "param")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, name); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (var name)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (var tname)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, ')');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn emit_param_arr
+    (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param name
+        (type StringLiteral)
+      )
+      (param sbuf
+        (type U8Array)
+      )
+      (param snlen
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "param")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, name); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (var name)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_type_arr
+        (var sb)
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, ')');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn emit_param_struct
+    (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param name
+        (type StringLiteral)
+      )
+      (param sbuf
+        (type U8Array)
+      )
+      (param snlen
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"param\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "param")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, name); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (var name)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_n
+        (var sb)
+        (var sbuf)
+        (int 0)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, ')');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn emit_ret_lit
+    (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param tname
+        (type StringLiteral)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "ret")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (var tname)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, ')');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn emit_ret_arr
+    (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param sbuf
+        (type U8Array)
+      )
+      (param snlen
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "ret")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_type_arr
+        (var sb)
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, ')');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn emit_ret_struct
+    (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param sbuf
+        (type U8Array)
+      )
+      (param snlen
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"ret\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "ret")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_n
+        (var sb)
+        (var sbuf)
+        (int 0)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, ')');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn emit_struct_array_fns
+    (params
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+      (param cmt
+        (type StringBuffer)
+      )
+      (param sbuf
+        (type U8Array)
+      )
+      (param snlen
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_comment_line(sb, indent, cmt);")
+      (call_stmt emit_comment_line
+        (var sb)
+        (var indent)
+        (var cmt)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "fn")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_n(sb, sbuf, 0, snlen); emit_string(sb, \"Array\"); emit_char(sb, 10u8);")
+      (call_stmt emit_n
+        (var sb)
+        (var sbuf)
+        (int 0)
+        (var snlen)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "Array")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "params")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_param_lit(sb, indent + 2, \"__n\", \"u32\"); emit_char(sb, 10u8);")
+      (call_stmt emit_param_lit
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+        (str "__n")
+        (str "u32")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_ret_arr(sb, indent + 1, sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_ret_arr
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "block")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "return")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "cast")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 4);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 4)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "call")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"U32Array\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "U32Array")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 5);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 5)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "var")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"__n\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "__n")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 4)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 4); emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 4)
+        )
+      )
+      (call_stmt emit_type_arr
+        (var sb)
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent); emit_char(sb, ')');")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_comment_line(sb, indent, cmt);")
+      (call_stmt emit_comment_line
+        (var sb)
+        (var indent)
+        (var cmt)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "fn")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"len\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "len")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "params")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_param_arr(sb, indent + 2, \"__a\", sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_param_arr
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+        (str "__a")
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_ret_lit(sb, indent + 1, \"i32\"); emit_char(sb, 10u8);")
+      (call_stmt emit_ret_lit
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+        (str "i32")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "block")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "return")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"len\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "call")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "len")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_cast_var(sb, indent + 4, \"__a\", \"U32Array\"); emit_char(sb, 10u8);")
+      (call_stmt emit_cast_var
+        (var sb)
+        (binop +
+          (var indent)
+          (int 4)
+        )
+        (str "__a")
+        (str "U32Array")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent); emit_char(sb, ')');")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_comment_line(sb, indent, cmt);")
+      (call_stmt emit_comment_line
+        (var sb)
+        (var indent)
+        (var cmt)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "fn")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"get\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "get")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "params")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_param_arr(sb, indent + 2, \"__a\", sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_param_arr
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+        (str "__a")
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_param_lit(sb, indent + 2, \"__i\", \"i32\"); emit_char(sb, 10u8);")
+      (call_stmt emit_param_lit
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+        (str "__i")
+        (str "i32")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_ret_struct(sb, indent + 1, sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_ret_struct
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "block")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "return")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, \"cast\"); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "cast")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 4);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 4)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"call\"); emit_char(sb, ' '); emit_string(sb, \"get\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "call")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "get")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_cast_var(sb, indent + 5, \"__a\", \"U32Array\"); emit_char(sb, 10u8);")
+      (call_stmt emit_cast_var
+        (var sb)
+        (binop +
+          (var indent)
+          (int 5)
+        )
+        (str "__a")
+        (str "U32Array")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 5);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 5)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "var")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"__i\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "__i")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 4)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 4);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 4)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"type\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "type")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_n
+        (var sb)
+        (var sbuf)
+        (int 0)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent); emit_char(sb, ')');")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_comment_line(sb, indent, cmt);")
+      (call_stmt emit_comment_line
+        (var sb)
+        (var indent)
+        (var cmt)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "fn")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"set\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "set")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "params")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_param_arr(sb, indent + 2, \"__a\", sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_param_arr
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+        (str "__a")
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_param_lit(sb, indent + 2, \"__i\", \"i32\"); emit_char(sb, 10u8);")
+      (call_stmt emit_param_lit
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+        (str "__i")
+        (str "i32")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_param_struct(sb, indent + 2, \"__v\", sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_param_struct
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+        (str "__v")
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_ret_lit(sb, indent + 1, \"void\"); emit_char(sb, 10u8);")
+      (call_stmt emit_ret_lit
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+        (str "void")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "block")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "call_stmt")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"set\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "set")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_cast_var(sb, indent + 3, \"__a\", \"U32Array\"); emit_char(sb, 10u8);")
+      (call_stmt emit_cast_var
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+        (str "__a")
+        (str "U32Array")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 3);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"var\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "var")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"__i\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "__i")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_cast_var(sb, indent + 3, \"__v\", \"u32\"); emit_char(sb, 10u8);")
+      (call_stmt emit_cast_var
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+        (str "__v")
+        (str "u32")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "return")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent); emit_char(sb, ')');")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_comment_line(sb, indent, cmt);")
+      (call_stmt emit_comment_line
+        (var sb)
+        (var indent)
+        (var cmt)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"fn\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "fn")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"delete\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "delete")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"params\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "params")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_param_arr(sb, indent + 2, \"__a\", sbuf, snlen); emit_char(sb, 10u8);")
+      (call_stmt emit_param_arr
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+        (str "__a")
+        (var sbuf)
+        (var snlen)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_ret_lit(sb, indent + 1, \"void\"); emit_char(sb, 10u8);")
+      (call_stmt emit_ret_lit
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+        (str "void")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"block\"); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "block")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"call_stmt\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "call_stmt")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_string(sb, \"delete\"); emit_char(sb, 10u8);")
+      (call_stmt emit_string
+        (var sb)
+        (str "delete")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_cast_var(sb, indent + 3, \"__a\", \"U32Array\"); emit_char(sb, 10u8);")
+      (call_stmt emit_cast_var
+        (var sb)
+        (binop +
+          (var indent)
+          (int 3)
+        )
+        (str "__a")
+        (str "U32Array")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 2);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 2)
+        )
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"return\"); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "return")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 10)
+      )
+      (comment "emit_indent(sb, indent); emit_char(sb, ')');")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
   (var_decl FI_STRIDE
     (type i32)
     (int 4)
@@ -8395,14 +10422,14 @@
           (int 4)
         )
       )
-      (comment "emit_char(sb, '('); emit_string(sb, \"int\"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);")
+      (comment "emit_char(sb, '('); emit_string(sb, \"int:u32\"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);")
       (call_stmt emit_char
         (var sb)
         (int:u8 40)
       )
       (call_stmt emit_string
         (var sb)
-        (str "int")
+        (str "int:u32")
       )
       (call_stmt emit_char
         (var sb)
@@ -10000,11 +12027,11 @@
         (var src)
         (var tok)
       )
-      (comment "var sname_buf: U8Array = U8Array(64);")
+      (comment "var sname_buf: U8Array = U8Array(64u32);")
       (var_decl sname_buf
         (type U8Array)
         (call U8Array
-          (int 64)
+          (int:u32 64)
         )
       )
       (comment "var snlen: i32 = g_tok_slen;")
@@ -10052,25 +12079,25 @@
         (var src)
         (var tok)
       )
-      (comment "var fnames: U8Array = U8Array(1024);")
+      (comment "var fnames: U8Array = U8Array(1024u32);")
       (var_decl fnames
         (type U8Array)
         (call U8Array
-          (int 1024)
+          (int:u32 1024)
         )
       )
-      (comment "var ftypes: U8Array = U8Array(1024);")
+      (comment "var ftypes: U8Array = U8Array(1024u32);")
       (var_decl ftypes
         (type U8Array)
         (call U8Array
-          (int 1024)
+          (int:u32 1024)
         )
       )
-      (comment "var fields: I32Array = I32Array(64);  // 16 fields * 4 ints")
+      (comment "var fields: I32Array = I32Array(64u32);  // 16 fields * 4 ints")
       (var_decl fields
         (type I32Array)
         (call I32Array
-          (int 64)
+          (int:u32 64)
         )
       )
       (comment "var nfields: i32 = 0;")
@@ -10169,13 +12196,16 @@
                 (type i32)
                 (var g_tok_slen)
               )
-              (comment "var fname_buf: U8Array = U8Array(fname_len + 1);")
+              (comment "var fname_buf: U8Array = U8Array((fname_len + 1) as u32);")
               (var_decl fname_buf
                 (type U8Array)
                 (call U8Array
-                  (binop +
-                    (var fname_len)
-                    (int 1)
+                  (cast
+                    (binop +
+                      (var fname_len)
+                      (int 1)
+                    )
+                    (type u32)
                   )
                 )
               )
@@ -10945,6 +12975,14 @@
         (var sb)
         (int:u8 41)
       )
+      (comment "emit_struct_array_fns(sb, indent, struct_cmt, sname_buf, snlen);")
+      (call_stmt emit_struct_array_fns
+        (var sb)
+        (var indent)
+        (var struct_cmt)
+        (var sname_buf)
+        (var snlen)
+      )
       (comment "delete(sname_buf);")
       (call_stmt delete
         (var sname_buf)
@@ -11226,11 +13264,11 @@
           (int 0)
         )
       )
-      (comment "var tok_buf: U8Array = U8Array(4092);")
+      (comment "var tok_buf: U8Array = U8Array(4092u32);")
       (var_decl tok_buf
         (type U8Array)
         (call U8Array
-          (int 4092)
+          (int:u32 4092)
         )
       )
       (comment "var sb: StringBuffer = StringBuffer_new(1);")

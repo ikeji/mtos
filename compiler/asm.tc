@@ -299,7 +299,7 @@ fn parse_hilo(off: i32, len: i32, is_hi: i32) -> i32 {
         }
         add_offset = ov;
     }
-    var tmp: U8Array = U8Array(label_len);
+    var tmp: U8Array = U8Array((label_len) as u32);
     i = 0;
     while i < label_len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
     var addr: i32 = 0;
@@ -363,7 +363,7 @@ fn parse_label_op(op_idx: i32) -> i32 {
         if dir == 'f' { return numlab_fwd(digit, pc); }
     }
     // Named label
-    var tmp: U8Array = U8Array(len);
+    var tmp: U8Array = U8Array((len) as u32);
     var i: i32 = 0;
     while i < len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
     var addr: i32 = 0;
@@ -381,7 +381,7 @@ fn parse_label_op_section(op_idx: i32) -> i32 {
         off = off + 1; len = len - 1;
     }
     if len == 2 && is_digit(get(g_line_buf, off)) { return 0; }
-    var tmp: U8Array = U8Array(len);
+    var tmp: U8Array = U8Array((len) as u32);
     var i: i32 = 0;
     while i < len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
     var idx: i32 = find_label(tmp, len);
@@ -748,7 +748,7 @@ fn process_line(line_idx: i32) -> void {
         }
         if is_numlab == 0 {
             // Named label
-            var lname: U8Array = U8Array(colon_pos);
+            var lname: U8Array = U8Array((colon_pos) as u32);
             i = 0;
             while i < colon_pos { set(lname, i, get(g_line_buf, i)); i = i + 1; }
             if g_pass == 1 { define_label(lname, colon_pos, g_pos); }
@@ -818,7 +818,7 @@ fn process_line(line_idx: i32) -> void {
             if g_nops >= 1 {
                 var op_off: i32 = get(g_ops, 0);
                 var op_len: i32 = get(g_ops, 1);
-                var lname: U8Array = U8Array(op_len);
+                var lname: U8Array = U8Array((op_len) as u32);
                 i = 0;
                 while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
                 if g_pass == 1 { define_label(lname, op_len, g_pos); }
@@ -839,7 +839,7 @@ fn process_line(line_idx: i32) -> void {
                 if g_nops >= 3 { align = parse_imm_op(2); }
                 var bss_cursor: i32 = get(g_sec_pos, 3);
                 while bss_cursor % align != 0 { bss_cursor = bss_cursor + 1; }
-                var lname: U8Array = U8Array(op_len);
+                var lname: U8Array = U8Array((op_len) as u32);
                 i = 0;
                 while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
                 if g_pass == 1 {
@@ -1033,9 +1033,9 @@ fn write_elf(code_size: i32, mem_size: i32) -> void {
         sys_write(1, g_code, code_size);
         return;
     }
-    var out: U8Array = U8Array(4096);
+    var out: U8Array = U8Array(4096u32);
     var entry: i32 = 0;
-    var tmp: U8Array = U8Array(6);
+    var tmp: U8Array = U8Array(6u32);
     set(tmp, 0, '_'); set(tmp, 1, 's'); set(tmp, 2, 't');
     set(tmp, 3, 'a'); set(tmp, 4, 'r'); set(tmp, 5, 't');
     // PIC: label_addr returns offset from code start.
@@ -1081,24 +1081,24 @@ fn write_elf(code_size: i32, mem_size: i32) -> void {
 // ===== Main =====
 fn main() -> i32 {
     // Allocate buffers
-    g_code = U8Array(MAX_CODE);
-    g_lab_names = U8Array(262144);
-    g_lab_offs = I32Array(MAX_LABELS);
-    g_lab_lens = I32Array(MAX_LABELS);
-    g_lab_addrs = I32Array(MAX_LABELS);
-    g_lab_is_bss = I32Array(MAX_LABELS);
-    g_lab_section = U8Array(MAX_LABELS);
-    g_sec_pos = I32Array(4);
-    g_sec_base = I32Array(4);
-    g_line_section = U8Array(131072);
-    g_lines = U8Array(MAX_CODE);
-    g_line_offs = I32Array(131072);
-    g_line_lens = I32Array(131072);
-    g_mnem = U8Array(64);
-    g_ops = I32Array(8);  // 4 ops x 2 (off, len)
-    g_line_buf = U8Array(4092);
-    g_numlab = I32Array(10240);      // 10 digits x 1024
-    g_numlab_count = I32Array(10);
+    g_code = U8Array((MAX_CODE) as u32);
+    g_lab_names = U8Array(262144u32);
+    g_lab_offs = I32Array((MAX_LABELS) as u32);
+    g_lab_lens = I32Array((MAX_LABELS) as u32);
+    g_lab_addrs = I32Array((MAX_LABELS) as u32);
+    g_lab_is_bss = I32Array((MAX_LABELS) as u32);
+    g_lab_section = U8Array((MAX_LABELS) as u32);
+    g_sec_pos = I32Array(4u32);
+    g_sec_base = I32Array(4u32);
+    g_line_section = U8Array(131072u32);
+    g_lines = U8Array((MAX_CODE) as u32);
+    g_line_offs = I32Array(131072u32);
+    g_line_lens = I32Array(131072u32);
+    g_mnem = U8Array(64u32);
+    g_ops = I32Array(8u32);  // 4 ops x 2 (off, len)
+    g_line_buf = U8Array(4092u32);
+    g_numlab = I32Array(10240u32);      // 10 digits x 1024
+    g_numlab_count = I32Array(10u32);
 
     // Read all input lines
     read_all_lines();
@@ -1119,7 +1119,7 @@ fn main() -> i32 {
     set(g_sec_pos, 3, 0);
     // Pre-define __global_pointer$ in text section; its final value is
     // patched to data_base + 0x800 after pass 1.
-    var gp_sym: U8Array = U8Array(20);
+    var gp_sym: U8Array = U8Array(20u32);
     var gp_len: i32 = buf_set_str(gp_sym, 0, "__global_pointer$");
     define_label(gp_sym, gp_len, 0);
     var i: i32 = 0;
@@ -1189,7 +1189,7 @@ fn main() -> i32 {
 
     // Dump label map to stderr for debugging
     var map_buf: StringBuffer = StringBuffer_new(2);
-    var hex: U8Array = U8Array(16);
+    var hex: U8Array = U8Array(16u32);
     set(hex,0,'0');set(hex,1,'1');set(hex,2,'2');set(hex,3,'3');
     set(hex,4,'4');set(hex,5,'5');set(hex,6,'6');set(hex,7,'7');
     set(hex,8,'8');set(hex,9,'9');set(hex,10,'a');set(hex,11,'b');
