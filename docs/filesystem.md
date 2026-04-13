@@ -361,7 +361,12 @@ fn vfs_xip_addr(fd: i32) -> u32;                       // exec / loader 用、0=
 syscall はバッファを `U8Array + len` で受け渡すので、カーネル内部 API も
 `String` ではなく `U8Array + len` に揃える。
 
-## 実装フェーズ (本プロジェクトでのフェーズ5)
+## 実装フェーズ (本プロジェクトでのフェーズ5、完了)
+
+> **Status:** フェーズ5 は step 1〜9 まで完了。続くフェーズ6 で mtfs 上に
+> `/bin/hello`, `/bin/hello2`, `/bin/catfile`, `/bin/sh` 等のゲストタスク
+> を配置し、`kernel/loader.tc` + `vfs_xip_addr` 経由で起動する形になった。
+> 以下は当時の計画メモを残してある。
 
 ### スコープ
 

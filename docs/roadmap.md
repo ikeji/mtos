@@ -172,9 +172,11 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
       `BLOCK: flash backend ready / MTFS: mounted / CAT:hello, mtfs` まで
       動作確認済み)
 
-## フェーズ6: ユーザランド基盤
+## フェーズ6: ユーザランド基盤 (完了)
 
-実装計画は `docs/task/phase6_userland.md` にまとめる。
+実装計画は `docs/task/phase6_userland.md`。5 ステップ全完了、
+virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
+で継続検証している。
 
 - [x] Step 6.1: 最小限の libc 相当 (`kernel/tasks/libtc/libtc.tc`、
       `puts` / `str_nul` / `strlen`)。catfile の重複ヘルパを集約、
@@ -196,11 +198,10 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
         差し替え、`_switch_frame` 経由で mret で飛ぶ
       - `kernel/tasks/launcher/launcher.tc` が `/bin/catfile` を
         sys_exec するデモとして virt / pico2 実機の両方で動作確認
-- [x] Step 6.4: `/bin/sh` 最小シェル (UART 1 行読み → sys_exec)
-      virt slot 2 に登録。`fs_virtio` テストが `printf 'catfile\n' | qemu`
-      でコマンドをパイプ入力し、シェル経由の sys_exec → catfile 起動を
-      end-to-end で検証。pico2 はハードテストに stdin がないので launcher
-      を据え置き (build.sh が target 別にタスクリストを切り替える)。
+- [x] Step 6.4: `/bin/sh` 最小シェル (UART 1 行読み → sys_exec の
+      単発版、step 6.5 でループ化)。virt slot 2 に登録。pico2 はハード
+      テストに stdin がないので launcher を据え置き (build.sh が target
+      別にタスクリストを切り替える)。
 - [x] Step 6.5: `sys_spawn` + `sys_wait` による親子同期
       - スケジューラに state 4 種 (ready/done/unused/waiting) と
         `g_wait_on` を追加。`sched_init(max)` で全スロットを unused に
@@ -222,13 +223,20 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 ## フェーズ7: ネイティブコンパイラをOS上で動かす
 
 フェーズ2.5 で Pico 2 ベアメタル上で動く TC プログラムの足場は確認済み。
-ここではその上に OS の syscall 層 (open/read/write 等) を乗せ、
-compiler/ 配下のツールをそのまま OS 上のプロセスとして起動できるようにする。
+フェーズ6 で mtfs + sys_spawn + sys_wait + /bin/sh のユーザランド基盤
+が整ったので、次は `compiler/` 配下のツールをそのまま OS 上のプロセス
+として起動できるようにする。
 
-- [ ] フェーズ2で作ったコンパイラ・アセンブラ・リンカをOS上に移植
-      (runtime.tc の do_write/do_read/do_exit を OS syscall に差し替え)
-- [ ] OS上でコンパイラが動作することを確認
-- [ ] OS上でHello Worldプログラムをコンパイル・実行
+- [ ] `runtime.tc` の do_write/do_read/do_exit を Linux 互換 ABI
+      (write=64, read=63, exit=93) に揃えて、OS 側 ecall でそのまま
+      通るようにする (現状は Linux syscall 直呼び)
+- [ ] compiler のパイプライン (parse → typecheck → codegen → bc2asm)
+      を `/bin/parse`, `/bin/typecheck`, ... として mtfs に入れ、
+      シェルから順に起動できるようにする
+- [ ] パイプ (`sys_pipe` もしくは一時ファイル) でツール間を繋ぐ
+      方法を決める。現状 sys_pipe はないので、最初は一時ファイル
+      経由でも可
+- [ ] OS 上で Hello World 相当の .tc をコンパイル → OS 上で実行
 
 ## フェーズ8: 自己ホスト
 
