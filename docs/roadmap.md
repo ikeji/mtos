@@ -158,7 +158,8 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 - [x] `tools/mkfs.py`: MyTinyFS (mtfs) ディスクイメージ生成
 - [x] `kernel/mtfs.tc`: mount + lookup + open + read + close
       (root 直下のみ、inode table 全キャッシュ、MtfsFDArray で fd 管理)
-- [ ] `kernel/vfs.tc` + syscall 追加（sys_openat/close + read/write 経路差し替え）
+- [x] `kernel/vfs.tc` + syscall 追加（sys_openat=56/sys_close=57/
+      sys_read=63/sys_write=64 を VFS 経由で dispatch。fd<3 は UART）
 - [ ] タスクから `/hello.txt` を open/read する catfile ゲストタスク
 - [ ] `kernel/block_flash.tc` (Pico 2 XIP memcpy) に差し替え
 

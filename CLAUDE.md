@@ -69,6 +69,7 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
   kernel_pico2.tc     Pico 2 用 main + rearm_timer (SIO MTIME)
   block_virtio.tc     virtio-mmio (legacy v1) block デバイスドライバ (virt)
   mtfs.tc             MyTinyFS read-only ドライバ (mount/lookup/open/read/close)
+  vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close, fd<3 は UART)
   trap_common.s       共通 asm: trap entry/exit, ecall, sched_start, kern_run_task
   platform_virt.s     virt 固有: _start, 16550 UART, _set_kern_gp via la
   platform_pico2.s    Pico 2 固有: IMAGE_DEF, XOSC, PL011, .data コピー, _set_kern_gp via li
@@ -304,11 +305,13 @@ Pico 2 実機で実行 (Debug Probe + openocd-rpi):
 # → openocd で SWD 経由フラッシュ → /dev/ttyACM0 で UART キャプチャ
 ```
 
-タスクは ecall で syscall を発行 (Linux 互換 ABI: a7=64 write, a7=63 read,
-a7=93 exit)。カーネルの ecall handler (trap_common.s) がアセンブリで
-ディスパッチする。タイマ割り込みで TC の trap_handler (kernel_common.tc)
-がラウンドロビンスケジューリングを実行。詳細は `docs/task/kernel_design.md`
-と `docs/task/kernel_platform_split.md` を参照。
+タスクは ecall で syscall を発行 (Linux 互換 ABI: a7=56 openat, a7=57 close,
+a7=63 read, a7=64 write, a7=93 exit)。カーネルの ecall handler
+(trap_common.s) がアセンブリでディスパッチし、read/write/openat/close は
+`kernel/vfs.tc` の VFS 層経由で mtfs / UART に振り分けられる。
+タイマ割り込みで TC の trap_handler (kernel_common.tc) がラウンドロビン
+スケジューリングを実行。詳細は `docs/task/kernel_design.md`、
+`docs/task/kernel_platform_split.md`、`docs/filesystem.md` を参照。
 
 ### Pico 2 デバッグ環境
 
