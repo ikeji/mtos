@@ -1,127 +1,23 @@
-# kernel/crt0_pico2.s — kernel crt0 for RP2350 (Pico 2) RISC-V
+# kernel/trap_common.s — platform-independent trap handling and scheduler
 #
-# Platform: PL011 UART0 @ 0x40070000, XOSC 12MHz, 115200 bps.
-# Ecall handler for task syscalls. No timer preemption (sequential tasks).
+# Provides: _trap_entry, _trap_restore, _handle_ecall, _task_exit_trampoline,
+#           init_task_frame, sched_start, kern_run_task, set_switch_frame,
+#           default trap_handler/sched_task_exit, peek/poke, CSR helpers.
+#
+# Requires from platform.s:
+#   _set_kern_gp:       sets gp to the kernel's runtime gp value (1 instr ok)
+#   do_uart_write:      a0=buf, a1=len  → write to UART
+#   do_uart_read:       a0=buf, a1=len  → read from UART (block first byte)
+#   _kern_save, _trap_frame, _switch_frame in BSS
 
     .text
-    .globl __embedded_block
-__embedded_block:
-    .word 0xFFFFDED3
-    .word 0x11010142
-    .word 0x00000344
-    .word 0x10000020
-    .word 0x20082000
-    .word 0x000004FF
-    .word 0x00000000
-    .word 0xAB123579
-
-    .globl _start
-_start:
-    # Core 1 park
-    li   t0, 0xD0000000
-    lw   t0, 0(t0)
-    bnez t0, _park
-
-    li   sp, 0x20082000
-
-    # XOSC init
-    li   t0, 0x40048000
-    li   t1, 0xAA0
-    sw   t1, 0x00(t0)
-    li   t1, 0xC4
-    sw   t1, 0x0C(t0)
-    li   t2, 0x4004A000
-    li   t1, 0x00FAB000
-    sw   t1, 0x00(t2)
-1:  lw   t1, 0x04(t0)
-    bge  t1, zero, 1b
-
-    # clk_peri → XOSC
-    li   t0, 0x40010048
-    sw   zero, 0(t0)
-    li   t1, 0x880
-    sw   t1, 0(t0)
-
-    # RESETS (IO_BANK0, PADS_BANK0, UART0)
-    li   t0, 0x40023000
-    li   t1, 0x4000240
-    sw   t1, 0(t0)
-    li   t0, 0x40020008
-2:  lw   t2, 0(t0)
-    and  t2, t2, t1
-    bne  t2, t1, 2b
-
-    # GPIO0/1 → UART
-    li   t0, 0x40028004
-    li   t1, 2
-    sw   t1, 0(t0)
-    li   t0, 0x4002800C
-    sw   t1, 0(t0)
-
-    # PAD ISO clear + GPIO1 IE
-    li   t1, 0x100
-    li   t0, 0x4003B004
-    sw   t1, 0(t0)
-    li   t0, 0x4003B008
-    sw   t1, 0(t0)
-    li   t0, 0x4003A008
-    li   t1, 0x40
-    sw   t1, 0(t0)
-
-    # UART0 init (12MHz / 115200)
-    li   t0, 0x40070000
-    li   t1, 6
-    sw   t1, 0x24(t0)
-    li   t1, 33
-    sw   t1, 0x28(t0)
-    li   t1, 0x70
-    sw   t1, 0x2C(t0)
-    li   t1, 0x301
-    sw   t1, 0x30(t0)
-
-    # Zero SRAM
-    li   t0, 0x20000000
-    li   t1, 0x20080000
-3:  sw   zero, 0(t0)
-    addi t0, t0, 4
-    bltu t0, t1, 3b
-
-    # gp
-    li   gp, 0x20000800
-
-    # Copy .data from Flash to SRAM
-    # Source: PC-relative __global_pointer$ gives Flash gp address
-    la   t0, __global_pointer$
-    addi t0, t0, -0x800           # t0 = Flash data_base (source)
-    addi t1, gp, -0x800           # t1 = SRAM data_base (dest = 0x20000000)
-    la   t2, __data_end           # gp-relative: SRAM data_end
-    beq  t1, t2, 5f
-4:  lw   t3, 0(t0)
-    sw   t3, 0(t1)
-    addi t0, t0, 4
-    addi t1, t1, 4
-    bltu t1, t2, 4b
-5:
-
-    # runtime init
-    la   a0, __arena
-    li   a1, 262144
-    call __runtime_init__u32__i32
-
-    # trap vector (for ecall handling)
-    la   t0, _trap_frame
-    csrw 0x340, t0
-    la   t0, _trap_entry
-    csrw 0x305, t0
-
-    call main
-
-_park:
-    j    _park
 
 # ===== Trap entry =====
+# Saves all 31 regs + mepc to mscratch (current task's trap frame).
+# Then dispatches by mcause.
+    .globl _trap_entry
 _trap_entry:
-    csrrw sp, 0x340, sp
+    csrrw sp, 0x340, sp       # sp ↔ trap frame
     sw   ra,   4(sp)
     sw   gp,  12(sp)
     sw   tp,  16(sp)
@@ -153,25 +49,26 @@ _trap_entry:
     sw   t5, 120(sp)
     sw   t6, 124(sp)
     csrr t0, 0x340
-    sw   t0,   8(sp)
+    sw   t0,   8(sp)          # original sp
     csrr t0, 0x341
-    sw   t0, 128(sp)
-    csrw 0x340, sp
+    sw   t0, 128(sp)          # mepc
+    csrw 0x340, sp            # mscratch = trap frame
     # Dispatch by mcause
     csrr t0, 0x342
     li   t1, 11
     beq  t0, t1, _handle_ecall
     # Not ecall: call TC trap_handler(cause, epc)
     mv   s0, sp
-    li   gp, 0x20000800
+    call _set_kern_gp
     la   t2, _kern_save
     lw   sp, 4(t2)
-    mv   a0, t0
+    csrr a0, 0x342
     csrr a1, 0x341
     call trap_handler__u32__u32
     mv   sp, s0
     j    _trap_restore
 
+# ===== ecall handler =====
 _handle_ecall:
     lw   t0, 68(sp)
     li   t1, 64
@@ -180,7 +77,7 @@ _handle_ecall:
     beq  t0, t1, _ecall_read
     li   t1, 93
     beq  t0, t1, _ecall_exit
-    # Unknown: advance mepc
+    # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
     sw   t0, 128(sp)
@@ -188,7 +85,7 @@ _handle_ecall:
 
 _ecall_write:
     mv   s0, sp
-    li   gp, 0x20000800
+    call _set_kern_gp
     la   t0, _kern_save
     lw   sp, 4(t0)
     lw   a0, 44(s0)
@@ -203,7 +100,7 @@ _ecall_write:
 
 _ecall_read:
     mv   s0, sp
-    li   gp, 0x20000800
+    call _set_kern_gp
     la   t0, _kern_save
     lw   sp, 4(t0)
     lw   a0, 44(s0)
@@ -217,8 +114,9 @@ _ecall_read:
     j    _trap_restore
 
 _ecall_exit:
+    # Call TC sched_task_exit() to get next task frame (0 = all done)
     mv   s0, sp
-    li   gp, 0x20000800
+    call _set_kern_gp
     la   t0, _kern_save
     lw   sp, 4(t0)
     call sched_task_exit
@@ -228,6 +126,7 @@ _ecall_exit:
     mv   sp, s0
     j    _trap_restore
 _all_tasks_done:
+    # Disable interrupts: clear MPIE so mret leaves MIE=0
     csrr t0, 0x300
     li   t1, 0x80
     not  t1, t1
@@ -238,6 +137,8 @@ _all_tasks_done:
     sw   t0, 128(sp)
     j    _trap_restore
 
+# ===== Trap restore + context switch =====
+    .globl _trap_restore
 _trap_restore:
     la   t0, _switch_frame
     lw   t1, 0(t0)
@@ -282,8 +183,9 @@ _no_switch:
     mret
 
 # ===== Task exit trampoline =====
+# After mret to here: restore kernel callee-saved from _kern_save and ret.
 _task_exit_trampoline:
-    li   gp, 0x20000800
+    call _set_kern_gp
     la   t0, _kern_save
     lw   ra,  0(t0)
     lw   sp,  4(t0)
@@ -302,7 +204,66 @@ _task_exit_trampoline:
     lw   gp, 56(t0)
     ret
 
-# ===== kern_run_task(entry: u32, sp: u32, gp: u32, arena: u32, arena_size: i32) =====
+# ===== Default handlers (overridden by TC) =====
+    .globl trap_handler__u32__u32
+trap_handler__u32__u32:
+    ret
+    .globl sched_task_exit
+sched_task_exit:
+    li   a0, 0
+    ret
+
+# ===== set_switch_frame(addr: u32) =====
+    .globl set_switch_frame__u32
+set_switch_frame__u32:
+    la   t0, _switch_frame
+    sw   a0, 0(t0)
+    ret
+
+# ===== init_task_frame(frame, entry, sp, gp, arena, arena_size) =====
+    .globl init_task_frame__u32__u32__u32__u32__u32__i32
+init_task_frame__u32__u32__u32__u32__u32__i32:
+    # a0=frame, a1=entry, a2=sp, a3=gp, a4=arena, a5=arena_size
+    mv   t0, a0
+    li   t1, 132
+    add  t1, t0, t1
+1:  sw   zero, 0(t0)
+    addi t0, t0, 4
+    bltu t0, t1, 1b
+    sw   a1, 128(a0)          # mepc = entry
+    sw   a2,   8(a0)          # sp
+    sw   a3,  12(a0)          # gp
+    sw   a4,  40(a0)          # a0 = arena addr
+    sw   a5,  44(a0)          # a1 = arena size
+    ret
+
+# ===== sched_start(frame: u32) =====
+    .globl sched_start__u32
+sched_start__u32:
+    la   t0, _kern_save
+    sw   ra,  0(t0)
+    sw   sp,  4(t0)
+    sw   s0,  8(t0)
+    sw   s1, 12(t0)
+    sw   s2, 16(t0)
+    sw   s3, 20(t0)
+    sw   s4, 24(t0)
+    sw   s5, 28(t0)
+    sw   s6, 32(t0)
+    sw   s7, 36(t0)
+    sw   s8, 40(t0)
+    sw   s9, 44(t0)
+    sw   s10, 48(t0)
+    sw   s11, 52(t0)
+    sw   gp, 56(t0)
+    csrw 0x340, a0
+    csrr t0, 0x300
+    li   t1, 0x1880           # MPP=11 + MPIE
+    or   t0, t0, t1
+    csrw 0x300, t0
+    j    _trap_restore
+
+# ===== kern_run_task(entry, sp, gp, arena, arena_size) -> i32 =====
     .globl kern_run_task__u32__u32__u32__u32__i32
 kern_run_task__u32__u32__u32__u32__i32:
     la   t0, _kern_save
@@ -327,64 +288,6 @@ kern_run_task__u32__u32__u32__u32__i32:
     mv   a0, a3
     mv   a1, a4
     jr   t0
-
-# ===== UART output =====
-    .globl do_uart_write__u32__i32
-do_uart_write__u32__i32:
-    li   t0, 0x40070000
-    mv   t2, a1
-1:  beqz t2, 2f
-4:  lw   t1, 0x18(t0)
-    andi t1, t1, 0x20
-    bnez t1, 4b
-    lbu  t1, 0(a0)
-    sw   t1, 0x00(t0)
-    addi a0, a0, 1
-    addi t2, t2, -1
-    j    1b
-2:  mv   a0, a1
-    ret
-
-    .globl do_write__i32__u32__i32
-do_write__i32__u32__i32:
-    mv   a0, a1
-    mv   a1, a2
-    j    do_uart_write__u32__i32
-
-    .globl do_uart_read__u32__i32
-do_uart_read__u32__i32:
-    li   t0, 0x40070000
-    beqz a1, 8f
-    mv   t2, a1
-    mv   t3, a0
-6:  lw   t1, 0x18(t0)
-    andi t1, t1, 0x10
-    bnez t1, 6b
-    lbu  t1, 0(t0)
-    sb   t1, 0(t3)
-    addi t3, t3, 1
-    addi t2, t2, -1
-7:  beqz t2, 8f
-    lw   t1, 0x18(t0)
-    andi t1, t1, 0x10
-    bnez t1, 8f
-    lbu  t1, 0(t0)
-    sb   t1, 0(t3)
-    addi t3, t3, 1
-    addi t2, t2, -1
-    j    7b
-8:  sub  a0, a1, t2
-    ret
-
-    .globl do_read__i32__u32__i32
-do_read__i32__u32__i32:
-    mv   a0, a1
-    mv   a1, a2
-    j    do_uart_read__u32__i32
-
-    .globl do_exit__i32
-do_exit__i32:
-    j    _park
 
 # ===== Peek/Poke =====
     .globl peek8__u32
@@ -411,64 +314,6 @@ poke16__u32__u16:
 poke32__u32__u32:
     sw   a1, 0(a0)
     ret
-
-# ===== Default handlers (overridden by TC) =====
-    .globl trap_handler__u32__u32
-trap_handler__u32__u32:
-    ret
-    .globl sched_task_exit
-sched_task_exit:
-    li   a0, 0
-    ret
-
-# ===== set_switch_frame(addr: u32) =====
-    .globl set_switch_frame__u32
-set_switch_frame__u32:
-    la   t0, _switch_frame
-    sw   a0, 0(t0)
-    ret
-
-# ===== init_task_frame(frame, entry, sp, gp, arena, arena_size) =====
-    .globl init_task_frame__u32__u32__u32__u32__u32__i32
-init_task_frame__u32__u32__u32__u32__u32__i32:
-    mv   t0, a0
-    li   t1, 132
-    add  t1, t0, t1
-1:  sw   zero, 0(t0)
-    addi t0, t0, 4
-    bltu t0, t1, 1b
-    sw   a1, 128(a0)
-    sw   a2,   8(a0)
-    sw   a3,  12(a0)
-    sw   a4,  40(a0)
-    sw   a5,  44(a0)
-    ret
-
-# ===== sched_start(frame: u32) =====
-    .globl sched_start__u32
-sched_start__u32:
-    la   t0, _kern_save
-    sw   ra,  0(t0)
-    sw   sp,  4(t0)
-    sw   s0,  8(t0)
-    sw   s1, 12(t0)
-    sw   s2, 16(t0)
-    sw   s3, 20(t0)
-    sw   s4, 24(t0)
-    sw   s5, 28(t0)
-    sw   s6, 32(t0)
-    sw   s7, 36(t0)
-    sw   s8, 40(t0)
-    sw   s9, 44(t0)
-    sw   s10, 48(t0)
-    sw   s11, 52(t0)
-    sw   gp, 56(t0)
-    csrw 0x340, a0
-    csrr t0, 0x300
-    li   t1, 0x1880
-    or   t0, t0, t1
-    csrw 0x300, t0
-    j    _trap_restore
 
 # ===== CSR helpers =====
     .globl csr_read_mstatus

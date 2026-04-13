@@ -3,7 +3,7 @@
 // Two tasks run concurrently, switched by timer interrupt.
 // Each task prints a character in a loop. Output should be interleaved.
 
-// Assembly-defined functions (crt0_virt.s)
+// Assembly-defined functions (trap_common.s + platform_virt.s)
 fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;
 fn set_switch_frame(addr: u32) -> void;
