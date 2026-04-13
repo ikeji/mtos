@@ -54,6 +54,18 @@ do_read__i32__u32__i32:
     ecall
     ret
 
+    .globl do_openat__i32__u32__i32
+do_openat__i32__u32__i32:
+    li   a7, 56
+    ecall
+    ret
+
+    .globl do_close__i32
+do_close__i32:
+    li   a7, 57
+    ecall
+    ret
+
     .globl do_exit__i32
 do_exit__i32:
     li   a7, 93

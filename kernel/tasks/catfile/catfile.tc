@@ -1,0 +1,56 @@
+// catfile.tc — guest task: read /hello.txt via VFS syscalls
+//
+// Exercises sys_openat(56) + sys_read(63) + sys_write(64) + sys_close(57)
+// from the task side (ecall path), complementing kernel.tc cat_hello_txt
+// which exercises the kernel-side VFS path directly.
+
+// Assembly-provided syscall stubs (kernel/tasks/task_crt0.s)
+fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+fn str_to_u8_nul(s: StringLiteral) -> U8Array {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array((slen + 1) as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, slen, 0u8);
+    return buf;
+}
+
+fn write_lit(s: StringLiteral) -> void {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array(slen as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    sys_write(1, buf, slen);
+    delete(buf);
+    return;
+}
+
+fn main() -> i32 {
+    var path: U8Array = str_to_u8_nul("/hello.txt");
+    var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
+    delete(path);
+    if fd < 0 {
+        write_lit("CAT: open failed\n");
+        return 1;
+    }
+
+    var buf: U8Array = U8Array(64u32);
+    var n: i32 = sys_read(fd, buf, 64);
+    if n > 0 {
+        write_lit("CAT:");
+        sys_write(1, buf, n);
+    } else {
+        write_lit("CAT: read failed\n");
+    }
+    delete(buf);
+    do_close(fd);
+    return 0;
+}

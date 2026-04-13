@@ -160,7 +160,9 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
       (root 直下のみ、inode table 全キャッシュ、MtfsFDArray で fd 管理)
 - [x] `kernel/vfs.tc` + syscall 追加（sys_openat=56/sys_close=57/
       sys_read=63/sys_write=64 を VFS 経由で dispatch。fd<3 は UART）
-- [ ] タスクから `/hello.txt` を open/read する catfile ゲストタスク
+- [x] タスクから `/hello.txt` を open/read する catfile ゲストタスク
+      (sys_openat/close/read/write を task_crt0.s のスタブ経由で発行、
+      `kernel/tasks/catfile/catfile.tc`、`tests/test_os.sh` で CAT: 出力を検証)
 - [ ] `kernel/block_flash.tc` (Pico 2 XIP memcpy) に差し替え
 
 ## フェーズ6: ユーザランド基盤

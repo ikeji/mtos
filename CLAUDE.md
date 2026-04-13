@@ -83,6 +83,7 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
     task_data.s       タスク用最小 BSS
     hello/hello.tc    タスク1 ("A" 出力)
     hello2/hello2.tc  タスク2 ("B" 出力)
+    catfile/catfile.tc タスク3 (sys_openat で /hello.txt を開き "CAT:" と共に出力)
 tools/      ホスト側ツール
   mkfs.py             MyTinyFS (mtfs) ディスクイメージ生成 (Python)
 ```

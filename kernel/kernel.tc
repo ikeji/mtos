@@ -13,6 +13,7 @@ fn csr_write_mie(val: u32) -> void;
 fn sched_start(frame: u32) -> void;
 fn _task_hello_addr() -> u32;
 fn _task_hello2_addr() -> u32;
+fn _task_catfile_addr() -> u32;
 
 // CLINT MMIO (qemu virt)
 var MTIMECMP_LO: u32 = 0x02004000u32;
@@ -121,9 +122,10 @@ fn main() -> i32 {
         kputs("BLOCK: no virtio-blk\n");
     }
 
-    sched_init(2);
+    sched_init(3);
     sched_register(0, make_task(_task_hello_addr(), 65536, 65536));
     sched_register(1, make_task(_task_hello2_addr(), 65536, 65536));
+    sched_register(2, make_task(_task_catfile_addr(), 65536, 65536));
 
     rearm_timer();
     var mie: u32 = csr_read_mie();

@@ -57,7 +57,7 @@ TASK_CRT0="$KERN_DIR/tasks/task_crt0.s"
 TASK_DATA="$KERN_DIR/tasks/task_data.s"
 
 # --- Step 1: Build task binaries ---
-for task in hello hello2; do
+for task in hello hello2 catfile; do
     echo "Building task: $task" >&2
     CRT0="$TASK_CRT0" \
     CRT0_DATA="$TASK_DATA" \
@@ -74,11 +74,12 @@ done
 # --- Step 2: Convert tasks to .s ---
 "$KERN_DIR/bin2s.sh" "$TMP/hello.bin" _task_hello > "$TMP/hello_task.s"
 "$KERN_DIR/bin2s.sh" "$TMP/hello2.bin" _task_hello2 > "$TMP/hello2_task.s"
+"$KERN_DIR/bin2s.sh" "$TMP/catfile.bin" _task_catfile > "$TMP/catfile_task.s"
 
 # --- Step 3: Build kernel ---
 # Concat platform.s + trap_common.s as the "crt0"
 cat "$PLATFORM_S" "$KERN_DIR/trap_common.s" > "$TMP/crt0.s"
-cat "$DATA_S" "$TMP/hello_task.s" "$TMP/hello2_task.s" > "$TMP/kern_data.s"
+cat "$DATA_S" "$TMP/hello_task.s" "$TMP/hello2_task.s" "$TMP/catfile_task.s" > "$TMP/kern_data.s"
 
 echo "Building kernel: $TARGET" >&2
 CRT0="$TMP/crt0.s" \
