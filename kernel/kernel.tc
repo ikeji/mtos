@@ -5,6 +5,7 @@
 import "kernel_common.tc";
 import "block_virtio.tc";
 import "mtfs.tc";
+import "vfs.tc";
 
 // Assembly-defined functions
 fn csr_read_mie() -> u32;
@@ -67,49 +68,45 @@ fn dump_sector0() -> void {
     return;
 }
 
-// Copy a string literal into a freshly-allocated U8Array (caller deletes).
-fn str_u8(s: StringLiteral) -> U8Array {
+// Copy a string literal into a freshly-allocated U8Array followed by
+// a terminating NUL byte. Caller is responsible for delete().
+fn str_u8_nul(s: StringLiteral) -> U8Array {
     var slen: i32 = len(s);
-    var buf: U8Array = U8Array((slen) as u32);
+    var buf: U8Array = U8Array((slen + 1) as u32);
     var i: i32 = 0;
     while i < slen {
         set(buf, i, get(s, i));
         i = i + 1;
     }
+    set(buf, slen, 0u8);
     return buf;
 }
 
 fn cat_hello_txt() -> void {
-    if mtfs_mount() != 0 {
+    if vfs_init() != 0 {
         kputs("MTFS: mount failed\n");
         return;
     }
     kputs("MTFS: mounted\n");
 
-    var name: U8Array = str_u8("hello.txt");
-    var ino: i32 = mtfs_lookup(0u32, name, len(name));
-    delete(name);
-    if ino < 0 {
+    var path: U8Array = str_u8_nul("/hello.txt");
+    var fd: i32 = vfs_open(path as u32 + 4u32, 0);
+    delete(path);
+    if fd < 0 {
         kputs("MTFS: hello.txt not found\n");
         return;
     }
 
-    var fd: i32 = mtfs_open(ino as u32);
-    if fd < 0 {
-        kputs("MTFS: open failed\n");
-        return;
-    }
-
     var buf: U8Array = U8Array(64u32);
-    var n: i32 = mtfs_read(fd, buf, 64);
+    var n: i32 = vfs_read(fd, buf as u32 + 4u32, 64);
     if n > 0 {
         kputs("FILE:");
-        sys_write(1, buf, n);
+        vfs_write(1, buf as u32 + 4u32, n);
     } else {
         kputs("MTFS: read failed\n");
     }
     delete(buf);
-    mtfs_close(fd);
+    vfs_close(fd);
     return;
 }
 

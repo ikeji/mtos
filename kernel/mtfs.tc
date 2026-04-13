@@ -178,7 +178,11 @@ export fn mtfs_size(fd: i32) -> i32 {
     return inode_u32(inum as u32, INO_SIZE) as i32;
 }
 
-export fn mtfs_read(fd: i32, buf: U8Array, n: i32) -> i32 {
+// Read up to n bytes into a raw buffer address.
+// buf_addr is the data pointer (not a U8Array header). The caller is
+// responsible for the buffer's size — VFS passes through the task's
+// buffer address without any bounds check.
+export fn mtfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if g_mtfs_mounted == 0 { return -1; }
     if fd < 0 || fd >= MTFS_MAX_FDS { return -1; }
     var e: MtfsFD = get(g_mtfs_fds, fd);
@@ -207,7 +211,8 @@ export fn mtfs_read(fd: i32, buf: U8Array, n: i32) -> i32 {
         if chunk > want - copied { chunk = want - copied; }
         var k: i32 = 0;
         while k < chunk {
-            set(buf, copied + k, get(g_mtfs_sector, in_block + k));
+            poke8(buf_addr + (copied + k) as u32,
+                  get(g_mtfs_sector, in_block + k));
             k = k + 1;
         }
         copied = copied + chunk;

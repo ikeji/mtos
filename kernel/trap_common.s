@@ -75,6 +75,10 @@ _handle_ecall:
     beq  t0, t1, _ecall_write
     li   t1, 63
     beq  t0, t1, _ecall_read
+    li   t1, 56
+    beq  t0, t1, _ecall_openat
+    li   t1, 57
+    beq  t0, t1, _ecall_close
     li   t1, 93
     beq  t0, t1, _ecall_exit
     # Unknown: advance mepc and return
@@ -88,9 +92,10 @@ _ecall_write:
     call _set_kern_gp
     la   t0, _kern_save
     lw   sp, 4(t0)
-    lw   a0, 44(s0)
-    lw   a1, 48(s0)
-    call do_uart_write__u32__i32
+    lw   a0, 40(s0)         # fd
+    lw   a1, 44(s0)         # buf addr
+    lw   a2, 48(s0)         # len
+    call vfs_write__i32__u32__i32
     sw   a0, 40(s0)
     lw   t0, 128(s0)
     addi t0, t0, 4
@@ -103,9 +108,40 @@ _ecall_read:
     call _set_kern_gp
     la   t0, _kern_save
     lw   sp, 4(t0)
-    lw   a0, 44(s0)
-    lw   a1, 48(s0)
-    call do_uart_read__u32__i32
+    lw   a0, 40(s0)         # fd
+    lw   a1, 44(s0)         # buf addr
+    lw   a2, 48(s0)         # len
+    call vfs_read__i32__u32__i32
+    sw   a0, 40(s0)
+    lw   t0, 128(s0)
+    addi t0, t0, 4
+    sw   t0, 128(s0)
+    mv   sp, s0
+    j    _trap_restore
+
+_ecall_openat:
+    mv   s0, sp
+    call _set_kern_gp
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    # a0 = task's dirfd (ignored)
+    lw   a0, 44(s0)         # path addr (task's a1)
+    lw   a1, 48(s0)         # flags    (task's a2)
+    call vfs_open__u32__i32
+    sw   a0, 40(s0)
+    lw   t0, 128(s0)
+    addi t0, t0, 4
+    sw   t0, 128(s0)
+    mv   sp, s0
+    j    _trap_restore
+
+_ecall_close:
+    mv   s0, sp
+    call _set_kern_gp
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    lw   a0, 40(s0)         # fd
+    call vfs_close__i32
     sw   a0, 40(s0)
     lw   t0, 128(s0)
     addi t0, t0, 4
