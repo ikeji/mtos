@@ -33,7 +33,7 @@ CRT0_DATA="$TASK_DATA" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \
     "$ROOT_DIR/compile-gen2.sh" -o "$TMP/hello.bin" \
-    "$KERN_DIR/tasks/pico2_hello/hello.tc" 2>/dev/null
+    "$KERN_DIR/tasks/hello/hello.tc" 2>/dev/null
 
 echo "Building task: hello2 (pico2)" >&2
 CRT0="$TASK_CRT0" \
@@ -41,7 +41,7 @@ CRT0_DATA="$TASK_DATA" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \
     "$ROOT_DIR/compile-gen2.sh" -o "$TMP/hello2.bin" \
-    "$KERN_DIR/tasks/pico2_hello2/hello2.tc" 2>/dev/null
+    "$KERN_DIR/tasks/hello2/hello2.tc" 2>/dev/null
 
 # Convert to .s
 "$KERN_DIR/bin2s.sh" "$TMP/hello.bin" _task_hello > "$TMP/hello_task.s"
