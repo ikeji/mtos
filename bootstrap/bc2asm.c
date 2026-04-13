@@ -31,6 +31,7 @@ typedef enum {
     OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
     OP_AND, OP_OR,  OP_XOR, OP_SHL, OP_SHR, OP_SHR_U,
     OP_EQ,  OP_NE,  OP_LT,  OP_LE,  OP_GT,  OP_GE,
+    OP_LT_U, OP_LE_U, OP_GT_U, OP_GE_U,
     OP_NEG, OP_LNOT,
     OP_CAST,
     OP_JUMP, OP_JUMP_IF, OP_JUMP_IFNOT,
@@ -211,6 +212,10 @@ static BcProg *bc_parse(FILE *in) {
         else if(!strcmp(op,"le"))        {ins.op=OP_LE;}
         else if(!strcmp(op,"gt"))        {ins.op=OP_GT;}
         else if(!strcmp(op,"ge"))        {ins.op=OP_GE;}
+        else if(!strcmp(op,"lt_u"))      {ins.op=OP_LT_U;}
+        else if(!strcmp(op,"le_u"))      {ins.op=OP_LE_U;}
+        else if(!strcmp(op,"gt_u"))      {ins.op=OP_GT_U;}
+        else if(!strcmp(op,"ge_u"))      {ins.op=OP_GE_U;}
         else if(!strcmp(op,"neg"))       {ins.op=OP_NEG;}
         else if(!strcmp(op,"lnot"))      {ins.op=OP_LNOT;}
         else if(!strcmp(op,"cast"))      {ins.op=OP_CAST;char t[64];next_tok(s,t,sizeof(t));ins.sarg=strdup(t);}
@@ -301,6 +306,7 @@ static int max_eval_depth(BcFunc *fn) {
         case OP_ADD: case OP_SUB: case OP_MUL: case OP_DIV: case OP_MOD:
         case OP_AND: case OP_OR:  case OP_XOR: case OP_SHL: case OP_SHR: case OP_SHR_U:
         case OP_EQ:  case OP_NE:  case OP_LT:  case OP_LE:  case OP_GT: case OP_GE:
+        case OP_LT_U: case OP_LE_U: case OP_GT_U: case OP_GE_U:
             depth--; break; /* pop 2, push 1 */
         case OP_NEG: case OP_LNOT: case OP_CAST:
             break; /* pop 1, push 1 */
@@ -500,6 +506,26 @@ static void emit_fn(BcFunc *fn) {
             /* a >= b  ≡  NOT (a < b) */
             pop_t1_t0();
             E("    slt  t0, t0, t1\n");
+            E("    xori t0, t0, 1\n");
+            push_t0(); break;
+        case OP_LT_U:
+            pop_t1_t0();
+            E("    sltu t0, t0, t1\n");
+            push_t0(); break;
+        case OP_LE_U:
+            /* a <= b  ≡  NOT (b < a) */
+            pop_t1_t0();
+            E("    sltu t0, t1, t0\n");
+            E("    xori t0, t0, 1\n");
+            push_t0(); break;
+        case OP_GT_U:
+            pop_t1_t0();
+            E("    sltu t0, t1, t0\n");
+            push_t0(); break;
+        case OP_GE_U:
+            /* a >= b  ≡  NOT (a < b) */
+            pop_t1_t0();
+            E("    sltu t0, t0, t1\n");
             E("    xori t0, t0, 1\n");
             push_t0(); break;
 

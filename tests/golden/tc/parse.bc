@@ -397,15 +397,79 @@ __L8:
 .fn emit_int StringBuffer i32 void
 .param sb StringBuffer
 .param val i32
+.local int32_min i32
 .local tmp U8Array
 .local dlen i32
 .local v i32
 .local i i32
+; var int32_min: i32 = (0 - 2147483647) - 1;
+  push_int 0
+  push_int 2147483647
+  sub
+  push_int 1
+  sub
+  store int32_min
+; if val == int32_min {
+  load val
+  load int32_min
+  eq
+  jump_ifnot __L9
+; emit_char(sb, '-'); emit_char(sb, '2'); emit_char(sb, '1');
+  load sb
+  push_int 45
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 50
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 49
+  call emit_char StringBuffer u8
+  pop
+; emit_char(sb, '4'); emit_char(sb, '7'); emit_char(sb, '4');
+  load sb
+  push_int 52
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 55
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 52
+  call emit_char StringBuffer u8
+  pop
+; emit_char(sb, '8'); emit_char(sb, '3'); emit_char(sb, '6');
+  load sb
+  push_int 56
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 51
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 54
+  call emit_char StringBuffer u8
+  pop
+; emit_char(sb, '4'); emit_char(sb, '8');
+  load sb
+  push_int 52
+  call emit_char StringBuffer u8
+  pop
+  load sb
+  push_int 56
+  call emit_char StringBuffer u8
+  pop
+; return;
+  return_void
+__L9:
 ; if val < 0 {
   load val
   push_int 0
   lt
-  jump_ifnot __L9
+  jump_ifnot __L10
 ; emit_char(sb, '-');
   load sb
   push_int 45
@@ -416,12 +480,12 @@ __L8:
   load val
   sub
   store val
-__L9:
+__L10:
 ; if val == 0 {
   load val
   push_int 0
   eq
-  jump_ifnot __L10
+  jump_ifnot __L11
 ; emit_char(sb, '0');
   load sb
   push_int 48
@@ -429,7 +493,7 @@ __L9:
   pop
 ; return;
   return_void
-__L10:
+__L11:
 ; var tmp: U8Array = U8Array(12u32);
   push_int 12
   call U8Array u32
@@ -441,11 +505,11 @@ __L10:
   load val
   store v
 ; while v > 0 {
-__L11:
+__L12:
   load v
   push_int 0
   gt
-  jump_ifnot __L12
+  jump_ifnot __L13
 ; set(tmp, dlen, (48 + v % 10) as u8);
   load tmp
   load dlen
@@ -467,19 +531,19 @@ __L11:
   push_int 10
   div
   store v
-  jump __L11
-__L12:
+  jump __L12
+__L13:
 ; var i: i32 = dlen - 1;
   load dlen
   push_int 1
   sub
   store i
 ; while i >= 0 {
-__L13:
+__L14:
   load i
   push_int 0
   ge
-  jump_ifnot __L14
+  jump_ifnot __L15
 ; emit_char(sb, get(tmp, i));
   load sb
   load tmp
@@ -492,8 +556,8 @@ __L13:
   push_int 1
   sub
   store i
-  jump __L13
-__L14:
+  jump __L14
+__L15:
 ; delete(tmp);
   load tmp
   call delete U8Array
@@ -513,11 +577,11 @@ __L14:
   push_int 0
   store i
 ; while i < n {
-__L15:
+__L16:
   load i
   load n
   lt
-  jump_ifnot __L16
+  jump_ifnot __L17
 ; emit_char(sb, get(src, (start + i)));
   load sb
   load src
@@ -532,8 +596,8 @@ __L15:
   push_int 1
   add
   store i
-  jump __L15
-__L16:
+  jump __L16
+__L17:
 ; return;
   return_void
   return_void
@@ -553,11 +617,11 @@ __L16:
   push_int 0
   store i
 ; while i < spaces {
-__L17:
+__L18:
   load i
   load spaces
   lt
-  jump_ifnot __L18
+  jump_ifnot __L19
 ; emit_char(sb, ' ');
   load sb
   push_int 32
@@ -568,8 +632,8 @@ __L17:
   push_int 1
   add
   store i
-  jump __L17
-__L18:
+  jump __L18
+__L19:
 ; return;
   return_void
   return_void
@@ -588,11 +652,11 @@ __L18:
   push_int 0
   store i
 ; while i < n {
-__L19:
+__L20:
   load i
   load n
   lt
-  jump_ifnot __L20
+  jump_ifnot __L21
 ; emit_char(dst, get(buf(src), i));
   load dst
   load src
@@ -606,8 +670,8 @@ __L19:
   push_int 1
   add
   store i
-  jump __L19
-__L20:
+  jump __L20
+__L21:
 ; return;
   return_void
   return_void
@@ -1425,11 +1489,11 @@ __L21:
 ; return c >= '0' && c <= '9';
   load c
   push_int 48
-  ge
+  ge_u
   jump_ifnot __L0
   load c
   push_int 57
-  le
+  le_u
   jump_ifnot __L0
   push_int 1
   jump __L1
@@ -1445,11 +1509,11 @@ __L1:
 ; return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
   load c
   push_int 97
-  ge
+  ge_u
   jump_ifnot __L6
   load c
   push_int 122
-  le
+  le_u
   jump_ifnot __L6
   push_int 1
   jump __L7
@@ -1459,11 +1523,11 @@ __L7:
   jump_if __L4
   load c
   push_int 65
-  ge
+  ge_u
   jump_ifnot __L8
   load c
   push_int 90
-  le
+  le_u
   jump_ifnot __L8
   push_int 1
   jump __L9
@@ -2451,11 +2515,11 @@ __L80:
 ; return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
   load c
   push_int 48
-  ge
+  ge_u
   jump_ifnot __L87
   load c
   push_int 57
-  le
+  le_u
   jump_ifnot __L87
   push_int 1
   jump __L88
@@ -2465,11 +2529,11 @@ __L88:
   jump_if __L85
   load c
   push_int 97
-  ge
+  ge_u
   jump_ifnot __L89
   load c
   push_int 102
-  le
+  le_u
   jump_ifnot __L89
   push_int 1
   jump __L90
@@ -2485,11 +2549,11 @@ __L86:
   jump_if __L83
   load c
   push_int 65
-  ge
+  ge_u
   jump_ifnot __L91
   load c
   push_int 70
-  le
+  le_u
   jump_ifnot __L91
   push_int 1
   jump __L92
@@ -2511,11 +2575,11 @@ __L84:
 ; if c >= '0' && c <= '9' { return c as i32 - 48; }
   load c
   push_int 48
-  ge
+  ge_u
   jump_ifnot __L94
   load c
   push_int 57
-  le
+  le_u
   jump_ifnot __L94
   push_int 1
   jump __L95
@@ -2532,11 +2596,11 @@ __L93:
 ; if c >= 'a' && c <= 'f' { return c as i32 - 87; }
   load c
   push_int 97
-  ge
+  ge_u
   jump_ifnot __L97
   load c
   push_int 102
-  le
+  le_u
   jump_ifnot __L97
   push_int 1
   jump __L98

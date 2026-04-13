@@ -32,6 +32,10 @@ var OP_JUMP: i32 = 28;
 var OP_JUMP_IF: i32 = 29;
 var OP_JUMP_IFNOT: i32 = 30;
 var OP_SHR_U: i32 = 31;
+var OP_LT_U: i32 = 32;
+var OP_LE_U: i32 = 33;
+var OP_GT_U: i32 = 34;
+var OP_GE_U: i32 = 35;
 
 // Heap object kinds
 var HK_U8: i32 = 1;
@@ -218,6 +222,15 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
         if a=='l'&&b=='o'&&c=='a'&&d=='d'  { return OP_LOAD; } // load
         if a=='j'&&b=='u'&&c=='m'&&d=='p' { return OP_JUMP; } // jump
         if a=='c'&&b=='a'&&c=='l'&&d=='l'   { return OP_CALL; } // call
+        // unsigned comparisons: lt_u, le_u, gt_u, ge_u
+        if b=='t'&&c=='_'&&d=='u' {
+            if a=='l' { return OP_LT_U; }
+            if a=='g' { return OP_GT_U; }
+        }
+        if b=='e'&&c=='_'&&d=='u' {
+            if a=='l' { return OP_LE_U; }
+            if a=='g' { return OP_GE_U; }
+        }
     }
     if sl == 5 {
         // store: s,t,o,r,e = 115,116,111,114,101
@@ -992,6 +1005,25 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                     if op==OP_GT { if a2>b2  { r2=1; } }
                     if op==OP_GE { if a2>=b2 { r2=1; } }
                     stk_push(stk_i,stk_t,r2,TAG_INT);
+                }
+                if op >= OP_LT_U && op <= OP_GE_U {
+                    // Unsigned compare via sign-bit flip: flipping the
+                    // top bit maps unsigned order to signed order. TC's
+                    // own `<` is signed, so we can't rely on it for the
+                    // raw u32 values. Computed as `1 << 31` at runtime
+                    // to avoid the 0x80000000 literal (which overflows
+                    // i32 at parse time).
+                    stk_pop(stk_i,stk_t); var b4: i32=g_pop_ival;
+                    stk_pop(stk_i,stk_t); var a4: i32=g_pop_ival;
+                    var sign_bit: i32 = 1 << 31;
+                    var af: i32 = a4 ^ sign_bit;
+                    var bf: i32 = b4 ^ sign_bit;
+                    var r4: i32 = 0;
+                    if op==OP_LT_U { if af<bf  { r4=1; } }
+                    if op==OP_LE_U { if af<=bf { r4=1; } }
+                    if op==OP_GT_U { if af>bf  { r4=1; } }
+                    if op==OP_GE_U { if af>=bf { r4=1; } }
+                    stk_push(stk_i,stk_t,r4,TAG_INT);
                 }
                 if op == OP_NEG {
                     stk_pop(stk_i,stk_t); stk_push(stk_i,stk_t,0-g_pop_ival,TAG_INT);

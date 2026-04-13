@@ -8,11 +8,11 @@
 ; return c >= 48u8 && c <= 57u8;
   load c
   push_int 48
-  ge
+  ge_u
   jump_ifnot __L0
   load c
   push_int 57
-  le
+  le_u
   jump_ifnot __L0
   push_int 1
   jump __L1

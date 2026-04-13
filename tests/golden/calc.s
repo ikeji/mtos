@@ -19,7 +19,7 @@ is_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -37,7 +37,7 @@ is_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)

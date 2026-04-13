@@ -63,6 +63,7 @@ typedef enum {
     OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
     OP_AND, OP_OR,  OP_XOR, OP_SHL, OP_SHR, OP_SHR_U,
     OP_EQ,  OP_NE,  OP_LT,  OP_LE,  OP_GT,  OP_GE,
+    OP_LT_U, OP_LE_U, OP_GT_U, OP_GE_U,
     OP_NEG, OP_LNOT,
     OP_CAST,
     OP_JUMP, OP_JUMP_IF, OP_JUMP_IFNOT,
@@ -407,6 +408,10 @@ static BcProg *bc_parse(FILE *in) {
         else if (!strcmp(op, "le"))          { ins.op = OP_LE; }
         else if (!strcmp(op, "gt"))          { ins.op = OP_GT; }
         else if (!strcmp(op, "ge"))          { ins.op = OP_GE; }
+        else if (!strcmp(op, "lt_u"))        { ins.op = OP_LT_U; }
+        else if (!strcmp(op, "le_u"))        { ins.op = OP_LE_U; }
+        else if (!strcmp(op, "gt_u"))        { ins.op = OP_GT_U; }
+        else if (!strcmp(op, "ge_u"))        { ins.op = OP_GE_U; }
         else if (!strcmp(op, "neg"))         { ins.op = OP_NEG; }
         else if (!strcmp(op, "lnot"))        { ins.op = OP_LNOT; }
         else if (!strcmp(op, "cast"))        { ins.op = OP_CAST;       char t[64]; next_tok(s,t,sizeof(t)); ins.sarg=strdup(t); }
@@ -745,6 +750,14 @@ static Value vm_exec(VM *vm, BcFunc *fn, Value *args, int nargs) {
         case OP_LE:   { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival<=b.ival)); break; }
         case OP_GT:   { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival>b.ival));  break; }
         case OP_GE:   { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival>=b.ival)); break; }
+        case OP_LT_U: { Value b=vm_pop(vm),a=vm_pop(vm);
+                        vm_push(vm,val_int((uint32_t)a.ival< (uint32_t)b.ival)); break; }
+        case OP_LE_U: { Value b=vm_pop(vm),a=vm_pop(vm);
+                        vm_push(vm,val_int((uint32_t)a.ival<=(uint32_t)b.ival)); break; }
+        case OP_GT_U: { Value b=vm_pop(vm),a=vm_pop(vm);
+                        vm_push(vm,val_int((uint32_t)a.ival> (uint32_t)b.ival)); break; }
+        case OP_GE_U: { Value b=vm_pop(vm),a=vm_pop(vm);
+                        vm_push(vm,val_int((uint32_t)a.ival>=(uint32_t)b.ival)); break; }
         case OP_NEG:  { Value a=vm_pop(vm); vm_push(vm,val_int(-a.ival)); break; }
         case OP_LNOT: { Value a=vm_pop(vm); vm_push(vm,val_int(!a.ival)); break; }
 

@@ -535,10 +535,21 @@ static Value eval_expr(Interp *ip, AstNode *node) {
         if (strcmp(op, ">>") == 0) return val_int(a >> b);
         if (strcmp(op, "==") == 0) return val_int(a == b);
         if (strcmp(op, "!=") == 0) return val_int(a != b);
-        if (strcmp(op, "<") == 0) return val_int(a < b);
-        if (strcmp(op, "<=") == 0) return val_int(a <= b);
-        if (strcmp(op, ">") == 0) return val_int(a > b);
-        if (strcmp(op, ">=") == 0) return val_int(a >= b);
+        {
+            /* Unsigned LHS → compare as uint32_t; signed otherwise.
+               The binop's result type is "bool", so peek at children[0]'s
+               type_annot (set by typecheck). */
+            const char *lty = node->children[0]->type_annot;
+            int is_u = (lty && lty[0] == 'u');
+            if (strcmp(op, "<") == 0)
+                return val_int(is_u ? (uint32_t)a <  (uint32_t)b : a <  b);
+            if (strcmp(op, "<=") == 0)
+                return val_int(is_u ? (uint32_t)a <= (uint32_t)b : a <= b);
+            if (strcmp(op, ">") == 0)
+                return val_int(is_u ? (uint32_t)a >  (uint32_t)b : a >  b);
+            if (strcmp(op, ">=") == 0)
+                return val_int(is_u ? (uint32_t)a >= (uint32_t)b : a >= b);
+        }
         fprintf(stderr, "unknown binop '%s'\n", op);
         exit(1);
     }

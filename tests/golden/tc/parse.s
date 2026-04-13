@@ -1252,7 +1252,7 @@ emit_string__StringBuffer__String:
     .globl emit_int__StringBuffer__i32
     .type  emit_int__StringBuffer__i32, @function
 emit_int__StringBuffer__i32:
-    # prologue: frame_size=64, params=2, locals=4, eval_depth=5
+    # prologue: frame_size=64, params=2, locals=5, eval_depth=5
     addi sp, sp, -64
     sw   ra, 60(sp)
     sw   s0, 56(sp)
@@ -1263,6 +1263,198 @@ emit_int__StringBuffer__i32:
     sw   zero, -24(s0)
     sw   zero, -28(s0)
     sw   zero, -32(s0)
+    sw   zero, -36(s0)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2147483647
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_emit_int__StringBuffer__i32_pc55
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 45
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 50
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 49
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 52
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 55
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 52
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 56
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 51
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 54
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 52
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 56
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_emit_int__StringBuffer__i32_pc55:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1278,7 +1470,7 @@ emit_int__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_emit_int__StringBuffer__i32_pc12
+    j    .L_emit_int__StringBuffer__i32_pc67
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -1308,7 +1500,7 @@ emit_int__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-  .L_emit_int__StringBuffer__i32_pc12:
+  .L_emit_int__StringBuffer__i32_pc67:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1325,7 +1517,7 @@ emit_int__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_emit_int__StringBuffer__i32_pc21
+    j    .L_emit_int__StringBuffer__i32_pc76
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -1345,7 +1537,7 @@ emit_int__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_emit_int__StringBuffer__i32_pc21:
+  .L_emit_int__StringBuffer__i32_pc76:
     li   t0, 12
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -1356,21 +1548,21 @@ emit_int__StringBuffer__i32:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -20(s0)
+    sw   t0, -24(s0)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -24(s0)
+    sw   t0, -28(s0)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -28(s0)
-  .L_emit_int__StringBuffer__i32_pc28:
-    lw   t0, -28(s0)
+    sw   t0, -32(s0)
+  .L_emit_int__StringBuffer__i32_pc83:
+    lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -1385,18 +1577,18 @@ emit_int__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_emit_int__StringBuffer__i32_pc51
+    j    .L_emit_int__StringBuffer__i32_pc106
 0:
-    lw   t0, -20(s0)
+    lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -24(s0)
+    lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 48
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -28(s0)
+    lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 10
@@ -1427,7 +1619,7 @@ emit_int__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -24(s0)
+    lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -1441,8 +1633,8 @@ emit_int__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -24(s0)
-    lw   t0, -28(s0)
+    sw   t0, -28(s0)
+    lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 10
@@ -1456,10 +1648,10 @@ emit_int__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -28(s0)
-    j    .L_emit_int__StringBuffer__i32_pc28
-  .L_emit_int__StringBuffer__i32_pc51:
-    lw   t0, -24(s0)
+    sw   t0, -32(s0)
+    j    .L_emit_int__StringBuffer__i32_pc83
+  .L_emit_int__StringBuffer__i32_pc106:
+    lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -1473,9 +1665,9 @@ emit_int__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -32(s0)
-  .L_emit_int__StringBuffer__i32_pc55:
-    lw   t0, -32(s0)
+    sw   t0, -36(s0)
+  .L_emit_int__StringBuffer__i32_pc110:
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -1491,15 +1683,15 @@ emit_int__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_emit_int__StringBuffer__i32_pc70
+    j    .L_emit_int__StringBuffer__i32_pc125
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -20(s0)
+    lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -32(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -1515,7 +1707,7 @@ emit_int__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -32(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -1529,10 +1721,10 @@ emit_int__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -32(s0)
-    j    .L_emit_int__StringBuffer__i32_pc55
-  .L_emit_int__StringBuffer__i32_pc70:
-    lw   t0, -20(s0)
+    sw   t0, -36(s0)
+    j    .L_emit_int__StringBuffer__i32_pc110
+  .L_emit_int__StringBuffer__i32_pc125:
+    lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -4467,7 +4659,7 @@ is_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4485,7 +4677,7 @@ is_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4536,7 +4728,7 @@ is_alpha__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4554,7 +4746,7 @@ is_alpha__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4586,7 +4778,7 @@ is_alpha__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4604,7 +4796,7 @@ is_alpha__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7691,7 +7883,7 @@ is_hex_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7709,7 +7901,7 @@ is_hex_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7741,7 +7933,7 @@ is_hex_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7759,7 +7951,7 @@ is_hex_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7805,7 +7997,7 @@ is_hex_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7823,7 +8015,7 @@ is_hex_digit__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7888,7 +8080,7 @@ hex_val__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7906,7 +8098,7 @@ hex_val__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7963,7 +8155,7 @@ hex_val__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t0, t1
+    sltu t0, t0, t1
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7981,7 +8173,7 @@ hex_val__u8:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    slt  t0, t1, t0
+    sltu t0, t1, t0
     xori t0, t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)

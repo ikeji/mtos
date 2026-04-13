@@ -35,6 +35,10 @@ var OP_JUMP: i32 = 28;
 var OP_JUMP_IF: i32 = 29;
 var OP_JUMP_IFNOT: i32 = 30;
 var OP_SHR_U: i32 = 31;
+var OP_LT_U: i32 = 32;
+var OP_LE_U: i32 = 33;
+var OP_GT_U: i32 = 34;
+var OP_GE_U: i32 = 35;
 
 // ===== Global state =====
 var g_in_pos: i32 = 0;
@@ -207,6 +211,14 @@ fn asm_slt(swap: i32, ob: StringBuffer) -> void {
     else         { eregt1(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8); }
     return;
 }
+// "    sltu t0, A, B\n" — unsigned variant of asm_slt
+fn asm_sltu(swap: i32, ob: StringBuffer) -> void {
+    e4(ob);emit_char(ob, 's');emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, ' ');
+    eregt0(ob);
+    if swap == 0 { eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8); }
+    else         { eregt1(ob);emit_char(ob, 't');emit_char(ob, '0');emit_char(ob, 10u8); }
+    return;
+}
 
 // ===== String table =====
 fn stab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
@@ -326,6 +338,15 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
         if a=='l'&&b=='o'&&c=='a'&&d=='d'  { return OP_LOAD; }
         if a=='j'&&b=='u'&&c=='m'&&d=='p' { return OP_JUMP; }
         if a=='c'&&b=='a'&&c=='l'&&d=='l'   { return OP_CALL; }
+        // unsigned comparisons: lt_u, le_u, gt_u, ge_u
+        if b=='t'&&c=='_'&&d=='u' {
+            if a=='l' { return OP_LT_U; }
+            if a=='g' { return OP_GT_U; }
+        }
+        if b=='e'&&c=='_'&&d=='u' {
+            if a=='l' { return OP_LE_U; }
+            if a=='g' { return OP_GE_U; }
+        }
     }
     if sl==5 {
         if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; }
@@ -668,6 +689,7 @@ fn max_eval_depth(fns: I32Array, instrs: I32Array, fi: i32) -> i32 {
         }
         if op >= OP_ADD && op <= OP_GE { depth = depth - 1; }
         if op == OP_SHR_U { depth = depth - 1; }
+        if op >= OP_LT_U && op <= OP_GE_U { depth = depth - 1; }
         if op == OP_CALL {
             var nargs: i32 = ins_ival(instrs, ibase, i);
             depth = depth - (nargs - 1);
@@ -919,6 +941,10 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
         if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
         if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
         if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
+        if op==OP_LT_U { asm_pop_t1_t0(ob); asm_sltu(0,ob); asm_push_t0(ob); }             // sltu t0,t0,t1
+        if op==OP_LE_U { asm_pop_t1_t0(ob); asm_sltu(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
+        if op==OP_GT_U { asm_pop_t1_t0(ob); asm_sltu(1,ob); asm_push_t0(ob); }             // sltu t0,t1,t0
+        if op==OP_GE_U { asm_pop_t1_t0(ob); asm_sltu(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
         if op==OP_NEG {
             asm_pop_t0(ob);
             e4(ob);emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, ' ');

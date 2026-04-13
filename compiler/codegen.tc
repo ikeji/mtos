@@ -661,8 +661,23 @@ fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer,
     if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and
     if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or
     if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor
-    if sv1(strtab,ss,sl, '<') { emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // lt
-    if sv1(strtab,ss,sl, '>') { emit_char(ob, 'g');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // gt
+    // Unsigned LHS → lt_u / gt_u; signed → lt / gt.
+    if sv1(strtab,ss,sl, '<') {
+        emit_char(ob, 'l');emit_char(ob, 't');
+        if tasl > 0 && get(strtab, tass) == 'u' {
+            emit_char(ob, '_');emit_char(ob, 'u');
+        }
+        emit_char(ob, 10u8);
+        return;
+    }  // lt / lt_u
+    if sv1(strtab,ss,sl, '>') {
+        emit_char(ob, 'g');emit_char(ob, 't');
+        if tasl > 0 && get(strtab, tass) == 'u' {
+            emit_char(ob, '_');emit_char(ob, 'u');
+        }
+        emit_char(ob, 10u8);
+        return;
+    }  // gt / gt_u
     if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl
     if sv2(strtab,ss,sl, '>','>') {
         // Unsigned LHS → logical shift (shr_u); otherwise arithmetic (shr).
@@ -676,8 +691,22 @@ fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer,
     }  // shr / shr_u
     if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq
     if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne
-    if sv2(strtab,ss,sl, '<','=') { emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // le
-    if sv2(strtab,ss,sl, '>','=') { emit_char(ob, 'g');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ge
+    if sv2(strtab,ss,sl, '<','=') {
+        emit_char(ob, 'l');emit_char(ob, 'e');
+        if tasl > 0 && get(strtab, tass) == 'u' {
+            emit_char(ob, '_');emit_char(ob, 'u');
+        }
+        emit_char(ob, 10u8);
+        return;
+    }  // le / le_u
+    if sv2(strtab,ss,sl, '>','=') {
+        emit_char(ob, 'g');emit_char(ob, 'e');
+        if tasl > 0 && get(strtab, tass) == 'u' {
+            emit_char(ob, '_');emit_char(ob, 'u');
+        }
+        emit_char(ob, 10u8);
+        return;
+    }  // ge / ge_u
     // Unknown op - just add newline
     emit_char(ob, 10u8);
     return;
@@ -833,10 +862,14 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: StringBuffer, 
             return;
         }
 
-        // Regular binop
+        // Regular binop. Pass child0's type_annot (LHS type) so
+        // cg_binop_inst can pick signed vs unsigned variants
+        // (shr/shr_u, lt/lt_u, etc.). The binop node's own type_annot
+        // would be "bool" for comparisons, which is useless here.
         cg_expr(nodes, strtab, slits, ob, child0);
         cg_expr(nodes, strtab, slits, ob, child1);
-        cg_binop_inst(strtab, ss, sl, ob, n_tass(nodes, n), n_tasl(nodes, n));
+        cg_binop_inst(strtab, ss, sl, ob,
+                      n_tass(nodes, child0), n_tasl(nodes, child0));
         return;
     }
 

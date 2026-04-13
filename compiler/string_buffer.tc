@@ -80,6 +80,18 @@ export fn emit_string(sb: StringBuffer, s: String) -> void {
 
 // Emit the decimal representation of an integer.
 export fn emit_int(sb: StringBuffer, val: i32) -> void {
+    // Special-case INT32_MIN: `0 - val` would overflow and leave val
+    // unchanged, so the digit loop below would produce no output.
+    // Constructed via (0 - INT32_MAX) - 1 to avoid needing to write
+    // the literal -2147483648 directly.
+    var int32_min: i32 = (0 - 2147483647) - 1;
+    if val == int32_min {
+        emit_char(sb, '-'); emit_char(sb, '2'); emit_char(sb, '1');
+        emit_char(sb, '4'); emit_char(sb, '7'); emit_char(sb, '4');
+        emit_char(sb, '8'); emit_char(sb, '3'); emit_char(sb, '6');
+        emit_char(sb, '4'); emit_char(sb, '8');
+        return;
+    }
     if val < 0 {
         emit_char(sb, '-');
         val = 0 - val;

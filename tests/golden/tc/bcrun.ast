@@ -123,6 +123,22 @@
     (type i32)
     (int 31)
   )
+  (var_decl OP_LT_U
+    (type i32)
+    (int 32)
+  )
+  (var_decl OP_LE_U
+    (type i32)
+    (int 33)
+  )
+  (var_decl OP_GT_U
+    (type i32)
+    (int 34)
+  )
+  (var_decl OP_GE_U
+    (type i32)
+    (int 35)
+  )
   (var_decl HK_U8
     (type i32)
     (int 1)
@@ -1837,6 +1853,96 @@
             (block
               (return
                 (var OP_CALL)
+              )
+            )
+          )
+          (comment "if b=='t'&&c=='_'&&d=='u' {")
+          (if
+            (binop &&
+              (binop &&
+                (binop ==
+                  (var b)
+                  (int:u8 116)
+                )
+                (binop ==
+                  (var c)
+                  (int:u8 95)
+                )
+              )
+              (binop ==
+                (var d)
+                (int:u8 117)
+              )
+            )
+            (block
+              (comment "if a=='l' { return OP_LT_U; }")
+              (if
+                (binop ==
+                  (var a)
+                  (int:u8 108)
+                )
+                (block
+                  (return
+                    (var OP_LT_U)
+                  )
+                )
+              )
+              (comment "if a=='g' { return OP_GT_U; }")
+              (if
+                (binop ==
+                  (var a)
+                  (int:u8 103)
+                )
+                (block
+                  (return
+                    (var OP_GT_U)
+                  )
+                )
+              )
+            )
+          )
+          (comment "if b=='e'&&c=='_'&&d=='u' {")
+          (if
+            (binop &&
+              (binop &&
+                (binop ==
+                  (var b)
+                  (int:u8 101)
+                )
+                (binop ==
+                  (var c)
+                  (int:u8 95)
+                )
+              )
+              (binop ==
+                (var d)
+                (int:u8 117)
+              )
+            )
+            (block
+              (comment "if a=='l' { return OP_LE_U; }")
+              (if
+                (binop ==
+                  (var a)
+                  (int:u8 108)
+                )
+                (block
+                  (return
+                    (var OP_LE_U)
+                  )
+                )
+              )
+              (comment "if a=='g' { return OP_GE_U; }")
+              (if
+                (binop ==
+                  (var a)
+                  (int:u8 103)
+                )
+                (block
+                  (return
+                    (var OP_GE_U)
+                  )
+                )
               )
             )
           )
@@ -8650,6 +8756,155 @@
                         (var stk_i)
                         (var stk_t)
                         (var r2)
+                        (var TAG_INT)
+                      )
+                    )
+                  )
+                  (comment "if op >= OP_LT_U && op <= OP_GE_U {")
+                  (if
+                    (binop &&
+                      (binop >=
+                        (var op)
+                        (var OP_LT_U)
+                      )
+                      (binop <=
+                        (var op)
+                        (var OP_GE_U)
+                      )
+                    )
+                    (block
+                      (comment "stk_pop(stk_i,stk_t); var b4: i32=g_pop_ival;")
+                      (call_stmt stk_pop
+                        (var stk_i)
+                        (var stk_t)
+                      )
+                      (var_decl b4
+                        (type i32)
+                        (var g_pop_ival)
+                      )
+                      (comment "stk_pop(stk_i,stk_t); var a4: i32=g_pop_ival;")
+                      (call_stmt stk_pop
+                        (var stk_i)
+                        (var stk_t)
+                      )
+                      (var_decl a4
+                        (type i32)
+                        (var g_pop_ival)
+                      )
+                      (comment "var sign_bit: i32 = 1 << 31;")
+                      (var_decl sign_bit
+                        (type i32)
+                        (binop <<
+                          (int 1)
+                          (int 31)
+                        )
+                      )
+                      (comment "var af: i32 = a4 ^ sign_bit;")
+                      (var_decl af
+                        (type i32)
+                        (binop ^
+                          (var a4)
+                          (var sign_bit)
+                        )
+                      )
+                      (comment "var bf: i32 = b4 ^ sign_bit;")
+                      (var_decl bf
+                        (type i32)
+                        (binop ^
+                          (var b4)
+                          (var sign_bit)
+                        )
+                      )
+                      (comment "var r4: i32 = 0;")
+                      (var_decl r4
+                        (type i32)
+                        (int 0)
+                      )
+                      (comment "if op==OP_LT_U { if af<bf  { r4=1; } }")
+                      (if
+                        (binop ==
+                          (var op)
+                          (var OP_LT_U)
+                        )
+                        (block
+                          (if
+                            (binop <
+                              (var af)
+                              (var bf)
+                            )
+                            (block
+                              (assign r4
+                                (int 1)
+                              )
+                            )
+                          )
+                        )
+                      )
+                      (comment "if op==OP_LE_U { if af<=bf { r4=1; } }")
+                      (if
+                        (binop ==
+                          (var op)
+                          (var OP_LE_U)
+                        )
+                        (block
+                          (if
+                            (binop <=
+                              (var af)
+                              (var bf)
+                            )
+                            (block
+                              (assign r4
+                                (int 1)
+                              )
+                            )
+                          )
+                        )
+                      )
+                      (comment "if op==OP_GT_U { if af>bf  { r4=1; } }")
+                      (if
+                        (binop ==
+                          (var op)
+                          (var OP_GT_U)
+                        )
+                        (block
+                          (if
+                            (binop >
+                              (var af)
+                              (var bf)
+                            )
+                            (block
+                              (assign r4
+                                (int 1)
+                              )
+                            )
+                          )
+                        )
+                      )
+                      (comment "if op==OP_GE_U { if af>=bf { r4=1; } }")
+                      (if
+                        (binop ==
+                          (var op)
+                          (var OP_GE_U)
+                        )
+                        (block
+                          (if
+                            (binop >=
+                              (var af)
+                              (var bf)
+                            )
+                            (block
+                              (assign r4
+                                (int 1)
+                              )
+                            )
+                          )
+                        )
+                      )
+                      (comment "stk_push(stk_i,stk_t,r4,TAG_INT);")
+                      (call_stmt stk_push
+                        (var stk_i)
+                        (var stk_t)
+                        (var r4)
                         (var TAG_INT)
                       )
                     )

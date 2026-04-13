@@ -209,10 +209,19 @@ static void cg_expr(CG *cg, AstNode *node) {
         }
         else if (strcmp(op, "==") == 0) fprintf(cg->out, "  eq\n");
         else if (strcmp(op, "!=") == 0) fprintf(cg->out, "  ne\n");
-        else if (strcmp(op, "<")  == 0) fprintf(cg->out, "  lt\n");
-        else if (strcmp(op, "<=") == 0) fprintf(cg->out, "  le\n");
-        else if (strcmp(op, ">")  == 0) fprintf(cg->out, "  gt\n");
-        else if (strcmp(op, ">=") == 0) fprintf(cg->out, "  ge\n");
+        else if (strcmp(op, "<")  == 0 || strcmp(op, "<=") == 0 ||
+                 strcmp(op, ">")  == 0 || strcmp(op, ">=") == 0) {
+            /* Unsigned LHS → lt_u/le_u/gt_u/ge_u; otherwise signed lt/le/gt/ge.
+               The binop's result type is "bool", so we peek at children[0]'s
+               own type_annot (set by typecheck) to decide. */
+            const char *lty = node->children[0]->type_annot;
+            int is_u = (lty && lty[0] == 'u');
+            const char *suffix = is_u ? "_u" : "";
+            if      (strcmp(op, "<")  == 0) fprintf(cg->out, "  lt%s\n", suffix);
+            else if (strcmp(op, "<=") == 0) fprintf(cg->out, "  le%s\n", suffix);
+            else if (strcmp(op, ">")  == 0) fprintf(cg->out, "  gt%s\n", suffix);
+            else                            fprintf(cg->out, "  ge%s\n", suffix);
+        }
         else { fprintf(stderr, "codegen: unknown binop '%s'\n", op); exit(1); }
         return;
     }
