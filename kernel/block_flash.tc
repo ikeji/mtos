@@ -48,3 +48,10 @@ export fn block_read(sector: u32, buf: U8Array) -> i32 {
 export fn block_write(sector: u32, buf: U8Array) -> i32 {
     return -1;  // Flash is read-only from the kernel's perspective
 }
+
+// Non-zero = the entire image is directly readable at flash_base
+// (block N is at flash_base + N * 512). Used by mtfs.tc to skip the
+// block_read copy when building an XIP pointer for a file.
+export fn block_xip_base() -> u32 {
+    return g_flash_base;
+}

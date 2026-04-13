@@ -8,6 +8,7 @@
 // Pico 2 uses block_flash.tc. mtfs itself only needs block_read.
 
 fn block_read(sector: u32, buf: U8Array) -> i32;
+fn block_xip_base() -> u32;
 
 // Layout constants (mirror tools/mkfs.py)
 var MTFS_MAGIC: u32         = 0x5346544Du32;   // 'M','T','F','S' LE
@@ -231,4 +232,19 @@ export fn mtfs_close(fd: i32) -> i32 {
     ino(e, -1);
     pos(e, 0);
     return 0;
+}
+
+// Return the direct (XIP) address of the file's first byte, or 0 if
+// the block backend cannot serve the image in-place. When supported,
+// callers can use this pointer instead of doing a block_read copy.
+export fn mtfs_xip_addr(fd: i32) -> u32 {
+    if g_mtfs_mounted == 0 { return 0u32; }
+    if fd < 0 || fd >= MTFS_MAX_FDS { return 0u32; }
+    var e: MtfsFD = get(g_mtfs_fds, fd);
+    var inum: i32 = ino(e);
+    if inum < 0 { return 0u32; }
+    var base: u32 = block_xip_base();
+    if base == 0u32 { return 0u32; }
+    var start: u32 = inode_u32(inum as u32, INO_START);
+    return base + (g_mtfs_data_start + start) * (MTFS_BLOCK_SIZE as u32);
 }

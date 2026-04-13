@@ -26,6 +26,30 @@ fn load_str_nul(s: StringLiteral) -> U8Array {
     return buf;
 }
 
+// Build a task frame for the file already open at fd. Uses the XIP
+// fast path when the block backend is memory-mapped (flash); otherwise
+// allocates a kmalloc buffer and copies the file into it.
+fn load_fd(fd: i32, ram_size: i32, stack_size: i32) -> u32 {
+    var xip: u32 = vfs_xip_addr(fd);
+    if xip != 0u32 {
+        // Pico 2 / flash fast path: execute directly out of the
+        // XIP-mapped image, no RAM copy.
+        return make_task(xip, ram_size, stack_size);
+    }
+
+    var size: i32 = vfs_size(fd);
+    if size <= 0 { return 0u32; }
+
+    // Slow path (virt / virtio-blk): copy the image into RAM. The
+    // buffer is leaked on purpose — the task runs from it until
+    // sys_exit, and we have no process teardown yet.
+    var img: U8Array = U8Array(size as u32);
+    var n: i32 = vfs_read(fd, img as u32 + 4u32, size);
+    if n != size { return 0u32; }
+
+    return make_task(img as u32 + 4u32, ram_size, stack_size);
+}
+
 // Load the given path from the VFS and build a task frame.
 // Returns 0 on any failure, otherwise a frame pointer ready for
 // sched_register.
@@ -35,18 +59,7 @@ export fn load_task(path: StringLiteral, ram_size: i32, stack_size: i32) -> u32 
     delete(pbuf);
     if fd < 0 { return 0u32; }
 
-    var size: i32 = vfs_size(fd);
-    if size <= 0 {
-        vfs_close(fd);
-        return 0u32;
-    }
-
-    // The image is leaked on purpose: the task runs from this buffer
-    // until sys_exit, and we have no process teardown yet.
-    var img: U8Array = U8Array(size as u32);
-    var n: i32 = vfs_read(fd, img as u32 + 4u32, size);
+    var frame: u32 = load_fd(fd, ram_size, stack_size);
     vfs_close(fd);
-    if n != size { return 0u32; }
-
-    return make_task(img as u32 + 4u32, ram_size, stack_size);
+    return frame;
 }

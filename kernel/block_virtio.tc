@@ -244,6 +244,12 @@ export fn block_write(sector: u32, buf: U8Array) -> i32 {
     return -1;  // read-only for now
 }
 
+// virtio-blk is not memory-mapped; block data has to be copied by
+// block_read. Returning 0 tells mtfs there is no XIP shortcut.
+export fn block_xip_base() -> u32 {
+    return 0u32;
+}
+
 export fn virtio_blk_base() -> u32 {
     return g_vblk_base;
 }

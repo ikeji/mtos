@@ -141,6 +141,20 @@ export fn vfs_size(fd: i32) -> i32 {
     return -1;
 }
 
+// Return an XIP-direct address for fd's file contents, or 0 if the
+// backing FS cannot provide one. Used by kernel/loader.tc to skip the
+// binary copy on targets where the image is already in CPU-addressable
+// flash (Pico 2).
+export fn vfs_xip_addr(fd: i32) -> u32 {
+    if fd < 3 { return 0u32; }
+    if g_vfs_ready == 0 { return 0u32; }
+    if fd >= VFS_MAX_FDS + 3 { return 0u32; }
+    var e: FD = get(g_vfs_fds, fd - 3);
+    var t: i32 = fs_type(e);
+    if t == FS_MTFS { return mtfs_xip_addr(inner(e)); }
+    return 0u32;
+}
+
 export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd >= 0 && fd < 3 { return do_uart_read(buf_addr, n); }
     if g_vfs_ready == 0 { return -1; }
