@@ -174,11 +174,23 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 
 ## フェーズ6: ユーザランド基盤
 
-- [ ] 最小限のlibcポート（memcpy, strlen, printf等）
-- [ ] ローダ（実行ファイルをメモリにロード）
-- [ ] sys_exec, sys_fork, sys_wait の実装
-- [ ] シェル（コマンド入力・実行）
-- [ ] QEMUで動作確認
+実装計画は `docs/task/phase6_userland.md` にまとめる。
+
+- [ ] Step 6.1: 最小限の libc 相当 (`kernel/tasks/ulib/ulib.tc`、
+      `u_puts` / `u_str_nul` / `u_strlen`)。hello/hello2/catfile の
+      重複ヘルパを集約するリファクタ。
+- [ ] Step 6.2: ゲストバイナリを mtfs に格納 (`/bin/hello` 等)。
+      `tools/mkfs.py` を複数ファイル対応に拡張し、`bin2s` でタスクを
+      `.rodata` に焼く経路を廃止。
+- [ ] Step 6.3: sys_exec + ローダ
+      - `vfs_xip_addr` / `mtfs_xip_addr` 実装 (フェーズ5 で予約した
+        インタフェース、Pico 2 は flash 上物理アドレス、virt は 0)
+      - `kernel/loader.tc` が vfs_xip_addr を見て XIP 直接実行 or
+        RAM コピーを切り替える
+      - `sys_exec(path)` ecall + カーネル側ハンドラ (同期 exec で
+        親は戻らない、fork は導入しない)
+- [ ] Step 6.4: `/bin/sh` 最小シェル (UART 1 行読み → sys_exec)
+- [ ] Step 6.5 (オプション): sys_wait による親子同期
 
 ## フェーズ7: ネイティブコンパイラをOS上で動かす
 

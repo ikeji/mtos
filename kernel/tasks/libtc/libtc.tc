@@ -1,0 +1,47 @@
+// libtc.tc — minimal user-space helper library for guest tasks.
+//
+// Guest tasks are raw binaries separate from the kernel ELF, so symbol
+// collisions with kernel_common (e.g. kputs) do not happen at link time.
+// We therefore keep the names short (no u_/lib_ prefix).
+//
+// Provides:
+//   puts(s)     — write a string literal to stdout (fd 1).
+//   str_nul(s)  — copy a string literal into a freshly-allocated
+//                 U8Array followed by a NUL byte. Caller must delete().
+//   strlen(buf) — return the length of a NUL-terminated byte sequence
+//                 inside a U8Array (scans up to the array length).
+
+export fn puts(s: StringLiteral) -> void {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array(slen as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    sys_write(1, buf, slen);
+    delete(buf);
+    return;
+}
+
+export fn str_nul(s: StringLiteral) -> U8Array {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array((slen + 1) as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, slen, 0u8);
+    return buf;
+}
+
+export fn strlen(buf: U8Array) -> i32 {
+    var cap: i32 = len(buf);
+    var i: i32 = 0;
+    while i < cap {
+        if get(buf, i) == 0u8 { return i; }
+        i = i + 1;
+    }
+    return cap;
+}
