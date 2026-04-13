@@ -103,4 +103,32 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1; then
     fi
 fi
 
+# --- fs_virtio_sector0: reuse kernel build, attach a disk image, check the
+#     kernel reads sector 0 correctly via block_virtio.tc
+if command -v qemu-system-riscv32 >/dev/null 2>&1 && [ -s "$TMP/kernel_virt" ]; then
+    t0=$(time_ms)
+    # Craft a 16-sector disk image with "Hello, virtio\n" at the start of
+    # sector 0. dd pads the rest with zeros.
+    dd if=/dev/zero of="$TMP/disk.img" bs=512 count=16 >/dev/null 2>&1
+    printf 'Hello, virtio\n' | dd of="$TMP/disk.img" conv=notrunc bs=512 count=1 >/dev/null 2>&1
+    fs_out=$(timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -drive "file=$TMP/disk.img,format=raw,if=none,id=blk0" \
+        -device "virtio-blk-device,drive=blk0" \
+        -device "loader,file=$TMP/kernel_virt,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+    elapsed=$(( $(time_ms) - t0 ))
+    expected="SECTOR0: 48 65 6c 6c 6f 2c 20 76 69 72 74 69 6f 0a 00 00"
+    case "$fs_out" in
+        *"BLOCK: virtio-blk detected"*"$expected"*)
+            report_pass "fs_virtio: sector 0 read matches disk image" "$elapsed"
+            ;;
+        *)
+            report_fail_msg "fs_virtio" \
+                "expected detected + '$expected', got: $(printf '%s' "$fs_out" | head -c 200)"
+            ;;
+    esac
+fi
+
 print_results
