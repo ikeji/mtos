@@ -1,10 +1,9 @@
-// kernel_pico2.tc — preemptive multitasking kernel for Pico 2
+// kernel_pico2.tc — preemptive multitasking kernel for RP2350 (Pico 2)
 
-// Assembly-defined functions (trap_common.s + platform_pico2.s + bin2s)
+import "kernel_common.tc";
+
 fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;
-fn set_switch_frame(addr: u32) -> void;
-fn init_task_frame(frame: u32, entry: u32, sp: u32, gp: u32, arena: u32, arena_size: i32) -> void;
 fn sched_start(frame: u32) -> void;
 fn _task_hello_addr() -> u32;
 fn _task_hello2_addr() -> u32;
@@ -15,39 +14,14 @@ var SIO_MTIME_L: u32    = 0xD00001B0u32;
 var SIO_MTIME_H: u32    = 0xD00001B4u32;
 var SIO_MTIMECMP_L: u32 = 0xD00001B8u32;
 var SIO_MTIMECMP_H: u32 = 0xD00001BCu32;
-var TIMER_INTERVAL: u32  = 100000u32;
-
-// Scheduler state
-var NUM_TASKS: i32 = 2;
-var g_current: i32 = 0;
-var g_frames: U32Array = 0 as U32Array;
-var g_states: I32Array = 0 as I32Array;
-
-fn uart_putc(c: u8) -> void {
-    var uart: u32 = 0x40070000u32;
-    while (peek32(uart + 0x18u32) & 0x20u32) != 0u32 {
-    }
-    poke32(uart, c as u32);
-    return;
-}
-
-fn uart_puts(s: StringLiteral) -> void {
-    var i: i32 = 0;
-    while i < len(s) {
-        uart_putc(get(s, i));
-        i = i + 1;
-    }
-    return;
-}
+var TIMER_INTERVAL: u32 = 100000u32;
 
 fn rearm_timer() -> void {
-    // Read 64-bit mtime, compute target = mtime + interval, write 64-bit mtimecmp.
-    // To prevent spurious interrupts during update, set MTIMECMP_H = 0xFFFFFFFF first.
+    // 64-bit mtimecmp write: prevent spurious interrupts during update
     poke32(SIO_MTIMECMP_H, 0xFFFFFFFFu32);
     var lo: u32 = peek32(SIO_MTIME_L);
     var hi: u32 = peek32(SIO_MTIME_H);
     var new_lo: u32 = lo + TIMER_INTERVAL;
-    // Carry detection: if new_lo < lo, we wrapped
     if new_lo < lo {
         hi = hi + 1u32;
     }
@@ -56,78 +30,21 @@ fn rearm_timer() -> void {
     return;
 }
 
-fn trap_handler(cause: u32, epc: u32) -> void {
-    if cause == 0x80000007u32 {
-        var i: i32 = 0;
-        while i < NUM_TASKS {
-            var next: i32 = (g_current + 1 + i) % NUM_TASKS;
-            if get(g_states, next) == 0 {
-                g_current = next;
-                set_switch_frame(get(g_frames, next) as u32);
-                i = NUM_TASKS;
-            }
-            i = i + 1;
-        }
-        rearm_timer();
-    }
-    return;
-}
-
-fn sched_task_exit() -> u32 {
-    set(g_states, g_current, 1);
-    var i: i32 = 0;
-    while i < NUM_TASKS {
-        var next: i32 = (g_current + 1 + i) % NUM_TASKS;
-        if get(g_states, next) == 0 {
-            g_current = next;
-            return get(g_frames, next) as u32;
-        }
-        i = i + 1;
-    }
-    return 0u32;
-}
-
-fn make_task(entry: u32) -> u32 {
-    var frame_buf: U8Array = U8Array(132);
-    var frame: u32 = frame_buf as u32 + 4u32;
-
-    var task_ram: U8Array = U8Array(16384);
-    var ram_base: u32 = task_ram as u32 + 4u32;
-    var task_gp: u32 = ram_base + 0x800u32;
-    var arena_addr: u32 = ram_base + 4096u32;
-    var arena_size: i32 = 16384 - 4096;
-
-    var task_stack: U8Array = U8Array(8192);
-    var stack_top: u32 = (task_stack as u32 + 4u32 + 8192u32) & 0xFFFFFFF0u32;
-
-    init_task_frame(frame, entry, stack_top, task_gp, arena_addr, arena_size);
-    return frame;
-}
-
 fn main() -> i32 {
-    uart_puts("KERN: starting\r\n");
+    kputs("KERN: starting\r\n");
 
-    g_frames = U32Array(NUM_TASKS);
-    g_states = I32Array(NUM_TASKS);
+    sched_init(2);
+    sched_register(0, make_task(_task_hello_addr(), 16384, 8192));
+    sched_register(1, make_task(_task_hello2_addr(), 16384, 8192));
 
-    var frame0: u32 = make_task(_task_hello_addr());
-    set(g_frames, 0, frame0);
-    set(g_states, 0, 0);
-
-    var frame1: u32 = make_task(_task_hello2_addr());
-    set(g_frames, 1, frame1);
-    set(g_states, 1, 0);
-
-    // Enable SIO MTIME counter: EN (bit 0) + FULLSPEED (bit 1)
-    // Leave DBGPAUSE bits as default (pause during debug halt)
+    // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
     poke32(SIO_MTIME_CTRL, 0x0Fu32);
     rearm_timer();
     var mie: u32 = csr_read_mie();
     csr_write_mie(mie | 0x80u32);
 
-    g_current = 0;
-    sched_start(frame0);
+    sched_start(sched_get_frame(0));
 
-    uart_puts("\r\nKERN: all tasks done\r\n");
+    kputs("\r\nKERN: all tasks done\r\n");
     return 0;
 }

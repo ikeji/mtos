@@ -1,0 +1,102 @@
+// kernel_common.tc — platform-independent kernel helpers
+//
+// Shared by kernel.tc (virt) and kernel_pico2.tc (Pico 2).
+// Provides: kputs, make_task, scheduler (trap_handler, sched_task_exit),
+//           sched_init, sched_register.
+//
+// Platform must provide (as TC functions):
+//   fn rearm_timer() -> void;   — set next timer interrupt
+
+// Assembly-defined functions (trap_common.s)
+fn set_switch_frame(addr: u32) -> void;
+fn init_task_frame(frame: u32, entry: u32, sp: u32, gp: u32, arena: u32, arena_size: i32) -> void;
+
+// Platform-provided (linked at build time)
+fn rearm_timer() -> void;
+
+// Scheduler state (private to this module)
+var g_num_tasks: i32 = 0;
+var g_current: i32 = 0;
+var g_frames: U32Array = 0 as U32Array;
+var g_states: I32Array = 0 as I32Array;  // 0=ready, 1=done
+
+export fn kputs(s: StringLiteral) -> void {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array(slen);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    sys_write(1, buf, slen);
+    delete(buf);
+    return;
+}
+
+export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
+    var frame_buf: U8Array = U8Array(132);
+    var frame: u32 = frame_buf as u32 + 4u32;
+
+    var task_ram: U8Array = U8Array(ram_size);
+    var ram_base: u32 = task_ram as u32 + 4u32;
+    var task_gp: u32 = ram_base + 0x800u32;
+    var arena_addr: u32 = ram_base + 4096u32;
+    var arena_size: i32 = ram_size - 4096;
+
+    var task_stack: U8Array = U8Array(stack_size);
+    var stack_top: u32 = (task_stack as u32 + 4u32 + stack_size as u32) & 0xFFFFFFF0u32;
+
+    init_task_frame(frame, entry, stack_top, task_gp, arena_addr, arena_size);
+    return frame;
+}
+
+export fn sched_init(num: i32) -> void {
+    g_num_tasks = num;
+    g_frames = U32Array(num);
+    g_states = I32Array(num);
+    g_current = 0;
+    return;
+}
+
+export fn sched_register(idx: i32, frame: u32) -> void {
+    set(g_frames, idx, frame);
+    set(g_states, idx, 0);
+    return;
+}
+
+export fn sched_get_frame(idx: i32) -> u32 {
+    return get(g_frames, idx);
+}
+
+// Called from assembly _trap_entry on non-ecall traps
+fn trap_handler(cause: u32, epc: u32) -> void {
+    if cause == 0x80000007u32 {
+        var i: i32 = 0;
+        while i < g_num_tasks {
+            var next: i32 = (g_current + 1 + i) % g_num_tasks;
+            if get(g_states, next) == 0 {
+                g_current = next;
+                set_switch_frame(get(g_frames, next) as u32);
+                i = g_num_tasks;
+            }
+            i = i + 1;
+        }
+        rearm_timer();
+    }
+    return;
+}
+
+// Called from assembly _ecall_exit on sys_exit
+fn sched_task_exit() -> u32 {
+    set(g_states, g_current, 1);
+    var i: i32 = 0;
+    while i < g_num_tasks {
+        var next: i32 = (g_current + 1 + i) % g_num_tasks;
+        if get(g_states, next) == 0 {
+            g_current = next;
+            return get(g_frames, next) as u32;
+        }
+        i = i + 1;
+    }
+    return 0u32;
+}
