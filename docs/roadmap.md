@@ -136,6 +136,9 @@ C言語でフルパイプラインを実装し、動作を検証する。
 - [x] Pico 2 向けカーネル crt0 (kernel/crt0_pico2.s + build_pico2.sh → UF2)
 - [x] タスクの初期化済みデータコピー（task_crt0.s で PC 相対 la + gp 相対コピー）
 - [x] 本体なし関数宣言 (`fn foo() -> void;`) でアセンブリ関数を呼び出し可能に
+- [x] Pico 2 実機でプリエンプティブマルチタスク動作確認（SIO MTIME + 64-bit mtimecmp）
+- [x] sys_read (16550 UART / PL011 UART の RX)
+- [x] Debug Probe + openocd-rpi で実機フラッシュ・デバッグ環境構築
 
 ## フェーズ5: ファイルシステム（QEMUで開発・検証）
 
