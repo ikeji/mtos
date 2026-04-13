@@ -38,12 +38,16 @@ case "$TARGET" in
         PLATFORM_S="$KERN_DIR/platform_virt.s"
         DATA_S="$KERN_DIR/crt0_data.s"
         KERNEL_TC="$KERN_DIR/kernel.tc"
+        # virt slot 2 is /bin/sh; /bin/launcher is pico2-only.
+        TASKS="hello hello2 catfile sh"
         : "${OUTFILE:=kernel_virt.bin}"
         ;;
     pico2)
         PLATFORM_S="$KERN_DIR/platform_pico2.s"
         DATA_S="$KERN_DIR/crt0_pico2_data.s"
         KERNEL_TC="$KERN_DIR/kernel_pico2.tc"
+        # pico2 has no interactive stdin pipe; slot 2 uses launcher.
+        TASKS="hello hello2 catfile launcher"
         : "${OUTFILE:=kernel_pico2.uf2}"
         ;;
     *)
@@ -59,7 +63,7 @@ TASK_CRT0="$KERN_DIR/tasks/task_crt0.s"
 TASK_DATA="$KERN_DIR/tasks/task_data.s"
 
 # --- Step 1: Build task binaries ---
-for task in hello hello2 catfile launcher; do
+for task in $TASKS; do
     echo "Building task: $task" >&2
     CRT0="$TASK_CRT0" \
     CRT0_DATA="$TASK_DATA" \
@@ -81,10 +85,9 @@ done
 # layer — no more _task_*_addr() in .rodata.
 ROOT_DIR_TREE="$TMP/root"
 mkdir -p "$ROOT_DIR_TREE/bin"
-cp "$TMP/hello.bin"    "$ROOT_DIR_TREE/bin/hello"
-cp "$TMP/hello2.bin"   "$ROOT_DIR_TREE/bin/hello2"
-cp "$TMP/catfile.bin"  "$ROOT_DIR_TREE/bin/catfile"
-cp "$TMP/launcher.bin" "$ROOT_DIR_TREE/bin/launcher"
+for task in $TASKS; do
+    cp "$TMP/$task.bin" "$ROOT_DIR_TREE/bin/$task"
+done
 printf 'hello, mtfs\n' > "$ROOT_DIR_TREE/hello.txt"
 python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 

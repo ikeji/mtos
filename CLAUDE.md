@@ -97,7 +97,10 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
     hello2/hello2.tc  タスク2 ("B" 出力)
     catfile/catfile.tc タスク3 (sys_openat で /hello.txt を開き "CAT:" と共に出力)
     launcher/launcher.tc タスク4 (sys_exec("/bin/catfile") を呼ぶデモ、
-                      ecall 221 の end-to-end 検証用)
+                      ecall 221 の end-to-end 検証用、pico2 slot 2)
+    sh/sh.tc          最小シェル (stdin から 1 コマンド読んで /bin/<cmd>
+                      を sys_exec する、virt slot 2、fs_virtio テストで
+                      "catfile\n" をパイプして検証)
     libtc/libtc.tc    ユーザ空間ライブラリ (puts/str_nul/strlen、別 ELF なので
                       カーネル側シンボルと衝突しない)
 tools/      ホスト側ツール

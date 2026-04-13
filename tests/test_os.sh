@@ -80,12 +80,14 @@ fi
 
 # --- fs_virtio: attach the mtfs disk, boot kernel_virt, verify it
 #     reads sector 0 (mtfs superblock), mounts mtfs, cats /hello.txt
-#     via its in-kernel demo, loads /bin/hello, /bin/hello2,
-#     /bin/catfile from the FS and runs them preemptively. ---
+#     via its in-kernel demo, loads /bin/hello, /bin/hello2, /bin/sh
+#     from the FS and runs them preemptively. The shell reads a
+#     single command from stdin — we pipe "catfile\n" so it execs
+#     /bin/catfile. ---
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$TMP/kernel_virt" ] && [ -s "$TMP/disk.img" ]; then
     t0=$(time_ms)
-    fs_out=$(timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+    fs_out=$(printf 'catfile\n' | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
         -drive "file=$TMP/disk.img,format=raw,if=none,id=blk0" \
@@ -96,21 +98,23 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # We only check the mtfs magic bytes in SECTOR0: total_blocks varies
     # with how many files the image contains.
     expected="SECTOR0: 4d 54 46 53"
-    # catfile's "CAT:<contents>" can be interleaved with A/B from the other
-    # tasks under preemption, so check each piece separately rather than as
-    # a single substring.
+    # The shell prompt + catfile output + A/B get interleaved under
+    # preemption, so check each piece separately rather than as a
+    # single substring.
     fs_has_a=$(echo "$fs_out" | grep -c "A")
     fs_has_b=$(echo "$fs_out" | grep -c "B")
     fs_has_cat=$(echo "$fs_out" | grep -c "CAT:")
     fs_has_mtfs_msg=$(echo "$fs_out" | grep -c "hello, mtfs")
+    fs_has_sh=$(echo "$fs_out" | grep -c "SH: ready")
     case "$fs_out" in
         *"BLOCK: virtio-blk detected"*"$expected"*"MTFS: mounted"*"FILE:hello, mtfs"*"all tasks done"*)
             if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
-                && [ "$fs_has_cat" -gt 0 ] && [ "$fs_has_mtfs_msg" -gt 0 ]; then
-                report_pass "fs_virtio: mtfs mount + loader + preempt (hello/hello2/catfile)" "$elapsed"
+                && [ "$fs_has_cat" -gt 0 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
+                && [ "$fs_has_sh" -gt 0 ]; then
+                report_pass "fs_virtio: mtfs mount + sh sys_exec + preempt (hello/hello2/sh→catfile)" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "missing CAT:/A/B/mtfs contents, got: $(printf '%s' "$fs_out" | head -c 240)"
+                    "missing SH:/CAT:/A/B/mtfs contents, got: $(printf '%s' "$fs_out" | head -c 240)"
             fi
             ;;
         *)

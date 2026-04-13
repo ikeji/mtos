@@ -196,7 +196,11 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
         差し替え、`_switch_frame` 経由で mret で飛ぶ
       - `kernel/tasks/launcher/launcher.tc` が `/bin/catfile` を
         sys_exec するデモとして virt / pico2 実機の両方で動作確認
-- [ ] Step 6.4: `/bin/sh` 最小シェル (UART 1 行読み → sys_exec)
+- [x] Step 6.4: `/bin/sh` 最小シェル (UART 1 行読み → sys_exec)
+      virt slot 2 に登録。`fs_virtio` テストが `printf 'catfile\n' | qemu`
+      でコマンドをパイプ入力し、シェル経由の sys_exec → catfile 起動を
+      end-to-end で検証。pico2 はハードテストに stdin がないので launcher
+      を据え置き (build.sh が target 別にタスクリストを切り替える)。
 - [ ] Step 6.5 (オプション): sys_wait による親子同期
 
 ## フェーズ7: ネイティブコンパイラをOS上で動かす
