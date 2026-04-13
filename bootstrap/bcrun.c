@@ -61,7 +61,7 @@ typedef enum {
     OP_LOAD, OP_STORE,
     OP_CALL, OP_RETURN, OP_RETURN_VOID, OP_POP,
     OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
-    OP_AND, OP_OR,  OP_XOR, OP_SHL, OP_SHR,
+    OP_AND, OP_OR,  OP_XOR, OP_SHL, OP_SHR, OP_SHR_U,
     OP_EQ,  OP_NE,  OP_LT,  OP_LE,  OP_GT,  OP_GE,
     OP_NEG, OP_LNOT,
     OP_CAST,
@@ -400,6 +400,7 @@ static BcProg *bc_parse(FILE *in) {
         else if (!strcmp(op, "xor"))         { ins.op = OP_XOR; }
         else if (!strcmp(op, "shl"))         { ins.op = OP_SHL; }
         else if (!strcmp(op, "shr"))         { ins.op = OP_SHR; }
+        else if (!strcmp(op, "shr_u"))       { ins.op = OP_SHR_U; }
         else if (!strcmp(op, "eq"))          { ins.op = OP_EQ; }
         else if (!strcmp(op, "ne"))          { ins.op = OP_NE; }
         else if (!strcmp(op, "lt"))          { ins.op = OP_LT; }
@@ -736,6 +737,8 @@ static Value vm_exec(VM *vm, BcFunc *fn, Value *args, int nargs) {
         case OP_XOR:  { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival^b.ival)); break; }
         case OP_SHL:  { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival<<b.ival)); break; }
         case OP_SHR:  { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival>>b.ival)); break; }
+        case OP_SHR_U:{ Value b=vm_pop(vm),a=vm_pop(vm);
+                        vm_push(vm,val_int((int32_t)((uint32_t)a.ival>>(uint32_t)b.ival))); break; }
         case OP_EQ:   { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival==b.ival)); break; }
         case OP_NE:   { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival!=b.ival)); break; }
         case OP_LT:   { Value b=vm_pop(vm),a=vm_pop(vm); vm_push(vm,val_int(a.ival<b.ival));  break; }

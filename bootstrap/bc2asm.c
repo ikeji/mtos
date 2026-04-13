@@ -29,7 +29,7 @@ typedef enum {
     OP_LOAD, OP_STORE,
     OP_CALL, OP_RETURN, OP_RETURN_VOID, OP_POP,
     OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
-    OP_AND, OP_OR,  OP_XOR, OP_SHL, OP_SHR,
+    OP_AND, OP_OR,  OP_XOR, OP_SHL, OP_SHR, OP_SHR_U,
     OP_EQ,  OP_NE,  OP_LT,  OP_LE,  OP_GT,  OP_GE,
     OP_NEG, OP_LNOT,
     OP_CAST,
@@ -204,6 +204,7 @@ static BcProg *bc_parse(FILE *in) {
         else if(!strcmp(op,"xor"))       {ins.op=OP_XOR;}
         else if(!strcmp(op,"shl"))       {ins.op=OP_SHL;}
         else if(!strcmp(op,"shr"))       {ins.op=OP_SHR;}
+        else if(!strcmp(op,"shr_u"))     {ins.op=OP_SHR_U;}
         else if(!strcmp(op,"eq"))        {ins.op=OP_EQ;}
         else if(!strcmp(op,"ne"))        {ins.op=OP_NE;}
         else if(!strcmp(op,"lt"))        {ins.op=OP_LT;}
@@ -298,7 +299,7 @@ static int max_eval_depth(BcFunc *fn) {
         case OP_RETURN_VOID: case OP_JUMP:
             break;
         case OP_ADD: case OP_SUB: case OP_MUL: case OP_DIV: case OP_MOD:
-        case OP_AND: case OP_OR:  case OP_XOR: case OP_SHL: case OP_SHR:
+        case OP_AND: case OP_OR:  case OP_XOR: case OP_SHL: case OP_SHR: case OP_SHR_U:
         case OP_EQ:  case OP_NE:  case OP_LT:  case OP_LE:  case OP_GT: case OP_GE:
             depth--; break; /* pop 2, push 1 */
         case OP_NEG: case OP_LNOT: case OP_CAST:
@@ -468,6 +469,7 @@ static void emit_fn(BcFunc *fn) {
         case OP_XOR: pop_t1_t0(); E("    xor  t0, t0, t1\n"); push_t0(); break;
         case OP_SHL: pop_t1_t0(); E("    sll  t0, t0, t1\n"); push_t0(); break;
         case OP_SHR: pop_t1_t0(); E("    sra  t0, t0, t1\n"); push_t0(); break;
+        case OP_SHR_U: pop_t1_t0(); E("    srl  t0, t0, t1\n"); push_t0(); break;
 
         /* --- comparisons (result: 1 or 0) --- */
         case OP_EQ:

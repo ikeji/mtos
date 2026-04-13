@@ -17261,18 +17261,20 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     ret
     # end of cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
 
-    .globl cg_binop_inst__U8Array__i32__i32__StringBuffer
-    .type  cg_binop_inst__U8Array__i32__i32__StringBuffer, @function
-cg_binop_inst__U8Array__i32__i32__StringBuffer:
-    # prologue: frame_size=48, params=4, locals=0, eval_depth=5
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
+    .globl cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32
+    .type  cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32, @function
+cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
+    # prologue: frame_size=64, params=6, locals=0, eval_depth=6
+    addi sp, sp, -64
+    sw   ra, 60(sp)
+    sw   s0, 56(sp)
+    addi s0, sp, 64
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
     sw   a3, -24(s0)
+    sw   a4, -28(s0)
+    sw   a5, -32(s0)
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17322,7 +17324,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc31
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc31
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -17381,7 +17383,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc31:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc31:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17405,7 +17407,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc54
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc54
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -17464,7 +17466,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc54:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc54:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17488,7 +17490,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc77
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc77
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -17547,7 +17549,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc77:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc77:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17571,7 +17573,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc100
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc100
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -17630,7 +17632,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc100:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc100:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17654,7 +17656,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc123
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc123
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -17713,7 +17715,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc123:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc123:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17737,7 +17739,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc146
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc146
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -17796,7 +17798,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc146:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc146:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17820,7 +17822,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc165
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc165
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -17866,7 +17868,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc165:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc165:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17890,7 +17892,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc188
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc188
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -17949,7 +17951,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc188:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc188:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17973,7 +17975,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc207
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc207
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18019,7 +18021,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc207:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc207:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18043,7 +18045,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc226
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc226
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18089,7 +18091,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc226:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc226:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18117,7 +18119,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc250
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc250
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18176,7 +18178,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc250:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc250:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18204,7 +18206,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc274
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc296
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18245,6 +18247,91 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc281
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U8Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc281
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc282
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc281:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc282:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc291
+0:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 95
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 117
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call emit_char__StringBuffer__u8
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc291:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18263,7 +18350,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc274:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc296:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18291,7 +18378,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc294
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc316
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18337,7 +18424,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc294:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc316:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18365,7 +18452,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc314
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc336
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18411,7 +18498,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc314:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc336:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18439,7 +18526,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc334
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc356
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18485,7 +18572,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc334:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc356:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18513,7 +18600,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc354
+    j    .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc376
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -18559,7 +18646,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer_pc354:
+  .L_cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32_pc376:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18583,7 +18670,7 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_binop_inst__U8Array__i32__i32__StringBuffer
+    # end of cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32
 
     .globl cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
     .type  cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32, @function
@@ -20465,7 +20552,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1281
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1287
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -23021,12 +23108,38 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 12(sp)
-    lw   a1, 8(sp)
-    lw   a2, 4(sp)
-    lw   a3, 0(sp)
-    call cg_binop_inst__U8Array__i32__i32__StringBuffer
-    addi sp, sp, 16
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_tass__I32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_tasl__I32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 20(sp)
+    lw   a1, 16(sp)
+    lw   a2, 12(sp)
+    lw   a3, 8(sp)
+    lw   a4, 4(sp)
+    lw   a5, 0(sp)
+    call cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32
+    addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -23035,7 +23148,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1281:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1287:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23053,7 +23166,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1549
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1555
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -23175,7 +23288,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1319
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1325
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -23183,7 +23296,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1319:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1325:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23211,7 +23324,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1328
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1334
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -23219,7 +23332,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1328:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1334:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23236,7 +23349,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1460
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1466
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23263,7 +23376,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1348
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1354
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23299,21 +23412,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1348
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1354
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1349
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1348:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1355
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1354:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1349:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1355:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1360
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1366
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23349,21 +23462,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1360
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1366
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1361
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1360:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1367
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1366:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1361:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1367:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1364
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1370
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -23371,7 +23484,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1364:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1370:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23397,7 +23510,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1380
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1386
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23433,21 +23546,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1380
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1386
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1381
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1380:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1387
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1386:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1381:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1387:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1392
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1398
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23483,21 +23596,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1392
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1398
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1393
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1392:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1399
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1398:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1393:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1399:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1396
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1402
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -23505,7 +23618,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1396:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1402:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23531,7 +23644,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1412
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1418
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23567,21 +23680,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1412
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1418
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1413
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1412:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1419
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1418:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1413:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1419:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1424
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1430
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23617,21 +23730,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1424
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1430
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1425
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1424:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1431
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1430:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1425:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1431:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1428
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1434
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -23639,7 +23752,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1428:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1434:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23665,7 +23778,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1444
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1450
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23701,21 +23814,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1444
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1450
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1445
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1444:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1451
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1450:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1445:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1451:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1456
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1462
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23751,21 +23864,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1456
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1462
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1457
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1456:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1463
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1462:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1457:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1463:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1460
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1466
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -23773,7 +23886,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1460:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1466:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -23790,7 +23903,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1508
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1514
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23817,7 +23930,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1480
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1486
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23853,21 +23966,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1480
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1486
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1481
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1480:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1487
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1486:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1481:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1487:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1492
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1498
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23903,21 +24016,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1492
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1498
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1493
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1492:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1499
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1498:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1493:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1499:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1504
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1510
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -23953,21 +24066,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1504
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1510
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1505
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1504:
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1511
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1510:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1505:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1511:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1508
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1514
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -23975,14 +24088,14 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1508:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1514:
     lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1548
+    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1554
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -24109,13 +24222,13 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1548:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1554:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1549:
+  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1555:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)

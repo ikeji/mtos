@@ -149,11 +149,7 @@ export fn block_init() -> i32 {
     if qmax == 0u32 { return -1; }
     mmio_w(REG_QUEUE_NUM, QUEUE_SIZE);
     mmio_w(REG_QUEUE_ALIGN, QUEUE_ALIGN);
-    // Compute PFN = g_mem_base / 4096 without triggering a sign-extending
-    // shift in current gen2 codegen. Mask after the shift keeps only the
-    // low 20 bits which is the real page number in 32-bit phys space.
-    var pfn: u32 = (g_mem_base >> 12u32) & 0x000FFFFFu32;
-    mmio_w(REG_QUEUE_PFN, pfn);
+    mmio_w(REG_QUEUE_PFN, g_mem_base >> 12u32);
 
     // DRIVER_OK
     mmio_w(REG_STATUS, STATUS_ACK | STATUS_DRIVER | STATUS_FEATURES_OK | STATUS_DRIVER_OK);

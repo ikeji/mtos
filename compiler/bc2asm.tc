@@ -34,6 +34,7 @@ var OP_CAST: i32 = 27;
 var OP_JUMP: i32 = 28;
 var OP_JUMP_IF: i32 = 29;
 var OP_JUMP_IFNOT: i32 = 30;
+var OP_SHR_U: i32 = 31;
 
 // ===== Global state =====
 var g_in_pos: i32 = 0;
@@ -326,7 +327,10 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
         if a=='j'&&b=='u'&&c=='m'&&d=='p' { return OP_JUMP; }
         if a=='c'&&b=='a'&&c=='l'&&d=='l'   { return OP_CALL; }
     }
-    if sl==5 { if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; } }
+    if sl==5 {
+        if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; }
+        if a=='s'&&b=='h'&&c=='r'&&d=='_'&&e=='u' { return OP_SHR_U; }
+    }
     if sl==6 { if a=='r'&&b=='e'&&c=='t' { return OP_RETURN; } }
     if sl==7 {
         if a=='j'&&b=='u'&&c=='m'&&d=='p'&&e=='_' {
@@ -663,6 +667,7 @@ fn max_eval_depth(fns: I32Array, instrs: I32Array, fi: i32) -> i32 {
             depth = depth - 1;
         }
         if op >= OP_ADD && op <= OP_GE { depth = depth - 1; }
+        if op == OP_SHR_U { depth = depth - 1; }
         if op == OP_CALL {
             var nargs: i32 = ins_ival(instrs, ibase, i);
             depth = depth - (nargs - 1);
@@ -901,6 +906,10 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
             asm_push_t0(ob); }
         if op==OP_SHR { asm_pop_t1_t0(ob);
             e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, ' ');emit_char(ob, ' ');
+            eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
+            asm_push_t0(ob); }
+        if op==OP_SHR_U { asm_pop_t1_t0(ob);
+            e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');
             eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);
             asm_push_t0(ob); }
         // Comparisons

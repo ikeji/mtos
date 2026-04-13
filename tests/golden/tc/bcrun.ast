@@ -119,6 +119,10 @@
     (type i32)
     (int 30)
   )
+  (var_decl OP_SHR_U
+    (type i32)
+    (int 31)
+  )
   (var_decl HK_U8
     (type i32)
     (int 1)
@@ -1878,6 +1882,42 @@
             (block
               (return
                 (var OP_STORE)
+              )
+            )
+          )
+          (comment "if a=='s'&&b=='h'&&c=='r'&&d=='_'&&e=='u' { return OP_SHR_U; }")
+          (if
+            (binop &&
+              (binop &&
+                (binop &&
+                  (binop &&
+                    (binop ==
+                      (var a)
+                      (int:u8 115)
+                    )
+                    (binop ==
+                      (var b)
+                      (int:u8 104)
+                    )
+                  )
+                  (binop ==
+                    (var c)
+                    (int:u8 114)
+                  )
+                )
+                (binop ==
+                  (var d)
+                  (int:u8 95)
+                )
+              )
+              (binop ==
+                (var e)
+                (int:u8 117)
+              )
+            )
+            (block
+              (return
+                (var OP_SHR_U)
               )
             )
           )
@@ -8368,6 +8408,74 @@
                         (var stk_i)
                         (var stk_t)
                         (var r2)
+                        (var TAG_INT)
+                      )
+                    )
+                  )
+                  (comment "if op == OP_SHR_U {")
+                  (if
+                    (binop ==
+                      (var op)
+                      (var OP_SHR_U)
+                    )
+                    (block
+                      (comment "stk_pop(stk_i,stk_t); var b3: i32=g_pop_ival;")
+                      (call_stmt stk_pop
+                        (var stk_i)
+                        (var stk_t)
+                      )
+                      (var_decl b3
+                        (type i32)
+                        (var g_pop_ival)
+                      )
+                      (comment "stk_pop(stk_i,stk_t); var a3: i32=g_pop_ival;")
+                      (call_stmt stk_pop
+                        (var stk_i)
+                        (var stk_t)
+                      )
+                      (var_decl a3
+                        (type i32)
+                        (var g_pop_ival)
+                      )
+                      (comment "var r3: i32 = a3;")
+                      (var_decl r3
+                        (type i32)
+                        (var a3)
+                      )
+                      (comment "if b3 >= 1 {")
+                      (if
+                        (binop >=
+                          (var b3)
+                          (int 1)
+                        )
+                        (block
+                          (comment "r3 = (r3 >> 1) & 0x7FFFFFFF;")
+                          (assign r3
+                            (binop &
+                              (binop >>
+                                (var r3)
+                                (int 1)
+                              )
+                              (int 2147483647)
+                            )
+                          )
+                          (comment "r3 = r3 >> (b3 - 1);")
+                          (assign r3
+                            (binop >>
+                              (var r3)
+                              (binop -
+                                (var b3)
+                                (int 1)
+                              )
+                            )
+                          )
+                        )
+                      )
+                      (comment "stk_push(stk_i,stk_t,r3,TAG_INT);")
+                      (call_stmt stk_push
+                        (var stk_i)
+                        (var stk_t)
+                        (var r3)
                         (var TAG_INT)
                       )
                     )

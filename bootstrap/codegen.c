@@ -200,7 +200,13 @@ static void cg_expr(CG *cg, AstNode *node) {
         else if (strcmp(op, "|")  == 0) fprintf(cg->out, "  or\n");
         else if (strcmp(op, "^")  == 0) fprintf(cg->out, "  xor\n");
         else if (strcmp(op, "<<") == 0) fprintf(cg->out, "  shl\n");
-        else if (strcmp(op, ">>") == 0) fprintf(cg->out, "  shr\n");
+        else if (strcmp(op, ">>") == 0) {
+            /* Unsigned LHS → logical shift (shr_u); otherwise arithmetic (shr).
+               The binop's type annotation matches the LHS type for shift. */
+            const char *ty = node->type_annot;
+            if (ty && ty[0] == 'u') fprintf(cg->out, "  shr_u\n");
+            else                    fprintf(cg->out, "  shr\n");
+        }
         else if (strcmp(op, "==") == 0) fprintf(cg->out, "  eq\n");
         else if (strcmp(op, "!=") == 0) fprintf(cg->out, "  ne\n");
         else if (strcmp(op, "<")  == 0) fprintf(cg->out, "  lt\n");

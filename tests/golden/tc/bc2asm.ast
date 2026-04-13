@@ -120,6 +120,10 @@
     (type i32)
     (int 30)
   )
+  (var_decl OP_SHR_U
+    (type i32)
+    (int 31)
+  )
   (var_decl g_in_pos
     (type i32)
     (int 0)
@@ -3118,13 +3122,14 @@
           )
         )
       )
-      (comment "if sl==5 { if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; } }")
+      (comment "if sl==5 {")
       (if
         (binop ==
           (var sl)
           (int 5)
         )
         (block
+          (comment "if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; }")
           (if
             (binop &&
               (binop &&
@@ -3157,6 +3162,42 @@
             (block
               (return
                 (var OP_STORE)
+              )
+            )
+          )
+          (comment "if a=='s'&&b=='h'&&c=='r'&&d=='_'&&e=='u' { return OP_SHR_U; }")
+          (if
+            (binop &&
+              (binop &&
+                (binop &&
+                  (binop &&
+                    (binop ==
+                      (var a)
+                      (int:u8 115)
+                    )
+                    (binop ==
+                      (var b)
+                      (int:u8 104)
+                    )
+                  )
+                  (binop ==
+                    (var c)
+                    (int:u8 114)
+                  )
+                )
+                (binop ==
+                  (var d)
+                  (int:u8 95)
+                )
+              )
+              (binop ==
+                (var e)
+                (int:u8 117)
+              )
+            )
+            (block
+              (return
+                (var OP_SHR_U)
               )
             )
           )
@@ -6606,6 +6647,21 @@
               )
             )
           )
+          (comment "if op == OP_SHR_U { depth = depth - 1; }")
+          (if
+            (binop ==
+              (var op)
+              (var OP_SHR_U)
+            )
+            (block
+              (assign depth
+                (binop -
+                  (var depth)
+                  (int 1)
+                )
+              )
+            )
+          )
           (comment "if op == OP_CALL {")
           (if
             (binop ==
@@ -8904,6 +8960,65 @@
               (call_stmt emit_char
                 (var ob)
                 (int:u8 97)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 32)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 32)
+              )
+              (comment "eregt0(ob);eregt0(ob);emit_char(ob, 't');emit_char(ob, '1');emit_char(ob, 10u8);")
+              (call_stmt eregt0
+                (var ob)
+              )
+              (call_stmt eregt0
+                (var ob)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 116)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 49)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 10)
+              )
+              (comment "asm_push_t0(ob); }")
+              (call_stmt asm_push_t0
+                (var ob)
+              )
+            )
+          )
+          (comment "if op==OP_SHR_U { asm_pop_t1_t0(ob);")
+          (if
+            (binop ==
+              (var op)
+              (var OP_SHR_U)
+            )
+            (block
+              (call_stmt asm_pop_t1_t0
+                (var ob)
+              )
+              (comment "e4(ob);emit_char(ob, 's');emit_char(ob, 'r');emit_char(ob, 'l');emit_char(ob, ' ');emit_char(ob, ' ');")
+              (call_stmt e4
+                (var ob)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 115)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 114)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 108)
               )
               (call_stmt emit_char
                 (var ob)

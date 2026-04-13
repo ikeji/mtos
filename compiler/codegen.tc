@@ -649,7 +649,8 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: StringBuffer, 
     return;
 }
 
-fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer) -> void {
+fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer,
+                 tass: i32, tasl: i32) -> void {
     emit_char(ob, ' '); emit_char(ob, ' ');
     // Map operator to instruction
     if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add
@@ -663,7 +664,16 @@ fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer) -> void {
     if sv1(strtab,ss,sl, '<') { emit_char(ob, 'l');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // lt
     if sv1(strtab,ss,sl, '>') { emit_char(ob, 'g');emit_char(ob, 't');emit_char(ob, 10u8); return; }  // gt
     if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl
-    if sv2(strtab,ss,sl, '>','>') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // shr
+    if sv2(strtab,ss,sl, '>','>') {
+        // Unsigned LHS → logical shift (shr_u); otherwise arithmetic (shr).
+        // The binop's type annotation matches the LHS type for shifts.
+        emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');
+        if tasl > 0 && get(strtab, tass) == 'u' {
+            emit_char(ob, '_');emit_char(ob, 'u');
+        }
+        emit_char(ob, 10u8);
+        return;
+    }  // shr / shr_u
     if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq
     if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne
     if sv2(strtab,ss,sl, '<','=') { emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // le
@@ -826,7 +836,7 @@ fn cg_expr(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: StringBuffer, 
         // Regular binop
         cg_expr(nodes, strtab, slits, ob, child0);
         cg_expr(nodes, strtab, slits, ob, child1);
-        cg_binop_inst(strtab, ss, sl, ob);
+        cg_binop_inst(strtab, ss, sl, ob, n_tass(nodes, n), n_tasl(nodes, n));
         return;
     }
 

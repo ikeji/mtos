@@ -5367,6 +5367,12 @@
       (param ob
         (type StringBuffer)
       )
+      (param tass
+        (type i32)
+      )
+      (param tasl
+        (type i32)
+      )
     )
     (ret
       (type void)
@@ -5678,7 +5684,7 @@
           (return)
         )
       )
-      (comment "if sv2(strtab,ss,sl, '>','>') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // shr")
+      (comment "if sv2(strtab,ss,sl, '>','>') {")
       (if
         (call sv2
           (var strtab)
@@ -5688,6 +5694,7 @@
           (int:u8 62)
         )
         (block
+          (comment "emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');")
           (call_stmt emit_char
             (var ob)
             (int:u8 115)
@@ -5700,10 +5707,39 @@
             (var ob)
             (int:u8 114)
           )
+          (comment "if tasl > 0 && get(strtab, tass) == 'u' {")
+          (if
+            (binop &&
+              (binop >
+                (var tasl)
+                (int 0)
+              )
+              (binop ==
+                (call get
+                  (var strtab)
+                  (var tass)
+                )
+                (int:u8 117)
+              )
+            )
+            (block
+              (comment "emit_char(ob, '_');emit_char(ob, 'u');")
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 95)
+              )
+              (call_stmt emit_char
+                (var ob)
+                (int:u8 117)
+              )
+            )
+          )
+          (comment "emit_char(ob, 10u8);")
           (call_stmt emit_char
             (var ob)
             (int:u8 10)
           )
+          (comment "return;")
           (return)
         )
       )
@@ -7372,12 +7408,20 @@
             (var ob)
             (var child1)
           )
-          (comment "cg_binop_inst(strtab, ss, sl, ob);")
+          (comment "cg_binop_inst(strtab, ss, sl, ob, n_tass(nodes, n), n_tasl(nodes, n));")
           (call_stmt cg_binop_inst
             (var strtab)
             (var ss)
             (var sl)
             (var ob)
+            (call n_tass
+              (var nodes)
+              (var n)
+            )
+            (call n_tasl
+              (var nodes)
+              (var n)
+            )
           )
           (comment "return;")
           (return)
