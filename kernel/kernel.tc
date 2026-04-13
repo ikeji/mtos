@@ -26,11 +26,52 @@ fn rearm_timer() -> void {
     return;
 }
 
+// Hex output helpers (used to dump sector 0 during bring-up)
+fn kputchar(c: u8) -> void {
+    var b: U8Array = U8Array(1);
+    set(b, 0, c);
+    sys_write(1, b, 1);
+    delete(b);
+    return;
+}
+
+fn kputs_hex8(x: u8) -> void {
+    var hi: i32 = ((x as i32) >> 4) & 15;
+    var lo: i32 = (x as i32) & 15;
+    var c1: u8 = 0u8;
+    var c2: u8 = 0u8;
+    if hi < 10 { c1 = (hi + 48) as u8; } else { c1 = (hi - 10 + 97) as u8; }
+    if lo < 10 { c2 = (lo + 48) as u8; } else { c2 = (lo - 10 + 97) as u8; }
+    kputchar(c1);
+    kputchar(c2);
+    return;
+}
+
+fn dump_sector0() -> void {
+    var buf: U8Array = U8Array(512);
+    var n: i32 = block_read(0u32, buf);
+    if n == 512 {
+        kputs("SECTOR0:");
+        var i: i32 = 0;
+        while i < 16 {
+            kputchar(' ');
+            kputs_hex8(get(buf, i));
+            i = i + 1;
+        }
+        kputs("\n");
+    } else {
+        kputs("SECTOR0: read failed\n");
+    }
+    delete(buf);
+    return;
+}
+
 fn main() -> i32 {
     kputs("KERN: starting\n");
 
     if block_init() == 0 {
         kputs("BLOCK: virtio-blk detected\n");
+        dump_sector0();
     } else {
         kputs("BLOCK: no virtio-blk\n");
     }

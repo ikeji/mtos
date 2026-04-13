@@ -1,38 +1,93 @@
 // kernel/block_virtio.tc — virtio-mmio block device driver (qemu virt)
 //
-// Scans the 8 virtio-mmio slots at 0x10001000..0x10008000 for a block
-// device (DeviceID=2) and records its base address + version.
-// Read/write are stubs for step 2; they will be filled in later steps.
+// Targets legacy virtio-mmio (version 1) since that's what qemu-system-riscv32
+// -M virt exposes by default. Uses a single queue (size 8) with polling.
 
-// virtio-mmio layout (qemu virt)
+// MMIO base and scan
 var VIRTIO_BASE: u32   = 0x10001000u32;
 var VIRTIO_STRIDE: u32 = 0x1000u32;
 var VIRTIO_SLOTS: i32  = 8;
-
-// Register offsets (from virtio-v1.1 MMIO spec)
-var REG_MAGIC:     u32 = 0x000u32;
-var REG_VERSION:   u32 = 0x004u32;
-var REG_DEVICE_ID: u32 = 0x008u32;
-var REG_VENDOR_ID: u32 = 0x00Cu32;
-
-// Constants
-var VIRTIO_MAGIC: u32    = 0x74726976u32;  // "virt" in little-endian
+var VIRTIO_MAGIC: u32  = 0x74726976u32;  // "virt" in LE
 var DEVICE_ID_BLOCK: u32 = 2u32;
 
-// Discovered device state
+// Register offsets (legacy virtio-mmio, virtio 1.1 spec §4.2.4)
+var REG_MAGIC:         u32 = 0x000u32;
+var REG_VERSION:       u32 = 0x004u32;
+var REG_DEVICE_ID:     u32 = 0x008u32;
+var REG_HOST_FEAT:     u32 = 0x010u32;
+var REG_HOST_FEAT_SEL: u32 = 0x014u32;
+var REG_GUEST_FEAT:    u32 = 0x020u32;
+var REG_GUEST_FEAT_SEL:u32 = 0x024u32;
+var REG_GUEST_PGSIZE:  u32 = 0x028u32;
+var REG_QUEUE_SEL:     u32 = 0x030u32;
+var REG_QUEUE_NUM_MAX: u32 = 0x034u32;
+var REG_QUEUE_NUM:     u32 = 0x038u32;
+var REG_QUEUE_ALIGN:   u32 = 0x03Cu32;
+var REG_QUEUE_PFN:     u32 = 0x040u32;
+var REG_QUEUE_NOTIFY:  u32 = 0x050u32;
+var REG_INT_STATUS:    u32 = 0x060u32;
+var REG_INT_ACK:       u32 = 0x064u32;
+var REG_STATUS:        u32 = 0x070u32;
+var REG_CONFIG:        u32 = 0x100u32;
+
+// Device status bits
+var STATUS_ACK:         u32 = 1u32;
+var STATUS_DRIVER:      u32 = 2u32;
+var STATUS_DRIVER_OK:   u32 = 4u32;
+var STATUS_FEATURES_OK: u32 = 8u32;
+
+// virtio-blk request types
+var VBLK_T_IN: u32 = 0u32;  // read
+
+// Descriptor flags
+var DESC_F_NEXT:  u16 = 1u16;
+var DESC_F_WRITE: u16 = 2u16;
+
+// Queue sizing / layout
+//   queue_size = 8
+//   DESC:   [0 .. 128)
+//   AVAIL:  [128 .. 150)   flags(2) + idx(2) + ring[8](16) + used_event(2)
+//   (padding up to QueueAlign = 4096)
+//   USED:   [4096 .. 4166) flags(2) + idx(2) + ring[8](64) + avail_event(2)
+//   HDR:    [4168 .. 4184) virtio_blk_req header
+//   DATA:   [4184 .. 4696) 512 B data
+//   STATUS: [4696 .. 4697) 1 B status
+//
+// We allocate a 12 KB buffer so the 4 KB alignment can always be met.
+var QUEUE_SIZE: u32 = 8u32;
+var QUEUE_ALIGN: u32 = 4096u32;
+var OFF_DESC:   u32 = 0u32;
+var OFF_AVAIL:  u32 = 128u32;
+var OFF_USED:   u32 = 4096u32;
+var OFF_HDR:    u32 = 4168u32;
+var OFF_DATA:   u32 = 4184u32;
+var OFF_STATUS: u32 = 4696u32;
+var MEM_RESERVE: i32 = 12288;  // 3 * 4096, guarantees aligned slot
+
+// Discovered / initialized state
 var g_vblk_base:    u32 = 0u32;
 var g_vblk_version: i32 = 0;
+var g_vblk_ready:   i32 = 0;
 
-export fn block_init() -> i32 {
-    g_vblk_base = 0u32;
-    g_vblk_version = 0;
+// Queue memory (retained across calls)
+var g_mem_buf:  U8Array = 0 as U8Array;
+var g_mem_base: u32 = 0u32;   // 4 KB-aligned
+
+fn mmio_r(off: u32) -> u32 {
+    return peek32(g_vblk_base + off);
+}
+
+fn mmio_w(off: u32, val: u32) -> void {
+    poke32(g_vblk_base + off, val);
+    return;
+}
+
+fn scan_for_block() -> i32 {
     var i: i32 = 0;
     while i < VIRTIO_SLOTS {
         var base: u32 = VIRTIO_BASE + (i as u32) * VIRTIO_STRIDE;
-        var magic: u32 = peek32(base + REG_MAGIC);
-        if magic == VIRTIO_MAGIC {
-            var dev_id: u32 = peek32(base + REG_DEVICE_ID);
-            if dev_id == DEVICE_ID_BLOCK {
+        if peek32(base + REG_MAGIC) == VIRTIO_MAGIC {
+            if peek32(base + REG_DEVICE_ID) == DEVICE_ID_BLOCK {
                 g_vblk_base = base;
                 g_vblk_version = peek32(base + REG_VERSION) as i32;
                 return 0;
@@ -43,23 +98,156 @@ export fn block_init() -> i32 {
     return -1;
 }
 
+fn alloc_queue_mem() -> void {
+    g_mem_buf = U8Array(MEM_RESERVE);
+    var raw: u32 = (g_mem_buf as u32) + 4u32;
+    g_mem_base = (raw + 0xFFFu32) & 0xFFFFF000u32;
+    // Zero the queue region (just DESC/AVAIL/USED area)
+    var p: u32 = g_mem_base;
+    var end: u32 = g_mem_base + OFF_STATUS + 1u32;
+    while p < end {
+        poke32(p, 0u32);
+        p = p + 4u32;
+    }
+    return;
+}
+
+export fn block_init() -> i32 {
+    g_vblk_base = 0u32;
+    g_vblk_version = 0;
+    g_vblk_ready = 0;
+
+    if scan_for_block() != 0 { return -1; }
+
+    // Legacy transport only (version 1)
+    if g_vblk_version != 1 { return -1; }
+
+    alloc_queue_mem();
+
+    // Reset
+    mmio_w(REG_STATUS, 0u32);
+
+    // ACKNOWLEDGE + DRIVER
+    mmio_w(REG_STATUS, STATUS_ACK);
+    mmio_w(REG_STATUS, STATUS_ACK | STATUS_DRIVER);
+
+    // Feature negotiation: accept nothing special.
+    // Legacy devices still accept FEATURES_OK in the transitional init path.
+    mmio_w(REG_HOST_FEAT_SEL, 0u32);
+    var feat0: u32 = mmio_r(REG_HOST_FEAT);
+    mmio_w(REG_GUEST_FEAT_SEL, 0u32);
+    mmio_w(REG_GUEST_FEAT, feat0);
+
+    mmio_w(REG_STATUS, STATUS_ACK | STATUS_DRIVER | STATUS_FEATURES_OK);
+
+    // Legacy guest page size
+    mmio_w(REG_GUEST_PGSIZE, 4096u32);
+
+    // Queue 0 setup
+    mmio_w(REG_QUEUE_SEL, 0u32);
+    var qmax: u32 = mmio_r(REG_QUEUE_NUM_MAX);
+    if qmax == 0u32 { return -1; }
+    mmio_w(REG_QUEUE_NUM, QUEUE_SIZE);
+    mmio_w(REG_QUEUE_ALIGN, QUEUE_ALIGN);
+    // Compute PFN = g_mem_base / 4096 without triggering a sign-extending
+    // shift in current gen2 codegen. Mask after the shift keeps only the
+    // low 20 bits which is the real page number in 32-bit phys space.
+    var pfn: u32 = (g_mem_base >> 12u32) & 0x000FFFFFu32;
+    mmio_w(REG_QUEUE_PFN, pfn);
+
+    // DRIVER_OK
+    mmio_w(REG_STATUS, STATUS_ACK | STATUS_DRIVER | STATUS_FEATURES_OK | STATUS_DRIVER_OK);
+
+    g_vblk_ready = 1;
+    return 0;
+}
+
 export fn block_sector_size() -> i32 {
     return 512;
 }
 
 export fn block_count() -> u32 {
-    return 0u32;  // TODO: read from virtio-blk config space in step 3
+    if g_vblk_ready == 0 { return 0u32; }
+    // virtio-blk config: u64 capacity (sectors of 512 B) at offset 0
+    return peek32(g_vblk_base + REG_CONFIG);
 }
 
 export fn block_read(sector: u32, buf: U8Array) -> i32 {
-    return -1;  // TODO: step 3 — queue init + read
+    if g_vblk_ready == 0 { return -1; }
+
+    var desc:   u32 = g_mem_base + OFF_DESC;
+    var avail:  u32 = g_mem_base + OFF_AVAIL;
+    var used:   u32 = g_mem_base + OFF_USED;
+    var hdr:    u32 = g_mem_base + OFF_HDR;
+    var data:   u32 = g_mem_base + OFF_DATA;
+    var status: u32 = g_mem_base + OFF_STATUS;
+
+    // virtio_blk_req header: type(u32) + reserved(u32) + sector(u64)
+    poke32(hdr + 0u32,  VBLK_T_IN);
+    poke32(hdr + 4u32,  0u32);
+    poke32(hdr + 8u32,  sector);
+    poke32(hdr + 12u32, 0u32);
+
+    // Distinctive value so we can tell the device set it
+    poke8(status, 0xFFu8);
+
+    // Descriptor 0: header (device-readable)
+    poke32(desc + 0u32,  hdr);
+    poke32(desc + 4u32,  0u32);
+    poke32(desc + 8u32,  16u32);
+    poke16(desc + 12u32, DESC_F_NEXT);
+    poke16(desc + 14u32, 1u16);
+
+    // Descriptor 1: data buffer (device-writable for read)
+    poke32(desc + 16u32, data);
+    poke32(desc + 20u32, 0u32);
+    poke32(desc + 24u32, 512u32);
+    poke16(desc + 28u32, DESC_F_NEXT | DESC_F_WRITE);
+    poke16(desc + 30u32, 2u16);
+
+    // Descriptor 2: status byte (device-writable)
+    poke32(desc + 32u32, status);
+    poke32(desc + 36u32, 0u32);
+    poke32(desc + 40u32, 1u32);
+    poke16(desc + 44u32, DESC_F_WRITE);
+    poke16(desc + 46u32, 0u16);
+
+    // Remember used.idx before submitting
+    var last_used: u32 = peek16(used + 2u32) as u32;
+
+    // Submit: avail.ring[avail.idx % 8] = 0 (desc head), avail.idx++
+    var avail_idx: u32 = peek16(avail + 2u32) as u32;
+    var slot_off: u32 = 4u32 + (avail_idx & 7u32) * 2u32;
+    poke16(avail + slot_off, 0u16);
+    poke16(avail + 2u32, (avail_idx + 1u32) as u16);
+
+    // Notify device (queue index 0)
+    mmio_w(REG_QUEUE_NOTIFY, 0u32);
+
+    // Poll for completion
+    var timeout: i32 = 10000000;
+    while timeout > 0 {
+        var new_used: u32 = peek16(used + 2u32) as u32;
+        if new_used != last_used {
+            var s: u8 = peek8(status);
+            if s != 0u8 { return -1; }
+            // Copy the 512 B payload into the caller's buffer
+            var i: i32 = 0;
+            while i < 512 {
+                set(buf, i, peek8(data + (i as u32)));
+                i = i + 1;
+            }
+            return 512;
+        }
+        timeout = timeout - 1;
+    }
+    return -1;  // timeout
 }
 
 export fn block_write(sector: u32, buf: U8Array) -> i32 {
     return -1;  // read-only for now
 }
 
-// Debug accessors (used by kernel main to confirm detection)
 export fn virtio_blk_base() -> u32 {
     return g_vblk_base;
 }
