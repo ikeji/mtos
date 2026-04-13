@@ -13,11 +13,13 @@ ROOT_DIR="$(dirname "$KERN_DIR")"
 
 TARGET=""
 OUTFILE=""
+DISK_OUT=""
 while [ $# -gt 0 ]; do
     case "$1" in
-        --target) TARGET="$2"; shift 2 ;;
-        -o) OUTFILE="$2"; shift 2 ;;
-        *) shift ;;
+        --target)   TARGET="$2"; shift 2 ;;
+        -o)         OUTFILE="$2"; shift 2 ;;
+        --disk-out) DISK_OUT="$2"; shift 2 ;;
+        *)          shift ;;
     esac
 done
 
@@ -71,28 +73,40 @@ for task in hello hello2 catfile; do
     fi
 done
 
-# --- Step 2: Convert tasks to .s ---
-"$KERN_DIR/bin2s.sh" "$TMP/hello.bin" _task_hello > "$TMP/hello_task.s"
-"$KERN_DIR/bin2s.sh" "$TMP/hello2.bin" _task_hello2 > "$TMP/hello2_task.s"
-"$KERN_DIR/bin2s.sh" "$TMP/catfile.bin" _task_catfile > "$TMP/catfile_task.s"
+# --- Step 2: Build mtfs disk image containing the task binaries ---
+# Lay out a temporary root directory with /bin/<task> + /hello.txt and
+# run mkfs.py against it. The resulting mtfs image is either supplied to
+# qemu via -drive (virt) or embedded in .rodata via bin2s (pico2). In
+# both cases the kernel reads task binaries at runtime through the VFS
+# layer — no more _task_*_addr() in .rodata.
+ROOT_DIR_TREE="$TMP/root"
+mkdir -p "$ROOT_DIR_TREE/bin"
+cp "$TMP/hello.bin"   "$ROOT_DIR_TREE/bin/hello"
+cp "$TMP/hello2.bin"  "$ROOT_DIR_TREE/bin/hello2"
+cp "$TMP/catfile.bin" "$ROOT_DIR_TREE/bin/catfile"
+printf 'hello, mtfs\n' > "$ROOT_DIR_TREE/hello.txt"
+python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 
-# --- Step 2b (pico2 only): build a default mtfs disk image and embed it
-# as _mtfs_image_* so block_flash.tc can read it via XIP. On virt the disk
-# is supplied by qemu's -drive and read through virtio-blk. The kernel .tc
-# file already picks the correct backend via its imports. ---
+# Optional: copy the mtfs image out for callers that need it (e.g.
+# tests/test_os.sh passes it to qemu via -drive).
+if [ -n "$DISK_OUT" ]; then
+    cp "$TMP/mtfs.img" "$DISK_OUT"
+fi
+
+# Pico 2 additionally embeds the image as _mtfs_image_* so block_flash.tc
+# can serve it directly from XIP flash.
 MTFS_S=""
 if [ "$TARGET" = "pico2" ]; then
-    printf 'hello, mtfs\n' > "$TMP/hello.txt"
-    python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$TMP/hello.txt" >&2
     "$KERN_DIR/bin2s.sh" "$TMP/mtfs.img" _mtfs_image > "$TMP/mtfs_image.s"
     MTFS_S="$TMP/mtfs_image.s"
 fi
 
 # --- Step 3: Build kernel ---
-# Concat platform.s + trap_common.s as the "crt0"
+# Concat platform.s + trap_common.s as the "crt0".
+# Task binaries no longer live in .rodata — they are read from the mtfs
+# image at runtime. On Pico 2 we still append the embedded image .s.
 cat "$PLATFORM_S" "$KERN_DIR/trap_common.s" > "$TMP/crt0.s"
-cat "$DATA_S" "$TMP/hello_task.s" "$TMP/hello2_task.s" "$TMP/catfile_task.s" \
-    ${MTFS_S:+"$MTFS_S"} > "$TMP/kern_data.s"
+cat "$DATA_S" ${MTFS_S:+"$MTFS_S"} > "$TMP/kern_data.s"
 
 echo "Building kernel: $TARGET" >&2
 CRT0="$TMP/crt0.s" \

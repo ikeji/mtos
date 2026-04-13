@@ -179,9 +179,12 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 - [ ] Step 6.1: 最小限の libc 相当 (`kernel/tasks/ulib/ulib.tc`、
       `u_puts` / `u_str_nul` / `u_strlen`)。hello/hello2/catfile の
       重複ヘルパを集約するリファクタ。
-- [ ] Step 6.2: ゲストバイナリを mtfs に格納 (`/bin/hello` 等)。
-      `tools/mkfs.py` を複数ファイル対応に拡張し、`bin2s` でタスクを
-      `.rodata` に焼く経路を廃止。
+- [x] Step 6.2: ゲストバイナリを mtfs に格納 (`/bin/hello` 等)。
+      `tools/mkfs.py` をディレクトリ指定に拡張 (1 階層のサブディレクトリ
+      対応)、`vfs_open` が `/bin/hello` のような多階層パスを解決、
+      `kernel/loader.tc` の `load_task` が VFS からタスクバイナリを読み
+      `make_task` でフレーム化。virt (fs_virtio テスト) / pico2 実機
+      (test_pico2.sh) 両方で動作確認済み。
 - [ ] Step 6.3: sys_exec + ローダ
       - `vfs_xip_addr` / `mtfs_xip_addr` 実装 (フェーズ5 で予約した
         インタフェース、Pico 2 は flash 上物理アドレス、virt は 0)

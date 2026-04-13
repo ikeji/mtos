@@ -6,14 +6,12 @@ import "kernel_common.tc";
 import "block_virtio.tc";
 import "mtfs.tc";
 import "vfs.tc";
+import "loader.tc";
 
 // Assembly-defined functions
 fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;
 fn sched_start(frame: u32) -> void;
-fn _task_hello_addr() -> u32;
-fn _task_hello2_addr() -> u32;
-fn _task_catfile_addr() -> u32;
 
 // CLINT MMIO (qemu virt)
 var MTIMECMP_LO: u32 = 0x02004000u32;
@@ -84,12 +82,6 @@ fn str_u8_nul(s: StringLiteral) -> U8Array {
 }
 
 fn cat_hello_txt() -> void {
-    if vfs_init() != 0 {
-        kputs("MTFS: mount failed\n");
-        return;
-    }
-    kputs("MTFS: mounted\n");
-
     var path: U8Array = str_u8_nul("/hello.txt");
     var fd: i32 = vfs_open(path as u32 + 4u32, 0);
     delete(path);
@@ -114,18 +106,25 @@ fn cat_hello_txt() -> void {
 fn main() -> i32 {
     kputs("KERN: starting\n");
 
-    if block_init() == 0 {
-        kputs("BLOCK: virtio-blk detected\n");
-        dump_sector0();
-        cat_hello_txt();
-    } else {
+    if block_init() != 0 {
         kputs("BLOCK: no virtio-blk\n");
+        return 1;
     }
+    kputs("BLOCK: virtio-blk detected\n");
+    dump_sector0();
+
+    if vfs_init() != 0 {
+        kputs("MTFS: mount failed\n");
+        return 1;
+    }
+    kputs("MTFS: mounted\n");
+
+    cat_hello_txt();
 
     sched_init(3);
-    sched_register(0, make_task(_task_hello_addr(), 65536, 65536));
-    sched_register(1, make_task(_task_hello2_addr(), 65536, 65536));
-    sched_register(2, make_task(_task_catfile_addr(), 65536, 65536));
+    sched_register(0, load_task("/bin/hello",   65536, 65536));
+    sched_register(1, load_task("/bin/hello2",  65536, 65536));
+    sched_register(2, load_task("/bin/catfile", 65536, 65536));
 
     rearm_timer();
     var mie: u32 = csr_read_mie();

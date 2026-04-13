@@ -70,13 +70,19 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
   block_virtio.tc     virtio-mmio (legacy v1) block デバイスドライバ (virt)
   block_flash.tc      XIP flash block デバイスドライバ (pico2、_mtfs_image_addr 経由)
   mtfs.tc             MyTinyFS read-only ドライバ (mount/lookup/open/read/close)
-  vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close, fd<3 は UART)
+  vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close/size,
+                      /bin/hello のような多階層パス対応、fd<3 は UART)
+  loader.tc           mtfs からタスクバイナリを読み込み make_task で
+                      フレーム化する起動時ローダ (load_task)
   trap_common.s       共通 asm: trap entry/exit, ecall, sched_start, kern_run_task
   platform_virt.s     virt 固有: _start, 16550 UART, _set_kern_gp via la
   platform_pico2.s    Pico 2 固有: IMAGE_DEF, XOSC, PL011, .data コピー, _set_kern_gp via li
   crt0_data.s         virt 用 BSS (大きい __arena)
   crt0_pico2_data.s   Pico 2 用 BSS (256KB __arena)
   build.sh            統一ビルド: --target virt|pico2 [-o output]
+                      [--disk-out path] (タスクバイナリを mtfs イメージに
+                      格納し、virt は --disk-out で取り出す、pico2 は
+                      bin2s で .rodata に埋める)
   bin2s.sh            raw バイナリ → .s データ変換 (PREFIX_addr 関数生成)
   run_pico2.sh        Pico 2 実機書き込み + UART キャプチャ (openocd 経由)
   tasks/              ゲストタスク (両プラットフォーム共通)
@@ -89,6 +95,8 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       カーネル側シンボルと衝突しない)
 tools/      ホスト側ツール
   mkfs.py             MyTinyFS (mtfs) ディスクイメージ生成 (Python)
+                      mkfs.py <output> <rootdir> でディレクトリを再帰的に
+                      取り込み、1 階層のサブディレクトリを dir inode 化する
 ```
 
 ## ビルド＆実行

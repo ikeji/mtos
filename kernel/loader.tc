@@ -1,0 +1,52 @@
+// kernel/loader.tc — load guest tasks from the filesystem
+//
+// Reads a task binary through the VFS layer into freshly allocated
+// RAM and returns a task frame ready to be registered with the
+// scheduler. Memory allocated for the task image is intentionally
+// leaked: the task runs until sys_exit, and we do not track binary
+// lifetimes yet.
+//
+// Step 6.3 will add an XIP fast path via vfs_xip_addr so the Pico 2
+// flash backend can skip the copy.
+
+import "vfs.tc";
+import "kernel_common.tc";
+
+// Copy a string literal into a NUL-terminated U8Array in kernel RAM.
+// Caller is responsible for delete().
+fn load_str_nul(s: StringLiteral) -> U8Array {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array((slen + 1) as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, slen, 0u8);
+    return buf;
+}
+
+// Load the given path from the VFS and build a task frame.
+// Returns 0 on any failure, otherwise a frame pointer ready for
+// sched_register.
+export fn load_task(path: StringLiteral, ram_size: i32, stack_size: i32) -> u32 {
+    var pbuf: U8Array = load_str_nul(path);
+    var fd: i32 = vfs_open(pbuf as u32 + 4u32, 0);
+    delete(pbuf);
+    if fd < 0 { return 0u32; }
+
+    var size: i32 = vfs_size(fd);
+    if size <= 0 {
+        vfs_close(fd);
+        return 0u32;
+    }
+
+    // The image is leaked on purpose: the task runs from this buffer
+    // until sys_exit, and we have no process teardown yet.
+    var img: U8Array = U8Array(size as u32);
+    var n: i32 = vfs_read(fd, img as u32 + 4u32, size);
+    vfs_close(fd);
+    if n != size { return 0u32; }
+
+    return make_task(img as u32 + 4u32, ram_size, stack_size);
+}

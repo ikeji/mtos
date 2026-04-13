@@ -80,27 +80,47 @@ fn alloc_vfs_fd(fs: i32, inner_fd: i32) -> i32 {
 // Open a file at the given path. `flags` is currently ignored — all
 // opens are read-only. Path is a null-terminated byte string in task
 // memory at path_addr (virt has ID mapping, so kernel can read it).
+// Path components are separated by '/'. A leading '/' is accepted and
+// skipped. Each component is looked up under the running parent inode,
+// so /bin/hello descends into the "bin" directory first.
 export fn vfs_open(path_addr: u32, flags: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
     var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
     if plen == 0 { return -1; }
 
-    // Skip a leading '/' to get the filename (root dir only for now).
-    var name_start: i32 = 0;
-    if peek8(path_addr) == '/' as u8 { name_start = 1; }
-    var name_len: i32 = plen - name_start;
-    if name_len <= 0 { return -1; }
-
-    // Copy the name into a U8Array so mtfs_lookup can do byte compares.
-    var name_buf: U8Array = U8Array(name_len as u32);
     var i: i32 = 0;
-    while i < name_len {
-        set(name_buf, i, peek8(path_addr + (name_start + i) as u32));
-        i = i + 1;
+    if peek8(path_addr) == '/' as u8 { i = 1; }
+
+    var cur_parent: u32 = 0u32;
+    var inode: i32 = -1;
+
+    while i < plen {
+        // Find the end of this path component (up to '/' or end of string).
+        var seg_start: i32 = i;
+        while i < plen && peek8(path_addr + (i as u32)) != '/' as u8 {
+            i = i + 1;
+        }
+        var seg_len: i32 = i - seg_start;
+        if seg_len == 0 { return -1; }
+
+        var seg: U8Array = U8Array(seg_len as u32);
+        var j: i32 = 0;
+        while j < seg_len {
+            set(seg, j, peek8(path_addr + ((seg_start + j) as u32)));
+            j = j + 1;
+        }
+        inode = mtfs_lookup(cur_parent, seg, seg_len);
+        delete(seg);
+        if inode < 0 { return -1; }
+
+        // If there's a '/' separator, skip it and descend into this
+        // inode on the next iteration.
+        if i < plen {
+            cur_parent = inode as u32;
+            i = i + 1;
+        }
     }
 
-    var inode: i32 = mtfs_lookup(0u32, name_buf, name_len);
-    delete(name_buf);
     if inode < 0 { return -1; }
 
     var mtfs_fd: i32 = mtfs_open(inode as u32);
@@ -109,6 +129,16 @@ export fn vfs_open(path_addr: u32, flags: i32) -> i32 {
     var fd: i32 = alloc_vfs_fd(FS_MTFS, mtfs_fd);
     if fd < 0 { mtfs_close(mtfs_fd); return -1; }
     return fd;
+}
+
+export fn vfs_size(fd: i32) -> i32 {
+    if fd < 3 { return -1; }
+    if g_vfs_ready == 0 { return -1; }
+    if fd >= VFS_MAX_FDS + 3 { return -1; }
+    var e: FD = get(g_vfs_fds, fd - 3);
+    var t: i32 = fs_type(e);
+    if t == FS_MTFS { return mtfs_size(inner(e)); }
+    return -1;
 }
 
 export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {

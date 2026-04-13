@@ -4,13 +4,11 @@ import "kernel_common.tc";
 import "block_flash.tc";
 import "mtfs.tc";
 import "vfs.tc";
+import "loader.tc";
 
 fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;
 fn sched_start(frame: u32) -> void;
-fn _task_hello_addr() -> u32;
-fn _task_hello2_addr() -> u32;
-fn _task_catfile_addr() -> u32;
 
 // RP2350 SIO timer (from pico-sdk)
 var SIO_MTIME_CTRL: u32 = 0xD00001A4u32;
@@ -57,9 +55,9 @@ fn main() -> i32 {
     mount_fs();
 
     sched_init(3);
-    sched_register(0, make_task(_task_hello_addr(),   16384, 8192));
-    sched_register(1, make_task(_task_hello2_addr(),  16384, 8192));
-    sched_register(2, make_task(_task_catfile_addr(), 16384, 8192));
+    sched_register(0, load_task("/bin/hello",   16384, 8192));
+    sched_register(1, load_task("/bin/hello2",  16384, 8192));
+    sched_register(2, load_task("/bin/catfile", 16384, 8192));
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
     poke32(SIO_MTIME_CTRL, 0x0Fu32);
