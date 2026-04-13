@@ -1,0 +1,69 @@
+// kernel/block_virtio.tc — virtio-mmio block device driver (qemu virt)
+//
+// Scans the 8 virtio-mmio slots at 0x10001000..0x10008000 for a block
+// device (DeviceID=2) and records its base address + version.
+// Read/write are stubs for step 2; they will be filled in later steps.
+
+// virtio-mmio layout (qemu virt)
+var VIRTIO_BASE: u32   = 0x10001000u32;
+var VIRTIO_STRIDE: u32 = 0x1000u32;
+var VIRTIO_SLOTS: i32  = 8;
+
+// Register offsets (from virtio-v1.1 MMIO spec)
+var REG_MAGIC:     u32 = 0x000u32;
+var REG_VERSION:   u32 = 0x004u32;
+var REG_DEVICE_ID: u32 = 0x008u32;
+var REG_VENDOR_ID: u32 = 0x00Cu32;
+
+// Constants
+var VIRTIO_MAGIC: u32    = 0x74726976u32;  // "virt" in little-endian
+var DEVICE_ID_BLOCK: u32 = 2u32;
+
+// Discovered device state
+var g_vblk_base:    u32 = 0u32;
+var g_vblk_version: i32 = 0;
+
+export fn block_init() -> i32 {
+    g_vblk_base = 0u32;
+    g_vblk_version = 0;
+    var i: i32 = 0;
+    while i < VIRTIO_SLOTS {
+        var base: u32 = VIRTIO_BASE + (i as u32) * VIRTIO_STRIDE;
+        var magic: u32 = peek32(base + REG_MAGIC);
+        if magic == VIRTIO_MAGIC {
+            var dev_id: u32 = peek32(base + REG_DEVICE_ID);
+            if dev_id == DEVICE_ID_BLOCK {
+                g_vblk_base = base;
+                g_vblk_version = peek32(base + REG_VERSION) as i32;
+                return 0;
+            }
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+export fn block_sector_size() -> i32 {
+    return 512;
+}
+
+export fn block_count() -> u32 {
+    return 0u32;  // TODO: read from virtio-blk config space in step 3
+}
+
+export fn block_read(sector: u32, buf: U8Array) -> i32 {
+    return -1;  // TODO: step 3 — queue init + read
+}
+
+export fn block_write(sector: u32, buf: U8Array) -> i32 {
+    return -1;  // read-only for now
+}
+
+// Debug accessors (used by kernel main to confirm detection)
+export fn virtio_blk_base() -> u32 {
+    return g_vblk_base;
+}
+
+export fn virtio_blk_version() -> i32 {
+    return g_vblk_version;
+}

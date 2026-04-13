@@ -3,6 +3,7 @@
 // Two tasks run concurrently, switched by timer interrupt.
 
 import "kernel_common.tc";
+import "block_virtio.tc";
 
 // Assembly-defined functions
 fn csr_read_mie() -> u32;
@@ -27,6 +28,12 @@ fn rearm_timer() -> void {
 
 fn main() -> i32 {
     kputs("KERN: starting\n");
+
+    if block_init() == 0 {
+        kputs("BLOCK: virtio-blk detected\n");
+    } else {
+        kputs("BLOCK: no virtio-blk\n");
+    }
 
     sched_init(2);
     sched_register(0, make_task(_task_hello_addr(), 65536, 65536));
