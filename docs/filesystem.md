@@ -78,32 +78,44 @@
 TC には関数ポインタが無いので、FS ごとに関数テーブルを持たせる代わりに
 **mount table + fs_type タグ + switch ディスパッチ** 方式を取る。
 
-```tinyc
-// マウントテーブル (カーネル内グローバル)
-//   prefix      : マウントポイント (例 "/tmp")
-//   fs_type     : 1=mtfs, 2=tmpfs, 3=devfs, 4=procfs
-//   fs_handle   : FS ごとの不透明なハンドル (state インデックス等)
-var g_mount_prefix: StringArray = 0 as StringArray;
-var g_mount_type:   I32Array    = 0 as I32Array;
-var g_mount_handle: I32Array    = 0 as I32Array;
+マウントテーブルと fd テーブルは struct + XxxArray で持つ。
+parallel array よりも追加フィールドが増えた時の改変が小さい。
 
-// fd テーブル
-//   fs_type     : 開いたときの fs_type (0 = UART 特別扱い)
-//   fs_inner    : 各 FS 内での fd (or inode 番号)
-//   offset      : 読み書きポジション
-var g_fd_type:   I32Array = ...;
-var g_fd_inner:  I32Array = ...;
-var g_fd_offset: I32Array = ...;
+```tinyc
+// マウントエントリ
+//   prefix  : マウントポイント (例 "/tmp")
+//   fs_type : 1=mtfs, 2=tmpfs, 3=devfs, 4=procfs
+//   handle  : FS ごとの不透明なハンドル (state インデックス等)
+struct Mount {
+    prefix:  StringLiteral,
+    fs_type: i32,
+    handle:  i32,
+}
+
+// fd エントリ
+//   fs_type : 開いたときの fs_type (0 = UART 特別扱い)
+//   inner   : 各 FS 内での fd (or inode 番号)
+//   offset  : 読み書きポジション
+struct FD {
+    fs_type: i32,
+    inner:   i32,
+    offset:  i32,
+}
+
+// カーネル内グローバル
+var g_mount: MountArray = 0 as MountArray;
+var g_fd:    FDArray    = 0 as FDArray;
 ```
 
-`vfs_read` などは `fs_type` で if-else ディスパッチする。fd 0/1/2 は
-標準入出力として UART に直結する特別扱い:
+`vfs_read` などは fd の `fs_type` で if-else ディスパッチする。fd 0/1/2
+は標準入出力として UART に直結する特別扱い:
 
 ```tinyc
 export fn vfs_read(fd: i32, buf: U8Array, n: i32) -> i32 {
     if fd < 3 { return do_uart_read(buf as u32, n); }
-    var t: i32 = get(g_fd_type, fd);
-    var inner: i32 = get(g_fd_inner, fd);
+    var e: FD = get(g_fd, fd);
+    var t: i32 = fs_type(e);
+    var inner: i32 = inner(e);
     if t == 1 { return mtfs_read(inner, buf, n); }
     if t == 2 { return tmpfs_read(inner, buf, n); }
     if t == 3 { return devfs_read(inner, buf, n); }
@@ -111,6 +123,9 @@ export fn vfs_read(fd: i32, buf: U8Array, n: i32) -> i32 {
     return -1;
 }
 ```
+
+`fs_type(e)` / `inner(e)` は struct 宣言で自動生成されるゲッター
+(`docs/language.md` の「構造体」参照)。
 
 FS を増やすたびに分岐を追加する必要はあるが、数が少ないので許容する。
 
@@ -190,8 +205,9 @@ inode 番号 0 はルートディレクトリ予約。inode 1 以降を通常フ
 - **inode キャッシュ**: 最小実装として superblock + inode table 全体を
   カーネル側 `U8Array` にキャッシュする。inode_count が数十なら数 KB で
   済む。将来のサイズ拡大時は on-demand block_read にする。
-- **mtfs 内 fd テーブル**: `g_mtfs_fd_inode` / `g_mtfs_fd_offset` を持つ。
-  offset は次回 read の開始位置。size を超えたら 0 バイト返し。
+- **mtfs 内 fd テーブル**: `MtfsFD { inode: i32, offset: i32 }` の
+  `MtfsFDArray` を持つ。offset は次回 read の開始位置。size を超えたら
+  0 バイト返し。
 
 ### mtfs インタフェース
 
