@@ -168,7 +168,9 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
       build.sh --target pico2 が mkfs.py で mtfs イメージを生成して
       bin2s.sh 経由で `_mtfs_image` として .rodata に埋め込み、
       kernel_pico2.tc が block_flash.tc + mtfs + vfs + catfile task を
-      組み込んでビルドが通ることを確認)
+      組み込む。Pico 2 実機 (Debug Probe + openocd) で
+      `BLOCK: flash backend ready / MTFS: mounted / CAT:hello, mtfs` まで
+      動作確認済み)
 
 ## フェーズ6: ユーザランド基盤
 
