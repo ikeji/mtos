@@ -3,8 +3,11 @@
 // Mounts a mtfs image served by the block layer, caches the entire
 // inode table in RAM, and services read-only open/lookup/read/close.
 // Supports only root-directory files (no subdirectories) for now.
+//
+// The block backend is injected at link time: virt uses block_virtio.tc,
+// Pico 2 uses block_flash.tc. mtfs itself only needs block_read.
 
-import "block_virtio.tc";
+fn block_read(sector: u32, buf: U8Array) -> i32;
 
 // Layout constants (mirror tools/mkfs.py)
 var MTFS_MAGIC: u32         = 0x5346544Du32;   // 'M','T','F','S' LE

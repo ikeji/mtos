@@ -163,7 +163,12 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 - [x] タスクから `/hello.txt` を open/read する catfile ゲストタスク
       (sys_openat/close/read/write を task_crt0.s のスタブ経由で発行、
       `kernel/tasks/catfile/catfile.tc`、`tests/test_os.sh` で CAT: 出力を検証)
-- [ ] `kernel/block_flash.tc` (Pico 2 XIP memcpy) に差し替え
+- [x] `kernel/block_flash.tc` (Pico 2 XIP memcpy) に差し替え
+      (mtfs.tc/vfs.tc から block_virtio.tc の import を外して backend 中立化、
+      build.sh --target pico2 が mkfs.py で mtfs イメージを生成して
+      bin2s.sh 経由で `_mtfs_image` として .rodata に埋め込み、
+      kernel_pico2.tc が block_flash.tc + mtfs + vfs + catfile task を
+      組み込んでビルドが通ることを確認)
 
 ## フェーズ6: ユーザランド基盤
 

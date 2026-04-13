@@ -9,7 +9,6 @@
 //   0, 1, 2     — standard input/output/error, routed to UART directly
 //   3 ..        — VFS-allocated fds backed by an FS entry in g_vfs_fds
 
-import "block_virtio.tc";
 import "mtfs.tc";
 
 // Platform UART helpers (defined in platform_*.s)

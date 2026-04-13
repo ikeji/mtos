@@ -1,12 +1,16 @@
 // kernel_pico2.tc — preemptive multitasking kernel for RP2350 (Pico 2)
 
 import "kernel_common.tc";
+import "block_flash.tc";
+import "mtfs.tc";
+import "vfs.tc";
 
 fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;
 fn sched_start(frame: u32) -> void;
 fn _task_hello_addr() -> u32;
 fn _task_hello2_addr() -> u32;
+fn _task_catfile_addr() -> u32;
 
 // RP2350 SIO timer (from pico-sdk)
 var SIO_MTIME_CTRL: u32 = 0xD00001A4u32;
@@ -30,12 +34,32 @@ fn rearm_timer() -> void {
     return;
 }
 
+// Mount mtfs from XIP flash and announce it to the serial console. If
+// block/vfs init fail we still start the hello/hello2/catfile tasks so
+// that a regression in the FS code does not break visible progress.
+fn mount_fs() -> void {
+    if block_init() != 0 {
+        kputs("BLOCK: flash init failed\r\n");
+        return;
+    }
+    kputs("BLOCK: flash backend ready\r\n");
+    if vfs_init() != 0 {
+        kputs("MTFS: mount failed\r\n");
+        return;
+    }
+    kputs("MTFS: mounted\r\n");
+    return;
+}
+
 fn main() -> i32 {
     kputs("KERN: starting\r\n");
 
-    sched_init(2);
-    sched_register(0, make_task(_task_hello_addr(), 16384, 8192));
-    sched_register(1, make_task(_task_hello2_addr(), 16384, 8192));
+    mount_fs();
+
+    sched_init(3);
+    sched_register(0, make_task(_task_hello_addr(),   16384, 8192));
+    sched_register(1, make_task(_task_hello2_addr(),  16384, 8192));
+    sched_register(2, make_task(_task_catfile_addr(), 16384, 8192));
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
     poke32(SIO_MTIME_CTRL, 0x0Fu32);

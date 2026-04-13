@@ -68,6 +68,7 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
   kernel.tc           virt 用 main + rearm_timer + mtfs マウント/read デモ
   kernel_pico2.tc     Pico 2 用 main + rearm_timer (SIO MTIME)
   block_virtio.tc     virtio-mmio (legacy v1) block デバイスドライバ (virt)
+  block_flash.tc      XIP flash block デバイスドライバ (pico2、_mtfs_image_addr 経由)
   mtfs.tc             MyTinyFS read-only ドライバ (mount/lookup/open/read/close)
   vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close, fd<3 は UART)
   trap_common.s       共通 asm: trap entry/exit, ecall, sched_start, kern_run_task
@@ -92,8 +93,8 @@ tools/      ホスト側ツール
 
 ```bash
 make                              # Gen1 バイナリをビルド（parse, codegen, bc2asm, typecheck, extract-sigs 等）
-make test                         # テスト実行（約50秒、上限 60 秒）
-make full-test                    # consistency + kmalloc/kernel1 も含めた全テスト（約63秒）
+make test                         # テスト実行（約60秒、上限 60 秒）
+make full-test                    # consistency + kmalloc/kernel1/kernel_preempt も含めた全テスト（約63秒）
 make update-golden                # goldenファイルを再生成
 make update-golden-and-run-test   # golden 再生成してからテスト実行
 ```

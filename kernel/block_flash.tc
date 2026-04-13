@@ -1,0 +1,50 @@
+// kernel/block_flash.tc — XIP flash block backend for Pico 2
+//
+// The mtfs disk image is embedded into the kernel .rodata via bin2s.sh,
+// which generates `_mtfs_image_addr() -> u32` pointing to the start of
+// the image. Since Pico 2 executes from XIP flash (0x10000000…), that
+// address is already the physical flash location; block_read just does
+// a byte-copy from base + sector * 512 into the caller's buffer.
+//
+// Interface matches block_virtio.tc so mtfs.tc can link against either
+// backend unchanged.
+
+// Provided by kern_data.s (bin2s.sh <mtfs.img> _mtfs_image)
+fn _mtfs_image_addr() -> u32;
+
+var MTFS_BLOCK: i32 = 512;
+var g_flash_base: u32 = 0u32;
+
+export fn block_init() -> i32 {
+    g_flash_base = _mtfs_image_addr();
+    if g_flash_base == 0u32 { return -1; }
+    // Sanity: check the mtfs magic in the superblock.
+    //   superblock byte 0..3 = 'M','T','F','S' (0x5346544D LE)
+    if peek32(g_flash_base) != 0x5346544Du32 { return -1; }
+    return 0;
+}
+
+export fn block_sector_size() -> i32 {
+    return MTFS_BLOCK;
+}
+
+export fn block_count() -> u32 {
+    if g_flash_base == 0u32 { return 0u32; }
+    // Superblock: magic(4) version(4) block_size(4) total_blocks(4) ...
+    return peek32(g_flash_base + 12u32);
+}
+
+export fn block_read(sector: u32, buf: U8Array) -> i32 {
+    if g_flash_base == 0u32 { return -1; }
+    var src: u32 = g_flash_base + sector * 512u32;
+    var i: i32 = 0;
+    while i < 512 {
+        set(buf, i, peek8(src + (i as u32)));
+        i = i + 1;
+    }
+    return 512;
+}
+
+export fn block_write(sector: u32, buf: U8Array) -> i32 {
+    return -1;  // Flash is read-only from the kernel's perspective
+}

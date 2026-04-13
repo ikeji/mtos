@@ -76,10 +76,23 @@ done
 "$KERN_DIR/bin2s.sh" "$TMP/hello2.bin" _task_hello2 > "$TMP/hello2_task.s"
 "$KERN_DIR/bin2s.sh" "$TMP/catfile.bin" _task_catfile > "$TMP/catfile_task.s"
 
+# --- Step 2b (pico2 only): build a default mtfs disk image and embed it
+# as _mtfs_image_* so block_flash.tc can read it via XIP. On virt the disk
+# is supplied by qemu's -drive and read through virtio-blk. The kernel .tc
+# file already picks the correct backend via its imports. ---
+MTFS_S=""
+if [ "$TARGET" = "pico2" ]; then
+    printf 'hello, mtfs\n' > "$TMP/hello.txt"
+    python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$TMP/hello.txt" >&2
+    "$KERN_DIR/bin2s.sh" "$TMP/mtfs.img" _mtfs_image > "$TMP/mtfs_image.s"
+    MTFS_S="$TMP/mtfs_image.s"
+fi
+
 # --- Step 3: Build kernel ---
 # Concat platform.s + trap_common.s as the "crt0"
 cat "$PLATFORM_S" "$KERN_DIR/trap_common.s" > "$TMP/crt0.s"
-cat "$DATA_S" "$TMP/hello_task.s" "$TMP/hello2_task.s" "$TMP/catfile_task.s" > "$TMP/kern_data.s"
+cat "$DATA_S" "$TMP/hello_task.s" "$TMP/hello2_task.s" "$TMP/catfile_task.s" \
+    ${MTFS_S:+"$MTFS_S"} > "$TMP/kern_data.s"
 
 echo "Building kernel: $TARGET" >&2
 CRT0="$TMP/crt0.s" \
