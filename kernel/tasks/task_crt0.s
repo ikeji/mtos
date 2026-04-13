@@ -72,6 +72,12 @@ do_exit__i32:
     ecall
     ret
 
+    .globl do_exec__u32
+do_exec__u32:
+    li   a7, 221
+    ecall
+    ret
+
 # peek/poke builtins
     .globl peek8__u32
 peek8__u32:

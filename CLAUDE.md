@@ -73,8 +73,13 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
   vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close/size,
                       /bin/hello のような多階層パス対応、fd<3 は UART)
   loader.tc           mtfs からタスクバイナリを読み込み make_task で
-                      フレーム化する起動時ローダ (load_task)
-  trap_common.s       共通 asm: trap entry/exit, ecall, sched_start, kern_run_task
+                      フレーム化する起動時ローダ (load_task)。
+                      vfs_xip_addr が非0なら RAM コピーせず flash 直実行。
+                      sys_exec_handler (ecall 221) で実行中タスクを
+                      別バイナリに置き換える
+  trap_common.s       共通 asm: trap entry/exit, ecall dispatch (write64 /
+                      read63 / openat56 / close57 / exit93 / exec221),
+                      sched_start, kern_run_task
   platform_virt.s     virt 固有: _start, 16550 UART, _set_kern_gp via la
   platform_pico2.s    Pico 2 固有: IMAGE_DEF, XOSC, PL011, .data コピー, _set_kern_gp via li
   crt0_data.s         virt 用 BSS (大きい __arena)
@@ -91,6 +96,8 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
     hello/hello.tc    タスク1 ("A" 出力)
     hello2/hello2.tc  タスク2 ("B" 出力)
     catfile/catfile.tc タスク3 (sys_openat で /hello.txt を開き "CAT:" と共に出力)
+    launcher/launcher.tc タスク4 (sys_exec("/bin/catfile") を呼ぶデモ、
+                      ecall 221 の end-to-end 検証用)
     libtc/libtc.tc    ユーザ空間ライブラリ (puts/str_nul/strlen、別 ELF なので
                       カーネル側シンボルと衝突しない)
 tools/      ホスト側ツール

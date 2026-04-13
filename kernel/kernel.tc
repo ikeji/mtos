@@ -121,10 +121,14 @@ fn main() -> i32 {
 
     cat_hello_txt();
 
+    // Slot 2 loads the launcher task, which immediately issues
+    // sys_exec("/bin/catfile"). That exercises the ecall 221 path end
+    // to end on both virt and Pico 2 while keeping the observable
+    // output the same as the direct load path.
     sched_init(3);
-    sched_register(0, load_task("/bin/hello",   65536, 65536));
-    sched_register(1, load_task("/bin/hello2",  65536, 65536));
-    sched_register(2, load_task("/bin/catfile", 65536, 65536));
+    sched_register(0, load_task("/bin/hello",    65536, 65536));
+    sched_register(1, load_task("/bin/hello2",   65536, 65536));
+    sched_register(2, load_task("/bin/launcher", 65536, 65536));
 
     rearm_timer();
     var mie: u32 = csr_read_mie();

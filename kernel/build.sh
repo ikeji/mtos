@@ -59,7 +59,7 @@ TASK_CRT0="$KERN_DIR/tasks/task_crt0.s"
 TASK_DATA="$KERN_DIR/tasks/task_data.s"
 
 # --- Step 1: Build task binaries ---
-for task in hello hello2 catfile; do
+for task in hello hello2 catfile launcher; do
     echo "Building task: $task" >&2
     CRT0="$TASK_CRT0" \
     CRT0_DATA="$TASK_DATA" \
@@ -81,9 +81,10 @@ done
 # layer — no more _task_*_addr() in .rodata.
 ROOT_DIR_TREE="$TMP/root"
 mkdir -p "$ROOT_DIR_TREE/bin"
-cp "$TMP/hello.bin"   "$ROOT_DIR_TREE/bin/hello"
-cp "$TMP/hello2.bin"  "$ROOT_DIR_TREE/bin/hello2"
-cp "$TMP/catfile.bin" "$ROOT_DIR_TREE/bin/catfile"
+cp "$TMP/hello.bin"    "$ROOT_DIR_TREE/bin/hello"
+cp "$TMP/hello2.bin"   "$ROOT_DIR_TREE/bin/hello2"
+cp "$TMP/catfile.bin"  "$ROOT_DIR_TREE/bin/catfile"
+cp "$TMP/launcher.bin" "$ROOT_DIR_TREE/bin/launcher"
 printf 'hello, mtfs\n' > "$ROOT_DIR_TREE/hello.txt"
 python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 

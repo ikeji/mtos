@@ -54,10 +54,13 @@ fn main() -> i32 {
 
     mount_fs();
 
+    // Slot 2 runs the launcher task, which sys_execs /bin/catfile on
+    // startup. Exercises the XIP fast path through sys_exec in
+    // addition to the direct load path used for slots 0 and 1.
     sched_init(3);
-    sched_register(0, load_task("/bin/hello",   16384, 8192));
-    sched_register(1, load_task("/bin/hello2",  16384, 8192));
-    sched_register(2, load_task("/bin/catfile", 16384, 8192));
+    sched_register(0, load_task("/bin/hello",    16384, 8192));
+    sched_register(1, load_task("/bin/hello2",   16384, 8192));
+    sched_register(2, load_task("/bin/launcher", 16384, 8192));
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
     poke32(SIO_MTIME_CTRL, 0x0Fu32);

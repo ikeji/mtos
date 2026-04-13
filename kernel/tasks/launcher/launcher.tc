@@ -1,0 +1,22 @@
+// launcher.tc — demo guest task that execs another binary.
+//
+// Exists to exercise the sys_exec (a7 = 221) ecall path end-to-end:
+// the launcher itself prints nothing on the happy path because
+// sys_exec replaces its image before control returns. If exec fails
+// we fall through to a visible error message so the kernel's
+// regression tests notice.
+
+import "../libtc/libtc.tc";
+
+// Assembly-provided syscall stub (kernel/tasks/task_crt0.s)
+fn do_exec(path_addr: u32) -> i32;
+
+fn main() -> i32 {
+    var path: U8Array = str_nul("/bin/catfile");
+    do_exec(path as u32 + 4u32);
+    // sys_exec should not return on success; if we get here the
+    // kernel failed to replace us.
+    delete(path);
+    puts("LAUNCHER: exec failed\n");
+    return 1;
+}

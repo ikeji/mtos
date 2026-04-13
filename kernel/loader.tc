@@ -63,3 +63,26 @@ export fn load_task(path: StringLiteral, ram_size: i32, stack_size: i32) -> u32 
     vfs_close(fd);
     return frame;
 }
+
+// Handler for sys_exec (a7 = 221). Called from trap_common.s after a
+// task issues ecall. path_addr is a NUL-terminated byte string already
+// readable in the kernel address space (virt/pico2 are ID-mapped, so
+// user pointers and kernel pointers coincide).
+//
+// On success: builds a new task frame, replaces the current scheduler
+// slot with it, and returns the new frame. Assembly then switches to
+// that frame via _switch_frame, so the old task is abandoned.
+//
+// On failure: returns 0, and the caller delivers -1 to the task's a0.
+//
+// Task sizing is hardcoded for now (16 KB RAM + 8 KB stack) — small
+// enough for Pico 2, large enough for the current demo tasks.
+export fn sys_exec_handler(path_addr: u32) -> u32 {
+    var fd: i32 = vfs_open(path_addr, 0);
+    if fd < 0 { return 0u32; }
+    var frame: u32 = load_fd(fd, 16384, 8192);
+    vfs_close(fd);
+    if frame == 0u32 { return 0u32; }
+    sched_replace_current(frame);
+    return frame;
+}

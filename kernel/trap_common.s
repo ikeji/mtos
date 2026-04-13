@@ -81,6 +81,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_close
     li   t1, 93
     beq  t0, t1, _ecall_exit
+    li   t1, 221
+    beq  t0, t1, _ecall_exec
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -143,6 +145,33 @@ _ecall_close:
     lw   a0, 40(s0)         # fd
     call vfs_close__i32
     sw   a0, 40(s0)
+    lw   t0, 128(s0)
+    addi t0, t0, 4
+    sw   t0, 128(s0)
+    mv   sp, s0
+    j    _trap_restore
+
+# ===== sys_exec (a7 = 221) =====
+# a0 = NUL-terminated path address (task virtual == kernel virtual).
+# On success, sys_exec_handler returns the new frame and has already
+# called sched_replace_current; we then switch mscratch to it so mret
+# lands in the new task's entry. On failure, we write -1 to a0 and
+# advance mepc past the ecall like a normal syscall return.
+_ecall_exec:
+    mv   s0, sp
+    call _set_kern_gp
+    la   t0, _kern_save
+    lw   sp, 4(t0)
+    lw   a0, 40(s0)         # path addr (task's a0)
+    call sys_exec_handler__u32
+    beqz a0, _exec_failed
+    la   t0, _switch_frame
+    sw   a0, 0(t0)
+    mv   sp, s0
+    j    _trap_restore
+_exec_failed:
+    li   t0, -1
+    sw   t0, 40(s0)         # saved a0 = -1
     lw   t0, 128(s0)
     addi t0, t0, 4
     sw   t0, 128(s0)
@@ -246,6 +275,10 @@ trap_handler__u32__u32:
     ret
     .globl sched_task_exit
 sched_task_exit:
+    li   a0, 0
+    ret
+    .globl sys_exec_handler__u32
+sys_exec_handler__u32:
     li   a0, 0
     ret
 

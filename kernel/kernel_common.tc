@@ -68,6 +68,16 @@ export fn sched_get_frame(idx: i32) -> u32 {
     return get(g_frames, idx);
 }
 
+// Replace the currently running task's frame with `frame`. Used by
+// sys_exec to drop the caller's image and continue the slot with the
+// new binary. The old frame / task_ram / task_stack are leaked — we
+// do not track per-task lifetimes yet.
+export fn sched_replace_current(frame: u32) -> void {
+    set(g_frames, g_current, frame);
+    set(g_states, g_current, 0);
+    return;
+}
+
 // Called from assembly _trap_entry on non-ecall traps
 fn trap_handler(cause: u32, epc: u32) -> void {
     if cause == 0x80000007u32 {

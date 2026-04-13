@@ -185,13 +185,17 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
       `kernel/loader.tc` の `load_task` が VFS からタスクバイナリを読み
       `make_task` でフレーム化。virt (fs_virtio テスト) / pico2 実機
       (test_pico2.sh) 両方で動作確認済み。
-- [ ] Step 6.3: sys_exec + ローダ
-      - `vfs_xip_addr` / `mtfs_xip_addr` 実装 (フェーズ5 で予約した
-        インタフェース、Pico 2 は flash 上物理アドレス、virt は 0)
-      - `kernel/loader.tc` が vfs_xip_addr を見て XIP 直接実行 or
-        RAM コピーを切り替える
-      - `sys_exec(path)` ecall + カーネル側ハンドラ (同期 exec で
-        親は戻らない、fork は導入しない)
+- [x] Step 6.3: sys_exec + ローダ
+      - `vfs_xip_addr` / `mtfs_xip_addr` 実装 (block_xip_base 経由で
+        flash は `_mtfs_image_addr + (data_start + start_block)*512`、
+        virtio-blk は 0)
+      - `kernel/loader.tc` の `load_task` が vfs_xip_addr を見て
+        XIP 直接実行 / RAM コピーを切り替え
+      - `sys_exec(path)` ecall (a7=221) + `sys_exec_handler` が
+        `sched_replace_current` で呼び出し元スロットを新バイナリに
+        差し替え、`_switch_frame` 経由で mret で飛ぶ
+      - `kernel/tasks/launcher/launcher.tc` が `/bin/catfile` を
+        sys_exec するデモとして virt / pico2 実機の両方で動作確認
 - [ ] Step 6.4: `/bin/sh` 最小シェル (UART 1 行読み → sys_exec)
 - [ ] Step 6.5 (オプション): sys_wait による親子同期
 
