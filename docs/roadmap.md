@@ -176,9 +176,9 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 
 実装計画は `docs/task/phase6_userland.md` にまとめる。
 
-- [ ] Step 6.1: 最小限の libc 相当 (`kernel/tasks/ulib/ulib.tc`、
-      `u_puts` / `u_str_nul` / `u_strlen`)。hello/hello2/catfile の
-      重複ヘルパを集約するリファクタ。
+- [x] Step 6.1: 最小限の libc 相当 (`kernel/tasks/libtc/libtc.tc`、
+      `puts` / `str_nul` / `strlen`)。catfile の重複ヘルパを集約、
+      以後 launcher と sh でも使用。
 - [x] Step 6.2: ゲストバイナリを mtfs に格納 (`/bin/hello` 等)。
       `tools/mkfs.py` をディレクトリ指定に拡張 (1 階層のサブディレクトリ
       対応)、`vfs_open` が `/bin/hello` のような多階層パスを解決、
@@ -201,7 +201,15 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
       でコマンドをパイプ入力し、シェル経由の sys_exec → catfile 起動を
       end-to-end で検証。pico2 はハードテストに stdin がないので launcher
       を据え置き (build.sh が target 別にタスクリストを切り替える)。
-- [ ] Step 6.5 (オプション): sys_wait による親子同期
+- [ ] Step 6.5 (オプション): `sys_spawn` + `sys_wait` による親子同期
+      - スケジューラに state (ready/done/unused/waiting) を追加
+      - `sched_spawn(frame)` が未使用スロットに新タスクを挿入
+      - `sched_wait(slot)` が呼び出し元を waiting にし、ready タスクに
+        切り替える。対象 slot が sys_exit で done になると、
+        wait 中の親を ready に戻して復帰させる
+      - 新 ecall `a7=220 (spawn)` / `a7=260 (wait)` を task_crt0.s に追加
+      - `/bin/sh` をループ化し、`quit` で終了するまで毎回プロンプト→
+        spawn→wait→次プロンプトを繰り返す
 
 ## フェーズ7: ネイティブコンパイラをOS上で動かす
 
