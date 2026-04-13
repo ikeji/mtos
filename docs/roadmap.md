@@ -97,48 +97,51 @@ C言語でフルパイプラインを実装し、動作を検証する。
 - [x] `compile-pico2.sh`: compile-gen2.sh に `ASM_PROLOGUE="; raw"` + crt0 差し替え
 - [x] `pico2/bin2uf2.py`: raw bin → UF2 (family_id=0xe48bff5a)
 - [x] `pico2/hello.tc` が実機 Pico 2 の UART0 に "Hello, Pico 2!\r\n" を出力
-- [ ] print_i32 / print_str / sys_read 等の runtime API を Pico 2 でも動作確認
-- [ ] 複数ファイル import (`import "lib.tc"`) を Pico 2 ビルドで動かす
+- [x] sys_write / sys_read / 複数ファイル import が Pico 2 でも動作 (kernel/ で確認)
 - [ ] PSRAM 初期化 (QMI CS1, 0x11000000〜) を crt0 に追加
 - [ ] typecheck.tc / asm.tc のメモリ使用量を PSRAM 上で回せるレベルに最適化
       (ラベルテーブル・行バッファのストリーミング化、分割実行)
 - [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)
 
-## フェーズ3: カーネル基盤（QEMUで開発・検証）
+## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
 
-フェーズ2.5 で作った `crt0_pico2.s` / `virt_crt0.s` 系のベアメタル起動
-コードを再利用しつつ、一般的な OS 機能を積み上げていく。
+フェーズ2.5 で作ったベアメタル起動コードを再利用し、
+trap/scheduler を加えてマルチタスク OS の足場を築く。
 
-- [x] ブートスタブ (crt0_pico2.s / virt_crt0.s: _start, SP/GP/SRAM 初期化)
-- [x] UARTドライバ (PL011 / 16550、bare-metal レベル)
-- [x] メモリアロケータ（runtime.tc に kmalloc/kfree 実装済み、free-list first-fit + 10-bucket 小ブロック高速化）
-- [x] 例外・割り込みハンドラ枠組み（trap vector、コンテキスト保存/復元、mscratch swap）
-- [x] CSR 命令サポート（asm.tc に csrrw/csrrs/csrrc/csrr/csrw/mret 追加）
-- [x] CSR アクセス組み込み関数（csr_read/write_mstatus/mie/mcause）
-- [x] タイマ割り込み（mtime / mtimecmp、TC trap_handler で処理）
-- [x] QEMU virt 上でタイマ割り込みハンドラが発火するところまで確認
+- [x] ブートスタブ (kernel/platform_{virt,pico2}.s: _start, SP/GP/SRAM 初期化)
+- [x] UARTドライバ (16550 / PL011、do_uart_write/read で抽象化)
+- [x] メモリアロケータ (runtime.tc kmalloc/kfree、free-list first-fit + 10-bucket)
+- [x] 例外・割り込みハンドラ枠組み (trap vector、132B コンテキスト保存/復元、mscratch swap)
+- [x] CSR 命令サポート (asm.tc に csrrw/csrrs/csrrc/csrr/csrw/mret)
+- [x] CSR アクセス組み込み関数 (csr_read/write_mstatus/mie/mcause を本体なし宣言)
+- [x] タイマ割り込み (virt CLINT mtime + Pico 2 SIO MTIME)
+- [x] QEMU virt + Pico 2 実機の両方でタイマプリエンプション動作確認
 - [ ] `print_*` / 文字列フォーマッタを runtime.tc から OS 向けに切り出し
 
-## フェーズ4: プロセス管理（QEMUで開発・検証）
+## フェーズ4: プロセス管理（QEMU virt + Pico 2 実機で検証）
 
-- [x] ゲストタスクを独立 raw バイナリとしてコンパイル（task_crt0.s + ecall ABI）
-- [x] bin2s.sh でタスクバイナリをカーネル .rodata に埋め込み
-- [x] ecall ハンドラ（アセンブリ）: sys_write(64) → UART、sys_exit(93) → タスク終了
+- [x] ゲストタスクを独立 raw バイナリとしてコンパイル（tasks/task_crt0.s + ecall ABI）
+- [x] bin2s.sh でタスクバイナリをカーネル .rodata に埋め込み（`_PREFIX_addr()` 自動生成）
+- [x] ecall ハンドラ（アセンブリ）: sys_write(64) / sys_read(63) / sys_exit(93)
 - [x] カーネルがタスク用 RAM (data+bss+arena) を確保し gp を設定
 - [x] per-task トラップフレーム（132B: 31レジスタ + mepc）
 - [x] kern_run_task: 単一タスク協調実行（カーネルコンテキスト保存/復元）
-- [x] 複数タスク逐次実行（タスク1完了→タスク2実行）
-- [x] sched_start + init_task_frame: mret でタスク起動（MPP=M-mode 設定必須）
+- [x] 複数タスク逐次実行・同一タスクの複数インスタンス起動
+- [x] sched_start + init_task_frame: mret でタスク起動（MPP=M-mode 必須）
 - [x] タイマ割り込みによるプリエンプティブ・ラウンドロビンスケジューラ
 - [x] _switch_frame によるコンテキストスイッチ（trap_restore で mscratch 切り替え）
 - [x] sched_task_exit: タスク終了時に次タスクへ切り替え、全完了でカーネル復帰
 - [x] QEMU virt で動作確認（2タスクが交互に A/B を出力）
-- [x] Pico 2 向けカーネル crt0 (kernel/crt0_pico2.s + build_pico2.sh → UF2)
 - [x] タスクの初期化済みデータコピー（task_crt0.s で PC 相対 la + gp 相対コピー）
 - [x] 本体なし関数宣言 (`fn foo() -> void;`) でアセンブリ関数を呼び出し可能に
-- [x] Pico 2 実機でプリエンプティブマルチタスク動作確認（SIO MTIME + 64-bit mtimecmp）
+- [x] hex/binary 整数リテラル (`0xFF`, `0b1010`) のサポート
 - [x] sys_read (16550 UART / PL011 UART の RX)
-- [x] Debug Probe + openocd-rpi で実機フラッシュ・デバッグ環境構築
+- [x] Pico 2 向けカーネル (kernel/platform_pico2.s + .data Flash→SRAM コピー)
+- [x] Pico 2 実機でプリエンプティブマルチタスク動作確認（SIO MTIME + 64-bit mtimecmp）
+- [x] Debug Probe + openocd-rpi (Raspberry Pi fork) で実機フラッシュ・デバッグ環境
+- [x] **カーネル共通化**: trap_common.s + platform_{virt,pico2}.s,
+      kernel_common.tc 共有, 統一 build.sh --target で重複排除
+      （docs/task/kernel_platform_split.md）
 
 ## フェーズ5: ファイルシステム（QEMUで開発・検証）
 
