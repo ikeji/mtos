@@ -9,8 +9,10 @@ fn sched_start(frame: u32) -> void;
 fn _task_hello_addr() -> u32;
 fn _task_hello2_addr() -> u32;
 
-// RP2350 SIO timer (MTIME via SIO)
+// RP2350 SIO timer (from pico-sdk)
+var SIO_MTIME_CTRL: u32 = 0xD00001A4u32;
 var SIO_MTIME_L: u32    = 0xD00001B0u32;
+var SIO_MTIME_H: u32    = 0xD00001B4u32;
 var SIO_MTIMECMP_L: u32 = 0xD00001B8u32;
 var SIO_MTIMECMP_H: u32 = 0xD00001BCu32;
 var TIMER_INTERVAL: u32  = 100000u32;
@@ -39,9 +41,18 @@ fn uart_puts(s: StringLiteral) -> void {
 }
 
 fn rearm_timer() -> void {
-    var now: u32 = peek32(SIO_MTIME_L);
-    poke32(SIO_MTIMECMP_H, 0u32);
-    poke32(SIO_MTIMECMP_L, now + TIMER_INTERVAL);
+    // Read 64-bit mtime, compute target = mtime + interval, write 64-bit mtimecmp.
+    // To prevent spurious interrupts during update, set MTIMECMP_H = 0xFFFFFFFF first.
+    poke32(SIO_MTIMECMP_H, 0xFFFFFFFFu32);
+    var lo: u32 = peek32(SIO_MTIME_L);
+    var hi: u32 = peek32(SIO_MTIME_H);
+    var new_lo: u32 = lo + TIMER_INTERVAL;
+    // Carry detection: if new_lo < lo, we wrapped
+    if new_lo < lo {
+        hi = hi + 1u32;
+    }
+    poke32(SIO_MTIMECMP_L, new_lo);
+    poke32(SIO_MTIMECMP_H, hi);
     return;
 }
 
@@ -107,7 +118,9 @@ fn main() -> i32 {
     set(g_frames, 1, frame1);
     set(g_states, 1, 0);
 
-    // Set up timer
+    // Enable SIO MTIME counter: EN (bit 0) + FULLSPEED (bit 1)
+    // Leave DBGPAUSE bits as default (pause during debug halt)
+    poke32(SIO_MTIME_CTRL, 0x0Fu32);
     rearm_timer();
     var mie: u32 = csr_read_mie();
     csr_write_mie(mie | 0x80u32);
