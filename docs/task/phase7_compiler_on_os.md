@@ -29,22 +29,23 @@ Gen3 を再ビルド) まで持っていきたい。
 
 **設計方針**: **kernel 側で argv を TC の `StringLiteralArray` として
 構築してから crt0 に制御を渡す**。crt0 はレジスタ配線のみで、TC データ
-構造の組み立てはアセンブリでは一切行わない。
+構造の組み立てはアセンブリでは一切行わない。`StringLiteralArray` は
+`len(arr) -> i32` を持っているので **argc は不要**、main には argv
+1 本だけ渡す。
 
 **フロー**:
-1. `sh.tc` がコマンド行をスペースでトークナイズし、新 ABI で
-   `sys_spawn(path, argv_array, argc)` を発行 (argv_array は sh 自身が
-   既に構築した StringLiteralArray)
+1. `sh.tc` がコマンド行をスペースでトークナイズし、
+   `StringLiteralArray(argc)` を構築。新 ABI で
+   `sys_spawn(path, argv_array)` を発行
 2. `sys_spawn_handler` (kernel TC, `loader.tc`) が自分の kmalloc で
-   **新しい** `StringLiteralArray(argc)` を allocate し、親から来た
-   argv の内容を kernel 所有のバッファにコピー (親が exit しても
+   **新しい** `StringLiteralArray(len(argv))` を allocate し、親から
+   来た argv の内容を kernel 所有のバッファにコピー (親が exit しても
    子から argv が見える状態にする)
-3. `make_task` がトラップフレームに `a0 = argc` / `a1 = argv_ptr` を
-   書き込み
-4. mret でタスクに飛んだら `task_crt0.s` は a0/a1 をそのまま保存して
+3. `make_task` がトラップフレームに `a0 = argv_ptr` を書き込み
+4. mret でタスクに飛んだら `task_crt0.s` は a0 をそのまま保存して
    `call main`
-5. TC の main は `fn main(argc: i32, argv: StringLiteralArray) -> i32`
-   として受ける
+5. TC の main は `fn main(argv: StringLiteralArray) -> i32` として
+   受ける。長さが要るときは `len(argv)` を呼ぶ
 
 **argv の所有権**:
 - argv は kernel の kmalloc で確保されているので、タスクからは kfree
@@ -78,13 +79,13 @@ Gen3 を再ビルド) まで持っていきたい。
 - `kernel/kernel_common.tc` — struct Task に argv フィールド追加、
   make_task / slot_capture_last / slot_free_allocs を拡張
 - `kernel/trap_common.s` — sys_spawn / sys_exec 各 handler の引数配線
-  (a0=path, a1=argv_ptr, a2=argc)
-- `kernel/tasks/task_crt0.s` — main 呼び出し時に a0/a1 を main に渡す
-  (現状は a0 / a1 を破壊していないか要確認)
+  (a0=path, a1=argv_ptr)
+- `kernel/tasks/task_crt0.s` — main 呼び出し時に a0 を main に渡す
+  (現状は a0 を破壊していないか要確認)
 - `kernel/tasks/sh/sh.tc` — コマンド行をスペース分割、StringLiteralArray
   を構築、sys_spawn に渡す
-- `kernel/tasks/catfile/catfile.tc` — argc>1 なら argv[1] を open (現状
-  hardcode `/hello.txt`)
+- `kernel/tasks/catfile/catfile.tc` — len(argv)>1 なら argv[1] を
+  open (現状 hardcode `/hello.txt`)
 - `tests/test_os.sh` — `catfile /hello.txt` 引数渡しのシナリオ追加
 
 **検証**:
