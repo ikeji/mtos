@@ -132,48 +132,27 @@ var LOADER_O_TRUNC:  i32 = 512;
 
 // ===== Per-task memory sizing (phase 7 E-step1) =====
 //
-// Compiler tools spawned via sh need much more than the 16K default
-// because typecheck's AST pool, codegen's string_buffer, and bc2asm's
-// emit buffers all live in the task's arena. Until we have a per-
-// binary header (problem.md K3 case C), we hard-code sizes by path
-// prefix and measure actual usage to calibrate.
+// We hand every spawned task a flat 4 MB RAM block + 64 KB stack
+// regardless of the path. Compiler tools (parse, typecheck, ...)
+// need at least a few MB for AST/BC/emit buffers, and trying to
+// pick sizes by path was fragile — the first attempt silently fell
+// back to the 16K default because of a cmp mismatch we never fully
+// diagnosed. Flat 4 MB is the simplest thing that lets parse run.
 //
-// Initial guess: 4 MB arena + 64 KB stack for any /bin/<compiler>
-// path. qemu virt has 128 MB of RAM so the headroom is generous;
-// pico2 would never run compiler tasks today anyway (problem.md #7).
-var DEFAULT_RAM_SIZE:   i32 = 16384;
-var DEFAULT_STACK_SIZE: i32 = 8192;
-var COMPILER_RAM_SIZE:  i32 = 2097152;
-var COMPILER_STACK_SIZE: i32 = 32768;
-
-// Byte-wise prefix match against a StringLiteral. path_addr is a
-// NUL-terminated byte string in task memory.
-fn path_starts_with(path_addr: u32, s: StringLiteral) -> bool {
-    var sl: i32 = len(s);
-    var i: i32 = 0;
-    while i < sl {
-        if peek8(path_addr + i as u32) != get(s, i) { return false; }
-        i = i + 1;
-    }
-    return true;
-}
-
-fn path_is_compiler(path_addr: u32) -> bool {
-    if path_starts_with(path_addr, "/bin/parse")     { return true; }
-    if path_starts_with(path_addr, "/bin/typecheck") { return true; }
-    if path_starts_with(path_addr, "/bin/codegen")   { return true; }
-    if path_starts_with(path_addr, "/bin/bc2asm")    { return true; }
-    return false;
-}
+// Side effect: the kernel arena (kernel/crt0_data.s) must be large
+// enough to hold several 4 MB blocks simultaneously (sh + parent
+// hold-overs + the spawned child), so crt0_data.s was bumped from
+// ~4.4 MB to 32 MB. Only affects the qemu virt build, which has
+// 128 MB of RAM available — plenty of room.
+var TASK_RAM_SIZE:   i32 = 4194304;
+var TASK_STACK_SIZE: i32 = 65536;
 
 fn ram_for_path(path_addr: u32) -> i32 {
-    if path_is_compiler(path_addr) { return COMPILER_RAM_SIZE; }
-    return DEFAULT_RAM_SIZE;
+    return TASK_RAM_SIZE;
 }
 
 fn stack_for_path(path_addr: u32) -> i32 {
-    if path_is_compiler(path_addr) { return COMPILER_STACK_SIZE; }
-    return DEFAULT_STACK_SIZE;
+    return TASK_STACK_SIZE;
 }
 
 // Open an optional redirect path (may be 0u32 = "not set"). Returns

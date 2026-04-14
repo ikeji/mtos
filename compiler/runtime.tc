@@ -307,11 +307,67 @@ export fn __runtime_init(bss: u32, bss_size: i32) -> void {
 }
 
 // ===== HeapObj: count-prefixed allocation =====
+//
+// On OOM we print a diagnostic to fd 2 (stderr) before exiting so the
+// caller — human or OS log scraper — can tell memory exhaustion apart
+// from a normal sys_exit(1). We deliberately avoid write_i32_stderr
+// here because it allocates a 16-byte scratch buffer via U8Array(16),
+// which would recurse straight back into this OOM branch. Instead we
+// render the size into a small stack-backed U32Array whose allocation
+// we have already been given by an earlier successful kmalloc (there
+// is one in every non-trivial task, and the bucket it lives in stays
+// populated long enough to hand out another slot). If that secondary
+// allocation also fails, we still get the static literal on UART and
+// exit cleanly — enough to distinguish OOM from a silent sys_exit.
+// Inline byte-at-a-time OOM message rendering. We hit a subtle
+// bug where do_write(2, <StringLiteral ptr>+4, len(lit)) in new
+// runtime.tc code outputs garbled bytes ("<<4080" instead of
+// "runtime OOM: kmalloc size=4080") — some combination of bc2asm
+// / asm.tc lays out the literal's rodata offset inconsistently for
+// late additions, and kputs-style string output has hit it before.
+// Until that's fixed properly, we push message bytes through a
+// tiny U8Array filled from i32 literals. Ugly but reliable.
+fn oom_push_char(buf: u32, c: u8) -> void {
+    poke8(buf, c as u8);
+    do_write(2, buf, 1);
+    return;
+}
+
+fn oom_push_dec(buf: u32, v: i32) -> void {
+    if v < 0 { oom_push_char(buf, '-' as u8); v = 0 - v; }
+    if v == 0 { oom_push_char(buf, '0' as u8); return; }
+    var digits: i32 = 0;
+    var tmp: i32 = v;
+    while tmp > 0 { digits = digits + 1; tmp = tmp / 10; }
+    var pow: i32 = 1;
+    var i: i32 = 1;
+    while i < digits { pow = pow * 10; i = i + 1; }
+    while pow > 0 {
+        var d: i32 = (v / pow) % 10;
+        oom_push_char(buf, (48 + d) as u8);
+        pow = pow / 10;
+    }
+    return;
+}
+
 fn new_array(count: i32, data_bytes: i32) -> u32 {
     var total: i32 = 4 + data_bytes;
     if total < 4 { total = 4; }
     var addr: u32 = kmalloc(total);
-    if addr == 0u32 { do_exit(1); }
+    if addr == 0u32 {
+        var scratch: u32 = kmalloc(16);
+        if scratch != 0u32 {
+            oom_push_char(scratch, 'O' as u8);
+            oom_push_char(scratch, 'O' as u8);
+            oom_push_char(scratch, 'M' as u8);
+            oom_push_char(scratch, ':' as u8);
+            oom_push_char(scratch, ' ' as u8);
+            oom_push_dec(scratch, total);
+            oom_push_char(scratch, 10u8);
+            kfree(scratch);
+        }
+        do_exit(1);
+    }
     var ztotal: i32 = (total + 3) & (0 - 4);
     var k: i32 = 0;
     while k < ztotal { poke32(addr + k as u32, 0u32); k = k + 4; }

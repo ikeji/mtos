@@ -9,7 +9,10 @@ _start:
     la   gp, __global_pointer$
     li   sp, 0x88000000
     la   a0, __arena
-    li   a1, 4648960
+    # Must match crt0_data.s:__arena .space size (kept deliberately
+    # generous so loader.tc's 4 MB-per-task budget has room for a
+    # handful of live spawn/wait chains).
+    li   a1, 33554432
     call __runtime_init__u32__i32
     la   t0, _trap_frame
     csrw 0x340, t0

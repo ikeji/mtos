@@ -135,16 +135,16 @@ fn main() -> i32 {
     // the remaining 5 are reserved for sys_spawn children of the
     // shell. The shell loops: prompt → do_spawn("/bin/<cmd>") →
     // do_wait(slot) → prompt ... until it reads "quit".
-    // All seeded tasks use the same 16K RAM / 8K stack budget that
-    // pico2 and sys_exec_handler / sys_spawn_handler already use.
-    // The four shipping tasks (hello/hello2/catfile/sh) each touch
-    // <1 KB of arena and a tiny stack, so 16K/8K is comfortable.
-    // If a future task needs more, see problem.md K3 for the per-task
-    // size hint plan.
+    //
+    // All tasks — seeded and spawned — get a flat 4 MB RAM + 64 KB
+    // stack. Phase 7 E-step1 showed that compiler tools need at
+    // least a few MB and the previous 16K default left them OOM'd.
+    // crt0_data.s grew to 32 MB of arena to accommodate multiple
+    // live 4 MB slots.
     sched_init(8);
-    sched_register(0, load_task("/bin/hello",  16384, 8192));
-    sched_register(1, load_task("/bin/hello2", 16384, 8192));
-    sched_register(2, load_task("/bin/sh",     16384, 8192));
+    sched_register(0, load_task("/bin/hello",  4194304, 65536));
+    sched_register(1, load_task("/bin/hello2", 4194304, 65536));
+    sched_register(2, load_task("/bin/sh",     4194304, 65536));
 
     rearm_timer();
     var mie: u32 = csr_read_mie();
