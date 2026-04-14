@@ -130,6 +130,52 @@ var LOADER_O_WRONLY: i32 = 1;
 var LOADER_O_CREAT:  i32 = 64;
 var LOADER_O_TRUNC:  i32 = 512;
 
+// ===== Per-task memory sizing (phase 7 E-step1) =====
+//
+// Compiler tools spawned via sh need much more than the 16K default
+// because typecheck's AST pool, codegen's string_buffer, and bc2asm's
+// emit buffers all live in the task's arena. Until we have a per-
+// binary header (problem.md K3 case C), we hard-code sizes by path
+// prefix and measure actual usage to calibrate.
+//
+// Initial guess: 4 MB arena + 64 KB stack for any /bin/<compiler>
+// path. qemu virt has 128 MB of RAM so the headroom is generous;
+// pico2 would never run compiler tasks today anyway (problem.md #7).
+var DEFAULT_RAM_SIZE:   i32 = 16384;
+var DEFAULT_STACK_SIZE: i32 = 8192;
+var COMPILER_RAM_SIZE:  i32 = 2097152;
+var COMPILER_STACK_SIZE: i32 = 32768;
+
+// Byte-wise prefix match against a StringLiteral. path_addr is a
+// NUL-terminated byte string in task memory.
+fn path_starts_with(path_addr: u32, s: StringLiteral) -> bool {
+    var sl: i32 = len(s);
+    var i: i32 = 0;
+    while i < sl {
+        if peek8(path_addr + i as u32) != get(s, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn path_is_compiler(path_addr: u32) -> bool {
+    if path_starts_with(path_addr, "/bin/parse")     { return true; }
+    if path_starts_with(path_addr, "/bin/typecheck") { return true; }
+    if path_starts_with(path_addr, "/bin/codegen")   { return true; }
+    if path_starts_with(path_addr, "/bin/bc2asm")    { return true; }
+    return false;
+}
+
+fn ram_for_path(path_addr: u32) -> i32 {
+    if path_is_compiler(path_addr) { return COMPILER_RAM_SIZE; }
+    return DEFAULT_RAM_SIZE;
+}
+
+fn stack_for_path(path_addr: u32) -> i32 {
+    if path_is_compiler(path_addr) { return COMPILER_STACK_SIZE; }
+    return DEFAULT_STACK_SIZE;
+}
+
 // Open an optional redirect path (may be 0u32 = "not set"). Returns
 // the VFS fd on success, 0 if addr is 0, or -1 on error. `wr` is 1
 // for stdout (write-create-truncate) or 0 for stdin (read-only).
@@ -187,7 +233,8 @@ export fn sys_exec_handler(path_addr: u32, argv_addr: u32,
 
     var fd: i32 = vfs_open(path_addr, 0);
     if fd < 0 { close_redir(in_fd); close_redir(out_fd); return 0u32; }
-    var frame: u32 = load_fd(fd, 16384, 8192);
+    var frame: u32 = load_fd(fd, ram_for_path(path_addr),
+                             stack_for_path(path_addr));
     vfs_close(fd);
     if frame == 0u32 { close_redir(in_fd); close_redir(out_fd); return 0u32; }
 
@@ -211,7 +258,8 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
 
     var fd: i32 = vfs_open(path_addr, 0);
     if fd < 0 { close_redir(in_fd); close_redir(out_fd); return -1; }
-    var frame: u32 = load_fd(fd, 16384, 8192);
+    var frame: u32 = load_fd(fd, ram_for_path(path_addr),
+                             stack_for_path(path_addr));
     vfs_close(fd);
     if frame == 0u32 { close_redir(in_fd); close_redir(out_fd); return -1; }
 

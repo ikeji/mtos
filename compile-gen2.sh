@@ -38,6 +38,16 @@ if [ -z "$TC_FILE" ]; then
     exit 1
 fi
 
+# Resolve symlinks in the input path so imports are looked up next to
+# the real source, not next to the symlink. kernel/build.sh stages
+# compiler/ sources as kernel/tasks/<name>/<name>.tc symlinks, and
+# their imports (string_buffer.tc, ast_node.tc, ...) only exist under
+# compiler/. Without the resolve step, _collect_imports would search
+# kernel/tasks/<name>/ and find nothing.
+if [ -L "$TC_FILE" ]; then
+    TC_FILE=$(readlink -f "$TC_FILE")
+fi
+
 if [ -z "$GEN2_DIR" ]; then
     echo "Error: GEN2_DIR not set. Build Gen2 tools first with compile-gen1.sh." >&2
     exit 1

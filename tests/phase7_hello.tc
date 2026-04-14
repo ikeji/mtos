@@ -1,0 +1,8 @@
+// phase7_hello.tc — minimal program compiled on the OS.
+// Used by tests/test_phase7.sh to exercise /bin/parse (and eventually
+// the full parse→typecheck→codegen→bc2asm pipeline) running as a
+// kernel task. Kept intentionally small so parse's output AST is
+// easy to grep for and the task's kmalloc footprint stays low.
+fn main() -> i32 {
+    return 42;
+}

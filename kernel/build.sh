@@ -58,6 +58,15 @@ case "$TARGET" in
         ;;
 esac
 
+# Optional EXTRA_TASKS env var: append experimental tasks (e.g. the
+# phase 7 compiler binaries /bin/parse, /bin/typecheck, ...) to the
+# base TASKS list. `kernel/tasks/<name>/<name>.tc` may be a symlink
+# into compiler/; compile-gen2.sh resolves symlinks before import
+# collection so this works without copying files.
+if [ -n "$EXTRA_TASKS" ]; then
+    TASKS="$TASKS $EXTRA_TASKS"
+fi
+
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
@@ -128,6 +137,12 @@ for task in $TASKS; do
     cp "$TMP/$task.bin" "$ROOT_DIR_TREE/bin/$task"
 done
 printf 'hello, mtfs\n' > "$ROOT_DIR_TREE/hello.txt"
+# phase 7 test input: a minimal .tc program that compiler tasks can
+# consume from /phase7.tc. Always staged so tests/test_phase7.sh can
+# use the same kernel build regardless of EXTRA_TASKS.
+if [ -f "$ROOT_DIR/tests/phase7_hello.tc" ]; then
+    cp "$ROOT_DIR/tests/phase7_hello.tc" "$ROOT_DIR_TREE/phase7.tc"
+fi
 python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 
 # Optional: copy the mtfs image out for callers that need it (e.g.
