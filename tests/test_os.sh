@@ -87,15 +87,17 @@ fi
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$TMP/kernel_virt" ] && [ -s "$TMP/disk.img" ]; then
     t0=$(time_ms)
-    # Shell loop: spawn catfile five times (four without args, one
-    # with an explicit argv[1]=/hello.txt), then read "quit" to exit.
-    # The mixed argv exercises the phase 7 B prereq (argc/argv flow
-    # through sys_spawn → clone_argv → trap frame → main(argv)).
-    # Five iterations also exercise the loader's kfree path for
-    # frame_buf / ram / stack / img / argv after each child exits —
-    # the kernel prints "KERN: live=N" at shutdown so the test can
-    # assert the count did not grow with spawn iterations.
-    fs_out=$(printf 'catfile\ncatfile\ncatfile\ncatfile\ncatfile /hello.txt\nquit\n' \
+    # Shell loop: run tmpdemo once to exercise the tmpfs write path
+    # (open /tmp/demo with O_WRONLY|O_CREAT, write + close, re-open
+    # for read), then spawn catfile five times (four without args,
+    # one with an explicit argv[1]=/hello.txt), then read "quit"
+    # to exit. The mixed argv exercises the phase 7 B prereq, and
+    # tmpdemo exercises the phase 7 A prereq (tmpfs). Six iterations
+    # also exercise the loader's kfree path for frame_buf / ram /
+    # stack / img / argv after each child exits — the kernel prints
+    # "KERN: live=N" at shutdown so the test can assert the count
+    # did not grow with spawn iterations.
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile\ncatfile\ncatfile\ncatfile /hello.txt\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -118,6 +120,8 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_cat1_count=$(echo "$fs_out" | grep -c 'CAT\[1\]:')
     fs_cat2_count=$(echo "$fs_out" | grep -c 'CAT\[2\]:')
     fs_has_mtfs_msg=$(echo "$fs_out" | grep -c "hello, mtfs")
+    fs_has_tmpfs_ok=$(echo "$fs_out" | grep -c "TMPFS_OK")
+    fs_has_tmpfs_payload=$(echo "$fs_out" | grep -c "TMP:hello tmpfs")
     fs_has_sh=$(echo "$fs_out" | grep -c "SH: ready")
     fs_has_bye=$(echo "$fs_out" | grep -c "SH: bye")
     # Leak canary: the kernel prints its kmalloc live count at the
@@ -126,21 +130,23 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_live=$(echo "$fs_out" | sed -n 's/.*KERN: live=\([0-9]*\).*/\1/p' | tail -1)
     case "$fs_out" in
         *"BLOCK: virtio-blk detected"*"$expected"*"MTFS: mounted"*"FILE:hello, mtfs"*"all tasks done"*)
-            # The 5 spawns mean we expect ≥5 CAT: outputs. The live
-            # count must stay ≤ 64 — the current baseline is 38
-            # (seeded tasks + VFS/block state + TaskArray of 8 Task
-            # structs). A leak would push it up by ~4 per extra
-            # spawn, so 5 leaked spawns would hit 58 and a
-            # regression would trip well before 64.
+            # The 5 catfile spawns mean we expect ≥5 CAT: outputs.
+            # The live count must stay ≤ 96 — the current baseline
+            # is ~67 (seeded tasks + VFS/block state + mtfs inode
+            # cache + TmpFileArray(16)/TmpfsFDArray(8) struct slots
+            # + the persistent /tmp/demo file). A per-spawn leak
+            # would push it up by ~4 per extra spawn, so 5 leaks
+            # would reach ~87 and a regression would trip before 96.
             if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
                 && [ "$fs_cat_count" -ge 5 ] && [ "$fs_cat1_count" -ge 4 ] \
                 && [ "$fs_cat2_count" -ge 1 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
+                && [ "$fs_has_tmpfs_ok" -gt 0 ] && [ "$fs_has_tmpfs_payload" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
-                && [ -n "$fs_live" ] && [ "$fs_live" -le 64 ]; then
-                report_pass "fs_virtio: 5× catfile spawn/wait (4 default + 1 argv), live=$fs_live" "$elapsed"
+                && [ -n "$fs_live" ] && [ "$fs_live" -le 96 ]; then
+                report_pass "fs_virtio: tmpdemo + 5× catfile spawn/wait, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 320)"
+                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 320)"
             fi
             ;;
         *)

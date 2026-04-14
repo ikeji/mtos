@@ -1,0 +1,238 @@
+// kernel/tmpfs.tc — RAM-backed read/write filesystem for /tmp
+//
+// Provides scratch space for intermediate files (*.ast / *.tast /
+// *.bc / *.s) before phase 7 runs the compiler on the OS. Backed
+// entirely by kmalloc — no block layer involvement.
+//
+// v1 simplifications:
+//   - Flat directory: files live at /tmp/<name>, no subdirectories.
+//     <name> is ≤ 63 bytes.
+//   - Grow-only data blocks: a write past capacity doubles the
+//     backing U8Array. Truncation only happens via O_TRUNC on open.
+//   - Up to 16 files and 8 concurrent fds.
+//   - No link count / permission bits / timestamps.
+
+// Runtime allocator (compiler/runtime.tc)
+fn kfree(ptr: u32) -> void;
+
+var TMPFS_MAX_FILES: i32 = 16;
+var TMPFS_MAX_FDS:   i32 = 8;
+var TMPFS_NAME_MAX:  i32 = 63;
+
+// Linux open() flag subset. Stored values match the usual O_*
+// constants so tasks can pass them through as-is.
+var TMPFS_O_WRONLY: i32 = 1;
+var TMPFS_O_RDWR:   i32 = 2;
+var TMPFS_O_CREAT:  i32 = 64;
+var TMPFS_O_TRUNC:  i32 = 512;
+
+// Inode:
+//   nm_addr  kmalloc-backed NUL-terminated name, 0 = free slot
+//   nlen     name byte count (excluding NUL)
+//   dp       kmalloc-backed data block (0 = nothing written yet)
+//   sz       current file size
+//   cp       capacity of the data block (≥ sz)
+struct TmpFile {
+    nm_addr: u32,
+    nlen:    i32,
+    dp:      u32,
+    sz:      i32,
+    cp:      i32,
+}
+
+// Open handle: file index + read/write position + writable flag.
+// tf_ino = -1 marks a free slot.
+struct TmpfsFD {
+    tf_ino: i32,
+    tf_pos: i32,
+    tf_wr:  i32,
+}
+
+var g_tmpfs_files: TmpFileArray = 0 as TmpFileArray;
+var g_tmpfs_fds:   TmpfsFDArray = 0 as TmpfsFDArray;
+var g_tmpfs_ready: i32 = 0;
+
+export fn tmpfs_mount() -> i32 {
+    g_tmpfs_files = TmpFileArray(TMPFS_MAX_FILES as u32);
+    var i: i32 = 0;
+    while i < TMPFS_MAX_FILES {
+        set(g_tmpfs_files, i, TmpFile(0u32, 0, 0u32, 0, 0));
+        i = i + 1;
+    }
+    g_tmpfs_fds = TmpfsFDArray(TMPFS_MAX_FDS as u32);
+    var k: i32 = 0;
+    while k < TMPFS_MAX_FDS {
+        set(g_tmpfs_fds, k, TmpfsFD(-1, 0, 0));
+        k = k + 1;
+    }
+    g_tmpfs_ready = 1;
+    return 0;
+}
+
+// Compare n bytes at name_addr against the NUL-terminated name at
+// nm_addr. Returns true iff the stored name matches exactly and has
+// no extra characters past n.
+fn name_matches(stored: u32, name_addr: u32, n: i32) -> bool {
+    var i: i32 = 0;
+    while i < n {
+        if peek8(stored + i as u32) != peek8(name_addr + i as u32) { return false; }
+        i = i + 1;
+    }
+    return peek8(stored + n as u32) == 0u8;
+}
+
+// Look up an existing file by name. Returns the file index or -1.
+fn tmpfs_lookup(name_addr: u32, n: i32) -> i32 {
+    var i: i32 = 0;
+    while i < TMPFS_MAX_FILES {
+        var f: TmpFile = get(g_tmpfs_files, i);
+        if nm_addr(f) != 0u32 && nlen(f) == n {
+            if name_matches(nm_addr(f), name_addr, n) { return i; }
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+// Allocate a new file slot with a copy of name_addr[0..n] (+ NUL).
+// Returns the slot index, or -1 if the table is full.
+fn tmpfs_create(name_addr: u32, n: i32) -> i32 {
+    var i: i32 = 0;
+    while i < TMPFS_MAX_FILES {
+        var f: TmpFile = get(g_tmpfs_files, i);
+        if nm_addr(f) == 0u32 {
+            var nb: U8Array = U8Array((n + 1) as u32);
+            var j: i32 = 0;
+            while j < n {
+                set(nb, j, peek8(name_addr + j as u32) as u8);
+                j = j + 1;
+            }
+            poke8(nb as u32 + 4u32 + n as u32, 0u8);
+            nm_addr(f, nb as u32 + 4u32);
+            nlen(f, n);
+            dp(f, 0u32);
+            sz(f, 0);
+            cp(f, 0);
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn tmpfs_alloc_fd(ino: i32, wr_flag: i32) -> i32 {
+    var i: i32 = 0;
+    while i < TMPFS_MAX_FDS {
+        var e: TmpfsFD = get(g_tmpfs_fds, i);
+        if tf_ino(e) < 0 {
+            tf_ino(e, ino);
+            tf_pos(e, 0);
+            tf_wr(e, wr_flag);
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+// Open /tmp/<name> where name_addr points at the name bytes (no
+// leading slash). Returns a tmpfs-local fd ≥ 0 or -1.
+export fn tmpfs_open(name_addr: u32, n: i32, flags: i32) -> i32 {
+    if g_tmpfs_ready == 0 { return -1; }
+    if n == 0 || n > TMPFS_NAME_MAX { return -1; }
+
+    var ino: i32 = tmpfs_lookup(name_addr, n);
+    if ino < 0 {
+        if (flags & TMPFS_O_CREAT) == 0 { return -1; }
+        ino = tmpfs_create(name_addr, n);
+        if ino < 0 { return -1; }
+    } else if (flags & TMPFS_O_TRUNC) != 0 {
+        var f: TmpFile = get(g_tmpfs_files, ino);
+        sz(f, 0);
+    }
+
+    var wr_bit: i32 = 0;
+    if (flags & TMPFS_O_WRONLY) != 0 || (flags & TMPFS_O_RDWR) != 0 {
+        wr_bit = 1;
+    }
+    return tmpfs_alloc_fd(ino, wr_bit);
+}
+
+export fn tmpfs_close(fd: i32) -> i32 {
+    if fd < 0 || fd >= TMPFS_MAX_FDS { return -1; }
+    var e: TmpfsFD = get(g_tmpfs_fds, fd);
+    if tf_ino(e) < 0 { return -1; }
+    tf_ino(e, -1);
+    tf_pos(e, 0);
+    tf_wr(e, 0);
+    return 0;
+}
+
+export fn tmpfs_size(fd: i32) -> i32 {
+    if fd < 0 || fd >= TMPFS_MAX_FDS { return -1; }
+    var e: TmpfsFD = get(g_tmpfs_fds, fd);
+    var ino: i32 = tf_ino(e);
+    if ino < 0 { return -1; }
+    return sz(get(g_tmpfs_files, ino));
+}
+
+export fn tmpfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    if fd < 0 || fd >= TMPFS_MAX_FDS { return -1; }
+    var e: TmpfsFD = get(g_tmpfs_fds, fd);
+    var ino: i32 = tf_ino(e);
+    if ino < 0 { return -1; }
+    var f: TmpFile = get(g_tmpfs_files, ino);
+    var remaining: i32 = sz(f) - tf_pos(e);
+    if remaining <= 0 { return 0; }
+    var want: i32 = n;
+    if want > remaining { want = remaining; }
+    var src: u32 = dp(f) + tf_pos(e) as u32;
+    var i: i32 = 0;
+    while i < want {
+        poke8(buf_addr + i as u32, peek8(src + i as u32) as u8);
+        i = i + 1;
+    }
+    tf_pos(e, tf_pos(e) + want);
+    return want;
+}
+
+// Grow the data block to hold at least need_bytes. Called from
+// tmpfs_write when an append would exceed the current capacity.
+fn tmpfs_grow(f: TmpFile, need_bytes: i32) -> void {
+    var new_cap: i32 = cp(f);
+    if new_cap == 0 { new_cap = 128; }
+    while new_cap < need_bytes { new_cap = new_cap * 2; }
+    var new_buf: U8Array = U8Array(new_cap as u32);
+    var old_dp: u32 = dp(f);
+    var cur_size: i32 = sz(f);
+    var i: i32 = 0;
+    while i < cur_size {
+        poke8(new_buf as u32 + 4u32 + i as u32, peek8(old_dp + i as u32) as u8);
+        i = i + 1;
+    }
+    if old_dp != 0u32 {
+        // dp points at [header+4]; kfree needs the [header] base.
+        kfree(old_dp - 4u32);
+    }
+    dp(f, new_buf as u32 + 4u32);
+    cp(f, new_cap);
+    return;
+}
+
+export fn tmpfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    if fd < 0 || fd >= TMPFS_MAX_FDS { return -1; }
+    var e: TmpfsFD = get(g_tmpfs_fds, fd);
+    var ino: i32 = tf_ino(e);
+    if ino < 0 || tf_wr(e) == 0 { return -1; }
+    var f: TmpFile = get(g_tmpfs_files, ino);
+    var need: i32 = tf_pos(e) + n;
+    if need > cp(f) { tmpfs_grow(f, need); }
+    var j: i32 = 0;
+    while j < n {
+        poke8(dp(f) + (tf_pos(e) + j) as u32, peek8(buf_addr + j as u32) as u8);
+        j = j + 1;
+    }
+    tf_pos(e, tf_pos(e) + n);
+    if tf_pos(e) > sz(f) { sz(f, tf_pos(e)); }
+    return n;
+}

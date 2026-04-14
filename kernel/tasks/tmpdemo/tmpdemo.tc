@@ -1,0 +1,62 @@
+// tmpdemo.tc — guest task that exercises the tmpfs write path.
+//
+// Writes a short payload to /tmp/demo via sys_openat(O_WRONLY|O_CREAT)
+// + sys_write, closes, re-opens for read, reads it back, and prints
+// the contents with a "TMP:" prefix plus "TMPFS_OK" marker so the
+// host-side test can grep the result.
+
+import "../libtc/libtc.tc";
+
+fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+// Linux O_* subset understood by kernel/tmpfs.tc
+var O_WRONLY: i32 = 1;
+var O_CREAT:  i32 = 64;
+var O_TRUNC:  i32 = 512;
+
+fn main(argv: StringArray) -> i32 {
+    var path: U8Array = str_nul("/tmp/demo");
+
+    // --- Write ---
+    var fd: i32 = do_openat(0, path as u32 + 4u32,
+                            O_WRONLY | O_CREAT | O_TRUNC);
+    if fd < 0 {
+        puts("TMP: open-write failed\n");
+        delete(path);
+        return 1;
+    }
+    var payload: U8Array = str_nul("hello tmpfs\n");
+    // strlen: str_nul reserves +1 for NUL, len() reports bytes incl NUL.
+    // Use len() - 1 to get the actual payload length.
+    var plen: i32 = len(payload) - 1;
+    var nw: i32 = sys_write(fd, payload, plen);
+    delete(payload);
+    do_close(fd);
+    if nw != plen {
+        puts("TMP: short write\n");
+        delete(path);
+        return 1;
+    }
+
+    // --- Read back ---
+    fd = do_openat(0, path as u32 + 4u32, 0);
+    delete(path);
+    if fd < 0 {
+        puts("TMP: open-read failed\n");
+        return 1;
+    }
+    var buf: U8Array = U8Array(64u32);
+    var nr: i32 = sys_read(fd, buf, 64);
+    do_close(fd);
+    if nr <= 0 {
+        puts("TMP: read failed\n");
+        delete(buf);
+        return 1;
+    }
+    puts("TMP:");
+    sys_write(1, buf, nr);
+    puts("TMPFS_OK\n");
+    delete(buf);
+    return 0;
+}

@@ -39,7 +39,8 @@ case "$TARGET" in
         DATA_S="$KERN_DIR/crt0_data.s"
         KERNEL_TC="$KERN_DIR/kernel.tc"
         # virt slot 2 is /bin/sh; /bin/launcher is pico2-only.
-        TASKS="hello hello2 catfile sh"
+        # tmpdemo exercises the tmpfs write path under /tmp/.
+        TASKS="hello hello2 catfile sh tmpdemo"
         : "${OUTFILE:=kernel_virt.bin}"
         ;;
     pico2)

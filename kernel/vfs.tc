@@ -1,15 +1,20 @@
 // kernel/vfs.tc — Virtual File System dispatch layer
 //
 // Sits between the kernel's ecall handlers and per-FS implementations
-// (currently only mtfs). All I/O uses raw u32 data addresses because
+// (mtfs and tmpfs today). All I/O uses raw u32 data addresses because
 // that's what the task-side ecall passes in. Bounds are trusted —
 // the caller owns the buffer.
 //
 // fd layout:
 //   0, 1, 2     — standard input/output/error, routed to UART directly
 //   3 ..        — VFS-allocated fds backed by an FS entry in g_vfs_fds
+//
+// Path routing:
+//   /tmp/<name>    → tmpfs (RAM-backed, read/write, O_CREAT supported)
+//   everything else → mtfs  (read-only, from block layer)
 
 import "mtfs.tc";
+import "tmpfs.tc";
 
 // Platform UART helpers (defined in platform_*.s)
 fn do_uart_write(buf: u32, len: i32) -> i32;
@@ -19,10 +24,11 @@ var VFS_MAX_FDS: i32 = 16;
 var VFS_PATH_MAX: i32 = 128;
 
 // fs_type values
-//   -1 = free slot, 0 = UART (unused today), 1 = mtfs
-var FS_NONE: i32 = -1;
-var FS_UART: i32 = 0;
-var FS_MTFS: i32 = 1;
+//   -1 = free slot, 0 = UART (unused today), 1 = mtfs, 2 = tmpfs
+var FS_NONE:  i32 = -1;
+var FS_UART:  i32 = 0;
+var FS_MTFS:  i32 = 1;
+var FS_TMPFS: i32 = 2;
 
 // ===== fd table =====
 // fs_type : which FS owns this fd
@@ -41,6 +47,7 @@ var g_vfs_ready: i32 = 0;
 
 export fn vfs_init() -> i32 {
     if mtfs_mount() != 0 { return -1; }
+    if tmpfs_mount() != 0 { return -1; }
     g_vfs_fds = FDArray(VFS_MAX_FDS as u32);
     var i: i32 = 0;
     while i < VFS_MAX_FDS {
@@ -49,6 +56,17 @@ export fn vfs_init() -> i32 {
     }
     g_vfs_ready = 1;
     return 0;
+}
+
+// Recognise the /tmp/ prefix and route to tmpfs.
+fn is_tmp_path(path_addr: u32, plen: i32) -> bool {
+    if plen < 5 { return false; }
+    if peek8(path_addr)          != '/' as u8 { return false; }
+    if peek8(path_addr + 1u32)   != 't' as u8 { return false; }
+    if peek8(path_addr + 2u32)   != 'm' as u8 { return false; }
+    if peek8(path_addr + 3u32)   != 'p' as u8 { return false; }
+    if peek8(path_addr + 4u32)   != '/' as u8 { return false; }
+    return true;
 }
 
 // strnlen over raw memory. Scans at most max bytes.
@@ -77,16 +95,30 @@ fn alloc_vfs_fd(fs: i32, inner_fd: i32) -> i32 {
     return -1;
 }
 
-// Open a file at the given path. `flags` is currently ignored — all
-// opens are read-only. Path is a null-terminated byte string in task
-// memory at path_addr (virt has ID mapping, so kernel can read it).
-// Path components are separated by '/'. A leading '/' is accepted and
-// skipped. Each component is looked up under the running parent inode,
-// so /bin/hello descends into the "bin" directory first.
+// Open a file at the given path. Path is a null-terminated byte
+// string in task memory at path_addr (virt / pico2 have ID mapping,
+// so kernel can read it directly). Paths under /tmp/ route to tmpfs
+// and may pass O_CREAT / O_TRUNC / O_WRONLY / O_RDWR in flags. All
+// other paths go to mtfs (read-only); flags are ignored there.
+//
+// mtfs path components are separated by '/'. A leading '/' is
+// accepted and skipped. Each component is looked up under the
+// running parent inode, so /bin/hello descends into the "bin"
+// directory first.
 export fn vfs_open(path_addr: u32, flags: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
     var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
     if plen == 0 { return -1; }
+
+    if is_tmp_path(path_addr, plen) {
+        var nlen: i32 = plen - 5;  // "/tmp/" is 5 bytes
+        if nlen == 0 { return -1; }
+        var inner_fd: i32 = tmpfs_open(path_addr + 5u32, nlen, flags);
+        if inner_fd < 0 { return -1; }
+        var fd: i32 = alloc_vfs_fd(FS_TMPFS, inner_fd);
+        if fd < 0 { tmpfs_close(inner_fd); return -1; }
+        return fd;
+    }
 
     var i: i32 = 0;
     if peek8(path_addr) == '/' as u8 { i = 1; }
@@ -137,7 +169,8 @@ export fn vfs_size(fd: i32) -> i32 {
     if fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_MTFS { return mtfs_size(inner(e)); }
+    if t == FS_MTFS  { return mtfs_size(inner(e)); }
+    if t == FS_TMPFS { return tmpfs_size(inner(e)); }
     return -1;
 }
 
@@ -161,13 +194,19 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_MTFS { return mtfs_read(inner(e), buf_addr, n); }
+    if t == FS_MTFS  { return mtfs_read(inner(e), buf_addr, n); }
+    if t == FS_TMPFS { return tmpfs_read(inner(e), buf_addr, n); }
     return -1;
 }
 
 export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
     // Standard streams and anything without an open file go to UART.
     if fd >= 0 && fd < 3 { return do_uart_write(buf_addr, n); }
+    if g_vfs_ready == 0 { return -1; }
+    if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
+    var e: FD = get(g_vfs_fds, fd - 3);
+    var t: i32 = fs_type(e);
+    if t == FS_TMPFS { return tmpfs_write(inner(e), buf_addr, n); }
     // mtfs is read-only; no other writable FS yet.
     return -1;
 }
@@ -178,7 +217,8 @@ export fn vfs_close(fd: i32) -> i32 {
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_MTFS { mtfs_close(inner(e)); }
+    if t == FS_MTFS  { mtfs_close(inner(e)); }
+    if t == FS_TMPFS { tmpfs_close(inner(e)); }
     fs_type(e, FS_NONE);
     inner(e, 0);
     offset(e, 0);
