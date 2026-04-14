@@ -200,17 +200,6 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 
 ## ビルド / テスト
 
-### 15. `/tmp/gen2` キャッシュが stale になる (ergonomics)
-
-手動で `/tmp/gen2` に Gen2 ツールを置いて開発していると、compiler/*.tc
-を変更したときに古い Gen2 が使われて意味不明なエラー (`get: out of
-bounds`) を食らう。`make test` の中では毎回 fresh ビルドするので OK。
-
-対処案:
-- `compile-gen2.sh` に `GEN2_REBUILD=1` のようなフラグを追加。
-- Gen2 ツールのビルド時刻を compiler/*.tc の最新 mtime と比較して
-  警告を出す。
-
 ### 16. Gen2 ツールの再ビルドが遅い (ergonomics)
 
 `compile-gen1.sh` で 7 本 (parse/typecheck/codegen/bc2asm/bcrun/asm/
@@ -414,6 +403,14 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   半分程度に縮めた。`.macro` / `.endm` のサポートを asm.tc に足さず
   ヘルパラベル (`call _ecall_enter` / `j _ecall_leave_advance`) で
   single-source 化。23 行減 (#7 短期)
+- `/tmp/gen2` / `/tmp/gen3` のキャッシュが stale のまま使われると、
+  古い overload テーブル経由で意味不明な実行時エラー (かつて
+  "get: out of bounds" の発生源) になっていた → compile-gen2.sh /
+  compile-gen3.sh の起動時に `find compiler/*.tc -newer
+  $GEN2_DIR/typecheck` で検出し、stale 時に rebuild コマンドを含む
+  警告を stderr に出すようにした。強制 rebuild はしない (開発者が
+  stale build を意図的に使いたい場面もあるため)。make test は毎回
+  fresh にビルドするので警告は出ない (#15)
 - ツールチェーンの stderr が「成功時に 100 行以上のノイズ」で埋まっていて
   `compile-gen*.sh` が全パイプ段を `2>/dev/null` で潰していた (結果
   typecheck/codegen/bc2asm の失敗が開発者に見えなかった) → 3 箇所の

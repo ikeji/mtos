@@ -50,6 +50,23 @@ for tool in typecheck codegen bc2asm asm; do
     fi
 done
 
+# Stale-cache check: if any compiler/*.tc is newer than the Gen2
+# typecheck binary, the user probably forgot to rebuild Gen2 after
+# editing the compiler. A stale Gen2 typechecks against old overload
+# tables and gives mystifying errors (historically "get: N out of
+# bounds"). Warn loudly but keep running — the dev may want the stale
+# build on purpose (e.g. to diff golden outputs against old vs new).
+# See problem.md #15.
+if find "$ROOT_DIR/compiler" -maxdepth 1 -name '*.tc' \
+        -newer "$GEN2_DIR/typecheck" -print -quit 2>/dev/null | grep -q .; then
+    {
+        echo "warning: GEN2_DIR=$GEN2_DIR is older than compiler/*.tc"
+        echo "         rebuild with:  rm -rf $GEN2_DIR && mkdir -p $GEN2_DIR &&"
+        echo "           for t in parse typecheck codegen bc2asm bcrun asm; do"
+        echo "             ./compile-gen1.sh -o \$GEN2_DIR/\$t compiler/\$t.tc; done"
+    } >&2
+fi
+
 # Recursive import collection
 _COLLECTED=""
 _collect_imports() {

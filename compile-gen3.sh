@@ -48,6 +48,16 @@ for tool in typecheck codegen bc2asm asm; do
     fi
 done
 
+# Stale-cache check (see problem.md #15 and compile-gen2.sh for the
+# same check).
+if find "$ROOT_DIR/compiler" -maxdepth 1 -name '*.tc' \
+        -newer "$GEN3_DIR/typecheck" -print -quit 2>/dev/null | grep -q .; then
+    {
+        echo "warning: GEN3_DIR=$GEN3_DIR is older than compiler/*.tc"
+        echo "         rebuild with compile-gen2.sh against each compiler/*.tc"
+    } >&2
+fi
+
 # Recursive import collection
 _COLLECTED=""
 _collect_imports() {
