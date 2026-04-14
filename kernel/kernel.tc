@@ -13,6 +13,10 @@ fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;
 fn sched_start(frame: u32) -> void;
 
+// Runtime allocator stats (compiler/runtime.tc)
+fn km_live_count() -> i32;
+fn print_i32(v: i32) -> void;
+
 // CLINT MMIO (qemu virt)
 var MTIMECMP_LO: u32 = 0x02004000u32;
 var MTIMECMP_HI: u32 = 0x02004004u32;
@@ -137,5 +141,12 @@ fn main() -> i32 {
     sched_start(sched_get_frame(0));
 
     kputs("\nKERN: all tasks done\n");
+    // Leak canary: after the scheduler drains, only a few long-lived
+    // kernel allocations (VFS fd table, block driver state, mtfs
+    // inode cache...) should be outstanding. A regression that leaks
+    // per-task frame_buf/ram/stack/img would push this count up
+    // linearly with the number of spawn/wait cycles.
+    kputs("KERN: live=");
+    print_i32(km_live_count());
     return 0;
 }

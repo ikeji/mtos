@@ -268,7 +268,7 @@ fn kmalloc(size: i32) -> u32 {
 //    該当バケットのフリーリストに push して O(1) で完了。
 //    (ヘッダ領域を next ポインタとして再利用する)
 // 3. 一致しなければ large_free でヒープに返却 (隣接結合���り)。
-fn kfree(ptr: u32) -> void {
+export fn kfree(ptr: u32) -> void {
     if ptr == 0u32 { return; }
     var blk: u32 = ptr - KM_HDR as u32;
     var total: i32 = peek32(blk) as i32;
@@ -429,7 +429,23 @@ fn write_str_stderr(s: StringLiteral) -> void {
     return;
 }
 
-fn km_dump_stats() -> void {
+// Returns the total number of kmalloc'd blocks currently live (not
+// yet freed), summed across all size buckets and large allocations.
+// Handy for regression-testing that a workload doesn't leak — after
+// a scheduler drains, this should be bounded by a small constant.
+export fn km_live_count() -> i32 {
+    var n: i32 = 0;
+    var i: i32 = 0;
+    while i < KM_NBUCKETS {
+        n = n + peek32(stat_addr(i, 0)) as i32;
+        i = i + 1;
+    }
+    var base: u32 = g_bucket_base + KM_LARGE_STAT_OFFSET as u32;
+    n = n + peek32(base) as i32;
+    return n;
+}
+
+export fn km_dump_stats() -> void {
     write_str_stderr("\nkmalloc stats (bucket: peak/total):\n");
     var i: i32 = 0;
     while i < KM_NBUCKETS {

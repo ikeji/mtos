@@ -87,9 +87,13 @@ fi
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$TMP/kernel_virt" ] && [ -s "$TMP/disk.img" ]; then
     t0=$(time_ms)
-    # Shell loop: spawn catfile + wait for it, then prompt again and
-    # read "quit" to exit. Validates sys_spawn + sys_wait end to end.
-    fs_out=$(printf 'catfile\nquit\n' | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+    # Shell loop: spawn catfile five times (via sys_spawn+sys_wait),
+    # then read "quit" to exit. Five iterations exercise the loader's
+    # kfree path for frame_buf / ram / stack / img after each child
+    # exits — the kernel prints "KERN: live=N" at shutdown so the
+    # test can assert the count did not grow with spawn iterations.
+    fs_out=$(printf 'catfile\ncatfile\ncatfile\ncatfile\ncatfile\nquit\n' \
+        | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
         -drive "file=$TMP/disk.img,format=raw,if=none,id=blk0" \
@@ -105,19 +109,29 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # single substring.
     fs_has_a=$(echo "$fs_out" | grep -c "A")
     fs_has_b=$(echo "$fs_out" | grep -c "B")
-    fs_has_cat=$(echo "$fs_out" | grep -c "CAT:")
+    fs_cat_count=$(echo "$fs_out" | grep -c "CAT:")
     fs_has_mtfs_msg=$(echo "$fs_out" | grep -c "hello, mtfs")
     fs_has_sh=$(echo "$fs_out" | grep -c "SH: ready")
     fs_has_bye=$(echo "$fs_out" | grep -c "SH: bye")
+    # Leak canary: the kernel prints its kmalloc live count at the
+    # end. With the K1 process-table fix in place, this stays bounded
+    # by a small constant regardless of how many children sh spawns.
+    fs_live=$(echo "$fs_out" | sed -n 's/.*KERN: live=\([0-9]*\).*/\1/p' | tail -1)
     case "$fs_out" in
         *"BLOCK: virtio-blk detected"*"$expected"*"MTFS: mounted"*"FILE:hello, mtfs"*"all tasks done"*)
+            # The 5 spawns mean we expect ≥5 CAT: outputs. The live
+            # count must stay ≤ 64 — the current baseline is 36
+            # (seeded tasks + VFS/block state). A leak would push it
+            # up by ~4 per extra spawn, so 5 leaked spawns would hit
+            # 56 and a regression would trip well before 64.
             if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
-                && [ "$fs_has_cat" -gt 0 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
-                && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ]; then
-                report_pass "fs_virtio: mtfs mount + sh spawn/wait loop (hello/hello2/sh→catfile→quit)" "$elapsed"
+                && [ "$fs_cat_count" -ge 5 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
+                && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
+                && [ -n "$fs_live" ] && [ "$fs_live" -le 64 ]; then
+                report_pass "fs_virtio: 5× catfile spawn/wait, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "missing SH:/CAT:/A/B/mtfs/bye, got: $(printf '%s' "$fs_out" | head -c 240)"
+                    "cat=$fs_cat_count live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 240)"
             fi
             ;;
         *)
