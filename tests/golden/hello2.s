@@ -129,7 +129,7 @@ main:
     sw   s0, 24(sp)
     addi s0, sp, 32
     sw   zero, -12(s0)
-    la   t0, __tc_strobj0
+    la   t0, __to_buf__StringLiteral_strobj0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -186,7 +186,7 @@ main:
 
     .section .rodata
     .align 4
-__tc_strobj0:
+__to_buf__StringLiteral_strobj0:
     .word 13
     .string "Hello, World\n"
 

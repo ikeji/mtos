@@ -239,7 +239,7 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 
 詳細な実装計画と前提機能 (A〜F / M1〜M7) は
 `docs/task/phase7_compiler_on_os.md`、実測ピークメモリと残課題は
-`docs/problem.md` #7 / K3 / K5 / K6 / K7 / #21 を参照。
+`docs/problem.md` #7 / K3 / K5 / K6 / K7 を参照。
 **M1〜M6 まで qemu virt 上で完走**、OS 上で Hello World を自己
 コンパイル + 自己実行できるところまで到達している。
 

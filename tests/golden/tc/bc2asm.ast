@@ -185,6 +185,14 @@
     (type i32)
     (int 0)
   )
+  (var_decl g_strobj_ss
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_strobj_sl
+    (type i32)
+    (int 0)
+  )
   (fn e4
     (params
       (param ob
@@ -700,6 +708,51 @@
       )
       (call_stmt emit_nl
         (var ob)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn e_strobj
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param idx
+        (type i32)
+      )
+      (param ob
+        (type StringBuffer)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "emit_char(ob, '_'); emit_char(ob, '_');")
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (call_stmt emit_char
+        (var ob)
+        (int:u8 95)
+      )
+      (comment "emit_n(ob, strtab, g_strobj_ss, g_strobj_sl);")
+      (call_stmt emit_n
+        (var ob)
+        (var strtab)
+        (var g_strobj_ss)
+        (var g_strobj_sl)
+      )
+      (comment "emit_string(ob, \"_strobj\"); emit_int(ob, idx);")
+      (call_stmt emit_string
+        (var ob)
+        (str "_strobj")
+      )
+      (call_stmt emit_int
+        (var ob)
+        (var idx)
       )
       (comment "return;")
       (return)
@@ -6941,15 +6994,11 @@
               (call_stmt eregt0
                 (var ob)
               )
-              (comment "emit_string(ob, \"__tc_strobj\");")
-              (call_stmt emit_string
-                (var ob)
-                (str "__tc_strobj")
-              )
-              (comment "emit_int(ob, ival); emit_nl(ob);")
-              (call_stmt emit_int
-                (var ob)
+              (comment "e_strobj(strtab, ival, ob); emit_nl(ob);")
+              (call_stmt e_strobj
+                (var strtab)
                 (var ival)
+                (var ob)
               )
               (call_stmt emit_nl
                 (var ob)
@@ -8937,15 +8986,11 @@
               (call_stmt emit_nl
                 (var ob)
               )
-              (comment "emit_string(ob, \"__tc_strobj\");")
-              (call_stmt emit_string
-                (var ob)
-                (str "__tc_strobj")
-              )
-              (comment "emit_int(ob, si); emit_char(ob, ':');emit_nl(ob);")
-              (call_stmt emit_int
-                (var ob)
+              (comment "e_strobj(strtab, si, ob); emit_char(ob, ':');emit_nl(ob);")
+              (call_stmt e_strobj
+                (var strtab)
                 (var si)
+                (var ob)
               )
               (call_stmt emit_char
                 (var ob)
@@ -9103,6 +9148,35 @@
       (comment "close(g_reader);")
       (call_stmt close
         (var g_reader)
+      )
+      (comment "if g_nfuncs > 0 {")
+      (if
+        (binop >
+          (var g_nfuncs)
+          (int 0)
+        )
+        (block
+          (comment "var f0: BcFunc = get(fns, 0);")
+          (var_decl f0
+            (type BcFunc)
+            (call get
+              (var fns)
+              (int 0)
+            )
+          )
+          (comment "g_strobj_ss = name_ss(f0);")
+          (assign g_strobj_ss
+            (call name_ss
+              (var f0)
+            )
+          )
+          (comment "g_strobj_sl = name_sl(f0);")
+          (assign g_strobj_sl
+            (call name_sl
+              (var f0)
+            )
+          )
+        )
       )
       (comment "emit_program(strtab,string_lits,global_vars,global_inits,")
       (call_stmt emit_program

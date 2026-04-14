@@ -109,10 +109,12 @@ export fn kputs(s: StringLiteral) -> void {
 // when the current task has stdio redirected to tmpfs. Used by the
 // trap / task-exit / task-switch / redirected-write traces below.
 //
-// kdbg_chr allocates a 1-byte U8Array per call, which is a lot of
-// churn but keeps every call self-contained and immune to the
-// StringLiteral pointer quirk I ran into when first trying kputs
-// for these markers. kdbg_dec / kdbg_hex compose on top of it.
+// kdbg_chr allocates a 1-byte U8Array per call. Originally this was
+// also a workaround for a StringLiteral pointer bug that got fixed by
+// discriminating `__tc_strobj<N>` labels per .tc file (see problem.md
+// "fixed" list); today the byte-at-a-time form is just the simplest
+// way to compose kdbg_dec / kdbg_hex on top without threading a
+// StringBuffer through each caller.
 
 fn kdbg_chr(c: u8) -> void {
     var b: U8Array = U8Array(1u32);

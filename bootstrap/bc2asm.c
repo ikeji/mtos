@@ -258,6 +258,13 @@ static int is_local(BcFunc *fn, const char *name) {
 
 static FILE *out;
 
+/* String literal labels include the first function's mangled name so
+ * multiple .tc files linked into one asm.tc invocation don't collide on
+ * the per-file-local literal index. asm.tc does last-wins label
+ * resolution, so before this fix kernel.tc's __tc_strobj0 would
+ * silently replace runtime.tc's __tc_strobj0 (see docs/problem.md #21). */
+static const char *g_strobj_prefix = "tc";
+
 /* Macro-like helpers to emit common idioms */
 #define E(...) fprintf(out, __VA_ARGS__)
 
@@ -379,7 +386,7 @@ static void emit_fn(BcFunc *fn) {
         case OP_PUSH_STR: {
             /* Push pointer to static HeapObj in .rodata (no allocation) */
             int idx = (int)ins->ival;
-            E("    la   t0, __tc_strobj%d\n", idx);
+            E("    la   t0, __%s_strobj%d\n", g_strobj_prefix, idx);
             push_t0();
             break;
         }
@@ -604,6 +611,12 @@ static void emit_strdata(FILE *f, const char *s) {
 static void emit_program(BcProg *prog) {
     out = stdout;
 
+    /* Discriminate string literal labels by the first function's name.
+     * When a .tc file has zero functions it also has zero literals, so
+     * the default "tc" prefix never actually appears in output. */
+    if (prog->nfuncs > 0 && prog->funcs[0].name)
+        g_strobj_prefix = prog->funcs[0].name;
+
     /* --- .text: functions first (asm.tc treats all sections as flat stream) --- */
     E("    .text\n");
     E("    .align 2\n\n");
@@ -626,7 +639,7 @@ static void emit_program(BcProg *prog) {
         for (int i = 0; i < prog->nstrings; i++) {
             const char *s = prog->strings[i] ? prog->strings[i] : "";
             E("    .align 4\n");
-            E("__tc_strobj%d:\n", i);
+            E("__%s_strobj%d:\n", g_strobj_prefix, i);
             E("    .word %d\n", (int)strlen(s));    /* count */
             E("    .string "); emit_strdata(out, s); E("\n");  /* data follows inline */
         }

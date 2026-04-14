@@ -1840,6 +1840,8 @@ __L25:
 .global g_ninstrs i32 0
 .global g_nglobals i32 0
 .global g_nstrings i32 0
+.global g_strobj_ss i32 0
+.global g_strobj_sl i32 0
 
 .fn e4 StringBuffer void
 .param ob StringBuffer
@@ -2220,6 +2222,40 @@ __L25:
   return_void
 .endfn
 
+.fn e_strobj U8Array i32 StringBuffer void
+.param strtab U8Array
+.param idx i32
+.param ob StringBuffer
+; emit_char(ob, '_'); emit_char(ob, '_');
+  load ob
+  push_int 95
+  call emit_char StringBuffer u8
+  pop
+  load ob
+  push_int 95
+  call emit_char StringBuffer u8
+  pop
+; emit_n(ob, strtab, g_strobj_ss, g_strobj_sl);
+  load ob
+  load strtab
+  load g_strobj_ss
+  load g_strobj_sl
+  call emit_n StringBuffer U8Array i32 i32
+  pop
+; emit_string(ob, "_strobj"); emit_int(ob, idx);
+  load ob
+  push_str 19
+  call emit_string StringBuffer StringLiteral
+  pop
+  load ob
+  load idx
+  call emit_int StringBuffer i32
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
 .fn asm_pc_label U8Array i32 i32 i32 StringBuffer void
 .param strtab U8Array
 .param nm_ss i32
@@ -2228,7 +2264,7 @@ __L25:
 .param ob StringBuffer
 ; emit_string(ob, "  .L_");
   load ob
-  push_str 19
+  push_str 20
   call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, nm_ss, nm_sl);emit_string(ob, "_pc");emit_int(ob, pc);emit_char(ob, ':');emit_nl(ob);
@@ -2239,7 +2275,7 @@ __L25:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load ob
-  push_str 20
+  push_str 21
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2266,7 +2302,7 @@ __L25:
 .param ob StringBuffer
 ; emit_string(ob, ".L_");
   load ob
-  push_str 21
+  push_str 22
   call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, nm_ss, nm_sl);emit_string(ob, "_pc");emit_int(ob, pc);
@@ -2277,7 +2313,7 @@ __L25:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load ob
-  push_str 20
+  push_str 21
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2300,7 +2336,7 @@ __L25:
   call e4 StringBuffer
   pop
   load ob
-  push_str 22
+  push_str 23
   call emit_string StringBuffer StringLiteral
   pop
 ; e_pcref(strtab,nm_ss,nm_sl,target,ob);emit_nl(ob);
@@ -2337,20 +2373,20 @@ __L25:
   jump_ifnot __L0
 ; emit_string(ob, "beqz ");
   load ob
-  push_str 23
+  push_str 24
   call emit_string StringBuffer StringLiteral
   pop
   jump __L1
 __L0:
 ; emit_string(ob, "bnez ");
   load ob
-  push_str 24
+  push_str 25
   call emit_string StringBuffer StringLiteral
   pop
 __L1:
 ; emit_string(ob, "t0");ecomma(ob);
   load ob
-  push_str 25
+  push_str 26
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2358,7 +2394,7 @@ __L1:
   pop
 ; emit_string(ob, "0f");
   load ob
-  push_str 26
+  push_str 27
   call emit_string StringBuffer StringLiteral
   pop
 ; emit_nl(ob);
@@ -2371,7 +2407,7 @@ __L1:
   pop
 ; emit_string(ob, "j    ");
   load ob
-  push_str 22
+  push_str 23
   call emit_string StringBuffer StringLiteral
   pop
 ; e_pcref(strtab,nm_ss,nm_sl,target,ob);emit_nl(ob);
@@ -2387,7 +2423,7 @@ __L1:
   pop
 ; emit_string(ob, "0:");emit_nl(ob);
   load ob
-  push_str 27
+  push_str 28
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2465,7 +2501,7 @@ __L3:
   call e4 StringBuffer
   pop
   load ob
-  push_str 28
+  push_str 29
   call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, nm_ss, nm_sl);
@@ -2491,7 +2527,7 @@ __L3:
   call e4 StringBuffer
   pop
   load ob
-  push_str 29
+  push_str 30
   call emit_string StringBuffer StringLiteral
   pop
 ; eregt0(ob);emit_string(ob, "t0");emit_nl(ob);
@@ -2499,7 +2535,7 @@ __L3:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 25
+  push_str 26
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2517,7 +2553,7 @@ __L3:
   call e4 StringBuffer
   pop
   load ob
-  push_str 30
+  push_str 31
   call emit_string StringBuffer StringLiteral
   pop
 ; eregt0(ob);emit_string(ob, "t0");emit_nl(ob);
@@ -2525,7 +2561,7 @@ __L3:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 25
+  push_str 26
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2543,7 +2579,7 @@ __L3:
   call e4 StringBuffer
   pop
   load ob
-  push_str 31
+  push_str 32
   call emit_string StringBuffer StringLiteral
   pop
 ; eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_nl(ob);
@@ -2572,7 +2608,7 @@ __L3:
   call e4 StringBuffer
   pop
   load ob
-  push_str 32
+  push_str 33
   call emit_string StringBuffer StringLiteral
   pop
 ; eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
@@ -2583,7 +2619,7 @@ __L3:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2602,7 +2638,7 @@ __L3:
   call e4 StringBuffer
   pop
   load ob
-  push_str 34
+  push_str 35
   call emit_string StringBuffer StringLiteral
   pop
 ; eregt0(ob);
@@ -2618,7 +2654,7 @@ __L3:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2631,7 +2667,7 @@ __L7:
   call eregt1 StringBuffer
   pop
   load ob
-  push_str 25
+  push_str 26
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2651,7 +2687,7 @@ __L8:
   call e4 StringBuffer
   pop
   load ob
-  push_str 35
+  push_str 36
   call emit_string StringBuffer StringLiteral
   pop
 ; eregt0(ob);
@@ -2667,7 +2703,7 @@ __L8:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -2680,7 +2716,7 @@ __L9:
   call eregt1 StringBuffer
   pop
   load ob
-  push_str 25
+  push_str 26
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -3349,7 +3385,7 @@ __L49:
   load strtab
   load ss
   load sl
-  push_str 36
+  push_str 37
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L79
   load OP_OR
@@ -3359,7 +3395,7 @@ __L79:
   load strtab
   load ss
   load sl
-  push_str 37
+  push_str 38
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L80
   load OP_EQ
@@ -3369,7 +3405,7 @@ __L80:
   load strtab
   load ss
   load sl
-  push_str 38
+  push_str 39
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L81
   load OP_NE
@@ -3379,7 +3415,7 @@ __L81:
   load strtab
   load ss
   load sl
-  push_str 39
+  push_str 40
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L82
   load OP_LT
@@ -3389,7 +3425,7 @@ __L82:
   load strtab
   load ss
   load sl
-  push_str 40
+  push_str 41
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L83
   load OP_LE
@@ -3399,7 +3435,7 @@ __L83:
   load strtab
   load ss
   load sl
-  push_str 41
+  push_str 42
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L84
   load OP_GT
@@ -3409,7 +3445,7 @@ __L84:
   load strtab
   load ss
   load sl
-  push_str 42
+  push_str 43
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L85
   load OP_GE
@@ -3419,7 +3455,7 @@ __L85:
   load strtab
   load ss
   load sl
-  push_str 43
+  push_str 44
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L86
   load OP_ADD
@@ -3429,7 +3465,7 @@ __L86:
   load strtab
   load ss
   load sl
-  push_str 44
+  push_str 45
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L87
   load OP_SUB
@@ -3439,7 +3475,7 @@ __L87:
   load strtab
   load ss
   load sl
-  push_str 45
+  push_str 46
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L88
   load OP_MUL
@@ -3449,7 +3485,7 @@ __L88:
   load strtab
   load ss
   load sl
-  push_str 46
+  push_str 47
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L89
   load OP_DIV
@@ -3459,7 +3495,7 @@ __L89:
   load strtab
   load ss
   load sl
-  push_str 47
+  push_str 48
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L90
   load OP_MOD
@@ -3469,7 +3505,7 @@ __L90:
   load strtab
   load ss
   load sl
-  push_str 48
+  push_str 49
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L91
   load OP_AND
@@ -3479,7 +3515,7 @@ __L91:
   load strtab
   load ss
   load sl
-  push_str 49
+  push_str 50
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L92
   load OP_XOR
@@ -3489,7 +3525,7 @@ __L92:
   load strtab
   load ss
   load sl
-  push_str 50
+  push_str 51
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L93
   load OP_SHL
@@ -3499,7 +3535,7 @@ __L93:
   load strtab
   load ss
   load sl
-  push_str 51
+  push_str 52
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L94
   load OP_SHR
@@ -3509,7 +3545,7 @@ __L94:
   load strtab
   load ss
   load sl
-  push_str 52
+  push_str 53
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L95
   load OP_POP
@@ -3519,7 +3555,7 @@ __L95:
   load strtab
   load ss
   load sl
-  push_str 53
+  push_str 54
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L96
   load OP_NEG
@@ -3529,7 +3565,7 @@ __L96:
   load strtab
   load ss
   load sl
-  push_str 54
+  push_str 55
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L97
   load OP_LNOT
@@ -3539,7 +3575,7 @@ __L97:
   load strtab
   load ss
   load sl
-  push_str 55
+  push_str 56
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L98
   load OP_CAST
@@ -3549,7 +3585,7 @@ __L98:
   load strtab
   load ss
   load sl
-  push_str 56
+  push_str 57
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L99
   load OP_LOAD
@@ -3559,7 +3595,7 @@ __L99:
   load strtab
   load ss
   load sl
-  push_str 57
+  push_str 58
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L100
   load OP_JUMP
@@ -3569,7 +3605,7 @@ __L100:
   load strtab
   load ss
   load sl
-  push_str 58
+  push_str 59
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L101
   load OP_CALL
@@ -3579,7 +3615,7 @@ __L101:
   load strtab
   load ss
   load sl
-  push_str 59
+  push_str 60
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L102
   load OP_LT_U
@@ -3589,7 +3625,7 @@ __L102:
   load strtab
   load ss
   load sl
-  push_str 60
+  push_str 61
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L103
   load OP_LE_U
@@ -3599,7 +3635,7 @@ __L103:
   load strtab
   load ss
   load sl
-  push_str 61
+  push_str 62
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L104
   load OP_GT_U
@@ -3609,7 +3645,7 @@ __L104:
   load strtab
   load ss
   load sl
-  push_str 62
+  push_str 63
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L105
   load OP_GE_U
@@ -3619,7 +3655,7 @@ __L105:
   load strtab
   load ss
   load sl
-  push_str 63
+  push_str 64
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L106
   load OP_STORE
@@ -3629,7 +3665,7 @@ __L106:
   load strtab
   load ss
   load sl
-  push_str 64
+  push_str 65
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L107
   load OP_SHR_U
@@ -3639,7 +3675,7 @@ __L107:
   load strtab
   load ss
   load sl
-  push_str 65
+  push_str 66
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L108
   load OP_DIV_U
@@ -3649,7 +3685,7 @@ __L108:
   load strtab
   load ss
   load sl
-  push_str 66
+  push_str 67
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L109
   load OP_MOD_U
@@ -3659,7 +3695,7 @@ __L109:
   load strtab
   load ss
   load sl
-  push_str 67
+  push_str 68
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L110
   load OP_RETURN
@@ -3669,7 +3705,7 @@ __L110:
   load strtab
   load ss
   load sl
-  push_str 68
+  push_str 69
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L111
   load OP_JUMP_IF
@@ -3679,7 +3715,7 @@ __L111:
   load strtab
   load ss
   load sl
-  push_str 69
+  push_str 70
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L112
   load OP_PUSH_INT
@@ -3689,7 +3725,7 @@ __L112:
   load strtab
   load ss
   load sl
-  push_str 70
+  push_str 71
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L113
   load OP_PUSH_STR
@@ -3699,7 +3735,7 @@ __L113:
   load strtab
   load ss
   load sl
-  push_str 71
+  push_str 72
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L114
   load OP_JUMP_IFNOT
@@ -3709,7 +3745,7 @@ __L114:
   load strtab
   load ss
   load sl
-  push_str 72
+  push_str 73
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L115
   load OP_RETURN_VOID
@@ -5998,7 +6034,7 @@ __L260:
   eq
   jump_ifnot __L262
   load ob
-  push_str 73
+  push_str 74
   call emit_string StringBuffer StringLiteral
   pop
   push_int 1
@@ -6020,7 +6056,7 @@ __L264:
 __L265:
   jump_ifnot __L263
   load ob
-  push_str 74
+  push_str 75
   call emit_string StringBuffer StringLiteral
   pop
   push_int 1
@@ -6042,7 +6078,7 @@ __L267:
 __L268:
   jump_ifnot __L266
   load ob
-  push_str 75
+  push_str 76
   call emit_string StringBuffer StringLiteral
   pop
   push_int 1
@@ -6064,7 +6100,7 @@ __L270:
 __L271:
   jump_ifnot __L269
   load ob
-  push_str 76
+  push_str 77
   call emit_string StringBuffer StringLiteral
   pop
   push_int 1
@@ -6086,7 +6122,7 @@ __L273:
 __L274:
   jump_ifnot __L272
   load ob
-  push_str 77
+  push_str 78
   call emit_string StringBuffer StringLiteral
   pop
   push_int 1
@@ -6550,7 +6586,7 @@ __L310:
   pop
 ; emit_string(ob, ".globl "); emit_n(ob, strtab,nm_ss,nm_sl); emit_nl(ob);
   load ob
-  push_str 78
+  push_str 79
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -6568,7 +6604,7 @@ __L310:
   pop
 ; emit_string(ob, ".type  ");
   load ob
-  push_str 79
+  push_str 80
   call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab,nm_ss,nm_sl);
@@ -6580,7 +6616,7 @@ __L310:
   pop
 ; emit_string(ob, ", @function");emit_nl(ob);
   load ob
-  push_str 80
+  push_str 81
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -6605,7 +6641,7 @@ __L310:
   call e4 StringBuffer
   pop
   load ob
-  push_str 81
+  push_str 82
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -6614,7 +6650,7 @@ __L310:
   pop
 ; emit_string(ob, ", params=");emit_int(ob, np);
   load ob
-  push_str 82
+  push_str 83
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -6623,7 +6659,7 @@ __L310:
   pop
 ; emit_string(ob, ", locals=");emit_int(ob, nl);
   load ob
-  push_str 83
+  push_str 84
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -6632,7 +6668,7 @@ __L310:
   pop
 ; emit_string(ob, ", eval_depth=");emit_int(ob, eval_slots);emit_nl(ob);
   load ob
-  push_str 84
+  push_str 85
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -6773,7 +6809,7 @@ __L315:
   jump_ifnot __L316
 ; emit_string(ob, "    lw   t0");ecomma(ob);
   load ob
-  push_str 85
+  push_str 86
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -6790,7 +6826,7 @@ __L315:
   pop
 ; emit_string(ob, "(s0)");
   load ob
-  push_str 86
+  push_str 87
   call emit_string StringBuffer StringLiteral
   pop
 ; emit_nl(ob);
@@ -6803,7 +6839,7 @@ __L315:
   pop
 ; emit_string(ob, "t0");ecomma(ob);
   load ob
-  push_str 25
+  push_str 26
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -6842,7 +6878,7 @@ __L317:
   pop
 ; emit_string(ob, "zero"); // "zero"
   load ob
-  push_str 87
+  push_str 88
   call emit_string StringBuffer StringLiteral
   pop
 ; ecomma(ob);
@@ -6957,15 +6993,11 @@ __L322:
   load ob
   call eregt0 StringBuffer
   pop
-; emit_string(ob, "__tc_strobj");
-  load ob
-  push_str 88
-  call emit_string StringBuffer StringLiteral
-  pop
-; emit_int(ob, ival); emit_nl(ob);
-  load ob
+; e_strobj(strtab, ival, ob); emit_nl(ob);
+  load strtab
   load ival
-  call emit_int StringBuffer i32
+  load ob
+  call e_strobj U8Array i32 StringBuffer
   pop
   load ob
   call emit_nl StringBuffer
@@ -7400,7 +7432,7 @@ __L330:
   pop
 ; emit_string(ob, "t0");emit_nl(ob);
   load ob
-  push_str 25
+  push_str 26
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7468,7 +7500,7 @@ __L342:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7492,7 +7524,7 @@ __L343:
   call e4 StringBuffer
   pop
   load ob
-  push_str 32
+  push_str 33
   call emit_string StringBuffer StringLiteral
   pop
 ; eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
@@ -7503,7 +7535,7 @@ __L343:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7538,7 +7570,7 @@ __L344:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7573,7 +7605,7 @@ __L345:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7608,7 +7640,7 @@ __L346:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7643,7 +7675,7 @@ __L347:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7678,7 +7710,7 @@ __L348:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7713,7 +7745,7 @@ __L349:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7748,7 +7780,7 @@ __L350:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7783,7 +7815,7 @@ __L351:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7818,7 +7850,7 @@ __L352:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7853,7 +7885,7 @@ __L353:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -7888,7 +7920,7 @@ __L354:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 33
+  push_str 34
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -8097,7 +8129,7 @@ __L365:
   call eregt0 StringBuffer
   pop
   load ob
-  push_str 25
+  push_str 26
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -8601,7 +8633,7 @@ __L390:
   pop
 ; emit_string(ob, ".globl "); emit_n(ob, strtab,nm_ss,nm_sl); emit_nl(ob);
   load ob
-  push_str 78
+  push_str 79
   call emit_string StringBuffer StringLiteral
   pop
   load ob
@@ -8710,15 +8742,11 @@ __L393:
   load ob
   call emit_nl StringBuffer
   pop
-; emit_string(ob, "__tc_strobj");
-  load ob
-  push_str 88
-  call emit_string StringBuffer StringLiteral
-  pop
-; emit_int(ob, si); emit_char(ob, ':');emit_nl(ob);
-  load ob
+; e_strobj(strtab, si, ob); emit_char(ob, ':');emit_nl(ob);
+  load strtab
   load si
-  call emit_int StringBuffer i32
+  load ob
+  call e_strobj U8Array i32 StringBuffer
   pop
   load ob
   push_int 58
@@ -8788,6 +8816,7 @@ __L392:
 .local locals_pool I32Array
 .local instrs I32Array
 .local label_pcs I32Array
+.local f0 BcFunc
 ; var strtab:       U8Array  = U8Array(262144u32);
   push_int 262144
   call U8Array u32
@@ -8848,6 +8877,25 @@ __L392:
   load g_reader
   call close SourceReader
   pop
+; if g_nfuncs > 0 {
+  load g_nfuncs
+  push_int 0
+  gt
+  jump_ifnot __L395
+; var f0: BcFunc = get(fns, 0);
+  load fns
+  push_int 0
+  call get BcFuncArray i32
+  store f0
+; g_strobj_ss = name_ss(f0);
+  load f0
+  call name_ss BcFunc
+  store g_strobj_ss
+; g_strobj_sl = name_sl(f0);
+  load f0
+  call name_sl BcFunc
+  store g_strobj_sl
+__L395:
 ; emit_program(strtab,string_lits,global_vars,global_inits,
   load strtab
   load string_lits
@@ -8891,76 +8939,76 @@ __L392:
 .string 16 "mv   "
 .string 17 "s0"
 .string 18 "ret"
-.string 19 "  .L_"
-.string 20 "_pc"
-.string 21 ".L_"
-.string 22 "j    "
-.string 23 "beqz "
-.string 24 "bnez "
-.string 25 "t0"
-.string 26 "0f"
-.string 27 "0:"
-.string 28 "call "
-.string 29 "seqz "
-.string 30 "snez "
-.string 31 "xori "
-.string 32 "sub  "
-.string 33 "t1"
-.string 34 "slt  "
-.string 35 "sltu "
-.string 36 "or"
-.string 37 "eq"
-.string 38 "ne"
-.string 39 "lt"
-.string 40 "le"
-.string 41 "gt"
-.string 42 "ge"
-.string 43 "add"
-.string 44 "sub"
-.string 45 "mul"
-.string 46 "div"
-.string 47 "mod"
-.string 48 "and"
-.string 49 "xor"
-.string 50 "shl"
-.string 51 "shr"
-.string 52 "pop"
-.string 53 "neg"
-.string 54 "lnot"
-.string 55 "cast"
-.string 56 "load"
-.string 57 "jump"
-.string 58 "call"
-.string 59 "lt_u"
-.string 60 "le_u"
-.string 61 "gt_u"
-.string 62 "ge_u"
-.string 63 "store"
-.string 64 "shr_u"
-.string 65 "div_u"
-.string 66 "mod_u"
-.string 67 "return"
-.string 68 "jump_if"
-.string 69 "push_int"
-.string 70 "push_str"
-.string 71 "jump_ifnot"
-.string 72 "return_void"
-.string 73 "\\\""
-.string 74 "\\\\"
-.string 75 "\\n"
-.string 76 "\\r"
-.string 77 "\\t"
-.string 78 ".globl "
-.string 79 ".type  "
-.string 80 ", @function"
-.string 81 "# prologue: frame_size="
-.string 82 ", params="
-.string 83 ", locals="
-.string 84 ", eval_depth="
-.string 85 "    lw   t0"
-.string 86 "(s0)"
-.string 87 "zero"
-.string 88 "__tc_strobj"
+.string 19 "_strobj"
+.string 20 "  .L_"
+.string 21 "_pc"
+.string 22 ".L_"
+.string 23 "j    "
+.string 24 "beqz "
+.string 25 "bnez "
+.string 26 "t0"
+.string 27 "0f"
+.string 28 "0:"
+.string 29 "call "
+.string 30 "seqz "
+.string 31 "snez "
+.string 32 "xori "
+.string 33 "sub  "
+.string 34 "t1"
+.string 35 "slt  "
+.string 36 "sltu "
+.string 37 "or"
+.string 38 "eq"
+.string 39 "ne"
+.string 40 "lt"
+.string 41 "le"
+.string 42 "gt"
+.string 43 "ge"
+.string 44 "add"
+.string 45 "sub"
+.string 46 "mul"
+.string 47 "div"
+.string 48 "mod"
+.string 49 "and"
+.string 50 "xor"
+.string 51 "shl"
+.string 52 "shr"
+.string 53 "pop"
+.string 54 "neg"
+.string 55 "lnot"
+.string 56 "cast"
+.string 57 "load"
+.string 58 "jump"
+.string 59 "call"
+.string 60 "lt_u"
+.string 61 "le_u"
+.string 62 "gt_u"
+.string 63 "ge_u"
+.string 64 "store"
+.string 65 "shr_u"
+.string 66 "div_u"
+.string 67 "mod_u"
+.string 68 "return"
+.string 69 "jump_if"
+.string 70 "push_int"
+.string 71 "push_str"
+.string 72 "jump_ifnot"
+.string 73 "return_void"
+.string 74 "\\\""
+.string 75 "\\\\"
+.string 76 "\\n"
+.string 77 "\\r"
+.string 78 "\\t"
+.string 79 ".globl "
+.string 80 ".type  "
+.string 81 ", @function"
+.string 82 "# prologue: frame_size="
+.string 83 ", params="
+.string 84 ", locals="
+.string 85 ", eval_depth="
+.string 86 "    lw   t0"
+.string 87 "(s0)"
+.string 88 "zero"
 .string 89 "0(t1)"
 .string 90 "a0"
 .string 91 "mv   a0"

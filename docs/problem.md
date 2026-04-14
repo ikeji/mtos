@@ -63,45 +63,6 @@ extract_sigs.tc と bootstrap 各種の AST 読み取りを同期する大規模
   #5 段階 2 と共通の AST/BC フォーマット変更。必要性が出てから
   検討。
 
-### 21. 追加した StringLiteral がデバッグ出力で壊れる (bug, 未診断)
-
-`runtime.tc` や `kernel_common.tc` に **新しく** `kputs("...")` や
-`write_str_stderr("...")` を足すと、ランタイムの出力が全然違う文字列
-を吐く現象がある。同じ関数を元々呼んでいた既存コード (例えば
-`kputs("KERN: starting")` や `write_str_stderr("set: ")`) は
-期待通り動くので、追加されたリテラル固有の症状。
-
-観測例 (phase 7 デバッグ):
-- `kputs("KDBG: exit slot=")` → 実際の出力は `SECTOR0:`
-- `kputs("\nZZZZ=")` → 実際の出力は `SECTOR0:`
-- `do_write(2, "runtime OOM: kmalloc size=" + 4, len(...))` →
-  実際の出力は `<<4080` (末尾の数字は別 do_write で正しく出る)
-- `strings` で binary をダンプすると追加した literal 自体は
-  入っている。つまり rodata には存在するが、
-  実行時アドレス解決が別の場所を指している。
-
-現状のワークアラウンド:
-- 問題が発生する経路は TC の StringLiteral ポインタを引数として
-  渡して peek32(len) + データ読みするもの全て。代わりに 1 バイトずつ
-  `U8Array` に poke して `do_write(2, buf, n)` で一発送信すると安定
-  する。`compiler/runtime.tc` の `km_dump_peak` と
-  `kernel/kernel_common.tc` の `kdbg_chr` / `kdbg_dec` /
-  `kdbg_hex` はこの方式で書かれている。
-
-原因候補 (未確定):
-- bc2asm がリテラルを `.rodata` 内に配置する際のオフセット計算が、
-  特定のケースで壊れている可能性。特に既存リテラルとの間に
-  微妙な一致があるとき。
-- asm.tc のラベル配置で `.rodata` と `.data` の境界が揺らぐ
-  可能性 (section_base の fixup)。
-- codegen が生成する `push_str_lit` 相当のオペランドが、リテラル
-  テーブルのインデックスか生アドレスかの扱いを間違えている可能性。
-
-発生条件が絞り切れていないので再現手順から固めるのが先。既存の
-StringLiteral 経由の出力が無事に動いている(kputs / print_str /
-write_str_stderr の既存呼び出し) 一方で、**同じ関数に渡す新規の
-リテラル** が壊れる、というパターンは解析の突破口になるはず。
-
 ---
 
 ## asm.tc (アセンブラ兼リンカ)
@@ -401,8 +362,20 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
   test_phase7.sh に 2 ステージのテストあり (`make test` 非同梱)。主要な
   残件は #7 (asm.tc メモリ分離)、K3 (per-task サイズ宣言)、K5 (cat 5
   ファイル後の spawn failure)、K6 (デバッグトレース常時 ON)、K7 (pico2
-  対応)、#21 (StringLiteral emission bug)
+  対応)
 
+- **bc2asm の `__tc_strobj<N>` ラベルが複数 .tc 間で衝突していた (#21)**:
+  bc2asm は文字列リテラルを per-file 0 採番の `__tc_strobj<N>` で
+  定義していたが、asm.tc は全ラベルをフラット名前空間で扱う (last-wins)
+  ため、複数 .tc を同じ asm 呼び出しにまとめると後ろの .tc のリテラルが
+  前の .tc を上書きしていた。観測上「`runtime.tc` / `kernel_common.tc`
+  に**新しく** `kputs("...")` を追加すると `SECTOR0:` と化ける」という
+  現象として出ていた ("SECTOR0:" は kernel.tc の最初の literal)。修正は
+  ラベルを `__<first_fn_mangled_name>_strobj<N>` にして .tc ごとに一意化。
+  bootstrap/bc2asm.c と compiler/bc2asm.tc の両方に同じ変更を入れた。
+  `km_dump_peak` / `kdbg_*` で使っていた「byte-at-a-time 回避策」は
+  本来の StringLiteral ベース実装に書き戻せる (km_dump_peak はすでに
+  書き戻し済み)
 
 - `u32 >> n` が arithmetic shift だった → `shr_u` opcode 追加 (9ff97b5)
 - `u32 < u32` (`<=`, `>`, `>=`) が signed 比較になっていた → `lt_u` /

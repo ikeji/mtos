@@ -58,6 +58,14 @@ var g_ninstrs: i32 = 0;
 var g_nglobals: i32 = 0;
 var g_nstrings: i32 = 0;
 
+// String literal labels include the first function's mangled name so
+// multiple .tc files linked into one asm.tc invocation don't collide on
+// the per-file-local literal index. asm.tc does last-wins label
+// resolution, so before this fix kernel.tc's __tc_strobj0 would silently
+// replace runtime.tc's __tc_strobj0 (see docs/problem.md #21).
+var g_strobj_ss: i32 = 0;
+var g_strobj_sl: i32 = 0;
+
 // ===== Common emit helpers =====
 fn e4(ob: StringBuffer) -> void { emit_string(ob, "    "); return; }
 fn ecomma(ob: StringBuffer) -> void { emit_string(ob, ", "); return; }
@@ -119,6 +127,16 @@ fn asm_epilogue(ob: StringBuffer) -> void {
     emit_char(ob, '0');emit_nl(ob);
     // ret
     e4(ob);emit_string(ob, "ret");emit_nl(ob);
+    return;
+}
+// "__<first_fn>_strobj<idx>" — discriminate literal labels per .tc file
+// so asm.tc's last-wins label resolution doesn't silently alias two
+// files' literals (problem.md #21). g_strobj_ss / _sl are set by main()
+// after parse_bc, once the first function's mangled name is known.
+fn e_strobj(strtab: U8Array, idx: i32, ob: StringBuffer) -> void {
+    emit_char(ob, '_'); emit_char(ob, '_');
+    emit_n(ob, strtab, g_strobj_ss, g_strobj_sl);
+    emit_string(ob, "_strobj"); emit_int(ob, idx);
     return;
 }
 // "  .L_FNAME_pcN:\n"  (uses mangled function name for globally unique labels)
@@ -797,10 +815,9 @@ fn emit_fn(strtab: U8Array, fns: BcFuncArray, params_pool: I32Array, locals_pool
             asm_push_t0(ob);
         }
         if op==OP_PUSH_STR {
-            // la t0, __tc_strobjN
+            // la t0, __<first_fn>_strobjN
             e_la(ob); eregt0(ob);
-            emit_string(ob, "__tc_strobj");
-            emit_int(ob, ival); emit_nl(ob);
+            e_strobj(strtab, ival, ob); emit_nl(ob);
             asm_push_t0(ob);
         }
         if op==OP_LOAD {
@@ -1042,8 +1059,7 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
             var ss: i32=get(string_lits,(si*2+0));
             var sl: i32=get(string_lits,(si*2+1));
             e4(ob);emit_string(ob, ".align 4");emit_nl(ob);
-            emit_string(ob, "__tc_strobj");
-            emit_int(ob, si); emit_char(ob, ':');emit_nl(ob);
+            e_strobj(strtab, si, ob); emit_char(ob, ':');emit_nl(ob);
             e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_nl(ob);
             e4(ob);emit_string(ob, ".string ");
             emit_strdata(strtab,ss,sl,ob); emit_nl(ob);
@@ -1076,6 +1092,15 @@ fn main() -> i32 {
              fns,params_pool,locals_pool,instrs,label_pcs);
 
     close(g_reader);
+
+    // Seed the strobj label discriminator from the first function's
+    // mangled name. A .tc with zero functions has zero literals, so
+    // leaving the globals at 0 in that case is harmless.
+    if g_nfuncs > 0 {
+        var f0: BcFunc = get(fns, 0);
+        g_strobj_ss = name_ss(f0);
+        g_strobj_sl = name_sl(f0);
+    }
 
     emit_program(strtab,string_lits,global_vars,global_inits,
                  fns,params_pool,locals_pool,instrs,ob);

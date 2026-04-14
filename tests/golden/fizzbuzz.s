@@ -63,7 +63,7 @@ fizzbuzz__i32:
     bnez t0, 0f
     j    .L_fizzbuzz__i32_pc16
 0:
-    la   t0, __tc_strobj0
+    la   t0, __fizzbuzz__i32_strobj0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -101,7 +101,7 @@ fizzbuzz__i32:
     bnez t0, 0f
     j    .L_fizzbuzz__i32_pc26
 0:
-    la   t0, __tc_strobj1
+    la   t0, __fizzbuzz__i32_strobj1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -139,7 +139,7 @@ fizzbuzz__i32:
     bnez t0, 0f
     j    .L_fizzbuzz__i32_pc36
 0:
-    la   t0, __tc_strobj2
+    la   t0, __fizzbuzz__i32_strobj2
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -228,15 +228,15 @@ main:
 
     .section .rodata
     .align 4
-__tc_strobj0:
+__fizzbuzz__i32_strobj0:
     .word 8
     .string "FizzBuzz"
     .align 4
-__tc_strobj1:
+__fizzbuzz__i32_strobj1:
     .word 4
     .string "Fizz"
     .align 4
-__tc_strobj2:
+__fizzbuzz__i32_strobj2:
     .word 4
     .string "Buzz"
 
