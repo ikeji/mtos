@@ -41,6 +41,8 @@ var STATE_WAITING: i32 = 3;
 //   ram       kmalloc base owning the task's RAM (data/bss + arena)
 //   stack     kmalloc base owning the task's stack
 //   img       kmalloc base owning the slow-path image (0 if XIP)
+//   argv      kmalloc base owning the kernel-side StringArray passed
+//             to the task as main's first argument (0 if none)
 //
 // Struct synthetic fns are module-private in TC, so the field
 // accessors stay hidden inside kernel_common.tc; callers still go
@@ -53,6 +55,7 @@ struct Task {
     ram:       u32,
     stack:     u32,
     img:       u32,
+    argv:      u32,
 }
 
 var g_num_tasks: i32 = 0;
@@ -68,6 +71,7 @@ var g_last_frame_buf: u32 = 0u32;
 var g_last_ram:       u32 = 0u32;
 var g_last_stack:     u32 = 0u32;
 var g_last_img:       u32 = 0u32;
+var g_last_argv:      u32 = 0u32;
 
 export fn kputs(s: StringLiteral) -> void {
     var slen: i32 = len(s);
@@ -115,6 +119,7 @@ export fn reset_last_alloc() -> void {
     g_last_ram       = 0u32;
     g_last_stack     = 0u32;
     g_last_img       = 0u32;
+    g_last_argv      = 0u32;
     return;
 }
 
@@ -128,6 +133,41 @@ export fn set_last_img(img_base: u32) -> void {
     return;
 }
 
+// Attach ownership of a kernel-side argv StringArray to the task frame
+// being built. Called from sys_spawn_handler / sys_exec_handler after
+// clone_argv and before sched_spawn / sched_replace_current so the
+// slot becomes the sole owner.
+export fn set_last_argv(argv_base: u32) -> void {
+    g_last_argv = argv_base;
+    return;
+}
+
+// Write the argv pointer into the trap frame's saved a2 slot (offset
+// 48 in the 132-byte layout). task_crt0.s forwards a2 to main's first
+// argument after the runtime is initialized. argv = 0 means "no argv"
+// and main(argv: StringArray) sees a null pointer, which len() / get()
+// handle gracefully.
+export fn set_frame_argv(frame: u32, argv: u32) -> void {
+    poke32(frame + 48u32, argv);
+    return;
+}
+
+// Free a kernel-side argv StringArray and all of its Strings. Used by
+// slot_free_allocs when a task exits / is replaced, and by the failure
+// paths in sys_spawn_handler / sys_exec_handler.
+fn free_argv_impl(sa_addr: u32) -> void {
+    if sa_addr == 0u32 { return; }
+    var sa: StringArray = sa_addr as StringArray;
+    var n: i32 = len(sa);
+    var i: i32 = 0;
+    while i < n {
+        delete(get(sa, i));
+        i = i + 1;
+    }
+    delete(sa);
+    return;
+}
+
 // Copy the allocation bases recorded by the most recent make_task /
 // load_fd into slot `idx`. Used by sched_register, sched_spawn, and
 // sched_replace_current after they install a new frame.
@@ -137,6 +177,7 @@ fn slot_capture_last(idx: i32) -> void {
     ram(t, g_last_ram);
     stack(t, g_last_stack);
     img(t, g_last_img);
+    argv(t, g_last_argv);
     return;
 }
 
@@ -148,14 +189,17 @@ fn slot_free_allocs(idx: i32) -> void {
     var ra: u32 = ram(t);
     var st: u32 = stack(t);
     var im: u32 = img(t);
+    var av: u32 = argv(t);
     if fb != 0u32 { kfree(fb); }
     if ra != 0u32 { kfree(ra); }
     if st != 0u32 { kfree(st); }
     if im != 0u32 { kfree(im); }
+    free_argv_impl(av);
     frame_buf(t, 0u32);
     ram(t, 0u32);
     stack(t, 0u32);
     img(t, 0u32);
+    argv(t, 0u32);
     return;
 }
 
@@ -165,7 +209,7 @@ export fn sched_init(max: i32) -> void {
     g_current = 0;
     var i: i32 = 0;
     while i < max {
-        set(g_tasks, i, Task(0u32, STATE_UNUSED, -1, 0u32, 0u32, 0u32, 0u32));
+        set(g_tasks, i, Task(0u32, STATE_UNUSED, -1, 0u32, 0u32, 0u32, 0u32, 0u32));
         i = i + 1;
     }
     return;

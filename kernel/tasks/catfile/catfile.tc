@@ -1,8 +1,14 @@
-// catfile.tc — guest task: read /hello.txt via VFS syscalls
+// catfile.tc — guest task: read a file via VFS syscalls
 //
 // Exercises sys_openat(56) + sys_read(63) + sys_write(64) + sys_close(57)
 // from the task side (ecall path), complementing kernel.tc cat_hello_txt
 // which exercises the kernel-side VFS path directly.
+//
+// With argc >= 2 the path comes from argv[1] (e.g. sh typing
+// "catfile /hello.txt"). When the shell passes no argument — or the
+// launcher task on pico2 execs /bin/catfile without argv — we fall
+// back to "/hello.txt" so the existing kernel bring-up tests keep
+// working unchanged.
 
 import "../libtc/libtc.tc";
 
@@ -10,10 +16,30 @@ import "../libtc/libtc.tc";
 fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
-fn main() -> i32 {
-    var path: U8Array = str_nul("/hello.txt");
-    var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
-    delete(path);
+// Allocate a NUL-terminated U8Array holding the bytes of s. Caller
+// owns it and must delete it.
+fn string_to_nul(s: String) -> U8Array {
+    var sl: i32 = len(s);
+    var buf: U8Array = U8Array((sl + 1) as u32);
+    var i: i32 = 0;
+    while i < sl {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, sl, 0u8);
+    return buf;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var path_buf: U8Array = 0 as U8Array;
+    if len(argv) >= 2 {
+        path_buf = string_to_nul(get(argv, 1));
+    } else {
+        path_buf = str_nul("/hello.txt");
+    }
+
+    var fd: i32 = do_openat(0, path_buf as u32 + 4u32, 0);
+    delete(path_buf);
     if fd < 0 {
         puts("CAT: open failed\n");
         return 1;
@@ -22,7 +48,16 @@ fn main() -> i32 {
     var buf: U8Array = U8Array(64u32);
     var n: i32 = sys_read(fd, buf, 64);
     if n > 0 {
-        puts("CAT:");
+        // Prefix includes argc so tests can tell default-path runs
+        // apart from runs that received an explicit argv[1]. We emit
+        // the digit by hand rather than calling print_i32 because
+        // print_i32 always appends a newline.
+        puts("CAT[");
+        var d: U8Array = U8Array(1u32);
+        set(d, 0, (48 + len(argv)) as u8);
+        sys_write(1, d, 1);
+        delete(d);
+        puts("]:");
         sys_write(1, buf, n);
     } else {
         puts("CAT: read failed\n");

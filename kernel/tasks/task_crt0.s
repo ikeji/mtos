@@ -5,16 +5,21 @@
 #   sp = task stack top
 #   gp = kernel-allocated RAM + 0x800
 #   a0 = arena addr, a1 = arena size
+#   a2 = argv StringArray pointer (0 if the task has no argv)
 #
 # _start copies .data from the binary to kernel RAM (gp-relative region),
-# then initializes the runtime and calls main.
+# then initializes the runtime and calls main(argv: StringArray). Tasks
+# that take no argv just ignore a0; len(null) returns 0 so main can
+# probe argv.
 #
     .text
     .globl _start
 _start:
-    # Save arena args (a0/a1) across the data copy
+    # Save arena args (a0/a1) and argv (a2) across the data copy
+    # and runtime init — these are clobbered by any TC call.
     mv   s0, a0
     mv   s1, a1
+    mv   s2, a2
 
     # Copy .data from binary to kernel-allocated RAM.
     # __global_pointer$ is a text-section label → PC-relative la.
@@ -35,7 +40,12 @@ _start:
     mv   a0, s0
     mv   a1, s1
     call __runtime_init__u32__i32
-    call main
+    # Call main(argv). Every task defines main with signature
+    # `fn main(argv: StringArray) -> i32` so the symbol is always
+    # `main__StringArray`; tasks that ignore argv still accept the
+    # unused parameter.
+    mv   a0, s2
+    call main__StringArray
     # sys_exit(return value of main)
     li   a7, 93
     ecall
@@ -72,14 +82,14 @@ do_exit__i32:
     ecall
     ret
 
-    .globl do_exec__u32
-do_exec__u32:
+    .globl do_exec__u32__u32
+do_exec__u32__u32:
     li   a7, 221
     ecall
     ret
 
-    .globl do_spawn__u32
-do_spawn__u32:
+    .globl do_spawn__u32__u32
+do_spawn__u32__u32:
     li   a7, 220
     ecall
     ret

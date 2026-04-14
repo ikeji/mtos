@@ -87,12 +87,15 @@ fi
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$TMP/kernel_virt" ] && [ -s "$TMP/disk.img" ]; then
     t0=$(time_ms)
-    # Shell loop: spawn catfile five times (via sys_spawn+sys_wait),
-    # then read "quit" to exit. Five iterations exercise the loader's
-    # kfree path for frame_buf / ram / stack / img after each child
-    # exits — the kernel prints "KERN: live=N" at shutdown so the
-    # test can assert the count did not grow with spawn iterations.
-    fs_out=$(printf 'catfile\ncatfile\ncatfile\ncatfile\ncatfile\nquit\n' \
+    # Shell loop: spawn catfile five times (four without args, one
+    # with an explicit argv[1]=/hello.txt), then read "quit" to exit.
+    # The mixed argv exercises the phase 7 B prereq (argc/argv flow
+    # through sys_spawn → clone_argv → trap frame → main(argv)).
+    # Five iterations also exercise the loader's kfree path for
+    # frame_buf / ram / stack / img / argv after each child exits —
+    # the kernel prints "KERN: live=N" at shutdown so the test can
+    # assert the count did not grow with spawn iterations.
+    fs_out=$(printf 'catfile\ncatfile\ncatfile\ncatfile\ncatfile /hello.txt\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -106,10 +109,14 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     expected="SECTOR0: 4d 54 46 53"
     # The shell prompt + catfile output + A/B get interleaved under
     # preemption, so check each piece separately rather than as a
-    # single substring.
+    # single substring. catfile prints "CAT[<argc>]:" so we can
+    # distinguish default runs (argc=1) from explicit-argv runs
+    # (argc=2).
     fs_has_a=$(echo "$fs_out" | grep -c "A")
     fs_has_b=$(echo "$fs_out" | grep -c "B")
-    fs_cat_count=$(echo "$fs_out" | grep -c "CAT:")
+    fs_cat_count=$(echo "$fs_out" | grep -c 'CAT\[')
+    fs_cat1_count=$(echo "$fs_out" | grep -c 'CAT\[1\]:')
+    fs_cat2_count=$(echo "$fs_out" | grep -c 'CAT\[2\]:')
     fs_has_mtfs_msg=$(echo "$fs_out" | grep -c "hello, mtfs")
     fs_has_sh=$(echo "$fs_out" | grep -c "SH: ready")
     fs_has_bye=$(echo "$fs_out" | grep -c "SH: bye")
@@ -126,13 +133,14 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
             # spawn, so 5 leaked spawns would hit 58 and a
             # regression would trip well before 64.
             if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
-                && [ "$fs_cat_count" -ge 5 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
+                && [ "$fs_cat_count" -ge 5 ] && [ "$fs_cat1_count" -ge 4 ] \
+                && [ "$fs_cat2_count" -ge 1 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
                 && [ -n "$fs_live" ] && [ "$fs_live" -le 64 ]; then
-                report_pass "fs_virtio: 5× catfile spawn/wait, live=$fs_live" "$elapsed"
+                report_pass "fs_virtio: 5× catfile spawn/wait (4 default + 1 argv), live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 240)"
+                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 320)"
             fi
             ;;
         *)

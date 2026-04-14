@@ -1,16 +1,17 @@
 // sh.tc — minimal interactive shell with sys_spawn + sys_wait.
 //
 // On each iteration: print "sh$ ", read a line from stdin (fd 0 →
-// UART), resolve it as "/bin/<cmd>", spawn it via do_spawn, then
-// block on do_wait until the child finishes. The loop exits on the
-// built-in command "quit".
+// UART), tokenize it on whitespace, resolve the first token as
+// "/bin/<cmd>", build a StringArray of the full argv, spawn the
+// binary via do_spawn(path, argv), then block on do_wait until the
+// child finishes. The loop exits on the built-in command "quit".
 //
 // do_uart_read has no concept of EOF, so we cannot rely on closing
 // stdin to terminate the shell — a "quit" line is required.
 
 import "../libtc/libtc.tc";
 
-fn do_spawn(path_addr: u32) -> i32;
+fn do_spawn(path_addr: u32, argv_addr: u32) -> i32;
 fn do_wait(slot: i32) -> i32;
 
 var CMD_MAX:  i32 = 64;
@@ -55,22 +56,114 @@ fn eq_lit(buf: U8Array, s: StringLiteral) -> bool {
     return get(buf, slen) == 0u8;
 }
 
-fn build_path(path: U8Array, cmd: U8Array, n: i32) -> void {
+// Count tokens in buf[0..n], treating runs of spaces as separators.
+fn count_tokens(buf: U8Array, n: i32) -> i32 {
+    var count: i32 = 0;
+    var in_tok: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        var c: u8 = get(buf, i);
+        if c == ' ' as u8 {
+            in_tok = 0;
+        } else {
+            if in_tok == 0 {
+                count = count + 1;
+                in_tok = 1;
+            }
+        }
+        i = i + 1;
+    }
+    return count;
+}
+
+// Copy buf[start..start+n] into a new String. We skip the
+// append-in-a-loop pattern because each append kmallocs a new
+// intermediate String and leaks the prior one. Allocate once via
+// U8Array (String shares its len-prefixed layout) and poke the
+// length to exclude the NUL terminator so len()/delete() behave.
+fn copy_range(buf: U8Array, start: i32, n: i32) -> String {
+    var s: U8Array = U8Array((n + 1) as u32);
+    poke32(s as u32, n as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(s, i, get(buf, start + i));
+        i = i + 1;
+    }
+    poke8(s as u32 + 4u32 + n as u32, 0u8);
+    return s as String;
+}
+
+// Build a StringArray of whitespace-separated tokens in buf[0..n].
+// Each token becomes a fresh String allocated in the shell's arena
+// (the kernel clones these before handing them to the child).
+fn build_argv(buf: U8Array, n: i32) -> StringArray {
+    var count: i32 = count_tokens(buf, n);
+    var argv: StringArray = StringArray(count as u32);
+    var idx: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        while i < n && get(buf, i) == ' ' as u8 {
+            i = i + 1;
+        }
+        if i < n {
+            var start: i32 = i;
+            while i < n && get(buf, i) != ' ' as u8 {
+                i = i + 1;
+            }
+            set(argv, idx, copy_range(buf, start, i - start));
+            idx = idx + 1;
+        }
+    }
+    return argv;
+}
+
+// Free every String element in sa then the array itself. Called
+// after do_spawn so the shell's arena does not accumulate argv
+// allocations across iterations (the kernel has already cloned the
+// contents for the child by this point).
+fn free_argv(sa: StringArray) -> void {
+    var n: i32 = len(sa);
+    var i: i32 = 0;
+    while i < n {
+        delete(get(sa, i));
+        i = i + 1;
+    }
+    delete(sa);
+    return;
+}
+
+// Write "/bin/<first token>\0" into path. The first token runs from
+// cmd[start..start+clen].
+fn build_path(path: U8Array, cmd: U8Array, start: i32, clen: i32) -> void {
     set(path, 0, '/' as u8);
     set(path, 1, 'b' as u8);
     set(path, 2, 'i' as u8);
     set(path, 3, 'n' as u8);
     set(path, 4, '/' as u8);
     var i: i32 = 0;
-    while i < n {
-        set(path, 5 + i, get(cmd, i));
+    while i < clen {
+        set(path, 5 + i, get(cmd, start + i));
         i = i + 1;
     }
-    set(path, 5 + n, 0u8);
+    set(path, 5 + clen, 0u8);
     return;
 }
 
-fn main() -> i32 {
+// First-token start and length helpers for build_path.
+fn first_token_start(buf: U8Array, n: i32) -> i32 {
+    var i: i32 = 0;
+    while i < n && get(buf, i) == ' ' as u8 { i = i + 1; }
+    return i;
+}
+
+fn first_token_len(buf: U8Array, n: i32) -> i32 {
+    var s: i32 = first_token_start(buf, n);
+    var i: i32 = s;
+    while i < n && get(buf, i) != ' ' as u8 { i = i + 1; }
+    return i - s;
+}
+
+fn main(argv: StringArray) -> i32 {
     puts("SH: ready\n");
 
     var cmd:  U8Array = U8Array(CMD_MAX  as u32);
@@ -85,8 +178,12 @@ fn main() -> i32 {
         } else if eq_lit(cmd, "quit") {
             running = 0;
         } else {
-            build_path(path, cmd, n);
-            var slot: i32 = do_spawn(path as u32 + 4u32);
+            var ft_start: i32 = first_token_start(cmd, n);
+            var ft_len:   i32 = first_token_len(cmd, n);
+            build_path(path, cmd, ft_start, ft_len);
+            var argv: StringArray = build_argv(cmd, n);
+            var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32);
+            free_argv(argv);
             if slot < 0 {
                 puts("sh: spawn failed\n");
             } else {

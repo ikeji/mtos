@@ -74,6 +74,55 @@ export fn load_task(path: StringLiteral, ram_size: i32, stack_size: i32) -> u32 
     return frame;
 }
 
+// Allocate a fresh kernel-owned String that holds the same bytes as
+// src. We deliberately avoid the `dst = append(dst, c)` pattern in a
+// loop because every iteration kmallocs a new intermediate String
+// and leaks the previous one, leaving O(N) garbage per copy. Instead
+// we allocate once via U8Array (which shares String's len-prefixed
+// layout) and poke the length field to exclude the NUL byte so
+// delete() and len() still match String's convention.
+fn copy_string(src: String) -> String {
+    var sl: i32 = len(src);
+    var buf: U8Array = U8Array((sl + 1) as u32);
+    // U8Array() wrote (sl+1) as the length. Overwrite with sl so the
+    // resulting String reports its byte count without the NUL, matching
+    // runtime.tc's append() convention.
+    poke32(buf as u32, sl as u32);
+    var i: i32 = 0;
+    while i < sl {
+        set(buf, i, get(src, i));
+        i = i + 1;
+    }
+    // Terminate for do_openat / do_exec consumers that scan for NUL.
+    // poke8 bypasses bounds check (the slot is inside the kmalloc
+    // block even though i == sl falls at or past the poked length).
+    poke8(buf as u32 + 4u32 + sl as u32, 0u8);
+    return buf as String;
+}
+
+// Deep-copy a StringArray owned by the calling task into a fresh
+// StringArray owned by the kernel's kmalloc. Each element becomes a
+// new String allocated from kernel memory, so the copy survives
+// long after the caller exits or reuses its arena. Returns 0u32 if
+// src_addr is 0, meaning "no argv".
+//
+// The caller's StringArray is treated as raw u32 memory because the
+// kernel and user share the same (identity-mapped) address space:
+// len() / get() just peek32 into the task's arena and return pointers
+// to the original bytes, which we then copy via copy_string.
+fn clone_argv(src_addr: u32) -> u32 {
+    if src_addr == 0u32 { return 0u32; }
+    var src: StringArray = src_addr as StringArray;
+    var n: i32 = len(src);
+    var copy: StringArray = StringArray(n as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(copy, i, copy_string(get(src, i)));
+        i = i + 1;
+    }
+    return copy as u32;
+}
+
 // Handler for sys_exec (a7 = 221). Called from trap_common.s after a
 // task issues ecall. path_addr is a NUL-terminated byte string already
 // readable in the kernel address space (virt/pico2 are ID-mapped, so
@@ -81,35 +130,46 @@ export fn load_task(path: StringLiteral, ram_size: i32, stack_size: i32) -> u32 
 //
 // On success: builds a new task frame, replaces the current scheduler
 // slot with it, and returns the new frame. sched_replace_current
-// frees the caller's old allocations (frame_buf / ram / stack / img)
-// before attaching the new bases — we are running on the kernel stack
-// here, not the dying task's user stack, so it is safe to kfree
-// the user-side allocations.
+// frees the caller's old allocations (frame_buf / ram / stack / img
+// / argv) before attaching the new bases — we are running on the
+// kernel stack here, not the dying task's user stack, so it is safe
+// to kfree the user-side allocations.
+//
+// argv_addr points at a StringArray in the calling task's arena (may
+// be 0 for "no argv"). We clone it into kernel memory before load_fd
+// touches the old slot so the new frame carries its own copy.
 //
 // On failure: returns 0, and the caller delivers -1 to the task's a0.
 // The old task keeps running in place (nothing was freed).
 //
 // Task sizing is hardcoded for now (16 KB RAM + 8 KB stack) — small
 // enough for Pico 2, large enough for the current demo tasks.
-export fn sys_exec_handler(path_addr: u32) -> u32 {
+export fn sys_exec_handler(path_addr: u32, argv_addr: u32) -> u32 {
     var fd: i32 = vfs_open(path_addr, 0);
     if fd < 0 { return 0u32; }
     var frame: u32 = load_fd(fd, 16384, 8192);
     vfs_close(fd);
     if frame == 0u32 { return 0u32; }
+    var kargv: u32 = clone_argv(argv_addr);
+    set_frame_argv(frame, kargv);
+    set_last_argv(kargv);
     sched_replace_current(frame);
     return frame;
 }
 
 // Handler for sys_spawn (a7 = 220). Loads the given path into a new
 // scheduler slot and returns the slot index, or -1 on failure. Caller
-// keeps running.
-export fn sys_spawn_handler(path_addr: u32) -> i32 {
+// keeps running. argv_addr is cloned into kernel memory like in
+// sys_exec_handler.
+export fn sys_spawn_handler(path_addr: u32, argv_addr: u32) -> i32 {
     var fd: i32 = vfs_open(path_addr, 0);
     if fd < 0 { return -1; }
     var frame: u32 = load_fd(fd, 16384, 8192);
     vfs_close(fd);
     if frame == 0u32 { return -1; }
+    var kargv: u32 = clone_argv(argv_addr);
+    set_frame_argv(frame, kargv);
+    set_last_argv(kargv);
     return sched_spawn(frame);
 }
 
