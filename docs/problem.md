@@ -122,28 +122,28 @@ section_base を合わせないと padding 量が drift する。
 
 ## カーネル / OS
 
-### K2. スケジューラの最大スロット数がハードコード (limitation)
+### K3. タスクのスタック / arena サイズがハードコード (limitation, 残件)
 
-`kernel_common.tc` の `sched_init(max)` が `max` 個のスロットを確保し、
-`sched_spawn` はその中から unused / done スロットを再利用する。
-`max` を超える同時タスクは spawn できない (spawn が -1 を返す)。
-現状 virt / pico2 とも `sched_init(8)` で 8 並列が上限。
+`make_task(entry, ram_size, stack_size)` の呼び出し側がサイズ即値を
+渡す。バラバラだった virt (64K/64K) は **16K/8K に統一済** で、
+現在は全経路 (`kernel.tc` / `kernel_pico2.tc` の seeded タスク、
+`loader.tc` の `sys_exec_handler` / `sys_spawn_handler`) が
+**16K RAM + 8K stack** で揃っている。シェル経由のテスト 134 個が
+通る範囲で 16K/8K で動いている。
 
-対処案:
-- スロット数を動的に増やす (U32Array の再割り当て)。
-- done スロットを積極的にリサイクル (既に実装済み)。
+残件: タスク自身が必要量を宣言する仕組みがないので、本当に大きな
+RAM/stack を要求するタスクが現れたら現状ではコードを書き換える
+しかない。
 
-### K3. タスクのスタック / arena サイズがハードコード (limitation)
-
-`make_task(entry, ram_size, stack_size)` の呼び出し側でサイズを指定
-するが、virt は 65536/65536、pico2 は 16384/8192、sys_exec_handler
-は 16384/8192 とバラバラ。統一した "task size policy" がない。
-
-対処案:
-- ELF ヘッダで必要な BSS サイズを宣言する (現在 raw bin なのでヘッダ
-  なし)。
-- kmalloc ベースのタスクであれば最低限のサイズ (4KB?) で済むように
-  するか、タスクの crt0 が自分の必要量を宣言する仕組みを入れる。
+対処案 (未着手, ニーズが出てから):
+- **案 B (ELF)**: タスクを raw bin → ELF 形式に切り替え、ローダが
+  ELF ヘッダの p_memsz から必要量を取る。ローダ + 各 crt0 +
+  build script に変更 (~150 行)。
+- **案 C (custom header)**: タスクバイナリ先頭 8 バイトに
+  `[arena_size, stack_size]` を埋め込み、ローダが先頭を読んで
+  サイズ決定。ELF より軽量 (~50 行)。
+- 16K/8K で足りないタスクが 1-2 個現れたら案 C、4-5 個以上なら
+  案 B が筋。
 
 ### K4. `do_uart_read` が無限ループで EOF を検出できない (limitation)
 
@@ -430,6 +430,13 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   compile-gen1/gen2/gen3.sh の `2>/dev/null` を全部外せて、成功時は
   完全無音・失敗時はエラーがそのまま見えるようになった。make test も
   副次効果で ~1s 速くなった (#14)
+- スケジューラの max スロットが 8 ハードコード (旧 K2) は実害なしで
+  削除。動的拡張は本当に必要になってから書く。
+- virt の seeded タスクサイズが 64K/64K で他経路 (pico2 /
+  sys_exec_handler / sys_spawn_handler) の 16K/8K と食い違っていた
+  (旧 K3 のうち統一部分) → kernel.tc を 16K/8K に揃え、全経路で
+  サイズ統一。タスク自身がサイズを宣言する仕組みは未実装で
+  残件として K3 に残す
 - `struct` フィールドに `StringLiteral` 型を書けるか未検証だった (#18) →
   3 経路 (interp / bcrun / rv32) で動作確認。`struct Mount { prefix:
   StringLiteral, fs_type: i32 }` のような宣言・コンストラクト・
