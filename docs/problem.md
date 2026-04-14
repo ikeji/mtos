@@ -247,27 +247,6 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 コード中に `// TODO:` で書き残した、動作は正しいが書き方が冗長 /
 共通化できていない箇所のまとめ。挙動に影響しない refactor のみ。
 
-### R1. ノードプールを struct 化する (ergonomics)
-
-`compiler/codegen.tc` と `compiler/extract_sigs.tc` が AST ノードを
-`I32Array` の 8 エントリごとに手で index している
-(`n*8 + field_idx`)。`struct AstNode { kind, ss, sl, ival, first_child,
-next_sibling, tass, tasl }` + `AstNodeArray` に置き換えれば
-`kind(node)` のようにフィールドアクセスで書ける。scheduler を
-`struct Task` に畳んだのと同じパターン。
-
-- `compiler/codegen.tc:93` — `// TODO: Structにして。`
-- `compiler/extract_sigs.tc:57` — `// TODO: struct`
-
-### R2. extract_sigs と typecheck のノードプール処理を共通化 (ergonomics)
-
-`extract_sigs.tc` と `typecheck.tc` が同じような node accessors
-(`n_kind` / `n_ss` / `n_sl` / …) と kind classifier (`cmp2` / `cmp3`
-/ `cmp4`) を各自コピーしている。R1 で struct 化すれば自然に
-「AstNode は 1 箇所で定義」になる流れ。
-
-- `compiler/extract_sigs.tc:56` — `// TODO: これ、typecheckと共通化できない？`
-
 ### R3. 文字列比較ヘルパ `cmp(U8Array, offset, StringLiteral)` を作る (ergonomics)
 
 `strtab` やラインバッファに対する「この位置から始まる領域が特定の
@@ -437,6 +416,18 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   (旧 K3 のうち統一部分) → kernel.tc を 16K/8K に揃え、全経路で
   サイズ統一。タスク自身がサイズを宣言する仕組みは未実装で
   残件として K3 に残す
+- compiler/{codegen,typecheck,extract_sigs}.tc が同じ AST ノードプール
+  アクセサ (n_kind / n_ss / ...) と alloc_node を各自コピーしていて、
+  かつ flat I32Array 上で 8-int レイアウトを hand-index していた
+  (R1, R2) → 共有モジュール `compiler/ast_node.tc` を新設、`struct
+  AstNode` + AstNodeArray に切り替えて 3 ファイルから自前 accessor を
+  削除。export 前方宣言で synthetic fn を export 化する pattern
+  (R1 phase 1 で document) を使ったので 218 callsite は無修正。
+  メモリレイアウトも flat I32Array(N*8) → AstNodeArray(N) ref 配列 +
+  per-node 36-byte struct 動的確保に変更。小さいファイルでは
+  proportional に小さく済むので Pico 2 自己ホストの前提条件が満たせる。
+  bootstrap C runtime の bucket-2 (64-byte) を 256 → 32768 slot に
+  拡張 (typecheck.tc のノード instance 用)
 - `struct` フィールドに `StringLiteral` 型を書けるか未検証だった (#18) →
   3 経路 (interp / bcrun / rv32) で動作確認。`struct Mount { prefix:
   StringLiteral, fs_type: i32 }` のような宣言・コンストラクト・
