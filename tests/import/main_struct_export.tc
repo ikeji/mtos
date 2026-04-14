@@ -1,0 +1,15 @@
+// Verifies that an importer can call synthetic fns (constructor,
+// getters, setters) that the library promoted to export via
+// forward declarations. See struct_export.tc and
+// design_decisions.md #1.
+
+import "struct_export.tc";
+
+fn main() -> i32 {
+    var p: Point = Point(3, 4);  // synthetic constructor, now export
+    var sum: i32 = x(p) + y(p);  // synthetic getters, now export
+    if sum != 7 { return 1; }
+    x(p, 10);                     // synthetic setter, now export
+    if x(p) != 10 { return 2; }
+    return 0;
+}

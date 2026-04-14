@@ -68,10 +68,58 @@ fn main() -> i32 {
 煩わしいから省きたい」は動機として不十分で、wrapper の存在自体が
 API boundary の表明として重要。
 
+### 例外 — 明示的に opt-out したいとき (export 前方宣言)
+
+「常に private」だと共通モジュール (e.g. AST ノードを 3 ファイルで
+共有したい) を作るのが厳しい。そのために TC は **export 前方宣言で
+合成 fn を export 化** する opt-out パスを認めている:
+
+```tc
+// ast_node.tc — 共有したい module
+struct AstNode { kind: i32, ss: i32, sl: i32, ... }
+
+// 既存の synthetic fn と signature が一致する forward decl を
+// 書くと、parser が「この合成 fn を export 扱いに promote する」
+// と解釈する。本体は parser が自動生成したまま。
+export fn AstNode(kind: i32, ss: i32, sl: i32, ...) -> AstNode;
+export fn kind(n: AstNode) -> i32;
+export fn kind(n: AstNode, v: i32) -> void;
+export fn ss(n: AstNode) -> i32;
+// ... 必要なフィールドだけ列挙
+export fn AstNodeArray(n: u32) -> AstNodeArray;
+export fn get(a: AstNodeArray, i: i32) -> AstNode;
+export fn set(a: AstNodeArray, i: i32, v: AstNode) -> void;
+```
+
+import 側はこれらを直接呼べる:
+
+```tc
+import "ast_node.tc";
+
+fn process(arr: AstNodeArray, i: i32) -> void {
+    var node: AstNode = get(arr, i);
+    if kind(node) == 17 { ... }
+}
+```
+
+**何が起きているか**: parser は struct 定義を見たとき、合成 fn を
+**module-private な関数** として emit する。後続で同じシグネチャの
+`export fn` 前方宣言を見ると、それを「promote 指示」と解釈し、
+合成 fn のリンケージを export に切り替える。重複定義エラーには
+ならず、本体は元の synthetic のまま。
+
+**いつ使うか**: 共通の data structure を複数ファイルで触りたいとき
+**だけ**。デフォルトの "private struct" の方が安全なので、迷ったら
+private を選ぶ。export 前方宣言を書くということは「このフィールドは
+public API である」と宣言するのと同じ。後で表現を変えると import
+側が壊れる。
+
 ### 関連ドキュメント
 
 - `docs/language.md` の「struct のプライベートフィールド」節
 - `docs/task/multi_file.md` (import の全体挙動)
+- `tests/test_import.sh` の "export forward decl exposes synthetic fn"
+  ケース (この挙動の回帰テスト)
 
 ---
 

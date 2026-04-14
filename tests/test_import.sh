@@ -155,4 +155,33 @@ else
     echo "SKIP: deep import rv32 (RISC-V toolchain not found)"
 fi
 
+# --- Test 9: export forward decl exposes struct synthetic fns ---
+# struct_export.tc declares `struct Point` and adds `export fn`
+# forward declarations whose signatures match the parser-generated
+# synthetic constructor / getters / setters. The forward decls promote
+# those synthetics to export linkage, so main_struct_export.tc can
+# call Point() / x(p) / y(p) / x(p, v) directly.  See
+# design_decisions.md #1 for the rationale.
+if [ "$HAS_RV" = true ]; then
+    TMP=$(mktemp -d)
+    t0=$(time_ms)
+    compile_tc "$IMPORT_DIR/struct_export.tc" "$TMP/struct_export.s"
+    compile_tc "$IMPORT_DIR/main_struct_export.tc" "$TMP/main.s"
+    if link_and_run "$TMP/out" "$TMP/exit" "$TMP/struct_export.s" "$TMP/main.s"; then
+        elapsed=$(( $(time_ms) - t0 ))
+        out=$(cat "$TMP/out"); ex=$(cat "$TMP/exit")
+        if [ "$ex" = "0" ]; then
+            report_pass "export forward-decl exposes synthetic fn" "$elapsed"
+        else
+            report_fail_msg "export forward-decl exposes synthetic fn" "expected exit 0, got '$out' exit $ex"
+        fi
+    else
+        elapsed=$(( $(time_ms) - t0 ))
+        report_fail_msg "export forward-decl exposes synthetic fn" "link failed"
+    fi
+    rm -rf "$TMP"
+else
+    echo "SKIP: export forward-decl exposes synthetic fn (RISC-V toolchain not found)"
+fi
+
 print_results

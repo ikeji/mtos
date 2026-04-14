@@ -1,0 +1,16 @@
+// struct_export.tc — exposes a struct's synthetic fns to importers
+// by re-declaring them as `export fn` forward decls. The bodies are
+// still provided by the parser-generated synthetics; the forward
+// decls only flip their linkage to export. See design_decisions.md
+// section #1.
+
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+export fn Point(x: i32, y: i32) -> Point;
+export fn x(p: Point) -> i32;
+export fn y(p: Point) -> i32;
+export fn x(p: Point, v: i32) -> void;
+export fn y(p: Point, v: i32) -> void;
