@@ -137,11 +137,14 @@ for task in $TASKS; do
     cp "$TMP/$task.bin" "$ROOT_DIR_TREE/bin/$task"
 done
 printf 'hello, mtfs\n' > "$ROOT_DIR_TREE/hello.txt"
-# phase 7 test input: a minimal .tc program that compiler tasks can
-# consume from /phase7.tc. Always staged so tests/test_phase7.sh can
+# phase 7 test inputs: small .tc programs that compiler tasks can
+# consume from /phase7*.tc. Always staged so tests/test_phase7.sh can
 # use the same kernel build regardless of EXTRA_TASKS.
 if [ -f "$ROOT_DIR/tests/phase7_hello.tc" ]; then
     cp "$ROOT_DIR/tests/phase7_hello.tc" "$ROOT_DIR_TREE/phase7.tc"
+fi
+if [ -f "$ROOT_DIR/tests/phase7_min.tc" ]; then
+    cp "$ROOT_DIR/tests/phase7_min.tc" "$ROOT_DIR_TREE/phase7_min.tc"
 fi
 python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 

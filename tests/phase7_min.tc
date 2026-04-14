@@ -1,0 +1,3 @@
+// A `var` statement instead of `return`. If parse crashes here too,
+// the issue is emit_comment_src or pars_block's loop, not pars_return.
+fn f() -> i32 { var x: i32 = 42; }
