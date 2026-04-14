@@ -28,20 +28,35 @@ var STATE_DONE:    i32 = 1;
 var STATE_UNUSED:  i32 = 2;
 var STATE_WAITING: i32 = 3;
 
+// Per-task process-table entry. Each scheduler slot owns one Task
+// instance; sched_init allocates them up-front and we mutate fields
+// in place via the parser-generated setters, so a slot's Task
+// reference never changes across its lifetime.
+//
+// Fields:
+//   t_frame     trap frame pointer handed to assembly's _switch_frame
+//   t_state     STATE_READY / DONE / UNUSED / WAITING
+//   t_wait_on   slot this WAITING task is blocked on (-1 otherwise)
+//   t_frame_buf kmalloc base owning the trap frame U8Array
+//   t_ram       kmalloc base owning the task's RAM (data/bss + arena)
+//   t_stack     kmalloc base owning the task's stack
+//   t_img       kmalloc base owning the slow-path image (0 if XIP)
+//
+// struct fields are module-private in TC, so `t_*` accessors stay
+// hidden inside kernel_common.tc; callers go through sched_* only.
+struct Task {
+    t_frame:     u32,
+    t_state:     i32,
+    t_wait_on:   i32,
+    t_frame_buf: u32,
+    t_ram:       u32,
+    t_stack:     u32,
+    t_img:       u32,
+}
+
 var g_num_tasks: i32 = 0;
 var g_current: i32 = 0;
-var g_frames:  U32Array = 0 as U32Array;
-var g_states:  I32Array = 0 as I32Array;
-var g_wait_on: I32Array = 0 as I32Array;   // slot each waiting task is blocked on
-
-// Per-slot ownership of kmalloc'd allocations. Each cell holds the
-// raw kmalloc base pointer (what kfree expects). 0 means "nothing to
-// free" — e.g. the XIP fast path leaves the image unallocated, so its
-// slot's g_alloc_img stays 0.
-var g_alloc_frame_buf: U32Array = 0 as U32Array;
-var g_alloc_ram:       U32Array = 0 as U32Array;
-var g_alloc_stack:     U32Array = 0 as U32Array;
-var g_alloc_img:       U32Array = 0 as U32Array;
+var g_tasks: TaskArray = 0 as TaskArray;
 
 // Allocation bases of the task most recently built by make_task. The
 // caller (sched_register / sched_spawn / sys_exec_handler) copies these
@@ -116,45 +131,40 @@ export fn set_last_img(img_base: u32) -> void {
 // load_fd into slot `idx`. Used by sched_register, sched_spawn, and
 // sched_replace_current after they install a new frame.
 fn slot_capture_last(idx: i32) -> void {
-    set(g_alloc_frame_buf, idx, g_last_frame_buf);
-    set(g_alloc_ram,       idx, g_last_ram);
-    set(g_alloc_stack,     idx, g_last_stack);
-    set(g_alloc_img,       idx, g_last_img);
+    var t: Task = get(g_tasks, idx);
+    t_frame_buf(t, g_last_frame_buf);
+    t_ram(t, g_last_ram);
+    t_stack(t, g_last_stack);
+    t_img(t, g_last_img);
     return;
 }
 
 // Release every kmalloc base owned by slot `idx` and clear the entries.
 // Safe to call on an empty slot (all zeros).
 fn slot_free_allocs(idx: i32) -> void {
-    var fb: u32 = get(g_alloc_frame_buf, idx);
-    var ra: u32 = get(g_alloc_ram,       idx);
-    var st: u32 = get(g_alloc_stack,     idx);
-    var im: u32 = get(g_alloc_img,       idx);
+    var t: Task = get(g_tasks, idx);
+    var fb: u32 = t_frame_buf(t);
+    var ra: u32 = t_ram(t);
+    var st: u32 = t_stack(t);
+    var im: u32 = t_img(t);
     if fb != 0u32 { kfree(fb); }
     if ra != 0u32 { kfree(ra); }
     if st != 0u32 { kfree(st); }
     if im != 0u32 { kfree(im); }
-    set(g_alloc_frame_buf, idx, 0u32);
-    set(g_alloc_ram,       idx, 0u32);
-    set(g_alloc_stack,     idx, 0u32);
-    set(g_alloc_img,       idx, 0u32);
+    t_frame_buf(t, 0u32);
+    t_ram(t, 0u32);
+    t_stack(t, 0u32);
+    t_img(t, 0u32);
     return;
 }
 
 export fn sched_init(max: i32) -> void {
     g_num_tasks = max;
-    g_frames  = U32Array((max) as u32);
-    g_states  = I32Array((max) as u32);
-    g_wait_on = I32Array((max) as u32);
-    g_alloc_frame_buf = U32Array((max) as u32);
-    g_alloc_ram       = U32Array((max) as u32);
-    g_alloc_stack     = U32Array((max) as u32);
-    g_alloc_img       = U32Array((max) as u32);
+    g_tasks = TaskArray((max) as u32);
     g_current = 0;
     var i: i32 = 0;
     while i < max {
-        set(g_states,  i, STATE_UNUSED);
-        set(g_wait_on, i, -1);
+        set(g_tasks, i, Task(0u32, STATE_UNUSED, -1, 0u32, 0u32, 0u32, 0u32));
         i = i + 1;
     }
     return;
@@ -163,16 +173,17 @@ export fn sched_init(max: i32) -> void {
 // Install a freshly-built task frame into slot idx. The caller must
 // have just finished calling load_task / make_task so that the
 // g_last_* allocation bases still describe this exact frame —
-// sched_register snapshots them into the slot's ownership arrays.
+// sched_register snapshots them into the slot's Task struct.
 export fn sched_register(idx: i32, frame: u32) -> void {
-    set(g_frames, idx, frame);
-    set(g_states, idx, STATE_READY);
+    var t: Task = get(g_tasks, idx);
+    t_frame(t, frame);
+    t_state(t, STATE_READY);
     slot_capture_last(idx);
     return;
 }
 
 export fn sched_get_frame(idx: i32) -> u32 {
-    return get(g_frames, idx);
+    return t_frame(get(g_tasks, idx));
 }
 
 // Replace the currently running task's frame with `frame`. Used by
@@ -182,29 +193,31 @@ export fn sched_get_frame(idx: i32) -> u32 {
 // allocations are freed before the new bases are captured.
 export fn sched_replace_current(frame: u32) -> void {
     slot_free_allocs(g_current);
-    set(g_frames, g_current, frame);
-    set(g_states, g_current, STATE_READY);
+    var t: Task = get(g_tasks, g_current);
+    t_frame(t, frame);
+    t_state(t, STATE_READY);
     slot_capture_last(g_current);
     return;
 }
 
 // Install `frame` in the first slot that is free (unused or done).
 // Returns the slot index, or -1 if the scheduler is full. Snapshots
-// the g_last_* allocation bases into the slot's ownership arrays so
+// the g_last_* allocation bases into the slot's Task struct so
 // that the eventual sched_task_exit can free them.
 export fn sched_spawn(frame: u32) -> i32 {
     var i: i32 = 0;
     while i < g_num_tasks {
-        var s: i32 = get(g_states, i);
+        var t: Task = get(g_tasks, i);
+        var s: i32 = t_state(t);
         if s == STATE_UNUSED || s == STATE_DONE {
             // Done slots can still own stale allocations (see
             // sched_task_exit — it already frees them, but defend
             // against a future refactor that leaves ownership stale
             // in the slot).
             slot_free_allocs(i);
-            set(g_frames,  i, frame);
-            set(g_states,  i, STATE_READY);
-            set(g_wait_on, i, -1);
+            t_frame(t, frame);
+            t_state(t, STATE_READY);
+            t_wait_on(t, -1);
             slot_capture_last(i);
             return i;
         }
@@ -219,17 +232,19 @@ export fn sched_spawn(frame: u32) -> i32 {
 // signal "no switch needed" and leave the caller in STATE_READY.
 export fn sched_wait(target: i32) -> u32 {
     if target < 0 || target >= g_num_tasks { return 0u32; }
-    if get(g_states, target) == STATE_DONE { return 0u32; }
+    if t_state(get(g_tasks, target)) == STATE_DONE { return 0u32; }
 
-    set(g_states,  g_current, STATE_WAITING);
-    set(g_wait_on, g_current, target);
+    var cur: Task = get(g_tasks, g_current);
+    t_state(cur, STATE_WAITING);
+    t_wait_on(cur, target);
 
     var i: i32 = 0;
     while i < g_num_tasks {
         var next: i32 = (g_current + 1 + i) % g_num_tasks;
-        if get(g_states, next) == STATE_READY {
+        var nt: Task = get(g_tasks, next);
+        if t_state(nt) == STATE_READY {
             g_current = next;
-            return get(g_frames, next) as u32;
+            return t_frame(nt);
         }
         i = i + 1;
     }
@@ -242,9 +257,10 @@ fn trap_handler(cause: u32, epc: u32) -> void {
         var i: i32 = 0;
         while i < g_num_tasks {
             var next: i32 = (g_current + 1 + i) % g_num_tasks;
-            if get(g_states, next) == STATE_READY {
+            var nt: Task = get(g_tasks, next);
+            if t_state(nt) == STATE_READY {
                 g_current = next;
-                set_switch_frame(get(g_frames, next) as u32);
+                set_switch_frame(t_frame(nt));
                 i = g_num_tasks;
             }
             i = i + 1;
@@ -259,15 +275,17 @@ fn trap_handler(cause: u32, epc: u32) -> void {
 // the dying slot's frame_buf / ram / stack / img here.
 fn sched_task_exit() -> u32 {
     slot_free_allocs(g_current);
-    set(g_states, g_current, STATE_DONE);
-    set(g_frames, g_current, 0u32);
+    var cur: Task = get(g_tasks, g_current);
+    t_state(cur, STATE_DONE);
+    t_frame(cur, 0u32);
 
     // Wake any tasks that were waiting on the one we just finished.
     var w: i32 = 0;
     while w < g_num_tasks {
-        if get(g_states, w) == STATE_WAITING && get(g_wait_on, w) == g_current {
-            set(g_states,  w, STATE_READY);
-            set(g_wait_on, w, -1);
+        var wt: Task = get(g_tasks, w);
+        if t_state(wt) == STATE_WAITING && t_wait_on(wt) == g_current {
+            t_state(wt, STATE_READY);
+            t_wait_on(wt, -1);
         }
         w = w + 1;
     }
@@ -275,9 +293,10 @@ fn sched_task_exit() -> u32 {
     var i: i32 = 0;
     while i < g_num_tasks {
         var next: i32 = (g_current + 1 + i) % g_num_tasks;
-        if get(g_states, next) == STATE_READY {
+        var nt: Task = get(g_tasks, next);
+        if t_state(nt) == STATE_READY {
             g_current = next;
-            return get(g_frames, next) as u32;
+            return t_frame(nt);
         }
         i = i + 1;
     }
