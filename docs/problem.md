@@ -105,14 +105,17 @@ Pico 2 セルフホストはもう一歩で届くはず。
   エピローグをヘルパラベル (`_ecall_enter` / `_ecall_leave_advance`)
   に括り出し、`.macro` なしでも単一ソース化できることを確認。
   asm.tc には触れていない。→ fixed list 参照。
-- **中期**: asm.tc の MAX_CODE / g_lines を実用値 (512 KB?) に下げる、
-  入力を streaming にする、2 パス目は backpatch テーブルで済ませて
-  source の再読み込みを避ける。単一プロセスのまま半分以下のメモリ。
+- **本計画**: asm 単体ではなく pipeline 全体 (typecheck / codegen /
+  bc2asm / asm) を 100 KB 級に落とす計画を `docs/task/pipeline_100kb.md`
+  にまとめた。asm は stream 2 パス + argv ファイル入力 + 動的 label
+  テーブルで 9.5 MB → 80 KB、bc2asm は per-function emission で
+  1.4 MB → 40 KB、typecheck は sigscan/tcheck 分割で 717 KB → 80 KB が
+  目標。実装順序は T1 動的配列 → codegen → bc2asm → typecheck 分割 →
+  asm stream。
 - **長期**: `.o` ファイル形式を決めて assembler と linker を別プロセス
   に分離する。アセンブラは single-file 入力で `.o` 出力、リンカは
-  複数 `.o` を読んでシンボル解決 + ELF 出力。macro サポートは分離後
-  のアセンブラフェーズに入れる (今入れると分離時に移し替えが必要)。
-  これで各プロセスが Pico 2 の 256 KB に収まる。
+  複数 `.o` を読んでシンボル解決 + ELF 出力。本計画の stream 2 パスが
+  動いてから移行する。
 
 ### 8. asm.tc がセクション境界を 16 バイト単位までしかアラインしない (wontfix)
 

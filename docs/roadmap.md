@@ -118,10 +118,12 @@ C言語でフルパイプラインを実装し、動作を検証する。
       SourceReader (4 KB 内部バッファ) でストリーミング化。520 KB
       ピーク削減
 - [ ] PSRAM 初期化 (QMI CS1, 0x11000000〜) を crt0 に追加
-- [ ] asm.tc のメモリ削減: `g_code` / `g_lines` 各 4 MB + `g_line_offs/lens`
-      1 MB が残っており、現状約 9 MB ピーク。PSRAM 前提でも Pico 2
-      の 520 KB SRAM では動かないため、assembler/linker 分離
-      (問題 #7) または入力のストリーミング処理が必要
+- [ ] コンパイルパイプライン全体を 100 KB 級に縮める (計画は
+      `docs/task/pipeline_100kb.md`)。ピーク内訳は parse 14 KB /
+      typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB。
+      T1 動的配列 → codegen → bc2asm per-function → typecheck 分割
+      (sigscan+tcheck) → asm stream 2 パスの順に attack する。
+      目標は各ステージ単体 80 KB 以下
 - [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)
 
 ## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
