@@ -170,6 +170,39 @@ TC 側の `>>` が常に arithmetic shift なので、bcrun.tc で `shr_u` を
 しない。これは意図的 (MMIO とカーネル用) だが、ユーザコードで使う
 と簡単にメモリを壊せる。
 
+### 20. `peek*` / `poke*` / `get` / `set` が関数呼び出しで遅い (ergonomics, 後回し)
+
+`peek8` / `peek16` / `peek32` / `poke8` / `poke16` / `poke32` は
+それぞれ `trap_common.s` / `crt0_tc.s` で `.globl` ラベルとして定義
+された小さなアセンブラ関数で、中身は `lbu a0, 0(a0); ret` のような
+1〜2 命令。ところが TC コードから呼ぶと BC レベルでは普通の
+call 命令に展開され、bc2asm が `call peek8__u32` を吐く:
+
+- 引数を push
+- `call peek8__u32` (jal + 関数先頭 + `lbu`/`ret` + 戻り)
+- 結果を pop
+
+実質 1 命令の操作に 5〜6 命令のオーバーヘッドが付く。
+`get(U8Array, i)` は内部で `peek8(o as u32 + 4 + i as u32)` を呼ぶ
+ので、さらに call が入れ子になる。kernel scheduler / lexer / AST
+walk のような hot path で効く。
+
+**症状**: compiler/runtime.tc の `get` 側に境界チェックを追加
+しようとしたら (#6 段階 1b) `make test` が 60 秒制約を超えた。
+peek/poke の call オーバーヘッドがボトルネックの一因。
+
+対処案:
+- bc2asm (または codegen) に「peek/poke を intrinsic として認識し、
+  該当 BC opcode → 直接 `lbu`/`lhu`/`lw`/`sb`/`sh`/`sw` を emit」
+  する特化コードを入れる。関数 label 自体は残して宣言 fallback と
+  して動くようにしておけば、codegen 以外のフロント (bcrun 等) は
+  従来通り。
+- 将来 get/set にも同様の展開を行えば、境界チェック付き get の
+  hot-path コストが許容範囲に収まる可能性あり。
+
+**いつやるか**: kernel/tests/pico2 実機のどれかが「遅くてどうしよう
+もない」状態になったら試す。現状は特に実害なし。
+
 ### 13. Compiler bug: struct 定義時にも auto-generated array の size が u32 ハードコード
 
 struct を宣言すると `XxxArray(__n: u32) -> XxxArray` が parser で生成
