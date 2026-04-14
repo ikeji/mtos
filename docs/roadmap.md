@@ -238,26 +238,43 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 ## フェーズ7: ネイティブコンパイラをOS上で動かす
 
 詳細な実装計画と前提機能 (A〜F / M1〜M7) は
-`docs/task/phase7_compiler_on_os.md` にまとめた。以下はマイルストーン
-だけのサマリ。
+`docs/task/phase7_compiler_on_os.md`、実測ピークメモリと残課題は
+`docs/problem.md` #7 / K3 / K5 / K6 / K7 / #21 を参照。
+**M1〜M6 まで qemu virt 上で完走**、OS 上で Hello World を自己
+コンパイル + 自己実行できるところまで到達している。
 
-- [ ] **B**: タスクが argc/argv を受け取れるようにする (sys_execve /
-      sys_spawn の argv 渡し、task_crt0.s、sh のコマンドラインパーサ)
-- [ ] **A+D+F**: tmpfs (/tmp にマウント) + リダイレクト (`<` / `>` + dup3)
-      + stderr (fd=2) を UART 固定にして fd=1 のみ差し替え可能に
-- [ ] **E**: タスクバイナリに arena/stack サイズヘッダ (案 C:
-      先頭 8 バイト) を載せ、loader が読んで kmalloc するようにする
-      (problem.md K3 残件の解決)
-- [ ] **C-1**: compiler のパイプライン (`parse` / `typecheck` /
-      `codegen` / `bc2asm`) を `/bin/` に置き、中間ファイル経由で
-      順に起動できるようにする
+- [x] **B**: argc/argv を kernel 側で StringArray として構築し
+      crt0 経由で main に渡す。`fn main(argv: StringArray)` と
+      `fn main()` の両方を task_crt0.s の fallback スタブで受ける
+- [x] **A**: tmpfs (/tmp にマウント)。kmalloc-backed、16 files /
+      8 fds、grow-on-write
+- [x] **D**: sh の `<` / `>` リダイレクト。sys_spawn/exec の 4 引数
+      ABI (path, argv, in_path, out_path) で kernel が開く。
+      per-task stdin_fd / stdout_fd をスケジューラスロットに所有
+- [x] **F**: stderr (fd=2) は常に UART 直行、redirect 対象外
+- [x] **E-step1**: タスクメモリを flat 16 MB に一律引き上げ、
+      kernel arena は 96 MB。per-task header 方式 (K3 案 C) は
+      依然未実装。実測ピークは #7 に記録
+- [x] **E-step2**: `runtime.tc` に per-task ピークメモリ計測を追加
+      (`km_dump_peak`)、task_crt0.s がタスク終了時に
+      `[kmem peak=... live=...]` を stderr にダンプ
+- [x] **C-1**: parse / typecheck / codegen / bc2asm / asm を
+      `kernel/tasks/<name>/<name>.tc` シンボリックリンクで
+      `EXTRA_TASKS` 経由でビルドし、sh から中間ファイル経由の
+      パイプラインを回す
+- [x] **M4**: OS 上で parse が単段動く
+- [x] **M5**: parse → typecheck → codegen → bc2asm を中間ファイルで
+      繋いで `.s` を得る
+- [x] **M6**: `cat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s`
+      を asm に通して raw binary を生成、`/tmp/hw` に書き出して
+      sh の絶対パス対応で実行。Hello World が OS 上で自己コンパイル
+      + 自己実行できることを確認 (`tests/test_phase7.sh` の stage 2)
 - [ ] **C-2 (任意)**: `pipe()` + dup2 による真のパイプサポート
       (中間ファイル経由で動いたあと、性能が問題になったら)
-- [ ] **M6**: OS 上で asm まで走らせ、生成した bin を tmpfs に置いて
-      load/run (自己コンパイル → 自己実行の初動)
-- [ ] **M7**: Gen2 ツールで Gen3 を作れる (OS 上で自己ホストループを
-      一周)。asm.tc のメモリ問題 (problem.md #7) が qemu virt なら
-      素で、Pico 2 実機なら解決後に可能
+- [ ] **M7**: OS 上で Gen2 コンパイラ自身を再コンパイルして
+      Gen3 に相当する一周をやる。asm.tc のメモリ問題 (#7) は
+      qemu virt なら flat 16 MB で収まる (実測 9.5 MB)。時間は
+      多めに要る見込み
 
 ## フェーズ8: 自己ホスト
 
@@ -273,7 +290,7 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 |---|---|
 | インタプリタとコンパイラの挙動が一致しない | `tests/test_consistency.sh` / `tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
 | LL(1)で表現できない構文が欲しくなる | 文法制約を文書化し、設計段階で確認 |
-| メモリ不足（520KB SRAM） | `runtime.tc` は kmalloc/kfree に移行、`typecheck.tc` は `compiler/ast_node.tc` で AST ノードプールを struct AstNode + AstNodeArray 化して on-demand 確保に (512 KB pre-alloc 撤廃)、`bc2asm.tc` は SourceReader ストリーミングに移行して 524 KB src 削減済み。残るボトルネックは `asm.tc` の ~9 MB 静的バッファ (g_code / g_lines / g_line_offs) で、assembler と linker の分離が必要 (problem.md #7) |
+| メモリ不足（520KB SRAM） | `runtime.tc` は kmalloc/kfree に移行、`typecheck.tc` は `compiler/ast_node.tc` で AST ノードプールを struct AstNode + AstNodeArray 化して on-demand 確保に (512 KB pre-alloc 撤廃)、`bc2asm.tc` は SourceReader ストリーミングに移行して 524 KB src 削減済み。phase 7 で実測したピークは parse ≈14 KB / typecheck ≈717 KB / codegen ≈303 KB / bc2asm ≈1.4 MB / **asm ≈9.5 MB** — asm 以外は全部 1.5 MB 以下で、Pico 2 セルフホストの最後の壁は asm だけ。assembler と linker の分離もしくは MAX_CODE / g_lines の削減が必要 (problem.md #7) |
 | gp 相対 `la` の 12-bit 制約 | hello レベルでは余裕。将来必要なら 12 byte 形式 (`lui+addi+add gp`) に拡張 |
 | QEMUと実機の挙動差異 | bring-up 時に standalone hello を実機検証、以降はカーネル込みの kernel/platform_pico2.s に集約。test_pico2.sh が Debug Probe 経由で継続検証 |
 | Flash書き込みが遅い・壊れやすい | picotool UF2 経由の書き込みのみ使用。書き換え頻度は開発サイクルで問題ないレベル |
