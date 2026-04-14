@@ -117,10 +117,6 @@ section_base を合わせないと padding 量が drift する。
 4 KB 境界を要求したりしたら再評価する。それまでは block_virtio.tc の
 手動アラインのまま。
 
-### 9. エラーメッセージが `asm: unknown instruction 'xxx'` だけ (ergonomics)
-
-行番号が出ない。入力行は連結された .s ファイルで、grep する手がかりが
-ほぼ命令名だけになる。
 
 ### 10. struct array 呼び出しが mangle 名で未解決 (FIXED)
 
@@ -453,3 +449,11 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   半分程度に縮めた。`.macro` / `.endm` のサポートを asm.tc に足さず
   ヘルパラベル (`call _ecall_enter` / `j _ecall_leave_advance`) で
   single-source 化。23 行減 (#7 短期)
+- asm.tc のエラーが「`asm: unknown instruction 'xxx'`」など mnemonic
+  だけで行番号も元行もなかった → `g_cur_line` を `process_line` 冒頭
+  でセットし、`asm_err_begin` / `asm_err_end` ヘルパで 3 つのエラー
+  サイト (unknown instruction / undefined label / gp-relative out of
+  range) を書き直した。新しい出力形式: `asm:<line>: <msg>\n  at:
+  <verbatim line>`。pass 2 終了後は `g_cur_line = 0` でクリアし
+  write_elf 段階のエラー (e.g. 未定義 _start) が過去の行を誤って
+  参照しないようにした (#9)
