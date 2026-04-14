@@ -142,9 +142,9 @@ fn main() -> i32 {
     // crt0_data.s grew to 32 MB of arena to accommodate multiple
     // live 4 MB slots.
     sched_init(8);
-    sched_register(0, load_task("/bin/hello",  4194304, 65536));
-    sched_register(1, load_task("/bin/hello2", 4194304, 65536));
-    sched_register(2, load_task("/bin/sh",     4194304, 65536));
+    sched_register(0, load_task("/bin/hello",  16777216, 65536));
+    sched_register(1, load_task("/bin/hello2", 16777216, 65536));
+    sched_register(2, load_task("/bin/sh",     16777216, 65536));
 
     rearm_timer();
     var mie: u32 = csr_read_mie();

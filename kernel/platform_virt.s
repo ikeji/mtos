@@ -10,9 +10,10 @@ _start:
     li   sp, 0x88000000
     la   a0, __arena
     # Must match crt0_data.s:__arena .space size (kept deliberately
-    # generous so loader.tc's 4 MB-per-task budget has room for a
-    # handful of live spawn/wait chains).
-    li   a1, 33554432
+    # generous so loader.tc's 16 MB-per-task budget has room for
+    # multiple live spawn/wait chains including asm.tc, which
+    # statically allocates ~9 MB at startup).
+    li   a1, 100663296
     call __runtime_init__u32__i32
     la   t0, _trap_frame
     csrw 0x340, t0

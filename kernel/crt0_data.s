@@ -3,11 +3,15 @@
 # _trap_frame and _kern_save must be near __global_pointer$ (gp-relative ±2KB).
 # __arena is large and placed last since it is only accessed via peek/poke.
 #
-# Arena size: 32 MB. Each spawned task gets a flat 4 MB RAM + 64 KB
-# stack from loader.tc (phase 7 E-step1), so we need room for the
-# seeded tasks plus a few live spawn/wait chains simultaneously.
-# qemu virt has 128 MB of RAM, so 32 MB of arena still leaves
-# plenty of headroom for the kernel ELF itself, stacks, etc.
+# Arena size: 96 MB. Each spawned task now gets a flat 16 MB RAM
+# block (loader.tc TASK_RAM_SIZE) so that the asm.tc assembler — which
+# statically allocates ~9 MB at startup (g_code + g_lines +
+# g_line_offs/lens + labels) — fits in a single task with working
+# space to spare. Peak memory with 5 live slots stays under 80 MB,
+# leaving the rest of qemu virt's 128 MB for the kernel text, stacks,
+# and qemu overhead. Raw mode output (ASM_PROLOGUE="; raw") means
+# the .bss .space never actually shows up in the emitted binary, so
+# this only affects runtime memory use.
 #
     .bss
     .align 4
@@ -19,4 +23,4 @@ _switch_frame:
     .space 4
     .globl __arena
 __arena:
-    .space 33554432
+    .space 100663296

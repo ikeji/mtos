@@ -40,8 +40,8 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 echo "=== phase 7 compiler-on-OS ==="
-echo "Building kernel with EXTRA_TASKS=parse typecheck codegen bc2asm"
-EXTRA_TASKS="parse typecheck codegen bc2asm" \
+echo "Building kernel with EXTRA_TASKS=parse typecheck codegen bc2asm asm cat"
+EXTRA_TASKS="parse typecheck codegen bc2asm asm cat" \
 GEN2_DIR="$GEN2_DIR" \
     "$ROOT_DIR/kernel/build.sh" --target virt \
     -o "$TMP/kernel_virt" --disk-out "$TMP/disk.img" 2>&1 | tail -5
@@ -91,7 +91,31 @@ if [ "$has_text_dir" -lt 1 ] || [ "$has_globl_main" -lt 1 ]; then
     exit 1
 fi
 
-echo "OK: compiler pipeline reached bc2asm"
+echo "OK (stage 1): compiler pipeline reached bc2asm"
 echo "  writes:       $write_markers"
 echo "  clean exits:  $clean_exits"
+
+echo ""
+echo "=== phase 7 M6: compile + link + run Hello World ==="
+# Runs the full 6-stage pipeline on the OS — parse → typecheck →
+# codegen → bc2asm → cat (link with prelude) → asm — producing a
+# loader-ready raw binary in /tmp/hw, then sh executes /tmp/hw via
+# its absolute-path support and the Hello World line lands on UART.
+out2=$(printf 'parse < /hw.tc > /tmp/1.ast\ntypecheck < /tmp/1.ast > /tmp/2.tast\ncodegen < /tmp/2.tast > /tmp/3.bc\nbc2asm < /tmp/3.bc > /tmp/4.s\ncat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s\nasm < /tmp/full.s > /tmp/hw\n/tmp/hw\nquit\n' \
+    | timeout 60 qemu-system-riscv32 -smp 1 -nographic \
+    -serial mon:stdio --no-reboot -m 128 \
+    -machine virt,aclint=on -bios none \
+    -drive "file=$TMP/disk.img,format=raw,if=none,id=blk0" \
+    -device "virtio-blk-device,drive=blk0" \
+    -device "loader,file=$TMP/kernel_virt,addr=0x80000000" \
+    -device "loader,addr=0x80000000,cpu-num=0" 2>&1 | tr -d '\0')
+
+if ! echo "$out2" | grep -q "Hello, World!"; then
+    echo "FAIL: OS-compiled Hello World did not print the expected greeting" >&2
+    echo "--- output ---"
+    echo "$out2"
+    exit 1
+fi
+
+echo "OK (stage 2): self-hosted compile+link+run reached 'Hello, World!'"
 exit 0

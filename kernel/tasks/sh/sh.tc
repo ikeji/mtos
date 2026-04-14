@@ -215,14 +215,25 @@ fn free_argv(sa: StringArray) -> void {
     return;
 }
 
-// Write "/bin/<first argv token>\0" into path. The first token is
-// extracted from argv because parse_redir has already stripped the
-// redirect operators.
+// Write the path to execute into `path`. If argv[0] starts with '/'
+// we treat it as an absolute path (used by phase 7 to run freshly
+// compiled binaries out of /tmp). Otherwise we prepend "/bin/".
 fn build_path(path: U8Array, argv: StringArray) -> bool {
     if len(argv) == 0 { return false; }
     var head: String = get(argv, 0);
     var hlen: i32 = len(head);
-    if hlen == 0 || hlen + 5 + 1 > PATH_MAX { return false; }
+    if hlen == 0 { return false; }
+    if get(head, 0) == '/' as u8 {
+        if hlen + 1 > PATH_MAX { return false; }
+        var i: i32 = 0;
+        while i < hlen {
+            set(path, i, get(head, i));
+            i = i + 1;
+        }
+        set(path, hlen, 0u8);
+        return true;
+    }
+    if hlen + 5 + 1 > PATH_MAX { return false; }
     set(path, 0, '/' as u8);
     set(path, 1, 'b' as u8);
     set(path, 2, 'i' as u8);

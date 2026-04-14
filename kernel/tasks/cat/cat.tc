@@ -1,0 +1,50 @@
+// cat.tc — concatenate files listed in argv and write them to stdout.
+//
+// Used by the phase 7 compile-and-link pipeline to glue together a
+// pre-staged `; raw\n` directive, task_crt0.s, runtime.s, the
+// freshly-compiled user .s, and task_data.s before feeding the
+// whole thing to asm. The mtfs image (kernel/build.sh) stages the
+// invariant pieces as /rawhdr.s, /crt0.s, /runtime.s, /task_data.s.
+//
+// No argv[0] inspection — we skip it and concatenate argv[1..].
+// Files are read in 4 KB chunks; missing files are silently
+// skipped (the shell prints "open failed" separately in that case).
+
+import "../libtc/libtc.tc";
+
+fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+fn main(argv: StringArray) -> i32 {
+    var nargs: i32 = len(argv);
+    var buf: U8Array = U8Array(4096u32);
+    var i: i32 = 1;
+    while i < nargs {
+        var arg: String = get(argv, i);
+        var slen: i32 = len(arg);
+        var path: U8Array = U8Array((slen + 1) as u32);
+        var j: i32 = 0;
+        while j < slen {
+            set(path, j, get(arg, j));
+            j = j + 1;
+        }
+        set(path, slen, 0u8);
+        var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
+        delete(path);
+        if fd >= 0 {
+            var done: i32 = 0;
+            while done == 0 {
+                var n: i32 = sys_read(fd, buf, 4096);
+                if n <= 0 {
+                    done = 1;
+                } else {
+                    sys_write(1, buf, n);
+                }
+            }
+            do_close(fd);
+        }
+        i = i + 1;
+    }
+    delete(buf);
+    return 0;
+}

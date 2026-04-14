@@ -146,6 +146,24 @@ fi
 if [ -f "$ROOT_DIR/tests/phase7_min.tc" ]; then
     cp "$ROOT_DIR/tests/phase7_min.tc" "$ROOT_DIR_TREE/phase7_min.tc"
 fi
+if [ -f "$ROOT_DIR/tests/phase7_hello_world.tc" ]; then
+    cp "$ROOT_DIR/tests/phase7_hello_world.tc" "$ROOT_DIR_TREE/hw.tc"
+fi
+# Phase 7 OS-side linker prelude: the task_crt0.s + runtime.s glue
+# is the same for every compile-on-OS build, so we pre-concatenate
+# it into a single /prelude.s file inside the mtfs image. The OS-
+# side pipeline then only needs one small `cat` step to splice the
+# freshly-compiled user .s between /prelude.s and /prelude_tail.s.
+#
+# Having a single prelude file avoids reading tmpfs files larger
+# than ~100 KB under phase 7's sh-driven pipeline, which caused
+# intermittent spawn failures for asm during development.
+{
+    printf '; raw\n'
+    cat "$TASK_CRT0"
+    cat "$CACHE_DIR/runtime.s"
+} > "$ROOT_DIR_TREE/prelude.s"
+cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
 python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 
 # Optional: copy the mtfs image out for callers that need it (e.g.

@@ -144,7 +144,7 @@ var LOADER_O_TRUNC:  i32 = 512;
 // hold-overs + the spawned child), so crt0_data.s was bumped from
 // ~4.4 MB to 32 MB. Only affects the qemu virt build, which has
 // 128 MB of RAM available — plenty of room.
-var TASK_RAM_SIZE:   i32 = 4194304;
+var TASK_RAM_SIZE:   i32 = 16777216;
 var TASK_STACK_SIZE: i32 = 65536;
 
 fn ram_for_path(path_addr: u32) -> i32 {

@@ -1,0 +1,10 @@
+// phase7_hello_world.tc — classic Hello World for the OS-level
+// compile-and-run test. Runs through parse → typecheck → codegen
+// → bc2asm → rawify → asm on the OS, the resulting raw binary is
+// written to /tmp/hw, and sh executes it with the absolute path
+// syntax added for phase 7.
+
+fn main() -> i32 {
+    print_str("Hello, World!");
+    return 0;
+}
