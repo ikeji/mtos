@@ -3002,140 +3002,309 @@ __L116:
   return_void
 .endfn
 
-.fn fn_name_ss I32Array i32 i32
-.param fns I32Array
-.param fi i32
-; fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+0)); }
-  load fns
-  load fi
-  push_int 10
-  mul
-  push_int 0
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fn_name_sl I32Array i32 i32
-.param fns I32Array
-.param fi i32
-; fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+1)); }
-  load fns
-  load fi
-  push_int 10
-  mul
-  push_int 1
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fn_param_base I32Array i32 i32
-.param fns I32Array
-.param fi i32
-; fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+4)); }
-  load fns
-  load fi
-  push_int 10
-  mul
-  push_int 4
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fn_nparam I32Array i32 i32
-.param fns I32Array
-.param fi i32
-; fn fn_nparam(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+5)); }
-  load fns
-  load fi
-  push_int 10
-  mul
-  push_int 5
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fn_local_base I32Array i32 i32
-.param fns I32Array
-.param fi i32
-; fn fn_local_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+6)); }
-  load fns
-  load fi
-  push_int 10
-  mul
-  push_int 6
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fn_nlocal I32Array i32 i32
-.param fns I32Array
-.param fi i32
-; fn fn_nlocal(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+7)); }
-  load fns
-  load fi
-  push_int 10
-  mul
-  push_int 7
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fn_instr_base I32Array i32 i32
-.param fns I32Array
-.param fi i32
-; fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+8)); }
-  load fns
-  load fi
-  push_int 10
-  mul
+.fn BcFunc i32 i32 i32 i32 i32 i32 i32 i32 BcFunc
+.param __a0 i32
+.param __a1 i32
+.param __a2 i32
+.param __a3 i32
+.param __a4 i32
+.param __a5 i32
+.param __a6 i32
+.param __a7 i32
+.local __p U32Array
   push_int 8
-  add
-  call get I32Array i32
+  call U32Array u32
+  store __p
+  load __p
+  push_int 0
+  load __a0
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 1
+  load __a1
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 2
+  load __a2
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 3
+  load __a3
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 4
+  load __a4
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 5
+  load __a5
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 6
+  load __a6
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 7
+  load __a7
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
   return
   return_void
 .endfn
 
-.fn fn_ninstr I32Array i32 i32
-.param fns I32Array
-.param fi i32
-; fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+9)); }
-  load fns
-  load fi
-  push_int 10
-  mul
-  push_int 9
-  add
-  call get I32Array i32
+.fn name_ss BcFunc i32
+.param __p BcFunc
+  load __p
+  push_int 0
+  call get U32Array i32
+  cast i32
   return
   return_void
 .endfn
 
-.fn fn_set I32Array i32 i32 i32 void
-.param fns I32Array
-.param fi i32
-.param f i32
-.param v i32
-; fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns,(fi*10+f),v); return; }
-  load fns
-  load fi
-  push_int 10
-  mul
-  load f
-  add
-  load v
-  call set I32Array i32 i32
+.fn name_sl BcFunc i32
+.param __p BcFunc
+  load __p
+  push_int 1
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn param_base BcFunc i32
+.param __p BcFunc
+  load __p
+  push_int 2
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn nparam BcFunc i32
+.param __p BcFunc
+  load __p
+  push_int 3
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn local_base BcFunc i32
+.param __p BcFunc
+  load __p
+  push_int 4
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn nlocal BcFunc i32
+.param __p BcFunc
+  load __p
+  push_int 5
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn instr_base BcFunc i32
+.param __p BcFunc
+  load __p
+  push_int 6
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn ninstr BcFunc i32
+.param __p BcFunc
+  load __p
+  push_int 7
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn name_ss BcFunc i32 void
+.param __p BcFunc
+.param __v i32
+  load __p
+  push_int 0
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn name_sl BcFunc i32 void
+.param __p BcFunc
+.param __v i32
+  load __p
+  push_int 1
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn param_base BcFunc i32 void
+.param __p BcFunc
+.param __v i32
+  load __p
+  push_int 2
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn nparam BcFunc i32 void
+.param __p BcFunc
+.param __v i32
+  load __p
+  push_int 3
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn local_base BcFunc i32 void
+.param __p BcFunc
+.param __v i32
+  load __p
+  push_int 4
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn nlocal BcFunc i32 void
+.param __p BcFunc
+.param __v i32
+  load __p
+  push_int 5
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn instr_base BcFunc i32 void
+.param __p BcFunc
+.param __v i32
+  load __p
+  push_int 6
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn ninstr BcFunc i32 void
+.param __p BcFunc
+.param __v i32
+  load __p
+  push_int 7
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete BcFunc void
+.param __p BcFunc
+  load __p
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn BcFuncArray u32 BcFuncArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len BcFuncArray i32
+.param __a BcFuncArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get BcFuncArray i32 BcFunc
+.param __a BcFuncArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set BcFuncArray i32 BcFunc void
+.param __a BcFuncArray
+.param __i i32
+.param __v BcFunc
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete BcFuncArray void
+.param __a BcFuncArray
+  load __a
+  call delete U32Array
   pop
   return_void
   return_void
@@ -3344,13 +3513,13 @@ __L118:
   return_void
 .endfn
 
-.fn parse_bc U8Array U8Array I32Array I32Array I32Array I32Array I32Array I32Array I32Array I32Array void
+.fn parse_bc U8Array U8Array I32Array I32Array I32Array BcFuncArray I32Array I32Array I32Array I32Array void
 .param src U8Array
 .param strtab U8Array
 .param string_lits I32Array
 .param global_vars I32Array
 .param global_inits I32Array
-.param fns I32Array
+.param fns BcFuncArray
 .param params_pool I32Array
 .param locals_pool I32Array
 .param instrs I32Array
@@ -3374,6 +3543,7 @@ __L118:
 .local iv i32
 .local gi i32
 .local prev_under i32
+.local cf BcFunc
 .local d3b u8
 .local ib i32
 .local ni i32
@@ -3828,57 +3998,19 @@ __L156:
 ; cur_fn=g_nfuncs;
   load g_nfuncs
   store cur_fn
-; fn_set(fns,cur_fn,0,nm_ss); fn_set(fns,cur_fn,1,nm_sl);
+; set(fns, cur_fn, BcFunc(nm_ss, nm_sl,
   load fns
   load cur_fn
-  push_int 0
   load nm_ss
-  call fn_set I32Array i32 i32 i32
-  pop
-  load fns
-  load cur_fn
-  push_int 1
   load nm_sl
-  call fn_set I32Array i32 i32 i32
-  pop
-; fn_set(fns,cur_fn,4,g_nparams); fn_set(fns,cur_fn,5,0);
-  load fns
-  load cur_fn
-  push_int 4
   load g_nparams
-  call fn_set I32Array i32 i32 i32
-  pop
-  load fns
-  load cur_fn
-  push_int 5
   push_int 0
-  call fn_set I32Array i32 i32 i32
-  pop
-; fn_set(fns,cur_fn,6,g_nlocals); fn_set(fns,cur_fn,7,0);
-  load fns
-  load cur_fn
-  push_int 6
   load g_nlocals
-  call fn_set I32Array i32 i32 i32
-  pop
-  load fns
-  load cur_fn
-  push_int 7
   push_int 0
-  call fn_set I32Array i32 i32 i32
-  pop
-; fn_set(fns,cur_fn,8,g_ninstrs); fn_set(fns,cur_fn,9,0);
-  load fns
-  load cur_fn
-  push_int 8
   load g_ninstrs
-  call fn_set I32Array i32 i32 i32
-  pop
-  load fns
-  load cur_fn
-  push_int 9
   push_int 0
-  call fn_set I32Array i32 i32 i32
+  call BcFunc i32 i32 i32 i32 i32 i32 i32 i32
+  call set BcFuncArray i32 BcFunc
   pop
 ; g_nfuncs=g_nfuncs+1; skip_line(src);
   load g_nfuncs
@@ -3942,20 +4074,23 @@ __L161:
   push_int 1
   add
   store g_nparams
-; if cur_fn>=0 { fn_set(fns,cur_fn,5,fn_nparam(fns,cur_fn)+1); }
+; if cur_fn>=0 {
   load cur_fn
   push_int 0
   ge
   jump_ifnot __L162
+; var cf: BcFunc = get(fns, cur_fn);
   load fns
   load cur_fn
-  push_int 5
-  load fns
-  load cur_fn
-  call fn_nparam I32Array i32
+  call get BcFuncArray i32
+  store cf
+; nparam(cf, nparam(cf) + 1);
+  load cf
+  load cf
+  call nparam BcFunc
   push_int 1
   add
-  call fn_set I32Array i32 i32 i32
+  call nparam BcFunc i32
   pop
 __L162:
 ; skip_line(src);
@@ -4016,20 +4151,23 @@ __L165:
   push_int 1
   add
   store g_nlocals
-; if cur_fn>=0 { fn_set(fns,cur_fn,7,fn_nlocal(fns,cur_fn)+1); }
+; if cur_fn>=0 {
   load cur_fn
   push_int 0
   ge
   jump_ifnot __L166
+; var cf: BcFunc = get(fns, cur_fn);
   load fns
   load cur_fn
-  push_int 7
-  load fns
-  load cur_fn
-  call fn_nlocal I32Array i32
+  call get BcFuncArray i32
+  store cf
+; nlocal(cf, nlocal(cf) + 1);
+  load cf
+  load cf
+  call nlocal BcFunc
   push_int 1
   add
-  call fn_set I32Array i32 i32 i32
+  call nlocal BcFunc i32
   pop
 __L166:
 ; skip_line(src);
@@ -4098,15 +4236,17 @@ __L173:
   push_int 0
   ge
   jump_ifnot __L174
-; var ib: i32=fn_instr_base(fns,cur_fn);
+; var ib: i32=instr_base(get(fns, cur_fn));
   load fns
   load cur_fn
-  call fn_instr_base I32Array i32
+  call get BcFuncArray i32
+  call instr_base BcFunc
   store ib
-; var ni: i32=fn_ninstr(fns,cur_fn);
+; var ni: i32=ninstr(get(fns, cur_fn));
   load fns
   load cur_fn
-  call fn_ninstr I32Array i32
+  call get BcFuncArray i32
+  call ninstr BcFunc
   store ni
 ; var ii: i32=0;
   push_int 0
@@ -4354,7 +4494,7 @@ __L210:
   push_int 1
   add
   store g_in_pos
-; if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-fn_instr_base(fns,cur_fn)); }
+; if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-instr_base(get(fns, cur_fn))); }
   load cur_fn
   push_int 0
   ge
@@ -4364,7 +4504,8 @@ __L210:
   load g_ninstrs
   load fns
   load cur_fn
-  call fn_instr_base I32Array i32
+  call get BcFuncArray i32
+  call instr_base BcFunc
   sub
   call set I32Array i32 i32
   pop
@@ -4454,15 +4595,17 @@ __L222:
   push_int 0
 __L223:
   jump_ifnot __L221
-; var ib3: i32=fn_instr_base(fns,cur_fn);
+; var ib3: i32=instr_base(get(fns, cur_fn));
   load fns
   load cur_fn
-  call fn_instr_base I32Array i32
+  call get BcFuncArray i32
+  call instr_base BcFunc
   store ib3
-; var iidx: i32=fn_ninstr(fns,cur_fn);
+; var iidx: i32=ninstr(get(fns, cur_fn));
   load fns
   load cur_fn
-  call fn_ninstr I32Array i32
+  call get BcFuncArray i32
+  call ninstr BcFunc
   store iidx
 ; ins_set(instrs,ib3,iidx,0,op3);
   load instrs
@@ -4790,14 +4933,14 @@ __L241:
   call ins_set I32Array i32 i32 i32 i32
   pop
 __L235:
-; fn_set(fns,cur_fn,9,iidx+1);
+; ninstr(get(fns, cur_fn), iidx + 1);
   load fns
   load cur_fn
-  push_int 9
+  call get BcFuncArray i32
   load iidx
   push_int 1
   add
-  call fn_set I32Array i32 i32 i32
+  call ninstr BcFunc i32
   pop
 ; g_ninstrs=g_ninstrs+1;
   load g_ninstrs
@@ -4818,9 +4961,9 @@ __L123:
   return_void
 .endfn
 
-.fn is_local U8Array I32Array I32Array I32Array i32 i32 i32 i32
+.fn is_local U8Array BcFuncArray I32Array I32Array i32 i32 i32 i32
 .param strtab U8Array
-.param fns I32Array
+.param fns BcFuncArray
 .param params_pool I32Array
 .param locals_pool I32Array
 .param fi i32
@@ -4831,23 +4974,27 @@ __L123:
 .local lb i32
 .local nl i32
 .local i i32
-; var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);
+; var pb: i32=param_base(get(fns, fi)); var np: i32=nparam(get(fns, fi));
   load fns
   load fi
-  call fn_param_base I32Array i32
+  call get BcFuncArray i32
+  call param_base BcFunc
   store pb
   load fns
   load fi
-  call fn_nparam I32Array i32
+  call get BcFuncArray i32
+  call nparam BcFunc
   store np
-; var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);
+; var lb: i32=local_base(get(fns, fi)); var nl: i32=nlocal(get(fns, fi));
   load fns
   load fi
-  call fn_local_base I32Array i32
+  call get BcFuncArray i32
+  call local_base BcFunc
   store lb
   load fns
   load fi
-  call fn_nlocal I32Array i32
+  call get BcFuncArray i32
+  call nlocal BcFunc
   store nl
 ; var i: i32=0;
   push_int 0
@@ -4925,9 +5072,9 @@ __L248:
   return_void
 .endfn
 
-.fn var_offset U8Array I32Array I32Array I32Array i32 i32 i32 i32
+.fn var_offset U8Array BcFuncArray I32Array I32Array i32 i32 i32 i32
 .param strtab U8Array
-.param fns I32Array
+.param fns BcFuncArray
 .param params_pool I32Array
 .param locals_pool I32Array
 .param fi i32
@@ -4938,23 +5085,27 @@ __L248:
 .local lb i32
 .local nl i32
 .local i i32
-; var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);
+; var pb: i32=param_base(get(fns, fi)); var np: i32=nparam(get(fns, fi));
   load fns
   load fi
-  call fn_param_base I32Array i32
+  call get BcFuncArray i32
+  call param_base BcFunc
   store pb
   load fns
   load fi
-  call fn_nparam I32Array i32
+  call get BcFuncArray i32
+  call nparam BcFunc
   store np
-; var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);
+; var lb: i32=local_base(get(fns, fi)); var nl: i32=nlocal(get(fns, fi));
   load fns
   load fi
-  call fn_local_base I32Array i32
+  call get BcFuncArray i32
+  call local_base BcFunc
   store lb
   load fns
   load fi
-  call fn_nlocal I32Array i32
+  call get BcFuncArray i32
+  call nlocal BcFunc
   store nl
 ; var i: i32=0;
   push_int 0
@@ -5411,8 +5562,8 @@ __L269:
   return_void
 .endfn
 
-.fn max_eval_depth I32Array I32Array i32 i32
-.param fns I32Array
+.fn max_eval_depth BcFuncArray I32Array i32 i32
+.param fns BcFuncArray
 .param instrs I32Array
 .param fi i32
 .local ibase i32
@@ -5422,15 +5573,17 @@ __L269:
 .local i i32
 .local op i32
 .local nargs i32
-; var ibase: i32 = fn_instr_base(fns, fi);
+; var ibase: i32 = instr_base(get(fns, fi));
   load fns
   load fi
-  call fn_instr_base I32Array i32
+  call get BcFuncArray i32
+  call instr_base BcFunc
   store ibase
-; var ni: i32 = fn_ninstr(fns, fi);
+; var ni: i32 = ninstr(get(fns, fi));
   load fns
   load fi
-  call fn_ninstr I32Array i32
+  call get BcFuncArray i32
+  call ninstr BcFunc
   store ni
 ; var depth: i32 = 0;
   push_int 0
@@ -5653,9 +5806,9 @@ __L290:
   return_void
 .endfn
 
-.fn emit_fn U8Array I32Array I32Array I32Array I32Array I32Array i32 StringBuffer void
+.fn emit_fn U8Array BcFuncArray I32Array I32Array I32Array I32Array i32 StringBuffer void
 .param strtab U8Array
-.param fns I32Array
+.param fns BcFuncArray
 .param params_pool I32Array
 .param locals_pool I32Array
 .param instrs I32Array
@@ -5688,41 +5841,47 @@ __L290:
 .local ai i32
 .local ta u8
 .local tb u8
-; var nm_ss: i32=fn_name_ss(fns,fi);
+; var nm_ss: i32=name_ss(get(fns, fi));
   load fns
   load fi
-  call fn_name_ss I32Array i32
+  call get BcFuncArray i32
+  call name_ss BcFunc
   store nm_ss
-; var nm_sl: i32=fn_name_sl(fns,fi);
+; var nm_sl: i32=name_sl(get(fns, fi));
   load fns
   load fi
-  call fn_name_sl I32Array i32
+  call get BcFuncArray i32
+  call name_sl BcFunc
   store nm_sl
-; var np: i32=fn_nparam(fns,fi);
+; var np: i32=nparam(get(fns, fi));
   load fns
   load fi
-  call fn_nparam I32Array i32
+  call get BcFuncArray i32
+  call nparam BcFunc
   store np
-; var nl: i32=fn_nlocal(fns,fi);
+; var nl: i32=nlocal(get(fns, fi));
   load fns
   load fi
-  call fn_nlocal I32Array i32
+  call get BcFuncArray i32
+  call nlocal BcFunc
   store nl
-; var ibase: i32=fn_instr_base(fns,fi);
+; var ibase: i32=instr_base(get(fns, fi));
   load fns
   load fi
-  call fn_instr_base I32Array i32
+  call get BcFuncArray i32
+  call instr_base BcFunc
   store ibase
-; var ni: i32=fn_ninstr(fns,fi);
+; var ni: i32=ninstr(get(fns, fi));
   load fns
   load fi
-  call fn_ninstr I32Array i32
+  call get BcFuncArray i32
+  call ninstr BcFunc
   store ni
 ; var eval_slots: i32 = max_eval_depth(fns, instrs, fi);
   load fns
   load instrs
   load fi
-  call max_eval_depth I32Array I32Array i32
+  call max_eval_depth BcFuncArray I32Array i32
   store eval_slots
 ; var nvars: i32=np+nl;
   load np
@@ -6201,7 +6360,7 @@ __L331:
   load fi
   load sss
   load ssl
-  call is_local U8Array I32Array I32Array I32Array i32 i32 i32
+  call is_local U8Array BcFuncArray I32Array I32Array i32 i32 i32
   push_int 1
   eq
   jump_ifnot __L333
@@ -6213,7 +6372,7 @@ __L331:
   load fi
   load sss
   load ssl
-  call var_offset U8Array I32Array I32Array I32Array i32 i32 i32
+  call var_offset U8Array BcFuncArray I32Array I32Array i32 i32 i32
   store off
 ; e_lw(ob); eregt0(ob); eNs0nl(off,ob);
   load ob
@@ -6282,7 +6441,7 @@ __L332:
   load fi
   load sss
   load ssl
-  call is_local U8Array I32Array I32Array I32Array i32 i32 i32
+  call is_local U8Array BcFuncArray I32Array I32Array i32 i32 i32
   push_int 1
   eq
   jump_ifnot __L336
@@ -6294,7 +6453,7 @@ __L332:
   load fi
   load sss
   load ssl
-  call var_offset U8Array I32Array I32Array I32Array i32 i32 i32
+  call var_offset U8Array BcFuncArray I32Array I32Array i32 i32 i32
   store off
 ; e_sw(ob); eregt0(ob); eNs0nl(off,ob);
   load ob
@@ -7687,12 +7846,12 @@ __L328:
   return_void
 .endfn
 
-.fn emit_program U8Array I32Array I32Array I32Array I32Array I32Array I32Array I32Array StringBuffer void
+.fn emit_program U8Array I32Array I32Array I32Array BcFuncArray I32Array I32Array I32Array StringBuffer void
 .param strtab U8Array
 .param string_lits I32Array
 .param global_vars I32Array
 .param global_inits I32Array
-.param fns I32Array
+.param fns BcFuncArray
 .param params_pool I32Array
 .param locals_pool I32Array
 .param instrs I32Array
@@ -7750,7 +7909,7 @@ __L395:
   load string_lits
   load fi
   load ob
-  call emit_fn U8Array I32Array I32Array I32Array I32Array I32Array i32 StringBuffer
+  call emit_fn U8Array BcFuncArray I32Array I32Array I32Array I32Array i32 StringBuffer
   pop
 ; fi=fi+1;
   load fi
@@ -7997,7 +8156,7 @@ __L400:
 .local string_lits I32Array
 .local global_vars I32Array
 .local global_inits I32Array
-.local fns I32Array
+.local fns BcFuncArray
 .local params_pool I32Array
 .local locals_pool I32Array
 .local instrs I32Array
@@ -8030,9 +8189,9 @@ __L400:
   push_int 256
   call I32Array u32
   store global_inits
-; var fns:          I32Array = I32Array(2560u32);
-  push_int 2560
-  call I32Array u32
+; var fns:          BcFuncArray = BcFuncArray(256u32);
+  push_int 256
+  call BcFuncArray u32
   store fns
 ; var params_pool:  I32Array = I32Array(4096u32);
   push_int 4096
@@ -8152,7 +8311,7 @@ __L411:
   load locals_pool
   load instrs
   load label_pcs
-  call parse_bc U8Array U8Array I32Array I32Array I32Array I32Array I32Array I32Array I32Array I32Array
+  call parse_bc U8Array U8Array I32Array I32Array I32Array BcFuncArray I32Array I32Array I32Array I32Array
   pop
 ; emit_program(strtab,string_lits,global_vars,global_inits,
   load strtab
@@ -8164,7 +8323,7 @@ __L411:
   load locals_pool
   load instrs
   load ob
-  call emit_program U8Array I32Array I32Array I32Array I32Array I32Array I32Array I32Array StringBuffer
+  call emit_program U8Array I32Array I32Array I32Array BcFuncArray I32Array I32Array I32Array StringBuffer
   pop
 ; write(ob, 1);
   load ob

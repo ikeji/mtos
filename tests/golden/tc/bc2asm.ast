@@ -2761,242 +2761,339 @@
       )
     )
   )
-  (fn fn_name_ss
+  (struct BcFunc
+    (field name_ss
+      (type i32)
+    )
+    (field name_sl
+      (type i32)
+    )
+    (field param_base
+      (type i32)
+    )
+    (field nparam
+      (type i32)
+    )
+    (field local_base
+      (type i32)
+    )
+    (field nlocal
+      (type i32)
+    )
+    (field instr_base
+      (type i32)
+    )
+    (field ninstr
+      (type i32)
+    )
+  )
+  (fn BcFunc
     (params
-      (param fns
-        (type I32Array)
-      )
-      (param fi
+      (param __a0
         (type i32)
+      )
+      (param __a1
+        (type i32)
+      )
+      (param __a2
+        (type i32)
+      )
+      (param __a3
+        (type i32)
+      )
+      (param __a4
+        (type i32)
+      )
+      (param __a5
+        (type i32)
+      )
+      (param __a6
+        (type i32)
+      )
+      (param __a7
+        (type i32)
+      )
+    )
+    (ret
+      (type BcFunc)
+    )
+    (block
+      (var_decl __p
+        (type U32Array)
+        (call U32Array
+          (int:u32 8)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 0)
+        (cast
+          (var __a0)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 1)
+        (cast
+          (var __a1)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 2)
+        (cast
+          (var __a2)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 3)
+        (cast
+          (var __a3)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 4)
+        (cast
+          (var __a4)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 5)
+        (cast
+          (var __a5)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 6)
+        (cast
+          (var __a6)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 7)
+        (cast
+          (var __a7)
+          (type u32)
+        )
+      )
+      (return
+        (cast
+          (var __p)
+          (type BcFunc)
+        )
+      )
+    )
+  )
+  (fn name_ss
+    (params
+      (param __p
+        (type BcFunc)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+0)); }")
       (return
-        (call get
-          (var fns)
-          (binop +
-            (binop *
-              (var fi)
-              (int 10)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 0)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fn_name_sl
+  (fn name_sl
     (params
-      (param fns
-        (type I32Array)
-      )
-      (param fi
-        (type i32)
+      (param __p
+        (type BcFunc)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+1)); }")
       (return
-        (call get
-          (var fns)
-          (binop +
-            (binop *
-              (var fi)
-              (int 10)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 1)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fn_param_base
+  (fn param_base
     (params
-      (param fns
-        (type I32Array)
-      )
-      (param fi
-        (type i32)
+      (param __p
+        (type BcFunc)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+4)); }")
       (return
-        (call get
-          (var fns)
-          (binop +
-            (binop *
-              (var fi)
-              (int 10)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 2)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn nparam
+    (params
+      (param __p
+        (type BcFunc)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 3)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn local_base
+    (params
+      (param __p
+        (type BcFunc)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 4)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fn_nparam
+  (fn nlocal
     (params
-      (param fns
-        (type I32Array)
-      )
-      (param fi
-        (type i32)
+      (param __p
+        (type BcFunc)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fn_nparam(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+5)); }")
       (return
-        (call get
-          (var fns)
-          (binop +
-            (binop *
-              (var fi)
-              (int 10)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 5)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fn_local_base
+  (fn instr_base
     (params
-      (param fns
-        (type I32Array)
-      )
-      (param fi
-        (type i32)
+      (param __p
+        (type BcFunc)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fn_local_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+6)); }")
       (return
-        (call get
-          (var fns)
-          (binop +
-            (binop *
-              (var fi)
-              (int 10)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 6)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fn_nlocal
+  (fn ninstr
     (params
-      (param fns
-        (type I32Array)
-      )
-      (param fi
-        (type i32)
+      (param __p
+        (type BcFunc)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fn_nlocal(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+7)); }")
       (return
-        (call get
-          (var fns)
-          (binop +
-            (binop *
-              (var fi)
-              (int 10)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 7)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fn_instr_base
+  (fn name_ss
     (params
-      (param fns
-        (type I32Array)
+      (param __p
+        (type BcFunc)
       )
-      (param fi
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+8)); }")
-      (return
-        (call get
-          (var fns)
-          (binop +
-            (binop *
-              (var fi)
-              (int 10)
-            )
-            (int 8)
-          )
-        )
-      )
-    )
-  )
-  (fn fn_ninstr
-    (params
-      (param fns
-        (type I32Array)
-      )
-      (param fi
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+9)); }")
-      (return
-        (call get
-          (var fns)
-          (binop +
-            (binop *
-              (var fi)
-              (int 10)
-            )
-            (int 9)
-          )
-        )
-      )
-    )
-  )
-  (fn fn_set
-    (params
-      (param fns
-        (type I32Array)
-      )
-      (param fi
-        (type i32)
-      )
-      (param f
-        (type i32)
-      )
-      (param v
+      (param __v
         (type i32)
       )
     )
@@ -3004,17 +3101,340 @@
       (type void)
     )
     (block
-      (comment "fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns,(fi*10+f),v); return; }")
       (call_stmt set
-        (var fns)
-        (binop +
-          (binop *
-            (var fi)
-            (int 10)
-          )
-          (var f)
+        (cast
+          (var __p)
+          (type U32Array)
         )
-        (var v)
+        (int 0)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn name_sl
+    (params
+      (param __p
+        (type BcFunc)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 1)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn param_base
+    (params
+      (param __p
+        (type BcFunc)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 2)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn nparam
+    (params
+      (param __p
+        (type BcFunc)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 3)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn local_base
+    (params
+      (param __p
+        (type BcFunc)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 4)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn nlocal
+    (params
+      (param __p
+        (type BcFunc)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 5)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn instr_base
+    (params
+      (param __p
+        (type BcFunc)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 6)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn ninstr
+    (params
+      (param __p
+        (type BcFunc)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 7)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __p
+        (type BcFunc)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+      )
+      (return)
+    )
+  )
+  (fn BcFuncArray
+    (params
+      (param __n
+        (type u32)
+      )
+    )
+    (ret
+      (type BcFuncArray)
+    )
+    (block
+      (return
+        (cast
+          (call U32Array
+            (var __n)
+          )
+          (type BcFuncArray)
+        )
+      )
+    )
+  )
+  (fn len
+    (params
+      (param __a
+        (type BcFuncArray)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call len
+          (cast
+            (var __a)
+            (type U32Array)
+          )
+        )
+      )
+    )
+  )
+  (fn get
+    (params
+      (param __a
+        (type BcFuncArray)
+      )
+      (param __i
+        (type i32)
+      )
+    )
+    (ret
+      (type BcFunc)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __a)
+              (type U32Array)
+            )
+            (var __i)
+          )
+          (type BcFunc)
+        )
+      )
+    )
+  )
+  (fn set
+    (params
+      (param __a
+        (type BcFuncArray)
+      )
+      (param __i
+        (type i32)
+      )
+      (param __v
+        (type BcFunc)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+        (var __i)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __a
+        (type BcFuncArray)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __a)
+          (type U32Array)
+        )
       )
       (return)
     )
@@ -3388,7 +3808,7 @@
         (type I32Array)
       )
       (param fns
-        (type I32Array)
+        (type BcFuncArray)
       )
       (param params_pool
         (type I32Array)
@@ -3921,57 +4341,20 @@
                       (assign cur_fn
                         (var g_nfuncs)
                       )
-                      (comment "fn_set(fns,cur_fn,0,nm_ss); fn_set(fns,cur_fn,1,nm_sl);")
-                      (call_stmt fn_set
+                      (comment "set(fns, cur_fn, BcFunc(nm_ss, nm_sl,")
+                      (call_stmt set
                         (var fns)
                         (var cur_fn)
-                        (int 0)
-                        (var nm_ss)
-                      )
-                      (call_stmt fn_set
-                        (var fns)
-                        (var cur_fn)
-                        (int 1)
-                        (var nm_sl)
-                      )
-                      (comment "fn_set(fns,cur_fn,4,g_nparams); fn_set(fns,cur_fn,5,0);")
-                      (call_stmt fn_set
-                        (var fns)
-                        (var cur_fn)
-                        (int 4)
-                        (var g_nparams)
-                      )
-                      (call_stmt fn_set
-                        (var fns)
-                        (var cur_fn)
-                        (int 5)
-                        (int 0)
-                      )
-                      (comment "fn_set(fns,cur_fn,6,g_nlocals); fn_set(fns,cur_fn,7,0);")
-                      (call_stmt fn_set
-                        (var fns)
-                        (var cur_fn)
-                        (int 6)
-                        (var g_nlocals)
-                      )
-                      (call_stmt fn_set
-                        (var fns)
-                        (var cur_fn)
-                        (int 7)
-                        (int 0)
-                      )
-                      (comment "fn_set(fns,cur_fn,8,g_ninstrs); fn_set(fns,cur_fn,9,0);")
-                      (call_stmt fn_set
-                        (var fns)
-                        (var cur_fn)
-                        (int 8)
-                        (var g_ninstrs)
-                      )
-                      (call_stmt fn_set
-                        (var fns)
-                        (var cur_fn)
-                        (int 9)
-                        (int 0)
+                        (call BcFunc
+                          (var nm_ss)
+                          (var nm_sl)
+                          (var g_nparams)
+                          (int 0)
+                          (var g_nlocals)
+                          (int 0)
+                          (var g_ninstrs)
+                          (int 0)
+                        )
                       )
                       (comment "g_nfuncs=g_nfuncs+1; skip_line(src);")
                       (assign g_nfuncs
@@ -4047,21 +4430,27 @@
                           (int 1)
                         )
                       )
-                      (comment "if cur_fn>=0 { fn_set(fns,cur_fn,5,fn_nparam(fns,cur_fn)+1); }")
+                      (comment "if cur_fn>=0 {")
                       (if
                         (binop >=
                           (var cur_fn)
                           (int 0)
                         )
                         (block
-                          (call_stmt fn_set
-                            (var fns)
-                            (var cur_fn)
-                            (int 5)
+                          (comment "var cf: BcFunc = get(fns, cur_fn);")
+                          (var_decl cf
+                            (type BcFunc)
+                            (call get
+                              (var fns)
+                              (var cur_fn)
+                            )
+                          )
+                          (comment "nparam(cf, nparam(cf) + 1);")
+                          (call_stmt nparam
+                            (var cf)
                             (binop +
-                              (call fn_nparam
-                                (var fns)
-                                (var cur_fn)
+                              (call nparam
+                                (var cf)
                               )
                               (int 1)
                             )
@@ -4136,21 +4525,27 @@
                           (int 1)
                         )
                       )
-                      (comment "if cur_fn>=0 { fn_set(fns,cur_fn,7,fn_nlocal(fns,cur_fn)+1); }")
+                      (comment "if cur_fn>=0 {")
                       (if
                         (binop >=
                           (var cur_fn)
                           (int 0)
                         )
                         (block
-                          (call_stmt fn_set
-                            (var fns)
-                            (var cur_fn)
-                            (int 7)
+                          (comment "var cf: BcFunc = get(fns, cur_fn);")
+                          (var_decl cf
+                            (type BcFunc)
+                            (call get
+                              (var fns)
+                              (var cur_fn)
+                            )
+                          )
+                          (comment "nlocal(cf, nlocal(cf) + 1);")
+                          (call_stmt nlocal
+                            (var cf)
                             (binop +
-                              (call fn_nlocal
-                                (var fns)
-                                (var cur_fn)
+                              (call nlocal
+                                (var cf)
                               )
                               (int 1)
                             )
@@ -4232,20 +4627,24 @@
                           (int 0)
                         )
                         (block
-                          (comment "var ib: i32=fn_instr_base(fns,cur_fn);")
+                          (comment "var ib: i32=instr_base(get(fns, cur_fn));")
                           (var_decl ib
                             (type i32)
-                            (call fn_instr_base
-                              (var fns)
-                              (var cur_fn)
+                            (call instr_base
+                              (call get
+                                (var fns)
+                                (var cur_fn)
+                              )
                             )
                           )
-                          (comment "var ni: i32=fn_ninstr(fns,cur_fn);")
+                          (comment "var ni: i32=ninstr(get(fns, cur_fn));")
                           (var_decl ni
                             (type i32)
-                            (call fn_ninstr
-                              (var fns)
-                              (var cur_fn)
+                            (call ninstr
+                              (call get
+                                (var fns)
+                                (var cur_fn)
+                              )
                             )
                           )
                           (comment "var ii: i32=0;")
@@ -4479,7 +4878,7 @@
                           (int 1)
                         )
                       )
-                      (comment "if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-fn_instr_base(fns,cur_fn)); }")
+                      (comment "if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-instr_base(get(fns, cur_fn))); }")
                       (if
                         (binop >=
                           (var cur_fn)
@@ -4491,9 +4890,11 @@
                             (var lnum3)
                             (binop -
                               (var g_ninstrs)
-                              (call fn_instr_base
-                                (var fns)
-                                (var cur_fn)
+                              (call instr_base
+                                (call get
+                                  (var fns)
+                                  (var cur_fn)
+                                )
                               )
                             )
                           )
@@ -4579,20 +4980,24 @@
                       )
                     )
                     (block
-                      (comment "var ib3: i32=fn_instr_base(fns,cur_fn);")
+                      (comment "var ib3: i32=instr_base(get(fns, cur_fn));")
                       (var_decl ib3
                         (type i32)
-                        (call fn_instr_base
-                          (var fns)
-                          (var cur_fn)
+                        (call instr_base
+                          (call get
+                            (var fns)
+                            (var cur_fn)
+                          )
                         )
                       )
-                      (comment "var iidx: i32=fn_ninstr(fns,cur_fn);")
+                      (comment "var iidx: i32=ninstr(get(fns, cur_fn));")
                       (var_decl iidx
                         (type i32)
-                        (call fn_ninstr
-                          (var fns)
-                          (var cur_fn)
+                        (call ninstr
+                          (call get
+                            (var fns)
+                            (var cur_fn)
+                          )
                         )
                       )
                       (comment "ins_set(instrs,ib3,iidx,0,op3);")
@@ -4968,11 +5373,12 @@
                           )
                         )
                       )
-                      (comment "fn_set(fns,cur_fn,9,iidx+1);")
-                      (call_stmt fn_set
-                        (var fns)
-                        (var cur_fn)
-                        (int 9)
+                      (comment "ninstr(get(fns, cur_fn), iidx + 1);")
+                      (call_stmt ninstr
+                        (call get
+                          (var fns)
+                          (var cur_fn)
+                        )
                         (binop +
                           (var iidx)
                           (int 1)
@@ -5007,7 +5413,7 @@
         (type U8Array)
       )
       (param fns
-        (type I32Array)
+        (type BcFuncArray)
       )
       (param params_pool
         (type I32Array)
@@ -5029,34 +5435,42 @@
       (type i32)
     )
     (block
-      (comment "var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);")
+      (comment "var pb: i32=param_base(get(fns, fi)); var np: i32=nparam(get(fns, fi));")
       (var_decl pb
         (type i32)
-        (call fn_param_base
-          (var fns)
-          (var fi)
+        (call param_base
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
       (var_decl np
         (type i32)
-        (call fn_nparam
-          (var fns)
-          (var fi)
+        (call nparam
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
-      (comment "var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);")
+      (comment "var lb: i32=local_base(get(fns, fi)); var nl: i32=nlocal(get(fns, fi));")
       (var_decl lb
         (type i32)
-        (call fn_local_base
-          (var fns)
-          (var fi)
+        (call local_base
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
       (var_decl nl
         (type i32)
-        (call fn_nlocal
-          (var fns)
-          (var fi)
+        (call nlocal
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
       (comment "var i: i32=0;")
@@ -5166,7 +5580,7 @@
         (type U8Array)
       )
       (param fns
-        (type I32Array)
+        (type BcFuncArray)
       )
       (param params_pool
         (type I32Array)
@@ -5188,34 +5602,42 @@
       (type i32)
     )
     (block
-      (comment "var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);")
+      (comment "var pb: i32=param_base(get(fns, fi)); var np: i32=nparam(get(fns, fi));")
       (var_decl pb
         (type i32)
-        (call fn_param_base
-          (var fns)
-          (var fi)
+        (call param_base
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
       (var_decl np
         (type i32)
-        (call fn_nparam
-          (var fns)
-          (var fi)
+        (call nparam
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
-      (comment "var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);")
+      (comment "var lb: i32=local_base(get(fns, fi)); var nl: i32=nlocal(get(fns, fi));")
       (var_decl lb
         (type i32)
-        (call fn_local_base
-          (var fns)
-          (var fi)
+        (call local_base
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
       (var_decl nl
         (type i32)
-        (call fn_nlocal
-          (var fns)
-          (var fi)
+        (call nlocal
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
       (comment "var i: i32=0;")
@@ -5808,7 +6230,7 @@
   (fn max_eval_depth
     (params
       (param fns
-        (type I32Array)
+        (type BcFuncArray)
       )
       (param instrs
         (type I32Array)
@@ -5821,20 +6243,24 @@
       (type i32)
     )
     (block
-      (comment "var ibase: i32 = fn_instr_base(fns, fi);")
+      (comment "var ibase: i32 = instr_base(get(fns, fi));")
       (var_decl ibase
         (type i32)
-        (call fn_instr_base
-          (var fns)
-          (var fi)
+        (call instr_base
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
-      (comment "var ni: i32 = fn_ninstr(fns, fi);")
+      (comment "var ni: i32 = ninstr(get(fns, fi));")
       (var_decl ni
         (type i32)
-        (call fn_ninstr
-          (var fns)
-          (var fi)
+        (call ninstr
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
       (comment "var depth: i32 = 0;")
@@ -6087,7 +6513,7 @@
         (type U8Array)
       )
       (param fns
-        (type I32Array)
+        (type BcFuncArray)
       )
       (param params_pool
         (type I32Array)
@@ -6112,52 +6538,64 @@
       (type void)
     )
     (block
-      (comment "var nm_ss: i32=fn_name_ss(fns,fi);")
+      (comment "var nm_ss: i32=name_ss(get(fns, fi));")
       (var_decl nm_ss
         (type i32)
-        (call fn_name_ss
-          (var fns)
-          (var fi)
+        (call name_ss
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
-      (comment "var nm_sl: i32=fn_name_sl(fns,fi);")
+      (comment "var nm_sl: i32=name_sl(get(fns, fi));")
       (var_decl nm_sl
         (type i32)
-        (call fn_name_sl
-          (var fns)
-          (var fi)
+        (call name_sl
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
-      (comment "var np: i32=fn_nparam(fns,fi);")
+      (comment "var np: i32=nparam(get(fns, fi));")
       (var_decl np
         (type i32)
-        (call fn_nparam
-          (var fns)
-          (var fi)
+        (call nparam
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
-      (comment "var nl: i32=fn_nlocal(fns,fi);")
+      (comment "var nl: i32=nlocal(get(fns, fi));")
       (var_decl nl
         (type i32)
-        (call fn_nlocal
-          (var fns)
-          (var fi)
+        (call nlocal
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
-      (comment "var ibase: i32=fn_instr_base(fns,fi);")
+      (comment "var ibase: i32=instr_base(get(fns, fi));")
       (var_decl ibase
         (type i32)
-        (call fn_instr_base
-          (var fns)
-          (var fi)
+        (call instr_base
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
-      (comment "var ni: i32=fn_ninstr(fns,fi);")
+      (comment "var ni: i32=ninstr(get(fns, fi));")
       (var_decl ni
         (type i32)
-        (call fn_ninstr
-          (var fns)
-          (var fi)
+        (call ninstr
+          (call get
+            (var fns)
+            (var fi)
+          )
         )
       )
       (comment "var eval_slots: i32 = max_eval_depth(fns, instrs, fi);")
@@ -8404,7 +8842,7 @@
         (type I32Array)
       )
       (param fns
-        (type I32Array)
+        (type BcFuncArray)
       )
       (param params_pool
         (type I32Array)
@@ -8799,11 +9237,11 @@
           (int:u32 256)
         )
       )
-      (comment "var fns:          I32Array = I32Array(2560u32);")
+      (comment "var fns:          BcFuncArray = BcFuncArray(256u32);")
       (var_decl fns
-        (type I32Array)
-        (call I32Array
-          (int:u32 2560)
+        (type BcFuncArray)
+        (call BcFuncArray
+          (int:u32 256)
         )
       )
       (comment "var params_pool:  I32Array = I32Array(4096u32);")

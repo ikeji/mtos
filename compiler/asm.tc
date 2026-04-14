@@ -34,9 +34,6 @@ var g_current_section: i32 = 0;
 var g_sec_pos: I32Array = 0 as I32Array;   // [text, rodata, data, bss] intra cursors
 var g_sec_base: I32Array = 0 as I32Array;  // final absolute base of each section
 var g_gp_abs: i32 = 0;                     // absolute value of __global_pointer$
-// Parallel to g_lab_addrs, but 1 byte per label (values 0..3) so the
-// allocation goes to a smaller bucket than the other label arrays.
-var g_lab_section: U8Array = 0 as U8Array;
 var g_line_section: U8Array = 0 as U8Array;
 
 // ===== Global state =====
@@ -46,12 +43,20 @@ var g_pass: i32 = 0;                 // 1 or 2
 var g_code_end: i32 = 0;             // highest position written to g_code
 var g_bss_pos: i32 = 0;              // BSS size (accumulated from .comm directives)
 
-// Label table: parallel arrays
-var g_lab_names: U8Array = 0 as U8Array;   // name storage (packed)
-var g_lab_offs: I32Array = 0 as I32Array;   // name offset into g_lab_names
-var g_lab_lens: I32Array = 0 as I32Array;   // name length
-var g_lab_addrs: I32Array = 0 as I32Array;  // address
-var g_lab_is_bss: I32Array = 0 as I32Array; // 1 if .comm label
+// Label table. g_lab_names is a shared packed-byte pool that every
+// Label's [name_off..name_off+name_len] slice points into; the Label
+// struct itself holds per-entry metadata (R6). The old parallel
+// arrays g_lab_offs / g_lab_lens / g_lab_addrs / g_lab_section /
+// g_lab_is_bss were collapsed here; is_bss was dead anyway so we
+// dropped it.
+struct Label {
+    name_off: i32,
+    name_len: i32,
+    addr:     i32,
+    section:  i32,  // 0=text 1=rodata 2=data 3=bss
+}
+var g_lab_names: U8Array = 0 as U8Array;      // packed name storage
+var g_labels: LabelArray = 0 as LabelArray;
 var g_nlabels: i32 = 0;
 var g_lab_name_pos: i32 = 0;
 
@@ -136,9 +141,9 @@ fn align_to(n: i32) -> void {
 
 // ===== Label management =====
 fn lab_name_eq(idx: i32, name: U8Array, nlen: i32) -> bool {
-    var ll: i32 = get(g_lab_lens, idx);
-    if ll != nlen { return false; }
-    var off: i32 = get(g_lab_offs, idx);
+    var lb: Label = get(g_labels, idx);
+    if name_len(lb) != nlen { return false; }
+    var off: i32 = name_off(lb);
     var i: i32 = 0;
     while i < nlen {
         if get(g_lab_names, (off + i)) != get(name, i) { return false; }
@@ -161,17 +166,19 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
     if idx < 0 {
         idx = g_nlabels;
         g_nlabels = g_nlabels + 1;
-        set(g_lab_offs, idx, g_lab_name_pos);
-        set(g_lab_lens, idx, nlen);
+        var noff: i32 = g_lab_name_pos;
         var i: i32 = 0;
         while i < nlen {
             set(g_lab_names, (g_lab_name_pos + i), get(name, i));
             i = i + 1;
         }
         g_lab_name_pos = g_lab_name_pos + nlen;
+        set(g_labels, idx, Label(noff, nlen, addr, g_current_section));
+    } else {
+        var lb: Label = get(g_labels, idx);
+        addr(lb, addr);
+        section(lb, g_current_section);
     }
-    set(g_lab_addrs, idx, addr);
-    set(g_lab_section, idx, g_current_section as u8);
     return;
 }
 
@@ -185,7 +192,7 @@ fn label_addr(name: U8Array, nlen: i32) -> i32 {
         emit_string(eb, "'");
         asm_err_end(eb);
     }
-    return get(g_lab_addrs, idx);
+    return addr(get(g_labels, idx));
 }
 
 // ===== Numeric label support =====
@@ -234,23 +241,8 @@ fn reg_eq(s: U8Array, off: i32, len: i32, name: StringLiteral) -> bool {
     return true;
 }
 
-fn parse_reg(s: U8Array, off: i32, len: i32) -> i32 {
-    // Strip leading whitespace and trailing comma/paren/space
-    while len > 0 && (get(s, off) == ' ' || get(s, off) == 9u8) { off = off + 1; len = len - 1; }
-    while len > 0 {
-        var last: u8 = get(s, (off + len - 1));
-        if last == ',' || last == ')' || last == ' ' || last == 9u8 { len = len - 1; }
-        else { last = 0u8; len = len + 0; }  // break
-        if last == 0u8 { len = len + 0; }     // tinyc: no break
-        else { len = len + 0; }
-    }
-    // Actually, let's simplify: just strip known trailing chars
-    // Re-read with proper logic
-    return 0 - 1; // TODO
-}
-
-// Simpler: parse register from a NUL-separated buffer position
-// We'll use g_line_buf and operand offsets
+// Parse register from a NUL-separated buffer position.
+// Reads g_line_buf and operand offsets.
 fn parse_reg_op(op_idx: i32) -> i32 {
     var off: i32 = get(g_ops, (op_idx * 2));
     var len: i32 = get(g_ops, (op_idx * 2 + 1));
@@ -421,7 +413,7 @@ fn parse_label_op_section(op_idx: i32) -> i32 {
     var idx: i32 = find_label(tmp, len);
     delete(tmp);
     if idx < 0 { return 0; }
-    return get(g_lab_section, idx) as i32;
+    return section(get(g_labels, idx));
 }
 
 // Parse memory operand "offset(reg)" — returns offset and sets reg via op_idx+1
@@ -1088,13 +1080,8 @@ fn write_elf(code_size: i32, mem_size: i32) -> void {
 fn main() -> i32 {
     // Allocate buffers
     g_code = U8Array((MAX_CODE) as u32);
-// TODO: Label構造体を作って。
     g_lab_names = U8Array(262144u32);
-    g_lab_offs = I32Array((MAX_LABELS) as u32);
-    g_lab_lens = I32Array((MAX_LABELS) as u32);
-    g_lab_addrs = I32Array((MAX_LABELS) as u32);
-    g_lab_is_bss = I32Array((MAX_LABELS) as u32);
-    g_lab_section = U8Array((MAX_LABELS) as u32);
+    g_labels = LabelArray((MAX_LABELS) as u32);
     g_sec_pos = I32Array(4u32);
     g_sec_base = I32Array(4u32);
     g_line_section = U8Array(131072u32);
@@ -1160,13 +1147,14 @@ fn main() -> i32 {
     // Fix up labels: addr += section_base[section].
     i = 0;
     while i < g_nlabels {
-        var lsec: i32 = get(g_lab_section, i) as i32;
-        set(g_lab_addrs, i, get(g_lab_addrs, i) + get(g_sec_base, lsec));
+        var lb: Label = get(g_labels, i);
+        var lsec: i32 = section(lb);
+        addr(lb, addr(lb) + get(g_sec_base, lsec));
         i = i + 1;
     }
     // Patch __global_pointer$ to point at data_base + 0x800.
     var gp_idx: i32 = find_label(gp_sym, gp_len);
-    if gp_idx >= 0 { set(g_lab_addrs, gp_idx, g_gp_abs); }
+    if gp_idx >= 0 { addr(get(g_labels, gp_idx), g_gp_abs); }
     delete(gp_sym);
 
     var total_code: i32  = text_size + rodata_size + data_size;

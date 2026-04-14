@@ -346,17 +346,21 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     return -1;
 }
 
-// ===== Table accessors =====
-// TODO: Structにして。
-fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+0)); }
-fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+1)); }
-fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+4)); }
-fn fn_nparam(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+5)); }
-fn fn_local_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+6)); }
-fn fn_nlocal(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+7)); }
-fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+8)); }
-fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+9)); }
-fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns,(fi*10+f),v); return; }
+// ===== Function table =====
+// One BcFunc per `.fn` directive in the input bytecode. Previously a
+// flat I32Array(10 * N) with hand-indexed accessors and two wasted
+// slots (indices 2 and 3 were never set). R5 collapses this into a
+// struct + BcFuncArray and drops the unused fields.
+struct BcFunc {
+    name_ss:    i32,
+    name_sl:    i32,
+    param_base: i32,  // index into params_pool where this fn's params start
+    nparam:     i32,
+    local_base: i32,
+    nlocal:     i32,
+    instr_base: i32,  // index into instrs where this fn's instructions start
+    ninstr:     i32,
+}
 fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+0)); }
 fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+1)); }
 fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool,(i*4+f),v); return; }
@@ -378,7 +382,7 @@ fn parse_lnum(src: U8Array, from: i32, to: i32) -> i32 {
 // ===== Parse bytecode =====
 fn parse_bc(src: U8Array, strtab: U8Array,
             string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
-            fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+            fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
             instrs: I32Array, label_pcs: I32Array) -> void {
     var cur_fn: i32=-1; var done: i32=0;
     while done==0&&g_in_pos<g_in_len {
@@ -435,10 +439,10 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     g_stab_pos=prev_under; // remove last __ + rettype token
                     var nm_sl: i32=g_stab_pos-nm_ss;
                     cur_fn=g_nfuncs;
-                    fn_set(fns,cur_fn,0,nm_ss); fn_set(fns,cur_fn,1,nm_sl);
-                    fn_set(fns,cur_fn,4,g_nparams); fn_set(fns,cur_fn,5,0);
-                    fn_set(fns,cur_fn,6,g_nlocals); fn_set(fns,cur_fn,7,0);
-                    fn_set(fns,cur_fn,8,g_ninstrs); fn_set(fns,cur_fn,9,0);
+                    set(fns, cur_fn, BcFunc(nm_ss, nm_sl,
+                                            g_nparams, 0,
+                                            g_nlocals, 0,
+                                            g_ninstrs, 0));
                     g_nfuncs=g_nfuncs+1; skip_line(src);
                 }
                 if d0=='p'&&d1=='a' { // param
@@ -447,7 +451,10 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
                     pl_set(params_pool,g_nparams,0,nm_ss); pl_set(params_pool,g_nparams,1,nm_sl);
                     g_nparams=g_nparams+1;
-                    if cur_fn>=0 { fn_set(fns,cur_fn,5,fn_nparam(fns,cur_fn)+1); }
+                    if cur_fn>=0 {
+                        var cf: BcFunc = get(fns, cur_fn);
+                        nparam(cf, nparam(cf) + 1);
+                    }
                     skip_line(src);
                 }
                 if d0=='l'&&d1=='o' { // local
@@ -456,7 +463,10 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
                     pl_set(locals_pool,g_nlocals,0,nm_ss); pl_set(locals_pool,g_nlocals,1,nm_sl);
                     g_nlocals=g_nlocals+1;
-                    if cur_fn>=0 { fn_set(fns,cur_fn,7,fn_nlocal(fns,cur_fn)+1); }
+                    if cur_fn>=0 {
+                        var cf: BcFunc = get(fns, cur_fn);
+                        nlocal(cf, nlocal(cf) + 1);
+                    }
                     skip_line(src);
                 }
                 var d3b: u8=0u8;
@@ -467,8 +477,8 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 if d0=='e'&&d3b!='b' { // endfn
                     discard_tok(dir_ss);
                     if cur_fn>=0 {
-                        var ib: i32=fn_instr_base(fns,cur_fn);
-                        var ni: i32=fn_ninstr(fns,cur_fn);
+                        var ib: i32=instr_base(get(fns, cur_fn));
+                        var ni: i32=ninstr(get(fns, cur_fn));
                         var ii: i32=0;
                         while ii<ni {
                             var op2: i32=ins_op(instrs,ib,ii);
@@ -491,7 +501,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 if g_in_pos<g_in_len&&in_cur(src)==':' {
                     var lnum3: i32=parse_lnum(src,lbl_start,g_in_pos);
                     g_in_pos=g_in_pos+1;
-                    if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-fn_instr_base(fns,cur_fn)); }
+                    if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-instr_base(get(fns, cur_fn))); }
                 }
                 skip_line(src);
             }
@@ -501,8 +511,8 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 var op3: i32=classify_op(strtab,op_ss,op_sl);
                 discard_tok(op_ss);
                 if op3>=0&&cur_fn>=0 {
-                    var ib3: i32=fn_instr_base(fns,cur_fn);
-                    var iidx: i32=fn_ninstr(fns,cur_fn);
+                    var ib3: i32=instr_base(get(fns, cur_fn));
+                    var iidx: i32=ninstr(get(fns, cur_fn));
                     ins_set(instrs,ib3,iidx,0,op3);
                     ins_set(instrs,ib3,iidx,1,0);
                     ins_set(instrs,ib3,iidx,2,0);
@@ -548,7 +558,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                         while g_in_pos<g_in_len&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
                         ins_set(instrs,ib3,iidx,1,parse_lnum(src,lbl_in,g_in_pos));
                     }
-                    fn_set(fns,cur_fn,9,iidx+1);
+                    ninstr(get(fns, cur_fn), iidx + 1);
                     g_ninstrs=g_ninstrs+1;
                 }
                 skip_line(src);
@@ -559,10 +569,10 @@ fn parse_bc(src: U8Array, strtab: U8Array,
 }
 
 // ===== Variable lookup =====
-fn is_local(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+fn is_local(strtab: U8Array, fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
             fi: i32, nm_ss: i32, nm_sl: i32) -> i32 {
-    var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);
-    var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);
+    var pb: i32=param_base(get(fns, fi)); var np: i32=nparam(get(fns, fi));
+    var lb: i32=local_base(get(fns, fi)); var nl: i32=nlocal(get(fns, fi));
     var i: i32=0;
     while i<np {
         if stab_eq(strtab,pl_name_ss(params_pool,pb+i),pl_name_sl(params_pool,pb+i),nm_ss,nm_sl) { return 1; }
@@ -575,10 +585,10 @@ fn is_local(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: 
     }
     return 0;
 }
-fn var_offset(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+fn var_offset(strtab: U8Array, fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
               fi: i32, nm_ss: i32, nm_sl: i32) -> i32 {
-    var pb: i32=fn_param_base(fns,fi); var np: i32=fn_nparam(fns,fi);
-    var lb: i32=fn_local_base(fns,fi); var nl: i32=fn_nlocal(fns,fi);
+    var pb: i32=param_base(get(fns, fi)); var np: i32=nparam(get(fns, fi));
+    var lb: i32=local_base(get(fns, fi)); var nl: i32=nlocal(get(fns, fi));
     var i: i32=0;
     while i<np {
         if stab_eq(strtab,pl_name_ss(params_pool,pb+i),pl_name_sl(params_pool,pb+i),nm_ss,nm_sl) {
@@ -648,9 +658,9 @@ fn emit_strdata(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer) -> void {
 }
 
 // ===== Eval stack depth =====
-fn max_eval_depth(fns: I32Array, instrs: I32Array, fi: i32) -> i32 {
-    var ibase: i32 = fn_instr_base(fns, fi);
-    var ni: i32 = fn_ninstr(fns, fi);
+fn max_eval_depth(fns: BcFuncArray, instrs: I32Array, fi: i32) -> i32 {
+    var ibase: i32 = instr_base(get(fns, fi));
+    var ni: i32 = ninstr(get(fns, fi));
     var depth: i32 = 0;
     var max_d: i32 = 0;
     var i: i32 = 0;
@@ -679,14 +689,14 @@ fn max_eval_depth(fns: I32Array, instrs: I32Array, fi: i32) -> i32 {
 }
 
 // ===== Emit one function =====
-fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+fn emit_fn(strtab: U8Array, fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
            instrs: I32Array, string_lits: I32Array, fi: i32, ob: StringBuffer) -> void {
-    var nm_ss: i32=fn_name_ss(fns,fi);
-    var nm_sl: i32=fn_name_sl(fns,fi);
-    var np: i32=fn_nparam(fns,fi);
-    var nl: i32=fn_nlocal(fns,fi);
-    var ibase: i32=fn_instr_base(fns,fi);
-    var ni: i32=fn_ninstr(fns,fi);
+    var nm_ss: i32=name_ss(get(fns, fi));
+    var nm_sl: i32=name_sl(get(fns, fi));
+    var np: i32=nparam(get(fns, fi));
+    var nl: i32=nlocal(get(fns, fi));
+    var ibase: i32=instr_base(get(fns, fi));
+    var ni: i32=ninstr(get(fns, fi));
     var eval_slots: i32 = max_eval_depth(fns, instrs, fi);
     var nvars: i32=np+nl;
     var frame_size: i32=8+4*nvars+4*eval_slots;
@@ -972,7 +982,7 @@ fn emit_fn(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I
 // ===== Emit full program =====
 fn emit_program(strtab: U8Array, string_lits: I32Array,
                 global_vars: I32Array, global_inits: I32Array,
-                fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+                fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
                 instrs: I32Array, ob: StringBuffer) -> void {
     // .text: functions first (asm.tc treats all sections as flat stream)
     e4(ob);
@@ -1032,7 +1042,9 @@ fn main() -> i32 {
     var string_lits:  I32Array = I32Array(512u32);
     var global_vars:  I32Array = I32Array(1024u32);
     var global_inits: I32Array = I32Array(256u32);
-    var fns:          I32Array = I32Array(2560u32);
+    // Pool of up to 256 BcFunc refs. Each is allocated lazily by
+    // parse_bc on first `.fn` directive.
+    var fns:          BcFuncArray = BcFuncArray(256u32);
     var params_pool:  I32Array = I32Array(4096u32);
     var locals_pool:  I32Array = I32Array(4096u32);
     var instrs:       I32Array = I32Array(262144u32);
