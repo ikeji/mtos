@@ -782,6 +782,7 @@ fn process_line(line_idx: i32) -> void {
             if g_nops > 0 {
                 var sop_off: i32 = get(g_ops, 0);
                 var sop_len: i32 = get(g_ops, 1);
+// TODO: compare(g_line_buf, sop_off, ".rodata")みたいなの作って。
                 if sop_len >= 7
                    && get(g_line_buf, sop_off)     == '.'
                    && get(g_line_buf, (sop_off+1)) == 'r'
@@ -962,6 +963,7 @@ fn parse_meta_directive(lstart: i32, llen: i32) -> i32 {
     }
     // ; load_base 0xHHHHHHHH
     if (end - p) >= 11
+// TODO: compare(g_lines, p, "load_base ") みたいなの作って。
        && get(g_lines, p)     == 'l'
        && get(g_lines, (p+1)) == 'o'
        && get(g_lines, (p+2)) == 'a'
@@ -1084,6 +1086,7 @@ fn write_elf(code_size: i32, mem_size: i32) -> void {
 fn main() -> i32 {
     // Allocate buffers
     g_code = U8Array((MAX_CODE) as u32);
+// TODO: Label構造体を作って。
     g_lab_names = U8Array(262144u32);
     g_lab_offs = I32Array((MAX_LABELS) as u32);
     g_lab_lens = I32Array((MAX_LABELS) as u32);

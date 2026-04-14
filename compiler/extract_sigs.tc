@@ -53,6 +53,8 @@ fn read_atom_in(atom: U8Array) -> i32 {
 }
 
 // ===== Node pool (8 ints per node) =====
+// TODO: これ、typecheckと共通化できない？
+// TODO: struct
 fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8)); }
 fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+1)); }
 fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+2)); }
@@ -79,6 +81,7 @@ fn alloc_node(nodes: I32Array, kind: i32) -> i32 {
 }
 
 // ===== Kind classification =====
+// TODO: cmp(a, "type") でいい。
 fn cmp2(a: U8Array, st: i32, b0: u8, b1: u8) -> bool {
     return get(a, st)==b0 && get(a, (st+1))==b1;
 }

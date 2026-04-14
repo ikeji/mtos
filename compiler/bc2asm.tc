@@ -78,6 +78,8 @@ fn e_la(ob: StringBuffer) -> void { emit_string(ob, "    la   "); return; }
 // push_t0 / pop_t0 / pop_t1_t0
 fn asm_push_t0(ob: StringBuffer) -> void {
     // addi sp, sp, -4
+// TODO: emit_stirng使えないの？
+// TODO: emit_nl(ob) -> emit_char(ob, 10u8)を作ろう。
     e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-');emit_char(ob, '4');emit_char(ob, 10u8);
     // sw t0, 0(sp)
     e_sw(ob); eregt0(ob); eNspnl(0,ob);
@@ -102,6 +104,7 @@ fn asm_pop_t1_t0(ob: StringBuffer) -> void {
 // Epilogue: mv t0,s0; lw ra,-4(t0); lw s0,-8(t0); addi sp,t0,0; ret
 fn asm_epilogue(ob: StringBuffer) -> void {
     // mv t0, s0
+    // TODO: emit_string
     e4(ob);emit_char(ob, 'm');emit_char(ob, 'v');emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, ' ');
     eregt0(ob);emit_char(ob, 's');emit_char(ob, '0');emit_char(ob, 10u8);
     // lw ra, -4(t0)
@@ -307,6 +310,7 @@ fn read_strlit(src: U8Array, strtab: U8Array) -> i32 {
 // ===== Opcode classifier =====
 fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
+    // TODO: cmp(strtab, "or") みたいなの作って。
     if sl>0 { a=get(strtab,ss); }
     if sl>1 { b=get(strtab,(ss+1)); }
     if sl>2 { c=get(strtab,(ss+2)); }
@@ -376,6 +380,7 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
 }
 
 // ===== Table accessors =====
+// TODO: Structにして。
 fn fn_name_ss(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+0)); }
 fn fn_name_sl(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+1)); }
 fn fn_param_base(fns: I32Array, fi: i32) -> i32 { return get(fns,(fi*10+4)); }
@@ -1089,6 +1094,7 @@ fn main() -> i32 {
     var label_pcs:    I32Array = I32Array(16384u32);
 
     // Read all stdin
+    // TODO: Use SourceReader
     g_in_len=0;
     var chunk_buf: U8Array=U8Array(65536u32);
     var rdone: i32=0;

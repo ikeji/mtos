@@ -90,6 +90,7 @@ fn read_atom_in(atom: U8Array) -> i32 {
 
 // ===== Node pool (8 ints per node) =====
 // Layout: [kind, sstart, slen, ival, first_child, next_sibling, tass, tasl]
+// TODO: Structにして。
 fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8)); }
 fn n_sk(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8), v); }
 fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+1)); }
@@ -146,6 +147,7 @@ fn add_child(nodes: I32Array, parent: i32, child: i32) -> void {
 }
 
 // ===== Kind classification =====
+// TODO: 関数名は全部cmpでいい。引数はStringLiteralでいい。
 fn cmp2(a: U8Array, st: i32, b0: u8, b1: u8) -> bool {
     return get(a, st)==b0 && get(a, (st+1))==b1;
 }
@@ -499,6 +501,7 @@ fn cg_stmt(nodes: I32Array, strtab: U8Array, slits: I32Array, ob: StringBuffer, 
             cg_expr(nodes, strtab, slits, ob, init);
         } else {
             // "  push_int 0\n"
+// TODO: emit_string
             emit_char(ob, ' ');emit_char(ob, ' ');
             emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
             emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);

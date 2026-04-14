@@ -220,9 +220,17 @@ LEN_ALIAS(StringArray) LEN_ALIAS(String) LEN_ALIAS(StringLiteral)
 static void get_null_check(HeapObj o) {
     if (!o) { do_write(2, "get: null\n", 10); __syscall1(SYS_exit, 1); }
 }
+/* Emit "get: <idx> out of bounds (len=<n>)\n" then exit. Hand-rolled
+   instead of snprintf so we don't depend on libc stdio. */
 static void get_bounds_check(HeapObj o, int32_t idx) {
     if (idx < 0 || idx >= OBJ_COUNT(o)) {
-        do_write(2, "get: out of bounds\n", 19); __syscall1(SYS_exit, 1);
+        char tmp[16]; int n;
+        do_write(2, "get: ", 5);
+        n = i32_to_str(idx, tmp); tmp[n-1] = ' '; do_write(2, tmp, n);
+        do_write(2, "out of bounds (len=", 19);
+        n = i32_to_str(OBJ_COUNT(o), tmp); tmp[n-1] = ')'; do_write(2, tmp, n);
+        do_write(2, "\n", 1);
+        __syscall1(SYS_exit, 1);
     }
 }
 
@@ -244,8 +252,17 @@ int32_t get__StringLiteral__i32(HeapObj o, int32_t i) {
 
 /* set — typed per element size */
 static void set_bounds_check(HeapObj o, int32_t idx) {
-    if (!o || idx < 0 || idx >= OBJ_COUNT(o)) {
-        do_write(2, "set: out of bounds\n", 19); __syscall1(SYS_exit, 1);
+    if (!o) {
+        do_write(2, "set: null\n", 10); __syscall1(SYS_exit, 1);
+    }
+    if (idx < 0 || idx >= OBJ_COUNT(o)) {
+        char tmp[16]; int n;
+        do_write(2, "set: ", 5);
+        n = i32_to_str(idx, tmp); tmp[n-1] = ' '; do_write(2, tmp, n);
+        do_write(2, "out of bounds (len=", 19);
+        n = i32_to_str(OBJ_COUNT(o), tmp); tmp[n-1] = ')'; do_write(2, tmp, n);
+        do_write(2, "\n", 1);
+        __syscall1(SYS_exit, 1);
     }
 }
 

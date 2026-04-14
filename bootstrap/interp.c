@@ -352,7 +352,7 @@ static Value call_builtin(const char *name, Value *args, int nargs) {
             return val_int(o->bytes[idx]);
         }
         if (idx < 0 || idx >= o->size) {
-            fprintf(stderr, "get: index %d out of bounds (size %d)\n", idx, o->size);
+            fprintf(stderr, "get: %d out of bounds (len=%d)\n", idx, o->size);
             exit(1);
         }
         return o->fields[idx];
@@ -365,7 +365,7 @@ static Value call_builtin(const char *name, Value *args, int nargs) {
         Value val = args[2];
         if (!o) { fprintf(stderr, "set: null array\n"); exit(1); }
         if (idx < 0 || idx >= o->size) {
-            fprintf(stderr, "set: index %d out of bounds (size %d)\n", idx, o->size);
+            fprintf(stderr, "set: %d out of bounds (len=%d)\n", idx, o->size);
             exit(1);
         }
         o->fields[idx] = val;

@@ -12,33 +12,51 @@
 
 ## 言語 / コンパイラ本体
 
-### 3. 暗黙の int → u32 変換がない (ergonomics)
+### 3. 整数リテラルの型が文脈を見ない (ergonomics)
 
 `U8Array(256)` と書くと i32→u32 のミスマッチで overload 解決に失敗する。
 配列コンストラクタが u32 になったため、リテラルは `256u32`、
 変数は `(n) as u32` と毎回書かないといけない。
 
-対処案:
-- 整数リテラルが型推論時に文脈を見て型を決める (大きな言語変更)。
-- 非負の整数リテラルは自動的に符号なし型へ代入可能にする。
+影響範囲: `compiler/*.tc` と `kernel/*.tc` 合わせて `as u32` が 190 箇所
+前後ある。これらがほぼ消える見込み。
 
-### 5. Gen2 typecheck のエラーメッセージが `Type error` だけ (ergonomics)
+対処方針 (後回し):
+- **整数リテラルはコンテキストが指定する型で parse/typecheck する**
+  のが本命。例: `fn f(x: u32) -> void;` に対して `f(256)` と書いたら
+  typecheck が 256 を u32 リテラルとして確定し、そのまま overload 解決
+  する。変数経由 (`var n: i32 = 256; f(n)`) は従来通りエラー。
+- 文脈がないとき (e.g. `var x = 256;`) はデフォルト i32 のまま。
 
-compiler/typecheck.tc が失敗すると行番号も何も出ない。Gen1 の
-bootstrap/typecheck.c は `file:line: message` を出すので、Gen2 との
-比較で最初に試すといい。
+### 5. Gen2 typecheck のエラーメッセージ: 段階 2 (AST line info) のみ残 (ergonomics)
 
-対処案:
-- typecheck.tc に行番号トラッキング + エラーメッセージを追加。
+段階 1 (関数名 + 引数型 + 直前 comment) は実装済 (→ fixed list)。
+出力例:
+```
+Type error: no overload for 'append' matching (StringLiteral, i32)
+  near: var s: String = append("hi", a);
+```
 
-### 6. Gen2 codegen のエラーメッセージが `get: out of bounds` のみ (ergonomics)
+段階 2 は未着手: AST に `@line` 情報を入れて `file:line: message` が
+出せるようにする。parse.tc / typecheck.tc / codegen.tc / bc2asm.tc /
+extract_sigs.tc と bootstrap 各種の AST 読み取りを同期する大規模変更。
+段階 1 で実用上十分に場所が特定できているので、必要性が出てから検討。
 
-配列アクセス境界エラーが出ると場所がわからない。実は
-コンパイラ自身のバグを示唆していることが多い (例: 今回の Gen2 キャッシュ
-stale 問題の初期症状)。
+### 6. 配列境界エラー: 残件 (ergonomics)
 
-対処案:
-- codegen.tc 側の境界チェックに文脈情報を足す。
+段階 1a (bootstrap C runtime のメッセージに idx/len を入れる) と
+1b (compiler/runtime.tc の **set** に境界チェック追加) は実装済
+(→ fixed list)。例: `set: 10 out of bounds (len=5)`。
+
+残件:
+- **get の境界チェックは未実装** (set のみ)。読み取り側 OOB は
+  silent に不正な値を返す。set と同じく入れる方が筋だが、get は
+  kernel scheduler 他の hot path にあり、入れると `make test` が
+  60 秒制約を超えたので保留。runtime 側の最適化か、test 制約の
+  緩和が先。
+- **段階 2 (大規模)**: BC に line 情報を入れて「どの TC 行」を出す。
+  #5 段階 2 と共通の AST/BC フォーマット変更。必要性が出てから
+  検討。
 
 ---
 
@@ -335,3 +353,20 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   `KERN: live=36` が変わらないことを検証 (リーク時は spawn 毎に 4 ずつ
   増える)。runtime.tc に `kfree` / `km_live_count` / `km_dump_stats` の
   export を追加 (K1)
+- typecheck のエラーメッセージが `"Type error\n"` 11 バイト固定だった
+  → `check_call_site` の失敗時に関数名 + 引数型リスト + 直前 comment
+  ノード (parse.tc が AST に埋め込む元ソース行) を印字するよう拡張。
+  例: `Type error: no overload for 'append' matching (StringLiteral, i32)
+  near: var s: String = append("hi", a);`。行番号なしでも位置特定
+  できる。AST フォーマットは不変 (#5 段階 1)
+- bootstrap C runtime の `"get/set: out of bounds"` メッセージが固定
+  文字列で idx/len を含まなかった → `bootstrap/runtime_syscall.c` の
+  get_bounds_check / set_bounds_check で `"get: <idx> out of bounds
+  (len=<n>)"` を出すように修正。bootstrap/bcrun.c / interp.c の独立
+  チェックも同じ書式に揃えた (#6 段階 1a)
+- compiler/runtime.tc の get/set に境界チェックが一切なく Gen3 ターゲット
+  (kernel / 各種 TC app) は OOB で silent corruption していた → `set`
+  側のみ境界チェックを追加 (set は書き込み = 他領域を壊せるので
+  こちらが致命的)。`(i as u32) >= (n as u32)` の unsigned 比較で
+  "i<0 または i>=n" を 1 命令にまとめて hot-path コストを最小化。
+  get 側は 60 秒テスト制約を超えたので残件 (#6 段階 1b 部分)

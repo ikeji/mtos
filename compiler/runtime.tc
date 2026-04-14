@@ -340,6 +340,36 @@ export fn len(o: String) -> i32 { if o as u32 == 0u32 { return 0; } return peek3
 export fn len(o: StringLiteral) -> i32 { if o as u32 == 0u32 { return 0; } return peek32(o as u32) as i32; }
 
 // ===== get =====
+// ===== Bounds check (set only) =====
+//
+// Only set() operations enforce bounds. Rationale: a stray read
+// returns garbage to the caller but leaves every other allocation
+// untouched; a stray write clobbers adjacent heap blocks and
+// corrupts unrelated state, which is typically unrecoverable and
+// far harder to debug. The 60-second make-test budget is tight
+// enough that instrumenting get() as well pushes the kernel tests
+// over the limit — we accept the asymmetry.
+//
+// Message format matches the bootstrap C runtime
+// ("set: <idx> out of bounds (len=<n>)") so users can't tell which
+// runtime they're running against from the error alone.
+//
+// The unsigned compare folds "i < 0 || i >= n" into one sltu. The
+// null case falls out naturally: peek32(0) reads 0 (virt/pico2 ID-
+// map low memory to zero), so any i triggers the OOB branch.
+fn set_check(addr: u32, i: i32) -> void {
+    var n: i32 = peek32(addr) as i32;
+    if (i as u32) >= (n as u32) {
+        write_str_stderr("set: ");
+        write_i32_stderr(i);
+        write_str_stderr(" out of bounds (len=");
+        write_i32_stderr(n);
+        write_str_stderr(")\n");
+        do_exit(1);
+    }
+    return;
+}
+
 export fn get(o: U8Array, i: i32) -> u8 { return peek8(o as u32 + 4u32 + i as u32) as u8; }
 export fn get(o: U16Array, i: i32) -> u16 { return peek16(o as u32 + 4u32 + (i * 2) as u32) as u16; }
 export fn get(o: U32Array, i: i32) -> u32 { return peek32(o as u32 + 4u32 + (i * 4) as u32); }
@@ -351,14 +381,14 @@ export fn get(o: String, i: i32) -> u8 { return peek8(o as u32 + 4u32 + i as u32
 export fn get(o: StringLiteral, i: i32) -> u8 { return peek8(o as u32 + 4u32 + i as u32) as u8; }
 
 // ===== set =====
-export fn set(o: U8Array, i: i32, v: u8) -> void { poke8(o as u32 + 4u32 + i as u32, v as u8); return; }
-export fn set(o: U16Array, i: i32, v: u16) -> void { poke16(o as u32 + 4u32 + (i*2) as u32, v as u16); return; }
-export fn set(o: U32Array, i: i32, v: u32) -> void { poke32(o as u32 + 4u32 + (i*4) as u32, v); return; }
-export fn set(o: I8Array, i: i32, v: i8) -> void { poke8(o as u32 + 4u32 + i as u32, v as u8); return; }
-export fn set(o: I16Array, i: i32, v: i16) -> void { poke16(o as u32 + 4u32 + (i*2) as u32, v as u16); return; }
-export fn set(o: I32Array, i: i32, v: i32) -> void { poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return; }
-export fn set(o: StringArray, i: i32, v: String) -> void { poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return; }
-export fn set(o: StringArray, i: i32, v: StringLiteral) -> void { poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return; }
+export fn set(o: U8Array, i: i32, v: u8) -> void { set_check(o as u32, i); poke8(o as u32 + 4u32 + i as u32, v as u8); return; }
+export fn set(o: U16Array, i: i32, v: u16) -> void { set_check(o as u32, i); poke16(o as u32 + 4u32 + (i*2) as u32, v as u16); return; }
+export fn set(o: U32Array, i: i32, v: u32) -> void { set_check(o as u32, i); poke32(o as u32 + 4u32 + (i*4) as u32, v); return; }
+export fn set(o: I8Array, i: i32, v: i8) -> void { set_check(o as u32, i); poke8(o as u32 + 4u32 + i as u32, v as u8); return; }
+export fn set(o: I16Array, i: i32, v: i16) -> void { set_check(o as u32, i); poke16(o as u32 + 4u32 + (i*2) as u32, v as u16); return; }
+export fn set(o: I32Array, i: i32, v: i32) -> void { set_check(o as u32, i); poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return; }
+export fn set(o: StringArray, i: i32, v: String) -> void { set_check(o as u32, i); poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return; }
+export fn set(o: StringArray, i: i32, v: StringLiteral) -> void { set_check(o as u32, i); poke32(o as u32 + 4u32 + (i*4) as u32, v as u32); return; }
 
 // ===== delete =====
 fn delete_impl(o: u32) -> void { if o == 0u32 { return; } kfree(o); return; }

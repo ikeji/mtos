@@ -612,13 +612,19 @@ static Value call_builtin(const char *mangled, Value *args, int nargs) {
             if(idx<0||idx>=o->len) return val_int(0);
             return val_int(o->bytes[idx]);
         }
-        if(idx<0||idx>=o->size){fprintf(stderr,"get: index %d/%d\n",idx,o->size);exit(1);}
+        if(idx<0||idx>=o->size){
+            fprintf(stderr,"get: %d out of bounds (len=%d)\n",idx,o->size);
+            exit(1);
+        }
         return o->fields[idx];
     }
     if (!strcmp(name,"set") && nargs==3) {
         HeapObj *o=args[0].ref; int idx=args[1].ival;
         if(!o){fprintf(stderr,"set: null\n");exit(1);}
-        if(idx<0||idx>=o->size){fprintf(stderr,"set: index %d/%d\n",idx,o->size);exit(1);}
+        if(idx<0||idx>=o->size){
+            fprintf(stderr,"set: %d out of bounds (len=%d)\n",idx,o->size);
+            exit(1);
+        }
         o->fields[idx]=args[2]; return val_void();
     }
     if (!strcmp(name,"delete")) return val_void();
