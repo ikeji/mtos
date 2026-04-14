@@ -53,6 +53,13 @@ _start:
     # it since RISC-V callees don't read unused argument registers.
     mv   a0, s2
     call main__StringArray
+    # Print a compact "[kmem peak=X live=Y]" line to stderr before
+    # exiting so phase 7 debug sessions can see per-task peak memory
+    # usage at a glance. Save main's return value across the call
+    # since km_dump_peak clobbers a0.
+    mv   s3, a0
+    call km_dump_peak
+    mv   a0, s3
     # sys_exit(return value of main)
     li   a7, 93
     ecall

@@ -41,6 +41,13 @@ var KM_NBUCKETS: i32 = 10;
 var g_bucket_base: u32 = 0u32;
 var g_free_list: u32 = 0u32;
 
+// Live/peak byte tracking for the per-task "how much memory did we
+// burn?" debug line that task_crt0.s prints at sys_exit. Bytes are
+// counted as the full kmalloc block size (user bytes + KM_HDR) so
+// the per-allocation overhead shows up in the total.
+var g_km_curr_bytes: i32 = 0;
+var g_km_peak_bytes: i32 = 0;
+
 var KM_STAT_OFFSET: i32 = 40;
 var KM_LARGE_STAT_OFFSET: i32 = 160;
 var KM_HEAP_OFFSET: i32 = 172;
@@ -229,6 +236,21 @@ fn large_free(blk: u32, bsz: i32) -> void {
 //    large_alloc で確保する。
 //
 // 返却値: ユーザデータ先頭 (ヘッダの直後)。OOM なら 0。
+// Track a successful allocation's full block size (user + KM_HDR)
+// against the peak/curr byte counters.
+fn km_track_alloc(total: i32) -> void {
+    g_km_curr_bytes = g_km_curr_bytes + total;
+    if g_km_curr_bytes > g_km_peak_bytes {
+        g_km_peak_bytes = g_km_curr_bytes;
+    }
+    return;
+}
+
+fn km_track_free(total: i32) -> void {
+    g_km_curr_bytes = g_km_curr_bytes - total;
+    return;
+}
+
 fn kmalloc(size: i32) -> u32 {
     if size <= 0 { size = 1; }
     var bkt: i32 = size_to_bucket(size);
@@ -240,12 +262,13 @@ fn kmalloc(size: i32) -> u32 {
             var total: i32 = bucket_user_size(bkt) + KM_HDR;
             poke32(head, total as u32);
             stat_inc_bucket(bkt);
+            km_track_alloc(total);
             return head + KM_HDR as u32;
         }
         // バケット空 → ヒープから切り出し
         var total: i32 = bucket_user_size(bkt) + KM_HDR;
         var ret: u32 = large_alloc(total);
-        if ret != 0u32 { stat_inc_bucket(bkt); }
+        if ret != 0u32 { stat_inc_bucket(bkt); km_track_alloc(total); }
         return ret;
     }
     // バケット範囲外 → large_alloc
@@ -257,7 +280,7 @@ fn kmalloc(size: i32) -> u32 {
         if need < KM_MIN_BLK { need = KM_MIN_BLK; }
     }
     var ret: u32 = large_alloc(need);
-    if ret != 0u32 { stat_inc_large(); }
+    if ret != 0u32 { stat_inc_large(); km_track_alloc(need); }
     return ret;
 }
 
@@ -272,6 +295,7 @@ export fn kfree(ptr: u32) -> void {
     if ptr == 0u32 { return; }
     var blk: u32 = ptr - KM_HDR as u32;
     var total: i32 = peek32(blk) as i32;
+    km_track_free(total);
     var user: i32 = total - KM_HDR;
     var bkt: i32 = size_to_bucket(user);
     if bkt >= 0 && bucket_user_size(bkt) == user {
@@ -567,6 +591,77 @@ export fn km_dump_stats() -> void {
 // compile-gen*.sh had to `2>/dev/null` every pipe segment to hide it,
 // which then hid real errors too. See problem.md #14.
 export fn sys_exit(code: i32) -> void { do_exit(code); return; }
+
+// Compact one-liner version of km_dump_stats: prints
+// "[kmem peak=<bytes> live=<bytes>]\n" to stderr. task_crt0.s on
+// the kernel calls this just before ecall 93 so the phase 7 debug
+// traces can see actual per-task memory usage without being drowned
+// in 14 lines of per-bucket stats.
+//
+// Avoids write_str_stderr / write_i32_stderr because StringLiteral
+// lookups in late additions to runtime.tc have an unresolved bc2asm/
+// asm layout quirk (see phase 7 commit history: "SECTOR0:" / "<<4080"
+// garbled outputs). Every character is poked into a 32-byte scratch
+// block and written through one do_write call.
+fn km_dump_push(buf: u32, pos: i32, c: u8) -> i32 {
+    poke8(buf + pos as u32, c);
+    return pos + 1;
+}
+
+fn km_dump_push_dec(buf: u32, pos: i32, v: i32) -> i32 {
+    if v < 0 {
+        var p1: i32 = km_dump_push(buf, pos, '-' as u8);
+        return km_dump_push_dec(buf, p1, 0 - v);
+    }
+    if v == 0 {
+        return km_dump_push(buf, pos, '0' as u8);
+    }
+    var digits: i32 = 0;
+    var tmp: i32 = v;
+    while tmp > 0 { digits = digits + 1; tmp = tmp / 10; }
+    var pow: i32 = 1;
+    var i: i32 = 1;
+    while i < digits { pow = pow * 10; i = i + 1; }
+    var p: i32 = pos;
+    while pow > 0 {
+        p = km_dump_push(buf, p, (48 + (v / pow) % 10) as u8);
+        pow = pow / 10;
+    }
+    return p;
+}
+
+export fn km_dump_peak() -> void {
+    var scratch: u32 = kmalloc(48);
+    if scratch == 0u32 { return; }
+    var p: i32 = 0;
+    p = km_dump_push(scratch, p, '[' as u8);
+    p = km_dump_push(scratch, p, 'k' as u8);
+    p = km_dump_push(scratch, p, 'm' as u8);
+    p = km_dump_push(scratch, p, 'e' as u8);
+    p = km_dump_push(scratch, p, 'm' as u8);
+    p = km_dump_push(scratch, p, ' ' as u8);
+    p = km_dump_push(scratch, p, 'p' as u8);
+    p = km_dump_push(scratch, p, 'e' as u8);
+    p = km_dump_push(scratch, p, 'a' as u8);
+    p = km_dump_push(scratch, p, 'k' as u8);
+    p = km_dump_push(scratch, p, '=' as u8);
+    p = km_dump_push_dec(scratch, p, g_km_peak_bytes);
+    p = km_dump_push(scratch, p, ' ' as u8);
+    p = km_dump_push(scratch, p, 'l' as u8);
+    p = km_dump_push(scratch, p, 'i' as u8);
+    p = km_dump_push(scratch, p, 'v' as u8);
+    p = km_dump_push(scratch, p, 'e' as u8);
+    p = km_dump_push(scratch, p, '=' as u8);
+    p = km_dump_push_dec(scratch, p, g_km_curr_bytes);
+    p = km_dump_push(scratch, p, ']' as u8);
+    p = km_dump_push(scratch, p, 10u8);
+    do_write(2, scratch, p);
+    kfree(scratch);
+    return;
+}
+
+export fn km_peak_bytes() -> i32 { return g_km_peak_bytes; }
+export fn km_curr_bytes() -> i32 { return g_km_curr_bytes; }
 
 // ===== Print helpers =====
 export fn print_i32(v: i32) -> void {
