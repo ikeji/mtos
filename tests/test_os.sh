@@ -87,17 +87,17 @@ fi
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$TMP/kernel_virt" ] && [ -s "$TMP/disk.img" ]; then
     t0=$(time_ms)
-    # Shell loop: run tmpdemo once to exercise the tmpfs write path
-    # (open /tmp/demo with O_WRONLY|O_CREAT, write + close, re-open
-    # for read), then spawn catfile five times (four without args,
-    # one with an explicit argv[1]=/hello.txt), then read "quit"
-    # to exit. The mixed argv exercises the phase 7 B prereq, and
-    # tmpdemo exercises the phase 7 A prereq (tmpfs). Six iterations
-    # also exercise the loader's kfree path for frame_buf / ram /
-    # stack / img / argv after each child exits — the kernel prints
-    # "KERN: live=N" at shutdown so the test can assert the count
-    # did not grow with spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile\ncatfile\ncatfile\ncatfile /hello.txt\nquit\n' \
+    # Shell loop exercises all phase 7 A/B/D prereqs:
+    #   - tmpdemo:                tmpfs write path (phase 7 A)
+    #   - catfile:                default argv (kernel argv clone)
+    #   - catfile /hello.txt:     explicit argv path
+    #   - echo hi > /tmp/redir:   sh stdout redirection (phase 7 D)
+    #   - catfile /tmp/redir:     reads redirected content back
+    # then quit. Six spawn cycles are enough to exercise the loader's
+    # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
+    # the kernel prints "KERN: live=N" at shutdown so the test asserts
+    # the count stays bounded regardless of spawn iterations.
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -122,6 +122,10 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_has_mtfs_msg=$(echo "$fs_out" | grep -c "hello, mtfs")
     fs_has_tmpfs_ok=$(echo "$fs_out" | grep -c "TMPFS_OK")
     fs_has_tmpfs_payload=$(echo "$fs_out" | grep -c "TMP:hello tmpfs")
+    # Redirect check: echo hi > /tmp/redir writes "hi\n" to tmpfs
+    # (no CAT: prefix because the byte stream is redirected away
+    # from the UART), and catfile /tmp/redir prints "CAT[2]:hi".
+    fs_has_redir=$(echo "$fs_out" | grep -c 'CAT\[2\]:hi')
     fs_has_sh=$(echo "$fs_out" | grep -c "SH: ready")
     fs_has_bye=$(echo "$fs_out" | grep -c "SH: bye")
     # Leak canary: the kernel prints its kmalloc live count at the
@@ -138,15 +142,16 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
             # would push it up by ~4 per extra spawn, so 5 leaks
             # would reach ~87 and a regression would trip before 96.
             if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
-                && [ "$fs_cat_count" -ge 5 ] && [ "$fs_cat1_count" -ge 4 ] \
-                && [ "$fs_cat2_count" -ge 1 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
+                && [ "$fs_cat_count" -ge 3 ] && [ "$fs_cat1_count" -ge 1 ] \
+                && [ "$fs_cat2_count" -ge 2 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
                 && [ "$fs_has_tmpfs_ok" -gt 0 ] && [ "$fs_has_tmpfs_payload" -gt 0 ] \
+                && [ "$fs_has_redir" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
                 && [ -n "$fs_live" ] && [ "$fs_live" -le 96 ]; then
-                report_pass "fs_virtio: tmpdemo + 5× catfile spawn/wait, live=$fs_live" "$elapsed"
+                report_pass "fs_virtio: tmpdemo + catfile argv + redirect, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 320)"
+                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)

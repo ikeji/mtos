@@ -40,7 +40,8 @@ case "$TARGET" in
         KERNEL_TC="$KERN_DIR/kernel.tc"
         # virt slot 2 is /bin/sh; /bin/launcher is pico2-only.
         # tmpdemo exercises the tmpfs write path under /tmp/.
-        TASKS="hello hello2 catfile sh tmpdemo"
+        # echo is used by the redirect test (echo hi > /tmp/redir).
+        TASKS="hello hello2 catfile sh tmpdemo echo"
         : "${OUTFILE:=kernel_virt.bin}"
         ;;
     pico2)
@@ -63,15 +64,27 @@ trap 'rm -rf "$TMP"' EXIT
 TASK_CRT0="$KERN_DIR/tasks/task_crt0.s"
 TASK_DATA="$KERN_DIR/tasks/task_data.s"
 
-# --- Step 1: Build task binaries ---
+# --- Step 1: Build task binaries (in parallel) ---
+# Each .tc task is independent of the others, so we fan them out and
+# wait for the whole batch. This shaves ~(N-1) * compile_time off the
+# OS test while keeping the sequential error handling shape.
+pids=""
 for task in $TASKS; do
     echo "Building task: $task" >&2
-    CRT0="$TASK_CRT0" \
-    CRT0_DATA="$TASK_DATA" \
-    ASM_PROLOGUE="; raw" \
-    GEN2_DIR="$GEN2_DIR" \
-        "$ROOT_DIR/compile-gen2.sh" -o "$TMP/$task.bin" \
-        "$KERN_DIR/tasks/$task/$task.tc" 2>/dev/null
+    (
+        CRT0="$TASK_CRT0" \
+        CRT0_DATA="$TASK_DATA" \
+        ASM_PROLOGUE="; raw" \
+        GEN2_DIR="$GEN2_DIR" \
+            "$ROOT_DIR/compile-gen2.sh" -o "$TMP/$task.bin" \
+            "$KERN_DIR/tasks/$task/$task.tc" 2>/dev/null
+    ) &
+    pids="$pids $!"
+done
+for pid in $pids; do
+    wait "$pid" || { echo "Error: task compilation failed (pid $pid)" >&2; exit 1; }
+done
+for task in $TASKS; do
     if [ ! -s "$TMP/$task.bin" ]; then
         echo "Error: $task task compilation failed" >&2
         exit 1

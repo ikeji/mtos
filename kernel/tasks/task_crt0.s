@@ -82,14 +82,14 @@ do_exit__i32:
     ecall
     ret
 
-    .globl do_exec__u32__u32
-do_exec__u32__u32:
+    .globl do_exec__u32__u32__u32__u32
+do_exec__u32__u32__u32__u32:
     li   a7, 221
     ecall
     ret
 
-    .globl do_spawn__u32__u32
-do_spawn__u32__u32:
+    .globl do_spawn__u32__u32__u32__u32
+do_spawn__u32__u32__u32__u32:
     li   a7, 220
     ecall
     ret

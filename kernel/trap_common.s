@@ -157,6 +157,8 @@ _ecall_close:
 # ===== sys_exec (a7 = 221) =====
 # a0 = NUL-terminated path address (task virtual == kernel virtual).
 # a1 = argv StringArray pointer in the task's arena (0 for no argv).
+# a2 = in_path addr (NUL-terminated, 0 for no stdin redirect).
+# a3 = out_path addr (NUL-terminated, 0 for no stdout redirect).
 # On success, sys_exec_handler returns the new frame and has already
 # called sched_replace_current; we then switch mscratch to it so mret
 # lands in the new task's entry. On failure, we write -1 to a0 and
@@ -165,7 +167,9 @@ _ecall_exec:
     call _ecall_enter
     lw   a0, 40(s0)         # path addr (task's a0)
     lw   a1, 44(s0)         # argv addr (task's a1, 0 if none)
-    call sys_exec_handler__u32__u32
+    lw   a2, 48(s0)         # in_path addr (task's a2, 0 if none)
+    lw   a3, 52(s0)         # out_path addr (task's a3, 0 if none)
+    call sys_exec_handler__u32__u32__u32__u32
     beqz a0, _exec_failed
     la   t0, _switch_frame
     sw   a0, 0(t0)
@@ -177,7 +181,9 @@ _exec_failed:
     j    _ecall_leave_advance
 
 # ===== sys_spawn (a7 = 220) =====
-# a0 = path_addr, a1 = argv StringArray pointer (0 for no argv).
+# a0 = path_addr, a1 = argv StringArray pointer (0 for no argv),
+# a2 = in_path addr (0 for no stdin redirect),
+# a3 = out_path addr (0 for no stdout redirect).
 # Load the binary into a new slot via sys_spawn_handler, write the
 # new slot id (or -1) back to the task, advance mepc, and return
 # to the caller. No context switch: parent keeps running.
@@ -185,7 +191,9 @@ _ecall_spawn:
     call _ecall_enter
     lw   a0, 40(s0)
     lw   a1, 44(s0)
-    call sys_spawn_handler__u32__u32
+    lw   a2, 48(s0)
+    lw   a3, 52(s0)
+    call sys_spawn_handler__u32__u32__u32__u32
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 
@@ -304,12 +312,12 @@ trap_handler__u32__u32:
 sched_task_exit:
     li   a0, 0
     ret
-    .globl sys_exec_handler__u32__u32
-sys_exec_handler__u32__u32:
+    .globl sys_exec_handler__u32__u32__u32__u32
+sys_exec_handler__u32__u32__u32__u32:
     li   a0, 0
     ret
-    .globl sys_spawn_handler__u32__u32
-sys_spawn_handler__u32__u32:
+    .globl sys_spawn_handler__u32__u32__u32__u32
+sys_spawn_handler__u32__u32__u32__u32:
     li   a0, -1
     ret
     .globl sys_wait_handler__i32

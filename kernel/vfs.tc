@@ -15,6 +15,7 @@
 
 import "mtfs.tc";
 import "tmpfs.tc";
+import "kernel_common.tc";
 
 // Platform UART helpers (defined in platform_*.s)
 fn do_uart_write(buf: u32, len: i32) -> i32;
@@ -189,6 +190,14 @@ export fn vfs_xip_addr(fd: i32) -> u32 {
 }
 
 export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    // Per-task stdin redirection: if fd == 0 and the running task has
+    // set stdin_fd != 0 (via sys_spawn's in_path argument), consume
+    // from that VFS fd instead of UART. fd 2 (stderr) is never
+    // redirected — it always stays on UART.
+    if fd == 0 && g_vfs_ready != 0 {
+        var redir: i32 = task_get_stdin_fd(sched_current_idx());
+        if redir != 0 { fd = redir; }
+    }
     if fd >= 0 && fd < 3 { return do_uart_read(buf_addr, n); }
     if g_vfs_ready == 0 { return -1; }
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
@@ -200,6 +209,13 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
 }
 
 export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    // Per-task stdout redirection: fd == 1 can be rerouted to a
+    // VFS fd via sys_spawn's out_path. fd 2 (stderr) is never
+    // redirected so pipeline errors stay visible on the UART.
+    if fd == 1 && g_vfs_ready != 0 {
+        var redir: i32 = task_get_stdout_fd(sched_current_idx());
+        if redir != 0 { fd = redir; }
+    }
     // Standard streams and anything without an open file go to UART.
     if fd >= 0 && fd < 3 { return do_uart_write(buf_addr, n); }
     if g_vfs_ready == 0 { return -1; }

@@ -123,6 +123,32 @@ fn clone_argv(src_addr: u32) -> u32 {
     return copy as u32;
 }
 
+// Linux open() flags — duplicate the subset tmpfs understands so
+// loader.tc can open redirected stdout files with O_WRONLY|O_CREAT|
+// O_TRUNC. Defined inline to avoid an extra import.
+var LOADER_O_WRONLY: i32 = 1;
+var LOADER_O_CREAT:  i32 = 64;
+var LOADER_O_TRUNC:  i32 = 512;
+
+// Open an optional redirect path (may be 0u32 = "not set"). Returns
+// the VFS fd on success, 0 if addr is 0, or -1 on error. `wr` is 1
+// for stdout (write-create-truncate) or 0 for stdin (read-only).
+fn open_redir(addr: u32, wr: i32) -> i32 {
+    if addr == 0u32 { return 0; }
+    var flags: i32 = 0;
+    if wr != 0 { flags = LOADER_O_WRONLY | LOADER_O_CREAT | LOADER_O_TRUNC; }
+    var fd: i32 = vfs_open(addr, flags);
+    if fd < 0 { return -1; }
+    return fd;
+}
+
+// Close an fd that was opened by open_redir, iff it was actually
+// assigned (fd > 0). Used by failure paths to undo partial opens.
+fn close_redir(fd: i32) -> void {
+    if fd > 0 { vfs_close(fd); }
+    return;
+}
+
 // Handler for sys_exec (a7 = 221). Called from trap_common.s after a
 // task issues ecall. path_addr is a NUL-terminated byte string already
 // readable in the kernel address space (virt/pico2 are ID-mapped, so
@@ -131,45 +157,68 @@ fn clone_argv(src_addr: u32) -> u32 {
 // On success: builds a new task frame, replaces the current scheduler
 // slot with it, and returns the new frame. sched_replace_current
 // frees the caller's old allocations (frame_buf / ram / stack / img
-// / argv) before attaching the new bases — we are running on the
-// kernel stack here, not the dying task's user stack, so it is safe
-// to kfree the user-side allocations.
+// / argv / stdio fds) before attaching the new bases — we are
+// running on the kernel stack here, not the dying task's user stack,
+// so it is safe to kfree the user-side allocations and vfs_close
+// the redirected stdio fds.
 //
 // argv_addr points at a StringArray in the calling task's arena (may
-// be 0 for "no argv"). We clone it into kernel memory before load_fd
-// touches the old slot so the new frame carries its own copy.
+// be 0 for "no argv"). in_addr / out_addr point at NUL-terminated
+// path strings (also may be 0). We clone / open them before load_fd
+// touches the old slot so the new frame carries its own copies.
 //
 // On failure: returns 0, and the caller delivers -1 to the task's a0.
 // The old task keeps running in place (nothing was freed).
 //
 // Task sizing is hardcoded for now (16 KB RAM + 8 KB stack) — small
 // enough for Pico 2, large enough for the current demo tasks.
-export fn sys_exec_handler(path_addr: u32, argv_addr: u32) -> u32 {
+// Ordering note: redirect opens happen BEFORE load_fd so a failure
+// to open /tmp/out does not leak the frame_buf / ram / stack that
+// make_task would have allocated inside load_fd. reset_last_alloc
+// (called at the top of load_fd) still wipes any previous g_last_*,
+// so the in_fd / out_fd we opened earlier live on the kernel's TC
+// stack until we re-install them via set_last_stdio.
+export fn sys_exec_handler(path_addr: u32, argv_addr: u32,
+                           in_addr: u32, out_addr: u32) -> u32 {
+    var in_fd: i32 = open_redir(in_addr, 0);
+    if in_fd < 0 { return 0u32; }
+    var out_fd: i32 = open_redir(out_addr, 1);
+    if out_fd < 0 { close_redir(in_fd); return 0u32; }
+
     var fd: i32 = vfs_open(path_addr, 0);
-    if fd < 0 { return 0u32; }
+    if fd < 0 { close_redir(in_fd); close_redir(out_fd); return 0u32; }
     var frame: u32 = load_fd(fd, 16384, 8192);
     vfs_close(fd);
-    if frame == 0u32 { return 0u32; }
+    if frame == 0u32 { close_redir(in_fd); close_redir(out_fd); return 0u32; }
+
     var kargv: u32 = clone_argv(argv_addr);
     set_frame_argv(frame, kargv);
     set_last_argv(kargv);
+    set_last_stdio(in_fd, out_fd);
     sched_replace_current(frame);
     return frame;
 }
 
 // Handler for sys_spawn (a7 = 220). Loads the given path into a new
 // scheduler slot and returns the slot index, or -1 on failure. Caller
-// keeps running. argv_addr is cloned into kernel memory like in
-// sys_exec_handler.
-export fn sys_spawn_handler(path_addr: u32, argv_addr: u32) -> i32 {
+// keeps running. argv_addr / in_addr / out_addr mirror the exec path.
+export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
+                            in_addr: u32, out_addr: u32) -> i32 {
+    var in_fd: i32 = open_redir(in_addr, 0);
+    if in_fd < 0 { return -1; }
+    var out_fd: i32 = open_redir(out_addr, 1);
+    if out_fd < 0 { close_redir(in_fd); return -1; }
+
     var fd: i32 = vfs_open(path_addr, 0);
-    if fd < 0 { return -1; }
+    if fd < 0 { close_redir(in_fd); close_redir(out_fd); return -1; }
     var frame: u32 = load_fd(fd, 16384, 8192);
     vfs_close(fd);
-    if frame == 0u32 { return -1; }
+    if frame == 0u32 { close_redir(in_fd); close_redir(out_fd); return -1; }
+
     var kargv: u32 = clone_argv(argv_addr);
     set_frame_argv(frame, kargv);
     set_last_argv(kargv);
+    set_last_stdio(in_fd, out_fd);
     return sched_spawn(frame);
 }
 
