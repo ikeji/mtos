@@ -16,11 +16,13 @@
            独自言語製コンパイラ → ネイティブなコンパイラ実行ファイル
            (Gen2==Gen3 の自己ホスト検証は tests/test_gen3.sh で CI 化)
 
-ステップ3.5: 独自言語製プログラムを実機 RP2350 で直接動かす  [hello 完了]
+ステップ3.5: 独自言語製プログラムを実機 RP2350 で直接動かす  [kernel 完了]
            asm.tc をセクション並べ替えリンカ化し、gp 相対 la で
-           Flash/SRAM 分離に対応。pico2/hello.tc が実機で UART 出力
-           するところまで到達。コンパイラ自体を Pico 2 で動かすには
-           PSRAM 初期化と typecheck/asm.tc のメモリ削減が未着手。
+           Flash/SRAM 分離に対応。初期 bring-up の standalone
+           pico2/hello.tc でコンパイルパスを通した後、カーネルが
+           RP2350 で動くようになり同ディレクトリは削除した。
+           Pico 2 セルフホストにはまだ asm.tc の ~9 MB 静的
+           バッファが残っている。
 
 ステップ4: ネイティブコンパイラでOSをビルド
            OS全体を独自言語で記述し、ネイティブコンパイラでビルド
@@ -43,7 +45,9 @@
 - [x] クロスコンパイル環境構築（riscv64-unknown-elf-gcc, qemu-riscv32）
 - [x] QEMU環境構築（`qemu-system-riscv32 -M virt`、`tests/test_asm.sh` で CI 化）
 - [x] QEMUでHello World（virt、16550 UART、TC ソースから UART 出力確認）
-- [x] RP2350実機でもHello World（`pico2/hello.tc` → `pico2/build.sh` → `pico2/hello.uf2`、実機動作確認）
+- [x] RP2350実機でもHello World（初期 bring-up 時に `pico2/hello.tc` +
+      `compile-pico2.sh` で実機動作確認。以降はカーネル同梱の
+      hello/hello2/catfile/launcher タスクに置き換わり同ディレクトリは削除済み）
 - [x] hex / binary 整数リテラル (`0xFF`, `0b1010`) サポート
 - [x] `shr_u` 論理右シフト opcode 追加（`u32 >> n` が算術シフトになるバグ修正）
 - [x] Struct array (`XxxArray`) を parser 合成で完全サポート（asm リンカ経路込み）
@@ -97,16 +101,27 @@ C言語でフルパイプラインを実装し、動作を検証する。
 のどこに落とし穴があるかを洗い出す。
 
 - [x] picobin IMAGE_DEF ブロック (RP2350 RISC-V family ID 0xE48BFF5A)
-- [x] `pico2/crt0_pico2.s`: core1 park、XOSC/clk_peri/RESETS/GPIO/UART0 初期化
+- [x] core1 park、XOSC/clk_peri/RESETS/GPIO/UART0 初期化 (現在は
+      `kernel/platform_pico2.s` に集約、standalone 初期版の
+      `pico2/crt0_pico2.s` は kernel 版で置き換えて削除済み)
 - [x] SRAM ゼロクリア、gp 設定、runtime_init 呼び出し
-- [x] `pico2/crt0_pico2_data.s`: .bss (__arena)
-- [x] `compile-pico2.sh`: compile-gen2.sh に `ASM_PROLOGUE="; raw"` + crt0 差し替え
-- [x] `pico2/bin2uf2.py`: raw bin → UF2 (family_id=0xe48bff5a)
-- [x] `pico2/hello.tc` が実機 Pico 2 の UART0 に "Hello, Pico 2!\r\n" を出力
+- [x] Pico 2 向け BSS レイアウト (`kernel/crt0_pico2_data.s` の __arena)
+- [x] `tools/bin2uf2.py`: raw bin → UF2 (family_id=0xe48bff5a)。
+      `kernel/build.sh --target pico2` が内部で呼ぶ
+- [x] 実機 Pico 2 で UART 出力 (bring-up 時は standalone hello、
+      現在は kernel + guest task 経由。test_pico2.sh で継続検証)
 - [x] sys_write / sys_read / 複数ファイル import が Pico 2 でも動作 (kernel/ で確認)
+- [x] typecheck.tc のメモリ削減 (R1 phase 2): flat I32Array(131072) →
+      AstNodeArray(16384) + per-node on-demand。小さいファイルで
+      512 KB → proportional allocation
+- [x] bc2asm.tc のメモリ削減 (R7): 524 KB src バッファを撤廃し
+      SourceReader (4 KB 内部バッファ) でストリーミング化。520 KB
+      ピーク削減
 - [ ] PSRAM 初期化 (QMI CS1, 0x11000000〜) を crt0 に追加
-- [ ] typecheck.tc / asm.tc のメモリ使用量を PSRAM 上で回せるレベルに最適化
-      (ラベルテーブル・行バッファのストリーミング化、分割実行)
+- [ ] asm.tc のメモリ削減: `g_code` / `g_lines` 各 4 MB + `g_line_offs/lens`
+      1 MB が残っており、現状約 9 MB ピーク。PSRAM 前提でも Pico 2
+      の 520 KB SRAM では動かないため、assembler/linker 分離
+      (問題 #7) または入力のストリーミング処理が必要
 - [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)
 
 ## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
@@ -252,8 +267,8 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 |---|---|
 | インタプリタとコンパイラの挙動が一致しない | `tests/test_consistency.sh` / `tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
 | LL(1)で表現できない構文が欲しくなる | 文法制約を文書化し、設計段階で確認 |
-| メモリ不足（520KB SRAM） | `asm.tc` はセクション並べ替えで data/bss を最小化済み。runtime.tc は kmalloc/kfree（free-list + bucket）に移行し pool 制約を解消。`typecheck.tc` / `asm.tc` のラベル・行バッファは PSRAM 前提で拡張予定（フェーズ2.5） |
+| メモリ不足（520KB SRAM） | `runtime.tc` は kmalloc/kfree に移行、`typecheck.tc` は `compiler/ast_node.tc` で AST ノードプールを struct AstNode + AstNodeArray 化して on-demand 確保に (512 KB pre-alloc 撤廃)、`bc2asm.tc` は SourceReader ストリーミングに移行して 524 KB src 削減済み。残るボトルネックは `asm.tc` の ~9 MB 静的バッファ (g_code / g_lines / g_line_offs) で、assembler と linker の分離が必要 (problem.md #7) |
 | gp 相対 `la` の 12-bit 制約 | hello レベルでは余裕。将来必要なら 12 byte 形式 (`lui+addi+add gp`) に拡張 |
-| QEMUと実機の挙動差異 | `pico2/hello.tc` で既に実機 Pico 2 上の挙動を検証。ペリフェラル依存は crt0_pico2.s に集約 |
+| QEMUと実機の挙動差異 | bring-up 時に standalone hello を実機検証、以降はカーネル込みの kernel/platform_pico2.s に集約。test_pico2.sh が Debug Probe 経由で継続検証 |
 | Flash書き込みが遅い・壊れやすい | picotool UF2 経由の書き込みのみ使用。書き換え頻度は開発サイクルで問題ないレベル |
-| デバッグが困難 | UART 出力 (Linux: syscall、virt: 16550、Pico 2: PL011) を `do_write` で統一、`asm.tc` は pass 2 でラベルマップを stderr に出す |
+| デバッグが困難 | UART 出力 (Linux: syscall、virt: 16550、Pico 2: PL011) を `do_write` で統一。`asm.tc` のエラーは `asm:<line>: <msg>\n at: <source line>` 形式で現在行を示す。typecheck のエラーは直前 comment ノード (元ソース行) を `near:` で表示 |
