@@ -8838,38 +8838,21 @@
                         (type i32)
                         (var g_pop_ival)
                       )
-                      (comment "var r3: i32 = a3;")
+                      (comment "var r3: i32 = ((a3 as u32) >> (b3 as u32)) as i32;")
                       (var_decl r3
                         (type i32)
-                        (var a3)
-                      )
-                      (comment "if b3 >= 1 {")
-                      (if
-                        (binop >=
-                          (var b3)
-                          (int 1)
-                        )
-                        (block
-                          (comment "r3 = (r3 >> 1) & 0x7FFFFFFF;")
-                          (assign r3
-                            (binop &
-                              (binop >>
-                                (var r3)
-                                (int 1)
-                              )
-                              (int 2147483647)
+                        (cast
+                          (binop >>
+                            (cast
+                              (var a3)
+                              (type u32)
+                            )
+                            (cast
+                              (var b3)
+                              (type u32)
                             )
                           )
-                          (comment "r3 = r3 >> (b3 - 1);")
-                          (assign r3
-                            (binop >>
-                              (var r3)
-                              (binop -
-                                (var b3)
-                                (int 1)
-                              )
-                            )
-                          )
+                          (type i32)
                         )
                       )
                       (comment "stk_push(stk_i,stk_t,r3,TAG_INT);")

@@ -118,12 +118,6 @@ section_base を合わせないと padding 量が drift する。
 手動アラインのまま。
 
 
-### 10. struct array 呼び出しが mangle 名で未解決 (FIXED)
-
-歴史的経緯メモ: `set__FooArray__i32__Foo` のような mangle 名に対して
-実装が存在せず、リンカ未定義エラーになっていた。parser で synthetic
-fn を生成することで修正済み。
-
 ---
 
 ## カーネル / OS
@@ -168,13 +162,6 @@ stdin が閉じた (EOF) 状態を区別できない。
 - qemu のシリアル終了条件を使う (但し実機との挙動差が出る)。
 
 ## バイトコード / ランタイム
-
-### 11. bcrun.tc の `shr_u` 実装が手動マスク (limitation)
-
-TC 側の `>>` が常に arithmetic shift なので、bcrun.tc で `shr_u` を
-実装するときに 1 ビットずらして `& 0x7FFFFFFF` する trick を使っている。
-コンパイラ自身に u32 用の論理シフト命令がないと綺麗に書けない
-(循環依存)。
 
 ### 12. `poke8` / `poke16` / `poke32` は境界チェックなし (by design)
 
@@ -449,6 +436,11 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   半分程度に縮めた。`.macro` / `.endm` のサポートを asm.tc に足さず
   ヘルパラベル (`call _ecall_enter` / `j _ecall_leave_advance`) で
   single-source 化。23 行減 (#7 短期)
+- `compiler/bcrun.tc` の OP_SHR_U 実装が「1 ビット arithmetic shift +
+  & 0x7FFFFFFF マスク + 残りシフト」という 5 行の trick だった → shr_u
+  が bootstrap / Gen2 両方に実装済なので、`((a3 as u32) >> (b3 as u32))
+  as i32` の 1 行に置き換え。以前の循環依存 (shr_u 実装に shr_u が
+  必要) は解消済 (#11)
 - asm.tc のエラーが「`asm: unknown instruction 'xxx'`」など mnemonic
   だけで行番号も元行もなかった → `g_cur_line` を `process_line` 冒頭
   でセットし、`asm_err_begin` / `asm_err_end` ヘルパで 3 つのエラー

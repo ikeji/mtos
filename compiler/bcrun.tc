@@ -1025,17 +1025,16 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                     stk_push(stk_i,stk_t,r5,TAG_INT);
                 }
                 if op == OP_SHR_U {
-                    // Logical right shift. TC's `>>` is arithmetic, so we
-                    // clear the sign bit with one manual shift+mask, then
-                    // finish with plain arithmetic shift on the now-positive
-                    // value.
+                    // Logical right shift. TC's plain `>>` is arithmetic,
+                    // but casting to u32 first makes the compiler emit
+                    // shr_u (→ `srl` in asm), which is exactly what we
+                    // want here. Earlier this had to be faked with a
+                    // manual sign-bit mask because of a bootstrap
+                    // circular dependency; shr_u is now available in
+                    // both Gen1 and Gen2.
                     stk_pop(stk_i,stk_t); var b3: i32=g_pop_ival;
                     stk_pop(stk_i,stk_t); var a3: i32=g_pop_ival;
-                    var r3: i32 = a3;
-                    if b3 >= 1 {
-                        r3 = (r3 >> 1) & 0x7FFFFFFF;
-                        r3 = r3 >> (b3 - 1);
-                    }
+                    var r3: i32 = ((a3 as u32) >> (b3 as u32)) as i32;
                     stk_push(stk_i,stk_t,r3,TAG_INT);
                 }
                 if op >= OP_EQ && op <= OP_GE {
