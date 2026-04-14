@@ -26,6 +26,37 @@ export fn buf_set_str(buf: U8Array, start: i32, s: StringLiteral) -> i32 {
     return n;
 }
 
+// Return true iff buf[offset..offset+slice_len] equals `s`
+// byte-for-byte (length included). Replaces the old `if len == N {
+// if cmpN(atom,0, ...) }` scaffolding: one call does both the length
+// check and the byte compare. Works for both "atom at offset 0"
+// (e.g. classify_kind) and "strtab at arbitrary offset" (e.g.
+// bc2asm classify_op). See problem.md R3 for history.
+export fn streq_lit(buf: U8Array, offset: i32, slice_len: i32, s: StringLiteral) -> bool {
+    var sl: i32 = len(s);
+    if slice_len != sl { return false; }
+    var i: i32 = 0;
+    while i < sl {
+        if get(buf, (offset + i)) != get(s, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Return true iff buf[offset..offset+len(s)] matches `s`. Does NOT
+// check overall buf length — caller must know offset + len(s) is in
+// range. Used for "does this substring at N match a literal?" cases
+// like asm.tc's `.rodata` directive detection.
+export fn cmp_lit(buf: U8Array, offset: i32, s: StringLiteral) -> bool {
+    var sl: i32 = len(s);
+    var i: i32 = 0;
+    while i < sl {
+        if get(buf, (offset + i)) != get(s, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
 // Print an error message to stderr.
 export fn print_error(msg: StringLiteral) -> void {
     var eb: StringBuffer = StringBuffer_new();

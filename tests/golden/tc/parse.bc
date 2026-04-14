@@ -1652,6 +1652,107 @@ __L19:
   return_void
 .endfn
 
+.fn streq_lit U8Array i32 i32 StringLiteral bool
+.param buf U8Array
+.param offset i32
+.param slice_len i32
+.param s StringLiteral
+.local sl i32
+.local i i32
+; var sl: i32 = len(s);
+  load s
+  call len StringLiteral
+  store sl
+; if slice_len != sl { return false; }
+  load slice_len
+  load sl
+  ne
+  jump_ifnot __L20
+  push_int 0
+  return
+__L20:
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < sl {
+__L21:
+  load i
+  load sl
+  lt
+  jump_ifnot __L22
+; if get(buf, (offset + i)) != get(s, i) { return false; }
+  load buf
+  load offset
+  load i
+  add
+  call get U8Array i32
+  load s
+  load i
+  call get StringLiteral i32
+  ne
+  jump_ifnot __L23
+  push_int 0
+  return
+__L23:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L21
+__L22:
+; return true;
+  push_int 1
+  return
+  return_void
+.endfn
+
+.fn cmp_lit U8Array i32 StringLiteral bool
+.param buf U8Array
+.param offset i32
+.param s StringLiteral
+.local sl i32
+.local i i32
+; var sl: i32 = len(s);
+  load s
+  call len StringLiteral
+  store sl
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < sl {
+__L24:
+  load i
+  load sl
+  lt
+  jump_ifnot __L25
+; if get(buf, (offset + i)) != get(s, i) { return false; }
+  load buf
+  load offset
+  load i
+  add
+  call get U8Array i32
+  load s
+  load i
+  call get StringLiteral i32
+  ne
+  jump_ifnot __L26
+  push_int 0
+  return
+__L26:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L24
+__L25:
+; return true;
+  push_int 1
+  return
+  return_void
+.endfn
+
 .fn print_error StringLiteral void
 .param msg StringLiteral
 .local eb StringBuffer

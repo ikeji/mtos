@@ -2226,6 +2226,305 @@ __L9:
   return_void
 .endfn
 
+.fn is_digit u8 bool
+.param c u8
+; return c >= '0' && c <= '9';
+  load c
+  push_int 48
+  ge_u
+  jump_ifnot __L0
+  load c
+  push_int 57
+  le_u
+  jump_ifnot __L0
+  push_int 1
+  jump __L1
+__L0:
+  push_int 0
+__L1:
+  return
+  return_void
+.endfn
+
+.fn is_alpha u8 bool
+.param c u8
+; return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+  load c
+  push_int 97
+  ge_u
+  jump_ifnot __L6
+  load c
+  push_int 122
+  le_u
+  jump_ifnot __L6
+  push_int 1
+  jump __L7
+__L6:
+  push_int 0
+__L7:
+  jump_if __L4
+  load c
+  push_int 65
+  ge_u
+  jump_ifnot __L8
+  load c
+  push_int 90
+  le_u
+  jump_ifnot __L8
+  push_int 1
+  jump __L9
+__L8:
+  push_int 0
+__L9:
+  jump_if __L4
+  push_int 0
+  jump __L5
+__L4:
+  push_int 1
+__L5:
+  jump_if __L2
+  load c
+  push_int 95
+  eq
+  jump_if __L2
+  push_int 0
+  jump __L3
+__L2:
+  push_int 1
+__L3:
+  return
+  return_void
+.endfn
+
+.fn is_alnum u8 bool
+.param c u8
+; return is_alpha(c) || is_digit(c);
+  load c
+  call is_alpha u8
+  jump_if __L10
+  load c
+  call is_digit u8
+  jump_if __L10
+  push_int 0
+  jump __L11
+__L10:
+  push_int 1
+__L11:
+  return
+  return_void
+.endfn
+
+.fn is_wspace u8 bool
+.param c u8
+; return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8;
+  load c
+  push_int 32
+  eq
+  jump_if __L16
+  load c
+  push_int 9
+  eq
+  jump_if __L16
+  push_int 0
+  jump __L17
+__L16:
+  push_int 1
+__L17:
+  jump_if __L14
+  load c
+  push_int 10
+  eq
+  jump_if __L14
+  push_int 0
+  jump __L15
+__L14:
+  push_int 1
+__L15:
+  jump_if __L12
+  load c
+  push_int 13
+  eq
+  jump_if __L12
+  push_int 0
+  jump __L13
+__L12:
+  push_int 1
+__L13:
+  return
+  return_void
+.endfn
+
+.fn buf_set_str U8Array i32 StringLiteral i32
+.param buf U8Array
+.param start i32
+.param s StringLiteral
+.local i i32
+.local n i32
+; var i: i32 = 0;
+  push_int 0
+  store i
+; var n: i32 = len(s);
+  load s
+  call len StringLiteral
+  store n
+; while i < n { set(buf, (start + i), get(s, i)); i = i + 1; }
+__L18:
+  load i
+  load n
+  lt
+  jump_ifnot __L19
+  load buf
+  load start
+  load i
+  add
+  load s
+  load i
+  call get StringLiteral i32
+  call set U8Array i32 u8
+  pop
+  load i
+  push_int 1
+  add
+  store i
+  jump __L18
+__L19:
+; return n;
+  load n
+  return
+  return_void
+.endfn
+
+.fn streq_lit U8Array i32 i32 StringLiteral bool
+.param buf U8Array
+.param offset i32
+.param slice_len i32
+.param s StringLiteral
+.local sl i32
+.local i i32
+; var sl: i32 = len(s);
+  load s
+  call len StringLiteral
+  store sl
+; if slice_len != sl { return false; }
+  load slice_len
+  load sl
+  ne
+  jump_ifnot __L20
+  push_int 0
+  return
+__L20:
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < sl {
+__L21:
+  load i
+  load sl
+  lt
+  jump_ifnot __L22
+; if get(buf, (offset + i)) != get(s, i) { return false; }
+  load buf
+  load offset
+  load i
+  add
+  call get U8Array i32
+  load s
+  load i
+  call get StringLiteral i32
+  ne
+  jump_ifnot __L23
+  push_int 0
+  return
+__L23:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L21
+__L22:
+; return true;
+  push_int 1
+  return
+  return_void
+.endfn
+
+.fn cmp_lit U8Array i32 StringLiteral bool
+.param buf U8Array
+.param offset i32
+.param s StringLiteral
+.local sl i32
+.local i i32
+; var sl: i32 = len(s);
+  load s
+  call len StringLiteral
+  store sl
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < sl {
+__L24:
+  load i
+  load sl
+  lt
+  jump_ifnot __L25
+; if get(buf, (offset + i)) != get(s, i) { return false; }
+  load buf
+  load offset
+  load i
+  add
+  call get U8Array i32
+  load s
+  load i
+  call get StringLiteral i32
+  ne
+  jump_ifnot __L26
+  push_int 0
+  return
+__L26:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L24
+__L25:
+; return true;
+  push_int 1
+  return
+  return_void
+.endfn
+
+.fn print_error StringLiteral void
+.param msg StringLiteral
+.local eb StringBuffer
+; var eb: StringBuffer = StringBuffer_new();
+  call StringBuffer_new
+  store eb
+; emit_string(eb, msg);
+  load eb
+  load msg
+  call emit_string StringBuffer StringLiteral
+  pop
+; emit_char(eb, 10u8);
+  load eb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+; write(eb, 2);
+  load eb
+  push_int 2
+  call write StringBuffer i32
+  pop
+; destroy(eb);
+  load eb
+  call destroy StringBuffer
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
 ; globals
 .global NK_PROGRAM i32 0
 .global NK_FN i32 1
@@ -2568,759 +2867,279 @@ __L35:
   return_void
 .endfn
 
-.fn cmp2 U8Array i32 u8 u8 bool
-.param a U8Array
-.param st i32
-.param b0 u8
-.param b1 u8
-; return get(a, st)==b0 && get(a, (st+1))==b1;
-  load a
-  load st
-  call get U8Array i32
-  load b0
-  eq
-  jump_ifnot __L38
-  load a
-  load st
-  push_int 1
-  add
-  call get U8Array i32
-  load b1
-  eq
-  jump_ifnot __L38
-  push_int 1
-  jump __L39
-__L38:
-  push_int 0
-__L39:
-  return
-  return_void
-.endfn
-
-.fn cmp3 U8Array i32 u8 u8 u8 bool
-.param a U8Array
-.param st i32
-.param b0 u8
-.param b1 u8
-.param b2 u8
-; return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2;
-  load a
-  load st
-  call get U8Array i32
-  load b0
-  eq
-  jump_ifnot __L42
-  load a
-  load st
-  push_int 1
-  add
-  call get U8Array i32
-  load b1
-  eq
-  jump_ifnot __L42
-  push_int 1
-  jump __L43
-__L42:
-  push_int 0
-__L43:
-  jump_ifnot __L40
-  load a
-  load st
-  push_int 2
-  add
-  call get U8Array i32
-  load b2
-  eq
-  jump_ifnot __L40
-  push_int 1
-  jump __L41
-__L40:
-  push_int 0
-__L41:
-  return
-  return_void
-.endfn
-
-.fn cmp4 U8Array i32 u8 u8 u8 u8 bool
-.param a U8Array
-.param st i32
-.param b0 u8
-.param b1 u8
-.param b2 u8
-.param b3 u8
-; return get(a,st)==b0 && get(a,(st+1))==b1 &&
-  load a
-  load st
-  call get U8Array i32
-  load b0
-  eq
-  jump_ifnot __L48
-  load a
-  load st
-  push_int 1
-  add
-  call get U8Array i32
-  load b1
-  eq
-  jump_ifnot __L48
-  push_int 1
-  jump __L49
-__L48:
-  push_int 0
-__L49:
-  jump_ifnot __L46
-  load a
-  load st
-  push_int 2
-  add
-  call get U8Array i32
-  load b2
-  eq
-  jump_ifnot __L46
-  push_int 1
-  jump __L47
-__L46:
-  push_int 0
-__L47:
-  jump_ifnot __L44
-  load a
-  load st
-  push_int 3
-  add
-  call get U8Array i32
-  load b3
-  eq
-  jump_ifnot __L44
-  push_int 1
-  jump __L45
-__L44:
-  push_int 0
-__L45:
-  return
-  return_void
-.endfn
-
-.fn cmp5 U8Array i32 u8 u8 u8 u8 u8 bool
-.param a U8Array
-.param st i32
-.param b0 u8
-.param b1 u8
-.param b2 u8
-.param b3 u8
-.param b4 u8
-; return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&
-  load a
-  load st
-  call get U8Array i32
-  load b0
-  eq
-  jump_ifnot __L56
-  load a
-  load st
-  push_int 1
-  add
-  call get U8Array i32
-  load b1
-  eq
-  jump_ifnot __L56
-  push_int 1
-  jump __L57
-__L56:
-  push_int 0
-__L57:
-  jump_ifnot __L54
-  load a
-  load st
-  push_int 2
-  add
-  call get U8Array i32
-  load b2
-  eq
-  jump_ifnot __L54
-  push_int 1
-  jump __L55
-__L54:
-  push_int 0
-__L55:
-  jump_ifnot __L52
-  load a
-  load st
-  push_int 3
-  add
-  call get U8Array i32
-  load b3
-  eq
-  jump_ifnot __L52
-  push_int 1
-  jump __L53
-__L52:
-  push_int 0
-__L53:
-  jump_ifnot __L50
-  load a
-  load st
-  push_int 4
-  add
-  call get U8Array i32
-  load b4
-  eq
-  jump_ifnot __L50
-  push_int 1
-  jump __L51
-__L50:
-  push_int 0
-__L51:
-  return
-  return_void
-.endfn
-
-.fn cmp6 U8Array i32 u8 u8 u8 u8 u8 u8 bool
-.param a U8Array
-.param st i32
-.param b0 u8
-.param b1 u8
-.param b2 u8
-.param b3 u8
-.param b4 u8
-.param b5 u8
-; return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&
-  load a
-  load st
-  call get U8Array i32
-  load b0
-  eq
-  jump_ifnot __L66
-  load a
-  load st
-  push_int 1
-  add
-  call get U8Array i32
-  load b1
-  eq
-  jump_ifnot __L66
-  push_int 1
-  jump __L67
-__L66:
-  push_int 0
-__L67:
-  jump_ifnot __L64
-  load a
-  load st
-  push_int 2
-  add
-  call get U8Array i32
-  load b2
-  eq
-  jump_ifnot __L64
-  push_int 1
-  jump __L65
-__L64:
-  push_int 0
-__L65:
-  jump_ifnot __L62
-  load a
-  load st
-  push_int 3
-  add
-  call get U8Array i32
-  load b3
-  eq
-  jump_ifnot __L62
-  push_int 1
-  jump __L63
-__L62:
-  push_int 0
-__L63:
-  jump_ifnot __L60
-  load a
-  load st
-  push_int 4
-  add
-  call get U8Array i32
-  load b4
-  eq
-  jump_ifnot __L60
-  push_int 1
-  jump __L61
-__L60:
-  push_int 0
-__L61:
-  jump_ifnot __L58
-  load a
-  load st
-  push_int 5
-  add
-  call get U8Array i32
-  load b5
-  eq
-  jump_ifnot __L58
-  push_int 1
-  jump __L59
-__L58:
-  push_int 0
-__L59:
-  return
-  return_void
-.endfn
-
 .fn classify_kind U8Array i32 i32
 .param atom U8Array
 .param len i32
-; if len == 2 {
-  load len
-  push_int 2
-  eq
-  jump_ifnot __L68
-; if cmp2(atom,0, 'f','n')  { return NK_FN; }     // fn
+; if streq_lit(atom, 0, len, "fn")        { return NK_FN; }
   load atom
   push_int 0
-  push_int 102
-  push_int 110
-  call cmp2 U8Array i32 u8 u8
-  jump_ifnot __L69
+  load len
+  push_str 0
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L38
   load NK_FN
   return
-__L69:
-; if cmp2(atom,0, 'i','f')  { return NK_IF; }     // if
+__L38:
+; if streq_lit(atom, 0, len, "if")        { return NK_IF; }
   load atom
   push_int 0
-  push_int 105
-  push_int 102
-  call cmp2 U8Array i32 u8 u8
-  jump_ifnot __L70
+  load len
+  push_str 1
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L39
   load NK_IF
   return
-__L70:
-__L68:
-; if len == 3 {
-  load len
-  push_int 3
-  eq
-  jump_ifnot __L71
-; if cmp3(atom,0, 'r','e','t') { return NK_RET; }   // ret
+__L39:
+; if streq_lit(atom, 0, len, "ret")       { return NK_RET; }
   load atom
   push_int 0
-  push_int 114
-  push_int 101
-  push_int 116
-  call cmp3 U8Array i32 u8 u8 u8
-  jump_ifnot __L72
+  load len
+  push_str 2
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L40
   load NK_RET
   return
-__L72:
-; if cmp3(atom,0, 'i','n','t') { return NK_INT; }   // int
+__L40:
+; if streq_lit(atom, 0, len, "int")       { return NK_INT; }
   load atom
   push_int 0
-  push_int 105
-  push_int 110
-  push_int 116
-  call cmp3 U8Array i32 u8 u8 u8
-  jump_ifnot __L73
+  load len
+  push_str 3
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L41
   load NK_INT
   return
-__L73:
-; if cmp3(atom,0, 's','t','r') { return NK_STR; }   // str
+__L41:
+; if streq_lit(atom, 0, len, "str")       { return NK_STR; }
   load atom
   push_int 0
-  push_int 115
-  push_int 116
-  push_int 114
-  call cmp3 U8Array i32 u8 u8 u8
-  jump_ifnot __L74
+  load len
+  push_str 4
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L42
   load NK_STR
   return
-__L74:
-; if cmp3(atom,0, 'v','a','r')  { return NK_VAR; }   // var
+__L42:
+; if streq_lit(atom, 0, len, "var")       { return NK_VAR; }
   load atom
   push_int 0
-  push_int 118
-  push_int 97
-  push_int 114
-  call cmp3 U8Array i32 u8 u8 u8
-  jump_ifnot __L75
+  load len
+  push_str 5
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L43
   load NK_VAR
   return
-__L75:
-__L71:
-; if len == 4 {
-  load len
-  push_int 4
-  eq
-  jump_ifnot __L76
-; if cmp4(atom,0, 'b','o','o','l') { return NK_BOOL; }   // bool
+__L43:
+; if streq_lit(atom, 0, len, "bool")      { return NK_BOOL; }
   load atom
   push_int 0
-  push_int 98
-  push_int 111
-  push_int 111
-  push_int 108
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L77
+  load len
+  push_str 6
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L44
   load NK_BOOL
   return
-__L77:
-; if cmp4(atom,0, 't','y','p','e') { return NK_TYPE; }  // type
+__L44:
+; if streq_lit(atom, 0, len, "type")      { return NK_TYPE; }
   load atom
   push_int 0
-  push_int 116
-  push_int 121
-  push_int 112
-  push_int 101
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L78
+  load len
+  push_str 7
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L45
   load NK_TYPE
   return
-__L78:
-; if cmp4(atom,0, 'c','a','s','t')   { return NK_CAST; }  // cast
+__L45:
+; if streq_lit(atom, 0, len, "cast")      { return NK_CAST; }
   load atom
   push_int 0
-  push_int 99
-  push_int 97
-  push_int 115
-  push_int 116
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L79
+  load len
+  push_str 8
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L46
   load NK_CAST
   return
-__L79:
-; if cmp4(atom,0, 'c','a','l','l')   { return NK_CALL; }  // call
+__L46:
+; if streq_lit(atom, 0, len, "call")      { return NK_CALL; }
   load atom
   push_int 0
-  push_int 99
-  push_int 97
-  push_int 108
-  push_int 108
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L80
+  load len
+  push_str 9
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L47
   load NK_CALL
   return
-__L80:
-__L76:
-; if len == 5 {
-  load len
-  push_int 5
-  eq
-  jump_ifnot __L81
-; if cmp5(atom,0, 'b','l','o','c','k')   { return NK_BLOCK; }  // block
+__L47:
+; if streq_lit(atom, 0, len, "block")     { return NK_BLOCK; }
   load atom
   push_int 0
-  push_int 98
-  push_int 108
-  push_int 111
-  push_int 99
-  push_int 107
-  call cmp5 U8Array i32 u8 u8 u8 u8 u8
-  jump_ifnot __L82
+  load len
+  push_str 10
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L48
   load NK_BLOCK
   return
-__L82:
-; if cmp5(atom,0, 'p','a','r','a','m')   { return NK_PARAM; }  // param
+__L48:
+; if streq_lit(atom, 0, len, "param")     { return NK_PARAM; }
   load atom
   push_int 0
-  push_int 112
-  push_int 97
-  push_int 114
-  push_int 97
-  push_int 109
-  call cmp5 U8Array i32 u8 u8 u8 u8 u8
-  jump_ifnot __L83
+  load len
+  push_str 11
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L49
   load NK_PARAM
   return
-__L83:
-; if cmp5(atom,0, 'w','h','i','l','e') { return NK_WHILE; }  // while
+__L49:
+; if streq_lit(atom, 0, len, "while")     { return NK_WHILE; }
   load atom
   push_int 0
-  push_int 119
-  push_int 104
-  push_int 105
-  push_int 108
-  push_int 101
-  call cmp5 U8Array i32 u8 u8 u8 u8 u8
-  jump_ifnot __L84
+  load len
+  push_str 12
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L50
   load NK_WHILE
   return
-__L84:
-; if cmp5(atom,0, 'b','i','n','o','p')  { return NK_BINOP; }  // binop
+__L50:
+; if streq_lit(atom, 0, len, "binop")     { return NK_BINOP; }
   load atom
   push_int 0
-  push_int 98
-  push_int 105
-  push_int 110
-  push_int 111
-  push_int 112
-  call cmp5 U8Array i32 u8 u8 u8 u8 u8
-  jump_ifnot __L85
+  load len
+  push_str 13
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L51
   load NK_BINOP
   return
-__L85:
-; if cmp5(atom,0, 'u','n','a','r','y')  { return NK_UNARY; }  // unary
+__L51:
+; if streq_lit(atom, 0, len, "unary")     { return NK_UNARY; }
   load atom
   push_int 0
-  push_int 117
-  push_int 110
-  push_int 97
-  push_int 114
-  push_int 121
-  call cmp5 U8Array i32 u8 u8 u8 u8 u8
-  jump_ifnot __L86
+  load len
+  push_str 14
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L52
   load NK_UNARY
   return
-__L86:
-; if cmp5(atom,0, 'f','i','e','l','d') { return NK_FIELD; }  // field
+__L52:
+; if streq_lit(atom, 0, len, "field")     { return NK_FIELD; }
   load atom
   push_int 0
-  push_int 102
-  push_int 105
-  push_int 101
-  push_int 108
-  push_int 100
-  call cmp5 U8Array i32 u8 u8 u8 u8 u8
-  jump_ifnot __L87
+  load len
+  push_str 15
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L53
   load NK_FIELD
   return
-__L87:
-; if cmp5(atom,0, 'b','r','e','a','k')   { return NK_BREAK; }  // break
+__L53:
+; if streq_lit(atom, 0, len, "break")     { return NK_BREAK; }
   load atom
   push_int 0
-  push_int 98
-  push_int 114
-  push_int 101
-  push_int 97
-  push_int 107
-  call cmp5 U8Array i32 u8 u8 u8 u8 u8
-  jump_ifnot __L88
+  load len
+  push_str 16
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L54
   load NK_BREAK
   return
-__L88:
-__L81:
-; if len == 6 {
-  load len
-  push_int 6
-  eq
-  jump_ifnot __L89
-; if cmp6(atom,0, 'p','a','r','a','m','s')  { return NK_PARAMS; }  // params
+__L54:
+; if streq_lit(atom, 0, len, "params")    { return NK_PARAMS; }
   load atom
   push_int 0
-  push_int 112
-  push_int 97
-  push_int 114
-  push_int 97
-  push_int 109
-  push_int 115
-  call cmp6 U8Array i32 u8 u8 u8 u8 u8 u8
-  jump_ifnot __L90
+  load len
+  push_str 17
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L55
   load NK_PARAMS
   return
-__L90:
-; if cmp6(atom,0, 'r','e','t','u','r','n'){ return NK_RETURN; }  // return
+__L55:
+; if streq_lit(atom, 0, len, "return")    { return NK_RETURN; }
   load atom
   push_int 0
-  push_int 114
-  push_int 101
-  push_int 116
-  push_int 117
-  push_int 114
-  push_int 110
-  call cmp6 U8Array i32 u8 u8 u8 u8 u8 u8
-  jump_ifnot __L91
+  load len
+  push_str 18
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L56
   load NK_RETURN
   return
-__L91:
-; if cmp6(atom,0, 's','t','r','u','c','t') { return NK_STRUCT; }  // struct
+__L56:
+; if streq_lit(atom, 0, len, "struct")    { return NK_STRUCT; }
   load atom
   push_int 0
-  push_int 115
-  push_int 116
-  push_int 114
-  push_int 117
-  push_int 99
-  push_int 116
-  call cmp6 U8Array i32 u8 u8 u8 u8 u8 u8
-  jump_ifnot __L92
+  load len
+  push_str 19
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L57
   load NK_STRUCT
   return
-__L92:
-; if cmp6(atom,0, 'a','s','s','i','g','n') { return NK_ASSIGN; }  // assign
+__L57:
+; if streq_lit(atom, 0, len, "assign")    { return NK_ASSIGN; }
   load atom
   push_int 0
-  push_int 97
-  push_int 115
-  push_int 115
-  push_int 105
-  push_int 103
-  push_int 110
-  call cmp6 U8Array i32 u8 u8 u8 u8 u8 u8
-  jump_ifnot __L93
+  load len
+  push_str 20
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L58
   load NK_ASSIGN
   return
-__L93:
-; if cmp6(atom,0, 'i','m','p','o','r','t'){ return NK_IMPORT; }  // import
+__L58:
+; if streq_lit(atom, 0, len, "import")    { return NK_IMPORT; }
   load atom
   push_int 0
-  push_int 105
-  push_int 109
-  push_int 112
-  push_int 111
-  push_int 114
-  push_int 116
-  call cmp6 U8Array i32 u8 u8 u8 u8 u8 u8
-  jump_ifnot __L94
+  load len
+  push_str 21
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L59
   load NK_IMPORT
   return
-__L94:
-__L89:
-; if len == 7 {
+__L59:
+; if streq_lit(atom, 0, len, "program")   { return NK_PROGRAM; }
+  load atom
+  push_int 0
   load len
-  push_int 7
-  eq
-  jump_ifnot __L95
-; if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {
-  load atom
-  push_int 0
-  push_int 112
-  push_int 114
-  push_int 111
-  push_int 103
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L97
-  load atom
-  push_int 4
-  push_int 114
-  push_int 97
-  push_int 109
-  call cmp3 U8Array i32 u8 u8 u8
-  jump_ifnot __L97
-  push_int 1
-  jump __L98
-__L97:
-  push_int 0
-__L98:
-  jump_ifnot __L96
-; return NK_PROGRAM;
+  push_str 22
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L60
   load NK_PROGRAM
   return
-__L96:
-; if cmp4(atom,0, 'c','o','m','m') && cmp3(atom,4, 'e','n','t') {
+__L60:
+; if streq_lit(atom, 0, len, "comment")   { return NK_COMMENT; }
   load atom
   push_int 0
-  push_int 99
-  push_int 111
-  push_int 109
-  push_int 109
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L100
-  load atom
-  push_int 4
-  push_int 101
-  push_int 110
-  push_int 116
-  call cmp3 U8Array i32 u8 u8 u8
-  jump_ifnot __L100
-  push_int 1
-  jump __L101
-__L100:
-  push_int 0
-__L101:
-  jump_ifnot __L99
-; return NK_COMMENT;
+  load len
+  push_str 23
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L61
   load NK_COMMENT
   return
-__L99:
-__L95:
-; if len == 8 {
+__L61:
+; if streq_lit(atom, 0, len, "var_decl")  { return NK_VAR_DECL; }
+  load atom
+  push_int 0
   load len
-  push_int 8
-  eq
-  jump_ifnot __L102
-; if cmp4(atom,0, 'v','a','r','_') && cmp4(atom,4, 'd','e','c','l') {
-  load atom
-  push_int 0
-  push_int 118
-  push_int 97
-  push_int 114
-  push_int 95
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L104
-  load atom
-  push_int 4
-  push_int 100
-  push_int 101
-  push_int 99
-  push_int 108
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L104
-  push_int 1
-  jump __L105
-__L104:
-  push_int 0
-__L105:
-  jump_ifnot __L103
-; return NK_VAR_DECL;
+  push_str 24
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L62
   load NK_VAR_DECL
   return
-__L103:
-; if cmp4(atom,0, 'c','o','n','t') && cmp4(atom,4, 'i','n','u','e') {
+__L62:
+; if streq_lit(atom, 0, len, "continue")  { return NK_CONTINUE; }
   load atom
   push_int 0
-  push_int 99
-  push_int 111
-  push_int 110
-  push_int 116
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L107
-  load atom
-  push_int 4
-  push_int 105
-  push_int 110
-  push_int 117
-  push_int 101
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L107
-  push_int 1
-  jump __L108
-__L107:
-  push_int 0
-__L108:
-  jump_ifnot __L106
-; return NK_CONTINUE;
+  load len
+  push_str 25
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L63
   load NK_CONTINUE
   return
-__L106:
-__L102:
-; if len == 9 {
+__L63:
+; if streq_lit(atom, 0, len, "call_stmt") { return NK_CALL_STMT; }
+  load atom
+  push_int 0
   load len
-  push_int 9
-  eq
-  jump_ifnot __L109
-; if cmp4(atom,0, 'c','a','l','l') && cmp5(atom,4, '_','s','t','m','t') {
-  load atom
-  push_int 0
-  push_int 99
-  push_int 97
-  push_int 108
-  push_int 108
-  call cmp4 U8Array i32 u8 u8 u8 u8
-  jump_ifnot __L111
-  load atom
-  push_int 4
-  push_int 95
-  push_int 115
-  push_int 116
-  push_int 109
-  push_int 116
-  call cmp5 U8Array i32 u8 u8 u8 u8 u8
-  jump_ifnot __L111
-  push_int 1
-  jump __L112
-__L111:
-  push_int 0
-__L112:
-  jump_ifnot __L110
-; return NK_CALL_STMT;
+  push_str 26
+  call streq_lit U8Array i32 i32 StringLiteral
+  jump_ifnot __L64
   load NK_CALL_STMT
   return
-__L110:
-__L109:
+__L64:
 ; return NK_UNKNOWN;
   load NK_UNKNOWN
   return
@@ -3333,16 +3152,16 @@ __L109:
   load c
   push_int 48
   ge_u
-  jump_ifnot __L113
+  jump_ifnot __L65
   load c
   push_int 57
   le_u
-  jump_ifnot __L113
+  jump_ifnot __L65
   push_int 1
-  jump __L114
-__L113:
+  jump __L66
+__L65:
   push_int 0
-__L114:
+__L66:
   return
   return_void
 .endfn
@@ -3374,20 +3193,20 @@ __L114:
 ; if at_eof(g_reader) { return -1; }
   load g_reader
   call at_eof SourceReader
-  jump_ifnot __L115
+  jump_ifnot __L67
   push_int 1
   neg
   return
-__L115:
+__L67:
 ; if peek_in() != '(' { return -1; }  // not '('
   call peek_in
   push_int 40
   ne
-  jump_ifnot __L116
+  jump_ifnot __L68
   push_int 1
   neg
   return
-__L116:
+__L68:
 ; next(g_reader);
   load g_reader
   call next SourceReader
@@ -3403,30 +3222,30 @@ __L116:
   push_int 0
   store actual_klen
 ; while actual_klen < klen && get(atom, actual_klen) != ':' {
-__L117:
+__L69:
   load actual_klen
   load klen
   lt
-  jump_ifnot __L119
+  jump_ifnot __L71
   load atom
   load actual_klen
   call get U8Array i32
   push_int 58
   ne
-  jump_ifnot __L119
+  jump_ifnot __L71
   push_int 1
-  jump __L120
-__L119:
+  jump __L72
+__L71:
   push_int 0
-__L120:
-  jump_ifnot __L118
+__L72:
+  jump_ifnot __L70
 ; actual_klen = actual_klen + 1;
   load actual_klen
   push_int 1
   add
   store actual_klen
-  jump __L117
-__L118:
+  jump __L69
+__L70:
 ; var kind_code: i32 = classify_kind(atom, actual_klen);
   load atom
   load actual_klen
@@ -3441,7 +3260,7 @@ __L118:
   load actual_klen
   load klen
   lt
-  jump_ifnot __L121
+  jump_ifnot __L73
 ; var tss: i32 = g_sp;
   load g_sp
   store tss
@@ -3458,11 +3277,11 @@ __L118:
   add
   store ti
 ; while ti < klen {
-__L122:
+__L74:
   load ti
   load klen
   lt
-  jump_ifnot __L123
+  jump_ifnot __L75
 ; set(strtab, g_sp, get(atom, ti));
   load strtab
   load g_sp
@@ -3481,8 +3300,8 @@ __L122:
   push_int 1
   add
   store ti
-  jump __L122
-__L123:
+  jump __L74
+__L75:
 ; n_set_tass(nodes, n, tss);
   load nodes
   load n
@@ -3495,7 +3314,7 @@ __L123:
   load tasl
   call n_set_tasl AstNodeArray i32 i32
   pop
-__L121:
+__L73:
 ; skip_ws_in();
   call skip_ws_in
   pop
@@ -3506,27 +3325,27 @@ __L121:
   load kind_code
   load NK_STR
   eq
-  jump_if __L128
+  jump_if __L80
   load kind_code
   load NK_COMMENT
   eq
-  jump_if __L128
+  jump_if __L80
   push_int 0
-  jump __L129
-__L128:
+  jump __L81
+__L80:
   push_int 1
-__L129:
-  jump_ifnot __L126
+__L81:
+  jump_ifnot __L78
   load c
   push_int 34
   eq
-  jump_ifnot __L126
+  jump_ifnot __L78
   push_int 1
-  jump __L127
-__L126:
+  jump __L79
+__L78:
   push_int 0
-__L127:
-  jump_ifnot __L124
+__L79:
+  jump_ifnot __L76
 ; next(g_reader); // consume opening '"'
   load g_reader
   call next SourceReader
@@ -3538,26 +3357,26 @@ __L127:
   call peek_in
   store ch
 ; while ch != '"' && ch != 0u8 {
-__L130:
+__L82:
   load ch
   push_int 34
   ne
-  jump_ifnot __L132
+  jump_ifnot __L84
   load ch
   push_int 0
   ne
-  jump_ifnot __L132
+  jump_ifnot __L84
   push_int 1
-  jump __L133
-__L132:
+  jump __L85
+__L84:
   push_int 0
-__L133:
-  jump_ifnot __L131
+__L85:
+  jump_ifnot __L83
 ; if ch == '\\' {
   load ch
   push_int 92
   eq
-  jump_ifnot __L134
+  jump_ifnot __L86
 ; next(g_reader);
   load g_reader
   call next SourceReader
@@ -3569,91 +3388,91 @@ __L133:
   load esc
   push_int 110
   eq
-  jump_ifnot __L135
+  jump_ifnot __L87
   push_int 10
   store ch
-__L135:
+__L87:
 ; if esc == 't'  { ch = 9u8; }
   load esc
   push_int 116
   eq
-  jump_ifnot __L136
+  jump_ifnot __L88
   push_int 9
   store ch
-__L136:
+__L88:
 ; if esc == 'r'  { ch = 13u8; }
   load esc
   push_int 114
   eq
-  jump_ifnot __L137
+  jump_ifnot __L89
   push_int 13
   store ch
-__L137:
+__L89:
 ; if esc == '\\' { ch = '\\'; }
   load esc
   push_int 92
   eq
-  jump_ifnot __L138
+  jump_ifnot __L90
   push_int 92
   store ch
-__L138:
+__L90:
 ; if esc == '"'  { ch = '"'; }
   load esc
   push_int 34
   eq
-  jump_ifnot __L139
+  jump_ifnot __L91
   push_int 34
   store ch
-__L139:
+__L91:
 ; if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\' && esc != '"' { ch = esc; }
   load esc
   push_int 110
   ne
-  jump_ifnot __L147
+  jump_ifnot __L99
   load esc
   push_int 116
   ne
-  jump_ifnot __L147
+  jump_ifnot __L99
   push_int 1
-  jump __L148
-__L147:
+  jump __L100
+__L99:
   push_int 0
-__L148:
-  jump_ifnot __L145
+__L100:
+  jump_ifnot __L97
   load esc
   push_int 114
   ne
-  jump_ifnot __L145
+  jump_ifnot __L97
   push_int 1
-  jump __L146
-__L145:
+  jump __L98
+__L97:
   push_int 0
-__L146:
-  jump_ifnot __L143
+__L98:
+  jump_ifnot __L95
   load esc
   push_int 92
   ne
-  jump_ifnot __L143
+  jump_ifnot __L95
   push_int 1
-  jump __L144
-__L143:
+  jump __L96
+__L95:
   push_int 0
-__L144:
-  jump_ifnot __L141
+__L96:
+  jump_ifnot __L93
   load esc
   push_int 34
   ne
-  jump_ifnot __L141
+  jump_ifnot __L93
   push_int 1
-  jump __L142
-__L141:
+  jump __L94
+__L93:
   push_int 0
-__L142:
-  jump_ifnot __L140
+__L94:
+  jump_ifnot __L92
   load esc
   store ch
-__L140:
-__L134:
+__L92:
+__L86:
 ; set(strtab, g_sp, ch);
   load strtab
   load g_sp
@@ -3672,17 +3491,17 @@ __L134:
 ; ch = peek_in();
   call peek_in
   store ch
-  jump __L130
-__L131:
+  jump __L82
+__L83:
 ; if ch == '"' { next(g_reader); } // consume closing '"'
   load ch
   push_int 34
   eq
-  jump_ifnot __L149
+  jump_ifnot __L101
   load g_reader
   call next SourceReader
   pop
-__L149:
+__L101:
 ; n_set_ss(nodes, n, ss);
   load nodes
   load n
@@ -3700,32 +3519,32 @@ __L149:
 ; skip_ws_in();
   call skip_ws_in
   pop
-  jump __L125
-__L124:
+  jump __L77
+__L76:
   load c
   push_int 40
   ne
-  jump_ifnot __L153
+  jump_ifnot __L105
   load c
   push_int 41
   ne
-  jump_ifnot __L153
+  jump_ifnot __L105
   push_int 1
-  jump __L154
-__L153:
+  jump __L106
+__L105:
   push_int 0
-__L154:
-  jump_ifnot __L151
+__L106:
+  jump_ifnot __L103
   load c
   push_int 0
   ne
-  jump_ifnot __L151
+  jump_ifnot __L103
   push_int 1
-  jump __L152
-__L151:
+  jump __L104
+__L103:
   push_int 0
-__L152:
-  jump_ifnot __L150
+__L104:
+  jump_ifnot __L102
 ; var vlen: i32 = read_atom_in(atom);
   load atom
   call read_atom_in U8Array
@@ -3734,40 +3553,40 @@ __L152:
   load kind_code
   load NK_INT
   eq
-  jump_ifnot __L159
+  jump_ifnot __L111
   load vlen
   push_int 0
   gt
-  jump_ifnot __L159
+  jump_ifnot __L111
   push_int 1
-  jump __L160
-__L159:
+  jump __L112
+__L111:
   push_int 0
-__L160:
-  jump_ifnot __L157
+__L112:
+  jump_ifnot __L109
   load atom
   push_int 0
   call get U8Array i32
   call is_digit_c u8
-  jump_if __L161
+  jump_if __L113
   load atom
   push_int 0
   call get U8Array i32
   push_int 45
   eq
-  jump_if __L161
+  jump_if __L113
   push_int 0
-  jump __L162
-__L161:
+  jump __L114
+__L113:
   push_int 1
-__L162:
-  jump_ifnot __L157
+__L114:
+  jump_ifnot __L109
   push_int 1
-  jump __L158
-__L157:
+  jump __L110
+__L109:
   push_int 0
-__L158:
-  jump_ifnot __L155
+__L110:
+  jump_ifnot __L107
 ; var ival: i32 = 0;
   push_int 0
   store ival
@@ -3783,18 +3602,18 @@ __L158:
   call get U8Array i32
   push_int 45
   eq
-  jump_ifnot __L163
+  jump_ifnot __L115
   push_int 1
   store neg
   push_int 1
   store ii
-__L163:
+__L115:
 ; while ii < vlen {
-__L164:
+__L116:
   load ii
   load vlen
   lt
-  jump_ifnot __L165
+  jump_ifnot __L117
 ; ival = ival * 10 + (get(atom, ii) as i32 - 48);
   load ival
   push_int 10
@@ -3812,26 +3631,26 @@ __L164:
   push_int 1
   add
   store ii
-  jump __L164
-__L165:
+  jump __L116
+__L117:
 ; if neg == 1 { ival = 0 - ival; }
   load neg
   push_int 1
   eq
-  jump_ifnot __L166
+  jump_ifnot __L118
   push_int 0
   load ival
   sub
   store ival
-__L166:
+__L118:
 ; n_set_ival(nodes, n, ival);
   load nodes
   load n
   load ival
   call n_set_ival AstNodeArray i32 i32
   pop
-  jump __L156
-__L155:
+  jump __L108
+__L107:
 ; var ss: i32 = g_sp;
   load g_sp
   store ss
@@ -3839,11 +3658,11 @@ __L155:
   push_int 0
   store ii
 ; while ii < vlen {
-__L167:
+__L119:
   load ii
   load vlen
   lt
-  jump_ifnot __L168
+  jump_ifnot __L120
 ; set(strtab, g_sp, get(atom, ii));
   load strtab
   load g_sp
@@ -3862,8 +3681,8 @@ __L167:
   push_int 1
   add
   store ii
-  jump __L167
-__L168:
+  jump __L119
+__L120:
 ; n_set_ss(nodes, n, ss);
   load nodes
   load n
@@ -3876,12 +3695,12 @@ __L168:
   load vlen
   call n_set_sl AstNodeArray i32 i32
   pop
-__L156:
+__L108:
 ; skip_ws_in();
   call skip_ws_in
   pop
-__L150:
-__L125:
+__L102:
+__L77:
 ; c = peek_in();
   call peek_in
   store c
@@ -3890,11 +3709,11 @@ __L125:
   neg
   store last_child
 ; while c == '(' {
-__L169:
+__L121:
   load c
   push_int 40
   eq
-  jump_ifnot __L170
+  jump_ifnot __L122
 ; var child: i32 = read_node(atom, nodes, strtab);
   load atom
   load nodes
@@ -3905,48 +3724,48 @@ __L169:
   load child
   push_int 0
   ge
-  jump_ifnot __L171
+  jump_ifnot __L123
 ; if last_child < 0 {
   load last_child
   push_int 0
   lt
-  jump_ifnot __L172
+  jump_ifnot __L124
 ; n_set_child(nodes, n, child);
   load nodes
   load n
   load child
   call n_set_child AstNodeArray i32 i32
   pop
-  jump __L173
-__L172:
+  jump __L125
+__L124:
 ; n_set_sib(nodes, last_child, child);
   load nodes
   load last_child
   load child
   call n_set_sib AstNodeArray i32 i32
   pop
-__L173:
+__L125:
 ; last_child = child;
   load child
   store last_child
-__L171:
+__L123:
 ; skip_ws_in();
   call skip_ws_in
   pop
 ; c = peek_in();
   call peek_in
   store c
-  jump __L169
-__L170:
+  jump __L121
+__L122:
 ; if peek_in() == ')' { next(g_reader); }
   call peek_in
   push_int 41
   eq
-  jump_ifnot __L174
+  jump_ifnot __L126
   load g_reader
   call next SourceReader
   pop
-__L174:
+__L126:
 ; return n;
   load n
   return
@@ -3964,19 +3783,19 @@ __L174:
   load sl
   load bl
   ne
-  jump_ifnot __L175
+  jump_ifnot __L127
   push_int 0
   return
-__L175:
+__L127:
 ; var i: i32 = 0;
   push_int 0
   store i
 ; while i < sl {
-__L176:
+__L128:
   load i
   load sl
   lt
-  jump_ifnot __L177
+  jump_ifnot __L129
 ; if get(strtab, (ss+i)) != get(b, i) { return false; }
   load strtab
   load ss
@@ -3987,17 +3806,17 @@ __L176:
   load i
   call get U8Array i32
   ne
-  jump_ifnot __L178
+  jump_ifnot __L130
   push_int 0
   return
-__L178:
+__L130:
 ; i = i + 1;
   load i
   push_int 1
   add
   store i
-  jump __L176
-__L177:
+  jump __L128
+__L129:
 ; return true;
   push_int 1
   return
@@ -4013,10 +3832,10 @@ __L177:
   load sl
   push_int 1
   ne
-  jump_ifnot __L179
+  jump_ifnot __L131
   push_int 0
   return
-__L179:
+__L131:
 ; return get(strtab, ss) == c0;
   load strtab
   load ss
@@ -4037,17 +3856,17 @@ __L179:
   load sl
   push_int 2
   ne
-  jump_ifnot __L180
+  jump_ifnot __L132
   push_int 0
   return
-__L180:
+__L132:
 ; return get(strtab,ss)==c0 && get(strtab,(ss+1))==c1;
   load strtab
   load ss
   call get U8Array i32
   load c0
   eq
-  jump_ifnot __L181
+  jump_ifnot __L133
   load strtab
   load ss
   push_int 1
@@ -4055,12 +3874,12 @@ __L180:
   call get U8Array i32
   load c1
   eq
-  jump_ifnot __L181
+  jump_ifnot __L133
   push_int 1
-  jump __L182
-__L181:
+  jump __L134
+__L133:
   push_int 0
-__L182:
+__L134:
   return
   return_void
 .endfn
@@ -4080,11 +3899,11 @@ __L182:
   push_int 0
   store i
 ; while i < g_slc {
-__L183:
+__L135:
   load i
   load g_slc
   lt
-  jump_ifnot __L184
+  jump_ifnot __L136
 ; var base: i32 = i * 2;
   load i
   push_int 2
@@ -4106,7 +3925,7 @@ __L183:
   load el
   load sl
   eq
-  jump_ifnot __L185
+  jump_ifnot __L137
 ; var match: i32 = 1;
   push_int 1
   store match
@@ -4114,21 +3933,21 @@ __L183:
   push_int 0
   store j
 ; while j < sl && match == 1 {
-__L186:
+__L138:
   load j
   load sl
   lt
-  jump_ifnot __L188
+  jump_ifnot __L140
   load match
   push_int 1
   eq
-  jump_ifnot __L188
+  jump_ifnot __L140
   push_int 1
-  jump __L189
-__L188:
+  jump __L141
+__L140:
   push_int 0
-__L189:
-  jump_ifnot __L187
+__L141:
+  jump_ifnot __L139
 ; if get(strtab,(ss+j)) != get(strtab,(es+j)) { match = 0; }
   load strtab
   load ss
@@ -4141,33 +3960,33 @@ __L189:
   add
   call get U8Array i32
   ne
-  jump_ifnot __L190
+  jump_ifnot __L142
   push_int 0
   store match
-__L190:
+__L142:
 ; j = j + 1;
   load j
   push_int 1
   add
   store j
-  jump __L186
-__L187:
+  jump __L138
+__L139:
 ; if match == 1 { return i; }
   load match
   push_int 1
   eq
-  jump_ifnot __L191
+  jump_ifnot __L143
   load i
   return
-__L191:
-__L185:
+__L143:
+__L137:
 ; i = i + 1;
   load i
   push_int 1
   add
   store i
-  jump __L183
-__L184:
+  jump __L135
+__L136:
 ; return -1;
   push_int 1
   neg
@@ -4193,10 +4012,10 @@ __L184:
   load idx
   push_int 0
   ge
-  jump_ifnot __L192
+  jump_ifnot __L144
   load idx
   return
-__L192:
+__L144:
 ; var base: i32 = g_slc * 2;
   load g_slc
   push_int 2
@@ -4245,11 +4064,11 @@ __L192:
   push_int 0
   store i
 ; while i < g_locc {
-__L193:
+__L145:
   load i
   load g_locc
   lt
-  jump_ifnot __L194
+  jump_ifnot __L146
 ; var b: i32 = i * 4;
   load i
   push_int 4
@@ -4271,7 +4090,7 @@ __L193:
   load el
   load nsl
   eq
-  jump_ifnot __L195
+  jump_ifnot __L147
 ; var match: i32 = 1;
   push_int 1
   store match
@@ -4279,21 +4098,21 @@ __L193:
   push_int 0
   store j
 ; while j < nsl && match == 1 {
-__L196:
+__L148:
   load j
   load nsl
   lt
-  jump_ifnot __L198
+  jump_ifnot __L150
   load match
   push_int 1
   eq
-  jump_ifnot __L198
+  jump_ifnot __L150
   push_int 1
-  jump __L199
-__L198:
+  jump __L151
+__L150:
   push_int 0
-__L199:
-  jump_ifnot __L197
+__L151:
+  jump_ifnot __L149
 ; if get(strtab,(nss+j)) != get(strtab,(es+j)) { match = 0; }
   load strtab
   load nss
@@ -4306,33 +4125,33 @@ __L199:
   add
   call get U8Array i32
   ne
-  jump_ifnot __L200
+  jump_ifnot __L152
   push_int 0
   store match
-__L200:
+__L152:
 ; j = j + 1;
   load j
   push_int 1
   add
   store j
-  jump __L196
-__L197:
+  jump __L148
+__L149:
 ; if match == 1 { return i; }
   load match
   push_int 1
   eq
-  jump_ifnot __L201
+  jump_ifnot __L153
   load i
   return
-__L201:
-__L195:
+__L153:
+__L147:
 ; i = i + 1;
   load i
   push_int 1
   add
   store i
-  jump __L193
-__L194:
+  jump __L145
+__L146:
 ; return -1;
   push_int 1
   neg
@@ -4356,9 +4175,9 @@ __L194:
   call locals_find U8Array I32Array i32 i32
   push_int 0
   ge
-  jump_ifnot __L202
+  jump_ifnot __L154
   return_void
-__L202:
+__L154:
 ; var b: i32 = g_locc * 4;
   load g_locc
   push_int 4
@@ -4421,7 +4240,7 @@ __L202:
   load k
   load NK_VAR_DECL
   eq
-  jump_ifnot __L203
+  jump_ifnot __L155
 ; var type_n: i32 = n_child(nodes, n);
   load nodes
   load n
@@ -4431,7 +4250,7 @@ __L202:
   load type_n
   push_int 0
   ge
-  jump_ifnot __L204
+  jump_ifnot __L156
 ; locals_add_entry(strtab, locals,
   load strtab
   load locals
@@ -4449,15 +4268,15 @@ __L202:
   call n_sl AstNodeArray i32
   call locals_add_entry U8Array I32Array i32 i32 i32 i32
   pop
-__L204:
+__L156:
 ; return;
   return_void
-__L203:
+__L155:
 ; if k == NK_IF {
   load k
   load NK_IF
   eq
-  jump_ifnot __L205
+  jump_ifnot __L157
 ; collect_locals_block(nodes, strtab, locals, n_nth_child(nodes, n, 1));
   load nodes
   load strtab
@@ -4478,14 +4297,14 @@ __L203:
   load ec
   push_int 0
   ge
-  jump_ifnot __L206
+  jump_ifnot __L158
 ; if n_kind(nodes, ec) == NK_IF {
   load nodes
   load ec
   call n_kind AstNodeArray i32
   load NK_IF
   eq
-  jump_ifnot __L207
+  jump_ifnot __L159
 ; collect_locals_stmt(nodes, strtab, locals, ec);
   load nodes
   load strtab
@@ -4493,8 +4312,8 @@ __L203:
   load ec
   call collect_locals_stmt AstNodeArray U8Array I32Array i32
   pop
-  jump __L208
-__L207:
+  jump __L160
+__L159:
 ; collect_locals_block(nodes, strtab, locals, ec);
   load nodes
   load strtab
@@ -4502,16 +4321,16 @@ __L207:
   load ec
   call collect_locals_block AstNodeArray U8Array I32Array i32
   pop
-__L208:
-__L206:
+__L160:
+__L158:
 ; return;
   return_void
-__L205:
+__L157:
 ; if k == NK_WHILE {
   load k
   load NK_WHILE
   eq
-  jump_ifnot __L209
+  jump_ifnot __L161
 ; collect_locals_block(nodes, strtab, locals, n_nth_child(nodes, n, 1));
   load nodes
   load strtab
@@ -4524,7 +4343,7 @@ __L205:
   pop
 ; return;
   return_void
-__L209:
+__L161:
 ; return;
   return_void
   return_void
@@ -4542,11 +4361,11 @@ __L209:
   call n_child AstNodeArray i32
   store c
 ; while c >= 0 {
-__L210:
+__L162:
   load c
   push_int 0
   ge
-  jump_ifnot __L211
+  jump_ifnot __L163
 ; collect_locals_stmt(nodes, strtab, locals, c);
   load nodes
   load strtab
@@ -4559,8 +4378,8 @@ __L210:
   load c
   call n_sib AstNodeArray i32
   store c
-  jump __L210
-__L211:
+  jump __L162
+__L163:
 ; return;
   return_void
   return_void
@@ -4580,11 +4399,11 @@ __L211:
   call n_child AstNodeArray i32
   store c
 ; while c >= 0 {
-__L212:
+__L164:
   load c
   push_int 0
   ge
-  jump_ifnot __L213
+  jump_ifnot __L165
 ; cg_stmt(nodes, strtab, slits, ob, loop_stk, c);
   load nodes
   load strtab
@@ -4599,8 +4418,8 @@ __L212:
   load c
   call n_sib AstNodeArray i32
   store c
-  jump __L212
-__L213:
+  jump __L164
+__L165:
 ; return;
   return_void
   return_void
@@ -4635,7 +4454,7 @@ __L213:
   load k
   load NK_COMMENT
   eq
-  jump_ifnot __L214
+  jump_ifnot __L166
 ; emit_char(ob, ';'); emit_char(ob, ' ');
   load ob
   push_int 59
@@ -4663,12 +4482,12 @@ __L213:
   pop
 ; return;
   return_void
-__L214:
+__L166:
 ; if k == NK_VAR_DECL {
   load k
   load NK_VAR_DECL
   eq
-  jump_ifnot __L215
+  jump_ifnot __L167
 ; var init: i32 = n_nth_child(nodes, n, 1);
   load nodes
   load n
@@ -4679,7 +4498,7 @@ __L214:
   load init
   push_int 0
   ge
-  jump_ifnot __L216
+  jump_ifnot __L168
 ; cg_expr(nodes, strtab, slits, ob, init);
   load nodes
   load strtab
@@ -4688,8 +4507,8 @@ __L214:
   load init
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-  jump __L217
-__L216:
+  jump __L169
+__L168:
 ; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
@@ -4745,7 +4564,7 @@ __L216:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L217:
+__L169:
 ; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
@@ -4797,12 +4616,12 @@ __L217:
   pop
 ; return;
   return_void
-__L215:
+__L167:
 ; if k == NK_ASSIGN {
   load k
   load NK_ASSIGN
   eq
-  jump_ifnot __L218
+  jump_ifnot __L170
 ; cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
   load nodes
   load strtab
@@ -4864,12 +4683,12 @@ __L215:
   pop
 ; return;
   return_void
-__L218:
+__L170:
 ; if k == NK_CALL_STMT {
   load k
   load NK_CALL_STMT
   eq
-  jump_ifnot __L219
+  jump_ifnot __L171
 ; var args: I32Array = I32Array(24u32);
   push_int 24
   call I32Array u32
@@ -4883,21 +4702,21 @@ __L218:
   call n_child AstNodeArray i32
   store c
 ; while c >= 0 && nargs < 24 {
-__L220:
+__L172:
   load c
   push_int 0
   ge
-  jump_ifnot __L222
+  jump_ifnot __L174
   load nargs
   push_int 24
   lt
-  jump_ifnot __L222
+  jump_ifnot __L174
   push_int 1
-  jump __L223
-__L222:
+  jump __L175
+__L174:
   push_int 0
-__L223:
-  jump_ifnot __L221
+__L175:
+  jump_ifnot __L173
 ; set(args, nargs, c);
   load args
   load nargs
@@ -4914,17 +4733,17 @@ __L223:
   load c
   call n_sib AstNodeArray i32
   store c
-  jump __L220
-__L221:
+  jump __L172
+__L173:
 ; var ai: i32 = 0;
   push_int 0
   store ai
 ; while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }
-__L224:
+__L176:
   load ai
   load nargs
   lt
-  jump_ifnot __L225
+  jump_ifnot __L177
   load nodes
   load strtab
   load slits
@@ -4938,8 +4757,8 @@ __L224:
   push_int 1
   add
   store ai
-  jump __L224
-__L225:
+  jump __L176
+__L177:
 ; delete(args);
   load args
   call delete I32Array
@@ -4991,11 +4810,11 @@ __L225:
   call n_child AstNodeArray i32
   store c
 ; while c >= 0 {
-__L226:
+__L178:
   load c
   push_int 0
   ge
-  jump_ifnot __L227
+  jump_ifnot __L179
 ; emit_char(ob, ' ');
   load ob
   push_int 32
@@ -5010,7 +4829,7 @@ __L226:
   load tsl
   push_int 0
   gt
-  jump_ifnot __L228
+  jump_ifnot __L180
 ; emit_n(ob, strtab, n_tass(nodes,c), tsl);
   load ob
   load strtab
@@ -5020,21 +4839,21 @@ __L226:
   load tsl
   call emit_n StringBuffer U8Array i32 i32
   pop
-  jump __L229
-__L228:
+  jump __L181
+__L180:
 ; emit_char(ob, '?');
   load ob
   push_int 63
   call emit_char StringBuffer u8
   pop
-__L229:
+__L181:
 ; c = n_sib(nodes, c);
   load nodes
   load c
   call n_sib AstNodeArray i32
   store c
-  jump __L226
-__L227:
+  jump __L178
+__L179:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -5067,12 +4886,12 @@ __L227:
   pop
 ; return;
   return_void
-__L219:
+__L171:
 ; if k == NK_IF {
   load k
   load NK_IF
   eq
-  jump_ifnot __L230
+  jump_ifnot __L182
 ; var nc: i32 = n_nchildren(nodes, n);
   load nodes
   load n
@@ -5082,7 +4901,7 @@ __L219:
   load nc
   push_int 2
   gt
-  jump_ifnot __L231
+  jump_ifnot __L183
 ; var lelse: i32 = g_lc; g_lc = g_lc + 1;
   load g_lc
   store lelse
@@ -5284,7 +5103,7 @@ __L219:
   call n_kind AstNodeArray i32
   load NK_IF
   eq
-  jump_ifnot __L233
+  jump_ifnot __L185
 ; cg_stmt(nodes, strtab, slits, ob, loop_stk, else_n);
   load nodes
   load strtab
@@ -5294,8 +5113,8 @@ __L219:
   load else_n
   call cg_stmt AstNodeArray U8Array I32Array StringBuffer I32Array i32
   pop
-  jump __L234
-__L233:
+  jump __L186
+__L185:
 ; cg_block(nodes, strtab, slits, ob, loop_stk, else_n);
   load nodes
   load strtab
@@ -5305,7 +5124,7 @@ __L233:
   load else_n
   call cg_block AstNodeArray U8Array I32Array StringBuffer I32Array i32
   pop
-__L234:
+__L186:
 ; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);
   load ob
   push_int 95
@@ -5331,8 +5150,8 @@ __L234:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  jump __L232
-__L231:
+  jump __L184
+__L183:
 ; var lend: i32 = g_lc; g_lc = g_lc + 1;
   load g_lc
   store lend
@@ -5464,15 +5283,15 @@ __L231:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L232:
+__L184:
 ; return;
   return_void
-__L230:
+__L182:
 ; if k == NK_WHILE {
   load k
   load NK_WHILE
   eq
-  jump_ifnot __L235
+  jump_ifnot __L187
 ; var lloop: i32 = g_lc; g_lc = g_lc + 1;
   load g_lc
   store lloop
@@ -5717,12 +5536,12 @@ __L230:
   store g_loop_depth
 ; return;
   return_void
-__L235:
+__L187:
 ; if k == NK_BREAK {
   load k
   load NK_BREAK
   eq
-  jump_ifnot __L236
+  jump_ifnot __L188
 ; var lend: i32 = get(loop_stk, (g_loop_depth*2-1));
   load loop_stk
   load g_loop_depth
@@ -5785,12 +5604,12 @@ __L235:
   pop
 ; return;
   return_void
-__L236:
+__L188:
 ; if k == NK_CONTINUE {
   load k
   load NK_CONTINUE
   eq
-  jump_ifnot __L237
+  jump_ifnot __L189
 ; var lloop: i32 = get(loop_stk, (g_loop_depth*2-2));
   load loop_stk
   load g_loop_depth
@@ -5853,12 +5672,12 @@ __L236:
   pop
 ; return;
   return_void
-__L237:
+__L189:
 ; if k == NK_RETURN {
   load k
   load NK_RETURN
   eq
-  jump_ifnot __L238
+  jump_ifnot __L190
 ; var v: i32 = n_child(nodes, n);
   load nodes
   load n
@@ -5868,7 +5687,7 @@ __L237:
   load v
   push_int 0
   ge
-  jump_ifnot __L239
+  jump_ifnot __L191
 ; cg_expr(nodes, strtab, slits, ob, v);
   load nodes
   load strtab
@@ -5915,8 +5734,8 @@ __L237:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  jump __L240
-__L239:
+  jump __L192
+__L191:
 ; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
@@ -5976,10 +5795,10 @@ __L239:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L240:
+__L192:
 ; return;
   return_void
-__L238:
+__L190:
 ; return;
   return_void
   return_void
@@ -6007,7 +5826,7 @@ __L238:
   load sl
   push_int 43
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L241
+  jump_ifnot __L193
   load ob
   push_int 97
   call emit_char StringBuffer u8
@@ -6025,14 +5844,14 @@ __L238:
   call emit_char StringBuffer u8
   pop
   return_void
-__L241:
+__L193:
 ; if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub
   load strtab
   load ss
   load sl
   push_int 45
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L242
+  jump_ifnot __L194
   load ob
   push_int 115
   call emit_char StringBuffer u8
@@ -6050,14 +5869,14 @@ __L241:
   call emit_char StringBuffer u8
   pop
   return_void
-__L242:
+__L194:
 ; if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul
   load strtab
   load ss
   load sl
   push_int 42
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L243
+  jump_ifnot __L195
   load ob
   push_int 109
   call emit_char StringBuffer u8
@@ -6075,14 +5894,14 @@ __L242:
   call emit_char StringBuffer u8
   pop
   return_void
-__L243:
+__L195:
 ; if sv1(strtab,ss,sl, '/') {
   load strtab
   load ss
   load sl
   push_int 47
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L244
+  jump_ifnot __L196
 ; emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');
   load ob
   push_int 100
@@ -6100,19 +5919,19 @@ __L243:
   load tasl
   push_int 0
   gt
-  jump_ifnot __L246
+  jump_ifnot __L198
   load strtab
   load tass
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L246
+  jump_ifnot __L198
   push_int 1
-  jump __L247
-__L246:
+  jump __L199
+__L198:
   push_int 0
-__L247:
-  jump_ifnot __L245
+__L199:
+  jump_ifnot __L197
 ; emit_char(ob, '_');emit_char(ob, 'u');
   load ob
   push_int 95
@@ -6122,7 +5941,7 @@ __L247:
   push_int 117
   call emit_char StringBuffer u8
   pop
-__L245:
+__L197:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -6130,14 +5949,14 @@ __L245:
   pop
 ; return;
   return_void
-__L244:
+__L196:
 ; if sv1(strtab,ss,sl, '%') {
   load strtab
   load ss
   load sl
   push_int 37
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L248
+  jump_ifnot __L200
 ; emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');
   load ob
   push_int 109
@@ -6155,19 +5974,19 @@ __L244:
   load tasl
   push_int 0
   gt
-  jump_ifnot __L250
+  jump_ifnot __L202
   load strtab
   load tass
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L250
+  jump_ifnot __L202
   push_int 1
-  jump __L251
-__L250:
+  jump __L203
+__L202:
   push_int 0
-__L251:
-  jump_ifnot __L249
+__L203:
+  jump_ifnot __L201
 ; emit_char(ob, '_');emit_char(ob, 'u');
   load ob
   push_int 95
@@ -6177,7 +5996,7 @@ __L251:
   push_int 117
   call emit_char StringBuffer u8
   pop
-__L249:
+__L201:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -6185,14 +6004,14 @@ __L249:
   pop
 ; return;
   return_void
-__L248:
+__L200:
 ; if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and
   load strtab
   load ss
   load sl
   push_int 38
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L252
+  jump_ifnot __L204
   load ob
   push_int 97
   call emit_char StringBuffer u8
@@ -6210,14 +6029,14 @@ __L248:
   call emit_char StringBuffer u8
   pop
   return_void
-__L252:
+__L204:
 ; if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or
   load strtab
   load ss
   load sl
   push_int 124
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L253
+  jump_ifnot __L205
   load ob
   push_int 111
   call emit_char StringBuffer u8
@@ -6231,14 +6050,14 @@ __L252:
   call emit_char StringBuffer u8
   pop
   return_void
-__L253:
+__L205:
 ; if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor
   load strtab
   load ss
   load sl
   push_int 94
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L254
+  jump_ifnot __L206
   load ob
   push_int 120
   call emit_char StringBuffer u8
@@ -6256,14 +6075,14 @@ __L253:
   call emit_char StringBuffer u8
   pop
   return_void
-__L254:
+__L206:
 ; if sv1(strtab,ss,sl, '<') {
   load strtab
   load ss
   load sl
   push_int 60
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L255
+  jump_ifnot __L207
 ; emit_char(ob, 'l');emit_char(ob, 't');
   load ob
   push_int 108
@@ -6277,19 +6096,19 @@ __L254:
   load tasl
   push_int 0
   gt
-  jump_ifnot __L257
+  jump_ifnot __L209
   load strtab
   load tass
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L257
+  jump_ifnot __L209
   push_int 1
-  jump __L258
-__L257:
+  jump __L210
+__L209:
   push_int 0
-__L258:
-  jump_ifnot __L256
+__L210:
+  jump_ifnot __L208
 ; emit_char(ob, '_');emit_char(ob, 'u');
   load ob
   push_int 95
@@ -6299,7 +6118,7 @@ __L258:
   push_int 117
   call emit_char StringBuffer u8
   pop
-__L256:
+__L208:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -6307,14 +6126,14 @@ __L256:
   pop
 ; return;
   return_void
-__L255:
+__L207:
 ; if sv1(strtab,ss,sl, '>') {
   load strtab
   load ss
   load sl
   push_int 62
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L259
+  jump_ifnot __L211
 ; emit_char(ob, 'g');emit_char(ob, 't');
   load ob
   push_int 103
@@ -6328,19 +6147,19 @@ __L255:
   load tasl
   push_int 0
   gt
-  jump_ifnot __L261
+  jump_ifnot __L213
   load strtab
   load tass
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L261
+  jump_ifnot __L213
   push_int 1
-  jump __L262
-__L261:
+  jump __L214
+__L213:
   push_int 0
-__L262:
-  jump_ifnot __L260
+__L214:
+  jump_ifnot __L212
 ; emit_char(ob, '_');emit_char(ob, 'u');
   load ob
   push_int 95
@@ -6350,7 +6169,7 @@ __L262:
   push_int 117
   call emit_char StringBuffer u8
   pop
-__L260:
+__L212:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -6358,7 +6177,7 @@ __L260:
   pop
 ; return;
   return_void
-__L259:
+__L211:
 ; if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl
   load strtab
   load ss
@@ -6366,7 +6185,7 @@ __L259:
   push_int 60
   push_int 60
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L263
+  jump_ifnot __L215
   load ob
   push_int 115
   call emit_char StringBuffer u8
@@ -6384,7 +6203,7 @@ __L259:
   call emit_char StringBuffer u8
   pop
   return_void
-__L263:
+__L215:
 ; if sv2(strtab,ss,sl, '>','>') {
   load strtab
   load ss
@@ -6392,7 +6211,7 @@ __L263:
   push_int 62
   push_int 62
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L264
+  jump_ifnot __L216
 ; emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');
   load ob
   push_int 115
@@ -6410,19 +6229,19 @@ __L263:
   load tasl
   push_int 0
   gt
-  jump_ifnot __L266
+  jump_ifnot __L218
   load strtab
   load tass
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L266
+  jump_ifnot __L218
   push_int 1
-  jump __L267
-__L266:
+  jump __L219
+__L218:
   push_int 0
-__L267:
-  jump_ifnot __L265
+__L219:
+  jump_ifnot __L217
 ; emit_char(ob, '_');emit_char(ob, 'u');
   load ob
   push_int 95
@@ -6432,7 +6251,7 @@ __L267:
   push_int 117
   call emit_char StringBuffer u8
   pop
-__L265:
+__L217:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -6440,7 +6259,7 @@ __L265:
   pop
 ; return;
   return_void
-__L264:
+__L216:
 ; if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq
   load strtab
   load ss
@@ -6448,7 +6267,7 @@ __L264:
   push_int 61
   push_int 61
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L268
+  jump_ifnot __L220
   load ob
   push_int 101
   call emit_char StringBuffer u8
@@ -6462,7 +6281,7 @@ __L264:
   call emit_char StringBuffer u8
   pop
   return_void
-__L268:
+__L220:
 ; if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne
   load strtab
   load ss
@@ -6470,7 +6289,7 @@ __L268:
   push_int 33
   push_int 61
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L269
+  jump_ifnot __L221
   load ob
   push_int 110
   call emit_char StringBuffer u8
@@ -6484,7 +6303,7 @@ __L268:
   call emit_char StringBuffer u8
   pop
   return_void
-__L269:
+__L221:
 ; if sv2(strtab,ss,sl, '<','=') {
   load strtab
   load ss
@@ -6492,7 +6311,7 @@ __L269:
   push_int 60
   push_int 61
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L270
+  jump_ifnot __L222
 ; emit_char(ob, 'l');emit_char(ob, 'e');
   load ob
   push_int 108
@@ -6506,19 +6325,19 @@ __L269:
   load tasl
   push_int 0
   gt
-  jump_ifnot __L272
+  jump_ifnot __L224
   load strtab
   load tass
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L272
+  jump_ifnot __L224
   push_int 1
-  jump __L273
-__L272:
+  jump __L225
+__L224:
   push_int 0
-__L273:
-  jump_ifnot __L271
+__L225:
+  jump_ifnot __L223
 ; emit_char(ob, '_');emit_char(ob, 'u');
   load ob
   push_int 95
@@ -6528,7 +6347,7 @@ __L273:
   push_int 117
   call emit_char StringBuffer u8
   pop
-__L271:
+__L223:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -6536,7 +6355,7 @@ __L271:
   pop
 ; return;
   return_void
-__L270:
+__L222:
 ; if sv2(strtab,ss,sl, '>','=') {
   load strtab
   load ss
@@ -6544,7 +6363,7 @@ __L270:
   push_int 62
   push_int 61
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L274
+  jump_ifnot __L226
 ; emit_char(ob, 'g');emit_char(ob, 'e');
   load ob
   push_int 103
@@ -6558,19 +6377,19 @@ __L270:
   load tasl
   push_int 0
   gt
-  jump_ifnot __L276
+  jump_ifnot __L228
   load strtab
   load tass
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L276
+  jump_ifnot __L228
   push_int 1
-  jump __L277
-__L276:
+  jump __L229
+__L228:
   push_int 0
-__L277:
-  jump_ifnot __L275
+__L229:
+  jump_ifnot __L227
 ; emit_char(ob, '_');emit_char(ob, 'u');
   load ob
   push_int 95
@@ -6580,7 +6399,7 @@ __L277:
   push_int 117
   call emit_char StringBuffer u8
   pop
-__L275:
+__L227:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -6588,7 +6407,7 @@ __L275:
   pop
 ; return;
   return_void
-__L274:
+__L226:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -6632,7 +6451,7 @@ __L274:
   load k
   load NK_INT
   eq
-  jump_ifnot __L278
+  jump_ifnot __L230
 ; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
@@ -6693,12 +6512,12 @@ __L274:
   pop
 ; return;
   return_void
-__L278:
+__L230:
 ; if k == NK_BOOL {
   load k
   load NK_BOOL
   eq
-  jump_ifnot __L279
+  jump_ifnot __L231
 ; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
@@ -6755,7 +6574,7 @@ __L278:
   call n_sl AstNodeArray i32
   push_int 4
   eq
-  jump_ifnot __L280
+  jump_ifnot __L232
 ; var ss: i32 = n_ss(nodes,n);
   load nodes
   load n
@@ -6767,7 +6586,7 @@ __L278:
   call get U8Array i32
   push_int 116
   eq
-  jump_ifnot __L286
+  jump_ifnot __L238
   load strtab
   load ss
   push_int 1
@@ -6775,13 +6594,13 @@ __L278:
   call get U8Array i32
   push_int 114
   eq
-  jump_ifnot __L286
+  jump_ifnot __L238
   push_int 1
-  jump __L287
-__L286:
+  jump __L239
+__L238:
   push_int 0
-__L287:
-  jump_ifnot __L284
+__L239:
+  jump_ifnot __L236
   load strtab
   load ss
   push_int 2
@@ -6789,13 +6608,13 @@ __L287:
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L284
+  jump_ifnot __L236
   push_int 1
-  jump __L285
-__L284:
+  jump __L237
+__L236:
   push_int 0
-__L285:
-  jump_ifnot __L282
+__L237:
+  jump_ifnot __L234
   load strtab
   load ss
   push_int 3
@@ -6803,18 +6622,18 @@ __L285:
   call get U8Array i32
   push_int 101
   eq
-  jump_ifnot __L282
+  jump_ifnot __L234
   push_int 1
-  jump __L283
-__L282:
+  jump __L235
+__L234:
   push_int 0
-__L283:
-  jump_ifnot __L281
+__L235:
+  jump_ifnot __L233
 ; is_true = 1;
   push_int 1
   store is_true
-__L281:
-__L280:
+__L233:
+__L232:
 ; emit_int(ob, is_true); emit_char(ob, 10u8);
   load ob
   load is_true
@@ -6826,12 +6645,12 @@ __L280:
   pop
 ; return;
   return_void
-__L279:
+__L231:
 ; if k == NK_STR {
   load k
   load NK_STR
   eq
-  jump_ifnot __L288
+  jump_ifnot __L240
 ; var idx: i32 = slit_add(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));
   load strtab
   load slits
@@ -6901,12 +6720,12 @@ __L279:
   pop
 ; return;
   return_void
-__L288:
+__L240:
 ; if k == NK_VAR {
   load k
   load NK_VAR
   eq
-  jump_ifnot __L289
+  jump_ifnot __L241
 ; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
@@ -6954,12 +6773,12 @@ __L288:
   pop
 ; return;
   return_void
-__L289:
+__L241:
 ; if k == NK_CALL {
   load k
   load NK_CALL
   eq
-  jump_ifnot __L290
+  jump_ifnot __L242
 ; var args: I32Array = I32Array(24u32);
   push_int 24
   call I32Array u32
@@ -6973,21 +6792,21 @@ __L289:
   call n_child AstNodeArray i32
   store c
 ; while c >= 0 && nargs < 24 {
-__L291:
+__L243:
   load c
   push_int 0
   ge
-  jump_ifnot __L293
+  jump_ifnot __L245
   load nargs
   push_int 24
   lt
-  jump_ifnot __L293
+  jump_ifnot __L245
   push_int 1
-  jump __L294
-__L293:
+  jump __L246
+__L245:
   push_int 0
-__L294:
-  jump_ifnot __L292
+__L246:
+  jump_ifnot __L244
 ; set(args, nargs, c);
   load args
   load nargs
@@ -7004,17 +6823,17 @@ __L294:
   load c
   call n_sib AstNodeArray i32
   store c
-  jump __L291
-__L292:
+  jump __L243
+__L244:
 ; var ai: i32 = 0;
   push_int 0
   store ai
 ; while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }
-__L295:
+__L247:
   load ai
   load nargs
   lt
-  jump_ifnot __L296
+  jump_ifnot __L248
   load nodes
   load strtab
   load slits
@@ -7028,8 +6847,8 @@ __L295:
   push_int 1
   add
   store ai
-  jump __L295
-__L296:
+  jump __L247
+__L248:
 ; delete(args);
   load args
   call delete I32Array
@@ -7081,11 +6900,11 @@ __L296:
   call n_child AstNodeArray i32
   store c
 ; while c >= 0 {
-__L297:
+__L249:
   load c
   push_int 0
   ge
-  jump_ifnot __L298
+  jump_ifnot __L250
 ; emit_char(ob, ' ');
   load ob
   push_int 32
@@ -7100,7 +6919,7 @@ __L297:
   load tsl
   push_int 0
   gt
-  jump_ifnot __L299
+  jump_ifnot __L251
 ; emit_n(ob, strtab, n_tass(nodes,c), tsl);
   load ob
   load strtab
@@ -7110,21 +6929,21 @@ __L297:
   load tsl
   call emit_n StringBuffer U8Array i32 i32
   pop
-  jump __L300
-__L299:
+  jump __L252
+__L251:
 ; emit_char(ob, '?');
   load ob
   push_int 63
   call emit_char StringBuffer u8
   pop
-__L300:
+__L252:
 ; c = n_sib(nodes, c);
   load nodes
   load c
   call n_sib AstNodeArray i32
   store c
-  jump __L297
-__L298:
+  jump __L249
+__L250:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -7132,12 +6951,12 @@ __L298:
   pop
 ; return;
   return_void
-__L290:
+__L242:
 ; if k == NK_UNARY {
   load k
   load NK_UNARY
   eq
-  jump_ifnot __L301
+  jump_ifnot __L253
 ; cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
   load nodes
   load strtab
@@ -7173,7 +6992,7 @@ __L290:
   load sl
   push_int 45
   call sv1 U8Array i32 i32 u8
-  jump_ifnot __L302
+  jump_ifnot __L254
 ; emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, 10u8);  // neg
   load ob
   push_int 110
@@ -7191,8 +7010,8 @@ __L290:
   push_int 10
   call emit_char StringBuffer u8
   pop
-  jump __L303
-__L302:
+  jump __L255
+__L254:
 ; emit_char(ob, 'l');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');emit_char(ob, 10u8);  // lnot
   load ob
   push_int 108
@@ -7214,15 +7033,15 @@ __L302:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L303:
+__L255:
 ; return;
   return_void
-__L301:
+__L253:
 ; if k == NK_BINOP {
   load k
   load NK_BINOP
   eq
-  jump_ifnot __L304
+  jump_ifnot __L256
 ; var ss: i32 = n_ss(nodes,n);
   load nodes
   load n
@@ -7252,7 +7071,7 @@ __L301:
   push_int 38
   push_int 38
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L305
+  jump_ifnot __L257
 ; var lf: i32 = g_lc; g_lc = g_lc + 1;
   load g_lc
   store lf
@@ -7648,7 +7467,7 @@ __L301:
   pop
 ; return;
   return_void
-__L305:
+__L257:
 ; if sv2(strtab,ss,sl, '|','|') {
   load strtab
   load ss
@@ -7656,7 +7475,7 @@ __L305:
   push_int 124
   push_int 124
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L306
+  jump_ifnot __L258
 ; var lt: i32 = g_lc; g_lc = g_lc + 1;
   load g_lc
   store lt
@@ -8028,7 +7847,7 @@ __L305:
   pop
 ; return;
   return_void
-__L306:
+__L258:
 ; cg_expr(nodes, strtab, slits, ob, child0);
   load nodes
   load strtab
@@ -8060,12 +7879,12 @@ __L306:
   pop
 ; return;
   return_void
-__L304:
+__L256:
 ; if k == NK_CAST {
   load k
   load NK_CAST
   eq
-  jump_ifnot __L307
+  jump_ifnot __L259
 ; cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes,n,0));
   load nodes
   load strtab
@@ -8103,10 +7922,10 @@ __L304:
   push_int 117
   push_int 56
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L308
+  jump_ifnot __L260
   push_int 1
   store is_prim
-__L308:
+__L260:
 ; if sv2(strtab, tss, tsl, 'i','8') { is_prim = true; }
   load strtab
   load tss
@@ -8114,22 +7933,22 @@ __L308:
   push_int 105
   push_int 56
   call sv2 U8Array i32 i32 u8 u8
-  jump_ifnot __L309
+  jump_ifnot __L261
   push_int 1
   store is_prim
-__L309:
+__L261:
 ; if tsl==3 {
   load tsl
   push_int 3
   eq
-  jump_ifnot __L310
+  jump_ifnot __L262
 ; if get(strtab,tss)=='u' && get(strtab,(tss+1))=='1' && get(strtab,(tss+2))=='6' { is_prim = true; }
   load strtab
   load tss
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L314
+  jump_ifnot __L266
   load strtab
   load tss
   push_int 1
@@ -8137,13 +7956,13 @@ __L309:
   call get U8Array i32
   push_int 49
   eq
-  jump_ifnot __L314
+  jump_ifnot __L266
   push_int 1
-  jump __L315
-__L314:
+  jump __L267
+__L266:
   push_int 0
-__L315:
-  jump_ifnot __L312
+__L267:
+  jump_ifnot __L264
   load strtab
   load tss
   push_int 2
@@ -8151,23 +7970,23 @@ __L315:
   call get U8Array i32
   push_int 54
   eq
-  jump_ifnot __L312
+  jump_ifnot __L264
   push_int 1
-  jump __L313
-__L312:
+  jump __L265
+__L264:
   push_int 0
-__L313:
-  jump_ifnot __L311
+__L265:
+  jump_ifnot __L263
   push_int 1
   store is_prim
-__L311:
+__L263:
 ; if get(strtab,tss)=='u' && get(strtab,(tss+1))=='3' && get(strtab,(tss+2))=='2' { is_prim = true; }
   load strtab
   load tss
   call get U8Array i32
   push_int 117
   eq
-  jump_ifnot __L319
+  jump_ifnot __L271
   load strtab
   load tss
   push_int 1
@@ -8175,13 +7994,13 @@ __L311:
   call get U8Array i32
   push_int 51
   eq
-  jump_ifnot __L319
+  jump_ifnot __L271
   push_int 1
-  jump __L320
-__L319:
+  jump __L272
+__L271:
   push_int 0
-__L320:
-  jump_ifnot __L317
+__L272:
+  jump_ifnot __L269
   load strtab
   load tss
   push_int 2
@@ -8189,23 +8008,23 @@ __L320:
   call get U8Array i32
   push_int 50
   eq
-  jump_ifnot __L317
+  jump_ifnot __L269
   push_int 1
-  jump __L318
-__L317:
+  jump __L270
+__L269:
   push_int 0
-__L318:
-  jump_ifnot __L316
+__L270:
+  jump_ifnot __L268
   push_int 1
   store is_prim
-__L316:
+__L268:
 ; if get(strtab,tss)=='i' && get(strtab,(tss+1))=='1' && get(strtab,(tss+2))=='6' { is_prim = true; }
   load strtab
   load tss
   call get U8Array i32
   push_int 105
   eq
-  jump_ifnot __L324
+  jump_ifnot __L276
   load strtab
   load tss
   push_int 1
@@ -8213,13 +8032,13 @@ __L316:
   call get U8Array i32
   push_int 49
   eq
-  jump_ifnot __L324
+  jump_ifnot __L276
   push_int 1
-  jump __L325
-__L324:
+  jump __L277
+__L276:
   push_int 0
-__L325:
-  jump_ifnot __L322
+__L277:
+  jump_ifnot __L274
   load strtab
   load tss
   push_int 2
@@ -8227,23 +8046,23 @@ __L325:
   call get U8Array i32
   push_int 54
   eq
-  jump_ifnot __L322
+  jump_ifnot __L274
   push_int 1
-  jump __L323
-__L322:
+  jump __L275
+__L274:
   push_int 0
-__L323:
-  jump_ifnot __L321
+__L275:
+  jump_ifnot __L273
   push_int 1
   store is_prim
-__L321:
+__L273:
 ; if get(strtab,tss)=='i' && get(strtab,(tss+1))=='3' && get(strtab,(tss+2))=='2' { is_prim = true; }
   load strtab
   load tss
   call get U8Array i32
   push_int 105
   eq
-  jump_ifnot __L329
+  jump_ifnot __L281
   load strtab
   load tss
   push_int 1
@@ -8251,13 +8070,13 @@ __L321:
   call get U8Array i32
   push_int 51
   eq
-  jump_ifnot __L329
+  jump_ifnot __L281
   push_int 1
-  jump __L330
-__L329:
+  jump __L282
+__L281:
   push_int 0
-__L330:
-  jump_ifnot __L327
+__L282:
+  jump_ifnot __L279
   load strtab
   load tss
   push_int 2
@@ -8265,29 +8084,29 @@ __L330:
   call get U8Array i32
   push_int 50
   eq
-  jump_ifnot __L327
+  jump_ifnot __L279
   push_int 1
-  jump __L328
-__L327:
+  jump __L280
+__L279:
   push_int 0
-__L328:
-  jump_ifnot __L326
+__L280:
+  jump_ifnot __L278
   push_int 1
   store is_prim
-__L326:
-__L310:
+__L278:
+__L262:
 ; if tsl==4 {
   load tsl
   push_int 4
   eq
-  jump_ifnot __L331
+  jump_ifnot __L283
 ; if get(strtab,tss)=='b' && get(strtab,(tss+1))=='o' && get(strtab,(tss+2))=='o' && get(strtab,(tss+3))=='l' { is_prim = true; }
   load strtab
   load tss
   call get U8Array i32
   push_int 98
   eq
-  jump_ifnot __L337
+  jump_ifnot __L289
   load strtab
   load tss
   push_int 1
@@ -8295,13 +8114,13 @@ __L310:
   call get U8Array i32
   push_int 111
   eq
-  jump_ifnot __L337
+  jump_ifnot __L289
   push_int 1
-  jump __L338
-__L337:
+  jump __L290
+__L289:
   push_int 0
-__L338:
-  jump_ifnot __L335
+__L290:
+  jump_ifnot __L287
   load strtab
   load tss
   push_int 2
@@ -8309,13 +8128,13 @@ __L338:
   call get U8Array i32
   push_int 111
   eq
-  jump_ifnot __L335
+  jump_ifnot __L287
   push_int 1
-  jump __L336
-__L335:
+  jump __L288
+__L287:
   push_int 0
-__L336:
-  jump_ifnot __L333
+__L288:
+  jump_ifnot __L285
   load strtab
   load tss
   push_int 3
@@ -8323,20 +8142,20 @@ __L336:
   call get U8Array i32
   push_int 108
   eq
-  jump_ifnot __L333
+  jump_ifnot __L285
   push_int 1
-  jump __L334
-__L333:
+  jump __L286
+__L285:
   push_int 0
-__L334:
-  jump_ifnot __L332
+__L286:
+  jump_ifnot __L284
   push_int 1
   store is_prim
-__L332:
-__L331:
+__L284:
+__L283:
 ; if is_prim {
   load is_prim
-  jump_ifnot __L339
+  jump_ifnot __L291
 ; emit_char(ob, ' ');emit_char(ob, ' ');
   load ob
   push_int 32
@@ -8378,10 +8197,10 @@ __L331:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L339:
+__L291:
 ; return;
   return_void
-__L307:
+__L259:
 ; return;
   return_void
   return_void
@@ -8444,7 +8263,7 @@ __L307:
   load ret_type_n
   push_int 0
   ge
-  jump_ifnot __L340
+  jump_ifnot __L292
 ; ret_ss = n_ss(nodes, ret_type_n);
   load nodes
   load ret_type_n
@@ -8455,7 +8274,7 @@ __L307:
   load ret_type_n
   call n_sl AstNodeArray i32
   store ret_sl
-__L340:
+__L292:
 ; emit_char(ob, '.');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, ' ');
   load ob
   push_int 46
@@ -8490,11 +8309,11 @@ __L340:
   call n_child AstNodeArray i32
   store pp
 ; while pp >= 0 {
-__L341:
+__L293:
   load pp
   push_int 0
   ge
-  jump_ifnot __L342
+  jump_ifnot __L294
 ; var ptype_n: i32 = n_child(nodes, pp);
   load nodes
   load pp
@@ -8521,8 +8340,8 @@ __L341:
   load pp
   call n_sib AstNodeArray i32
   store pp
-  jump __L341
-__L342:
+  jump __L293
+__L294:
 ; emit_char(ob, ' ');
   load ob
   push_int 32
@@ -8532,7 +8351,7 @@ __L342:
   load ret_sl
   push_int 0
   eq
-  jump_ifnot __L343
+  jump_ifnot __L295
 ; emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');
   load ob
   push_int 118
@@ -8550,8 +8369,8 @@ __L342:
   push_int 100
   call emit_char StringBuffer u8
   pop
-  jump __L344
-__L343:
+  jump __L296
+__L295:
 ; emit_n(ob, strtab, ret_ss, ret_sl);
   load ob
   load strtab
@@ -8559,7 +8378,7 @@ __L343:
   load ret_sl
   call emit_n StringBuffer U8Array i32 i32
   pop
-__L344:
+__L296:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
@@ -8571,11 +8390,11 @@ __L344:
   call n_child AstNodeArray i32
   store p
 ; while p >= 0 {
-__L345:
+__L297:
   load p
   push_int 0
   ge
-  jump_ifnot __L346
+  jump_ifnot __L298
 ; var type_n: i32 = n_child(nodes, p);
   load nodes
   load p
@@ -8647,8 +8466,8 @@ __L345:
   load p
   call n_sib AstNodeArray i32
   store p
-  jump __L345
-__L346:
+  jump __L297
+__L298:
 ; g_locc = 0;
   push_int 0
   store g_locc
@@ -8663,11 +8482,11 @@ __L346:
   push_int 0
   store i
 ; while i < g_locc {
-__L347:
+__L299:
   load i
   load g_locc
   lt
-  jump_ifnot __L348
+  jump_ifnot __L300
 ; var b: i32 = i * 4;
   load i
   push_int 4
@@ -8757,8 +8576,8 @@ __L347:
   push_int 1
   add
   store i
-  jump __L347
-__L348:
+  jump __L299
+__L300:
 ; g_loop_depth = 0;
   push_int 0
   store g_loop_depth
@@ -8889,7 +8708,7 @@ __L348:
   load g_slc
   push_int 0
   gt
-  jump_ifnot __L349
+  jump_ifnot __L301
 ; emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);
   load ob
   push_int 59
@@ -8955,11 +8774,11 @@ __L348:
   push_int 0
   store i
 ; while i < g_slc {
-__L350:
+__L302:
   load i
   load g_slc
   lt
-  jump_ifnot __L351
+  jump_ifnot __L303
 ; var b: i32 = i * 2;
   load i
   push_int 2
@@ -9045,14 +8864,14 @@ __L350:
   push_int 1
   add
   store i
-  jump __L350
-__L351:
+  jump __L302
+__L303:
 ; emit_char(ob, 10u8);
   load ob
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L349:
+__L301:
 ; return;
   return_void
   return_void
@@ -9140,11 +8959,11 @@ __L349:
   call peek_in
   push_int 40
   ne
-  jump_ifnot __L352
+  jump_ifnot __L304
   push_int 1
   call sys_exit i32
   pop
-__L352:
+__L304:
 ; next(g_reader);
   load g_reader
   call next SourceReader
@@ -9163,11 +8982,11 @@ __L352:
   push_int 0
   store has_global
 ; while peek_in() == '(' {
-__L353:
+__L305:
   call peek_in
   push_int 40
   eq
-  jump_ifnot __L354
+  jump_ifnot __L306
 ; reset_node_pool(nodes);
   load nodes
   call reset_node_pool AstNodeArray
@@ -9182,7 +9001,7 @@ __L353:
   load n
   push_int 0
   ge
-  jump_ifnot __L355
+  jump_ifnot __L307
 ; var k: i32 = n_kind(nodes, n);
   load nodes
   load n
@@ -9192,12 +9011,12 @@ __L353:
   load k
   load NK_VAR_DECL
   eq
-  jump_ifnot __L356
+  jump_ifnot __L308
 ; if has_global == 0 {
   load has_global
   push_int 0
   eq
-  jump_ifnot __L357
+  jump_ifnot __L309
 ; emit_char(out_buf, ';');emit_char(out_buf, ' ');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, 's');emit_char(out_buf, 10u8);
   load out_buf
   push_int 59
@@ -9242,7 +9061,7 @@ __L353:
 ; has_global = 1;
   push_int 1
   store has_global
-__L357:
+__L309:
 ; var type_n: i32 = n_child(nodes, n);
   load nodes
   load n
@@ -9260,12 +9079,12 @@ __L357:
   load init_n
   push_int 0
   ge
-  jump_ifnot __L358
+  jump_ifnot __L310
   load nodes
   load init_n
   call n_ival AstNodeArray i32
   store initval
-__L358:
+__L310:
 ; emit_char(out_buf, '.');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, ' ');
   load out_buf
   push_int 46
@@ -9341,24 +9160,24 @@ __L358:
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L356:
+__L308:
 ; if k == NK_FN {
   load k
   load NK_FN
   eq
-  jump_ifnot __L359
+  jump_ifnot __L311
 ; if has_global == 1 { emit_char(out_buf, 10u8); has_global = 2; }
   load has_global
   push_int 1
   eq
-  jump_ifnot __L360
+  jump_ifnot __L312
   load out_buf
   push_int 10
   call emit_char StringBuffer u8
   pop
   push_int 2
   store has_global
-__L360:
+__L312:
 ; cg_fn(nodes, strtab, slits, locals, out_buf, n);
   load nodes
   load strtab
@@ -9368,32 +9187,32 @@ __L360:
   load n
   call cg_fn AstNodeArray U8Array I32Array I32Array StringBuffer i32
   pop
-__L359:
-__L355:
+__L311:
+__L307:
 ; skip_ws_in();
   call skip_ws_in
   pop
-  jump __L353
-__L354:
+  jump __L305
+__L306:
 ; if has_global == 1 { emit_char(out_buf, 10u8); }
   load has_global
   push_int 1
   eq
-  jump_ifnot __L361
+  jump_ifnot __L313
   load out_buf
   push_int 10
   call emit_char StringBuffer u8
   pop
-__L361:
+__L313:
 ; if peek_in() == ')' { next(g_reader); }
   call peek_in
   push_int 41
   eq
-  jump_ifnot __L362
+  jump_ifnot __L314
   load g_reader
   call next SourceReader
   pop
-__L362:
+__L314:
 ; emit_string_table(strtab, slits, out_buf);
   load strtab
   load slits
@@ -9463,5 +9282,34 @@ __L362:
   return
   return_void
 .endfn
+
+; string table
+.string 0 "fn"
+.string 1 "if"
+.string 2 "ret"
+.string 3 "int"
+.string 4 "str"
+.string 5 "var"
+.string 6 "bool"
+.string 7 "type"
+.string 8 "cast"
+.string 9 "call"
+.string 10 "block"
+.string 11 "param"
+.string 12 "while"
+.string 13 "binop"
+.string 14 "unary"
+.string 15 "field"
+.string 16 "break"
+.string 17 "params"
+.string 18 "return"
+.string 19 "struct"
+.string 20 "assign"
+.string 21 "import"
+.string 22 "program"
+.string 23 "comment"
+.string 24 "var_decl"
+.string 25 "continue"
+.string 26 "call_stmt"
 
 .endbc

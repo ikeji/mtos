@@ -2,6 +2,7 @@
 // Target: RV32IM, GAS syntax
 
 import "string_buffer.tc";
+import "strlib.tc";
 
 // ===== Opcodes =====
 var OP_PUSH_INT: i32 = 1;
@@ -308,74 +309,47 @@ fn read_strlit(src: U8Array, strtab: U8Array) -> i32 {
 }
 
 // ===== Opcode classifier =====
+// streq_lit (strlib.tc) handles length check + byte compare in one
+// call. Dropped the old hand-rolled a==.. && b==.. ladder and the
+// TODO that asked for exactly this helper (R3).
 fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
-    var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;
-    // TODO: cmp(strtab, "or") みたいなの作って。
-    if sl>0 { a=get(strtab,ss); }
-    if sl>1 { b=get(strtab,(ss+1)); }
-    if sl>2 { c=get(strtab,(ss+2)); }
-    if sl>3 { d=get(strtab,(ss+3)); }
-    if sl>4 { e=get(strtab,(ss+4)); }
-    if sl==2 {
-        if a=='o'&&b=='r' { return OP_OR; }
-        if a=='e'&&b=='q' { return OP_EQ; }
-        if a=='n'&&b=='e' { return OP_NE; }
-        if a=='l'&&b=='t' { return OP_LT; }
-        if a=='l'&&b=='e' { return OP_LE; }
-        if a=='g'&&b=='t' { return OP_GT; }
-        if a=='g'&&b=='e' { return OP_GE; }
-    }
-    if sl==3 {
-        if a=='a'&&b=='d'&&c=='d'  { return OP_ADD; }
-        if a=='s'&&b=='u'&&c=='b'  { return OP_SUB; }
-        if a=='m'&&b=='u'&&c=='l' { return OP_MUL; }
-        if a=='d'&&b=='i'&&c=='v' { return OP_DIV; }
-        if a=='m'&&b=='o'&&c=='d' { return OP_MOD; }
-        if a=='a'&&b=='n'&&c=='d'  { return OP_AND; }
-        if a=='x'&&b=='o'&&c=='r' { return OP_XOR; }
-        if a=='s'&&b=='h'&&c=='l' { return OP_SHL; }
-        if a=='s'&&b=='h'&&c=='r' { return OP_SHR; }
-        if a=='p'&&b=='o'&&c=='p' { return OP_POP; }
-        if a=='n'&&b=='e'&&c=='g' { return OP_NEG; }
-    }
-    if sl==4 {
-        if a=='l'&&b=='n'&&c=='o'&&d=='t' { return OP_LNOT; }
-        if a=='c'&&b=='a'&&c=='s'&&d=='t'   { return OP_CAST; }
-        if a=='l'&&b=='o'&&c=='a'&&d=='d'  { return OP_LOAD; }
-        if a=='j'&&b=='u'&&c=='m'&&d=='p' { return OP_JUMP; }
-        if a=='c'&&b=='a'&&c=='l'&&d=='l'   { return OP_CALL; }
-        // unsigned comparisons: lt_u, le_u, gt_u, ge_u
-        if b=='t'&&c=='_'&&d=='u' {
-            if a=='l' { return OP_LT_U; }
-            if a=='g' { return OP_GT_U; }
-        }
-        if b=='e'&&c=='_'&&d=='u' {
-            if a=='l' { return OP_LE_U; }
-            if a=='g' { return OP_GE_U; }
-        }
-    }
-    if sl==5 {
-        if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; }
-        if a=='s'&&b=='h'&&c=='r'&&d=='_'&&e=='u' { return OP_SHR_U; }
-        if a=='d'&&b=='i'&&c=='v'&&d=='_'&&e=='u' { return OP_DIV_U; }
-        if a=='m'&&b=='o'&&c=='d'&&d=='_'&&e=='u' { return OP_MOD_U; }
-    }
-    if sl==6 { if a=='r'&&b=='e'&&c=='t' { return OP_RETURN; } }
-    if sl==7 {
-        if a=='j'&&b=='u'&&c=='m'&&d=='p'&&e=='_' {
-            var f: u8=get(strtab,(ss+5));
-            if f=='i' { return OP_JUMP_IF; }
-        }
-    }
-    if sl==8 {
-        if a=='p'&&b=='u'&&c=='s'&&d=='h'&&e=='_' {
-            var f: u8=get(strtab,(ss+5));
-            if f=='i' { return OP_PUSH_INT; }
-            if f=='s' { return OP_PUSH_STR; }
-        }
-    }
-    if sl==10 { if a=='j' { return OP_JUMP_IFNOT; } }
-    if sl==11 { if a=='r'&&b=='e' { return OP_RETURN_VOID; } }
+    if streq_lit(strtab, ss, sl, "or")          { return OP_OR; }
+    if streq_lit(strtab, ss, sl, "eq")          { return OP_EQ; }
+    if streq_lit(strtab, ss, sl, "ne")          { return OP_NE; }
+    if streq_lit(strtab, ss, sl, "lt")          { return OP_LT; }
+    if streq_lit(strtab, ss, sl, "le")          { return OP_LE; }
+    if streq_lit(strtab, ss, sl, "gt")          { return OP_GT; }
+    if streq_lit(strtab, ss, sl, "ge")          { return OP_GE; }
+    if streq_lit(strtab, ss, sl, "add")         { return OP_ADD; }
+    if streq_lit(strtab, ss, sl, "sub")         { return OP_SUB; }
+    if streq_lit(strtab, ss, sl, "mul")         { return OP_MUL; }
+    if streq_lit(strtab, ss, sl, "div")         { return OP_DIV; }
+    if streq_lit(strtab, ss, sl, "mod")         { return OP_MOD; }
+    if streq_lit(strtab, ss, sl, "and")         { return OP_AND; }
+    if streq_lit(strtab, ss, sl, "xor")         { return OP_XOR; }
+    if streq_lit(strtab, ss, sl, "shl")         { return OP_SHL; }
+    if streq_lit(strtab, ss, sl, "shr")         { return OP_SHR; }
+    if streq_lit(strtab, ss, sl, "pop")         { return OP_POP; }
+    if streq_lit(strtab, ss, sl, "neg")         { return OP_NEG; }
+    if streq_lit(strtab, ss, sl, "lnot")        { return OP_LNOT; }
+    if streq_lit(strtab, ss, sl, "cast")        { return OP_CAST; }
+    if streq_lit(strtab, ss, sl, "load")        { return OP_LOAD; }
+    if streq_lit(strtab, ss, sl, "jump")        { return OP_JUMP; }
+    if streq_lit(strtab, ss, sl, "call")        { return OP_CALL; }
+    if streq_lit(strtab, ss, sl, "lt_u")        { return OP_LT_U; }
+    if streq_lit(strtab, ss, sl, "le_u")        { return OP_LE_U; }
+    if streq_lit(strtab, ss, sl, "gt_u")        { return OP_GT_U; }
+    if streq_lit(strtab, ss, sl, "ge_u")        { return OP_GE_U; }
+    if streq_lit(strtab, ss, sl, "store")       { return OP_STORE; }
+    if streq_lit(strtab, ss, sl, "shr_u")       { return OP_SHR_U; }
+    if streq_lit(strtab, ss, sl, "div_u")       { return OP_DIV_U; }
+    if streq_lit(strtab, ss, sl, "mod_u")       { return OP_MOD_U; }
+    if streq_lit(strtab, ss, sl, "return")      { return OP_RETURN; }
+    if streq_lit(strtab, ss, sl, "jump_if")     { return OP_JUMP_IF; }
+    if streq_lit(strtab, ss, sl, "push_int")    { return OP_PUSH_INT; }
+    if streq_lit(strtab, ss, sl, "push_str")    { return OP_PUSH_STR; }
+    if streq_lit(strtab, ss, sl, "jump_ifnot")  { return OP_JUMP_IFNOT; }
+    if streq_lit(strtab, ss, sl, "return_void") { return OP_RETURN_VOID; }
     return -1;
 }
 

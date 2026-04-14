@@ -247,24 +247,6 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 コード中に `// TODO:` で書き残した、動作は正しいが書き方が冗長 /
 共通化できていない箇所のまとめ。挙動に影響しない refactor のみ。
 
-### R3. 文字列比較ヘルパ `cmp(U8Array, offset, StringLiteral)` を作る (ergonomics)
-
-`strtab` やラインバッファに対する「この位置から始まる領域が特定の
-リテラルと一致するか」の判定が、今は `sl==N` + 1文字ずつの `a=='s'&&
-b=='h'&&c=='r'` で展開されている (bc2asm.tc, codegen.tc,
-extract_sigs.tc, asm.tc)。
-
-1 つの `cmp(buf, offset, s: StringLiteral) -> bool` ヘルパに
-置き換えれば `classify_op` などが読みやすくなる。TC のオーバーロード
-上は U8Array と StringLiteral の 2 引数なので素直に書ける
-(StringLiteral の `len` + `get` を使ってバイト比較)。
-
-- `compiler/bc2asm.tc:313` — `// TODO: cmp(strtab, "or") みたいなの作って。`
-- `compiler/asm.tc:785` — `// TODO: compare(g_line_buf, sop_off, ".rodata")`
-- `compiler/asm.tc:966` — `// TODO: compare(g_lines, p, "load_base ")`
-- `compiler/extract_sigs.tc:84` — `// TODO: cmp(a, "type") でいい。`
-- `compiler/codegen.tc:150` — `// TODO: 関数名は全部cmpでいい。引数はStringLiteralでいい。`
-
 ### R4. 文字列出力ヘルパ `emit_string(StringBuffer, StringLiteral)` を使い切る (ergonomics)
 
 `bc2asm.tc` / `codegen.tc` の asm 出力が `emit_char` を 1 バイトずつ
@@ -416,6 +398,16 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   (旧 K3 のうち統一部分) → kernel.tc を 16K/8K に揃え、全経路で
   サイズ統一。タスク自身がサイズを宣言する仕組みは未実装で
   残件として K3 に残す
+- 文字列比較が cmp2/cmp3/cmp4/cmp5/cmp6 という長さ別ヘルパに展開されて
+  いて、`if len == N { if cmpN(atom,0, 'a','b','c',...) }` のような
+  ネストで書かれていた (codegen.tc / typecheck.tc / extract_sigs.tc /
+  bc2asm.tc / bcrun.tc / asm.tc の classify_kind / classify_op /
+  `.rodata` 判定 / `load_base` 判定) → compiler/strlib.tc に
+  `streq_lit(buf, offset, slice_len, StringLiteral)` と
+  `cmp_lit(buf, offset, StringLiteral)` を追加、全箇所を 1 行ずつの
+  `if streq_lit(atom, 0, len, "fn") { return NK_FN; }` 形式に統一。
+  6 ファイルから自前 cmpN (5 関数 × 各 ~5 行) を削除。可読性
+  大幅改善、classify_kind はネスト構造が完全に消えた (R3)
 - compiler/{codegen,typecheck,extract_sigs}.tc が同じ AST ノードプール
   アクセサ (n_kind / n_ss / ...) と alloc_node を各自コピーしていて、
   かつ flat I32Array 上で 8-int レイアウトを hand-index していた

@@ -4,6 +4,7 @@
 import "string_buffer.tc";
 import "source_reader.tc";
 import "ast_node.tc";
+import "strlib.tc";
 
 // ===== AST node kind constants =====
 var NK_PROGRAM: i32 = 0;
@@ -96,86 +97,35 @@ fn read_atom_in(atom: U8Array) -> i32 {
 // add_child wrappers from there.
 
 // ===== Kind classification =====
-// TODO: 関数名は全部cmpでいい。引数はStringLiteralでいい。
-fn cmp2(a: U8Array, st: i32, b0: u8, b1: u8) -> bool {
-    return get(a, st)==b0 && get(a, (st+1))==b1;
-}
-fn cmp3(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8) -> bool {
-    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2;
-}
-fn cmp4(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8) -> bool {
-    return get(a,st)==b0 && get(a,(st+1))==b1 &&
-           get(a,(st+2))==b2 && get(a,(st+3))==b3;
-}
-fn cmp5(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8) -> bool {
-    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&
-           get(a,(st+3))==b3 && get(a,(st+4))==b4;
-}
-fn cmp6(a: U8Array, st: i32, b0: u8, b1: u8, b2: u8, b3: u8, b4: u8, b5: u8) -> bool {
-    return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&
-           get(a,(st+3))==b3 && get(a,(st+4))==b4 && get(a,(st+5))==b5;
-}
-
+// streq_lit / cmp_lit live in strlib.tc (R3).
 fn classify_kind(atom: U8Array, len: i32) -> i32 {
-    if len == 2 {
-        if cmp2(atom,0, 'f','n')  { return NK_FN; }     // fn
-        if cmp2(atom,0, 'i','f')  { return NK_IF; }     // if
-    }
-    if len == 3 {
-        if cmp3(atom,0, 'r','e','t') { return NK_RET; }   // ret
-        if cmp3(atom,0, 'i','n','t') { return NK_INT; }   // int
-        if cmp3(atom,0, 's','t','r') { return NK_STR; }   // str
-        if cmp3(atom,0, 'v','a','r')  { return NK_VAR; }   // var
-    }
-    if len == 4 {
-        if cmp4(atom,0, 'b','o','o','l') { return NK_BOOL; }   // bool
-        if cmp4(atom,0, 't','y','p','e') { return NK_TYPE; }  // type
-        if cmp4(atom,0, 'c','a','s','t')   { return NK_CAST; }  // cast
-        if cmp4(atom,0, 'c','a','l','l')   { return NK_CALL; }  // call
-    }
-    if len == 5 {
-        if cmp5(atom,0, 'b','l','o','c','k')   { return NK_BLOCK; }  // block
-        if cmp5(atom,0, 'p','a','r','a','m')   { return NK_PARAM; }  // param
-        if cmp5(atom,0, 'w','h','i','l','e') { return NK_WHILE; }  // while
-        if cmp5(atom,0, 'b','i','n','o','p')  { return NK_BINOP; }  // binop
-        if cmp5(atom,0, 'u','n','a','r','y')  { return NK_UNARY; }  // unary
-        if cmp5(atom,0, 'f','i','e','l','d') { return NK_FIELD; }  // field
-        if cmp5(atom,0, 'b','r','e','a','k')   { return NK_BREAK; }  // break
-    }
-    if len == 6 {
-        if cmp6(atom,0, 'p','a','r','a','m','s')  { return NK_PARAMS; }  // params
-        if cmp6(atom,0, 'r','e','t','u','r','n'){ return NK_RETURN; }  // return
-        if cmp6(atom,0, 's','t','r','u','c','t') { return NK_STRUCT; }  // struct
-        if cmp6(atom,0, 'a','s','s','i','g','n') { return NK_ASSIGN; }  // assign
-        if cmp6(atom,0, 'i','m','p','o','r','t'){ return NK_IMPORT; }  // import
-    }
-    // var_decl (8), call_stmt (9), program (7)
-    if len == 7 {
-        // program
-        if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {
-            return NK_PROGRAM;
-        }
-        // comment
-        if cmp4(atom,0, 'c','o','m','m') && cmp3(atom,4, 'e','n','t') {
-            return NK_COMMENT;
-        }
-    }
-    if len == 8 {
-        // var_decl: v(118) a(97) r(114) _(95) d(100) e(101) c(99) l(108)
-        if cmp4(atom,0, 'v','a','r','_') && cmp4(atom,4, 'd','e','c','l') {
-            return NK_VAR_DECL;
-        }
-        // continue: c(99) o(111) n(110) t(116) i(105) n(110) u(117) e(101)
-        if cmp4(atom,0, 'c','o','n','t') && cmp4(atom,4, 'i','n','u','e') {
-            return NK_CONTINUE;
-        }
-    }
-    if len == 9 {
-        // call_stmt
-        if cmp4(atom,0, 'c','a','l','l') && cmp5(atom,4, '_','s','t','m','t') {
-            return NK_CALL_STMT;
-        }
-    }
+    if streq_lit(atom, 0, len, "fn")        { return NK_FN; }
+    if streq_lit(atom, 0, len, "if")        { return NK_IF; }
+    if streq_lit(atom, 0, len, "ret")       { return NK_RET; }
+    if streq_lit(atom, 0, len, "int")       { return NK_INT; }
+    if streq_lit(atom, 0, len, "str")       { return NK_STR; }
+    if streq_lit(atom, 0, len, "var")       { return NK_VAR; }
+    if streq_lit(atom, 0, len, "bool")      { return NK_BOOL; }
+    if streq_lit(atom, 0, len, "type")      { return NK_TYPE; }
+    if streq_lit(atom, 0, len, "cast")      { return NK_CAST; }
+    if streq_lit(atom, 0, len, "call")      { return NK_CALL; }
+    if streq_lit(atom, 0, len, "block")     { return NK_BLOCK; }
+    if streq_lit(atom, 0, len, "param")     { return NK_PARAM; }
+    if streq_lit(atom, 0, len, "while")     { return NK_WHILE; }
+    if streq_lit(atom, 0, len, "binop")     { return NK_BINOP; }
+    if streq_lit(atom, 0, len, "unary")     { return NK_UNARY; }
+    if streq_lit(atom, 0, len, "field")     { return NK_FIELD; }
+    if streq_lit(atom, 0, len, "break")     { return NK_BREAK; }
+    if streq_lit(atom, 0, len, "params")    { return NK_PARAMS; }
+    if streq_lit(atom, 0, len, "return")    { return NK_RETURN; }
+    if streq_lit(atom, 0, len, "struct")    { return NK_STRUCT; }
+    if streq_lit(atom, 0, len, "assign")    { return NK_ASSIGN; }
+    if streq_lit(atom, 0, len, "import")    { return NK_IMPORT; }
+    if streq_lit(atom, 0, len, "program")   { return NK_PROGRAM; }
+    if streq_lit(atom, 0, len, "comment")   { return NK_COMMENT; }
+    if streq_lit(atom, 0, len, "var_decl")  { return NK_VAR_DECL; }
+    if streq_lit(atom, 0, len, "continue")  { return NK_CONTINUE; }
+    if streq_lit(atom, 0, len, "call_stmt") { return NK_CALL_STMT; }
     return NK_UNKNOWN;
 }
 

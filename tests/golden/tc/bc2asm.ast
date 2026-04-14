@@ -1,5 +1,6 @@
 (program
   (import string_buffer.tc)
+  (import strlib.tc)
   (var_decl OP_PUSH_INT
     (type i32)
     (int 1)
@@ -2558,1141 +2559,521 @@
       (type i32)
     )
     (block
-      (comment "var a: u8=0u8; var b: u8=0u8; var c: u8=0u8; var d: u8=0u8; var e: u8=0u8;")
-      (var_decl a
-        (type u8)
-        (int:u8 0)
-      )
-      (var_decl b
-        (type u8)
-        (int:u8 0)
-      )
-      (var_decl c
-        (type u8)
-        (int:u8 0)
-      )
-      (var_decl d
-        (type u8)
-        (int:u8 0)
-      )
-      (var_decl e
-        (type u8)
-        (int:u8 0)
-      )
-      (comment "if sl>0 { a=get(strtab,ss); }")
+      (comment "if streq_lit(strtab, ss, sl, \"or\")          { return OP_OR; }")
       (if
-        (binop >
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 0)
+          (str "or")
         )
         (block
-          (assign a
-            (call get
-              (var strtab)
-              (var ss)
-            )
+          (return
+            (var OP_OR)
           )
         )
       )
-      (comment "if sl>1 { b=get(strtab,(ss+1)); }")
+      (comment "if streq_lit(strtab, ss, sl, \"eq\")          { return OP_EQ; }")
       (if
-        (binop >
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 1)
+          (str "eq")
         )
         (block
-          (assign b
-            (call get
-              (var strtab)
-              (binop +
-                (var ss)
-                (int 1)
-              )
-            )
+          (return
+            (var OP_EQ)
           )
         )
       )
-      (comment "if sl>2 { c=get(strtab,(ss+2)); }")
+      (comment "if streq_lit(strtab, ss, sl, \"ne\")          { return OP_NE; }")
       (if
-        (binop >
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 2)
+          (str "ne")
         )
         (block
-          (assign c
-            (call get
-              (var strtab)
-              (binop +
-                (var ss)
-                (int 2)
-              )
-            )
+          (return
+            (var OP_NE)
           )
         )
       )
-      (comment "if sl>3 { d=get(strtab,(ss+3)); }")
+      (comment "if streq_lit(strtab, ss, sl, \"lt\")          { return OP_LT; }")
       (if
-        (binop >
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 3)
+          (str "lt")
         )
         (block
-          (assign d
-            (call get
-              (var strtab)
-              (binop +
-                (var ss)
-                (int 3)
-              )
-            )
+          (return
+            (var OP_LT)
           )
         )
       )
-      (comment "if sl>4 { e=get(strtab,(ss+4)); }")
+      (comment "if streq_lit(strtab, ss, sl, \"le\")          { return OP_LE; }")
       (if
-        (binop >
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 4)
+          (str "le")
         )
         (block
-          (assign e
-            (call get
-              (var strtab)
-              (binop +
-                (var ss)
-                (int 4)
-              )
-            )
+          (return
+            (var OP_LE)
           )
         )
       )
-      (comment "if sl==2 {")
+      (comment "if streq_lit(strtab, ss, sl, \"gt\")          { return OP_GT; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 2)
+          (str "gt")
         )
         (block
-          (comment "if a=='o'&&b=='r' { return OP_OR; }")
-          (if
-            (binop &&
-              (binop ==
-                (var a)
-                (int:u8 111)
-              )
-              (binop ==
-                (var b)
-                (int:u8 114)
-              )
-            )
-            (block
-              (return
-                (var OP_OR)
-              )
-            )
-          )
-          (comment "if a=='e'&&b=='q' { return OP_EQ; }")
-          (if
-            (binop &&
-              (binop ==
-                (var a)
-                (int:u8 101)
-              )
-              (binop ==
-                (var b)
-                (int:u8 113)
-              )
-            )
-            (block
-              (return
-                (var OP_EQ)
-              )
-            )
-          )
-          (comment "if a=='n'&&b=='e' { return OP_NE; }")
-          (if
-            (binop &&
-              (binop ==
-                (var a)
-                (int:u8 110)
-              )
-              (binop ==
-                (var b)
-                (int:u8 101)
-              )
-            )
-            (block
-              (return
-                (var OP_NE)
-              )
-            )
-          )
-          (comment "if a=='l'&&b=='t' { return OP_LT; }")
-          (if
-            (binop &&
-              (binop ==
-                (var a)
-                (int:u8 108)
-              )
-              (binop ==
-                (var b)
-                (int:u8 116)
-              )
-            )
-            (block
-              (return
-                (var OP_LT)
-              )
-            )
-          )
-          (comment "if a=='l'&&b=='e' { return OP_LE; }")
-          (if
-            (binop &&
-              (binop ==
-                (var a)
-                (int:u8 108)
-              )
-              (binop ==
-                (var b)
-                (int:u8 101)
-              )
-            )
-            (block
-              (return
-                (var OP_LE)
-              )
-            )
-          )
-          (comment "if a=='g'&&b=='t' { return OP_GT; }")
-          (if
-            (binop &&
-              (binop ==
-                (var a)
-                (int:u8 103)
-              )
-              (binop ==
-                (var b)
-                (int:u8 116)
-              )
-            )
-            (block
-              (return
-                (var OP_GT)
-              )
-            )
-          )
-          (comment "if a=='g'&&b=='e' { return OP_GE; }")
-          (if
-            (binop &&
-              (binop ==
-                (var a)
-                (int:u8 103)
-              )
-              (binop ==
-                (var b)
-                (int:u8 101)
-              )
-            )
-            (block
-              (return
-                (var OP_GE)
-              )
-            )
+          (return
+            (var OP_GT)
           )
         )
       )
-      (comment "if sl==3 {")
+      (comment "if streq_lit(strtab, ss, sl, \"ge\")          { return OP_GE; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 3)
+          (str "ge")
         )
         (block
-          (comment "if a=='a'&&b=='d'&&c=='d'  { return OP_ADD; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 97)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 100)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 100)
-              )
-            )
-            (block
-              (return
-                (var OP_ADD)
-              )
-            )
-          )
-          (comment "if a=='s'&&b=='u'&&c=='b'  { return OP_SUB; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 115)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 117)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 98)
-              )
-            )
-            (block
-              (return
-                (var OP_SUB)
-              )
-            )
-          )
-          (comment "if a=='m'&&b=='u'&&c=='l' { return OP_MUL; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 109)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 117)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 108)
-              )
-            )
-            (block
-              (return
-                (var OP_MUL)
-              )
-            )
-          )
-          (comment "if a=='d'&&b=='i'&&c=='v' { return OP_DIV; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 100)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 105)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 118)
-              )
-            )
-            (block
-              (return
-                (var OP_DIV)
-              )
-            )
-          )
-          (comment "if a=='m'&&b=='o'&&c=='d' { return OP_MOD; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 109)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 111)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 100)
-              )
-            )
-            (block
-              (return
-                (var OP_MOD)
-              )
-            )
-          )
-          (comment "if a=='a'&&b=='n'&&c=='d'  { return OP_AND; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 97)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 110)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 100)
-              )
-            )
-            (block
-              (return
-                (var OP_AND)
-              )
-            )
-          )
-          (comment "if a=='x'&&b=='o'&&c=='r' { return OP_XOR; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 120)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 111)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 114)
-              )
-            )
-            (block
-              (return
-                (var OP_XOR)
-              )
-            )
-          )
-          (comment "if a=='s'&&b=='h'&&c=='l' { return OP_SHL; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 115)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 104)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 108)
-              )
-            )
-            (block
-              (return
-                (var OP_SHL)
-              )
-            )
-          )
-          (comment "if a=='s'&&b=='h'&&c=='r' { return OP_SHR; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 115)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 104)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 114)
-              )
-            )
-            (block
-              (return
-                (var OP_SHR)
-              )
-            )
-          )
-          (comment "if a=='p'&&b=='o'&&c=='p' { return OP_POP; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 112)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 111)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 112)
-              )
-            )
-            (block
-              (return
-                (var OP_POP)
-              )
-            )
-          )
-          (comment "if a=='n'&&b=='e'&&c=='g' { return OP_NEG; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 110)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 101)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 103)
-              )
-            )
-            (block
-              (return
-                (var OP_NEG)
-              )
-            )
+          (return
+            (var OP_GE)
           )
         )
       )
-      (comment "if sl==4 {")
+      (comment "if streq_lit(strtab, ss, sl, \"add\")         { return OP_ADD; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 4)
+          (str "add")
         )
         (block
-          (comment "if a=='l'&&b=='n'&&c=='o'&&d=='t' { return OP_LNOT; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop ==
-                    (var a)
-                    (int:u8 108)
-                  )
-                  (binop ==
-                    (var b)
-                    (int:u8 110)
-                  )
-                )
-                (binop ==
-                  (var c)
-                  (int:u8 111)
-                )
-              )
-              (binop ==
-                (var d)
-                (int:u8 116)
-              )
-            )
-            (block
-              (return
-                (var OP_LNOT)
-              )
-            )
-          )
-          (comment "if a=='c'&&b=='a'&&c=='s'&&d=='t'   { return OP_CAST; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop ==
-                    (var a)
-                    (int:u8 99)
-                  )
-                  (binop ==
-                    (var b)
-                    (int:u8 97)
-                  )
-                )
-                (binop ==
-                  (var c)
-                  (int:u8 115)
-                )
-              )
-              (binop ==
-                (var d)
-                (int:u8 116)
-              )
-            )
-            (block
-              (return
-                (var OP_CAST)
-              )
-            )
-          )
-          (comment "if a=='l'&&b=='o'&&c=='a'&&d=='d'  { return OP_LOAD; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop ==
-                    (var a)
-                    (int:u8 108)
-                  )
-                  (binop ==
-                    (var b)
-                    (int:u8 111)
-                  )
-                )
-                (binop ==
-                  (var c)
-                  (int:u8 97)
-                )
-              )
-              (binop ==
-                (var d)
-                (int:u8 100)
-              )
-            )
-            (block
-              (return
-                (var OP_LOAD)
-              )
-            )
-          )
-          (comment "if a=='j'&&b=='u'&&c=='m'&&d=='p' { return OP_JUMP; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop ==
-                    (var a)
-                    (int:u8 106)
-                  )
-                  (binop ==
-                    (var b)
-                    (int:u8 117)
-                  )
-                )
-                (binop ==
-                  (var c)
-                  (int:u8 109)
-                )
-              )
-              (binop ==
-                (var d)
-                (int:u8 112)
-              )
-            )
-            (block
-              (return
-                (var OP_JUMP)
-              )
-            )
-          )
-          (comment "if a=='c'&&b=='a'&&c=='l'&&d=='l'   { return OP_CALL; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop ==
-                    (var a)
-                    (int:u8 99)
-                  )
-                  (binop ==
-                    (var b)
-                    (int:u8 97)
-                  )
-                )
-                (binop ==
-                  (var c)
-                  (int:u8 108)
-                )
-              )
-              (binop ==
-                (var d)
-                (int:u8 108)
-              )
-            )
-            (block
-              (return
-                (var OP_CALL)
-              )
-            )
-          )
-          (comment "if b=='t'&&c=='_'&&d=='u' {")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var b)
-                  (int:u8 116)
-                )
-                (binop ==
-                  (var c)
-                  (int:u8 95)
-                )
-              )
-              (binop ==
-                (var d)
-                (int:u8 117)
-              )
-            )
-            (block
-              (comment "if a=='l' { return OP_LT_U; }")
-              (if
-                (binop ==
-                  (var a)
-                  (int:u8 108)
-                )
-                (block
-                  (return
-                    (var OP_LT_U)
-                  )
-                )
-              )
-              (comment "if a=='g' { return OP_GT_U; }")
-              (if
-                (binop ==
-                  (var a)
-                  (int:u8 103)
-                )
-                (block
-                  (return
-                    (var OP_GT_U)
-                  )
-                )
-              )
-            )
-          )
-          (comment "if b=='e'&&c=='_'&&d=='u' {")
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var b)
-                  (int:u8 101)
-                )
-                (binop ==
-                  (var c)
-                  (int:u8 95)
-                )
-              )
-              (binop ==
-                (var d)
-                (int:u8 117)
-              )
-            )
-            (block
-              (comment "if a=='l' { return OP_LE_U; }")
-              (if
-                (binop ==
-                  (var a)
-                  (int:u8 108)
-                )
-                (block
-                  (return
-                    (var OP_LE_U)
-                  )
-                )
-              )
-              (comment "if a=='g' { return OP_GE_U; }")
-              (if
-                (binop ==
-                  (var a)
-                  (int:u8 103)
-                )
-                (block
-                  (return
-                    (var OP_GE_U)
-                  )
-                )
-              )
-            )
+          (return
+            (var OP_ADD)
           )
         )
       )
-      (comment "if sl==5 {")
+      (comment "if streq_lit(strtab, ss, sl, \"sub\")         { return OP_SUB; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 5)
+          (str "sub")
         )
         (block
-          (comment "if a=='s'&&b=='t'&&c=='o'&&d=='r'&&e=='e' { return OP_STORE; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop &&
-                    (binop ==
-                      (var a)
-                      (int:u8 115)
-                    )
-                    (binop ==
-                      (var b)
-                      (int:u8 116)
-                    )
-                  )
-                  (binop ==
-                    (var c)
-                    (int:u8 111)
-                  )
-                )
-                (binop ==
-                  (var d)
-                  (int:u8 114)
-                )
-              )
-              (binop ==
-                (var e)
-                (int:u8 101)
-              )
-            )
-            (block
-              (return
-                (var OP_STORE)
-              )
-            )
-          )
-          (comment "if a=='s'&&b=='h'&&c=='r'&&d=='_'&&e=='u' { return OP_SHR_U; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop &&
-                    (binop ==
-                      (var a)
-                      (int:u8 115)
-                    )
-                    (binop ==
-                      (var b)
-                      (int:u8 104)
-                    )
-                  )
-                  (binop ==
-                    (var c)
-                    (int:u8 114)
-                  )
-                )
-                (binop ==
-                  (var d)
-                  (int:u8 95)
-                )
-              )
-              (binop ==
-                (var e)
-                (int:u8 117)
-              )
-            )
-            (block
-              (return
-                (var OP_SHR_U)
-              )
-            )
-          )
-          (comment "if a=='d'&&b=='i'&&c=='v'&&d=='_'&&e=='u' { return OP_DIV_U; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop &&
-                    (binop ==
-                      (var a)
-                      (int:u8 100)
-                    )
-                    (binop ==
-                      (var b)
-                      (int:u8 105)
-                    )
-                  )
-                  (binop ==
-                    (var c)
-                    (int:u8 118)
-                  )
-                )
-                (binop ==
-                  (var d)
-                  (int:u8 95)
-                )
-              )
-              (binop ==
-                (var e)
-                (int:u8 117)
-              )
-            )
-            (block
-              (return
-                (var OP_DIV_U)
-              )
-            )
-          )
-          (comment "if a=='m'&&b=='o'&&c=='d'&&d=='_'&&e=='u' { return OP_MOD_U; }")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop &&
-                    (binop ==
-                      (var a)
-                      (int:u8 109)
-                    )
-                    (binop ==
-                      (var b)
-                      (int:u8 111)
-                    )
-                  )
-                  (binop ==
-                    (var c)
-                    (int:u8 100)
-                  )
-                )
-                (binop ==
-                  (var d)
-                  (int:u8 95)
-                )
-              )
-              (binop ==
-                (var e)
-                (int:u8 117)
-              )
-            )
-            (block
-              (return
-                (var OP_MOD_U)
-              )
-            )
+          (return
+            (var OP_SUB)
           )
         )
       )
-      (comment "if sl==6 { if a=='r'&&b=='e'&&c=='t' { return OP_RETURN; } }")
+      (comment "if streq_lit(strtab, ss, sl, \"mul\")         { return OP_MUL; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 6)
+          (str "mul")
         )
         (block
-          (if
-            (binop &&
-              (binop &&
-                (binop ==
-                  (var a)
-                  (int:u8 114)
-                )
-                (binop ==
-                  (var b)
-                  (int:u8 101)
-                )
-              )
-              (binop ==
-                (var c)
-                (int:u8 116)
-              )
-            )
-            (block
-              (return
-                (var OP_RETURN)
-              )
-            )
+          (return
+            (var OP_MUL)
           )
         )
       )
-      (comment "if sl==7 {")
+      (comment "if streq_lit(strtab, ss, sl, \"div\")         { return OP_DIV; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 7)
+          (str "div")
         )
         (block
-          (comment "if a=='j'&&b=='u'&&c=='m'&&d=='p'&&e=='_' {")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop &&
-                    (binop ==
-                      (var a)
-                      (int:u8 106)
-                    )
-                    (binop ==
-                      (var b)
-                      (int:u8 117)
-                    )
-                  )
-                  (binop ==
-                    (var c)
-                    (int:u8 109)
-                  )
-                )
-                (binop ==
-                  (var d)
-                  (int:u8 112)
-                )
-              )
-              (binop ==
-                (var e)
-                (int:u8 95)
-              )
-            )
-            (block
-              (comment "var f: u8=get(strtab,(ss+5));")
-              (var_decl f
-                (type u8)
-                (call get
-                  (var strtab)
-                  (binop +
-                    (var ss)
-                    (int 5)
-                  )
-                )
-              )
-              (comment "if f=='i' { return OP_JUMP_IF; }")
-              (if
-                (binop ==
-                  (var f)
-                  (int:u8 105)
-                )
-                (block
-                  (return
-                    (var OP_JUMP_IF)
-                  )
-                )
-              )
-            )
+          (return
+            (var OP_DIV)
           )
         )
       )
-      (comment "if sl==8 {")
+      (comment "if streq_lit(strtab, ss, sl, \"mod\")         { return OP_MOD; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 8)
+          (str "mod")
         )
         (block
-          (comment "if a=='p'&&b=='u'&&c=='s'&&d=='h'&&e=='_' {")
-          (if
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop &&
-                    (binop ==
-                      (var a)
-                      (int:u8 112)
-                    )
-                    (binop ==
-                      (var b)
-                      (int:u8 117)
-                    )
-                  )
-                  (binop ==
-                    (var c)
-                    (int:u8 115)
-                  )
-                )
-                (binop ==
-                  (var d)
-                  (int:u8 104)
-                )
-              )
-              (binop ==
-                (var e)
-                (int:u8 95)
-              )
-            )
-            (block
-              (comment "var f: u8=get(strtab,(ss+5));")
-              (var_decl f
-                (type u8)
-                (call get
-                  (var strtab)
-                  (binop +
-                    (var ss)
-                    (int 5)
-                  )
-                )
-              )
-              (comment "if f=='i' { return OP_PUSH_INT; }")
-              (if
-                (binop ==
-                  (var f)
-                  (int:u8 105)
-                )
-                (block
-                  (return
-                    (var OP_PUSH_INT)
-                  )
-                )
-              )
-              (comment "if f=='s' { return OP_PUSH_STR; }")
-              (if
-                (binop ==
-                  (var f)
-                  (int:u8 115)
-                )
-                (block
-                  (return
-                    (var OP_PUSH_STR)
-                  )
-                )
-              )
-            )
+          (return
+            (var OP_MOD)
           )
         )
       )
-      (comment "if sl==10 { if a=='j' { return OP_JUMP_IFNOT; } }")
+      (comment "if streq_lit(strtab, ss, sl, \"and\")         { return OP_AND; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 10)
+          (str "and")
         )
         (block
-          (if
-            (binop ==
-              (var a)
-              (int:u8 106)
-            )
-            (block
-              (return
-                (var OP_JUMP_IFNOT)
-              )
-            )
+          (return
+            (var OP_AND)
           )
         )
       )
-      (comment "if sl==11 { if a=='r'&&b=='e' { return OP_RETURN_VOID; } }")
+      (comment "if streq_lit(strtab, ss, sl, \"xor\")         { return OP_XOR; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var strtab)
+          (var ss)
           (var sl)
-          (int 11)
+          (str "xor")
         )
         (block
-          (if
-            (binop &&
-              (binop ==
-                (var a)
-                (int:u8 114)
-              )
-              (binop ==
-                (var b)
-                (int:u8 101)
-              )
-            )
-            (block
-              (return
-                (var OP_RETURN_VOID)
-              )
-            )
+          (return
+            (var OP_XOR)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"shl\")         { return OP_SHL; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "shl")
+        )
+        (block
+          (return
+            (var OP_SHL)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"shr\")         { return OP_SHR; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "shr")
+        )
+        (block
+          (return
+            (var OP_SHR)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"pop\")         { return OP_POP; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "pop")
+        )
+        (block
+          (return
+            (var OP_POP)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"neg\")         { return OP_NEG; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "neg")
+        )
+        (block
+          (return
+            (var OP_NEG)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"lnot\")        { return OP_LNOT; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "lnot")
+        )
+        (block
+          (return
+            (var OP_LNOT)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"cast\")        { return OP_CAST; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "cast")
+        )
+        (block
+          (return
+            (var OP_CAST)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"load\")        { return OP_LOAD; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "load")
+        )
+        (block
+          (return
+            (var OP_LOAD)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"jump\")        { return OP_JUMP; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "jump")
+        )
+        (block
+          (return
+            (var OP_JUMP)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"call\")        { return OP_CALL; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "call")
+        )
+        (block
+          (return
+            (var OP_CALL)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"lt_u\")        { return OP_LT_U; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "lt_u")
+        )
+        (block
+          (return
+            (var OP_LT_U)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"le_u\")        { return OP_LE_U; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "le_u")
+        )
+        (block
+          (return
+            (var OP_LE_U)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"gt_u\")        { return OP_GT_U; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "gt_u")
+        )
+        (block
+          (return
+            (var OP_GT_U)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"ge_u\")        { return OP_GE_U; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "ge_u")
+        )
+        (block
+          (return
+            (var OP_GE_U)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"store\")       { return OP_STORE; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "store")
+        )
+        (block
+          (return
+            (var OP_STORE)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"shr_u\")       { return OP_SHR_U; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "shr_u")
+        )
+        (block
+          (return
+            (var OP_SHR_U)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"div_u\")       { return OP_DIV_U; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "div_u")
+        )
+        (block
+          (return
+            (var OP_DIV_U)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"mod_u\")       { return OP_MOD_U; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "mod_u")
+        )
+        (block
+          (return
+            (var OP_MOD_U)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"return\")      { return OP_RETURN; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "return")
+        )
+        (block
+          (return
+            (var OP_RETURN)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"jump_if\")     { return OP_JUMP_IF; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "jump_if")
+        )
+        (block
+          (return
+            (var OP_JUMP_IF)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"push_int\")    { return OP_PUSH_INT; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "push_int")
+        )
+        (block
+          (return
+            (var OP_PUSH_INT)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"push_str\")    { return OP_PUSH_STR; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "push_str")
+        )
+        (block
+          (return
+            (var OP_PUSH_STR)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"jump_ifnot\")  { return OP_JUMP_IFNOT; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "jump_ifnot")
+        )
+        (block
+          (return
+            (var OP_JUMP_IFNOT)
+          )
+        )
+      )
+      (comment "if streq_lit(strtab, ss, sl, \"return_void\") { return OP_RETURN_VOID; }")
+      (if
+        (call streq_lit
+          (var strtab)
+          (var ss)
+          (var sl)
+          (str "return_void")
+        )
+        (block
+          (return
+            (var OP_RETURN_VOID)
           )
         )
       )

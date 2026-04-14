@@ -2,6 +2,7 @@
   (import string_buffer.tc)
   (import source_reader.tc)
   (import ast_node.tc)
+  (import strlib.tc)
   (var_decl NK_PROGRAM
     (type i32)
     (int 0)
@@ -484,371 +485,6 @@
       )
     )
   )
-  (fn cmp2
-    (params
-      (param a
-        (type U8Array)
-      )
-      (param st
-        (type i32)
-      )
-      (param b0
-        (type u8)
-      )
-      (param b1
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return get(a, st)==b0 && get(a, (st+1))==b1;")
-      (return
-        (binop &&
-          (binop ==
-            (call get
-              (var a)
-              (var st)
-            )
-            (var b0)
-          )
-          (binop ==
-            (call get
-              (var a)
-              (binop +
-                (var st)
-                (int 1)
-              )
-            )
-            (var b1)
-          )
-        )
-      )
-    )
-  )
-  (fn cmp3
-    (params
-      (param a
-        (type U8Array)
-      )
-      (param st
-        (type i32)
-      )
-      (param b0
-        (type u8)
-      )
-      (param b1
-        (type u8)
-      )
-      (param b2
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2;")
-      (return
-        (binop &&
-          (binop &&
-            (binop ==
-              (call get
-                (var a)
-                (var st)
-              )
-              (var b0)
-            )
-            (binop ==
-              (call get
-                (var a)
-                (binop +
-                  (var st)
-                  (int 1)
-                )
-              )
-              (var b1)
-            )
-          )
-          (binop ==
-            (call get
-              (var a)
-              (binop +
-                (var st)
-                (int 2)
-              )
-            )
-            (var b2)
-          )
-        )
-      )
-    )
-  )
-  (fn cmp4
-    (params
-      (param a
-        (type U8Array)
-      )
-      (param st
-        (type i32)
-      )
-      (param b0
-        (type u8)
-      )
-      (param b1
-        (type u8)
-      )
-      (param b2
-        (type u8)
-      )
-      (param b3
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return get(a,st)==b0 && get(a,(st+1))==b1 &&")
-      (return
-        (binop &&
-          (binop &&
-            (binop &&
-              (binop ==
-                (call get
-                  (var a)
-                  (var st)
-                )
-                (var b0)
-              )
-              (binop ==
-                (call get
-                  (var a)
-                  (binop +
-                    (var st)
-                    (int 1)
-                  )
-                )
-                (var b1)
-              )
-            )
-            (binop ==
-              (call get
-                (var a)
-                (binop +
-                  (var st)
-                  (int 2)
-                )
-              )
-              (var b2)
-            )
-          )
-          (binop ==
-            (call get
-              (var a)
-              (binop +
-                (var st)
-                (int 3)
-              )
-            )
-            (var b3)
-          )
-        )
-      )
-    )
-  )
-  (fn cmp5
-    (params
-      (param a
-        (type U8Array)
-      )
-      (param st
-        (type i32)
-      )
-      (param b0
-        (type u8)
-      )
-      (param b1
-        (type u8)
-      )
-      (param b2
-        (type u8)
-      )
-      (param b3
-        (type u8)
-      )
-      (param b4
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&")
-      (return
-        (binop &&
-          (binop &&
-            (binop &&
-              (binop &&
-                (binop ==
-                  (call get
-                    (var a)
-                    (var st)
-                  )
-                  (var b0)
-                )
-                (binop ==
-                  (call get
-                    (var a)
-                    (binop +
-                      (var st)
-                      (int 1)
-                    )
-                  )
-                  (var b1)
-                )
-              )
-              (binop ==
-                (call get
-                  (var a)
-                  (binop +
-                    (var st)
-                    (int 2)
-                  )
-                )
-                (var b2)
-              )
-            )
-            (binop ==
-              (call get
-                (var a)
-                (binop +
-                  (var st)
-                  (int 3)
-                )
-              )
-              (var b3)
-            )
-          )
-          (binop ==
-            (call get
-              (var a)
-              (binop +
-                (var st)
-                (int 4)
-              )
-            )
-            (var b4)
-          )
-        )
-      )
-    )
-  )
-  (fn cmp6
-    (params
-      (param a
-        (type U8Array)
-      )
-      (param st
-        (type i32)
-      )
-      (param b0
-        (type u8)
-      )
-      (param b1
-        (type u8)
-      )
-      (param b2
-        (type u8)
-      )
-      (param b3
-        (type u8)
-      )
-      (param b4
-        (type u8)
-      )
-      (param b5
-        (type u8)
-      )
-    )
-    (ret
-      (type bool)
-    )
-    (block
-      (comment "return get(a,st)==b0 && get(a,(st+1))==b1 && get(a,(st+2))==b2 &&")
-      (return
-        (binop &&
-          (binop &&
-            (binop &&
-              (binop &&
-                (binop &&
-                  (binop ==
-                    (call get
-                      (var a)
-                      (var st)
-                    )
-                    (var b0)
-                  )
-                  (binop ==
-                    (call get
-                      (var a)
-                      (binop +
-                        (var st)
-                        (int 1)
-                      )
-                    )
-                    (var b1)
-                  )
-                )
-                (binop ==
-                  (call get
-                    (var a)
-                    (binop +
-                      (var st)
-                      (int 2)
-                    )
-                  )
-                  (var b2)
-                )
-              )
-              (binop ==
-                (call get
-                  (var a)
-                  (binop +
-                    (var st)
-                    (int 3)
-                  )
-                )
-                (var b3)
-              )
-            )
-            (binop ==
-              (call get
-                (var a)
-                (binop +
-                  (var st)
-                  (int 4)
-                )
-              )
-              (var b4)
-            )
-          )
-          (binop ==
-            (call get
-              (var a)
-              (binop +
-                (var st)
-                (int 5)
-              )
-            )
-            (var b5)
-          )
-        )
-      )
-    )
-  )
   (fn classify_kind
     (params
       (param atom
@@ -862,570 +498,381 @@
       (type i32)
     )
     (block
-      (comment "if len == 2 {")
+      (comment "if streq_lit(atom, 0, len, \"fn\")        { return NK_FN; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var atom)
+          (int 0)
           (var len)
-          (int 2)
+          (str "fn")
         )
         (block
-          (comment "if cmp2(atom,0, 'f','n')  { return NK_FN; }     // fn")
-          (if
-            (call cmp2
-              (var atom)
-              (int 0)
-              (int:u8 102)
-              (int:u8 110)
-            )
-            (block
-              (return
-                (var NK_FN)
-              )
-            )
-          )
-          (comment "if cmp2(atom,0, 'i','f')  { return NK_IF; }     // if")
-          (if
-            (call cmp2
-              (var atom)
-              (int 0)
-              (int:u8 105)
-              (int:u8 102)
-            )
-            (block
-              (return
-                (var NK_IF)
-              )
-            )
+          (return
+            (var NK_FN)
           )
         )
       )
-      (comment "if len == 3 {")
+      (comment "if streq_lit(atom, 0, len, \"if\")        { return NK_IF; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var atom)
+          (int 0)
           (var len)
-          (int 3)
+          (str "if")
         )
         (block
-          (comment "if cmp3(atom,0, 'r','e','t') { return NK_RET; }   // ret")
-          (if
-            (call cmp3
-              (var atom)
-              (int 0)
-              (int:u8 114)
-              (int:u8 101)
-              (int:u8 116)
-            )
-            (block
-              (return
-                (var NK_RET)
-              )
-            )
-          )
-          (comment "if cmp3(atom,0, 'i','n','t') { return NK_INT; }   // int")
-          (if
-            (call cmp3
-              (var atom)
-              (int 0)
-              (int:u8 105)
-              (int:u8 110)
-              (int:u8 116)
-            )
-            (block
-              (return
-                (var NK_INT)
-              )
-            )
-          )
-          (comment "if cmp3(atom,0, 's','t','r') { return NK_STR; }   // str")
-          (if
-            (call cmp3
-              (var atom)
-              (int 0)
-              (int:u8 115)
-              (int:u8 116)
-              (int:u8 114)
-            )
-            (block
-              (return
-                (var NK_STR)
-              )
-            )
-          )
-          (comment "if cmp3(atom,0, 'v','a','r')  { return NK_VAR; }   // var")
-          (if
-            (call cmp3
-              (var atom)
-              (int 0)
-              (int:u8 118)
-              (int:u8 97)
-              (int:u8 114)
-            )
-            (block
-              (return
-                (var NK_VAR)
-              )
-            )
+          (return
+            (var NK_IF)
           )
         )
       )
-      (comment "if len == 4 {")
+      (comment "if streq_lit(atom, 0, len, \"ret\")       { return NK_RET; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var atom)
+          (int 0)
           (var len)
-          (int 4)
+          (str "ret")
         )
         (block
-          (comment "if cmp4(atom,0, 'b','o','o','l') { return NK_BOOL; }   // bool")
-          (if
-            (call cmp4
-              (var atom)
-              (int 0)
-              (int:u8 98)
-              (int:u8 111)
-              (int:u8 111)
-              (int:u8 108)
-            )
-            (block
-              (return
-                (var NK_BOOL)
-              )
-            )
-          )
-          (comment "if cmp4(atom,0, 't','y','p','e') { return NK_TYPE; }  // type")
-          (if
-            (call cmp4
-              (var atom)
-              (int 0)
-              (int:u8 116)
-              (int:u8 121)
-              (int:u8 112)
-              (int:u8 101)
-            )
-            (block
-              (return
-                (var NK_TYPE)
-              )
-            )
-          )
-          (comment "if cmp4(atom,0, 'c','a','s','t')   { return NK_CAST; }  // cast")
-          (if
-            (call cmp4
-              (var atom)
-              (int 0)
-              (int:u8 99)
-              (int:u8 97)
-              (int:u8 115)
-              (int:u8 116)
-            )
-            (block
-              (return
-                (var NK_CAST)
-              )
-            )
-          )
-          (comment "if cmp4(atom,0, 'c','a','l','l')   { return NK_CALL; }  // call")
-          (if
-            (call cmp4
-              (var atom)
-              (int 0)
-              (int:u8 99)
-              (int:u8 97)
-              (int:u8 108)
-              (int:u8 108)
-            )
-            (block
-              (return
-                (var NK_CALL)
-              )
-            )
+          (return
+            (var NK_RET)
           )
         )
       )
-      (comment "if len == 5 {")
+      (comment "if streq_lit(atom, 0, len, \"int\")       { return NK_INT; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var atom)
+          (int 0)
           (var len)
-          (int 5)
+          (str "int")
         )
         (block
-          (comment "if cmp5(atom,0, 'b','l','o','c','k')   { return NK_BLOCK; }  // block")
-          (if
-            (call cmp5
-              (var atom)
-              (int 0)
-              (int:u8 98)
-              (int:u8 108)
-              (int:u8 111)
-              (int:u8 99)
-              (int:u8 107)
-            )
-            (block
-              (return
-                (var NK_BLOCK)
-              )
-            )
-          )
-          (comment "if cmp5(atom,0, 'p','a','r','a','m')   { return NK_PARAM; }  // param")
-          (if
-            (call cmp5
-              (var atom)
-              (int 0)
-              (int:u8 112)
-              (int:u8 97)
-              (int:u8 114)
-              (int:u8 97)
-              (int:u8 109)
-            )
-            (block
-              (return
-                (var NK_PARAM)
-              )
-            )
-          )
-          (comment "if cmp5(atom,0, 'w','h','i','l','e') { return NK_WHILE; }  // while")
-          (if
-            (call cmp5
-              (var atom)
-              (int 0)
-              (int:u8 119)
-              (int:u8 104)
-              (int:u8 105)
-              (int:u8 108)
-              (int:u8 101)
-            )
-            (block
-              (return
-                (var NK_WHILE)
-              )
-            )
-          )
-          (comment "if cmp5(atom,0, 'b','i','n','o','p')  { return NK_BINOP; }  // binop")
-          (if
-            (call cmp5
-              (var atom)
-              (int 0)
-              (int:u8 98)
-              (int:u8 105)
-              (int:u8 110)
-              (int:u8 111)
-              (int:u8 112)
-            )
-            (block
-              (return
-                (var NK_BINOP)
-              )
-            )
-          )
-          (comment "if cmp5(atom,0, 'u','n','a','r','y')  { return NK_UNARY; }  // unary")
-          (if
-            (call cmp5
-              (var atom)
-              (int 0)
-              (int:u8 117)
-              (int:u8 110)
-              (int:u8 97)
-              (int:u8 114)
-              (int:u8 121)
-            )
-            (block
-              (return
-                (var NK_UNARY)
-              )
-            )
-          )
-          (comment "if cmp5(atom,0, 'f','i','e','l','d') { return NK_FIELD; }  // field")
-          (if
-            (call cmp5
-              (var atom)
-              (int 0)
-              (int:u8 102)
-              (int:u8 105)
-              (int:u8 101)
-              (int:u8 108)
-              (int:u8 100)
-            )
-            (block
-              (return
-                (var NK_FIELD)
-              )
-            )
-          )
-          (comment "if cmp5(atom,0, 'b','r','e','a','k')   { return NK_BREAK; }  // break")
-          (if
-            (call cmp5
-              (var atom)
-              (int 0)
-              (int:u8 98)
-              (int:u8 114)
-              (int:u8 101)
-              (int:u8 97)
-              (int:u8 107)
-            )
-            (block
-              (return
-                (var NK_BREAK)
-              )
-            )
+          (return
+            (var NK_INT)
           )
         )
       )
-      (comment "if len == 6 {")
+      (comment "if streq_lit(atom, 0, len, \"str\")       { return NK_STR; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var atom)
+          (int 0)
           (var len)
-          (int 6)
+          (str "str")
         )
         (block
-          (comment "if cmp6(atom,0, 'p','a','r','a','m','s')  { return NK_PARAMS; }  // params")
-          (if
-            (call cmp6
-              (var atom)
-              (int 0)
-              (int:u8 112)
-              (int:u8 97)
-              (int:u8 114)
-              (int:u8 97)
-              (int:u8 109)
-              (int:u8 115)
-            )
-            (block
-              (return
-                (var NK_PARAMS)
-              )
-            )
-          )
-          (comment "if cmp6(atom,0, 'r','e','t','u','r','n'){ return NK_RETURN; }  // return")
-          (if
-            (call cmp6
-              (var atom)
-              (int 0)
-              (int:u8 114)
-              (int:u8 101)
-              (int:u8 116)
-              (int:u8 117)
-              (int:u8 114)
-              (int:u8 110)
-            )
-            (block
-              (return
-                (var NK_RETURN)
-              )
-            )
-          )
-          (comment "if cmp6(atom,0, 's','t','r','u','c','t') { return NK_STRUCT; }  // struct")
-          (if
-            (call cmp6
-              (var atom)
-              (int 0)
-              (int:u8 115)
-              (int:u8 116)
-              (int:u8 114)
-              (int:u8 117)
-              (int:u8 99)
-              (int:u8 116)
-            )
-            (block
-              (return
-                (var NK_STRUCT)
-              )
-            )
-          )
-          (comment "if cmp6(atom,0, 'a','s','s','i','g','n') { return NK_ASSIGN; }  // assign")
-          (if
-            (call cmp6
-              (var atom)
-              (int 0)
-              (int:u8 97)
-              (int:u8 115)
-              (int:u8 115)
-              (int:u8 105)
-              (int:u8 103)
-              (int:u8 110)
-            )
-            (block
-              (return
-                (var NK_ASSIGN)
-              )
-            )
-          )
-          (comment "if cmp6(atom,0, 'i','m','p','o','r','t'){ return NK_IMPORT; }  // import")
-          (if
-            (call cmp6
-              (var atom)
-              (int 0)
-              (int:u8 105)
-              (int:u8 109)
-              (int:u8 112)
-              (int:u8 111)
-              (int:u8 114)
-              (int:u8 116)
-            )
-            (block
-              (return
-                (var NK_IMPORT)
-              )
-            )
+          (return
+            (var NK_STR)
           )
         )
       )
-      (comment "if len == 7 {")
+      (comment "if streq_lit(atom, 0, len, \"var\")       { return NK_VAR; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var atom)
+          (int 0)
           (var len)
-          (int 7)
+          (str "var")
         )
         (block
-          (comment "if cmp4(atom,0, 'p','r','o','g') && cmp3(atom,4, 'r','a','m') {")
-          (if
-            (binop &&
-              (call cmp4
-                (var atom)
-                (int 0)
-                (int:u8 112)
-                (int:u8 114)
-                (int:u8 111)
-                (int:u8 103)
-              )
-              (call cmp3
-                (var atom)
-                (int 4)
-                (int:u8 114)
-                (int:u8 97)
-                (int:u8 109)
-              )
-            )
-            (block
-              (comment "return NK_PROGRAM;")
-              (return
-                (var NK_PROGRAM)
-              )
-            )
-          )
-          (comment "if cmp4(atom,0, 'c','o','m','m') && cmp3(atom,4, 'e','n','t') {")
-          (if
-            (binop &&
-              (call cmp4
-                (var atom)
-                (int 0)
-                (int:u8 99)
-                (int:u8 111)
-                (int:u8 109)
-                (int:u8 109)
-              )
-              (call cmp3
-                (var atom)
-                (int 4)
-                (int:u8 101)
-                (int:u8 110)
-                (int:u8 116)
-              )
-            )
-            (block
-              (comment "return NK_COMMENT;")
-              (return
-                (var NK_COMMENT)
-              )
-            )
+          (return
+            (var NK_VAR)
           )
         )
       )
-      (comment "if len == 8 {")
+      (comment "if streq_lit(atom, 0, len, \"bool\")      { return NK_BOOL; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var atom)
+          (int 0)
           (var len)
-          (int 8)
+          (str "bool")
         )
         (block
-          (comment "if cmp4(atom,0, 'v','a','r','_') && cmp4(atom,4, 'd','e','c','l') {")
-          (if
-            (binop &&
-              (call cmp4
-                (var atom)
-                (int 0)
-                (int:u8 118)
-                (int:u8 97)
-                (int:u8 114)
-                (int:u8 95)
-              )
-              (call cmp4
-                (var atom)
-                (int 4)
-                (int:u8 100)
-                (int:u8 101)
-                (int:u8 99)
-                (int:u8 108)
-              )
-            )
-            (block
-              (comment "return NK_VAR_DECL;")
-              (return
-                (var NK_VAR_DECL)
-              )
-            )
-          )
-          (comment "if cmp4(atom,0, 'c','o','n','t') && cmp4(atom,4, 'i','n','u','e') {")
-          (if
-            (binop &&
-              (call cmp4
-                (var atom)
-                (int 0)
-                (int:u8 99)
-                (int:u8 111)
-                (int:u8 110)
-                (int:u8 116)
-              )
-              (call cmp4
-                (var atom)
-                (int 4)
-                (int:u8 105)
-                (int:u8 110)
-                (int:u8 117)
-                (int:u8 101)
-              )
-            )
-            (block
-              (comment "return NK_CONTINUE;")
-              (return
-                (var NK_CONTINUE)
-              )
-            )
+          (return
+            (var NK_BOOL)
           )
         )
       )
-      (comment "if len == 9 {")
+      (comment "if streq_lit(atom, 0, len, \"type\")      { return NK_TYPE; }")
       (if
-        (binop ==
+        (call streq_lit
+          (var atom)
+          (int 0)
           (var len)
-          (int 9)
+          (str "type")
         )
         (block
-          (comment "if cmp4(atom,0, 'c','a','l','l') && cmp5(atom,4, '_','s','t','m','t') {")
-          (if
-            (binop &&
-              (call cmp4
-                (var atom)
-                (int 0)
-                (int:u8 99)
-                (int:u8 97)
-                (int:u8 108)
-                (int:u8 108)
-              )
-              (call cmp5
-                (var atom)
-                (int 4)
-                (int:u8 95)
-                (int:u8 115)
-                (int:u8 116)
-                (int:u8 109)
-                (int:u8 116)
-              )
-            )
-            (block
-              (comment "return NK_CALL_STMT;")
-              (return
-                (var NK_CALL_STMT)
-              )
-            )
+          (return
+            (var NK_TYPE)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"cast\")      { return NK_CAST; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "cast")
+        )
+        (block
+          (return
+            (var NK_CAST)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"call\")      { return NK_CALL; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "call")
+        )
+        (block
+          (return
+            (var NK_CALL)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"block\")     { return NK_BLOCK; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "block")
+        )
+        (block
+          (return
+            (var NK_BLOCK)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"param\")     { return NK_PARAM; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "param")
+        )
+        (block
+          (return
+            (var NK_PARAM)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"while\")     { return NK_WHILE; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "while")
+        )
+        (block
+          (return
+            (var NK_WHILE)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"binop\")     { return NK_BINOP; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "binop")
+        )
+        (block
+          (return
+            (var NK_BINOP)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"unary\")     { return NK_UNARY; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "unary")
+        )
+        (block
+          (return
+            (var NK_UNARY)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"field\")     { return NK_FIELD; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "field")
+        )
+        (block
+          (return
+            (var NK_FIELD)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"break\")     { return NK_BREAK; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "break")
+        )
+        (block
+          (return
+            (var NK_BREAK)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"params\")    { return NK_PARAMS; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "params")
+        )
+        (block
+          (return
+            (var NK_PARAMS)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"return\")    { return NK_RETURN; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "return")
+        )
+        (block
+          (return
+            (var NK_RETURN)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"struct\")    { return NK_STRUCT; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "struct")
+        )
+        (block
+          (return
+            (var NK_STRUCT)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"assign\")    { return NK_ASSIGN; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "assign")
+        )
+        (block
+          (return
+            (var NK_ASSIGN)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"import\")    { return NK_IMPORT; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "import")
+        )
+        (block
+          (return
+            (var NK_IMPORT)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"program\")   { return NK_PROGRAM; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "program")
+        )
+        (block
+          (return
+            (var NK_PROGRAM)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"comment\")   { return NK_COMMENT; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "comment")
+        )
+        (block
+          (return
+            (var NK_COMMENT)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"var_decl\")  { return NK_VAR_DECL; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "var_decl")
+        )
+        (block
+          (return
+            (var NK_VAR_DECL)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"continue\")  { return NK_CONTINUE; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "continue")
+        )
+        (block
+          (return
+            (var NK_CONTINUE)
+          )
+        )
+      )
+      (comment "if streq_lit(atom, 0, len, \"call_stmt\") { return NK_CALL_STMT; }")
+      (if
+        (call streq_lit
+          (var atom)
+          (int 0)
+          (var len)
+          (str "call_stmt")
+        )
+        (block
+          (return
+            (var NK_CALL_STMT)
           )
         )
       )
