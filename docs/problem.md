@@ -62,11 +62,38 @@ extract_sigs.tc と bootstrap 各種の AST 読み取りを同期する大規模
 
 ## asm.tc (アセンブラ兼リンカ)
 
-### 7. `.macro` / `.endm` 未対応 (limitation)
+### 7. asm.tc が assembler + linker 一体でメモリ消費が巨大 (limitation, 長期)
 
-アセンブラマクロが使えないため、trap_common.s のように
-ecall ハンドラを書くときに prologue/epilogue をコピペすることになる。
-一箇所直すと全部直す必要がある。
+現状の `compiler/asm.tc` は 1 プロセスで .s の tokenize →
+シンボル解決 → ELF 出力まで全部こなし、起動時に静的に約 **9 MB** の
+バッファを確保している:
+
+| バッファ | サイズ |
+|---|---|
+| `g_code` (出力) | 4 MB |
+| `g_lines` (入力ソース保存、2 パス目で参照) | 4 MB |
+| `g_line_offs` / `g_line_lens` (各 128K × 4B) | 1 MB |
+| `g_lab_names` / `g_lab_*` 4 本 | ~500 KB |
+| その他 | ~150 KB |
+| **合計** | **~9 MB** |
+
+ホストで走らせる分には問題ないが、**Pico 2 (256 KB RAM) のセルフ
+ホストは全く不可能**。フェーズ 2.5 (Pico 2 セルフホスト) /
+フェーズ 7 (OS 上コンパイラ) の前提として解決したい。
+
+対処 (段階的):
+- **短期 (実装済)**: trap_common.s の ecall handler プロローグ /
+  エピローグをヘルパラベル (`_ecall_enter` / `_ecall_leave_advance`)
+  に括り出し、`.macro` なしでも単一ソース化できることを確認。
+  asm.tc には触れていない。→ fixed list 参照。
+- **中期**: asm.tc の MAX_CODE / g_lines を実用値 (512 KB?) に下げる、
+  入力を streaming にする、2 パス目は backpatch テーブルで済ませて
+  source の再読み込みを避ける。単一プロセスのまま半分以下のメモリ。
+- **長期**: `.o` ファイル形式を決めて assembler と linker を別プロセス
+  に分離する。アセンブラは single-file 入力で `.o` 出力、リンカは
+  複数 `.o` を読んでシンボル解決 + ELF 出力。macro サポートは分離後
+  のアセンブラフェーズに入れる (今入れると分離時に移し替えが必要)。
+  これで各プロセスが Pico 2 の 256 KB に収まる。
 
 ### 8. `.align 12` 未対応 (limitation)
 
@@ -370,3 +397,10 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   こちらが致命的)。`(i as u32) >= (n as u32)` の unsigned 比較で
   "i<0 または i>=n" を 1 命令にまとめて hot-path コストを最小化。
   get 側は 60 秒テスト制約を超えたので残件 (#6 段階 1b 部分)
+- trap_common.s の 8 つの ecall ハンドラが prologue / epilogue を
+  コピペしていた (mv s0,sp; call _set_kern_gp; la t0,_kern_save;
+  lw sp,4(t0) の 4 行 × 8 + 終端 5 行 × 8) → `_ecall_enter` /
+  `_ecall_leave_advance` というヘルパラベルに括り出して各ハンドラを
+  半分程度に縮めた。`.macro` / `.endm` のサポートを asm.tc に足さず
+  ヘルパラベル (`call _ecall_enter` / `j _ecall_leave_advance`) で
+  single-source 化。23 行減 (#7 短期)

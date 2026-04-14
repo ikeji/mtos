@@ -93,67 +93,66 @@ _handle_ecall:
     sw   t0, 128(sp)
     j    _trap_restore
 
-_ecall_write:
+# Common ecall prologue: save the caller's ra in t2 (temp reg, we're
+# the only code running here), stash the user trap frame pointer in
+# s0, install kernel gp, and switch sp to the kernel stack saved in
+# _kern_save by sched_start. Returns via `jr t2` so the caller's ra
+# (clobbered by our `call _set_kern_gp`) doesn't matter.
+#
+# asm.tc has no `.macro` support, so using a shared helper is the
+# lightest way to keep the ecall prologue/epilogue in a single place.
+# Each ecall handler becomes `call _ecall_enter` + its own syscall
+# body + `j _ecall_leave_advance`. See problem.md #7.
+_ecall_enter:
+    mv   t2, ra
     mv   s0, sp
     call _set_kern_gp
     la   t0, _kern_save
     lw   sp, 4(t0)
+    jr   t2
+
+# Common ecall epilogue: advance mepc past the ecall instruction,
+# restore sp from s0, and drop into _trap_restore (no return).
+_ecall_leave_advance:
+    lw   t0, 128(s0)
+    addi t0, t0, 4
+    sw   t0, 128(s0)
+    mv   sp, s0
+    j    _trap_restore
+
+_ecall_write:
+    call _ecall_enter
     lw   a0, 40(s0)         # fd
     lw   a1, 44(s0)         # buf addr
     lw   a2, 48(s0)         # len
     call vfs_write__i32__u32__i32
     sw   a0, 40(s0)
-    lw   t0, 128(s0)
-    addi t0, t0, 4
-    sw   t0, 128(s0)
-    mv   sp, s0
-    j    _trap_restore
+    j    _ecall_leave_advance
 
 _ecall_read:
-    mv   s0, sp
-    call _set_kern_gp
-    la   t0, _kern_save
-    lw   sp, 4(t0)
+    call _ecall_enter
     lw   a0, 40(s0)         # fd
     lw   a1, 44(s0)         # buf addr
     lw   a2, 48(s0)         # len
     call vfs_read__i32__u32__i32
     sw   a0, 40(s0)
-    lw   t0, 128(s0)
-    addi t0, t0, 4
-    sw   t0, 128(s0)
-    mv   sp, s0
-    j    _trap_restore
+    j    _ecall_leave_advance
 
 _ecall_openat:
-    mv   s0, sp
-    call _set_kern_gp
-    la   t0, _kern_save
-    lw   sp, 4(t0)
+    call _ecall_enter
     # a0 = task's dirfd (ignored)
     lw   a0, 44(s0)         # path addr (task's a1)
     lw   a1, 48(s0)         # flags    (task's a2)
     call vfs_open__u32__i32
     sw   a0, 40(s0)
-    lw   t0, 128(s0)
-    addi t0, t0, 4
-    sw   t0, 128(s0)
-    mv   sp, s0
-    j    _trap_restore
+    j    _ecall_leave_advance
 
 _ecall_close:
-    mv   s0, sp
-    call _set_kern_gp
-    la   t0, _kern_save
-    lw   sp, 4(t0)
+    call _ecall_enter
     lw   a0, 40(s0)         # fd
     call vfs_close__i32
     sw   a0, 40(s0)
-    lw   t0, 128(s0)
-    addi t0, t0, 4
-    sw   t0, 128(s0)
-    mv   sp, s0
-    j    _trap_restore
+    j    _ecall_leave_advance
 
 # ===== sys_exec (a7 = 221) =====
 # a0 = NUL-terminated path address (task virtual == kernel virtual).
@@ -162,10 +161,7 @@ _ecall_close:
 # lands in the new task's entry. On failure, we write -1 to a0 and
 # advance mepc past the ecall like a normal syscall return.
 _ecall_exec:
-    mv   s0, sp
-    call _set_kern_gp
-    la   t0, _kern_save
-    lw   sp, 4(t0)
+    call _ecall_enter
     lw   a0, 40(s0)         # path addr (task's a0)
     call sys_exec_handler__u32
     beqz a0, _exec_failed
@@ -176,60 +172,41 @@ _ecall_exec:
 _exec_failed:
     li   t0, -1
     sw   t0, 40(s0)         # saved a0 = -1
-    lw   t0, 128(s0)
-    addi t0, t0, 4
-    sw   t0, 128(s0)
-    mv   sp, s0
-    j    _trap_restore
+    j    _ecall_leave_advance
 
 # ===== sys_spawn (a7 = 220) =====
 # a0 = path_addr. Load the binary into a new slot via sys_spawn_handler,
 # write the new slot id (or -1) back to the task, advance mepc, and
 # return to the caller. No context switch: parent keeps running.
 _ecall_spawn:
-    mv   s0, sp
-    call _set_kern_gp
-    la   t0, _kern_save
-    lw   sp, 4(t0)
+    call _ecall_enter
     lw   a0, 40(s0)
     call sys_spawn_handler__u32
     sw   a0, 40(s0)
-    lw   t0, 128(s0)
-    addi t0, t0, 4
-    sw   t0, 128(s0)
-    mv   sp, s0
-    j    _trap_restore
+    j    _ecall_leave_advance
 
 # ===== sys_wait (a7 = 260) =====
 # a0 = target slot. sys_wait_handler either returns 0 (target already
 # done — don't switch, caller stays READY) or a frame to switch to
 # (caller is now WAITING). Either way we write 0 as the return value
 # of sys_wait and advance mepc so the parent resumes just past ecall
-# once it becomes ready again.
+# once it becomes ready again. The actual switch (if any) is done
+# inline: we need to poke _switch_frame before jumping into the shared
+# epilogue, so this handler doesn't use _ecall_leave_advance directly.
 _ecall_wait:
-    mv   s0, sp
-    call _set_kern_gp
-    la   t0, _kern_save
-    lw   sp, 4(t0)
+    call _ecall_enter
     lw   a0, 40(s0)
     call sys_wait_handler__i32
     sw   zero, 40(s0)        # saved a0 = 0 (success)
-    lw   t0, 128(s0)
-    addi t0, t0, 4
-    sw   t0, 128(s0)
     beqz a0, _wait_no_switch
     la   t0, _switch_frame
     sw   a0, 0(t0)
 _wait_no_switch:
-    mv   sp, s0
-    j    _trap_restore
+    j    _ecall_leave_advance
 
 _ecall_exit:
     # Call TC sched_task_exit() to get next task frame (0 = all done)
-    mv   s0, sp
-    call _set_kern_gp
-    la   t0, _kern_save
-    lw   sp, 4(t0)
+    call _ecall_enter
     call sched_task_exit
     beqz a0, _all_tasks_done
     la   t0, _switch_frame
