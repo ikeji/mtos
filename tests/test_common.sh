@@ -162,7 +162,7 @@ _GEN2_READY=false
 # build_gen2_tool "name" — compiles compiler/$name.tc to RISC-V ELF via compile-gen1.sh
 build_gen2_tool() {
     local name="$1"
-    "$ROOT_DIR/compile-gen1.sh" -o "$_GEN2_TMP/$name" "$TC_DIR/$name.tc" 2>/dev/null
+    "$ROOT_DIR/compile-gen1.sh" -o "$_GEN2_TMP/$name" "$TC_DIR/$name.tc"
 }
 
 # ensure_gen2_tools — builds Gen2 RISC-V binaries (once), sets USE_NATIVE

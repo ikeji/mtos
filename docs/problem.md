@@ -200,16 +200,6 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 
 ## ビルド / テスト
 
-### 16. Gen2 ツールの再ビルドが遅い (ergonomics)
-
-`compile-gen1.sh` で 7 本 (parse/typecheck/codegen/bc2asm/bcrun/asm/
-extract_sigs) を順次ビルドすると 15 秒以上かかる。インクリメンタル
-ビルドはしていない。
-
-対処案:
-- ツール単位でタイムスタンプ比較してスキップ。
-- make ベースのビルドに移行。
-
 ### 17. `make test` の実行時間が 60 秒上限にぎりぎり (ergonomics)
 
 現在 58 秒前後で 60 秒制約 (CLAUDE.md) を満たしている。qemu ベースの
@@ -403,6 +393,13 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   半分程度に縮めた。`.macro` / `.endm` のサポートを asm.tc に足さず
   ヘルパラベル (`call _ecall_enter` / `j _ecall_leave_advance`) で
   single-source 化。23 行減 (#7 短期)
+- Gen2 ツールの再ビルドが「15 秒以上かかる」という問題と対処案が
+  problem.md にあったが、実測で 1.6 秒 (6 ツール順次) になっていた。
+  原因は特定しきれていないが、shr_u / u32 除算 / int32 canonicalization
+  などの bootstrap 改善が積み重なった結果と推測。測定値が十分小さい
+  ので #16 は閉じる。合わせて `tests/test_common.sh:build_gen2_tool`
+  に残っていた `2>/dev/null` を削除して #14 (stderr 可視化) と一貫
+  させた (#16)
 - `/tmp/gen2` / `/tmp/gen3` のキャッシュが stale のまま使われると、
   古い overload テーブル経由で意味不明な実行時エラー (かつて
   "get: out of bounds" の発生源) になっていた → compile-gen2.sh /
