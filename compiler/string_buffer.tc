@@ -57,6 +57,10 @@ export fn emit_char(sb: StringBuffer, c: u8) -> void {
     return;
 }
 
+// Emit a single newline byte. Thin wrapper around emit_char so we
+// don't have to spell `emit_char(ob, 10u8)` at every callsite.
+export fn emit_nl(sb: StringBuffer) -> void { emit_char(sb, 10u8); return; }
+
 // Emit all characters of a string into the buffer.
 export fn emit_string(sb: StringBuffer, s: StringLiteral) -> void {
     var i: i32 = 0;

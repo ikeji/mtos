@@ -320,6 +320,17 @@ __L2:
   return_void
 .endfn
 
+.fn emit_nl StringBuffer void
+.param sb StringBuffer
+; export fn emit_nl(sb: StringBuffer) -> void { emit_char(sb, 10u8); return; }
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn emit_string StringBuffer StringLiteral void
 .param sb StringBuffer
 .param s StringLiteral
@@ -4081,10 +4092,9 @@ __L252:
   load op
   call emit_op StringBuffer i32
   pop
-; emit_char(sb, 10u8);  // newline (for readability, downstream ignores whitespace)
+; emit_nl(sb);  // newline (for readability, downstream ignores whitespace)
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_n(sb, left_buf, 0, left_len);
   load sb
@@ -4093,10 +4103,9 @@ __L252:
   load left_len
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -4468,10 +4477,9 @@ __L274:
   load TK_RPAREN
   ne
   jump_ifnot __L275
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; pars_expr(src, tok, sb);
   load src
@@ -4577,7 +4585,7 @@ __L277:
 ; var wrapped: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store wrapped
-; emit_char(wrapped, '('); emit_string(wrapped, "cast"); emit_char(wrapped, 10u8);
+; emit_char(wrapped, '('); emit_string(wrapped, "cast"); emit_nl(wrapped);
   load wrapped
   push_int 40
   call emit_char StringBuffer u8
@@ -4587,18 +4595,16 @@ __L277:
   call emit_string StringBuffer StringLiteral
   pop
   load wrapped
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(wrapped, inner);
   load wrapped
   load inner
   call append StringBuffer StringBuffer
   pop
-; emit_char(wrapped, 10u8);
+; emit_nl(wrapped);
   load wrapped
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; pars_type(src, tok, wrapped, 0);
   load src
@@ -4666,10 +4672,9 @@ __L278:
   push_int 33
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; pars_unary(src, tok, sb);
   load src
@@ -4712,10 +4717,9 @@ __L279:
   push_int 45
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; pars_unary(src, tok, sb);
   load src
@@ -4805,7 +4809,7 @@ __L284:
 ; var combined: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store combined
-; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);
+; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_nl(combined);
   load combined
   push_int 40
   call emit_char StringBuffer u8
@@ -4823,17 +4827,15 @@ __L284:
   call emit_op StringBuffer i32
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(combined, left_sb); emit_char(combined, 10u8);
+; append(combined, left_sb); emit_nl(combined);
   load combined
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(combined, right_sb);
   load combined
@@ -4924,7 +4926,7 @@ __L290:
 ; var combined: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store combined
-; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);
+; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_nl(combined);
   load combined
   push_int 40
   call emit_char StringBuffer u8
@@ -4942,17 +4944,15 @@ __L290:
   call emit_op StringBuffer i32
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(combined, left_sb); emit_char(combined, 10u8);
+; append(combined, left_sb); emit_nl(combined);
   load combined
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(combined, right_sb);
   load combined
@@ -5043,7 +5043,7 @@ __L294:
 ; var combined: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store combined
-; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_char(combined, 10u8);
+; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_op(combined, op); emit_nl(combined);
   load combined
   push_int 40
   call emit_char StringBuffer u8
@@ -5061,17 +5061,15 @@ __L294:
   call emit_op StringBuffer i32
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(combined, left_sb); emit_char(combined, 10u8);
+; append(combined, left_sb); emit_nl(combined);
   load combined
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(combined, right_sb);
   load combined
@@ -5148,7 +5146,7 @@ __L295:
 ; var combined: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store combined
-; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '&'); emit_char(combined, 10u8);
+; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '&'); emit_nl(combined);
   load combined
   push_int 40
   call emit_char StringBuffer u8
@@ -5166,17 +5164,15 @@ __L295:
   call emit_char StringBuffer u8
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(combined, left_sb); emit_char(combined, 10u8);
+; append(combined, left_sb); emit_nl(combined);
   load combined
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(combined, right_sb);
   load combined
@@ -5253,7 +5249,7 @@ __L297:
 ; var combined: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store combined
-; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '^'); emit_char(combined, 10u8);
+; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '^'); emit_nl(combined);
   load combined
   push_int 40
   call emit_char StringBuffer u8
@@ -5271,17 +5267,15 @@ __L297:
   call emit_char StringBuffer u8
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(combined, left_sb); emit_char(combined, 10u8);
+; append(combined, left_sb); emit_nl(combined);
   load combined
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(combined, right_sb);
   load combined
@@ -5358,7 +5352,7 @@ __L299:
 ; var combined: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store combined
-; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '|'); emit_char(combined, 10u8);
+; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_char(combined, '|'); emit_nl(combined);
   load combined
   push_int 40
   call emit_char StringBuffer u8
@@ -5376,17 +5370,15 @@ __L299:
   call emit_char StringBuffer u8
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(combined, left_sb); emit_char(combined, 10u8);
+; append(combined, left_sb); emit_nl(combined);
   load combined
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(combined, right_sb);
   load combined
@@ -5512,7 +5504,7 @@ __L303:
   load right_sb
   call pars_bitor SourceReader U8Array StringBuffer
   pop
-; emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' '); emit_op(sb, k); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' '); emit_op(sb, k); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -5530,17 +5522,15 @@ __L303:
   call emit_op StringBuffer i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(sb, left_sb); emit_char(sb, 10u8);
+; append(sb, left_sb); emit_nl(sb);
   load sb
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(sb, right_sb);
   load sb
@@ -5615,7 +5605,7 @@ __L312:
 ; var combined: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store combined
-; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_string(combined, "&&"); emit_char(combined, 10u8);
+; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_string(combined, "&&"); emit_nl(combined);
   load combined
   push_int 40
   call emit_char StringBuffer u8
@@ -5633,17 +5623,15 @@ __L312:
   call emit_string StringBuffer StringLiteral
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(combined, left_sb); emit_char(combined, 10u8);
+; append(combined, left_sb); emit_nl(combined);
   load combined
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(combined, right_sb);
   load combined
@@ -5720,7 +5708,7 @@ __L314:
 ; var combined: StringBuffer = StringBuffer_new();
   call StringBuffer_new
   store combined
-; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_string(combined, "||"); emit_char(combined, 10u8);
+; emit_char(combined, '('); emit_string(combined, "binop"); emit_char(combined, ' '); emit_string(combined, "||"); emit_nl(combined);
   load combined
   push_int 40
   call emit_char StringBuffer u8
@@ -5738,17 +5726,15 @@ __L314:
   call emit_string StringBuffer StringLiteral
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; append(combined, left_sb); emit_char(combined, 10u8);
+; append(combined, left_sb); emit_nl(combined);
   load combined
   load left_sb
   call append StringBuffer StringBuffer
   pop
   load combined
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; append(combined, right_sb);
   load combined
@@ -5943,10 +5929,9 @@ __L322:
   load name_buf
   call delete U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -5974,10 +5959,9 @@ __L322:
   load tok
   call lex_tok SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -5999,10 +5983,9 @@ __L323:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -6114,10 +6097,9 @@ __L323:
   load TK_SEMI
   ne
   jump_ifnot __L324
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6139,10 +6121,9 @@ __L324:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -6179,10 +6160,9 @@ __L324:
   push_str 18
   call emit_string StringBuffer StringLiteral
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6197,10 +6177,9 @@ __L324:
   load sb
   call pars_expr SourceReader U8Array StringBuffer
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6228,10 +6207,9 @@ __L324:
   load tok
   call lex_tok SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6267,10 +6245,9 @@ __L326:
   pop
 __L327:
 __L325:
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -6307,10 +6284,9 @@ __L325:
   push_str 22
   call emit_string StringBuffer StringLiteral
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6325,10 +6301,9 @@ __L325:
   load sb
   call pars_expr SourceReader U8Array StringBuffer
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6346,10 +6321,9 @@ __L325:
   add
   call pars_block SourceReader U8Array StringBuffer i32
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -6445,10 +6419,9 @@ __L329:
   load name_len
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6469,10 +6442,9 @@ __L329:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -6558,10 +6530,9 @@ __L335:
   load name_len
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6633,10 +6604,9 @@ __L345:
   call emit_char StringBuffer u8
   pop
 __L346:
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
   load sb
@@ -6651,7 +6621,7 @@ __L346:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, name_buf, 0, name_len); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, name_buf, 0, name_len); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load name_buf
   push_int 0
@@ -6663,8 +6633,7 @@ __L346:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; pars_expr(src, tok, sb);
   load src
@@ -6683,10 +6652,9 @@ __L346:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -6736,10 +6704,9 @@ __L349:
   load TK_RPAREN
   ne
   jump_ifnot __L350
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -6780,10 +6747,9 @@ __L350:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -7152,10 +7118,9 @@ __L377:
   push_int 0
 __L378:
   jump_ifnot __L376
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7169,10 +7134,9 @@ __L378:
   load src
   call emit_comment_src StringBuffer SourceReader
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7198,10 +7162,9 @@ __L376:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -7322,10 +7285,9 @@ __L381:
   load name_buf
   call delete U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7395,10 +7357,9 @@ __L385:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -7427,10 +7388,9 @@ __L385:
   load pname_len
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -7448,10 +7408,9 @@ __L385:
   add
   call pars_type SourceReader U8Array StringBuffer i32
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -7489,10 +7448,9 @@ __L383:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7506,10 +7464,9 @@ __L383:
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7527,10 +7484,9 @@ __L383:
   push_str 45
   call emit_string StringBuffer StringLiteral
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -7582,10 +7538,9 @@ __L387:
   call emit_char StringBuffer u8
   pop
 __L388:
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7611,10 +7566,9 @@ __L388:
   pop
   jump __L390
 __L389:
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7633,10 +7587,9 @@ __L389:
   call pars_block SourceReader U8Array StringBuffer i32
   pop
 __L390:
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -7814,14 +7767,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, name); emit_char(sb, 10u8);
+; emit_string(sb, name); emit_nl(sb);
   load sb
   load name
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7850,14 +7802,13 @@ __L399:
   load tlen
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -7919,7 +7870,7 @@ __L399:
   load indent
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -7929,8 +7880,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7952,7 +7902,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, name); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, name); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load name
   call emit_string StringBuffer StringLiteral
@@ -7962,8 +7912,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -7985,7 +7934,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, tname); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load tname
   call emit_string StringBuffer StringLiteral
@@ -7995,8 +7944,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -8025,7 +7973,7 @@ __L399:
   load indent
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -8035,8 +7983,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8058,7 +8005,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, name); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, name); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load name
   call emit_string StringBuffer StringLiteral
@@ -8068,8 +8015,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8098,14 +8044,13 @@ __L399:
   load tlen
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -8136,10 +8081,9 @@ __L399:
   load text
   call emit_comment_sb StringBuffer StringBuffer
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -8208,14 +8152,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, name); emit_char(sb, 10u8);
+; emit_string(sb, name); emit_nl(sb);
   load sb
   load name
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8237,7 +8180,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, tname); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load tname
   call emit_string StringBuffer StringLiteral
@@ -8247,8 +8190,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -8289,14 +8231,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, name); emit_char(sb, 10u8);
+; emit_string(sb, name); emit_nl(sb);
   load sb
   load name
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8305,15 +8246,14 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+; emit_type_arr(sb, sbuf, snlen); emit_nl(sb);
   load sb
   load sbuf
   load snlen
   call emit_type_arr StringBuffer U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -8354,14 +8294,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, name); emit_char(sb, 10u8);
+; emit_string(sb, name); emit_nl(sb);
   load sb
   load name
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8383,7 +8322,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -8395,8 +8334,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -8422,7 +8360,7 @@ __L399:
   load indent
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -8432,8 +8370,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8455,7 +8392,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, tname); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, tname); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load tname
   call emit_string StringBuffer StringLiteral
@@ -8465,8 +8402,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -8493,7 +8429,7 @@ __L399:
   load indent
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -8503,8 +8439,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8513,15 +8448,14 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+; emit_type_arr(sb, sbuf, snlen); emit_nl(sb);
   load sb
   load sbuf
   load snlen
   call emit_type_arr StringBuffer U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -8548,7 +8482,7 @@ __L399:
   load indent
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -8558,8 +8492,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8581,7 +8514,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -8593,8 +8526,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -8617,10 +8549,9 @@ __L399:
 .param cmt StringBuffer
 .param sbuf U8Array
 .param snlen i32
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent, cmt);
   load sb
@@ -8646,7 +8577,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_string(sb, "Array"); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_string(sb, "Array"); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -8658,8 +8589,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8668,7 +8598,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -8678,10 +8608,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_param_lit(sb, indent + 2, "__n", "u32"); emit_char(sb, 10u8);
+; emit_param_lit(sb, indent + 2, "__n", "u32"); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -8691,10 +8620,9 @@ __L399:
   call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -8706,10 +8634,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_ret_arr(sb, indent + 1, sbuf, snlen); emit_char(sb, 10u8);
+; emit_ret_arr(sb, indent + 1, sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -8719,8 +8646,7 @@ __L399:
   call emit_ret_arr StringBuffer i32 U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8729,7 +8655,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -8739,8 +8665,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -8749,7 +8674,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "return"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -8759,10 +8684,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -8778,8 +8702,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4);
   load sb
@@ -8801,14 +8724,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "U32Array"); emit_char(sb, 10u8);
+; emit_string(sb, "U32Array"); emit_nl(sb);
   load sb
   push_str 48
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 5);
   load sb
@@ -8830,7 +8752,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "__n"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, "__n"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_str 47
   call emit_string StringBuffer StringLiteral
@@ -8840,10 +8762,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 4
@@ -8855,10 +8776,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 4); emit_type_arr(sb, sbuf, snlen); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 4); emit_type_arr(sb, sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 4
@@ -8871,10 +8791,9 @@ __L399:
   call emit_type_arr StringBuffer U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -8886,10 +8805,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -8901,10 +8819,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -8916,8 +8833,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent); emit_char(sb, ')');
   load sb
@@ -8928,10 +8844,9 @@ __L399:
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent, cmt);
   load sb
@@ -8957,14 +8872,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "len"); emit_char(sb, 10u8);
+; emit_string(sb, "len"); emit_nl(sb);
   load sb
   push_str 49
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -8973,7 +8887,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -8983,10 +8897,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -8997,10 +8910,9 @@ __L399:
   call emit_param_arr StringBuffer i32 StringLiteral U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9012,10 +8924,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_ret_lit(sb, indent + 1, "i32"); emit_char(sb, 10u8);
+; emit_ret_lit(sb, indent + 1, "i32"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9024,8 +8935,7 @@ __L399:
   call emit_ret_lit StringBuffer i32 StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -9034,7 +8944,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9044,8 +8954,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -9054,7 +8963,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "return"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9064,8 +8973,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -9074,7 +8982,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "len"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "len"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9092,10 +9000,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_cast_var(sb, indent + 4, "__a", "U32Array"); emit_char(sb, 10u8);
+; emit_cast_var(sb, indent + 4, "__a", "U32Array"); emit_nl(sb);
   load sb
   load indent
   push_int 4
@@ -9105,10 +9012,9 @@ __L399:
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -9120,10 +9026,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9135,10 +9040,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9150,8 +9054,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent); emit_char(sb, ')');
   load sb
@@ -9162,10 +9065,9 @@ __L399:
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent, cmt);
   load sb
@@ -9191,14 +9093,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "get"); emit_char(sb, 10u8);
+; emit_string(sb, "get"); emit_nl(sb);
   load sb
   push_str 51
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -9207,7 +9108,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9217,10 +9118,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9231,10 +9131,9 @@ __L399:
   call emit_param_arr StringBuffer i32 StringLiteral U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_param_lit(sb, indent + 2, "__i", "i32"); emit_char(sb, 10u8);
+; emit_param_lit(sb, indent + 2, "__i", "i32"); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9244,10 +9143,9 @@ __L399:
   call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9259,10 +9157,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_ret_struct(sb, indent + 1, sbuf, snlen); emit_char(sb, 10u8);
+; emit_ret_struct(sb, indent + 1, sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9272,8 +9169,7 @@ __L399:
   call emit_ret_struct StringBuffer i32 U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -9282,7 +9178,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9292,8 +9188,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -9302,7 +9197,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "return"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9312,10 +9207,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -9331,8 +9225,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4);
   load sb
@@ -9341,7 +9234,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "get"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "get"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9359,10 +9252,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_cast_var(sb, indent + 5, "__a", "U32Array"); emit_char(sb, 10u8);
+; emit_cast_var(sb, indent + 5, "__a", "U32Array"); emit_nl(sb);
   load sb
   load indent
   push_int 5
@@ -9372,8 +9264,7 @@ __L399:
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 5);
   load sb
@@ -9395,7 +9286,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "__i"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, "__i"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_str 52
   call emit_string StringBuffer StringLiteral
@@ -9405,10 +9296,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 4
@@ -9420,8 +9310,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4);
   load sb
@@ -9443,7 +9332,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -9455,10 +9344,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -9470,10 +9358,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9485,10 +9372,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9500,8 +9386,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent); emit_char(sb, ')');
   load sb
@@ -9512,10 +9397,9 @@ __L399:
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent, cmt);
   load sb
@@ -9541,14 +9425,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "set"); emit_char(sb, 10u8);
+; emit_string(sb, "set"); emit_nl(sb);
   load sb
   push_str 53
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -9557,7 +9440,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9567,10 +9450,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9581,10 +9463,9 @@ __L399:
   call emit_param_arr StringBuffer i32 StringLiteral U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_param_lit(sb, indent + 2, "__i", "i32"); emit_char(sb, 10u8);
+; emit_param_lit(sb, indent + 2, "__i", "i32"); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9594,10 +9475,9 @@ __L399:
   call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_param_struct(sb, indent + 2, "__v", sbuf, snlen); emit_char(sb, 10u8);
+; emit_param_struct(sb, indent + 2, "__v", sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9608,10 +9488,9 @@ __L399:
   call emit_param_struct StringBuffer i32 StringLiteral U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9623,10 +9502,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_ret_lit(sb, indent + 1, "void"); emit_char(sb, 10u8);
+; emit_ret_lit(sb, indent + 1, "void"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9635,8 +9513,7 @@ __L399:
   call emit_ret_lit StringBuffer i32 StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -9645,7 +9522,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9655,8 +9532,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -9678,16 +9554,15 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "set"); emit_char(sb, 10u8);
+; emit_string(sb, "set"); emit_nl(sb);
   load sb
   push_str 53
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_cast_var(sb, indent + 3, "__a", "U32Array"); emit_char(sb, 10u8);
+; emit_cast_var(sb, indent + 3, "__a", "U32Array"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -9697,8 +9572,7 @@ __L399:
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -9720,7 +9594,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "__i"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, "__i"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_str 52
   call emit_string StringBuffer StringLiteral
@@ -9730,10 +9604,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_cast_var(sb, indent + 3, "__v", "u32"); emit_char(sb, 10u8);
+; emit_cast_var(sb, indent + 3, "__v", "u32"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -9743,10 +9616,9 @@ __L399:
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9758,8 +9630,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -9768,7 +9639,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9782,10 +9653,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9797,8 +9667,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent); emit_char(sb, ')');
   load sb
@@ -9809,10 +9678,9 @@ __L399:
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent, cmt);
   load sb
@@ -9838,14 +9706,13 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "delete"); emit_char(sb, 10u8);
+; emit_string(sb, "delete"); emit_nl(sb);
   load sb
   push_str 55
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -9854,7 +9721,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9864,10 +9731,9 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_char(sb, 10u8);
+; emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9878,10 +9744,9 @@ __L399:
   call emit_param_arr StringBuffer i32 StringLiteral U8Array i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9893,10 +9758,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_ret_lit(sb, indent + 1, "void"); emit_char(sb, 10u8);
+; emit_ret_lit(sb, indent + 1, "void"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -9905,8 +9769,7 @@ __L399:
   call emit_ret_lit StringBuffer i32 StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -9915,7 +9778,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -9925,8 +9788,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -9948,16 +9810,15 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "delete"); emit_char(sb, 10u8);
+; emit_string(sb, "delete"); emit_nl(sb);
   load sb
   push_str 55
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_cast_var(sb, indent + 3, "__a", "U32Array"); emit_char(sb, 10u8);
+; emit_cast_var(sb, indent + 3, "__a", "U32Array"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -9967,10 +9828,9 @@ __L399:
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9982,8 +9842,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -9992,7 +9851,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10006,10 +9865,9 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -10021,8 +9879,7 @@ __L399:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent); emit_char(sb, ')');
   load sb
@@ -10176,7 +10033,7 @@ __L399:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -10184,8 +10041,7 @@ __L399:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -10194,7 +10050,7 @@ __L399:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10204,8 +10060,7 @@ __L399:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; var i: i32 = 0;
   push_int 0
@@ -10236,7 +10091,7 @@ __L402:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "__a"); emit_int(sb, i); emit_char(sb, 10u8);
+; emit_string(sb, "__a"); emit_int(sb, i); emit_nl(sb);
   load sb
   push_str 50
   call emit_string StringBuffer StringLiteral
@@ -10246,8 +10101,7 @@ __L402:
   call emit_int StringBuffer i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -10256,7 +10110,7 @@ __L402:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_type(sb, ftypes, fi_type_off(fields, i), fi_type_len(fields, i)); emit_char(sb, 10u8);
+; emit_type(sb, ftypes, fi_type_off(fields, i), fi_type_len(fields, i)); emit_nl(sb);
   load sb
   load ftypes
   load fields
@@ -10268,8 +10122,7 @@ __L402:
   call emit_type StringBuffer U8Array i32 i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -10278,14 +10131,13 @@ __L402:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; i = i + 1;
   load i
@@ -10294,7 +10146,7 @@ __L402:
   store i
   jump __L402
 __L403:
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -10306,8 +10158,7 @@ __L403:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -10316,7 +10167,7 @@ __L403:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10326,8 +10177,7 @@ __L403:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -10349,7 +10199,7 @@ __L403:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -10361,10 +10211,9 @@ __L403:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -10376,8 +10225,7 @@ __L403:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -10386,7 +10234,7 @@ __L403:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10396,8 +10244,7 @@ __L403:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent + 2, cmt);
   load sb
@@ -10414,7 +10261,7 @@ __L403:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "var_decl"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "var_decl"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10432,8 +10279,7 @@ __L403:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -10442,7 +10288,7 @@ __L403:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' '); emit_string(sb, "U32Array"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' '); emit_string(sb, "U32Array"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10464,8 +10310,7 @@ __L403:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -10474,7 +10319,7 @@ __L403:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "U32Array"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "U32Array"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10492,8 +10337,7 @@ __L403:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4);
   load sb
@@ -10502,7 +10346,7 @@ __L403:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "int:u32"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "int:u32"); emit_char(sb, ' '); emit_int(sb, nfields); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10524,10 +10368,9 @@ __L403:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -10539,10 +10382,9 @@ __L403:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -10554,8 +10396,7 @@ __L403:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; var k: i32 = 0;
   push_int 0
@@ -10581,7 +10422,7 @@ __L404:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' '); emit_string(sb, "set"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' '); emit_string(sb, "set"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10599,8 +10440,7 @@ __L404:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -10609,7 +10449,7 @@ __L404:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10631,8 +10471,7 @@ __L404:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -10641,7 +10480,7 @@ __L404:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, k); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10663,10 +10502,9 @@ __L404:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -10682,8 +10520,7 @@ __L404:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
   load sb
@@ -10704,7 +10541,7 @@ __L404:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "__a"); emit_int(sb, k); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, "__a"); emit_int(sb, k); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_str 50
   call emit_string StringBuffer StringLiteral
@@ -10718,8 +10555,7 @@ __L404:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
   load sb
@@ -10740,7 +10576,7 @@ __L404:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "u32"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, "u32"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_str 10
   call emit_string StringBuffer StringLiteral
@@ -10750,10 +10586,9 @@ __L404:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -10765,10 +10600,9 @@ __L404:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -10780,8 +10614,7 @@ __L404:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; k = k + 1;
   load k
@@ -10805,7 +10638,7 @@ __L405:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "return"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -10815,10 +10648,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -10834,10 +10666,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 4
@@ -10865,8 +10696,7 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
   load sb
@@ -10887,7 +10717,7 @@ __L405:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -10899,10 +10729,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -10914,10 +10743,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -10929,10 +10757,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -10944,8 +10771,7 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent); emit_char(sb, ')');
   load sb
@@ -11013,7 +10839,7 @@ __L405:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, fnames, fnoff, fnlen); emit_char(sb, 10u8);
+; emit_n(sb, fnames, fnoff, fnlen); emit_nl(sb);
   load sb
   load fnames
   load fnoff
@@ -11021,10 +10847,9 @@ __L405:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11040,10 +10865,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11067,8 +10891,7 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
   load sb
@@ -11089,7 +10912,7 @@ __L405:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -11101,10 +10924,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11116,10 +10938,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11131,10 +10952,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11150,8 +10970,7 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
   load sb
@@ -11172,7 +10991,7 @@ __L405:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load ftypes
   load ftoff
@@ -11184,10 +11003,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11199,10 +11017,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11218,8 +11035,7 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent + 2, cmt);
   load sb
@@ -11229,7 +11045,7 @@ __L405:
   load cmt
   call emit_comment_line StringBuffer i32 StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "return"); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11245,10 +11061,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -11264,10 +11079,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "get"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "call"); emit_char(sb, ' '); emit_string(sb, "get"); emit_nl(sb);
   load sb
   load indent
   push_int 4
@@ -11291,10 +11105,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_cast_var(sb, indent + 5, "__p", "U32Array"); emit_char(sb, 10u8);
+; emit_cast_var(sb, indent + 5, "__p", "U32Array"); emit_nl(sb);
   load sb
   load indent
   push_int 5
@@ -11304,10 +11117,9 @@ __L405:
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 5); emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 5
@@ -11335,10 +11147,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 4); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 4
@@ -11350,8 +11161,7 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
   load sb
@@ -11372,7 +11182,7 @@ __L405:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load ftypes
   load ftoff
@@ -11384,10 +11194,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -11399,10 +11208,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11414,10 +11222,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11429,8 +11236,7 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent); emit_char(sb, ')');
   load sb
@@ -11498,7 +11304,7 @@ __L405:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, fnames, fnoff, fnlen); emit_char(sb, 10u8);
+; emit_n(sb, fnames, fnoff, fnlen); emit_nl(sb);
   load sb
   load fnames
   load fnoff
@@ -11506,10 +11312,9 @@ __L405:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11525,10 +11330,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__p"); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11552,8 +11356,7 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
   load sb
@@ -11574,7 +11377,7 @@ __L405:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, sbuf, 0, snlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load sbuf
   push_int 0
@@ -11586,10 +11389,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11601,10 +11403,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__v"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' '); emit_string(sb, "__v"); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11628,8 +11429,7 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
   load sb
@@ -11650,7 +11450,7 @@ __L405:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_n(sb, ftypes, ftoff, ftlen); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load ftypes
   load ftoff
@@ -11662,10 +11462,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11677,10 +11476,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11692,10 +11490,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11711,10 +11508,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' '); emit_string(sb, "void"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' '); emit_string(sb, "void"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11742,10 +11538,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11757,10 +11552,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11776,8 +11570,7 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent + 2, cmt);
   load sb
@@ -11787,7 +11580,7 @@ __L405:
   load cmt
   call emit_comment_line StringBuffer i32 StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' '); emit_string(sb, "set"); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "call_stmt"); emit_char(sb, ' '); emit_string(sb, "set"); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11811,10 +11604,9 @@ __L405:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_cast_var(sb, indent + 3, "__p", "U32Array"); emit_char(sb, 10u8);
+; emit_cast_var(sb, indent + 3, "__p", "U32Array"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -11824,10 +11616,9 @@ __L405:
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 3); emit_char(sb, '('); emit_string(sb, "int"); emit_char(sb, ' '); emit_int(sb, fidx); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -11855,10 +11646,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_cast_var(sb, indent + 3, "__v", "u32"); emit_char(sb, 10u8);
+; emit_cast_var(sb, indent + 3, "__v", "u32"); emit_nl(sb);
   load sb
   load indent
   push_int 3
@@ -11868,10 +11658,9 @@ __L405:
   call emit_cast_var StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11883,8 +11672,7 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent + 2, cmt);
   load sb
@@ -11894,7 +11682,7 @@ __L405:
   load cmt
   call emit_comment_line StringBuffer i32 StringBuffer
   pop
-; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 2); emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -11914,10 +11702,9 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
   load sb
   load indent
   push_int 1
@@ -11929,8 +11716,7 @@ __L405:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent); emit_char(sb, ')');
   load sb
@@ -12206,10 +11992,9 @@ __L419:
   load ftl
   add
   store ftpos
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -12238,10 +12023,9 @@ __L419:
   load fname_len
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -12259,10 +12043,9 @@ __L419:
   add
   call pars_type SourceReader U8Array StringBuffer i32
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -12294,10 +12077,9 @@ __L409:
   load tok
   call expect_tok i32 SourceReader U8Array
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -12309,10 +12091,9 @@ __L409:
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_struct_ctor(sb, indent, struct_cmt, sname_buf, snlen, fnames, ftypes, fields, nfields);
   load sb
@@ -12335,10 +12116,9 @@ __L420:
   load nfields
   lt
   jump_ifnot __L421
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_struct_getter(
   load sb
@@ -12368,10 +12148,9 @@ __L422:
   load nfields
   lt
   jump_ifnot __L423
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_struct_setter(
   load sb
@@ -12392,10 +12171,9 @@ __L422:
   store si
   jump __L422
 __L423:
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_comment_line(sb, indent, struct_cmt);
   load sb
@@ -12421,14 +12199,13 @@ __L423:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "delete"); emit_char(sb, 10u8);
+; emit_string(sb, "delete"); emit_nl(sb);
   load sb
   push_str 55
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -12437,7 +12214,7 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "params"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -12447,8 +12224,7 @@ __L423:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -12470,14 +12246,13 @@ __L423:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "__p"); emit_char(sb, 10u8);
+; emit_string(sb, "__p"); emit_nl(sb);
   load sb
   push_str 56
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -12506,14 +12281,13 @@ __L423:
   load snlen
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -12522,14 +12296,13 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -12538,14 +12311,13 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -12554,7 +12326,7 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "ret"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -12564,8 +12336,7 @@ __L423:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -12592,14 +12363,13 @@ __L423:
   push_str 15
   call emit_string StringBuffer StringLiteral
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -12608,14 +12378,13 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -12624,7 +12393,7 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "block"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -12634,8 +12403,7 @@ __L423:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -12657,14 +12425,13 @@ __L423:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "delete"); emit_char(sb, 10u8);
+; emit_string(sb, "delete"); emit_nl(sb);
   load sb
   push_str 55
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -12673,7 +12440,7 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "cast"); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -12683,8 +12450,7 @@ __L423:
   call emit_string StringBuffer StringLiteral
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 4);
   load sb
@@ -12706,7 +12472,7 @@ __L423:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "__p"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, "__p"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_str 56
   call emit_string StringBuffer StringLiteral
@@ -12716,8 +12482,7 @@ __L423:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -12739,7 +12504,7 @@ __L423:
   push_int 32
   call emit_char StringBuffer u8
   pop
-; emit_string(sb, "U32Array"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_string(sb, "U32Array"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_str 48
   call emit_string StringBuffer StringLiteral
@@ -12749,8 +12514,7 @@ __L423:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 3);
   load sb
@@ -12759,14 +12523,13 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -12775,14 +12538,13 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 2);
   load sb
@@ -12791,7 +12553,7 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, '('); emit_string(sb, "return"); emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 40
   call emit_char StringBuffer u8
@@ -12805,8 +12567,7 @@ __L423:
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent + 1);
   load sb
@@ -12815,14 +12576,13 @@ __L423:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_char(sb, ')'); emit_char(sb, 10u8);
+; emit_char(sb, ')'); emit_nl(sb);
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, indent);
   load sb
@@ -12942,10 +12702,9 @@ __L425:
   load TK_IMPORT
   eq
   jump_ifnot __L426
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, 1);
   load sb
@@ -12967,10 +12726,9 @@ __L427:
   load TK_EOF
   ne
   jump_ifnot __L428
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_indent(sb, 1);
   load sb
@@ -13050,20 +12808,18 @@ __L432:
 __L430:
   jump __L427
 __L428:
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; emit_char(sb, ')');  // )
   load sb
   push_int 41
   call emit_char StringBuffer u8
   pop
-; emit_char(sb, 10u8);
+; emit_nl(sb);
   load sb
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void

@@ -320,6 +320,17 @@ __L2:
   return_void
 .endfn
 
+.fn emit_nl StringBuffer void
+.param sb StringBuffer
+; export fn emit_nl(sb: StringBuffer) -> void { emit_char(sb, 10u8); return; }
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn emit_string StringBuffer StringLiteral void
 .param sb StringBuffer
 .param s StringLiteral

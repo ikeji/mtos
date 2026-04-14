@@ -212,11 +212,11 @@ fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i3
     } else {
         var c: i32 = first_child;
         while c >= 0 {
-            emit_char(ob, 10u8);
+            emit_nl(ob);
             write_node(nodes, strtab, ob, (indent + 1), c);
             c = n_sib(nodes, c);
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         emit_indent(ob, indent);
         emit_char(ob, ')');
     }
@@ -247,14 +247,14 @@ fn write_fn_header(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, inden
     while c >= 0 {
         var ck: i32 = n_kind(nodes, c);
         if ck == NK_PARAMS || ck == NK_RET {
-            emit_char(ob, 10u8);
+            emit_nl(ob);
             write_node(nodes, strtab, ob, (indent + 1), c);
             has_child = 1;
         }
         c = n_sib(nodes, c);
     }
     if has_child == 1 {
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         emit_indent(ob, indent);
     }
     emit_char(ob, ')');
@@ -279,7 +279,7 @@ fn main() -> i32 {
 
     // Output filtered program
     emit_string(ob, "(program");
-    emit_char(ob, 10u8);
+    emit_nl(ob);
 
     var c: i32 = n_child(nodes, root);
     while c >= 0 {
@@ -293,7 +293,7 @@ fn main() -> i32 {
                get(strtab, (tass+2)) == 'p' && get(strtab, (tass+3)) == 'o' &&
                get(strtab, (tass+4)) == 'r' && get(strtab, (tass+5)) == 't' {
                 write_fn_header(nodes, strtab, ob, 1, c);
-                emit_char(ob, 10u8);
+                emit_nl(ob);
             }
         }
         if k == NK_STRUCT {
@@ -304,13 +304,13 @@ fn main() -> i32 {
             emit_char(ob, ' ');
             emit_n(ob, strtab, n_ss(nodes, c), n_sl(nodes, c));
             emit_char(ob, ')');
-            emit_char(ob, 10u8);
+            emit_nl(ob);
         }
         c = n_sib(nodes, c);
     }
 
     emit_char(ob, ')');
-    emit_char(ob, 10u8);
+    emit_nl(ob);
     write(ob, 1);
 
     close(g_reader);

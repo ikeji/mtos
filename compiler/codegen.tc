@@ -51,11 +51,11 @@ fn ob_st_escaped(strtab: U8Array, start: i32, slen: i32, ob: StringBuffer) -> vo
     var i: i32 = 0;
     while i < slen {
         var c: u8 = get(strtab, (start + i));
-        if c == '"'  { emit_char(ob, '\\'); emit_char(ob, '"'); }
-        else { if c == '\\' { emit_char(ob, '\\'); emit_char(ob, '\\'); }
-        else { if c == 10u8 { emit_char(ob, '\\'); emit_char(ob, 'n'); }
-        else { if c == 13u8 { emit_char(ob, '\\'); emit_char(ob, 'r'); }
-        else { if c == 9u8  { emit_char(ob, '\\'); emit_char(ob, 't'); }
+        if c == '"'  { emit_string(ob, "\\\""); }
+        else { if c == '\\' { emit_string(ob, "\\\\"); }
+        else { if c == 10u8 { emit_string(ob, "\\n"); }
+        else { if c == 13u8 { emit_string(ob, "\\r"); }
+        else { if c == 9u8  { emit_string(ob, "\\t"); }
         else { emit_char(ob, c); }}}}}
         i = i + 1;
     }
@@ -387,9 +387,9 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
 
     if k == NK_COMMENT {
         // "; <comment text>\n"
-        emit_char(ob, ';'); emit_char(ob, ' ');
+        emit_string(ob, "; ");
         emit_n(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }
 
@@ -399,23 +399,18 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
             cg_expr(nodes, strtab, slits, ob, init);
         } else {
             // "  push_int 0\n"
-// TODO: emit_string
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);
+            emit_string(ob, "  push_int 0");emit_nl(ob);
         }
         // "  store NAME\n"
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');
-        emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);
+        emit_string(ob, "  store ");
+        emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_nl(ob);
         return;
     }
 
     if k == NK_ASSIGN {
         cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');
-        emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);
+        emit_string(ob, "  store ");
+        emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_nl(ob);
         return;
     }
 
@@ -433,8 +428,7 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
         while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }
         delete(args);
         // "  call NAME TYPE1 TYPE2...\n"
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
+        emit_string(ob, "  call ");
         emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n));
         c = n_child(nodes, n);
         while c >= 0 {
@@ -447,9 +441,9 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
             }
             c = n_sib(nodes, c);
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         // "  pop\n"
-        emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, 'p');emit_char(ob, 'o');emit_char(ob, 'p');emit_char(ob, 10u8);
+        emit_string(ob, "  pop");emit_nl(ob);
         return;
     }
 
@@ -460,17 +454,12 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
             var lend: i32 = g_lc; g_lc = g_lc + 1;
             cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
             // "  jump_ifnot __Lx\n"
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, 10u8);
+            emit_string(ob, "  jump_ifnot __L");emit_int(ob, lelse);emit_nl(ob);
             cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
             // "  jump __Lend\n"
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);
+            emit_string(ob, "  jump __L");emit_int(ob, lend);emit_nl(ob);
             // "__Lelse:\n"
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, ':');emit_char(ob, 10u8);
+            emit_string(ob, "__L");emit_int(ob, lelse);emit_char(ob, ':');emit_nl(ob);
             var else_n: i32 = n_nth_child(nodes, n, 2);
             if n_kind(nodes, else_n) == NK_IF {
                 cg_stmt(nodes, strtab, slits, ob, loop_stk, else_n);
@@ -478,16 +467,13 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
                 cg_block(nodes, strtab, slits, ob, loop_stk, else_n);
             }
             // "__Lend:\n"
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);
+            emit_string(ob, "__L");emit_int(ob, lend);emit_char(ob, ':');emit_nl(ob);
         } else {
             var lend: i32 = g_lc; g_lc = g_lc + 1;
             cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);
+            emit_string(ob, "  jump_ifnot __L");emit_int(ob, lend);emit_nl(ob);
             cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);
+            emit_string(ob, "__L");emit_int(ob, lend);emit_char(ob, ':');emit_nl(ob);
         }
         return;
     }
@@ -499,18 +485,13 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
         set(loop_stk, (g_loop_depth*2+1), lend);
         g_loop_depth = g_loop_depth + 1;
         // "__Lloop:\n"
-        emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, ':');emit_char(ob, 10u8);
+        emit_string(ob, "__L");emit_int(ob, lloop);emit_char(ob, ':');emit_nl(ob);
         cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-        emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-        emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);
+        emit_string(ob, "  jump_ifnot __L");emit_int(ob, lend);emit_nl(ob);
         cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
         // "  jump __Lloop\n"
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-        emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);
-        emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);
+        emit_string(ob, "  jump __L");emit_int(ob, lloop);emit_nl(ob);
+        emit_string(ob, "__L");emit_int(ob, lend);emit_char(ob, ':');emit_nl(ob);
         g_loop_depth = g_loop_depth - 1;
         return;
     }
@@ -518,18 +499,14 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
     if k == NK_BREAK {
         // "  jump __Lend\n"
         var lend: i32 = get(loop_stk, (g_loop_depth*2-1));
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-        emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);
+        emit_string(ob, "  jump __L");emit_int(ob, lend);emit_nl(ob);
         return;
     }
 
     if k == NK_CONTINUE {
         // "  jump __Lloop\n"
         var lloop: i32 = get(loop_stk, (g_loop_depth*2-2));
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-        emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);
+        emit_string(ob, "  jump __L");emit_int(ob, lloop);emit_nl(ob);
         return;
     }
 
@@ -537,12 +514,9 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
         var v: i32 = n_child(nodes, n);
         if v >= 0 {
             cg_expr(nodes, strtab, slits, ob, v);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');emit_char(ob, 10u8);
+            emit_string(ob, "  return");emit_nl(ob);
         } else {
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');
-            emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);
+            emit_string(ob, "  return_void");emit_nl(ob);
         }
         return;
     }
@@ -552,79 +526,79 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
 
 fn cg_binop_inst(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer,
                  tass: i32, tasl: i32) -> void {
-    emit_char(ob, ' '); emit_char(ob, ' ');
+    emit_string(ob, "  ");
     // Map operator to instruction
-    if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add
-    if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub
-    if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul
+    if sv1(strtab,ss,sl, '+') { emit_string(ob, "add");emit_nl(ob); return; }  // add
+    if sv1(strtab,ss,sl, '-') { emit_string(ob, "sub");emit_nl(ob); return; }  // sub
+    if sv1(strtab,ss,sl, '*') { emit_string(ob, "mul");emit_nl(ob); return; }  // mul
     // Unsigned LHS → div_u / mod_u; signed → div / mod.
     if sv1(strtab,ss,sl, '/') {
-        emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');
+        emit_string(ob, "div");
         if tasl > 0 && get(strtab, tass) == 'u' {
-            emit_char(ob, '_');emit_char(ob, 'u');
+            emit_string(ob, "_u");
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }  // div / div_u
     if sv1(strtab,ss,sl, '%') {
-        emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');
+        emit_string(ob, "mod");
         if tasl > 0 && get(strtab, tass) == 'u' {
-            emit_char(ob, '_');emit_char(ob, 'u');
+            emit_string(ob, "_u");
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }  // mod / mod_u
-    if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and
-    if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or
-    if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor
+    if sv1(strtab,ss,sl, '&') { emit_string(ob, "and");emit_nl(ob); return; }  // and
+    if sv1(strtab,ss,sl, '|'){ emit_string(ob, "or");emit_nl(ob); return; }  // or
+    if sv1(strtab,ss,sl, '^') { emit_string(ob, "xor");emit_nl(ob); return; }  // xor
     // Unsigned LHS → lt_u / gt_u; signed → lt / gt.
     if sv1(strtab,ss,sl, '<') {
-        emit_char(ob, 'l');emit_char(ob, 't');
+        emit_string(ob, "lt");
         if tasl > 0 && get(strtab, tass) == 'u' {
-            emit_char(ob, '_');emit_char(ob, 'u');
+            emit_string(ob, "_u");
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }  // lt / lt_u
     if sv1(strtab,ss,sl, '>') {
-        emit_char(ob, 'g');emit_char(ob, 't');
+        emit_string(ob, "gt");
         if tasl > 0 && get(strtab, tass) == 'u' {
-            emit_char(ob, '_');emit_char(ob, 'u');
+            emit_string(ob, "_u");
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }  // gt / gt_u
-    if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl
+    if sv2(strtab,ss,sl, '<','<') { emit_string(ob, "shl");emit_nl(ob); return; }  // shl
     if sv2(strtab,ss,sl, '>','>') {
         // Unsigned LHS → logical shift (shr_u); otherwise arithmetic (shr).
         // The binop's type annotation matches the LHS type for shifts.
-        emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');
+        emit_string(ob, "shr");
         if tasl > 0 && get(strtab, tass) == 'u' {
-            emit_char(ob, '_');emit_char(ob, 'u');
+            emit_string(ob, "_u");
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }  // shr / shr_u
-    if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq
-    if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne
+    if sv2(strtab,ss,sl, '=','=') { emit_string(ob, "eq");emit_nl(ob); return; }  // eq
+    if sv2(strtab,ss,sl, '!','=') { emit_string(ob, "ne");emit_nl(ob); return; }  // ne
     if sv2(strtab,ss,sl, '<','=') {
-        emit_char(ob, 'l');emit_char(ob, 'e');
+        emit_string(ob, "le");
         if tasl > 0 && get(strtab, tass) == 'u' {
-            emit_char(ob, '_');emit_char(ob, 'u');
+            emit_string(ob, "_u");
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }  // le / le_u
     if sv2(strtab,ss,sl, '>','=') {
-        emit_char(ob, 'g');emit_char(ob, 'e');
+        emit_string(ob, "ge");
         if tasl > 0 && get(strtab, tass) == 'u' {
-            emit_char(ob, '_');emit_char(ob, 'u');
+            emit_string(ob, "_u");
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }  // ge / ge_u
     // Unknown op - just add newline
-    emit_char(ob, 10u8);
+    emit_nl(ob);
     return;
 }
 
@@ -632,17 +606,13 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
     var k: i32 = n_kind(nodes, n);
 
     if k == NK_INT {
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-        emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');
-        emit_int(ob, n_ival(nodes,n)); emit_char(ob, 10u8);
+        emit_string(ob, "  push_int ");
+        emit_int(ob, n_ival(nodes,n)); emit_nl(ob);
         return;
     }
 
     if k == NK_BOOL {
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-        emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');
+        emit_string(ob, "  push_int ");
         // check sval: "true" → 1, else → 0
         var is_true: i32 = 0;
         if n_sl(nodes,n) == 4 {
@@ -652,23 +622,20 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
                 is_true = 1;
             }
         }
-        emit_int(ob, is_true); emit_char(ob, 10u8);
+        emit_int(ob, is_true); emit_nl(ob);
         return;
     }
 
     if k == NK_STR {
         var idx: i32 = slit_add(strtab, slits, n_ss(nodes,n), n_sl(nodes,n));
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-        emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, ' ');
-        emit_int(ob, idx); emit_char(ob, 10u8);
+        emit_string(ob, "  push_str ");
+        emit_int(ob, idx); emit_nl(ob);
         return;
     }
 
     if k == NK_VAR {
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, ' ');
-        emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);
+        emit_string(ob, "  load ");
+        emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_nl(ob);
         return;
     }
 
@@ -685,8 +652,7 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
         var ai: i32 = 0;
         while ai < nargs { cg_expr(nodes, strtab, slits, ob, get(args, ai)); ai = ai + 1; }
         delete(args);
-        emit_char(ob, ' ');emit_char(ob, ' ');
-        emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
+        emit_string(ob, "  call ");
         emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n));
         c = n_child(nodes, n);
         while c >= 0 {
@@ -699,19 +665,19 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
             }
             c = n_sib(nodes, c);
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         return;
     }
 
     if k == NK_UNARY {
         cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
-        emit_char(ob, ' ');emit_char(ob, ' ');
+        emit_string(ob, "  ");
         var ss: i32 = n_ss(nodes,n);
         var sl: i32 = n_sl(nodes,n);
         if sv1(strtab,ss,sl, '-') {
-            emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, 10u8);  // neg
+            emit_string(ob, "neg");emit_nl(ob);  // neg
         } else {
-            emit_char(ob, 'l');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');emit_char(ob, 10u8);  // lnot
+            emit_string(ob, "lnot");emit_nl(ob);  // lnot
         }
         return;
     }
@@ -727,26 +693,14 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
             var lf: i32 = g_lc; g_lc = g_lc + 1;
             var le: i32 = g_lc; g_lc = g_lc + 1;
             cg_expr(nodes, strtab, slits, ob, child0);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);
+            emit_string(ob, "  jump_ifnot __L");emit_int(ob, lf);emit_nl(ob);
             cg_expr(nodes, strtab, slits, ob, child1);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, ':');emit_char(ob, 10u8);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);
+            emit_string(ob, "  jump_ifnot __L");emit_int(ob, lf);emit_nl(ob);
+            emit_string(ob, "  push_int 1");emit_nl(ob);
+            emit_string(ob, "  jump __L");emit_int(ob, le);emit_nl(ob);
+            emit_string(ob, "__L");emit_int(ob, lf);emit_char(ob, ':');emit_nl(ob);
+            emit_string(ob, "  push_int 0");emit_nl(ob);
+            emit_string(ob, "__L");emit_int(ob, le);emit_char(ob, ':');emit_nl(ob);
             return;
         }
 
@@ -755,26 +709,14 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
             var lt: i32 = g_lc; g_lc = g_lc + 1;
             var le: i32 = g_lc; g_lc = g_lc + 1;
             cg_expr(nodes, strtab, slits, ob, child0);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'f');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);
+            emit_string(ob, "  jump_if __L");emit_int(ob, lt);emit_nl(ob);
             cg_expr(nodes, strtab, slits, ob, child1);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'f');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-            emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, ':');emit_char(ob, 10u8);
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-            emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);
-            emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);
+            emit_string(ob, "  jump_if __L");emit_int(ob, lt);emit_nl(ob);
+            emit_string(ob, "  push_int 0");emit_nl(ob);
+            emit_string(ob, "  jump __L");emit_int(ob, le);emit_nl(ob);
+            emit_string(ob, "__L");emit_int(ob, lt);emit_char(ob, ':');emit_nl(ob);
+            emit_string(ob, "  push_int 1");emit_nl(ob);
+            emit_string(ob, "__L");emit_int(ob, le);emit_char(ob, ':');emit_nl(ob);
             return;
         }
 
@@ -809,9 +751,8 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
             if get(strtab,tss)=='b' && get(strtab,(tss+1))=='o' && get(strtab,(tss+2))=='o' && get(strtab,(tss+3))=='l' { is_prim = true; }
         }
         if is_prim {
-            emit_char(ob, ' ');emit_char(ob, ' ');
-            emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, ' ');
-            emit_n(ob, strtab, tss, tsl); emit_char(ob, 10u8);
+            emit_string(ob, "  cast ");
+            emit_n(ob, strtab, tss, tsl); emit_nl(ob);
         }
         return;
     }
@@ -834,7 +775,7 @@ fn cg_fn(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, locals: I32Array
     }
 
     // ".fn NAME ARG_TYPE... RET\n"
-    emit_char(ob, '.');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, ' ');
+    emit_string(ob, ".fn ");
     emit_n(ob, strtab, n_ss(nodes,fn_node), n_sl(nodes,fn_node));
     // emit each param type
     var pp: i32 = n_child(nodes, params_n);
@@ -846,21 +787,21 @@ fn cg_fn(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, locals: I32Array
     }
     emit_char(ob, ' ');
     if ret_sl == 0 {
-        emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');
+        emit_string(ob, "void");
     } else {
         emit_n(ob, strtab, ret_ss, ret_sl);
     }
-    emit_char(ob, 10u8);
+    emit_nl(ob);
 
     // ".param NAME TYPE\n" for each param
     var p: i32 = n_child(nodes, params_n);
     while p >= 0 {
         var type_n: i32 = n_child(nodes, p);
-        emit_char(ob, '.');emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, ' ');
+        emit_string(ob, ".param ");
         emit_n(ob, strtab, n_ss(nodes,p), n_sl(nodes,p));
         emit_char(ob, ' ');
         emit_n(ob, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         p = n_sib(nodes, p);
     }
 
@@ -874,11 +815,11 @@ fn cg_fn(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, locals: I32Array
         var nsl: i32 = get(locals, (b+1));
         var tss: i32 = get(locals, (b+2));
         var tsl: i32 = get(locals, (b+3));
-        emit_char(ob, '.');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');
+        emit_string(ob, ".local ");
         emit_n(ob, strtab, nss, nsl);
         emit_char(ob, ' ');
         emit_n(ob, strtab, tss, tsl);
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         i = i + 1;
     }
 
@@ -888,32 +829,30 @@ fn cg_fn(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, locals: I32Array
     delete(loop_stk);
 
     // "  return_void\n.endfn\n\n"
-    emit_char(ob, ' ');emit_char(ob, ' ');
-    emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');
-    emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);
-    emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 10u8);
-    emit_char(ob, 10u8);
+    emit_string(ob, "  return_void");emit_nl(ob);
+    emit_string(ob, ".endfn");emit_nl(ob);
+    emit_nl(ob);
     return;
 }
 
 fn emit_string_table(strtab: U8Array, slits: I32Array, ob: StringBuffer) -> void {
     if g_slc > 0 {
         // "; string table\n"
-        emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);
+        emit_string(ob, "; string table");emit_nl(ob);
         var i: i32 = 0;
         while i < g_slc {
             var b: i32 = i * 2;
             var ss: i32 = get(slits, b);
             var sl: i32 = get(slits, (b+1));
             // ".string i \"...\"\n"
-            emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');
+            emit_string(ob, ".string ");
             emit_int(ob, i);
-            emit_char(ob, ' ');emit_char(ob, '"');
+            emit_string(ob, " \"");
             ob_st_escaped(strtab, ss, sl, ob);
-            emit_char(ob, '"');emit_char(ob, 10u8);
+            emit_char(ob, '"');emit_nl(ob);
             i = i + 1;
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
     }
     return;
 }
@@ -934,7 +873,7 @@ fn main() -> i32 {
     g_locc = 0;
 
     // ".bc\n" header
-    emit_char(out_buf, '.');emit_char(out_buf, 'b');emit_char(out_buf, 'c');emit_char(out_buf, 10u8);
+    emit_string(out_buf, ".bc");emit_nl(out_buf);
 
     // Read "(program" header
     skip_ws_in();
@@ -955,29 +894,29 @@ fn main() -> i32 {
             var k: i32 = n_kind(nodes, n);
             if k == NK_VAR_DECL {
                 if has_global == 0 {
-                    emit_char(out_buf, ';');emit_char(out_buf, ' ');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, 's');emit_char(out_buf, 10u8);
+                    emit_string(out_buf, "; globals");emit_nl(out_buf);
                     has_global = 1;
                 }
                 var type_n: i32 = n_child(nodes, n);
                 var init_n: i32 = n_sib(nodes, type_n);
                 var initval: i32 = 0;
                 if init_n >= 0 { initval = n_ival(nodes, init_n); }
-                emit_char(out_buf, '.');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, ' ');
+                emit_string(out_buf, ".global ");
                 emit_n(out_buf, strtab, n_ss(nodes,n), n_sl(nodes,n));
                 emit_char(out_buf, ' ');
                 emit_n(out_buf, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));
                 emit_char(out_buf, ' ');
                 emit_int(out_buf, initval);
-                emit_char(out_buf, 10u8);
+                emit_nl(out_buf);
             }
             if k == NK_FN {
-                if has_global == 1 { emit_char(out_buf, 10u8); has_global = 2; }
+                if has_global == 1 { emit_nl(out_buf); has_global = 2; }
                 cg_fn(nodes, strtab, slits, locals, out_buf, n);
             }
         }
         skip_ws_in();
     }
-    if has_global == 1 { emit_char(out_buf, 10u8); }
+    if has_global == 1 { emit_nl(out_buf); }
 
     // Consume closing ')'
     if peek_in() == ')' { next(g_reader); }
@@ -986,8 +925,7 @@ fn main() -> i32 {
     emit_string_table(strtab, slits, out_buf);
 
     // ".endbc\n"
-    emit_char(out_buf, '.');emit_char(out_buf, 'e');emit_char(out_buf, 'n');emit_char(out_buf, 'd');
-    emit_char(out_buf, 'b');emit_char(out_buf, 'c');emit_char(out_buf, 10u8);
+    emit_string(out_buf, ".endbc");emit_nl(out_buf);
 
     write(out_buf, 1);
 

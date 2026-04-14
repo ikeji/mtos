@@ -320,6 +320,17 @@ __L2:
   return_void
 .endfn
 
+.fn emit_nl StringBuffer void
+.param sb StringBuffer
+; export fn emit_nl(sb: StringBuffer) -> void { emit_char(sb, 10u8); return; }
+  load sb
+  push_int 10
+  call emit_char StringBuffer u8
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn emit_string StringBuffer StringLiteral void
 .param sb StringBuffer
 .param s StringLiteral
@@ -2584,78 +2595,58 @@ __L0:
   add
   call get U8Array i32
   store c
-; if c == '"'  { emit_char(ob, '\\'); emit_char(ob, '"'); }
+; if c == '"'  { emit_string(ob, "\\\""); }
   load c
   push_int 34
   eq
   jump_ifnot __L2
   load ob
-  push_int 92
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 34
-  call emit_char StringBuffer u8
+  push_str 0
+  call emit_string StringBuffer StringLiteral
   pop
   jump __L3
 __L2:
-; else { if c == '\\' { emit_char(ob, '\\'); emit_char(ob, '\\'); }
+; else { if c == '\\' { emit_string(ob, "\\\\"); }
   load c
   push_int 92
   eq
   jump_ifnot __L4
   load ob
-  push_int 92
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 92
-  call emit_char StringBuffer u8
+  push_str 1
+  call emit_string StringBuffer StringLiteral
   pop
   jump __L5
 __L4:
-; else { if c == 10u8 { emit_char(ob, '\\'); emit_char(ob, 'n'); }
+; else { if c == 10u8 { emit_string(ob, "\\n"); }
   load c
   push_int 10
   eq
   jump_ifnot __L6
   load ob
-  push_int 92
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
+  push_str 2
+  call emit_string StringBuffer StringLiteral
   pop
   jump __L7
 __L6:
-; else { if c == 13u8 { emit_char(ob, '\\'); emit_char(ob, 'r'); }
+; else { if c == 13u8 { emit_string(ob, "\\r"); }
   load c
   push_int 13
   eq
   jump_ifnot __L8
   load ob
-  push_int 92
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
+  push_str 3
+  call emit_string StringBuffer StringLiteral
   pop
   jump __L9
 __L8:
-; else { if c == 9u8  { emit_char(ob, '\\'); emit_char(ob, 't'); }
+; else { if c == 9u8  { emit_string(ob, "\\t"); }
   load c
   push_int 9
   eq
   jump_ifnot __L10
   load ob
-  push_int 92
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
+  push_str 4
+  call emit_string StringBuffer StringLiteral
   pop
   jump __L11
 __L10:
@@ -2874,7 +2865,7 @@ __L35:
   load atom
   push_int 0
   load len
-  push_str 0
+  push_str 5
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L38
   load NK_FN
@@ -2884,7 +2875,7 @@ __L38:
   load atom
   push_int 0
   load len
-  push_str 1
+  push_str 6
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L39
   load NK_IF
@@ -2894,7 +2885,7 @@ __L39:
   load atom
   push_int 0
   load len
-  push_str 2
+  push_str 7
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L40
   load NK_RET
@@ -2904,7 +2895,7 @@ __L40:
   load atom
   push_int 0
   load len
-  push_str 3
+  push_str 8
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L41
   load NK_INT
@@ -2914,7 +2905,7 @@ __L41:
   load atom
   push_int 0
   load len
-  push_str 4
+  push_str 9
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L42
   load NK_STR
@@ -2924,7 +2915,7 @@ __L42:
   load atom
   push_int 0
   load len
-  push_str 5
+  push_str 10
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L43
   load NK_VAR
@@ -2934,7 +2925,7 @@ __L43:
   load atom
   push_int 0
   load len
-  push_str 6
+  push_str 11
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L44
   load NK_BOOL
@@ -2944,7 +2935,7 @@ __L44:
   load atom
   push_int 0
   load len
-  push_str 7
+  push_str 12
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L45
   load NK_TYPE
@@ -2954,7 +2945,7 @@ __L45:
   load atom
   push_int 0
   load len
-  push_str 8
+  push_str 13
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L46
   load NK_CAST
@@ -2964,7 +2955,7 @@ __L46:
   load atom
   push_int 0
   load len
-  push_str 9
+  push_str 14
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L47
   load NK_CALL
@@ -2974,7 +2965,7 @@ __L47:
   load atom
   push_int 0
   load len
-  push_str 10
+  push_str 15
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L48
   load NK_BLOCK
@@ -2984,7 +2975,7 @@ __L48:
   load atom
   push_int 0
   load len
-  push_str 11
+  push_str 16
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L49
   load NK_PARAM
@@ -2994,7 +2985,7 @@ __L49:
   load atom
   push_int 0
   load len
-  push_str 12
+  push_str 17
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L50
   load NK_WHILE
@@ -3004,7 +2995,7 @@ __L50:
   load atom
   push_int 0
   load len
-  push_str 13
+  push_str 18
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L51
   load NK_BINOP
@@ -3014,7 +3005,7 @@ __L51:
   load atom
   push_int 0
   load len
-  push_str 14
+  push_str 19
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L52
   load NK_UNARY
@@ -3024,7 +3015,7 @@ __L52:
   load atom
   push_int 0
   load len
-  push_str 15
+  push_str 20
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L53
   load NK_FIELD
@@ -3034,7 +3025,7 @@ __L53:
   load atom
   push_int 0
   load len
-  push_str 16
+  push_str 21
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L54
   load NK_BREAK
@@ -3044,7 +3035,7 @@ __L54:
   load atom
   push_int 0
   load len
-  push_str 17
+  push_str 22
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L55
   load NK_PARAMS
@@ -3054,7 +3045,7 @@ __L55:
   load atom
   push_int 0
   load len
-  push_str 18
+  push_str 23
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L56
   load NK_RETURN
@@ -3064,7 +3055,7 @@ __L56:
   load atom
   push_int 0
   load len
-  push_str 19
+  push_str 24
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L57
   load NK_STRUCT
@@ -3074,7 +3065,7 @@ __L57:
   load atom
   push_int 0
   load len
-  push_str 20
+  push_str 25
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L58
   load NK_ASSIGN
@@ -3084,7 +3075,7 @@ __L58:
   load atom
   push_int 0
   load len
-  push_str 21
+  push_str 26
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L59
   load NK_IMPORT
@@ -3094,7 +3085,7 @@ __L59:
   load atom
   push_int 0
   load len
-  push_str 22
+  push_str 27
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L60
   load NK_PROGRAM
@@ -3104,7 +3095,7 @@ __L60:
   load atom
   push_int 0
   load len
-  push_str 23
+  push_str 28
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L61
   load NK_COMMENT
@@ -3114,7 +3105,7 @@ __L61:
   load atom
   push_int 0
   load len
-  push_str 24
+  push_str 29
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L62
   load NK_VAR_DECL
@@ -3124,7 +3115,7 @@ __L62:
   load atom
   push_int 0
   load len
-  push_str 25
+  push_str 30
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L63
   load NK_CONTINUE
@@ -3134,7 +3125,7 @@ __L63:
   load atom
   push_int 0
   load len
-  push_str 26
+  push_str 31
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L64
   load NK_CALL_STMT
@@ -4455,14 +4446,10 @@ __L165:
   load NK_COMMENT
   eq
   jump_ifnot __L166
-; emit_char(ob, ';'); emit_char(ob, ' ');
+; emit_string(ob, "; ");
   load ob
-  push_int 59
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 32
+  call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
   load ob
@@ -4475,10 +4462,9 @@ __L165:
   call n_sl AstNodeArray i32
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -4509,97 +4495,21 @@ __L166:
   pop
   jump __L169
 __L168:
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  push_int 0");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 33
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 48
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 __L169:
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  store ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 34
+  call emit_string StringBuffer StringLiteral
   pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);
+; emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_nl(ob);
   load ob
   load strtab
   load nodes
@@ -4611,8 +4521,7 @@ __L169:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -4632,41 +4541,12 @@ __L167:
   call n_child AstNodeArray i32
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  store ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 34
+  call emit_string StringBuffer StringLiteral
   pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, ' ');
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);
+; emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_nl(ob);
   load ob
   load strtab
   load nodes
@@ -4678,8 +4558,7 @@ __L167:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -4763,35 +4642,10 @@ __L177:
   load args
   call delete I32Array
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  call ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
-  load ob
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 35
+  call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n));
   load ob
@@ -4854,35 +4708,17 @@ __L181:
   store c
   jump __L178
 __L179:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');emit_char(ob, 'p');emit_char(ob, 'o');emit_char(ob, 'p');emit_char(ob, 10u8);
+; emit_string(ob, "  pop");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 36
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -4927,81 +4763,17 @@ __L171:
   call n_nth_child AstNodeArray i32 i32
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump_ifnot __L");emit_int(ob, lelse);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 37
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lelse
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
   load nodes
@@ -5015,69 +4787,22 @@ __L171:
   call n_nth_child AstNodeArray i32 i32
   call cg_block AstNodeArray U8Array I32Array StringBuffer I32Array i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump __L");emit_int(ob, lend);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 38
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lend
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lelse);emit_char(ob, ':');emit_char(ob, 10u8);
+; emit_string(ob, "__L");emit_int(ob, lelse);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lelse
@@ -5088,8 +4813,7 @@ __L171:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; var else_n: i32 = n_nth_child(nodes, n, 2);
   load nodes
@@ -5125,18 +4849,10 @@ __L185:
   call cg_block AstNodeArray U8Array I32Array StringBuffer I32Array i32
   pop
 __L186:
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);
+; emit_string(ob, "__L");emit_int(ob, lend);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lend
@@ -5147,8 +4863,7 @@ __L186:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   jump __L184
 __L183:
@@ -5170,81 +4885,17 @@ __L183:
   call n_nth_child AstNodeArray i32 i32
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump_ifnot __L");emit_int(ob, lend);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 37
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lend
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
   load nodes
@@ -5258,18 +4909,10 @@ __L183:
   call n_nth_child AstNodeArray i32 i32
   call cg_block AstNodeArray U8Array I32Array StringBuffer I32Array i32
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);
+; emit_string(ob, "__L");emit_int(ob, lend);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lend
@@ -5280,8 +4923,7 @@ __L183:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 __L184:
 ; return;
@@ -5329,18 +4971,10 @@ __L182:
   push_int 1
   add
   store g_loop_depth
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, ':');emit_char(ob, 10u8);
+; emit_string(ob, "__L");emit_int(ob, lloop);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lloop
@@ -5351,8 +4985,7 @@ __L182:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; cg_expr(nodes, strtab, slits, ob, n_nth_child(nodes, n, 0));
   load nodes
@@ -5365,81 +4998,17 @@ __L182:
   call n_nth_child AstNodeArray i32 i32
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump_ifnot __L");emit_int(ob, lend);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 37
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lend
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; cg_block(nodes, strtab, slits, ob, loop_stk, n_nth_child(nodes, n, 1));
   load nodes
@@ -5453,69 +5022,22 @@ __L182:
   call n_nth_child AstNodeArray i32 i32
   call cg_block AstNodeArray U8Array I32Array StringBuffer I32Array i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump __L");emit_int(ob, lloop);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 38
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lloop
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, ':');emit_char(ob, 10u8);
+; emit_string(ob, "__L");emit_int(ob, lend);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lend
@@ -5526,8 +5048,7 @@ __L182:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; g_loop_depth = g_loop_depth - 1;
   load g_loop_depth
@@ -5551,56 +5072,17 @@ __L187:
   sub
   call get I32Array i32
   store lend
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump __L");emit_int(ob, lend);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lend);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 38
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lend
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -5619,56 +5101,17 @@ __L188:
   sub
   call get I32Array i32
   store lloop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump __L");emit_int(ob, lloop);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lloop);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 38
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lloop
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -5696,104 +5139,23 @@ __L189:
   load v
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  return");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 40
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');emit_char(ob, 10u8);
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   jump __L192
 __L191:
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  return_void");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 41
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 118
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 __L192:
 ; return;
@@ -5811,16 +5173,12 @@ __L190:
 .param ob StringBuffer
 .param tass i32
 .param tasl i32
-; emit_char(ob, ' '); emit_char(ob, ' ');
+; emit_string(ob, "  ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 42
+  call emit_string StringBuffer StringLiteral
   pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; if sv1(strtab,ss,sl, '+') { emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // add
+; if sv1(strtab,ss,sl, '+') { emit_string(ob, "add");emit_nl(ob); return; }  // add
   load strtab
   load ss
   load sl
@@ -5828,24 +5186,15 @@ __L190:
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L193
   load ob
-  push_int 97
-  call emit_char StringBuffer u8
+  push_str 43
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L193:
-; if sv1(strtab,ss,sl, '-') { emit_char(ob, 's');emit_char(ob, 'u');emit_char(ob, 'b');emit_char(ob, 10u8); return; }  // sub
+; if sv1(strtab,ss,sl, '-') { emit_string(ob, "sub");emit_nl(ob); return; }  // sub
   load strtab
   load ss
   load sl
@@ -5853,24 +5202,15 @@ __L193:
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L194
   load ob
-  push_int 115
-  call emit_char StringBuffer u8
+  push_str 44
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 98
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L194:
-; if sv1(strtab,ss,sl, '*') { emit_char(ob, 'm');emit_char(ob, 'u');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // mul
+; if sv1(strtab,ss,sl, '*') { emit_string(ob, "mul");emit_nl(ob); return; }  // mul
   load strtab
   load ss
   load sl
@@ -5878,20 +5218,11 @@ __L194:
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L195
   load ob
-  push_int 109
-  call emit_char StringBuffer u8
+  push_str 45
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L195:
@@ -5902,18 +5233,10 @@ __L195:
   push_int 47
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L196
-; emit_char(ob, 'd');emit_char(ob, 'i');emit_char(ob, 'v');
+; emit_string(ob, "div");
   load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 118
-  call emit_char StringBuffer u8
+  push_str 46
+  call emit_string StringBuffer StringLiteral
   pop
 ; if tasl > 0 && get(strtab, tass) == 'u' {
   load tasl
@@ -5932,20 +5255,15 @@ __L198:
   push_int 0
 __L199:
   jump_ifnot __L197
-; emit_char(ob, '_');emit_char(ob, 'u');
+; emit_string(ob, "_u");
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  push_str 47
+  call emit_string StringBuffer StringLiteral
   pop
 __L197:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -5957,18 +5275,10 @@ __L196:
   push_int 37
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L200
-; emit_char(ob, 'm');emit_char(ob, 'o');emit_char(ob, 'd');
+; emit_string(ob, "mod");
   load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
+  push_str 48
+  call emit_string StringBuffer StringLiteral
   pop
 ; if tasl > 0 && get(strtab, tass) == 'u' {
   load tasl
@@ -5987,25 +5297,20 @@ __L202:
   push_int 0
 __L203:
   jump_ifnot __L201
-; emit_char(ob, '_');emit_char(ob, 'u');
+; emit_string(ob, "_u");
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  push_str 47
+  call emit_string StringBuffer StringLiteral
   pop
 __L201:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
 __L200:
-; if sv1(strtab,ss,sl, '&') { emit_char(ob, 'a');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 10u8); return; }  // and
+; if sv1(strtab,ss,sl, '&') { emit_string(ob, "and");emit_nl(ob); return; }  // and
   load strtab
   load ss
   load sl
@@ -6013,24 +5318,15 @@ __L200:
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L204
   load ob
-  push_int 97
-  call emit_char StringBuffer u8
+  push_str 49
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L204:
-; if sv1(strtab,ss,sl, '|'){ emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // or
+; if sv1(strtab,ss,sl, '|'){ emit_string(ob, "or");emit_nl(ob); return; }  // or
   load strtab
   load ss
   load sl
@@ -6038,20 +5334,15 @@ __L204:
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L205
   load ob
-  push_int 111
-  call emit_char StringBuffer u8
+  push_str 50
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L205:
-; if sv1(strtab,ss,sl, '^') { emit_char(ob, 'x');emit_char(ob, 'o');emit_char(ob, 'r');emit_char(ob, 10u8); return; }  // xor
+; if sv1(strtab,ss,sl, '^') { emit_string(ob, "xor");emit_nl(ob); return; }  // xor
   load strtab
   load ss
   load sl
@@ -6059,20 +5350,11 @@ __L205:
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L206
   load ob
-  push_int 120
-  call emit_char StringBuffer u8
+  push_str 51
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L206:
@@ -6083,14 +5365,10 @@ __L206:
   push_int 60
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L207
-; emit_char(ob, 'l');emit_char(ob, 't');
+; emit_string(ob, "lt");
   load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
+  push_str 52
+  call emit_string StringBuffer StringLiteral
   pop
 ; if tasl > 0 && get(strtab, tass) == 'u' {
   load tasl
@@ -6109,20 +5387,15 @@ __L209:
   push_int 0
 __L210:
   jump_ifnot __L208
-; emit_char(ob, '_');emit_char(ob, 'u');
+; emit_string(ob, "_u");
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  push_str 47
+  call emit_string StringBuffer StringLiteral
   pop
 __L208:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -6134,14 +5407,10 @@ __L207:
   push_int 62
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L211
-; emit_char(ob, 'g');emit_char(ob, 't');
+; emit_string(ob, "gt");
   load ob
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
+  push_str 53
+  call emit_string StringBuffer StringLiteral
   pop
 ; if tasl > 0 && get(strtab, tass) == 'u' {
   load tasl
@@ -6160,25 +5429,20 @@ __L213:
   push_int 0
 __L214:
   jump_ifnot __L212
-; emit_char(ob, '_');emit_char(ob, 'u');
+; emit_string(ob, "_u");
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  push_str 47
+  call emit_string StringBuffer StringLiteral
   pop
 __L212:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
 __L211:
-; if sv2(strtab,ss,sl, '<','<') { emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'l');emit_char(ob, 10u8); return; }  // shl
+; if sv2(strtab,ss,sl, '<','<') { emit_string(ob, "shl");emit_nl(ob); return; }  // shl
   load strtab
   load ss
   load sl
@@ -6187,20 +5451,11 @@ __L211:
   call sv2 U8Array i32 i32 u8 u8
   jump_ifnot __L215
   load ob
-  push_int 115
-  call emit_char StringBuffer u8
+  push_str 54
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L215:
@@ -6212,18 +5467,10 @@ __L215:
   push_int 62
   call sv2 U8Array i32 i32 u8 u8
   jump_ifnot __L216
-; emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, 'r');
+; emit_string(ob, "shr");
   load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
+  push_str 55
+  call emit_string StringBuffer StringLiteral
   pop
 ; if tasl > 0 && get(strtab, tass) == 'u' {
   load tasl
@@ -6242,25 +5489,20 @@ __L218:
   push_int 0
 __L219:
   jump_ifnot __L217
-; emit_char(ob, '_');emit_char(ob, 'u');
+; emit_string(ob, "_u");
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  push_str 47
+  call emit_string StringBuffer StringLiteral
   pop
 __L217:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
 __L216:
-; if sv2(strtab,ss,sl, '=','=') { emit_char(ob, 'e');emit_char(ob, 'q');emit_char(ob, 10u8); return; }  // eq
+; if sv2(strtab,ss,sl, '=','=') { emit_string(ob, "eq");emit_nl(ob); return; }  // eq
   load strtab
   load ss
   load sl
@@ -6269,20 +5511,15 @@ __L216:
   call sv2 U8Array i32 i32 u8 u8
   jump_ifnot __L220
   load ob
-  push_int 101
-  call emit_char StringBuffer u8
+  push_str 56
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 113
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L220:
-; if sv2(strtab,ss,sl, '!','=') { emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 10u8); return; }  // ne
+; if sv2(strtab,ss,sl, '!','=') { emit_string(ob, "ne");emit_nl(ob); return; }  // ne
   load strtab
   load ss
   load sl
@@ -6291,16 +5528,11 @@ __L220:
   call sv2 U8Array i32 i32 u8 u8
   jump_ifnot __L221
   load ob
-  push_int 110
-  call emit_char StringBuffer u8
+  push_str 57
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   return_void
 __L221:
@@ -6312,14 +5544,10 @@ __L221:
   push_int 61
   call sv2 U8Array i32 i32 u8 u8
   jump_ifnot __L222
-; emit_char(ob, 'l');emit_char(ob, 'e');
+; emit_string(ob, "le");
   load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
+  push_str 58
+  call emit_string StringBuffer StringLiteral
   pop
 ; if tasl > 0 && get(strtab, tass) == 'u' {
   load tasl
@@ -6338,20 +5566,15 @@ __L224:
   push_int 0
 __L225:
   jump_ifnot __L223
-; emit_char(ob, '_');emit_char(ob, 'u');
+; emit_string(ob, "_u");
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  push_str 47
+  call emit_string StringBuffer StringLiteral
   pop
 __L223:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -6364,14 +5587,10 @@ __L222:
   push_int 61
   call sv2 U8Array i32 i32 u8 u8
   jump_ifnot __L226
-; emit_char(ob, 'g');emit_char(ob, 'e');
+; emit_string(ob, "ge");
   load ob
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
+  push_str 59
+  call emit_string StringBuffer StringLiteral
   pop
 ; if tasl > 0 && get(strtab, tass) == 'u' {
   load tasl
@@ -6390,28 +5609,22 @@ __L228:
   push_int 0
 __L229:
   jump_ifnot __L227
-; emit_char(ob, '_');emit_char(ob, 'u');
+; emit_string(ob, "_u");
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  push_str 47
+  call emit_string StringBuffer StringLiteral
   pop
 __L227:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
 __L226:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -6452,54 +5665,12 @@ __L226:
   load NK_INT
   eq
   jump_ifnot __L230
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  push_int ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 60
+  call emit_string StringBuffer StringLiteral
   pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_int(ob, n_ival(nodes,n)); emit_char(ob, 10u8);
+; emit_int(ob, n_ival(nodes,n)); emit_nl(ob);
   load ob
   load nodes
   load n
@@ -6507,8 +5678,7 @@ __L226:
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -6518,52 +5688,10 @@ __L230:
   load NK_BOOL
   eq
   jump_ifnot __L231
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  push_int ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 60
+  call emit_string StringBuffer StringLiteral
   pop
 ; var is_true: i32 = 0;
   push_int 0
@@ -6634,14 +5762,13 @@ __L235:
   store is_true
 __L233:
 __L232:
-; emit_int(ob, is_true); emit_char(ob, 10u8);
+; emit_int(ob, is_true); emit_nl(ob);
   load ob
   load is_true
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -6662,61 +5789,18 @@ __L231:
   call n_sl AstNodeArray i32
   call slit_add U8Array I32Array i32 i32
   store idx
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  push_str ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 61
+  call emit_string StringBuffer StringLiteral
   pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, ' ');
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_int(ob, idx); emit_char(ob, 10u8);
+; emit_int(ob, idx); emit_nl(ob);
   load ob
   load idx
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -6726,37 +5810,12 @@ __L240:
   load NK_VAR
   eq
   jump_ifnot __L241
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  load ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 62
+  call emit_string StringBuffer StringLiteral
   pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'a');emit_char(ob, 'd');emit_char(ob, ' ');
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_char(ob, 10u8);
+; emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_nl(ob);
   load ob
   load strtab
   load nodes
@@ -6768,8 +5827,7 @@ __L240:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -6853,35 +5911,10 @@ __L248:
   load args
   call delete I32Array
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  call ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, 'l');emit_char(ob, ' ');
-  load ob
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 35
+  call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n));
   load ob
@@ -6944,10 +5977,9 @@ __L252:
   store c
   jump __L249
 __L250:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -6967,14 +5999,10 @@ __L242:
   call n_child AstNodeArray i32
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 42
+  call emit_string StringBuffer StringLiteral
   pop
 ; var ss: i32 = n_ss(nodes,n);
   load nodes
@@ -6993,45 +6021,23 @@ __L242:
   push_int 45
   call sv1 U8Array i32 i32 u8
   jump_ifnot __L254
-; emit_char(ob, 'n');emit_char(ob, 'e');emit_char(ob, 'g');emit_char(ob, 10u8);  // neg
+; emit_string(ob, "neg");emit_nl(ob);  // neg
   load ob
-  push_int 110
-  call emit_char StringBuffer u8
+  push_str 63
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   jump __L255
 __L254:
-; emit_char(ob, 'l');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');emit_char(ob, 10u8);  // lnot
+; emit_string(ob, "lnot");emit_nl(ob);  // lnot
   load ob
-  push_int 108
-  call emit_char StringBuffer u8
+  push_str 64
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 __L255:
 ; return;
@@ -7094,81 +6100,17 @@ __L253:
   load child0
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump_ifnot __L");emit_int(ob, lf);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 37
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lf
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; cg_expr(nodes, strtab, slits, ob, child1);
   load nodes
@@ -7178,200 +6120,42 @@ __L253:
   load child1
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump_ifnot __L");emit_int(ob, lf);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 'o');emit_char(ob, 't');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 37
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lf
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  push_int 1");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
+  push_str 65
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
+; emit_string(ob, "  jump __L");emit_int(ob, le);emit_nl(ob);
   load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 49
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 38
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load le
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lf);emit_char(ob, ':');emit_char(ob, 10u8);
+; emit_string(ob, "__L");emit_int(ob, lf);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lf
@@ -7382,76 +6166,20 @@ __L253:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  push_int 0");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
+  push_str 33
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
+; emit_string(ob, "__L");emit_int(ob, le);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 48
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load le
@@ -7462,8 +6190,7 @@ __L253:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -7498,69 +6225,17 @@ __L257:
   load child0
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump_if __L");emit_int(ob, lt);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'f');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 66
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lt
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; cg_expr(nodes, strtab, slits, ob, child1);
   load nodes
@@ -7570,188 +6245,42 @@ __L257:
   load child1
   call cg_expr AstNodeArray U8Array I32Array StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  jump_if __L");emit_int(ob, lt);emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');emit_char(ob, '_');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'f');
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 66
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lt
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  push_int 0");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
+  push_str 33
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
+; emit_string(ob, "  jump __L");emit_int(ob, le);emit_nl(ob);
   load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '0');emit_char(ob, 10u8);
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 48
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'j');emit_char(ob, 'u');emit_char(ob, 'm');emit_char(ob, 'p');
-  load ob
-  push_int 106
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, ' ');emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, 10u8);
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 38
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load le
   call emit_int StringBuffer i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, lt);emit_char(ob, ':');emit_char(ob, 10u8);
+; emit_string(ob, "__L");emit_int(ob, lt);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load lt
@@ -7762,76 +6291,20 @@ __L257:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  push_int 1");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'p');emit_char(ob, 'u');emit_char(ob, 's');emit_char(ob, 'h');emit_char(ob, '_');
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
+  push_str 65
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 117
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
+; emit_string(ob, "__L");emit_int(ob, le);emit_char(ob, ':');emit_nl(ob);
   load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 104
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 't');emit_char(ob, ' ');emit_char(ob, '1');emit_char(ob, 10u8);
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 49
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, '_');emit_char(ob, '_');emit_char(ob, 'L');emit_int(ob, le);emit_char(ob, ':');emit_char(ob, 10u8);
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 76
-  call emit_char StringBuffer u8
+  push_str 39
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
   load le
@@ -7842,8 +6315,7 @@ __L257:
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -8156,37 +6628,12 @@ __L283:
 ; if is_prim {
   load is_prim
   jump_ifnot __L291
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  cast ");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 67
+  call emit_string StringBuffer StringLiteral
   pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, ' ');
-  load ob
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-; emit_n(ob, strtab, tss, tsl); emit_char(ob, 10u8);
+; emit_n(ob, strtab, tss, tsl); emit_nl(ob);
   load ob
   load strtab
   load tss
@@ -8194,8 +6641,7 @@ __L283:
   call emit_n StringBuffer U8Array i32 i32
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 __L291:
 ; return;
@@ -8275,22 +6721,10 @@ __L259:
   call n_sl AstNodeArray i32
   store ret_sl
 __L292:
-; emit_char(ob, '.');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, ' ');
+; emit_string(ob, ".fn ");
   load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 68
+  call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, n_ss(nodes,fn_node), n_sl(nodes,fn_node));
   load ob
@@ -8352,22 +6786,10 @@ __L294:
   push_int 0
   eq
   jump_ifnot __L295
-; emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');
+; emit_string(ob, "void");
   load ob
-  push_int 118
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
+  push_str 69
+  call emit_string StringBuffer StringLiteral
   pop
   jump __L296
 __L295:
@@ -8379,10 +6801,9 @@ __L295:
   call emit_n StringBuffer U8Array i32 i32
   pop
 __L296:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; var p: i32 = n_child(nodes, params_n);
   load nodes
@@ -8400,34 +6821,10 @@ __L297:
   load p
   call n_child AstNodeArray i32
   store type_n
-; emit_char(ob, '.');emit_char(ob, 'p');emit_char(ob, 'a');emit_char(ob, 'r');emit_char(ob, 'a');emit_char(ob, 'm');emit_char(ob, ' ');
+; emit_string(ob, ".param ");
   load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 112
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 109
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 70
+  call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, n_ss(nodes,p), n_sl(nodes,p));
   load ob
@@ -8456,10 +6853,9 @@ __L297:
   call n_sl AstNodeArray i32
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; p = n_sib(nodes, p);
   load nodes
@@ -8518,34 +6914,10 @@ __L299:
   add
   call get I32Array i32
   store tsl
-; emit_char(ob, '.');emit_char(ob, 'l');emit_char(ob, 'o');emit_char(ob, 'c');emit_char(ob, 'a');emit_char(ob, 'l');emit_char(ob, ' ');
+; emit_string(ob, ".local ");
   load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 71
+  call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(ob, strtab, nss, nsl);
   load ob
@@ -8566,10 +6938,9 @@ __L299:
   load tsl
   call emit_n StringBuffer U8Array i32 i32
   pop
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; i = i + 1;
   load i
@@ -8598,98 +6969,25 @@ __L300:
   load loop_stk
   call delete I32Array
   pop
-; emit_char(ob, ' ');emit_char(ob, ' ');
+; emit_string(ob, "  return_void");emit_nl(ob);
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 41
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
-; emit_char(ob, 'r');emit_char(ob, 'e');emit_char(ob, 't');emit_char(ob, 'u');emit_char(ob, 'r');emit_char(ob, 'n');
+; emit_string(ob, ".endfn");emit_nl(ob);
   load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
+  push_str 72
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 116
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
+; emit_nl(ob);
   load ob
-  push_int 117
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, '_');emit_char(ob, 'v');emit_char(ob, 'o');emit_char(ob, 'i');emit_char(ob, 'd');emit_char(ob, 10u8);
-  load ob
-  push_int 95
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 118
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, '.');emit_char(ob, 'e');emit_char(ob, 'n');emit_char(ob, 'd');emit_char(ob, 'f');emit_char(ob, 'n');emit_char(ob, 10u8);
-  load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 102
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
-  pop
-; emit_char(ob, 10u8);
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; return;
   return_void
@@ -8709,66 +7007,13 @@ __L300:
   push_int 0
   gt
   jump_ifnot __L301
-; emit_char(ob, ';');emit_char(ob, ' ');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');emit_char(ob, 't');emit_char(ob, 'a');emit_char(ob, 'b');emit_char(ob, 'l');emit_char(ob, 'e');emit_char(ob, 10u8);
+; emit_string(ob, "; string table");emit_nl(ob);
   load ob
-  push_int 59
-  call emit_char StringBuffer u8
+  push_str 73
+  call emit_string StringBuffer StringLiteral
   pop
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 98
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; var i: i32 = 0;
   push_int 0
@@ -8796,52 +7041,20 @@ __L302:
   add
   call get I32Array i32
   store sl
-; emit_char(ob, '.');emit_char(ob, 's');emit_char(ob, 't');emit_char(ob, 'r');emit_char(ob, 'i');emit_char(ob, 'n');emit_char(ob, 'g');emit_char(ob, ' ');
+; emit_string(ob, ".string ");
   load ob
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 116
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 114
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 105
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 74
+  call emit_string StringBuffer StringLiteral
   pop
 ; emit_int(ob, i);
   load ob
   load i
   call emit_int StringBuffer i32
   pop
-; emit_char(ob, ' ');emit_char(ob, '"');
+; emit_string(ob, " \"");
   load ob
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load ob
-  push_int 34
-  call emit_char StringBuffer u8
+  push_str 75
+  call emit_string StringBuffer StringLiteral
   pop
 ; ob_st_escaped(strtab, ss, sl, ob);
   load strtab
@@ -8850,14 +7063,13 @@ __L302:
   load ob
   call ob_st_escaped U8Array i32 i32 StringBuffer
   pop
-; emit_char(ob, '"');emit_char(ob, 10u8);
+; emit_char(ob, '"');emit_nl(ob);
   load ob
   push_int 34
   call emit_char StringBuffer u8
   pop
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; i = i + 1;
   load i
@@ -8866,10 +7078,9 @@ __L302:
   store i
   jump __L302
 __L303:
-; emit_char(ob, 10u8);
+; emit_nl(ob);
   load ob
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 __L301:
 ; return;
@@ -8935,22 +7146,13 @@ __L301:
 ; g_locc = 0;
   push_int 0
   store g_locc
-; emit_char(out_buf, '.');emit_char(out_buf, 'b');emit_char(out_buf, 'c');emit_char(out_buf, 10u8);
+; emit_string(out_buf, ".bc");emit_nl(out_buf);
   load out_buf
-  push_int 46
-  call emit_char StringBuffer u8
+  push_str 76
+  call emit_string StringBuffer StringLiteral
   pop
   load out_buf
-  push_int 98
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; skip_ws_in();
   call skip_ws_in
@@ -9017,46 +7219,13 @@ __L305:
   push_int 0
   eq
   jump_ifnot __L309
-; emit_char(out_buf, ';');emit_char(out_buf, ' ');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, 's');emit_char(out_buf, 10u8);
+; emit_string(out_buf, "; globals");emit_nl(out_buf);
   load out_buf
-  push_int 59
-  call emit_char StringBuffer u8
+  push_str 77
+  call emit_string StringBuffer StringLiteral
   pop
   load out_buf
-  push_int 32
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 98
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 115
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; has_global = 1;
   push_int 1
@@ -9085,38 +7254,10 @@ __L309:
   call n_ival AstNodeArray i32
   store initval
 __L310:
-; emit_char(out_buf, '.');emit_char(out_buf, 'g');emit_char(out_buf, 'l');emit_char(out_buf, 'o');emit_char(out_buf, 'b');emit_char(out_buf, 'a');emit_char(out_buf, 'l');emit_char(out_buf, ' ');
+; emit_string(out_buf, ".global ");
   load out_buf
-  push_int 46
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 103
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 111
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 98
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 97
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 108
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 32
-  call emit_char StringBuffer u8
+  push_str 78
+  call emit_string StringBuffer StringLiteral
   pop
 ; emit_n(out_buf, strtab, n_ss(nodes,n), n_sl(nodes,n));
   load out_buf
@@ -9155,10 +7296,9 @@ __L310:
   load initval
   call emit_int StringBuffer i32
   pop
-; emit_char(out_buf, 10u8);
+; emit_nl(out_buf);
   load out_buf
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 __L308:
 ; if k == NK_FN {
@@ -9166,14 +7306,13 @@ __L308:
   load NK_FN
   eq
   jump_ifnot __L311
-; if has_global == 1 { emit_char(out_buf, 10u8); has_global = 2; }
+; if has_global == 1 { emit_nl(out_buf); has_global = 2; }
   load has_global
   push_int 1
   eq
   jump_ifnot __L312
   load out_buf
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
   push_int 2
   store has_global
@@ -9194,14 +7333,13 @@ __L307:
   pop
   jump __L305
 __L306:
-; if has_global == 1 { emit_char(out_buf, 10u8); }
+; if has_global == 1 { emit_nl(out_buf); }
   load has_global
   push_int 1
   eq
   jump_ifnot __L313
   load out_buf
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 __L313:
 ; if peek_in() == ')' { next(g_reader); }
@@ -9219,35 +7357,13 @@ __L314:
   load out_buf
   call emit_string_table U8Array I32Array StringBuffer
   pop
-; emit_char(out_buf, '.');emit_char(out_buf, 'e');emit_char(out_buf, 'n');emit_char(out_buf, 'd');
+; emit_string(out_buf, ".endbc");emit_nl(out_buf);
   load out_buf
-  push_int 46
-  call emit_char StringBuffer u8
+  push_str 79
+  call emit_string StringBuffer StringLiteral
   pop
   load out_buf
-  push_int 101
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 110
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 100
-  call emit_char StringBuffer u8
-  pop
-; emit_char(out_buf, 'b');emit_char(out_buf, 'c');emit_char(out_buf, 10u8);
-  load out_buf
-  push_int 98
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 99
-  call emit_char StringBuffer u8
-  pop
-  load out_buf
-  push_int 10
-  call emit_char StringBuffer u8
+  call emit_nl StringBuffer
   pop
 ; write(out_buf, 1);
   load out_buf
@@ -9284,32 +7400,85 @@ __L314:
 .endfn
 
 ; string table
-.string 0 "fn"
-.string 1 "if"
-.string 2 "ret"
-.string 3 "int"
-.string 4 "str"
-.string 5 "var"
-.string 6 "bool"
-.string 7 "type"
-.string 8 "cast"
-.string 9 "call"
-.string 10 "block"
-.string 11 "param"
-.string 12 "while"
-.string 13 "binop"
-.string 14 "unary"
-.string 15 "field"
-.string 16 "break"
-.string 17 "params"
-.string 18 "return"
-.string 19 "struct"
-.string 20 "assign"
-.string 21 "import"
-.string 22 "program"
-.string 23 "comment"
-.string 24 "var_decl"
-.string 25 "continue"
-.string 26 "call_stmt"
+.string 0 "\\\""
+.string 1 "\\\\"
+.string 2 "\\n"
+.string 3 "\\r"
+.string 4 "\\t"
+.string 5 "fn"
+.string 6 "if"
+.string 7 "ret"
+.string 8 "int"
+.string 9 "str"
+.string 10 "var"
+.string 11 "bool"
+.string 12 "type"
+.string 13 "cast"
+.string 14 "call"
+.string 15 "block"
+.string 16 "param"
+.string 17 "while"
+.string 18 "binop"
+.string 19 "unary"
+.string 20 "field"
+.string 21 "break"
+.string 22 "params"
+.string 23 "return"
+.string 24 "struct"
+.string 25 "assign"
+.string 26 "import"
+.string 27 "program"
+.string 28 "comment"
+.string 29 "var_decl"
+.string 30 "continue"
+.string 31 "call_stmt"
+.string 32 "; "
+.string 33 "  push_int 0"
+.string 34 "  store "
+.string 35 "  call "
+.string 36 "  pop"
+.string 37 "  jump_ifnot __L"
+.string 38 "  jump __L"
+.string 39 "__L"
+.string 40 "  return"
+.string 41 "  return_void"
+.string 42 "  "
+.string 43 "add"
+.string 44 "sub"
+.string 45 "mul"
+.string 46 "div"
+.string 47 "_u"
+.string 48 "mod"
+.string 49 "and"
+.string 50 "or"
+.string 51 "xor"
+.string 52 "lt"
+.string 53 "gt"
+.string 54 "shl"
+.string 55 "shr"
+.string 56 "eq"
+.string 57 "ne"
+.string 58 "le"
+.string 59 "ge"
+.string 60 "  push_int "
+.string 61 "  push_str "
+.string 62 "  load "
+.string 63 "neg"
+.string 64 "lnot"
+.string 65 "  push_int 1"
+.string 66 "  jump_if __L"
+.string 67 "  cast "
+.string 68 ".fn "
+.string 69 "void"
+.string 70 ".param "
+.string 71 ".local "
+.string 72 ".endfn"
+.string 73 "; string table"
+.string 74 ".string "
+.string 75 " \""
+.string 76 ".bc"
+.string 77 "; globals"
+.string 78 ".global "
+.string 79 ".endbc"
 
 .endbc

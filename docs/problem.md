@@ -247,19 +247,6 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 コード中に `// TODO:` で書き残した、動作は正しいが書き方が冗長 /
 共通化できていない箇所のまとめ。挙動に影響しない refactor のみ。
 
-### R4. 文字列出力ヘルパ `emit_string(StringBuffer, StringLiteral)` を使い切る (ergonomics)
-
-`bc2asm.tc` / `codegen.tc` の asm 出力が `emit_char` を 1 バイトずつ
-呼んでいる箇所が多数ある (`e4(ob); emit_char('a'); emit_char('d');
-emit_char('d')`)。`emit_string` は既に `string_buffer.tc` にあるので
-置き換え可能。合わせて `emit_nl(ob) -> emit_char(ob, 10u8)` のような
-薄いヘルパも欲しい (改行出力が至る所に散らばっている)。
-
-- `compiler/bc2asm.tc:81` — `// TODO: emit_stirng 使えないの？`
-- `compiler/bc2asm.tc:82` — `// TODO: emit_nl(ob) -> emit_char(ob, 10u8)を作ろう。`
-- `compiler/bc2asm.tc:107` — `// TODO: emit_string`
-- `compiler/codegen.tc:504` — `// TODO: emit_string`
-
 ### R5. bc2asm 関数テーブル行を struct 化する (ergonomics)
 
 `bc2asm.tc` の `fns: I32Array` は 1 行 10 エントリの固定レイアウトで
@@ -398,6 +385,14 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   (旧 K3 のうち統一部分) → kernel.tc を 16K/8K に揃え、全経路で
   サイズ統一。タスク自身がサイズを宣言する仕組みは未実装で
   残件として K3 に残す
+- codegen.tc / bc2asm.tc / typecheck.tc の asm/BC 出力が `emit_char(ob,
+  'a'); emit_char(ob, 'd'); emit_char(ob, 'd');` のように 1 バイトずつ
+  垂れ流していた (R4) → `emit_nl(ob)` ヘルパを `string_buffer.tc` に
+  追加し、連続する `emit_char(VAR, 'X')` を Python スクリプトで機械的
+  に `emit_string(VAR, "...")` に折りたたみ、`emit_char(VAR, 10u8)` を
+  `emit_nl(VAR)` に統一。削減量: bc2asm.tc -6.2KB、codegen.tc -8.5KB。
+  例: 4 行の emit_char 連鎖 → 1 行の `emit_string(ob, "  jump_ifnot __L");
+  emit_int(ob, lend); emit_nl(ob);` になった
 - 文字列比較が cmp2/cmp3/cmp4/cmp5/cmp6 という長さ別ヘルパに展開されて
   いて、`if len == N { if cmpN(atom,0, 'a','b','c',...) }` のような
   ネストで書かれていた (codegen.tc / typecheck.tc / extract_sigs.tc /

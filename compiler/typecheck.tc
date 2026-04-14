@@ -84,11 +84,11 @@ fn ob_str_escaped(strtab: U8Array, start: i32, slen: i32, ob: StringBuffer) -> v
     var i: i32 = 0;
     while i < slen {
         var c: u8 = get(strtab, (start + i));
-        if c == '"'  { emit_char(ob, '\\'); emit_char(ob, '"'); }
-        else { if c == '\\' { emit_char(ob, '\\'); emit_char(ob, '\\'); }
-        else { if c == 10u8 { emit_char(ob, '\\'); emit_char(ob, 'n'); }
-        else { if c == 13u8 { emit_char(ob, '\\'); emit_char(ob, 'r'); }
-        else { if c == 9u8  { emit_char(ob, '\\'); emit_char(ob, 't'); }
+        if c == '"'  { emit_string(ob, "\\\""); }
+        else { if c == '\\' { emit_string(ob, "\\\\"); }
+        else { if c == 10u8 { emit_string(ob, "\\n"); }
+        else { if c == 13u8 { emit_string(ob, "\\r"); }
+        else { if c == 9u8  { emit_string(ob, "\\t"); }
         else { emit_char(ob, c); }}}}}
         i = i + 1;
     }
@@ -1119,11 +1119,11 @@ fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i3
             emit_string(ob, "false");
         }
     } else if k == NK_STR {
-        emit_char(ob, ' '); emit_char(ob, '"');
+        emit_string(ob, " \"");
         ob_str_escaped(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
         emit_char(ob, '"');
     } else if k == NK_COMMENT {
-        emit_char(ob, ' '); emit_char(ob, '"');
+        emit_string(ob, " \"");
         ob_str_escaped(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
         emit_char(ob, '"');
     } else if n_sl(nodes, n) > 0 {
@@ -1137,11 +1137,11 @@ fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i3
     } else {
         var c2: i32 = first_child;
         while c2 >= 0 {
-            emit_char(ob, 10u8);
+            emit_nl(ob);
             write_node(nodes, strtab, ob, (indent + 1), c2);
             c2 = n_sib(nodes, c2);
         }
-        emit_char(ob, 10u8);
+        emit_nl(ob);
         write_indent(indent, ob);
         emit_char(ob, ')');
     }
@@ -1191,7 +1191,7 @@ fn main() -> i32 {
     check_program(nodes, strtab, fntab, vartab, root);
 
     write_node(nodes, strtab, ob, 0, root);
-    emit_char(ob, 10u8);
+    emit_nl(ob);
     write(ob, 1);
 
     delete(nodes); delete(strtab); delete(atom_buf); destroy(ob); close(g_reader);
