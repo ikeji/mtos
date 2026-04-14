@@ -202,16 +202,43 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 
 ### 17. `make test` の実行時間が 60 秒上限にぎりぎり (ergonomics)
 
-現在 58 秒前後で 60 秒制約 (CLAUDE.md) を満たしている。qemu ベースの
-テストがこれ以上増えると制約を超える可能性がある。フェーズ6 で
-/bin/sh を追加したときも 60.3 秒まで伸び、`kernel/build.sh` の TASKS
-リストを target 別に切ることで 58 秒台に戻した経緯がある。
+現在 57-58 秒前後で 60 秒制約 (CLAUDE.md) を満たしている。スイート別
+内訳 (実測):
 
-対処案:
-- 並列実行 (現状逐次)。
-- 遅いテストを `make full-test` 側に移す。
-- kernel タスクの qemu コンパイルがボトルネックなので、ビルドキャッシュ
-  導入を検討 (同じ .tc で同じ Gen2 なら前回の .bin を再利用)。
+| スイート | 時間 | 主な内容 |
+|---|---|---|
+| Compiler Source Tests | ~24 s | parse/codegen/bc2asm/bcrun の Gen1 vs golden、Gen2 vs Gen1、Gen2 vs Gen3 (qemu 経由 4 ファイル) |
+| OS Component Tests (fs_virtio) | ~19 s | kernel + 4 task の Gen2 ビルド + qemu 起動 |
+| asm.tc Virt End-to-End | ~10 s | 5 件 × compile-gen2.sh |
+| その他 (unit / pipeline / import / golden) | ~5 s | |
+
+**最有力の方向 (未実装)**: テストを「コンパイラを触ったときに必要」と
+「OS / カーネルを触ったときに必要」に分割する。Makefile に
+`make compiler-test` と `make os-test` (仮) を導入し、デフォルト
+`make test` の意味を文脈で切り替える。
+
+理由:
+- 普段の開発で「コンパイラは触っていない、kernel/* だけ書いている」
+  ときに Compiler Source Tests (24s) を毎回回す必要がない
+- 逆もまた然り (compiler/* だけ触ってるときに kernel build を回す
+  必要がない)。
+- 単純に「全部速くする」より「触っていない部分を skip する」ほうが
+  実効ターンアラウンドが短くなる
+- 60 秒制約への余裕も自然に生まれる
+
+実装メモ:
+- ファイル分割: tests/test_compiler.sh (Gen2/Gen3 比較系) と
+  tests/test_os.sh (kernel + asm Virt) を独立に呼べるようにする
+- `make test` のデフォルト挙動は要相談。今のように全部回すか、
+  どれか一方をデフォルトにするか
+- CLAUDE.md の 60 秒ルールは「個別ターゲットそれぞれ 60 秒以内」と
+  読み替える可能性
+
+その他の高速化案 (副案):
+- kernel/build.sh の task コンパイル並列化 (5 ファイル sequential
+  → parallel で OS Tests が 19s → ~5s 期待)
+- Gen2 中間出力のキャッシュ (.tc hash → .bin)
+- 上記分割と独立に効くので、必要に応じて段階的に。
 
 ---
 
