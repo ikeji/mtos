@@ -2,6 +2,7 @@
 // Target: RV32IM, GAS syntax
 
 import "string_buffer.tc";
+import "source_reader.tc";
 import "strlib.tc";
 
 // ===== Opcodes =====
@@ -44,8 +45,11 @@ var OP_DIV_U: i32 = 36;
 var OP_MOD_U: i32 = 37;
 
 // ===== Global state =====
-var g_in_pos: i32 = 0;
-var g_in_len: i32 = 0;
+// Streams stdin via SourceReader (R7). Previously this was a 524 KB
+// flat U8Array buffer (src + g_in_pos + g_in_len); now the 4 KB
+// SourceReader buffer is enough since parse_bc only ever reads
+// forward. Frees 520 KB.
+var g_reader: SourceReader = 0 as SourceReader;
 var g_stab_pos: i32 = 0;
 var g_nfuncs: i32 = 0;
 var g_nparams: i32 = 0;
@@ -231,26 +235,32 @@ fn stab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
 }
 
 // ===== Input utilities =====
-fn in_cur(src: U8Array) -> u8 {
-    if g_in_pos >= g_in_len { return 0u8; }
-    return get(src, g_in_pos);
-}
+// All read from the streaming SourceReader in g_reader. Token bytes
+// are still materialized into `strtab` at g_stab_pos so the rest of
+// parse_bc can do its random-access work on `strtab` slices via
+// streq / int_from_stab etc.
 fn is_ws(c: u8) -> bool { return c==' '||c==9u8||c==13u8||c==10u8; }
-fn skip_spaces(src: U8Array) -> void {
-    while g_in_pos < g_in_len && (in_cur(src)==' '||in_cur(src)==9u8) { g_in_pos=g_in_pos+1; }
+fn skip_spaces() -> void {
+    while at_eof(g_reader) == false {
+        var c: u8 = peek(g_reader);
+        if c==' '||c==9u8 { next(g_reader); }
+        else { return; }
+    }
     return;
 }
-fn skip_line(src: U8Array) -> void {
-    while g_in_pos < g_in_len && in_cur(src)!=10u8 { g_in_pos=g_in_pos+1; }
-    if g_in_pos < g_in_len { g_in_pos=g_in_pos+1; }
+fn skip_line() -> void {
+    while at_eof(g_reader) == false && peek(g_reader) != 10u8 {
+        next(g_reader);
+    }
+    if at_eof(g_reader) == false { next(g_reader); }
     return;
 }
-fn next_tok(src: U8Array, strtab: U8Array) -> i32 {
-    skip_spaces(src);
+fn next_tok(strtab: U8Array) -> i32 {
+    skip_spaces();
     var start: i32 = g_stab_pos;
-    while g_in_pos < g_in_len && !is_ws(in_cur(src)) {
-        set(strtab,g_stab_pos,in_cur(src));
-        g_stab_pos=g_stab_pos+1; g_in_pos=g_in_pos+1;
+    while at_eof(g_reader) == false && !is_ws(peek(g_reader)) {
+        set(strtab, g_stab_pos, next(g_reader));
+        g_stab_pos = g_stab_pos + 1;
     }
     return start;
 }
@@ -268,23 +278,23 @@ fn int_from_stab(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     if neg==1 { return 0-r; }
     return r;
 }
-fn read_strlit(src: U8Array, strtab: U8Array) -> i32 {
+fn read_strlit(strtab: U8Array) -> i32 {
     var start: i32=g_stab_pos;
-    if g_in_pos<g_in_len&&in_cur(src)=='"' { g_in_pos=g_in_pos+1; }
+    if at_eof(g_reader) == false && peek(g_reader)=='"' { next(g_reader); }
     var done: i32=0;
-    while done==0&&g_in_pos<g_in_len {
-        var c: u8=in_cur(src); g_in_pos=g_in_pos+1;
+    while done==0 && at_eof(g_reader) == false {
+        var c: u8 = next(g_reader);
         var handled: i32=0;
         if c=='"' { done=1; handled=1; }
-        if handled==0&&c=='\\' {
-            var e: u8=in_cur(src); g_in_pos=g_in_pos+1;
+        if handled==0 && c=='\\' {
+            var e: u8 = next(g_reader);
             var out: u8=e;
             if e=='n' { out=10u8; }
             if e=='r' { out=13u8; }
             if e=='t' { out=9u8; }
             if e=='x' {
-                var h1: u8=in_cur(src); g_in_pos=g_in_pos+1;
-                var h2: u8=in_cur(src); g_in_pos=g_in_pos+1;
+                var h1: u8 = next(g_reader);
+                var h2: u8 = next(g_reader);
                 var v1: i32=0; var v2: i32=0;
                 if h1>='0'&&h1<='9' { v1=h1 as i32-48; }
                 if h1>='A'&&h1<='F' { v1=h1 as i32-55; }
@@ -372,69 +382,76 @@ fn ins_set(instrs: I32Array, base: i32, pc: i32, f: i32, v: i32) -> void {
     set(instrs,((base+pc)*4+f),v); return;
 }
 
-// ===== Label number =====
-fn parse_lnum(src: U8Array, from: i32, to: i32) -> i32 {
-    var r: i32=0; var i: i32=from+3;
-    while i<to { var c: u8=get(src,i); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }
+// Parse a `__LNN` label number from the input stream. Skips leading
+// non-digit chars (for the `__L` prefix) and accumulates digits
+// until the stop char. Stops without consuming the stop byte.
+fn parse_lnum_stream(stop: u8) -> i32 {
+    var r: i32 = 0;
+    while at_eof(g_reader) == false {
+        var c: u8 = peek(g_reader);
+        if c == stop || is_ws(c) { return r; }
+        next(g_reader);
+        if c >= '0' && c <= '9' { r = r * 10 + (c as i32 - 48); }
+    }
     return r;
 }
 
 // ===== Parse bytecode =====
-fn parse_bc(src: U8Array, strtab: U8Array,
+fn parse_bc(strtab: U8Array,
             string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
             fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
             instrs: I32Array, label_pcs: I32Array) -> void {
     var cur_fn: i32=-1; var done: i32=0;
-    while done==0&&g_in_pos<g_in_len {
-        skip_spaces(src);
-        if g_in_pos>=g_in_len { done=1; }
+    while done==0 && at_eof(g_reader) == false {
+        skip_spaces();
+        if at_eof(g_reader) { done=1; }
         if done==0 {
-            var c: u8=in_cur(src);
-            if c==10u8||c==13u8 { g_in_pos=g_in_pos+1; }
-            if c!=10u8&&c!=13u8&&c==';' { skip_line(src); }
+            var c: u8 = peek(g_reader);
+            if c==10u8||c==13u8 { next(g_reader); }
+            if c!=10u8&&c!=13u8&&c==';' { skip_line(); }
             if c!=10u8&&c!=13u8&&c!=';'&&c=='.' {
-                g_in_pos=g_in_pos+1;
-                var dir_ss: i32=next_tok(src,strtab);
+                next(g_reader);
+                var dir_ss: i32=next_tok(strtab);
                 var dir_sl: i32=tok_len(dir_ss);
                 var d0: u8=0u8; var d1: u8=0u8;
                 if dir_sl>0 { d0=get(strtab,dir_ss); }
                 if dir_sl>1 { d1=get(strtab,(dir_ss+1)); }
                 if d0=='s'&&d1=='t' { // string
                     discard_tok(dir_ss);
-                    var idx_ss: i32=next_tok(src,strtab);
+                    var idx_ss: i32=next_tok(strtab);
                     var idx: i32=int_from_stab(strtab,idx_ss,tok_len(idx_ss));
-                    discard_tok(idx_ss); skip_spaces(src);
-                    var slit_ss: i32=read_strlit(src,strtab);
+                    discard_tok(idx_ss); skip_spaces();
+                    var slit_ss: i32=read_strlit(strtab);
                     var slit_sl: i32=g_stab_pos-slit_ss;
                     set(string_lits,(idx*2+0),slit_ss);
                     set(string_lits,(idx*2+1),slit_sl);
                     if idx+1>g_nstrings { g_nstrings=idx+1; }
-                    skip_line(src);
+                    skip_line();
                 }
                 if d0=='g'&&d1=='l' { // global
                     discard_tok(dir_ss);
-                    var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
-                    var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
-                    var iv_ss: i32=next_tok(src,strtab); var iv_sl: i32=tok_len(iv_ss);
+                    var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);
+                    var iv_ss: i32=next_tok(strtab); var iv_sl: i32=tok_len(iv_ss);
                     var iv: i32=int_from_stab(strtab,iv_ss,iv_sl); discard_tok(iv_ss);
                     var gi: i32=g_nglobals;
                     set(global_vars,(gi*4+0),nm_ss);
                     set(global_vars,(gi*4+1),nm_sl);
                     set(global_inits,gi,iv);
-                    g_nglobals=g_nglobals+1; skip_line(src);
+                    g_nglobals=g_nglobals+1; skip_line();
                 }
                 if d0=='f'&&d1=='n' { // fn
                     discard_tok(dir_ss);
-                    var nm_ss: i32=next_tok(src,strtab);
+                    var nm_ss: i32=next_tok(strtab);
                     // Build mangled name: append __TYPE for each arg type (last token = rettype, skip it)
                     var prev_under: i32=g_stab_pos;
-                    skip_spaces(src);
-                    while in_cur(src)!=10u8&&g_in_pos<g_in_len {
+                    skip_spaces();
+                    while at_eof(g_reader) == false && peek(g_reader)!=10u8 {
                         prev_under=g_stab_pos;
                         set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
                         set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
-                        next_tok(src,strtab);
-                        skip_spaces(src);
+                        next_tok(strtab);
+                        skip_spaces();
                     }
                     g_stab_pos=prev_under; // remove last __ + rettype token
                     var nm_sl: i32=g_stab_pos-nm_ss;
@@ -443,31 +460,31 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                                             g_nparams, 0,
                                             g_nlocals, 0,
                                             g_ninstrs, 0));
-                    g_nfuncs=g_nfuncs+1; skip_line(src);
+                    g_nfuncs=g_nfuncs+1; skip_line();
                 }
                 if d0=='p'&&d1=='a' { // param
                     discard_tok(dir_ss);
-                    var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
-                    var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
+                    var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);
                     pl_set(params_pool,g_nparams,0,nm_ss); pl_set(params_pool,g_nparams,1,nm_sl);
                     g_nparams=g_nparams+1;
                     if cur_fn>=0 {
                         var cf: BcFunc = get(fns, cur_fn);
                         nparam(cf, nparam(cf) + 1);
                     }
-                    skip_line(src);
+                    skip_line();
                 }
                 if d0=='l'&&d1=='o' { // local
                     discard_tok(dir_ss);
-                    var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
-                    var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);
+                    var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);
                     pl_set(locals_pool,g_nlocals,0,nm_ss); pl_set(locals_pool,g_nlocals,1,nm_sl);
                     g_nlocals=g_nlocals+1;
                     if cur_fn>=0 {
                         var cf: BcFunc = get(fns, cur_fn);
                         nlocal(cf, nlocal(cf) + 1);
                     }
-                    skip_line(src);
+                    skip_line();
                 }
                 var d3b: u8=0u8;
                 if dir_sl>3 { d3b=get(strtab,(dir_ss+3)); }
@@ -489,24 +506,26 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                             ii=ii+1;
                         }
                     }
-                    cur_fn=-1; skip_line(src);
+                    cur_fn=-1; skip_line();
                 }
                 if d0!='s'&&d0!='g'&&d0!='f'&&d0!='p'&&d0!='l'&&d0!='e' {
-                    discard_tok(dir_ss); skip_line(src);
+                    discard_tok(dir_ss); skip_line();
                 }
             }
             if c!=10u8&&c!=13u8&&c!=';'&&c!='.'&&c=='_' { // label
-                var lbl_start: i32=g_in_pos;
-                while g_in_pos<g_in_len&&in_cur(src)!=':'&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
-                if g_in_pos<g_in_len&&in_cur(src)==':' {
-                    var lnum3: i32=parse_lnum(src,lbl_start,g_in_pos);
-                    g_in_pos=g_in_pos+1;
+                // Labels look like __LNN:. parse_lnum_stream walks
+                // until ':' or whitespace and accumulates digits
+                // along the way (the prefix chars are non-digits so
+                // they're skipped automatically).
+                var lnum3: i32 = parse_lnum_stream(':' as u8);
+                if at_eof(g_reader) == false && peek(g_reader) == ':' {
+                    next(g_reader);
                     if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-instr_base(get(fns, cur_fn))); }
                 }
-                skip_line(src);
+                skip_line();
             }
             if c!=10u8&&c!=13u8&&c!=';'&&c!='.'&&c!='_' { // instruction
-                var op_ss: i32=next_tok(src,strtab);
+                var op_ss: i32=next_tok(strtab);
                 var op_sl: i32=tok_len(op_ss);
                 var op3: i32=classify_op(strtab,op_ss,op_sl);
                 discard_tok(op_ss);
@@ -518,50 +537,50 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     ins_set(instrs,ib3,iidx,2,0);
                     ins_set(instrs,ib3,iidx,3,0);
                     if op3==OP_PUSH_INT {
-                        var v_ss: i32=next_tok(src,strtab);
+                        var v_ss: i32=next_tok(strtab);
                         ins_set(instrs,ib3,iidx,1,int_from_stab(strtab,v_ss,tok_len(v_ss)));
                         discard_tok(v_ss);
                     }
                     if op3==OP_PUSH_STR {
-                        var v_ss: i32=next_tok(src,strtab);
+                        var v_ss: i32=next_tok(strtab);
                         ins_set(instrs,ib3,iidx,1,int_from_stab(strtab,v_ss,tok_len(v_ss)));
                         discard_tok(v_ss);
                     }
                     if op3==OP_LOAD||op3==OP_STORE {
-                        var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);
+                        var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);
                         ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
                     }
                     if op3==OP_CALL {
-                        var nm_ss: i32=next_tok(src,strtab);
+                        var nm_ss: i32=next_tok(strtab);
                         var mangle_end: i32=g_stab_pos;
                         var na: i32=0;
-                        skip_spaces(src);
-                        while in_cur(src)!=10u8&&g_in_pos<g_in_len {
+                        skip_spaces();
+                        while at_eof(g_reader) == false && peek(g_reader)!=10u8 {
                             set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
                             set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
-                            next_tok(src,strtab);
+                            next_tok(strtab);
                             mangle_end=g_stab_pos;
                             na=na+1;
-                            skip_spaces(src);
+                            skip_spaces();
                         }
                         var nm_sl: i32=mangle_end-nm_ss;
                         ins_set(instrs,ib3,iidx,1,na);
                         ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
                     }
                     if op3==OP_CAST {
-                        var ty_ss: i32=next_tok(src,strtab); var ty_sl: i32=tok_len(ty_ss);
+                        var ty_ss: i32=next_tok(strtab); var ty_sl: i32=tok_len(ty_ss);
                         ins_set(instrs,ib3,iidx,2,ty_ss); ins_set(instrs,ib3,iidx,3,ty_sl);
                     }
                     if op3==OP_JUMP||op3==OP_JUMP_IF||op3==OP_JUMP_IFNOT {
-                        skip_spaces(src);
-                        var lbl_in: i32=g_in_pos;
-                        while g_in_pos<g_in_len&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }
-                        ins_set(instrs,ib3,iidx,1,parse_lnum(src,lbl_in,g_in_pos));
+                        skip_spaces();
+                        // Jump target is __LNN — parse_lnum_stream
+                        // walks until whitespace.
+                        ins_set(instrs,ib3,iidx,1,parse_lnum_stream(' ' as u8));
                     }
                     ninstr(get(fns, cur_fn), iidx + 1);
                     g_ninstrs=g_ninstrs+1;
                 }
-                skip_line(src);
+                skip_line();
             }
         }
     }
@@ -1036,7 +1055,6 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
 }
 
 fn main() -> i32 {
-    var src:          U8Array  = U8Array(524288u32);
     var strtab:       U8Array  = U8Array(262144u32);
     var ob:           StringBuffer = StringBuffer_new(1);
     var string_lits:  I32Array = I32Array(512u32);
@@ -1050,28 +1068,14 @@ fn main() -> i32 {
     var instrs:       I32Array = I32Array(262144u32);
     var label_pcs:    I32Array = I32Array(16384u32);
 
-    // Read all stdin
-    // TODO: Use SourceReader
-    g_in_len=0;
-    var chunk_buf: U8Array=U8Array(65536u32);
-    var rdone: i32=0;
-    while rdone==0&&g_in_len<524000 {
-        var chunk: i32=sys_read(0,chunk_buf,65536);
-        if chunk<=0 { rdone=1; }
-        if chunk>0 {
-            var ci: i32=0;
-            while ci<chunk {
-                set(src,(g_in_len+ci),get(chunk_buf,ci));
-                ci=ci+1;
-            }
-            g_in_len=g_in_len+chunk;
-        }
-    }
-    delete(chunk_buf);
-    if g_in_len<=0 { return 1; }
+    // Stream stdin through SourceReader (R7). Replaces the old 524 KB
+    // up-front buffer + manual chunked read loop.
+    g_reader = SourceReader_new(0);
 
-    parse_bc(src,strtab,string_lits,global_vars,global_inits,
+    parse_bc(strtab,string_lits,global_vars,global_inits,
              fns,params_pool,locals_pool,instrs,label_pcs);
+
+    close(g_reader);
 
     emit_program(strtab,string_lits,global_vars,global_inits,
                  fns,params_pool,locals_pool,instrs,ob);

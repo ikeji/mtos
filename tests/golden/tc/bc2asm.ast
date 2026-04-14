@@ -1,5 +1,6 @@
 (program
   (import string_buffer.tc)
+  (import source_reader.tc)
   (import strlib.tc)
   (var_decl OP_PUSH_INT
     (type i32)
@@ -149,13 +150,12 @@
     (type i32)
     (int 37)
   )
-  (var_decl g_in_pos
-    (type i32)
-    (int 0)
-  )
-  (var_decl g_in_len
-    (type i32)
-    (int 0)
+  (var_decl g_reader
+    (type SourceReader)
+    (cast
+      (int 0)
+      (type SourceReader)
+    )
   )
   (var_decl g_stab_pos
     (type i32)
@@ -1414,37 +1414,6 @@
       )
     )
   )
-  (fn in_cur
-    (params
-      (param src
-        (type U8Array)
-      )
-    )
-    (ret
-      (type u8)
-    )
-    (block
-      (comment "if g_in_pos >= g_in_len { return 0u8; }")
-      (if
-        (binop >=
-          (var g_in_pos)
-          (var g_in_len)
-        )
-        (block
-          (return
-            (int:u8 0)
-          )
-        )
-      )
-      (comment "return get(src, g_in_pos);")
-      (return
-        (call get
-          (var src)
-          (var g_in_pos)
-        )
-      )
-    )
-  )
   (fn is_ws
     (params
       (param c
@@ -1483,42 +1452,47 @@
     )
   )
   (fn skip_spaces
-    (params
-      (param src
-        (type U8Array)
-      )
-    )
+    (params)
     (ret
       (type void)
     )
     (block
-      (comment "while g_in_pos < g_in_len && (in_cur(src)==' '||in_cur(src)==9u8) { g_in_pos=g_in_pos+1; }")
+      (comment "while at_eof(g_reader) == false {")
       (while
-        (binop &&
-          (binop <
-            (var g_in_pos)
-            (var g_in_len)
+        (binop ==
+          (call at_eof
+            (var g_reader)
           )
-          (binop ||
-            (binop ==
-              (call in_cur
-                (var src)
-              )
-              (int:u8 32)
-            )
-            (binop ==
-              (call in_cur
-                (var src)
-              )
-              (int:u8 9)
-            )
-          )
+          (bool false)
         )
         (block
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
-              (int 1)
+          (comment "var c: u8 = peek(g_reader);")
+          (var_decl c
+            (type u8)
+            (call peek
+              (var g_reader)
+            )
+          )
+          (comment "if c==' '||c==9u8 { next(g_reader); }")
+          (if
+            (binop ||
+              (binop ==
+                (var c)
+                (int:u8 32)
+              )
+              (binop ==
+                (var c)
+                (int:u8 9)
+              )
+            )
+            (block
+              (call_stmt next
+                (var g_reader)
+              )
+            )
+            (block
+              (comment "else { return; }")
+              (return)
             )
           )
         )
@@ -1528,50 +1502,45 @@
     )
   )
   (fn skip_line
-    (params
-      (param src
-        (type U8Array)
-      )
-    )
+    (params)
     (ret
       (type void)
     )
     (block
-      (comment "while g_in_pos < g_in_len && in_cur(src)!=10u8 { g_in_pos=g_in_pos+1; }")
+      (comment "while at_eof(g_reader) == false && peek(g_reader) != 10u8 {")
       (while
         (binop &&
-          (binop <
-            (var g_in_pos)
-            (var g_in_len)
+          (binop ==
+            (call at_eof
+              (var g_reader)
+            )
+            (bool false)
           )
           (binop !=
-            (call in_cur
-              (var src)
+            (call peek
+              (var g_reader)
             )
             (int:u8 10)
           )
         )
         (block
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
-              (int 1)
-            )
+          (comment "next(g_reader);")
+          (call_stmt next
+            (var g_reader)
           )
         )
       )
-      (comment "if g_in_pos < g_in_len { g_in_pos=g_in_pos+1; }")
+      (comment "if at_eof(g_reader) == false { next(g_reader); }")
       (if
-        (binop <
-          (var g_in_pos)
-          (var g_in_len)
+        (binop ==
+          (call at_eof
+            (var g_reader)
+          )
+          (bool false)
         )
         (block
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
-              (int 1)
-            )
+          (call_stmt next
+            (var g_reader)
           )
         )
       )
@@ -1581,9 +1550,6 @@
   )
   (fn next_tok
     (params
-      (param src
-        (type U8Array)
-      )
       (param strtab
         (type U8Array)
       )
@@ -1592,49 +1558,43 @@
       (type i32)
     )
     (block
-      (comment "skip_spaces(src);")
-      (call_stmt skip_spaces
-        (var src)
-      )
+      (comment "skip_spaces();")
+      (call_stmt skip_spaces)
       (comment "var start: i32 = g_stab_pos;")
       (var_decl start
         (type i32)
         (var g_stab_pos)
       )
-      (comment "while g_in_pos < g_in_len && !is_ws(in_cur(src)) {")
+      (comment "while at_eof(g_reader) == false && !is_ws(peek(g_reader)) {")
       (while
         (binop &&
-          (binop <
-            (var g_in_pos)
-            (var g_in_len)
+          (binop ==
+            (call at_eof
+              (var g_reader)
+            )
+            (bool false)
           )
           (unary !
             (call is_ws
-              (call in_cur
-                (var src)
+              (call peek
+                (var g_reader)
               )
             )
           )
         )
         (block
-          (comment "set(strtab,g_stab_pos,in_cur(src));")
+          (comment "set(strtab, g_stab_pos, next(g_reader));")
           (call_stmt set
             (var strtab)
             (var g_stab_pos)
-            (call in_cur
-              (var src)
+            (call next
+              (var g_reader)
             )
           )
-          (comment "g_stab_pos=g_stab_pos+1; g_in_pos=g_in_pos+1;")
+          (comment "g_stab_pos = g_stab_pos + 1;")
           (assign g_stab_pos
             (binop +
               (var g_stab_pos)
-              (int 1)
-            )
-          )
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
               (int 1)
             )
           )
@@ -1816,9 +1776,6 @@
   )
   (fn read_strlit
     (params
-      (param src
-        (type U8Array)
-      )
       (param strtab
         (type U8Array)
       )
@@ -1832,26 +1789,25 @@
         (type i32)
         (var g_stab_pos)
       )
-      (comment "if g_in_pos<g_in_len&&in_cur(src)=='\"' { g_in_pos=g_in_pos+1; }")
+      (comment "if at_eof(g_reader) == false && peek(g_reader)=='\"' { next(g_reader); }")
       (if
         (binop &&
-          (binop <
-            (var g_in_pos)
-            (var g_in_len)
+          (binop ==
+            (call at_eof
+              (var g_reader)
+            )
+            (bool false)
           )
           (binop ==
-            (call in_cur
-              (var src)
+            (call peek
+              (var g_reader)
             )
             (int:u8 34)
           )
         )
         (block
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
-              (int 1)
-            )
+          (call_stmt next
+            (var g_reader)
           )
         )
       )
@@ -1860,30 +1816,26 @@
         (type i32)
         (int 0)
       )
-      (comment "while done==0&&g_in_pos<g_in_len {")
+      (comment "while done==0 && at_eof(g_reader) == false {")
       (while
         (binop &&
           (binop ==
             (var done)
             (int 0)
           )
-          (binop <
-            (var g_in_pos)
-            (var g_in_len)
+          (binop ==
+            (call at_eof
+              (var g_reader)
+            )
+            (bool false)
           )
         )
         (block
-          (comment "var c: u8=in_cur(src); g_in_pos=g_in_pos+1;")
+          (comment "var c: u8 = next(g_reader);")
           (var_decl c
             (type u8)
-            (call in_cur
-              (var src)
-            )
-          )
-          (assign g_in_pos
-            (binop +
-              (var g_in_pos)
-              (int 1)
+            (call next
+              (var g_reader)
             )
           )
           (comment "var handled: i32=0;")
@@ -1906,7 +1858,7 @@
               )
             )
           )
-          (comment "if handled==0&&c=='\\\\' {")
+          (comment "if handled==0 && c=='\\\\' {")
           (if
             (binop &&
               (binop ==
@@ -1919,17 +1871,11 @@
               )
             )
             (block
-              (comment "var e: u8=in_cur(src); g_in_pos=g_in_pos+1;")
+              (comment "var e: u8 = next(g_reader);")
               (var_decl e
                 (type u8)
-                (call in_cur
-                  (var src)
-                )
-              )
-              (assign g_in_pos
-                (binop +
-                  (var g_in_pos)
-                  (int 1)
+                (call next
+                  (var g_reader)
                 )
               )
               (comment "var out: u8=e;")
@@ -1980,30 +1926,18 @@
                   (int:u8 120)
                 )
                 (block
-                  (comment "var h1: u8=in_cur(src); g_in_pos=g_in_pos+1;")
+                  (comment "var h1: u8 = next(g_reader);")
                   (var_decl h1
                     (type u8)
-                    (call in_cur
-                      (var src)
+                    (call next
+                      (var g_reader)
                     )
                   )
-                  (assign g_in_pos
-                    (binop +
-                      (var g_in_pos)
-                      (int 1)
-                    )
-                  )
-                  (comment "var h2: u8=in_cur(src); g_in_pos=g_in_pos+1;")
+                  (comment "var h2: u8 = next(g_reader);")
                   (var_decl h2
                     (type u8)
-                    (call in_cur
-                      (var src)
-                    )
-                  )
-                  (assign g_in_pos
-                    (binop +
-                      (var g_in_pos)
-                      (int 1)
+                    (call next
+                      (var g_reader)
                     )
                   )
                   (comment "var v1: i32=0; var v2: i32=0;")
@@ -3705,48 +3639,59 @@
       (return)
     )
   )
-  (fn parse_lnum
+  (fn parse_lnum_stream
     (params
-      (param src
-        (type U8Array)
-      )
-      (param from
-        (type i32)
-      )
-      (param to
-        (type i32)
+      (param stop
+        (type u8)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "var r: i32=0; var i: i32=from+3;")
+      (comment "var r: i32 = 0;")
       (var_decl r
         (type i32)
         (int 0)
       )
-      (var_decl i
-        (type i32)
-        (binop +
-          (var from)
-          (int 3)
-        )
-      )
-      (comment "while i<to { var c: u8=get(src,i); if c>='0'&&c<='9' { r=r*10+(c as i32-48); } i=i+1; }")
+      (comment "while at_eof(g_reader) == false {")
       (while
-        (binop <
-          (var i)
-          (var to)
+        (binop ==
+          (call at_eof
+            (var g_reader)
+          )
+          (bool false)
         )
         (block
+          (comment "var c: u8 = peek(g_reader);")
           (var_decl c
             (type u8)
-            (call get
-              (var src)
-              (var i)
+            (call peek
+              (var g_reader)
             )
           )
+          (comment "if c == stop || is_ws(c) { return r; }")
+          (if
+            (binop ||
+              (binop ==
+                (var c)
+                (var stop)
+              )
+              (call is_ws
+                (var c)
+              )
+            )
+            (block
+              (return
+                (var r)
+              )
+            )
+          )
+          (comment "next(g_reader);")
+          (call_stmt next
+            (var g_reader)
+          )
+          (comment "if c >= '0' && c <= '9' { r = r * 10 + (c as i32 - 48); }")
           (if
             (binop &&
               (binop >=
@@ -3776,12 +3721,6 @@
               )
             )
           )
-          (assign i
-            (binop +
-              (var i)
-              (int 1)
-            )
-          )
         )
       )
       (comment "return r;")
@@ -3792,9 +3731,6 @@
   )
   (fn parse_bc
     (params
-      (param src
-        (type U8Array)
-      )
       (param strtab
         (type U8Array)
       )
@@ -3838,28 +3774,27 @@
         (type i32)
         (int 0)
       )
-      (comment "while done==0&&g_in_pos<g_in_len {")
+      (comment "while done==0 && at_eof(g_reader) == false {")
       (while
         (binop &&
           (binop ==
             (var done)
             (int 0)
           )
-          (binop <
-            (var g_in_pos)
-            (var g_in_len)
+          (binop ==
+            (call at_eof
+              (var g_reader)
+            )
+            (bool false)
           )
         )
         (block
-          (comment "skip_spaces(src);")
-          (call_stmt skip_spaces
-            (var src)
-          )
-          (comment "if g_in_pos>=g_in_len { done=1; }")
+          (comment "skip_spaces();")
+          (call_stmt skip_spaces)
+          (comment "if at_eof(g_reader) { done=1; }")
           (if
-            (binop >=
-              (var g_in_pos)
-              (var g_in_len)
+            (call at_eof
+              (var g_reader)
             )
             (block
               (assign done
@@ -3874,14 +3809,14 @@
               (int 0)
             )
             (block
-              (comment "var c: u8=in_cur(src);")
+              (comment "var c: u8 = peek(g_reader);")
               (var_decl c
                 (type u8)
-                (call in_cur
-                  (var src)
+                (call peek
+                  (var g_reader)
                 )
               )
-              (comment "if c==10u8||c==13u8 { g_in_pos=g_in_pos+1; }")
+              (comment "if c==10u8||c==13u8 { next(g_reader); }")
               (if
                 (binop ||
                   (binop ==
@@ -3894,15 +3829,12 @@
                   )
                 )
                 (block
-                  (assign g_in_pos
-                    (binop +
-                      (var g_in_pos)
-                      (int 1)
-                    )
+                  (call_stmt next
+                    (var g_reader)
                   )
                 )
               )
-              (comment "if c!=10u8&&c!=13u8&&c==';' { skip_line(src); }")
+              (comment "if c!=10u8&&c!=13u8&&c==';' { skip_line(); }")
               (if
                 (binop &&
                   (binop &&
@@ -3921,9 +3853,7 @@
                   )
                 )
                 (block
-                  (call_stmt skip_line
-                    (var src)
-                  )
+                  (call_stmt skip_line)
                 )
               )
               (comment "if c!=10u8&&c!=13u8&&c!=';'&&c=='.' {")
@@ -3951,18 +3881,14 @@
                   )
                 )
                 (block
-                  (comment "g_in_pos=g_in_pos+1;")
-                  (assign g_in_pos
-                    (binop +
-                      (var g_in_pos)
-                      (int 1)
-                    )
+                  (comment "next(g_reader);")
+                  (call_stmt next
+                    (var g_reader)
                   )
-                  (comment "var dir_ss: i32=next_tok(src,strtab);")
+                  (comment "var dir_ss: i32=next_tok(strtab);")
                   (var_decl dir_ss
                     (type i32)
                     (call next_tok
-                      (var src)
                       (var strtab)
                     )
                   )
@@ -4032,11 +3958,10 @@
                       (call_stmt discard_tok
                         (var dir_ss)
                       )
-                      (comment "var idx_ss: i32=next_tok(src,strtab);")
+                      (comment "var idx_ss: i32=next_tok(strtab);")
                       (var_decl idx_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4051,18 +3976,15 @@
                           )
                         )
                       )
-                      (comment "discard_tok(idx_ss); skip_spaces(src);")
+                      (comment "discard_tok(idx_ss); skip_spaces();")
                       (call_stmt discard_tok
                         (var idx_ss)
                       )
-                      (call_stmt skip_spaces
-                        (var src)
-                      )
-                      (comment "var slit_ss: i32=read_strlit(src,strtab);")
+                      (call_stmt skip_spaces)
+                      (comment "var slit_ss: i32=read_strlit(strtab);")
                       (var_decl slit_ss
                         (type i32)
                         (call read_strlit
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4116,10 +4038,8 @@
                           )
                         )
                       )
-                      (comment "skip_line(src);")
-                      (call_stmt skip_line
-                        (var src)
-                      )
+                      (comment "skip_line();")
+                      (call_stmt skip_line)
                     )
                   )
                   (comment "if d0=='g'&&d1=='l' { // global")
@@ -4139,11 +4059,10 @@
                       (call_stmt discard_tok
                         (var dir_ss)
                       )
-                      (comment "var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);")
+                      (comment "var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);")
                       (var_decl nm_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4153,22 +4072,20 @@
                           (var nm_ss)
                         )
                       )
-                      (comment "var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);")
+                      (comment "var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);")
                       (var_decl ty_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
                       (call_stmt discard_tok
                         (var ty_ss)
                       )
-                      (comment "var iv_ss: i32=next_tok(src,strtab); var iv_sl: i32=tok_len(iv_ss);")
+                      (comment "var iv_ss: i32=next_tok(strtab); var iv_sl: i32=tok_len(iv_ss);")
                       (var_decl iv_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4225,16 +4142,14 @@
                         (var gi)
                         (var iv)
                       )
-                      (comment "g_nglobals=g_nglobals+1; skip_line(src);")
+                      (comment "g_nglobals=g_nglobals+1; skip_line();")
                       (assign g_nglobals
                         (binop +
                           (var g_nglobals)
                           (int 1)
                         )
                       )
-                      (call_stmt skip_line
-                        (var src)
-                      )
+                      (call_stmt skip_line)
                     )
                   )
                   (comment "if d0=='f'&&d1=='n' { // fn")
@@ -4254,11 +4169,10 @@
                       (call_stmt discard_tok
                         (var dir_ss)
                       )
-                      (comment "var nm_ss: i32=next_tok(src,strtab);")
+                      (comment "var nm_ss: i32=next_tok(strtab);")
                       (var_decl nm_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4267,22 +4181,22 @@
                         (type i32)
                         (var g_stab_pos)
                       )
-                      (comment "skip_spaces(src);")
-                      (call_stmt skip_spaces
-                        (var src)
-                      )
-                      (comment "while in_cur(src)!=10u8&&g_in_pos<g_in_len {")
+                      (comment "skip_spaces();")
+                      (call_stmt skip_spaces)
+                      (comment "while at_eof(g_reader) == false && peek(g_reader)!=10u8 {")
                       (while
                         (binop &&
+                          (binop ==
+                            (call at_eof
+                              (var g_reader)
+                            )
+                            (bool false)
+                          )
                           (binop !=
-                            (call in_cur
-                              (var src)
+                            (call peek
+                              (var g_reader)
                             )
                             (int:u8 10)
-                          )
-                          (binop <
-                            (var g_in_pos)
-                            (var g_in_len)
                           )
                         )
                         (block
@@ -4314,15 +4228,12 @@
                               (int 1)
                             )
                           )
-                          (comment "next_tok(src,strtab);")
+                          (comment "next_tok(strtab);")
                           (call_stmt next_tok
-                            (var src)
                             (var strtab)
                           )
-                          (comment "skip_spaces(src);")
-                          (call_stmt skip_spaces
-                            (var src)
-                          )
+                          (comment "skip_spaces();")
+                          (call_stmt skip_spaces)
                         )
                       )
                       (comment "g_stab_pos=prev_under; // remove last __ + rettype token")
@@ -4356,16 +4267,14 @@
                           (int 0)
                         )
                       )
-                      (comment "g_nfuncs=g_nfuncs+1; skip_line(src);")
+                      (comment "g_nfuncs=g_nfuncs+1; skip_line();")
                       (assign g_nfuncs
                         (binop +
                           (var g_nfuncs)
                           (int 1)
                         )
                       )
-                      (call_stmt skip_line
-                        (var src)
-                      )
+                      (call_stmt skip_line)
                     )
                   )
                   (comment "if d0=='p'&&d1=='a' { // param")
@@ -4385,11 +4294,10 @@
                       (call_stmt discard_tok
                         (var dir_ss)
                       )
-                      (comment "var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);")
+                      (comment "var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);")
                       (var_decl nm_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4399,11 +4307,10 @@
                           (var nm_ss)
                         )
                       )
-                      (comment "var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);")
+                      (comment "var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);")
                       (var_decl ty_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4457,10 +4364,8 @@
                           )
                         )
                       )
-                      (comment "skip_line(src);")
-                      (call_stmt skip_line
-                        (var src)
-                      )
+                      (comment "skip_line();")
+                      (call_stmt skip_line)
                     )
                   )
                   (comment "if d0=='l'&&d1=='o' { // local")
@@ -4480,11 +4385,10 @@
                       (call_stmt discard_tok
                         (var dir_ss)
                       )
-                      (comment "var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);")
+                      (comment "var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);")
                       (var_decl nm_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4494,11 +4398,10 @@
                           (var nm_ss)
                         )
                       )
-                      (comment "var ty_ss: i32=next_tok(src,strtab); discard_tok(ty_ss);")
+                      (comment "var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);")
                       (var_decl ty_ss
                         (type i32)
                         (call next_tok
-                          (var src)
                           (var strtab)
                         )
                       )
@@ -4552,10 +4455,8 @@
                           )
                         )
                       )
-                      (comment "skip_line(src);")
-                      (call_stmt skip_line
-                        (var src)
-                      )
+                      (comment "skip_line();")
+                      (call_stmt skip_line)
                     )
                   )
                   (comment "var d3b: u8=0u8;")
@@ -4720,15 +4621,13 @@
                           )
                         )
                       )
-                      (comment "cur_fn=-1; skip_line(src);")
+                      (comment "cur_fn=-1; skip_line();")
                       (assign cur_fn
                         (unary -
                           (int 1)
                         )
                       )
-                      (call_stmt skip_line
-                        (var src)
-                      )
+                      (call_stmt skip_line)
                     )
                   )
                   (comment "if d0!='s'&&d0!='g'&&d0!='f'&&d0!='p'&&d0!='l'&&d0!='e' {")
@@ -4768,13 +4667,11 @@
                       )
                     )
                     (block
-                      (comment "discard_tok(dir_ss); skip_line(src);")
+                      (comment "discard_tok(dir_ss); skip_line();")
                       (call_stmt discard_tok
                         (var dir_ss)
                       )
-                      (call_stmt skip_line
-                        (var src)
-                      )
+                      (call_stmt skip_line)
                     )
                   )
                 )
@@ -4810,73 +4707,36 @@
                   )
                 )
                 (block
-                  (comment "var lbl_start: i32=g_in_pos;")
-                  (var_decl lbl_start
+                  (comment "var lnum3: i32 = parse_lnum_stream(':' as u8);")
+                  (var_decl lnum3
                     (type i32)
-                    (var g_in_pos)
-                  )
-                  (comment "while g_in_pos<g_in_len&&in_cur(src)!=':'&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }")
-                  (while
-                    (binop &&
-                      (binop &&
-                        (binop <
-                          (var g_in_pos)
-                          (var g_in_len)
-                        )
-                        (binop !=
-                          (call in_cur
-                            (var src)
-                          )
-                          (int:u8 58)
-                        )
-                      )
-                      (unary !
-                        (call is_ws
-                          (call in_cur
-                            (var src)
-                          )
-                        )
-                      )
-                    )
-                    (block
-                      (assign g_in_pos
-                        (binop +
-                          (var g_in_pos)
-                          (int 1)
-                        )
+                    (call parse_lnum_stream
+                      (cast
+                        (int:u8 58)
+                        (type u8)
                       )
                     )
                   )
-                  (comment "if g_in_pos<g_in_len&&in_cur(src)==':' {")
+                  (comment "if at_eof(g_reader) == false && peek(g_reader) == ':' {")
                   (if
                     (binop &&
-                      (binop <
-                        (var g_in_pos)
-                        (var g_in_len)
+                      (binop ==
+                        (call at_eof
+                          (var g_reader)
+                        )
+                        (bool false)
                       )
                       (binop ==
-                        (call in_cur
-                          (var src)
+                        (call peek
+                          (var g_reader)
                         )
                         (int:u8 58)
                       )
                     )
                     (block
-                      (comment "var lnum3: i32=parse_lnum(src,lbl_start,g_in_pos);")
-                      (var_decl lnum3
-                        (type i32)
-                        (call parse_lnum
-                          (var src)
-                          (var lbl_start)
-                          (var g_in_pos)
-                        )
-                      )
-                      (comment "g_in_pos=g_in_pos+1;")
-                      (assign g_in_pos
-                        (binop +
-                          (var g_in_pos)
-                          (int 1)
-                        )
+                      (comment "next(g_reader);")
+                      (call_stmt next
+                        (var g_reader)
                       )
                       (comment "if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-instr_base(get(fns, cur_fn))); }")
                       (if
@@ -4902,10 +4762,8 @@
                       )
                     )
                   )
-                  (comment "skip_line(src);")
-                  (call_stmt skip_line
-                    (var src)
-                  )
+                  (comment "skip_line();")
+                  (call_stmt skip_line)
                 )
               )
               (comment "if c!=10u8&&c!=13u8&&c!=';'&&c!='.'&&c!='_' { // instruction")
@@ -4939,11 +4797,10 @@
                   )
                 )
                 (block
-                  (comment "var op_ss: i32=next_tok(src,strtab);")
+                  (comment "var op_ss: i32=next_tok(strtab);")
                   (var_decl op_ss
                     (type i32)
                     (call next_tok
-                      (var src)
                       (var strtab)
                     )
                   )
@@ -5039,11 +4896,10 @@
                           (var OP_PUSH_INT)
                         )
                         (block
-                          (comment "var v_ss: i32=next_tok(src,strtab);")
+                          (comment "var v_ss: i32=next_tok(strtab);")
                           (var_decl v_ss
                             (type i32)
                             (call next_tok
-                              (var src)
                               (var strtab)
                             )
                           )
@@ -5074,11 +4930,10 @@
                           (var OP_PUSH_STR)
                         )
                         (block
-                          (comment "var v_ss: i32=next_tok(src,strtab);")
+                          (comment "var v_ss: i32=next_tok(strtab);")
                           (var_decl v_ss
                             (type i32)
                             (call next_tok
-                              (var src)
                               (var strtab)
                             )
                           )
@@ -5115,11 +4970,10 @@
                           )
                         )
                         (block
-                          (comment "var nm_ss: i32=next_tok(src,strtab); var nm_sl: i32=tok_len(nm_ss);")
+                          (comment "var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);")
                           (var_decl nm_ss
                             (type i32)
                             (call next_tok
-                              (var src)
                               (var strtab)
                             )
                           )
@@ -5153,11 +5007,10 @@
                           (var OP_CALL)
                         )
                         (block
-                          (comment "var nm_ss: i32=next_tok(src,strtab);")
+                          (comment "var nm_ss: i32=next_tok(strtab);")
                           (var_decl nm_ss
                             (type i32)
                             (call next_tok
-                              (var src)
                               (var strtab)
                             )
                           )
@@ -5171,22 +5024,22 @@
                             (type i32)
                             (int 0)
                           )
-                          (comment "skip_spaces(src);")
-                          (call_stmt skip_spaces
-                            (var src)
-                          )
-                          (comment "while in_cur(src)!=10u8&&g_in_pos<g_in_len {")
+                          (comment "skip_spaces();")
+                          (call_stmt skip_spaces)
+                          (comment "while at_eof(g_reader) == false && peek(g_reader)!=10u8 {")
                           (while
                             (binop &&
+                              (binop ==
+                                (call at_eof
+                                  (var g_reader)
+                                )
+                                (bool false)
+                              )
                               (binop !=
-                                (call in_cur
-                                  (var src)
+                                (call peek
+                                  (var g_reader)
                                 )
                                 (int:u8 10)
-                              )
-                              (binop <
-                                (var g_in_pos)
-                                (var g_in_len)
                               )
                             )
                             (block
@@ -5214,9 +5067,8 @@
                                   (int 1)
                                 )
                               )
-                              (comment "next_tok(src,strtab);")
+                              (comment "next_tok(strtab);")
                               (call_stmt next_tok
-                                (var src)
                                 (var strtab)
                               )
                               (comment "mangle_end=g_stab_pos;")
@@ -5230,10 +5082,8 @@
                                   (int 1)
                                 )
                               )
-                              (comment "skip_spaces(src);")
-                              (call_stmt skip_spaces
-                                (var src)
-                              )
+                              (comment "skip_spaces();")
+                              (call_stmt skip_spaces)
                             )
                           )
                           (comment "var nm_sl: i32=mangle_end-nm_ss;")
@@ -5276,11 +5126,10 @@
                           (var OP_CAST)
                         )
                         (block
-                          (comment "var ty_ss: i32=next_tok(src,strtab); var ty_sl: i32=tok_len(ty_ss);")
+                          (comment "var ty_ss: i32=next_tok(strtab); var ty_sl: i32=tok_len(ty_ss);")
                           (var_decl ty_ss
                             (type i32)
                             (call next_tok
-                              (var src)
                               (var strtab)
                             )
                           )
@@ -5326,49 +5175,19 @@
                           )
                         )
                         (block
-                          (comment "skip_spaces(src);")
-                          (call_stmt skip_spaces
-                            (var src)
-                          )
-                          (comment "var lbl_in: i32=g_in_pos;")
-                          (var_decl lbl_in
-                            (type i32)
-                            (var g_in_pos)
-                          )
-                          (comment "while g_in_pos<g_in_len&&!is_ws(in_cur(src)) { g_in_pos=g_in_pos+1; }")
-                          (while
-                            (binop &&
-                              (binop <
-                                (var g_in_pos)
-                                (var g_in_len)
-                              )
-                              (unary !
-                                (call is_ws
-                                  (call in_cur
-                                    (var src)
-                                  )
-                                )
-                              )
-                            )
-                            (block
-                              (assign g_in_pos
-                                (binop +
-                                  (var g_in_pos)
-                                  (int 1)
-                                )
-                              )
-                            )
-                          )
-                          (comment "ins_set(instrs,ib3,iidx,1,parse_lnum(src,lbl_in,g_in_pos));")
+                          (comment "skip_spaces();")
+                          (call_stmt skip_spaces)
+                          (comment "ins_set(instrs,ib3,iidx,1,parse_lnum_stream(' ' as u8));")
                           (call_stmt ins_set
                             (var instrs)
                             (var ib3)
                             (var iidx)
                             (int 1)
-                            (call parse_lnum
-                              (var src)
-                              (var lbl_in)
-                              (var g_in_pos)
+                            (call parse_lnum_stream
+                              (cast
+                                (int:u8 32)
+                                (type u8)
+                              )
                             )
                           )
                         )
@@ -5393,10 +5212,8 @@
                       )
                     )
                   )
-                  (comment "skip_line(src);")
-                  (call_stmt skip_line
-                    (var src)
-                  )
+                  (comment "skip_line();")
+                  (call_stmt skip_line)
                 )
               )
             )
@@ -9195,13 +9012,6 @@
       (type i32)
     )
     (block
-      (comment "var src:          U8Array  = U8Array(524288u32);")
-      (var_decl src
-        (type U8Array)
-        (call U8Array
-          (int:u32 524288)
-        )
-      )
       (comment "var strtab:       U8Array  = U8Array(262144u32);")
       (var_decl strtab
         (type U8Array)
@@ -9272,126 +9082,14 @@
           (int:u32 16384)
         )
       )
-      (comment "g_in_len=0;")
-      (assign g_in_len
-        (int 0)
-      )
-      (comment "var chunk_buf: U8Array=U8Array(65536u32);")
-      (var_decl chunk_buf
-        (type U8Array)
-        (call U8Array
-          (int:u32 65536)
-        )
-      )
-      (comment "var rdone: i32=0;")
-      (var_decl rdone
-        (type i32)
-        (int 0)
-      )
-      (comment "while rdone==0&&g_in_len<524000 {")
-      (while
-        (binop &&
-          (binop ==
-            (var rdone)
-            (int 0)
-          )
-          (binop <
-            (var g_in_len)
-            (int 524000)
-          )
-        )
-        (block
-          (comment "var chunk: i32=sys_read(0,chunk_buf,65536);")
-          (var_decl chunk
-            (type i32)
-            (call sys_read
-              (int 0)
-              (var chunk_buf)
-              (int 65536)
-            )
-          )
-          (comment "if chunk<=0 { rdone=1; }")
-          (if
-            (binop <=
-              (var chunk)
-              (int 0)
-            )
-            (block
-              (assign rdone
-                (int 1)
-              )
-            )
-          )
-          (comment "if chunk>0 {")
-          (if
-            (binop >
-              (var chunk)
-              (int 0)
-            )
-            (block
-              (comment "var ci: i32=0;")
-              (var_decl ci
-                (type i32)
-                (int 0)
-              )
-              (comment "while ci<chunk {")
-              (while
-                (binop <
-                  (var ci)
-                  (var chunk)
-                )
-                (block
-                  (comment "set(src,(g_in_len+ci),get(chunk_buf,ci));")
-                  (call_stmt set
-                    (var src)
-                    (binop +
-                      (var g_in_len)
-                      (var ci)
-                    )
-                    (call get
-                      (var chunk_buf)
-                      (var ci)
-                    )
-                  )
-                  (comment "ci=ci+1;")
-                  (assign ci
-                    (binop +
-                      (var ci)
-                      (int 1)
-                    )
-                  )
-                )
-              )
-              (comment "g_in_len=g_in_len+chunk;")
-              (assign g_in_len
-                (binop +
-                  (var g_in_len)
-                  (var chunk)
-                )
-              )
-            )
-          )
-        )
-      )
-      (comment "delete(chunk_buf);")
-      (call_stmt delete
-        (var chunk_buf)
-      )
-      (comment "if g_in_len<=0 { return 1; }")
-      (if
-        (binop <=
-          (var g_in_len)
+      (comment "g_reader = SourceReader_new(0);")
+      (assign g_reader
+        (call SourceReader_new
           (int 0)
         )
-        (block
-          (return
-            (int 1)
-          )
-        )
       )
-      (comment "parse_bc(src,strtab,string_lits,global_vars,global_inits,")
+      (comment "parse_bc(strtab,string_lits,global_vars,global_inits,")
       (call_stmt parse_bc
-        (var src)
         (var strtab)
         (var string_lits)
         (var global_vars)
@@ -9401,6 +9099,10 @@
         (var locals_pool)
         (var instrs)
         (var label_pcs)
+      )
+      (comment "close(g_reader);")
+      (call_stmt close
+        (var g_reader)
       )
       (comment "emit_program(strtab,string_lits,global_vars,global_inits,")
       (call_stmt emit_program

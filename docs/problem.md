@@ -242,46 +242,6 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 
 ---
 
-## compiler/ のリファクタ TODO
-
-コード中に `// TODO:` で書き残した、動作は正しいが書き方が冗長 /
-共通化できていない箇所のまとめ。挙動に影響しない refactor のみ。
-
-### R5. bc2asm 関数テーブル行を struct 化する (ergonomics)
-
-`bc2asm.tc` の `fns: I32Array` は 1 行 10 エントリの固定レイアウトで
-アクセサ関数 (`fn_name_ss` / `fn_name_sl` / ...) を手書きしている。
-R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
-すっきりする。
-
-- `compiler/bc2asm.tc:383` — `// TODO: Structにして。`
-
-### R6. asm.tc のラベル管理を struct 化する (ergonomics)
-
-`asm.tc` は `g_lab_names` (U8Array) + `g_lab_offs` (I32Array) を
-並列配列でラベル表にしている。`struct Label { name_ss, name_sl, off }`
-+ `LabelArray` に置き換えたい (`sched_init` 周りと同じ構造)。
-
-- `compiler/asm.tc:1089` — `// TODO: Label構造体を作って。`
-
-### R7. bc2asm の stdin 読み込みを SourceReader に寄せる (ergonomics)
-
-`bc2asm.tc` の `main` は 64KB チャンクで stdin をループ読みしている
-が、`compiler/source_reader.tc` が既にストリーミング入力ライブラリとして
-存在する。揃えれば `parse.tc` と同じ入力処理パスになる。
-
-- `compiler/bc2asm.tc:1097` — `// TODO: Use SourceReader`
-
-### R8. asm.tc の dead `parse_reg` を消す (cleanup)
-
-`compiler/asm.tc:203` の `parse_reg` は書きかけで `return 0 - 1; // TODO`
-で終わっており、実際のロジックは `parse_reg_op` に書き直されている。
-呼び出し元もないはずなので dead code として削除するだけで済む。
-
-- `compiler/asm.tc:215` — `return 0 - 1; // TODO`
-
----
-
 ## 参考: すでに直した問題
 
 履歴として残す。コミットメッセージを見れば詳細がわかる。
@@ -385,6 +345,24 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   (旧 K3 のうち統一部分) → kernel.tc を 16K/8K に揃え、全経路で
   サイズ統一。タスク自身がサイズを宣言する仕組みは未実装で
   残件として K3 に残す
+- bc2asm.tc の関数テーブルが 10-int flat I32Array で、R1 と同じ並列配列
+  パターンを持っていた (R5) → `struct BcFunc { name_ss, name_sl,
+  param_base, nparam, local_base, nlocal, instr_base, ninstr }` +
+  BcFuncArray に畳んだ。旧レイアウトで未使用だった index 2/3 スロットも
+  自動的に消滅
+- asm.tc のラベル表も 5 並列配列 (g_lab_offs/lens/addrs/is_bss/section)
+  だった (R6) → `struct Label { name_off, name_len, addr, section }` +
+  LabelArray に整理。`g_lab_is_bss` は宣言されたまま読み書き皆無の dead
+  code だったので削除
+- asm.tc に書きかけの dead `parse_reg` (常に -1 を返すスケルトン) が
+  残っていた (R8) → 削除
+- bc2asm.tc が 524 KB の flat `src` バッファに stdin を丸ごと読み込んで
+  から parse_bc が `g_in_pos` で indexing していた (R7) → SourceReader
+  (4 KB の内部バッファ) でストリーミング処理に移行。 parse_lnum は
+  random-access 前提だったので `parse_lnum_stream(stop)` に書き直し、
+  スキャン中に桁を累積する 1-pass 版に。 main が sys_read でチャンク
+  読みしていたループも消滅。520 KB のピークメモリ削減 (Pico 2 セルフ
+  ホストの前提条件)
 - codegen.tc / bc2asm.tc / typecheck.tc の asm/BC 出力が `emit_char(ob,
   'a'); emit_char(ob, 'd'); emit_char(ob, 'd');` のように 1 バイトずつ
   垂れ流していた (R4) → `emit_nl(ob)` ヘルパを `string_buffer.tc` に
