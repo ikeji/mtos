@@ -115,6 +115,8 @@ docs/       ドキュメント
 | `docs/compiler.md` | コンパイラ設計 |
 | `docs/kernel.md` | OS カーネル設計 |
 | `docs/filesystem.md` | ファイルシステム設計 |
+| `docs/design_decisions.md` | 意図して残している挙動の設計判断集 (「バグでは?」と誤解されがちなもの) |
+| `docs/problem.md` | 既知の未解決バグ / limitation / ergonomic 課題リスト |
 | `docs/roadmap.md` | 開発ロードマップ |
 | `docs/tinyc_cheatsheet.md` | tinyc 言語クイックリファレンス |
 | `docs/bc_format.md` | バイトコード（`.bc`）フォーマット仕様 |

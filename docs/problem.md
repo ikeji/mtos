@@ -22,18 +22,6 @@
 - 整数リテラルが型推論時に文脈を見て型を決める (大きな言語変更)。
 - 非負の整数リテラルは自動的に符号なし型へ代入可能にする。
 
-### 4. Import 先の struct の auto-generated fn が呼べない (limitation)
-
-`import "lib.tc";` で `struct Point` を取り込むと型名としては使えるが、
-`Point(3, 4)` / `x(p)` / `delete(p)` などの synthetic fn は import 側から
-呼べない。struct array (`PointArray` / `get(PointArray, i)` 等) も同様。
-
-ワークアラウンド:
-- import 先で `export fn make_point(x: i32, y: i32) -> Point { ... }` の
-  ような wrapper を定義して露出する。
-
-詳細: `docs/task/multi_file.md`。
-
 ### 5. Gen2 typecheck のエラーメッセージが `Type error` だけ (ergonomics)
 
 compiler/typecheck.tc が失敗すると行番号も何も出ない。Gen1 の

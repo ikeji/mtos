@@ -252,6 +252,16 @@ import "filename.tc"
 - 循環 import はコンパイルエラー
 - コンパイルと実行は各ファイルを個別にコンパイルしてリンカで結合する
 
+### struct のプライベートフィールド
+
+`struct` を宣言すると parser が生成するコンストラクタ / getter /
+setter / `delete` / 配列操作などの **合成 fn は import 側からは
+呼べない**（struct 型名だけが import される）。これによりフィールドを
+private にでき、import 側は opaque handle としてしか struct を扱えない
+ので、公開したい操作は `export fn` の wrapper で明示する。詳細と
+書き方は `docs/design_decisions.md` の「struct の合成 fn は import
+側から見えない」節を参照。
+
 ### コンパイラパイプラインへの影響
 
 `parse` → `typecheck` の段階で import を処理する。
