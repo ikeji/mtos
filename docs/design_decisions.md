@@ -120,6 +120,52 @@ API boundary の表明として重要。
 
 ---
 
+## 3. `peek*` / `poke*` は境界チェックしない (raw アドレス専用)
+
+### 判断
+
+`peek8` / `peek16` / `peek32` / `poke8` / `poke16` / `poke32` は
+u32 の raw アドレスを第 1 引数に取り、**境界チェックを一切しない**。
+`trap_common.s` / `crt0_tc.s` で `.globl` の asm 関数として
+`lbu a0, 0(a0); ret` のように 1〜2 命令で定義されている。
+
+対比: `get(U8Array, i) / set(U8Array, i, v)` は U8Array の count
+前置フィールドを参照して境界チェックを行う (set 側のみ実装済、#6 参照)。
+つまり **安全版 (get/set) と危険版 (peek/poke) の 2 階層** があり、
+それぞれ別用途に使い分ける。
+
+### なぜ
+
+peek / poke は以下の用途で、そもそも「境界」が適用できない領域に
+アクセスする:
+
+- **MMIO**: `poke32(0x02004000, ...)` で CLINT mtimecmp、`poke32(0x10000000, ...)` で 16550 UART、`poke32(0x10001000, ...)` で virtio-blk MMIO。相手は RAM ではなくデバイスで、count 付き HeapObj として表現できない
+- **カーネル BSS 初期化**: `__runtime_init` が `g_bucket_base` 直後のアリーナを `poke32` でゼロ化する
+- **タスクフレーム構築**: `init_task_frame` が 132 バイトのトラップフレームに sp/gp/entry を書き込む
+- **virtio queue 操作**: desc / avail / used ring を PFN 越しに直接叩く (block_virtio.tc)
+- **SRAM への手動書き込み**: Pico 2 の `_mtfs_image_addr` を XIP flash 越しに参照するとき等
+
+これらはいずれも「カーネル / ドライバ / crt0 の下回り」で、安全な
+`U8Array` 抽象が届かない層。低レベル経路が無いと実装自体が書けない。
+
+### 使い方
+
+- **peek/poke は kernel / driver / crt0 コードからのみ呼ぶ**。ユーザ
+  アプリの .tc から呼ぶべきではない (MMIO / 絶対アドレスを扱う必然性が
+  無いはず)
+- メモリアクセスしたいだけなら `U8Array` 経由で `get` / `set` を使う
+- 迷ったら U8Array を使う方を優先。アドレス演算を 1 文字間違えるだけで
+  arena / stack / trap frame を壊せる
+- 将来的に peek/poke を bc2asm で intrinsic として直接 `lbu/sb` に
+  展開する計画あり (#20) — 当然境界チェックは追加しない
+
+### 関連
+
+- `problem.md #6` (U8Array 側の境界チェック状況)
+- `problem.md #20` (peek/poke の関数呼び出しオーバーヘッド)
+
+---
+
 ## 追加のガイドライン
 
 ここに載る判断は以下の性質のもの:

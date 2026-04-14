@@ -163,12 +163,6 @@ stdin が閉じた (EOF) 状態を区別できない。
 
 ## バイトコード / ランタイム
 
-### 12. `poke8` / `poke16` / `poke32` は境界チェックなし (by design)
-
-`set(U8Array, i, v)` は範囲チェックするが、raw アドレスへの poke は
-しない。これは意図的 (MMIO とカーネル用) だが、ユーザコードで使う
-と簡単にメモリを壊せる。
-
 ### 20. `peek*` / `poke*` / `get` / `set` が関数呼び出しで遅い (ergonomics, 後回し)
 
 `peek8` / `peek16` / `peek32` / `poke8` / `poke16` / `poke32` は
