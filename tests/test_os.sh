@@ -120,10 +120,11 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     case "$fs_out" in
         *"BLOCK: virtio-blk detected"*"$expected"*"MTFS: mounted"*"FILE:hello, mtfs"*"all tasks done"*)
             # The 5 spawns mean we expect ≥5 CAT: outputs. The live
-            # count must stay ≤ 64 — the current baseline is 36
-            # (seeded tasks + VFS/block state). A leak would push it
-            # up by ~4 per extra spawn, so 5 leaked spawns would hit
-            # 56 and a regression would trip well before 64.
+            # count must stay ≤ 64 — the current baseline is 38
+            # (seeded tasks + VFS/block state + TaskArray of 8 Task
+            # structs). A leak would push it up by ~4 per extra
+            # spawn, so 5 leaked spawns would hit 58 and a
+            # regression would trip well before 64.
             if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
                 && [ "$fs_cat_count" -ge 5 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
