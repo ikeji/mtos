@@ -131,7 +131,7 @@ case "$TARGET" in
         cp "$TMP/kernel.bin" "$OUTFILE"
         ;;
     pico2)
-        python3 "$ROOT_DIR/pico2/bin2uf2.py" "$TMP/kernel.bin" "$OUTFILE"
+        python3 "$ROOT_DIR/tools/bin2uf2.py" "$TMP/kernel.bin" "$OUTFILE"
         ;;
 esac
 

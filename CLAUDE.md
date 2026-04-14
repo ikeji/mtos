@@ -47,12 +47,6 @@ compiler/   自作TinyC製の自己ホスト型コンパイラ（Gen2/Gen3）
   runtime.tc         TinyC製ランタイム（プールアロケータ等、compile-gen2/3.sh で使用）
   crt0_tc.s          asm.tcリンク用 Linux crt0（_start, syscall stub, peek/poke）
   crt0_tc_data.s     asm.tcリンク用プールメタデータ (`.data` + `.bss` + __arena)
-pico2/      Raspberry Pi Pico 2 (RP2350 RISC-V) 向け
-  hello.tc           TC 言語で書いた UART hello world
-  crt0_pico2.s       IMAGE_DEF + _start + XOSC/UART 初期化 + UART syscall
-  crt0_pico2_data.s  pool metadata / __arena (.rodata + .bss)
-  bin2uf2.py         raw bin → UF2 コンバータ
-  build.sh           hello.tc を hello.uf2 にビルド
 tests/      テストスイート
   golden/            Gen1 の基準出力（.ast .bc .s .out .exit）
   golden/tc/         compiler/ ソースの基準出力
@@ -121,6 +115,8 @@ tools/      ホスト側ツール
   mkfs.py             MyTinyFS (mtfs) ディスクイメージ生成 (Python)
                       mkfs.py <output> <rootdir> でディレクトリを再帰的に
                       取り込み、1 階層のサブディレクトリを dir inode 化する
+  bin2uf2.py          raw bin → UF2 (family_id=0xe48bff5a) コンバータ
+                      kernel/build.sh --target pico2 が内部で呼ぶ
 ```
 
 ## ビルド＆実行
@@ -138,20 +134,15 @@ make update-golden-and-run-test   # golden 再生成してからテスト実行
 
 ## Pico 2 (RP2350 RISC-V) ビルド
 
-```bash
-./pico2/build.sh                  # pico2/hello.tc → pico2/hello.uf2
-```
+カーネルを Pico 2 向けにビルドするには `kernel/build.sh --target pico2`
+を使う。「カーネル / 統一ビルド」節 (後述) を参照。
+`tools/bin2uf2.py` が raw bin → UF2 (family_id=0xe48bff5a) 変換を担当する
+共通ユーティリティで、カーネルビルドが内部で呼ぶ。
 
-内部では Gen1 parse + Gen2 (typecheck/codegen/bc2asm/asm, qemu-riscv32 経由)
-+ `pico2/crt0_pico2.s` + `pico2/crt0_pico2_data.s` + `compile-pico2.sh` の
-パイプラインで raw bin を作り、`pico2/bin2uf2.py` で UF2 化する。
-Gen2 ツールは `/tmp/gen2_pico2/` にキャッシュされる。
-
-実機テスト:
-1. Pico 2 の BOOTSEL ボタンを押しながら USB 接続 → マスストレージとしてマウント
-2. `pico2/hello.uf2` をドラッグ&ドロップ
-3. GPIO0 (TX) / GPIO1 (RX) / GND をシリアルアダプタに接続
-4. 115200 bps, 8N1 で `Hello, Pico 2!` を受信
+bring-up 当初は `pico2/hello.tc` というカーネル抜きの standalone hello
+world と専用の `compile-pico2.sh` / `pico2/crt0_pico2.s` を持っていたが、
+カーネルが Pico 2 で動くようになって以降は使われなくなったので削除済み
+(履歴は `git log -- pico2/`)。
 
 ## 世代の定義
 
