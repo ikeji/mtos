@@ -74,6 +74,42 @@ var g_ops: I32Array = 0 as I32Array;  // operand offsets into line (4 entries x 
 var g_nops: i32 = 0;
 var g_line_buf: U8Array = 0 as U8Array; // current line buffer (4096 bytes)
 var g_line_buf_len: i32 = 0;
+// 1-origin line number of the line process_line is currently handling.
+// Used by asm_err_* so error messages can say "asm:<line>: ..." and
+// echo the source line. 0 means "no specific line" (e.g. a failure
+// during write_elf after both passes complete).
+var g_cur_line: i32 = 0;
+
+// ===== Error reporting =====
+//
+// Usage pattern for each failure site:
+//   var eb: StringBuffer = StringBuffer_new();
+//   asm_err_begin(eb);
+//   emit_string(eb, "undefined label '");
+//   emit_n(eb, name, 0, nlen);
+//   emit_string(eb, "'");
+//   asm_err_end(eb);   // writes, destroys, exits — never returns
+//
+// Output format:
+//   asm:<line>: <your message>
+//     at: <verbatim source line>
+fn asm_err_begin(eb: StringBuffer) -> void {
+    emit_string(eb, "asm:");
+    if g_cur_line > 0 { emit_int(eb, g_cur_line); }
+    emit_string(eb, ": ");
+    return;
+}
+fn asm_err_end(eb: StringBuffer) -> void {
+    if g_cur_line > 0 {
+        emit_string(eb, "\n  at: ");
+        emit_n(eb, g_line_buf, 0, g_line_buf_len);
+    }
+    emit_string(eb, "\n");
+    write(eb, 2);
+    destroy(eb);
+    sys_exit(1);
+    return;
+}
 
 // ===== Emit helpers =====
 fn emit8(v: i32) -> void {
@@ -142,14 +178,12 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
 fn label_addr(name: U8Array, nlen: i32) -> i32 {
     var idx: i32 = find_label(name, nlen);
     if idx < 0 {
-        // Error: undefined label
         var eb: StringBuffer = StringBuffer_new();
-        emit_string(eb, "asm: undefined label '");
+        asm_err_begin(eb);
+        emit_string(eb, "undefined label '");
         emit_n(eb, name, 0, nlen);
-        emit_string(eb, "'\n");
-        write(eb, 2);
-        destroy(eb);
-        sys_exit(1);
+        emit_string(eb, "'");
+        asm_err_end(eb);
     }
     return get(g_lab_addrs, idx);
 }
@@ -590,14 +624,13 @@ fn asm_instr() -> i32 {
                 var gpoff: i32 = target - g_gp_abs;
                 if gpoff < (0 - 2048) || gpoff > 2047 {
                     var eb1: StringBuffer = StringBuffer_new(1);
-                    emit_string(eb1, "asm: gp-relative la out of 12-bit range for label '");
+                    asm_err_begin(eb1);
+                    emit_string(eb1, "gp-relative la out of 12-bit range for label '");
                     var lop_off: i32 = get(g_ops, 2);
                     var lop_len: i32 = get(g_ops, 3);
                     emit_n(eb1, g_line_buf, lop_off, lop_len);
-                    emit_string(eb1, "'\n");
-                    write(eb1, 2);
-                    destroy(eb1);
-                    sys_exit(1);
+                    emit_string(eb1, "'");
+                    asm_err_end(eb1);
                 }
                 // auipc rd, 0 (rd = pc, overwritten by next addi)
                 emit32(enc_u(23, rd, 0));
@@ -630,12 +663,11 @@ fn asm_instr() -> i32 {
 
     // Unknown instruction
     var eb: StringBuffer = StringBuffer_new();
-    emit_string(eb, "asm: unknown instruction '");
+    asm_err_begin(eb);
+    emit_string(eb, "unknown instruction '");
     emit_n(eb, g_mnem, 0, g_mnem_len);
-    emit_string(eb, "'\n");
-    write(eb, 2);
-    destroy(eb);
-    sys_exit(1);
+    emit_string(eb, "'");
+    asm_err_end(eb);
     return 0;
 }
 
@@ -706,6 +738,7 @@ fn parse_asm_line() -> void {
 
 // ===== Process one stored line =====
 fn process_line(line_idx: i32) -> void {
+    g_cur_line = line_idx + 1;
     // Load line into g_line_buf
     var off: i32 = get(g_line_offs, line_idx);
     var len: i32 = get(g_line_lens, line_idx);
@@ -1189,6 +1222,9 @@ fn main() -> i32 {
         set(g_sec_pos, lsec2, g_pos - get(g_sec_base, lsec2));
         i = i + 1;
     }
+    // Clear the "current line" marker so any error from write_elf
+    // (e.g. undefined _start) doesn't blame a stale line number.
+    g_cur_line = 0;
     // Write ELF (filesz = code written, memsz = code + BSS)
     write_elf(g_code_end, total_memsz);
 

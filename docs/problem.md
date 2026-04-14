@@ -95,11 +95,27 @@ extract_sigs.tc と bootstrap 各種の AST 読み取りを同期する大規模
   のアセンブラフェーズに入れる (今入れると分離時に移し替えが必要)。
   これで各プロセスが Pico 2 の 256 KB に収まる。
 
-### 8. `.align 12` 未対応 (limitation)
+### 8. asm.tc がセクション境界を 16 バイト単位までしかアラインしない (wontfix)
 
-16 バイト境界 (`.align 4`) までしか扱えない。virtio-legacy の queue
-のように 4KB 境界が必要な場合は、TC 側で手動マスクしてアラインを
-確保する必要がある (block_virtio.tc の `g_mem_base` 参照)。
+`compiler/asm.tc:1148-1151` で各セクションサイズを 16 バイト
+(`.align 4`) に切り上げるため、`.align 12` (4 KB 境界) 以上を
+.bss に書けない。pass 1 と pass 2 で g_pos の basis が違うので、
+section_base を合わせないと padding 量が drift する。
+
+実害範囲を検討した結果 **修正不要** と判断:
+
+- 影響するのは `kernel/block_virtio.tc` 1 箇所のみ (virtio-legacy
+  の queue を 4 KB 境界に置くため、TC 側で 12 KB kmalloc して
+  先頭を手動で 4 KB に切り上げ)。
+- **問題になるのは qemu virt ターゲットだけ**。virt は 128 MB
+  RAM なので 12 KB の waste は誤差。
+- **実機 Pico 2 は virtio を使わない**。block_flash.tc で XIP
+  経由、4 KB 境界の要求自体が発生しない。
+- したがってこの限界を直しても減るのは qemu 上の 12 KB だけ。
+
+もし将来 virtio-net / virtio-gpu を追加したり、実機で別のデバイスが
+4 KB 境界を要求したりしたら再評価する。それまでは block_virtio.tc の
+手動アラインのまま。
 
 ### 9. エラーメッセージが `asm: unknown instruction 'xxx'` だけ (ergonomics)
 
