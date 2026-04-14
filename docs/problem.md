@@ -244,11 +244,6 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 
 ## 言語仕様で未確定 / 揺れているもの
 
-### 18. 構造体フィールドに `StringLiteral` 型を書けるか (open)
-
-`docs/filesystem.md` のデザインで `struct Mount { prefix: StringLiteral, ... }`
-と書いたが、まだ実際に使っていないので検証してない。
-
 ### 19. ネストしたジェネリック配列 (`MtfsFDArrayArray` など) (open)
 
 `struct Foo { ... }` は `FooArray` を自動生成するが、`FooArrayArray` は
@@ -445,6 +440,10 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   compile-gen1/gen2/gen3.sh の `2>/dev/null` を全部外せて、成功時は
   完全無音・失敗時はエラーがそのまま見えるようになった。make test も
   副次効果で ~1s 速くなった (#14)
+- `struct` フィールドに `StringLiteral` 型を書けるか未検証だった (#18) →
+  3 経路 (interp / bcrun / rv32) で動作確認。`struct Mount { prefix:
+  StringLiteral, fs_type: i32 }` のような宣言・コンストラクト・
+  field アクセスとも問題なし
 - `compiler/bcrun.tc` の OP_SHR_U 実装が「1 ビット arithmetic shift +
   & 0x7FFFFFFF マスク + 残りシフト」という 5 行の trick だった → shr_u
   が bootstrap / Gen2 両方に実装済なので、`((a3 as u32) >> (b3 as u32))
