@@ -101,6 +101,122 @@ export fn kputs(s: StringLiteral) -> void {
     return;
 }
 
+// ===== Low-level debug output =====
+//
+// Kernel-side sys_write bypasses vfs_write on this platform
+// (platform_virt.s / platform_pico2.s route do_write directly to
+// do_uart_write), so these helpers reliably land on the UART even
+// when the current task has stdio redirected to tmpfs. Used by the
+// trap / task-exit / task-switch / redirected-write traces below.
+//
+// kdbg_chr allocates a 1-byte U8Array per call, which is a lot of
+// churn but keeps every call self-contained and immune to the
+// StringLiteral pointer quirk I ran into when first trying kputs
+// for these markers. kdbg_dec / kdbg_hex compose on top of it.
+
+fn kdbg_chr(c: u8) -> void {
+    var b: U8Array = U8Array(1u32);
+    set(b, 0, c);
+    sys_write(1, b, 1);
+    delete(b);
+    return;
+}
+
+fn kdbg_dec(v: i32) -> void {
+    if v < 0 { kdbg_chr('-' as u8); v = 0 - v; }
+    if v == 0 { kdbg_chr('0' as u8); return; }
+    var digits: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    while v > 0 {
+        set(digits, n, (48 + v % 10) as u8);
+        n = n + 1;
+        v = v / 10;
+    }
+    while n > 0 {
+        n = n - 1;
+        kdbg_chr(get(digits, n));
+    }
+    delete(digits);
+    return;
+}
+
+fn kdbg_hex(v: i32) -> void {
+    var started: i32 = 0;
+    var i: i32 = 28;
+    while i >= 0 {
+        var d: i32 = (v >> i) & 15;
+        if d != 0 || started == 1 || i == 0 {
+            started = 1;
+            var c: u8 = 0u8;
+            if d < 10 { c = (d + 48) as u8; }
+            else { c = (d - 10 + 97) as u8; }
+            kdbg_chr(c);
+        }
+        i = i - 4;
+    }
+    return;
+}
+
+// Print "[sw from>to]" when a preempting timer interrupt actually
+// changed g_current. Called from trap_handler's timer branch.
+fn kdbg_switch(from: i32, to: i32) -> void {
+    kdbg_chr('[' as u8);
+    kdbg_chr('s' as u8); kdbg_chr('w' as u8); kdbg_chr(' ' as u8);
+    kdbg_dec(from);
+    kdbg_chr('>' as u8);
+    kdbg_dec(to);
+    kdbg_chr(']' as u8);
+    kdbg_chr(10u8);
+    return;
+}
+
+// Print "[x slot=code]" when a task exits normally via sys_exit.
+// Called from sched_task_exit before slot_free_allocs destroys the
+// frame we need to read the exit code from.
+fn kdbg_exit(slot: i32, code: i32) -> void {
+    kdbg_chr('[' as u8);
+    kdbg_chr('x' as u8); kdbg_chr(' ' as u8);
+    kdbg_dec(slot);
+    kdbg_chr('=' as u8);
+    kdbg_dec(code);
+    kdbg_chr(']' as u8);
+    kdbg_chr(10u8);
+    return;
+}
+
+// Print "[TRAP c=HH e=HHHHHHHH s=N]" when a non-timer, non-ecall
+// trap fires (illegal instruction, misaligned access, page fault,
+// ...). The task is then evicted via sched_task_exit-like cleanup.
+fn kdbg_trap(cause: u32, epc: u32, slot: i32) -> void {
+    kdbg_chr('[' as u8);
+    kdbg_chr('T' as u8); kdbg_chr('R' as u8);
+    kdbg_chr('A' as u8); kdbg_chr('P' as u8); kdbg_chr(' ' as u8);
+    kdbg_chr('c' as u8); kdbg_chr('=' as u8);
+    kdbg_hex(cause as i32);
+    kdbg_chr(' ' as u8);
+    kdbg_chr('e' as u8); kdbg_chr('=' as u8);
+    kdbg_hex(epc as i32);
+    kdbg_chr(' ' as u8);
+    kdbg_chr('s' as u8); kdbg_chr('=' as u8);
+    kdbg_dec(slot);
+    kdbg_chr(']' as u8);
+    kdbg_chr(10u8);
+    return;
+}
+
+// Print "[w slot:len]" when a task writes to a redirected stdout
+// (task fd 1 → tmpfs/mtfs fd ≥ 3). Exported so vfs.tc can trace
+// redirected writes without poking kernel_common internals.
+export fn kdbg_write(slot: i32, n: i32) -> void {
+    kdbg_chr('[' as u8);
+    kdbg_chr('w' as u8); kdbg_chr(' ' as u8);
+    kdbg_dec(slot);
+    kdbg_chr(':' as u8);
+    kdbg_dec(n);
+    kdbg_chr(']' as u8);
+    return;
+}
+
 export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
     var frame_buf: U8Array = U8Array(132u32);
     var frame: u32 = frame_buf as u32 + 4u32;
@@ -357,6 +473,7 @@ export fn sched_wait(target: i32) -> u32 {
 // Called from assembly _trap_entry on non-ecall traps
 fn trap_handler(cause: u32, epc: u32) -> void {
     if cause == 0x80000007u32 {
+        var from_slot: i32 = g_current;
         var i: i32 = 0;
         while i < g_num_tasks {
             var next: i32 = (g_current + 1 + i) % g_num_tasks;
@@ -368,7 +485,20 @@ fn trap_handler(cause: u32, epc: u32) -> void {
             }
             i = i + 1;
         }
+        if g_current != from_slot {
+            kdbg_switch(from_slot, g_current);
+        }
         rearm_timer();
+        return;
+    }
+    // Any other trap (illegal insn, access fault, page fault, ...)
+    // is a task-fatal error. Print a diagnostic and evict the task
+    // via the normal exit path so that sh and its do_wait pick it
+    // up, instead of spinning forever on an uncorrected mepc.
+    kdbg_trap(cause, epc, g_current);
+    var next_frame: u32 = sched_task_exit();
+    if next_frame != 0u32 {
+        set_switch_frame(next_frame);
     }
     return;
 }
@@ -377,8 +507,14 @@ fn trap_handler(cause: u32, epc: u32) -> void {
 // stack (not the dying task's user stack), so it is safe to kfree
 // the dying slot's frame_buf / ram / stack / img here.
 fn sched_task_exit() -> u32 {
-    slot_free_allocs(g_current);
+    // Read the exiting task's saved a0 (exit code) before we free
+    // the frame, then trace "[x slot=code]" so parse-on-OS debug
+    // sessions can see whether a task exited cleanly or not.
     var cur: Task = get(g_tasks, g_current);
+    var exit_code: i32 = peek32(frame(cur) + 40u32) as i32;
+    kdbg_exit(g_current, exit_code);
+
+    slot_free_allocs(g_current);
     state(cur, STATE_DONE);
     frame(cur, 0u32);
 

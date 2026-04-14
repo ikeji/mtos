@@ -21,7 +21,13 @@ fn print_i32(v: i32) -> void;
 var MTIMECMP_LO: u32 = 0x02004000u32;
 var MTIMECMP_HI: u32 = 0x02004004u32;
 var MTIME_LO: u32    = 0x0200BFF8u32;
-var TIMER_INTERVAL: u32 = 10000u32;
+// qemu virt CLINT mtime runs at 10 MHz by default, so 10_000_000
+// ticks ≈ 1 second between preemptions. Kept deliberately slow so
+// kernel debug markers (task switch / exit / trap / write) stay
+// legible during phase 7 debugging — round-robin only actually
+// triggers if two tasks are READY simultaneously, which mostly
+// doesn't happen when sh + compiler task are using sys_wait.
+var TIMER_INTERVAL: u32 = 10000000u32;
 
 // Provided to kernel_common (called from trap_handler)
 fn rearm_timer() -> void {
