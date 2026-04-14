@@ -1,6 +1,7 @@
 (program
   (import string_buffer.tc)
   (import source_reader.tc)
+  (import ast_node.tc)
   (var_decl NK_PROGRAM
     (type i32)
     (int 0)
@@ -119,10 +120,6 @@
       (int 0)
       (type SourceReader)
     )
-  )
-  (var_decl g_nc
-    (type i32)
-    (int 0)
   )
   (var_decl g_sp
     (type i32)
@@ -485,704 +482,6 @@
       (return
         (var alen)
       )
-    )
-  )
-  (fn n_kind
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8)); }")
-      (return
-        (call get
-          (var nodes)
-          (binop *
-            (var n)
-            (int 8)
-          )
-        )
-      )
-    )
-  )
-  (fn n_sk
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-      (param v
-        (type i32)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "fn n_sk(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8), v); }")
-      (call_stmt set
-        (var nodes)
-        (binop *
-          (var n)
-          (int 8)
-        )
-        (var v)
-      )
-    )
-  )
-  (fn n_ss
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+1)); }")
-      (return
-        (call get
-          (var nodes)
-          (binop +
-            (binop *
-              (var n)
-              (int 8)
-            )
-            (int 1)
-          )
-        )
-      )
-    )
-  )
-  (fn n_set_ss
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-      (param v
-        (type i32)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "fn n_set_ss(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+1), v); }")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (binop *
-            (var n)
-            (int 8)
-          )
-          (int 1)
-        )
-        (var v)
-      )
-    )
-  )
-  (fn n_sl
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+2)); }")
-      (return
-        (call get
-          (var nodes)
-          (binop +
-            (binop *
-              (var n)
-              (int 8)
-            )
-            (int 2)
-          )
-        )
-      )
-    )
-  )
-  (fn n_set_sl
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-      (param v
-        (type i32)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "fn n_set_sl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+2), v); }")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (binop *
-            (var n)
-            (int 8)
-          )
-          (int 2)
-        )
-        (var v)
-      )
-    )
-  )
-  (fn n_ival
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+3)); }")
-      (return
-        (call get
-          (var nodes)
-          (binop +
-            (binop *
-              (var n)
-              (int 8)
-            )
-            (int 3)
-          )
-        )
-      )
-    )
-  )
-  (fn n_set_ival
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-      (param v
-        (type i32)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "fn n_set_ival(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+3), v); }")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (binop *
-            (var n)
-            (int 8)
-          )
-          (int 3)
-        )
-        (var v)
-      )
-    )
-  )
-  (fn n_child
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+4)); }")
-      (return
-        (call get
-          (var nodes)
-          (binop +
-            (binop *
-              (var n)
-              (int 8)
-            )
-            (int 4)
-          )
-        )
-      )
-    )
-  )
-  (fn n_set_child
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-      (param v
-        (type i32)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+4), v); }")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (binop *
-            (var n)
-            (int 8)
-          )
-          (int 4)
-        )
-        (var v)
-      )
-    )
-  )
-  (fn n_sib
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+5)); }")
-      (return
-        (call get
-          (var nodes)
-          (binop +
-            (binop *
-              (var n)
-              (int 8)
-            )
-            (int 5)
-          )
-        )
-      )
-    )
-  )
-  (fn n_set_sib
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-      (param v
-        (type i32)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+5), v); }")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (binop *
-            (var n)
-            (int 8)
-          )
-          (int 5)
-        )
-        (var v)
-      )
-    )
-  )
-  (fn n_tass
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn n_tass(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+6)); }")
-      (return
-        (call get
-          (var nodes)
-          (binop +
-            (binop *
-              (var n)
-              (int 8)
-            )
-            (int 6)
-          )
-        )
-      )
-    )
-  )
-  (fn n_tasl
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "fn n_tasl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+7)); }")
-      (return
-        (call get
-          (var nodes)
-          (binop +
-            (binop *
-              (var n)
-              (int 8)
-            )
-            (int 7)
-          )
-        )
-      )
-    )
-  )
-  (fn alloc_node
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param kind
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "var n: i32 = g_nc;")
-      (var_decl n
-        (type i32)
-        (var g_nc)
-      )
-      (comment "g_nc = g_nc + 1;")
-      (assign g_nc
-        (binop +
-          (var g_nc)
-          (int 1)
-        )
-      )
-      (comment "var b: i32 = n * 8;")
-      (var_decl b
-        (type i32)
-        (binop *
-          (var n)
-          (int 8)
-        )
-      )
-      (comment "set(nodes, b, kind);")
-      (call_stmt set
-        (var nodes)
-        (var b)
-        (var kind)
-      )
-      (comment "set(nodes, (b+1), -1);")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (var b)
-          (int 1)
-        )
-        (unary -
-          (int 1)
-        )
-      )
-      (comment "set(nodes, (b+2), 0);")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (var b)
-          (int 2)
-        )
-        (int 0)
-      )
-      (comment "set(nodes, (b+3), 0);")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (var b)
-          (int 3)
-        )
-        (int 0)
-      )
-      (comment "set(nodes, (b+4), -1);")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (var b)
-          (int 4)
-        )
-        (unary -
-          (int 1)
-        )
-      )
-      (comment "set(nodes, (b+5), -1);")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (var b)
-          (int 5)
-        )
-        (unary -
-          (int 1)
-        )
-      )
-      (comment "set(nodes, (b+6), -1);")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (var b)
-          (int 6)
-        )
-        (unary -
-          (int 1)
-        )
-      )
-      (comment "set(nodes, (b+7), 0);")
-      (call_stmt set
-        (var nodes)
-        (binop +
-          (var b)
-          (int 7)
-        )
-        (int 0)
-      )
-      (comment "return n;")
-      (return
-        (var n)
-      )
-    )
-  )
-  (fn n_nchildren
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "var c: i32 = n_child(nodes, n);")
-      (var_decl c
-        (type i32)
-        (call n_child
-          (var nodes)
-          (var n)
-        )
-      )
-      (comment "var count: i32 = 0;")
-      (var_decl count
-        (type i32)
-        (int 0)
-      )
-      (comment "while c >= 0 { count = count + 1; c = n_sib(nodes, c); }")
-      (while
-        (binop >=
-          (var c)
-          (int 0)
-        )
-        (block
-          (assign count
-            (binop +
-              (var count)
-              (int 1)
-            )
-          )
-          (assign c
-            (call n_sib
-              (var nodes)
-              (var c)
-            )
-          )
-        )
-      )
-      (comment "return count;")
-      (return
-        (var count)
-      )
-    )
-  )
-  (fn n_nth_child
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param n
-        (type i32)
-      )
-      (param idx
-        (type i32)
-      )
-    )
-    (ret
-      (type i32)
-    )
-    (block
-      (comment "var c: i32 = n_child(nodes, n);")
-      (var_decl c
-        (type i32)
-        (call n_child
-          (var nodes)
-          (var n)
-        )
-      )
-      (comment "var i: i32 = 0;")
-      (var_decl i
-        (type i32)
-        (int 0)
-      )
-      (comment "while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }")
-      (while
-        (binop &&
-          (binop <
-            (var i)
-            (var idx)
-          )
-          (binop >=
-            (var c)
-            (int 0)
-          )
-        )
-        (block
-          (assign c
-            (call n_sib
-              (var nodes)
-              (var c)
-            )
-          )
-          (assign i
-            (binop +
-              (var i)
-              (int 1)
-            )
-          )
-        )
-      )
-      (comment "return c;")
-      (return
-        (var c)
-      )
-    )
-  )
-  (fn add_child
-    (params
-      (param nodes
-        (type I32Array)
-      )
-      (param parent
-        (type i32)
-      )
-      (param child
-        (type i32)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "var c: i32 = n_child(nodes, parent);")
-      (var_decl c
-        (type i32)
-        (call n_child
-          (var nodes)
-          (var parent)
-        )
-      )
-      (comment "if c < 0 {")
-      (if
-        (binop <
-          (var c)
-          (int 0)
-        )
-        (block
-          (comment "n_set_child(nodes, parent, child);")
-          (call_stmt n_set_child
-            (var nodes)
-            (var parent)
-            (var child)
-          )
-        )
-        (block
-          (comment "while n_sib(nodes, c) >= 0 { c = n_sib(nodes, c); }")
-          (while
-            (binop >=
-              (call n_sib
-                (var nodes)
-                (var c)
-              )
-              (int 0)
-            )
-            (block
-              (assign c
-                (call n_sib
-                  (var nodes)
-                  (var c)
-                )
-              )
-            )
-          )
-          (comment "n_set_sib(nodes, c, child);")
-          (call_stmt n_set_sib
-            (var nodes)
-            (var c)
-            (var child)
-          )
-        )
-      )
-      (comment "return;")
-      (return)
     )
   )
   (fn cmp2
@@ -2167,7 +1466,7 @@
         (type U8Array)
       )
       (param nodes
-        (type I32Array)
+        (type AstNodeArray)
       )
       (param strtab
         (type U8Array)
@@ -2265,14 +1564,6 @@
           (var kind_code)
         )
       )
-      (comment "var base: i32 = n * 8;")
-      (var_decl base
-        (type i32)
-        (binop *
-          (var n)
-          (int 8)
-        )
-      )
       (comment "if actual_klen < klen {")
       (if
         (binop <
@@ -2336,22 +1627,16 @@
               )
             )
           )
-          (comment "set(nodes, (base+6), tss);")
-          (call_stmt set
+          (comment "n_set_tass(nodes, n, tss);")
+          (call_stmt n_set_tass
             (var nodes)
-            (binop +
-              (var base)
-              (int 6)
-            )
+            (var n)
             (var tss)
           )
-          (comment "set(nodes, (base+7), tasl);")
-          (call_stmt set
+          (comment "n_set_tasl(nodes, n, tasl);")
+          (call_stmt n_set_tasl
             (var nodes)
-            (binop +
-              (var base)
-              (int 7)
-            )
+            (var n)
             (var tasl)
           )
         )
@@ -2558,22 +1843,16 @@
               )
             )
           )
-          (comment "set(nodes, (base+1), ss);")
-          (call_stmt set
+          (comment "n_set_ss(nodes, n, ss);")
+          (call_stmt n_set_ss
             (var nodes)
-            (binop +
-              (var base)
-              (int 1)
-            )
+            (var n)
             (var ss)
           )
-          (comment "set(nodes, (base+2), g_sp - ss);")
-          (call_stmt set
+          (comment "n_set_sl(nodes, n, g_sp - ss);")
+          (call_stmt n_set_sl
             (var nodes)
-            (binop +
-              (var base)
-              (int 2)
-            )
+            (var n)
             (binop -
               (var g_sp)
               (var ss)
@@ -2720,13 +1999,10 @@
                     )
                   )
                 )
-                (comment "set(nodes, (base+3), ival);")
-                (call_stmt set
+                (comment "n_set_ival(nodes, n, ival);")
+                (call_stmt n_set_ival
                   (var nodes)
-                  (binop +
-                    (var base)
-                    (int 3)
-                  )
+                  (var n)
                   (var ival)
                 )
               )
@@ -2773,22 +2049,16 @@
                     )
                   )
                 )
-                (comment "set(nodes, (base+1), ss);")
-                (call_stmt set
+                (comment "n_set_ss(nodes, n, ss);")
+                (call_stmt n_set_ss
                   (var nodes)
-                  (binop +
-                    (var base)
-                    (int 1)
-                  )
+                  (var n)
                   (var ss)
                 )
-                (comment "set(nodes, (base+2), vlen);")
-                (call_stmt set
+                (comment "n_set_sl(nodes, n, vlen);")
+                (call_stmt n_set_sl
                   (var nodes)
-                  (binop +
-                    (var base)
-                    (int 2)
-                  )
+                  (var n)
                   (var vlen)
                 )
               )
@@ -2839,13 +2109,10 @@
                   (int 0)
                 )
                 (block
-                  (comment "set(nodes, (base+4), child);")
-                  (call_stmt set
+                  (comment "n_set_child(nodes, n, child);")
+                  (call_stmt n_set_child
                     (var nodes)
-                    (binop +
-                      (var base)
-                      (int 4)
-                    )
+                    (var n)
                     (var child)
                   )
                 )
@@ -3553,7 +2820,7 @@
   (fn collect_locals_stmt
     (params
       (param nodes
-        (type I32Array)
+        (type AstNodeArray)
       )
       (param strtab
         (type U8Array)
@@ -3723,7 +2990,7 @@
   (fn collect_locals_block
     (params
       (param nodes
-        (type I32Array)
+        (type AstNodeArray)
       )
       (param strtab
         (type U8Array)
@@ -3777,7 +3044,7 @@
   (fn cg_block
     (params
       (param nodes
-        (type I32Array)
+        (type AstNodeArray)
       )
       (param strtab
         (type U8Array)
@@ -3839,7 +3106,7 @@
   (fn cg_stmt
     (params
       (param nodes
-        (type I32Array)
+        (type AstNodeArray)
       )
       (param strtab
         (type U8Array)
@@ -6035,7 +5302,7 @@
   (fn cg_expr
     (params
       (param nodes
-        (type I32Array)
+        (type AstNodeArray)
       )
       (param strtab
         (type U8Array)
@@ -7969,7 +7236,7 @@
   (fn cg_fn
     (params
       (param nodes
-        (type I32Array)
+        (type AstNodeArray)
       )
       (param strtab
         (type U8Array)
@@ -8762,11 +8029,11 @@
           (int 1)
         )
       )
-      (comment "var nodes: I32Array = I32Array(32768u32);   // 4096 nodes per function (streaming)")
+      (comment "var nodes: AstNodeArray = AstNodeArray(4096u32);   // pool of up to 4096 AstNode refs (streaming, see ast_node.tc)")
       (var_decl nodes
-        (type I32Array)
-        (call I32Array
-          (int:u32 32768)
+        (type AstNodeArray)
+        (call AstNodeArray
+          (int:u32 4096)
         )
       )
       (comment "var strtab: U8Array = U8Array(262144u32);   // string table")
@@ -8796,8 +8063,8 @@
           (int 0)
         )
       )
-      (comment "g_nc = 0;")
-      (assign g_nc
+      (comment "ast_set_count(0);")
+      (call_stmt ast_set_count
         (int 0)
       )
       (comment "g_sp = 0;")
@@ -8874,9 +8141,9 @@
           (int:u8 40)
         )
         (block
-          (comment "g_nc = 0;")
-          (assign g_nc
-            (int 0)
+          (comment "reset_node_pool(nodes);")
+          (call_stmt reset_node_pool
+            (var nodes)
           )
           (comment "var n: i32 = read_node(atom_buf, nodes, strtab);")
           (var_decl n

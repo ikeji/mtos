@@ -76,9 +76,15 @@ static const int pool_size[NPOOLS] = {
     1048576, 2097152, 4194304
 };
 static const int pool_count[NPOOLS] = {
-    256, 32768, 256, 128, 64, 256, 64, 64, 32, 16,
+    256, 32768, 32768, 128, 64, 256, 64, 64, 32, 16,
     32, 8, 8, 4, 8, 4, 4, 4, 2
 };
+/* bucket 2 (64-byte) was bumped from 256 to 32768 to hold the
+   per-AstNode struct instances created by ast_node.tc. Each AstNode
+   is 8 i32 fields + 4 byte HeapObj header → 36 bytes, rounded up
+   into bucket 2. typecheck.tc routinely allocates 6-7K nodes
+   compiling the larger compiler files. Total bucket-2 footprint:
+   64 * 32768 = 2 MB out of the 48 MB heap arena. */
 static char heap_mem[50331648]; /* 48MB arena */
 static char *pool_free[NPOOLS];
 static char *pool_base[NPOOLS];

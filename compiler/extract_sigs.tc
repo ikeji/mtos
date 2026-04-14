@@ -6,6 +6,7 @@
 
 import "string_buffer.tc";
 import "source_reader.tc";
+import "ast_node.tc";
 
 // Node kind constants (subset needed for filtering)
 var NK_PROGRAM: i32 = 0;
@@ -20,9 +21,8 @@ var NK_FIELD: i32 = 23;
 var NK_COMMENT: i32 = 26;
 var NK_UNKNOWN: i32 = 99;
 
-// Global state
+// Global state. AST node counter (g_nc) lives in ast_node.tc.
 var g_reader: SourceReader = 0 as SourceReader;
-var g_nc: i32 = 0;
 var g_sp: i32 = 0;
 
 // ===== Input helpers =====
@@ -52,33 +52,8 @@ fn read_atom_in(atom: U8Array) -> i32 {
     return alen;
 }
 
-// ===== Node pool (8 ints per node) =====
-// TODO: これ、typecheckと共通化できない？
-// TODO: struct
-fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8)); }
-fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+1)); }
-fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+2)); }
-fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+3)); }
-fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+4)); }
-fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+5)); }
-fn n_tass(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+6)); }
-fn n_tasl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+7)); }
-fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+5), v); }
-
-fn alloc_node(nodes: I32Array, kind: i32) -> i32 {
-    var n: i32 = g_nc;
-    g_nc = g_nc + 1;
-    var b: i32 = n * 8;
-    set(nodes, b, kind);
-    set(nodes, (b+1), -1);
-    set(nodes, (b+2), 0);
-    set(nodes, (b+3), 0);
-    set(nodes, (b+4), -1);
-    set(nodes, (b+5), -1);
-    set(nodes, (b+6), -1);
-    set(nodes, (b+7), 0);
-    return n;
-}
+// ===== Node pool =====
+// Pool storage and accessors live in ast_node.tc.
 
 // ===== Kind classification =====
 // TODO: cmp(a, "type") でいい。
@@ -134,7 +109,7 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
 fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
 
 // ===== S-expression reader =====
-fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
+fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
     skip_ws_in();
     if at_eof(g_reader) { return -1; }
     if peek_in() != '(' { return -1; }
@@ -148,7 +123,6 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
     }
     var kind_code: i32 = classify_kind(atom, actual_klen);
     var n: i32 = alloc_node(nodes, kind_code);
-    var base: i32 = n * 8;
 
     // Store type_annot if present (after ':')
     if actual_klen < klen {
@@ -159,8 +133,8 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
             g_sp = g_sp + 1;
             ti = ti + 1;
         }
-        set(nodes, (base+6), tss);
-        set(nodes, (base+7), klen - actual_klen - 1);
+        n_set_tass(nodes, n, tss);
+        n_set_tasl(nodes, n, klen - actual_klen - 1);
     }
 
     skip_ws_in();
@@ -188,8 +162,8 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
             ch = peek_in();
         }
         if ch == '"' { next(g_reader); }
-        set(nodes, (base+1), ss);
-        set(nodes, (base+2), g_sp - ss);
+        n_set_ss(nodes, n, ss);
+        n_set_sl(nodes, n, g_sp - ss);
         skip_ws_in();
     } else if c != '(' && c != ')' && c != 0u8 {
         // Atom value (name, int, etc)
@@ -199,7 +173,7 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
             var ival: i32 = 0;
             var ii: i32 = 0;
             while ii < vlen { ival = ival * 10 + (get(atom, ii) as i32 - 48); ii = ii + 1; }
-            set(nodes, (base+3), ival);
+            n_set_ival(nodes, n, ival);
         } else {
             var ss2: i32 = g_sp;
             var ii2: i32 = 0;
@@ -208,8 +182,8 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
                 g_sp = g_sp + 1;
                 ii2 = ii2 + 1;
             }
-            set(nodes, (base+1), ss2);
-            set(nodes, (base+2), vlen);
+            n_set_ss(nodes, n, ss2);
+            n_set_sl(nodes, n, vlen);
         }
         skip_ws_in();
     }
@@ -221,7 +195,7 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
         var child: i32 = read_node(atom, nodes, strtab);
         if child >= 0 {
             if last_child < 0 {
-                set(nodes, (base+4), child);
+                n_set_child(nodes, n, child);
             } else {
                 n_set_sib(nodes, last_child, child);
             }
@@ -248,7 +222,7 @@ fn emit_kind(k: i32, ob: StringBuffer) -> void {
     return;
 }
 
-fn write_node(nodes: I32Array, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
+fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
     emit_indent(ob, indent);
     emit_char(ob, '(');
     var k: i32 = n_kind(nodes, n);
@@ -284,7 +258,7 @@ fn write_node(nodes: I32Array, strtab: U8Array, ob: StringBuffer, indent: i32, n
 }
 
 // Write fn header (skip block children)
-fn write_fn_header(nodes: I32Array, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
+fn write_fn_header(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
     emit_indent(ob, indent);
     emit_char(ob, '(');
     emit_kind(n_kind(nodes, n), ob);
@@ -323,13 +297,15 @@ fn write_fn_header(nodes: I32Array, strtab: U8Array, ob: StringBuffer, indent: i
 
 // ===== Main =====
 fn main() -> i32 {
-    var nodes: I32Array = I32Array(32768u32);
+    // 4096 AstNode refs is plenty for extract-sigs: it only emits
+    // export fn / struct headers, never bodies.
+    var nodes: AstNodeArray = AstNodeArray(4096u32);
     var strtab: U8Array = U8Array(65536u32);
     var atom_buf: U8Array = U8Array(1024u32);
     var ob: StringBuffer = StringBuffer_new(1);
 
     g_reader = SourceReader_new(0);
-    g_nc = 0;
+    ast_set_count(0);
     g_sp = 0;
 
     var root: i32 = read_node(atom_buf, nodes, strtab);

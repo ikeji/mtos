@@ -4641,6 +4641,2425 @@ line_buf__SourceReader__StringBuffer:
     ret
     # end of line_buf__SourceReader__StringBuffer
 
+    .globl AstNode__i32__i32__i32__i32__i32__i32__i32__i32
+    .type  AstNode__i32__i32__i32__i32__i32__i32__i32__i32, @function
+AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
+    # prologue: frame_size=64, params=8, locals=1, eval_depth=3
+    addi sp, sp, -64
+    sw   ra, 60(sp)
+    sw   s0, 56(sp)
+    addi s0, sp, 64
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    sw   a3, -24(s0)
+    sw   a4, -28(s0)
+    sw   a5, -32(s0)
+    sw   a6, -36(s0)
+    sw   a7, -40(s0)
+    sw   zero, -44(s0)
+    li   t0, 8
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call U32Array__u32
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -44(s0)
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 3
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 5
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 6
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -36(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 7
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of AstNode__i32__i32__i32__i32__i32__i32__i32__i32
+
+    .globl kind__AstNode
+    .type  kind__AstNode, @function
+kind__AstNode:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of kind__AstNode
+
+    .globl ss__AstNode
+    .type  ss__AstNode, @function
+ss__AstNode:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of ss__AstNode
+
+    .globl sl__AstNode
+    .type  sl__AstNode, @function
+sl__AstNode:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of sl__AstNode
+
+    .globl ival__AstNode
+    .type  ival__AstNode, @function
+ival__AstNode:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 3
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of ival__AstNode
+
+    .globl first_child__AstNode
+    .type  first_child__AstNode, @function
+first_child__AstNode:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of first_child__AstNode
+
+    .globl next_sibling__AstNode
+    .type  next_sibling__AstNode, @function
+next_sibling__AstNode:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 5
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of next_sibling__AstNode
+
+    .globl tass__AstNode
+    .type  tass__AstNode, @function
+tass__AstNode:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 6
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of tass__AstNode
+
+    .globl tasl__AstNode
+    .type  tasl__AstNode, @function
+tasl__AstNode:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 7
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of tasl__AstNode
+
+    .globl kind__AstNode__i32
+    .type  kind__AstNode__i32, @function
+kind__AstNode__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of kind__AstNode__i32
+
+    .globl ss__AstNode__i32
+    .type  ss__AstNode__i32, @function
+ss__AstNode__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of ss__AstNode__i32
+
+    .globl sl__AstNode__i32
+    .type  sl__AstNode__i32, @function
+sl__AstNode__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of sl__AstNode__i32
+
+    .globl ival__AstNode__i32
+    .type  ival__AstNode__i32, @function
+ival__AstNode__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 3
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of ival__AstNode__i32
+
+    .globl first_child__AstNode__i32
+    .type  first_child__AstNode__i32, @function
+first_child__AstNode__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of first_child__AstNode__i32
+
+    .globl next_sibling__AstNode__i32
+    .type  next_sibling__AstNode__i32, @function
+next_sibling__AstNode__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 5
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of next_sibling__AstNode__i32
+
+    .globl tass__AstNode__i32
+    .type  tass__AstNode__i32, @function
+tass__AstNode__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 6
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of tass__AstNode__i32
+
+    .globl tasl__AstNode__i32
+    .type  tasl__AstNode__i32, @function
+tasl__AstNode__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 7
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of tasl__AstNode__i32
+
+    .globl delete__AstNode
+    .type  delete__AstNode, @function
+delete__AstNode:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call delete__U32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of delete__AstNode
+
+    .globl AstNodeArray__u32
+    .type  AstNodeArray__u32, @function
+AstNodeArray__u32:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call U32Array__u32
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of AstNodeArray__u32
+
+    .globl len__AstNodeArray
+    .type  len__AstNodeArray, @function
+len__AstNodeArray:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call len__U32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of len__AstNodeArray
+
+    .globl get__AstNodeArray__i32
+    .type  get__AstNodeArray__i32, @function
+get__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of get__AstNodeArray__i32
+
+    .globl set__AstNodeArray__i32__AstNode
+    .type  set__AstNodeArray__i32__AstNode, @function
+set__AstNodeArray__i32__AstNode:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__U32Array__i32__u32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of set__AstNodeArray__i32__AstNode
+
+    .globl delete__AstNodeArray
+    .type  delete__AstNodeArray, @function
+delete__AstNodeArray:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call delete__U32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of delete__AstNodeArray
+
+    .globl ast_count
+    .type  ast_count, @function
+ast_count:
+    # prologue: frame_size=16, params=0, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    la   t1, g_nc
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of ast_count
+
+    .globl ast_set_count__i32
+    .type  ast_set_count__i32, @function
+ast_set_count__i32:
+    # prologue: frame_size=16, params=1, locals=0, eval_depth=1
+    addi sp, sp, -16
+    sw   ra, 12(sp)
+    sw   s0, 8(sp)
+    addi s0, sp, 16
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    la   t1, g_nc
+    sw   t0, 0(t1)
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of ast_set_count__i32
+
+    .globl alloc_node__AstNodeArray__i32
+    .type  alloc_node__AstNodeArray__i32, @function
+alloc_node__AstNodeArray__i32:
+    # prologue: frame_size=64, params=2, locals=1, eval_depth=10
+    addi sp, sp, -64
+    sw   ra, 60(sp)
+    sw   s0, 56(sp)
+    addi s0, sp, 64
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   zero, -20(s0)
+    la   t1, g_nc
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+    la   t1, g_nc
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    la   t1, g_nc
+    sw   t0, 0(t1)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    neg  t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    neg  t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    neg  t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    neg  t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 28(sp)
+    lw   a1, 24(sp)
+    lw   a2, 20(sp)
+    lw   a3, 16(sp)
+    lw   a4, 12(sp)
+    lw   a5, 8(sp)
+    lw   a6, 4(sp)
+    lw   a7, 0(sp)
+    call AstNode__i32__i32__i32__i32__i32__i32__i32__i32
+    addi sp, sp, 32
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__AstNodeArray__i32__AstNode
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of alloc_node__AstNodeArray__i32
+
+    .globl reset_node_pool__AstNodeArray
+    .type  reset_node_pool__AstNodeArray, @function
+reset_node_pool__AstNodeArray:
+    # prologue: frame_size=32, params=1, locals=1, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   zero, -16(s0)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -16(s0)
+  .L_reset_node_pool__AstNodeArray_pc2:
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    la   t1, g_nc
+    lw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_reset_node_pool__AstNodeArray_pc16
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call delete__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -16(s0)
+    j    .L_reset_node_pool__AstNodeArray_pc2
+  .L_reset_node_pool__AstNodeArray_pc16:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    la   t1, g_nc
+    sw   t0, 0(t1)
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of reset_node_pool__AstNodeArray
+
+    .globl n_kind__AstNodeArray__i32
+    .type  n_kind__AstNodeArray__i32, @function
+n_kind__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call kind__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_kind__AstNodeArray__i32
+
+    .globl n_ss__AstNodeArray__i32
+    .type  n_ss__AstNodeArray__i32, @function
+n_ss__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call ss__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_ss__AstNodeArray__i32
+
+    .globl n_sl__AstNodeArray__i32
+    .type  n_sl__AstNodeArray__i32, @function
+n_sl__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call sl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_sl__AstNodeArray__i32
+
+    .globl n_ival__AstNodeArray__i32
+    .type  n_ival__AstNodeArray__i32, @function
+n_ival__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call ival__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_ival__AstNodeArray__i32
+
+    .globl n_child__AstNodeArray__i32
+    .type  n_child__AstNodeArray__i32, @function
+n_child__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call first_child__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_child__AstNodeArray__i32
+
+    .globl n_sib__AstNodeArray__i32
+    .type  n_sib__AstNodeArray__i32, @function
+n_sib__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call next_sibling__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_sib__AstNodeArray__i32
+
+    .globl n_tass__AstNodeArray__i32
+    .type  n_tass__AstNodeArray__i32, @function
+n_tass__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call tass__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_tass__AstNodeArray__i32
+
+    .globl n_tasl__AstNodeArray__i32
+    .type  n_tasl__AstNodeArray__i32, @function
+n_tasl__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call tasl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_tasl__AstNodeArray__i32
+
+    .globl n_sk__AstNodeArray__i32__i32
+    .type  n_sk__AstNodeArray__i32__i32, @function
+n_sk__AstNodeArray__i32__i32:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call kind__AstNode__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_sk__AstNodeArray__i32__i32
+
+    .globl n_set_ss__AstNodeArray__i32__i32
+    .type  n_set_ss__AstNodeArray__i32__i32, @function
+n_set_ss__AstNodeArray__i32__i32:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ss__AstNode__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_set_ss__AstNodeArray__i32__i32
+
+    .globl n_set_sl__AstNodeArray__i32__i32
+    .type  n_set_sl__AstNodeArray__i32__i32, @function
+n_set_sl__AstNodeArray__i32__i32:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call sl__AstNode__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_set_sl__AstNodeArray__i32__i32
+
+    .globl n_set_ival__AstNodeArray__i32__i32
+    .type  n_set_ival__AstNodeArray__i32__i32, @function
+n_set_ival__AstNodeArray__i32__i32:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call ival__AstNode__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_set_ival__AstNodeArray__i32__i32
+
+    .globl n_set_child__AstNodeArray__i32__i32
+    .type  n_set_child__AstNodeArray__i32__i32, @function
+n_set_child__AstNodeArray__i32__i32:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call first_child__AstNode__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_set_child__AstNodeArray__i32__i32
+
+    .globl n_set_sib__AstNodeArray__i32__i32
+    .type  n_set_sib__AstNodeArray__i32__i32, @function
+n_set_sib__AstNodeArray__i32__i32:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call next_sibling__AstNode__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_set_sib__AstNodeArray__i32__i32
+
+    .globl n_set_tass__AstNodeArray__i32__i32
+    .type  n_set_tass__AstNodeArray__i32__i32, @function
+n_set_tass__AstNodeArray__i32__i32:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call tass__AstNode__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_set_tass__AstNodeArray__i32__i32
+
+    .globl n_set_tasl__AstNodeArray__i32__i32
+    .type  n_set_tasl__AstNodeArray__i32__i32, @function
+n_set_tasl__AstNodeArray__i32__i32:
+    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call tasl__AstNode__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_set_tasl__AstNodeArray__i32__i32
+
+    .globl n_nchildren__AstNodeArray__i32
+    .type  n_nchildren__AstNodeArray__i32, @function
+n_nchildren__AstNodeArray__i32:
+    # prologue: frame_size=32, params=2, locals=2, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   zero, -20(s0)
+    sw   zero, -24(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_child__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+  .L_n_nchildren__AstNodeArray__i32_pc6:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_n_nchildren__AstNodeArray__i32_pc19
+0:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_sib__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+    j    .L_n_nchildren__AstNodeArray__i32_pc6
+  .L_n_nchildren__AstNodeArray__i32_pc19:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_nchildren__AstNodeArray__i32
+
+    .globl n_nth_child__AstNodeArray__i32__i32
+    .type  n_nth_child__AstNodeArray__i32__i32, @function
+n_nth_child__AstNodeArray__i32__i32:
+    # prologue: frame_size=48, params=3, locals=2, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    sw   zero, -24(s0)
+    sw   zero, -28(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_child__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -28(s0)
+  .L_n_nth_child__AstNodeArray__i32__i32_pc6:
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_n_nth_child__AstNodeArray__i32__i32_pc16
+0:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_n_nth_child__AstNodeArray__i32__i32_pc16
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    j    .L_n_nth_child__AstNodeArray__i32__i32_pc17
+  .L_n_nth_child__AstNodeArray__i32__i32_pc16:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+  .L_n_nth_child__AstNodeArray__i32__i32_pc17:
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_n_nth_child__AstNodeArray__i32__i32_pc27
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_sib__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -28(s0)
+    j    .L_n_nth_child__AstNodeArray__i32__i32_pc6
+  .L_n_nth_child__AstNodeArray__i32__i32_pc27:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of n_nth_child__AstNodeArray__i32__i32
+
+    .globl add_child__AstNodeArray__i32__i32
+    .type  add_child__AstNodeArray__i32__i32, @function
+add_child__AstNodeArray__i32__i32:
+    # prologue: frame_size=48, params=3, locals=1, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   a2, -20(s0)
+    sw   zero, -24(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_child__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_add_child__AstNodeArray__i32__i32_pc14
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call n_set_child__AstNodeArray__i32__i32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    j    .L_add_child__AstNodeArray__i32__i32_pc30
+  .L_add_child__AstNodeArray__i32__i32_pc14:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_sib__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_add_child__AstNodeArray__i32__i32_pc25
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call n_sib__AstNodeArray__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    j    .L_add_child__AstNodeArray__i32__i32_pc14
+  .L_add_child__AstNodeArray__i32__i32_pc25:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call n_set_sib__AstNodeArray__i32__i32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_add_child__AstNodeArray__i32__i32_pc30:
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of add_child__AstNodeArray__i32__i32
+
     .globl ob_st_escaped__U8Array__i32__i32__StringBuffer
     .type  ob_st_escaped__U8Array__i32__i32__StringBuffer, @function
 ob_st_escaped__U8Array__i32__i32__StringBuffer:
@@ -5565,1407 +7984,6 @@ read_atom_in__U8Array:
     addi sp, t0, 0
     ret
     # end of read_atom_in__U8Array
-
-    .globl n_kind__I32Array__i32
-    .type  n_kind__I32Array__i32, @function
-n_kind__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_kind__I32Array__i32
-
-    .globl n_sk__I32Array__i32__i32
-    .type  n_sk__I32Array__i32__i32, @function
-n_sk__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_sk__I32Array__i32__i32
-
-    .globl n_ss__I32Array__i32
-    .type  n_ss__I32Array__i32, @function
-n_ss__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_ss__I32Array__i32
-
-    .globl n_set_ss__I32Array__i32__i32
-    .type  n_set_ss__I32Array__i32__i32, @function
-n_set_ss__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_set_ss__I32Array__i32__i32
-
-    .globl n_sl__I32Array__i32
-    .type  n_sl__I32Array__i32, @function
-n_sl__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 2
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_sl__I32Array__i32
-
-    .globl n_set_sl__I32Array__i32__i32
-    .type  n_set_sl__I32Array__i32__i32, @function
-n_set_sl__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 2
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_set_sl__I32Array__i32__i32
-
-    .globl n_ival__I32Array__i32
-    .type  n_ival__I32Array__i32, @function
-n_ival__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 3
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_ival__I32Array__i32
-
-    .globl n_set_ival__I32Array__i32__i32
-    .type  n_set_ival__I32Array__i32__i32, @function
-n_set_ival__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 3
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_set_ival__I32Array__i32__i32
-
-    .globl n_child__I32Array__i32
-    .type  n_child__I32Array__i32, @function
-n_child__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_child__I32Array__i32
-
-    .globl n_set_child__I32Array__i32__i32
-    .type  n_set_child__I32Array__i32__i32, @function
-n_set_child__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_set_child__I32Array__i32__i32
-
-    .globl n_sib__I32Array__i32
-    .type  n_sib__I32Array__i32, @function
-n_sib__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 5
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_sib__I32Array__i32
-
-    .globl n_set_sib__I32Array__i32__i32
-    .type  n_set_sib__I32Array__i32__i32, @function
-n_set_sib__I32Array__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 5
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_set_sib__I32Array__i32__i32
-
-    .globl n_tass__I32Array__i32
-    .type  n_tass__I32Array__i32, @function
-n_tass__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 6
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_tass__I32Array__i32
-
-    .globl n_tasl__I32Array__i32
-    .type  n_tasl__I32Array__i32, @function
-n_tasl__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 7
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_tasl__I32Array__i32
-
-    .globl alloc_node__I32Array__i32
-    .type  alloc_node__I32Array__i32, @function
-alloc_node__I32Array__i32:
-    # prologue: frame_size=48, params=2, locals=2, eval_depth=3
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   zero, -20(s0)
-    sw   zero, -24(s0)
-    la   t1, g_nc
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -20(s0)
-    la   t1, g_nc
-    lw   t0, 0(t1)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    la   t1, g_nc
-    sw   t0, 0(t1)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -24(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    neg  t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 2
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 3
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    neg  t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 5
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    neg  t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 6
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    neg  t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 7
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of alloc_node__I32Array__i32
-
-    .globl n_nchildren__I32Array__i32
-    .type  n_nchildren__I32Array__i32, @function
-n_nchildren__I32Array__i32:
-    # prologue: frame_size=32, params=2, locals=2, eval_depth=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   zero, -20(s0)
-    sw   zero, -24(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_child__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -20(s0)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -24(s0)
-  .L_n_nchildren__I32Array__i32_pc6:
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    slt  t0, t0, t1
-    xori t0, t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    bnez t0, 0f
-    j    .L_n_nchildren__I32Array__i32_pc19
-0:
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -24(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_sib__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -20(s0)
-    j    .L_n_nchildren__I32Array__i32_pc6
-  .L_n_nchildren__I32Array__i32_pc19:
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_nchildren__I32Array__i32
-
-    .globl n_nth_child__I32Array__i32__i32
-    .type  n_nth_child__I32Array__i32__i32, @function
-n_nth_child__I32Array__i32__i32:
-    # prologue: frame_size=48, params=3, locals=2, eval_depth=3
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    sw   zero, -24(s0)
-    sw   zero, -28(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_child__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -24(s0)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -28(s0)
-  .L_n_nth_child__I32Array__i32__i32_pc6:
-    lw   t0, -28(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    slt  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    bnez t0, 0f
-    j    .L_n_nth_child__I32Array__i32__i32_pc16
-0:
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    slt  t0, t0, t1
-    xori t0, t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    bnez t0, 0f
-    j    .L_n_nth_child__I32Array__i32__i32_pc16
-0:
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    j    .L_n_nth_child__I32Array__i32__i32_pc17
-  .L_n_nth_child__I32Array__i32__i32_pc16:
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-  .L_n_nth_child__I32Array__i32__i32_pc17:
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    bnez t0, 0f
-    j    .L_n_nth_child__I32Array__i32__i32_pc27
-0:
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_sib__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -24(s0)
-    lw   t0, -28(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -28(s0)
-    j    .L_n_nth_child__I32Array__i32__i32_pc6
-  .L_n_nth_child__I32Array__i32__i32_pc27:
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of n_nth_child__I32Array__i32__i32
-
-    .globl add_child__I32Array__i32__i32
-    .type  add_child__I32Array__i32__i32, @function
-add_child__I32Array__i32__i32:
-    # prologue: frame_size=48, params=3, locals=1, eval_depth=3
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    sw   zero, -24(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_child__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -24(s0)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    slt  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    bnez t0, 0f
-    j    .L_add_child__I32Array__i32__i32_pc14
-0:
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call n_set_child__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    j    .L_add_child__I32Array__i32__i32_pc30
-  .L_add_child__I32Array__i32__i32_pc14:
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_sib__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    slt  t0, t0, t1
-    xori t0, t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    bnez t0, 0f
-    j    .L_add_child__I32Array__i32__i32_pc25
-0:
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call n_sib__I32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -24(s0)
-    j    .L_add_child__I32Array__i32__i32_pc14
-  .L_add_child__I32Array__i32__i32_pc25:
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call n_set_sib__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_add_child__I32Array__i32__i32_pc30:
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of add_child__I32Array__i32__i32
 
     .globl cmp2__U8Array__i32__u8__u8
     .type  cmp2__U8Array__i32__u8__u8, @function
@@ -9723,10 +10741,10 @@ is_digit_c__u8:
     ret
     # end of is_digit_c__u8
 
-    .globl read_node__U8Array__I32Array__U8Array
-    .type  read_node__U8Array__I32Array__U8Array, @function
-read_node__U8Array__I32Array__U8Array:
-    # prologue: frame_size=160, params=3, locals=18, eval_depth=17
+    .globl read_node__U8Array__AstNodeArray__U8Array
+    .type  read_node__U8Array__AstNodeArray__U8Array, @function
+read_node__U8Array__AstNodeArray__U8Array:
+    # prologue: frame_size=160, params=3, locals=17, eval_depth=17
     addi sp, sp, -160
     sw   ra, 156(sp)
     sw   s0, 152(sp)
@@ -9751,7 +10769,6 @@ read_node__U8Array__I32Array__U8Array:
     sw   zero, -80(s0)
     sw   zero, -84(s0)
     sw   zero, -88(s0)
-    sw   zero, -92(s0)
     call skip_ws_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9768,7 +10785,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc8
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc8
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -9786,7 +10803,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_read_node__U8Array__I32Array__U8Array_pc8:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc8:
     call peek_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -9803,7 +10820,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc15
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc15
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -9821,7 +10838,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_read_node__U8Array__I32Array__U8Array_pc15:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc15:
     la   t1, g_reader
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -9853,7 +10870,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc25:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc25:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9869,7 +10886,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc37
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc37
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -9896,21 +10913,21 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc37
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc37
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc38
-  .L_read_node__U8Array__I32Array__U8Array_pc37:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc38
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc37:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc38:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc38:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc44
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc44
 0:
     lw   t0, -28(s0)
     addi sp, sp, -4
@@ -9927,8 +10944,8 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc25
-  .L_read_node__U8Array__I32Array__U8Array_pc44:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc25
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc44:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9952,28 +10969,13 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call alloc_node__I32Array__i32
+    call alloc_node__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-    lw   t0, -36(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 8
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    mul  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -40(s0)
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -9989,7 +10991,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc106
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc98
 0:
     la   t1, g_sp
     lw   t0, 0(t1)
@@ -9997,7 +10999,7 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -44(s0)
+    sw   t0, -40(s0)
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10021,7 +11023,7 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -48(s0)
+    sw   t0, -44(s0)
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10036,9 +11038,9 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -52(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc72:
-    lw   t0, -52(s0)
+    sw   t0, -48(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc68:
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -24(s0)
@@ -10053,7 +11055,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc92
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc88
 0:
     lw   t0, -20(s0)
     addi sp, sp, -4
@@ -10065,7 +11067,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -10099,7 +11101,7 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, 4
     la   t1, g_sp
     sw   t0, 0(t1)
-    lw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -10113,22 +11115,30 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -52(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc72
-  .L_read_node__U8Array__I32Array__U8Array_pc92:
+    sw   t0, -48(s0)
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc68
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc88:
     lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 6
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call n_set_tass__AstNodeArray__i32__i32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -44(s0)
@@ -10137,38 +11147,12 @@ read_node__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call set__I32Array__i32__i32
+    call n_set_tasl__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 7
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -48(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc106:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc98:
     call skip_ws_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10178,7 +11162,7 @@ read_node__U8Array__I32Array__U8Array:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -56(s0)
+    sw   t0, -52(s0)
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10196,7 +11180,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc120
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc112
 0:
     lw   t0, -32(s0)
     addi sp, sp, -4
@@ -10215,23 +11199,23 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc120
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc112
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc121
-  .L_read_node__U8Array__I32Array__U8Array_pc120:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc113
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc112:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc121:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc113:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc128
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc120
 0:
-    lw   t0, -56(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 34
@@ -10247,21 +11231,21 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc128
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc120
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc129
-  .L_read_node__U8Array__I32Array__U8Array_pc128:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc121
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc120:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc129:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc121:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc267
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc255
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -10279,15 +11263,15 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
+    sw   t0, -56(s0)
     call peek_in
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -64(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc137:
-    lw   t0, -64(s0)
+    sw   t0, -60(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc129:
+    lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 34
@@ -10303,9 +11287,9 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc147
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc139
 0:
-    lw   t0, -64(s0)
+    lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -10321,23 +11305,23 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc147
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc139
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc148
-  .L_read_node__U8Array__I32Array__U8Array_pc147:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc140
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc139:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc148:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc140:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc241
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc233
 0:
-    lw   t0, -64(s0)
+    lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 92
@@ -10353,7 +11337,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc226
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc218
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -10370,8 +11354,8 @@ read_node__U8Array__I32Array__U8Array:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -68(s0)
-    lw   t0, -68(s0)
+    sw   t0, -64(s0)
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 110
@@ -10387,16 +11371,16 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc164
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc156
 0:
     li   t0, 10
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -64(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc164:
-    lw   t0, -68(s0)
+    sw   t0, -60(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc156:
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 116
@@ -10412,16 +11396,16 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc170
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc162
 0:
     li   t0, 9
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -64(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc170:
-    lw   t0, -68(s0)
+    sw   t0, -60(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc162:
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 114
@@ -10437,16 +11421,16 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc176
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc168
 0:
     li   t0, 13
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -64(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc176:
-    lw   t0, -68(s0)
+    sw   t0, -60(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc168:
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 92
@@ -10462,16 +11446,16 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc182
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc174
 0:
     li   t0, 92
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -64(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc182:
-    lw   t0, -68(s0)
+    sw   t0, -60(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc174:
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 34
@@ -10487,16 +11471,16 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc188
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc180
 0:
     li   t0, 34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -64(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc188:
-    lw   t0, -68(s0)
+    sw   t0, -60(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc180:
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 110
@@ -10512,9 +11496,9 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc198
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc190
 0:
-    lw   t0, -68(s0)
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 116
@@ -10530,23 +11514,23 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc198
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc190
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc199
-  .L_read_node__U8Array__I32Array__U8Array_pc198:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc191
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc190:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc199:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc191:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc206
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc198
 0:
-    lw   t0, -68(s0)
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 114
@@ -10562,23 +11546,23 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc206
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc198
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc207
-  .L_read_node__U8Array__I32Array__U8Array_pc206:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc199
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc198:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc207:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc199:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc214
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc206
 0:
-    lw   t0, -68(s0)
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 92
@@ -10594,23 +11578,23 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc214
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc206
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc215
-  .L_read_node__U8Array__I32Array__U8Array_pc214:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc207
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc206:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc215:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc207:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc222
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc214
 0:
-    lw   t0, -68(s0)
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 34
@@ -10626,29 +11610,29 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc222
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc214
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc223
-  .L_read_node__U8Array__I32Array__U8Array_pc222:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc215
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc214:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc223:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc215:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc226
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc218
 0:
-    lw   t0, -68(s0)
+    lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -64(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc226:
+    sw   t0, -60(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc218:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10656,7 +11640,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -64(s0)
+    lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
@@ -10699,10 +11683,10 @@ read_node__U8Array__I32Array__U8Array:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -64(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc137
-  .L_read_node__U8Array__I32Array__U8Array_pc241:
-    lw   t0, -64(s0)
+    sw   t0, -60(s0)
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc129
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc233:
+    lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 34
@@ -10718,7 +11702,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc248
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc240
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -10730,29 +11714,20 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc248:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc240:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -40(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call set__I32Array__i32__i32
+    call n_set_ss__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10760,23 +11735,14 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 2
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, g_sp
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -10788,7 +11754,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call set__I32Array__i32__i32
+    call n_set_sl__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -10797,9 +11763,9 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_read_node__U8Array__I32Array__U8Array_pc413
-  .L_read_node__U8Array__I32Array__U8Array_pc267:
-    lw   t0, -56(s0)
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc395
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc255:
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 40
@@ -10815,9 +11781,9 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc277
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc265
 0:
-    lw   t0, -56(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 41
@@ -10833,23 +11799,23 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc277
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc265
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc278
-  .L_read_node__U8Array__I32Array__U8Array_pc277:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc266
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc265:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc278:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc266:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc285
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc273
 0:
-    lw   t0, -56(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -10865,21 +11831,21 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc285
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc273
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc286
-  .L_read_node__U8Array__I32Array__U8Array_pc285:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc274
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc273:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc286:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc274:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc413
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc395
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10891,7 +11857,7 @@ read_node__U8Array__I32Array__U8Array:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -72(s0)
+    sw   t0, -68(s0)
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -10909,9 +11875,9 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc300
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc288
 0:
-    lw   t0, -72(s0)
+    lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -10926,21 +11892,21 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc300
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc288
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc301
-  .L_read_node__U8Array__I32Array__U8Array_pc300:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc289
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc288:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc301:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc289:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc319
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc307
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10962,7 +11928,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc315
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc303
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -10989,36 +11955,42 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc315
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc303
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc316
-  .L_read_node__U8Array__I32Array__U8Array_pc315:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc304
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc303:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc316:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc304:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc319
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc307
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc320
-  .L_read_node__U8Array__I32Array__U8Array_pc319:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc308
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc307:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_read_node__U8Array__I32Array__U8Array_pc320:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc308:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc373
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc359
 0:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -72(s0)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11031,12 +12003,6 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -80(s0)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -84(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11062,25 +12028,25 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc337
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc325
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -84(s0)
+    sw   t0, -80(s0)
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -80(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc337:
-    lw   t0, -80(s0)
+    sw   t0, -76(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc325:
+    lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -72(s0)
+    lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -11092,9 +12058,9 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc357
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc345
 0:
-    lw   t0, -76(s0)
+    lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 10
@@ -11109,7 +12075,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -80(s0)
+    lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -11139,8 +12105,8 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -76(s0)
-    lw   t0, -80(s0)
+    sw   t0, -72(s0)
+    lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -11154,10 +12120,10 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -80(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc337
-  .L_read_node__U8Array__I32Array__U8Array_pc357:
-    lw   t0, -84(s0)
+    sw   t0, -76(s0)
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc325
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc345:
+    lw   t0, -80(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -11173,12 +12139,12 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc365
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc353
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -76(s0)
+    lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -11189,54 +12155,45 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -76(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc365:
+    sw   t0, -72(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc353:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -40(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 3
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -76(s0)
+    lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call set__I32Array__i32__i32
+    call n_set_ival__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_read_node__U8Array__I32Array__U8Array_pc411
-  .L_read_node__U8Array__I32Array__U8Array_pc373:
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc393
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc359:
     la   t1, g_sp
     lw   t0, 0(t1)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
+    sw   t0, -56(s0)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -80(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc377:
-    lw   t0, -80(s0)
+    sw   t0, -76(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc363:
+    lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -72(s0)
+    lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -11248,7 +12205,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc397
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc383
 0:
     lw   t0, -20(s0)
     addi sp, sp, -4
@@ -11260,7 +12217,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -80(s0)
+    lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -11294,7 +12251,7 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, 4
     la   t1, g_sp
     sw   t0, 0(t1)
-    lw   t0, -80(s0)
+    lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -11308,31 +12265,22 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -80(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc377
-  .L_read_node__U8Array__I32Array__U8Array_pc397:
+    sw   t0, -76(s0)
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc363
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc383:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -40(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call set__I32Array__i32__i32
+    call n_set_ss__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11340,41 +12288,32 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -40(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 2
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -72(s0)
+    lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call set__I32Array__i32__i32
+    call n_set_sl__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc411:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc393:
     call skip_ws_in
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc413:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc395:
     call peek_in
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -56(s0)
+    sw   t0, -52(s0)
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11385,9 +12324,9 @@ read_node__U8Array__I32Array__U8Array:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -88(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc418:
-    lw   t0, -56(s0)
+    sw   t0, -84(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc400:
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 40
@@ -11403,7 +12342,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc455
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc435
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -11417,14 +12356,14 @@ read_node__U8Array__I32Array__U8Array:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call read_node__U8Array__I32Array__U8Array
+    call read_node__U8Array__AstNodeArray__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -92(s0)
-    lw   t0, -92(s0)
+    sw   t0, -88(s0)
+    lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -11440,9 +12379,9 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc450
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc430
 0:
-    lw   t0, -88(s0)
+    lw   t0, -84(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -11457,61 +12396,52 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc443
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc423
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -92(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__I32Array__i32__i32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    j    .L_read_node__U8Array__I32Array__U8Array_pc448
-  .L_read_node__U8Array__I32Array__U8Array_pc443:
-    lw   t0, -16(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -92(s0)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call n_set_child__AstNodeArray__i32__i32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc428
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc423:
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -84(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_set_sib__I32Array__i32__i32
+    call n_set_sib__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc448:
-    lw   t0, -92(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc428:
+    lw   t0, -88(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -88(s0)
-  .L_read_node__U8Array__I32Array__U8Array_pc450:
+    sw   t0, -84(s0)
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc430:
     call skip_ws_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11521,9 +12451,9 @@ read_node__U8Array__I32Array__U8Array:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -56(s0)
-    j    .L_read_node__U8Array__I32Array__U8Array_pc418
-  .L_read_node__U8Array__I32Array__U8Array_pc455:
+    sw   t0, -52(s0)
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc400
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc435:
     call peek_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -11540,7 +12470,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_read_node__U8Array__I32Array__U8Array_pc462
+    j    .L_read_node__U8Array__AstNodeArray__U8Array_pc442
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -11552,7 +12482,7 @@ read_node__U8Array__I32Array__U8Array:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_read_node__U8Array__I32Array__U8Array_pc462:
+  .L_read_node__U8Array__AstNodeArray__U8Array_pc442:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -11569,7 +12499,7 @@ read_node__U8Array__I32Array__U8Array:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of read_node__U8Array__I32Array__U8Array
+    # end of read_node__U8Array__AstNodeArray__U8Array
 
     .globl sval_eq__U8Array__i32__i32__U8Array__i32
     .type  sval_eq__U8Array__i32__i32__U8Array__i32, @function
@@ -12954,9 +13884,9 @@ locals_add_entry__U8Array__I32Array__i32__i32__i32__i32:
     ret
     # end of locals_add_entry__U8Array__I32Array__i32__i32__i32__i32
 
-    .globl collect_locals_stmt__I32Array__U8Array__I32Array__i32
-    .type  collect_locals_stmt__I32Array__U8Array__I32Array__i32, @function
-collect_locals_stmt__I32Array__U8Array__I32Array__i32:
+    .globl collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32
+    .type  collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32, @function
+collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32:
     # prologue: frame_size=64, params=4, locals=3, eval_depth=7
     addi sp, sp, -64
     sw   ra, 60(sp)
@@ -12977,7 +13907,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_kind__I32Array__i32
+    call n_kind__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13001,7 +13931,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc33
+    j    .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc33
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13011,7 +13941,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13034,7 +13964,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc32
+    j    .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc32
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -13050,7 +13980,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13062,7 +13992,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13074,7 +14004,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13086,7 +14016,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13101,13 +14031,13 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc32:
+  .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc32:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc33:
+  .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc33:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13125,7 +14055,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc75
+    j    .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc75
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13148,7 +14078,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13156,7 +14086,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call collect_locals_block__I32Array__U8Array__I32Array__i32
+    call collect_locals_block__AstNodeArray__U8Array__I32Array__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13173,7 +14103,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13196,7 +14126,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc74
+    j    .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc74
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13206,7 +14136,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_kind__I32Array__i32
+    call n_kind__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13224,7 +14154,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc68
+    j    .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc68
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13242,13 +14172,13 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call collect_locals_stmt__I32Array__U8Array__I32Array__i32
+    call collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc74
-  .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc68:
+    j    .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc74
+  .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc68:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13265,18 +14195,18 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call collect_locals_block__I32Array__U8Array__I32Array__i32
+    call collect_locals_block__AstNodeArray__U8Array__I32Array__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc74:
+  .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc74:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc75:
+  .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc75:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13294,7 +14224,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc89
+    j    .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc89
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13317,7 +14247,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13325,7 +14255,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call collect_locals_block__I32Array__U8Array__I32Array__i32
+    call collect_locals_block__AstNodeArray__U8Array__I32Array__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13335,7 +14265,7 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_collect_locals_stmt__I32Array__U8Array__I32Array__i32_pc89:
+  .L_collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32_pc89:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -13346,11 +14276,11 @@ collect_locals_stmt__I32Array__U8Array__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of collect_locals_stmt__I32Array__U8Array__I32Array__i32
+    # end of collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32
 
-    .globl collect_locals_block__I32Array__U8Array__I32Array__i32
-    .type  collect_locals_block__I32Array__U8Array__I32Array__i32, @function
-collect_locals_block__I32Array__U8Array__I32Array__i32:
+    .globl collect_locals_block__AstNodeArray__U8Array__I32Array__i32
+    .type  collect_locals_block__AstNodeArray__U8Array__I32Array__i32, @function
+collect_locals_block__AstNodeArray__U8Array__I32Array__i32:
     # prologue: frame_size=48, params=4, locals=1, eval_depth=4
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -13369,14 +14299,14 @@ collect_locals_block__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-  .L_collect_locals_block__I32Array__U8Array__I32Array__i32_pc4:
+  .L_collect_locals_block__AstNodeArray__U8Array__I32Array__i32_pc4:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13393,7 +14323,7 @@ collect_locals_block__I32Array__U8Array__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_collect_locals_block__I32Array__U8Array__I32Array__i32_pc19
+    j    .L_collect_locals_block__AstNodeArray__U8Array__I32Array__i32_pc19
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13411,7 +14341,7 @@ collect_locals_block__I32Array__U8Array__I32Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call collect_locals_stmt__I32Array__U8Array__I32Array__i32
+    call collect_locals_stmt__AstNodeArray__U8Array__I32Array__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13424,15 +14354,15 @@ collect_locals_block__I32Array__U8Array__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-    j    .L_collect_locals_block__I32Array__U8Array__I32Array__i32_pc4
-  .L_collect_locals_block__I32Array__U8Array__I32Array__i32_pc19:
+    j    .L_collect_locals_block__AstNodeArray__U8Array__I32Array__i32_pc4
+  .L_collect_locals_block__AstNodeArray__U8Array__I32Array__i32_pc19:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -13443,11 +14373,11 @@ collect_locals_block__I32Array__U8Array__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of collect_locals_block__I32Array__U8Array__I32Array__i32
+    # end of collect_locals_block__AstNodeArray__U8Array__I32Array__i32
 
-    .globl cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
-    .type  cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32, @function
-cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
+    .globl cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
+    .type  cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32, @function
+cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32:
     # prologue: frame_size=64, params=6, locals=1, eval_depth=6
     addi sp, sp, -64
     sw   ra, 60(sp)
@@ -13468,14 +14398,14 @@ cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-  .L_cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc4:
+  .L_cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc4:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13492,7 +14422,7 @@ cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc21
+    j    .L_cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc21
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13518,7 +14448,7 @@ cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a3, 8(sp)
     lw   a4, 4(sp)
     lw   a5, 0(sp)
-    call cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    call cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
     addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13531,15 +14461,15 @@ cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-    j    .L_cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc4
-  .L_cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc21:
+    j    .L_cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc4
+  .L_cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc21:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -13550,11 +14480,11 @@ cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    # end of cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
 
-    .globl cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
-    .type  cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32, @function
-cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
+    .globl cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
+    .type  cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32, @function
+cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32:
     # prologue: frame_size=128, params=6, locals=13, eval_depth=9
     addi sp, sp, -128
     sw   ra, 124(sp)
@@ -13587,7 +14517,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_kind__I32Array__i32
+    call n_kind__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13611,7 +14541,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc31
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc31
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -13653,7 +14583,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13665,7 +14595,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13696,7 +14626,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc31:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc31:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13714,7 +14644,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc151
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc151
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13728,7 +14658,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -13751,7 +14681,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc52
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc52
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -13773,13 +14703,13 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc104
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc52:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc104
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc52:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -13949,7 +14879,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc104:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc104:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14068,7 +14998,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14080,7 +15010,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14111,7 +15041,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc151:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc151:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14129,7 +15059,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc211
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc211
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -14151,7 +15081,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14160,7 +15090,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14283,7 +15213,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14295,7 +15225,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14326,7 +15256,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc211:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc211:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14344,7 +15274,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc378
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc378
 0:
     li   t0, 24
     addi sp, sp, -4
@@ -14371,14 +15301,14 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc224:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc224:
     lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14395,7 +15325,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc234
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc234
 0:
     lw   t0, -48(s0)
     addi sp, sp, -4
@@ -14412,21 +15342,21 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc234
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc234
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc235
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc234:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc235
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc234:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc235:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc235:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc250
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc250
 0:
     lw   t0, -44(s0)
     addi sp, sp, -4
@@ -14468,22 +15398,22 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc224
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc250:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc224
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc250:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc252:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc252:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14499,7 +15429,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc270
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc270
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -14530,7 +15460,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14550,8 +15480,8 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc252
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc270:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc252
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc270:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14666,7 +15596,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14678,7 +15608,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14699,14 +15629,14 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc315:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc315:
     lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14723,7 +15653,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc349
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc349
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -14746,7 +15676,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_tasl__I32Array__i32
+    call n_tasl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14768,7 +15698,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc340
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc340
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -14784,7 +15714,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_tass__I32Array__i32
+    call n_tass__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14800,8 +15730,8 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc344
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc340:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc344
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc340:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14815,7 +15745,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc344:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc344:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14824,15 +15754,15 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -52(s0)
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc315
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc349:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc315
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc349:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14929,7 +15859,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc378:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc378:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -14947,7 +15877,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc744
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc744
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -14957,7 +15887,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_nchildren__I32Array__i32
+    call n_nchildren__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -14979,7 +15909,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc620
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc620
 0:
     la   t1, g_lc
     lw   t0, 0(t1)
@@ -15053,7 +15983,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15062,7 +15992,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15328,7 +16258,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15338,7 +16268,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a3, 8(sp)
     lw   a4, 4(sp)
     lw   a5, 0(sp)
-    call cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    call cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
     addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15589,7 +16519,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15604,7 +16534,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_kind__I32Array__i32
+    call n_kind__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15622,7 +16552,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc587
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc587
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -15648,13 +16578,13 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a3, 8(sp)
     lw   a4, 4(sp)
     lw   a5, 0(sp)
-    call cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    call cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
     addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc595
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc587:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc595
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc587:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15679,12 +16609,12 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a3, 8(sp)
     lw   a4, 4(sp)
     lw   a5, 0(sp)
-    call cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    call cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
     addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc595:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc595:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -15763,8 +16693,8 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc743
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc620:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc743
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc620:
     la   t1, g_lc
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -15813,7 +16743,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -15822,7 +16752,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16088,7 +17018,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16098,7 +17028,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a3, 8(sp)
     lw   a4, 4(sp)
     lw   a5, 0(sp)
-    call cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    call cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
     addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16181,13 +17111,13 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc743:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc743:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc744:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc744:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -16205,7 +17135,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc974
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc974
 0:
     la   t1, g_lc
     lw   t0, 0(t1)
@@ -16437,7 +17367,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16446,7 +17376,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16712,7 +17642,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16722,7 +17652,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a3, 8(sp)
     lw   a4, 4(sp)
     lw   a5, 0(sp)
-    call cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    call cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
     addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -16983,7 +17913,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc974:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc974:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17001,7 +17931,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1035
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1035
 0:
     lw   t0, -28(s0)
     addi sp, sp, -4
@@ -17198,7 +18128,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1035:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1035:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17216,7 +18146,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1096
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1096
 0:
     lw   t0, -28(s0)
     addi sp, sp, -4
@@ -17413,7 +18343,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1096:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1096:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17431,7 +18361,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1209
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1209
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -17441,7 +18371,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17464,7 +18394,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1152
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1152
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -17486,7 +18416,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -17608,8 +18538,8 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1208
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1152:
+    j    .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1208
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1152:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17792,13 +18722,13 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1208:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1208:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32_pc1209:
+  .L_cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32_pc1209:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -17809,7 +18739,7 @@ cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_stmt__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    # end of cg_stmt__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
 
     .globl cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32
     .type  cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32, @function
@@ -19732,9 +20662,9 @@ cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32:
     ret
     # end of cg_binop_inst__U8Array__i32__i32__StringBuffer__i32__i32
 
-    .globl cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
-    .type  cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32, @function
-cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
+    .globl cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
+    .type  cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32, @function
+cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32:
     # prologue: frame_size=176, params=5, locals=18, eval_depth=19
     addi sp, sp, -176
     sw   ra, 172(sp)
@@ -19771,7 +20701,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_kind__I32Array__i32
+    call n_kind__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19795,7 +20725,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc63
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc63
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19951,7 +20881,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ival__I32Array__i32
+    call n_ival__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -19980,7 +20910,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc63:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc63:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19998,7 +20928,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc176
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc176
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -20157,7 +21087,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20174,7 +21104,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc167
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc167
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -20184,7 +21114,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20216,7 +21146,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc139
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc139
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -20252,21 +21182,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc139
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc139
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc140
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc139:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc140
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc139:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc140:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc140:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc151
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc151
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -20302,21 +21232,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc151
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc151
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc152
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc151:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc152
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc151:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc152:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc152:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc163
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc163
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -20352,21 +21282,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc163
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc163
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc164
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc163:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc164
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc163:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc164:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc164:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc167
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc167
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -20374,7 +21304,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -36(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc167:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc167:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20406,7 +21336,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc176:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc176:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20424,7 +21354,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc243
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc243
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -20440,7 +21370,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20452,7 +21382,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20641,7 +21571,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc243:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc243:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20659,7 +21589,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc290
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc290
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -20766,7 +21696,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20778,7 +21708,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -20809,7 +21739,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc290:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc290:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20827,7 +21757,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc433
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc433
 0:
     li   t0, 24
     addi sp, sp, -4
@@ -20854,14 +21784,14 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc303:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc303:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20878,7 +21808,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc313
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc313
 0:
     lw   t0, -52(s0)
     addi sp, sp, -4
@@ -20895,21 +21825,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc313
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc313
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc314
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc313:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc314
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc313:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc314:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc314:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc329
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc329
 0:
     lw   t0, -48(s0)
     addi sp, sp, -4
@@ -20951,22 +21881,22 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc303
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc329:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc303
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc329:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -60(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc331:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc331:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20982,7 +21912,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc349
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc349
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -21013,7 +21943,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21033,8 +21963,8 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -60(s0)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc331
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc349:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc331
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc349:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21149,7 +22079,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21161,7 +22091,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21182,14 +22112,14 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc394:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc394:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21206,7 +22136,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc428
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc428
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -21229,7 +22159,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_tasl__I32Array__i32
+    call n_tasl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21251,7 +22181,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc419
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc419
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -21267,7 +22197,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_tass__I32Array__i32
+    call n_tass__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21283,8 +22213,8 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc423
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc419:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc423
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc419:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21298,7 +22228,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc423:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc423:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21307,15 +22237,15 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc394
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc428:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc394
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc428:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21334,7 +22264,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc433:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc433:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21352,7 +22282,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc506
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc506
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -21374,7 +22304,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21383,7 +22313,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21422,7 +22352,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21437,7 +22367,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21467,7 +22397,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc485
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc485
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -21521,8 +22451,8 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc505
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc485:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc505
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc485:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21588,13 +22518,13 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc505:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc505:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc506:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc506:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21612,7 +22542,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1287
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1287
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -21622,7 +22552,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21637,7 +22567,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21656,7 +22586,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21675,7 +22605,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -21709,7 +22639,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc906
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc906
 0:
     la   t1, g_lc
     lw   t0, 0(t1)
@@ -21779,7 +22709,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -22038,7 +22968,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -22932,7 +23862,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc906:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc906:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -22960,7 +23890,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1260
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1260
 0:
     la   t1, g_lc
     lw   t0, 0(t1)
@@ -23030,7 +23960,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23250,7 +24180,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24105,7 +25035,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1260:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1260:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24126,7 +25056,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24151,7 +25081,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24176,7 +25106,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_tass__I32Array__i32
+    call n_tass__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24188,7 +25118,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_tasl__I32Array__i32
+    call n_tasl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24208,7 +25138,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1287:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1287:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24226,7 +25156,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1555
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1555
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -24252,7 +25182,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24261,7 +25191,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    call cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24278,7 +25208,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24293,7 +25223,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24308,7 +25238,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -24348,7 +25278,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1325
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1325
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -24356,7 +25286,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1325:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1325:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24384,7 +25314,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1334
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1334
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -24392,7 +25322,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1334:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1334:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24409,7 +25339,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1466
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1466
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24436,7 +25366,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1354
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1354
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24472,21 +25402,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1354
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1354
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1355
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1354:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1355
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1354:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1355:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1355:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1366
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1366
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24522,21 +25452,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1366
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1366
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1367
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1366:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1367
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1366:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1367:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1367:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1370
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1370
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -24544,7 +25474,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1370:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1370:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24570,7 +25500,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1386
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1386
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24606,21 +25536,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1386
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1386
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1387
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1386:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1387
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1386:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1387:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1387:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1398
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1398
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24656,21 +25586,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1398
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1398
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1399
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1398:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1399
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1398:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1399:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1399:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1402
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1402
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -24678,7 +25608,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1402:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1402:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24704,7 +25634,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1418
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1418
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24740,21 +25670,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1418
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1418
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1419
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1418:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1419
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1418:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1419:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1419:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1430
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1430
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24790,21 +25720,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1430
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1430
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1431
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1430:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1431
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1430:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1431:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1431:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1434
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1434
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -24812,7 +25742,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1434:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1434:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24838,7 +25768,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1450
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1450
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24874,21 +25804,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1450
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1450
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1451
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1450:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1451
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1450:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1451:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1451:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1462
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1462
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24924,21 +25854,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1462
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1462
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1463
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1462:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1463
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1462:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1463:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1463:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1466
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1466
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -24946,7 +25876,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1466:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1466:
     lw   t0, -64(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -24963,7 +25893,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1514
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1514
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -24990,7 +25920,7 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1486
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1486
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -25026,21 +25956,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1486
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1486
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1487
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1486:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1487
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1486:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1487:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1487:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1498
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1498
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -25076,21 +26006,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1498
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1498
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1499
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1498:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1499
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1498:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1499:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1499:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1510
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1510
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -25126,21 +26056,21 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1510
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1510
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1511
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1510:
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1511
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1510:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1511:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1511:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1514
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1514
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -25148,14 +26078,14 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1514:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1514:
     lw   t0, -100(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1554
+    j    .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1554
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -25282,13 +26212,13 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1554:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1554:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32_pc1555:
+  .L_cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32_pc1555:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -25299,11 +26229,11 @@ cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_expr__I32Array__U8Array__I32Array__StringBuffer__i32
+    # end of cg_expr__AstNodeArray__U8Array__I32Array__StringBuffer__i32
 
-    .globl cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32
-    .type  cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32, @function
-cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
+    .globl cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32
+    .type  cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32, @function
+cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32:
     # prologue: frame_size=128, params=6, locals=17, eval_depth=6
     addi sp, sp, -128
     sw   ra, 124(sp)
@@ -25344,7 +26274,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25363,7 +26293,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25382,7 +26312,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call n_nth_child__I32Array__i32__i32
+    call n_nth_child__AstNodeArray__i32__i32
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25397,7 +26327,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25432,7 +26362,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc35
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc35
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -25442,7 +26372,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25457,14 +26387,14 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc35:
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc35:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -25531,7 +26461,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25543,7 +26473,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25564,14 +26494,14 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -60(s0)
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc65:
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc65:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -25588,7 +26518,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc92
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc92
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -25598,7 +26528,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25632,7 +26562,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25644,7 +26574,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25665,15 +26595,15 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -60(s0)
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc65
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc92:
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc65
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc92:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -25703,7 +26633,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc117
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc117
 0:
     lw   t0, -28(s0)
     addi sp, sp, -4
@@ -25757,8 +26687,8 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc123
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc117:
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc123
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc117:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -25780,7 +26710,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc123:
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc123:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -25802,14 +26732,14 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -68(s0)
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc131:
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc131:
     lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -25826,7 +26756,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc200
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc200
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -25836,7 +26766,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25948,7 +26878,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -25960,7 +26890,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26000,7 +26930,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26012,7 +26942,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26046,15 +26976,15 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -68(s0)
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc131
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc200:
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc131
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc200:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -26078,7 +27008,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call collect_locals_block__I32Array__U8Array__I32Array__i32
+    call collect_locals_block__AstNodeArray__U8Array__I32Array__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26089,7 +27019,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -76(s0)
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc210:
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc210:
     lw   t0, -76(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -26106,7 +27036,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc293
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc293
 0:
     lw   t0, -76(s0)
     addi sp, sp, -4
@@ -26384,8 +27314,8 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -76(s0)
-    j    .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc210
-  .L_cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32_pc293:
+    j    .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc210
+  .L_cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32_pc293:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -26428,7 +27358,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   a3, 8(sp)
     lw   a4, 4(sp)
     lw   a5, 0(sp)
-    call cg_block__I32Array__U8Array__I32Array__StringBuffer__I32Array__i32
+    call cg_block__AstNodeArray__U8Array__I32Array__StringBuffer__I32Array__i32
     addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -26738,7 +27668,7 @@ cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32
+    # end of cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32
 
     .globl emit_string_table__U8Array__I32Array__StringBuffer
     .type  emit_string_table__U8Array__I32Array__StringBuffer, @function
@@ -27323,11 +28253,11 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-    li   t0, 32768
+    li   t0, 4096
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call I32Array__u32
+    call AstNodeArray__u32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27382,10 +28312,12 @@ main:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call ast_set_count__i32
     addi sp, sp, 4
-    la   t1, g_nc
-    sw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -27486,7 +28418,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc56
+    j    .L_main_pc57
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -27497,7 +28429,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_main_pc56:
+  .L_main_pc57:
     la   t1, g_reader
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -27533,7 +28465,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -40(s0)
-  .L_main_pc68:
+  .L_main_pc69:
     call peek_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27550,15 +28482,17 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc248
+    j    .L_main_pc250
 0:
-    li   t0, 0
+    lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call reset_node_pool__AstNodeArray
     addi sp, sp, 4
-    la   t1, g_nc
-    sw   t0, 0(t1)
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -27571,7 +28505,7 @@ main:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call read_node__U8Array__I32Array__U8Array
+    call read_node__U8Array__AstNodeArray__U8Array
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27594,7 +28528,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc245
+    j    .L_main_pc247
 0:
     lw   t0, -20(s0)
     addi sp, sp, -4
@@ -27604,7 +28538,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_kind__I32Array__i32
+    call n_kind__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27628,7 +28562,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc223
+    j    .L_main_pc225
 0:
     lw   t0, -40(s0)
     addi sp, sp, -4
@@ -27646,7 +28580,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc137
+    j    .L_main_pc139
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -27784,7 +28718,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -40(s0)
-  .L_main_pc137:
+  .L_main_pc139:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -27793,7 +28727,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_child__I32Array__i32
+    call n_child__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27808,7 +28742,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sib__I32Array__i32
+    call n_sib__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27837,7 +28771,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc155
+    j    .L_main_pc157
 0:
     lw   t0, -20(s0)
     addi sp, sp, -4
@@ -27847,14 +28781,14 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ival__I32Array__i32
+    call n_ival__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -60(s0)
-  .L_main_pc155:
+  .L_main_pc157:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -27973,7 +28907,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27985,7 +28919,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28025,7 +28959,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_ss__I32Array__i32
+    call n_ss__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28037,7 +28971,7 @@ main:
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call n_sl__I32Array__i32
+    call n_sl__AstNodeArray__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28089,7 +29023,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_main_pc223:
+  .L_main_pc225:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28107,7 +29041,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc245
+    j    .L_main_pc247
 0:
     lw   t0, -40(s0)
     addi sp, sp, -4
@@ -28125,7 +29059,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc237
+    j    .L_main_pc239
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -28146,7 +29080,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -40(s0)
-  .L_main_pc237:
+  .L_main_pc239:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28171,18 +29105,18 @@ main:
     lw   a3, 8(sp)
     lw   a4, 4(sp)
     lw   a5, 0(sp)
-    call cg_fn__I32Array__U8Array__I32Array__I32Array__StringBuffer__i32
+    call cg_fn__AstNodeArray__U8Array__I32Array__I32Array__StringBuffer__i32
     addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_main_pc245:
+  .L_main_pc247:
     call skip_ws_in
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_main_pc68
-  .L_main_pc248:
+    j    .L_main_pc69
+  .L_main_pc250:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28199,7 +29133,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc256
+    j    .L_main_pc258
 0:
     lw   t0, -16(s0)
     addi sp, sp, -4
@@ -28214,7 +29148,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_main_pc256:
+  .L_main_pc258:
     call peek_in
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28231,7 +29165,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_main_pc263
+    j    .L_main_pc265
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -28243,7 +29177,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_main_pc263:
+  .L_main_pc265:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -28397,7 +29331,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call delete__I32Array
+    call delete__AstNodeArray
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28448,6 +29382,9 @@ main:
     # end of main
 
     .data
+    .globl g_nc
+g_nc:
+    .word 0
     .globl NK_PROGRAM
 NK_PROGRAM:
     .word 0
@@ -28534,9 +29471,6 @@ NK_UNKNOWN:
     .word 99
     .globl g_reader
 g_reader:
-    .word 0
-    .globl g_nc
-g_nc:
     .word 0
     .globl g_sp
 g_sp:

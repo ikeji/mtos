@@ -4,6 +4,7 @@
 
 import "string_buffer.tc";
 import "source_reader.tc";
+import "ast_node.tc";
 
 // ===== AST node kind constants =====
 var NK_PROGRAM: i32 = 0;
@@ -37,8 +38,9 @@ var NK_UNKNOWN: i32 = 99;
 var NK_IMPORTS: i32 = 100;
 
 // ===== Global state =====
+// Note: AST node counter (g_nc) lives in ast_node.tc now; access via
+// ast_count() / ast_set_count().
 var g_reader: SourceReader = 0 as SourceReader;  // set in main
-var g_nc: i32 = 0;
 var g_sp: i32 = 0;
 var g_fn_count: i32 = 0;
 var g_var_count: i32 = 0;
@@ -123,49 +125,10 @@ fn read_atom_in(atom: U8Array) -> i32 {
     return alen;
 }
 
-// ===== Node pool (8 ints per node) =====
-// Layout: [kind, sstart, slen, ival, first_child, next_sibling, tass, tasl]
-fn n_kind(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8)); }
-fn n_ss(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+1)); }
-fn n_sl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+2)); }
-fn n_ival(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+3)); }
-fn n_child(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+4)); }
-fn n_sib(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+5)); }
-fn n_tass(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+6)); }
-fn n_tasl(nodes: I32Array, n: i32) -> i32 { return get(nodes, (n*8+7)); }
-fn n_set_sib(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+5), v); }
-fn n_set_child(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+4), v); }
-fn n_set_tass(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+6), v); }
-fn n_set_tasl(nodes: I32Array, n: i32, v: i32) -> void { set(nodes, (n*8+7), v); }
-
-fn alloc_node(nodes: I32Array, kind: i32) -> i32 {
-    var n: i32 = g_nc;
-    g_nc = g_nc + 1;
-    var b: i32 = n * 8;
-    set(nodes, b, kind);
-    set(nodes, (b+1), -1);
-    set(nodes, (b+2), 0);
-    set(nodes, (b+3), 0);
-    set(nodes, (b+4), -1);
-    set(nodes, (b+5), -1);
-    set(nodes, (b+6), -1);
-    set(nodes, (b+7), 0);
-    return n;
-}
-
-fn n_nchildren(nodes: I32Array, n: i32) -> i32 {
-    var c: i32 = n_child(nodes, n);
-    var count: i32 = 0;
-    while c >= 0 { count = count + 1; c = n_sib(nodes, c); }
-    return count;
-}
-
-fn n_nth_child(nodes: I32Array, n: i32, idx: i32) -> i32 {
-    var c: i32 = n_child(nodes, n);
-    var i: i32 = 0;
-    while i < idx && c >= 0 { c = n_sib(nodes, c); i = i + 1; }
-    return c;
-}
+// ===== Node pool =====
+// Pool storage and accessors live in ast_node.tc; typecheck just uses
+// AstNodeArray + the n_* / alloc_node / n_nchildren / n_nth_child
+// wrappers from there.
 
 // ===== Kind classification =====
 fn cmp2(a: U8Array, st: i32, b0: u8, b1: u8) -> bool {
@@ -250,7 +213,7 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
 // ===== S-expression reader =====
 fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
 
-fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
+fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
     skip_ws_in();
     if at_eof(g_reader) { return -1; }
     if peek_in() != '(' { return -1; }
@@ -264,7 +227,6 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
     }
     var kind_code: i32 = classify_kind(atom, actual_klen);
     var n: i32 = alloc_node(nodes, kind_code);
-    var base: i32 = n * 8;
 
     // Store type_annot if present (after ':')
     if actual_klen < klen {
@@ -276,8 +238,8 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
             g_sp = g_sp + 1;
             ti = ti + 1;
         }
-        set(nodes, (base+6), tss);
-        set(nodes, (base+7), tasl);
+        n_set_tass(nodes, n, tss);
+        n_set_tasl(nodes, n, tasl);
     }
 
     skip_ws_in();
@@ -304,8 +266,8 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
             ch = peek_in();
         }
         if ch == '"' { next(g_reader); }
-        set(nodes, (base+1), ss);
-        set(nodes, (base+2), g_sp - ss);
+        n_set_ss(nodes, n, ss);
+        n_set_sl(nodes, n, g_sp - ss);
         skip_ws_in();
     } else if c != '(' && c != ')' && c != 0u8 {
         var vlen: i32 = read_atom_in(atom);
@@ -321,14 +283,14 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
                 ii = ii + 1;
             }
             if neg { ival = 0 - ival; }
-            set(nodes, (base+3), ival);
+            n_set_ival(nodes, n, ival);
         } else if kind_code == NK_BOOL {
             // Store true/false as ival (1/0), do NOT store sval (matches C ast_read)
             var bval: i32 = 0;
             if vlen == 4 && get(atom,0)=='t' && get(atom,1)=='r' && get(atom,2)=='u' && get(atom,3)=='e' {
                 bval = 1;
             }
-            set(nodes, (base+3), bval);
+            n_set_ival(nodes, n, bval);
         } else {
             var ss2: i32 = g_sp;
             var ii2: i32 = 0;
@@ -337,8 +299,8 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
                 g_sp = g_sp + 1;
                 ii2 = ii2 + 1;
             }
-            set(nodes, (base+1), ss2);
-            set(nodes, (base+2), vlen);
+            n_set_ss(nodes, n, ss2);
+            n_set_sl(nodes, n, vlen);
         }
         skip_ws_in();
     }
@@ -349,7 +311,7 @@ fn read_node(atom: U8Array, nodes: I32Array, strtab: U8Array) -> i32 {
         var child: i32 = read_node(atom, nodes, strtab);
         if child >= 0 {
             if last_child < 0 {
-                set(nodes, (base+4), child);
+                n_set_child(nodes, n, child);
             } else {
                 n_set_sib(nodes, last_child, child);
             }
@@ -468,13 +430,13 @@ fn var_add(strtab: U8Array, vartab: I32Array, nss: i32, nsl: i32, tss: i32, tsl:
 }
 
 // ===== Set type annotation =====
-fn set_annot(nodes: I32Array, n: i32, tss: i32, tsl: i32) -> void {
+fn set_annot(nodes: AstNodeArray, n: i32, tss: i32, tsl: i32) -> void {
     n_set_tass(nodes, n, tss);
     n_set_tasl(nodes, n, tsl);
     return;
 }
 
-fn set_annot_lit(nodes: I32Array, strtab: U8Array, n: i32, ty: StringLiteral) -> void {
+fn set_annot_lit(nodes: AstNodeArray, strtab: U8Array, n: i32, ty: StringLiteral) -> void {
     var start: i32 = st_add_str(strtab, ty);
     var slen: i32 = len(ty);
     set_annot(nodes, n, start, slen);
@@ -637,7 +599,7 @@ fn resolve_overload(strtab: U8Array, fntab: I32Array, arg_tss: I32Array, arg_tsl
 // ===== Type check expressions =====
 // Result type is stored in g_type_ss / g_type_sl.
 // Also annotates node n with its type.
-fn check_expr(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, n: i32) -> void {
+fn check_expr(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, n: i32) -> void {
     if n < 0 {
         g_type_ss = -1;
         g_type_sl = 0;
@@ -779,7 +741,7 @@ fn err_slice(buf: U8Array, pos: i32, strtab: U8Array, ss: i32, sl: i32) -> i32 {
     return pos + sl;
 }
 
-fn check_call_site(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array,
+fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array,
                    n: i32, fname_ss: i32, fname_sl: i32) -> void {
     var nargs: i32 = n_nchildren(nodes, n);
     var arg_tss: I32Array = I32Array(24u32);
@@ -839,7 +801,7 @@ fn check_call_site(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I3
     return;
 }
 
-fn check_stmt(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, n: i32) -> void {
+fn check_stmt(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, n: i32) -> void {
     var k: i32 = n_kind(nodes, n);
 
     if k == NK_VAR_DECL {
@@ -940,7 +902,7 @@ fn check_stmt(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Arra
     return;
 }
 
-fn check_block(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, blk_n: i32) -> void {
+fn check_block(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, blk_n: i32) -> void {
     var c: i32 = n_child(nodes, blk_n);
     while c >= 0 {
         check_stmt(nodes, strtab, fntab, vartab, c);
@@ -949,7 +911,7 @@ fn check_block(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Arr
     return;
 }
 
-fn check_fn(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, fn_n: i32) -> void {
+fn check_fn(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, fn_n: i32) -> void {
     var params_n: i32 = n_child(nodes, fn_n);
     var ret_n: i32 = -1;
     var body_n: i32 = -1;
@@ -991,7 +953,7 @@ fn check_fn(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array,
 }
 
 // ===== Collect declarations =====
-fn collect_fn(nodes: I32Array, strtab: U8Array, fntab: I32Array, fn_n: i32) -> void {
+fn collect_fn(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, fn_n: i32) -> void {
     var fi: i32 = g_fn_count;
     g_fn_count = g_fn_count + 1;
 
@@ -1035,7 +997,7 @@ fn collect_fn(nodes: I32Array, strtab: U8Array, fntab: I32Array, fn_n: i32) -> v
     return;
 }
 
-fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i32) -> void {
+fn collect_struct(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, struct_n: i32) -> void {
     var sname_ss: i32 = n_ss(nodes, struct_n);
     var sname_sl: i32 = n_sl(nodes, struct_n);
 
@@ -1068,7 +1030,7 @@ fn collect_struct(nodes: I32Array, strtab: U8Array, fntab: I32Array, struct_n: i
 // Collect exported declarations from .th imports node
 // The imports node contains program sub-nodes, each from a .th file.
 // Only export fn signatures and struct type names are collected.
-fn collect_imports_th(nodes: I32Array, strtab: U8Array, fntab: I32Array, imports_n: i32) -> void {
+fn collect_imports_th(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, imports_n: i32) -> void {
     // Each child of imports is a (program ...) from a .th file
     var prog: i32 = n_child(nodes, imports_n);
     while prog >= 0 {
@@ -1090,7 +1052,7 @@ fn collect_imports_th(nodes: I32Array, strtab: U8Array, fntab: I32Array, imports
     return;
 }
 
-fn collect_decls(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
+fn collect_decls(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
     var c: i32 = n_child(nodes, root);
     while c >= 0 {
         var ck: i32 = n_kind(nodes, c);
@@ -1105,7 +1067,7 @@ fn collect_decls(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32A
     return;
 }
 
-fn check_program(nodes: I32Array, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
+fn check_program(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
     var c: i32 = n_child(nodes, root);
     while c >= 0 {
         var ck: i32 = n_kind(nodes, c);
@@ -1169,7 +1131,7 @@ fn write_indent(indent: i32, ob: StringBuffer) -> void {
     return;
 }
 
-fn write_node(nodes: I32Array, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
+fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
     var k: i32 = n_kind(nodes, n);
     // Skip body-less fn declarations (signature only, no codegen output)
     if k == NK_FN {
@@ -1233,7 +1195,10 @@ fn write_node(nodes: I32Array, strtab: U8Array, ob: StringBuffer, indent: i32, n
 
 // ===== Main =====
 fn main() -> i32 {
-    var nodes: I32Array = I32Array(131072u32);
+    // Pool of up to 16384 AstNode refs; each slot holds at most one
+    // ~36-byte AstNode struct (allocated lazily by alloc_node, freed
+    // collectively at process exit). See ast_node.tc for the layout.
+    var nodes: AstNodeArray = AstNodeArray(16384u32);
     var strtab: U8Array = U8Array(524288u32);
     var atom_buf: U8Array = U8Array(1024u32);
     var ob: StringBuffer = StringBuffer_new(1);
@@ -1245,7 +1210,7 @@ fn main() -> i32 {
     var vartab: I32Array = I32Array(2560u32);
 
     g_reader = SourceReader_new(0);
-    g_nc = 0;
+    ast_set_count(0);
     g_sp = 0;
     g_fn_count = 0;
     g_var_count = 0;
