@@ -40,16 +40,39 @@ _start:
     mv   a0, s0
     mv   a1, s1
     call __runtime_init__u32__i32
-    # Call main(argv). Every task defines main with signature
-    # `fn main(argv: StringArray) -> i32` so the symbol is always
-    # `main__StringArray`; tasks that ignore argv still accept the
-    # unused parameter.
+    # Call main(argv). The task may define either
+    #   fn main() -> i32
+    #   fn main(argv: StringArray) -> i32
+    # which TC mangles to `main` or `main__StringArray` respectively.
+    # We always call `main__StringArray` here. When the task only
+    # defines plain `main`, asm.tc's last-wins label resolution leaves
+    # the stub below (which tail-calls to `main`) intact. When the task
+    # defines `main__StringArray`, the task's symbol overrides the stub
+    # and this call lands directly in the task's body. a0 carries the
+    # argv pointer in both cases — argv-unaware `main` simply ignores
+    # it since RISC-V callees don't read unused argument registers.
     mv   a0, s2
     call main__StringArray
     # sys_exit(return value of main)
     li   a7, 93
     ecall
 1:  j    1b
+
+# Fallback stubs overridden by the task's own definitions. asm.tc's
+# define_label updates the existing label in place when it sees a
+# duplicate, and the task's .s files are linked AFTER task_crt0.s,
+# so these only matter when the task omits a definition.
+#
+# `main__StringArray` forwards to `main` with a tail-call: useful for
+# tasks that define only `fn main() -> i32`. `main` as a default just
+# returns 0, so a task with neither symbol exits cleanly.
+    .globl main__StringArray
+main__StringArray:
+    j    main
+    .globl main
+main:
+    li   a0, 0
+    ret
 
 # Syscall stubs (ecall — same ABI as Linux)
     .globl do_write__i32__u32__i32

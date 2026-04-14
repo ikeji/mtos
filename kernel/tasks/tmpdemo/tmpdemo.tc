@@ -15,7 +15,7 @@ var O_WRONLY: i32 = 1;
 var O_CREAT:  i32 = 64;
 var O_TRUNC:  i32 = 512;
 
-fn main(argv: StringArray) -> i32 {
+fn main() -> i32 {
     var path: U8Array = str_nul("/tmp/demo");
 
     // --- Write ---

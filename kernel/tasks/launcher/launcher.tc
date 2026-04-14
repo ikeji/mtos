@@ -11,7 +11,7 @@ import "../libtc/libtc.tc";
 // Assembly-provided syscall stub (kernel/tasks/task_crt0.s)
 fn do_exec(path_addr: u32, argv_addr: u32, in_addr: u32, out_addr: u32) -> i32;
 
-fn main(argv: StringArray) -> i32 {
+fn main() -> i32 {
     var path: U8Array = str_nul("/bin/catfile");
     // argv = 0 means "no argv"; catfile falls back to its default
     // path. in / out = 0 means "no stdio redirect" — UART stays as

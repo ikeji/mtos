@@ -237,7 +237,7 @@ fn build_path(path: U8Array, argv: StringArray) -> bool {
     return true;
 }
 
-fn main(argv_unused: StringArray) -> i32 {
+fn main() -> i32 {
     puts("SH: ready\n");
 
     var cmd:  U8Array = U8Array(CMD_MAX  as u32);
