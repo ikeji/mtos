@@ -384,6 +384,10 @@ static void pool_dump_stats(void) {
 }
 
 void sys_exit__i32(int32_t code) {
-    pool_dump_stats();
+    /* Silent by default so compile-gen*.sh can surface real errors
+       without the 14-line pool stats noise drowning them. See
+       problem.md #14. pool_dump_stats() is still defined above
+       for future opt-in use (ENV var / debug flag). */
+    (void)pool_dump_stats;  /* silence unused-function warning */
     __syscall1(SYS_exit, code);
 }

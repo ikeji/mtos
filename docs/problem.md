@@ -196,25 +196,9 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 **いつやるか**: kernel/tests/pico2 実機のどれかが「遅くてどうしよう
 もない」状態になったら試す。現状は特に実害なし。
 
-### 13. Compiler bug: struct 定義時にも auto-generated array の size が u32 ハードコード
-
-struct を宣言すると `XxxArray(__n: u32) -> XxxArray` が parser で生成
-されるが、現状 `u32` 固定になっている。将来配列サイズを `i32` に
-戻したい場合は parser を直す必要がある。
-
 ---
 
 ## ビルド / テスト
-
-### 14. `compile-gen2.sh` が stderr を `2>/dev/null` で潰している (ergonomics)
-
-中の `typecheck`/`codegen`/`bc2asm`/`asm` が失敗してもエラーが見えない。
-デバッグするときは毎回、同じパイプラインを手で組み直してエラーを
-出している (`TMP=$(mktemp -d); ./parse ... | ...` を手書き)。
-
-対処案:
-- エラーの時だけ表示するラッパを挟む。
-- `-v` / `VERBOSE=1` で stderr を残すオプション。
 
 ### 15. `/tmp/gen2` キャッシュが stale になる (ergonomics)
 
@@ -430,6 +414,16 @@ R1 と同じ発想で `struct BcFunc { ... }` + `BcFuncArray` にすれば
   半分程度に縮めた。`.macro` / `.endm` のサポートを asm.tc に足さず
   ヘルパラベル (`call _ecall_enter` / `j _ecall_leave_advance`) で
   single-source 化。23 行減 (#7 短期)
+- ツールチェーンの stderr が「成功時に 100 行以上のノイズ」で埋まっていて
+  `compile-gen*.sh` が全パイプ段を `2>/dev/null` で潰していた (結果
+  typecheck/codegen/bc2asm の失敗が開発者に見えなかった) → 3 箇所の
+  無条件 stderr 出力を削除: (a) `compiler/runtime.tc` の `sys_exit` が
+  `km_dump_stats` を呼んでいたのをやめた、(b) `compiler/asm.tc` の
+  成功時ラベルマップダンプを削除、(c) `bootstrap/runtime_syscall.c` の
+  `sys_exit__i32` が `pool_dump_stats` を呼んでいたのをやめた。これで
+  compile-gen1/gen2/gen3.sh の `2>/dev/null` を全部外せて、成功時は
+  完全無音・失敗時はエラーがそのまま見えるようになった。make test も
+  副次効果で ~1s 速くなった (#14)
 - `compiler/bcrun.tc` の OP_SHR_U 実装が「1 ビット arithmetic shift +
   & 0x7FFFFFFF マスク + 残りシフト」という 5 行の trick だった → shr_u
   が bootstrap / Gen2 両方に実装済なので、`((a3 as u32) >> (b3 as u32))

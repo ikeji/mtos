@@ -66,7 +66,7 @@ ASM_FILES=()
 for tc in "${ALL_FILES[@]}"; do
     base=$(basename "$tc" .tc)
     asm="$TMP/$base.s"
-    "$CODEGEN" "$tc" 2>/dev/null | "$BC2ASM" > "$asm" 2>/dev/null
+    "$CODEGEN" "$tc" | "$BC2ASM" > "$asm"
     ASM_FILES+=("$asm")
 done
 

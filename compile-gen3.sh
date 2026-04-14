@@ -98,14 +98,14 @@ compile_one() {
     if [ -f "$TMP/imports.th" ]; then
         "$PARSE" "$tc" | \
             { cat "$TMP/imports.th"; cat; } | \
-            "$QEMU" "$GEN3_DIR/typecheck" 2>/dev/null | \
-            "$QEMU" "$GEN3_DIR/codegen" 2>/dev/null | \
-            "$QEMU" "$GEN3_DIR/bc2asm" > "$raw_s" 2>/dev/null
+            "$QEMU" "$GEN3_DIR/typecheck" | \
+            "$QEMU" "$GEN3_DIR/codegen" | \
+            "$QEMU" "$GEN3_DIR/bc2asm" > "$raw_s"
     else
         "$PARSE" "$tc" | \
-            "$QEMU" "$GEN3_DIR/typecheck" 2>/dev/null | \
-            "$QEMU" "$GEN3_DIR/codegen" 2>/dev/null | \
-            "$QEMU" "$GEN3_DIR/bc2asm" > "$out_s" 2>/dev/null
+            "$QEMU" "$GEN3_DIR/typecheck" | \
+            "$QEMU" "$GEN3_DIR/codegen" | \
+            "$QEMU" "$GEN3_DIR/bc2asm" > "$out_s"
     fi
 }
 
@@ -122,6 +122,6 @@ done
 
 # Assemble: crt0_tc.s + runtime.s + user .s files + crt0_tc_data.s → ELF via Gen3 asm
 { cat "$CRT0"; cat "$TMP/runtime.s"; cat "${ASM_FILES[@]}"; cat "$CRT0_DATA"; } | \
-    "$QEMU" "$GEN3_DIR/asm" > "$OUTFILE" 2>/dev/null
+    "$QEMU" "$GEN3_DIR/asm" > "$OUTFILE"
 
 chmod +x "$OUTFILE"

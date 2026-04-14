@@ -1228,35 +1228,12 @@ fn main() -> i32 {
     // Write ELF (filesz = code written, memsz = code + BSS)
     write_elf(g_code_end, total_memsz);
 
-    // Dump label map to stderr for debugging
-    var map_buf: StringBuffer = StringBuffer_new(2);
-    var hex: U8Array = U8Array(16u32);
-    set(hex,0,'0');set(hex,1,'1');set(hex,2,'2');set(hex,3,'3');
-    set(hex,4,'4');set(hex,5,'5');set(hex,6,'6');set(hex,7,'7');
-    set(hex,8,'8');set(hex,9,'9');set(hex,10,'a');set(hex,11,'b');
-    set(hex,12,'c');set(hex,13,'d');set(hex,14,'e');set(hex,15,'f');
-    i = 0;
-    while i < g_nlabels {
-        var addr: i32 = get(g_lab_addrs, i);
-        // emit hex address (8 digits)
-        var d: i32 = 7;
-        while d >= 0 {
-            emit_char(map_buf, get(hex, ((addr >> (d * 4)) & 15)));
-            d = d - 1;
-        }
-        emit_char(map_buf, ' ');
-        var off: i32 = get(g_lab_offs, i);
-        var ll: i32 = get(g_lab_lens, i);
-        var j: i32 = 0;
-        while j < ll {
-            emit_char(map_buf, get(g_lab_names, (off + j)));
-            j = j + 1;
-        }
-        emit_char(map_buf, 10u8);
-        i = i + 1;
-    }
-    write(map_buf, 2);
-    destroy(map_buf);
+    // Label map dump removed: it was unconditional and wrote dozens
+    // to hundreds of lines to stderr for every successful assemble,
+    // which forced compile-gen*.sh to `2>/dev/null` the whole pipe
+    // and hid real errors. If we need the map back for linker
+    // debugging, reintroduce it behind an env/flag check. See
+    // problem.md #14 history.
 
     return 0;
 }

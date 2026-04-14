@@ -100,14 +100,14 @@ compile_one() {
     if [ -f "$TMP/imports.th" ]; then
         "$PARSE" "$tc" | \
             { cat "$TMP/imports.th"; cat; } | \
-            "$QEMU" "$GEN2_DIR/typecheck" 2>/dev/null | \
-            "$QEMU" "$GEN2_DIR/codegen" 2>/dev/null | \
-            "$QEMU" "$GEN2_DIR/bc2asm" > "$out_s" 2>/dev/null
+            "$QEMU" "$GEN2_DIR/typecheck" | \
+            "$QEMU" "$GEN2_DIR/codegen" | \
+            "$QEMU" "$GEN2_DIR/bc2asm" > "$out_s"
     else
         "$PARSE" "$tc" | \
-            "$QEMU" "$GEN2_DIR/typecheck" 2>/dev/null | \
-            "$QEMU" "$GEN2_DIR/codegen" 2>/dev/null | \
-            "$QEMU" "$GEN2_DIR/bc2asm" > "$out_s" 2>/dev/null
+            "$QEMU" "$GEN2_DIR/typecheck" | \
+            "$QEMU" "$GEN2_DIR/codegen" | \
+            "$QEMU" "$GEN2_DIR/bc2asm" > "$out_s"
     fi
 }
 
@@ -129,6 +129,6 @@ done
     cat "$TMP/runtime.s"
     cat "${ASM_FILES[@]}"
     cat "$CRT0_DATA"
-} | "$QEMU" "$GEN2_DIR/asm" > "$OUTFILE" 2>/dev/null
+} | "$QEMU" "$GEN2_DIR/asm" > "$OUTFILE"
 
 chmod +x "$OUTFILE"

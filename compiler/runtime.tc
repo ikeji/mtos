@@ -504,7 +504,13 @@ export fn km_dump_stats() -> void {
     return;
 }
 
-export fn sys_exit(code: i32) -> void { km_dump_stats(); do_exit(code); return; }
+// sys_exit is silent by default. Tools that want a stats dump on the
+// way out can call km_dump_stats() explicitly before sys_exit — that
+// way the common path (Gen2 tool runs inside compile-gen*.sh) doesn't
+// flood stderr with 14 lines of kmalloc stats per stage. Previously
+// compile-gen*.sh had to `2>/dev/null` every pipe segment to hide it,
+// which then hid real errors too. See problem.md #14.
+export fn sys_exit(code: i32) -> void { do_exit(code); return; }
 
 // ===== Print helpers =====
 export fn print_i32(v: i32) -> void {
