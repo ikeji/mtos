@@ -5185,9 +5185,9 @@ buf_set_str__U8Array__i32__StringLiteral:
     ret
     # end of buf_set_str__U8Array__i32__StringLiteral
 
-    .globl streq_lit__U8Array__i32__i32__StringLiteral
-    .type  streq_lit__U8Array__i32__i32__StringLiteral, @function
-streq_lit__U8Array__i32__i32__StringLiteral:
+    .globl streq__U8Array__i32__i32__StringLiteral
+    .type  streq__U8Array__i32__i32__StringLiteral, @function
+streq__U8Array__i32__i32__StringLiteral:
     # prologue: frame_size=48, params=4, locals=2, eval_depth=3
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -5226,7 +5226,7 @@ streq_lit__U8Array__i32__i32__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_streq_lit__U8Array__i32__i32__StringLiteral_pc9
+    j    .L_streq__U8Array__i32__i32__StringLiteral_pc9
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -5239,14 +5239,14 @@ streq_lit__U8Array__i32__i32__StringLiteral:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_streq_lit__U8Array__i32__i32__StringLiteral_pc9:
+  .L_streq__U8Array__i32__i32__StringLiteral_pc9:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-  .L_streq_lit__U8Array__i32__i32__StringLiteral_pc11:
+  .L_streq__U8Array__i32__i32__StringLiteral_pc11:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5262,7 +5262,7 @@ streq_lit__U8Array__i32__i32__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_streq_lit__U8Array__i32__i32__StringLiteral_pc32
+    j    .L_streq__U8Array__i32__i32__StringLiteral_pc32
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -5307,7 +5307,7 @@ streq_lit__U8Array__i32__i32__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_streq_lit__U8Array__i32__i32__StringLiteral_pc27
+    j    .L_streq__U8Array__i32__i32__StringLiteral_pc27
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -5320,7 +5320,7 @@ streq_lit__U8Array__i32__i32__StringLiteral:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_streq_lit__U8Array__i32__i32__StringLiteral_pc27:
+  .L_streq__U8Array__i32__i32__StringLiteral_pc27:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5336,8 +5336,8 @@ streq_lit__U8Array__i32__i32__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-    j    .L_streq_lit__U8Array__i32__i32__StringLiteral_pc11
-  .L_streq_lit__U8Array__i32__i32__StringLiteral_pc32:
+    j    .L_streq__U8Array__i32__i32__StringLiteral_pc11
+  .L_streq__U8Array__i32__i32__StringLiteral_pc32:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5354,11 +5354,11 @@ streq_lit__U8Array__i32__i32__StringLiteral:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of streq_lit__U8Array__i32__i32__StringLiteral
+    # end of streq__U8Array__i32__i32__StringLiteral
 
-    .globl cmp_lit__U8Array__i32__StringLiteral
-    .type  cmp_lit__U8Array__i32__StringLiteral, @function
-cmp_lit__U8Array__i32__StringLiteral:
+    .globl cmp__U8Array__i32__StringLiteral
+    .type  cmp__U8Array__i32__StringLiteral, @function
+cmp__U8Array__i32__StringLiteral:
     # prologue: frame_size=48, params=3, locals=2, eval_depth=3
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -5386,7 +5386,7 @@ cmp_lit__U8Array__i32__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-  .L_cmp_lit__U8Array__i32__StringLiteral_pc5:
+  .L_cmp__U8Array__i32__StringLiteral_pc5:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5402,7 +5402,7 @@ cmp_lit__U8Array__i32__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cmp_lit__U8Array__i32__StringLiteral_pc26
+    j    .L_cmp__U8Array__i32__StringLiteral_pc26
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -5447,7 +5447,7 @@ cmp_lit__U8Array__i32__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_cmp_lit__U8Array__i32__StringLiteral_pc21
+    j    .L_cmp__U8Array__i32__StringLiteral_pc21
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -5460,7 +5460,7 @@ cmp_lit__U8Array__i32__StringLiteral:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-  .L_cmp_lit__U8Array__i32__StringLiteral_pc21:
+  .L_cmp__U8Array__i32__StringLiteral_pc21:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5476,8 +5476,8 @@ cmp_lit__U8Array__i32__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-    j    .L_cmp_lit__U8Array__i32__StringLiteral_pc5
-  .L_cmp_lit__U8Array__i32__StringLiteral_pc26:
+    j    .L_cmp__U8Array__i32__StringLiteral_pc5
+  .L_cmp__U8Array__i32__StringLiteral_pc26:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -5494,7 +5494,7 @@ cmp_lit__U8Array__i32__StringLiteral:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of cmp_lit__U8Array__i32__StringLiteral
+    # end of cmp__U8Array__i32__StringLiteral
 
     .globl print_error__StringLiteral
     .type  print_error__StringLiteral, @function

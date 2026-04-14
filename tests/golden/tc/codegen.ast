@@ -498,9 +498,9 @@
       (type i32)
     )
     (block
-      (comment "if streq_lit(atom, 0, len, \"fn\")        { return NK_FN; }")
+      (comment "if streq(atom, 0, len, \"fn\")        { return NK_FN; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -512,9 +512,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"if\")        { return NK_IF; }")
+      (comment "if streq(atom, 0, len, \"if\")        { return NK_IF; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -526,9 +526,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"ret\")       { return NK_RET; }")
+      (comment "if streq(atom, 0, len, \"ret\")       { return NK_RET; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -540,9 +540,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"int\")       { return NK_INT; }")
+      (comment "if streq(atom, 0, len, \"int\")       { return NK_INT; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -554,9 +554,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"str\")       { return NK_STR; }")
+      (comment "if streq(atom, 0, len, \"str\")       { return NK_STR; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -568,9 +568,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"var\")       { return NK_VAR; }")
+      (comment "if streq(atom, 0, len, \"var\")       { return NK_VAR; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -582,9 +582,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"bool\")      { return NK_BOOL; }")
+      (comment "if streq(atom, 0, len, \"bool\")      { return NK_BOOL; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -596,9 +596,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"type\")      { return NK_TYPE; }")
+      (comment "if streq(atom, 0, len, \"type\")      { return NK_TYPE; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -610,9 +610,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"cast\")      { return NK_CAST; }")
+      (comment "if streq(atom, 0, len, \"cast\")      { return NK_CAST; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -624,9 +624,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"call\")      { return NK_CALL; }")
+      (comment "if streq(atom, 0, len, \"call\")      { return NK_CALL; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -638,9 +638,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"block\")     { return NK_BLOCK; }")
+      (comment "if streq(atom, 0, len, \"block\")     { return NK_BLOCK; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -652,9 +652,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"param\")     { return NK_PARAM; }")
+      (comment "if streq(atom, 0, len, \"param\")     { return NK_PARAM; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -666,9 +666,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"while\")     { return NK_WHILE; }")
+      (comment "if streq(atom, 0, len, \"while\")     { return NK_WHILE; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -680,9 +680,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"binop\")     { return NK_BINOP; }")
+      (comment "if streq(atom, 0, len, \"binop\")     { return NK_BINOP; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -694,9 +694,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"unary\")     { return NK_UNARY; }")
+      (comment "if streq(atom, 0, len, \"unary\")     { return NK_UNARY; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -708,9 +708,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"field\")     { return NK_FIELD; }")
+      (comment "if streq(atom, 0, len, \"field\")     { return NK_FIELD; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -722,9 +722,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"break\")     { return NK_BREAK; }")
+      (comment "if streq(atom, 0, len, \"break\")     { return NK_BREAK; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -736,9 +736,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"params\")    { return NK_PARAMS; }")
+      (comment "if streq(atom, 0, len, \"params\")    { return NK_PARAMS; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -750,9 +750,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"return\")    { return NK_RETURN; }")
+      (comment "if streq(atom, 0, len, \"return\")    { return NK_RETURN; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -764,9 +764,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"struct\")    { return NK_STRUCT; }")
+      (comment "if streq(atom, 0, len, \"struct\")    { return NK_STRUCT; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -778,9 +778,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"assign\")    { return NK_ASSIGN; }")
+      (comment "if streq(atom, 0, len, \"assign\")    { return NK_ASSIGN; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -792,9 +792,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"import\")    { return NK_IMPORT; }")
+      (comment "if streq(atom, 0, len, \"import\")    { return NK_IMPORT; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -806,9 +806,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"program\")   { return NK_PROGRAM; }")
+      (comment "if streq(atom, 0, len, \"program\")   { return NK_PROGRAM; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -820,9 +820,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"comment\")   { return NK_COMMENT; }")
+      (comment "if streq(atom, 0, len, \"comment\")   { return NK_COMMENT; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -834,9 +834,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"var_decl\")  { return NK_VAR_DECL; }")
+      (comment "if streq(atom, 0, len, \"var_decl\")  { return NK_VAR_DECL; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -848,9 +848,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"continue\")  { return NK_CONTINUE; }")
+      (comment "if streq(atom, 0, len, \"continue\")  { return NK_CONTINUE; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)
@@ -862,9 +862,9 @@
           )
         )
       )
-      (comment "if streq_lit(atom, 0, len, \"call_stmt\") { return NK_CALL_STMT; }")
+      (comment "if streq(atom, 0, len, \"call_stmt\") { return NK_CALL_STMT; }")
       (if
-        (call streq_lit
+        (call streq
           (var atom)
           (int 0)
           (var len)

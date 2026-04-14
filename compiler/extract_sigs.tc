@@ -57,18 +57,18 @@ fn read_atom_in(atom: U8Array) -> i32 {
 // Pool storage and accessors live in ast_node.tc.
 
 // ===== Kind classification =====
-// streq_lit lives in strlib.tc (R3).
+// streq lives in strlib.tc (R3).
 fn classify_kind(atom: U8Array, len: i32) -> i32 {
-    if streq_lit(atom, 0, len, "fn")      { return NK_FN; }
-    if streq_lit(atom, 0, len, "ret")     { return NK_RET; }
-    if streq_lit(atom, 0, len, "type")    { return NK_TYPE; }
-    if streq_lit(atom, 0, len, "block")   { return NK_BLOCK; }
-    if streq_lit(atom, 0, len, "param")   { return NK_PARAM; }
-    if streq_lit(atom, 0, len, "field")   { return NK_FIELD; }
-    if streq_lit(atom, 0, len, "params")  { return NK_PARAMS; }
-    if streq_lit(atom, 0, len, "struct")  { return NK_STRUCT; }
-    if streq_lit(atom, 0, len, "program") { return NK_PROGRAM; }
-    if streq_lit(atom, 0, len, "comment") { return NK_COMMENT; }
+    if streq(atom, 0, len, "fn")      { return NK_FN; }
+    if streq(atom, 0, len, "ret")     { return NK_RET; }
+    if streq(atom, 0, len, "type")    { return NK_TYPE; }
+    if streq(atom, 0, len, "block")   { return NK_BLOCK; }
+    if streq(atom, 0, len, "param")   { return NK_PARAM; }
+    if streq(atom, 0, len, "field")   { return NK_FIELD; }
+    if streq(atom, 0, len, "params")  { return NK_PARAMS; }
+    if streq(atom, 0, len, "struct")  { return NK_STRUCT; }
+    if streq(atom, 0, len, "program") { return NK_PROGRAM; }
+    if streq(atom, 0, len, "comment") { return NK_COMMENT; }
     return NK_UNKNOWN;
 }
 

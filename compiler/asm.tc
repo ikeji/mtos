@@ -815,11 +815,11 @@ fn process_line(line_idx: i32) -> void {
             if g_nops > 0 {
                 var sop_off: i32 = get(g_ops, 0);
                 var sop_len: i32 = get(g_ops, 1);
-                if sop_len >= 7 && cmp_lit(g_line_buf, sop_off, ".rodata") {
+                if sop_len >= 7 && cmp(g_line_buf, sop_off, ".rodata") {
                     g_current_section = 1;
-                } else if sop_len >= 5 && cmp_lit(g_line_buf, sop_off, ".data") {
+                } else if sop_len >= 5 && cmp(g_line_buf, sop_off, ".data") {
                     g_current_section = 2;
-                } else if sop_len >= 4 && cmp_lit(g_line_buf, sop_off, ".bss") {
+                } else if sop_len >= 4 && cmp(g_line_buf, sop_off, ".bss") {
                     g_current_section = 3;
                 }
             }
@@ -970,12 +970,12 @@ fn parse_meta_directive(lstart: i32, llen: i32) -> i32 {
     // Skip trailing newline
     if end > p && get(g_lines, (end - 1)) == 10u8 { end = end - 1; }
     // ; raw
-    if (end - p) == 3 && cmp_lit(g_lines, p, "raw") {
+    if (end - p) == 3 && cmp(g_lines, p, "raw") {
         g_raw_mode = 1;
         return 1;
     }
     // ; load_base 0xHHHHHHHH
-    if (end - p) >= 11 && cmp_lit(g_lines, p, "load_base ") {
+    if (end - p) >= 11 && cmp(g_lines, p, "load_base ") {
         var q: i32 = p + 10;
         while q < end && get(g_lines, q) == ' ' { q = q + 1; }
         if q + 1 < end && get(g_lines, q) == '0'

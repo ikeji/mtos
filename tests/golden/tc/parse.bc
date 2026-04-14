@@ -1652,7 +1652,7 @@ __L19:
   return_void
 .endfn
 
-.fn streq_lit U8Array i32 i32 StringLiteral bool
+.fn streq U8Array i32 i32 StringLiteral bool
 .param buf U8Array
 .param offset i32
 .param slice_len i32
@@ -1707,7 +1707,7 @@ __L22:
   return_void
 .endfn
 
-.fn cmp_lit U8Array i32 StringLiteral bool
+.fn cmp U8Array i32 StringLiteral bool
 .param buf U8Array
 .param offset i32
 .param s StringLiteral

@@ -2394,7 +2394,7 @@ __L19:
   return_void
 .endfn
 
-.fn streq_lit U8Array i32 i32 StringLiteral bool
+.fn streq U8Array i32 i32 StringLiteral bool
 .param buf U8Array
 .param offset i32
 .param slice_len i32
@@ -2449,7 +2449,7 @@ __L22:
   return_void
 .endfn
 
-.fn cmp_lit U8Array i32 StringLiteral bool
+.fn cmp U8Array i32 StringLiteral bool
 .param buf U8Array
 .param offset i32
 .param s StringLiteral
@@ -2870,272 +2870,272 @@ __L35:
 .fn classify_kind U8Array i32 i32
 .param atom U8Array
 .param len i32
-; if streq_lit(atom, 0, len, "fn")        { return NK_FN; }
+; if streq(atom, 0, len, "fn")        { return NK_FN; }
   load atom
   push_int 0
   load len
   push_str 0
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L38
   load NK_FN
   return
 __L38:
-; if streq_lit(atom, 0, len, "if")        { return NK_IF; }
+; if streq(atom, 0, len, "if")        { return NK_IF; }
   load atom
   push_int 0
   load len
   push_str 1
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L39
   load NK_IF
   return
 __L39:
-; if streq_lit(atom, 0, len, "ret")       { return NK_RET; }
+; if streq(atom, 0, len, "ret")       { return NK_RET; }
   load atom
   push_int 0
   load len
   push_str 2
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L40
   load NK_RET
   return
 __L40:
-; if streq_lit(atom, 0, len, "int")       { return NK_INT; }
+; if streq(atom, 0, len, "int")       { return NK_INT; }
   load atom
   push_int 0
   load len
   push_str 3
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L41
   load NK_INT
   return
 __L41:
-; if streq_lit(atom, 0, len, "str")       { return NK_STR; }
+; if streq(atom, 0, len, "str")       { return NK_STR; }
   load atom
   push_int 0
   load len
   push_str 4
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L42
   load NK_STR
   return
 __L42:
-; if streq_lit(atom, 0, len, "var")       { return NK_VAR; }
+; if streq(atom, 0, len, "var")       { return NK_VAR; }
   load atom
   push_int 0
   load len
   push_str 5
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L43
   load NK_VAR
   return
 __L43:
-; if streq_lit(atom, 0, len, "bool")      { return NK_BOOL; }
+; if streq(atom, 0, len, "bool")      { return NK_BOOL; }
   load atom
   push_int 0
   load len
   push_str 6
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L44
   load NK_BOOL
   return
 __L44:
-; if streq_lit(atom, 0, len, "type")      { return NK_TYPE; }
+; if streq(atom, 0, len, "type")      { return NK_TYPE; }
   load atom
   push_int 0
   load len
   push_str 7
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L45
   load NK_TYPE
   return
 __L45:
-; if streq_lit(atom, 0, len, "cast")      { return NK_CAST; }
+; if streq(atom, 0, len, "cast")      { return NK_CAST; }
   load atom
   push_int 0
   load len
   push_str 8
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L46
   load NK_CAST
   return
 __L46:
-; if streq_lit(atom, 0, len, "call")      { return NK_CALL; }
+; if streq(atom, 0, len, "call")      { return NK_CALL; }
   load atom
   push_int 0
   load len
   push_str 9
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L47
   load NK_CALL
   return
 __L47:
-; if streq_lit(atom, 0, len, "block")     { return NK_BLOCK; }
+; if streq(atom, 0, len, "block")     { return NK_BLOCK; }
   load atom
   push_int 0
   load len
   push_str 10
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L48
   load NK_BLOCK
   return
 __L48:
-; if streq_lit(atom, 0, len, "param")     { return NK_PARAM; }
+; if streq(atom, 0, len, "param")     { return NK_PARAM; }
   load atom
   push_int 0
   load len
   push_str 11
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L49
   load NK_PARAM
   return
 __L49:
-; if streq_lit(atom, 0, len, "while")     { return NK_WHILE; }
+; if streq(atom, 0, len, "while")     { return NK_WHILE; }
   load atom
   push_int 0
   load len
   push_str 12
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L50
   load NK_WHILE
   return
 __L50:
-; if streq_lit(atom, 0, len, "binop")     { return NK_BINOP; }
+; if streq(atom, 0, len, "binop")     { return NK_BINOP; }
   load atom
   push_int 0
   load len
   push_str 13
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L51
   load NK_BINOP
   return
 __L51:
-; if streq_lit(atom, 0, len, "unary")     { return NK_UNARY; }
+; if streq(atom, 0, len, "unary")     { return NK_UNARY; }
   load atom
   push_int 0
   load len
   push_str 14
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L52
   load NK_UNARY
   return
 __L52:
-; if streq_lit(atom, 0, len, "field")     { return NK_FIELD; }
+; if streq(atom, 0, len, "field")     { return NK_FIELD; }
   load atom
   push_int 0
   load len
   push_str 15
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L53
   load NK_FIELD
   return
 __L53:
-; if streq_lit(atom, 0, len, "break")     { return NK_BREAK; }
+; if streq(atom, 0, len, "break")     { return NK_BREAK; }
   load atom
   push_int 0
   load len
   push_str 16
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L54
   load NK_BREAK
   return
 __L54:
-; if streq_lit(atom, 0, len, "params")    { return NK_PARAMS; }
+; if streq(atom, 0, len, "params")    { return NK_PARAMS; }
   load atom
   push_int 0
   load len
   push_str 17
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L55
   load NK_PARAMS
   return
 __L55:
-; if streq_lit(atom, 0, len, "return")    { return NK_RETURN; }
+; if streq(atom, 0, len, "return")    { return NK_RETURN; }
   load atom
   push_int 0
   load len
   push_str 18
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L56
   load NK_RETURN
   return
 __L56:
-; if streq_lit(atom, 0, len, "struct")    { return NK_STRUCT; }
+; if streq(atom, 0, len, "struct")    { return NK_STRUCT; }
   load atom
   push_int 0
   load len
   push_str 19
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L57
   load NK_STRUCT
   return
 __L57:
-; if streq_lit(atom, 0, len, "assign")    { return NK_ASSIGN; }
+; if streq(atom, 0, len, "assign")    { return NK_ASSIGN; }
   load atom
   push_int 0
   load len
   push_str 20
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L58
   load NK_ASSIGN
   return
 __L58:
-; if streq_lit(atom, 0, len, "import")    { return NK_IMPORT; }
+; if streq(atom, 0, len, "import")    { return NK_IMPORT; }
   load atom
   push_int 0
   load len
   push_str 21
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L59
   load NK_IMPORT
   return
 __L59:
-; if streq_lit(atom, 0, len, "program")   { return NK_PROGRAM; }
+; if streq(atom, 0, len, "program")   { return NK_PROGRAM; }
   load atom
   push_int 0
   load len
   push_str 22
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L60
   load NK_PROGRAM
   return
 __L60:
-; if streq_lit(atom, 0, len, "comment")   { return NK_COMMENT; }
+; if streq(atom, 0, len, "comment")   { return NK_COMMENT; }
   load atom
   push_int 0
   load len
   push_str 23
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L61
   load NK_COMMENT
   return
 __L61:
-; if streq_lit(atom, 0, len, "var_decl")  { return NK_VAR_DECL; }
+; if streq(atom, 0, len, "var_decl")  { return NK_VAR_DECL; }
   load atom
   push_int 0
   load len
   push_str 24
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L62
   load NK_VAR_DECL
   return
 __L62:
-; if streq_lit(atom, 0, len, "continue")  { return NK_CONTINUE; }
+; if streq(atom, 0, len, "continue")  { return NK_CONTINUE; }
   load atom
   push_int 0
   load len
   push_str 25
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L63
   load NK_CONTINUE
   return
 __L63:
-; if streq_lit(atom, 0, len, "call_stmt") { return NK_CALL_STMT; }
+; if streq(atom, 0, len, "call_stmt") { return NK_CALL_STMT; }
   load atom
   push_int 0
   load len
   push_str 26
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L64
   load NK_CALL_STMT
   return

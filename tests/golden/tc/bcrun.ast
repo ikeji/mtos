@@ -1335,9 +1335,9 @@
       (type i32)
     )
     (block
-      (comment "if streq_lit(strtab, ss, sl, \"or\")          { return OP_OR; }")
+      (comment "if streq(strtab, ss, sl, \"or\")          { return OP_OR; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1349,9 +1349,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"eq\")          { return OP_EQ; }")
+      (comment "if streq(strtab, ss, sl, \"eq\")          { return OP_EQ; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1363,9 +1363,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"ne\")          { return OP_NE; }")
+      (comment "if streq(strtab, ss, sl, \"ne\")          { return OP_NE; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1377,9 +1377,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"lt\")          { return OP_LT; }")
+      (comment "if streq(strtab, ss, sl, \"lt\")          { return OP_LT; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1391,9 +1391,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"le\")          { return OP_LE; }")
+      (comment "if streq(strtab, ss, sl, \"le\")          { return OP_LE; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1405,9 +1405,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"gt\")          { return OP_GT; }")
+      (comment "if streq(strtab, ss, sl, \"gt\")          { return OP_GT; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1419,9 +1419,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"ge\")          { return OP_GE; }")
+      (comment "if streq(strtab, ss, sl, \"ge\")          { return OP_GE; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1433,9 +1433,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"add\")         { return OP_ADD; }")
+      (comment "if streq(strtab, ss, sl, \"add\")         { return OP_ADD; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1447,9 +1447,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"sub\")         { return OP_SUB; }")
+      (comment "if streq(strtab, ss, sl, \"sub\")         { return OP_SUB; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1461,9 +1461,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"mul\")         { return OP_MUL; }")
+      (comment "if streq(strtab, ss, sl, \"mul\")         { return OP_MUL; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1475,9 +1475,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"div\")         { return OP_DIV; }")
+      (comment "if streq(strtab, ss, sl, \"div\")         { return OP_DIV; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1489,9 +1489,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"mod\")         { return OP_MOD; }")
+      (comment "if streq(strtab, ss, sl, \"mod\")         { return OP_MOD; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1503,9 +1503,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"and\")         { return OP_AND; }")
+      (comment "if streq(strtab, ss, sl, \"and\")         { return OP_AND; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1517,9 +1517,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"xor\")         { return OP_XOR; }")
+      (comment "if streq(strtab, ss, sl, \"xor\")         { return OP_XOR; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1531,9 +1531,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"shl\")         { return OP_SHL; }")
+      (comment "if streq(strtab, ss, sl, \"shl\")         { return OP_SHL; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1545,9 +1545,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"shr\")         { return OP_SHR; }")
+      (comment "if streq(strtab, ss, sl, \"shr\")         { return OP_SHR; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1559,9 +1559,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"pop\")         { return OP_POP; }")
+      (comment "if streq(strtab, ss, sl, \"pop\")         { return OP_POP; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1573,9 +1573,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"neg\")         { return OP_NEG; }")
+      (comment "if streq(strtab, ss, sl, \"neg\")         { return OP_NEG; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1587,9 +1587,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"lnot\")        { return OP_LNOT; }")
+      (comment "if streq(strtab, ss, sl, \"lnot\")        { return OP_LNOT; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1601,9 +1601,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"cast\")        { return OP_CAST; }")
+      (comment "if streq(strtab, ss, sl, \"cast\")        { return OP_CAST; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1615,9 +1615,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"load\")        { return OP_LOAD; }")
+      (comment "if streq(strtab, ss, sl, \"load\")        { return OP_LOAD; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1629,9 +1629,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"jump\")        { return OP_JUMP; }")
+      (comment "if streq(strtab, ss, sl, \"jump\")        { return OP_JUMP; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1643,9 +1643,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"call\")        { return OP_CALL; }")
+      (comment "if streq(strtab, ss, sl, \"call\")        { return OP_CALL; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1657,9 +1657,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"lt_u\")        { return OP_LT_U; }")
+      (comment "if streq(strtab, ss, sl, \"lt_u\")        { return OP_LT_U; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1671,9 +1671,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"le_u\")        { return OP_LE_U; }")
+      (comment "if streq(strtab, ss, sl, \"le_u\")        { return OP_LE_U; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1685,9 +1685,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"gt_u\")        { return OP_GT_U; }")
+      (comment "if streq(strtab, ss, sl, \"gt_u\")        { return OP_GT_U; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1699,9 +1699,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"ge_u\")        { return OP_GE_U; }")
+      (comment "if streq(strtab, ss, sl, \"ge_u\")        { return OP_GE_U; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1713,9 +1713,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"store\")       { return OP_STORE; }")
+      (comment "if streq(strtab, ss, sl, \"store\")       { return OP_STORE; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1727,9 +1727,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"shr_u\")       { return OP_SHR_U; }")
+      (comment "if streq(strtab, ss, sl, \"shr_u\")       { return OP_SHR_U; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1741,9 +1741,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"div_u\")       { return OP_DIV_U; }")
+      (comment "if streq(strtab, ss, sl, \"div_u\")       { return OP_DIV_U; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1755,9 +1755,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"mod_u\")       { return OP_MOD_U; }")
+      (comment "if streq(strtab, ss, sl, \"mod_u\")       { return OP_MOD_U; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1769,9 +1769,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"return\")      { return OP_RETURN; }")
+      (comment "if streq(strtab, ss, sl, \"return\")      { return OP_RETURN; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1783,9 +1783,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"jump_if\")     { return OP_JUMP_IF; }")
+      (comment "if streq(strtab, ss, sl, \"jump_if\")     { return OP_JUMP_IF; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1797,9 +1797,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"push_int\")    { return OP_PUSH_INT; }")
+      (comment "if streq(strtab, ss, sl, \"push_int\")    { return OP_PUSH_INT; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1811,9 +1811,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"push_str\")    { return OP_PUSH_STR; }")
+      (comment "if streq(strtab, ss, sl, \"push_str\")    { return OP_PUSH_STR; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1825,9 +1825,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"jump_ifnot\")  { return OP_JUMP_IFNOT; }")
+      (comment "if streq(strtab, ss, sl, \"jump_ifnot\")  { return OP_JUMP_IFNOT; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)
@@ -1839,9 +1839,9 @@
           )
         )
       )
-      (comment "if streq_lit(strtab, ss, sl, \"return_void\") { return OP_RETURN_VOID; }")
+      (comment "if streq(strtab, ss, sl, \"return_void\") { return OP_RETURN_VOID; }")
       (if
-        (call streq_lit
+        (call streq
           (var strtab)
           (var ss)
           (var sl)

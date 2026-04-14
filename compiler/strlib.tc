@@ -32,7 +32,7 @@ export fn buf_set_str(buf: U8Array, start: i32, s: StringLiteral) -> i32 {
 // check and the byte compare. Works for both "atom at offset 0"
 // (e.g. classify_kind) and "strtab at arbitrary offset" (e.g.
 // bc2asm classify_op). See problem.md R3 for history.
-export fn streq_lit(buf: U8Array, offset: i32, slice_len: i32, s: StringLiteral) -> bool {
+export fn streq(buf: U8Array, offset: i32, slice_len: i32, s: StringLiteral) -> bool {
     var sl: i32 = len(s);
     if slice_len != sl { return false; }
     var i: i32 = 0;
@@ -47,7 +47,7 @@ export fn streq_lit(buf: U8Array, offset: i32, slice_len: i32, s: StringLiteral)
 // check overall buf length — caller must know offset + len(s) is in
 // range. Used for "does this substring at N match a literal?" cases
 // like asm.tc's `.rodata` directive detection.
-export fn cmp_lit(buf: U8Array, offset: i32, s: StringLiteral) -> bool {
+export fn cmp(buf: U8Array, offset: i32, s: StringLiteral) -> bool {
     var sl: i32 = len(s);
     var i: i32 = 0;
     while i < sl {

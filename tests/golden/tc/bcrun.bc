@@ -894,7 +894,7 @@ __L19:
   return_void
 .endfn
 
-.fn streq_lit U8Array i32 i32 StringLiteral bool
+.fn streq U8Array i32 i32 StringLiteral bool
 .param buf U8Array
 .param offset i32
 .param slice_len i32
@@ -949,7 +949,7 @@ __L22:
   return_void
 .endfn
 
-.fn cmp_lit U8Array i32 StringLiteral bool
+.fn cmp U8Array i32 StringLiteral bool
 .param buf U8Array
 .param offset i32
 .param s StringLiteral
@@ -1891,372 +1891,372 @@ __L43:
 .param strtab U8Array
 .param ss i32
 .param sl i32
-; if streq_lit(strtab, ss, sl, "or")          { return OP_OR; }
+; if streq(strtab, ss, sl, "or")          { return OP_OR; }
   load strtab
   load ss
   load sl
   push_str 0
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L73
   load OP_OR
   return
 __L73:
-; if streq_lit(strtab, ss, sl, "eq")          { return OP_EQ; }
+; if streq(strtab, ss, sl, "eq")          { return OP_EQ; }
   load strtab
   load ss
   load sl
   push_str 1
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L74
   load OP_EQ
   return
 __L74:
-; if streq_lit(strtab, ss, sl, "ne")          { return OP_NE; }
+; if streq(strtab, ss, sl, "ne")          { return OP_NE; }
   load strtab
   load ss
   load sl
   push_str 2
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L75
   load OP_NE
   return
 __L75:
-; if streq_lit(strtab, ss, sl, "lt")          { return OP_LT; }
+; if streq(strtab, ss, sl, "lt")          { return OP_LT; }
   load strtab
   load ss
   load sl
   push_str 3
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L76
   load OP_LT
   return
 __L76:
-; if streq_lit(strtab, ss, sl, "le")          { return OP_LE; }
+; if streq(strtab, ss, sl, "le")          { return OP_LE; }
   load strtab
   load ss
   load sl
   push_str 4
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L77
   load OP_LE
   return
 __L77:
-; if streq_lit(strtab, ss, sl, "gt")          { return OP_GT; }
+; if streq(strtab, ss, sl, "gt")          { return OP_GT; }
   load strtab
   load ss
   load sl
   push_str 5
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L78
   load OP_GT
   return
 __L78:
-; if streq_lit(strtab, ss, sl, "ge")          { return OP_GE; }
+; if streq(strtab, ss, sl, "ge")          { return OP_GE; }
   load strtab
   load ss
   load sl
   push_str 6
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L79
   load OP_GE
   return
 __L79:
-; if streq_lit(strtab, ss, sl, "add")         { return OP_ADD; }
+; if streq(strtab, ss, sl, "add")         { return OP_ADD; }
   load strtab
   load ss
   load sl
   push_str 7
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L80
   load OP_ADD
   return
 __L80:
-; if streq_lit(strtab, ss, sl, "sub")         { return OP_SUB; }
+; if streq(strtab, ss, sl, "sub")         { return OP_SUB; }
   load strtab
   load ss
   load sl
   push_str 8
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L81
   load OP_SUB
   return
 __L81:
-; if streq_lit(strtab, ss, sl, "mul")         { return OP_MUL; }
+; if streq(strtab, ss, sl, "mul")         { return OP_MUL; }
   load strtab
   load ss
   load sl
   push_str 9
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L82
   load OP_MUL
   return
 __L82:
-; if streq_lit(strtab, ss, sl, "div")         { return OP_DIV; }
+; if streq(strtab, ss, sl, "div")         { return OP_DIV; }
   load strtab
   load ss
   load sl
   push_str 10
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L83
   load OP_DIV
   return
 __L83:
-; if streq_lit(strtab, ss, sl, "mod")         { return OP_MOD; }
+; if streq(strtab, ss, sl, "mod")         { return OP_MOD; }
   load strtab
   load ss
   load sl
   push_str 11
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L84
   load OP_MOD
   return
 __L84:
-; if streq_lit(strtab, ss, sl, "and")         { return OP_AND; }
+; if streq(strtab, ss, sl, "and")         { return OP_AND; }
   load strtab
   load ss
   load sl
   push_str 12
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L85
   load OP_AND
   return
 __L85:
-; if streq_lit(strtab, ss, sl, "xor")         { return OP_XOR; }
+; if streq(strtab, ss, sl, "xor")         { return OP_XOR; }
   load strtab
   load ss
   load sl
   push_str 13
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L86
   load OP_XOR
   return
 __L86:
-; if streq_lit(strtab, ss, sl, "shl")         { return OP_SHL; }
+; if streq(strtab, ss, sl, "shl")         { return OP_SHL; }
   load strtab
   load ss
   load sl
   push_str 14
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L87
   load OP_SHL
   return
 __L87:
-; if streq_lit(strtab, ss, sl, "shr")         { return OP_SHR; }
+; if streq(strtab, ss, sl, "shr")         { return OP_SHR; }
   load strtab
   load ss
   load sl
   push_str 15
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L88
   load OP_SHR
   return
 __L88:
-; if streq_lit(strtab, ss, sl, "pop")         { return OP_POP; }
+; if streq(strtab, ss, sl, "pop")         { return OP_POP; }
   load strtab
   load ss
   load sl
   push_str 16
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L89
   load OP_POP
   return
 __L89:
-; if streq_lit(strtab, ss, sl, "neg")         { return OP_NEG; }
+; if streq(strtab, ss, sl, "neg")         { return OP_NEG; }
   load strtab
   load ss
   load sl
   push_str 17
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L90
   load OP_NEG
   return
 __L90:
-; if streq_lit(strtab, ss, sl, "lnot")        { return OP_LNOT; }
+; if streq(strtab, ss, sl, "lnot")        { return OP_LNOT; }
   load strtab
   load ss
   load sl
   push_str 18
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L91
   load OP_LNOT
   return
 __L91:
-; if streq_lit(strtab, ss, sl, "cast")        { return OP_CAST; }
+; if streq(strtab, ss, sl, "cast")        { return OP_CAST; }
   load strtab
   load ss
   load sl
   push_str 19
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L92
   load OP_CAST
   return
 __L92:
-; if streq_lit(strtab, ss, sl, "load")        { return OP_LOAD; }
+; if streq(strtab, ss, sl, "load")        { return OP_LOAD; }
   load strtab
   load ss
   load sl
   push_str 20
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L93
   load OP_LOAD
   return
 __L93:
-; if streq_lit(strtab, ss, sl, "jump")        { return OP_JUMP; }
+; if streq(strtab, ss, sl, "jump")        { return OP_JUMP; }
   load strtab
   load ss
   load sl
   push_str 21
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L94
   load OP_JUMP
   return
 __L94:
-; if streq_lit(strtab, ss, sl, "call")        { return OP_CALL; }
+; if streq(strtab, ss, sl, "call")        { return OP_CALL; }
   load strtab
   load ss
   load sl
   push_str 22
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L95
   load OP_CALL
   return
 __L95:
-; if streq_lit(strtab, ss, sl, "lt_u")        { return OP_LT_U; }
+; if streq(strtab, ss, sl, "lt_u")        { return OP_LT_U; }
   load strtab
   load ss
   load sl
   push_str 23
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L96
   load OP_LT_U
   return
 __L96:
-; if streq_lit(strtab, ss, sl, "le_u")        { return OP_LE_U; }
+; if streq(strtab, ss, sl, "le_u")        { return OP_LE_U; }
   load strtab
   load ss
   load sl
   push_str 24
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L97
   load OP_LE_U
   return
 __L97:
-; if streq_lit(strtab, ss, sl, "gt_u")        { return OP_GT_U; }
+; if streq(strtab, ss, sl, "gt_u")        { return OP_GT_U; }
   load strtab
   load ss
   load sl
   push_str 25
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L98
   load OP_GT_U
   return
 __L98:
-; if streq_lit(strtab, ss, sl, "ge_u")        { return OP_GE_U; }
+; if streq(strtab, ss, sl, "ge_u")        { return OP_GE_U; }
   load strtab
   load ss
   load sl
   push_str 26
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L99
   load OP_GE_U
   return
 __L99:
-; if streq_lit(strtab, ss, sl, "store")       { return OP_STORE; }
+; if streq(strtab, ss, sl, "store")       { return OP_STORE; }
   load strtab
   load ss
   load sl
   push_str 27
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L100
   load OP_STORE
   return
 __L100:
-; if streq_lit(strtab, ss, sl, "shr_u")       { return OP_SHR_U; }
+; if streq(strtab, ss, sl, "shr_u")       { return OP_SHR_U; }
   load strtab
   load ss
   load sl
   push_str 28
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L101
   load OP_SHR_U
   return
 __L101:
-; if streq_lit(strtab, ss, sl, "div_u")       { return OP_DIV_U; }
+; if streq(strtab, ss, sl, "div_u")       { return OP_DIV_U; }
   load strtab
   load ss
   load sl
   push_str 29
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L102
   load OP_DIV_U
   return
 __L102:
-; if streq_lit(strtab, ss, sl, "mod_u")       { return OP_MOD_U; }
+; if streq(strtab, ss, sl, "mod_u")       { return OP_MOD_U; }
   load strtab
   load ss
   load sl
   push_str 30
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L103
   load OP_MOD_U
   return
 __L103:
-; if streq_lit(strtab, ss, sl, "return")      { return OP_RETURN; }
+; if streq(strtab, ss, sl, "return")      { return OP_RETURN; }
   load strtab
   load ss
   load sl
   push_str 31
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L104
   load OP_RETURN
   return
 __L104:
-; if streq_lit(strtab, ss, sl, "jump_if")     { return OP_JUMP_IF; }
+; if streq(strtab, ss, sl, "jump_if")     { return OP_JUMP_IF; }
   load strtab
   load ss
   load sl
   push_str 32
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L105
   load OP_JUMP_IF
   return
 __L105:
-; if streq_lit(strtab, ss, sl, "push_int")    { return OP_PUSH_INT; }
+; if streq(strtab, ss, sl, "push_int")    { return OP_PUSH_INT; }
   load strtab
   load ss
   load sl
   push_str 33
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L106
   load OP_PUSH_INT
   return
 __L106:
-; if streq_lit(strtab, ss, sl, "push_str")    { return OP_PUSH_STR; }
+; if streq(strtab, ss, sl, "push_str")    { return OP_PUSH_STR; }
   load strtab
   load ss
   load sl
   push_str 34
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L107
   load OP_PUSH_STR
   return
 __L107:
-; if streq_lit(strtab, ss, sl, "jump_ifnot")  { return OP_JUMP_IFNOT; }
+; if streq(strtab, ss, sl, "jump_ifnot")  { return OP_JUMP_IFNOT; }
   load strtab
   load ss
   load sl
   push_str 35
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L108
   load OP_JUMP_IFNOT
   return
 __L108:
-; if streq_lit(strtab, ss, sl, "return_void") { return OP_RETURN_VOID; }
+; if streq(strtab, ss, sl, "return_void") { return OP_RETURN_VOID; }
   load strtab
   load ss
   load sl
   push_str 36
-  call streq_lit U8Array i32 i32 StringLiteral
+  call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L109
   load OP_RETURN_VOID
   return
