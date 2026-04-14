@@ -9015,13 +9015,13 @@ lex_tok__SourceReader__U8Array:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 16
+    li   t0, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    mul  t0, t0, t1
+    sll  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -12(s0)
@@ -9040,7 +9040,7 @@ lex_tok__SourceReader__U8Array:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    add  t0, t0, t1
+    or   t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
@@ -9257,13 +9257,13 @@ lex_tok__SourceReader__U8Array:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 2
+    li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    mul  t0, t0, t1
+    sll  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -12(s0)
@@ -9290,7 +9290,7 @@ lex_tok__SourceReader__U8Array:
     lw   t1, 0(sp)
     lw   t0, 4(sp)
     addi sp, sp, 8
-    add  t0, t0, t1
+    or   t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)

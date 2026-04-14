@@ -248,16 +248,17 @@ fn lex_tok(src: SourceReader, tok: U8Array) -> void {
         if c == '0' && at_eof(src) == false {
             next(src); // consume '0'
             if at_eof(src) == false && (peek(src) == 'x' || peek(src) == 'X') {
-                // hex literal: 0x...
+                // hex literal: 0x... — accumulate bitwise so full 32-bit
+                // patterns (e.g. 0xFFFFFFFF) survive TC's signed i32.
                 next(src); // consume 'x'
                 while at_eof(src) == false && is_hex_digit(peek(src)) {
-                    ival = ival * 16 + hex_val(next(src));
+                    ival = (ival << 4) | hex_val(next(src));
                 }
             } else if at_eof(src) == false && (peek(src) == 'b' || peek(src) == 'B') {
-                // binary literal: 0b...
+                // binary literal: 0b... — accumulate bitwise (same reason).
                 next(src); // consume 'b'
                 while at_eof(src) == false && (peek(src) == '0' || peek(src) == '1') {
-                    ival = ival * 2 + (next(src) as i32 - 48);
+                    ival = (ival << 1) | (next(src) as i32 - 48);
                 }
             } else {
                 // plain '0' or '0'-prefixed decimal

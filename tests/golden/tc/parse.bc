@@ -2885,14 +2885,14 @@ __L132:
   push_int 0
 __L133:
   jump_ifnot __L131
-; ival = ival * 16 + hex_val(next(src));
+; ival = (ival << 4) | hex_val(next(src));
   load ival
-  push_int 16
-  mul
+  push_int 4
+  shl
   load src
   call next SourceReader
   call hex_val u8
-  add
+  or
   store ival
   jump __L130
 __L131:
@@ -2958,16 +2958,16 @@ __L142:
   push_int 0
 __L143:
   jump_ifnot __L141
-; ival = ival * 2 + (next(src) as i32 - 48);
+; ival = (ival << 1) | (next(src) as i32 - 48);
   load ival
-  push_int 2
-  mul
+  push_int 1
+  shl
   load src
   call next SourceReader
   cast i32
   push_int 48
   sub
-  add
+  or
   store ival
   jump __L140
 __L141:

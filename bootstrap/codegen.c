@@ -116,12 +116,15 @@ static void cg_expr(CG *cg, AstNode *node) {
     const char *k = node->kind;
 
     if (strcmp(k, "int") == 0) {
-        fprintf(cg->out, "  push_int %ld\n", node->ival);
+        /* Narrow to int32 so values > INT32_MAX wrap to their signed
+           32-bit form — Gen2's self-hosted codegen uses i32 and must
+           agree with Gen1 textually. */
+        fprintf(cg->out, "  push_int %d\n", (int32_t)node->ival);
         return;
     }
 
     if (strcmp(k, "bool") == 0) {
-        fprintf(cg->out, "  push_int %ld\n", node->ival);
+        fprintf(cg->out, "  push_int %d\n", (int32_t)node->ival);
         return;
     }
 
@@ -412,7 +415,7 @@ void codegen(AstNode *program) {
             long initval = 0;
             if (d->nchildren > 1 && strcmp(d->children[1]->kind, "int") == 0)
                 initval = d->children[1]->ival;
-            fprintf(cg.out, ".global %s %s %ld\n", d->sval, d->children[0]->sval, initval);
+            fprintf(cg.out, ".global %s %s %d\n", d->sval, d->children[0]->sval, (int32_t)initval);
         }
     }
     if (has_global) fprintf(cg.out, "\n");

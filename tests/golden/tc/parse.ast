@@ -1669,12 +1669,12 @@
                       )
                     )
                     (block
-                      (comment "ival = ival * 16 + hex_val(next(src));")
+                      (comment "ival = (ival << 4) | hex_val(next(src));")
                       (assign ival
-                        (binop +
-                          (binop *
+                        (binop |
+                          (binop <<
                             (var ival)
-                            (int 16)
+                            (int 4)
                           )
                           (call hex_val
                             (call next
@@ -1739,12 +1739,12 @@
                         )
                       )
                       (block
-                        (comment "ival = ival * 2 + (next(src) as i32 - 48);")
+                        (comment "ival = (ival << 1) | (next(src) as i32 - 48);")
                         (assign ival
-                          (binop +
-                            (binop *
+                          (binop |
+                            (binop <<
                               (var ival)
-                              (int 2)
+                              (int 1)
                             )
                             (binop -
                               (cast

@@ -539,7 +539,13 @@ static Value eval_expr(Interp *ip, AstNode *node) {
         if (strcmp(op, "|") == 0) return val_int(a | b);
         if (strcmp(op, "^") == 0) return val_int(a ^ b);
         if (strcmp(op, "<<") == 0) return val_int(a << b);
-        if (strcmp(op, ">>") == 0) return val_int(a >> b);
+        if (strcmp(op, ">>") == 0) {
+            /* Unsigned LHS → logical shift; signed LHS → arithmetic. */
+            const char *slty = node->children[0]->type_annot;
+            if (slty && slty[0] == 'u')
+                return val_int((int32_t)((uint32_t)a >> (uint32_t)b));
+            return val_int(a >> b);
+        }
         if (strcmp(op, "==") == 0) return val_int(a == b);
         if (strcmp(op, "!=") == 0) return val_int(a != b);
         {

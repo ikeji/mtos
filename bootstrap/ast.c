@@ -102,7 +102,10 @@ static void ast_print_with_source_inner(AstNode *node, int indent, const char *s
             putchar(':');
             fputs(node->sval, stdout);
         }
-        printf(" %ld", node->ival);
+        /* Canonicalize to int32 so that values > INT32_MAX (e.g.
+           0xFFFFFFFF parsed as 4294967295L) match the self-hosted
+           Gen2 parser, whose accumulator is i32. */
+        printf(" %d", (int32_t)node->ival);
     } else if (strcmp(node->kind, "str") == 0 && node->sval) {
         putchar(' ');
         print_escaped_str(node->sval);
@@ -144,7 +147,7 @@ void ast_print(AstNode *node, int indent) {
             putchar(':');
             fputs(node->sval, stdout);
         }
-        printf(" %ld", node->ival);
+        printf(" %d", (int32_t)node->ival);
     } else if ((strcmp(node->kind, "str") == 0 || strcmp(node->kind, "comment") == 0) && node->sval) {
         putchar(' ');
         print_escaped_str(node->sval);
