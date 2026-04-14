@@ -64,27 +64,52 @@ trap 'rm -rf "$TMP"' EXIT
 TASK_CRT0="$KERN_DIR/tasks/task_crt0.s"
 TASK_DATA="$KERN_DIR/tasks/task_data.s"
 
-# --- Step 1: Build task binaries (in parallel) ---
-# Each .tc task is independent of the others, so we fan them out and
-# wait for the whole batch. This shaves ~(N-1) * compile_time off the
-# OS test while keeping the sequential error handling shape.
-pids=""
+QEMU="${QEMU:-qemu-riscv32}"
+PARSE="$ROOT_DIR/parse"
+
+# --- Step 0: Pre-compile runtime.tc and libtc.tc once ---
+# compile-gen2.sh compiles runtime.tc inside every task/kernel build.
+# That's a 1.4 s Gen2 pipeline (parse → typecheck → codegen → bc2asm)
+# multiplied by 7 builds here = ~10 s of redundant work. libtc.tc
+# adds another 5 × 0.15 s. We run the pipeline ourselves once per
+# shared module and pass the resulting .s files via CACHED_S_DIR so
+# compile-gen2.sh's compile_one() copies them instead of recompiling.
+# Neither runtime.tc nor libtc.tc has imports, so the pipeline needs
+# no .th header step.
+CACHE_DIR="$TMP/sc"
+mkdir -p "$CACHE_DIR"
+
+echo "Pre-compiling runtime.tc (shared)" >&2
+"$PARSE" "$ROOT_DIR/compiler/runtime.tc" \
+    | "$QEMU" "$GEN2_DIR/typecheck" \
+    | "$QEMU" "$GEN2_DIR/codegen" \
+    | "$QEMU" "$GEN2_DIR/bc2asm" > "$CACHE_DIR/runtime.s"
+if [ ! -s "$CACHE_DIR/runtime.s" ]; then
+    echo "Error: runtime.tc pre-compile failed" >&2
+    exit 1
+fi
+
+echo "Pre-compiling libtc.tc (shared)" >&2
+"$PARSE" "$KERN_DIR/tasks/libtc/libtc.tc" \
+    | "$QEMU" "$GEN2_DIR/typecheck" \
+    | "$QEMU" "$GEN2_DIR/codegen" \
+    | "$QEMU" "$GEN2_DIR/bc2asm" > "$CACHE_DIR/libtc.s"
+if [ ! -s "$CACHE_DIR/libtc.s" ]; then
+    echo "Error: libtc.tc pre-compile failed" >&2
+    exit 1
+fi
+
+export CACHED_S_DIR="$CACHE_DIR"
+
+# --- Step 1: Build task binaries ---
 for task in $TASKS; do
     echo "Building task: $task" >&2
-    (
-        CRT0="$TASK_CRT0" \
-        CRT0_DATA="$TASK_DATA" \
-        ASM_PROLOGUE="; raw" \
-        GEN2_DIR="$GEN2_DIR" \
-            "$ROOT_DIR/compile-gen2.sh" -o "$TMP/$task.bin" \
-            "$KERN_DIR/tasks/$task/$task.tc" 2>/dev/null
-    ) &
-    pids="$pids $!"
-done
-for pid in $pids; do
-    wait "$pid" || { echo "Error: task compilation failed (pid $pid)" >&2; exit 1; }
-done
-for task in $TASKS; do
+    CRT0="$TASK_CRT0" \
+    CRT0_DATA="$TASK_DATA" \
+    ASM_PROLOGUE="; raw" \
+    GEN2_DIR="$GEN2_DIR" \
+        "$ROOT_DIR/compile-gen2.sh" -o "$TMP/$task.bin" \
+        "$KERN_DIR/tasks/$task/$task.tc" 2>/dev/null
     if [ ! -s "$TMP/$task.bin" ]; then
         echo "Error: $task task compilation failed" >&2
         exit 1

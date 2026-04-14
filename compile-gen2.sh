@@ -112,8 +112,21 @@ fi
 
 # Compile helper: .tc → .s using Gen2 pipeline
 # Uses Gen1 parse for AST, Gen2 typecheck/codegen/bc2asm
+#
+# If CACHED_S_DIR is set and contains <basename>.s, we reuse it and
+# skip the qemu pipeline. kernel/build.sh pre-compiles runtime.tc
+# and libtc.tc once each and shares the .s across all task/kernel
+# builds to avoid re-running the same 1.4s runtime compile seven
+# times. Cache files must match by exact basename — the caller
+# controls both sides, and no task is named runtime/libtc.
 compile_one() {
     local tc="$1" out_s="$2"
+    local base
+    base=$(basename "$tc" .tc)
+    if [ -n "$CACHED_S_DIR" ] && [ -f "$CACHED_S_DIR/$base.s" ]; then
+        cp "$CACHED_S_DIR/$base.s" "$out_s"
+        return 0
+    fi
     if [ -f "$TMP/imports.th" ]; then
         "$PARSE" "$tc" | \
             { cat "$TMP/imports.th"; cat; } | \
