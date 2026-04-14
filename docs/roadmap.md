@@ -237,21 +237,27 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 
 ## フェーズ7: ネイティブコンパイラをOS上で動かす
 
-フェーズ2.5 で Pico 2 ベアメタル上で動く TC プログラムの足場は確認済み。
-フェーズ6 で mtfs + sys_spawn + sys_wait + /bin/sh のユーザランド基盤
-が整ったので、次は `compiler/` 配下のツールをそのまま OS 上のプロセス
-として起動できるようにする。
+詳細な実装計画と前提機能 (A〜F / M1〜M7) は
+`docs/task/phase7_compiler_on_os.md` にまとめた。以下はマイルストーン
+だけのサマリ。
 
-- [ ] `runtime.tc` の do_write/do_read/do_exit を Linux 互換 ABI
-      (write=64, read=63, exit=93) に揃えて、OS 側 ecall でそのまま
-      通るようにする (現状は Linux syscall 直呼び)
-- [ ] compiler のパイプライン (parse → typecheck → codegen → bc2asm)
-      を `/bin/parse`, `/bin/typecheck`, ... として mtfs に入れ、
-      シェルから順に起動できるようにする
-- [ ] パイプ (`sys_pipe` もしくは一時ファイル) でツール間を繋ぐ
-      方法を決める。現状 sys_pipe はないので、最初は一時ファイル
-      経由でも可
-- [ ] OS 上で Hello World 相当の .tc をコンパイル → OS 上で実行
+- [ ] **B**: タスクが argc/argv を受け取れるようにする (sys_execve /
+      sys_spawn の argv 渡し、task_crt0.s、sh のコマンドラインパーサ)
+- [ ] **A+D+F**: tmpfs (/tmp にマウント) + リダイレクト (`<` / `>` + dup3)
+      + stderr (fd=2) を UART 固定にして fd=1 のみ差し替え可能に
+- [ ] **E**: タスクバイナリに arena/stack サイズヘッダ (案 C:
+      先頭 8 バイト) を載せ、loader が読んで kmalloc するようにする
+      (problem.md K3 残件の解決)
+- [ ] **C-1**: compiler のパイプライン (`parse` / `typecheck` /
+      `codegen` / `bc2asm`) を `/bin/` に置き、中間ファイル経由で
+      順に起動できるようにする
+- [ ] **C-2 (任意)**: `pipe()` + dup2 による真のパイプサポート
+      (中間ファイル経由で動いたあと、性能が問題になったら)
+- [ ] **M6**: OS 上で asm まで走らせ、生成した bin を tmpfs に置いて
+      load/run (自己コンパイル → 自己実行の初動)
+- [ ] **M7**: Gen2 ツールで Gen3 を作れる (OS 上で自己ホストループを
+      一周)。asm.tc のメモリ問題 (problem.md #7) が qemu virt なら
+      素で、Pico 2 実機なら解決後に可能
 
 ## フェーズ8: 自己ホスト
 
