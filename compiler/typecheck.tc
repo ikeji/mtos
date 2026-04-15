@@ -1,6 +1,21 @@
 // typecheck.tc — type annotation pass for TinyC self-hosting compiler
 // Reads text AST (S-expression) from stdin, annotates expression nodes
 // with their types (:TYPE suffix on kind name), outputs annotated AST to stdout.
+//
+// **SUPERSEDED (but not yet deleted).** Phase 1 of the pipeline
+// memory reduction split this into compiler/sigscan.tc +
+// compiler/tcheck.tc. The new pair has per-top-level streaming and
+// drops the AstNode pool peak from ~700 KB to ~75-250 KB. See
+// docs/task/pipeline_100kb.md. tcheck.tc is byte-identical to this
+// file's output on every fixture in tests/test_split.sh.
+//
+// typecheck.tc remains in the tree because compile-gen2.sh,
+// compile-gen3.sh, tests/test_common.sh::ensure_gen2_tools,
+// tests/test_gen3.sh, and tests/test_asm.sh all build and run the
+// "legacy Gen2 toolchain" binary from this file. Migrating the
+// whole Gen2 pipeline to sigscan+tcheck is a separate cleanup task
+// (future work). Keep both in sync if you modify type-check
+// semantics.
 
 import "string_buffer.tc";
 import "source_reader.tc";

@@ -156,10 +156,11 @@ diff_one() {
 echo ""
 echo "=== compiler/*.tc ==="
 for f in compiler/strlib.tc compiler/source_reader.tc compiler/string_buffer.tc \
-         compiler/ast_node.tc compiler/extract_sigs.tc compiler/sigscan.tc \
+         compiler/ast_node.tc compiler/sigscan.tc \
          compiler/runtime.tc compiler/codegen.tc compiler/typecheck.tc \
          compiler/parse.tc compiler/bc2asm.tc compiler/bcrun.tc \
-         compiler/asm.tc compiler/tcheck.tc; do
+         compiler/asm.tc compiler/tcheck.tc \
+         compiler/asm_common.tc compiler/asm_pass1.tc compiler/asm_pass2.tc; do
     diff_one "$f"
 done
 
@@ -238,7 +239,7 @@ if [ "$HAS_GEN2" = "1" ]; then
     echo "=== asm split: compiler/*.tc via compile-gen2.sh ==="
     for f in compiler/parse.tc compiler/typecheck.tc compiler/codegen.tc \
              compiler/bc2asm.tc compiler/asm.tc compiler/sigscan.tc \
-             compiler/extract_sigs.tc compiler/tcheck.tc \
+             compiler/tcheck.tc \
              compiler/asm_pass1.tc compiler/asm_pass2.tc; do
         asm_diff_one "$f"
     done

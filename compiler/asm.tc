@@ -1,6 +1,20 @@
 // asm.tc — RISC-V 32-bit assembler
 // Reads .s assembly from stdin, writes ELF32 binary to stdout.
 // 2-pass: pass 1 collects labels, pass 2 encodes instructions.
+//
+// **SUPERSEDED (but not yet deleted).** Phase 2 of the pipeline
+// memory reduction split this into compiler/asm_common.tc +
+// compiler/asm_pass1.tc + compiler/asm_pass2.tc. The new triple
+// eliminates the 4 MB g_lines and drops asm-pass1 peak to ~430 KB
+// (asm-pass2 still needs g_code 4 MB until stream-emit lands). See
+// docs/task/pipeline_100kb.md. The split is byte-identical on every
+// fixture in tests/test_split.sh.
+//
+// asm.tc remains in the tree because compile-gen2.sh / compile-gen3.sh
+// and tests/test_common.sh::ensure_gen2_tools still build the legacy
+// Gen2 binary from this file. Migrating the whole Gen2 pipeline to
+// asm-pass1 + asm-pass2 is a separate cleanup task (future work).
+// Keep both in sync if you modify encoder / section logic.
 
 import "string_buffer.tc";
 import "source_reader.tc";

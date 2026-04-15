@@ -55,9 +55,16 @@ docs/       ドキュメント
 | ファイル | 説明 |
 |----------|------|
 | `compiler/parse.tc` | tinyc で書かれたパーサー。ソース → AST（S式）を出力する |
-| `compiler/codegen.tc` | tinyc で書かれたコードジェネレータ。AST → バイトコードを出力する |
-| `compiler/bc2asm.tc` | tinyc で書かれた bc2asm。バイトコード → RISC-V アセンブリを出力する |
+| `compiler/typecheck.tc` | 型チェッカ (レガシー; 全 AST を 1 つのプールに読んで 2 回歩く)。compile-gen2.sh が現在もこれを使用。`sigscan.tc` + `tcheck.tc` に実質 superseded (#51/#59 参照) |
+| `compiler/sigscan.tc` | Phase 1 分割後の「拡張 .th 抽出器」。AST を stream で読んで全 top-level decl を .th として吐く。~10 KB peak |
+| `compiler/tcheck.tc` | Phase 1 分割後の streaming type checker。`-h imports.th -s self.th` (wrapped stdin) から読む。~75〜250 KB peak |
+| `compiler/codegen.tc` | tinyc で書かれたコードジェネレータ。AST → バイトコードを出力する。per-top-level strtab rollback 済 (~80〜250 KB peak) |
+| `compiler/bc2asm.tc` | tinyc で書かれた bc2asm。バイトコード → RISC-V アセンブリを出力する。per-function emission 済 (~120〜126 KB peak) |
 | `compiler/bcrun.tc` | tinyc で書かれたバイトコードインタープリタ（`bcrun` の自己ホスト版） |
+| `compiler/asm.tc` | RISC-V 32-bit アセンブラ兼リンカ (レガシー)。compile-gen2.sh が現在もこれを使用。`asm_common.tc` + `asm_pass1.tc` + `asm_pass2.tc` に実質 superseded (#56 参照) |
+| `compiler/asm_common.tc` | Phase 2 分割後の共通 encoder/parser。pass1 / pass2 の両方が import |
+| `compiler/asm_pass1.tc` | Phase 2 分割後の label collector。`.s` を 1 度読んで .lab を吐く。~430 KB peak |
+| `compiler/asm_pass2.tc` | Phase 2 分割後の encoder。.lab + .s を再読して ELF を吐く。現状 g_code 4 MB のため ~4.6 MB peak (stream-emit 化は future) |
 
 ---
 
