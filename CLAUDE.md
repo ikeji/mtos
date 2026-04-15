@@ -89,9 +89,17 @@
   R1-R8 refactor, compile-gen\*.sh の `2>/dev/null` 撲滅,
   runtime.s / libtc.s の事前キャッシュ化,
   #21 StringLiteral emission bug (bc2asm ラベル衝突)
-- `make test`: 132 passed / ~59s (58〜60s、Gen2 migration 後)。
-  test_all.sh が `SHARED_GEN2_DIR` に Gen2 ツールを 1 度だけビルドして
-  全スイートに配る仕組みで ~10s 節約している
+- **Make ベース incremental build (2026-04-16、計画は
+  `docs/task/make_based_build.md`)**: Phase A〜D 完了。`build/gen2/`、
+  `build/kernel/virt_kernel.bin` + `build/kernel/disk.img`、
+  `build/test/asm/*.bin` を Make ターゲット化。依存追跡は
+  `tools/collect_imports.sh` で TC の transitive import を解決し
+  `.d` fragment を `-include` する。task 一覧は virt/pico2 共通化
+  (hello hello2 catfile sh tmpdemo echo launcher cat)。
+  `.NOTPARALLEL:` で `-j1` 強制。`make test`: 132 passed /
+  **warm 20s** (cold ~66s)。以前 (Phase A 前) 58s から ~3 倍速。
+  compiler/\*.tc を触ると該当 Gen2 ツールだけ、kernel/\*.tc を
+  触ると kernel + disk.img だけが再ビルドされる
 
 **次の候補** (どれも独立):
 
@@ -313,10 +321,14 @@ tools/      ホスト側ツール
 
 ```bash
 make                              # Gen1 バイナリをビルド（parse, codegen, bc2asm, typecheck, extract-sigs 等）
-make test                         # テスト実行（約50秒、上限 60 秒）
+make test                         # テスト実行（warm ~20s, cold ~66s、上限 60 秒 warm）
 make full-test                    # consistency + kmalloc / kernel1 (FULL_TEST=1) を含めた全テスト
 make update-golden                # goldenファイルを再生成
 make update-golden-and-run-test   # golden 再生成してからテスト実行
+make gen2-tools                   # build/gen2/* のみビルド (incremental)
+make virt-kernel                  # build/kernel/virt_kernel.bin + disk.img のみ
+make pico2-kernel                 # build/kernel/pico2_kernel.uf2 のみ
+make clean                        # Gen1 + build/ まとめて消す
 ```
 
 `make test` は時間短縮のため一部テストをスキップする (FULL_TEST=1 で有効化)。

@@ -119,20 +119,54 @@ build/kernel/pico2_kernel.uf2: $(KERNEL_BUILD_DEPS) | build/kernel
 virt-kernel:  build/kernel/virt_kernel.bin
 pico2-kernel: build/kernel/pico2_kernel.uf2
 
+# ===== test_asm prebuilt binaries (Phase D) =====
+#
+# tests/test_asm.sh compiles 3 small bare-metal .tc programs with
+# the virt crt0 to smoke-test the compile-gen2.sh pipeline in a raw
+# mode. Without Make caching it re-compiles them (~7 s) every run.
+# Move those builds here so make test 2 回目以降は compile をスキップ。
+
+build/test/asm:
+	mkdir -p $@
+
+TEST_ASM_DEPS := tests/virt_crt0.s $(RUNTIME_DEPS) $(GEN2_TOOLS) compile-gen2.sh
+
+build/test/asm/hello2_virt.bin: tests/hello2.tc $(TEST_ASM_DEPS) | build/test/asm
+	CRT0=tests/virt_crt0.s ASM_PROLOGUE='; raw' GEN2_DIR=build/gen2 \
+	    ./compile-gen2.sh -o $@ $< 2>/dev/null
+
+build/test/asm/test_timer.bin: tests/test_timer.tc $(TEST_ASM_DEPS) compiler/crt0_tc_data.s | build/test/asm
+	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/crt0_tc_data.s ASM_PROLOGUE='; raw' \
+	    GEN2_DIR=build/gen2 \
+	    ./compile-gen2.sh -o $@ $< 2>/dev/null
+
+build/test/asm/test_echo.bin: tests/test_echo.tc $(TEST_ASM_DEPS) compiler/crt0_tc_data.s | build/test/asm
+	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/crt0_tc_data.s ASM_PROLOGUE='; raw' \
+	    GEN2_DIR=build/gen2 \
+	    ./compile-gen2.sh -o $@ $< 2>/dev/null
+
+TEST_ASM_BINS := build/test/asm/hello2_virt.bin \
+                 build/test/asm/test_timer.bin \
+                 build/test/asm/test_echo.bin
+
+test-asm-bins: $(TEST_ASM_BINS)
+
 clean:
 	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o parse typecheck interp codegen bcrun bc2asm extract-sigs
 	rm -rf build
 
-test: all $(GEN2_TOOLS) build/kernel/virt_kernel.bin
+TEST_DEPS := all $(GEN2_TOOLS) build/kernel/virt_kernel.bin $(TEST_ASM_BINS)
+
+test: $(TEST_DEPS)
 	./tests/test_all.sh
 
-full-test: all $(GEN2_TOOLS) build/kernel/virt_kernel.bin
+full-test: $(TEST_DEPS)
 	FULL_TEST=1 ./tests/test_all.sh
 
 update-golden: all
 	./tests/update_golden.sh
 
-update-golden-and-run-test: all $(GEN2_TOOLS) build/kernel/virt_kernel.bin
+update-golden-and-run-test: $(TEST_DEPS)
 	./tests/update_golden.sh
 	./tests/test_all.sh
 

@@ -114,13 +114,20 @@ fi
 
 VIRT_CRT0="$SCRIPT_DIR/virt_crt0.s"
 HELLO_TC="$SCRIPT_DIR/hello2.tc"
+PREBUILT_DIR="$ROOT_DIR/build/test/asm"
 BIN="$TMP/hello2_virt.bin"
 
+# Phase D: prefer Make-cached prebuilt binary when present; this skips
+# a ~2.4 s compile-gen2.sh on every `make test` run.
 t0=$(time_ms)
-CRT0="$VIRT_CRT0" \
-ASM_PROLOGUE="; raw" \
-GEN2_DIR="$_GEN2_TMP" \
-    "$ROOT_DIR/compile-gen2.sh" -o "$BIN" "$HELLO_TC" 2>/dev/null
+if [ -s "$PREBUILT_DIR/hello2_virt.bin" ]; then
+    cp "$PREBUILT_DIR/hello2_virt.bin" "$BIN"
+else
+    CRT0="$VIRT_CRT0" \
+    ASM_PROLOGUE="; raw" \
+    GEN2_DIR="$_GEN2_TMP" \
+        "$ROOT_DIR/compile-gen2.sh" -o "$BIN" "$HELLO_TC" 2>/dev/null
+fi
 compile_elapsed=$(( $(time_ms) - t0 ))
 
 if [ ! -s "$BIN" ]; then
@@ -154,11 +161,15 @@ TIMER_TC="$SCRIPT_DIR/test_timer.tc"
 TIMER_BIN="$TMP/test_timer.bin"
 
 t0=$(time_ms)
-CRT0="$VIRT_CRT0" \
-CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
-ASM_PROLOGUE="; raw" \
-GEN2_DIR="$_GEN2_TMP" \
-    "$ROOT_DIR/compile-gen2.sh" -o "$TIMER_BIN" "$TIMER_TC" 2>/dev/null
+if [ -s "$PREBUILT_DIR/test_timer.bin" ]; then
+    cp "$PREBUILT_DIR/test_timer.bin" "$TIMER_BIN"
+else
+    CRT0="$VIRT_CRT0" \
+    CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
+    ASM_PROLOGUE="; raw" \
+    GEN2_DIR="$_GEN2_TMP" \
+        "$ROOT_DIR/compile-gen2.sh" -o "$TIMER_BIN" "$TIMER_TC" 2>/dev/null
+fi
 compile_elapsed=$(( $(time_ms) - t0 ))
 
 if [ ! -s "$TIMER_BIN" ]; then
@@ -189,11 +200,15 @@ ECHO_TC="$SCRIPT_DIR/test_echo.tc"
 ECHO_BIN="$TMP/test_echo.bin"
 
 t0=$(time_ms)
-CRT0="$VIRT_CRT0" \
-CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
-ASM_PROLOGUE="; raw" \
-GEN2_DIR="$_GEN2_TMP" \
-    "$ROOT_DIR/compile-gen2.sh" -o "$ECHO_BIN" "$ECHO_TC" 2>/dev/null
+if [ -s "$PREBUILT_DIR/test_echo.bin" ]; then
+    cp "$PREBUILT_DIR/test_echo.bin" "$ECHO_BIN"
+else
+    CRT0="$VIRT_CRT0" \
+    CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
+    ASM_PROLOGUE="; raw" \
+    GEN2_DIR="$_GEN2_TMP" \
+        "$ROOT_DIR/compile-gen2.sh" -o "$ECHO_BIN" "$ECHO_TC" 2>/dev/null
+fi
 compile_elapsed=$(( $(time_ms) - t0 ))
 
 if [ -s "$ECHO_BIN" ]; then
