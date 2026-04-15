@@ -237,32 +237,36 @@ phase 7 M6 時点でカーネルに常時出力している debug 出力:
 
 ### K7. pico2 で phase 7 コンパイラが動かない (部分解決、2026-04-15)
 
-K3 (per-task サイズ宣言) の導入で、**hello レベルの sys_spawn /
-sys_exec は pico2 でも動く見込み**。タスクバイナリの header で
-8 KB / 4 KB を宣言すれば、pico2 の 256 KB kernel arena から十分
-割り当てられる。
+K3 (per-task サイズ宣言) + kernel arena 拡大 (256 KB → 480 KB) の
+組み合わせで **dynamic sys_spawn / sys_wait が pico2 実機で動く** ように
+なった。実機検証: `kernel/tasks/launcher/launcher.tc` が `do_spawn(
+"/bin/hello2")` + `do_wait` → `do_exec("/bin/catfile")` を実行し、
+tests/test_pico2.sh が UART から
 
-ただし **pico2 での完全な自己ホストはまだ**:
+  KERN: starting / BLOCK: flash backend ready / MTFS: mounted /
+  LAUNCHER: spawned slot ok / LAUNCHER: wait returned /
+  CAT[0]:hello, mtfs / all tasks done
 
-- 現状のピーク (phase 7 測定値): asm-pass1 430 KB、asm-pass2 441 KB
-- pico2 kernel arena は `crt0_pico2_data.s` に 256 KB 固定
-- 520 KB SRAM 中、.text/.data/.bss と kernel scratch を除いた余剰は
-  ~470 KB。asm-pass1 430 KB ならギリギリ入るが、asm-pass2 441 KB +
-  16 KB stack + task img (~165 KB) + frame_buf で 620 KB は無理
+を verify している。per-task K3 header が正しく loader で読まれ、
+kmalloc ベースの dynamic 割り当てが 480 KB arena 上で回っている
+ことが確認できた。
+
+残件: **compiler タスク群 (asm_pass1 430 KB / asm_pass2 441 KB 級) を
+実際に pico2 で走らせてコンパイルを一周するところは未着手**:
+
+- 480 KB arena でも任意の task 1 つは同時 1 個しか取れない。sh +
+  spawn child + img 並列の構造がきつい
+- compiler タスクは stdin (UART) からの入力が必要。現状 pico2 には
+  sh が seed されていないので、UART で対話的に操作する手段が必要
+- Phase 7 M7 (Gen2 → Gen3 on OS) を pico2 に持ち込むには sh 化 +
+  task チェインを sh script で組むのが筋
 
 対処案:
-- **kernel arena を拡大** (256 KB → ~470 KB): ぎりぎり asm-pass1 /
-  asm-pass2 の task RAM を取れるようになる。現状の crt0_pico2_data.s
-  の `.space 262144` を大きくするだけ。ただし複数タスクの同時実行
-  や余裕は消える
-- **compiler タスクをさらに縮める**: asm-pass2 stream emit + tcheck /
-  codegen の AST pool shrink。これができれば 256 KB arena のままでも
-  回る可能性
-- **Phase 7 M7 (Gen2 → Gen3 on OS)** は compiler タスク群を順次走らせ
-  るだけなので、pico2 で動かすには上記 memory 対応が要る
-
-Phase 7 テスト自体は virt で十分実用的なので、pico2 でのコンパイラ
-実行は余裕ができてから。
+- kernel_pico2.tc の seed task に sh を追加し、UART から pico2 への
+  入力パスを作る
+- compiler タスクの K3 header サイズを pico2 に合わせて絞る
+  (asm_pass1/2 は現 512 KB 宣言 → 450 KB 前後に)
+- asm_pass2 の更なる shrink (stream emit 化など) で余裕を作る
 
 ## バイトコード / ランタイム
 

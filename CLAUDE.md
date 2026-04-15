@@ -66,6 +66,14 @@
   task_stack_size() の per-task テーブル)。各 task は測定ピーク
   +25% 程度 (hello 8 KB ... asm_pass2 512 KB) を宣言。phase 7
   パイプラインが virt で動き続けることを test_phase7.sh で確認済
+- **K7 部分解決 (2026-04-15)**: pico2 の kernel arena を
+  262144 → 491520 (256 KB → 480 KB) に拡大。launcher.tc を
+  `do_spawn("/bin/hello2") + do_wait` を挟む形に変更して
+  dynamic task spawn の実機 smoke test にした。test_pico2.sh が
+  Debug Probe + openocd で pico2 実機にフラッシュし、UART から
+  `LAUNCHER: spawned slot ok` / `LAUNCHER: wait returned` /
+  `CAT[0]:hello, mtfs` を verify して 2 件 PASS で完走。
+  compiler タスクの embedded / 起動までは OK (問題 #K7)
 - **`test_phase7.sh` (手動実行)**: sigscan + tcheck + asm_pass1 +
   asm_pass2 の full split pipeline で Hello World 完走
 - 以前から継続: u32 比較/除算/hex literal, K1 (task 画像 leak),

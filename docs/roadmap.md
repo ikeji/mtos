@@ -142,11 +142,13 @@ C言語でフルパイプラインを実装し、動作を検証する。
       `kmalloc` / `kfree` / `km_dump_peak` の builtin stub を追加
       (tc_run.sh pipeline method 用)
 - [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)。
-      K3 案C + K7 は部分解決 (問題 #K7 参照)。タスクヘッダ方式で
-      per-task サイズ宣言ができるようになり、hello レベルの
-      sys_spawn は pico2 で動く見込み。ただし compiler タスク群
-      (asm_pass1 430 KB / asm_pass2 441 KB) は pico2 kernel arena
-      256 KB に収まらないため、arena 拡大または更なる shrink が必要
+      K3 案C + K7 部分解決により pico2 kernel arena は 256 KB →
+      480 KB に拡大、dynamic sys_spawn / sys_wait が実機で動作確認
+      済。launcher が `do_spawn("/bin/hello2") + do_wait + do_exec`
+      の 3-step 動作を tests/test_pico2.sh で実機 verify。
+      compiler タスク embedded までは OK だが、パイプラインを
+      まわすには sh seed + compiler タスクサイズの pico2 最適化
+      が残件 (問題 #K7 参照)
 
 ## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
 

@@ -25,7 +25,7 @@ echo "=== Pico 2 Hardware Test ==="
 OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
 UART_PORT="${UART_PORT:-/dev/ttyACM0}"
-UART_WAIT="${UART_WAIT:-6}"
+UART_WAIT="${UART_WAIT:-15}"
 
 # ----- Preflight checks -----
 if [ -z "$GEN2_DIR" ]; then
@@ -128,7 +128,9 @@ uart_out=$(tr -d '\0' < "$TMP/uart.log")
 pico_has_start=$(echo "$uart_out" | grep -c "KERN: starting")
 pico_has_block=$(echo "$uart_out" | grep -c "BLOCK: flash backend ready")
 pico_has_mtfs=$(echo "$uart_out" | grep -c "MTFS: mounted")
-pico_has_cat=$(echo "$uart_out" | grep -c "CAT:")
+pico_has_spawn=$(echo "$uart_out" | grep -c "LAUNCHER: spawned slot ok")
+pico_has_wait=$(echo "$uart_out" | grep -c "LAUNCHER: wait returned")
+pico_has_cat=$(echo "$uart_out" | grep -c "CAT\[0\]:")
 pico_has_file=$(echo "$uart_out" | grep -c "hello, mtfs")
 pico_has_done=$(echo "$uart_out" | grep -c "all tasks done")
 pico_has_a=$(echo "$uart_out" | grep -c "A")
@@ -138,14 +140,16 @@ missing=""
 [ "$pico_has_start" -eq 0 ] && missing="$missing KERN:starting"
 [ "$pico_has_block" -eq 0 ] && missing="$missing BLOCK:flash"
 [ "$pico_has_mtfs"  -eq 0 ] && missing="$missing MTFS:mounted"
-[ "$pico_has_cat"   -eq 0 ] && missing="$missing CAT:"
+[ "$pico_has_spawn" -eq 0 ] && missing="$missing LAUNCHER:spawned"
+[ "$pico_has_wait"  -eq 0 ] && missing="$missing LAUNCHER:wait"
+[ "$pico_has_cat"   -eq 0 ] && missing="$missing CAT[0]:"
 [ "$pico_has_file"  -eq 0 ] && missing="$missing hello,mtfs"
 [ "$pico_has_done"  -eq 0 ] && missing="$missing all-tasks-done"
 [ "$pico_has_a"     -eq 0 ] && missing="$missing A"
 [ "$pico_has_b"     -eq 0 ] && missing="$missing B"
 
 if [ -z "$missing" ]; then
-    report_pass "pico2: flash + mtfs + catfile + preempt (hello/hello2/catfile)" "$elapsed"
+    report_pass "pico2: flash + mtfs + launcher spawn/wait/exec + preempt" "$elapsed"
 else
     report_fail_msg "pico2: run" \
         "missing [$missing ], got: $(printf '%s' "$uart_out" | head -c 240)"
