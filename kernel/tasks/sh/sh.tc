@@ -16,8 +16,15 @@ import "../libtc/libtc.tc";
 fn do_spawn(path_addr: u32, argv_addr: u32, in_addr: u32, out_addr: u32) -> i32;
 fn do_wait(slot: i32) -> i32;
 
-var CMD_MAX:  i32 = 64;
-// "/bin/" (5) + CMD_MAX + NUL = 70
+// CMD_MAX bumped to 128 for the typecheck split (#54): commands like
+//   cat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt \
+//       /tmp/1.ast > /tmp/1.wrap
+// run ~85 chars, well past the original 64-byte limit. read_line was
+// silently truncating past byte 63, which mangled the redirect target
+// (e.g. ">/tmp/y.txt" → ">/tmp/y" → catfile open failed). PATH_MAX
+// stays at 70 because individual paths still fit.
+var CMD_MAX:  i32 = 128;
+// "/bin/" (5) + path bytes + NUL ≤ 70. argv[0] alone, no command line.
 var PATH_MAX: i32 = 70;
 
 // Redirect results produced by parse_redir. Globals because TC

@@ -164,6 +164,14 @@ fi
     cat "$CACHE_DIR/runtime.s"
 } > "$ROOT_DIR_TREE/prelude.s"
 cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
+
+# Phase 1 typecheck split (#54): tcheck consumes a wrapped stdin
+# of the form (imports …) (self <a.th>) (program …). Stage three
+# tiny helper files so the OS-side `cat` pipeline can glue them
+# together without needing a printf builtin in sh.
+printf '(imports)\n' > "$ROOT_DIR_TREE/empty_imports.txt"
+printf '(self\n'    > "$ROOT_DIR_TREE/self_open.txt"
+printf ')\n'        > "$ROOT_DIR_TREE/wrap_close.txt"
 python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 
 # Optional: copy the mtfs image out for callers that need it (e.g.
