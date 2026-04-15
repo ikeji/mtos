@@ -91,6 +91,14 @@ var g_reader: SourceReader = 0 as SourceReader;  // set in main
 var g_sp: i32 = 0;
 var g_fn_count: i32 = 0;
 var g_var_count: i32 = 0;
+
+// Diagnostic peaks; updated in the per-top-level loop and dumped to
+// stderr at exit alongside km_dump_peak. Helps pick fixed buffer sizes
+// for the BSS allocations in main().
+var g_max_nc:    i32 = 0;
+var g_max_sp:    i32 = 0;
+var g_max_fn:    i32 = 0;
+var g_max_var:   i32 = 0;
 var g_scope_depth: i32 = 0;
 var g_ret_ss: i32 = -1;
 var g_ret_sl: i32 = 0;
@@ -107,7 +115,12 @@ var g_last_cmt_ss: i32 = -1;
 var g_last_cmt_sl: i32 = 0;
 
 // fntab stride: name_ss(0), name_sl(1), np(2), ret_ss(3), ret_sl(4),
-//               pss[0..20](5..25), psl[0..20](26..46) = 47 fields per entry
+//               pss[0..20](5..25), psl[0..20](26..46) = 47 fields/entry
+//
+// Max params is 21, matching typecheck.tc. The codebase actually has
+// one 21-param fn (compiler/bcrun.tc::vm_run, the bytecode interpreter
+// dispatch loop) so 21 is the floor — capping any lower causes a
+// type error on bcrun.tc.
 var FN_STRIDE: i32 = 47;
 var FN_NSS: i32 = 0;
 var FN_NSL: i32 = 1;
@@ -116,6 +129,7 @@ var FN_RSS: i32 = 3;
 var FN_RSL: i32 = 4;
 var FN_PSS: i32 = 5;
 var FN_PSL: i32 = 26;
+var FN_MAX_PARAMS: i32 = 21;
 
 // vartab stride: name_ss(0), name_sl(1), type_ss(2), type_sl(3), scope(4) = 5 fields per entry
 var VAR_STRIDE: i32 = 5;
@@ -985,7 +999,7 @@ fn collect_fn(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, fn_n: i32) 
     var np: i32 = 0;
     if params_n >= 0 {
         var pc2: i32 = n_child(nodes, params_n);
-        while pc2 >= 0 && np < 21 {
+        while pc2 >= 0 && np < FN_MAX_PARAMS {
             var ptype_n: i32 = n_child(nodes, pc2);
             if ptype_n >= 0 {
                 ft_set_pss(fntab, fi, np, n_ss(nodes, ptype_n));
@@ -1012,7 +1026,7 @@ fn collect_struct(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, struct_
     ft_set_rsl(fntab, fi2, sname_sl);
     var nfp: i32 = 0;
     var fc2: i32 = n_child(nodes, struct_n);
-    while fc2 >= 0 && nfp < 21 {
+    while fc2 >= 0 && nfp < FN_MAX_PARAMS {
         var ftype_n: i32 = n_child(nodes, fc2);
         if ftype_n >= 0 {
             ft_set_pss(fntab, fi2, nfp, n_ss(nodes, ftype_n));
@@ -1241,6 +1255,30 @@ fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i3
     return;
 }
 
+// Push a decimal i32 into buf at pos and return the new position.
+// Used by the diagnostic peak dump in main(). Avoids depending on
+// runtime helpers like write_i32_stderr that aren't exported.
+fn dump_dec(buf: U8Array, pos: i32, v: i32) -> i32 {
+    if v < 0 {
+        set(buf, pos, '-' as u8);
+        return dump_dec(buf, pos + 1, 0 - v);
+    }
+    if v == 0 { set(buf, pos, '0' as u8); return pos + 1; }
+    var digits: i32 = 0;
+    var tmp: i32 = v;
+    while tmp > 0 { digits = digits + 1; tmp = tmp / 10; }
+    var pow: i32 = 1;
+    var i: i32 = 1;
+    while i < digits { pow = pow * 10; i = i + 1; }
+    var p: i32 = pos;
+    while pow > 0 {
+        set(buf, p, (48 + (v / pow) % 10) as u8);
+        pow = pow / 10;
+        p = p + 1;
+    }
+    return p;
+}
+
 // ===== Streaming wrapper helpers (Phase 1 split) =====
 //
 // Read the opening "(name" of an S-expression and return its kind code.
@@ -1366,16 +1404,30 @@ fn read_self_wrapper(nodes: AstNodeArray, strtab: U8Array,
 // even when empty — the driver scripts always emit them — so the
 // reader can advance through them by byte without needing lookahead.
 fn main() -> i32 {
-    // Buffer sizes match typecheck.tc for now. After this lands and
-    // the diff harness (#52) goes green, pipeline_100kb.md task #62-style
-    // shrink + measure will tighten them. The streaming structure is
-    // already in place so the eventual peak should drop dramatically.
-    var nodes: AstNodeArray = AstNodeArray(16384u32);
-    var strtab: U8Array = U8Array(524288u32);
+    // Buffer sizes derived from measured peaks across all compiler/*.tc
+    // files (with the per-fn strtab rollback further down), ~25%
+    // headroom:
+    //
+    //   nodes  ≈ 2581 worst case (bcrun.tc → 3072 (12 KB refs)
+    //              vm_run, 21 params)
+    //   strtab ≈ 25109 B (bcrun.tc with    → 32768 (32 KB)
+    //              rollback)
+    //   fntab  ≈ 219 fns × 47 stride       → 256 fns × 47 = 12032
+    //              (FN_MAX_PARAMS=21,         (47 KB)
+    //               vm_run in bcrun.tc)
+    //   vartab ≈ 71 vars (bcrun.tc)        → 128 × 5 = 640 (2.5 KB)
+    //
+    // Total static ≈ 94 KB, down from typecheck.tc's ~712 KB. The
+    // remaining bloat is the 47-i32 fntab stride — most fns use
+    // far fewer slots than vm_run's 21, but compacting per-fn would
+    // need variable-length kmalloc which is a much bigger refactor
+    // (deferred to a follow-up).
+    var nodes: AstNodeArray = AstNodeArray(3072u32);
+    var strtab: U8Array = U8Array(32768u32);
     var atom_buf: U8Array = U8Array(1024u32);
     var ob: StringBuffer = StringBuffer_new(1);
-    var fntab: I32Array = I32Array(28200u32);
-    var vartab: I32Array = I32Array(2560u32);
+    var fntab: I32Array = I32Array(12032u32);
+    var vartab: I32Array = I32Array(640u32);
 
     g_reader = SourceReader_new(0);
     ast_set_count(0);
@@ -1403,6 +1455,20 @@ fn main() -> i32 {
     if pk != NK_PROGRAM { sys_exit(6); }
     emit_string(ob, "(program");
     emit_nl(ob);
+
+    // Per-top-level strtab rollback. After phase 2 (self), strtab
+    // contains every persistent symbol: builtins, import :exports,
+    // and self's fn/struct names. The streaming pass below adds
+    // strings as it reads each top-level subtree, but those strings
+    // become unreferenced once write_node finishes and the AST node
+    // pool is reset (locals/params popped, set_annot indices gone).
+    // So after each fn / struct / comment top-level we roll g_sp back
+    // to sp_persistent, freeing the 1-fn worth of bytes for the next
+    // iteration. var_decl is the exception: a global's var_add stores
+    // ss/sl into vartab that needs to outlive the iteration, so the
+    // var_decl branch commits the growth by advancing sp_persistent
+    // to the new high water.
+    var sp_persistent: i32 = g_sp;
 
     // Phase 4: stream top-level children.
     skip_ws_in();
@@ -1445,6 +1511,21 @@ fn main() -> i32 {
         write_node(nodes, strtab, ob, 1, n);
         emit_nl(ob);
 
+        // Update peak counters for the diagnostic dump.
+        var nc_now: i32 = ast_count();
+        if nc_now > g_max_nc  { g_max_nc  = nc_now; }
+        if g_sp    > g_max_sp { g_max_sp  = g_sp; }
+        if g_fn_count  > g_max_fn  { g_max_fn  = g_fn_count; }
+        if g_var_count > g_max_var { g_max_var = g_var_count; }
+
+        // Strtab rollback: globals advance sp_persistent, everything
+        // else falls back. See sp_persistent comment above.
+        if k == NK_VAR_DECL {
+            sp_persistent = g_sp;
+        } else {
+            g_sp = sp_persistent;
+        }
+
         skip_ws_in();
     }
 
@@ -1457,6 +1538,37 @@ fn main() -> i32 {
 
     delete(nodes); delete(strtab); delete(atom_buf); destroy(ob);
     delete(fntab); delete(vartab); close(g_reader);
+
+    // Per-top-level peaks. Used to size the fixed buffers above.
+    var dbuf: U8Array = U8Array(96u32);
+    var dp: i32 = 0;
+    set(dbuf, dp, '[' as u8); dp = dp + 1;
+    set(dbuf, dp, 't' as u8); dp = dp + 1;
+    set(dbuf, dp, 'c' as u8); dp = dp + 1;
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'n' as u8); dp = dp + 1;
+    set(dbuf, dp, 'c' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = dump_dec(dbuf, dp, g_max_nc);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 's' as u8); dp = dp + 1;
+    set(dbuf, dp, 'p' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = dump_dec(dbuf, dp, g_max_sp);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'f' as u8); dp = dp + 1;
+    set(dbuf, dp, 'n' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = dump_dec(dbuf, dp, g_max_fn);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'v' as u8); dp = dp + 1;
+    set(dbuf, dp, 'r' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = dump_dec(dbuf, dp, g_max_var);
+    set(dbuf, dp, ']' as u8); dp = dp + 1;
+    set(dbuf, dp, 10u8); dp = dp + 1;
+    sys_write(2, dbuf, dp);
+    delete(dbuf);
 
     km_dump_peak();
     return 0;
