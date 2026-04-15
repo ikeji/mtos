@@ -8,8 +8,9 @@ AST は S式（S-expression）のテキスト形式で表現される。
 | 拡張子 | 生成元 | 内容 |
 |---|---|---|
 | `.ast` | parse | 型注釈なし AST |
-| `.tast` | typecheck | 型注釈付き AST |
-| `.th` | extract-sigs | export シグネチャのみ（AST サブセット） |
+| `.tast` | typecheck / tcheck | 型注釈付き AST |
+| `.th` (旧) | extract-sigs | export シグネチャのみ（AST サブセット） |
+| `.th` (拡張) | sigscan | top-level 全部（fn 全て / struct + fields / global）|
 
 ## S式の基本構造
 
@@ -107,7 +108,16 @@ typecheck の出力。`.ast` と同じ構造だが、式ノードに型注釈が
 
 ## .th（tc header）
 
-extract-sigs の出力。`.ast` のサブセットで、以下のみ含む:
+`.ast` のサブセットで top-level 宣言だけを残したもの。フォーマットは
+通常の AST と同じだが、関数本体 (`block`) は省略される。生成ツールに
+よって 2 種類のレベルがある:
+
+### 旧 .th (export シグネチャのみ)
+
+`bootstrap/extract_sigs.c` および `compiler/extract_sigs.tc` の出力。
+import 先のモジュールに公開する API のみ。
+
+含むもの:
 - `fn:export` — パラメータと戻り値型のみ（block なし）
 - `struct` — 型名のみ（field なし）
 
@@ -130,12 +140,58 @@ extract-sigs の出力。`.ast` のサブセットで、以下のみ含む:
 )
 ```
 
-typecheck は `(imports (program ...) (program ...) ...)` ノードで
-複数の .th を受け取り、export シグネチャを型環境に登録する。
+### 拡張 .th (top-level 全部)
 
-## (imports ...) ノード
+`compiler/sigscan.tc` の出力。tcheck (= typecheck の per-function
+streaming 版) が **自分自身の forward 参照を解決するため**に消費する。
+旧 .th の strict superset:
 
-typecheck への入力で、stdin の先頭に置く。通常の `(program ...)` の前に配置。
+含むもの:
+- `fn:export` — export 関数 (旧 .th と同じ)
+- `fn` (annotation 無し) — **非 export 関数** (旧 .th では捨てていた)
+- `struct` — 名前 + フィールド一覧 (旧 .th と違って fields を残す)
+- `var_decl` — トップレベルの global 変数宣言
+
+例:
+
+```
+(program
+  (struct StringBuffer
+    (field cap (type i32))
+    (field len (type i32))
+    (field data (type u32))
+  )
+  (var_decl g_indent
+    (type i32)
+    (int 0)
+  )
+  (fn:export emit_char
+    (params
+      (param sb (type StringBuffer))
+      (param c (type u8))
+    )
+    (ret (type void))
+  )
+  (fn helper_internal
+    (params
+      (param x (type i32))
+    )
+    (ret (type i32))
+  )
+)
+```
+
+互換性: 旧 .th を期待する読み手 (= 既存 typecheck.tc) は、拡張 .th に
+出てくる `(fn ...)`/`var_decl` を **無視**して `(fn:export ...)` だけを
+拾えばよい。逆に拡張 .th を読む tcheck は旧 .th を読んでも壊れない
+(欠けた情報があっても export シグネチャは取れる)。
+
+## .th の渡し方
+
+### 既存: `(imports ...)` ノード経由 (typecheck.tc)
+
+stdin 先頭に `(imports (program ...) ...)` ブロックを置く方式。
+`compile-gen2.sh` がこの形を作る:
 
 ```
 (imports
@@ -151,7 +207,29 @@ typecheck への入力で、stdin の先頭に置く。通常の `(program ...)`
 )
 ```
 
-`(imports ...)` がない場合、typecheck は従来通り `(program ...)` を直接読む。
+`(imports ...)` がない場合は従来通り `(program ...)` を直接読む。
+
+### 新方式: `-h` argv (tcheck)
+
+tcheck は `(imports ...)` を使わず、コマンドライン引数で複数の .th を
+受け取る:
+
+```
+tcheck -h string_buffer.th -h source_reader.th -h self.th < a.ast > a.tast
+```
+
+**最後の `-h` を「自分自身の .th」、それ以外を import 扱いにする**:
+
+- 自分自身の .th: 全 top-level (fn 全部 / struct fields / globals) を
+  symbol table に登録 → 関数本体を stream check するときの forward
+  参照解決に使う
+- import の .th: `(fn:export ...)` のみ register、`(fn ...)` (非 export)
+  と struct fields は無視 (他モジュールから touch 不可なので不要)
+
+self の .th を `-h` で渡すこと自体は `compile-gen2.sh` / OS 上の sh が
+担当する。Build script は `parse → sigscan → tcheck` のパイプラインを
+組むときに、自分の .ast から sigscan で .th を作って tcheck の最後の
+`-h` に渡す。
 
 ## 完全な例
 
