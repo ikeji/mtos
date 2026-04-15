@@ -1,0 +1,402 @@
+// sigscan.tc — Scan AST for top-level declarations and emit extended .th
+//
+// Reads .ast (S-expression) from stdin, outputs the **extended .th**
+// described in docs/ast_format.md "拡張 .th":
+//
+//   - All `fn` (export AND non-export) — header only (params + ret,
+//     no body / block). Non-export ones include parser-synthesized
+//     struct accessors (constructor, getter, setter, delete, XxxArray,
+//     len/get/set), so struct field info is carried by those entries
+//     and we don't need to encode fields directly under (struct ...).
+//   - `struct` — name only, no fields (same as the legacy .th).
+//   - `var_decl` — top-level globals, type only (no init expression).
+//
+// Compared to compiler/extract_sigs.tc this drops the :export filter
+// and adds var_decl emission. tcheck consumes this via the -s argv
+// flag for self forward reference resolution; legacy typecheck.tc
+// continues to use extract_sigs's narrower output for imports.
+
+import "string_buffer.tc";
+import "source_reader.tc";
+import "ast_node.tc";
+import "strlib.tc";
+
+// Node kind constants (subset needed for filtering)
+var NK_PROGRAM:  i32 = 0;
+var NK_FN:       i32 = 1;
+var NK_STRUCT:   i32 = 2;
+var NK_PARAMS:   i32 = 3;
+var NK_PARAM:    i32 = 4;
+var NK_RET:      i32 = 5;
+var NK_TYPE:     i32 = 6;
+var NK_BLOCK:    i32 = 7;
+var NK_VAR_DECL: i32 = 8;
+var NK_FIELD:    i32 = 23;
+var NK_COMMENT:  i32 = 26;
+var NK_UNKNOWN:  i32 = 99;
+
+// Global state. AST node counter (g_nc) lives in ast_node.tc.
+var g_reader: SourceReader = 0 as SourceReader;
+var g_sp: i32 = 0;
+
+// ===== Input helpers =====
+fn peek_in() -> u8 { return peek(g_reader); }
+
+fn is_atom_end(c: u8) -> bool {
+    return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 ||
+           c == '(' || c == ')' || c == 0u8;
+}
+
+fn skip_ws_in() -> void {
+    while at_eof(g_reader) == false {
+        var c: u8 = peek(g_reader);
+        if c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 {
+            next(g_reader);
+        } else { return; }
+    }
+    return;
+}
+
+fn read_atom_in(atom: U8Array) -> i32 {
+    var alen: i32 = 0;
+    while at_eof(g_reader) == false && !is_atom_end(peek(g_reader)) {
+        set(atom, alen, next(g_reader));
+        alen = alen + 1;
+    }
+    return alen;
+}
+
+// ===== Kind classification =====
+fn classify_kind(atom: U8Array, len: i32) -> i32 {
+    if streq(atom, 0, len, "fn")       { return NK_FN; }
+    if streq(atom, 0, len, "ret")      { return NK_RET; }
+    if streq(atom, 0, len, "type")     { return NK_TYPE; }
+    if streq(atom, 0, len, "block")    { return NK_BLOCK; }
+    if streq(atom, 0, len, "param")    { return NK_PARAM; }
+    if streq(atom, 0, len, "field")    { return NK_FIELD; }
+    if streq(atom, 0, len, "params")   { return NK_PARAMS; }
+    if streq(atom, 0, len, "struct")   { return NK_STRUCT; }
+    if streq(atom, 0, len, "program")  { return NK_PROGRAM; }
+    if streq(atom, 0, len, "comment")  { return NK_COMMENT; }
+    if streq(atom, 0, len, "var_decl") { return NK_VAR_DECL; }
+    return NK_UNKNOWN;
+}
+
+fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
+
+// ===== S-expression reader =====
+// Identical to extract_sigs.tc — reads a node and its full subtree
+// into the AstNode pool. We rely on `kind_code` capturing the few
+// kinds we care about; other kinds become NK_UNKNOWN but are still
+// stored so we can walk children.
+fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
+    skip_ws_in();
+    if at_eof(g_reader) { return -1; }
+    if peek_in() != '(' { return -1; }
+    next(g_reader);
+    skip_ws_in();
+
+    var klen: i32 = read_atom_in(atom);
+    var actual_klen: i32 = 0;
+    while actual_klen < klen && get(atom, actual_klen) != ':' {
+        actual_klen = actual_klen + 1;
+    }
+    var kind_code: i32 = classify_kind(atom, actual_klen);
+    var n: i32 = alloc_node(nodes, kind_code);
+
+    // Store type_annot if present (after ':')
+    if actual_klen < klen {
+        var tss: i32 = g_sp;
+        var ti: i32 = actual_klen + 1;
+        while ti < klen {
+            set(strtab, g_sp, get(atom, ti));
+            g_sp = g_sp + 1;
+            ti = ti + 1;
+        }
+        n_set_tass(nodes, n, tss);
+        n_set_tasl(nodes, n, klen - actual_klen - 1);
+    }
+
+    skip_ws_in();
+
+    var c: u8 = peek_in();
+    if c == '"' {
+        // String value
+        next(g_reader);
+        var ss: i32 = g_sp;
+        var ch: u8 = peek_in();
+        while ch != '"' && ch != 0u8 {
+            if ch == '\\' {
+                next(g_reader);
+                var esc: u8 = peek_in();
+                if esc == 'n'  { ch = 10u8; }
+                if esc == 't'  { ch = 9u8; }
+                if esc == 'r'  { ch = 13u8; }
+                if esc == '\\' { ch = '\\'; }
+                if esc == '"'  { ch = '"'; }
+                if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\' && esc != '"' { ch = esc; }
+            }
+            set(strtab, g_sp, ch);
+            g_sp = g_sp + 1;
+            next(g_reader);
+            ch = peek_in();
+        }
+        if ch == '"' { next(g_reader); }
+        n_set_ss(nodes, n, ss);
+        n_set_sl(nodes, n, g_sp - ss);
+        skip_ws_in();
+    } else if c != '(' && c != ')' && c != 0u8 {
+        // Atom value (name, int, etc)
+        var vlen: i32 = read_atom_in(atom);
+        if kind_code == NK_UNKNOWN && vlen > 0 && is_digit_c(get(atom, 0)) {
+            // int literal
+            var ival: i32 = 0;
+            var ii: i32 = 0;
+            while ii < vlen { ival = ival * 10 + (get(atom, ii) as i32 - 48); ii = ii + 1; }
+            n_set_ival(nodes, n, ival);
+        } else {
+            var ss2: i32 = g_sp;
+            var ii2: i32 = 0;
+            while ii2 < vlen {
+                set(strtab, g_sp, get(atom, ii2));
+                g_sp = g_sp + 1;
+                ii2 = ii2 + 1;
+            }
+            n_set_ss(nodes, n, ss2);
+            n_set_sl(nodes, n, vlen);
+        }
+        skip_ws_in();
+    }
+
+    // Read children
+    c = peek_in();
+    var last_child: i32 = -1;
+    while c == '(' {
+        var child: i32 = read_node(atom, nodes, strtab);
+        if child >= 0 {
+            if last_child < 0 {
+                n_set_child(nodes, n, child);
+            } else {
+                n_set_sib(nodes, last_child, child);
+            }
+            last_child = child;
+        }
+        skip_ws_in();
+        c = peek_in();
+    }
+
+    if peek_in() == ')' { next(g_reader); }
+    return n;
+}
+
+// ===== Output =====
+fn emit_kind(k: i32, ob: StringBuffer) -> void {
+    if k == NK_PROGRAM  { emit_string(ob, "program"); return; }
+    if k == NK_FN       { emit_string(ob, "fn"); return; }
+    if k == NK_STRUCT   { emit_string(ob, "struct"); return; }
+    if k == NK_PARAMS   { emit_string(ob, "params"); return; }
+    if k == NK_PARAM    { emit_string(ob, "param"); return; }
+    if k == NK_RET      { emit_string(ob, "ret"); return; }
+    if k == NK_TYPE     { emit_string(ob, "type"); return; }
+    if k == NK_VAR_DECL { emit_string(ob, "var_decl"); return; }
+    emit_char(ob, '?');
+    return;
+}
+
+// Generic recursive emitter for nodes whose kinds we know (params,
+// param, ret, type). Used for the children of fn / var_decl.
+fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
+    emit_indent(ob, indent);
+    emit_char(ob, '(');
+    var k: i32 = n_kind(nodes, n);
+    emit_kind(k, ob);
+
+    var tass: i32 = n_tass(nodes, n);
+    var tasl: i32 = n_tasl(nodes, n);
+    if tass >= 0 && tasl > 0 {
+        emit_char(ob, ':');
+        emit_n(ob, strtab, tass, tasl);
+    }
+
+    if n_sl(nodes, n) > 0 {
+        emit_char(ob, ' ');
+        emit_n(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
+    }
+
+    var first_child: i32 = n_child(nodes, n);
+    if first_child < 0 {
+        emit_char(ob, ')');
+    } else {
+        var c: i32 = first_child;
+        while c >= 0 {
+            emit_nl(ob);
+            write_node(nodes, strtab, ob, (indent + 1), c);
+            c = n_sib(nodes, c);
+        }
+        emit_nl(ob);
+        emit_indent(ob, indent);
+        emit_char(ob, ')');
+    }
+    return;
+}
+
+// Emit a fn header (fn name + params + ret, skip block). Identical to
+// extract_sigs.tc's write_fn_header.
+fn write_fn_header(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
+    emit_indent(ob, indent);
+    emit_char(ob, '(');
+    emit_kind(n_kind(nodes, n), ob);
+
+    var tass: i32 = n_tass(nodes, n);
+    var tasl: i32 = n_tasl(nodes, n);
+    if tass >= 0 && tasl > 0 {
+        emit_char(ob, ':');
+        emit_n(ob, strtab, tass, tasl);
+    }
+
+    if n_sl(nodes, n) > 0 {
+        emit_char(ob, ' ');
+        emit_n(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
+    }
+
+    // Output only params and ret children, skip block
+    var c: i32 = n_child(nodes, n);
+    var has_child: i32 = 0;
+    while c >= 0 {
+        var ck: i32 = n_kind(nodes, c);
+        if ck == NK_PARAMS || ck == NK_RET {
+            emit_nl(ob);
+            write_node(nodes, strtab, ob, (indent + 1), c);
+            has_child = 1;
+        }
+        c = n_sib(nodes, c);
+    }
+    if has_child == 1 {
+        emit_nl(ob);
+        emit_indent(ob, indent);
+    }
+    emit_char(ob, ')');
+    return;
+}
+
+// Emit a top-level var_decl: "(var_decl name (type ...))". Strips the
+// optional init expression because tcheck only needs the type to put
+// the global into the symbol table. Using a dedicated emitter avoids
+// recursing into init expression nodes (int / call / binop / ...) for
+// which sigscan has no NK_ constants.
+fn write_global_var(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
+    emit_indent(ob, indent);
+    emit_char(ob, '(');
+    emit_string(ob, "var_decl");
+    if n_sl(nodes, n) > 0 {
+        emit_char(ob, ' ');
+        emit_n(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
+    }
+    var c: i32 = n_child(nodes, n);
+    var emitted_type: i32 = 0;
+    while c >= 0 {
+        if n_kind(nodes, c) == NK_TYPE {
+            emit_nl(ob);
+            write_node(nodes, strtab, ob, (indent + 1), c);
+            emitted_type = 1;
+            c = -1;
+        } else {
+            c = n_sib(nodes, c);
+        }
+    }
+    if emitted_type == 1 {
+        emit_nl(ob);
+        emit_indent(ob, indent);
+    }
+    emit_char(ob, ')');
+    return;
+}
+
+// ===== Main =====
+//
+// Per-top-level streaming: read "(program", then loop reading 1
+// top-level S-expression at a time, emit it, and reset the AST node
+// pool + strtab cursor before reading the next one. This keeps the
+// pool peak bounded by the largest single top-level decl rather than
+// the whole program — important because compiler/parse.tc and similar
+// real inputs blow past a fixed 4096-node pool when the pool is shared
+// across the entire AST.
+fn main() -> i32 {
+    // 16384 nodes is enough for the biggest single function we
+    // compile (rough max ~3000 nodes for a 500-line fn). Reset
+    // happens after every top-level so this is the per-decl peak.
+    var nodes: AstNodeArray = AstNodeArray(16384u32);
+    var strtab: U8Array = U8Array(65536u32);
+    var atom_buf: U8Array = U8Array(1024u32);
+    var ob: StringBuffer = StringBuffer_new(1);
+
+    g_reader = SourceReader_new(0);
+    ast_set_count(0);
+    g_sp = 0;
+
+    // Consume "(program" header
+    skip_ws_in();
+    if at_eof(g_reader) { sys_exit(1); }
+    if peek_in() != '(' { sys_exit(2); }
+    next(g_reader);
+    skip_ws_in();
+    var pgm_len: i32 = read_atom_in(atom_buf);
+    if !streq(atom_buf, 0, pgm_len, "program") { sys_exit(3); }
+
+    emit_string(ob, "(program");
+    emit_nl(ob);
+
+    // Loop over top-level children of (program ...)
+    skip_ws_in();
+    while peek_in() == '(' {
+        // Reset pool + strtab cursor so each top-level decl starts
+        // from a clean slate. Without this the pool fills up after
+        // a handful of top levels and read_node aborts with
+        // "out of bounds".
+        reset_node_pool(nodes);
+        g_sp = 0;
+
+        var n: i32 = read_node(atom_buf, nodes, strtab);
+        if n < 0 { sys_exit(4); }   // shouldn't happen mid-program
+
+        var k: i32 = n_kind(nodes, n);
+        if k == NK_FN {
+            // All fns (export and non-export). The parser-synthesized
+            // struct accessor fns (fn Foo, fn f1 getter, fn f1 setter,
+            // fn delete, fn FooArray, fn len/get/set) come through
+            // here naturally.
+            write_fn_header(nodes, strtab, ob, 1, n);
+            emit_nl(ob);
+        }
+        if k == NK_STRUCT {
+            // Struct name only (no fields). Field info is implied by
+            // the synthesized accessor fns above.
+            emit_indent(ob, 1);
+            emit_char(ob, '(');
+            emit_string(ob, "struct");
+            emit_char(ob, ' ');
+            emit_n(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
+            emit_char(ob, ')');
+            emit_nl(ob);
+        }
+        if k == NK_VAR_DECL {
+            // Top-level global declaration.
+            write_global_var(nodes, strtab, ob, 1, n);
+            emit_nl(ob);
+        }
+        // Other top-level kinds (comment, import, ...) are dropped.
+
+        skip_ws_in();
+    }
+
+    // Consume the closing ')' of (program ...)
+    if peek_in() == ')' { next(g_reader); }
+
+    emit_char(ob, ')');
+    emit_nl(ob);
+    write(ob, 1);
+
+    close(g_reader);
+    delete(nodes); delete(strtab); delete(atom_buf); destroy(ob);
+    return 0;
+}
