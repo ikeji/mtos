@@ -33,26 +33,24 @@ if [ -z "$GEN2_DIR" ]; then
     exit 1
 fi
 
+# Task binary 一覧は platform 非依存 (task_crt0.s は ecall syscall
+# のみ、runtime.tc も syscall 依存なし)。virt / pico2 の両方で
+# 同じ一覧を build して build/kernel/root/bin/ に平置きする。
+# Seed task の選定は kernel.tc / kernel_pico2.tc 側で決まるので
+# disk image に全部載っていても問題なし。
+TASKS="hello hello2 catfile sh tmpdemo echo launcher cat"
+
 case "$TARGET" in
     virt)
         PLATFORM_S="$KERN_DIR/platform_virt.s"
         DATA_S="$KERN_DIR/crt0_data.s"
         KERNEL_TC="$KERN_DIR/kernel.tc"
-        # virt slot 2 is /bin/sh; /bin/launcher is pico2-only.
-        # tmpdemo exercises the tmpfs write path under /tmp/.
-        # echo is used by the redirect test (echo hi > /tmp/redir).
-        TASKS="hello hello2 catfile sh tmpdemo echo"
         : "${OUTFILE:=kernel_virt.bin}"
         ;;
     pico2)
         PLATFORM_S="$KERN_DIR/platform_pico2.s"
         DATA_S="$KERN_DIR/crt0_pico2_data.s"
         KERNEL_TC="$KERN_DIR/kernel_pico2.tc"
-        # pico2 seeded tasks: hello/hello2 for preempt demo, launcher
-        # (dynamic spawn smoke test), catfile (mtfs read demo), sh
-        # (interactive shell over UART — Debug Probe CDC-ACM is
-        # bidirectional so we can type commands at runtime).
-        TASKS="hello hello2 catfile launcher sh"
         : "${OUTFILE:=kernel_pico2.uf2}"
         ;;
     *)

@@ -69,13 +69,22 @@ if [ "${FULL_TEST:-0}" = "1" ] && command -v qemu-system-riscv32 >/dev/null 2>&1
     fi
 fi
 
-# --- Build kernel_virt + mtfs disk image once. The kernel now reads
-#     its task binaries from the mtfs image at runtime, so fs_virtio
-#     needs both outputs. ---
-if command -v qemu-system-riscv32 >/dev/null 2>&1; then
-    GEN2_DIR="$_GEN2_TMP" \
-        "$ROOT_DIR/kernel/build.sh" --target virt \
-        -o "$TMP/kernel_virt" --disk-out "$TMP/disk.img" 2>/dev/null
+# --- Kernel + mtfs disk image: the Make build owns these now
+#     (build/kernel/virt_kernel.bin + build/kernel/disk.img). This
+#     script is run via `make test`, which ensures they are up to
+#     date. When someone invokes this script standalone without
+#     the Make wrapper, fall back to building into a local tmp
+#     directory. ---
+KERNEL_BIN="$ROOT_DIR/build/kernel/virt_kernel.bin"
+KERNEL_DISK="$ROOT_DIR/build/kernel/disk.img"
+if [ ! -s "$KERNEL_BIN" ] || [ ! -s "$KERNEL_DISK" ]; then
+    if command -v qemu-system-riscv32 >/dev/null 2>&1; then
+        GEN2_DIR="$_GEN2_TMP" \
+            "$ROOT_DIR/kernel/build.sh" --target virt \
+            -o "$TMP/kernel_virt" --disk-out "$TMP/disk.img" 2>/dev/null
+        KERNEL_BIN="$TMP/kernel_virt"
+        KERNEL_DISK="$TMP/disk.img"
+    fi
 fi
 
 # --- fs_virtio: attach the mtfs disk, boot kernel_virt, verify it
@@ -85,7 +94,7 @@ fi
 #     single command from stdin — we pipe "catfile\n" so it execs
 #     /bin/catfile. ---
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
-    && [ -s "$TMP/kernel_virt" ] && [ -s "$TMP/disk.img" ]; then
+    && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_DISK" ]; then
     t0=$(time_ms)
     # Shell loop exercises all phase 7 A/B/D prereqs:
     #   - tmpdemo:                tmpfs write path (phase 7 A)
@@ -101,9 +110,9 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
-        -drive "file=$TMP/disk.img,format=raw,if=none,id=blk0" \
+        -drive "file=$KERNEL_DISK,format=raw,if=none,id=blk0" \
         -device "virtio-blk-device,drive=blk0" \
-        -device "loader,file=$TMP/kernel_virt,addr=0x80000000" \
+        -device "loader,file=$KERNEL_BIN,addr=0x80000000" \
         -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
     elapsed=$(( $(time_ms) - t0 ))
     # We only check the mtfs magic bytes in SECTOR0: total_blocks varies
