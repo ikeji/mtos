@@ -31,7 +31,22 @@ import "strlib.tc";
 var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // PIC: labels are stored as offsets from code start (0..code_size).
 // ELF output adds g_load_vaddr + ELF_HDR_SIZE for runtime addresses.
-var MAX_LABELS: i32 = 16384;
+//
+// MAX_LABELS: 4096 is enough for the current self-host build (measured
+// ~2800-3200 labels when compiling a full compiler source). Raising
+// this triggers a 16 B × N alloc in g_labels so stay conservative.
+// MAX_NAME_POOL: ~90-110 KB measured for self-host, so 131072 (128 KB)
+// gives a comfortable margin. Both sizes control asm_pass1's peak
+// (see docs/task/pipeline_100kb.md § asm_pass1).
+var MAX_LABELS:    i32 = 4096;
+var MAX_NAME_POOL: i32 = 131072;
+// Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
+// definitions; the g_numlab table is `digit * NUM_LAB_PER_DIGIT + idx`.
+// Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
+// for every conditional branch). 1024/digit is the original safe
+// value and worth preserving — shrinking to 256 silently overflowed
+// into digit 1 and corrupted jump targets at boot.
+var NUM_LAB_PER_DIGIT: i32 = 1024;
 
 // ===== Output mode (set by ; raw / ; load_base directives) =====
 var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
@@ -88,8 +103,8 @@ var g_labels: LabelArray = 0 as LabelArray;
 var g_nlabels: i32 = 0;
 var g_lab_name_pos: i32 = 0;
 
-// Numeric labels: 10 digits x 256 entries each
-// g_numlab[digit * 1024 +count] = address
+// Numeric labels: 10 digits x NUM_LAB_PER_DIGIT entries each
+// g_numlab[digit * NUM_LAB_PER_DIGIT + count] = address
 var g_numlab: I32Array = 0 as I32Array;
 var g_numlab_count: I32Array = 0 as I32Array;  // count per digit (10 entries)
 
@@ -190,6 +205,26 @@ fn find_label(name: U8Array, nlen: i32) -> i32 {
 fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
     var idx: i32 = find_label(name, nlen);
     if idx < 0 {
+        if g_nlabels >= MAX_LABELS {
+            var eb: StringBuffer = StringBuffer_new();
+            asm_err_begin(eb);
+            emit_string(eb, "label table full: MAX_LABELS=");
+            emit_int(eb, MAX_LABELS);
+            emit_string(eb, " reached (at '");
+            emit_n(eb, name, 0, nlen);
+            emit_string(eb, "')");
+            asm_err_end(eb);
+        }
+        if g_lab_name_pos + nlen > MAX_NAME_POOL {
+            var eb2: StringBuffer = StringBuffer_new();
+            asm_err_begin(eb2);
+            emit_string(eb2, "label name pool full: MAX_NAME_POOL=");
+            emit_int(eb2, MAX_NAME_POOL);
+            emit_string(eb2, " reached (at '");
+            emit_n(eb2, name, 0, nlen);
+            emit_string(eb2, "')");
+            asm_err_end(eb2);
+        }
         idx = g_nlabels;
         g_nlabels = g_nlabels + 1;
         var noff: i32 = g_lab_name_pos;
@@ -224,7 +259,17 @@ fn label_addr(name: U8Array, nlen: i32) -> i32 {
 // ===== Numeric label support =====
 fn define_numlab(digit: i32, addr: i32) -> void {
     var cnt: i32 = get(g_numlab_count, digit);
-    set(g_numlab, (digit * 1024 +cnt), addr);
+    if cnt >= NUM_LAB_PER_DIGIT {
+        var eb: StringBuffer = StringBuffer_new();
+        asm_err_begin(eb);
+        emit_string(eb, "numlab overflow: digit ");
+        emit_int(eb, digit);
+        emit_string(eb, " exceeded NUM_LAB_PER_DIGIT (");
+        emit_int(eb, NUM_LAB_PER_DIGIT);
+        emit_string(eb, ")");
+        asm_err_end(eb);
+    }
+    set(g_numlab, (digit * NUM_LAB_PER_DIGIT + cnt), addr);
     set(g_numlab_count, digit, cnt + 1);
     return;
 }
@@ -236,7 +281,7 @@ fn numlab_back(digit: i32, pc: i32) -> i32 {
     var i: i32 = cnt - 1;
     var found: i32 = 0;
     while i >= 0 && found == 0 {
-        var addr: i32 = get(g_numlab, (digit * 1024 +i));
+        var addr: i32 = get(g_numlab, (digit * NUM_LAB_PER_DIGIT + i));
         if addr <= pc { result = addr; found = 1; }
         else { i = i - 1; }
     }
@@ -248,7 +293,7 @@ fn numlab_fwd(digit: i32, pc: i32) -> i32 {
     var cnt: i32 = get(g_numlab_count, digit);
     var i: i32 = 0;
     while i < cnt {
-        var addr: i32 = get(g_numlab, (digit * 1024 +i));
+        var addr: i32 = get(g_numlab, (digit * NUM_LAB_PER_DIGIT + i));
         if addr > pc { return addr; }
         i = i + 1;
     }
@@ -1032,7 +1077,7 @@ export fn asm_parse_meta_directive(buf: U8Array, blen: i32) -> i32 {
 // emit32 only write to g_code when g_pass == 2), so asm_init_pass1
 // skips that 4 MB allocation. Pass 2 needs everything.
 fn asm_init_common() -> void {
-    g_lab_names    = U8Array(262144u32);
+    g_lab_names    = U8Array((MAX_NAME_POOL) as u32);
     g_labels       = LabelArray((MAX_LABELS) as u32);
     g_sec_pos      = I32Array(4u32);
     g_sec_base     = I32Array(4u32);
@@ -1040,7 +1085,7 @@ fn asm_init_common() -> void {
     g_mnem         = U8Array(64u32);
     g_ops          = I32Array(8u32);    // 4 ops x 2 (off, len)
     g_line_buf     = U8Array(4092u32);
-    g_numlab       = I32Array(10240u32);
+    g_numlab       = I32Array((10 * NUM_LAB_PER_DIGIT) as u32);
     g_numlab_count = I32Array(10u32);
 
     g_pos              = 0;
@@ -1233,7 +1278,7 @@ export fn asm_dump_lab_state() -> void {
             emit_string(sb, "num ");
             dump_int(sb, d);
             emit_char(sb, ' ');
-            dump_int(sb, get(g_numlab, (d * 1024 + k)));
+            dump_int(sb, get(g_numlab, (d * NUM_LAB_PER_DIGIT + k)));
             emit_nl(sb);
             k = k + 1;
         }
@@ -1263,7 +1308,7 @@ export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: 
 
 export fn asm_install_numlab_from_lab(digit: i32, addrv: i32) -> void {
     var cnt: i32 = get(g_numlab_count, digit);
-    set(g_numlab, (digit * 1024 + cnt), addrv);
+    set(g_numlab, (digit * NUM_LAB_PER_DIGIT + cnt), addrv);
     set(g_numlab_count, digit, cnt + 1);
     return;
 }
