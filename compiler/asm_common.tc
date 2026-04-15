@@ -32,7 +32,6 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // PIC: labels are stored as offsets from code start (0..code_size).
 // ELF output adds g_load_vaddr + ELF_HDR_SIZE for runtime addresses.
 var MAX_LABELS: i32 = 16384;
-var MAX_CODE: i32 = 4194300; // ~4MB (4MB minus HeapObj header)
 
 // ===== Output mode (set by ; raw / ; load_base directives) =====
 var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
@@ -58,7 +57,15 @@ var g_sec_size: I32Array = 0 as I32Array;  // final size of each section (16-byt
 var g_gp_abs: i32 = 0;                     // absolute value of __global_pointer$
 
 // ===== Global state =====
-var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in main
+// g_code is the pass-2 output buffer. asm_pass1 never allocates it
+// (pass 1 is size-counting only). asm_pass2 allocates it AFTER the
+// .lab is parsed, sizing it to exactly text_size + rodata_size +
+// data_size (bss is memsz-only and never writes file bytes). This
+// is what turned the old 4 MB static MAX_CODE into a per-program
+// dynamic allocation, dropping asm_pass2 peak from ~4.6 MB to
+// roughly the output binary size plus ~300 KB of state.
+var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in asm_pass2_allocate_code
+var g_code_size: i32 = 0;            // allocated size of g_code (= filesz bytes)
 var g_pos: i32 = 0;                  // current write position
 var g_pass: i32 = 0;                 // 1 or 2
 var g_code_end: i32 = 0;             // highest position written to g_code
@@ -137,7 +144,7 @@ fn asm_err_end(eb: StringBuffer) -> void {
 
 // ===== Emit helpers =====
 fn emit8(v: i32) -> void {
-    if g_pass == 2 && g_pos < MAX_CODE {
+    if g_pass == 2 && g_pos < g_code_size {
         set(g_code, g_pos, v as u8);
         if g_pos >= g_code_end { g_code_end = g_pos + 1; }
     }
@@ -952,11 +959,15 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
         }
         if mnem_eq(".space") || mnem_eq(".zero") {
             var n: i32 = parse_imm_op(0);
-            // Advance position; only write to g_code if within buffer
+            // Advance position; only write to g_code if within buffer.
+            // bss-section .space lands past g_code_size (bss is memsz
+            // only) so the write loop's bound check skips it entirely
+            // — this is how the old 96 MB kernel arena .space stayed
+            // out of the ELF filesz.
             if g_pass == 2 {
                 var end: i32 = g_pos + n;
                 var write_end: i32 = end;
-                if write_end > MAX_CODE { write_end = MAX_CODE; }
+                if write_end > g_code_size { write_end = g_code_size; }
                 i = g_pos;
                 while i < write_end { set(g_code, i, 0u8); i = i + 1; }
             }
@@ -1061,7 +1072,25 @@ export fn asm_init_pass1() -> void {
 
 export fn asm_init_pass2() -> void {
     asm_init_common();
-    g_code = U8Array((MAX_CODE) as u32);
+    // g_code is allocated later via asm_pass2_allocate_code() once
+    // the .lab has been parsed and section sizes are known.
+    g_code = 0 as U8Array;
+    g_code_size = 0;
+    return;
+}
+
+// Allocate g_code based on the section sizes supplied by the .lab.
+// Must be called after all asm_install_sec_base_size() calls and
+// before switching to pass 2. filesz = text + rodata + data; bss is
+// memsz-only and never writes to g_code.
+export fn asm_pass2_allocate_code() -> void {
+    var fsz: i32 = get(g_sec_size, 0) + get(g_sec_size, 1) + get(g_sec_size, 2);
+    // Guard against a degenerate .lab where all sections are empty —
+    // U8Array(0) would fail, and at minimum we want a valid (empty)
+    // buffer so emit8 bound checks are well-defined.
+    if fsz <= 0 { fsz = 1; }
+    g_code_size = fsz;
+    g_code = U8Array(fsz as u32);
     return;
 }
 

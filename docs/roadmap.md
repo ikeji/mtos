@@ -21,9 +21,8 @@
            gp 相対 la で Flash/SRAM 分離に対応。初期 bring-up の
            standalone pico2/hello.tc でコンパイルパスを通した後、
            カーネルが RP2350 で動くようになり同ディレクトリは削除
-           した。Pico 2 セルフホストは asm-pass1 が 430 KB まで
-           落ちて収まる見込みだが、asm-pass2 の 4.6 MB がまだ
-           残っている (stream-emit 化が次)。
+           した。Pico 2 セルフホストは asm-pass1 430 KB / asm-pass2
+           441 KB とも 520 KB SRAM に収まる見込み (K3 / K7 が次)。
 
 ステップ4: ネイティブコンパイラでOSをビルド
            OS全体を独自言語で記述し、ネイティブコンパイラでビルド
@@ -128,11 +127,11 @@ C言語でフルパイプラインを実装し、動作を検証する。
       - sigscan ≈ 10 KB、tcheck ≈ 75〜252 KB (~9x)
       - codegen ≈ 80〜252 KB (~2x)
       - bc2asm ≈ 120〜126 KB (~11x)
-      - asm-pass1 ≈ 430 KB (~22x)、asm-pass2 ≈ 4.6 MB (g_code 4 MB
-        が支配的、stream-emit 化で 500 KB まで下がる見込み、future)
+      - asm-pass1 ≈ 430 KB (~22x)、asm-pass2 ≈ 441 KB (g_code を
+        .lab のセクションサイズ合計で動的確保、旧 4.6 MB 比 ~10x)
       `tests/test_phase7.sh` で OS 上の Hello World split pipeline を
-      回帰確認。残件は (1) asm-pass2 の stream-emit 化、(2) bcrun.tc::
-      vm_run の outlier (intentionally out of scope)
+      回帰確認。残件は bcrun.tc::vm_run の AST pool outlier
+      (intentionally out of scope)
 - [x] **Gen2 toolchain migration (2026-04-15)**: compile-gen2.sh /
       compile-gen3.sh / kernel/build.sh / tests/test_common.sh /
       test_gen3.sh / tc_run.sh を新パイプライン (sigscan + tcheck +
@@ -142,8 +141,9 @@ C言語でフルパイプラインを実装し、動作を検証する。
       `kmalloc` / `kfree` / `km_dump_peak` の builtin stub を追加
       (tc_run.sh pipeline method 用)
 - [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)。
-      asm-pass1 430 KB はもう Pico 2 (520 KB SRAM) に収まるが、
-      asm-pass2 の 4.6 MB が未解決。stream-emit 化が先
+      asm-pass1 430 KB / asm-pass2 441 KB ともに Pico 2 の 520 KB
+      SRAM 枠内に収まる見込み。残るはタスクサイズ宣言 (K3) と
+      pico2 ローダの動的タスク対応 (K7)
 
 ## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
 
@@ -323,7 +323,7 @@ asm split・full split すべての pipeline で Hello World が動く。
 |---|---|
 | インタプリタとコンパイラの挙動が一致しない | `tests/test_consistency.sh` / `tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
 | LL(1)で表現できない構文が欲しくなる | 文法制約を文書化し、設計段階で確認 |
-| メモリ不足（520KB SRAM） | **Phase 1 + 2 + 3 完了**: sigscan/tcheck/asm-pass1/asm-pass2 の 4 本を新設 + codegen/bc2asm の in-place shrink で全ステージを劇的に縮小。旧 (parse 14 KB / typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB) → 新 (parse 14 KB / sigscan 10 KB / tcheck ≈ 75-251 KB / codegen ≈ 80-252 KB / bc2asm ≈ 126 KB / asm-pass1 ≈ 430 KB / asm-pass2 ≈ 4.6 MB)。最後の壁は asm-pass2 の g_code 4 MB で、stream-emit 化すれば ~500 KB 見込み (future)。詳細は `docs/task/pipeline_100kb.md` |
+| メモリ不足（520KB SRAM） | **Phase 1 + 2 + 3 + 4 完了**: sigscan/tcheck/asm-pass1/asm-pass2 の 4 本を新設 + codegen/bc2asm の in-place shrink + asm-pass2 の g_code 動的確保で全ステージを劇的に縮小。旧 (parse 14 KB / typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB) → 新 (parse 14 KB / sigscan 10 KB / tcheck ≈ 75-252 KB / codegen ≈ 80-252 KB / bc2asm ≈ 126 KB / asm-pass1 ≈ 430 KB / asm-pass2 ≈ 441 KB)。全ステージが Pico 2 の 520 KB SRAM に収まる見込み。詳細は `docs/task/pipeline_100kb.md` |
 | gp 相対 `la` の 12-bit 制約 | hello レベルでは余裕。将来必要なら 12 byte 形式 (`lui+addi+add gp`) に拡張 |
 | QEMUと実機の挙動差異 | bring-up 時に standalone hello を実機検証、以降はカーネル込みの kernel/platform_pico2.s に集約。test_pico2.sh が Debug Probe 経由で継続検証 |
 | Flash書き込みが遅い・壊れやすい | picotool UF2 経由の書き込みのみ使用。書き換え頻度は開発サイクルで問題ないレベル |

@@ -148,6 +148,11 @@ fn main() -> i32 {
         }
     }
 
+    // .lab fully parsed. Now allocate g_code to the exact filesz
+    // (text + rodata + data) so pass 2 emission lands in a tight
+    // buffer instead of the old 4 MB static MAX_CODE allocation.
+    asm_pass2_allocate_code();
+
     // Phase B: source. Switch to pass 2 and stream-read each line.
     asm_set_pass(2);
     asm_pass2_reset_cursors();

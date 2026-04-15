@@ -67,13 +67,13 @@ extract_sigs.tc と bootstrap 各種の AST 読み取りを同期する大規模
 
 ## asm_pass1 / asm_pass2 (アセンブラ兼リンカ)
 
-### 7. asm-pass2 の g_code 4 MB 残件 (limitation, future)
+### 7. パイプライン 100 KB 計画: Phase 1+2+3+4 完了
 
-**元の「asm.tc 9 MB」問題は Phase 1+2+3 で解決**。compiler/asm.tc は
-`asm_common.tc + asm_pass1.tc + asm_pass2.tc` に分割され、2026-04-15
-の Gen2 toolchain migration で旧 `compiler/typecheck.tc` と
-`compiler/asm.tc` は削除された。全ビルドが sigscan + tcheck +
-asm_pass1 + asm_pass2 の新パイプラインを使っている。
+**元の「asm.tc 9 MB」問題は Phase 1+2+3+4 で実質解決済**。
+`compiler/asm.tc` は `asm_common.tc + asm_pass1.tc + asm_pass2.tc`
+に分割され、2026-04-15 の Gen2 toolchain migration で旧 asm.tc /
+typecheck.tc は削除。asm_pass2 の g_code を .lab のセクションサイズ
+合計で動的確保する仕組み (Phase 4) で、旧 4 MB 固定を廃止済。
 
 phase 7 OS 上の実測ピーク (`km_dump_peak` 基準、Hello World パイプ
 ライン):
@@ -86,30 +86,22 @@ phase 7 OS 上の実測ピーク (`km_dump_peak` 基準、Hello World パイプ
 | codegen       | 303 KB     | **80〜252 KB** |
 | bc2asm        | 1.4 MB     | **120〜126 KB** |
 | asm-pass1 (新)| —          | **~430 KB** |
-| asm-pass2 (新)| —          | **~4.6 MB** (← 残件) |
+| asm-pass2 (新)| —          | **~441 KB** (g_code 動的確保) |
 | (legacy asm)  | 9.5 MB     | — (削除済) |
 
-**残る大きな塊**: asm-pass2 が依然 `g_code: U8Array(4194300)` (4 MB)
-を持っている。stream-emit 化すれば ~500 KB まで落ちる見込み。必要なもの:
+全ステージが Pico 2 の 520 KB SRAM 枠に収まる見込み。残件は K3
+(タスクサイズ宣言) と K7 (pico2 ローダの動的タスク対応)。
 
-1. asm-pass1 が ELF filesz / memsz (= 各 sec サイズの総和) を .lab に
-   書き込む。現状の .lab はこれを持っていないので、pass2 が g_code_end
-   を知るために emit 後まで待つ必要がある
-2. asm-pass2 は起動時に ELF ヘッダを upfront で出力 (filesz / memsz は
-   .lab から既知)、その後 `emit8`/`emit32` を g_code バッファでなく
-   直接 sys_write(1, ...) に置き換える
-3. raw mode (`; raw`) の場合はヘッダ無しでそのまま stream
-
-Pico 2 セルフホスト (K7) の前提。stream-emit と併せて bcrun.tc の
-vm_run outlier を回避できれば 250 KB 以下に収まる見通し。
-
-元の問題 (「asm.tc 9 MB」) の対処履歴:
+対処履歴:
 - Phase 1 (#49〜#54、#62〜#64): typecheck を sigscan + tcheck に分割。
   per-top-level AST streaming + per-fn kmalloc fntab で 717 KB → 75 KB 台
 - Phase 2 (#55〜#58): asm を 3 ファイルに分割。`.lab` 中間ファイルで
   pass1 / pass2 を別プロセス化。g_lines 4 MB 廃止
 - Phase 3 (#59、#60): codegen と bc2asm を in-place shrink。bc2asm は
   per-function emission で 1.4 MB → 126 KB
+- Phase 4: asm_pass2 の g_code を .lab のセクションサイズ合計で動的確保。
+  `MAX_CODE = 4194300` 固定を廃止、bss は filesz に含めない。
+  4.6 MB → 441 KB (~10x)
 
 計画詳細: `docs/task/pipeline_100kb.md`、.lab 仕様: `docs/lab_format.md`。
 

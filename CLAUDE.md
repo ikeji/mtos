@@ -39,8 +39,9 @@
     `.lab` 中間ファイル (仕様: `docs/lab_format.md`) で pass1 が
     label を集めて pass2 が encoder。pass1/pass2 とも g_lines 4 MB
     を廃止して SourceReader で stream 読み。**asm-pass1 ≈ 430 KB**
-    (旧 9.5 MB 比 22x)、**asm-pass2 ≈ 4.6 MB** (g_code 4 MB が
-    支配的、stream-emit 化は future) (#55〜#58)
+    (旧 9.5 MB 比 22x)、**asm-pass2 ≈ 441 KB** (g_code を .lab の
+    セクションサイズ合計で動的確保し 4 MB 固定を廃止、旧 4.6 MB
+    比 10x) (#55〜#58 + Phase 4)
   - **Phase 3 (in-place shrinks)**:
     - codegen: strtab を perm/ephemeral 2 cursor 化 (per-top-level
       rollback) + buffer 縮小。303 KB → **80〜252 KB** (#59)
@@ -67,9 +68,6 @@
 
 **次の候補** (どれも独立):
 
-- **asm-pass2 stream-emit 化**: g_code 4 MB を廃止。ELF header の
-  filesz を pass1 が .lab に書く → pass2 はヘッダ upfront 出力 +
-  code stream emit。4.6 MB → ~500 KB 見込み
 - **フェーズ 7 M7**: OS 上で Gen2 → Gen3 相当の一周 (コンパイラ自身を
   OS 上で再コンパイル)。時間はかかるが現状の memory peak で成立する
   はず
@@ -131,8 +129,9 @@ compiler/   自作TinyC製の自己ホスト型コンパイラ（Gen2/Gen3）
   asm_pass1.tc       Label collector。`.s` を 1 度読んで `.lab`
                      (docs/lab_format.md) を吐く (~430 KB peak)
   asm_pass2.tc       Encoder。stdin に `(lab ...)` + `.s` の連結を
-                     受けて ELF を emit (~4.6 MB peak、g_code 4 MB が
-                     支配的。stream-emit 化は future)
+                     受けて ELF を emit。g_code を .lab のセクション
+                     サイズ合計で動的確保する仕組みで peak ~441 KB
+                     (旧 4.6 MB 比 ~10x 削減)
   runtime.tc         TinyC製ランタイム（kmalloc/kfree 等、compile-gen2/3.sh で使用）
   crt0_tc.s          asm_pass1/2 リンク用 Linux crt0（_start, syscall stub, peek/poke）
   crt0_tc_data.s     asm_pass1/2 リンク用プールメタデータ (`.data` + `.bss` + __arena)
@@ -214,8 +213,9 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       `__runtime_init` に渡す arena_size は 100_663_296
                       (96 MB) — crt0_data.s の .space と必ず一致させる
   platform_pico2.s    Pico 2 固有: IMAGE_DEF, XOSC, PL011, .data コピー, _set_kern_gp via li
-  crt0_data.s         virt 用 BSS (__arena .space 96 MB — phase 7 M6 で
-                      asm_pass2 の 4.6 MB ピーク + alpha を収めるため)
+  crt0_data.s         virt 用 BSS (__arena .space 96 MB — phase 7 で
+                      大きめに取っているが asm_pass2 peak 441 KB なので
+                      実際は数 MB で足りる)
   crt0_pico2_data.s   Pico 2 用 BSS (256KB __arena)
   build.sh            統一ビルド: --target virt|pico2 [-o output]
                       [--disk-out path] + `EXTRA_TASKS` 環境変数で
@@ -482,7 +482,9 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
   末尾の `.space`（`__arena` 等）は filesz に含まれず memsz だけ広がる。
 - 数字ラベル（0:-9:）対応、パス1で定義収集、パス2で参照解決 (text セクション
   前提で section_base の fixup は行わない)
-- MAX_CODE=~4MB、数字ラベル最大1024個/digit
+- g_code は .lab のセクションサイズ合計 (text + rodata + data) で
+  asm_pass2 起動時に動的確保。旧 MAX_CODE=4 MB 固定は廃止済。
+  数字ラベル最大1024個/digit
 - CSR 命令: `csrrw`, `csrrs`, `csrrc`, `csrr` (疑似), `csrw` (疑似), `mret`
 - `jalr rd, rs1, imm` (I-type 間接ジャンプ)
 - `.byte val[,val...]` (1行4バイトまで)、`.rodata` (短縮形)
