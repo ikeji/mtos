@@ -69,11 +69,17 @@
 - **K7 部分解決 (2026-04-15)**: pico2 の kernel arena を
   262144 → 491520 (256 KB → 480 KB) に拡大。launcher.tc を
   `do_spawn("/bin/hello2") + do_wait` を挟む形に変更して
-  dynamic task spawn の実機 smoke test にした。test_pico2.sh が
-  Debug Probe + openocd で pico2 実機にフラッシュし、UART から
-  `LAUNCHER: spawned slot ok` / `LAUNCHER: wait returned` /
-  `CAT[0]:hello, mtfs` を verify して 2 件 PASS で完走。
-  compiler タスクの embedded / 起動までは OK (問題 #K7)
+  dynamic task spawn の実機 smoke test にした。さらに K7 part 2:
+  pico2 の seed task 3 枠目を `launcher` から `sh` に切り替えた
+  (`kernel/kernel_pico2.tc`)。Debug Probe の CDC-ACM は双方向なので
+  host から `/dev/ttyACM0` に書き込めばコマンドを sh に渡せる。
+  `tests/test_pico2.sh` が flash 後に `catfile\n` / `launcher\n` /
+  `quit\n` を UART に送って sh + catfile (argv あり) + launcher 経由
+  の do_spawn/do_wait/do_exec cascade を実機で検証。出力は
+  scheduler tracer で断片化しがちなので grep 前に `[sw ..]` /
+  `[x ..]` / `[w ..]` / `[kmem ..]` を sed で落としてから
+  `CAT[1]:` / `LAUNCHER: spawned slot ok` / `SH: bye` などを counter
+  で確認。実機 2 件 PASS / ~98 秒
 - **`test_phase7.sh` (手動実行)**: sigscan + tcheck + asm_pass1 +
   asm_pass2 の full split pipeline で Hello World 完走
 - 以前から継続: u32 比較/除算/hex literal, K1 (task 画像 leak),

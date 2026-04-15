@@ -235,38 +235,41 @@ phase 7 M6 時点でカーネルに常時出力している debug 出力:
 出力が混ざっても grep 条件は無事なので急ぐ必要はないが、
 フェーズ 8 以降のクリーンな基盤作りには邪魔になる。
 
-### K7. pico2 で phase 7 コンパイラが動かない (部分解決、2026-04-15)
+### K7. pico2 で phase 7 コンパイラが動かない (part 1 + 2 完了、残: compiler 実行)
 
-K3 (per-task サイズ宣言) + kernel arena 拡大 (256 KB → 480 KB) の
-組み合わせで **dynamic sys_spawn / sys_wait が pico2 実機で動く** ように
-なった。実機検証: `kernel/tasks/launcher/launcher.tc` が `do_spawn(
-"/bin/hello2")` + `do_wait` → `do_exec("/bin/catfile")` を実行し、
-tests/test_pico2.sh が UART から
+**K7 part 1 (2026-04-15)**: K3 (per-task サイズ宣言) + kernel arena
+拡大 (256 KB → 480 KB) の組み合わせで dynamic sys_spawn /
+sys_wait が pico2 実機で動作。`kernel/tasks/launcher/launcher.tc`
+が `do_spawn("/bin/hello2")` + `do_wait` → `do_exec("/bin/catfile")`
+を実行し、`tests/test_pico2.sh` が UART で verify。
 
-  KERN: starting / BLOCK: flash backend ready / MTFS: mounted /
-  LAUNCHER: spawned slot ok / LAUNCHER: wait returned /
-  CAT[0]:hello, mtfs / all tasks done
+**K7 part 2 (2026-04-15)**: pico2 の 3 つ目 seed task を launcher
+から `/bin/sh` に切り替え。Debug Probe の CDC-ACM は双方向なので
+host 側から `/dev/ttyACM0` に書き込めば実機 sh にコマンドを送れる。
+test_pico2.sh が `catfile\n` / `launcher\n` / `quit\n` を送って、
+sh + spawn + wait + exec のカスケードが一通り動くことを実機で
+確認。
 
-を verify している。per-task K3 header が正しく loader で読まれ、
-kmalloc ベースの dynamic 割り当てが 480 KB arena 上で回っている
-ことが確認できた。
+残件: **compiler タスク群 (asm_pass1 430 KB / asm_pass2 441 KB 級)
+を実際に sh から spawn してパイプラインを一周するところは未着手**:
 
-残件: **compiler タスク群 (asm_pass1 430 KB / asm_pass2 441 KB 級) を
-実際に pico2 で走らせてコンパイルを一周するところは未着手**:
-
-- 480 KB arena でも任意の task 1 つは同時 1 個しか取れない。sh +
-  spawn child + img 並列の構造がきつい
-- compiler タスクは stdin (UART) からの入力が必要。現状 pico2 には
-  sh が seed されていないので、UART で対話的に操作する手段が必要
-- Phase 7 M7 (Gen2 → Gen3 on OS) を pico2 に持ち込むには sh 化 +
-  task チェインを sh script で組むのが筋
+- sh (32 KB arena) + compiler child を並行で持つには arena が
+  sh + asm_pass2 = 32 + 512 + stacks ≈ 570 KB 必要で 480 KB に
+  入らない。compiler タスクサイズを pico2 向けに絞るか、arena を
+  もう少し広げる (kernel stack を削れば ~500 KB まで拡大可能) か、
+  asm_pass2 をさらに shrink する必要がある
+- 小さい compiler task (parse 64 KB, sigscan 32 KB, bc2asm 192 KB)
+  は今の arena でも理論上 spawn できる。UART から stdin に
+  input を流し込む仕組みが必要なので、test_pico2.sh に
+  `parse < /hw.tc > /tmp/1.ast` を送る拡張が次の段階
 
 対処案:
-- kernel_pico2.tc の seed task に sh を追加し、UART から pico2 への
-  入力パスを作る
-- compiler タスクの K3 header サイズを pico2 に合わせて絞る
-  (asm_pass1/2 は現 512 KB 宣言 → 450 KB 前後に)
-- asm_pass2 の更なる shrink (stream emit 化など) で余裕を作る
+- **pico2 向け K3 header を別テーブルにする**: build.sh の
+  `task_arena_size()` を `virt` / `pico2` で出し分け。asm_pass1/2
+  を 430 KB / 441 KB ちょうどで宣言すれば pico2 でも spawn できる
+- **asm_pass2 stream-emit**: docs/task/pipeline_100kb.md で future
+  と書いていた最後のステージ shrink。filesz を .lab 経由で pass2
+  に渡して g_code バッファなしで write を stream 化
 
 ## バイトコード / ランタイム
 

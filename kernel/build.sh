@@ -48,8 +48,11 @@ case "$TARGET" in
         PLATFORM_S="$KERN_DIR/platform_pico2.s"
         DATA_S="$KERN_DIR/crt0_pico2_data.s"
         KERNEL_TC="$KERN_DIR/kernel_pico2.tc"
-        # pico2 has no interactive stdin pipe; slot 2 uses launcher.
-        TASKS="hello hello2 catfile launcher"
+        # pico2 seeded tasks: hello/hello2 for preempt demo, launcher
+        # (dynamic spawn smoke test), catfile (mtfs read demo), sh
+        # (interactive shell over UART — Debug Probe CDC-ACM is
+        # bidirectional so we can type commands at runtime).
+        TASKS="hello hello2 catfile launcher sh"
         : "${OUTFILE:=kernel_pico2.uf2}"
         ;;
     *)

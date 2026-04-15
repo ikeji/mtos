@@ -1,6 +1,20 @@
 #!/bin/bash
 # test_pico2.sh — flash kernel_pico2 to real RP2350 hardware and verify
-# the filesystem / preemption output on UART.
+# the filesystem, preemption, sh + spawn/wait via UART.
+#
+# Now that K7 part 2 (2026-04-15) is in, the pico2 kernel seeds sh as
+# slot 2 and reads commands from the Debug Probe's CDC-ACM UART. This
+# test flashes, waits for the sh$ prompt, sends a few commands over
+# /dev/ttyACM0, then verifies the captured UART output:
+#
+#   1. "catfile" → sh spawns /bin/catfile with argv=["catfile"],
+#                  catfile opens /hello.txt and prints "CAT[1]:hello, mtfs"
+#   2. "launcher" → sh spawns /bin/launcher, which in turn do_spawn's
+#                   /bin/hello2, do_wait's it, then do_exec's
+#                   /bin/catfile. Exercises the full dynamic-spawn +
+#                   wait + exec chain on real hardware.
+#   3. "quit" → sh prints SH: bye and exits, kernel drains seeded
+#               hello/hello2 tasks, prints "all tasks done"
 #
 # NOT part of make test: requires a physically connected Pico 2 with a
 # Debug Probe (SWD + UART via CDC-ACM). Run manually when you want to
@@ -14,7 +28,6 @@
 #   OPENOCD     — path to openocd binary (default ~/opt/openocd-rpi/bin/openocd)
 #   OPENOCD_SCRIPTS — openocd scripts dir (default ~/opt/openocd-rpi/share/openocd/scripts)
 #   UART_PORT   — UART device (default /dev/ttyACM0)
-#   UART_WAIT   — seconds to wait after flashing for the kernel to finish (default 6)
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,7 +38,6 @@ echo "=== Pico 2 Hardware Test ==="
 OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
 UART_PORT="${UART_PORT:-/dev/ttyACM0}"
-UART_WAIT="${UART_WAIT:-15}"
 
 # ----- Preflight checks -----
 if [ -z "$GEN2_DIR" ]; then
@@ -84,15 +96,19 @@ if [ ! -s "$TMP/kernel_pico2.bin" ]; then
     exit $?
 fi
 
-# ----- Step 3: Start background UART capture, then flash -----
-stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo 2>/dev/null || true
+# ----- Step 3: Flash the new kernel -----
+stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null || true
+
+# Drain any stale UART bytes from a previous run before we start the
+# real capture. Otherwise the last run's "SH: bye" / leftover prompt
+# bytes can bleed into this run's verification.
+cat "$UART_PORT" > /dev/null 2>&1 &
+FLUSH_PID=$!
+sleep 0.3
+kill "$FLUSH_PID" 2>/dev/null || true
+wait "$FLUSH_PID" 2>/dev/null || true
 
 t1=$(time_ms)
-# Generous read window so we never cut the kernel off mid-output;
-# we kill the reader ourselves once openocd + UART_WAIT have elapsed.
-timeout 30 cat "$UART_PORT" > "$TMP/uart.log" 2>/dev/null &
-CAT_PID=$!
-sleep 0.3   # let cat open the device before reset
 
 "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
     -f interface/cmsis-dap.cfg \
@@ -101,58 +117,109 @@ sleep 0.3   # let cat open the device before reset
     -c "init" \
     -c "reset halt" \
     -c "program $TMP/kernel_pico2.bin 0x10000000 verify" \
-    -c "reset run" \
-    -c "exit" > "$TMP/openocd.log" 2>&1
+    -c "reset init" \
+    -c "exit" > "$TMP/openocd.log" 2>&1 || true
 
 if ! grep -q "Verified OK" "$TMP/openocd.log"; then
-    kill "$CAT_PID" 2>/dev/null || true
-    wait "$CAT_PID" 2>/dev/null || true
     elapsed=$(( $(time_ms) - t1 ))
     report_fail_msg "pico2: flash" "openocd did not print 'Verified OK': $(tail -5 "$TMP/openocd.log" | tr '\n' ' ')"
     print_results
     exit $?
 fi
 
-# Wait for the kernel to finish running the 3 tasks
-sleep "$UART_WAIT"
+# ----- Step 4: Start background UART capture, trigger reset, drive sh -----
+#
+# Start the cat reader BEFORE releasing the CPU from halt. Without an
+# active reader the first ~16 bytes of KERN: starting end up in the
+# CDC-ACM ring buffer and we race against the kernel's early prints.
+timeout 40 cat "$UART_PORT" > "$TMP/uart.log" 2>/dev/null &
+CAT_PID=$!
+sleep 0.8
+
+"$OPENOCD" -s "$OPENOCD_SCRIPTS" \
+    -f interface/cmsis-dap.cfg \
+    -f target/rp2350-riscv.cfg \
+    -c "adapter speed 5000" \
+    -c "init" \
+    -c "reset run" \
+    -c "exit" > /dev/null 2>&1 || true
+
+# Wait for the kernel's early prints (KERN/BLOCK/MTFS/SH: ready) and
+# the first sh$ prompt to land.
+sleep 4
+
+# Drive /bin/sh over the Debug Probe's CDC-ACM TX line:
+#   "catfile\n"  → spawns /bin/catfile with argv=["catfile"], prints CAT[1]:hello, mtfs
+#   "launcher\n" → spawns /bin/launcher which do_spawn's /bin/hello2,
+#                  do_wait's it, then do_exec's /bin/catfile
+#                  (LAUNCHER: spawned slot ok / LAUNCHER: wait returned / CAT[0]:)
+#   "quit\n"     → sh breaks its loop, prints SH: bye, returns 0
+printf 'catfile\n'  > "$UART_PORT"
+sleep 4
+printf 'launcher\n' > "$UART_PORT"
+sleep 6
+printf 'quit\n'     > "$UART_PORT"
+sleep 6
+
 kill "$CAT_PID" 2>/dev/null || true
 wait "$CAT_PID" 2>/dev/null || true
 
 elapsed=$(( $(time_ms) - t1 ))
 
-# ----- Step 4: Verify UART output contents -----
-uart_out=$(tr -d '\0' < "$TMP/uart.log")
+# ----- Step 5: Verify UART output contents -----
+# The task's print output (kputs) is byte-streamed through the UART one
+# (or a few) bytes at a time, and the preemption tracer sprays
+# "[sw A>B]" / "[x N=M]" / "[w N:M]" markers in between. That chops
+# tokens like "CAT[1]:hello, mtfs" across multiple lines, so we
+# strip the scheduler markers BEFORE running the grep checks.
+uart_out=$(tr -d '\0' < "$TMP/uart.log" \
+    | sed -E 's/\[sw [0-9]+>[0-9]+\]//g' \
+    | sed -E 's/\[x [0-9]+=[0-9]+\]//g' \
+    | sed -E 's/\[w [0-9]+:[0-9]+\]//g' \
+    | sed -E 's/\[kmem peak=[0-9]+ live=[0-9]+\]//g' \
+    | tr -d '\n' | tr -s ' ')
 
-# Under preemption the catfile output may be interleaved with A/B, so
-# check each piece separately (same approach as fs_virtio in test_os.sh).
-pico_has_start=$(echo "$uart_out" | grep -c "KERN: starting")
-pico_has_block=$(echo "$uart_out" | grep -c "BLOCK: flash backend ready")
-pico_has_mtfs=$(echo "$uart_out" | grep -c "MTFS: mounted")
-pico_has_spawn=$(echo "$uart_out" | grep -c "LAUNCHER: spawned slot ok")
-pico_has_wait=$(echo "$uart_out" | grep -c "LAUNCHER: wait returned")
-pico_has_cat=$(echo "$uart_out" | grep -c "CAT\[0\]:")
-pico_has_file=$(echo "$uart_out" | grep -c "hello, mtfs")
-pico_has_done=$(echo "$uart_out" | grep -c "all tasks done")
-pico_has_a=$(echo "$uart_out" | grep -c "A")
-pico_has_b=$(echo "$uart_out" | grep -c "B")
+# uart_out is a single joined line after scheduler-marker stripping, so
+# use `grep -o | wc -l` for repeat counts and plain `grep -c` for
+# single-occurrence checks.
+count_occ() { echo "$uart_out" | grep -o "$1" | wc -l; }
+
+pico_has_start=$(count_occ "KERN: starting")
+pico_has_block=$(count_occ "BLOCK: flash backend ready")
+pico_has_mtfs=$(count_occ "MTFS: mounted")
+pico_has_sh_ready=$(count_occ "SH: ready")
+# sh$ prompt is printed before each command. With "catfile" +
+# "launcher" + "quit" inputs we expect ≥ 3 prompts.
+pico_prompt_n=$(count_occ "sh\\\$ ")
+# "catfile" → CAT[1]:hello, mtfs (argc=1 because sh put argv=["catfile"])
+pico_has_cat1=$(count_occ "CAT\\[1\\]:")
+# "launcher" → LAUNCHER: spawned slot ok / wait returned, then CAT[0]:
+pico_has_spawn=$(count_occ "LAUNCHER: spawned slot ok")
+pico_has_wait=$(count_occ "LAUNCHER: wait returned")
+pico_has_cat0=$(count_occ "CAT\\[0\\]:")
+pico_has_file=$(count_occ "hello, mtfs")
+pico_has_bye=$(count_occ "SH: bye")
+pico_has_done=$(count_occ "all tasks done")
 
 missing=""
-[ "$pico_has_start" -eq 0 ] && missing="$missing KERN:starting"
-[ "$pico_has_block" -eq 0 ] && missing="$missing BLOCK:flash"
-[ "$pico_has_mtfs"  -eq 0 ] && missing="$missing MTFS:mounted"
-[ "$pico_has_spawn" -eq 0 ] && missing="$missing LAUNCHER:spawned"
-[ "$pico_has_wait"  -eq 0 ] && missing="$missing LAUNCHER:wait"
-[ "$pico_has_cat"   -eq 0 ] && missing="$missing CAT[0]:"
-[ "$pico_has_file"  -eq 0 ] && missing="$missing hello,mtfs"
-[ "$pico_has_done"  -eq 0 ] && missing="$missing all-tasks-done"
-[ "$pico_has_a"     -eq 0 ] && missing="$missing A"
-[ "$pico_has_b"     -eq 0 ] && missing="$missing B"
+[ "$pico_has_start"    -eq 0 ] && missing="$missing KERN:starting"
+[ "$pico_has_block"    -eq 0 ] && missing="$missing BLOCK:flash"
+[ "$pico_has_mtfs"     -eq 0 ] && missing="$missing MTFS:mounted"
+[ "$pico_has_sh_ready" -eq 0 ] && missing="$missing SH:ready"
+[ "$pico_prompt_n"     -lt 3 ] && missing="$missing sh\$prompt(got=$pico_prompt_n)"
+[ "$pico_has_cat1"     -eq 0 ] && missing="$missing CAT[1]:"
+[ "$pico_has_spawn"    -eq 0 ] && missing="$missing LAUNCHER:spawned"
+[ "$pico_has_wait"     -eq 0 ] && missing="$missing LAUNCHER:wait"
+[ "$pico_has_cat0"     -eq 0 ] && missing="$missing CAT[0]:"
+[ "$pico_has_file"     -eq 0 ] && missing="$missing hello,mtfs"
+[ "$pico_has_bye"      -eq 0 ] && missing="$missing SH:bye"
+[ "$pico_has_done"     -eq 0 ] && missing="$missing all-tasks-done"
 
 if [ -z "$missing" ]; then
-    report_pass "pico2: flash + mtfs + launcher spawn/wait/exec + preempt" "$elapsed"
+    report_pass "pico2: sh + catfile + launcher(spawn/wait/exec) + quit" "$elapsed"
 else
     report_fail_msg "pico2: run" \
-        "missing [$missing ], got: $(printf '%s' "$uart_out" | head -c 240)"
+        "missing [$missing ], got: $(printf '%s' "$uart_out" | head -c 320)"
 fi
 
 print_results
