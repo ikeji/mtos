@@ -148,18 +148,44 @@ streaming 版) が **自分自身の forward 参照を解決するため**に消
 
 含むもの:
 - `fn:export` — export 関数 (旧 .th と同じ)
-- `fn` (annotation 無し) — **非 export 関数** (旧 .th では捨てていた)
-- `struct` — 名前 + フィールド一覧 (旧 .th と違って fields を残す)
+- `fn` (annotation 無し) — **非 export 関数** (旧 .th では捨てていた)。
+  parser が struct から自動生成する **コンストラクタ / getter / setter
+  / `delete` / `XxxArray` / `len` / `get` / `set` も全部ここに含まれる**
+  (parser はこれらを top-level の `(fn ...)` ノードとして吐く)
+- `struct` — **型名のみ** (旧 .th と同じ)。フィールド情報は上記の合成
+  関数が代わりに表現するので、`(struct Name (field ...))` のような形は
+  使わない
 - `var_decl` — トップレベルの global 変数宣言
 
-例:
+つまり sigscan は実質「extract_sigs から `:export` フィルタを外した
+だけ」になる。
+
+例 (struct + global + 関数 1 つを持つ単純なソースの拡張 .th):
 
 ```
 (program
-  (struct StringBuffer
-    (field cap (type i32))
-    (field len (type i32))
-    (field data (type u32))
+  (struct Foo)
+  (fn Foo
+    (params
+      (param __a0 (type i32))
+      (param __a1 (type u8))
+    )
+    (ret (type Foo))
+  )
+  (fn f1
+    (params (param __self (type Foo)))
+    (ret (type i32))
+  )
+  (fn f1
+    (params
+      (param __self (type Foo))
+      (param __v (type i32))
+    )
+    (ret (type void))
+  )
+  (fn delete
+    (params (param __self (type Foo)))
+    (ret (type void))
   )
   (var_decl g_indent
     (type i32)
@@ -173,18 +199,22 @@ streaming 版) が **自分自身の forward 参照を解決するため**に消
     (ret (type void))
   )
   (fn helper_internal
-    (params
-      (param x (type i32))
-    )
+    (params (param x (type i32)))
     (ret (type i32))
   )
 )
 ```
 
-互換性: 旧 .th を期待する読み手 (= 既存 typecheck.tc) は、拡張 .th に
-出てくる `(fn ...)`/`var_decl` を **無視**して `(fn:export ...)` だけを
-拾えばよい。逆に拡張 .th を読む tcheck は旧 .th を読んでも壊れない
-(欠けた情報があっても export シグネチャは取れる)。
+(`FooArray` / `len` / `get` / `set` の合成 fn は省略)
+
+互換性:
+
+- **旧 .th を期待する読み手 (= 既存 typecheck.tc)** が拡張 .th を読んでも
+  動く: `(fn ...)` (annotation 無し) と `(var_decl ...)` を無視して
+  `(fn:export ...)` だけ拾えばよい。`(struct Name)` の形は旧 .th と
+  同じなのでそのまま使える。
+- **tcheck** は旧 .th を読んでも壊れない: `:export` の fn だけ取れれば
+  import の用途は満たせる。
 
 ## .th の渡し方
 
@@ -209,27 +239,29 @@ stdin 先頭に `(imports (program ...) ...)` ブロックを置く方式。
 
 `(imports ...)` がない場合は従来通り `(program ...)` を直接読む。
 
-### 新方式: `-h` argv (tcheck)
+### 新方式: `-h` / `-s` argv (tcheck)
 
-tcheck は `(imports ...)` を使わず、コマンドライン引数で複数の .th を
-受け取る:
+tcheck は `(imports ...)` を使わず、コマンドライン引数で .th を
+受け取る。**`-h` は import の .th**、**`-s` は自分自身の .th** で
+役割を明示的に分ける (positional な「最後が self」のような暗黙ルールは
+使わない):
 
 ```
-tcheck -h string_buffer.th -h source_reader.th -h self.th < a.ast > a.tast
+tcheck -h string_buffer.th -h source_reader.th -s self.th < a.ast > a.tast
 ```
 
-**最後の `-h` を「自分自身の .th」、それ以外を import 扱いにする**:
-
-- 自分自身の .th: 全 top-level (fn 全部 / struct fields / globals) を
+- **`-s self.th`**: 全 top-level (fn 全部 + struct 型名 + globals) を
   symbol table に登録 → 関数本体を stream check するときの forward
-  参照解決に使う
-- import の .th: `(fn:export ...)` のみ register、`(fn ...)` (非 export)
-  と struct fields は無視 (他モジュールから touch 不可なので不要)
+  参照解決に使う。1 つだけ指定可。
+- **`-h import.th`** (複数指定可): `(fn:export ...)` のみ register。
+  `(fn ...)` (非 export) と global var は無視 (他モジュールから touch
+  不可なので不要)。
 
-self の .th を `-h` で渡すこと自体は `compile-gen2.sh` / OS 上の sh が
-担当する。Build script は `parse → sigscan → tcheck` のパイプラインを
-組むときに、自分の .ast から sigscan で .th を作って tcheck の最後の
-`-h` に渡す。
+`-s` 無しで起動された場合は self forward 参照を解決できないので、本体に
+self forward 参照を含む .ast には実用的に使えない (= ファイル先頭から
+順番にしか定義参照できない、C90 風の宣言要件)。`compile-gen2.sh` /
+OS 上の sh は parse → sigscan → tcheck のパイプラインで sigscan の
+出力を `-s` に必ず渡す。
 
 ## 完全な例
 
