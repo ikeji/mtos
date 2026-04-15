@@ -75,22 +75,29 @@ extract_sigs.tc と bootstrap 各種の AST 読み取りを同期する大規模
 typecheck.tc は削除。asm_pass2 の g_code を .lab のセクションサイズ
 合計で動的確保する仕組み (Phase 4) で、旧 4 MB 固定を廃止済。
 
-phase 7 OS 上の実測ピーク (`km_dump_peak` 基準、Hello World パイプ
-ライン):
+実測ピーク (compile-gen2.sh で build した Gen3 tools を
+qemu-riscv32 で動かして `[kmem peak=N live=M]` を回収):
 
-| タスク    | before | after |
-|---|---:|---:|
-| parse         | 14 KB      | 14 KB |
-| sigscan (新)  | —          | **~10 KB** |
-| tcheck  (新)  | —          | **75〜252 KB** |
-| codegen       | 303 KB     | **80〜252 KB** |
-| bc2asm        | 1.4 MB     | **120〜126 KB** |
-| asm-pass1 (新)| —          | **~430 KB** |
-| asm-pass2 (新)| —          | **~441 KB** (g_code 動的確保) |
-| (legacy asm)  | 9.5 MB     | — (削除済) |
+| タスク    | before  | Hello World | compiler/*.tc |
+|---|---:|---:|---:|
+| parse         | 14 KB  | 14 KB   | 14 KB        |
+| sigscan (新)  | —      | ~10 KB  | **9〜11 KB** |
+| tcheck  (新)  | —      | ~70 KB  | **74〜244 KB** |
+| codegen       | 303 KB | ~77 KB  | **79〜246 KB** |
+| bc2asm        | 1.4 MB | ~120 KB | **118〜124 KB** |
+| asm-pass1 (新)| —      | ~430 KB | **398〜436 KB** |
+| asm-pass2 (新)| —      | ~441 KB | **557〜624 KB** (Phase 4 動的確保後) |
+| (legacy asm)  | 9.5 MB | —       | — (削除済) |
 
-全ステージが Pico 2 の 520 KB SRAM 枠に収まる見込み。残件は K3
-(タスクサイズ宣言) と K7 (pico2 ローダの動的タスク対応)。
+Phase 4 で `g_code` を `.lab` のセクションサイズ合計で動的確保する
+ようにした結果、asm-pass2 の peak は compile 対象の text+rodata+data
+に比例する。Hello World (text+data ≈ 5 KB) では ~441 KB、compiler
+source (~300〜400 KB) では ~570〜640 KB。
+
+Hello World 級なら全ステージが Pico 2 の 520 KB SRAM 枠に収まる
+(K3 + K7 part 1/2 で実証済、docs/task/pipeline_100kb.md のステージ別
+実測表参照)。コンパイラ自体を pico2 で回すには asm_pass2 の追加
+shrink (g_code stream-emit 化) が必要。
 
 対処履歴:
 - Phase 1 (#49〜#54、#62〜#64): typecheck を sigscan + tcheck に分割。
