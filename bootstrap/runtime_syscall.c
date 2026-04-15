@@ -197,6 +197,12 @@ void print_str__StringLiteral(HeapObj s) {
     print_str__String(s);
 }
 
+/* km_dump_peak — no-op stub on host. The TC runtime (compiler/runtime.tc)
+ * tracks per-task kmalloc peak bytes and dumps them; bootstrap has no
+ * such tracker, so we just keep symbol resolution happy. sigscan.tc
+ * calls this on the OS to print "[kmem peak=N live=M]" before exit. */
+void km_dump_peak(void) {}
+
 /* ===== Array operations ===== */
 
 /* Typed array constructor: count-prefixed, 4 + count*elem_bytes */

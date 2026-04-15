@@ -21,6 +21,10 @@ import "source_reader.tc";
 import "ast_node.tc";
 import "strlib.tc";
 
+// Runtime helper, linked from runtime.tc. Prints per-task kmalloc peak
+// and live byte counts to stderr in the form "[kmem peak=N live=M]".
+fn km_dump_peak() -> void;
+
 // Node kind constants (subset needed for filtering)
 var NK_PROGRAM:  i32 = 0;
 var NK_FN:       i32 = 1;
@@ -84,11 +88,69 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
 
 fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
 
+// Kinds sigscan stores in the pool. Anything else (block, field,
+// comment, all expression kinds) gets read-and-discarded by
+// consume_subtree_silent so they never touch nodes / strtab.
+fn should_keep(kind_code: i32) -> bool {
+    if kind_code == NK_PROGRAM  { return true; }
+    if kind_code == NK_FN       { return true; }
+    if kind_code == NK_STRUCT   { return true; }
+    if kind_code == NK_VAR_DECL { return true; }
+    if kind_code == NK_PARAMS   { return true; }
+    if kind_code == NK_PARAM    { return true; }
+    if kind_code == NK_RET      { return true; }
+    if kind_code == NK_TYPE     { return true; }
+    return false;
+}
+
+// Consume the rest of an S-expression (after we've already eaten
+// the opening '(' and the kind atom) without allocating any AstNode
+// or copying any byte into strtab. Used by read_node when it sees
+// a kind that should_keep() rejects.
+fn consume_subtree_silent() -> void {
+    skip_ws_in();
+    var c: u8 = peek_in();
+
+    // Skip optional value (string or atom)
+    if c == '"' {
+        next(g_reader);
+        var ch: u8 = peek_in();
+        while ch != '"' && ch != 0u8 {
+            if ch == '\\' { next(g_reader); }
+            next(g_reader);
+            ch = peek_in();
+        }
+        if ch == '"' { next(g_reader); }
+    } else if c != '(' && c != ')' && c != 0u8 {
+        while at_eof(g_reader) == false && !is_atom_end(peek(g_reader)) {
+            next(g_reader);
+        }
+    }
+
+    // Skip nested children
+    skip_ws_in();
+    while peek_in() == '(' {
+        next(g_reader);
+        skip_ws_in();
+        // Drain the kind atom of the nested node
+        while at_eof(g_reader) == false && !is_atom_end(peek(g_reader)) {
+            next(g_reader);
+        }
+        consume_subtree_silent();
+        skip_ws_in();
+    }
+
+    if peek_in() == ')' { next(g_reader); }
+    return;
+}
+
 // ===== S-expression reader =====
-// Identical to extract_sigs.tc — reads a node and its full subtree
-// into the AstNode pool. We rely on `kind_code` capturing the few
-// kinds we care about; other kinds become NK_UNKNOWN but are still
-// stored so we can walk children.
+// Reads a node and its subtree into the AstNode pool, but **only for
+// kinds in should_keep()**. Anything outside that set is consumed by
+// consume_subtree_silent and read_node returns -1; the caller's child
+// link loop already handles -1 by skipping. This bounds the per-top-
+// level pool footprint to the header nodes we actually emit, instead
+// of the whole function body.
 fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
     skip_ws_in();
     if at_eof(g_reader) { return -1; }
@@ -102,6 +164,15 @@ fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
         actual_klen = actual_klen + 1;
     }
     var kind_code: i32 = classify_kind(atom, actual_klen);
+
+    // Drop subtrees we don't need. block / field / comment / all
+    // expression nodes (NK_UNKNOWN) end up here, which is what shrinks
+    // the pool peak for big function bodies.
+    if !should_keep(kind_code) {
+        consume_subtree_silent();
+        return -1;
+    }
+
     var n: i32 = alloc_node(nodes, kind_code);
 
     // Store type_annot if present (after ':')
@@ -316,18 +387,21 @@ fn write_global_var(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, inde
 //
 // Per-top-level streaming: read "(program", then loop reading 1
 // top-level S-expression at a time, emit it, and reset the AST node
-// pool + strtab cursor before reading the next one. This keeps the
-// pool peak bounded by the largest single top-level decl rather than
-// the whole program — important because compiler/parse.tc and similar
-// real inputs blow past a fixed 4096-node pool when the pool is shared
-// across the entire AST.
+// pool + strtab cursor before reading the next one. read_node also
+// drops anything outside should_keep() (block, field, expression
+// nodes, ...) without allocating, so the per-top-level peak is bounded
+// to the few header nodes (params + ret + their immediate children).
+//
+// Measured peaks across compiler/*.tc with the skip optimization:
+//   nc max  = 22 (parse.tc / bc2asm.tc)
+//   sp max  = 167 (bc2asm.tc)
+// The fixed buffers are sized at ~3x of those for safety; everything
+// else (kmalloc bookkeeping, SourceReader, StringBuffer scratch) is
+// small. See `[kmem peak=...]` printed at exit.
 fn main() -> i32 {
-    // 16384 nodes is enough for the biggest single function we
-    // compile (rough max ~3000 nodes for a 500-line fn). Reset
-    // happens after every top-level so this is the per-decl peak.
-    var nodes: AstNodeArray = AstNodeArray(16384u32);
-    var strtab: U8Array = U8Array(65536u32);
-    var atom_buf: U8Array = U8Array(1024u32);
+    var nodes: AstNodeArray = AstNodeArray(64u32);
+    var strtab: U8Array = U8Array(512u32);
+    var atom_buf: U8Array = U8Array(256u32);
     var ob: StringBuffer = StringBuffer_new(1);
 
     g_reader = SourceReader_new(0);
@@ -357,9 +431,14 @@ fn main() -> i32 {
         g_sp = 0;
 
         var n: i32 = read_node(atom_buf, nodes, strtab);
-        if n < 0 { sys_exit(4); }   // shouldn't happen mid-program
-
-        var k: i32 = n_kind(nodes, n);
+        // n == -1 is now a normal "this top-level was a skipped kind
+        // (comment / import / unknown)" signal. The reader has already
+        // consumed the closing ')', so just loop around.
+        if n < 0 {
+            skip_ws_in();
+            // continue while loop
+        } else {
+            var k: i32 = n_kind(nodes, n);
         if k == NK_FN {
             // All fns (export and non-export). The parser-synthesized
             // struct accessor fns (fn Foo, fn f1 getter, fn f1 setter,
@@ -385,6 +464,7 @@ fn main() -> i32 {
             emit_nl(ob);
         }
         // Other top-level kinds (comment, import, ...) are dropped.
+        }
 
         skip_ws_in();
     }
@@ -398,5 +478,11 @@ fn main() -> i32 {
 
     close(g_reader);
     delete(nodes); delete(strtab); delete(atom_buf); destroy(ob);
+
+    // Print "[kmem peak=N live=M]" to stderr — same line task_crt0.s
+    // emits on the kernel side. On the OS this is automatic; on host
+    // (compile-gen1.sh + qemu-riscv32) we call it explicitly so the
+    // diff harness can sanity-check sigscan stays inside its budget.
+    km_dump_peak();
     return 0;
 }
