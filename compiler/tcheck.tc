@@ -52,6 +52,11 @@ import "strlib.tc";
 // see bootstrap/runtime_syscall.c.
 fn km_dump_peak() -> void;
 
+// Raw byte allocator from the TC runtime (compiler/runtime.tc on Gen2,
+// bootstrap/runtime_syscall.c::kmalloc__i32 on Gen1). tcheck uses
+// this to carve variable-sized per-fn fntab entries.
+fn kmalloc(size: i32) -> u32;
+
 // ===== AST node kind constants =====
 var NK_PROGRAM: i32 = 0;
 var NK_FN: i32 = 1;
@@ -114,21 +119,22 @@ var g_type_sl: i32 = 0;
 var g_last_cmt_ss: i32 = -1;
 var g_last_cmt_sl: i32 = 0;
 
-// fntab stride: name_ss(0), name_sl(1), np(2), ret_ss(3), ret_sl(4),
-//               pss[0..20](5..25), psl[0..20](26..46) = 47 fields/entry
+// fntab is now a U32Array of handles into per-fn kmalloc'd entries.
+// Each entry is a variable-length record with a 5-field metadata
+// header followed by `np` parameter slots. Byte offsets:
 //
-// Max params is 21, matching typecheck.tc. The codebase actually has
-// one 21-param fn (compiler/bcrun.tc::vm_run, the bytecode interpreter
-// dispatch loop) so 21 is the floor — capping any lower causes a
-// type error on bcrun.tc.
-var FN_STRIDE: i32 = 47;
-var FN_NSS: i32 = 0;
-var FN_NSL: i32 = 1;
-var FN_NP: i32 = 2;
-var FN_RSS: i32 = 3;
-var FN_RSL: i32 = 4;
-var FN_PSS: i32 = 5;
-var FN_PSL: i32 = 26;
+//        +0   name_ss (i32)
+//        +4   name_sl (i32)
+//        +8   np      (i32)
+//       +12   ret_ss  (i32)
+//       +16   ret_sl  (i32)
+//       +20+i*4         pss[i] (i32)        for i in 0..np
+//       +20+np*4+i*4    psl[i] (i32)        for i in 0..np
+//
+// Total entry size = 20 + 8*np bytes. 0-param fns cost 20 B, the
+// single 21-param fn (bcrun.tc::vm_run) costs 188 B; old flat layout
+// charged 188 B for every fn. For ~200 fns averaging ~3 params each
+// we now spend ~10 KB instead of 47 KB on fntab.
 var FN_MAX_PARAMS: i32 = 21;
 
 // vartab stride: name_ss(0), name_sl(1), type_ss(2), type_sl(3), scope(4) = 5 fields per entry
@@ -377,22 +383,57 @@ fn st_add_str(strtab: U8Array, s: String) -> i32 {
 }
 
 // ===== fntab accessors =====
-// fntab stride=21: [nss, nsl, np, rss, rsl, pss[8], psl[8]]
-fn ft_nss(fntab: I32Array, fi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_NSS)); }
-fn ft_nsl(fntab: I32Array, fi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_NSL)); }
-fn ft_np(fntab: I32Array, fi: i32) -> i32  { return get(fntab, (fi*FN_STRIDE+FN_NP)); }
-fn ft_rss(fntab: I32Array, fi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_RSS)); }
-fn ft_rsl(fntab: I32Array, fi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_RSL)); }
-fn ft_pss(fntab: I32Array, fi: i32, pi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_PSS+pi)); }
-fn ft_psl(fntab: I32Array, fi: i32, pi: i32) -> i32 { return get(fntab, (fi*FN_STRIDE+FN_PSL+pi)); }
+//
+// fntab is a U32Array(MAX_FNS) of handles into kmalloc'd per-fn entries.
+// Layout of each entry is documented above near FN_MAX_PARAMS. The
+// accessors look up the handle from fntab[fi] then peek32 / poke32 at
+// the right byte offset.
+//
+// ft_alloc(fntab, fi, np) must be called BEFORE any ft_set_*: it
+// kmallocs an entry of size 20 + 8*np bytes, stores the handle at
+// fntab[fi], and pre-initialises the np field. Callers (collect_fn,
+// collect_struct, reg_fn) count their params, call ft_alloc, then
+// fill the rest.
 
-fn ft_set_nss(fntab: I32Array, fi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_NSS), v); }
-fn ft_set_nsl(fntab: I32Array, fi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_NSL), v); }
-fn ft_set_np(fntab: I32Array, fi: i32, v: i32) -> void  { set(fntab, (fi*FN_STRIDE+FN_NP), v); }
-fn ft_set_rss(fntab: I32Array, fi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_RSS), v); }
-fn ft_set_rsl(fntab: I32Array, fi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_RSL), v); }
-fn ft_set_pss(fntab: I32Array, fi: i32, pi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_PSS+pi), v); }
-fn ft_set_psl(fntab: I32Array, fi: i32, pi: i32, v: i32) -> void { set(fntab, (fi*FN_STRIDE+FN_PSL+pi), v); }
+fn ft_alloc(fntab: U32Array, fi: i32, np: i32) -> void {
+    var size: i32 = 20 + 8 * np;
+    var entry: u32 = kmalloc(size);
+    if entry == 0u32 { sys_exit(99); }
+    poke32(entry +  8u32, np as u32);   // np at byte 8
+    set(fntab, fi, entry);
+    return;
+}
+fn ft_h(fntab: U32Array, fi: i32) -> u32 { return get(fntab, fi); }
+
+fn ft_nss(fntab: U32Array, fi: i32) -> i32 { return peek32(ft_h(fntab, fi) +  0u32) as i32; }
+fn ft_nsl(fntab: U32Array, fi: i32) -> i32 { return peek32(ft_h(fntab, fi) +  4u32) as i32; }
+fn ft_np(fntab: U32Array, fi: i32) -> i32  { return peek32(ft_h(fntab, fi) +  8u32) as i32; }
+fn ft_rss(fntab: U32Array, fi: i32) -> i32 { return peek32(ft_h(fntab, fi) + 12u32) as i32; }
+fn ft_rsl(fntab: U32Array, fi: i32) -> i32 { return peek32(ft_h(fntab, fi) + 16u32) as i32; }
+fn ft_pss(fntab: U32Array, fi: i32, pi: i32) -> i32 {
+    return peek32(ft_h(fntab, fi) + (20 + pi*4) as u32) as i32;
+}
+fn ft_psl(fntab: U32Array, fi: i32, pi: i32) -> i32 {
+    var h: u32 = ft_h(fntab, fi);
+    var np: i32 = peek32(h + 8u32) as i32;
+    return peek32(h + (20 + np*4 + pi*4) as u32) as i32;
+}
+
+fn ft_set_nss(fntab: U32Array, fi: i32, v: i32) -> void { poke32(ft_h(fntab, fi) +  0u32, v as u32); return; }
+fn ft_set_nsl(fntab: U32Array, fi: i32, v: i32) -> void { poke32(ft_h(fntab, fi) +  4u32, v as u32); return; }
+fn ft_set_np(fntab: U32Array, fi: i32, v: i32) -> void  { poke32(ft_h(fntab, fi) +  8u32, v as u32); return; }
+fn ft_set_rss(fntab: U32Array, fi: i32, v: i32) -> void { poke32(ft_h(fntab, fi) + 12u32, v as u32); return; }
+fn ft_set_rsl(fntab: U32Array, fi: i32, v: i32) -> void { poke32(ft_h(fntab, fi) + 16u32, v as u32); return; }
+fn ft_set_pss(fntab: U32Array, fi: i32, pi: i32, v: i32) -> void {
+    poke32(ft_h(fntab, fi) + (20 + pi*4) as u32, v as u32);
+    return;
+}
+fn ft_set_psl(fntab: U32Array, fi: i32, pi: i32, v: i32) -> void {
+    var h: u32 = ft_h(fntab, fi);
+    var np: i32 = peek32(h + 8u32) as i32;
+    poke32(h + (20 + np*4 + pi*4) as u32, v as u32);
+    return;
+}
 
 // ===== vartab accessors =====
 // vartab stride=5: [nss, nsl, tss, tsl, sco]
@@ -462,13 +503,13 @@ fn set_annot_lit(nodes: AstNodeArray, strtab: U8Array, n: i32, ty: StringLiteral
 }
 
 // ===== Register builtins =====
-fn reg_fn(strtab: U8Array, fntab: I32Array, name: StringLiteral, pts: StringArray, np: i32, ret: StringLiteral) -> void {
+fn reg_fn(strtab: U8Array, fntab: U32Array, name: StringLiteral, pts: StringArray, np: i32, ret: StringLiteral) -> void {
     var fi: i32 = g_fn_count;
     g_fn_count = g_fn_count + 1;
+    ft_alloc(fntab, fi, np);
     var nstart: i32 = st_add_str(strtab, name);
     ft_set_nss(fntab, fi, nstart);
     ft_set_nsl(fntab, fi, len(name));
-    ft_set_np(fntab, fi, np);
     var rstart: i32 = st_add_str(strtab, ret);
     ft_set_rss(fntab, fi, rstart);
     ft_set_rsl(fntab, fi, len(ret));
@@ -483,14 +524,14 @@ fn reg_fn(strtab: U8Array, fntab: I32Array, name: StringLiteral, pts: StringArra
     return;
 }
 
-fn reg_fn0(strtab: U8Array, fntab: I32Array, name: StringLiteral, ret: StringLiteral) -> void {
+fn reg_fn0(strtab: U8Array, fntab: U32Array, name: StringLiteral, ret: StringLiteral) -> void {
     var pts: StringArray = StringArray(1u32);
     reg_fn(strtab, fntab, name, pts, 0, ret);
     delete(pts);
     return;
 }
 
-fn reg_fn1(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, ret: StringLiteral) -> void {
+fn reg_fn1(strtab: U8Array, fntab: U32Array, name: StringLiteral, p0: StringLiteral, ret: StringLiteral) -> void {
     var pts: StringArray = StringArray(1u32);
     set(pts, 0, p0);
     reg_fn(strtab, fntab, name, pts, 1, ret);
@@ -498,7 +539,7 @@ fn reg_fn1(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLite
     return;
 }
 
-fn reg_fn2(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, p1: StringLiteral, ret: StringLiteral) -> void {
+fn reg_fn2(strtab: U8Array, fntab: U32Array, name: StringLiteral, p0: StringLiteral, p1: StringLiteral, ret: StringLiteral) -> void {
     var pts: StringArray = StringArray(2u32);
     set(pts, 0, p0);
     set(pts, 1, p1);
@@ -507,7 +548,7 @@ fn reg_fn2(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLite
     return;
 }
 
-fn reg_fn3(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLiteral, p1: StringLiteral, p2: StringLiteral, ret: StringLiteral) -> void {
+fn reg_fn3(strtab: U8Array, fntab: U32Array, name: StringLiteral, p0: StringLiteral, p1: StringLiteral, p2: StringLiteral, ret: StringLiteral) -> void {
     var pts: StringArray = StringArray(3u32);
     set(pts, 0, p0);
     set(pts, 1, p1);
@@ -517,7 +558,7 @@ fn reg_fn3(strtab: U8Array, fntab: I32Array, name: StringLiteral, p0: StringLite
     return;
 }
 
-fn reg_array_builtins(strtab: U8Array, fntab: I32Array, arr_type: StringLiteral, elem_type: StringLiteral) -> void {
+fn reg_array_builtins(strtab: U8Array, fntab: U32Array, arr_type: StringLiteral, elem_type: StringLiteral) -> void {
     reg_fn1(strtab, fntab, arr_type, "u32", arr_type);
     reg_fn1(strtab, fntab, "len", arr_type, "i32");
     reg_fn2(strtab, fntab, "get", arr_type, "i32", elem_type);
@@ -526,7 +567,7 @@ fn reg_array_builtins(strtab: U8Array, fntab: I32Array, arr_type: StringLiteral,
     return;
 }
 
-fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
+fn register_builtins(strtab: U8Array, fntab: U32Array) -> void {
     reg_fn1(strtab, fntab, "peek8", "u32", "u8");
     reg_fn1(strtab, fntab, "peek16", "u32", "u16");
     reg_fn1(strtab, fntab, "peek32", "u32", "u32");
@@ -581,7 +622,7 @@ fn register_builtins(strtab: U8Array, fntab: I32Array) -> void {
 // ===== Resolve overload =====
 // Looks up function by name and nargs argument types (stored in arg_tss/arg_tsl arrays)
 // Sets g_type_ss/g_type_sl to return type on success. Returns fi or -1.
-fn resolve_overload(strtab: U8Array, fntab: I32Array, arg_tss: I32Array, arg_tsl: I32Array,
+fn resolve_overload(strtab: U8Array, fntab: U32Array, arg_tss: I32Array, arg_tsl: I32Array,
                     name_ss: i32, name_sl: i32, nargs: i32) -> i32 {
     var fi: i32 = 0;
     while fi < g_fn_count {
@@ -615,7 +656,7 @@ fn resolve_overload(strtab: U8Array, fntab: I32Array, arg_tss: I32Array, arg_tsl
 // ===== Type check expressions =====
 // Result type is stored in g_type_ss / g_type_sl.
 // Also annotates node n with its type.
-fn check_expr(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, n: i32) -> void {
+fn check_expr(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, n: i32) -> void {
     if n < 0 {
         g_type_ss = -1;
         g_type_sl = 0;
@@ -757,7 +798,7 @@ fn err_slice(buf: U8Array, pos: i32, strtab: U8Array, ss: i32, sl: i32) -> i32 {
     return pos + sl;
 }
 
-fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array,
+fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array,
                    n: i32, fname_ss: i32, fname_sl: i32) -> void {
     var nargs: i32 = n_nchildren(nodes, n);
     var arg_tss: I32Array = I32Array(24u32);
@@ -817,7 +858,7 @@ fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab
     return;
 }
 
-fn check_stmt(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, n: i32) -> void {
+fn check_stmt(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, n: i32) -> void {
     var k: i32 = n_kind(nodes, n);
 
     if k == NK_VAR_DECL {
@@ -918,7 +959,7 @@ fn check_stmt(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32
     return;
 }
 
-fn check_block(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, blk_n: i32) -> void {
+fn check_block(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, blk_n: i32) -> void {
     var c: i32 = n_child(nodes, blk_n);
     while c >= 0 {
         check_stmt(nodes, strtab, fntab, vartab, c);
@@ -927,7 +968,7 @@ fn check_block(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I3
     return;
 }
 
-fn check_fn(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, fn_n: i32) -> void {
+fn check_fn(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, fn_n: i32) -> void {
     var params_n: i32 = n_child(nodes, fn_n);
     var ret_n: i32 = -1;
     var body_n: i32 = -1;
@@ -969,14 +1010,26 @@ fn check_fn(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Ar
 }
 
 // ===== Collect declarations =====
-fn collect_fn(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, fn_n: i32) -> void {
+fn collect_fn(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, fn_n: i32) -> void {
+    var params_n: i32 = n_child(nodes, fn_n);
+
+    // First pass: count params so we can size the per-fn kmalloc.
+    var np: i32 = 0;
+    if params_n >= 0 {
+        var pc1: i32 = n_child(nodes, params_n);
+        while pc1 >= 0 && np < FN_MAX_PARAMS {
+            np = np + 1;
+            pc1 = n_sib(nodes, pc1);
+        }
+    }
+
     var fi: i32 = g_fn_count;
     g_fn_count = g_fn_count + 1;
+    ft_alloc(fntab, fi, np);
 
     ft_set_nss(fntab, fi, n_ss(nodes, fn_n));
     ft_set_nsl(fntab, fi, n_sl(nodes, fn_n));
 
-    var params_n: i32 = n_child(nodes, fn_n);
     var ret_n: i32 = -1;
     if params_n >= 0 { ret_n = n_sib(nodes, params_n); }
 
@@ -996,46 +1049,57 @@ fn collect_fn(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, fn_n: i32) 
     ft_set_rss(fntab, fi, rt_ss);
     ft_set_rsl(fntab, fi, rt_sl);
 
-    var np: i32 = 0;
+    // Second pass: fill in the param type slots.
     if params_n >= 0 {
         var pc2: i32 = n_child(nodes, params_n);
-        while pc2 >= 0 && np < FN_MAX_PARAMS {
+        var pi: i32 = 0;
+        while pc2 >= 0 && pi < np {
             var ptype_n: i32 = n_child(nodes, pc2);
             if ptype_n >= 0 {
-                ft_set_pss(fntab, fi, np, n_ss(nodes, ptype_n));
-                ft_set_psl(fntab, fi, np, n_sl(nodes, ptype_n));
+                ft_set_pss(fntab, fi, pi, n_ss(nodes, ptype_n));
+                ft_set_psl(fntab, fi, pi, n_sl(nodes, ptype_n));
             }
-            np = np + 1;
+            pi = pi + 1;
             pc2 = n_sib(nodes, pc2);
         }
     }
-    ft_set_np(fntab, fi, np);
     return;
 }
 
-fn collect_struct(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, struct_n: i32) -> void {
+fn collect_struct(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, struct_n: i32) -> void {
     var sname_ss: i32 = n_ss(nodes, struct_n);
     var sname_sl: i32 = n_sl(nodes, struct_n);
 
-    // Register constructor
+    // First pass: count fields (= params for the synthesized
+    // constructor) so we can size the per-fn kmalloc.
+    var nfp: i32 = 0;
+    var fc1: i32 = n_child(nodes, struct_n);
+    while fc1 >= 0 && nfp < FN_MAX_PARAMS {
+        nfp = nfp + 1;
+        fc1 = n_sib(nodes, fc1);
+    }
+
+    // Register constructor.
     var fi2: i32 = g_fn_count;
     g_fn_count = g_fn_count + 1;
+    ft_alloc(fntab, fi2, nfp);
     ft_set_nss(fntab, fi2, sname_ss);
     ft_set_nsl(fntab, fi2, sname_sl);
     ft_set_rss(fntab, fi2, sname_ss);
     ft_set_rsl(fntab, fi2, sname_sl);
-    var nfp: i32 = 0;
+
+    // Second pass: fill in the field type slots.
     var fc2: i32 = n_child(nodes, struct_n);
-    while fc2 >= 0 && nfp < FN_MAX_PARAMS {
+    var fi3: i32 = 0;
+    while fc2 >= 0 && fi3 < nfp {
         var ftype_n: i32 = n_child(nodes, fc2);
         if ftype_n >= 0 {
-            ft_set_pss(fntab, fi2, nfp, n_ss(nodes, ftype_n));
-            ft_set_psl(fntab, fi2, nfp, n_sl(nodes, ftype_n));
+            ft_set_pss(fntab, fi2, fi3, n_ss(nodes, ftype_n));
+            ft_set_psl(fntab, fi2, fi3, n_sl(nodes, ftype_n));
         }
-        nfp = nfp + 1;
+        fi3 = fi3 + 1;
         fc2 = n_sib(nodes, fc2);
     }
-    ft_set_np(fntab, fi2, nfp);
 
     // XxxArray constructor / len / get / set / delete are emitted as
     // synthetic fn AST nodes by the parser (see compiler/parse.tc
@@ -1063,7 +1127,7 @@ fn is_export_annot(nodes: AstNodeArray, strtab: U8Array, n: i32) -> bool {
 // The imports node contains (program ...) sub-nodes, one per .th file.
 // Only `(fn:export ...)` and `(struct ...)` are registered. Non-export
 // fns and `(var_decl ...)` from imports are deliberately ignored.
-fn collect_imports_th(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, imports_n: i32) -> void {
+fn collect_imports_th(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, imports_n: i32) -> void {
     var prog: i32 = n_child(nodes, imports_n);
     while prog >= 0 {
         var c: i32 = n_child(nodes, prog);
@@ -1094,7 +1158,7 @@ fn collect_imports_th(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, imp
 // (some forward-referenced globals would otherwise gain a `:type`
 // annotation they don't have under typecheck.tc), tcheck mirrors that
 // per-top-level adding via the main streaming loop.
-fn collect_self_th(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, self_n: i32) -> void {
+fn collect_self_th(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, self_n: i32) -> void {
     var prog: i32 = n_child(nodes, self_n);
     while prog >= 0 {
         var c: i32 = n_child(nodes, prog);
@@ -1114,7 +1178,7 @@ fn collect_self_th(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, self_n
     return;
 }
 
-fn collect_decls(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
+fn collect_decls(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, root: i32) -> void {
     var c: i32 = n_child(nodes, root);
     while c >= 0 {
         var ck: i32 = n_kind(nodes, c);
@@ -1129,7 +1193,7 @@ fn collect_decls(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: 
     return;
 }
 
-fn check_program(nodes: AstNodeArray, strtab: U8Array, fntab: I32Array, vartab: I32Array, root: i32) -> void {
+fn check_program(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, root: i32) -> void {
     var c: i32 = n_child(nodes, root);
     while c >= 0 {
         var ck: i32 = n_kind(nodes, c);
@@ -1314,7 +1378,7 @@ fn read_close_paren() -> void {
 // for why globals stay source-ordered. Resets the AST pool between
 // each top-level so the per-element pool peak stays small.
 fn stream_register_program(nodes: AstNodeArray, strtab: U8Array,
-                           fntab: I32Array, atom: U8Array, export_only: bool) -> void {
+                           fntab: U32Array, atom: U8Array, export_only: bool) -> void {
     skip_ws_in();
     while peek_in() == '(' {
         reset_node_pool(nodes);
@@ -1346,7 +1410,7 @@ fn stream_register_program(nodes: AstNodeArray, strtab: U8Array,
 // its top-level decls are stream-registered with export-only filter,
 // and its closing paren is consumed.
 fn read_imports_wrapper(nodes: AstNodeArray, strtab: U8Array,
-                        fntab: I32Array, atom: U8Array) -> void {
+                        fntab: U32Array, atom: U8Array) -> void {
     skip_ws_in();
     if peek_in() != '(' { return; }
     var k: i32 = read_open_kind(atom);
@@ -1368,7 +1432,7 @@ fn read_imports_wrapper(nodes: AstNodeArray, strtab: U8Array,
 // (export_only=false). Globals are still NOT registered here — see
 // collect_self_th for the rationale.
 fn read_self_wrapper(nodes: AstNodeArray, strtab: U8Array,
-                     fntab: I32Array, atom: U8Array) -> void {
+                     fntab: U32Array, atom: U8Array) -> void {
     skip_ws_in();
     if peek_in() != '(' { return; }
     var k: i32 = read_open_kind(atom);
@@ -1412,21 +1476,23 @@ fn main() -> i32 {
     //              vm_run, 21 params)
     //   strtab ≈ 25109 B (bcrun.tc with    → 32768 (32 KB)
     //              rollback)
-    //   fntab  ≈ 219 fns × 47 stride       → 256 fns × 47 = 12032
-    //              (FN_MAX_PARAMS=21,         (47 KB)
-    //               vm_run in bcrun.tc)
+    //   fntab  handles only                → U32Array(256) = 1 KB
+    //                                          + per-fn kmalloc:
+    //                                          ~10 KB total for ~220
+    //                                          fns averaging few
+    //                                          params each
     //   vartab ≈ 71 vars (bcrun.tc)        → 128 × 5 = 640 (2.5 KB)
     //
-    // Total static ≈ 94 KB, down from typecheck.tc's ~712 KB. The
-    // remaining bloat is the 47-i32 fntab stride — most fns use
-    // far fewer slots than vm_run's 21, but compacting per-fn would
-    // need variable-length kmalloc which is a much bigger refactor
-    // (deferred to a follow-up).
+    // Total static ≈ 48 KB, down from typecheck.tc's ~712 KB. fntab
+    // moved from a 47 KB flat I32Array(12032) to a 1 KB U32Array(256)
+    // handle table + per-fn kmalloc (#64). Each entry is (5 + 2*np)
+    // i32, so a 0-param fn costs 20 B and the 21-param vm_run costs
+    // 188 B instead of every fn paying 188 B.
     var nodes: AstNodeArray = AstNodeArray(3072u32);
     var strtab: U8Array = U8Array(32768u32);
     var atom_buf: U8Array = U8Array(1024u32);
     var ob: StringBuffer = StringBuffer_new(1);
-    var fntab: I32Array = I32Array(12032u32);
+    var fntab: U32Array = U32Array(256u32);
     var vartab: I32Array = I32Array(640u32);
 
     g_reader = SourceReader_new(0);

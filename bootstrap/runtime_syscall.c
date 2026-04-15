@@ -203,6 +203,14 @@ void print_str__StringLiteral(HeapObj s) {
  * calls this on the OS to print "[kmem peak=N live=M]" before exit. */
 void km_dump_peak(void) {}
 
+/* kmalloc — TC-level raw byte allocator. tcheck.tc uses this to
+ * carve per-fn fntab entries (variable size) instead of paying the
+ * worst-case stride for every fn. The TC runtime has its own
+ * tracking allocator; on host we just forward to pool_alloc. */
+uint32_t kmalloc__i32(int32_t size) {
+    return (uint32_t)(uintptr_t)pool_alloc(size);
+}
+
 /* ===== Array operations ===== */
 
 /* Typed array constructor: count-prefixed, 4 + count*elem_bytes */
