@@ -1,28 +1,34 @@
 #!/bin/bash
-# test_split.sh — diff harness for the typecheck split (#52).
+# test_split.sh — diff harness for the Phase 1 + Phase 2 splits.
 #
-# Verifies that the new sigscan + tcheck pipeline produces .tast
-# byte-identical to the legacy compiler/typecheck.tc on a battery of
-# real .tc inputs:
+# Two halves:
 #
-#   parse < $TC > a.ast
-#   sigscan < a.ast > a.th         (extended .th: all top-level decls)
-#   { (imports …); (self <a.th>); a.ast } | tcheck > new.tast
+# 1. typecheck split (#52):
+#      parse < $TC > a.ast
+#      sigscan < a.ast > a.th     (extended .th: all top-level decls)
+#      { (imports); (self <a.th>); a.ast } | tcheck > new.tast
+#      { (imports); a.ast }        | typecheck > old.tast
+#      diff old.tast new.tast
 #
-#   { (imports …); a.ast } | typecheck > old.tast
+# 2. asm split (#57):
+#      compile-gen2.sh ... > old.bin       (uses single-process asm.tc)
+#      cat $TMP/full.s | asm-pass1 > a.lab
+#      cat a.lab $TMP/full.s | asm-pass2 > new.bin
+#      cmp old.bin new.bin
 #
-#   diff old.tast new.tast
+# (imports …) is built per-file by walking import statements
+# transitively and feeding each through Gen1 extract-sigs (NOT
+# sigscan, so the legacy typecheck path stays on its native .th
+# format).
 #
-# (imports …) is built per-file by walking import "..." statements
-# transitively and feeding each through Gen1 extract-sigs (NOT sigscan,
-# so the legacy typecheck path stays on its native .th format).
+# All happy-path inputs in compiler/*.tc and tests/*.tc /
+# tests/import/*.tc are checked for the typecheck split; the asm
+# split runs over a smaller set of binary-producing inputs because
+# each one needs a full compile-gen2.sh round-trip.
 #
-# All inputs in compiler/*.tc and tests/*.tc / tests/import/*.tc are
-# checked. Any mismatch prints the first 30 lines of diff and exits 1.
-#
-# NOT run by `make test` — it builds Gen1 binaries for sigscan,
-# tcheck and typecheck.tc then runs each over many fixtures via
-# qemu-riscv32, which adds ~30 seconds. Invoke manually:
+# NOT run by `make test` — builds Gen1 binaries for sigscan, tcheck,
+# typecheck.tc, asm_pass1, asm_pass2 then runs each over many
+# fixtures via qemu-riscv32. Invoke manually:
 #
 #   tests/test_split.sh
 #
@@ -53,14 +59,26 @@ trap 'rm -rf "$TMP"' EXIT
 #   different from the bootstrap C ./typecheck (which prints bool
 #   literals slightly differently — see tcheck commit history)
 
-echo "Building reference (typecheck.tc) and new (sigscan + tcheck)..."
+echo "Building reference (typecheck.tc) and new (sigscan + tcheck + asm_pass1 + asm_pass2)..."
 ./compile-gen1.sh -o "$TMP/typecheck_tc" compiler/typecheck.tc 2>&1 | tail -3
 ./compile-gen1.sh -o "$TMP/sigscan"      compiler/sigscan.tc   2>&1 | tail -3
 ./compile-gen1.sh -o "$TMP/tcheck"       compiler/tcheck.tc    2>&1 | tail -3
+./compile-gen1.sh -o "$TMP/asm_pass1"    compiler/asm_pass1.tc 2>&1 | tail -3
+./compile-gen1.sh -o "$TMP/asm_pass2"    compiler/asm_pass2.tc 2>&1 | tail -3
 
-if [ ! -x "$TMP/typecheck_tc" ] || [ ! -x "$TMP/sigscan" ] || [ ! -x "$TMP/tcheck" ]; then
+if [ ! -x "$TMP/typecheck_tc" ] || [ ! -x "$TMP/sigscan" ] || [ ! -x "$TMP/tcheck" ] \
+   || [ ! -x "$TMP/asm_pass1" ] || [ ! -x "$TMP/asm_pass2" ]; then
     echo "FAIL: build" >&2
     exit 1
+fi
+
+# The asm half also needs a Gen2 toolchain ($GEN2_DIR) so compile-gen2.sh
+# can produce the reference ELF and the intermediate full.s. Skip the
+# asm half (with a notice) when it isn't available — the typecheck half
+# still runs.
+HAS_GEN2=0
+if [ -n "$GEN2_DIR" ] && [ -x "$GEN2_DIR/asm" ]; then
+    HAS_GEN2=1
 fi
 
 # ----- Helper: collect transitive imports of a .tc file -----
@@ -165,6 +183,71 @@ for f in tests/import/*.tc; do
     esac
     diff_one "$f"
 done
+
+# =====================================================================
+# asm split (#57)
+# =====================================================================
+#
+# For each input we re-run compile-gen2.sh with KEEP_TMP=1 so it keeps
+# its tmp dir and writes the assembled .s to $TMP_GEN2/full.s before
+# invoking the (old) asm. We then take the same full.s through
+# asm_pass1 + asm_pass2 and cmp the resulting binaries.
+
+asm_diff_one() {
+    local tc="$1"
+    local subtmp
+    subtmp=$(mktemp -d)
+    KEEP_TMP=1 GEN2_DIR="$GEN2_DIR" ./compile-gen2.sh -o "$subtmp/old.bin" "$tc" \
+        2>"$subtmp/cg2.err" >/dev/null || true
+
+    # compile-gen2.sh wrote its tmp to a fresh /tmp/tmp.* dir. Find the
+    # most recently created /tmp/tmp.*/full.s.
+    local cg2_tmp
+    cg2_tmp=$(ls -td /tmp/tmp.*/full.s 2>/dev/null | head -1)
+    if [ -z "$cg2_tmp" ] || [ ! -f "$cg2_tmp" ]; then
+        printf 'SKIP %s (no full.s emitted by compile-gen2.sh)\n' "$tc"
+        rm -rf "$subtmp"
+        return
+    fi
+    if [ ! -s "$subtmp/old.bin" ]; then
+        printf 'SKIP %s (compile-gen2.sh produced no binary)\n' "$tc"
+        rm -rf "$subtmp"
+        rm -rf "$(dirname "$cg2_tmp")"
+        return
+    fi
+
+    qemu-riscv32 "$TMP/asm_pass1" < "$cg2_tmp" > "$subtmp/x.lab" 2>/dev/null
+    cat "$subtmp/x.lab" "$cg2_tmp" | qemu-riscv32 "$TMP/asm_pass2" \
+        > "$subtmp/new.bin" 2>/dev/null
+
+    if cmp -s "$subtmp/old.bin" "$subtmp/new.bin"; then
+        printf 'OK   %-30s %d bytes\n' "$tc" "$(stat -c%s "$subtmp/old.bin")"
+        PASS=$((PASS + 1))
+    else
+        printf 'DIFF %-30s old=%d new=%d\n' "$tc" \
+            "$(stat -c%s "$subtmp/old.bin")" \
+            "$(stat -c%s "$subtmp/new.bin")"
+        FAIL=$((FAIL + 1))
+    fi
+    rm -rf "$subtmp"
+    rm -rf "$(dirname "$cg2_tmp")"
+}
+
+if [ "$HAS_GEN2" = "1" ]; then
+    echo ""
+    echo "=== asm split: compiler/*.tc via compile-gen2.sh ==="
+    for f in compiler/parse.tc compiler/typecheck.tc compiler/codegen.tc \
+             compiler/bc2asm.tc compiler/asm.tc compiler/sigscan.tc \
+             compiler/extract_sigs.tc compiler/tcheck.tc \
+             compiler/asm_pass1.tc compiler/asm_pass2.tc; do
+        asm_diff_one "$f"
+    done
+else
+    echo ""
+    echo "=== asm split ==="
+    echo "SKIP: GEN2_DIR not set or \$GEN2_DIR/asm missing — re-run with"
+    echo "      GEN2_DIR=/path/to/gen2 tests/test_split.sh"
+fi
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
