@@ -71,7 +71,11 @@ if [ -n "$EXTRA_TASKS" ]; then
 fi
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+if [ -z "$KEEP_TMP" ]; then
+    trap 'rm -rf "$TMP"' EXIT
+else
+    echo "KEEP_TMP set: leaving $TMP after build" >&2
+fi
 
 TASK_CRT0="$KERN_DIR/tasks/task_crt0.s"
 TASK_DATA="$KERN_DIR/tasks/task_data.s"

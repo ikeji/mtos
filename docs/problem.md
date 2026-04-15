@@ -235,6 +235,71 @@ phase 7 M6 時点でカーネルに常時出力している debug 出力:
 出力が混ざっても grep 条件は無事なので急ぐ必要はないが、
 フェーズ 8 以降のクリーンな基盤作りには邪魔になる。
 
+### K7 part 3 debug 未解決 — pico2 + EXTRA_TASKS + sh spawn で OOM
+
+**症状** (2026-04-15):
+
+- pico2 kernel を `EXTRA_TASKS="parse sigscan tcheck codegen bc2asm
+  asm_pass1 asm_pass2 cat"` 付きでビルド
+- kernel 起動後、sh の sys_spawn path で **何を spawn しても** 
+  `OOM: 524292` が出る
+- seeded load_task ("/bin/hello", "/bin/hello2", "/bin/sh") はちゃんと
+  正しい arena_size (8192 / 8192 / 32768) で load できているので、
+  sys_exec_handler / sys_spawn_handler 経由のパスだけが壊れている
+
+**診断中に分かったこと**:
+
+- `load_fd` に debug print を仕込むと、XIP 経路は正しい arena_x /
+  stack_x を返している (hello=8192 / 8192)
+- sh が do_spawn を呼んだ時の path を `do_write(1, path_addr, 20)` で
+  dump すると「/bin/\0catfile」「/bin/\0hello」のような変な bytes 列
+  に見える (\0 + 別の task 名が並ぶ)
+- その load_fd でもらう xip=0x1001e4f0 系は、正規の seeded load で
+  もらう xip=0x100c1e30 系と全然違う flash offset。mtfs superblock /
+  inode table 付近
+- 結果として load_fd が asm_pass1 の header (arena=524288) を読んで
+  しまい 512 KB の kmalloc を発動して arena (480 KB) OOM
+
+**仮説**:
+
+1. **mtfs_lookup が EXTRA_TASKS 有り mtfs image (inode ~32 個) で
+   誤マッチする** - 1 inode / 1 parent の照合ロジックのどこかが
+   inodes が増えたときに壊れる
+2. **sh の cmd / path buffer が UART RX の stale bytes を拾って
+   いる** - test_pico2.sh の flash+reset timing or CDC-ACM の buffering
+   で stale bytes が残り、sh の read_line が期待と違うバイト列を
+   読み込んでいる
+3. **vfs_open の path parser が長い path_addr で誤動作** - 20 byte
+   dump の見た目だと `/bin/` の後に NUL + 別名が続いているので
+   sh 側の path buffer allocation が疑わしい
+
+**未検証**:
+
+- `sh` を経由せずに `kernel_pico2.tc::main` から直接 `load_task("/bin/
+  parse")` + `sched_register` したら OOM は出るのか (mtfs_lookup の
+  バグと sh の buffer バグを切り分けられる)
+- virt で同じ EXTRA_TASKS + sh catfile 経路が動くか (virt は動いて
+  いる: test_phase7.sh の stage 1 が既に catfile+compiler task chain を
+  問題なく回している → virt でも pico2 でも mtfs の EXTRA_TASKS
+  レイアウトは同じなので、pico2 の症状が mtfs の inode 数依存だと
+  説明しづらい)
+
+**次に試すべきこと**:
+
+1. pico2 kernel_pico2.tc で main の中に `load_task("/bin/parse")` を
+   足して、sh 抜きで spawn できるか確認
+2. test_pico2.sh の UART 入力路を単一の `stty` + `exec 3>` pattern に
+   せず、pipe-from-host を使う (cdc-acm は読み/書き両用なので double-cat
+   pattern の race が出にくい)
+3. sh.tc の read_line / parse_redir に debug print を仕込んで実際に
+   読んでいる cmd 中身を stderr に流す
+
+時間がかかりそうなので part 3 はここで中断 (2026-04-15)。基本的な
+pico2 sh + catfile / launcher cascade は K7 part 2 で動作確認済で、
+compiler task を回す目的は上記のどれかで再開する。
+
+---
+
 ### K7. pico2 で phase 7 コンパイラが動かない (part 1 + 2 完了、残: compiler 実行)
 
 **K7 part 1 (2026-04-15)**: K3 (per-task サイズ宣言) + kernel arena
