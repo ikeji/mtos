@@ -124,14 +124,15 @@ C言語でフルパイプラインを実装し、動作を検証する。
       typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB。
       Phase 1 (typecheck 分割 → sigscan + tcheck)、Phase 2 (asm 分割
       → asm-pass1 + asm-pass2)、Phase 3 (codegen / bc2asm in-place
-      shrinks) をすべて完了:
+      shrinks)、Phase 4/5 (asm_pass2 shrink) をすべて完了:
       - sigscan ≈ 10 KB、tcheck ≈ 75〜252 KB (~9x)
       - codegen ≈ 80〜252 KB (~2x)
       - bc2asm ≈ 120〜126 KB (~11x)
-      - asm-pass1 ≈ 430 KB (~22x)、asm-pass2 ≈ 441 KB (g_code を
-        .lab のセクションサイズ合計で動的確保、旧 4.6 MB 比 ~10x)
+      - asm-pass1 ≈ 227〜268 KB (~40x、label pool shrink 後)
+      - asm-pass2 ≈ 260〜280 KB (Phase 5 stream-emit、旧 4.6 MB 比 ~16x)
       `tests/test_phase7.sh` で OS 上の Hello World split pipeline を
-      回帰確認。残件は bcrun.tc::vm_run の AST pool outlier
+      回帰確認。compiler 全タスクが Pico 2 kernel arena 480 KB に
+      余裕で収まる状態。残件は bcrun.tc::vm_run の AST pool outlier
       (intentionally out of scope)
 - [x] **Gen2 toolchain migration (2026-04-15)**: compile-gen2.sh /
       compile-gen3.sh / kernel/build.sh / tests/test_common.sh /
@@ -146,9 +147,10 @@ C言語でフルパイプラインを実装し、動作を検証する。
       dynamic sys_spawn / sys_wait + sh (UART interactive) が実機で
       動作確認済。tests/test_pico2.sh が UART 経由で `catfile\n` /
       `launcher\n` / `quit\n` を sh に送って実機検証 (2 件 PASS)。
-      残件: sh から compiler task を spawn してパイプラインを一周
-      するところ。compiler タスクの pico2 向けサイズ最適化か、
-      asm_pass2 の更なる shrink が必要 (問題 #K7)
+      Phase 4/5 で asm_pass2 peak が 280 KB まで落ちたので compiler
+      task 群はすべて 480 KB arena に収まる。残件: sh から compiler
+      task を spawn してパイプラインを一周するところ (問題 #K7 part
+      3 debug)
 
 ## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
 
@@ -313,9 +315,10 @@ asm split・full split すべての pipeline で Hello World が動く。
 - [ ] **C-2 (任意)**: `pipe()` + dup2 による真のパイプサポート
       (中間ファイル経由で動いたあと、性能が問題になったら)
 - [ ] **M7**: OS 上で Gen2 コンパイラ自身を再コンパイルして
-      Gen3 に相当する一周をやる。現状の per-stage peak は全部
-      16 MB task 枠に収まる (asm-pass2 が最大で 4.6 MB)。時間は
-      多めに要る見込み
+      Gen3 に相当する一周をやる。Phase 4/5 完了後は per-stage peak
+      が全部 300 KB 以下 (asm-pass1/2 が最大 ~280 KB) なので
+      16 MB task 枠どころか pico2 の 480 KB arena 枠にも収まる。
+      時間は多めに要る見込み
 
 ## フェーズ8: 自己ホスト
 
@@ -331,7 +334,7 @@ asm split・full split すべての pipeline で Hello World が動く。
 |---|---|
 | インタプリタとコンパイラの挙動が一致しない | `tests/test_consistency.sh` / `tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
 | LL(1)で表現できない構文が欲しくなる | 文法制約を文書化し、設計段階で確認 |
-| メモリ不足（520KB SRAM） | **Phase 1 + 2 + 3 + 4 完了**: sigscan/tcheck/asm-pass1/asm-pass2 の 4 本を新設 + codegen/bc2asm の in-place shrink + asm-pass2 の g_code 動的確保で全ステージを劇的に縮小。旧 (parse 14 KB / typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB) → 新 (parse 14 KB / sigscan 10 KB / tcheck ≈ 75-252 KB / codegen ≈ 80-252 KB / bc2asm ≈ 126 KB / asm-pass1 ≈ 430 KB / asm-pass2 ≈ 441 KB)。全ステージが Pico 2 の 520 KB SRAM に収まる見込み。詳細は `docs/task/pipeline_100kb.md` |
+| メモリ不足（520KB SRAM） | **Phase 1 + 2 + 3 + 4 + 5 完了**: sigscan/tcheck/asm-pass1/asm-pass2 の 4 本を新設 + codegen/bc2asm の in-place shrink + asm-pass1 の label pool 半減 + asm-pass2 の stream-emit 化で全ステージを劇的に縮小。旧 (parse 14 KB / typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB) → 新 (parse 14 KB / sigscan 10 KB / tcheck ≈ 75-252 KB / codegen ≈ 80-252 KB / bc2asm ≈ 126 KB / asm-pass1 ≈ 227-268 KB / asm-pass2 ≈ 260-280 KB)。全ステージが Pico 2 の 480 KB kernel arena に余裕で収まる。詳細は `docs/task/pipeline_100kb.md` |
 | gp 相対 `la` の 12-bit 制約 | hello レベルでは余裕。将来必要なら 12 byte 形式 (`lui+addi+add gp`) に拡張 |
 | QEMUと実機の挙動差異 | bring-up 時に standalone hello を実機検証、以降はカーネル込みの kernel/platform_pico2.s に集約。test_pico2.sh が Debug Probe 経由で継続検証 |
 | Flash書き込みが遅い・壊れやすい | picotool UF2 経由の書き込みのみ使用。書き換え頻度は開発サイクルで問題ないレベル |

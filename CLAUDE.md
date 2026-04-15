@@ -40,9 +40,12 @@
     `.lab` 中間ファイル (仕様: `docs/lab_format.md`) で pass1 が
     label を集めて pass2 が encoder。pass1/pass2 とも g_lines 4 MB
     を廃止して SourceReader で stream 読み。**asm-pass1 ≈ 430 KB**
-    (旧 9.5 MB 比 22x)、**asm-pass2 ≈ 441 KB** (g_code を .lab の
-    セクションサイズ合計で動的確保し 4 MB 固定を廃止、旧 4.6 MB
-    比 10x) (#55〜#58 + Phase 4)
+    (旧 9.5 MB 比 22x)、**asm-pass1 ≈ 227〜268 KB**
+    (MAX_LABELS 16384→4096 + MAX_NAME_POOL 256K→128K で label pool
+    を半分に、2026-04-16 / commit 5098a1e)、**asm-pass2 ≈ 260〜280
+    KB** (Phase 5 で g_code 廃止 → 3 pass source re-scan で stream
+    emit、2026-04-16 / commit 426f51e)。compiler 全タスクが Pico 2
+    の 480 KB arena に余裕で収まる (#55〜#58 + Phase 4/5)
   - **Phase 3 (in-place shrinks)**:
     - codegen: strtab を perm/ephemeral 2 cursor 化 (per-top-level
       rollback) + buffer 縮小。303 KB → **80〜252 KB** (#59)
@@ -151,11 +154,14 @@ compiler/   自作TinyC製の自己ホスト型コンパイラ（Gen2/Gen3）
                      label table / section state 全部ここに。asm_pass1/2
                      が import
   asm_pass1.tc       Label collector。`.s` を 1 度読んで `.lab`
-                     (docs/lab_format.md) を吐く (~430 KB peak)
-  asm_pass2.tc       Encoder。stdin に `(lab ...)` + `.s` の連結を
-                     受けて ELF を emit。g_code を .lab のセクション
-                     サイズ合計で動的確保する仕組みで peak ~441 KB
-                     (旧 4.6 MB 比 ~10x 削減)
+                     (docs/lab_format.md) を吐く (~250 KB peak、
+                     MAX_LABELS 4096 + MAX_NAME_POOL 128 KB)
+  asm_pass2.tc       Encoder。Phase 5 の stream-emit: stdin は
+                     `(lab ...)` + source × 3 (text/rodata/data 各
+                     1 copy ずつ)、source を 3 回再読み込みして
+                     target section を 4 KB out_buf 経由 stdout に
+                     直接 emit。peak ~260〜280 KB (旧 4.6 MB 比
+                     ~16x 削減)
   runtime.tc         TinyC製ランタイム（kmalloc/kfree 等、compile-gen2/3.sh で使用）
   crt0_tc.s          asm_pass1/2 リンク用 Linux crt0（_start, syscall stub, peek/poke）
   crt0_tc_data.s     asm_pass1/2 リンク用プールメタデータ (`.data` + `.bss` + __arena)
