@@ -72,6 +72,10 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2
 
 ## 設計方針
 
+TODO: gen1(Cのソースをコンパイルしたもの)もbuild/gen1に置きたい。
+TODO: gen3(gen2を使ってコンパイルしたもの)もbuild/gen3に置きたい。
+TODO: 今、kernelはgen2ツール(runtime_syscall.cを含んでいる)で作っているが、早くなるならgen3(runtime.tcのみを含む)でビルドしたい。
+
 ### D1: ビルド成果物は `build/` ツリーに固定パスで置く
 
 ```
@@ -87,10 +91,13 @@ build/
     asm_pass2
   cache/                # shared .s キャッシュ
     runtime.s           # compiler/runtime.tc から 1 回だけ生成
+TODO: 元ソースの位置に合わせたい。 build/compiler/runtime.s
     libtc.s             # kernel/tasks/libtc/libtc.tc から
+TODO: build/kernel/libtc/litbc.tc
   kernel/
     virt/
       tasks/
+TODO: ユーザーランドは実行環境に依存しないはず。 kernel/rootディレクトリに集めて、kernel/disk.imgに置く？
         hello.bin
         hello2.bin
         catfile.bin
@@ -107,9 +114,12 @@ build/
         cat.bin
       disk.img
       kernel.bin
+# TODO: build/kernel/kernel/virt_kernel.bin
     pico2/
       tasks/<same>
       kernel.uf2
+# TODO: build/kernel/kernel/pico2_kernel.bin
+# TODO: build/kernel/kernel/pico2_kernel.uf2
   test/
     asm/                # tests/test_asm.sh 用の中間 ELF
       hello2_virt.bin
@@ -337,6 +347,8 @@ disk.img + kernel.bin だけが再ビルドされる
   出している。そこは Make にはせず shell 側のままで OK か?
 - consistency は FULL_TEST 限定なのでデフォルトは影響しない
 
+TODO: 作りなおさず使いたい。そして、FULL_TESTから抜けたい。そのためにコンパイル時は中間ファイルを残す必要がある。
+
 ### Q2: Gen3 (`compile-gen3.sh`) の扱い
 
 Gen2 == Gen3 自己ホストチェックは make test の中には無い (test_gen3
@@ -344,17 +356,23 @@ Gen2 == Gen3 自己ホストチェックは make test の中には無い (test_g
 と更新トリガをどう決めるか。たぶん `test-gen3` サブターゲットで
 ローカルに `$(BUILD)/gen3` を作る暫定でいい
 
+TODO: 上記の通り使いたい。
+
 ### Q3: ビルド並列化 (-j)
 
 Phase C まで進めば Make が自動で並列化してくれるはずだが、
 `compile-gen2.sh` の中で qemu / CACHED_S_DIR を共用しているので
 race するかも。最初は `-j1` 前提で動かして確認
 
+TODO: そもそも、なるべく並列化したくない。
+
 ### Q4: hardware テスト (pico2) のタイムスタンプ戦略
 
 `test-pico2` は実機を触るのでスキップ判定が難しい。今回は
 デフォルトで `.PHONY`、手動呼び出し時だけ kernel.uf2 を依存と
 する扱いでよさそう
+
+TODO: それでいい。
 
 ### Q5: mtfs image と task 依存
 
@@ -363,11 +381,33 @@ race するかも。最初は `-j1` 前提で動かして確認
 dependency に入る。prelude_tc の header 値 (32 KB / 8 KB baked in)
 も変えたら disk.img を再生成
 
+TODO: それでいい。
+
 ### Q6: 既存 update_golden.sh の扱い
 
 `make update-golden` は `tests/update_golden.sh` を呼ぶだけ。
 Gen1 ツール依存なので Phase A/B/C の影響は薄いが、golden の
 更新判定は自動化しない (開発者が意図的に走らせるやつ)
+
+## 追加
+
+TODO: Makefileは、gen1用、gen2用、gen3用、kernel用、task用(各タスクに1つ)を用意し、
+TODO: 必要に応じてライブラリを作りincludeするといいと思う。
+
+```kernel/Makefile
+task: ... ../build/kernel/root/bin/hello ...
+
+../build/kernel/root/bin/hello:
+  make -C ./task/hello
+  cp ./task/hello/hello.bin ../build/kernel/bin/
+```
+
+```kernel/task/hello/Makefile
+BASENAME=hello
+ARENA_SIZE=32768
+STACK_SIZE=8192
+include ../tasks.mk
+```
 
 ## 進め方
 

@@ -148,6 +148,7 @@ done
 } > "$TMP/full.s"
 
 "$QEMU" "$GEN3_DIR/asm_pass1" < "$TMP/full.s" > "$TMP/full.lab"
-cat "$TMP/full.lab" "$TMP/full.s" | "$QEMU" "$GEN3_DIR/asm_pass2" > "$OUTFILE"
+cat "$TMP/full.lab" "$TMP/full.s" "$TMP/full.s" "$TMP/full.s" | \
+    "$QEMU" "$GEN3_DIR/asm_pass2" > "$OUTFILE"
 
 chmod +x "$OUTFILE"

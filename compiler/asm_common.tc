@@ -72,19 +72,34 @@ var g_sec_size: I32Array = 0 as I32Array;  // final size of each section (16-byt
 var g_gp_abs: i32 = 0;                     // absolute value of __global_pointer$
 
 // ===== Global state =====
-// g_code is the pass-2 output buffer. asm_pass1 never allocates it
-// (pass 1 is size-counting only). asm_pass2 allocates it AFTER the
-// .lab is parsed, sizing it to exactly text_size + rodata_size +
-// data_size (bss is memsz-only and never writes file bytes). This
-// is what turned the old 4 MB static MAX_CODE into a per-program
-// dynamic allocation, dropping asm_pass2 peak from ~4.6 MB to
-// roughly the output binary size plus ~300 KB of state.
-var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in asm_pass2_allocate_code
-var g_code_size: i32 = 0;            // allocated size of g_code (= filesz bytes)
-var g_pos: i32 = 0;                  // current write position
+// Pass 2 emit modes:
+//   - buffered (g_stream_mode=0): legacy path. g_code is a U8Array
+//     sized to filesz, bytes written via emit8 land at g_code[g_pos]
+//     and asm_write_elf dumps header + g_code at end. Used by
+//     single-pass callers that can't afford multi-pass source reads.
+//   - streaming (g_stream_mode=1): new path (2026-04-16). g_code is
+//     NOT allocated. Instead, asm_pass2 runs pass 2 THREE times (once
+//     per output section: text, rodata, data), each pass re-reading
+//     the source from a filename supplied as argv[1]. During a pass,
+//     emit8 writes to g_out_buf only if g_current_section equals
+//     g_target_section, flushing to stdout when the buffer fills.
+//     This cuts asm_pass2 peak from ~400 KB (asm_common + g_code
+//     filesz) to ~200 KB (asm_common + 4 KB g_out_buf).
+var g_code: U8Array = 0 as U8Array;  // buffered-mode output buffer, unused in stream mode
+var g_code_size: i32 = 0;            // allocated size of g_code
+var g_pos: i32 = 0;                  // current write position (PIC offset in bin)
 var g_pass: i32 = 0;                 // 1 or 2
 var g_code_end: i32 = 0;             // highest position written to g_code
 var g_bss_pos: i32 = 0;              // BSS size (accumulated from .comm directives)
+
+// Stream-emit state (2026-04-16, Phase 5)
+var g_stream_mode:     i32 = 0;        // 1 = stream to stdout, 0 = buffer in g_code
+var g_target_section:  i32 = 0;        // which section (0/1/2) the current pass is emitting
+var g_out_buf:         U8Array = 0 as U8Array;  // 4 KB stdout buffer
+var g_out_pos:         i32 = 0;        // bytes currently in g_out_buf
+var g_out_buf_size:    i32 = 4096;
+var g_section_emitted: i32 = 0;        // bytes emitted in the current target section this pass
+var g_src_bytes:       i32 = 0;        // source byte count emitted by pass1 in the .lab so pass2 knows where each copy ends
 
 // Label table. g_lab_names is a shared packed-byte pool that every
 // Label's [name_off..name_off+name_len] slice points into; the Label
@@ -158,10 +173,40 @@ fn asm_err_end(eb: StringBuffer) -> void {
 }
 
 // ===== Emit helpers =====
+//
+// Stream-mode output buffer flush. Writes g_out_buf[0..g_out_pos] to
+// stdout (fd 1) and resets g_out_pos to 0. Called from emit_stream
+// when the buffer fills and from asm_flush_output at section end.
+fn flush_out_buf() -> void {
+    if g_out_pos > 0 {
+        sys_write(1, g_out_buf, g_out_pos);
+        g_out_pos = 0;
+    }
+    return;
+}
+
+// Stream-mode byte emit: append one byte to g_out_buf. Called only
+// when g_current_section == g_target_section and g_pass == 2.
+fn emit_stream(v: i32) -> void {
+    if g_out_pos >= g_out_buf_size { flush_out_buf(); }
+    set(g_out_buf, g_out_pos, v as u8);
+    g_out_pos = g_out_pos + 1;
+    g_section_emitted = g_section_emitted + 1;
+    return;
+}
+
 fn emit8(v: i32) -> void {
-    if g_pass == 2 && g_pos < g_code_size {
-        set(g_code, g_pos, v as u8);
-        if g_pos >= g_code_end { g_code_end = g_pos + 1; }
+    if g_pass == 2 {
+        if g_stream_mode == 1 {
+            if g_current_section == g_target_section {
+                emit_stream(v);
+            }
+        } else {
+            if g_pos < g_code_size {
+                set(g_code, g_pos, v as u8);
+                if g_pos >= g_code_end { g_code_end = g_pos + 1; }
+            }
+        }
     }
     g_pos = g_pos + 1;
     return;
@@ -1010,6 +1055,19 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
             // — this is how the old 96 MB kernel arena .space stayed
             // out of the ELF filesz.
             if g_pass == 2 {
+                if g_stream_mode == 1 {
+                    // Stream mode: only emit zeros when inside the
+                    // target section; skip otherwise. This is how
+                    // the 96 MB kernel arena `.space` in bss stays
+                    // out of filesz without 96 million emit_stream
+                    // no-ops.
+                    if g_current_section == g_target_section {
+                        i = 0;
+                        while i < n { emit_stream(0); i = i + 1; }
+                    }
+                    g_pos = g_pos + n;
+                    return;
+                }
                 var end: i32 = g_pos + n;
                 var write_end: i32 = end;
                 if write_end > g_code_size { write_end = g_code_size; }
@@ -1118,16 +1176,21 @@ export fn asm_init_pass1() -> void {
 export fn asm_init_pass2() -> void {
     asm_init_common();
     // g_code is allocated later via asm_pass2_allocate_code() once
-    // the .lab has been parsed and section sizes are known.
+    // the .lab has been parsed and section sizes are known. Only
+    // used in buffered mode (g_stream_mode == 0).
     g_code = 0 as U8Array;
     g_code_size = 0;
+    // Stream-mode output buffer. 4 KB is enough to amortise sys_write
+    // syscall overhead; fits comfortably into any task arena.
+    g_out_buf = U8Array((g_out_buf_size) as u32);
+    g_out_pos = 0;
     return;
 }
 
 // Allocate g_code based on the section sizes supplied by the .lab.
 // Must be called after all asm_install_sec_base_size() calls and
 // before switching to pass 2. filesz = text + rodata + data; bss is
-// memsz-only and never writes to g_code.
+// memsz-only and never writes to g_code. Only used in buffered mode.
 export fn asm_pass2_allocate_code() -> void {
     var fsz: i32 = get(g_sec_size, 0) + get(g_sec_size, 1) + get(g_sec_size, 2);
     // Guard against a degenerate .lab where all sections are empty —
@@ -1136,6 +1199,43 @@ export fn asm_pass2_allocate_code() -> void {
     if fsz <= 0 { fsz = 1; }
     g_code_size = fsz;
     g_code = U8Array(fsz as u32);
+    return;
+}
+
+// Enable stream-emit mode (Phase 5). asm_pass2 calls this after
+// parsing the .lab and before running pass 2 on the source.
+// Stream mode replaces g_code with a small 4 KB buffer and a pass-
+// per-section algorithm (see asm_pass2.tc main()).
+export fn asm_enable_stream_mode() -> void {
+    g_stream_mode = 1;
+    g_target_section = 0;
+    g_section_emitted = 0;
+    return;
+}
+
+export fn asm_set_target_section(sec: i32) -> void {
+    g_target_section = sec;
+    g_section_emitted = 0;
+    return;
+}
+
+// Flush the output buffer and, if we're in the middle of a target
+// section, emit padding zero bytes up to the section's declared size
+// (which is already 16-byte aligned in asm_compute_sec_bases). Called
+// at the end of each pass in stream mode.
+export fn asm_flush_section_padding() -> void {
+    var want: i32 = get(g_sec_size, g_target_section);
+    while g_section_emitted < want {
+        emit_stream(0);
+    }
+    flush_out_buf();
+    return;
+}
+
+// Convenience: flush whatever is in g_out_buf (used in raw mode
+// between section passes when we don't want padding).
+export fn asm_flush_output() -> void {
+    flush_out_buf();
     return;
 }
 
@@ -1245,6 +1345,23 @@ export fn asm_dump_lab_state() -> void {
     emit_string(sb, "(lab"); emit_nl(sb);
     emit_string(sb, "; lab v1"); emit_nl(sb);
 
+    // Meta directives captured during pass 1 source scan. Stream-
+    // mode asm_pass2 reads these from the .lab so it doesn't need
+    // to probe the source itself before emitting the ELF header.
+    emit_string(sb, "raw ");
+    dump_int(sb, g_raw_mode);
+    emit_nl(sb);
+    emit_string(sb, "load_base ");
+    dump_int(sb, g_load_vaddr);
+    emit_nl(sb);
+    // Source byte count for the pass-per-section stream loop in
+    // asm_pass2 (each pass reads exactly src_bytes bytes from stdin
+    // so they stay aligned across the 3 source copies the caller
+    // concatenated).
+    emit_string(sb, "src_bytes ");
+    dump_int(sb, g_src_bytes);
+    emit_nl(sb);
+
     var i: i32 = 0;
     while i < 4 {
         emit_string(sb, "sec ");
@@ -1323,12 +1440,95 @@ export fn asm_install_sec_base_size(idx: i32, base: i32, size: i32) -> void {
     return;
 }
 
+// Stream-mode helpers: asm_pass2 reads `raw` / `load_base` from the
+// .lab and calls these so pass 2 knows the meta state before touching
+// the source body. Matches asm_parse_meta_directive's effect.
+export fn asm_install_raw_mode(v: i32) -> void {
+    g_raw_mode = v;
+    return;
+}
+
+export fn asm_install_load_base(v: i32) -> void {
+    g_load_vaddr = v;
+    return;
+}
+
+// asm_pass1 counts the source bytes it consumed and stashes the
+// total here so asm_dump_lab_state can emit a `src_bytes N` line.
+// asm_pass2 reads that and uses it as the per-pass source length.
+export fn asm_set_src_bytes(n: i32) -> void {
+    g_src_bytes = n;
+    return;
+}
+
+export fn asm_get_src_bytes() -> i32 {
+    return g_src_bytes;
+}
+
 // ===== Write ELF (pass 2) =====
 fn write_le32(buf: U8Array, off: i32, v: i32) -> void {
     set(buf, off, (v & 255) as u8);
     set(buf, (off+1), ((v >> 8) & 255) as u8);
     set(buf, (off+2), ((v >> 16) & 255) as u8);
     set(buf, (off+3), ((v >> 24) & 255) as u8);
+    return;
+}
+
+// Stream-mode ELF header emission. Computes filesz/memsz/entry from
+// the section sizes installed via asm_install_sec_base_size (= from
+// the .lab) and writes the 84-byte header to stdout upfront, before
+// any code bytes. Pass 5 (stream mode) uses this in place of
+// asm_write_elf, which needs the full g_code buffer at the end.
+//
+// raw mode (`; raw`) skips the header entirely — subsequent section
+// passes write code bytes directly.
+export fn asm_write_elf_header_stream() -> void {
+    if g_raw_mode == 1 { return; }
+
+    var text_size:   i32 = get(g_sec_size, 0);
+    var rodata_size: i32 = get(g_sec_size, 1);
+    var data_size:   i32 = get(g_sec_size, 2);
+    var bss_size:    i32 = get(g_sec_size, 3);
+    var code_size:   i32 = text_size + rodata_size + data_size;
+    var mem_size:    i32 = code_size + bss_size;
+
+    var entry: i32 = 0;
+    var tmp: U8Array = U8Array(6u32);
+    set(tmp, 0, '_'); set(tmp, 1, 's'); set(tmp, 2, 't');
+    set(tmp, 3, 'a'); set(tmp, 4, 'r'); set(tmp, 5, 't');
+    entry = label_addr(tmp, 6) + g_load_vaddr + ELF_HDR_SIZE;
+    delete(tmp);
+
+    var load_vaddr: i32 = g_load_vaddr;
+    var total_filesz: i32 = ELF_HDR_SIZE + code_size;
+    var total_memsz: i32 = ELF_HDR_SIZE + mem_size;
+
+    var out: U8Array = U8Array(ELF_HDR_SIZE as u32);
+    var i: i32 = 0;
+    while i < ELF_HDR_SIZE { set(out, i, 0u8); i = i + 1; }
+
+    set(out, 0, 127u8); set(out, 1, 'E'); set(out, 2, 'L'); set(out, 3, 'F');
+    set(out, 4, 1u8); set(out, 5, 1u8); set(out, 6, 1u8);
+    set(out, 16, 2u8);
+    set(out, 18, 243u8);
+    write_le32(out, 20, 1);
+    write_le32(out, 24, entry);
+    write_le32(out, 28, 52);
+    set(out, 40, 52u8);
+    set(out, 42, 32u8);
+    set(out, 44, 1u8);
+
+    write_le32(out, 52, 1);
+    write_le32(out, 56, 0);
+    write_le32(out, 60, load_vaddr);
+    write_le32(out, 64, load_vaddr);
+    write_le32(out, 68, total_filesz);
+    write_le32(out, 72, total_memsz);
+    write_le32(out, 76, 7);
+    write_le32(out, 80, 4096);
+
+    sys_write(1, out, ELF_HDR_SIZE);
+    delete(out);
     return;
 }
 

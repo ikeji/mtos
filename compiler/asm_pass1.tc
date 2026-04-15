@@ -28,6 +28,7 @@ fn main() -> i32 {
     var reader: SourceReader = SourceReader_new(0);
     var line: U8Array = U8Array(4096u32);
     var lineno: i32 = 0;
+    var total_bytes: i32 = 0;
 
     while at_eof(reader) == false {
         // Read one source line into `line`. We keep reading until LF
@@ -42,6 +43,7 @@ fn main() -> i32 {
             llen = llen + 1;
             if c == 10u8 { eol = 1; }
         }
+        total_bytes = total_bytes + llen;
         if llen == 0 { } else {
             lineno = lineno + 1;
             if asm_parse_meta_directive(line, llen) == 1 {
@@ -57,6 +59,9 @@ fn main() -> i32 {
 
     asm_compute_sec_bases();
     asm_fixup_labels();
+    // Stash the source byte count so asm_dump_lab_state can emit it
+    // as a `src_bytes N` line for asm_pass2 to consume.
+    asm_set_src_bytes(total_bytes);
     asm_dump_lab_state();
 
     km_dump_peak();

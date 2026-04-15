@@ -255,13 +255,17 @@ run_bc2asm_tc() {
 # needed) on stdin and emits the ELF or raw binary via the new
 # asm_pass1 + asm_pass2 split. Buffers stdin into a tmp file so
 # asm_pass1 and asm_pass2 can read it independently.
+#
+# Phase 5 stream-emit: asm_pass2 runs 3 section passes (text / rodata
+# / data), each consuming one full copy of the source from stdin, so
+# the caller must concatenate the source 3 times after the .lab.
 run_asm_tc() {
     local src lab
     src=$(mktemp)
     lab=$(mktemp)
     cat > "$src"
     "$QEMU" "$_GEN2_TMP/asm_pass1" < "$src" > "$lab" 2>/dev/null
-    cat "$lab" "$src" | "$QEMU" "$_GEN2_TMP/asm_pass2" 2>/dev/null
+    cat "$lab" "$src" "$src" "$src" | "$QEMU" "$_GEN2_TMP/asm_pass2" 2>/dev/null
     rm -f "$src" "$lab"
 }
 

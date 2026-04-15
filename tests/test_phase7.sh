@@ -62,8 +62,8 @@ fi
 # parsed AST.
 echo ""
 echo "=== stage 1: compile + link + run Hello World ==="
-out1=$(printf 'parse < /hw.tc > /tmp/1.ast\nsigscan < /tmp/1.ast > /tmp/1.th\ncat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt /tmp/1.ast > /tmp/1.wrap\ntcheck < /tmp/1.wrap > /tmp/2.tast\ncodegen < /tmp/2.tast > /tmp/3.bc\nbc2asm < /tmp/3.bc > /tmp/4.s\ncat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s\nasm_pass1 < /tmp/full.s > /tmp/lab.s\ncat /tmp/lab.s /tmp/full.s > /tmp/p2.in\nasm_pass2 < /tmp/p2.in > /tmp/hw\n/tmp/hw\nquit\n' \
-    | timeout 120 qemu-system-riscv32 -smp 1 -nographic \
+out1=$(printf 'parse < /hw.tc > /tmp/1.ast\nsigscan < /tmp/1.ast > /tmp/1.th\ncat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt /tmp/1.ast > /tmp/1.wrap\ntcheck < /tmp/1.wrap > /tmp/2.tast\ncodegen < /tmp/2.tast > /tmp/3.bc\nbc2asm < /tmp/3.bc > /tmp/4.s\ncat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s\nasm_pass1 < /tmp/full.s > /tmp/lab.s\ncat /tmp/lab.s /tmp/full.s /tmp/full.s /tmp/full.s > /tmp/p2.in\nasm_pass2 < /tmp/p2.in > /tmp/hw\n/tmp/hw\nquit\n' \
+    | timeout 240 qemu-system-riscv32 -smp 1 -nographic \
     -serial mon:stdio --no-reboot -m 128 \
     -machine virt,aclint=on -bios none \
     -drive "file=$TMP/disk.img,format=raw,if=none,id=blk0" \

@@ -1,18 +1,30 @@
 // asm_pass2.tc — encoder half of the asm split (Phase 2 #56).
 //
-// Reads stdin in two adjacent sections:
+// Reads stdin as a concatenation of:
 //
-//   1. The wrapped .lab block (`(lab` ... `)`) produced by asm_pass1.
-//      We parse it line by line, calling asm_install_*_from_lab to
-//      pre-populate the symbol / section state inside asm_common.
+//   1. (lab ... )                — wrapped .lab from asm_pass1
+//   2. full source (pass A)      — scanned while emitting .text bytes
+//   3. full source (pass B)      — scanned while emitting .rodata bytes
+//   4. full source (pass C)      — scanned while emitting .data bytes
 //
-//   2. The original `.s` source. We stream-read it the same way
-//      asm_pass1 does (one line at a time), but with g_pass = 2 so
-//      asm_run_line emits machine code into g_code.
+// Each of passes A/B/C sees the source in its entirety but emit8 only
+// writes to stdout when the current section directive matches that
+// pass's target section (g_target_section). Between passes each
+// target section is padded with zeros to its aligned size (from the
+// .lab) so the total byte count matches filesz.
 //
-// After the source is exhausted, asm_write_elf flushes g_code (or
-// the raw bytes) to stdout. Driver scripts feed both sections via a
-// single `cat a.lab a.s | asm-pass2 > a.out` style pipeline.
+// Phase 5 (2026-04-16): we stream bytes to stdout via a 4 KB
+// g_out_buf and drop the ~300 KB g_code that used to hold the whole
+// program image. asm_pass2 peak drops from ~400 KB (after the
+// asm_pass1 label-pool shrink) to ~200 KB.
+//
+// bss is memsz-only and never writes file bytes, so there is no
+// pass for section 3.
+//
+// Caller contract: the caller must duplicate the source 3 times in
+// the stdin stream. compile-gen2.sh and kernel/build.sh do this
+// automatically via `cat`; the OS-side sh pipeline does it via
+// intermediate tmpfs files.
 
 import "asm_common.tc";
 import "string_buffer.tc";
@@ -73,6 +85,21 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         asm_install_sec_base_size(sec_id, sec_base, sec_size);
         return 0;
     }
+    if blen - p >= 4 && cmp(buf, p, "raw ") {
+        parse_dec(buf, p + 4, blen);
+        asm_install_raw_mode(g_lab_int);
+        return 0;
+    }
+    if blen - p >= 10 && cmp(buf, p, "load_base ") {
+        parse_dec(buf, p + 10, blen);
+        asm_install_load_base(g_lab_int);
+        return 0;
+    }
+    if blen - p >= 10 && cmp(buf, p, "src_bytes ") {
+        parse_dec(buf, p + 10, blen);
+        asm_set_src_bytes(g_lab_int);
+        return 0;
+    }
     if blen - p >= 4 && cmp(buf, p, "num ") {
         parse_dec(buf, p + 4, blen);
         var dig: i32 = g_lab_int;
@@ -110,78 +137,174 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
     return 0;
 }
 
+// ===== Source section pass =====
+//
+// Run one full traversal of the source from stdin, emitting only the
+// bytes for sec_target. The caller has concatenated the source 3
+// times after the .lab; src_bytes tells this pass exactly how many
+// bytes to consume. Between passes, the shared rb_* reader keeps
+// its internal buffer so read-ahead crossing the source boundary
+// carries over into the next pass (instead of being lost like a
+// fresh SourceReader would lose it).
+fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
+    asm_set_target_section(sec_target);
+    asm_set_pass(2);
+    asm_pass2_reset_cursors();
+
+    var lineno: i32 = 0;
+    var budget: i32 = source_bytes;
+    while budget > 0 {
+        var llen: i32 = rb_read_line(line, 4096, budget);
+        budget = g_budget_after;
+        if llen < 0 { break; }
+        if llen > 0 {
+            lineno = lineno + 1;
+            if asm_parse_meta_directive(line, llen) == 1 {
+                // pragmas only affect g_raw_mode / g_load_vaddr
+            } else {
+                asm_run_line(line, llen, lineno);
+            }
+        }
+    }
+
+    // Pad the target section with zeros up to its aligned size and
+    // flush the output buffer. asm_flush_section_padding does both.
+    asm_flush_section_padding();
+    return;
+}
+
+// ===== Shared buffered stdin reader (Phase 5) =====
+//
+// SourceReader's 4 KB read-ahead eats past one source copy into the
+// next, which breaks the 3-pass scheme. We can't shrink its buffer
+// to 1 byte (far too slow for kernel-sized inputs, would add ~20 s
+// to make test). Instead this file keeps a single buffered reader
+// state across all 4 phases (.lab + text + rodata + data pass) so
+// the leftover bytes in the buffer carry over correctly into the
+// next phase's reads. The caller still concatenates the source 3
+// times, and src_bytes from the .lab tells each pass exactly when
+// to stop consuming from the stream.
+var G_BUF_CAP: i32 = 4096;
+var g_buf:     U8Array = 0 as U8Array;
+var g_buf_pos: i32 = 0;
+var g_buf_len: i32 = 0;
+var g_buf_eof: i32 = 0;
+
+fn rb_init() -> void {
+    g_buf     = U8Array((G_BUF_CAP) as u32);
+    g_buf_pos = 0;
+    g_buf_len = 0;
+    g_buf_eof = 0;
+    return;
+}
+
+// Refill the buffer if empty. Returns 0 on success, 1 on EOF.
+fn rb_fill() -> i32 {
+    if g_buf_pos < g_buf_len { return 0; }
+    if g_buf_eof == 1 { return 1; }
+    var n: i32 = sys_read(0, g_buf, G_BUF_CAP);
+    if n <= 0 {
+        g_buf_eof = 1;
+        return 1;
+    }
+    g_buf_pos = 0;
+    g_buf_len = n;
+    return 0;
+}
+
+// Read one byte. Returns -1 at EOF.
+fn rb_next() -> i32 {
+    if rb_fill() == 1 { return -1; }
+    var c: u8 = get(g_buf, g_buf_pos);
+    g_buf_pos = g_buf_pos + 1;
+    return c as i32;
+}
+
+// Read one LF-terminated line into buf[0..]. Stops at LF (keeping it
+// in the output), at EOF, or at byte_limit bytes consumed — the
+// last stops mid-line exactly when a source pass finishes. Returns
+// line length or -1 if EOF hit without any bytes.
+//
+// byte_budget is a POINTER-SEMANTICS i32 passed in as the caller's
+// remaining budget for this pass. We decrement it in-place by
+// returning the new value via a global; TC has no multi-return so
+// we stash it in g_budget_after.
+var g_budget_after: i32 = 0;
+fn rb_read_line(buf: U8Array, buf_cap: i32, byte_budget: i32) -> i32 {
+    var llen: i32 = 0;
+    var saw_byte: i32 = 0;
+    var budget: i32 = byte_budget;
+    var done: i32 = 0;
+    while done == 0 && budget > 0 {
+        var c: i32 = rb_next();
+        if c < 0 {
+            done = 1;
+        } else {
+            saw_byte = 1;
+            budget = budget - 1;
+            if llen < buf_cap { set(buf, llen, c as u8); }
+            llen = llen + 1;
+            if c == 10 { done = 1; }
+        }
+    }
+    g_budget_after = budget;
+    if saw_byte == 0 { return -1; }
+    return llen;
+}
+
 // ===== Main =====
 fn main() -> i32 {
     asm_init_pass2();
+    asm_enable_stream_mode();
+    rb_init();
 
-    var reader: SourceReader = SourceReader_new(0);
-    var line: U8Array = U8Array(4096u32);
+    var lab_line: U8Array = U8Array(4096u32);
 
-    // Phase A: scan to the "(lab" opener, then parse lab lines until ")"
+    // Phase A: scan stdin to the "(lab" opener, then parse lab lines
+    // until the closing ")". Uses the shared rb_* buffered reader
+    // with an effectively infinite budget so we read line by line
+    // until the `)` closer. The reader's internal buffer may have
+    // bytes of the source body read-ahead at that point — they
+    // carry over into run_section_pass automatically since we
+    // keep the same reader state.
     var saw_open: i32 = 0;
-    while saw_open == 0 && at_eof(reader) == false {
-        var llen: i32 = 0;
-        var eol: i32 = 0;
-        while eol == 0 && at_eof(reader) == false {
-            var c: u8 = next(reader);
-            if llen < 4096 { set(line, llen, c); }
-            llen = llen + 1;
-            if c == 10u8 { eol = 1; }
-        }
-        if llen >= 4 && cmp(line, 0, "(lab") {
+    while saw_open == 0 {
+        var llen: i32 = rb_read_line(lab_line, 4096, 0x7FFFFFFF);
+        if llen < 0 { break; }
+        if llen >= 4 && cmp(lab_line, 0, "(lab") {
             saw_open = 1;
         }
     }
 
     var done: i32 = 0;
-    while done == 0 && at_eof(reader) == false {
-        var llen2: i32 = 0;
-        var eol2: i32 = 0;
-        while eol2 == 0 && at_eof(reader) == false {
-            var c2: u8 = next(reader);
-            if llen2 < 4096 { set(line, llen2, c2); }
-            llen2 = llen2 + 1;
-            if c2 == 10u8 { eol2 = 1; }
-        }
+    while done == 0 {
+        var llen2: i32 = rb_read_line(lab_line, 4096, 0x7FFFFFFF);
+        if llen2 < 0 { break; }
         if llen2 > 0 {
-            if parse_lab_line(line, llen2) == 1 { done = 1; }
+            if parse_lab_line(lab_line, llen2) == 1 { done = 1; }
         }
     }
 
-    // .lab fully parsed. Now allocate g_code to the exact filesz
-    // (text + rodata + data) so pass 2 emission lands in a tight
-    // buffer instead of the old 4 MB static MAX_CODE allocation.
-    asm_pass2_allocate_code();
+    // Phase B: emit the ELF header upfront (raw mode skips this).
+    // filesz/memsz/entry come entirely from the .lab, and `raw` /
+    // `load_base` meta directives were captured by asm_pass1 from
+    // the source body during pass 1 and written to the .lab as
+    // their own lines — parse_lab_line has already installed them
+    // via asm_install_raw_mode / asm_install_load_base.
+    asm_write_elf_header_stream();
 
-    // Phase B: source. Switch to pass 2 and stream-read each line.
-    asm_set_pass(2);
-    asm_pass2_reset_cursors();
+    // Phase C: 3 × source passes, one per target section (text,
+    // rodata, data). The caller concatenated the source 3 times
+    // after the .lab so each pass consumes exactly src_bytes from
+    // stdin and stops at the next copy's boundary. Bss is memsz-
+    // only and never writes file bytes.
+    var src_bytes: i32 = asm_get_src_bytes();
+    run_section_pass(0, lab_line, src_bytes);
+    run_section_pass(1, lab_line, src_bytes);
+    run_section_pass(2, lab_line, src_bytes);
 
-    var lineno: i32 = 0;
-    while at_eof(reader) == false {
-        var llen3: i32 = 0;
-        var eol3: i32 = 0;
-        while eol3 == 0 && at_eof(reader) == false {
-            var c3: u8 = next(reader);
-            if llen3 < 4096 { set(line, llen3, c3); }
-            llen3 = llen3 + 1;
-            if c3 == 10u8 { eol3 = 1; }
-        }
-        if llen3 > 0 {
-            lineno = lineno + 1;
-            if asm_parse_meta_directive(line, llen3) == 1 {
-                // Discard meta directives in pass 2 too — they affect
-                // g_raw_mode / g_load_vaddr globals which asm_write_elf
-                // reads later.
-            } else {
-                asm_run_line(line, llen3, lineno);
-            }
-        }
-    }
-    close(reader);
-    delete(line);
+    delete(lab_line);
 
-    asm_write_elf();
     km_dump_peak();
     return 0;
 }

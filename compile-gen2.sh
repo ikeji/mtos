@@ -199,6 +199,11 @@ done
 } > "$TMP/full.s"
 
 "$QEMU" "$GEN2_DIR/asm_pass1" < "$TMP/full.s" > "$TMP/full.lab"
-cat "$TMP/full.lab" "$TMP/full.s" | "$QEMU" "$GEN2_DIR/asm_pass2" > "$OUTFILE"
+# asm_pass2 stream-emit mode (Phase 5): reads .lab, then 3 copies of
+# the source (one per output section — text, rodata, data). bss is
+# memsz-only so there is no 4th copy. This dodges the old g_code
+# filesz buffer and drops asm_pass2 peak from ~400 KB to ~200 KB.
+cat "$TMP/full.lab" "$TMP/full.s" "$TMP/full.s" "$TMP/full.s" | \
+    "$QEMU" "$GEN2_DIR/asm_pass2" > "$OUTFILE"
 
 chmod +x "$OUTFILE"
