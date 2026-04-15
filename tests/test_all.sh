@@ -65,9 +65,10 @@ run_suite() {
 
 run_suite "$SCRIPT_DIR/test_unit.sh"
 run_suite "$SCRIPT_DIR/test_pipeline.sh"
-if [ "${FULL_TEST:-0}" = "1" ]; then
-    run_suite "$SCRIPT_DIR/test_consistency.sh"
-fi
+# Phase E: consistency is now part of the default run. It adds ~12 s
+# but the warm make test budget (with kernel / Gen2 tools cached) is
+# well under 60 s so we include it unconditionally.
+run_suite "$SCRIPT_DIR/test_consistency.sh"
 run_suite "$SCRIPT_DIR/test_golden_examples.sh"
 run_suite "$SCRIPT_DIR/test_gen3.sh"
 run_suite "$SCRIPT_DIR/test_import.sh"

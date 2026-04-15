@@ -90,16 +90,21 @@
   runtime.s / libtc.s の事前キャッシュ化,
   #21 StringLiteral emission bug (bc2asm ラベル衝突)
 - **Make ベース incremental build (2026-04-16、計画は
-  `docs/task/make_based_build.md`)**: Phase A〜D 完了。`build/gen2/`、
+  `docs/task/make_based_build.md`、Phase A〜E 完了)**:
+  `build/gen2/`、`build/gen3/` (自己ホスト確認用)、
   `build/kernel/virt_kernel.bin` + `build/kernel/disk.img`、
   `build/test/asm/*.bin` を Make ターゲット化。依存追跡は
   `tools/collect_imports.sh` で TC の transitive import を解決し
   `.d` fragment を `-include` する。task 一覧は virt/pico2 共通化
   (hello hello2 catfile sh tmpdemo echo launcher cat)。
-  `.NOTPARALLEL:` で `-j1` 強制。`make test`: 132 passed /
-  **warm 20s** (cold ~66s)。以前 (Phase A 前) 58s から ~3 倍速。
-  compiler/\*.tc を触ると該当 Gen2 ツールだけ、kernel/\*.tc を
-  触ると kernel + disk.img だけが再ビルドされる
+  `.NOTPARALLEL:` で `-j1` 強制。
+  `make test`: **141 passed / warm 33s** (consistency を FULL_TEST
+  gate 外に出したので 9 件追加)。cold ~78s。Phase A 前 58s → 33s
+  (~1.8 倍速)。compiler/\*.tc を触ると該当 Gen2 ツールだけ、
+  kernel/\*.tc を触ると kernel + disk.img だけが再ビルドされる。
+  Gen3 経路は kernel build で測って Gen2 比 2x 遅かったので
+  (少し遅いの範囲外)、kernel 本番経路は Gen2 を維持。Gen3 は
+  自己ホスト確認用 Make ターゲット (`make gen3-tools`) として存在
 
 **次の候補** (どれも独立):
 
@@ -321,13 +326,15 @@ tools/      ホスト側ツール
 
 ```bash
 make                              # Gen1 バイナリをビルド（parse, codegen, bc2asm, typecheck, extract-sigs 等）
-make test                         # テスト実行（warm ~20s, cold ~66s、上限 60 秒 warm）
-make full-test                    # consistency + kmalloc / kernel1 (FULL_TEST=1) を含めた全テスト
+make test                         # テスト実行（warm ~33s, cold ~78s、上限 60 秒 warm）
+make full-test                    # kmalloc / kernel1 (FULL_TEST=1) 含む全テスト
 make update-golden                # goldenファイルを再生成
 make update-golden-and-run-test   # golden 再生成してからテスト実行
 make gen2-tools                   # build/gen2/* のみビルド (incremental)
+make gen3-tools                   # build/gen3/* のみビルド (自己ホスト確認用)
 make virt-kernel                  # build/kernel/virt_kernel.bin + disk.img のみ
 make pico2-kernel                 # build/kernel/pico2_kernel.uf2 のみ
+make test-asm-bins                # build/test/asm/*.bin (test_asm プリビルド)
 make clean                        # Gen1 + build/ まとめて消す
 ```
 

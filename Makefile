@@ -56,6 +56,26 @@ gen2-tools: $(GEN2_TOOLS)
 # `-include` (エラーにしない) を使う
 -include $(addsuffix .d,$(GEN2_TOOLS))
 
+# ===== Gen3 tools (Phase E) =====
+#
+# Gen3 は Gen2 ツール (Gen1 で build した TC 製ツール) を使って
+# compiler/*.tc を再 build したもの。自己ホスト確認 (Gen2==Gen3)
+# と、kernel build の本番経路候補に使う。build/gen2/ と同じ流れで
+# `.d` による transitive import 追跡を入れる。
+GEN3_NAMES = $(GEN2_NAMES)
+GEN3_TOOLS = $(addprefix build/gen3/,$(GEN3_NAMES))
+
+build/gen3:
+	mkdir -p $@
+
+build/gen3/%: compiler/%.tc $(GEN2_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh | build/gen3
+	GEN2_DIR=build/gen2 ./compile-gen2.sh -o $@ $< 2>/dev/null
+	./tools/tc_deps_to_d.sh $@ $< > $@.d
+
+gen3-tools: $(GEN3_TOOLS)
+
+-include $(addsuffix .d,$(GEN3_TOOLS))
+
 # ===== kernel build (Phase C) =====
 #
 # kernel/build.sh を monolithic に呼ぶが、正しい dependency グラフを
@@ -175,4 +195,4 @@ update-golden-and-run-test: $(TEST_DEPS)
 .NOTPARALLEL:
 
 .PHONY: all clean test full-test update-golden update-golden-and-run-test \
-        gen2-tools virt-kernel pico2-kernel
+        gen2-tools gen3-tools virt-kernel pico2-kernel test-asm-bins

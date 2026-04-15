@@ -456,6 +456,38 @@ Gen1 ツール依存なので Phase A-E の影響は薄いが、golden の
 ## 進め方
 
 1. この文書にレビューをもらう ✔ (2026-04-16)
-2. Phase A を実装 + `make test` で計測 (before/after 比較)
-3. Phase A が安定したら B/C/D/E を段階的に
-4. 各フェーズ完了時点で CLAUDE.md + roadmap.md を更新
+2. Phase A を実装 + `make test` で計測 (before/after 比較) ✔
+3. Phase A が安定したら B/C/D/E を段階的に ✔
+4. 各フェーズ完了時点で CLAUDE.md + roadmap.md を更新 ✔ (Phase E 完了時点)
+
+## 実装結果 (2026-04-16)
+
+全 5 Phase が 1 日で完了。commit ログ: `7cacdd5` (A) → `a2d4a52`
+(B) → `a8b9683` (C) → `2f82198` (D) → Phase E。
+
+| Phase | commit | before | after | 備考 |
+|---|---|---|---|---|
+| baseline | (Phase A 前) | 58 s | - | Gen2 tools を毎回 mktemp |
+| A | 7cacdd5 | 58 s | 56 s | `build/gen2/` 固定、-3 s |
+| B | a2d4a52 | 56 s | 57 s | `.d` 追跡追加 (計測微差) |
+| C | a8b9683 | 57 s | 27 s | kernel + disk.img を Make 化、-29 s |
+| D | 2f82198 | 27 s | 20 s | test_asm 3 bin を Make 化、-7 s |
+| E | (本 commit) | 20 s | 33 s | consistency (9 件、12 s) を FULL_TEST から default へ |
+
+**最終**: 132 → 141 passed / 33 s warm (cold ~78 s)。
+
+### 未達・方針変更点
+
+- **Gen3 経路での kernel build 移行は見送り**: 実測で Gen2 23 s に
+  対し Gen3 43 s と 2 倍近く遅かった (「少し遅い」の範囲外)。
+  byte-for-byte identical は確認済 (kernel bin / disk.img 両方 cmp OK)。
+  `build/gen3/` は自己ホスト確認用 Make ターゲット
+  (`make gen3-tools`) として存在し、kernel 本番経路は Gen2 のまま
+- **非再帰 `kernel/tasks/*/task.mk` 分割は未実施**: Phase C は
+  monolithic `kernel/build.sh` を wrap する形で依存グラフだけ
+  Make 側に上げた。新 task 追加時の「ディレクトリ + 1 行 Makefile」
+  までは行っていないが、Make rule 側で `GUEST_TASKS` 変数 1 行に
+  追加するだけ、という妥協で十分インクリメンタル
+- **consistency の中間ファイル cache は未実装**: 12 s 追加で warm
+  33 s (60 s budget 余裕) だったので、tc_run.sh を touch せず
+  FULL_TEST gate を外すだけで済ませた
