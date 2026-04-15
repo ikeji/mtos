@@ -96,7 +96,9 @@ _collect_imports() {
 }
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+if [ -z "$KEEP_TMP" ]; then
+    trap 'rm -rf "$TMP"' EXIT
+fi
 
 # Collect import files
 _COLLECTED=""
@@ -169,6 +171,7 @@ done
     cat "$TMP/runtime.s"
     cat "${ASM_FILES[@]}"
     cat "$CRT0_DATA"
-} | "$QEMU" "$GEN2_DIR/asm" > "$OUTFILE"
+} > "$TMP/full.s"
+"$QEMU" "$GEN2_DIR/asm" < "$TMP/full.s" > "$OUTFILE"
 
 chmod +x "$OUTFILE"

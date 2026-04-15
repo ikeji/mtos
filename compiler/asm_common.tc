@@ -1,0 +1,1314 @@
+// asm_common.tc — shared encoder/parser core for the asm split
+// (Phase 2 #56). asm-pass1 (label collector) and asm-pass2 (encoder)
+// import this module and call the export fns listed below; the
+// instruction encoders, operand parsers, mnemonic dispatch table,
+// label/section state, and per-line tokenizer all live here so the
+// two pass binaries don't have to duplicate them.
+//
+// Public entry points:
+//
+//   asm_init_pass1()                — allocate state for pass 1 (no g_code)
+//   asm_init_pass2()                — allocate state for pass 2 (+ g_code)
+//   asm_set_pass(p)                 — sets g_pass (1 or 2)
+//   asm_parse_meta_directive(buf,n) — handle ; raw / ; load_base
+//   asm_process_line(buf, n, ln)    — main per-line driver
+//   asm_compute_sec_bases()         — pass 1 fixup: derive sec_base[]
+//   asm_fixup_labels()              — pass 1 fixup: addr += sec_base
+//   asm_dump_lab_state()            — pass 1 → .lab on stdout
+//   asm_install_label_from_lab(name, nlen, addr, section)
+//   asm_install_numlab_from_lab(digit, addr)
+//   asm_install_sec_base_size(idx, base, size)
+//   asm_write_elf()                 — pass 2 final step
+//
+// See docs/lab_format.md for the .lab on-the-wire format and
+// docs/task/pipeline_100kb.md §5 for split rationale.
+
+import "string_buffer.tc";
+import "source_reader.tc";
+import "strlib.tc";
+
+// ===== Constants =====
+var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
+// PIC: labels are stored as offsets from code start (0..code_size).
+// ELF output adds g_load_vaddr + ELF_HDR_SIZE for runtime addresses.
+var MAX_LABELS: i32 = 16384;
+var MAX_CODE: i32 = 4194300; // ~4MB (4MB minus HeapObj header)
+
+// ===== Output mode (set by ; raw / ; load_base directives) =====
+var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
+var g_raw_mode: i32 = 0;        // 1 = raw bin output (no ELF header)
+
+// ===== Section-reordering linker =====
+// Sections: 0=text, 1=rodata, 2=data, 3=bss
+// asm.tc is the linker in this toolchain: it sees every `.s` input as a
+// single stream with interleaved sections, and emits them physically
+// grouped in the output (text -> rodata -> data -> bss). Labels are first
+// recorded with their per-section intra offset (g_sec_pos at the time of
+// definition), then fixed up after pass 1 by adding g_sec_base[section].
+//
+// gp-relative la is always active for data/bss labels. `__global_pointer$`
+// is auto-defined at data_base + 0x800 (in the text address space, so
+// `la gp, __global_pointer$` used by crt0 is a plain PC-relative la).
+// Data/bss la offsets must fit in 12-bit signed (-2048..2047); out of range
+// is a fatal error with the label name.
+var g_current_section: i32 = 0;
+var g_sec_pos: I32Array = 0 as I32Array;   // [text, rodata, data, bss] intra cursors
+var g_sec_base: I32Array = 0 as I32Array;  // final absolute base of each section
+var g_sec_size: I32Array = 0 as I32Array;  // final size of each section (16-byte aligned)
+var g_gp_abs: i32 = 0;                     // absolute value of __global_pointer$
+
+// ===== Global state =====
+var g_code: U8Array = 0 as U8Array;  // output buffer, allocated in main
+var g_pos: i32 = 0;                  // current write position
+var g_pass: i32 = 0;                 // 1 or 2
+var g_code_end: i32 = 0;             // highest position written to g_code
+var g_bss_pos: i32 = 0;              // BSS size (accumulated from .comm directives)
+
+// Label table. g_lab_names is a shared packed-byte pool that every
+// Label's [name_off..name_off+name_len] slice points into; the Label
+// struct itself holds per-entry metadata (R6). The old parallel
+// arrays g_lab_offs / g_lab_lens / g_lab_addrs / g_lab_section /
+// g_lab_is_bss were collapsed here; is_bss was dead anyway so we
+// dropped it.
+struct Label {
+    name_off: i32,
+    name_len: i32,
+    addr:     i32,
+    section:  i32,  // 0=text 1=rodata 2=data 3=bss
+}
+var g_lab_names: U8Array = 0 as U8Array;      // packed name storage
+var g_labels: LabelArray = 0 as LabelArray;
+var g_nlabels: i32 = 0;
+var g_lab_name_pos: i32 = 0;
+
+// Numeric labels: 10 digits x 256 entries each
+// g_numlab[digit * 1024 +count] = address
+var g_numlab: I32Array = 0 as I32Array;
+var g_numlab_count: I32Array = 0 as I32Array;  // count per digit (10 entries)
+
+// Per-line parse state. Each call to asm_process_line copies the
+// caller's line into g_line_buf, sets g_line_buf_len, then runs the
+// tokenizer. The asm split eliminates the old g_lines / g_line_offs
+// / g_line_lens / g_line_section caches (4 MB peak in single-process
+// asm.tc) — pass1 and pass2 both stream-read the source line by line
+// from their stdin instead.
+var g_mnem: U8Array = 0 as U8Array;  // mnemonic buffer (64 bytes)
+var g_mnem_len: i32 = 0;
+var g_ops: I32Array = 0 as I32Array;  // operand offsets into line (4 entries x 2: off, len)
+var g_nops: i32 = 0;
+var g_line_buf: U8Array = 0 as U8Array; // current line buffer (4096 bytes)
+var g_line_buf_len: i32 = 0;
+// 1-origin line number of the line process_line is currently handling.
+// Used by asm_err_* so error messages can say "asm:<line>: ..." and
+// echo the source line. 0 means "no specific line" (e.g. a failure
+// during write_elf after both passes complete).
+var g_cur_line: i32 = 0;
+
+// ===== Error reporting =====
+//
+// Usage pattern for each failure site:
+//   var eb: StringBuffer = StringBuffer_new();
+//   asm_err_begin(eb);
+//   emit_string(eb, "undefined label '");
+//   emit_n(eb, name, 0, nlen);
+//   emit_string(eb, "'");
+//   asm_err_end(eb);   // writes, destroys, exits — never returns
+//
+// Output format:
+//   asm:<line>: <your message>
+//     at: <verbatim source line>
+fn asm_err_begin(eb: StringBuffer) -> void {
+    emit_string(eb, "asm:");
+    if g_cur_line > 0 { emit_int(eb, g_cur_line); }
+    emit_string(eb, ": ");
+    return;
+}
+fn asm_err_end(eb: StringBuffer) -> void {
+    if g_cur_line > 0 {
+        emit_string(eb, "\n  at: ");
+        emit_n(eb, g_line_buf, 0, g_line_buf_len);
+    }
+    emit_string(eb, "\n");
+    write(eb, 2);
+    destroy(eb);
+    sys_exit(1);
+    return;
+}
+
+// ===== Emit helpers =====
+fn emit8(v: i32) -> void {
+    if g_pass == 2 && g_pos < MAX_CODE {
+        set(g_code, g_pos, v as u8);
+        if g_pos >= g_code_end { g_code_end = g_pos + 1; }
+    }
+    g_pos = g_pos + 1;
+    return;
+}
+
+fn emit32(v: i32) -> void {
+    emit8(v & 255);
+    emit8((v >> 8) & 255);
+    emit8((v >> 16) & 255);
+    emit8((v >> 24) & 255);
+    return;
+}
+
+fn align_to(n: i32) -> void {
+    while g_pos % n != 0 { emit8(0); }
+    return;
+}
+
+// ===== Label management =====
+fn lab_name_eq(idx: i32, name: U8Array, nlen: i32) -> bool {
+    var lb: Label = get(g_labels, idx);
+    if name_len(lb) != nlen { return false; }
+    var off: i32 = name_off(lb);
+    var i: i32 = 0;
+    while i < nlen {
+        if get(g_lab_names, (off + i)) != get(name, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn find_label(name: U8Array, nlen: i32) -> i32 {
+    var i: i32 = 0;
+    while i < g_nlabels {
+        if lab_name_eq(i, name, nlen) { return i; }
+        i = i + 1;
+    }
+    return 0 - 1;
+}
+
+fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
+    var idx: i32 = find_label(name, nlen);
+    if idx < 0 {
+        idx = g_nlabels;
+        g_nlabels = g_nlabels + 1;
+        var noff: i32 = g_lab_name_pos;
+        var i: i32 = 0;
+        while i < nlen {
+            set(g_lab_names, (g_lab_name_pos + i), get(name, i));
+            i = i + 1;
+        }
+        g_lab_name_pos = g_lab_name_pos + nlen;
+        set(g_labels, idx, Label(noff, nlen, addr, g_current_section));
+    } else {
+        var lb: Label = get(g_labels, idx);
+        addr(lb, addr);
+        section(lb, g_current_section);
+    }
+    return;
+}
+
+fn label_addr(name: U8Array, nlen: i32) -> i32 {
+    var idx: i32 = find_label(name, nlen);
+    if idx < 0 {
+        var eb: StringBuffer = StringBuffer_new();
+        asm_err_begin(eb);
+        emit_string(eb, "undefined label '");
+        emit_n(eb, name, 0, nlen);
+        emit_string(eb, "'");
+        asm_err_end(eb);
+    }
+    return addr(get(g_labels, idx));
+}
+
+// ===== Numeric label support =====
+fn define_numlab(digit: i32, addr: i32) -> void {
+    var cnt: i32 = get(g_numlab_count, digit);
+    set(g_numlab, (digit * 1024 +cnt), addr);
+    set(g_numlab_count, digit, cnt + 1);
+    return;
+}
+
+// Nb: backward reference — last definition at or before current pc
+fn numlab_back(digit: i32, pc: i32) -> i32 {
+    var cnt: i32 = get(g_numlab_count, digit);
+    var result: i32 = 0;
+    var i: i32 = cnt - 1;
+    var found: i32 = 0;
+    while i >= 0 && found == 0 {
+        var addr: i32 = get(g_numlab, (digit * 1024 +i));
+        if addr <= pc { result = addr; found = 1; }
+        else { i = i - 1; }
+    }
+    return result;
+}
+
+// Nf: forward reference — first definition after current pc
+fn numlab_fwd(digit: i32, pc: i32) -> i32 {
+    var cnt: i32 = get(g_numlab_count, digit);
+    var i: i32 = 0;
+    while i < cnt {
+        var addr: i32 = get(g_numlab, (digit * 1024 +i));
+        if addr > pc { return addr; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+// ===== Register parser =====
+fn reg_eq(s: U8Array, off: i32, len: i32, name: StringLiteral) -> bool {
+    var nlen: i32 = len(name);
+    if len != nlen { return false; }
+    var i: i32 = 0;
+    while i < len {
+        if get(s, (off + i)) != get(name, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Parse register from a NUL-separated buffer position.
+// Reads g_line_buf and operand offsets.
+fn parse_reg_op(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    // Skip leading whitespace
+    while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; len = len - 1;
+    }
+    // Strip trailing comma, paren, space
+    var stripping: i32 = 1;
+    while len > 0 && stripping == 1 {
+        var last: u8 = get(g_line_buf, (off + len - 1));
+        if last == ',' || last == ')' || last == '(' || last == ' ' || last == 9u8 {
+            len = len - 1;
+        } else {
+            stripping = 0;
+        }
+    }
+    // Match register names
+    if reg_eq(g_line_buf, off, len, "zero") || reg_eq(g_line_buf, off, len, "x0") { return 0; }
+    if reg_eq(g_line_buf, off, len, "ra") { return 1; }
+    if reg_eq(g_line_buf, off, len, "sp") { return 2; }
+    if reg_eq(g_line_buf, off, len, "gp") { return 3; }
+    if reg_eq(g_line_buf, off, len, "tp") { return 4; }
+    if reg_eq(g_line_buf, off, len, "t0") { return 5; }
+    if reg_eq(g_line_buf, off, len, "t1") { return 6; }
+    if reg_eq(g_line_buf, off, len, "t2") { return 7; }
+    if reg_eq(g_line_buf, off, len, "s0") || reg_eq(g_line_buf, off, len, "fp") { return 8; }
+    if reg_eq(g_line_buf, off, len, "s1") { return 9; }
+    if reg_eq(g_line_buf, off, len, "a0") { return 10; }
+    if reg_eq(g_line_buf, off, len, "a1") { return 11; }
+    if reg_eq(g_line_buf, off, len, "a2") { return 12; }
+    if reg_eq(g_line_buf, off, len, "a3") { return 13; }
+    if reg_eq(g_line_buf, off, len, "a4") { return 14; }
+    if reg_eq(g_line_buf, off, len, "a5") { return 15; }
+    if reg_eq(g_line_buf, off, len, "a6") { return 16; }
+    if reg_eq(g_line_buf, off, len, "a7") { return 17; }
+    if reg_eq(g_line_buf, off, len, "s2") { return 18; }
+    if reg_eq(g_line_buf, off, len, "s3") { return 19; }
+    if reg_eq(g_line_buf, off, len, "s4") { return 20; }
+    if reg_eq(g_line_buf, off, len, "s5") { return 21; }
+    if reg_eq(g_line_buf, off, len, "s6") { return 22; }
+    if reg_eq(g_line_buf, off, len, "s7") { return 23; }
+    if reg_eq(g_line_buf, off, len, "s8") { return 24; }
+    if reg_eq(g_line_buf, off, len, "s9") { return 25; }
+    if reg_eq(g_line_buf, off, len, "s10") { return 26; }
+    if reg_eq(g_line_buf, off, len, "s11") { return 27; }
+    if reg_eq(g_line_buf, off, len, "t3") { return 28; }
+    if reg_eq(g_line_buf, off, len, "t4") { return 29; }
+    if reg_eq(g_line_buf, off, len, "t5") { return 30; }
+    if reg_eq(g_line_buf, off, len, "t6") { return 31; }
+    return 0 - 1;
+}
+
+// ===== Parse immediate from operand =====
+// Parse %hi(label) or %hi(label+offset)
+fn parse_hilo(off: i32, len: i32, is_hi: i32) -> i32 {
+    // Skip "%hi(" or "%lo(" prefix (4 chars)
+    off = off + 4; len = len - 4;
+    // Strip trailing ')'
+    if len > 0 && get(g_line_buf, (off + len - 1)) == ')' { len = len - 1; }
+    // Check for label+offset
+    var plus_pos: i32 = 0 - 1;
+    var i: i32 = 0;
+    while i < len {
+        if get(g_line_buf, (off + i)) == '+' { plus_pos = i; i = len; }
+        else { i = i + 1; }
+    }
+    var label_len: i32 = len;
+    var add_offset: i32 = 0;
+    if plus_pos >= 0 {
+        label_len = plus_pos;
+        // Parse offset after '+'
+        var ostart: i32 = off + plus_pos + 1;
+        var olen: i32 = len - plus_pos - 1;
+        var ov: i32 = 0;
+        while olen > 0 {
+            var c: u8 = get(g_line_buf, ostart);
+            if c >= '0' && c <= '9' { ov = ov * 10 + (c as i32 - 48); }
+            ostart = ostart + 1; olen = olen - 1;
+        }
+        add_offset = ov;
+    }
+    var tmp: U8Array = U8Array((label_len) as u32);
+    i = 0;
+    while i < label_len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
+    var addr: i32 = 0;
+    if g_pass == 2 { addr = label_addr(tmp, label_len) + add_offset; }
+    delete(tmp);
+    if is_hi == 1 { return hi20(addr); }
+    return lo12(addr);
+}
+
+fn parse_imm_op(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; len = len - 1;
+    }
+    // Check for %hi(label) or %lo(label)
+    if len >= 4 && get(g_line_buf, off) == '%' {
+        if get(g_line_buf, (off+1)) == 'h' && get(g_line_buf, (off+2)) == 'i' && get(g_line_buf, (off+3)) == '(' {
+            return parse_hilo(off, len, 1);
+        }
+        if get(g_line_buf, (off+1)) == 'l' && get(g_line_buf, (off+2)) == 'o' && get(g_line_buf, (off+3)) == '(' {
+            return parse_hilo(off, len, 0);
+        }
+    }
+    var neg: i32 = 0;
+    if len > 0 && get(g_line_buf, off) == '-' { neg = 1; off = off + 1; len = len - 1; }
+    var v: i32 = 0;
+    if len >= 2 && get(g_line_buf, off) == '0' && (get(g_line_buf, (off+1)) == 'x' || get(g_line_buf, (off+1)) == 'X') {
+        off = off + 2; len = len - 2;
+        while len > 0 {
+            var c: u8 = get(g_line_buf, off);
+            if c >= '0' && c <= '9' { v = v * 16 + (c as i32 - 48); }
+            else if c >= 'a' && c <= 'f' { v = v * 16 + (c as i32 - 87); }
+            else if c >= 'A' && c <= 'F' { v = v * 16 + (c as i32 - 55); }
+            off = off + 1; len = len - 1;
+        }
+    } else {
+        while len > 0 {
+            var c: u8 = get(g_line_buf, off);
+            if c >= '0' && c <= '9' { v = v * 10 + (c as i32 - 48); }
+            off = off + 1; len = len - 1;
+        }
+    }
+    if neg == 1 { v = 0 - v; }
+    return v;
+}
+
+// Parse label name from operand, return address
+fn parse_label_op(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; len = len - 1;
+    }
+    // Check for numeric label reference: Nb or Nf
+    if len == 2 && is_digit(get(g_line_buf, off)) {
+        var digit: i32 = get(g_line_buf, off) as i32 - 48;
+        var dir: u8 = get(g_line_buf, (off + 1));
+        var pc: i32 = g_pos;
+        if dir == 'b' { return numlab_back(digit, pc); }
+        if dir == 'f' { return numlab_fwd(digit, pc); }
+    }
+    // Named label
+    var tmp: U8Array = U8Array((len) as u32);
+    var i: i32 = 0;
+    while i < len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
+    var addr: i32 = 0;
+    if g_pass == 2 { addr = label_addr(tmp, len); }
+    delete(tmp);
+    return addr;
+}
+
+// Return the section id of the label referenced by operand op_idx,
+// or 0 (SEC_TEXT) for numeric labels and unknown labels.
+fn parse_label_op_section(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; len = len - 1;
+    }
+    if len == 2 && is_digit(get(g_line_buf, off)) { return 0; }
+    var tmp: U8Array = U8Array((len) as u32);
+    var i: i32 = 0;
+    while i < len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
+    var idx: i32 = find_label(tmp, len);
+    delete(tmp);
+    if idx < 0 { return 0; }
+    return section(get(g_labels, idx));
+}
+
+// Parse memory operand "offset(reg)" — returns offset and sets reg via op_idx+1
+fn parse_mem_off(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    // Find LAST '(' (handles %lo(label)(reg) pattern)
+    var paren: i32 = 0;
+    var i: i32 = len - 1;
+    while i >= 0 {
+        if get(g_line_buf, (off + i)) == '(' { paren = i; i = 0 - 1; }
+        else { i = i - 1; }
+    }
+    // Parse offset (before paren)
+    // Temporarily adjust ops to point to offset part
+    var saved_off: i32 = get(g_ops, (op_idx * 2));
+    var saved_len: i32 = get(g_ops, (op_idx * 2 + 1));
+    set(g_ops, (op_idx * 2), off);
+    set(g_ops, (op_idx * 2 + 1), paren);
+    var imm: i32 = parse_imm_op(op_idx);
+    // Parse reg (after paren, before ')')
+    set(g_ops, (op_idx * 2), off + paren + 1);
+    var rlen: i32 = len - paren - 1;
+    if rlen > 0 && get(g_line_buf, (off + paren + 1 + rlen - 1)) == ')' { rlen = rlen - 1; }
+    set(g_ops, (op_idx * 2 + 1), rlen);
+    // Restore for caller to read reg via same op_idx
+    // Actually, we need a way to return both. Let's use a global.
+    g_mem_reg = parse_reg_op(op_idx);
+    // Restore
+    set(g_ops, (op_idx * 2), saved_off);
+    set(g_ops, (op_idx * 2 + 1), saved_len);
+    return imm;
+}
+var g_mem_reg: i32 = 0;
+
+// ===== Instruction encoding =====
+fn enc_r(op: i32, f3: i32, f7: i32, rd: i32, rs1: i32, rs2: i32) -> i32 {
+    return (f7 << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op;
+}
+fn enc_i(op: i32, f3: i32, rd: i32, rs1: i32, imm: i32) -> i32 {
+    return ((imm & 4095) << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op;
+}
+fn enc_s(f3: i32, rs1: i32, rs2: i32, imm: i32) -> i32 {
+    return (((imm >> 5) & 127) << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | ((imm & 31) << 7) | 35;
+}
+fn enc_b(f3: i32, rs1: i32, rs2: i32, off: i32) -> i32 {
+    return (((off >> 12) & 1) << 31) | (((off >> 5) & 63) << 25) |
+           (rs2 << 20) | (rs1 << 15) | (f3 << 12) |
+           (((off >> 1) & 15) << 8) | (((off >> 11) & 1) << 7) | 99;
+}
+fn enc_u(op: i32, rd: i32, imm: i32) -> i32 {
+    return (imm & (0 - 4096)) | (rd << 7) | op;
+}
+fn enc_j(rd: i32, off: i32) -> i32 {
+    return (((off >> 20) & 1) << 31) | (((off >> 1) & 1023) << 21) |
+           (((off >> 11) & 1) << 20) | (((off >> 12) & 255) << 12) |
+           (rd << 7) | 111;
+}
+
+fn hi20(v: i32) -> i32 {
+    if (v & 2048) != 0 { return ((v >> 12) + 1) & 1048575; }
+    return (v >> 12) & 1048575;
+}
+fn lo12(v: i32) -> i32 {
+    var lo: i32 = v & 4095;
+    if (lo & 2048) != 0 { lo = lo | (0 - 4096); }
+    return lo;
+}
+
+// ===== Mnemonic comparison =====
+fn mnem_eq(name: StringLiteral) -> bool {
+    var nlen: i32 = len(name);
+    if g_mnem_len != nlen { return false; }
+    var i: i32 = 0;
+    while i < nlen {
+        if get(g_mnem, i) != get(name, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// ===== Process instruction: returns byte count =====
+fn asm_instr() -> i32 {
+    var pc: i32 = g_pos;
+
+    // R-type
+    if mnem_eq("add")   { if g_pass==2 { emit32(enc_r(51,0,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("sub")   { if g_pass==2 { emit32(enc_r(51,0,32,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("and")   { if g_pass==2 { emit32(enc_r(51,7,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("or")    { if g_pass==2 { emit32(enc_r(51,6,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("xor")   { if g_pass==2 { emit32(enc_r(51,4,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("sll")   { if g_pass==2 { emit32(enc_r(51,1,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("srl")   { if g_pass==2 { emit32(enc_r(51,5,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("sra")   { if g_pass==2 { emit32(enc_r(51,5,32,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("slt")   { if g_pass==2 { emit32(enc_r(51,2,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("sltu")  { if g_pass==2 { emit32(enc_r(51,3,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("mul")   { if g_pass==2 { emit32(enc_r(51,0,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("mulhu") { if g_pass==2 { emit32(enc_r(51,3,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("div")   { if g_pass==2 { emit32(enc_r(51,4,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("divu")  { if g_pass==2 { emit32(enc_r(51,5,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("rem")   { if g_pass==2 { emit32(enc_r(51,6,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    if mnem_eq("remu")  { if g_pass==2 { emit32(enc_r(51,7,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+
+    // I-type ALU
+    if mnem_eq("addi")  { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("andi")  { if g_pass==2 { emit32(enc_i(19,7,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("ori")   { if g_pass==2 { emit32(enc_i(19,6,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("xori")  { if g_pass==2 { emit32(enc_i(19,4,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("slti")  { if g_pass==2 { emit32(enc_i(19,2,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("sltiu") { if g_pass==2 { emit32(enc_i(19,3,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("slli")  { if g_pass==2 { emit32(enc_i(19,1,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("srli")  { if g_pass==2 { emit32(enc_i(19,5,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("srai")  { if g_pass==2 { emit32(enc_i(19,5,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2) | 1024)); } return 4; }
+
+    // Load
+    if mnem_eq("lw")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,2,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+    if mnem_eq("lh")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,1,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+    if mnem_eq("lb")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,0,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+    if mnem_eq("lbu") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,4,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+    if mnem_eq("lhu") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,5,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+
+    // Store
+    if mnem_eq("sw") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(2,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+    if mnem_eq("sh") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(1,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+    if mnem_eq("sb") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(0,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+
+    // U-type
+    if mnem_eq("lui") { if g_pass==2 { emit32(enc_u(55,parse_reg_op(0),parse_imm_op(1)<<12)); } return 4; }
+
+    // Branch
+    if mnem_eq("beq") { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bne") { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("blt") { if g_pass==2 { emit32(enc_b(4,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bge") { if g_pass==2 { emit32(enc_b(5,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bltu"){ if g_pass==2 { emit32(enc_b(6,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bgeu"){ if g_pass==2 { emit32(enc_b(7,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+
+    // Pseudo: ble/bgt/bleu/bgtu (swap operands)
+    if mnem_eq("ble")  { if g_pass==2 { emit32(enc_b(5,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bgt")  { if g_pass==2 { emit32(enc_b(4,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bleu") { if g_pass==2 { emit32(enc_b(7,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("bgtu") { if g_pass==2 { emit32(enc_b(6,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+    if mnem_eq("beqz") { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
+    if mnem_eq("bnez") { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
+
+    // Pseudo: li
+    if mnem_eq("li") {
+        var imm: i32 = parse_imm_op(1);
+        var rd: i32 = parse_reg_op(0);
+        if imm >= 0 - 2048 && imm < 2048 {
+            if g_pass==2 { emit32(enc_i(19,0,rd,0,imm)); }
+            return 4;
+        }
+        if g_pass==2 {
+            emit32(enc_u(55,rd,hi20(imm)<<12));
+            emit32(enc_i(19,0,rd,rd,lo12(imm)));
+        }
+        return 8;
+    }
+
+    // Pseudo: mv, ret, nop, neg, not, seqz, snez
+    if mnem_eq("mv")   { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),0)); } return 4; }
+    if mnem_eq("ret")  { if g_pass==2 { emit32(enc_i(103,0,0,1,0)); } return 4; }
+    if mnem_eq("nop")  { if g_pass==2 { emit32(enc_i(19,0,0,0,0)); } return 4; }
+    if mnem_eq("neg")  { if g_pass==2 { emit32(enc_r(51,0,32,parse_reg_op(0),0,parse_reg_op(1))); } return 4; }
+    if mnem_eq("not")  { if g_pass==2 { emit32(enc_i(19,4,parse_reg_op(0),parse_reg_op(1),0-1)); } return 4; }
+    if mnem_eq("seqz") { if g_pass==2 { emit32(enc_i(19,3,parse_reg_op(0),parse_reg_op(1),1)); } return 4; }
+    if mnem_eq("snez") { if g_pass==2 { emit32(enc_r(51,3,0,parse_reg_op(0),0,parse_reg_op(1))); } return 4; }
+
+    // Pseudo: j, jr, call, tail, la
+    if mnem_eq("j") {
+        var off: i32 = 0;
+        if g_pass==2 { off = parse_label_op(0) - pc; emit32(enc_j(0,off)); }
+        return 4;
+    }
+    if mnem_eq("jr") { if g_pass==2 { emit32(enc_i(103,0,0,parse_reg_op(0),0)); } return 4; }
+    // jalr rd, rs1, imm  (I-type, opcode=103, funct3=0)
+    if mnem_eq("jalr") { if g_pass==2 { emit32(enc_i(103,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    if mnem_eq("call") || mnem_eq("tail") {
+        var rd: i32 = 1;
+        if mnem_eq("tail") { rd = 0; }
+        if g_pass==2 {
+            var off: i32 = parse_label_op(0) - pc;
+            emit32(enc_u(23,rd,hi20(off)<<12));
+            emit32(enc_i(103,0,rd,rd,lo12(off)));
+        }
+        return 8;
+    }
+    if mnem_eq("la") {
+        var rd: i32 = parse_reg_op(0);
+        if g_pass==2 {
+            var target: i32 = parse_label_op(1);
+            var tsec: i32 = parse_label_op_section(1);
+            // data/bss labels are always addressed via gp-relative; on Pico 2
+            // the PC-relative form would give a Flash address, which is
+            // wrong (the memory actually lives in SRAM). If the label ends
+            // up outside gp's ±2KB window, that's a linker bug in the crt0
+            // layout and we fail hard with the label name.
+            if tsec == 2 || tsec == 3 {
+                var gpoff: i32 = target - g_gp_abs;
+                if gpoff < (0 - 2048) || gpoff > 2047 {
+                    var eb1: StringBuffer = StringBuffer_new(1);
+                    asm_err_begin(eb1);
+                    emit_string(eb1, "gp-relative la out of 12-bit range for label '");
+                    var lop_off: i32 = get(g_ops, 2);
+                    var lop_len: i32 = get(g_ops, 3);
+                    emit_n(eb1, g_line_buf, lop_off, lop_len);
+                    emit_string(eb1, "'");
+                    asm_err_end(eb1);
+                }
+                // auipc rd, 0 (rd = pc, overwritten by next addi)
+                emit32(enc_u(23, rd, 0));
+                // addi rd, gp, gpoff   (gp = x3)
+                emit32(enc_i(19, 0, rd, 3, gpoff));
+            } else {
+                var off: i32 = target - pc;
+                emit32(enc_u(23,rd,hi20(off)<<12));
+                emit32(enc_i(19,0,rd,rd,lo12(off)));
+            }
+        }
+        return 8;
+    }
+
+    // ecall / mret
+    if mnem_eq("ecall") { if g_pass==2 { emit32(115); } return 4; }
+    if mnem_eq("mret")  { if g_pass==2 { emit32(0x30200073); } return 4; }
+
+    // CSR instructions (opcode=115, I-type encoding)
+    // csrrw rd, csr, rs1  (funct3=1)
+    if mnem_eq("csrrw") { if g_pass==2 { emit32(enc_i(115,1,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+    // csrrs rd, csr, rs1  (funct3=2)
+    if mnem_eq("csrrs") { if g_pass==2 { emit32(enc_i(115,2,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+    // csrrc rd, csr, rs1  (funct3=3)
+    if mnem_eq("csrrc") { if g_pass==2 { emit32(enc_i(115,3,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+    // csrr rd, csr  -> csrrs rd, csr, x0  (pseudo)
+    if mnem_eq("csrr")  { if g_pass==2 { emit32(enc_i(115,2,parse_reg_op(0),0,parse_imm_op(1))); } return 4; }
+    // csrw csr, rs1 -> csrrw x0, csr, rs1 (pseudo)
+    if mnem_eq("csrw")  { if g_pass==2 { emit32(enc_i(115,1,0,parse_reg_op(1),parse_imm_op(0))); } return 4; }
+
+    // Unknown instruction
+    var eb: StringBuffer = StringBuffer_new();
+    asm_err_begin(eb);
+    emit_string(eb, "unknown instruction '");
+    emit_n(eb, g_mnem, 0, g_mnem_len);
+    emit_string(eb, "'");
+    asm_err_end(eb);
+    return 0;
+}
+
+// ===== Line parser =====
+// Parse a line stored in g_line_buf[0..g_line_buf_len] into g_mnem and g_ops
+fn parse_asm_line() -> void {
+    g_mnem_len = 0;
+    g_nops = 0;
+    var pos: i32 = 0;
+    var len: i32 = g_line_buf_len;
+    // Skip leading whitespace
+    while pos < len && (get(g_line_buf, pos) == ' ' || get(g_line_buf, pos) == 9u8) { pos = pos + 1; }
+    if pos >= len { return; }
+    var c: u8 = get(g_line_buf, pos);
+    if c == '#' || c == ';' { return; }
+    if c == '/' && pos + 1 < len && get(g_line_buf, (pos+1)) == '*' { return; }
+    // Read mnemonic
+    var mstart: i32 = pos;
+    while pos < len && get(g_line_buf, pos) != ' ' && get(g_line_buf, pos) != 9u8 && get(g_line_buf, pos) != 10u8 {
+        pos = pos + 1;
+    }
+    g_mnem_len = pos - mstart;
+    var i: i32 = 0;
+    while i < g_mnem_len { set(g_mnem, i, get(g_line_buf, (mstart + i))); i = i + 1; }
+    // Skip whitespace after mnemonic
+    while pos < len && (get(g_line_buf, pos) == ' ' || get(g_line_buf, pos) == 9u8) { pos = pos + 1; }
+    // Read operands
+    while pos < len && get(g_line_buf, pos) != '#' && get(g_line_buf, pos) != 10u8 && g_nops < 4 {
+        // Skip separators
+        while pos < len && (get(g_line_buf, pos) == ',' || get(g_line_buf, pos) == ' ' || get(g_line_buf, pos) == 9u8) { pos = pos + 1; }
+        if pos >= len || get(g_line_buf, pos) == '#' || get(g_line_buf, pos) == 10u8 { return; }
+        // Handle quoted strings
+        if get(g_line_buf, pos) == '"' {
+            var qstart: i32 = pos;
+            pos = pos + 1;
+            while pos < len && get(g_line_buf, pos) != 10u8 {
+                if get(g_line_buf, pos) == '\\' && pos + 1 < len { pos = pos + 2; }
+                else if get(g_line_buf, pos) == '"' { pos = pos + 1; pos = len + 1; }  // break
+                else { pos = pos + 1; }
+            }
+            if pos > len { pos = pos - len - 1 + len; }  // undo break trick
+            set(g_ops, (g_nops * 2), qstart);
+            set(g_ops, (g_nops * 2 + 1), pos - qstart);
+            g_nops = g_nops + 1;
+            return;  // string is always last operand
+        }
+        // Regular operand (may include parens for memory ops)
+        var ostart: i32 = pos;
+        var paren: i32 = 0;
+        var odone: i32 = 0;
+        while pos < len && odone == 0 {
+            var ch: u8 = get(g_line_buf, pos);
+            if ch == '(' { paren = paren + 1; pos = pos + 1; }
+            else if ch == ')' { pos = pos + 1; paren = paren - 1; if paren <= 0 { odone = 1; } }
+            else if (ch == ',' || ch == ' ' || ch == 9u8) && paren == 0 { odone = 1; }
+            else if ch == '#' || ch == 10u8 { odone = 1; }
+            else { pos = pos + 1; }
+        }
+        var olen: i32 = pos - ostart;
+        if olen > 0 {
+            set(g_ops, (g_nops * 2), ostart);
+            set(g_ops, (g_nops * 2 + 1), olen);
+            g_nops = g_nops + 1;
+        }
+    }
+    return;
+}
+
+// ===== Process one stored line =====
+// Process one raw source line. The caller passes the bytes and the
+// 1-origin source line number; we copy into g_line_buf, then run the
+// existing strip / label / tokenize / dispatch pipeline. No g_lines
+// indirection — pass1 / pass2 both stream-read source one line at a
+// time and hand it here.
+export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
+    g_cur_line = lineno;
+    var len: i32 = blen;
+    var i: i32 = 0;
+    while i < len { set(g_line_buf, i, get(buf, i)); i = i + 1; }
+    g_line_buf_len = len;
+
+    // Strip leading/trailing whitespace
+    var start: i32 = 0;
+    while start < len && (get(g_line_buf, start) == ' ' || get(g_line_buf, start) == 9u8) { start = start + 1; }
+    while len > start && (get(g_line_buf, (len-1)) == ' ' || get(g_line_buf, (len-1)) == 9u8 || get(g_line_buf, (len-1)) == 10u8 || get(g_line_buf, (len-1)) == 13u8) { len = len - 1; }
+    if start > 0 {
+        i = 0;
+        while i < len - start { set(g_line_buf, i, get(g_line_buf, (start + i))); i = i + 1; }
+        len = len - start;
+    }
+    g_line_buf_len = len;
+    if len == 0 { return; }
+    if get(g_line_buf, 0) == '#' || get(g_line_buf, 0) == ';' { return; }
+
+    // Check for label (colon not inside quotes or a comment).
+    // Stop at '#' or ';' — both start end-of-line comments in the asm
+    // flavors we accept, and a colon inside the comment body must not
+    // be mistaken for a label delimiter.
+    var colon_pos: i32 = 0 - 1;
+    var in_quote: i32 = 0;
+    i = 0;
+    while i < len {
+        var cc: u8 = get(g_line_buf, i);
+        if cc == '"' { in_quote = 1 - in_quote; }
+        if in_quote == 0 && (cc == '#' || cc == ';') { i = len; }
+        else if cc == ':' && in_quote == 0 { colon_pos = i; i = len; }
+        else { i = i + 1; }
+    }
+    if colon_pos >= 0 {
+        // Check if numeric label (single digit before colon)
+        var is_numlab: i32 = 0;
+        if colon_pos == 1 && is_digit(get(g_line_buf, 0)) {
+            is_numlab = 1;
+            var digit: i32 = get(g_line_buf, 0) as i32 - 48;
+            if g_pass == 1 { define_numlab(digit, g_pos); }
+        }
+        if is_numlab == 0 {
+            // Named label
+            var lname: U8Array = U8Array((colon_pos) as u32);
+            i = 0;
+            while i < colon_pos { set(lname, i, get(g_line_buf, i)); i = i + 1; }
+            if g_pass == 1 { define_label(lname, colon_pos, g_pos); }
+            delete(lname);
+        }
+        // Process remainder after colon
+        var rest_start: i32 = colon_pos + 1;
+        while rest_start < len && (get(g_line_buf, rest_start) == ' ' || get(g_line_buf, rest_start) == 9u8) { rest_start = rest_start + 1; }
+        if rest_start < len {
+            // Shift remainder to start of buffer
+            i = 0;
+            while i < len - rest_start { set(g_line_buf, i, get(g_line_buf, (rest_start + i))); i = i + 1; }
+            g_line_buf_len = len - rest_start;
+        } else {
+            return;
+        }
+    }
+
+    parse_asm_line();
+    if g_mnem_len == 0 { return; }
+
+    // Directives
+    if get(g_mnem, 0) == '.' {
+        if mnem_eq(".text") { g_current_section = 0; return; }
+        if mnem_eq(".section") {
+            // .section .rodata / .data / .bss / .text / other
+            // Look at the first operand to pick a section id.
+            g_current_section = 0;  // default: treat as text
+            if g_nops > 0 {
+                var sop_off: i32 = get(g_ops, 0);
+                var sop_len: i32 = get(g_ops, 1);
+                if sop_len >= 7 && cmp(g_line_buf, sop_off, ".rodata") {
+                    g_current_section = 1;
+                } else if sop_len >= 5 && cmp(g_line_buf, sop_off, ".data") {
+                    g_current_section = 2;
+                } else if sop_len >= 4 && cmp(g_line_buf, sop_off, ".bss") {
+                    g_current_section = 3;
+                }
+            }
+            return;
+        }
+        if mnem_eq(".rodata") { g_current_section = 1; return; }
+        if mnem_eq(".data") { g_current_section = 2; return; }
+        if mnem_eq(".bss") { g_current_section = 3; return; }
+        if mnem_eq(".globl") || mnem_eq(".type") || mnem_eq(".size") ||
+           mnem_eq(".option") || mnem_eq(".attribute") || mnem_eq(".file") ||
+           mnem_eq(".ident") || mnem_eq(".p2align") { return; }
+        if mnem_eq(".set") {
+            // .set label, . + N  (define label at current position + offset)
+            // For now, just define at current position
+            if g_nops >= 1 {
+                var op_off: i32 = get(g_ops, 0);
+                var op_len: i32 = get(g_ops, 1);
+                var lname: U8Array = U8Array((op_len) as u32);
+                i = 0;
+                while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
+                if g_pass == 1 { define_label(lname, op_len, g_pos); }
+                delete(lname);
+            }
+            return;
+        }
+        if mnem_eq(".local") { return; }  // ignore
+        if mnem_eq(".comm") {
+            // .comm symbol,size,align — allocate BSS space via per-section
+            // cursor g_sec_pos[SEC_BSS=3]. The label is defined in the BSS
+            // section and fixed up (addr += bss_base) after pass 1.
+            if g_nops >= 2 {
+                var op_off: i32 = get(g_ops, 0);
+                var op_len: i32 = get(g_ops, 1);
+                var size: i32 = parse_imm_op(1);
+                var align: i32 = 4;
+                if g_nops >= 3 { align = parse_imm_op(2); }
+                var bss_cursor: i32 = get(g_sec_pos, 3);
+                while bss_cursor % align != 0 { bss_cursor = bss_cursor + 1; }
+                var lname: U8Array = U8Array((op_len) as u32);
+                i = 0;
+                while i < op_len { set(lname, i, get(g_line_buf, (op_off + i))); i = i + 1; }
+                if g_pass == 1 {
+                    // Temporarily switch section so define_label records BSS
+                    var saved_sec: i32 = g_current_section;
+                    g_current_section = 3;
+                    define_label(lname, op_len, bss_cursor);
+                    g_current_section = saved_sec;
+                }
+                delete(lname);
+                set(g_sec_pos, 3, bss_cursor + size);
+            }
+            return;
+        }
+        if mnem_eq(".align") {
+            var n: i32 = 1;
+            var shift: i32 = parse_imm_op(0);
+            i = 0;
+            while i < shift { n = n * 2; i = i + 1; }
+            align_to(n);
+            return;
+        }
+        if mnem_eq(".word") {
+            if g_nops > 0 {
+                // Try as label first, then as number
+                var op_off: i32 = get(g_ops, 0);
+                var op_len: i32 = get(g_ops, 1);
+                var c0: u8 = get(g_line_buf, op_off);
+                if (c0 >= '0' && c0 <= '9') || c0 == '-' {
+                    emit32(parse_imm_op(0));
+                } else {
+                    // Label
+                    if g_pass == 2 { emit32(parse_label_op(0)); }
+                    else { g_pos = g_pos + 4; }
+                }
+            }
+            return;
+        }
+        if mnem_eq(".byte") {
+            // Emit each comma-separated value as a single byte.
+            // Parse directly from g_line_buf to avoid g_nops limit.
+            var bi: i32 = 0;
+            while bi < g_nops {
+                emit8(parse_imm_op(bi) & 255);
+                bi = bi + 1;
+            }
+            return;
+        }
+        if mnem_eq(".string") {
+            if g_nops > 0 {
+                var op_off: i32 = get(g_ops, 0);
+                var op_len: i32 = get(g_ops, 1);
+                // Skip opening quote
+                var s: i32 = op_off + 1;
+                var e: i32 = op_off + op_len;
+                if e > s && get(g_line_buf, (e - 1)) == '"' { e = e - 1; }
+                i = s;
+                while i < e {
+                    if get(g_line_buf, i) == '\\' && i + 1 < e {
+                        i = i + 1;
+                        var esc: u8 = get(g_line_buf, i);
+                        if esc == 'n' { emit8(10); }
+                        else if esc == 't' { emit8(9); }
+                        else if esc == 'r' { emit8(13); }
+                        else if esc == '0' { emit8(0); }
+                        else if esc == '\\' { emit8(92); }
+                        else if esc == '"' { emit8(34); }
+                        else { emit8(esc as i32); }
+                    } else {
+                        emit8(get(g_line_buf, i) as i32);
+                    }
+                    i = i + 1;
+                }
+                emit8(0);  // NUL terminator
+            }
+            return;
+        }
+        if mnem_eq(".space") || mnem_eq(".zero") {
+            var n: i32 = parse_imm_op(0);
+            // Advance position; only write to g_code if within buffer
+            if g_pass == 2 {
+                var end: i32 = g_pos + n;
+                var write_end: i32 = end;
+                if write_end > MAX_CODE { write_end = MAX_CODE; }
+                i = g_pos;
+                while i < write_end { set(g_code, i, 0u8); i = i + 1; }
+            }
+            g_pos = g_pos + n;
+            return;
+        }
+        // Unknown directive: ignore
+        return;
+    }
+
+    // Instructions
+    var sz: i32 = asm_instr();
+    if g_pass == 1 { g_pos = g_pos + sz; }
+    return;
+}
+
+// Check whether a line starting with `; ` is a meta directive,
+// and if so update global state. Returns 1 if consumed, 0 otherwise.
+// Inspect a freshly-read source line for one of the meta directives
+// (`; raw` / `; load_base 0xN`) and apply it. Returns 1 if the line
+// was a meta directive (caller skips dispatching to process_line),
+// 0 otherwise. Walks the caller-supplied buffer directly so we
+// don't need a g_lines indirection.
+export fn asm_parse_meta_directive(buf: U8Array, blen: i32) -> i32 {
+    if blen < 4 { return 0; }
+    if get(buf, 0) != ';' { return 0; }
+    if get(buf, 1) != ' ' { return 0; }
+    var p: i32 = 2;
+    var end: i32 = blen;
+    // Strip trailing newline if present
+    if end > p && get(buf, (end - 1)) == 10u8 { end = end - 1; }
+    // ; raw
+    if (end - p) == 3 && cmp(buf, p, "raw") {
+        g_raw_mode = 1;
+        return 1;
+    }
+    // ; load_base 0xHHHHHHHH
+    if (end - p) >= 11 && cmp(buf, p, "load_base ") {
+        var q: i32 = p + 10;
+        while q < end && get(buf, q) == ' ' { q = q + 1; }
+        if q + 1 < end && get(buf, q) == '0'
+           && (get(buf, (q + 1)) == 'x' || get(buf, (q + 1)) == 'X') {
+            q = q + 2;
+        }
+        var v: i32 = 0;
+        while q < end {
+            var c: u8 = get(buf, q);
+            if c >= '0' && c <= '9' { v = v * 16 + (c as i32 - 48); }
+            else if c >= 'a' && c <= 'f' { v = v * 16 + (c as i32 - 87); }
+            else if c >= 'A' && c <= 'F' { v = v * 16 + (c as i32 - 55); }
+            q = q + 1;
+        }
+        g_load_vaddr = v;
+        return 1;
+    }
+    return 0;
+}
+
+// ===== Init =====
+//
+// Allocate the per-pass state. Pass 1 doesn't need g_code (emit8 /
+// emit32 only write to g_code when g_pass == 2), so asm_init_pass1
+// skips that 4 MB allocation. Pass 2 needs everything.
+fn asm_init_common() -> void {
+    g_lab_names    = U8Array(262144u32);
+    g_labels       = LabelArray((MAX_LABELS) as u32);
+    g_sec_pos      = I32Array(4u32);
+    g_sec_base     = I32Array(4u32);
+    g_sec_size     = I32Array(4u32);
+    g_mnem         = U8Array(64u32);
+    g_ops          = I32Array(8u32);    // 4 ops x 2 (off, len)
+    g_line_buf     = U8Array(4092u32);
+    g_numlab       = I32Array(10240u32);
+    g_numlab_count = I32Array(10u32);
+
+    g_pos              = 0;
+    g_pass             = 0;
+    g_nlabels          = 0;
+    g_lab_name_pos     = 0;
+    g_current_section  = 0;
+    g_code_end         = 0;
+    g_bss_pos          = 0;
+    g_cur_line         = 0;
+    set(g_sec_pos, 0, 0);
+    set(g_sec_pos, 1, 0);
+    set(g_sec_pos, 2, 0);
+    set(g_sec_pos, 3, 0);
+    return;
+}
+
+export fn asm_init_pass1() -> void {
+    asm_init_common();
+    // Pre-define __global_pointer$ in text section; its final value is
+    // patched to data_base + 0x800 after the pass 1 line loop, the
+    // same way single-process asm.tc did it.
+    var gp_sym: U8Array = U8Array(20u32);
+    var gp_len: i32 = buf_set_str(gp_sym, 0, "__global_pointer$");
+    define_label(gp_sym, gp_len, 0);
+    delete(gp_sym);
+    return;
+}
+
+export fn asm_init_pass2() -> void {
+    asm_init_common();
+    g_code = U8Array((MAX_CODE) as u32);
+    return;
+}
+
+export fn asm_set_pass(p: i32) -> void {
+    g_pass = p;
+    return;
+}
+
+// Track the "active section" cursor for the caller. asm_pass1 / pass2
+// drive process_line line by line, and each line needs g_pos set to
+// the per-section intra offset (pass 1) or sec_base+intra (pass 2)
+// before the line runs. This wraps that bookkeeping so the pass main
+// loops stay tiny.
+export fn asm_run_line(buf: U8Array, blen: i32, lineno: i32) -> void {
+    if g_pass == 1 {
+        var sec_before: i32 = g_current_section;
+        g_pos = get(g_sec_pos, sec_before);
+        asm_process_line(buf, blen, lineno);
+        set(g_sec_pos, sec_before, g_pos);
+    } else {
+        var sec_before2: i32 = g_current_section;
+        g_pos = get(g_sec_base, sec_before2) + get(g_sec_pos, sec_before2);
+        asm_process_line(buf, blen, lineno);
+        set(g_sec_pos, sec_before2, g_pos - get(g_sec_base, sec_before2));
+    }
+    return;
+}
+
+// Compute section bases / sizes from g_sec_pos (which pass 1 has been
+// updating) and stash __global_pointer$ value. Called once between
+// pass 1 and the .lab dump.
+export fn asm_compute_sec_bases() -> void {
+    var text_size: i32   = (get(g_sec_pos, 0) + 15) & (0 - 16);
+    var rodata_size: i32 = (get(g_sec_pos, 1) + 15) & (0 - 16);
+    var data_size: i32   = (get(g_sec_pos, 2) + 15) & (0 - 16);
+    var bss_size: i32    = (get(g_sec_pos, 3) + 15) & (0 - 16);
+    set(g_sec_base, 0, 0);
+    set(g_sec_base, 1, text_size);
+    set(g_sec_base, 2, text_size + rodata_size);
+    set(g_sec_base, 3, text_size + rodata_size + data_size);
+    set(g_sec_size, 0, text_size);
+    set(g_sec_size, 1, rodata_size);
+    set(g_sec_size, 2, data_size);
+    set(g_sec_size, 3, bss_size);
+    g_gp_abs = get(g_sec_base, 2) + 2048;
+    return;
+}
+
+// Add g_sec_base[section] to every label's intra offset, turning them
+// into absolute (PIC code-relative) addresses. Also patches the
+// magic __global_pointer$ label to data_base + 0x800. Pass 1 only.
+export fn asm_fixup_labels() -> void {
+    var i: i32 = 0;
+    while i < g_nlabels {
+        var lb: Label = get(g_labels, i);
+        var lsec: i32 = section(lb);
+        addr(lb, addr(lb) + get(g_sec_base, lsec));
+        i = i + 1;
+    }
+    var gp_sym: U8Array = U8Array(20u32);
+    var gp_len: i32 = buf_set_str(gp_sym, 0, "__global_pointer$");
+    var gp_idx: i32 = find_label(gp_sym, gp_len);
+    if gp_idx >= 0 { addr(get(g_labels, gp_idx), g_gp_abs); }
+    delete(gp_sym);
+    return;
+}
+
+// Reset the per-section cursors so pass 2 (called via asm_run_line)
+// starts at sec_base[i] + 0 for each section. asm_pass2 calls this
+// after installing labels from .lab and before re-reading source.
+export fn asm_pass2_reset_cursors() -> void {
+    set(g_sec_pos, 0, 0);
+    set(g_sec_pos, 1, 0);
+    set(g_sec_pos, 2, 0);
+    set(g_sec_pos, 3, 0);
+    g_current_section = 0;
+    g_pos = 0;
+    g_code_end = 0;
+    g_bss_pos = 0;
+    return;
+}
+
+// ===== .lab dump (pass 1 → stdout) =====
+//
+// Emits the wrapped .lab format documented in docs/lab_format.md:
+//
+//     (lab
+//     ; lab v1
+//     sec 0 <base> <size>
+//     sec 1 <base> <size>
+//     sec 2 <base> <size>
+//     sec 3 <base> <size>
+//     lab <addr> <section> <name>
+//     ...
+//     num <digit> <addr>
+//     ...
+//     )
+//
+// asm_pass2 reads this from its stdin (followed immediately by the
+// original source) and re-installs the state via the
+// asm_install_*_from_lab fns below.
+
+fn dump_int(sb: StringBuffer, v: i32) -> void { emit_int(sb, v); return; }
+
+export fn asm_dump_lab_state() -> void {
+    var sb: StringBuffer = StringBuffer_new(1);
+    emit_string(sb, "(lab"); emit_nl(sb);
+    emit_string(sb, "; lab v1"); emit_nl(sb);
+
+    var i: i32 = 0;
+    while i < 4 {
+        emit_string(sb, "sec ");
+        dump_int(sb, i);
+        emit_char(sb, ' ');
+        dump_int(sb, get(g_sec_base, i));
+        emit_char(sb, ' ');
+        dump_int(sb, get(g_sec_size, i));
+        emit_nl(sb);
+        i = i + 1;
+    }
+
+    var li: i32 = 0;
+    while li < g_nlabels {
+        var lb: Label = get(g_labels, li);
+        emit_string(sb, "lab ");
+        dump_int(sb, addr(lb));
+        emit_char(sb, ' ');
+        dump_int(sb, section(lb));
+        emit_char(sb, ' ');
+        emit_n(sb, g_lab_names, name_off(lb), name_len(lb));
+        emit_nl(sb);
+        li = li + 1;
+    }
+
+    var d: i32 = 0;
+    while d < 10 {
+        var cnt: i32 = get(g_numlab_count, d);
+        var k: i32 = 0;
+        while k < cnt {
+            emit_string(sb, "num ");
+            dump_int(sb, d);
+            emit_char(sb, ' ');
+            dump_int(sb, get(g_numlab, (d * 1024 + k)));
+            emit_nl(sb);
+            k = k + 1;
+        }
+        d = d + 1;
+    }
+
+    emit_char(sb, ')'); emit_nl(sb);
+    write(sb, 1);
+    destroy(sb);
+    return;
+}
+
+// ===== .lab install (pass 2 reader → in-memory state) =====
+export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: i32) -> void {
+    var idx: i32 = g_nlabels;
+    g_nlabels = g_nlabels + 1;
+    var noff: i32 = g_lab_name_pos;
+    var i: i32 = 0;
+    while i < nlen {
+        set(g_lab_names, (g_lab_name_pos + i), get(name, i));
+        i = i + 1;
+    }
+    g_lab_name_pos = g_lab_name_pos + nlen;
+    set(g_labels, idx, Label(noff, nlen, addrv, sec));
+    return;
+}
+
+export fn asm_install_numlab_from_lab(digit: i32, addrv: i32) -> void {
+    var cnt: i32 = get(g_numlab_count, digit);
+    set(g_numlab, (digit * 1024 + cnt), addrv);
+    set(g_numlab_count, digit, cnt + 1);
+    return;
+}
+
+export fn asm_install_sec_base_size(idx: i32, base: i32, size: i32) -> void {
+    set(g_sec_base, idx, base);
+    set(g_sec_size, idx, size);
+    // g_gp_abs depends on data_base (sec 2) — keep it in sync the
+    // moment sec 2 lands. asm_compute_sec_bases does the same thing
+    // for pass 1.
+    if idx == 2 { g_gp_abs = base + 2048; }
+    return;
+}
+
+// ===== Write ELF (pass 2) =====
+fn write_le32(buf: U8Array, off: i32, v: i32) -> void {
+    set(buf, off, (v & 255) as u8);
+    set(buf, (off+1), ((v >> 8) & 255) as u8);
+    set(buf, (off+2), ((v >> 16) & 255) as u8);
+    set(buf, (off+3), ((v >> 24) & 255) as u8);
+    return;
+}
+
+// Write the encoded program out. Uses g_code_end as the file size and
+// the sum of g_sec_size[] as the memory size (they differ when there
+// is bss content). Honors `; raw` (= no ELF header, just code bytes).
+export fn asm_write_elf() -> void {
+    g_cur_line = 0;
+    var code_size: i32 = g_code_end;
+    var mem_size:  i32 = get(g_sec_size, 0) + get(g_sec_size, 1) +
+                         get(g_sec_size, 2) + get(g_sec_size, 3);
+
+    if g_raw_mode == 1 {
+        sys_write(1, g_code, code_size);
+        return;
+    }
+
+    var out: U8Array = U8Array(4096u32);
+    var entry: i32 = 0;
+    var tmp: U8Array = U8Array(6u32);
+    set(tmp, 0, '_'); set(tmp, 1, 's'); set(tmp, 2, 't');
+    set(tmp, 3, 'a'); set(tmp, 4, 'r'); set(tmp, 5, 't');
+    entry = label_addr(tmp, 6) + g_load_vaddr + ELF_HDR_SIZE;
+    delete(tmp);
+
+    var load_vaddr: i32 = g_load_vaddr;
+    var total_filesz: i32 = ELF_HDR_SIZE + code_size;
+    var total_memsz: i32 = ELF_HDR_SIZE + mem_size;
+
+    var i: i32 = 0;
+    while i < ELF_HDR_SIZE { set(out, i, 0u8); i = i + 1; }
+
+    set(out, 0, 127u8); set(out, 1, 'E'); set(out, 2, 'L'); set(out, 3, 'F');
+    set(out, 4, 1u8); set(out, 5, 1u8); set(out, 6, 1u8);
+    set(out, 16, 2u8);
+    set(out, 18, 243u8);
+    write_le32(out, 20, 1);
+    write_le32(out, 24, entry);
+    write_le32(out, 28, 52);
+    set(out, 40, 52u8);
+    set(out, 42, 32u8);
+    set(out, 44, 1u8);
+
+    write_le32(out, 52, 1);
+    write_le32(out, 56, 0);
+    write_le32(out, 60, load_vaddr);
+    write_le32(out, 64, load_vaddr);
+    write_le32(out, 68, total_filesz);
+    write_le32(out, 72, total_memsz);
+    write_le32(out, 76, 7);
+    write_le32(out, 80, 4096);
+
+    sys_write(1, out, ELF_HDR_SIZE);
+    sys_write(1, g_code, code_size);
+    delete(out);
+    return;
+}

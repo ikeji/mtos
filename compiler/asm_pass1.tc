@@ -1,0 +1,64 @@
+// asm_pass1.tc — label collector half of the asm split (Phase 2 #56).
+//
+// Reads a `.s` source from stdin one line at a time, runs the
+// asm_common encoder in pass-1 mode (which collects labels and
+// section sizes without emitting any code bytes), then writes the
+// resulting label / section state to stdout in the wrapped .lab
+// format documented in docs/lab_format.md.
+//
+// The companion `asm-pass2` reads stdin = `.lab` followed by the
+// same source, installs the labels into its own state, runs pass 2,
+// and emits the ELF/raw binary. Both halves share asm_common.tc; the
+// only thing this file does is drive the input loop and call the
+// public entry points.
+
+import "asm_common.tc";
+import "string_buffer.tc";
+import "source_reader.tc";
+
+// km_dump_peak — printed at exit on the OS so test_phase7.sh can
+// see the per-stage memory peak. No-op stub on Gen1 (bootstrap), see
+// bootstrap/runtime_syscall.c.
+fn km_dump_peak() -> void;
+
+fn main() -> i32 {
+    asm_init_pass1();
+    asm_set_pass(1);
+
+    var reader: SourceReader = SourceReader_new(0);
+    var line: U8Array = U8Array(4096u32);
+    var lineno: i32 = 0;
+
+    while at_eof(reader) == false {
+        // Read one source line into `line`. We keep reading until LF
+        // (or EOF) and store everything including the LF so meta
+        // directive matching has the same view as single-process
+        // asm.tc.
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(reader) == false {
+            var c: u8 = next(reader);
+            if llen < 4096 { set(line, llen, c); }
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        if llen == 0 { } else {
+            lineno = lineno + 1;
+            if asm_parse_meta_directive(line, llen) == 1 {
+                // Discard meta directive lines just like read_all_lines
+                // did in single-process asm.tc.
+            } else {
+                asm_run_line(line, llen, lineno);
+            }
+        }
+    }
+    close(reader);
+    delete(line);
+
+    asm_compute_sec_bases();
+    asm_fixup_labels();
+    asm_dump_lab_state();
+
+    km_dump_peak();
+    return 0;
+}

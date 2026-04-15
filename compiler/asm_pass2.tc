@@ -1,0 +1,182 @@
+// asm_pass2.tc — encoder half of the asm split (Phase 2 #56).
+//
+// Reads stdin in two adjacent sections:
+//
+//   1. The wrapped .lab block (`(lab` ... `)`) produced by asm_pass1.
+//      We parse it line by line, calling asm_install_*_from_lab to
+//      pre-populate the symbol / section state inside asm_common.
+//
+//   2. The original `.s` source. We stream-read it the same way
+//      asm_pass1 does (one line at a time), but with g_pass = 2 so
+//      asm_run_line emits machine code into g_code.
+//
+// After the source is exhausted, asm_write_elf flushes g_code (or
+// the raw bytes) to stdout. Driver scripts feed both sections via a
+// single `cat a.lab a.s | asm-pass2 > a.out` style pipeline.
+
+import "asm_common.tc";
+import "string_buffer.tc";
+import "source_reader.tc";
+import "strlib.tc";
+
+fn km_dump_peak() -> void;
+
+// ===== .lab parsing helpers =====
+
+fn is_ws(c: u8) -> bool { return c == ' ' || c == 9u8; }
+fn lab_is_digit(c: u8) -> bool { return c >= '0' && c <= '9'; }
+
+// Skip whitespace at *cursor and return the new cursor.
+fn skip_ws(buf: U8Array, cursor: i32, end: i32) -> i32 {
+    var p: i32 = cursor;
+    while p < end && is_ws(get(buf, p)) { p = p + 1; }
+    return p;
+}
+
+// Parse a non-negative decimal i32 starting at *cursor. Returns the
+// value via g_lab_int and advances cursor (passed back via g_lab_cur).
+var g_lab_int: i32 = 0;
+var g_lab_cur: i32 = 0;
+fn parse_dec(buf: U8Array, cursor: i32, end: i32) -> void {
+    var p: i32 = cursor;
+    var neg: i32 = 0;
+    if p < end && get(buf, p) == '-' { neg = 1; p = p + 1; }
+    var v: i32 = 0;
+    while p < end && lab_is_digit(get(buf, p)) {
+        v = v * 10 + (get(buf, p) as i32 - 48);
+        p = p + 1;
+    }
+    if neg == 1 { v = 0 - v; }
+    g_lab_int = v;
+    g_lab_cur = p;
+    return;
+}
+
+// Process one .lab line. Returns 1 if it's the closing ")", else 0.
+// Mutates the asm_common state for sec / lab / num records, ignores
+// blanks and comments.
+fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
+    var p: i32 = skip_ws(buf, 0, blen);
+    if p >= blen { return 0; }
+    var c: u8 = get(buf, p);
+    if c == 10u8 || c == 13u8 { return 0; }
+    if c == ';' { return 0; }
+    if c == ')' { return 1; }
+    if c == '(' { return 0; }   // (lab opener — already consumed in caller, defensive
+    if blen - p >= 4 && cmp(buf, p, "sec ") {
+        parse_dec(buf, p + 4, blen);
+        var sec_id: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var sec_base: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var sec_size: i32 = g_lab_int;
+        asm_install_sec_base_size(sec_id, sec_base, sec_size);
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "num ") {
+        parse_dec(buf, p + 4, blen);
+        var dig: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var addrv: i32 = g_lab_int;
+        asm_install_numlab_from_lab(dig, addrv);
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "lab ") {
+        parse_dec(buf, p + 4, blen);
+        var laddr: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var lsec: i32 = g_lab_int;
+        var ns: i32 = skip_ws(buf, g_lab_cur, blen);
+        // Trim trailing whitespace / line endings so the name length
+        // doesn't include the LF the reader added.
+        var ne: i32 = blen;
+        var trimming: i32 = 1;
+        while trimming == 1 && ne > ns {
+            var tc: u8 = get(buf, ne - 1);
+            if tc == 10u8 || tc == 13u8 || tc == ' ' || tc == 9u8 {
+                ne = ne - 1;
+            } else {
+                trimming = 0;
+            }
+        }
+        var name_len: i32 = ne - ns;
+        var name: U8Array = U8Array((name_len) as u32);
+        var i: i32 = 0;
+        while i < name_len { set(name, i, get(buf, (ns + i))); i = i + 1; }
+        asm_install_label_from_lab(name, name_len, laddr, lsec);
+        delete(name);
+        return 0;
+    }
+    return 0;
+}
+
+// ===== Main =====
+fn main() -> i32 {
+    asm_init_pass2();
+
+    var reader: SourceReader = SourceReader_new(0);
+    var line: U8Array = U8Array(4096u32);
+
+    // Phase A: scan to the "(lab" opener, then parse lab lines until ")"
+    var saw_open: i32 = 0;
+    while saw_open == 0 && at_eof(reader) == false {
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(reader) == false {
+            var c: u8 = next(reader);
+            if llen < 4096 { set(line, llen, c); }
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        if llen >= 4 && cmp(line, 0, "(lab") {
+            saw_open = 1;
+        }
+    }
+
+    var done: i32 = 0;
+    while done == 0 && at_eof(reader) == false {
+        var llen2: i32 = 0;
+        var eol2: i32 = 0;
+        while eol2 == 0 && at_eof(reader) == false {
+            var c2: u8 = next(reader);
+            if llen2 < 4096 { set(line, llen2, c2); }
+            llen2 = llen2 + 1;
+            if c2 == 10u8 { eol2 = 1; }
+        }
+        if llen2 > 0 {
+            if parse_lab_line(line, llen2) == 1 { done = 1; }
+        }
+    }
+
+    // Phase B: source. Switch to pass 2 and stream-read each line.
+    asm_set_pass(2);
+    asm_pass2_reset_cursors();
+
+    var lineno: i32 = 0;
+    while at_eof(reader) == false {
+        var llen3: i32 = 0;
+        var eol3: i32 = 0;
+        while eol3 == 0 && at_eof(reader) == false {
+            var c3: u8 = next(reader);
+            if llen3 < 4096 { set(line, llen3, c3); }
+            llen3 = llen3 + 1;
+            if c3 == 10u8 { eol3 = 1; }
+        }
+        if llen3 > 0 {
+            lineno = lineno + 1;
+            if asm_parse_meta_directive(line, llen3) == 1 {
+                // Discard meta directives in pass 2 too — they affect
+                // g_raw_mode / g_load_vaddr globals which asm_write_elf
+                // reads later.
+            } else {
+                asm_run_line(line, llen3, lineno);
+            }
+        }
+    }
+    close(reader);
+    delete(line);
+
+    asm_write_elf();
+    km_dump_peak();
+    return 0;
+}
