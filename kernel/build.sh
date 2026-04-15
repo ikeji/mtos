@@ -73,6 +73,57 @@ trap 'rm -rf "$TMP"' EXIT
 TASK_CRT0="$KERN_DIR/tasks/task_crt0.s"
 TASK_DATA="$KERN_DIR/tasks/task_data.s"
 
+# ===== Per-task arena / stack sizes (K3) =====
+#
+# Each task binary starts with an 8-byte header (2 × .word) that
+# declares its required arena size (kmalloc pool) and stack size.
+# kernel/loader.tc reads this at load time, so the kernel no longer
+# hands every task a blanket 16 MB block. Sizes are sized to the
+# measured phase 7 peaks (see docs/problem.md #7 / #K3) plus a small
+# margin.
+#
+# stdout margin: compiler tasks need ~16 KB stack for deep recursive
+# AST walks (tcheck / codegen). Tiny demo tasks are fine with 4-8 KB.
+task_arena_size() {
+    case "$1" in
+        hello|hello2)                 echo 8192 ;;
+        catfile|launcher|tmpdemo|echo|cat) echo 16384 ;;
+        sh)                           echo 32768 ;;
+        parse)                        echo 65536 ;;
+        sigscan)                      echo 32768 ;;
+        tcheck)                       echo 393216 ;;  # 384 KB
+        codegen)                      echo 393216 ;;  # 384 KB
+        bc2asm)                       echo 196608 ;;  # 192 KB
+        asm_pass1)                    echo 524288 ;;  # 512 KB
+        asm_pass2)                    echo 524288 ;;  # 512 KB
+        *)                            echo 32768 ;;
+    esac
+}
+
+task_stack_size() {
+    case "$1" in
+        hello|hello2|catfile|launcher|tmpdemo|echo|cat) echo 8192 ;;
+        *) echo 16384 ;;
+    esac
+}
+
+# Emit a 2-word `.text` header file for the given task. When this is
+# linked first (before task_crt0.s), asm_pass1/asm_pass2 places the
+# two .word entries at offsets 0 and 4 of .text, and _start ends up at
+# offset 8. loader.tc adds 8 to the entry address so the CPU skips the
+# header words.
+emit_task_header() {
+    local name="$1" out="$2"
+    local arena stack
+    arena=$(task_arena_size "$name")
+    stack=$(task_stack_size "$name")
+    {
+        echo "    .text"
+        echo "    .word $arena"
+        echo "    .word $stack"
+    } > "$out"
+}
+
 QEMU="${QEMU:-qemu-riscv32}"
 PARSE="$ROOT_DIR/parse"
 
@@ -126,7 +177,12 @@ export CACHED_S_DIR="$CACHE_DIR"
 # --- Step 1: Build task binaries ---
 for task in $TASKS; do
     echo "Building task: $task" >&2
-    CRT0="$TASK_CRT0" \
+    # Emit a per-task 8-byte header + prepend to task_crt0.s via a
+    # temp CRT0 file. This puts `.word arena_size; .word stack_size`
+    # at offsets 0 and 4 of the binary, with _start at offset 8.
+    emit_task_header "$task" "$TMP/${task}_hdr.s"
+    cat "$TMP/${task}_hdr.s" "$TASK_CRT0" > "$TMP/${task}_crt0.s"
+    CRT0="$TMP/${task}_crt0.s" \
     CRT0_DATA="$TASK_DATA" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$GEN2_DIR" \
@@ -171,8 +227,19 @@ fi
 # Having a single prelude file avoids reading tmpfs files larger
 # than ~100 KB under phase 7's sh-driven pipeline, which caused
 # intermittent spawn failures for asm during development.
+#
+# K3: the prelude also carries the 8-byte task header (arena_size /
+# stack_size as two .word directives). The OS-side pipeline currently
+# only compiles Hello World-sized programs, so we use sh-sized
+# defaults — a big enough arena for the test programs without
+# starving the kernel of free memory while they run.
+PRELUDE_ARENA=32768
+PRELUDE_STACK=8192
 {
     printf '; raw\n'
+    echo "    .text"
+    echo "    .word $PRELUDE_ARENA"
+    echo "    .word $PRELUDE_STACK"
     cat "$TASK_CRT0"
     cat "$CACHE_DIR/runtime.s"
 } > "$ROOT_DIR_TREE/prelude.s"

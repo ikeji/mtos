@@ -60,9 +60,9 @@ fn main() -> i32 {
     // and the rest of the slots stay STATE_UNUSED unless something
     // calls sys_spawn.
     sched_init(8);
-    sched_register(0, load_task("/bin/hello",    16384, 8192));
-    sched_register(1, load_task("/bin/hello2",   16384, 8192));
-    sched_register(2, load_task("/bin/launcher", 16384, 8192));
+    sched_register(0, load_task("/bin/hello"));
+    sched_register(1, load_task("/bin/hello2"));
+    sched_register(2, load_task("/bin/launcher"));
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
     poke32(SIO_MTIME_CTRL, 0x0Fu32);

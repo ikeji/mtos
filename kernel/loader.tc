@@ -26,12 +26,44 @@ fn load_str_nul(s: StringLiteral) -> U8Array {
     return buf;
 }
 
+// ===== Task binary header (K3) =====
+//
+// The first 8 bytes of every task binary are a two-u32 header:
+//
+//     offset 0..4  arena_size  (task kmalloc pool bytes)
+//     offset 4..8  stack_size  (task stack bytes)
+//     offset 8..   _start code + sections
+//
+// kernel/build.sh prepends a 2-word .word directive file in front of
+// task_crt0.s so asm_pass1/pass2 emits the header as the first 8 bytes
+// of .text. Everything in the code section shifts by 8, but since all
+// references are PC-relative / gp-relative and the whole section moves
+// together, the linker / loader don't need to rewrite anything — the
+// loader just points entry at img_base + 8.
+//
+// This replaces the old hardcoded 16 MB RAM + 64 KB stack defaults,
+// which were too big for Pico 2 and wasteful on virt. Per-task peaks
+// range from ~8 KB (hello) to 512 KB (asm_pass2), so a single constant
+// was never going to be right.
+var TASK_HEADER_SIZE: i32 = 8;
+
+fn read_task_header_arena(img_addr: u32) -> i32 {
+    return peek32(img_addr) as i32;
+}
+fn read_task_header_stack(img_addr: u32) -> i32 {
+    return peek32(img_addr + 4u32) as i32;
+}
+
 // Build a task frame for the file already open at fd. Uses the XIP
 // fast path when the block backend is memory-mapped (flash); otherwise
 // allocates a kmalloc buffer and copies the file into it. Clears the
 // g_last_* allocation bases first so the caller can cleanly snapshot
 // them into the scheduler slot afterwards.
-fn load_fd(fd: i32, ram_size: i32, stack_size: i32) -> u32 {
+//
+// Per-task arena_size / stack_size come from the 8-byte binary header
+// (see above) — no explicit size arguments, each task declares its own
+// needs at build time.
+fn load_fd(fd: i32) -> u32 {
     reset_last_alloc();
 
     var xip: u32 = vfs_xip_addr(fd);
@@ -39,37 +71,43 @@ fn load_fd(fd: i32, ram_size: i32, stack_size: i32) -> u32 {
         // Pico 2 / flash fast path: execute directly out of the
         // XIP-mapped image, no RAM copy. make_task still records
         // frame_buf / ram / stack in g_last_*; img stays 0.
-        return make_task(xip, ram_size, stack_size);
+        var arena_x: i32 = read_task_header_arena(xip);
+        var stack_x: i32 = read_task_header_stack(xip);
+        return make_task(xip + (TASK_HEADER_SIZE as u32), arena_x, stack_x);
     }
 
     var size: i32 = vfs_size(fd);
-    if size <= 0 { return 0u32; }
+    if size <= TASK_HEADER_SIZE { return 0u32; }
 
     // Slow path (virt / virtio-blk): copy the image into RAM. Record
     // the img base in g_last_img so the scheduler slot owns it and can
     // free it in sched_task_exit / sys_exec.
     var img: U8Array = U8Array(size as u32);
-    var n: i32 = vfs_read(fd, img as u32 + 4u32, size);
+    var img_base: u32 = img as u32 + 4u32;
+    var n: i32 = vfs_read(fd, img_base, size);
     if n != size {
         delete(img);
         return 0u32;
     }
 
-    var frame: u32 = make_task(img as u32 + 4u32, ram_size, stack_size);
+    var arena_s: i32 = read_task_header_arena(img_base);
+    var stack_s: i32 = read_task_header_stack(img_base);
+    var frame: u32 = make_task(img_base + (TASK_HEADER_SIZE as u32),
+                               arena_s, stack_s);
     set_last_img(img as u32);
     return frame;
 }
 
 // Load the given path from the VFS and build a task frame.
 // Returns 0 on any failure, otherwise a frame pointer ready for
-// sched_register.
-export fn load_task(path: StringLiteral, ram_size: i32, stack_size: i32) -> u32 {
+// sched_register. Task sizes come from the binary header.
+export fn load_task(path: StringLiteral) -> u32 {
     var pbuf: U8Array = load_str_nul(path);
     var fd: i32 = vfs_open(pbuf as u32 + 4u32, 0);
     delete(pbuf);
     if fd < 0 { return 0u32; }
 
-    var frame: u32 = load_fd(fd, ram_size, stack_size);
+    var frame: u32 = load_fd(fd);
     vfs_close(fd);
     return frame;
 }
@@ -130,31 +168,6 @@ var LOADER_O_WRONLY: i32 = 1;
 var LOADER_O_CREAT:  i32 = 64;
 var LOADER_O_TRUNC:  i32 = 512;
 
-// ===== Per-task memory sizing (phase 7 E-step1) =====
-//
-// We hand every spawned task a flat 4 MB RAM block + 64 KB stack
-// regardless of the path. Compiler tools (parse, typecheck, ...)
-// need at least a few MB for AST/BC/emit buffers, and trying to
-// pick sizes by path was fragile — the first attempt silently fell
-// back to the 16K default because of a cmp mismatch we never fully
-// diagnosed. Flat 4 MB is the simplest thing that lets parse run.
-//
-// Side effect: the kernel arena (kernel/crt0_data.s) must be large
-// enough to hold several 4 MB blocks simultaneously (sh + parent
-// hold-overs + the spawned child), so crt0_data.s was bumped from
-// ~4.4 MB to 32 MB. Only affects the qemu virt build, which has
-// 128 MB of RAM available — plenty of room.
-var TASK_RAM_SIZE:   i32 = 16777216;
-var TASK_STACK_SIZE: i32 = 65536;
-
-fn ram_for_path(path_addr: u32) -> i32 {
-    return TASK_RAM_SIZE;
-}
-
-fn stack_for_path(path_addr: u32) -> i32 {
-    return TASK_STACK_SIZE;
-}
-
 // Open an optional redirect path (may be 0u32 = "not set"). Returns
 // the VFS fd on success, 0 if addr is 0, or -1 on error. `wr` is 1
 // for stdout (write-create-truncate) or 0 for stdin (read-only).
@@ -212,8 +225,7 @@ export fn sys_exec_handler(path_addr: u32, argv_addr: u32,
 
     var fd: i32 = vfs_open(path_addr, 0);
     if fd < 0 { close_redir(in_fd); close_redir(out_fd); return 0u32; }
-    var frame: u32 = load_fd(fd, ram_for_path(path_addr),
-                             stack_for_path(path_addr));
+    var frame: u32 = load_fd(fd);
     vfs_close(fd);
     if frame == 0u32 { close_redir(in_fd); close_redir(out_fd); return 0u32; }
 
@@ -237,8 +249,7 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
 
     var fd: i32 = vfs_open(path_addr, 0);
     if fd < 0 { close_redir(in_fd); close_redir(out_fd); return -1; }
-    var frame: u32 = load_fd(fd, ram_for_path(path_addr),
-                             stack_for_path(path_addr));
+    var frame: u32 = load_fd(fd);
     vfs_close(fd);
     if frame == 0u32 { close_redir(in_fd); close_redir(out_fd); return -1; }
 

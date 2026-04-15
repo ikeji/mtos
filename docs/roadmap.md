@@ -21,8 +21,9 @@
            gp 相対 la で Flash/SRAM 分離に対応。初期 bring-up の
            standalone pico2/hello.tc でコンパイルパスを通した後、
            カーネルが RP2350 で動くようになり同ディレクトリは削除
-           した。Pico 2 セルフホストは asm-pass1 430 KB / asm-pass2
-           441 KB とも 520 KB SRAM に収まる見込み (K3 / K7 が次)。
+           した。K3 案C でタスクサイズ宣言も入り、pico2 セルフホスト
+           は hello レベルでは動く見込み。compiler タスク群は
+           pico2 kernel arena 拡大が残件。
 
 ステップ4: ネイティブコンパイラでOSをビルド
            OS全体を独自言語で記述し、ネイティブコンパイラでビルド
@@ -141,9 +142,11 @@ C言語でフルパイプラインを実装し、動作を検証する。
       `kmalloc` / `kfree` / `km_dump_peak` の builtin stub を追加
       (tc_run.sh pipeline method 用)
 - [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)。
-      asm-pass1 430 KB / asm-pass2 441 KB ともに Pico 2 の 520 KB
-      SRAM 枠内に収まる見込み。残るはタスクサイズ宣言 (K3) と
-      pico2 ローダの動的タスク対応 (K7)
+      K3 案C + K7 は部分解決 (問題 #K7 参照)。タスクヘッダ方式で
+      per-task サイズ宣言ができるようになり、hello レベルの
+      sys_spawn は pico2 で動く見込み。ただし compiler タスク群
+      (asm_pass1 430 KB / asm_pass2 441 KB) は pico2 kernel arena
+      256 KB に収まらないため、arena 拡大または更なる shrink が必要
 
 ## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
 
@@ -275,8 +278,11 @@ asm split・full split すべての pipeline で Hello World が動く。
       per-task stdin_fd / stdout_fd をスケジューラスロットに所有
 - [x] **F**: stderr (fd=2) は常に UART 直行、redirect 対象外
 - [x] **E-step1**: タスクメモリを flat 16 MB に一律引き上げ、
-      kernel arena は 96 MB。per-task header 方式 (K3 案 C) は
-      依然未実装。実測ピークは #7 に記録
+      kernel arena は 96 MB。実測ピークは #7 に記録
+- [x] **K3 案C**: タスクバイナリの先頭 8 バイトに `.word
+      arena_size; .word stack_size` を埋め込み、loader.tc が読む。
+      kernel/build.sh の `task_arena_size()` / `task_stack_size()`
+      per-task テーブルで各タスクが宣言。16 MB 固定を撲滅
 - [x] **E-step2**: `runtime.tc` に per-task ピークメモリ計測を追加
       (`km_dump_peak`)、task_crt0.s がタスク終了時に
       `[kmem peak=... live=...]` を stderr にダンプ

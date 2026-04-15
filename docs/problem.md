@@ -132,35 +132,31 @@ section_base を合わせないと padding 量が drift する。
 
 ## カーネル / OS
 
-### K3. タスクのスタック / arena サイズがハードコード (limitation, 残件)
+### K3. タスクサイズ宣言 — **案C 完了 (2026-04-15)**
 
-`make_task(entry, ram_size, stack_size)` の呼び出し側がサイズ即値を
-渡す。現状 (phase 7 M6 以降):
+タスクバイナリの先頭 8 バイトに `.word arena_size; .word stack_size`
+の header を埋め込む仕組みで完了。
 
-- **virt**: `kernel.tc` の seeded タスクと `loader.tc` の
-  `sys_exec_handler` / `sys_spawn_handler` いずれも **16 MB RAM +
-  64 KB stack** 固定。`kernel/crt0_data.s` の `__arena` は 96 MB。
-  asm.tc の ~9.5 MB ピークを収めるためにここまで大きくした。
-- **pico2**: `kernel_pico2.tc` の seeded タスクは依然 16K/8K 固定。
-  `loader.tc` の TASK_RAM_SIZE は virt と共通なのでここが
-  不整合 (virt 想定の 16 MB は pico2 の 520 KB SRAM に入らない)。
-  → #22 参照。
+- `kernel/build.sh` が per-task で header.s を emit し task_crt0.s の
+  前にリンク。`task_arena_size()` / `task_stack_size()` の 2 つの
+  bash 関数に per-task 値が載っている (hello 8 KB ... asm_pass2 512
+  KB)。
+- `kernel/loader.tc::load_fd` が img 先頭 8 バイトから peek32 で
+  arena / stack を取り、`make_task(img + 8, arena, stack)` を呼ぶ。
+- kernel.tc / kernel_pico2.tc / sys_exec_handler / sys_spawn_handler
+  から固定 16 MB / 16 KB を撲滅。`load_task` の引数も
+  `load_task(path)` だけに簡潔化された。
+- 中間バイナリ (/tmp/hw) 用の header は `/prelude.s` に 32 KB / 8 KB
+  が baked in されている。OS 上で compile された任意の Hello World
+  サイズプログラムに使える。
 
-残件: タスク自身が必要量を宣言する仕組みが相変わらずないので、
-「Hello World なのに 16 MB 貼る」といった過剰配分が続いている。
-phase 7 で実測したピーク (→ #7) では parse が 14 KB、Hello World
-実行時が 68 B なので、**大半のタスクは 64 KB もあれば十分**。
+検証: `make test` / FULL_TEST / tests/test_phase7.sh 全て pass。
+実測値は #7 のピークテーブル参照。
 
-対処案 (未着手, ニーズが出てから):
-- **案 B (ELF)**: タスクを raw bin → ELF 形式に切り替え、ローダが
-  ELF ヘッダの p_memsz から必要量を取る。ローダ + 各 crt0 +
-  build script に変更 (~150 行)。
-- **案 C (custom header)**: タスクバイナリ先頭 8 バイトに
-  `[arena_size, stack_size]` を埋め込み、ローダが先頭を読んで
-  サイズ決定。ELF より軽量 (~50 行)。phase 7 で使えるサイズ帯が
-  14 KB (parse) から 9.5 MB (asm) まで約 700 倍も開いているので、
-  固定値でこれをカバーし続けるのは無理筋。近い将来案 C を入れる
-  のが筋。
+残件: OS 側で大きいタスクを compile するときに `/prelude.s` の
+header 値も調整する仕組みがない (固定 32 KB)。必要になったら OS 側
+sh に `prelude_tc <arena> <stack>` みたいなラッパーを追加するか、
+別の prelude ファイルを用意する。
 
 ### K4. `do_uart_read` が無限ループで EOF を検出できない (limitation)
 
@@ -239,26 +235,34 @@ phase 7 M6 時点でカーネルに常時出力している debug 出力:
 出力が混ざっても grep 条件は無事なので急ぐ必要はないが、
 フェーズ 8 以降のクリーンな基盤作りには邪魔になる。
 
-### K7. pico2 で phase 7 コンパイラが動かない (limitation)
+### K7. pico2 で phase 7 コンパイラが動かない (部分解決、2026-04-15)
 
-virt 向けに `loader.tc` の `TASK_RAM_SIZE` を 16 MB に引き上げた
-ため、pico2 の `sys_spawn_handler` / `sys_exec_handler` 経由で
-新タスクを起動しようとすると `U8Array(16777216)` kmalloc が失敗
-して spawn が落ちる。pico2 の SRAM は 520 KB しかなく、16 MB の
-単一ブロックを取ることは根本的に不可能。
+K3 (per-task サイズ宣言) の導入で、**hello レベルの sys_spawn /
+sys_exec は pico2 でも動く見込み**。タスクバイナリの header で
+8 KB / 4 KB を宣言すれば、pico2 の 256 KB kernel arena から十分
+割り当てられる。
 
-現状のフォールバック:
-- pico2 の seeded タスク (`kernel/kernel_pico2.tc` の
-  `sched_register` で 16K/8K 指定) だけは起動できる。
-- `sys_spawn` / `sys_exec` を呼ぶ pico2 タスクは動かない。
+ただし **pico2 での完全な自己ホストはまだ**:
 
-phase 7 の目的が virt ベースのコンパイラ実行なので pico2 は
-当面対象外で問題ないが、K3 (per-task サイズ宣言) を入れると
-同時に解決できる: タスクごとの要求サイズを宣言しておけば、
-pico2 でも Hello World サイズの 64 KB タスクは動かせる。
+- 現状のピーク (phase 7 測定値): asm-pass1 430 KB、asm-pass2 441 KB
+- pico2 kernel arena は `crt0_pico2_data.s` に 256 KB 固定
+- 520 KB SRAM 中、.text/.data/.bss と kernel scratch を除いた余剰は
+  ~470 KB。asm-pass1 430 KB ならギリギリ入るが、asm-pass2 441 KB +
+  16 KB stack + task img (~165 KB) + frame_buf で 620 KB は無理
 
-長期的には #7 (asm.tc メモリ分離) + K3 が両方入って初めて
-pico2 で phase 7 相当が走る。
+対処案:
+- **kernel arena を拡大** (256 KB → ~470 KB): ぎりぎり asm-pass1 /
+  asm-pass2 の task RAM を取れるようになる。現状の crt0_pico2_data.s
+  の `.space 262144` を大きくするだけ。ただし複数タスクの同時実行
+  や余裕は消える
+- **compiler タスクをさらに縮める**: asm-pass2 stream emit + tcheck /
+  codegen の AST pool shrink。これができれば 256 KB arena のままでも
+  回る可能性
+- **Phase 7 M7 (Gen2 → Gen3 on OS)** は compiler タスク群を順次走らせ
+  るだけなので、pico2 で動かすには上記 memory 対応が要る
+
+Phase 7 テスト自体は virt で十分実用的なので、pico2 でのコンパイラ
+実行は余裕ができてから。
 
 ## バイトコード / ランタイム
 

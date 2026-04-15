@@ -136,15 +136,14 @@ fn main() -> i32 {
     // shell. The shell loops: prompt → do_spawn("/bin/<cmd>") →
     // do_wait(slot) → prompt ... until it reads "quit".
     //
-    // All tasks — seeded and spawned — get a flat 4 MB RAM + 64 KB
-    // stack. Phase 7 E-step1 showed that compiler tools need at
-    // least a few MB and the previous 16K default left them OOM'd.
-    // crt0_data.s grew to 32 MB of arena to accommodate multiple
-    // live 4 MB slots.
+    // Per-task arena / stack sizes come from the 8-byte header at the
+    // start of each task binary (see loader.tc's K3 section) — no more
+    // hardcoded 16 MB blanket. crt0_data.s's arena stays big on virt
+    // because the compiler tasks still need a few hundred KB each.
     sched_init(8);
-    sched_register(0, load_task("/bin/hello",  16777216, 65536));
-    sched_register(1, load_task("/bin/hello2", 16777216, 65536));
-    sched_register(2, load_task("/bin/sh",     16777216, 65536));
+    sched_register(0, load_task("/bin/hello"));
+    sched_register(1, load_task("/bin/hello2"));
+    sched_register(2, load_task("/bin/sh"));
 
     rearm_timer();
     var mie: u32 = csr_read_mie();

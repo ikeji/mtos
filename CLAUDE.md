@@ -18,6 +18,7 @@
 - フェーズ 7 D+F: sh の `<` / `>` リダイレクト + per-task stdin/stdout
   fd (fd=2 stderr は常に UART)
 - フェーズ 7 E-step1: タスク一律 16 MB / 64 KB、kernel arena 96 MB
+  (K3 で per-task 可変化、下記)
 - フェーズ 7 E-step2: per-task ピークメモリ計測 (`km_dump_peak`)
 - フェーズ 7 C-1: parse / sigscan / tcheck / codegen / bc2asm /
   asm_pass1 / asm_pass2 を `EXTRA_TASKS` 経由でタスク化、sh から中間
@@ -56,6 +57,15 @@
   asm/, tc_asm.sh, tests/test_split.sh も削除)。bcrun.c に
   `kmalloc` / `kfree` / `km_dump_peak` の builtin stub を追加
   (tcheck.tc を bcrun で動かすため、tc_run.sh pipeline 用)
+- **K3 案C 完了 (2026-04-15)**: タスクバイナリの先頭 8 バイトに
+  `.word arena_size; .word stack_size` の header を埋め込み、
+  `loader.tc` が読んで `make_task` に渡す。`kernel.tc` /
+  `kernel_pico2.tc` / `sys_exec_handler` / `sys_spawn_handler` から
+  固定 16 MB / 64 KB を撲滅。`kernel/build.sh` が per-task で
+  header.s を emit し task_crt0.s の前にリンク (task_arena_size() /
+  task_stack_size() の per-task テーブル)。各 task は測定ピーク
+  +25% 程度 (hello 8 KB ... asm_pass2 512 KB) を宣言。phase 7
+  パイプラインが virt で動き続けることを test_phase7.sh で確認済
 - **`test_phase7.sh` (手動実行)**: sigscan + tcheck + asm_pass1 +
   asm_pass2 の full split pipeline で Hello World 完走
 - 以前から継続: u32 比較/除算/hex literal, K1 (task 画像 leak),
@@ -201,8 +211,11 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       は 4 引数 ABI (path, argv, in_path, out_path) で
                       kernel 側が redirect ファイルを open し argv を
                       StringArray clone してからスロットを作成。
-                      TASK_RAM_SIZE = 16 MB / TASK_STACK_SIZE = 64 KB
-                      の flat 割り当て (K3 案 C は未実装)。
+                      K3 案C: タスクバイナリの先頭 8 バイトに
+                      `.word arena_size; .word stack_size` の header が
+                      あり、`load_fd` がそれを読んで `make_task(entry+8,
+                      arena, stack)` を呼ぶ (ram_size / stack_size の
+                      固定値は撲滅済み)。
                       sys_wait_handler (260) は呼び出し元を waiting に
   trap_common.s       共通 asm: trap entry/exit, ecall dispatch (write64 /
                       read63 / openat56 / close57 / exit93 / spawn220 /
@@ -517,21 +530,22 @@ GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target pico2 -o kernel.uf2
    経由で各タスクビルドで共有 (phase 7 で導入、-8.8 s)
 2. ゲストタスク (target 別 TASKS リスト — virt は
    hello/hello2/catfile/sh/tmpdemo/echo、pico2 は hello/hello2/catfile/launcher)
-   を raw バイナリにコンパイル。`EXTRA_TASKS="parse sigscan tcheck codegen
-   bc2asm asm_pass1 asm_pass2 cat"` を渡すと phase 7 のコンパイラタスク群を追加できる
+   を raw バイナリにコンパイル。各タスクには `task_arena_size()` /
+   `task_stack_size()` の値を `.word` 2 本の header として prepend する
+   (K3 案C)。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1
+   asm_pass2 cat"` を渡すと phase 7 のコンパイラタスク群を追加できる
 3. `tools/mkfs.py` で `/bin/<task>` + `/hello.txt` + phase 7 の test 入力
    (`/phase7.tc` / `/hw.tc`) + OS 側 linker 用 `/prelude.s` (= `; raw` +
-   task_crt0.s + cached runtime.s) + `/prelude_tail.s` (= task_data.s) を
-   含む mtfs イメージを生成
+   `.word 32768; .word 8192` + task_crt0.s + cached runtime.s) +
+   `/prelude_tail.s` (= task_data.s) を含む mtfs イメージを生成
 4. virt は `--disk-out` でイメージを出力し、qemu の `-drive` から読む。
    pico2 は `bin2s.sh _mtfs_image` で .rodata に埋め込み、XIP 経由で読む
 5. platform_*.s + trap_common.s + crt0_*_data.s + kernel*.tc (+pico2 は mtfs image)
    を asm_pass1/pass2 で結合してリンク
 6. 起動時にカーネルの `loader.tc` (`load_task`) が `/bin/*` を VFS で開き、
-   XIP 可能なら flash 上のアドレスを直接 entry にし、そうでなければ RAM に
-   コピーして make_task に渡す。virt 版は TASK_RAM_SIZE = 16 MB /
-   TASK_STACK_SIZE = 64 KB の flat 割り当てで、kernel arena は
-   crt0_data.s に 96 MB。pico2 は seeded タスクだけ 16K/8K 固定で
+   先頭 8 バイトの K3 header (`arena_size / stack_size`) を読んで
+   `make_task(entry+8, arena, stack)` を呼ぶ。XIP 可能なら flash 上の
+   アドレスを直接 entry にし、そうでなければ RAM にコピーする。pico2 は
    spawn/exec 経由の動的タスクは未対応 (problem.md K7)
 
 qemu virt で実行:
