@@ -86,13 +86,23 @@ case "$METHOD" in
             for bc in "${all_bcs[@]}"; do printf '%s\n' "$bc" | grep -v '^\.\(bc\|endbc\)$'; done
             echo ".endbc"
         }
+        TMP=$(mktemp -d)
+        trap "rm -rf '$TMP'" EXIT
         PARSE_TC_BC=$(compile_tc_to_bc "$TC_DIR/parse.tc")
-        TYPECHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/typecheck.tc")
+        SIGSCAN_TC_BC=$(compile_tc_to_bc "$TC_DIR/sigscan.tc")
+        TCHECK_TC_BC=$(compile_tc_to_bc "$TC_DIR/tcheck.tc")
         CODEGEN_TC_BC=$(compile_tc_to_bc "$TC_DIR/codegen.tc")
-        AST=$({ printf '%s\n' "$PARSE_TC_BC"; cat "$TC_FILE"; } | "$BCRUN" 2>/dev/null)
-        TAST=$({ printf '%s\n' "$TYPECHECK_TC_BC"; printf '%s\n' "$AST"; } | "$BCRUN" 2>/dev/null)
-        BC=$({ printf '%s\n' "$CODEGEN_TC_BC"; printf '%s\n' "$TAST"; } | "$BCRUN" 2>/dev/null)
-        { printf '%s\n' "$BC"; emit_stdin; } | "$BCRUN"
+        { printf '%s\n' "$PARSE_TC_BC"; cat "$TC_FILE"; } | "$BCRUN" 2>/dev/null > "$TMP/a.ast"
+        { printf '%s\n' "$SIGSCAN_TC_BC"; cat "$TMP/a.ast"; } | "$BCRUN" 2>/dev/null > "$TMP/a.th"
+        {
+            printf '(imports)\n(self\n'
+            cat "$TMP/a.th"
+            printf ')\n'
+            cat "$TMP/a.ast"
+        } > "$TMP/a.wrap"
+        { printf '%s\n' "$TCHECK_TC_BC"; cat "$TMP/a.wrap"; } | "$BCRUN" 2>/dev/null > "$TMP/a.tast"
+        { printf '%s\n' "$CODEGEN_TC_BC"; cat "$TMP/a.tast"; } | "$BCRUN" 2>/dev/null > "$TMP/a.bc"
+        { cat "$TMP/a.bc"; emit_stdin; } | "$BCRUN"
         ;;
 
     bc2asm_tc)

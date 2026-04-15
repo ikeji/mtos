@@ -17,12 +17,13 @@
            (Gen2==Gen3 の自己ホスト検証は tests/test_gen3.sh で CI 化)
 
 ステップ3.5: 独自言語製プログラムを実機 RP2350 で直接動かす  [kernel 完了]
-           asm.tc をセクション並べ替えリンカ化し、gp 相対 la で
-           Flash/SRAM 分離に対応。初期 bring-up の standalone
-           pico2/hello.tc でコンパイルパスを通した後、カーネルが
-           RP2350 で動くようになり同ディレクトリは削除した。
-           Pico 2 セルフホストにはまだ asm.tc の ~9 MB 静的
-           バッファが残っている。
+           asm_pass1/pass2 をセクション並べ替えリンカとして動かし、
+           gp 相対 la で Flash/SRAM 分離に対応。初期 bring-up の
+           standalone pico2/hello.tc でコンパイルパスを通した後、
+           カーネルが RP2350 で動くようになり同ディレクトリは削除
+           した。Pico 2 セルフホストは asm-pass1 が 430 KB まで
+           落ちて収まる見込みだが、asm-pass2 の 4.6 MB がまだ
+           残っている (stream-emit 化が次)。
 
 ステップ4: ネイティブコンパイラでOSをビルド
            OS全体を独自言語で記述し、ネイティブコンパイラでビルド
@@ -124,24 +125,25 @@ C言語でフルパイプラインを実装し、動作を検証する。
       Phase 1 (typecheck 分割 → sigscan + tcheck)、Phase 2 (asm 分割
       → asm-pass1 + asm-pass2)、Phase 3 (codegen / bc2asm in-place
       shrinks) をすべて完了:
-      - sigscan ≈ 10 KB、tcheck ≈ 75〜251 KB (~9x)
+      - sigscan ≈ 10 KB、tcheck ≈ 75〜252 KB (~9x)
       - codegen ≈ 80〜252 KB (~2x)
       - bc2asm ≈ 120〜126 KB (~11x)
       - asm-pass1 ≈ 430 KB (~22x)、asm-pass2 ≈ 4.6 MB (g_code 4 MB
         が支配的、stream-emit 化で 500 KB まで下がる見込み、future)
-      `tests/test_split.sh` (58 fixture) で byte-identical を、
-      `tests/test_phase7.sh` stage 4 で OS 上の Hello World full
-      split pipeline を回帰確認。残件は (1) compile-gen2.sh 等を
-      新 path に migrate して旧 typecheck.tc/asm.tc 削除、
-      (2) asm-pass2 の stream-emit 化、(3) bcrun.tc::vm_run の
-      outlier (intentionally out of scope)
+      `tests/test_phase7.sh` で OS 上の Hello World split pipeline を
+      回帰確認。残件は (1) asm-pass2 の stream-emit 化、(2) bcrun.tc::
+      vm_run の outlier (intentionally out of scope)
+- [x] **Gen2 toolchain migration (2026-04-15)**: compile-gen2.sh /
+      compile-gen3.sh / kernel/build.sh / tests/test_common.sh /
+      test_gen3.sh / tc_run.sh を新パイプライン (sigscan + tcheck +
+      asm_pass1 + asm_pass2) に切り替え、`compiler/typecheck.tc` と
+      `compiler/asm.tc` を削除 (+ kernel/tasks/typecheck/, kernel/
+      tasks/asm/, tc_asm.sh, tests/test_split.sh も削除)。bcrun.c に
+      `kmalloc` / `kfree` / `km_dump_peak` の builtin stub を追加
+      (tc_run.sh pipeline method 用)
 - [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)。
       asm-pass1 430 KB はもう Pico 2 (520 KB SRAM) に収まるが、
       asm-pass2 の 4.6 MB が未解決。stream-emit 化が先
-- [ ] Gen2 toolchain migration: compile-gen2.sh / compile-gen3.sh /
-      tests/test_common.sh / tests/test_gen3.sh / tests/test_asm.sh
-      を sigscan + tcheck + asm-pass1 + asm-pass2 に切り替え、
-      compiler/typecheck.tc と compiler/asm.tc を削除
 
 ## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
 
@@ -278,23 +280,28 @@ asm split・full split すべての pipeline で Hello World が動く。
 - [x] **E-step2**: `runtime.tc` に per-task ピークメモリ計測を追加
       (`km_dump_peak`)、task_crt0.s がタスク終了時に
       `[kmem peak=... live=...]` を stderr にダンプ
-- [x] **C-1**: parse / typecheck / codegen / bc2asm / asm を
-      `kernel/tasks/<name>/<name>.tc` シンボリックリンクで
-      `EXTRA_TASKS` 経由でビルドし、sh から中間ファイル経由の
-      パイプラインを回す
+- [x] **C-1**: parse / sigscan / tcheck / codegen / bc2asm /
+      asm_pass1 / asm_pass2 を `kernel/tasks/<name>/<name>.tc`
+      シンボリックリンクで `EXTRA_TASKS` 経由でビルドし、
+      sh から中間ファイル経由のパイプラインを回す
 - [x] **M4**: OS 上で parse が単段動く
-- [x] **M5**: parse → typecheck → codegen → bc2asm を中間ファイルで
-      繋いで `.s` を得る
+- [x] **M5**: parse → sigscan → tcheck → codegen → bc2asm を中間
+      ファイルで繋いで `.s` を得る
 - [x] **M6**: `cat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s`
-      を asm に通して raw binary を生成、`/tmp/hw` に書き出して
-      sh の絶対パス対応で実行。Hello World が OS 上で自己コンパイル
-      + 自己実行できることを確認 (`tests/test_phase7.sh` の stage 2)
+      を asm_pass1/pass2 に通して raw binary を生成、`/tmp/hw` に
+      書き出して sh の絶対パス対応で実行。Hello World が OS 上で
+      自己コンパイル + 自己実行できることを確認
+      (`tests/test_phase7.sh`)
 - [x] **パイプライン 100 KB 計画 (Phase 1 + 2 + 3)**: sigscan /
-      tcheck / asm-pass1 / asm-pass2 を新設、codegen / bc2asm を
-      in-place で shrink。test_phase7.sh の stage 3 が sigscan +
-      tcheck pipeline、stage 4 が sigscan + tcheck + asm-pass1 +
-      asm-pass2 の full split pipeline で Hello World 完走。詳細は
-      `docs/task/pipeline_100kb.md`
+      tcheck / asm_pass1 / asm_pass2 を新設、codegen / bc2asm を
+      in-place で shrink。test_phase7.sh が sigscan + tcheck +
+      asm_pass1 + asm_pass2 の full split pipeline で Hello World
+      を完走。詳細は `docs/task/pipeline_100kb.md`
+- [x] **Gen2 toolchain migration**: compile-gen2.sh / compile-gen3.sh
+      / kernel/build.sh / tests/test_common.sh / test_gen3.sh /
+      tc_run.sh を sigscan + tcheck + asm_pass1 + asm_pass2 に
+      切り替え、`compiler/typecheck.tc` / `compiler/asm.tc`
+      (+ 関連 symlink / test_split.sh / tc_asm.sh) を削除
 - [ ] **C-2 (任意)**: `pipe()` + dup2 による真のパイプサポート
       (中間ファイル経由で動いたあと、性能が問題になったら)
 - [ ] **M7**: OS 上で Gen2 コンパイラ自身を再コンパイルして

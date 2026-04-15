@@ -78,31 +78,44 @@ PARSE="$ROOT_DIR/parse"
 
 # --- Step 0: Pre-compile runtime.tc and libtc.tc once ---
 # compile-gen2.sh compiles runtime.tc inside every task/kernel build.
-# That's a 1.4 s Gen2 pipeline (parse → typecheck → codegen → bc2asm)
-# multiplied by 7 builds here = ~10 s of redundant work. libtc.tc
-# adds another 5 × 0.15 s. We run the pipeline ourselves once per
-# shared module and pass the resulting .s files via CACHED_S_DIR so
-# compile-gen2.sh's compile_one() copies them instead of recompiling.
-# Neither runtime.tc nor libtc.tc has imports, so the pipeline needs
-# no .th header step.
+# That's a ~1.4 s Gen2 pipeline (parse → sigscan → tcheck → codegen
+# → bc2asm) multiplied by 7 builds here = ~10 s of redundant work.
+# libtc.tc adds another 5 × 0.15 s. We run the pipeline ourselves
+# once per shared module and pass the resulting .s files via
+# CACHED_S_DIR so compile-gen2.sh's compile_one() copies them
+# instead of recompiling. Neither runtime.tc nor libtc.tc has
+# imports, so the wrapped stdin for tcheck uses an empty (imports)
+# block and a (self …) block produced by sigscan from the parsed
+# .ast.
 CACHE_DIR="$TMP/sc"
 mkdir -p "$CACHE_DIR"
 
+precompile_shared() {
+    local src="$1" out="$2"
+    local ast th
+    ast="$TMP/$(basename "$src").ast"
+    th="$TMP/$(basename "$src").th"
+    "$PARSE" "$src" > "$ast"
+    "$QEMU" "$GEN2_DIR/sigscan" < "$ast" > "$th"
+    {
+        printf '(imports)\n(self\n'
+        cat "$th"
+        printf ')\n'
+        cat "$ast"
+    } | "$QEMU" "$GEN2_DIR/tcheck" \
+      | "$QEMU" "$GEN2_DIR/codegen" \
+      | "$QEMU" "$GEN2_DIR/bc2asm" > "$out"
+}
+
 echo "Pre-compiling runtime.tc (shared)" >&2
-"$PARSE" "$ROOT_DIR/compiler/runtime.tc" \
-    | "$QEMU" "$GEN2_DIR/typecheck" \
-    | "$QEMU" "$GEN2_DIR/codegen" \
-    | "$QEMU" "$GEN2_DIR/bc2asm" > "$CACHE_DIR/runtime.s"
+precompile_shared "$ROOT_DIR/compiler/runtime.tc" "$CACHE_DIR/runtime.s"
 if [ ! -s "$CACHE_DIR/runtime.s" ]; then
     echo "Error: runtime.tc pre-compile failed" >&2
     exit 1
 fi
 
 echo "Pre-compiling libtc.tc (shared)" >&2
-"$PARSE" "$KERN_DIR/tasks/libtc/libtc.tc" \
-    | "$QEMU" "$GEN2_DIR/typecheck" \
-    | "$QEMU" "$GEN2_DIR/codegen" \
-    | "$QEMU" "$GEN2_DIR/bc2asm" > "$CACHE_DIR/libtc.s"
+precompile_shared "$KERN_DIR/tasks/libtc/libtc.tc" "$CACHE_DIR/libtc.s"
 if [ ! -s "$CACHE_DIR/libtc.s" ]; then
     echo "Error: libtc.tc pre-compile failed" >&2
     exit 1

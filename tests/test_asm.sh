@@ -36,6 +36,24 @@ echo ""
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
+# Pre-compile runtime.tc once and share across the three compile-gen2
+# invocations below via CACHED_S_DIR. Saves ~4 s of redundant sigscan/
+# tcheck/codegen/bc2asm work (3 programs × ~1.5 s runtime build each).
+CACHE_DIR="$TMP/sc"
+mkdir -p "$CACHE_DIR"
+RUNTIME_TC="$ROOT_DIR/compiler/runtime.tc"
+"$ROOT_DIR/parse" "$RUNTIME_TC" > "$TMP/runtime.ast"
+"$QEMU" "$_GEN2_TMP/sigscan" < "$TMP/runtime.ast" > "$TMP/runtime.th" 2>/dev/null
+{
+    printf '(imports)\n(self\n'
+    cat "$TMP/runtime.th"
+    printf ')\n'
+    cat "$TMP/runtime.ast"
+} | "$QEMU" "$_GEN2_TMP/tcheck" 2>/dev/null \
+  | "$QEMU" "$_GEN2_TMP/codegen" 2>/dev/null \
+  | "$QEMU" "$_GEN2_TMP/bc2asm" 2>/dev/null > "$CACHE_DIR/runtime.s"
+export CACHED_S_DIR="$CACHE_DIR"
+
 # ===== gp-relative la expansion unit test =====
 # asm.tc is a section-reordering linker and always emits gp-relative la for
 # data/bss labels (with a PC-relative fallback when the 12-bit offset

@@ -65,14 +65,15 @@ extract_sigs.tc と bootstrap 各種の AST 読み取りを同期する大規模
 
 ---
 
-## asm.tc (アセンブラ兼リンカ)
+## asm_pass1 / asm_pass2 (アセンブラ兼リンカ)
 
 ### 7. asm-pass2 の g_code 4 MB 残件 (limitation, future)
 
-**元の「asm.tc 9 MB」問題は Phase 1+2+3 で実質解決**。compiler/asm.tc
-は `asm_common.tc + asm_pass1.tc + asm_pass2.tc` に分割され、旧 asm は
-compile-gen2.sh 互換のためだけに残っている (deprecation header 付き、
-tests/test_split.sh で byte-identical を確認済)。
+**元の「asm.tc 9 MB」問題は Phase 1+2+3 で解決**。compiler/asm.tc は
+`asm_common.tc + asm_pass1.tc + asm_pass2.tc` に分割され、2026-04-15
+の Gen2 toolchain migration で旧 `compiler/typecheck.tc` と
+`compiler/asm.tc` は削除された。全ビルドが sigscan + tcheck +
+asm_pass1 + asm_pass2 の新パイプラインを使っている。
 
 phase 7 OS 上の実測ピーク (`km_dump_peak` 基準、Hello World パイプ
 ライン):
@@ -81,12 +82,12 @@ phase 7 OS 上の実測ピーク (`km_dump_peak` 基準、Hello World パイプ
 |---|---:|---:|
 | parse         | 14 KB      | 14 KB |
 | sigscan (新)  | —          | **~10 KB** |
-| tcheck  (新)  | —          | **75〜251 KB** |
+| tcheck  (新)  | —          | **75〜252 KB** |
 | codegen       | 303 KB     | **80〜252 KB** |
 | bc2asm        | 1.4 MB     | **120〜126 KB** |
 | asm-pass1 (新)| —          | **~430 KB** |
 | asm-pass2 (新)| —          | **~4.6 MB** (← 残件) |
-| (legacy asm)  | 9.5 MB     | — (未使用化) |
+| (legacy asm)  | 9.5 MB     | — (削除済) |
 
 **残る大きな塊**: asm-pass2 が依然 `g_code: U8Array(4194300)` (4 MB)
 を持っている。stream-emit 化すれば ~500 KB まで落ちる見込み。必要なもの:
@@ -315,7 +316,7 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
 |---|---|---|
 | Compiler Source Tests | ~24 s | parse/codegen/bc2asm/bcrun の Gen1 vs golden、Gen2 vs Gen1、Gen2 vs Gen3 (qemu 経由 4 ファイル) |
 | OS Component Tests (fs_virtio) | ~19 s | kernel + 4 task の Gen2 ビルド + qemu 起動 |
-| asm.tc Virt End-to-End | ~10 s | 5 件 × compile-gen2.sh |
+| asm Virt End-to-End | ~10 s | 5 件 × compile-gen2.sh |
 | その他 (unit / pipeline / import / golden) | ~5 s | |
 
 **最有力の方向 (未実装)**: テストを「コンパイラを触ったときに必要」と
@@ -376,15 +377,22 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
   - Phase 3: codegen は strtab perm/ephemeral 2 cursor 化で
     303 KB → **80〜252 KB**。bc2asm は per-function emission で
     1.4 MB → **120〜126 KB** (~11x)
-  - Cleanup (#61): `compiler/extract_sigs.tc` 削除 (unused)、
-    `typecheck.tc` / `asm.tc` に deprecation header。完全削除 (compile-
-    gen2.sh の migration 必要) は future
-  - tests/test_split.sh: 58 fixture で byte-identical 検証 (47
-    typecheck split + 11 asm split)
-  - tests/test_phase7.sh: stage 3 (sigscan+tcheck) と stage 4
-    (sigscan+tcheck+asm-pass1+pass2) を追加、OS 上 Hello World 完走
+  - Cleanup (#61 partial): `compiler/extract_sigs.tc` 削除 (unused)、
+    `typecheck.tc` / `asm.tc` に deprecation header
+  - tests/test_phase7.sh: sigscan + tcheck + asm_pass1 + asm_pass2 の
+    full split pipeline で OS 上 Hello World 完走
   - #21 (StringLiteral emission bug) 関連のコード (`g_unit_name`
     bufferへの切替) は Phase 3 で整理
+
+- **Gen2 toolchain migration 完了 (2026-04-15)**: Phase 1+2+3 の後半
+  cleanup。compile-gen2.sh / compile-gen3.sh / kernel/build.sh /
+  tests/test_common.sh / tests/test_gen3.sh / tc_run.sh を新パイプ
+  ライン (sigscan + tcheck + asm_pass1 + asm_pass2) に切り替え、
+  `compiler/typecheck.tc` / `compiler/asm.tc` (+ kernel/tasks/
+  typecheck/, kernel/tasks/asm/, tc_asm.sh, tests/test_split.sh)
+  を完全削除。`bcrun.c` に `kmalloc` / `kfree` / `km_dump_peak` の
+  builtin stub を追加 (tc_run.sh pipeline method 用)。
+  `make test` / FULL_TEST=1 / test_phase7.sh 全て pass
 
 - **bc2asm の `__tc_strobj<N>` ラベルが複数 .tc 間で衝突していた (#21)**:
   bc2asm は文字列リテラルを per-file 0 採番の `__tc_strobj<N>` で

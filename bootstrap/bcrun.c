@@ -435,6 +435,11 @@ static BcProg *bc_parse(FILE *in) {
 /* fake memory for peek/poke */
 #define FAKE_MEM_SIZE (1024*1024)
 static uint8_t fake_mem[FAKE_MEM_SIZE];
+/* Bump arena for kmalloc/kfree, carved out of fake_mem. Starts at 256
+ * KB to leave room for the peek/poke test surface below it. tcheck.tc
+ * uses kmalloc for its per-fn fntab; kfree is a no-op (the arena is
+ * reset by process exit). */
+static uint32_t fake_km_cursor = 262144;
 
 /* Variable frame */
 typedef struct { char *name; Value val; } Slot;
@@ -578,6 +583,21 @@ static Value call_builtin(const char *mangled, Value *args, int nargs) {
         return val_int(-1);
     }
     if (!strcmp(name,"sys_exit") && nargs==1) exit(args[0].ival);
+
+    /* kmalloc — bump allocator over fake_mem. tcheck.tc uses this for
+     * its per-fn fntab. 16-byte aligned. Returns 0 on exhaustion (the
+     * caller checks and exits). kfree is a no-op stub. */
+    if (!strcmp(name,"kmalloc") && nargs==1) {
+        int32_t sz = args[0].ival; if (sz < 0) sz = 0;
+        uint32_t aligned = (uint32_t)((sz + 15) & ~15);
+        if (fake_km_cursor + aligned > FAKE_MEM_SIZE) return val_int(0);
+        uint32_t p = fake_km_cursor;
+        fake_km_cursor += aligned;
+        memset(fake_mem + p, 0, aligned);
+        return val_int((int32_t)p);
+    }
+    if (!strcmp(name,"kfree")) return val_void();
+    if (!strcmp(name,"km_dump_peak")) return val_void();
 
 
     /* print helpers */

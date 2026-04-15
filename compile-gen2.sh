@@ -1,15 +1,31 @@
 #!/bin/bash
-# compile-gen2.sh — Compile .tc to RV32 ELF using Gen2 tools (via qemu) + Gen2 asm.tc
-# Uses: Gen1 parse/extract-sigs (for .th generation),
-#       Gen2 typecheck/codegen/bc2asm/asm (qemu)
+# compile-gen2.sh — Compile .tc to RV32 ELF using Gen2 tools (via qemu).
+# Uses: Gen1 parse/extract-sigs (for import .th generation),
+#       Gen2 sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass2 (qemu).
 #
 # Usage: GEN2_DIR=/path/to/gen2 ./compile-gen2.sh [-o output] file.tc
 #
-# Resolves imports via .th headers (Gen1 parse + extract-sigs).
-# Links with Gen2 asm.tc (no GCC linker needed for output).
+# Pipeline (per .tc):
+#   parse  < file.tc                                  > file.ast
+#   sigscan < file.ast                                > file.th   (extended)
+#   { (imports) + (self file.th) + file.ast } | tcheck > file.tast
+#   codegen < file.tast                               > file.bc
+#   bc2asm  < file.bc                                 > file.s
 #
-# Requires: Gen1 tools (parse, extract-sigs, codegen, bc2asm),
-#           Gen2 tools in GEN2_DIR (typecheck, codegen, bc2asm, asm),
+# Linking (once):
+#   cat [prologue] crt0 runtime.s user1.s ... crt0_data > full.s
+#   asm_pass1 < full.s > full.lab
+#   cat full.lab full.s | asm_pass2 > OUTFILE
+#
+# The (imports) block is built from Gen1 parse + extract-sigs for each
+# transitively imported module (extract-sigs emits only :export decls,
+# which matches tcheck's imports behaviour). The (self) block is built
+# from sigscan, which emits every top-level decl for forward-reference
+# resolution within a single module.
+#
+# Requires: Gen1 tools (parse, extract-sigs),
+#           Gen2 tools in GEN2_DIR (sigscan, tcheck, codegen, bc2asm,
+#             asm_pass1, asm_pass2),
 #           qemu-riscv32
 
 set -e
@@ -53,7 +69,7 @@ if [ -z "$GEN2_DIR" ]; then
     exit 1
 fi
 
-for tool in typecheck codegen bc2asm asm; do
+for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass2; do
     if [ ! -x "$GEN2_DIR/$tool" ]; then
         echo "Error: Gen2 tool not found: $GEN2_DIR/$tool" >&2
         exit 1
@@ -61,18 +77,19 @@ for tool in typecheck codegen bc2asm asm; do
 done
 
 # Stale-cache check: if any compiler/*.tc is newer than the Gen2
-# typecheck binary, the user probably forgot to rebuild Gen2 after
+# tcheck binary, the user probably forgot to rebuild Gen2 after
 # editing the compiler. A stale Gen2 typechecks against old overload
 # tables and gives mystifying errors (historically "get: N out of
 # bounds"). Warn loudly but keep running — the dev may want the stale
 # build on purpose (e.g. to diff golden outputs against old vs new).
 # See problem.md #15.
 if find "$ROOT_DIR/compiler" -maxdepth 1 -name '*.tc' \
-        -newer "$GEN2_DIR/typecheck" -print -quit 2>/dev/null | grep -q .; then
+        -newer "$GEN2_DIR/tcheck" -print -quit 2>/dev/null | grep -q .; then
     {
         echo "warning: GEN2_DIR=$GEN2_DIR is older than compiler/*.tc"
         echo "         rebuild with:  rm -rf $GEN2_DIR && mkdir -p $GEN2_DIR &&"
-        echo "           for t in parse typecheck codegen bc2asm bcrun asm; do"
+        echo "           for t in parse sigscan tcheck codegen bc2asm bcrun \\"
+        echo "                    asm_pass1 asm_pass2; do"
         echo "             ./compile-gen1.sh -o \$GEN2_DIR/\$t compiler/\$t.tc; done"
     } >&2
 fi
@@ -111,7 +128,10 @@ done <<< "$_COLLECTED"
 
 ALL_FILES=("${IMPORT_FILES[@]}" "$TC_FILE")
 
-# Generate .th for each import (using Gen1 parse + extract-sigs)
+# Generate the shared (imports …) block for every compilation unit
+# using Gen1 parse + extract-sigs. extract-sigs emits only :export
+# decls, matching tcheck's "imports block = exported symbols only"
+# convention. The (self …) block is per-file and built in compile_one.
 if [ ${#IMPORT_FILES[@]} -gt 0 ]; then
     {
         echo "(imports"
@@ -120,10 +140,12 @@ if [ ${#IMPORT_FILES[@]} -gt 0 ]; then
         done
         echo ")"
     } > "$TMP/imports.th"
+else
+    printf '(imports)\n' > "$TMP/imports.th"
 fi
 
 # Compile helper: .tc → .s using Gen2 pipeline
-# Uses Gen1 parse for AST, Gen2 typecheck/codegen/bc2asm
+# Uses Gen1 parse for AST, Gen2 sigscan/tcheck/codegen/bc2asm
 #
 # If CACHED_S_DIR is set and contains <basename>.s, we reuse it and
 # skip the qemu pipeline. kernel/build.sh pre-compiles runtime.tc
@@ -139,18 +161,21 @@ compile_one() {
         cp "$CACHED_S_DIR/$base.s" "$out_s"
         return 0
     fi
-    if [ -f "$TMP/imports.th" ]; then
-        "$PARSE" "$tc" | \
-            { cat "$TMP/imports.th"; cat; } | \
-            "$QEMU" "$GEN2_DIR/typecheck" | \
-            "$QEMU" "$GEN2_DIR/codegen" | \
-            "$QEMU" "$GEN2_DIR/bc2asm" > "$out_s"
-    else
-        "$PARSE" "$tc" | \
-            "$QEMU" "$GEN2_DIR/typecheck" | \
-            "$QEMU" "$GEN2_DIR/codegen" | \
-            "$QEMU" "$GEN2_DIR/bc2asm" > "$out_s"
-    fi
+    local ast="$TMP/$base.ast"
+    local self_th="$TMP/$base.self.th"
+    local wrap="$TMP/$base.wrap"
+    "$PARSE" "$tc" > "$ast"
+    "$QEMU" "$GEN2_DIR/sigscan" < "$ast" > "$self_th"
+    {
+        cat "$TMP/imports.th"
+        printf '(self\n'
+        cat "$self_th"
+        printf ')\n'
+        cat "$ast"
+    } > "$wrap"
+    "$QEMU" "$GEN2_DIR/tcheck"  < "$wrap" | \
+        "$QEMU" "$GEN2_DIR/codegen" | \
+        "$QEMU" "$GEN2_DIR/bc2asm" > "$out_s"
 }
 
 # Compile runtime.tc (no imports needed)
@@ -164,7 +189,7 @@ for tc in "${ALL_FILES[@]}"; do
     ASM_FILES+=("$TMP/$base.s")
 done
 
-# Assemble: [prologue] + crt0 + runtime.s + user .s files + crt0_data → ELF/raw via Gen2 asm
+# Assemble: [prologue] + crt0 + runtime.s + user .s files + crt0_data → ELF/raw via Gen2 asm split
 {
     [ -n "$ASM_PROLOGUE" ] && printf '%s\n' "$ASM_PROLOGUE"
     cat "$CRT0"
@@ -172,6 +197,8 @@ done
     cat "${ASM_FILES[@]}"
     cat "$CRT0_DATA"
 } > "$TMP/full.s"
-"$QEMU" "$GEN2_DIR/asm" < "$TMP/full.s" > "$OUTFILE"
+
+"$QEMU" "$GEN2_DIR/asm_pass1" < "$TMP/full.s" > "$TMP/full.lab"
+cat "$TMP/full.lab" "$TMP/full.s" | "$QEMU" "$GEN2_DIR/asm_pass2" > "$OUTFILE"
 
 chmod +x "$OUTFILE"

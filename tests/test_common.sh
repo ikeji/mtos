@@ -165,28 +165,51 @@ build_gen2_tool() {
     "$ROOT_DIR/compile-gen1.sh" -o "$_GEN2_TMP/$name" "$TC_DIR/$name.tc"
 }
 
-# ensure_gen2_tools — builds Gen2 RISC-V binaries (once), sets USE_NATIVE
+# ensure_gen2_tools — builds Gen2 RISC-V binaries (once), sets USE_NATIVE.
+# Builds the split pipeline (parse + sigscan + tcheck + codegen +
+# bc2asm + bcrun + asm_pass1 + asm_pass2).
+#
+# If `SHARED_GEN2_DIR` is set and all expected binaries exist there,
+# we reuse it instead of rebuilding. test_all.sh sets this so each
+# sub-suite amortises the ~12 s compile-gen1.sh cost across the whole
+# run instead of paying it 4x.
 ensure_gen2_tools() {
     if [ "$_GEN2_READY" = true ]; then return; fi
     _GEN2_READY=true
     USE_NATIVE=false
-    if command -v "$QEMU" >/dev/null 2>&1 && command -v "$RISCV_CC" >/dev/null 2>&1; then
-        _GEN2_TMP=$(mktemp -d)
-        build_gen2_tool "parse"
-        build_gen2_tool "typecheck"
-        build_gen2_tool "codegen"
-        build_gen2_tool "bc2asm"
-        build_gen2_tool "bcrun"
-        build_gen2_tool "asm"
-        if [ -x "$_GEN2_TMP/parse" ] && [ -x "$_GEN2_TMP/typecheck" ] && \
-           [ -x "$_GEN2_TMP/codegen" ] && [ -x "$_GEN2_TMP/bc2asm" ] && \
-           [ -x "$_GEN2_TMP/bcrun" ] && [ -x "$_GEN2_TMP/asm" ]; then
-            USE_NATIVE=true
-        fi
+    if ! command -v "$QEMU" >/dev/null 2>&1 || ! command -v "$RISCV_CC" >/dev/null 2>&1; then
+        return
+    fi
+    if [ -n "$SHARED_GEN2_DIR" ] \
+       && [ -x "$SHARED_GEN2_DIR/parse" ] && [ -x "$SHARED_GEN2_DIR/sigscan" ] \
+       && [ -x "$SHARED_GEN2_DIR/tcheck" ] && [ -x "$SHARED_GEN2_DIR/codegen" ] \
+       && [ -x "$SHARED_GEN2_DIR/bc2asm" ] && [ -x "$SHARED_GEN2_DIR/bcrun" ] \
+       && [ -x "$SHARED_GEN2_DIR/asm_pass1" ] && [ -x "$SHARED_GEN2_DIR/asm_pass2" ]; then
+        _GEN2_TMP="$SHARED_GEN2_DIR"
+        _GEN2_SHARED=1
+        USE_NATIVE=true
+        return
+    fi
+    _GEN2_TMP=$(mktemp -d)
+    build_gen2_tool "parse"
+    build_gen2_tool "sigscan"
+    build_gen2_tool "tcheck"
+    build_gen2_tool "codegen"
+    build_gen2_tool "bc2asm"
+    build_gen2_tool "bcrun"
+    build_gen2_tool "asm_pass1"
+    build_gen2_tool "asm_pass2"
+    if [ -x "$_GEN2_TMP/parse" ] && [ -x "$_GEN2_TMP/sigscan" ] && \
+       [ -x "$_GEN2_TMP/tcheck" ] && [ -x "$_GEN2_TMP/codegen" ] && \
+       [ -x "$_GEN2_TMP/bc2asm" ] && [ -x "$_GEN2_TMP/bcrun" ] && \
+       [ -x "$_GEN2_TMP/asm_pass1" ] && [ -x "$_GEN2_TMP/asm_pass2" ]; then
+        USE_NATIVE=true
     fi
 }
 
 cleanup_gen2_tools() {
+    # Don't clean up a dir owned by the parent harness.
+    if [ "$_GEN2_SHARED" = 1 ]; then return; fi
     [ -n "$_GEN2_TMP" ] && rm -rf "$_GEN2_TMP"
 }
 
@@ -197,8 +220,27 @@ run_parse_tc() {
     "$QEMU" "$_GEN2_TMP/parse" < "$input" 2>/dev/null
 }
 
+# run_typecheck_tc — reads an .ast (program) from stdin and emits the
+# .tast via the new sigscan + tcheck pipeline. Buffers stdin into a
+# tmp file so sigscan can walk it first to produce the (self …) block.
+# No imports are injected (callers that need imports construct the
+# wrapped stdin themselves and call tcheck directly).
 run_typecheck_tc() {
-    "$QEMU" "$_GEN2_TMP/typecheck" 2>/dev/null
+    local ast th wrap
+    ast=$(mktemp)
+    th=$(mktemp)
+    wrap=$(mktemp)
+    cat > "$ast"
+    "$QEMU" "$_GEN2_TMP/sigscan" < "$ast" > "$th" 2>/dev/null
+    {
+        printf '(imports)\n'
+        printf '(self\n'
+        cat "$th"
+        printf ')\n'
+        cat "$ast"
+    } > "$wrap"
+    "$QEMU" "$_GEN2_TMP/tcheck" < "$wrap" 2>/dev/null
+    rm -f "$ast" "$th" "$wrap"
 }
 
 run_codegen_tc() {
@@ -209,8 +251,18 @@ run_bc2asm_tc() {
     "$QEMU" "$_GEN2_TMP/bc2asm" 2>/dev/null
 }
 
+# run_asm_tc — takes a .s (already concatenated with crt0 / runtime if
+# needed) on stdin and emits the ELF or raw binary via the new
+# asm_pass1 + asm_pass2 split. Buffers stdin into a tmp file so
+# asm_pass1 and asm_pass2 can read it independently.
 run_asm_tc() {
-    "$QEMU" "$_GEN2_TMP/asm" 2>/dev/null
+    local src lab
+    src=$(mktemp)
+    lab=$(mktemp)
+    cat > "$src"
+    "$QEMU" "$_GEN2_TMP/asm_pass1" < "$src" > "$lab" 2>/dev/null
+    cat "$lab" "$src" | "$QEMU" "$_GEN2_TMP/asm_pass2" 2>/dev/null
+    rm -f "$src" "$lab"
 }
 
 # ===== Common test file lists =====

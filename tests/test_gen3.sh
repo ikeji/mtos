@@ -153,12 +153,21 @@ for f in "${TC_FILES[@]}"; do
 
     # === Gen3 == Gen2 (BC) ===
     if [ "$HAS_GEN3" = true ] && [ "$has_import" -eq 0 ]; then
-        # Gen3: Gen2 parse → Gen2 typecheck → Gen2 codegen (from source)
+        # Gen3: Gen2 parse → Gen2 sigscan+tcheck → Gen2 codegen (from source)
         gen3_bc=$(mktemp)
         t0=$(time_ms)
-        "$QEMU" "$_GEN2_TMP/parse" < "$input" 2>/tmp/tc_gen3_parse_stderr_$$ | \
-        "$QEMU" "$_GEN2_TMP/typecheck" 2>/dev/null | \
-        "$QEMU" "$_GEN2_TMP/codegen" > "$gen3_bc" 2>/dev/null
+        "$QEMU" "$_GEN2_TMP/parse" < "$input" 2>/tmp/tc_gen3_parse_stderr_$$ \
+            > /tmp/tc_gen3_ast_$$
+        "$QEMU" "$_GEN2_TMP/sigscan" < /tmp/tc_gen3_ast_$$ \
+            > /tmp/tc_gen3_th_$$ 2>/dev/null
+        {
+            printf '(imports)\n(self\n'
+            cat /tmp/tc_gen3_th_$$
+            printf ')\n'
+            cat /tmp/tc_gen3_ast_$$
+        } | "$QEMU" "$_GEN2_TMP/tcheck" 2>/dev/null | \
+            "$QEMU" "$_GEN2_TMP/codegen" > "$gen3_bc" 2>/dev/null
+        rm -f /tmp/tc_gen3_ast_$$ /tmp/tc_gen3_th_$$
         elapsed=$(( $(time_ms) - t0 ))
 
         mem=$(awk '$1 ~ /^[0-9]+$/ && $3 ~ /\// { split($3,a,"/"); total += a[1] * $1 } END { if (total>0) printf "%dKB", total/1024 }' /tmp/tc_gen3_parse_stderr_$$)

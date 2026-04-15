@@ -1,15 +1,17 @@
 #!/bin/bash
-# compile-gen3.sh — Compile .tc to RV32 ELF using Gen3 tools (via qemu) + Gen3 asm.tc
-# Uses: Gen1 parse/extract-sigs (for .th generation),
-#       Gen3 typecheck/codegen/bc2asm/asm (qemu)
+# compile-gen3.sh — Compile .tc to RV32 ELF using Gen3 tools (via qemu).
+# Uses: Gen1 parse/extract-sigs (for import .th generation),
+#       Gen3 sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass2 (qemu).
 #
 # Usage: GEN3_DIR=/path/to/gen3 ./compile-gen3.sh [-o output] file.tc
 #
-# Resolves imports via .th headers (Gen1 parse + extract-sigs).
-# Links with Gen3 asm.tc (no GCC linker needed for output).
+# Mirrors compile-gen2.sh exactly; the only difference is which
+# binaries it calls (GEN3_DIR instead of GEN2_DIR). Used by
+# tests/test_gen3.sh to verify Gen2 == Gen3 self-hosting.
 #
 # Requires: Gen1 tools (parse, extract-sigs),
-#           Gen3 tools in GEN3_DIR (typecheck, codegen, bc2asm, asm),
+#           Gen3 tools in GEN3_DIR (sigscan, tcheck, codegen, bc2asm,
+#             asm_pass1, asm_pass2),
 #           qemu-riscv32
 
 set -e
@@ -41,7 +43,7 @@ if [ -z "$GEN3_DIR" ]; then
     exit 1
 fi
 
-for tool in typecheck codegen bc2asm asm; do
+for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass2; do
     if [ ! -x "$GEN3_DIR/$tool" ]; then
         echo "Error: Gen3 tool not found: $GEN3_DIR/$tool" >&2
         exit 1
@@ -51,7 +53,7 @@ done
 # Stale-cache check (see problem.md #15 and compile-gen2.sh for the
 # same check).
 if find "$ROOT_DIR/compiler" -maxdepth 1 -name '*.tc' \
-        -newer "$GEN3_DIR/typecheck" -print -quit 2>/dev/null | grep -q .; then
+        -newer "$GEN3_DIR/tcheck" -print -quit 2>/dev/null | grep -q .; then
     {
         echo "warning: GEN3_DIR=$GEN3_DIR is older than compiler/*.tc"
         echo "         rebuild with compile-gen2.sh against each compiler/*.tc"
@@ -90,7 +92,8 @@ done <<< "$_COLLECTED"
 
 ALL_FILES=("${IMPORT_FILES[@]}" "$TC_FILE")
 
-# Generate .th for each import (using Gen1 parse + extract-sigs)
+# Generate the shared (imports …) block via Gen1 parse + extract-sigs
+# (see compile-gen2.sh for the rationale).
 if [ ${#IMPORT_FILES[@]} -gt 0 ]; then
     {
         echo "(imports"
@@ -99,24 +102,30 @@ if [ ${#IMPORT_FILES[@]} -gt 0 ]; then
         done
         echo ")"
     } > "$TMP/imports.th"
+else
+    printf '(imports)\n' > "$TMP/imports.th"
 fi
 
 # Compile helper: .tc → .s using Gen3 pipeline
-# Uses Gen1 parse for AST, Gen3 typecheck/codegen/bc2asm
 compile_one() {
     local tc="$1" out_s="$2"
-    if [ -f "$TMP/imports.th" ]; then
-        "$PARSE" "$tc" | \
-            { cat "$TMP/imports.th"; cat; } | \
-            "$QEMU" "$GEN3_DIR/typecheck" | \
-            "$QEMU" "$GEN3_DIR/codegen" | \
-            "$QEMU" "$GEN3_DIR/bc2asm" > "$raw_s"
-    else
-        "$PARSE" "$tc" | \
-            "$QEMU" "$GEN3_DIR/typecheck" | \
-            "$QEMU" "$GEN3_DIR/codegen" | \
-            "$QEMU" "$GEN3_DIR/bc2asm" > "$out_s"
-    fi
+    local base
+    base=$(basename "$tc" .tc)
+    local ast="$TMP/$base.ast"
+    local self_th="$TMP/$base.self.th"
+    local wrap="$TMP/$base.wrap"
+    "$PARSE" "$tc" > "$ast"
+    "$QEMU" "$GEN3_DIR/sigscan" < "$ast" > "$self_th"
+    {
+        cat "$TMP/imports.th"
+        printf '(self\n'
+        cat "$self_th"
+        printf ')\n'
+        cat "$ast"
+    } > "$wrap"
+    "$QEMU" "$GEN3_DIR/tcheck"  < "$wrap" | \
+        "$QEMU" "$GEN3_DIR/codegen" | \
+        "$QEMU" "$GEN3_DIR/bc2asm" > "$out_s"
 }
 
 # Compile runtime.tc (no imports needed)
@@ -130,8 +139,15 @@ for tc in "${ALL_FILES[@]}"; do
     ASM_FILES+=("$TMP/$base.s")
 done
 
-# Assemble: crt0_tc.s + runtime.s + user .s files + crt0_tc_data.s → ELF via Gen3 asm
-{ cat "$CRT0"; cat "$TMP/runtime.s"; cat "${ASM_FILES[@]}"; cat "$CRT0_DATA"; } | \
-    "$QEMU" "$GEN3_DIR/asm" > "$OUTFILE"
+# Assemble: crt0_tc.s + runtime.s + user .s files + crt0_tc_data.s → ELF via Gen3 asm split
+{
+    cat "$CRT0"
+    cat "$TMP/runtime.s"
+    cat "${ASM_FILES[@]}"
+    cat "$CRT0_DATA"
+} > "$TMP/full.s"
+
+"$QEMU" "$GEN3_DIR/asm_pass1" < "$TMP/full.s" > "$TMP/full.lab"
+cat "$TMP/full.lab" "$TMP/full.s" | "$QEMU" "$GEN3_DIR/asm_pass2" > "$OUTFILE"
 
 chmod +x "$OUTFILE"

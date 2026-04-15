@@ -2,11 +2,29 @@
 # test_all.sh — run all test suites and report overall results
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 TOTAL_PASS=0
 TOTAL_FAIL=0
 time_ms() { date +%s%3N; }
 SUITE_TIME_START=$(time_ms)
+
+# Build Gen2 tools once up-front so every sub-suite that sources
+# test_common.sh can reuse the same binaries via SHARED_GEN2_DIR.
+# Saves ~10 s per run (4 suites × 8 tools × compile-gen1.sh).
+# Built in parallel to shave another second or two off the initial wait.
+QEMU="${QEMU:-qemu-riscv32}"
+RISCV_CC="riscv64-unknown-elf-gcc"
+if command -v "$QEMU" >/dev/null 2>&1 && command -v "$RISCV_CC" >/dev/null 2>&1; then
+    SHARED_GEN2_DIR=$(mktemp -d)
+    export SHARED_GEN2_DIR
+    trap 'rm -rf "$SHARED_GEN2_DIR"' EXIT
+    for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2; do
+        "$ROOT_DIR/compile-gen1.sh" -o "$SHARED_GEN2_DIR/$t" \
+            "$ROOT_DIR/compiler/$t.tc" 2>/dev/null &
+    done
+    wait
+fi
 
 run_suite() {
     local script="$1"
