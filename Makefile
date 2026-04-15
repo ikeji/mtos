@@ -39,17 +39,22 @@ extract-sigs: bootstrap/extract_sigs.c bootstrap/ast.o
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-# Gen2 ツールを compile-gen1.sh で build。compiler/<name>.tc が
-# import する他の .tc が変わったときの追跡は Phase B で .d 自動生成
-# を入れるので、今は最小依存 (<name>.tc + Gen1 ツール) だけ書く。
-# Phase A では「触っていないときに再ビルドしない」までで十分。
+# Gen2 ツールを compile-gen1.sh で build。transitive import 追跡は
+# recipe 末尾で `tools/tc_deps_to_d.sh` が .d を書き出し、top Makefile
+# が `-include` で取り込む (Phase B)。2 回目以降の make test はこの .d
+# で「触っていない .tc 経由のツール」を正しくスキップできる。
 build/gen2:
 	mkdir -p $@
 
-build/gen2/%: compiler/%.tc $(GEN1_TOOLS) | build/gen2
+build/gen2/%: compiler/%.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh | build/gen2
 	./compile-gen1.sh -o $@ $<
+	./tools/tc_deps_to_d.sh $@ $< > $@.d
 
 gen2-tools: $(GEN2_TOOLS)
+
+# .d の内容を取り込む。Phase B で導入。初回ビルドでは存在しないので
+# `-include` (エラーにしない) を使う
+-include $(addsuffix .d,$(GEN2_TOOLS))
 
 clean:
 	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o parse typecheck interp codegen bcrun bc2asm extract-sigs
