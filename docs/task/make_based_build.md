@@ -72,54 +72,51 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2
 
 ## 設計方針
 
-TODO: gen1(Cのソースをコンパイルしたもの)もbuild/gen1に置きたい。
-TODO: gen3(gen2を使ってコンパイルしたもの)もbuild/gen3に置きたい。
-TODO: 今、kernelはgen2ツール(runtime_syscall.cを含んでいる)で作っているが、早くなるならgen3(runtime.tcのみを含む)でビルドしたい。
+### D0: 世代ツールの置き場を `build/genN/` に統一
+
+- `build/gen1/` — Gen1 の C 製ツール (parse/codegen/bc2asm/typecheck/
+  bcrun/interp/extract-sigs)。現状 `bootstrap/` / トップ直下にバラけて
+  いるのをここに集約して `make clean` で一掃できるようにする
+- `build/gen2/` — Gen1 で build した TC 製ツール (parse/sigscan/tcheck/
+  codegen/bc2asm/bcrun/asm_pass1/asm_pass2)
+- `build/gen3/` — Gen2 で build した同じ TC 製ツール (自己ホスト確認
+  用 + kernel build の本番経路候補)
+
+### D0b: kernel build は Gen3 で行う (少し遅くなっても採用)
+
+現状 kernel/build.sh は Gen2 ツール (C 製 runtime linked) を使っている
+が、将来的には Gen3 ツール (TC runtime.tc linked) で build したい。
+qemu 上の実行速度は実測次第だが、**少し遅い程度なら Gen3 を採用** して
+「自己ホスト経路だけが本番」という状態を目指す。実装順としては Phase
+C 以降、build/gen3/ が安定してから切り替える。
 
 ### D1: ビルド成果物は `build/` ツリーに固定パスで置く
 
 ```
 build/
+  gen1/                 # Gen1 ツール (C 製、make で GCC コンパイル)
+    parse codegen bc2asm typecheck bcrun interp extract-sigs ...
   gen2/                 # Gen2 ツール (compile-gen1.sh 出力)
-    parse
-    sigscan
-    tcheck
-    codegen
-    bc2asm
-    bcrun
-    asm_pass1
-    asm_pass2
-  cache/                # shared .s キャッシュ
-    runtime.s           # compiler/runtime.tc から 1 回だけ生成
-TODO: 元ソースの位置に合わせたい。 build/compiler/runtime.s
-    libtc.s             # kernel/tasks/libtc/libtc.tc から
-TODO: build/kernel/libtc/litbc.tc
+    parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2
+  gen3/                 # Gen3 ツール (compile-gen2.sh 出力、kernel build 本番)
+    parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2
+  compiler/             # compiler/*.tc ソースのミラー位置
+    runtime.s           # compiler/runtime.tc → 1 回だけ
   kernel/
-    virt/
-      tasks/
-TODO: ユーザーランドは実行環境に依存しないはず。 kernel/rootディレクトリに集めて、kernel/disk.imgに置く？
-        hello.bin
-        hello2.bin
-        catfile.bin
-        sh.bin
-        tmpdemo.bin
-        echo.bin
-        parse.bin          # EXTRA_TASKS 時
-        sigscan.bin        # 〃
-        tcheck.bin
-        codegen.bin
-        bc2asm.bin
-        asm_pass1.bin
-        asm_pass2.bin
-        cat.bin
-      disk.img
-      kernel.bin
-# TODO: build/kernel/kernel/virt_kernel.bin
-    pico2/
-      tasks/<same>
-      kernel.uf2
-# TODO: build/kernel/kernel/pico2_kernel.bin
-# TODO: build/kernel/kernel/pico2_kernel.uf2
+    tasks/libtc/
+      libtc.s           # kernel/tasks/libtc/libtc.tc → 1 回だけ
+    root/               # plat 非依存のユーザーランド (disk image 源泉)
+      bin/
+        hello hello2 catfile sh tmpdemo echo launcher cat
+        parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2
+      hello.txt
+      prelude.s prelude_tail.s
+      empty_imports.txt self_open.txt wrap_close.txt
+      hw.tc phase7_min.tc phase7.tc
+    disk.img            # kernel/root/ を mkfs.py した結果、plat 共通
+    virt_kernel.bin     # virt 用カーネル本体 (kernel + disk を link)
+    pico2_kernel.bin    # pico2 用 (XIP に disk を埋め込み)
+    pico2_kernel.uf2    # bin2uf2.py 出力
   test/
     asm/                # tests/test_asm.sh 用の中間 ELF
       hello2_virt.bin
@@ -127,8 +124,41 @@ TODO: ユーザーランドは実行環境に依存しないはず。 kernel/roo
       test_echo.bin
 ```
 
+要点:
+
+- **ソースのミラー位置**: `compiler/runtime.tc` → `build/compiler/runtime.s`、
+  `kernel/tasks/libtc/libtc.tc` → `build/kernel/tasks/libtc/libtc.s` の
+  ようにソース階層をそのまま映す。`build/cache/` のような平置きは廃止
+- **task は plat 共通**: `build/kernel/root/bin/<task>` に 1 本だけ置き、
+  virt と pico2 の両方から同じ binary を参照する。virt 限定 (sh/echo/
+  tmpdemo) と pico2 限定 (launcher) はタスク一覧を統合して両 plat に
+  入れる (→ 下記 "タスク一覧の統合")
+- **disk.img も plat 共通**: `build/kernel/disk.img` 1 本。pico2 では
+  kernel build 時に `bin2s.sh _mtfs_image` でこれを .rodata に埋める
+- **kernel 本体は flat**: `build/kernel/virt_kernel.bin` /
+  `pico2_kernel.bin` / `pico2_kernel.uf2` を build/kernel/ 直下に置く
+  (`build/kernel/virt/` / `build/kernel/pico2/` のサブディレクトリを
+  廃止して見通しを良くする)
+
 これにより `make test` 2 回目は Make が mtime を見てスキップできる。
 `git clean -x build/` で全捨てに戻せる。
+
+### D1b: タスク一覧を virt/pico2 で統合
+
+現状 `kernel/build.sh` は virt と pico2 で TASKS リストが違う
+(virt: hello/hello2/catfile/sh/tmpdemo/echo、pico2: hello/hello2/
+catfile/launcher)。task binary 自体は ecall syscall だけで動くので
+plat 非依存 → 両方に同じ一覧を入れて `build/kernel/root/` を 1 本に
+共有できる。統合後のタスク一覧:
+
+```
+hello hello2 catfile sh tmpdemo echo launcher cat
+  + EXTRA_TASKS 時: parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2
+```
+
+seed task の選定 (pico2 は slot 2 が launcher、virt は slot 2 が sh)
+は変えない — disk.img に両方入っていても kernel 側の seed 設定で
+どちらを先に起動するかは決められる。disk.img だけが共通化対象。
 
 ### D2: .tc の `import` 依存は `.d` ファイルで auto-tracking
 
@@ -158,41 +188,53 @@ Gen2 ツール + task 全部 + kernel 本体で使う。Make 標準の `-include
 bash 関数をほぼそのまま使える。依存リストを stdout に出すモード
 を足して grep-friendly にする。
 
-### D3: 既存シェルスクリプトは生かす (recipe として呼ぶ)
+### D3: 非再帰 Makefile + 既存シェルスクリプトの薄い wrap
 
-`compile-gen1.sh` / `compile-gen2.sh` / `kernel/build.sh` は今も動く
-ものをゼロから書き直さない。Make の recipe から単純に呼び出すだけに
-する:
+`compile-gen1.sh` / `compile-gen2.sh` は今も動くので recipe から呼ぶ
+だけにして再実装しない。`kernel/build.sh` は **段階的に解体** する:
+Phase A/B では wrap で動かし、Phase C で task/link のサブコマンド
+に分割して、最終的に Makefile が全依存グラフを持つ形にする。
 
-```makefile
-build/gen2/%: compiler/%.tc $(GEN1_TOOLS) | build/gen2
-	./compile-gen1.sh -o $@ $<
-	./tools/collect_imports.sh $< > $(@).d
-```
-
-recipe の中で KEEP_TMP / CACHED_S_DIR 等の既存環境変数を使って
-incremental 効率を引き出す。
-
-唯一例外は `kernel/build.sh`: 今の「ワンショットで全部やる」形を、
-**個別 task を 1 つだけビルドするサブターゲット** + **それらを束ねて
-kernel + mtfs を作る最終ステップ** に二段に分ける。分けないと P2 が
-解決できない。具体的には:
-
-- `kernel/build.sh --task <name>` サブコマンドを新設: 1 task の
-  .bin だけを `build/kernel/<target>/tasks/<name>.bin` に出力
-- `kernel/build.sh --link <target>` サブコマンドを新設: 既存の
-  `build/kernel/<target>/tasks/*.bin` を mtfs 化して kernel と
-  リンクする最終段。task .bin は再ビルドせず読むだけ
-
-Make がそれぞれを独立ターゲットとして駆動:
+**非再帰 (`include`) 方式**: `kernel/tasks/*/task.mk` を top Makefile
+から `include` し、再帰 make は使わない。GNU Make の有名な罠 (再帰
+make が依存を壊す問題) を避けつつ、task 追加コストも低く抑える。
 
 ```makefile
-build/kernel/virt/tasks/hello.bin: kernel/tasks/hello/hello.tc ...
-	./kernel/build.sh --target virt --task hello
+# top Makefile の抜粋
+include $(wildcard kernel/tasks/*/task.mk)
 
-build/kernel/virt/kernel.bin: $(VIRT_TASK_BINS) $(VIRT_KERNEL_SOURCES)
-	./kernel/build.sh --target virt --link -o $@
+# kernel/tasks/hello/task.mk の中身
+$(eval $(call define_task,hello,32768,8192))
+
+# kernel/tasks/tasks.mk (共通マクロ、top から include 済みとする)
+define define_task
+build/kernel/root/bin/$(1): kernel/tasks/$(1)/$(1).tc \
+    $$(shell tools/collect_imports.sh kernel/tasks/$(1)/$(1).tc) \
+    build/compiler/runtime.s build/kernel/tasks/libtc/libtc.s \
+    $$(GEN2_TOOLS)
+	./compile-gen2.sh --task --arena $(2) --stack $(3) \
+	    -o $$@ $$<
+TASK_BINS += build/kernel/root/bin/$(1)
+endef
 ```
+
+各 task のソースディレクトリに 1 行だけの `task.mk` を置くので、task
+追加は「ディレクトリ作って .tc 置いて task.mk を 1 行書く」だけで済む。
+ARENA_SIZE / STACK_SIZE は task.mk の引数として明示 → 現状
+kernel/build.sh に散らばっている `TASK_ARENA` テーブルが不要になる。
+
+**並列は禁止**: `.NOTPARALLEL:` を top Makefile に宣言して `-j1` 強制。
+`compile-gen2.sh` が共用の CACHED_S_DIR / qemu state を race させる
+のを避ける (そもそも並列化したくない、という方針)。
+
+`kernel/build.sh` は Phase C で以下のサブコマンドに分割:
+
+- `kernel/build.sh --task <name> --arena N --stack N -o <path>`:
+  1 task の .bin だけを出力 (K3 header + crt0 + runtime.s + source)
+- `kernel/build.sh --disk <tasks...> -o build/kernel/disk.img`:
+  既存 task .bin を mkfs.py で disk image 化 (plat 非依存)
+- `kernel/build.sh --link <target> --disk <img> -o <kernel>`:
+  kernel 本体を .bin/.uf2 に link。task は触らない
 
 ### D4: テストターゲットは必要な成果物にだけ依存させる
 
@@ -211,8 +253,8 @@ test-asm: $(GEN2_TOOLS) build/test/asm/hello2_virt.bin \
           build/test/asm/test_timer.bin build/test/asm/test_echo.bin
 	./tests/test_asm.sh --use-prebuilt build/test/asm
 
-test-os: $(GEN2_TOOLS) build/kernel/virt/kernel.bin build/kernel/virt/disk.img
-	./tests/test_os.sh --use-prebuilt build/kernel/virt
+test-os: $(GEN2_TOOLS) build/kernel/virt_kernel.bin build/kernel/disk.img
+	./tests/test_os.sh --use-prebuilt build/kernel
 ```
 
 各テスト sh はプリビルド済み path を受け取って「すでに存在する
@@ -253,44 +295,56 @@ echo
 ## ビルドグラフ (主要ターゲット)
 
 ```
-Gen1 tools (Makefile 現行)
-    parse, codegen, bc2asm, typecheck, bcrun, interp, extract-sigs
+build/gen1/<tool>                      depends on
+    bootstrap/<tool>.c 等 (GCC リンク、Makefile 現行)
 
 build/gen2/<tool>                      depends on
-    compiler/<tool>.tc + transitive imports + Gen1 tools
+    compiler/<tool>.tc + transitive imports + $(GEN1_TOOLS)
 
-build/cache/runtime.s                  depends on
-    compiler/runtime.tc + Gen2 parse/sigscan/tcheck/codegen/bc2asm
+build/gen3/<tool>                      depends on
+    compiler/<tool>.tc + transitive imports + $(GEN2_TOOLS)
 
-build/cache/libtc.s                    depends on
-    kernel/tasks/libtc/libtc.tc + Gen2 tools
+build/compiler/runtime.s               depends on
+    compiler/runtime.tc + $(GEN2_TOOLS) (or Gen3)
 
-build/kernel/virt/tasks/<task>.bin     depends on
+build/kernel/tasks/libtc/libtc.s       depends on
+    kernel/tasks/libtc/libtc.tc + $(GEN2_TOOLS)
+
+build/kernel/root/bin/<task>           depends on
     kernel/tasks/<task>/<task>.tc + transitive imports
-    + build/cache/runtime.s
+    + build/compiler/runtime.s
+    + build/kernel/tasks/libtc/libtc.s
     + kernel/tasks/task_crt0.s + kernel/tasks/task_data.s
-    + Gen2 tools + asm_pass1/pass2
+    + $(GEN2_TOOLS)  (kernel build 本番で Gen3 採用後は $(GEN3_TOOLS))
 
-build/kernel/virt/disk.img             depends on
-    all $(VIRT_TASK_BINS) + tests/phase7_hello*.tc
+build/kernel/disk.img                  depends on
+    全 task bin + tests/phase7_hello*.tc + prelude.s / prelude_tail.s
     + kernel/tasks/task_crt0.s + kernel/tasks/task_data.s
-    (mtfs 化 + prelude staging)
+    (plat 非依存、virt と pico2 の両方から参照)
 
-build/kernel/virt/kernel.bin           depends on
+build/kernel/virt_kernel.bin           depends on
     kernel/kernel.tc + kernel/kernel_common.tc + kernel/*.tc
     + kernel/platform_virt.s + kernel/trap_common.s
     + kernel/crt0_data.s
-    + build/cache/runtime.s
-    + build/kernel/virt/disk.img   (virt はディスク別ファイル)
-    + Gen2 tools
-```
+    + build/compiler/runtime.s
+    + build/kernel/disk.img
+    + $(GEN2_TOOLS)  (本番 Gen3 後は $(GEN3_TOOLS))
 
-`pico2` も同型。`disk.img` は pico2 では `bin2s.sh` で .rodata に
-埋めるので kernel.uf2 が直接依存する (別 .img は出ない)。
+build/kernel/pico2_kernel.bin          depends on
+    kernel/kernel_pico2.tc + kernel/kernel_common.tc + kernel/*.tc
+    + kernel/platform_pico2.s + kernel/trap_common.s
+    + kernel/crt0_pico2_data.s
+    + build/compiler/runtime.s
+    + build/kernel/disk.img  (pico2 は bin2s.sh で .rodata に埋める)
+    + $(GEN2_TOOLS) / $(GEN3_TOOLS)
+
+build/kernel/pico2_kernel.uf2          depends on
+    build/kernel/pico2_kernel.bin + tools/bin2uf2.py
+```
 
 ## 段階的移行計画
 
-一度に全部ひっくり返すと壊れやすいので 4 フェーズに分ける。
+一度に全部ひっくり返すと壊れやすいので 5 フェーズに分ける。
 
 ### Phase A: 共有 Gen2 ディレクトリを `build/gen2/` 固定に (小)
 
@@ -301,6 +355,7 @@ build/kernel/virt/kernel.bin           depends on
   を定義
 - `make test` のターゲットを `test: all $(GEN2_TOOLS)` に変更
 - `tests/test_all.sh` から Gen2 pre-build ループ自体を削除
+- Gen1 ツールも `build/gen1/` に移す (現行の Makefile 出力先変更)
 
 **期待節約**: 毎 make test で ~3 s。もう一方のメリットとして、
 compiler/ 以下を触らないときは 1 本もリビルドしない
@@ -316,102 +371,91 @@ compiler/ 以下を触らないときは 1 本もリビルドしない
 **期待節約**: compiler/ 内の 1 ファイル編集時に他のツール (parse →
 他の 7 本) を再ビルドしなくなる
 
-### Phase C: kernel/build.sh を --task / --link に分割 (大)
+### Phase C: kernel/build.sh を --task / --disk / --link に分割 (大)
 
-- `build/cache/runtime.s` / `build/cache/libtc.s` を Make ルール化
-- `build/kernel/<target>/tasks/<task>.bin` を Make ルール化。中身は
-  新規追加の `kernel/build.sh --target <t> --task <name> -o <path>`
-  (既存 for ループを 1 task 分に切り出しただけ)
-- `build/kernel/<target>/kernel.bin` / `.uf2` を Make ルール化。中身は
-  `kernel/build.sh --target <t> --link --disk-out ... -o <out>`。
-  task 再コンパイルはしない
-- `test-os`/`test-phase7`/`test-pico2` を新ルールに依存させる
+- `build/compiler/runtime.s` / `build/kernel/tasks/libtc/libtc.s` を
+  Make ルール化 (ソース位置ミラー)
+- virt/pico2 のタスク一覧を統合 (D1b 参照) — `kernel/build.sh` の
+  TASKS 定義を 1 本化し、両 plat で同じ一覧をビルドする
+- `kernel/tasks/<task>/task.mk` を各 task ディレクトリに新設。
+  トップ Makefile で `include $(wildcard kernel/tasks/*/task.mk)`
+- `kernel/tasks/tasks.mk` に `define_task` 共通マクロを置き、
+  `build/kernel/root/bin/<task>` を生成する recipe を定義
+- `build/kernel/disk.img` を Make ルール化 (plat 非依存、全 task bin
+  + phase7 test input + prelude.s を mkfs.py)
+- `build/kernel/virt_kernel.bin` / `pico2_kernel.bin` /
+  `pico2_kernel.uf2` を Make ルール化 (task は触らない、kernel 本体
+  だけリンク)
+- `.NOTPARALLEL:` を top Makefile で宣言
+- `test-os` / `test-phase7` / `test-pico2` を新ルールに依存させる
 
 **期待節約**: kernel/ を触らない make test では kernel もタスクも
 再生成されない。kernel/tasks/<X> を 1 つ touch しても、X.bin +
-disk.img + kernel.bin だけが再ビルドされる
+disk.img + kernel.bin だけが再ビルドされる。virt/pico2 の task
+重複ビルドも消える
 
 ### Phase D: テストスクリプト移行 + 旧パス削除 (中)
 
 - `tests/test_*.sh` にビルド責任が残っているところを削ぎ落とし、
   Make からのプリビルド版を受け取る形に統一
 - `compile-gen2.sh` の単独実行パスは残すが、キャッシュディレクトリ
-  指定を正式な env (`BUILD_CACHE_DIR=build/cache`) にリネーム
+  指定を正式な env (`BUILD_CACHE_DIR=build/compiler`) にリネーム
 - README / CLAUDE.md 更新 (`make test` の体感が変わるので周知)
 
-## 未解決 / オープン課題
+### Phase E: Gen3 経路 + consistency 脱 FULL_TEST (小〜中)
 
-### Q1: test_consistency / test_gen3 の自作 tmp
+- `build/gen3/%` ルールを追加 (compile-gen2.sh で build、依存は
+  $(GEN2_TOOLS) + compiler/*.tc + imports)
+- `time compile-gen2.sh` vs `time compile-gen3.sh` を kernel build
+  と代表タスクで実測
+- 結果が「少し遅い程度」なら kernel build の本番経路を Gen3 に切替
+  ($(GEN3_TOOLS) を kernel/task recipe の依存に差し替え)
+- `test_consistency.sh` の中間ファイル (ast/bc/s/elf) を
+  `build/consistency/<input>/` に残すように改造し、2 回目以降は
+  qemu 実行のみに短縮 → FULL_TEST ガードを外してデフォルトで回す
 
-- `test_gen3.sh` が各ファイルに mktemp を使って中間 ast/bc を
-  出している。そこは Make にはせず shell 側のままで OK か?
-- consistency は FULL_TEST 限定なのでデフォルトは影響しない
+## 決定済み項目 (旧 Q1-Q5)
 
-TODO: 作りなおさず使いたい。そして、FULL_TESTから抜けたい。そのためにコンパイル時は中間ファイルを残す必要がある。
+### Q1: test_consistency を FULL_TEST から抜ける → Phase E で
 
-### Q2: Gen3 (`compile-gen3.sh`) の扱い
+中間ファイル (ast/bc/s/elf) を `build/consistency/<input>/` に残し、
+2 回目以降は qemu 実行だけに短縮する。`test_consistency.sh` は
+作り直さず、中間ファイルの出力先だけ env で切り替え可能にする。
+これで FULL_TEST ガードを外してデフォルトで走らせる余地ができる。
 
-Gen2 == Gen3 自己ホストチェックは make test の中には無い (test_gen3
-の内部で Gen2 ツールで再コンパイルするだけ)。`build/gen3/*` の置き場
-と更新トリガをどう決めるか。たぶん `test-gen3` サブターゲットで
-ローカルに `$(BUILD)/gen3` を作る暫定でいい
+### Q2: Gen3 は `build/gen3/` で本番採用 → Phase E で
 
-TODO: 上記の通り使いたい。
+`build/gen3/%` を Make ルール化し、kernel/task の build 経路を
+$(GEN3_TOOLS) に切り替える (実測の上、「少し遅い」程度なら採用)。
 
-### Q3: ビルド並列化 (-j)
+### Q3: 並列化はしない
 
-Phase C まで進めば Make が自動で並列化してくれるはずだが、
-`compile-gen2.sh` の中で qemu / CACHED_S_DIR を共用しているので
-race するかも。最初は `-j1` 前提で動かして確認
+`.NOTPARALLEL:` を top Makefile に宣言して `-j1` 強制。CACHED_S_DIR
+/ qemu の race もそもそも無視できるし、シリアル実行の方がログが
+読みやすい。
 
-TODO: そもそも、なるべく並列化したくない。
+### Q4: pico2 テストは `.PHONY`
 
-### Q4: hardware テスト (pico2) のタイムスタンプ戦略
+実機を触るので時刻比較でスキップ判定はしない。`test-pico2` は
+`.PHONY` で、手動呼び出し時に `build/kernel/pico2_kernel.uf2` を
+依存として持たせる。
 
-`test-pico2` は実機を触るのでスキップ判定が難しい。今回は
-デフォルトで `.PHONY`、手動呼び出し時だけ kernel.uf2 を依存と
-する扱いでよさそう
+### Q5: disk.img の task 依存
 
-TODO: それでいい。
-
-### Q5: mtfs image と task 依存
-
-`disk.img` は mtfs_mkfs の結果なので task binary 変化のたびに作り
-直す。phase7 の test input (.tc を /hw.tc として入れる) も
-dependency に入る。prelude_tc の header 値 (32 KB / 8 KB baked in)
-も変えたら disk.img を再生成
-
-TODO: それでいい。
+`build/kernel/disk.img` は全 task .bin + phase7 test input
+(`tests/phase7_hello*.tc` + `/hw.tc`) + prelude.s のどれかが変われば
+再生成。prelude の K3 header 値 (32 KB / 8 KB) も dependency に
+含める (実装は stamp ファイルを嚙ませる)。
 
 ### Q6: 既存 update_golden.sh の扱い
 
 `make update-golden` は `tests/update_golden.sh` を呼ぶだけ。
-Gen1 ツール依存なので Phase A/B/C の影響は薄いが、golden の
-更新判定は自動化しない (開発者が意図的に走らせるやつ)
-
-## 追加
-
-TODO: Makefileは、gen1用、gen2用、gen3用、kernel用、task用(各タスクに1つ)を用意し、
-TODO: 必要に応じてライブラリを作りincludeするといいと思う。
-
-```kernel/Makefile
-task: ... ../build/kernel/root/bin/hello ...
-
-../build/kernel/root/bin/hello:
-  make -C ./task/hello
-  cp ./task/hello/hello.bin ../build/kernel/bin/
-```
-
-```kernel/task/hello/Makefile
-BASENAME=hello
-ARENA_SIZE=32768
-STACK_SIZE=8192
-include ../tasks.mk
-```
+Gen1 ツール依存なので Phase A-E の影響は薄いが、golden の
+更新判定は自動化しない (開発者が意図的に走らせるやつ)。
 
 ## 進め方
 
-1. この文書にレビューをもらう
+1. この文書にレビューをもらう ✔ (2026-04-16)
 2. Phase A を実装 + `make test` で計測 (before/after 比較)
-3. Phase A が安定したら B/C/D を段階的に
+3. Phase A が安定したら B/C/D/E を段階的に
 4. 各フェーズ完了時点で CLAUDE.md + roadmap.md を更新
