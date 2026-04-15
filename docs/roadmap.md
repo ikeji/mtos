@@ -118,13 +118,30 @@ C言語でフルパイプラインを実装し、動作を検証する。
       SourceReader (4 KB 内部バッファ) でストリーミング化。520 KB
       ピーク削減
 - [ ] PSRAM 初期化 (QMI CS1, 0x11000000〜) を crt0 に追加
-- [ ] コンパイルパイプライン全体を 100 KB 級に縮める (計画は
-      `docs/task/pipeline_100kb.md`)。ピーク内訳は parse 14 KB /
+- [x] **コンパイルパイプライン全体を 100 KB 級に縮める** (計画:
+      `docs/task/pipeline_100kb.md`)。元々のピークは parse 14 KB /
       typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB。
-      T1 動的配列 → codegen → bc2asm per-function → typecheck 分割
-      (sigscan+tcheck) → asm stream 2 パスの順に attack する。
-      目標は各ステージ単体 80 KB 以下
-- [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)
+      Phase 1 (typecheck 分割 → sigscan + tcheck)、Phase 2 (asm 分割
+      → asm-pass1 + asm-pass2)、Phase 3 (codegen / bc2asm in-place
+      shrinks) をすべて完了:
+      - sigscan ≈ 10 KB、tcheck ≈ 75〜251 KB (~9x)
+      - codegen ≈ 80〜252 KB (~2x)
+      - bc2asm ≈ 120〜126 KB (~11x)
+      - asm-pass1 ≈ 430 KB (~22x)、asm-pass2 ≈ 4.6 MB (g_code 4 MB
+        が支配的、stream-emit 化で 500 KB まで下がる見込み、future)
+      `tests/test_split.sh` (58 fixture) で byte-identical を、
+      `tests/test_phase7.sh` stage 4 で OS 上の Hello World full
+      split pipeline を回帰確認。残件は (1) compile-gen2.sh 等を
+      新 path に migrate して旧 typecheck.tc/asm.tc 削除、
+      (2) asm-pass2 の stream-emit 化、(3) bcrun.tc::vm_run の
+      outlier (intentionally out of scope)
+- [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)。
+      asm-pass1 430 KB はもう Pico 2 (520 KB SRAM) に収まるが、
+      asm-pass2 の 4.6 MB が未解決。stream-emit 化が先
+- [ ] Gen2 toolchain migration: compile-gen2.sh / compile-gen3.sh /
+      tests/test_common.sh / tests/test_gen3.sh / tests/test_asm.sh
+      を sigscan + tcheck + asm-pass1 + asm-pass2 に切り替え、
+      compiler/typecheck.tc と compiler/asm.tc を削除
 
 ## フェーズ3: カーネル基盤（QEMU virt + Pico 2 実機で検証）
 
@@ -241,9 +258,10 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 
 詳細な実装計画と前提機能 (A〜F / M1〜M7) は
 `docs/task/phase7_compiler_on_os.md`、実測ピークメモリと残課題は
-`docs/problem.md` #7 / K3 / K5 / K6 / K7 を参照。
-**M1〜M6 まで qemu virt 上で完走**、OS 上で Hello World を自己
-コンパイル + 自己実行できるところまで到達している。
+`docs/problem.md` K3 / K5 / K6 / K7 を参照。
+**M1〜M6 + パイプライン 100 KB 計画 (Phase 1 + 2 + 3) まで完了**、
+qemu virt 上の 4 stage test_phase7.sh で、旧パス・typecheck split・
+asm split・full split すべての pipeline で Hello World が動く。
 
 - [x] **B**: argc/argv を kernel 側で StringArray として構築し
       crt0 経由で main に渡す。`fn main(argv: StringArray)` と
@@ -271,11 +289,17 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
       を asm に通して raw binary を生成、`/tmp/hw` に書き出して
       sh の絶対パス対応で実行。Hello World が OS 上で自己コンパイル
       + 自己実行できることを確認 (`tests/test_phase7.sh` の stage 2)
+- [x] **パイプライン 100 KB 計画 (Phase 1 + 2 + 3)**: sigscan /
+      tcheck / asm-pass1 / asm-pass2 を新設、codegen / bc2asm を
+      in-place で shrink。test_phase7.sh の stage 3 が sigscan +
+      tcheck pipeline、stage 4 が sigscan + tcheck + asm-pass1 +
+      asm-pass2 の full split pipeline で Hello World 完走。詳細は
+      `docs/task/pipeline_100kb.md`
 - [ ] **C-2 (任意)**: `pipe()` + dup2 による真のパイプサポート
       (中間ファイル経由で動いたあと、性能が問題になったら)
 - [ ] **M7**: OS 上で Gen2 コンパイラ自身を再コンパイルして
-      Gen3 に相当する一周をやる。asm.tc のメモリ問題 (#7) は
-      qemu virt なら flat 16 MB で収まる (実測 9.5 MB)。時間は
+      Gen3 に相当する一周をやる。現状の per-stage peak は全部
+      16 MB task 枠に収まる (asm-pass2 が最大で 4.6 MB)。時間は
       多めに要る見込み
 
 ## フェーズ8: 自己ホスト
@@ -292,7 +316,7 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 |---|---|
 | インタプリタとコンパイラの挙動が一致しない | `tests/test_consistency.sh` / `tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
 | LL(1)で表現できない構文が欲しくなる | 文法制約を文書化し、設計段階で確認 |
-| メモリ不足（520KB SRAM） | `runtime.tc` は kmalloc/kfree に移行、`typecheck.tc` は `compiler/ast_node.tc` で AST ノードプールを struct AstNode + AstNodeArray 化して on-demand 確保に (512 KB pre-alloc 撤廃)、`bc2asm.tc` は SourceReader ストリーミングに移行して 524 KB src 削減済み。phase 7 で実測したピークは parse ≈14 KB / typecheck ≈717 KB / codegen ≈303 KB / bc2asm ≈1.4 MB / **asm ≈9.5 MB** — asm 以外は全部 1.5 MB 以下で、Pico 2 セルフホストの最後の壁は asm だけ。assembler と linker の分離もしくは MAX_CODE / g_lines の削減が必要 (problem.md #7) |
+| メモリ不足（520KB SRAM） | **Phase 1 + 2 + 3 完了**: sigscan/tcheck/asm-pass1/asm-pass2 の 4 本を新設 + codegen/bc2asm の in-place shrink で全ステージを劇的に縮小。旧 (parse 14 KB / typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB) → 新 (parse 14 KB / sigscan 10 KB / tcheck ≈ 75-251 KB / codegen ≈ 80-252 KB / bc2asm ≈ 126 KB / asm-pass1 ≈ 430 KB / asm-pass2 ≈ 4.6 MB)。最後の壁は asm-pass2 の g_code 4 MB で、stream-emit 化すれば ~500 KB 見込み (future)。詳細は `docs/task/pipeline_100kb.md` |
 | gp 相対 `la` の 12-bit 制約 | hello レベルでは余裕。将来必要なら 12 byte 形式 (`lui+addi+add gp`) に拡張 |
 | QEMUと実機の挙動差異 | bring-up 時に standalone hello を実機検証、以降はカーネル込みの kernel/platform_pico2.s に集約。test_pico2.sh が Debug Probe 経由で継続検証 |
 | Flash書き込みが遅い・壊れやすい | picotool UF2 経由の書き込みのみ使用。書き換え頻度は開発サイクルで問題ないレベル |

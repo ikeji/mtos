@@ -67,55 +67,50 @@ extract_sigs.tc と bootstrap 各種の AST 読み取りを同期する大規模
 
 ## asm.tc (アセンブラ兼リンカ)
 
-### 7. asm.tc が assembler + linker 一体でメモリ消費が巨大 (limitation, 長期)
+### 7. asm-pass2 の g_code 4 MB 残件 (limitation, future)
 
-現状の `compiler/asm.tc` は 1 プロセスで .s の tokenize →
-シンボル解決 → ELF 出力まで全部こなし、起動時に静的に約 **9 MB** の
-バッファを確保している:
+**元の「asm.tc 9 MB」問題は Phase 1+2+3 で実質解決**。compiler/asm.tc
+は `asm_common.tc + asm_pass1.tc + asm_pass2.tc` に分割され、旧 asm は
+compile-gen2.sh 互換のためだけに残っている (deprecation header 付き、
+tests/test_split.sh で byte-identical を確認済)。
 
-| バッファ | サイズ |
-|---|---|
-| `g_code` (出力) | 4 MB |
-| `g_lines` (入力ソース保存、2 パス目で参照) | 4 MB |
-| `g_line_offs` / `g_line_lens` (各 128K × 4B) | 1 MB |
-| `g_lab_names` / `g_lab_*` 4 本 | ~500 KB |
-| その他 | ~150 KB |
-| **合計** | **~9 MB** |
+phase 7 OS 上の実測ピーク (`km_dump_peak` 基準、Hello World パイプ
+ライン):
 
-ホストで走らせる分には問題ないが、**Pico 2 (256 KB RAM) のセルフ
-ホストは全く不可能**。フェーズ 2.5 (Pico 2 セルフホスト) /
-フェーズ 7 (OS 上コンパイラ) の前提として解決したい。
+| タスク    | before | after |
+|---|---:|---:|
+| parse         | 14 KB      | 14 KB |
+| sigscan (新)  | —          | **~10 KB** |
+| tcheck  (新)  | —          | **75〜251 KB** |
+| codegen       | 303 KB     | **80〜252 KB** |
+| bc2asm        | 1.4 MB     | **120〜126 KB** |
+| asm-pass1 (新)| —          | **~430 KB** |
+| asm-pass2 (新)| —          | **~4.6 MB** (← 残件) |
+| (legacy asm)  | 9.5 MB     | — (未使用化) |
 
-phase 7 M6 (OS 上コンパイラ) での実測ピーク (`km_dump_peak` による):
+**残る大きな塊**: asm-pass2 が依然 `g_code: U8Array(4194300)` (4 MB)
+を持っている。stream-emit 化すれば ~500 KB まで落ちる見込み。必要なもの:
 
-| タスク    | ピーク       | 注釈 |
-|---|---:|---|
-| parse     | ≈ 14 KB     | SourceReader + tok_buf + sb |
-| typecheck | ≈ 717 KB    | AST ノードプール |
-| codegen   | ≈ 303 KB    | |
-| bc2asm    | ≈ 1.4 MB    | SourceReader streaming + emit |
-| **asm**   | **≈ 9.5 MB** | **g_code + g_lines + label tables** |
+1. asm-pass1 が ELF filesz / memsz (= 各 sec サイズの総和) を .lab に
+   書き込む。現状の .lab はこれを持っていないので、pass2 が g_code_end
+   を知るために emit 後まで待つ必要がある
+2. asm-pass2 は起動時に ELF ヘッダを upfront で出力 (filesz / memsz は
+   .lab から既知)、その後 `emit8`/`emit32` を g_code バッファでなく
+   直接 sys_write(1, ...) に置き換える
+3. raw mode (`; raw`) の場合はヘッダ無しでそのまま stream
 
-asm だけが他の 5-6 倍。他のステージは全部 1.5 MB 以下で、**Pico 2 の
-520 KB では asm だけが最後の壁**。これを 256 KB 以下に削減できれば、
-Pico 2 セルフホストはもう一歩で届くはず。
+Pico 2 セルフホスト (K7) の前提。stream-emit と併せて bcrun.tc の
+vm_run outlier を回避できれば 250 KB 以下に収まる見通し。
 
-対処 (段階的):
-- **短期 (実装済)**: trap_common.s の ecall handler プロローグ /
-  エピローグをヘルパラベル (`_ecall_enter` / `_ecall_leave_advance`)
-  に括り出し、`.macro` なしでも単一ソース化できることを確認。
-  asm.tc には触れていない。→ fixed list 参照。
-- **本計画**: asm 単体ではなく pipeline 全体 (typecheck / codegen /
-  bc2asm / asm) を 100 KB 級に落とす計画を `docs/task/pipeline_100kb.md`
-  にまとめた。asm は stream 2 パス + argv ファイル入力 + 動的 label
-  テーブルで 9.5 MB → 80 KB、bc2asm は per-function emission で
-  1.4 MB → 40 KB、typecheck は sigscan/tcheck 分割で 717 KB → 80 KB が
-  目標。実装順序は T1 動的配列 → codegen → bc2asm → typecheck 分割 →
-  asm stream。
-- **長期**: `.o` ファイル形式を決めて assembler と linker を別プロセス
-  に分離する。アセンブラは single-file 入力で `.o` 出力、リンカは
-  複数 `.o` を読んでシンボル解決 + ELF 出力。本計画の stream 2 パスが
-  動いてから移行する。
+元の問題 (「asm.tc 9 MB」) の対処履歴:
+- Phase 1 (#49〜#54、#62〜#64): typecheck を sigscan + tcheck に分割。
+  per-top-level AST streaming + per-fn kmalloc fntab で 717 KB → 75 KB 台
+- Phase 2 (#55〜#58): asm を 3 ファイルに分割。`.lab` 中間ファイルで
+  pass1 / pass2 を別プロセス化。g_lines 4 MB 廃止
+- Phase 3 (#59、#60): codegen と bc2asm を in-place shrink。bc2asm は
+  per-function emission で 1.4 MB → 126 KB
+
+計画詳細: `docs/task/pipeline_100kb.md`、.lab 仕様: `docs/lab_format.md`。
 
 ### 8. asm.tc がセクション境界を 16 バイト単位までしかアラインしない (wontfix)
 
@@ -363,9 +358,33 @@ peek/poke の call オーバーヘッドがボトルネックの一因。
   計測、`task_crt0.s` の `fn main()` / `fn main(argv)` 両対応フォールバック
   スタブ、`kernel/build.sh` の `/prelude.s` 事前連結など。tests/
   test_phase7.sh に 2 ステージのテストあり (`make test` 非同梱)。主要な
-  残件は #7 (asm.tc メモリ分離)、K3 (per-task サイズ宣言)、K5 (cat 5
-  ファイル後の spawn failure)、K6 (デバッグトレース常時 ON)、K7 (pico2
-  対応)
+  残件は K3 (per-task サイズ宣言)、K5 (cat 5 ファイル後の spawn
+  failure)、K6 (デバッグトレース常時 ON)、K7 (pico2 対応)
+
+- **パイプライン 100 KB 計画 Phase 1 + 2 + 3 完了 (2026-04-15)**: 計画
+  `docs/task/pipeline_100kb.md`、commit log は #49〜#64。元の 717 KB /
+  303 KB / 1.4 MB / 9.5 MB の各ステージを劇的に縮小:
+  - Phase 1: `compiler/sigscan.tc` + `compiler/tcheck.tc` を新設。
+    拡張 .th (`(imports)(self)(program)` wrapper) で typecheck を
+    per-function streaming 化。tcheck は per-fn strtab rollback +
+    per-fn kmalloc fntab で 717 KB → **75〜251 KB** (~9x)
+  - Phase 2: `compiler/asm_common.tc` + `compiler/asm_pass1.tc` +
+    `compiler/asm_pass2.tc` を新設。`.lab` 中間ファイル (`docs/
+    lab_format.md`) で 2 プロセス分離、g_lines 4 MB を廃止。
+    asm-pass1 **~430 KB** (~22x)、asm-pass2 **~4.6 MB** (g_code 残
+    件は問題 #7 に移動)
+  - Phase 3: codegen は strtab perm/ephemeral 2 cursor 化で
+    303 KB → **80〜252 KB**。bc2asm は per-function emission で
+    1.4 MB → **120〜126 KB** (~11x)
+  - Cleanup (#61): `compiler/extract_sigs.tc` 削除 (unused)、
+    `typecheck.tc` / `asm.tc` に deprecation header。完全削除 (compile-
+    gen2.sh の migration 必要) は future
+  - tests/test_split.sh: 58 fixture で byte-identical 検証 (47
+    typecheck split + 11 asm split)
+  - tests/test_phase7.sh: stage 3 (sigscan+tcheck) と stage 4
+    (sigscan+tcheck+asm-pass1+pass2) を追加、OS 上 Hello World 完走
+  - #21 (StringLiteral emission bug) 関連のコード (`g_unit_name`
+    bufferへの切替) は Phase 3 で整理
 
 - **bc2asm の `__tc_strobj<N>` ラベルが複数 .tc 間で衝突していた (#21)**:
   bc2asm は文字列リテラルを per-file 0 採番の `__tc_strobj<N>` で

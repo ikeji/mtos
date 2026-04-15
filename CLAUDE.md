@@ -9,48 +9,82 @@
 
 # 現在のフェーズ
 
-`docs/roadmap.md` 参照。**フェーズ 7 M1〜M6 まで到達**: OS 上で
-Hello World を自己コンパイル + 自己実行できる状態。以下が完了済:
+`docs/roadmap.md` 参照。**フェーズ 7 M1〜M6 + Phase 1/2/3 パイプライン
+メモリ削減まで到達**: OS 上で Hello World を自己コンパイル + 自己実行
+できる状態。以下が完了済:
 
 - フェーズ 7 B: argc/argv (kernel 側で StringArray 構築 → crt0)
 - フェーズ 7 A: tmpfs (/tmp, kmalloc backed, grow-on-write)
 - フェーズ 7 D+F: sh の `<` / `>` リダイレクト + per-task stdin/stdout
   fd (fd=2 stderr は常に UART)
 - フェーズ 7 E-step1: タスク一律 16 MB / 64 KB、kernel arena 96 MB
-- フェーズ 7 E-step2: per-task ピークメモリ計測 (`km_dump_peak`)。
-  実測値は parse ≈14 KB / typecheck ≈717 KB / codegen ≈303 KB /
-  bc2asm ≈1.4 MB / **asm ≈9.5 MB** (problem.md #7 に記録)
+- フェーズ 7 E-step2: per-task ピークメモリ計測 (`km_dump_peak`)
 - フェーズ 7 C-1: parse / typecheck / codegen / bc2asm / asm を
   `EXTRA_TASKS` 経由でタスク化、sh から中間ファイル経由で実行
 - フェーズ 7 M6: `parse → typecheck → codegen → bc2asm → cat +
   /prelude.s → asm` で 6 段パイプラインを回し、`/tmp/hw` に出力
   した raw binary を sh の絶対パス対応で実行して "Hello, World!"
+- **パイプライン 100 KB 計画 (Phase 1 + 2 + 3)** — 計画は
+  `docs/task/pipeline_100kb.md`、commit ログは #49〜#64:
+  - **Phase 1 (typecheck split)**: `compiler/sigscan.tc` +
+    `compiler/tcheck.tc` を新設。拡張 .th フォーマット (`(imports)
+    (self) (program)` ラッパー) で関数本体を per-function stream
+    check。tcheck 内部は per-fn strtab rollback + per-fn kmalloc
+    fntab。**tcheck ≈ 75〜251 KB** (旧 typecheck 717 KB 比 ~9x)、
+    **sigscan ≈ 10 KB** (#49〜#52, #54, #62〜#64)
+  - **Phase 2 (asm split)**: `compiler/asm_common.tc` +
+    `compiler/asm_pass1.tc` + `compiler/asm_pass2.tc` を新設。
+    `.lab` 中間ファイル (仕様: `docs/lab_format.md`) で pass1 が
+    label を集めて pass2 が encoder。pass1/pass2 とも g_lines 4 MB
+    を廃止して SourceReader で stream 読み。**asm-pass1 ≈ 430 KB**
+    (旧 9.5 MB 比 22x)、**asm-pass2 ≈ 4.6 MB** (g_code 4 MB が
+    支配的、stream-emit 化は future) (#55〜#58)
+  - **Phase 3 (in-place shrinks)**:
+    - codegen: strtab を perm/ephemeral 2 cursor 化 (per-top-level
+      rollback) + buffer 縮小。303 KB → **80〜252 KB** (#59)
+    - bc2asm: per-function emission (instrs 1 MB 廃止) + global
+      table 廃止 + per-fn strtab rollback。1.4 MB → **120〜126 KB**
+      (~11x 削減) (#60)
+- **`test_split.sh` (手動実行)**: 58 fixture の diff harness。47 件が
+  typecheck split (sigscan+tcheck vs 旧 typecheck.tc)、11 件が asm
+  split (asm-pass1+pass2 vs 旧 asm.tc)。.tast/.bin byte-identical を
+  検証 (#52, #57)
+- **`test_phase7.sh` (手動実行)**: **4 stage PASS**。stage 3 が
+  sigscan+tcheck pipeline、stage 4 が sigscan+tcheck+asm-pass1+pass2
+  の full split pipeline で Hello World 完走
+- #61 partial cleanup: `compiler/extract_sigs.tc` 削除、`typecheck.tc`
+  / `asm.tc` に deprecation header。完全削除 (compile-gen2.sh /
+  test_common.sh 等の migration 必要) は future work
 - 以前から継続: u32 比較/除算/hex literal, K1 (task 画像 leak),
   asm.tc エラーの行番号付与, R1-R8 refactor, compile-gen\*.sh の
-  `2>/dev/null` 撲滅, runtime.s / libtc.s の事前キャッシュ化
-- `make test`: 132 passed / ~55s (54〜57s の範囲で変動)
-- `tests/test_phase7.sh` (手動実行): 2 stage PASS
+  `2>/dev/null` 撲滅, runtime.s / libtc.s の事前キャッシュ化,
+  #21 StringLiteral emission bug (bc2asm ラベル衝突)
+- `make test`: 132 passed / ~55s (54〜58s の範囲で変動)
 
 **次の候補** (どれも独立):
 
-- フェーズ 7 M7: Gen2 → Gen3 に相当する一周 (OS 上でコンパイラ自身を
-  再コンパイル)。時間がかかる見込み
-- フェーズ 7 仕上げ: K6 debug trace のクリーンアップ、K7 pico2 対応
-  (要 K3: per-task サイズ宣言ヘッダ)
-- フェーズ 2.5 残り: コンパイルパイプライン全体を 100 KB 級に縮めて
-  Pico 2 セルフホスト (計画: `docs/task/pipeline_100kb.md`)。asm 単体
-  ではなく typecheck / codegen / bc2asm / asm の 4 ステージを同時に
-  attack する必要がある。T1 動的配列 → codegen → bc2asm → typecheck
-  分割 → asm stream の順で進める
-- フェーズ 8: OS 全体を独自言語で書く
-
-なお以前記録していた #21 (StringLiteral emission bug) は bc2asm の
-`__tc_strobj<N>` ラベル衝突が原因で、`__<first_fn>_strobj<N>` に
-discriminate して修正済み。
+- **Gen2 toolchain migration**: compile-gen2.sh / compile-gen3.sh /
+  tests/test_common.sh / test_gen3.sh / test_asm.sh を新パイプライン
+  (sigscan+tcheck + asm-pass1+pass2) に移行。完了後 `compiler/
+  typecheck.tc` と `compiler/asm.tc` を削除 (#61 の後半)
+- **asm-pass2 stream-emit 化**: g_code 4 MB を廃止。ELF header の
+  filesz を pass1 が .lab に書く → pass2 はヘッダ upfront 出力 +
+  code stream emit。4.6 MB → ~500 KB 見込み
+- **フェーズ 7 M7**: OS 上で Gen2 → Gen3 相当の一周 (コンパイラ自身を
+  OS 上で再コンパイル)。時間はかかるが現状の memory peak で成立する
+  はず
+- **フェーズ 7 仕上げ**: K6 debug trace のクリーンアップ、K7 pico2
+  対応 (要 K3: per-task サイズ宣言ヘッダ)
+- **bcrun.tc::vm_run AST pool outlier**: tcheck/codegen/bc2asm
+  すべての peak を跳ね上げる原因が vm_run 1 関数の巨大 AST (2581
+  node)。source 分解は intentionally out of scope (ユーザ指示)。
+  現状 252 KB peak は phase 7 OS の 16 MB task 枠に収まる
+- **フェーズ 8**: OS 全体を独自言語で書く
 
 問題詳細は `docs/problem.md` (#7 / K3 / K5 / K6 / K7)、
 phase 7 実装記録は `docs/task/phase7_compiler_on_os.md`、
-pipeline メモリ削減計画は `docs/task/pipeline_100kb.md`。
+pipeline メモリ削減計画は `docs/task/pipeline_100kb.md`、
+.lab 中間フォーマットは `docs/lab_format.md`。
 
 ---
 
@@ -71,18 +105,39 @@ bootstrap/  C実装のコンパイラ（ブートストラップ用、Gen1）
   bc2asm.c           バイトコード→RISC-V asm 変換
 compiler/   自作TinyC製の自己ホスト型コンパイラ（Gen2/Gen3）
   parse.tc           レキサー＋パーサー（ソース → AST .ast）
-  typecheck.tc       型チェック＋オーバーロード解決（AST → 型付きAST .tast）
-  codegen.tc         コード生成（型付きAST → バイトコード .bc、ストリーミング処理）
-  bc2asm.tc          バイトコード → RISC-V asm .s 変換（SourceReader ストリーミング）
+  typecheck.tc       型チェック＋オーバーロード解決 (AST → 型付きAST .tast)。
+                     **レガシー**: compile-gen2.sh が現時点では依然これを
+                     使うが、sigscan + tcheck (下記) に置き換え済。ヘッダの
+                     deprecation note 参照
+  sigscan.tc         拡張 .th 抽出器 (Phase 1)。AST を stream 読みして
+                     top-level 全部を .th に吐く。typecheck.tc の前段
+  tcheck.tc          Streaming type checker (Phase 1)。stdin に
+                     `(imports) (self) (program)` ラッパーを受けて per-
+                     function check + .tast emit。typecheck.tc の byte
+                     identical 代替
+  codegen.tc         コード生成（型付きAST → バイトコード .bc、per-top-level
+                     strtab rollback 済）
+  bc2asm.tc          バイトコード → RISC-V asm .s 変換 (per-function
+                     emission 済。`--unit` 無しで動き、string literal
+                     label は first fn name を使う)
   ast_node.tc        AST ノードプール共有モジュール (struct AstNode +
                      AstNodeArray + n_* wrappers、codegen/typecheck/
-                     extract_sigs が import)
-  extract_sigs.tc    .th ヘッダ抽出ツール（TC版）
+                     sigscan/tcheck が import)
   string_buffer.tc   伸長バッファライブラリ（emit_string/emit_nl/emit_int 等）
   source_reader.tc   ストリーミング入力リーダー（4KBバッファ）
   strlib.tc          共通ユーティリティ（is_digit, is_alpha, streq, cmp 等）
   bcrun.tc           バイトコードインタープリタ（TC版）
-  asm.tc             RISC-Vアセンブラ（.s → ELF32、GCC不要、compile-gen2/3.sh で使用）
+  asm.tc             RISC-V アセンブラ + リンカ (レガシー、compile-gen2.sh
+                     が現時点では依然これを使う)。ヘッダ deprecation 参照
+  asm_common.tc      asm-pass1 / asm-pass2 の共通 encoder/parser core
+                     (Phase 2)。process_line / enc_r/i/s/b/u/j /
+                     operand parser / label table / section state 全部
+                     ここに。asm-pass1/2 が import
+  asm_pass1.tc       Label collector (Phase 2)。`.s` を 1 度読んで
+                     `.lab` (docs/lab_format.md) を吐く
+  asm_pass2.tc       Encoder (Phase 2)。stdin に `(lab ...)` + `.s` の
+                     連結を受けて ELF を emit。asm.tc の byte-identical
+                     代替
   runtime.tc         TinyC製ランタイム（kmalloc/kfree 等、compile-gen2/3.sh で使用）
   crt0_tc.s          asm.tcリンク用 Linux crt0（_start, syscall stub, peek/poke）
   crt0_tc_data.s     asm.tcリンク用プールメタデータ (`.data` + `.bss` + __arena)
@@ -99,8 +154,19 @@ tests/      テストスイート
   test_import.sh     複数ファイル import/export のテスト
   test_asm.sh        hello2.tc を virt crt0 でビルドして qemu-system-riscv32 で実行
   test_os.sh         kernel + tmpfs + argv + redirect の virt 上 end-to-end
-  test_phase7.sh     phase 7 M4/M6 (compile → link → run on OS)
+  test_phase7.sh     phase 7 self-hosted pipeline (compile → link → run
+                     on OS)。4 stage 全部: (1) parse→…→bc2asm の write
+                     marker 検証、(2) 旧 typecheck + 旧 asm で Hello
+                     World、(3) sigscan + tcheck pipeline で Hello
+                     World、(4) sigscan + tcheck + asm-pass1 + asm-pass2
+                     full split pipeline で Hello World。
                      `make test` 非同梱、手動実行のみ
+  test_split.sh      Phase 1 + 2 split の host 側 diff harness。47 件の
+                     typecheck split (sigscan+tcheck vs 旧 typecheck.tc
+                     の .tast diff) + 11 件の asm split (asm-pass1+pass2
+                     vs 旧 asm.tc の .bin cmp) を走らせて byte-identical
+                     を検証。`GEN2_DIR=/tmp/gen2 tests/test_split.sh`、
+                     `make test` 非同梱
   phase7_hello.tc    parse 入力: `fn main() -> i32 { return 42; }`
   phase7_min.tc      parse 段階的縮小用の最小入力
   phase7_hello_world.tc Hello World ソース (M6 のゴール)
@@ -171,7 +237,12 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       追加可能。Step 0 で runtime.s / libtc.s を事前
                       コンパイル + `/prelude.s` (= `; raw` + task_crt0.s
                       + runtime.s) と `/prelude_tail.s` (= task_data.s)
-                      を mtfs に staging
+                      を mtfs に staging。Phase 1 の typecheck split
+                      用に `/empty_imports.txt` (= `(imports)\n`)、
+                      `/self_open.txt` (= `(self\n`)、`/wrap_close.txt`
+                      (= `)\n`) も staging — sh 側で cat して
+                      tcheck の wrap 入力を組み立てる。`KEEP_TMP=1` で
+                      中間 tmp dir を残せる
   bin2s.sh            raw バイナリ → .s データ変換 (PREFIX_addr 関数生成)
   run_pico2.sh        Pico 2 実機書き込み + UART キャプチャ (openocd 経由)
   tasks/              ゲストタスク (両プラットフォーム共通)
@@ -196,16 +267,24 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
     echo/echo.tc      argv[1..] を space 区切り + \n で stdout に出す
     cat/cat.tc        argv[1..] のファイルを順に stdout に流す (phase 7
                       M6 の prelude 連結用)
-    parse/parse.tc → compiler/parse.tc (symlink)
-    typecheck/typecheck.tc → compiler/typecheck.tc (symlink)
-    codegen/codegen.tc → compiler/codegen.tc (symlink)
-    bc2asm/bc2asm.tc → compiler/bc2asm.tc (symlink)
-    asm/asm.tc → compiler/asm.tc (symlink)
-                      上 5 つは `EXTRA_TASKS="parse ..."` を渡したときだけ
-                      ビルドされ /bin/<name> として mtfs に入る。
-                      compile-gen2.sh が TC_FILE の symlink を readlink
-                      で解決するので import (string_buffer.tc 等) が
-                      正しく compiler/ 配下から引ける
+    parse/parse.tc       → compiler/parse.tc (symlink)
+    typecheck/typecheck.tc → compiler/typecheck.tc (symlink、レガシー)
+    sigscan/sigscan.tc   → compiler/sigscan.tc (symlink、Phase 1)
+    tcheck/tcheck.tc     → compiler/tcheck.tc (symlink、Phase 1)
+    codegen/codegen.tc   → compiler/codegen.tc (symlink)
+    bc2asm/bc2asm.tc     → compiler/bc2asm.tc (symlink)
+    asm/asm.tc           → compiler/asm.tc (symlink、レガシー)
+    asm_pass1/asm_pass1.tc → compiler/asm_pass1.tc (symlink、Phase 2)
+    asm_pass2/asm_pass2.tc → compiler/asm_pass2.tc (symlink、Phase 2)
+                      上は `EXTRA_TASKS="parse sigscan typecheck tcheck
+                      codegen bc2asm asm asm_pass1 asm_pass2 cat"` を
+                      渡したときだけビルドされ `/bin/<name>` として
+                      mtfs に入る (test_phase7.sh が stage 2 の旧 asm
+                      path と stage 4 の新 split path を両方検証するため
+                      両方入れてある)。compile-gen2.sh が TC_FILE の
+                      symlink を readlink で解決するので import
+                      (string_buffer.tc 等) が正しく compiler/ 配下から
+                      引ける
 tools/      ホスト側ツール
   mkfs.py             MyTinyFS (mtfs) ディスクイメージ生成 (Python)
                       mkfs.py <output> <rootdir> でディレクトリを再帰的に
