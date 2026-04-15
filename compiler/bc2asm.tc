@@ -58,13 +58,26 @@ var g_ninstrs: i32 = 0;
 var g_nglobals: i32 = 0;
 var g_nstrings: i32 = 0;
 
+// Diagnostic peaks; updated at every .endfn (per-fn) and dumped to
+// stderr at exit alongside km_dump_peak. Helps size the fixed buffers
+// in main(). After #60 settles these numbers are stable across
+// compiler/*.tc inputs.
+var g_max_stab: i32 = 0;
+var g_max_instr: i32 = 0;
+var g_max_param: i32 = 0;
+var g_max_local: i32 = 0;
+
 // String literal labels include the first function's mangled name so
 // multiple .tc files linked into one asm.tc invocation don't collide on
 // the per-file-local literal index. asm.tc does last-wins label
 // resolution, so before this fix kernel.tc's __tc_strobj0 would silently
 // replace runtime.tc's __tc_strobj0 (see docs/problem.md #21).
-var g_strobj_ss: i32 = 0;
-var g_strobj_sl: i32 = 0;
+//
+// Stored in a dedicated 64-byte buffer (rather than a strtab pointer)
+// so the per-function emission refactor (#60) can roll the strtab
+// cursor back after each .endfn without losing this label-prefix.
+var g_unit_name: U8Array = 0 as U8Array;
+var g_unit_name_len: i32 = 0;
 
 // ===== Common emit helpers =====
 fn e4(ob: StringBuffer) -> void { emit_string(ob, "    "); return; }
@@ -131,11 +144,13 @@ fn asm_epilogue(ob: StringBuffer) -> void {
 }
 // "__<first_fn>_strobj<idx>" — discriminate literal labels per .tc file
 // so asm.tc's last-wins label resolution doesn't silently alias two
-// files' literals (problem.md #21). g_strobj_ss / _sl are set by main()
-// after parse_bc, once the first function's mangled name is known.
-fn e_strobj(strtab: U8Array, idx: i32, ob: StringBuffer) -> void {
+// files' literals (problem.md #21). g_unit_name is filled in on the
+// first .fn directive (parse_bc::handle_fn_directive); using a
+// dedicated buffer instead of a strtab slice lets the per-fn rollback
+// in #60 reclaim strtab without losing this prefix.
+fn e_strobj(idx: i32, ob: StringBuffer) -> void {
     emit_char(ob, '_'); emit_char(ob, '_');
-    emit_n(ob, strtab, g_strobj_ss, g_strobj_sl);
+    emit_n(ob, g_unit_name, 0, g_unit_name_len);
     emit_string(ob, "_strobj"); emit_int(ob, idx);
     return;
 }
@@ -414,11 +429,34 @@ fn parse_lnum_stream(stop: u8) -> i32 {
     return r;
 }
 
-// ===== Parse bytecode =====
+// ===== Parse + emit bytecode (#60: per-function streaming) =====
+//
+// Reads the .bc input one directive at a time. .string and .global
+// directives accumulate into string_lits / global_vars / global_inits
+// (small fixed tables); they are emitted in bulk after .endbc. .fn /
+// .endfn pairs are emitted **immediately** as they arrive, using the
+// single-slot fns / params_pool / locals_pool / instrs buffers — at
+// the .endfn boundary we call emit_fn(0, ob) and reset the per-fn
+// state so the next .fn can reuse the same kmalloc'd memory.
+//
+// The strtab cursor (g_stab_pos) follows the same per-fn rollback
+// pattern: on the first .fn we record strtab_save; after each
+// .endfn we restore g_stab_pos to that snapshot, freeing the bytes
+// the function used for its name / params / locals / call targets.
+// .string and .global content lives BELOW strtab_save and stays put.
+//
+// The first function's mangled name is also copied into g_unit_name
+// (a separate 64-byte buffer) the first time we hit .fn, so the
+// `__<unit>_strobj<N>` label prefix used by e_strobj survives the
+// rollback.
 fn parse_bc(strtab: U8Array,
             string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
             fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
-            instrs: I32Array, label_pcs: I32Array) -> void {
+            instrs: I32Array, label_pcs: I32Array, ob: StringBuffer) -> void {
+    // strtab_save is set on the FIRST .fn directive — everything
+    // before it (.string / .global) is permanent, everything after
+    // gets reclaimed at each .endfn.
+    var strtab_save: i32 = 0 - 1;
     var cur_fn: i32=-1; var done: i32=0;
     while done==0 && at_eof(g_reader) == false {
         skip_spaces();
@@ -445,6 +483,11 @@ fn parse_bc(strtab: U8Array,
                     set(string_lits,(idx*2+1),slit_sl);
                     if idx+1>g_nstrings { g_nstrings=idx+1; }
                     skip_line();
+                    // If we've already started fn-streaming, advance
+                    // strtab_save so the next .endfn rollback won't
+                    // clobber this literal — .strings can appear mid-
+                    // file, between .fn / .endfn blocks.
+                    if strtab_save >= 0 { strtab_save = g_stab_pos; }
                 }
                 if d0=='g'&&d1=='l' { // global
                     discard_tok(dir_ss);
@@ -457,9 +500,20 @@ fn parse_bc(strtab: U8Array,
                     set(global_vars,(gi*4+1),nm_sl);
                     set(global_inits,gi,iv);
                     g_nglobals=g_nglobals+1; skip_line();
+                    // Same protection as .string above: globals can be
+                    // interleaved with fns (real example:
+                    // ast_node.tc::g_nc lives after the AstNode getters).
+                    // Without this advance, the next .endfn rollback
+                    // would overwrite the global's name in strtab.
+                    if strtab_save >= 0 { strtab_save = g_stab_pos; }
                 }
                 if d0=='f'&&d1=='n' { // fn
                     discard_tok(dir_ss);
+                    // First .fn: snapshot the strtab cursor. Any
+                    // bytes added from here on (fn name, params,
+                    // locals, instruction operands) are reclaimable
+                    // once .endfn fires.
+                    if strtab_save < 0 { strtab_save = g_stab_pos; }
                     var nm_ss: i32=next_tok(strtab);
                     // Build mangled name: append __TYPE for each arg type (last token = rettype, skip it)
                     var prev_under: i32=g_stab_pos;
@@ -473,11 +527,25 @@ fn parse_bc(strtab: U8Array,
                     }
                     g_stab_pos=prev_under; // remove last __ + rettype token
                     var nm_sl: i32=g_stab_pos-nm_ss;
-                    cur_fn=g_nfuncs;
+                    // Single-slot fns: cur_fn is always 0. We reuse
+                    // the slot between functions; per-fn state is
+                    // valid from .fn through .endfn.
+                    cur_fn = 0;
                     set(fns, cur_fn, BcFunc(nm_ss, nm_sl,
                                             g_nparams, 0,
                                             g_nlocals, 0,
                                             g_ninstrs, 0));
+                    // Stash the first function's mangled name in
+                    // g_unit_name so e_strobj can use it after the
+                    // strtab rollback wipes the original bytes.
+                    if g_unit_name_len == 0 {
+                        var ui: i32 = 0;
+                        while ui < nm_sl && ui < 64 {
+                            set(g_unit_name, ui, get(strtab, (nm_ss + ui)));
+                            ui = ui + 1;
+                        }
+                        g_unit_name_len = ui;
+                    }
                     g_nfuncs=g_nfuncs+1; skip_line();
                 }
                 if d0=='p'&&d1=='a' { // param
@@ -512,6 +580,9 @@ fn parse_bc(strtab: U8Array,
                 if d0=='e'&&d3b!='b' { // endfn
                     discard_tok(dir_ss);
                     if cur_fn>=0 {
+                        // Resolve forward jumps inside this fn:
+                        // ival was set to a label number; rewrite it
+                        // to the resolved pc from label_pcs.
                         var ib: i32=instr_base(get(fns, cur_fn));
                         var ni: i32=ninstr(get(fns, cur_fn));
                         var ii: i32=0;
@@ -523,6 +594,21 @@ fn parse_bc(strtab: U8Array,
                             }
                             ii=ii+1;
                         }
+                        // Emit this function immediately and reset
+                        // per-fn state so the next .fn can reuse
+                        // strtab / params_pool / locals_pool / instrs
+                        // / label_pcs from offset 0.
+                        emit_fn(strtab, fns, params_pool, locals_pool,
+                                instrs, string_lits, cur_fn, ob);
+                        // Track peak per-fn usage before the reset.
+                        if g_stab_pos > g_max_stab { g_max_stab = g_stab_pos; }
+                        if g_ninstrs > g_max_instr { g_max_instr = g_ninstrs; }
+                        if g_nparams > g_max_param { g_max_param = g_nparams; }
+                        if g_nlocals > g_max_local { g_max_local = g_nlocals; }
+                        g_stab_pos = strtab_save;
+                        g_nparams = 0;
+                        g_nlocals = 0;
+                        g_ninstrs = 0;
                     }
                     cur_fn=-1; skip_line();
                 }
@@ -817,7 +903,7 @@ fn emit_fn(strtab: U8Array, fns: BcFuncArray, params_pool: I32Array, locals_pool
         if op==OP_PUSH_STR {
             // la t0, __<first_fn>_strobjN
             e_la(ob); eregt0(ob);
-            e_strobj(strtab, ival, ob); emit_nl(ob);
+            e_strobj(ival, ob); emit_nl(ob);
             asm_push_t0(ob);
         }
         if op==OP_LOAD {
@@ -1016,20 +1102,13 @@ fn emit_fn(strtab: U8Array, fns: BcFuncArray, params_pool: I32Array, locals_pool
 }
 
 // ===== Emit full program =====
-fn emit_program(strtab: U8Array, string_lits: I32Array,
-                global_vars: I32Array, global_inits: I32Array,
-                fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
-                instrs: I32Array, ob: StringBuffer) -> void {
-    // .text: functions first (asm.tc treats all sections as flat stream)
-    e4(ob);
-    emit_string(ob, ".text");emit_nl(ob);
-    e4(ob);emit_string(ob, ".align 2");emit_nl(ob);
-    emit_nl(ob);
-    var fi: i32=0;
-    while fi<g_nfuncs {
-        emit_fn(strtab,fns,params_pool,locals_pool,instrs,string_lits,fi,ob);
-        fi=fi+1;
-    }
+// Emit only the post-.text sections (.data globals + .rodata string
+// literals). The .text section is emitted **during** parse_bc as each
+// .fn / .endfn pair is parsed, so this function only handles what's
+// left after the per-function streaming loop finishes.
+fn emit_data_and_rodata(strtab: U8Array, string_lits: I32Array,
+                        global_vars: I32Array, global_inits: I32Array,
+                        ob: StringBuffer) -> void {
     // .data: globals (after .text for asm.tc compatibility)
     if g_nglobals > 0 {
         e4(ob);
@@ -1059,7 +1138,7 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
             var ss: i32=get(string_lits,(si*2+0));
             var sl: i32=get(string_lits,(si*2+1));
             e4(ob);emit_string(ob, ".align 4");emit_nl(ob);
-            e_strobj(strtab, si, ob); emit_char(ob, ':');emit_nl(ob);
+            e_strobj(si, ob); emit_char(ob, ':');emit_nl(ob);
             e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_nl(ob);
             e4(ob);emit_string(ob, ".string ");
             emit_strdata(strtab,ss,sl,ob); emit_nl(ob);
@@ -1070,40 +1149,116 @@ fn emit_program(strtab: U8Array, string_lits: I32Array,
     return;
 }
 
+fn km_dump_peak() -> void;
+
+// Push a decimal i32 into buf at pos and return the new position.
+// Used by the diagnostic peak dump in main().
+fn bc_dump_dec(buf: U8Array, pos: i32, v: i32) -> i32 {
+    if v < 0 {
+        set(buf, pos, '-' as u8);
+        return bc_dump_dec(buf, pos + 1, 0 - v);
+    }
+    if v == 0 { set(buf, pos, '0' as u8); return pos + 1; }
+    var digits: i32 = 0;
+    var tmp: i32 = v;
+    while tmp > 0 { digits = digits + 1; tmp = tmp / 10; }
+    var pow: i32 = 1;
+    var i: i32 = 1;
+    while i < digits { pow = pow * 10; i = i + 1; }
+    var p: i32 = pos;
+    while pow > 0 {
+        set(buf, p, (48 + (v / pow) % 10) as u8);
+        pow = pow / 10;
+        p = p + 1;
+    }
+    return p;
+}
+
 fn main() -> i32 {
-    var strtab:       U8Array  = U8Array(262144u32);
+    // Buffer sizes after the per-function streaming refactor (#60).
+    // Sized from the diagnostic counters dumped at exit ("[bc in=...
+    // sp=... pa=... lo=...]") across compiler/*.tc, with ~25%
+    // headroom:
+    //
+    //   strtab       max sp 12219 (bc2asm.tc)        → 16384  (16 KB)
+    //   string_lits  ≤ 256 literals × 2 i32          → 512    (2 KB)
+    //   global_vars  ≤ 256 globals × 4 i32           → 1024   (4 KB)
+    //   global_inits ≤ 256 i32                       → 256    (1 KB)
+    //   fns          single live BcFunc              → 1       slot
+    //   params_pool  21 max × 4 i32 (bcrun::vm_run)  → 128    (512 B)
+    //   locals_pool  bcrun::vm_run uses many         → 512    (2 KB)
+    //   instrs       bcrun::vm_run > 2048 ins        → 16384 (64 KB)
+    //   label_pcs    ≤ 256 labels per fn             → 1024   (4 KB)
+    //
+    // Total static ≈ 62 KB, down from the previous 1.4 MB peak
+    // (instrs alone was 1 MB). emit_fn fires from inside parse_bc on
+    // every .endfn, so the buffers above only need to hold one
+    // function at a time.
+    var strtab:       U8Array  = U8Array(16384u32);
     var ob:           StringBuffer = StringBuffer_new(1);
     var string_lits:  I32Array = I32Array(512u32);
     var global_vars:  I32Array = I32Array(1024u32);
     var global_inits: I32Array = I32Array(256u32);
-    // Pool of up to 256 BcFunc refs. Each is allocated lazily by
-    // parse_bc on first `.fn` directive.
-    var fns:          BcFuncArray = BcFuncArray(256u32);
-    var params_pool:  I32Array = I32Array(4096u32);
-    var locals_pool:  I32Array = I32Array(4096u32);
-    var instrs:       I32Array = I32Array(262144u32);
-    var label_pcs:    I32Array = I32Array(16384u32);
+    var fns:          BcFuncArray = BcFuncArray(1u32);
+    var params_pool:  I32Array = I32Array(128u32);
+    var locals_pool:  I32Array = I32Array(512u32);
+    var instrs:       I32Array = I32Array(16384u32);
+    var label_pcs:    I32Array = I32Array(1024u32);
+
+    g_unit_name = U8Array(64u32);
+    g_unit_name_len = 0;
 
     // Stream stdin through SourceReader (R7). Replaces the old 524 KB
     // up-front buffer + manual chunked read loop.
     g_reader = SourceReader_new(0);
 
+    // .text: emit the section header up front; parse_bc emits the
+    // body of each function as it reaches the corresponding .endfn.
+    e4(ob); emit_string(ob, ".text"); emit_nl(ob);
+    e4(ob); emit_string(ob, ".align 2"); emit_nl(ob);
+    emit_nl(ob);
+
     parse_bc(strtab,string_lits,global_vars,global_inits,
-             fns,params_pool,locals_pool,instrs,label_pcs);
+             fns,params_pool,locals_pool,instrs,label_pcs,ob);
 
     close(g_reader);
 
-    // Seed the strobj label discriminator from the first function's
-    // mangled name. A .tc with zero functions has zero literals, so
-    // leaving the globals at 0 in that case is harmless.
-    if g_nfuncs > 0 {
-        var f0: BcFunc = get(fns, 0);
-        g_strobj_ss = name_ss(f0);
-        g_strobj_sl = name_sl(f0);
-    }
-
-    emit_program(strtab,string_lits,global_vars,global_inits,
-                 fns,params_pool,locals_pool,instrs,ob);
+    // .data + .rodata at the end (asm.tc reorders so position is
+    // semantically irrelevant, but matching the legacy order keeps
+    // diffs clean for the test_split.sh harness).
+    emit_data_and_rodata(strtab, string_lits, global_vars, global_inits, ob);
     write(ob, 1);
+
+    // Per-fn peaks for diagnostics, written byte-at-a-time to stderr.
+    var dbuf: U8Array = U8Array(96u32);
+    var dp: i32 = 0;
+    set(dbuf, dp, '[' as u8); dp = dp + 1;
+    set(dbuf, dp, 'b' as u8); dp = dp + 1;
+    set(dbuf, dp, 'c' as u8); dp = dp + 1;
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'i' as u8); dp = dp + 1;
+    set(dbuf, dp, 'n' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = bc_dump_dec(dbuf, dp, g_max_instr);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 's' as u8); dp = dp + 1;
+    set(dbuf, dp, 'p' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = bc_dump_dec(dbuf, dp, g_max_stab);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'p' as u8); dp = dp + 1;
+    set(dbuf, dp, 'a' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = bc_dump_dec(dbuf, dp, g_max_param);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'l' as u8); dp = dp + 1;
+    set(dbuf, dp, 'o' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = bc_dump_dec(dbuf, dp, g_max_local);
+    set(dbuf, dp, ']' as u8); dp = dp + 1;
+    set(dbuf, dp, 10u8); dp = dp + 1;
+    sys_write(2, dbuf, dp);
+
+    km_dump_peak();
     return 0;
 }
