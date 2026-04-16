@@ -1,3 +1,3 @@
 EXTRA_GUEST_TASKS += asm_pass2
-TASK_ARENA_asm_pass2 := 524288
+TASK_ARENA_asm_pass2 := 327680
 TASK_STACK_asm_pass2 := 16384
