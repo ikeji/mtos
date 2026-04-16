@@ -168,6 +168,41 @@ build/kernel/pico2_kernel.uf2: $(KERNEL_BUILD_DEPS) | build/kernel
 virt-kernel:  build/kernel/virt_kernel.bin
 pico2-kernel: build/kernel/pico2_kernel.uf2
 
+# ===== make run — interactive virt boot =====
+#
+# `make run` builds the virt kernel and boots it under qemu-system-
+# riscv32 with a stdio serial console. Handy for trying sh commands
+# by hand (catfile / launcher / muxon + framed input / etc.). Exit
+# qemu with Ctrl-a x. Drop to the qemu monitor with Ctrl-a c.
+#
+# `make run-extra` is the same but with the full EXTRA_TASKS list
+# (compiler tools + muxon/muxoff + mx/mr) baked in, for phase 7
+# and UART-mux experiments.
+
+QEMU_SYSTEM := qemu-system-riscv32
+QEMU_ARGS   := -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
+               -machine virt,aclint=on -bios none \
+               -drive file=build/kernel/disk.img,format=raw,if=none,id=blk0 \
+               -device virtio-blk-device,drive=blk0 \
+               -device loader,file=build/kernel/virt_kernel.bin,addr=0x80000000 \
+               -device loader,addr=0x80000000,cpu-num=0
+
+run: build/kernel/virt_kernel.bin build/kernel/disk.img
+	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
+	$(QEMU_SYSTEM) $(QEMU_ARGS)
+
+# Force a rebuild so EXTRA_TASKS changes take effect even when the
+# bin is already present (Make doesn't track env changes). The build
+# script is cheap on a warm cache (~5s).
+.PHONY: run-extra
+run-extra:
+	EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat muxon muxoff mx mr" \
+	    GEN2_DIR=build/gen2 ./kernel/build.sh --target virt \
+	    -o build/kernel/virt_kernel.bin \
+	    --disk-out build/kernel/disk.img
+	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
+	$(QEMU_SYSTEM) $(QEMU_ARGS)
+
 # ===== test_asm prebuilt binaries (Phase D) =====
 #
 # tests/test_asm.sh compiles 3 small bare-metal .tc programs with
@@ -247,4 +282,5 @@ update-golden-and-run-test: $(BUILD_DEPS)
 .NOTPARALLEL:
 
 .PHONY: all clean test full-test update-golden update-golden-and-run-test \
-        gen2-tools gen3-tools virt-kernel pico2-kernel test-asm-bins
+        gen2-tools gen3-tools virt-kernel pico2-kernel test-asm-bins \
+        run run-extra
