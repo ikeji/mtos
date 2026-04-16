@@ -69,7 +69,7 @@
       - 未実装: tail (要 buffering)、mv (要 rename syscall)
 - [x] procfsを作る
 - [x] neofetchを作る
-- [ ] ls /procが失敗する。
-- [ ] cat 存在しないファイル がエラーにならない。
-- [ ] sh にタブ補完つけて。
-- [ ] viコマンド作って。
+- [x] ls /procが失敗する。
+- [x] cat 存在しないファイル がエラーにならない。
+- [x] sh にタブ補完つけて。
+- [x] viコマンド作って。
