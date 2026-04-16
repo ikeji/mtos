@@ -161,6 +161,11 @@ export fn mtfs_lookup(parent_inode: u32, name: U8Array, name_len: i32) -> i32 {
 export fn mtfs_open(inode_num: u32) -> i32 {
     if g_mtfs_mounted == 0 { return -1; }
     if inode_num >= g_mtfs_inode_count { return -1; }
+    // Reject directory inodes: callers use file fds, not dir fds.
+    // Without this, a trailing-slash path like "/bin/" would resolve
+    // to the bin directory inode and load_fd would misread its
+    // contents as a K3 task header (K7-3 root cause candidate).
+    if inode_u32(inode_num, INO_FLAGS) != 0u32 { return -1; }
     var i: i32 = 0;
     while i < MTFS_MAX_FDS {
         var e: MtfsFD = get(g_mtfs_fds, i);

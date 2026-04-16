@@ -12,6 +12,11 @@
 import "vfs.tc";
 import "kernel_common.tc";
 
+// Platform UART writer (platform_virt.s / platform_pico2.s). Used by
+// debug_dump_path to bypass vfs since the spawn failure path wants
+// raw UART emission even when vfs state is suspect.
+fn do_uart_write(buf: u32, len: i32) -> i32;
+
 // Copy a string literal into a NUL-terminated U8Array in kernel RAM.
 // Caller is responsible for delete().
 fn load_str_nul(s: StringLiteral) -> U8Array {
@@ -63,6 +68,50 @@ fn read_task_header_stack(img_addr: u32) -> i32 {
 // Per-task arena_size / stack_size come from the 8-byte binary header
 // (see above) — no explicit size arguments, each task declares its own
 // needs at build time.
+// Reasonable upper bounds for K3 task header values. If load_fd reads
+// something outside these ranges, the file is almost certainly not a
+// valid task binary (or we read the wrong file — see K7-3 in
+// docs/problem.md). Bail out instead of passing garbage to make_task,
+// which would kmalloc megabytes and OOM the kernel arena.
+var TASK_ARENA_MAX: i32 = 4194304;  // 4 MB
+var TASK_STACK_MAX: i32 = 131072;   // 128 KB
+var TASK_ARENA_MIN: i32 = 4096;     // 4 KB
+var TASK_STACK_MIN: i32 = 1024;     // 1 KB
+
+fn load_fd_header_ok(arena: i32, stack: i32) -> bool {
+    if arena < TASK_ARENA_MIN { return false; }
+    if arena > TASK_ARENA_MAX { return false; }
+    if stack < TASK_STACK_MIN { return false; }
+    if stack > TASK_STACK_MAX { return false; }
+    return true;
+}
+
+// Debug helper for K7-3: dump up to 32 bytes at path_addr to UART as a
+// sequence of escaped bytes. Used on spawn/exec failure so we can see
+// exactly what path string the kernel was handed. `tag` distinguishes
+// the call site (e.g., "spawn" vs "exec").
+fn debug_dump_path(path_addr: u32, tag: StringLiteral) -> void {
+    kputs(tag);
+    kputs(": path=\"");
+    var one: U8Array = U8Array(1u32);
+    var i: u32 = 0u32;
+    while i < 32u32 {
+        var b: u8 = peek8(path_addr + i);
+        if b == 0u8 {
+            kputs("\\0");
+        } else if b < 32u8 || b >= 127u8 {
+            kputs("?");
+        } else {
+            set(one, 0, b);
+            do_uart_write(one as u32 + 4u32, 1);
+        }
+        i = i + 1u32;
+    }
+    delete(one);
+    kputs("\"\n");
+    return;
+}
+
 fn load_fd(fd: i32) -> u32 {
     reset_last_alloc();
 
@@ -73,6 +122,10 @@ fn load_fd(fd: i32) -> u32 {
         // frame_buf / ram / stack in g_last_*; img stays 0.
         var arena_x: i32 = read_task_header_arena(xip);
         var stack_x: i32 = read_task_header_stack(xip);
+        if !load_fd_header_ok(arena_x, stack_x) {
+            kputs("load_fd: invalid K3 header (xip)\n");
+            return 0u32;
+        }
         return make_task(xip + (TASK_HEADER_SIZE as u32), arena_x, stack_x);
     }
 
@@ -92,6 +145,11 @@ fn load_fd(fd: i32) -> u32 {
 
     var arena_s: i32 = read_task_header_arena(img_base);
     var stack_s: i32 = read_task_header_stack(img_base);
+    if !load_fd_header_ok(arena_s, stack_s) {
+        kputs("load_fd: invalid K3 header\n");
+        delete(img);
+        return 0u32;
+    }
     var frame: u32 = make_task(img_base + (TASK_HEADER_SIZE as u32),
                                arena_s, stack_s);
     set_last_img(img as u32);
@@ -224,10 +282,16 @@ export fn sys_exec_handler(path_addr: u32, argv_addr: u32,
     if out_fd < 0 { close_redir(in_fd); return 0u32; }
 
     var fd: i32 = vfs_open(path_addr, 0);
-    if fd < 0 { close_redir(in_fd); close_redir(out_fd); return 0u32; }
+    if fd < 0 {
+        debug_dump_path(path_addr, "exec vfs_open failed");
+        close_redir(in_fd); close_redir(out_fd); return 0u32;
+    }
     var frame: u32 = load_fd(fd);
     vfs_close(fd);
-    if frame == 0u32 { close_redir(in_fd); close_redir(out_fd); return 0u32; }
+    if frame == 0u32 {
+        debug_dump_path(path_addr, "exec load_fd failed");
+        close_redir(in_fd); close_redir(out_fd); return 0u32;
+    }
 
     var kargv: u32 = clone_argv(argv_addr);
     set_frame_argv(frame, kargv);
@@ -248,10 +312,16 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
     if out_fd < 0 { close_redir(in_fd); return -1; }
 
     var fd: i32 = vfs_open(path_addr, 0);
-    if fd < 0 { close_redir(in_fd); close_redir(out_fd); return -1; }
+    if fd < 0 {
+        debug_dump_path(path_addr, "spawn vfs_open failed");
+        close_redir(in_fd); close_redir(out_fd); return -1;
+    }
     var frame: u32 = load_fd(fd);
     vfs_close(fd);
-    if frame == 0u32 { close_redir(in_fd); close_redir(out_fd); return -1; }
+    if frame == 0u32 {
+        debug_dump_path(path_addr, "spawn load_fd failed");
+        close_redir(in_fd); close_redir(out_fd); return -1;
+    }
 
     var kargv: u32 = clone_argv(argv_addr);
     set_frame_argv(frame, kargv);
