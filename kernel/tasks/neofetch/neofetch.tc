@@ -1,0 +1,114 @@
+// neofetch.tc — friendly system info splash.
+//
+// Reads /proc/tasks to count active/done slots, then prints a small
+// ASCII banner alongside kernel / arch / mux / task summary. No args.
+
+import "../libtc/libtc.tc";
+
+fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+fn print_u32(v: i32) -> void {
+    if v == 0 {
+        var z: U8Array = U8Array(1u32);
+        set(z, 0, '0' as u8);
+        sys_write(1, z, 1);
+        delete(z);
+        return;
+    }
+    var d: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    var x: i32 = v;
+    while x > 0 {
+        set(d, n, ('0' as i32 + x % 10) as u8);
+        n = n + 1;
+        x = x / 10;
+    }
+    var out: U8Array = U8Array(n as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(out, i, get(d, n - 1 - i));
+        i = i + 1;
+    }
+    sys_write(1, out, n);
+    delete(out);
+    delete(d);
+    return;
+}
+
+// Count task slots by state. Reads /proc/tasks lines; each line starts
+// with "N state ...". We classify tokens after the first space.
+struct TaskStats {
+    total:   i32,
+    ready:   i32,
+    done:    i32,
+    unused:  i32,
+    waiting: i32,
+}
+
+fn read_task_stats() -> TaskStats {
+    var stats: TaskStats = TaskStats(0, 0, 0, 0, 0);
+    var path: U8Array = str_nul("/proc/tasks");
+    var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
+    delete(path);
+    if fd < 0 { return stats; }
+    var buf: U8Array = U8Array(4096u32);
+    var n: i32 = sys_read(fd, buf, 4096);
+    do_close(fd);
+    if n <= 0 { delete(buf); return stats; }
+    var i: i32 = 0;
+    while i < n {
+        // Skip leading digits (slot number)
+        while i < n && get(buf, i) != 32u8 && get(buf, i) != 10u8 { i = i + 1; }
+        while i < n && get(buf, i) == 32u8 { i = i + 1; }
+        // i now points at state name
+        var st_start: i32 = i;
+        while i < n && get(buf, i) != 32u8 && get(buf, i) != 10u8 { i = i + 1; }
+        var st_len: i32 = i - st_start;
+        total(stats, total(stats) + 1);
+        if st_len == 5 && get(buf, st_start) == 'r' as u8 {
+            ready(stats, ready(stats) + 1);
+        } else if st_len == 4 && get(buf, st_start) == 'd' as u8 {
+            done(stats, done(stats) + 1);
+        } else if st_len == 6 && get(buf, st_start) == 'u' as u8 {
+            unused(stats, unused(stats) + 1);
+        } else if st_len == 7 && get(buf, st_start) == 'w' as u8 {
+            waiting(stats, waiting(stats) + 1);
+        }
+        // Skip to next line
+        while i < n && get(buf, i) != 10u8 { i = i + 1; }
+        if i < n { i = i + 1; }
+    }
+    delete(buf);
+    return stats;
+}
+
+fn main() -> i32 {
+    var stats: TaskStats = read_task_stats();
+
+    puts("      ___      \n");
+    puts("     |___|     ");
+    puts("  riscv-os\n");
+    puts("    __|_|__    ");
+    puts("  ------------\n");
+    puts("   /__|__|__\\   ");
+    puts("  kernel: TinyC-riscv\n");
+    puts("  /___|___|__\\  ");
+    puts("  arch  : RV32IM\n");
+    puts(" /____|_____|_\\ ");
+    puts("  tasks : ");
+    print_u32(ready(stats));
+    puts(" ready / ");
+    print_u32(total(stats));
+    puts(" total\n");
+    puts("                ");
+    puts("  done  : ");
+    print_u32(done(stats));
+    puts("\n");
+    puts("                ");
+    puts("  wait  : ");
+    print_u32(waiting(stats));
+    puts("\n");
+    delete(stats);
+    return 0;
+}

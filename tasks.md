@@ -68,4 +68,4 @@
       - 作成: ls, wc, head, cp, du
       - 未実装: tail (要 buffering)、mv (要 rename syscall)
 - [x] procfsを作る
-- [ ] neofetchを作る
+- [x] neofetchを作る
