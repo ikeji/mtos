@@ -22,6 +22,7 @@ import "../libtc/libtc.tc";
 
 fn do_spawn(path_addr: u32, argv_addr: u32, in_addr: u32, out_addr: u32) -> i32;
 fn do_wait(slot: i32) -> i32;
+fn do_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32;
 
 // CMD_MAX bumped to 128 for the typecheck split (#54): commands like
 //   cat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt \
@@ -61,6 +62,206 @@ fn echo_bs() -> void {
     return;
 }
 
+// --- Tab completion -------------------------------------------------
+//
+// On TAB, look at the current whitespace-separated token and try to
+// complete it against a directory listing:
+//   * first token on the line → /bin entries (command names)
+//   * token containing '/'    → readdir of the parent, match basename
+//   * other tokens            → readdir of "/" (no CWD concept)
+// Exactly one match: the remaining bytes are typed in (echoed to the
+// user as if they pressed them). Multiple matches: all candidates are
+// printed on a new line, the prompt and current buffer are re-echoed
+// so editing can continue.
+//
+// Keep the helpers local to sh.tc; they're not useful elsewhere.
+
+fn tc_is_path_char(c: u8) -> bool {
+    if c >= 'a' as u8 && c <= 'z' as u8 { return true; }
+    if c >= 'A' as u8 && c <= 'Z' as u8 { return true; }
+    if c >= '0' as u8 && c <= '9' as u8 { return true; }
+    if c == '_' as u8 || c == '.' as u8 ||
+       c == '/' as u8 || c == '-' as u8 { return true; }
+    return false;
+}
+
+// Walk backwards from pos to find the start of the current token.
+fn tc_token_start(buf: U8Array, pos: i32) -> i32 {
+    var i: i32 = pos;
+    while i > 0 && tc_is_path_char(get(buf, i - 1)) {
+        i = i - 1;
+    }
+    return i;
+}
+
+// True iff only whitespace/empty appears before tok_start in buf.
+fn tc_is_first_token(buf: U8Array, tok_start: i32) -> bool {
+    var i: i32 = 0;
+    while i < tok_start {
+        var c: u8 = get(buf, i);
+        if c != ' ' as u8 && c != 9u8 { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Find the offset of the last '/' in buf[start..end]. Returns -1
+// when the range contains no slash.
+fn tc_last_slash(buf: U8Array, start: i32, end: i32) -> i32 {
+    var i: i32 = end - 1;
+    while i >= start {
+        if get(buf, i) == '/' as u8 { return i; }
+        i = i - 1;
+    }
+    return -1;
+}
+
+// Echo one byte via sh's existing helper (fd=1). Wrapped here so
+// the many spots below stay terse.
+fn tc_echo_str(s: StringLiteral) -> void {
+    var sl: i32 = len(s);
+    var i: i32 = 0;
+    while i < sl { echo_byte(get(s, i)); i = i + 1; }
+    return;
+}
+
+// Perform tab completion and return the new end-of-buffer position.
+// The caller keeps pos at the end of buf; we inject the completion
+// bytes into buf and echo them so sh's outer state stays consistent.
+fn complete(buf: U8Array, pos: i32) -> i32 {
+    var tok_start: i32 = tc_token_start(buf, pos);
+    var base_start: i32 = tok_start;
+    // dir holds the path to enumerate (NUL-terminated, <= 128 chars).
+    var dir: U8Array = U8Array(128u32);
+    var dir_len: i32 = 0;
+    if tc_is_first_token(buf, tok_start) {
+        // command completion → /bin
+        var s: StringLiteral = "/bin";
+        var sl: i32 = len(s);
+        var i: i32 = 0;
+        while i < sl { set(dir, i, get(s, i)); i = i + 1; }
+        dir_len = sl;
+    } else {
+        var slash_idx: i32 = tc_last_slash(buf, tok_start, pos);
+        if slash_idx < 0 {
+            set(dir, 0, '/' as u8);
+            dir_len = 1;
+        } else {
+            // dir = buf[tok_start..slash_idx] (no trailing /), except
+            // for the root ("/xxx" → dir "/").
+            var start: i32 = tok_start;
+            var end: i32 = slash_idx;
+            if end == start {
+                // Path starts with '/', dir is "/"
+                set(dir, 0, '/' as u8);
+                dir_len = 1;
+            } else {
+                var k: i32 = 0;
+                while start + k < end {
+                    set(dir, k, get(buf, start + k));
+                    k = k + 1;
+                }
+                dir_len = end - start;
+            }
+            base_start = slash_idx + 1;
+        }
+    }
+    set(dir, dir_len, 0u8);
+    var base_len: i32 = pos - base_start;
+
+    var dirbuf: U8Array = U8Array(4096u32);
+    var n: i32 = do_readdir(dir as u32 + 4u32,
+                            dirbuf as u32 + 4u32, 4096);
+    delete(dir);
+    if n <= 0 { delete(dirbuf); return pos; }
+
+    // First pass: count matches + remember the first one.
+    var match_count: i32 = 0;
+    var first_start: i32 = 0;
+    var first_len: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        var ns: i32 = i;
+        while i < n && get(dirbuf, i) != 0u8 { i = i + 1; }
+        var nl: i32 = i - ns;
+        if i < n { i = i + 1; }
+        if nl < base_len {
+            // too short; skip
+        } else {
+            var matches: i32 = 1;
+            var j: i32 = 0;
+            while j < base_len {
+                if get(dirbuf, ns + j) != get(buf, base_start + j) {
+                    matches = 0;
+                    j = base_len;
+                }
+                j = j + 1;
+            }
+            if matches == 1 {
+                if match_count == 0 {
+                    first_start = ns;
+                    first_len = nl;
+                }
+                match_count = match_count + 1;
+            }
+        }
+    }
+
+    if match_count == 1 {
+        // Unique: inject the remaining bytes.
+        var extra: i32 = first_len - base_len;
+        var k: i32 = 0;
+        while k < extra && pos < CMD_MAX - 1 {
+            var c: u8 = get(dirbuf, first_start + base_len + k);
+            set(buf, pos, c);
+            pos = pos + 1;
+            echo_byte(c);
+            k = k + 1;
+        }
+    } else if match_count > 1 {
+        // Many: print all candidates on a fresh line, then re-echo
+        // the prompt and current buffer.
+        echo_byte(13u8);
+        echo_byte(10u8);
+        var ii: i32 = 0;
+        while ii < n {
+            var ns: i32 = ii;
+            while ii < n && get(dirbuf, ii) != 0u8 { ii = ii + 1; }
+            var nl: i32 = ii - ns;
+            if ii < n { ii = ii + 1; }
+            if nl >= base_len {
+                var mm: i32 = 1;
+                var jj: i32 = 0;
+                while jj < base_len {
+                    if get(dirbuf, ns + jj) != get(buf, base_start + jj) {
+                        mm = 0;
+                        jj = base_len;
+                    }
+                    jj = jj + 1;
+                }
+                if mm == 1 {
+                    var kk: i32 = 0;
+                    while kk < nl {
+                        echo_byte(get(dirbuf, ns + kk));
+                        kk = kk + 1;
+                    }
+                    echo_byte(' ' as u8);
+                }
+            }
+        }
+        echo_byte(13u8);
+        echo_byte(10u8);
+        tc_echo_str("sh$ ");
+        var pp: i32 = 0;
+        while pp < pos {
+            echo_byte(get(buf, pp));
+            pp = pp + 1;
+        }
+    }
+    delete(dirbuf);
+    return pos;
+}
+
 // Read characters from stdin until LF / CR. Returns the number of
 // command bytes stored in buf (not counting the NUL terminator).
 // Echoes each accepted byte to stdout, converts line termination to
@@ -88,7 +289,12 @@ fn read_line(buf: U8Array) -> i32 {
                     pos = pos - 1;
                     echo_bs();
                 }
-            } else if c < 32u8 && c != 9u8 {
+            } else if c == 9u8 {
+                // TAB: run completion. Null-terminate first so
+                // complete() can safely read buf[base_start..pos].
+                set(buf, pos, 0u8);
+                pos = complete(buf, pos);
+            } else if c < 32u8 {
                 // Skip other C0 controls (e.g. pre-boot stale UART
                 // bytes on pico2). No echo.
             } else if c >= 128u8 {
