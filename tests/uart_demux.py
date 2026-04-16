@@ -53,32 +53,30 @@ class FrameReader:
         self._parse()
 
     def _parse(self) -> None:
+        # Frame header: [0x1F magic][tag:4][len:1][payload:N].
         while True:
             if len(self._buf) == 0:
                 return
-            # Attempt to parse a frame at buf[0].
-            if len(self._buf) < 5:
-                # Not enough bytes yet — but if the existing bytes are
-                # clearly not a tag, flush them as RAW so callers see them
-                # without waiting for more data.
-                if not _looks_like_tag(bytes(self._buf[:4])) and len(self._buf) >= 1:
-                    self._frames.append(("RAW ", bytes(self._buf[:1])))
-                    del self._buf[:1]
-                    continue
-                return
-            tag = bytes(self._buf[0:4])
-            if not _looks_like_tag(tag):
-                # Emit one byte as RAW, try again at buf[1].
+            # Not a frame start? Emit one RAW byte and advance.
+            if self._buf[0] != 0x1F:
                 self._frames.append(("RAW ", bytes(self._buf[:1])))
                 del self._buf[:1]
                 continue
-            n = self._buf[4]
-            if len(self._buf) < 5 + n:
-                # Header parsed, waiting for payload.
+            # Got magic. Need at least 6 bytes for the header.
+            if len(self._buf) < 6:
                 return
-            payload = bytes(self._buf[5:5 + n])
+            tag = bytes(self._buf[1:5])
+            if not _looks_like_tag(tag):
+                # False magic inside raw text; drop magic byte as RAW.
+                self._frames.append(("RAW ", bytes(self._buf[:1])))
+                del self._buf[:1]
+                continue
+            n = self._buf[5]
+            if len(self._buf) < 6 + n:
+                return
+            payload = bytes(self._buf[6:6 + n])
             self._frames.append((tag.decode("ascii"), payload))
-            del self._buf[:5 + n]
+            del self._buf[:6 + n]
 
     def drain(self):
         out = self._frames
@@ -95,7 +93,7 @@ class FrameWriter:
             raise ValueError(f"tag must be 4 chars, got {tag!r}")
         if len(payload) > 255:
             raise ValueError(f"payload too long ({len(payload)} > 255)")
-        hdr = tag.encode("ascii") + bytes([len(payload)])
+        hdr = b"\x1F" + tag.encode("ascii") + bytes([len(payload)])
         os.write(self.fd, hdr + payload)
 
     def send_stream(self, tag: str, data: bytes, send_eof: bool = True) -> None:

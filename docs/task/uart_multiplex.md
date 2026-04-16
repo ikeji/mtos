@@ -20,14 +20,19 @@ Pico 2 (単一 UART) 上でカーネルデバッグ出力・複数タスクの s
 
 ## フレームフォーマット
 
-各フレームは **5 byte header + 最大 255 byte payload**、合計 6〜260 byte:
+各フレームは **6 byte header + 最大 255 byte payload**、合計 7〜261 byte:
 
 ```
 offset | size | field
-0-3    | 4    | tag (ASCII、スペースパディング、例 "PR02", "KERN")
-4      | 1    | len (0-255、payload byte 数)
-5..    | len  | payload (任意バイト列、バイナリ可)
+0      | 1    | magic (0x1F ASCII US — ストリーム同期用)
+1-4    | 4    | tag (ASCII、例 "KERN", "T002")
+5      | 1    | len (0-255、payload byte 数)
+6..    | len  | payload (任意バイト列、バイナリ可)
 ```
+
+magic 0x1F (Unit Separator) はテキストストリームに出現しない稀な
+制御文字なので、デマックスが途中から読み始めても「0x1F を探して
+次の frame を見つける」だけで再同期できる。
 
 - **バイナリ完全透過**: payload は long-prefix で byte-counted、escape 不要
 - **固定ヘッダ**: tag 4 byte が常に ASCII の範囲にあるので、ストリームの

@@ -115,14 +115,18 @@ export fn uart_mux_enable(on: i32) -> void {
     return;
 }
 
+// Frame header: [0x1F magic][tag:4][len:1][payload:N]. The leading
+// ASCII US (Unit Separator, 0x1F) is rare in normal text streams so
+// it lets the host demuxer resync if it drops / sees pre-mux garbage.
 fn uart_emit_frame_raw(tag: StringLiteral, addr: u32, n: i32) -> void {
-    var hdr: U8Array = U8Array(5u32);
-    set(hdr, 0, get(tag, 0));
-    set(hdr, 1, get(tag, 1));
-    set(hdr, 2, get(tag, 2));
-    set(hdr, 3, get(tag, 3));
-    set(hdr, 4, n as u8);
-    do_uart_write(hdr as u32 + 4u32, 5);
+    var hdr: U8Array = U8Array(6u32);
+    set(hdr, 0, 0x1Fu8);
+    set(hdr, 1, get(tag, 0));
+    set(hdr, 2, get(tag, 1));
+    set(hdr, 3, get(tag, 2));
+    set(hdr, 4, get(tag, 3));
+    set(hdr, 5, n as u8);
+    do_uart_write(hdr as u32 + 4u32, 6);
     if n > 0 { do_uart_write(addr, n); }
     delete(hdr);
     return;
