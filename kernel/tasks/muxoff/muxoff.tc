@@ -1,0 +1,8 @@
+// muxoff.tc — disable UART frame multiplexing. Counterpart to muxon.
+
+fn do_mux_enable(on: i32) -> void;
+
+fn main() -> i32 {
+    do_mux_enable(0);
+    return 0;
+}

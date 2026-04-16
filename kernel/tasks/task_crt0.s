@@ -130,6 +130,14 @@ do_wait__i32:
     ecall
     ret
 
+# do_mux_enable(on: i32) → void — toggle UART frame multiplexing.
+# See docs/task/uart_multiplex.md.
+    .globl do_mux_enable__i32
+do_mux_enable__i32:
+    li   a7, 250
+    ecall
+    ret
+
 # peek/poke builtins
     .globl peek8__u32
 peek8__u32:

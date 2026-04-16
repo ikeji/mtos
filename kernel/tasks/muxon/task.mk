@@ -1,0 +1,3 @@
+EXTRA_GUEST_TASKS += muxon
+TASK_ARENA_muxon := 8192
+TASK_STACK_muxon := 4096

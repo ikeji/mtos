@@ -3,3 +3,4 @@
 .claude/
 kernel/kernel_pico2.uf2
 /build/
+tests/__pycache__/

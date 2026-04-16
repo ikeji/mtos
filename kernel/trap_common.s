@@ -87,6 +87,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_spawn
     li   t1, 260
     beq  t0, t1, _ecall_wait
+    li   t1, 250
+    beq  t0, t1, _ecall_mux_enable
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -214,6 +216,15 @@ _ecall_wait:
     la   t0, _switch_frame
     sw   a0, 0(t0)
 _wait_no_switch:
+    j    _ecall_leave_advance
+
+# sys_mux_enable(on: i32) — toggle UART framing (docs/task/uart_multiplex.md).
+# a0 = 1 to enable, 0 to disable. Always returns 0.
+_ecall_mux_enable:
+    call _ecall_enter
+    lw   a0, 40(s0)
+    call uart_mux_enable__i32
+    sw   zero, 40(s0)
     j    _ecall_leave_advance
 
 _ecall_exit:

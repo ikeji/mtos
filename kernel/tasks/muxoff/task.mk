@@ -1,0 +1,3 @@
+EXTRA_GUEST_TASKS += muxoff
+TASK_ARENA_muxoff := 8192
+TASK_STACK_muxoff := 4096

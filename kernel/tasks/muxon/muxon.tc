@@ -1,0 +1,12 @@
+// muxon.tc — enable UART frame multiplexing (docs/task/uart_multiplex.md).
+//
+// Tiny helper that flips the kernel's g_mux_enabled flag. Host driver
+// runs `muxon` right after boot; all subsequent UART output is wrapped
+// in [tag:4][len:1][payload] frames. Use `muxoff` to turn it back off.
+
+fn do_mux_enable(on: i32) -> void;
+
+fn main() -> i32 {
+    do_mux_enable(1);
+    return 0;
+}
