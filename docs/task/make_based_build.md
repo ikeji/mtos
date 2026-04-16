@@ -355,7 +355,8 @@ build/kernel/pico2_kernel.uf2          depends on
   を定義
 - `make test` のターゲットを `test: all $(GEN2_TOOLS)` に変更
 - `tests/test_all.sh` から Gen2 pre-build ループ自体を削除
-- Gen1 ツールも `build/gen1/` に移す (現行の Makefile 出力先変更)
+- Gen1 ツールも `build/gen1/` に移す (現行の Makefile 出力先変更) —
+  Phase A では保留、2026-04-16 に別コミットで実施
 
 **期待節約**: 毎 make test で ~3 s。もう一方のメリットとして、
 compiler/ 以下を触らないときは 1 本もリビルドしない

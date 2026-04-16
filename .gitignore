@@ -1,14 +1,5 @@
 *.o
-# Gen1 bootstrap binaries at repo root (anchored so the same name
-# can still appear under kernel/tasks/<name>/ for phase 7 compiler
-# tasks).
-/parse
-/typecheck
-/interp
-/codegen
-/bcrun
-/bc2asm
-/extract-sigs
+# Gen1 bootstrap binaries now live in build/gen1/ (covered by /build/).
 .claude/
 kernel/kernel_pico2.uf2
 /build/

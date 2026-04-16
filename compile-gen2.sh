@@ -30,8 +30,8 @@
 
 set -e
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PARSE="$ROOT_DIR/parse"
-EXTRACT_SIGS="$ROOT_DIR/extract-sigs"
+PARSE="$ROOT_DIR/build/gen1/parse"
+EXTRACT_SIGS="$ROOT_DIR/build/gen1/extract-sigs"
 QEMU="${QEMU:-qemu-riscv32}"
 CRT0="${CRT0:-$ROOT_DIR/compiler/crt0_tc.s}"
 CRT0_DATA="${CRT0_DATA:-$ROOT_DIR/compiler/crt0_tc_data.s}"

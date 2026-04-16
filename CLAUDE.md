@@ -325,7 +325,7 @@ tools/      ホスト側ツール
 ## ビルド＆実行
 
 ```bash
-make                              # Gen1 バイナリをビルド（parse, codegen, bc2asm, typecheck, extract-sigs 等）
+make                              # Gen1 バイナリを build/gen1/ にビルド（parse, codegen, bc2asm, typecheck, extract-sigs 等）
 make test                         # テスト実行（warm ~33s, cold ~78s、上限 60 秒 warm）
 make full-test                    # kmalloc / kernel1 (FULL_TEST=1) 含む全テスト
 make update-golden                # goldenファイルを再生成

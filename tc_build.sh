@@ -7,8 +7,8 @@
 # The resulting .s files are linked together with crt0.s and runtime.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODEGEN="$ROOT_DIR/codegen"
-BC2ASM="$ROOT_DIR/bc2asm"
+CODEGEN="$ROOT_DIR/build/gen1/codegen"
+BC2ASM="$ROOT_DIR/build/gen1/bc2asm"
 COMPILER_DIR="$ROOT_DIR/bootstrap"
 
 RISCV_CC="riscv64-unknown-elf-gcc"

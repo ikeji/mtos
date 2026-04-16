@@ -130,7 +130,7 @@ emit_task_header() {
 }
 
 QEMU="${QEMU:-qemu-riscv32}"
-PARSE="$ROOT_DIR/parse"
+PARSE="$ROOT_DIR/build/gen1/parse"
 
 # --- Step 0: Pre-compile runtime.tc and libtc.tc once ---
 # compile-gen2.sh compiles runtime.tc inside every task/kernel build.

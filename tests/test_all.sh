@@ -20,7 +20,16 @@ if command -v "$QEMU" >/dev/null 2>&1 && command -v "$RISCV_CC" >/dev/null 2>&1;
     export SHARED_GEN2_DIR
     # Fallback: if someone ran test_all.sh directly without going
     # through `make test`, build the tools on the spot so the suite
-    # still works standalone.
+    # still works standalone. Gen1 tools (build/gen1/*) must exist
+    # first since compile-gen1.sh calls them — bounce through `make`
+    # which is the single source of truth for the Gen1 build rules.
+    _need_gen1=0
+    for t in parse typecheck interp codegen bcrun bc2asm extract-sigs; do
+        if [ ! -x "$ROOT_DIR/build/gen1/$t" ]; then _need_gen1=1; break; fi
+    done
+    if [ "$_need_gen1" = 1 ]; then
+        (cd "$ROOT_DIR" && make all >/dev/null)
+    fi
     _need_build=0
     for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2; do
         if [ ! -x "$SHARED_GEN2_DIR/$t" ]; then _need_build=1; break; fi

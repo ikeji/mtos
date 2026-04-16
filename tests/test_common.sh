@@ -11,12 +11,13 @@ GOLDEN_DIR="$SCRIPT_DIR/golden"
 TC_DIR="$ROOT_DIR/compiler"
 COMPILER_DIR="$ROOT_DIR/bootstrap"
 
-INTERP="$ROOT_DIR/interp"
-PARSE="$ROOT_DIR/parse"
-TYPECHECK="$ROOT_DIR/typecheck"
-CODEGEN="$ROOT_DIR/codegen"
-BCRUN="$ROOT_DIR/bcrun"
-BC2ASM="$ROOT_DIR/bc2asm"
+GEN1_DIR="$ROOT_DIR/build/gen1"
+INTERP="$GEN1_DIR/interp"
+PARSE="$GEN1_DIR/parse"
+TYPECHECK="$GEN1_DIR/typecheck"
+CODEGEN="$GEN1_DIR/codegen"
+BCRUN="$GEN1_DIR/bcrun"
+BC2ASM="$GEN1_DIR/bc2asm"
 
 RISCV_CC="riscv64-unknown-elf-gcc"
 RISCV_FLAGS=(-march=rv32im -mabi=ilp32 -static -nostdlib -lgcc -Wl,-Ttext-segment=0x10000)
@@ -33,7 +34,7 @@ time_ms() { date +%s%3N; }
 
 require_tools() {
     for tool in "$@"; do
-        local path="$ROOT_DIR/$tool"
+        local path="$GEN1_DIR/$tool"
         if [ ! -x "$path" ]; then
             echo "Error: $tool not found. Build first (make)." >&2
             exit 1

@@ -8,8 +8,8 @@
 
 set -e
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODEGEN="$ROOT_DIR/codegen"
-BC2ASM="$ROOT_DIR/bc2asm"
+CODEGEN="$ROOT_DIR/build/gen1/codegen"
+BC2ASM="$ROOT_DIR/build/gen1/bc2asm"
 RISCV_CC="riscv64-unknown-elf-gcc"
 RISCV_FLAGS="-march=rv32im -mabi=ilp32 -static -nostdlib -lgcc -Wl,-Ttext-segment=0x10000"
 CRT0="$ROOT_DIR/bootstrap/crt0.s"

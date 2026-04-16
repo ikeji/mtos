@@ -42,7 +42,7 @@ trap 'rm -rf "$TMP"' EXIT
 CACHE_DIR="$TMP/sc"
 mkdir -p "$CACHE_DIR"
 RUNTIME_TC="$ROOT_DIR/compiler/runtime.tc"
-"$ROOT_DIR/parse" "$RUNTIME_TC" > "$TMP/runtime.ast"
+"$PARSE" "$RUNTIME_TC" > "$TMP/runtime.ast"
 "$QEMU" "$_GEN2_TMP/sigscan" < "$TMP/runtime.ast" > "$TMP/runtime.th" 2>/dev/null
 {
     printf '(imports)\n(self\n'

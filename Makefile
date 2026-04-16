@@ -4,9 +4,9 @@ CFLAGS = -Wall -Wextra -g -I bootstrap
 SRCS = bootstrap/lexer.c bootstrap/ast.c bootstrap/parser.c bootstrap/typecheck.c bootstrap/interp.c bootstrap/codegen.c
 OBJS = $(SRCS:.c=.o)
 
-# Gen1 ツール (C 製、repo 直下に置く。Phase A では build/gen1/ 移動
-# はせず、後続 Phase で整理する)
-GEN1_TOOLS = parse typecheck interp codegen bcrun bc2asm extract-sigs
+# Gen1 ツール (C 製、build/gen1/ 固定。repo 直下には置かない)
+GEN1_NAMES = parse typecheck interp codegen bcrun bc2asm extract-sigs
+GEN1_TOOLS = $(addprefix build/gen1/,$(GEN1_NAMES))
 
 # Gen2 ツール (compile-gen1.sh で compiler/*.tc を RV32 ELF に。
 # build/gen2/ 固定にして make test 2 回目以降は再ビルドを避ける)
@@ -15,26 +15,29 @@ GEN2_TOOLS = $(addprefix build/gen2/,$(GEN2_NAMES))
 
 all: $(GEN1_TOOLS)
 
-parse: $(OBJS) bootstrap/parse_main.o
+build/gen1:
+	mkdir -p $@
+
+build/gen1/parse: $(OBJS) bootstrap/parse_main.o | build/gen1
 	$(CC) -o $@ $^
 
-typecheck: $(OBJS) bootstrap/typecheck_main.o
+build/gen1/typecheck: $(OBJS) bootstrap/typecheck_main.o | build/gen1
 	$(CC) -o $@ $^
 
-interp: $(OBJS) bootstrap/interp_main.o
+build/gen1/interp: $(OBJS) bootstrap/interp_main.o | build/gen1
 	$(CC) -o $@ $^
 
-codegen: $(OBJS) bootstrap/codegen_main.o
+build/gen1/codegen: $(OBJS) bootstrap/codegen_main.o | build/gen1
 	$(CC) -o $@ $^
 
-bcrun: bootstrap/bcrun.c
-	$(CC) $(CFLAGS) -o bcrun bootstrap/bcrun.c
+build/gen1/bcrun: bootstrap/bcrun.c | build/gen1
+	$(CC) $(CFLAGS) -o $@ bootstrap/bcrun.c
 
-bc2asm: bootstrap/bc2asm.c
-	$(CC) $(CFLAGS) -o bc2asm bootstrap/bc2asm.c
+build/gen1/bc2asm: bootstrap/bc2asm.c | build/gen1
+	$(CC) $(CFLAGS) -o $@ bootstrap/bc2asm.c
 
-extract-sigs: bootstrap/extract_sigs.c bootstrap/ast.o
-	$(CC) $(CFLAGS) -o extract-sigs bootstrap/extract_sigs.c bootstrap/ast.o
+build/gen1/extract-sigs: bootstrap/extract_sigs.c bootstrap/ast.o | build/gen1
+	$(CC) $(CFLAGS) -o $@ bootstrap/extract_sigs.c bootstrap/ast.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -172,7 +175,7 @@ TEST_ASM_BINS := build/test/asm/hello2_virt.bin \
 test-asm-bins: $(TEST_ASM_BINS)
 
 clean:
-	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o parse typecheck interp codegen bcrun bc2asm extract-sigs
+	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o
 	rm -rf build
 
 TEST_DEPS := all $(GEN2_TOOLS) build/kernel/virt_kernel.bin $(TEST_ASM_BINS)
