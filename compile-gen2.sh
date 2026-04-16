@@ -112,10 +112,12 @@ _collect_imports() {
     done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
 }
 
-TMP=$(mktemp -d)
-if [ -z "$KEEP_TMP" ]; then
-    trap 'rm -rf "$TMP"' EXIT
-fi
+# 中間ファイルを build/intermediate/gen2/<basename>/ に残す。
+# デバッグ時に .ast/.th/.s/.lab を直接確認できる。make clean で消える。
+# (KEEP_TMP は不要になったので廃止)
+_BASE=$(basename "$TC_FILE" .tc)
+TMP="$ROOT_DIR/build/intermediate/gen2/$_BASE"
+mkdir -p "$TMP"
 
 # Collect import files
 _COLLECTED=""

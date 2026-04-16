@@ -61,7 +61,7 @@
 - [x] update_golden.sh が遅すぎる。rv32版のコンパイラを使ったら早くならないかな？
       - rv32ネイティブ実行を導入。ただしボトルネックはparse.tc自体の遅さ（大きなファイル処理）。
 - [x] テスト完了したら、okファイル(ex, build/tests/test_unit.ok )をtouchするようにして、makeが必要ないならテストの再実行しなくする。
-- [ ] compile-genX.shで、中間ファイルをbuild内に残すようにする。デバッグ用に。その時ファイル名に使ったコンパイラを残す。hello.gen1.s
+- [x] compile-genX.shで、中間ファイルをbuild内に残すようにする。デバッグ用に。その時ファイル名に使ったコンパイラを残す。hello.gen1.s
 - [ ] coreutilsにありそうなツールをいくつか作る。ex, head tail cp du wc ls mv wc
 - [ ] procfsを作る
 - [ ] neofetchを作る

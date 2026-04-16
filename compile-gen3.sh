@@ -78,8 +78,10 @@ _collect_imports() {
     done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
 }
 
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+# 中間ファイルを build/intermediate/gen3/<basename>/ に残す。
+_BASE=$(basename "$TC_FILE" .tc)
+TMP="$ROOT_DIR/build/intermediate/gen3/$_BASE"
+mkdir -p "$TMP"
 
 # Collect import files
 _COLLECTED=""

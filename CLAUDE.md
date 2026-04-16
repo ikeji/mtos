@@ -275,7 +275,7 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       `/empty_imports.txt` / `/self_open.txt` /
                       `/wrap_close.txt` として staging — sh 側で
                       cat して tcheck の wrap 入力を組み立てる。
-                      `KEEP_TMP=1` で中間 tmp dir を残せる
+                      `KEEP_TMP=1` でカーネルビルド中間 tmp dir を残せる
   bin2s.sh            raw バイナリ → .s データ変換 (PREFIX_addr 関数生成)
   run_pico2.sh        Pico 2 実機書き込み + UART キャプチャ (openocd 経由)
   tasks/              ゲストタスク (両プラットフォーム共通)

@@ -48,8 +48,11 @@ _collect_imports() {
     done < <(grep '^import "' "$tc_file" 2>/dev/null | sed 's/^import "\(.*\)";$/\1/')
 }
 
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+# 中間ファイルを build/intermediate/gen1/<basename>/ に残す。
+# デバッグ時に .s を直接確認できる。make clean で消える。
+_BASE=$(basename "$TC_FILE" .tc)
+TMP="$ROOT_DIR/build/intermediate/gen1/$_BASE"
+mkdir -p "$TMP"
 
 # Collect all source files (imports + main)
 _COLLECTED=""
