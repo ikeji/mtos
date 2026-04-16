@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
 """phase3_verify.py — verify each compile-pipeline stage on virt OS
-by comparing OS outputs against Gen2 host references byte-for-byte.
+by comparing OS outputs against Gen2 host references byte-for-byte,
+through the final linked Hello World binary.
 
 Flow:
-  1. Generate reference files on the host using build/gen1/parse +
-     build/gen2/{sigscan,tcheck,codegen,bc2asm}.
-  2. Build a virt kernel with EXTRA_TASKS (mx + compiler tasks).
+  1. Build a virt kernel with EXTRA_TASKS (mx + compiler tasks) and
+     export /prelude.s / /prelude_tail.s via PRELUDE_OUT_DIR so host
+     references can replay the exact linker glue used on the OS.
+  2. Generate reference files on the host with build/gen2/* under
+     qemu-riscv32 — same binaries the OS runs, so byte-exact
+     comparison is a true self-hosting check.
   3. Boot qemu-system-riscv32 and drive msh (no prompt echo) to run
-     each stage then pipe the result through mx so the framed output
-     is unambiguous in the captured UART stream.
-  4. Turn mux on first so the host demuxer can split task outputs
-     cleanly. mx's stdout lands in a single T00N tag; we concat all
-     T00N tags (except T002=msh) as the mx stream.
-  5. Decode the mx-framed payloads back to raw bytes, one per stage,
-     and diff against the golden reference.
+     each compile + link stage, piping every intermediate through mx
+     so the framed output is unambiguous in the captured UART stream.
+     Finally execute /tmp/hw and check that "Hello, World!" appears
+     in the UART output.
+  4. Turn mux on first (via the muxon task) so the host demuxer can
+     split task outputs cleanly. mx's stdout lands in task-tty tags
+     (T00N with N≠2); we concat them in first-appearance order and
+     split the resulting bytestream on mx's zero-length EOF markers.
+  5. Diff each decoded mx stream against its golden reference.
+
+Stages verified:
+  1.ast 1.th 1.wrap 2.tast 3.bc 4.s full.s lab.s hw
+and finally the runtime output of /tmp/hw (Hello World greeting).
 
 Usage:  python3 tests/phase3_verify.py
 """
@@ -34,13 +44,15 @@ def run(cmd, **kw):
     return subprocess.run(cmd, check=True, **kw)
 
 
-def gen_references():
+def gen_references_compile():
+    """Compile stages: parse → sigscan → wrap → tcheck → codegen → bc2asm.
+
+    Uses Gen2 binaries under qemu-riscv32 to match what the OS runs
+    byte-for-byte (Gen1 parse would add cosmetic differences like
+    single-line (params) emission)."""
     os.makedirs(REFS, exist_ok=True)
-    # parse (Gen2, same binary the OS runs — we want byte-exact
-    # self-hosting agreement, not Gen1-vs-Gen2 differences).
     with open(INPUT_TC, "rb") as i, open(f"{REFS}/1.ast", "wb") as out:
         run(["qemu-riscv32", f"{ROOT}/build/gen2/parse"], stdin=i, stdout=out)
-    # sigscan (Gen2 RV32 via qemu-riscv32)
     with open(f"{REFS}/1.ast", "rb") as i, open(f"{REFS}/1.th", "wb") as o:
         run(["qemu-riscv32", f"{ROOT}/build/gen2/sigscan"], stdin=i, stdout=o)
     # wrap: (imports)(self .th)(program .ast)
@@ -49,7 +61,6 @@ def gen_references():
         w.write(open(f"{REFS}/1.th", "rb").read())
         w.write(b")\n")
         w.write(open(f"{REFS}/1.ast", "rb").read())
-    # tcheck / codegen / bc2asm
     for step, out_ext, prev in [
         ("tcheck",  "2.tast", "1.wrap"),
         ("codegen", "3.bc",   "2.tast"),
@@ -61,11 +72,38 @@ def gen_references():
                 stdin=i, stdout=o)
 
 
+def gen_references_link():
+    """Link stages: full.s (prelude + code + tail) → lab.s → hw binary.
+
+    Prelude files are staged by kernel/build.sh into REFS/ via the
+    PRELUDE_OUT_DIR env var, so we replay the exact bytes the OS
+    cats into its linker pipeline."""
+    with open(f"{REFS}/full.s", "wb") as o:
+        o.write(open(f"{REFS}/prelude.s", "rb").read())
+        o.write(open(f"{REFS}/4.s", "rb").read())
+        o.write(open(f"{REFS}/prelude_tail.s", "rb").read())
+    with open(f"{REFS}/full.s", "rb") as i, open(f"{REFS}/lab.s", "wb") as o:
+        run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass1"],
+            stdin=i, stdout=o)
+    # asm_pass2 input: lab.s + full.s × 3 (3-pass stream emitter —
+    # text, rodata, data rescans).
+    p2_in = (open(f"{REFS}/lab.s", "rb").read()
+             + open(f"{REFS}/full.s", "rb").read() * 3)
+    with open(f"{REFS}/hw", "wb") as o:
+        run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass2"],
+            input=p2_in, stdout=o)
+
+
 def build_kernel_with_extras():
     env = dict(os.environ)
-    env["EXTRA_TASKS"] = ("parse sigscan tcheck codegen bc2asm cat "
-                         "mx mr muxon muxoff")
+    env["EXTRA_TASKS"] = ("parse sigscan tcheck codegen bc2asm "
+                         "asm_pass1 asm_pass2 cat mx mr muxon muxoff")
     env["GEN2_DIR"] = os.path.join(ROOT, "build/gen2")
+    # Stage prelude.s / prelude_tail.s into REFS/ for the link-stage
+    # reference generator. (Same bytes mkfs.py put under /prelude.s
+    # and /prelude_tail.s in mtfs.)
+    os.makedirs(REFS, exist_ok=True)
+    env["PRELUDE_OUT_DIR"] = REFS
     run([f"{ROOT}/kernel/build.sh", "--target", "virt",
          "-o", f"{ROOT}/build/kernel/virt_kernel.bin",
          "--disk-out", f"{ROOT}/build/kernel/disk.img"], env=env)
@@ -140,6 +178,7 @@ def run_pipeline_on_virt():
     #      in_buf. Host must send framed input (T002 = sh's slot).
     #   3. Each subsequent command is wrapped as one T002 frame.
     stages = [
+        # ---- compile ----
         "parse   < /hw.tc > /tmp/1.ast",
         "mx      < /tmp/1.ast",
         "sigscan < /tmp/1.ast > /tmp/1.th",
@@ -152,6 +191,18 @@ def run_pipeline_on_virt():
         "mx      < /tmp/3.bc",
         "bc2asm  < /tmp/3.bc > /tmp/4.s",
         "mx      < /tmp/4.s",
+        # ---- link (asm_pass1 + asm_pass2) ----
+        "cat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s",
+        "mx      < /tmp/full.s",
+        "asm_pass1 < /tmp/full.s > /tmp/lab.s",
+        "mx      < /tmp/lab.s",
+        # asm_pass2 wants the label table followed by the source three
+        # times (3-pass stream emitter: text, rodata, data).
+        "cat /tmp/lab.s /tmp/full.s /tmp/full.s /tmp/full.s > /tmp/p2.in",
+        "asm_pass2 < /tmp/p2.in > /tmp/hw",
+        "mx      < /tmp/hw",
+        # ---- run ----
+        "/tmp/hw",
         "quit",
     ]
     stdin = b"muxon\n"
@@ -165,7 +216,7 @@ def run_pipeline_on_virt():
         "-device", "virtio-blk-device,drive=blk0",
         "-device", f"loader,file={ROOT}/build/kernel/virt_kernel.bin,addr=0x80000000",
         "-device", "loader,addr=0x80000000,cpu-num=0",
-    ], input=stdin, capture_output=True, timeout=300)
+    ], input=stdin, capture_output=True, timeout=600)
     return proc.stdout
 
 
@@ -174,11 +225,13 @@ def run_pipeline_on_virt():
 def main():
     os.makedirs(LOGS, exist_ok=True)
 
-    print("[1/4] generating host references …")
-    gen_references()
-
-    print("[2/4] building virt kernel with EXTRA_TASKS …")
+    print("[1/4] building virt kernel with EXTRA_TASKS "
+          "(also stages prelude.s / prelude_tail.s to REFS) …")
     build_kernel_with_extras()
+
+    print("[2/4] generating host references (compile + link) …")
+    gen_references_compile()
+    gen_references_link()
 
     print("[3/4] driving virt qemu …")
     raw = run_pipeline_on_virt()
@@ -215,7 +268,8 @@ def main():
 
     # Split into mx-delimited streams.
     streams = decode_mx_streams(bytes(child))
-    stage_names = ["1.ast", "1.th", "1.wrap", "2.tast", "3.bc", "4.s"]
+    stage_names = ["1.ast", "1.th", "1.wrap", "2.tast", "3.bc", "4.s",
+                   "full.s", "lab.s", "hw"]
     print(f"found {len(streams)} mx streams (expected {len(stage_names)})")
 
     # Save each recovered stream beside the reference and diff.
@@ -237,9 +291,22 @@ def main():
             print(f"  [{name}] DIFF: os={len(os_bytes)} ref={len(ref_bytes)}")
             all_ok = False
 
+    # Finally, check that the OS ran /tmp/hw and produced the expected
+    # greeting. The Hello World output comes after all mx streams have
+    # terminated (each mx ends with a [0:u16] marker), so decode_mx_streams
+    # silently drops it as trailing garbage — we instead scan the raw
+    # tagged payload for the greeting as a substring.
+    greeting = b"Hello, World!"
+    if greeting in bytes(child):
+        print(f"  [runtime] OK (/tmp/hw printed {greeting.decode()!r})")
+    else:
+        print(f"  [runtime] MISSING: /tmp/hw did not print "
+              f"{greeting.decode()!r}")
+        all_ok = False
+
     print()
     if all_ok:
-        print("All stages match Gen2 reference.")
+        print("All stages match Gen2 reference, and /tmp/hw ran Hello World.")
         return 0
     print(f"Mismatch. Inspect {LOGS}/os.* vs {REFS}/ for details.")
     return 1
