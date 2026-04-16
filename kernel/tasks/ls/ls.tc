@@ -1,0 +1,59 @@
+// ls.tc — print directory entries.
+//
+// Usage: `ls` (lists "/"), `ls <path>`.
+// Uses the sys_readdir (ecall 89) syscall which fills a buffer with
+// NUL-terminated names. One name per output line.
+
+import "../libtc/libtc.tc";
+
+fn do_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32;
+
+fn main(argv: StringArray) -> i32 {
+    // Determine target path: argv[1] if given, else "/".
+    var path_buf: U8Array = 0 as U8Array;
+    if len(argv) >= 2 {
+        var arg: String = get(argv, 1);
+        var slen: i32 = len(arg);
+        path_buf = U8Array((slen + 1) as u32);
+        var i: i32 = 0;
+        while i < slen {
+            set(path_buf, i, get(arg, i));
+            i = i + 1;
+        }
+        set(path_buf, slen, 0u8);
+    } else {
+        path_buf = str_nul("/");
+    }
+
+    var buf: U8Array = U8Array(4096u32);
+    var n: i32 = do_readdir(path_buf as u32 + 4u32,
+                            buf as u32 + 4u32, 4096);
+    if n < 0 {
+        puts("ls: readdir failed\n");
+        delete(path_buf);
+        delete(buf);
+        return 1;
+    }
+    // Walk NUL-separated names and emit each + '\n'.
+    var i: i32 = 0;
+    while i < n {
+        var start: i32 = i;
+        while i < n && get(buf, i) != 0u8 { i = i + 1; }
+        var nlen: i32 = i - start;
+        if nlen > 0 {
+            var out: U8Array = U8Array((nlen + 1) as u32);
+            var j: i32 = 0;
+            while j < nlen {
+                set(out, j, get(buf, start + j));
+                j = j + 1;
+            }
+            set(out, nlen, 10u8);   // '\n'
+            sys_write(1, out, nlen + 1);
+            delete(out);
+        }
+        i = i + 1;   // skip NUL
+    }
+    delete(path_buf);
+    delete(buf);
+    return 0;
+}

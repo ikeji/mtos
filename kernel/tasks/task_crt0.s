@@ -138,6 +138,14 @@ do_mux_enable__i32:
     ecall
     ret
 
+# do_readdir(path_addr, buf_addr, buf_size) → bytes_written / -1.
+# Writes NUL-terminated directory entry names into buf.
+    .globl do_readdir__u32__u32__i32
+do_readdir__u32__u32__i32:
+    li   a7, 89
+    ecall
+    ret
+
 # peek/poke builtins
     .globl peek8__u32
 peek8__u32:

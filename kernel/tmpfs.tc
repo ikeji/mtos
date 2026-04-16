@@ -81,6 +81,32 @@ fn name_matches(stored: u32, name_addr: u32, n: i32) -> bool {
     return peek8(stored + n as u32) == 0u8;
 }
 
+// Enumerate tmpfs entries, writing each name + NUL into buf. Returns
+// bytes written or -1 on error.
+export fn tmpfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
+    if g_tmpfs_ready == 0 { return -1; }
+    var pos: i32 = 0;
+    var i: i32 = 0;
+    while i < TMPFS_MAX_FILES {
+        var f: TmpFile = get(g_tmpfs_files, i);
+        var na: u32 = nm_addr(f);
+        if na != 0u32 {
+            var nl: i32 = nlen(f);
+            if pos + nl + 1 > buf_size { return pos; }
+            var j: i32 = 0;
+            while j < nl {
+                poke8(buf_addr + (pos as u32), peek8(na + (j as u32)) as u8);
+                pos = pos + 1;
+                j = j + 1;
+            }
+            poke8(buf_addr + (pos as u32), 0u8);
+            pos = pos + 1;
+        }
+        i = i + 1;
+    }
+    return pos;
+}
+
 // Look up an existing file by name. Returns the file index or -1.
 fn tmpfs_lookup(name_addr: u32, n: i32) -> i32 {
     var i: i32 = 0;

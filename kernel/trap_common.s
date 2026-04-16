@@ -89,6 +89,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_wait
     li   t1, 250
     beq  t0, t1, _ecall_mux_enable
+    li   t1, 89
+    beq  t0, t1, _ecall_readdir
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -225,6 +227,17 @@ _ecall_mux_enable:
     lw   a0, 40(s0)
     call uart_mux_enable__i32
     sw   zero, 40(s0)
+    j    _ecall_leave_advance
+
+# sys_readdir(path_addr, buf_addr, buf_size) — enumerate directory entries.
+# Writes NUL-terminated names into buf, returns total bytes written or -1.
+_ecall_readdir:
+    call _ecall_enter
+    lw   a0, 40(s0)     # path_addr
+    lw   a1, 44(s0)     # buf_addr
+    lw   a2, 48(s0)     # buf_size
+    call vfs_readdir__u32__u32__i32
+    sw   a0, 40(s0)
     j    _ecall_leave_advance
 
 _ecall_exit:

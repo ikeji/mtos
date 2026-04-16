@@ -158,6 +158,38 @@ export fn mtfs_lookup(parent_inode: u32, name: U8Array, name_len: i32) -> i32 {
     return -1;
 }
 
+// Enumerate the children of dir_inode. Writes each entry name to buf
+// as a NUL-terminated string, one after another. Returns total bytes
+// written, or -1 on error. A directory with N children yields N names
+// each followed by '\0'.
+//
+// Root directory is inode 0 (parent == 0 for top-level entries).
+export fn mtfs_readdir(dir_inode: u32, buf_addr: u32, buf_size: i32) -> i32 {
+    if g_mtfs_mounted == 0 { return -1; }
+    if dir_inode > 0u32 && dir_inode >= g_mtfs_inode_count { return -1; }
+    var pos: i32 = 0;
+    var i: u32 = 1u32;
+    while i < g_mtfs_inode_count {
+        if inode_u32(i, INO_PARENT) == dir_inode {
+            var nlen: i32 = 0;
+            while nlen < 32 && inode_byte(i, nlen) != 0u8 {
+                nlen = nlen + 1;
+            }
+            if pos + nlen + 1 > buf_size { return pos; }
+            var j: i32 = 0;
+            while j < nlen {
+                poke8(buf_addr + (pos as u32), inode_byte(i, j));
+                pos = pos + 1;
+                j = j + 1;
+            }
+            poke8(buf_addr + (pos as u32), 0u8);
+            pos = pos + 1;
+        }
+        i = i + 1u32;
+    }
+    return pos;
+}
+
 export fn mtfs_open(inode_num: u32) -> i32 {
     if g_mtfs_mounted == 0 { return -1; }
     if inode_num >= g_mtfs_inode_count { return -1; }

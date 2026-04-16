@@ -1,0 +1,3 @@
+GUEST_TASKS += ls
+TASK_ARENA_ls := 16384
+TASK_STACK_ls := 8192

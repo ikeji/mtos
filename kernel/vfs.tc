@@ -252,6 +252,72 @@ export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
     return -1;
 }
 
+// Resolve a path to the mtfs inode of its final component, walking
+// through nested directories. Returns inode number (≥0) on success,
+// -1 on lookup failure. An empty or "/" path returns 0 (root).
+fn resolve_mtfs_inode(path_addr: u32, plen: i32) -> i32 {
+    var i: i32 = 0;
+    if plen > 0 && peek8(path_addr) == '/' as u8 { i = 1; }
+    var cur_parent: u32 = 0u32;
+    var inode: i32 = 0;
+    while i < plen {
+        while i < plen && peek8(path_addr + (i as u32)) == '/' as u8 {
+            i = i + 1;
+        }
+        if i >= plen { return inode; }
+        var seg_start: i32 = i;
+        while i < plen && peek8(path_addr + (i as u32)) != '/' as u8 {
+            i = i + 1;
+        }
+        var seg_len: i32 = i - seg_start;
+        if seg_len == 0 { return inode; }
+        var seg: U8Array = U8Array(seg_len as u32);
+        var j: i32 = 0;
+        while j < seg_len {
+            set(seg, j, peek8(path_addr + ((seg_start + j) as u32)));
+            j = j + 1;
+        }
+        var next_inode: i32 = mtfs_lookup(cur_parent, seg, seg_len);
+        delete(seg);
+        if next_inode < 0 { return -1; }
+        inode = next_inode;
+        cur_parent = inode as u32;
+    }
+    return inode;
+}
+
+// List directory entries. For paths under /tmp/ (just "/tmp" or
+// "/tmp/") the tmpfs file table is enumerated. Otherwise the path is
+// resolved through mtfs and the resulting inode's children are dumped.
+// Each entry is a NUL-terminated byte string; returns total bytes.
+export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
+    if g_vfs_ready == 0 { return -1; }
+    var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
+    if plen == 0 { return -1; }
+    // "/tmp" or "/tmp/" → enumerate tmpfs
+    if plen == 4 {
+        if peek8(path_addr) == '/' as u8 &&
+           peek8(path_addr + 1u32) == 't' as u8 &&
+           peek8(path_addr + 2u32) == 'm' as u8 &&
+           peek8(path_addr + 3u32) == 'p' as u8 {
+            return tmpfs_readdir(buf_addr, buf_size);
+        }
+    }
+    if plen == 5 {
+        if peek8(path_addr) == '/' as u8 &&
+           peek8(path_addr + 1u32) == 't' as u8 &&
+           peek8(path_addr + 2u32) == 'm' as u8 &&
+           peek8(path_addr + 3u32) == 'p' as u8 &&
+           peek8(path_addr + 4u32) == '/' as u8 {
+            return tmpfs_readdir(buf_addr, buf_size);
+        }
+    }
+    // mtfs path — walk and readdir the final inode.
+    var inode: i32 = resolve_mtfs_inode(path_addr, plen);
+    if inode < 0 { return -1; }
+    return mtfs_readdir(inode as u32, buf_addr, buf_size);
+}
+
 export fn vfs_close(fd: i32) -> i32 {
     if fd >= 0 && fd < 3 { return 0; }   // stdio is always open
     if g_vfs_ready == 0 { return -1; }
