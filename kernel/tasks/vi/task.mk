@@ -1,0 +1,3 @@
+GUEST_TASKS += vi
+TASK_ARENA_vi := 65536
+TASK_STACK_vi := 8192
