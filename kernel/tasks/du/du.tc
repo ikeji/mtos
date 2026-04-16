@@ -1,0 +1,90 @@
+// du.tc — print byte count per file. Usage: `du <file> [file…]`.
+//
+// Reads each file to EOF and prints "<bytes>\t<path>". Simple byte
+// count, no block accounting or recursion yet.
+
+import "../libtc/libtc.tc";
+
+fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+fn print_u32(v: i32) -> void {
+    if v == 0 {
+        var z: U8Array = U8Array(1u32);
+        set(z, 0, '0' as u8);
+        sys_write(1, z, 1);
+        delete(z);
+        return;
+    }
+    var d: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    var x: i32 = v;
+    while x > 0 {
+        set(d, n, ('0' as i32 + x % 10) as u8);
+        n = n + 1;
+        x = x / 10;
+    }
+    var out: U8Array = U8Array(n as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(out, i, get(d, n - 1 - i));
+        i = i + 1;
+    }
+    sys_write(1, out, n);
+    delete(out);
+    delete(d);
+    return;
+}
+
+fn count_bytes(fd: i32) -> i32 {
+    var buf: U8Array = U8Array(4096u32);
+    var total: i32 = 0;
+    var done: i32 = 0;
+    while done == 0 {
+        var n: i32 = sys_read(fd, buf, 4096);
+        if n <= 0 { done = 1; }
+        else { total = total + n; }
+    }
+    delete(buf);
+    return total;
+}
+
+fn main(argv: StringArray) -> i32 {
+    if len(argv) < 2 {
+        puts("du: usage: du <file> [file...]\n");
+        return 1;
+    }
+    var i: i32 = 1;
+    while i < len(argv) {
+        var name: String = get(argv, i);
+        var sl: i32 = len(name);
+        var path: U8Array = U8Array((sl + 1) as u32);
+        var j: i32 = 0;
+        while j < sl { set(path, j, get(name, j)); j = j + 1; }
+        set(path, sl, 0u8);
+        var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
+        delete(path);
+        if fd < 0 {
+            puts("du: open failed\n");
+        } else {
+            var bytes: i32 = count_bytes(fd);
+            do_close(fd);
+            print_u32(bytes);
+            var tab: U8Array = U8Array(1u32);
+            set(tab, 0, 9u8);
+            sys_write(1, tab, 1);
+            delete(tab);
+            var nbuf: U8Array = U8Array(sl as u32);
+            var k: i32 = 0;
+            while k < sl { set(nbuf, k, get(name, k)); k = k + 1; }
+            sys_write(1, nbuf, sl);
+            delete(nbuf);
+            var nl: U8Array = U8Array(1u32);
+            set(nl, 0, 10u8);
+            sys_write(1, nl, 1);
+            delete(nl);
+        }
+        i = i + 1;
+    }
+    return 0;
+}

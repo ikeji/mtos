@@ -1,0 +1,57 @@
+// cp.tc — copy a file. Usage: `cp <src> <dst>`.
+//
+// dst must live on a writable FS (tmpfs). Source may be mtfs or
+// tmpfs. Uses standard openat/read/write.
+
+import "../libtc/libtc.tc";
+
+fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+var O_WRONLY: i32 = 1;
+var O_CREAT:  i32 = 64;
+var O_TRUNC:  i32 = 512;
+
+fn str_to_nul(s: String) -> U8Array {
+    var sl: i32 = len(s);
+    var p: U8Array = U8Array((sl + 1) as u32);
+    var i: i32 = 0;
+    while i < sl { set(p, i, get(s, i)); i = i + 1; }
+    set(p, sl, 0u8);
+    return p;
+}
+
+fn main(argv: StringArray) -> i32 {
+    if len(argv) < 3 {
+        puts("cp: usage: cp <src> <dst>\n");
+        return 1;
+    }
+    var src_path: U8Array = str_to_nul(get(argv, 1));
+    var dst_path: U8Array = str_to_nul(get(argv, 2));
+    var src_fd: i32 = do_openat(0, src_path as u32 + 4u32, 0);
+    if src_fd < 0 {
+        puts("cp: src open failed\n");
+        delete(src_path); delete(dst_path);
+        return 1;
+    }
+    var dst_fd: i32 = do_openat(0, dst_path as u32 + 4u32,
+                                O_WRONLY | O_CREAT | O_TRUNC);
+    if dst_fd < 0 {
+        puts("cp: dst open failed\n");
+        do_close(src_fd);
+        delete(src_path); delete(dst_path);
+        return 1;
+    }
+    var buf: U8Array = U8Array(4096u32);
+    var done: i32 = 0;
+    while done == 0 {
+        var n: i32 = sys_read(src_fd, buf, 4096);
+        if n <= 0 { done = 1; }
+        else { sys_write(dst_fd, buf, n); }
+    }
+    delete(buf);
+    do_close(src_fd);
+    do_close(dst_fd);
+    delete(src_path); delete(dst_path);
+    return 0;
+}

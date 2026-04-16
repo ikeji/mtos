@@ -1,0 +1,3 @@
+GUEST_TASKS += head
+TASK_ARENA_head := 16384
+TASK_STACK_head := 8192

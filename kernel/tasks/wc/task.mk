@@ -1,0 +1,3 @@
+GUEST_TASKS += wc
+TASK_ARENA_wc := 16384
+TASK_STACK_wc := 8192

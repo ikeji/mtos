@@ -1,0 +1,3 @@
+GUEST_TASKS += du
+TASK_ARENA_du := 16384
+TASK_STACK_du := 8192

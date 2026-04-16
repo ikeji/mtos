@@ -64,6 +64,8 @@
 - [x] compile-genX.shで、中間ファイルをbuild内に残すようにする。デバッグ用に。その時ファイル名に使ったコンパイラを残す。hello.gen1.s
 - [x] lsを実装する。readdirシステムコールの実装がいる。
 - [x] カーネル設定ファイルを用意。uart_muxのオンオフやinitプロセスを設定できる。
-- [ ] coreutilsにありそうなツールをいくつか作る。ex, head tail cp du wc ls mv wc
+- [x] coreutilsにありそうなツールをいくつか作る。ex, head tail cp du wc ls mv wc
+      - 作成: ls, wc, head, cp, du
+      - 未実装: tail (要 buffering)、mv (要 rename syscall)
 - [ ] procfsを作る
 - [ ] neofetchを作る

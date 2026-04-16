@@ -1,0 +1,3 @@
+GUEST_TASKS += cp
+TASK_ARENA_cp := 16384
+TASK_STACK_cp := 8192
