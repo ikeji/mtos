@@ -88,39 +88,131 @@ var g_last_argv:      u32 = 0u32;
 var g_last_stdin_fd:  i32 = 0;
 var g_last_stdout_fd: i32 = 0;
 
+// ===== UART frame multiplexer (docs/task/uart_multiplex.md) =====
+//
+// Every byte that leaves the kernel via UART is wrapped in a
+// [tag:4][len:1][payload:N] frame so the host can demux kernel /
+// per-task / stderr streams into separate log files. Tags:
+//   KERN  - kernel debug + all stderr
+//   T00N  - task stdout (fd=1, UART-direct), N = slot in hex
+// Payload is at most 255 bytes; longer writes are split here into
+// multiple frames with the same tag.
+//
+// Called from kputs / kdbg_chr (both KERN-tagged) and vfs_write
+// (T00N-tagged for the current slot's fd=1 UART path).
+
+// Low-level UART write (platform_virt.s / platform_pico2.s).
+fn do_uart_write(buf: u32, len: i32) -> i32;
+
+// Runtime toggle for UART multiplexing. Default 0 = raw UART (existing
+// behavior, keeps virt grep-based tests happy). Set to 1 via
+// uart_mux_enable() when the host side is a demuxer (e.g. pico2
+// driver). kernel_pico2.tc::main flips this on at boot.
+var g_mux_enabled: i32 = 0;
+
+export fn uart_mux_enable(on: i32) -> void {
+    g_mux_enabled = on;
+    return;
+}
+
+fn uart_emit_frame_raw(tag: StringLiteral, addr: u32, n: i32) -> void {
+    var hdr: U8Array = U8Array(5u32);
+    set(hdr, 0, get(tag, 0));
+    set(hdr, 1, get(tag, 1));
+    set(hdr, 2, get(tag, 2));
+    set(hdr, 3, get(tag, 3));
+    set(hdr, 4, n as u8);
+    do_uart_write(hdr as u32 + 4u32, 5);
+    if n > 0 { do_uart_write(addr, n); }
+    delete(hdr);
+    return;
+}
+
+export fn uart_emit_frame(tag: StringLiteral, addr: u32, n: i32) -> void {
+    if g_mux_enabled == 0 {
+        // Mux off: emit payload as raw UART, matching legacy behavior.
+        if n > 0 { do_uart_write(addr, n); }
+        return;
+    }
+    if n <= 0 {
+        uart_emit_frame_raw(tag, 0u32, 0);
+        return;
+    }
+    var off: i32 = 0;
+    while off < n {
+        var c: i32 = n - off;
+        if c > 255 { c = 255; }
+        uart_emit_frame_raw(tag, addr + (off as u32), c);
+        off = off + c;
+    }
+    return;
+}
+
+// Emit a frame for the given scheduler slot's stdout. slot → TTY map
+// is 1:1 for now (slot N → TTY N). Exposed to vfs.tc.
+export fn uart_emit_tty_frame(slot: i32, addr: u32, n: i32) -> void {
+    uart_emit_frame(tty_tag_for_slot(slot), addr, n);
+    return;
+}
+
+// TTY tag for a scheduler slot. Currently 1:1 mapping (slot N → TTY N).
+// Returns a 4-char StringLiteral "T00N" where N is the hex digit.
+// Slots 0..15 supported; beyond that returns "T00?" (noise, but the
+// host demuxer won't crash — it's just an unknown channel).
+fn tty_tag_for_slot(slot: i32) -> StringLiteral {
+    if slot == 0 { return "T000"; }
+    if slot == 1 { return "T001"; }
+    if slot == 2 { return "T002"; }
+    if slot == 3 { return "T003"; }
+    if slot == 4 { return "T004"; }
+    if slot == 5 { return "T005"; }
+    if slot == 6 { return "T006"; }
+    if slot == 7 { return "T007"; }
+    if slot == 8 { return "T008"; }
+    if slot == 9 { return "T009"; }
+    if slot == 10 { return "T00a"; }
+    if slot == 11 { return "T00b"; }
+    if slot == 12 { return "T00c"; }
+    if slot == 13 { return "T00d"; }
+    if slot == 14 { return "T00e"; }
+    if slot == 15 { return "T00f"; }
+    return "T00?";
+}
+
 export fn kputs(s: StringLiteral) -> void {
     var slen: i32 = len(s);
-    var buf: U8Array = U8Array((slen) as u32);
-    var i: i32 = 0;
-    while i < slen {
-        set(buf, i, get(s, i));
-        i = i + 1;
-    }
-    sys_write(1, buf, slen);
-    delete(buf);
+    if slen == 0 { return; }
+    uart_emit_frame("KERN", (s as u32) + 4u32, slen);
     return;
 }
 
 // ===== Low-level debug output =====
 //
-// Kernel-side sys_write bypasses vfs_write on this platform
-// (platform_virt.s / platform_pico2.s route do_write directly to
-// do_uart_write), so these helpers reliably land on the UART even
-// when the current task has stdio redirected to tmpfs. Used by the
-// trap / task-exit / task-switch / redirected-write traces below.
-//
-// kdbg_chr allocates a 1-byte U8Array per call. Originally this was
-// also a workaround for a StringLiteral pointer bug that got fixed by
-// discriminating `__tc_strobj<N>` labels per .tc file (see problem.md
-// "fixed" list); today the byte-at-a-time form is just the simplest
-// way to compose kdbg_dec / kdbg_hex on top without threading a
-// StringBuffer through each caller.
+// Buffered line assembly for kdbg_switch / kdbg_exit / kdbg_trap /
+// kdbg_write. kdbg_chr accumulates bytes; a newline triggers a single
+// KERN-tagged frame emission, keeping overhead low (one 5-byte header
+// per line instead of per byte).
+
+var g_kdbg_buf: U8Array = 0 as U8Array;
+var g_kdbg_pos: i32 = 0;
+var G_KDBG_CAP: i32 = 128;
+
+fn kdbg_flush() -> void {
+    if g_kdbg_pos <= 0 { return; }
+    uart_emit_frame("KERN", (g_kdbg_buf as u32) + 4u32, g_kdbg_pos);
+    g_kdbg_pos = 0;
+    return;
+}
 
 fn kdbg_chr(c: u8) -> void {
-    var b: U8Array = U8Array(1u32);
-    set(b, 0, c);
-    sys_write(1, b, 1);
-    delete(b);
+    if (g_kdbg_buf as u32) == 0u32 {
+        g_kdbg_buf = U8Array(G_KDBG_CAP as u32);
+    }
+    if g_kdbg_pos < G_KDBG_CAP {
+        set(g_kdbg_buf, g_kdbg_pos, c);
+        g_kdbg_pos = g_kdbg_pos + 1;
+    }
+    if c == 10u8 { kdbg_flush(); }
     return;
 }
 

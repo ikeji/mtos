@@ -222,8 +222,20 @@ export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
             fd = redir;
         }
     }
-    // Standard streams and anything without an open file go to UART.
-    if fd >= 0 && fd < 3 { return do_uart_write(buf_addr, n); }
+    // Standard streams go through the UART frame multiplexer so the
+    // host can demux per-task output into separate log files.
+    //   fd 0: nonsensical for write; route to UART raw as a fallback
+    //   fd 1: task stdout → TTY <slot> tag
+    //   fd 2: stderr       → KERN tag (aggregated with kernel debug)
+    if fd == 1 {
+        uart_emit_tty_frame(sched_current_idx(), buf_addr, n);
+        return n;
+    }
+    if fd == 2 {
+        uart_emit_frame("KERN", buf_addr, n);
+        return n;
+    }
+    if fd == 0 { return do_uart_write(buf_addr, n); }
     if g_vfs_ready == 0 { return -1; }
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
