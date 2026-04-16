@@ -69,6 +69,15 @@ struct Task {
     argv:      u32,
     stdin_fd:  i32,
     stdout_fd: i32,
+    // UART mux input buffer (Phase 2).
+    // Host sends `<1F>T00N<len><data>` frames; uart_rx_dispatch enqueues
+    // the payload here. sys_read(fd=0) consumes from this ring when
+    // g_mux_enabled is 1. in_buf == 0u32 means "not yet allocated"
+    // (allocated lazily in vfs_read on first read).
+    in_buf:    u32,
+    in_head:   i32,
+    in_tail:   i32,
+    in_eof:    i32,
 }
 
 var g_num_tasks: i32 = 0;
@@ -315,6 +324,168 @@ export fn kdbg_write(slot: i32, n: i32) -> void {
     return;
 }
 
+// ===== UART RX frame dispatcher (Phase 2) =====
+//
+// When g_mux_enabled=1, sys_read(fd=0) consumes from the current
+// task's per-slot input buffer instead of polling UART directly.
+// uart_rx_dispatch() drains the PL011 FIFO, parses frames, and
+// enqueues the payload into the right slot's ring buffer.
+//
+// Frame format on the wire: [0x1F magic][tag:4][len:1][payload:N].
+// Only `T00X` (hex digit) tags are accepted as input; other tags are
+// dropped. len=0 on a T00X frame sets in_eof for that slot.
+
+fn do_uart_try_read(buf: u32, max: i32) -> i32;
+
+var TASK_IN_BUF_CAP: i32 = 4096;
+var G_RX_PARSE_CAP:  i32 = 512;
+
+var g_rx_parse_buf: U8Array = 0 as U8Array;
+var g_rx_parse_pos: i32 = 0;
+
+fn tag_to_slot(a: u8, b: u8, c: u8, d: u8) -> i32 {
+    if a != 'T' as u8 { return -1; }
+    if b != '0' as u8 { return -1; }
+    if c != '0' as u8 { return -1; }
+    if d >= '0' as u8 && d <= '9' as u8 { return (d as i32) - 48; }
+    if d >= 'a' as u8 && d <= 'f' as u8 { return (d as i32) - 97 + 10; }
+    return -1;
+}
+
+fn task_input_enqueue(slot: i32, src: U8Array, src_off: i32, n: i32) -> void {
+    if slot < 0 || slot >= g_num_tasks { return; }
+    var t: Task = get(g_tasks, slot);
+    if n == 0 {
+        // len=0 frame → EOF for this slot's stdin
+        in_eof(t, 1);
+        return;
+    }
+    // Lazy allocate in_buf on first input
+    if in_buf(t) == 0u32 {
+        var buf: U8Array = U8Array(TASK_IN_BUF_CAP as u32);
+        in_buf(t, buf as u32);
+        in_head(t, 0);
+        in_tail(t, 0);
+    }
+    var data_addr: u32 = in_buf(t) + 4u32;
+    var head: i32 = in_head(t);
+    var tail: i32 = in_tail(t);
+    var cap: i32 = TASK_IN_BUF_CAP;
+    var i: i32 = 0;
+    while i < n {
+        var next_tail: i32 = (tail + 1) % cap;
+        if next_tail == head {
+            // Ring buffer full; drop remaining bytes (no flow control
+            // yet). Host should pace sends so this doesn't happen for
+            // a single-task consumer.
+            i = n;
+        } else {
+            poke8(data_addr + (tail as u32), get(src, src_off + i) as u8);
+            tail = next_tail;
+            i = i + 1;
+        }
+    }
+    in_tail(t, tail);
+    return;
+}
+
+fn parse_rx_frames() -> void {
+    var drop: i32 = 0;
+    while drop < g_rx_parse_pos {
+        if get(g_rx_parse_buf, drop) != 0x1Fu8 {
+            drop = drop + 1;
+        } else {
+            if g_rx_parse_pos - drop < 6 {
+                // Need more bytes for header
+                drop = g_rx_parse_pos;  // break outer loop
+            } else {
+                var t0: u8 = get(g_rx_parse_buf, drop + 1);
+                var t1: u8 = get(g_rx_parse_buf, drop + 2);
+                var t2: u8 = get(g_rx_parse_buf, drop + 3);
+                var t3: u8 = get(g_rx_parse_buf, drop + 4);
+                var n:  i32 = get(g_rx_parse_buf, drop + 5) as i32;
+                if g_rx_parse_pos - drop < 6 + n {
+                    // Need more bytes for payload
+                    drop = g_rx_parse_pos;
+                } else {
+                    var slot: i32 = tag_to_slot(t0, t1, t2, t3);
+                    if slot >= 0 {
+                        task_input_enqueue(slot, g_rx_parse_buf, drop + 6, n);
+                    }
+                    drop = drop + 6 + n;
+                }
+            }
+        }
+    }
+    // Compact remaining unparsed bytes to buffer start
+    if drop > 0 && drop < g_rx_parse_pos {
+        var i: i32 = 0;
+        while drop + i < g_rx_parse_pos {
+            set(g_rx_parse_buf, i, get(g_rx_parse_buf, drop + i));
+            i = i + 1;
+        }
+        g_rx_parse_pos = g_rx_parse_pos - drop;
+    } else if drop >= g_rx_parse_pos {
+        // Fully consumed
+        g_rx_parse_pos = 0;
+    }
+    return;
+}
+
+export fn uart_rx_dispatch() -> void {
+    if (g_rx_parse_buf as u32) == 0u32 {
+        g_rx_parse_buf = U8Array(G_RX_PARSE_CAP as u32);
+        g_rx_parse_pos = 0;
+    }
+    var chunk: U8Array = U8Array(64u32);
+    var n: i32 = do_uart_try_read(chunk as u32 + 4u32, 64);
+    var i: i32 = 0;
+    while i < n {
+        if g_rx_parse_pos < G_RX_PARSE_CAP {
+            set(g_rx_parse_buf, g_rx_parse_pos, get(chunk, i));
+            g_rx_parse_pos = g_rx_parse_pos + 1;
+        }
+        i = i + 1;
+    }
+    delete(chunk);
+    parse_rx_frames();
+    return;
+}
+
+// vfs_read(fd=0) entry when mux is on. Busy-polls uart_rx_dispatch
+// until this slot's input buffer has bytes, or EOF is set.
+export fn task_input_read(slot: i32, buf_addr: u32, want: i32) -> i32 {
+    if slot < 0 || slot >= g_num_tasks { return -1; }
+    if want <= 0 { return 0; }
+    var t: Task = get(g_tasks, slot);
+    while in_head(t) == in_tail(t) && in_eof(t) == 0 {
+        uart_rx_dispatch();
+        t = get(g_tasks, slot);
+    }
+    var tbuf: u32 = in_buf(t);
+    if tbuf == 0u32 {
+        // No data ever, EOF
+        return 0;
+    }
+    var data_addr: u32 = tbuf + 4u32;
+    var head: i32 = in_head(t);
+    var tail: i32 = in_tail(t);
+    var cap: i32 = TASK_IN_BUF_CAP;
+    var got: i32 = 0;
+    while got < want && head != tail {
+        poke8(buf_addr + (got as u32), peek8(data_addr + (head as u32)) as u8);
+        head = (head + 1) % cap;
+        got = got + 1;
+    }
+    in_head(t, head);
+    return got;
+}
+
+// Accessor for vfs_read: check if mux is currently enabled.
+export fn uart_mux_is_enabled() -> i32 {
+    return g_mux_enabled;
+}
+
 export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
     var frame_buf: U8Array = U8Array(132u32);
     var frame: u32 = frame_buf as u32 + 4u32;
@@ -456,6 +627,7 @@ fn slot_free_allocs(idx: i32) -> void {
     var av: u32 = argv(t);
     var si: i32 = stdin_fd(t);
     var so: i32 = stdout_fd(t);
+    var ib: u32 = in_buf(t);
     if fb != 0u32 { kfree(fb); }
     if ra != 0u32 { kfree(ra); }
     if st != 0u32 { kfree(st); }
@@ -463,6 +635,11 @@ fn slot_free_allocs(idx: i32) -> void {
     free_argv_impl(av);
     if si != 0 { vfs_close(si); }
     if so != 0 { vfs_close(so); }
+    if ib != 0u32 { kfree(ib); }
+    in_buf(t, 0u32);
+    in_head(t, 0);
+    in_tail(t, 0);
+    in_eof(t, 0);
     frame_buf(t, 0u32);
     ram(t, 0u32);
     stack(t, 0u32);
@@ -481,7 +658,8 @@ export fn sched_init(max: i32) -> void {
     while i < max {
         set(g_tasks, i,
             Task(0u32, STATE_UNUSED, -1,
-                 0u32, 0u32, 0u32, 0u32, 0u32, 0, 0));
+                 0u32, 0u32, 0u32, 0u32, 0u32, 0, 0,
+                 0u32, 0, 0, 0));
         i = i + 1;
     }
     return;

@@ -198,6 +198,13 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
         var redir: i32 = task_get_stdin_fd(sched_current_idx());
         if redir != 0 { fd = redir; }
     }
+    // When mux is on, fd 0 (no redirect) reads from the current
+    // task's demuxed input buffer, not raw UART. The UART bytes are
+    // framed per slot; sh / asm_pass1 / etc. each get their own
+    // stdin via task_input_read.
+    if fd == 0 && uart_mux_is_enabled() != 0 {
+        return task_input_read(sched_current_idx(), buf_addr, n);
+    }
     if fd >= 0 && fd < 3 { return do_uart_read(buf_addr, n); }
     if g_vfs_ready == 0 { return -1; }
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
