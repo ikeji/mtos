@@ -1,0 +1,71 @@
+// mr.tc — XMODEM-ish framing decoder. Counterpart of mx.tc.
+//
+// Reads `[len:u16 LE][data:len bytes]` frames from stdin and writes
+// `data` straight to stdout. A frame with len=0 terminates the
+// stream; mr returns 0 at that point.
+//
+// Binary-transparent by construction (no inband escaping).
+// Frame size limit: 65535 bytes. Actual max written by mx is 256.
+
+fn main() -> i32 {
+    var hdr: U8Array = U8Array(2u32);
+    var buf: U8Array = U8Array(65536u32);
+    var done: i32 = 0;
+
+    while done == 0 {
+        // Read the 2-byte little-endian size header.
+        var got: i32 = 0;
+        while got < 2 && done == 0 {
+            var tmp: U8Array = U8Array((2 - got) as u32);
+            var n: i32 = sys_read(0, tmp, 2 - got);
+            if n <= 0 {
+                done = 1;
+            } else {
+                var i: i32 = 0;
+                while i < n {
+                    set(hdr, got + i, get(tmp, i));
+                    i = i + 1;
+                }
+                got = got + n;
+            }
+            delete(tmp);
+        }
+        if done == 1 { i_break(); }  // sys_read failed mid-header
+
+        var sz: i32 = (get(hdr, 0) as i32) | ((get(hdr, 1) as i32) << 8);
+        if sz == 0 {
+            // End marker.
+            done = 1;
+        } else {
+            // Read sz bytes of payload and forward.
+            var have: i32 = 0;
+            while have < sz && done == 0 {
+                var tmp2: U8Array = U8Array((sz - have) as u32);
+                var m: i32 = sys_read(0, tmp2, sz - have);
+                if m <= 0 {
+                    // Truncated payload — bail out.
+                    done = 1;
+                } else {
+                    var j: i32 = 0;
+                    while j < m {
+                        set(buf, have + j, get(tmp2, j));
+                        j = j + 1;
+                    }
+                    have = have + m;
+                }
+                delete(tmp2);
+            }
+            if have > 0 {
+                sys_write(1, buf, have);
+            }
+        }
+    }
+    delete(hdr);
+    delete(buf);
+    return 0;
+}
+
+// Tiny helper: TC doesn't have `break`, so we simulate early-exit with
+// a no-op call that compilers can inline away. Used once above for
+// clarity; the outer `while done == 0` would catch the exit anyway.
+fn i_break() -> void { return; }

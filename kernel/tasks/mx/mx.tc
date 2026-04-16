@@ -1,0 +1,60 @@
+// mx.tc — XMODEM-ish framing encoder.
+//
+// Reads raw bytes from stdin, splits them into ≤256-byte chunks,
+// writes each chunk to stdout as `[len:u16 LE][data:len bytes]`.
+// Emits a final `[0:u16]` end marker so the receiver (`mr`) knows
+// the stream is over.
+//
+// Motivation: over a pipe-through-kernel / UART-mux / task-to-task
+// bytestream we sometimes need a self-describing frame boundary so
+// a consumer can tell where each producer output ends (and where
+// "done" is). mx/mr do that with zero assumptions on the payload —
+// binary data is transparent because the length prefix is an
+// explicit byte count.
+//
+// Matching decoder: mr.tc.
+//
+// Frame on wire:
+//   [size_lo][size_hi][data×size] ... [0x00][0x00]
+
+fn main() -> i32 {
+    var CHUNK: i32 = 256;
+    var buf: U8Array = U8Array(CHUNK as u32);
+    var hdr: U8Array = U8Array(2u32);
+    var done: i32 = 0;
+
+    while done == 0 {
+        // Fill buf up to CHUNK bytes, accumulating across multiple
+        // sys_read calls since a pipe / UART source may dribble in.
+        var got: i32 = 0;
+        while got < CHUNK && done == 0 {
+            var tmp: U8Array = U8Array((CHUNK - got) as u32);
+            var n: i32 = sys_read(0, tmp, CHUNK - got);
+            if n <= 0 {
+                done = 1;
+            } else {
+                var i: i32 = 0;
+                while i < n {
+                    set(buf, got + i, get(tmp, i));
+                    i = i + 1;
+                }
+                got = got + n;
+            }
+            delete(tmp);
+        }
+        if got > 0 {
+            set(hdr, 0, (got & 0xFF) as u8);
+            set(hdr, 1, ((got >> 8) & 0xFF) as u8);
+            sys_write(1, hdr, 2);
+            sys_write(1, buf, got);
+        }
+    }
+    // End marker: size = 0
+    set(hdr, 0, 0u8);
+    set(hdr, 1, 0u8);
+    sys_write(1, hdr, 2);
+
+    delete(buf);
+    delete(hdr);
+    return 0;
+}
