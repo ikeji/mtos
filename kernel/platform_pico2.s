@@ -174,19 +174,19 @@ do_uart_read__u32__i32:
     .globl do_uart_try_read__u32__i32
 do_uart_try_read__u32__i32:
     li   t0, 0x40070000
-    beqz a1, 9f
+    beqz a1, 5f
     mv   t2, a1
     mv   t3, a0
-10: beqz t2, 9f
+4:  beqz t2, 5f
     lw   t1, 0x18(t0)
     andi t1, t1, 0x10         # RXFE
-    bnez t1, 9f               # FIFO empty → bail
+    bnez t1, 5f               # FIFO empty → bail
     lbu  t1, 0(t0)
     sb   t1, 0(t3)
     addi t3, t3, 1
     addi t2, t2, -1
-    j    10b
-9:  sub  a0, a1, t2
+    j    4b
+5:  sub  a0, a1, t2
     ret
 
 # ===== Kernel runtime stubs =====
