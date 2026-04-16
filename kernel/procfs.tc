@@ -218,3 +218,20 @@ export fn procfs_close(fd: i32) -> i32 {
     pos(e, 0);
     return 0;
 }
+
+// Enumerate /proc entries into `buf_addr` as NUL-separated names.
+// Currently /proc exposes a single entry: "tasks". Returns the number
+// of bytes written (including trailing NULs), or -1 on error.
+export fn procfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
+    var name: StringLiteral = "tasks";
+    var nlen: i32 = len(name);
+    var need: i32 = nlen + 1;  // name + NUL
+    if need > buf_size { return -1; }
+    var i: i32 = 0;
+    while i < nlen {
+        poke8(buf_addr + (i as u32), get(name, i));
+        i = i + 1;
+    }
+    poke8(buf_addr + (nlen as u32), 0u8);
+    return need;
+}

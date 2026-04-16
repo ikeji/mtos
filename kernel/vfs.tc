@@ -314,27 +314,31 @@ fn resolve_mtfs_inode(path_addr: u32, plen: i32) -> i32 {
 // "/tmp/") the tmpfs file table is enumerated. Otherwise the path is
 // resolved through mtfs and the resulting inode's children are dumped.
 // Each entry is a NUL-terminated byte string; returns total bytes.
+// Compare path against a literal. Accepts both "/tmp" and "/tmp/"
+// variants so callers can spell the root once.
+fn path_eq_or_trailing(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
+    var sl: i32 = len(s);
+    if plen != sl && plen != sl + 1 { return false; }
+    var i: i32 = 0;
+    while i < sl {
+        if peek8(path_addr + (i as u32)) != get(s, i) { return false; }
+        i = i + 1;
+    }
+    if plen == sl + 1 {
+        if peek8(path_addr + (sl as u32)) != '/' as u8 { return false; }
+    }
+    return true;
+}
+
 export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
     var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
     if plen == 0 { return -1; }
-    // "/tmp" or "/tmp/" → enumerate tmpfs
-    if plen == 4 {
-        if peek8(path_addr) == '/' as u8 &&
-           peek8(path_addr + 1u32) == 't' as u8 &&
-           peek8(path_addr + 2u32) == 'm' as u8 &&
-           peek8(path_addr + 3u32) == 'p' as u8 {
-            return tmpfs_readdir(buf_addr, buf_size);
-        }
+    if path_eq_or_trailing(path_addr, plen, "/tmp") {
+        return tmpfs_readdir(buf_addr, buf_size);
     }
-    if plen == 5 {
-        if peek8(path_addr) == '/' as u8 &&
-           peek8(path_addr + 1u32) == 't' as u8 &&
-           peek8(path_addr + 2u32) == 'm' as u8 &&
-           peek8(path_addr + 3u32) == 'p' as u8 &&
-           peek8(path_addr + 4u32) == '/' as u8 {
-            return tmpfs_readdir(buf_addr, buf_size);
-        }
+    if path_eq_or_trailing(path_addr, plen, "/proc") {
+        return procfs_readdir(buf_addr, buf_size);
     }
     // mtfs path — walk and readdir the final inode.
     var inode: i32 = resolve_mtfs_inode(path_addr, plen);
