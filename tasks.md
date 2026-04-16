@@ -67,5 +67,5 @@
 - [x] coreutilsにありそうなツールをいくつか作る。ex, head tail cp du wc ls mv wc
       - 作成: ls, wc, head, cp, du
       - 未実装: tail (要 buffering)、mv (要 rename syscall)
-- [ ] procfsを作る
+- [x] procfsを作る
 - [ ] neofetchを作る

@@ -678,6 +678,27 @@ export fn task_get_stdout_fd(idx: i32) -> i32 {
     return stdout_fd(get(g_tasks, idx));
 }
 
+// Accessors exposed for procfs.tc / other introspection consumers.
+export fn sched_task_count() -> i32 { return g_num_tasks; }
+
+export fn task_get_state(idx: i32) -> i32 {
+    if g_tasks as u32 == 0u32 { return 2; }   // UNUSED
+    if idx < 0 || idx >= g_num_tasks { return 2; }
+    return state(get(g_tasks, idx));
+}
+
+export fn task_get_frame(idx: i32) -> u32 {
+    if g_tasks as u32 == 0u32 { return 0u32; }
+    if idx < 0 || idx >= g_num_tasks { return 0u32; }
+    return frame(get(g_tasks, idx));
+}
+
+export fn task_get_wait_on(idx: i32) -> i32 {
+    if g_tasks as u32 == 0u32 { return -1; }
+    if idx < 0 || idx >= g_num_tasks { return -1; }
+    return wait_on(get(g_tasks, idx));
+}
+
 export fn sched_current_idx() -> i32 {
     return g_current;
 }

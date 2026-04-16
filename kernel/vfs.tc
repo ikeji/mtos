@@ -15,6 +15,7 @@
 
 import "mtfs.tc";
 import "tmpfs.tc";
+import "procfs.tc";
 import "kernel_common.tc";
 
 // Platform UART helpers (defined in platform_*.s)
@@ -26,10 +27,11 @@ var VFS_PATH_MAX: i32 = 128;
 
 // fs_type values
 //   -1 = free slot, 0 = UART (unused today), 1 = mtfs, 2 = tmpfs
-var FS_NONE:  i32 = -1;
-var FS_UART:  i32 = 0;
-var FS_MTFS:  i32 = 1;
-var FS_TMPFS: i32 = 2;
+var FS_NONE:   i32 = -1;
+var FS_UART:   i32 = 0;
+var FS_MTFS:   i32 = 1;
+var FS_TMPFS:  i32 = 2;
+var FS_PROCFS: i32 = 3;
 
 // ===== fd table =====
 // fs_type : which FS owns this fd
@@ -67,6 +69,18 @@ fn is_tmp_path(path_addr: u32, plen: i32) -> bool {
     if peek8(path_addr + 2u32)   != 'm' as u8 { return false; }
     if peek8(path_addr + 3u32)   != 'p' as u8 { return false; }
     if peek8(path_addr + 4u32)   != '/' as u8 { return false; }
+    return true;
+}
+
+// Recognise /proc/ prefix and route to procfs.
+fn is_proc_path(path_addr: u32, plen: i32) -> bool {
+    if plen < 6 { return false; }
+    if peek8(path_addr)          != '/' as u8 { return false; }
+    if peek8(path_addr + 1u32)   != 'p' as u8 { return false; }
+    if peek8(path_addr + 2u32)   != 'r' as u8 { return false; }
+    if peek8(path_addr + 3u32)   != 'o' as u8 { return false; }
+    if peek8(path_addr + 4u32)   != 'c' as u8 { return false; }
+    if peek8(path_addr + 5u32)   != '/' as u8 { return false; }
     return true;
 }
 
@@ -121,6 +135,14 @@ export fn vfs_open(path_addr: u32, flags: i32) -> i32 {
         return fd;
     }
 
+    if is_proc_path(path_addr, plen) {
+        var inner_fd: i32 = procfs_open(path_addr, plen);
+        if inner_fd < 0 { return -1; }
+        var fd: i32 = alloc_vfs_fd(FS_PROCFS, inner_fd);
+        if fd < 0 { procfs_close(inner_fd); return -1; }
+        return fd;
+    }
+
     var i: i32 = 0;
     if peek8(path_addr) == '/' as u8 { i = 1; }
 
@@ -170,8 +192,9 @@ export fn vfs_size(fd: i32) -> i32 {
     if fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_MTFS  { return mtfs_size(inner(e)); }
-    if t == FS_TMPFS { return tmpfs_size(inner(e)); }
+    if t == FS_MTFS   { return mtfs_size(inner(e)); }
+    if t == FS_TMPFS  { return tmpfs_size(inner(e)); }
+    if t == FS_PROCFS { return procfs_size(inner(e)); }
     return -1;
 }
 
@@ -210,8 +233,9 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_MTFS  { return mtfs_read(inner(e), buf_addr, n); }
-    if t == FS_TMPFS { return tmpfs_read(inner(e), buf_addr, n); }
+    if t == FS_MTFS   { return mtfs_read(inner(e), buf_addr, n); }
+    if t == FS_TMPFS  { return tmpfs_read(inner(e), buf_addr, n); }
+    if t == FS_PROCFS { return procfs_read(inner(e), buf_addr, n); }
     return -1;
 }
 
@@ -324,8 +348,9 @@ export fn vfs_close(fd: i32) -> i32 {
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_MTFS  { mtfs_close(inner(e)); }
-    if t == FS_TMPFS { tmpfs_close(inner(e)); }
+    if t == FS_MTFS   { mtfs_close(inner(e)); }
+    if t == FS_TMPFS  { tmpfs_close(inner(e)); }
+    if t == FS_PROCFS { procfs_close(inner(e)); }
     fs_type(e, FS_NONE);
     inner(e, 0);
     offset(e, 0);

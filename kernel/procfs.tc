@@ -1,0 +1,220 @@
+// procfs.tc — read-only virtual filesystem rooted at /proc.
+//
+// Currently exposes a single synthesized file:
+//   /proc/tasks   — one line per scheduler slot:
+//                   "<slot> <state> <frame> <wait_on>"
+//                   state names: ready / done / unused / waiting
+//
+// On open, we snapshot the scheduler state into a kmalloc'd byte
+// buffer and return a procfs-fd. sys_read consumes from the buffer.
+// close frees the snapshot. No writes.
+//
+// Concurrent readers: up to PROCFS_MAX_FDS (4) snapshots alive
+// simultaneously. Each snapshot is its own buffer so readers don't
+// see torn updates.
+
+import "kernel_common.tc";
+
+// Runtime allocator (compiler/runtime.tc)
+fn kfree(ptr: u32) -> void;
+
+var PROCFS_MAX_FDS: i32 = 4;
+
+struct ProcFD {
+    // kmalloc'd U8Array holding the synthesized file contents. 0u32
+    // means this slot is free.
+    buf:  u32,
+    size: i32,
+    pos:  i32,
+}
+
+var g_procfs_fds:   ProcFDArray = 0 as ProcFDArray;
+var g_procfs_ready: i32 = 0;
+
+export fn procfs_init() -> void {
+    if g_procfs_ready != 0 { return; }
+    g_procfs_fds = ProcFDArray(PROCFS_MAX_FDS as u32);
+    var i: i32 = 0;
+    while i < PROCFS_MAX_FDS {
+        set(g_procfs_fds, i, ProcFD(0u32, 0, 0));
+        i = i + 1;
+    }
+    g_procfs_ready = 1;
+    return;
+}
+
+// ===== helpers =====
+
+fn append_byte(buf: U8Array, pos: i32, c: u8, cap: i32) -> i32 {
+    if pos < cap { set(buf, pos, c); }
+    return pos + 1;
+}
+
+fn append_dec(buf: U8Array, pos: i32, v: i32, cap: i32) -> i32 {
+    var x: i32 = v;
+    var sign: i32 = 0;
+    if x < 0 { sign = 1; x = 0 - x; }
+    if x == 0 {
+        return append_byte(buf, pos, '0' as u8, cap);
+    }
+    // write digits LSB first, then reverse
+    var d: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    while x > 0 {
+        set(d, n, ('0' as i32 + x % 10) as u8);
+        n = n + 1;
+        x = x / 10;
+    }
+    if sign == 1 { pos = append_byte(buf, pos, '-' as u8, cap); }
+    while n > 0 {
+        n = n - 1;
+        pos = append_byte(buf, pos, get(d, n), cap);
+    }
+    delete(d);
+    return pos;
+}
+
+fn append_hex(buf: U8Array, pos: i32, v: u32, cap: i32) -> i32 {
+    pos = append_byte(buf, pos, '0' as u8, cap);
+    pos = append_byte(buf, pos, 'x' as u8, cap);
+    var d: U8Array = U8Array(8u32);
+    var n: i32 = 0;
+    var x: u32 = v;
+    if x == 0u32 {
+        pos = append_byte(buf, pos, '0' as u8, cap);
+        delete(d);
+        return pos;
+    }
+    while x > 0u32 {
+        var dig: i32 = (x & 15u32) as i32;
+        var c: u8 = 0u8;
+        if dig < 10 { c = (dig + 48) as u8; }
+        else { c = (dig - 10 + 97) as u8; }
+        set(d, n, c);
+        n = n + 1;
+        x = x >> 4u32;
+    }
+    while n > 0 {
+        n = n - 1;
+        pos = append_byte(buf, pos, get(d, n), cap);
+    }
+    delete(d);
+    return pos;
+}
+
+fn append_str(buf: U8Array, pos: i32, s: StringLiteral, cap: i32) -> i32 {
+    var sl: i32 = len(s);
+    var i: i32 = 0;
+    while i < sl {
+        pos = append_byte(buf, pos, get(s, i), cap);
+        i = i + 1;
+    }
+    return pos;
+}
+
+fn state_name(s: i32) -> StringLiteral {
+    if s == 0 { return "ready"; }
+    if s == 1 { return "done"; }
+    if s == 2 { return "unused"; }
+    if s == 3 { return "waiting"; }
+    return "?";
+}
+
+// Snapshot /proc/tasks into a new kmalloc'd buffer. Returns header
+// address (U8Array), caller uses buf+4 as data. The buffer is sized
+// to fit N slots × ~64 bytes = ~512 bytes max.
+fn synth_tasks() -> u32 {
+    var cap: i32 = 4096;
+    var buf: U8Array = U8Array(cap as u32);
+    var pos: i32 = 0;
+    var n: i32 = sched_task_count();
+    var i: i32 = 0;
+    while i < n {
+        pos = append_dec(buf, pos, i, cap);
+        pos = append_byte(buf, pos, ' ' as u8, cap);
+        pos = append_str(buf, pos, state_name(task_get_state(i)), cap);
+        pos = append_byte(buf, pos, ' ' as u8, cap);
+        pos = append_hex(buf, pos, task_get_frame(i), cap);
+        pos = append_byte(buf, pos, ' ' as u8, cap);
+        pos = append_dec(buf, pos, task_get_wait_on(i), cap);
+        pos = append_byte(buf, pos, 10u8, cap);
+        i = i + 1;
+    }
+    // overwrite the U8Array length prefix with the actual content size
+    poke32(buf as u32, pos as u32);
+    return buf as u32;
+}
+
+// Match path against "/proc/tasks"; return true if so.
+fn path_is(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
+    var sl: i32 = len(s);
+    if plen != sl { return false; }
+    var i: i32 = 0;
+    while i < sl {
+        if peek8(path_addr + (i as u32)) != get(s, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+export fn procfs_open(path_addr: u32, plen: i32) -> i32 {
+    procfs_init();
+    var buf_hdr: u32 = 0u32;
+    var size: i32 = 0;
+    if path_is(path_addr, plen, "/proc/tasks") {
+        buf_hdr = synth_tasks();
+        size = peek32(buf_hdr) as i32;
+    } else {
+        return -1;
+    }
+    // Allocate procfs fd
+    var i: i32 = 0;
+    while i < PROCFS_MAX_FDS {
+        var e: ProcFD = get(g_procfs_fds, i);
+        if buf(e) == 0u32 {
+            buf(e, buf_hdr);
+            size(e, size);
+            pos(e, 0);
+            return i;
+        }
+        i = i + 1;
+    }
+    // Table full
+    if buf_hdr != 0u32 { kfree(buf_hdr); }
+    return -1;
+}
+
+export fn procfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    if fd < 0 || fd >= PROCFS_MAX_FDS { return -1; }
+    var e: ProcFD = get(g_procfs_fds, fd);
+    if buf(e) == 0u32 { return -1; }
+    var remain: i32 = size(e) - pos(e);
+    var want: i32 = n;
+    if want > remain { want = remain; }
+    if want <= 0 { return 0; }
+    var src: u32 = buf(e) + 4u32 + (pos(e) as u32);
+    var i: i32 = 0;
+    while i < want {
+        poke8(buf_addr + (i as u32), peek8(src + (i as u32)) as u8);
+        i = i + 1;
+    }
+    pos(e, pos(e) + want);
+    return want;
+}
+
+export fn procfs_size(fd: i32) -> i32 {
+    if fd < 0 || fd >= PROCFS_MAX_FDS { return -1; }
+    var e: ProcFD = get(g_procfs_fds, fd);
+    if buf(e) == 0u32 { return -1; }
+    return size(e);
+}
+
+export fn procfs_close(fd: i32) -> i32 {
+    if fd < 0 || fd >= PROCFS_MAX_FDS { return -1; }
+    var e: ProcFD = get(g_procfs_fds, fd);
+    if buf(e) != 0u32 { kfree(buf(e)); }
+    buf(e, 0u32);
+    size(e, 0);
+    pos(e, 0);
+    return 0;
+}
