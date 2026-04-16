@@ -1,0 +1,3 @@
+GUEST_TASKS += cat
+TASK_ARENA_cat := 16384
+TASK_STACK_cat := 8192

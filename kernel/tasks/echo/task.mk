@@ -1,0 +1,3 @@
+GUEST_TASKS += echo
+TASK_ARENA_echo := 16384
+TASK_STACK_echo := 8192

@@ -33,12 +33,15 @@ if [ -z "$GEN2_DIR" ]; then
     exit 1
 fi
 
-# Task binary 一覧は platform 非依存 (task_crt0.s は ecall syscall
-# のみ、runtime.tc も syscall 依存なし)。virt / pico2 の両方で
-# 同じ一覧を build して build/kernel/root/bin/ に平置きする。
-# Seed task の選定は kernel.tc / kernel_pico2.tc 側で決まるので
-# disk image に全部載っていても問題なし。
-TASKS="hello hello2 catfile sh tmpdemo echo launcher cat"
+# Task binary 一覧と arena/stack サイズは kernel/tasks/*/task.mk から
+# Makefile が build/kernel/task_sizes.sh に自動生成する。
+# standalone 実行時 (make を経由しない場合) のためのフォールバックあり。
+TASK_SIZES="$ROOT_DIR/build/kernel/task_sizes.sh"
+if [ -f "$TASK_SIZES" ]; then
+    source "$TASK_SIZES"
+else
+    TASKS="hello hello2 catfile sh tmpdemo echo launcher cat"
+fi
 
 case "$TARGET" in
     virt)
@@ -82,35 +85,14 @@ TASK_DATA="$KERN_DIR/tasks/task_data.s"
 #
 # Each task binary starts with an 8-byte header (2 × .word) that
 # declares its required arena size (kmalloc pool) and stack size.
-# kernel/loader.tc reads this at load time, so the kernel no longer
-# hands every task a blanket 16 MB block. Sizes are sized to the
-# measured phase 7 peaks (see docs/problem.md #7 / #K3) plus a small
-# margin.
-#
-# stdout margin: compiler tasks need ~16 KB stack for deep recursive
-# AST walks (tcheck / codegen). Tiny demo tasks are fine with 4-8 KB.
-task_arena_size() {
-    case "$1" in
-        hello|hello2)                 echo 8192 ;;
-        catfile|launcher|tmpdemo|echo|cat) echo 16384 ;;
-        sh)                           echo 32768 ;;
-        parse)                        echo 65536 ;;
-        sigscan)                      echo 32768 ;;
-        tcheck)                       echo 393216 ;;  # 384 KB
-        codegen)                      echo 393216 ;;  # 384 KB
-        bc2asm)                       echo 196608 ;;  # 192 KB
-        asm_pass1)                    echo 524288 ;;  # 512 KB
-        asm_pass2)                    echo 524288 ;;  # 512 KB
-        *)                            echo 32768 ;;
-    esac
-}
-
-task_stack_size() {
-    case "$1" in
-        hello|hello2|catfile|launcher|tmpdemo|echo|cat) echo 8192 ;;
-        *) echo 16384 ;;
-    esac
-}
+# kernel/loader.tc reads this at load time. Sizes are defined in
+# kernel/tasks/*/task.mk and auto-generated into task_sizes.sh by
+# the Makefile. task_arena_size / task_stack_size are defined there.
+# Standalone fallback (no task_sizes.sh) uses defaults below.
+if ! type task_arena_size >/dev/null 2>&1; then
+    task_arena_size() { echo 32768; }
+    task_stack_size() { echo 8192; }
+fi
 
 # Emit a 2-word `.text` header file for the given task. When this is
 # linked first (before task_crt0.s), asm_pass1/asm_pass2 places the

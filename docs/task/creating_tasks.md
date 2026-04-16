@@ -160,25 +160,20 @@ GUEST_TASKS := hello hello2 catfile sh tmpdemo echo launcher cat <name>
 
 ### 2. arena / stack サイズを設定
 
-`kernel/build.sh` の `task_arena_size()` と `task_stack_size()` に
-エントリを追加:
+`kernel/tasks/<name>/task.mk` に arena / stack サイズを宣言:
 
-```bash
-task_arena_size() {
-    case "$1" in
-        ...
-        <name>) echo 16384 ;;   # 16 KB (目安: ピーク + 25%)
-        ...
-    esac
-}
+```makefile
+GUEST_TASKS += <name>
+TASK_ARENA_<name> := 16384    # 16 KB (目安: ピーク + 25%)
+TASK_STACK_<name> := 8192     # 8 KB (大半のタスクはこれで十分)
+```
 
-task_stack_size() {
-    case "$1" in
-        ...
-        <name>) echo 8192 ;;    # 8 KB (大半のタスクはこれで十分)
-        ...
-    esac
-}
+Makefile が `kernel/tasks/*/task.mk` を自動 include し、
+`build/kernel/task_sizes.sh` を生成して kernel/build.sh に渡す。
+kernel/build.sh や Makefile 本体を編集する必要はない。
+
+compiler タスク (phase 7 用) は `EXTRA_GUEST_TASKS +=` を使う。
+EXTRA_TASKS 環境変数で kernel/build.sh に渡したときだけビルドされる。
 ```
 
 **サイズの目安**:

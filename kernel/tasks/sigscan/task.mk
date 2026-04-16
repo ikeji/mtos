@@ -1,0 +1,3 @@
+EXTRA_GUEST_TASKS += sigscan
+TASK_ARENA_sigscan := 32768
+TASK_STACK_sigscan := 16384

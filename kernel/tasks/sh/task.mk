@@ -1,0 +1,3 @@
+GUEST_TASKS += sh
+TASK_ARENA_sh := 32768
+TASK_STACK_sh := 8192

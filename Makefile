@@ -108,8 +108,15 @@ KERNEL_S_SOURCES  := kernel/platform_virt.s kernel/platform_pico2.s \
 RUNTIME_DEPS := $(shell tools/collect_imports.sh compiler/runtime.tc 2>/dev/null)
 LIBTC_DEPS   := $(shell tools/collect_imports.sh kernel/tasks/libtc/libtc.tc 2>/dev/null)
 
-# task の transitive import 一覧。TASKS list は build.sh と揃える。
-GUEST_TASKS := hello hello2 catfile sh tmpdemo echo launcher cat
+# task の定義は kernel/tasks/*/task.mk から include。各 task.mk が
+# GUEST_TASKS += <name> (常時ビルド) または EXTRA_GUEST_TASKS += <name>
+# (EXTRA_TASKS 指定時のみ) と TASK_ARENA_<name> / TASK_STACK_<name> を宣言。
+# タスク追加は「ディレクトリ + .tc + task.mk」だけで済む。
+GUEST_TASKS :=
+EXTRA_GUEST_TASKS :=
+-include $(wildcard kernel/tasks/*/task.mk)
+ALL_TASK_NAMES := $(GUEST_TASKS) $(EXTRA_GUEST_TASKS)
+
 TASK_TC_SOURCES := $(foreach t,$(GUEST_TASKS),\
                      $(shell tools/collect_imports.sh kernel/tasks/$(t)/$(t).tc 2>/dev/null))
 
@@ -124,8 +131,30 @@ KERNEL_BUILD_DEPS := \
     tools/mkfs.py \
     tests/phase7_hello.tc tests/phase7_min.tc tests/phase7_hello_world.tc
 
+# task_sizes.sh: kernel/build.sh が source する TASKS / arena / stack 定義。
+# task.mk から自動生成。task.mk を編集すると再生成 → kernel 再ビルド。
+TASK_MK_FILES := $(wildcard kernel/tasks/*/task.mk)
+
 build/kernel:
 	mkdir -p $@
+
+# `)` を Makefile 内で安全に使うためのヘルパー変数
+close_paren := )
+
+build/kernel/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
+	@printf '%s\n' \
+	    '# auto-generated from kernel/tasks/*/task.mk' \
+	    'TASKS="$(GUEST_TASKS)"' \
+	    'task_arena_size() { case "$$1" in' \
+	    $(foreach t,$(ALL_TASK_NAMES),'  $(t)$(close_paren) echo $(TASK_ARENA_$(t)) ;;') \
+	    '  *$(close_paren) echo 32768 ;;' \
+	    'esac; }' \
+	    'task_stack_size() { case "$$1" in' \
+	    $(foreach t,$(ALL_TASK_NAMES),'  $(t)$(close_paren) echo $(TASK_STACK_$(t)) ;;') \
+	    '  *$(close_paren) echo 16384 ;;' \
+	    'esac; }' > $@
+
+KERNEL_BUILD_DEPS += build/kernel/task_sizes.sh
 
 build/kernel/virt_kernel.bin build/kernel/disk.img &: $(KERNEL_BUILD_DEPS) | build/kernel
 	GEN2_DIR=build/gen2 ./kernel/build.sh --target virt \

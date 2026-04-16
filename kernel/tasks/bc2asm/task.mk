@@ -1,0 +1,3 @@
+EXTRA_GUEST_TASKS += bc2asm
+TASK_ARENA_bc2asm := 196608
+TASK_STACK_bc2asm := 16384

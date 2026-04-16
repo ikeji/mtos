@@ -1,0 +1,3 @@
+EXTRA_GUEST_TASKS += parse
+TASK_ARENA_parse := 65536
+TASK_STACK_parse := 16384

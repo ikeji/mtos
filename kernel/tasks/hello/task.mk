@@ -1,0 +1,3 @@
+GUEST_TASKS += hello
+TASK_ARENA_hello := 8192
+TASK_STACK_hello := 8192
