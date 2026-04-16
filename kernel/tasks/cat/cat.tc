@@ -7,8 +7,9 @@
 // invariant pieces as /rawhdr.s, /crt0.s, /runtime.s, /task_data.s.
 //
 // No argv[0] inspection — we skip it and concatenate argv[1..].
-// Files are read in 4 KB chunks; missing files are silently
-// skipped (the shell prints "open failed" separately in that case).
+// Files are read in 4 KB chunks; a missing file prints an error to
+// stderr and makes cat exit non-zero, but we keep processing the
+// remaining args (matches GNU cat).
 
 import "../libtc/libtc.tc";
 
@@ -52,6 +53,7 @@ fn main(argv: StringArray) -> i32 {
         return 0;
     }
     var i: i32 = 1;
+    var status: i32 = 0;
     while i < nargs {
         var arg: String = get(argv, i);
         var slen: i32 = len(arg);
@@ -63,7 +65,6 @@ fn main(argv: StringArray) -> i32 {
         }
         set(path, slen, 0u8);
         var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
-        delete(path);
         if fd >= 0 {
             var done: i32 = 0;
             while done == 0 {
@@ -75,9 +76,22 @@ fn main(argv: StringArray) -> i32 {
                 }
             }
             do_close(fd);
+        } else {
+            // Report the missing path to stderr (fd=2) as
+            //   cat: <path>: open failed
+            // fd=2 is always UART; no task-output redirection.
+            var msg1: U8Array = str_nul("cat: ");
+            sys_write(2, msg1, 5);
+            delete(msg1);
+            sys_write(2, path, slen);
+            var msg2: U8Array = str_nul(": open failed\n");
+            sys_write(2, msg2, 14);
+            delete(msg2);
+            status = 1;
         }
+        delete(path);
         i = i + 1;
     }
     delete(buf);
-    return 0;
+    return status;
 }
