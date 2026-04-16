@@ -178,20 +178,43 @@ clean:
 	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o
 	rm -rf build
 
-TEST_DEPS := all $(GEN2_TOOLS) build/kernel/virt_kernel.bin $(TEST_ASM_BINS)
+# ===== test stamp files =====
+#
+# テスト結果を stamp ファイル (build/tests/*.ok) で管理し、依存が
+# 変わっていないときは `make test` がテスト実行をスキップする。
+# 依存: ビルド成果物 + テストスクリプト + テスト入力 + golden + support
 
-test: $(TEST_DEPS)
+BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin $(TEST_ASM_BINS)
+
+TEST_SCRIPTS := $(wildcard tests/*.sh)
+TEST_INPUTS  := $(wildcard tests/*.tc) $(wildcard tests/import/*.tc)
+TEST_GOLDEN  := $(wildcard tests/golden/*) $(wildcard tests/golden/tc/*)
+TEST_SUPPORT := tc_run.sh tc_run_all.sh compile-gen1.sh compile-gen2.sh compile-gen3.sh
+
+ALL_TEST_DEPS := $(BUILD_DEPS) $(TEST_SCRIPTS) $(TEST_INPUTS) $(TEST_GOLDEN) $(TEST_SUPPORT)
+
+build/tests:
+	mkdir -p $@
+
+build/tests/test.ok: $(ALL_TEST_DEPS) | build/tests
 	./tests/test_all.sh
+	@touch $@
 
-full-test: $(TEST_DEPS)
+build/tests/full-test.ok: $(ALL_TEST_DEPS) | build/tests
 	FULL_TEST=1 ./tests/test_all.sh
+	@touch $@
+
+test: build/tests/test.ok
+
+full-test: build/tests/full-test.ok
 
 update-golden: all
 	./tests/update_golden.sh
 
-update-golden-and-run-test: $(TEST_DEPS)
+update-golden-and-run-test: $(BUILD_DEPS)
 	./tests/update_golden.sh
-	./tests/test_all.sh
+	rm -f build/tests/test.ok
+	$(MAKE) test
 
 # 並列ビルド禁止: compile-gen2.sh の CACHED_S_DIR / qemu state が race
 # するのを避ける。ログも読みやすくなる。
