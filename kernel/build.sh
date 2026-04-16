@@ -262,6 +262,17 @@ if [ -n "$DISK_OUT" ]; then
     cp "$TMP/mtfs.img" "$DISK_OUT"
 fi
 
+# Optional PRELUDE_OUT_DIR: export the staged prelude.s / prelude_tail.s
+# to the given directory so host-side drivers (e.g. the pico2 hello-world
+# pipeline) can replay the same linker prelude bytes back to the OS via
+# UART. tests/test_pico2_hw.sh uses this to avoid regenerating the
+# prelude from scratch in Python.
+if [ -n "$PRELUDE_OUT_DIR" ]; then
+    mkdir -p "$PRELUDE_OUT_DIR"
+    cp "$ROOT_DIR_TREE/prelude.s" "$PRELUDE_OUT_DIR/"
+    cp "$ROOT_DIR_TREE/prelude_tail.s" "$PRELUDE_OUT_DIR/"
+fi
+
 # Pico 2 additionally embeds the image as _mtfs_image_* so block_flash.tc
 # can serve it directly from XIP flash.
 MTFS_S=""
