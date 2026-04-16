@@ -483,6 +483,116 @@ export fn uart_mux_is_enabled() -> i32 {
     return g_mux_enabled;
 }
 
+// ===== Kernel configuration (/etc/kern.conf) =====
+//
+// Optional file on the boot FS. Format: one key=value per line.
+// Unknown keys ignored for forward compat.
+//
+//   mux=1         — enable UART multiplexing at boot
+//   init=/bin/sh  — register a seed task (repeat for more slots)
+//
+// If the config file is missing or can't be opened, platform main()
+// falls back to its hardcoded defaults (hello / hello2 / sh).
+
+fn vfs_open(path_addr: u32, flags: i32) -> i32;
+fn vfs_size(fd: i32) -> i32;
+fn vfs_read(fd: i32, buf: u32, n: i32) -> i32;
+fn vfs_close(fd: i32) -> i32;
+
+var g_cfg_inits:     U32Array = 0 as U32Array;
+var g_cfg_init_count: i32 = 0;
+var g_cfg_mux:        i32 = 0;
+
+fn cfg_line_starts_with(buf: U8Array, line_start: i32, line_len: i32,
+                         prefix: StringLiteral) -> bool {
+    var plen: i32 = len(prefix);
+    if line_len < plen { return false; }
+    var i: i32 = 0;
+    while i < plen {
+        if get(buf, line_start + i) != get(prefix, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn cfg_parse_line(buf: U8Array, line_start: i32, line_len: i32) -> void {
+    if line_len == 0 { return; }
+    if get(buf, line_start) == ('#' as u8) { return; }   // comment
+    if cfg_line_starts_with(buf, line_start, line_len, "mux=") {
+        if line_len >= 5 && get(buf, line_start + 4) == ('1' as u8) {
+            g_cfg_mux = 1;
+        }
+        return;
+    }
+    if cfg_line_starts_with(buf, line_start, line_len, "init=") {
+        var path_start: i32 = line_start + 5;
+        var path_len:   i32 = line_len - 5;
+        if path_len <= 0 { return; }
+        if g_cfg_init_count >= 8 { return; }
+        var pbuf: U8Array = U8Array((path_len + 1) as u32);
+        var j: i32 = 0;
+        while j < path_len {
+            set(pbuf, j, get(buf, path_start + j));
+            j = j + 1;
+        }
+        set(pbuf, path_len, 0u8);
+        set(g_cfg_inits, g_cfg_init_count, pbuf as u32);
+        g_cfg_init_count = g_cfg_init_count + 1;
+        return;
+    }
+    // Unknown key: silently ignore.
+    return;
+}
+
+// Read /etc/kern.conf from the boot FS and populate g_cfg_*.
+// Returns 1 on success, 0 if config file is missing (defaults).
+export fn read_kern_config() -> i32 {
+    g_cfg_inits = U32Array(8u32);
+    g_cfg_init_count = 0;
+    g_cfg_mux = 0;
+
+    var path: U8Array = U8Array(16u32);
+    var pstr: StringLiteral = "/etc/kern.conf";
+    var plen: i32 = len(pstr);
+    var k: i32 = 0;
+    while k < plen {
+        set(path, k, get(pstr, k));
+        k = k + 1;
+    }
+    set(path, plen, 0u8);
+
+    var fd: i32 = vfs_open(path as u32 + 4u32, 0);
+    delete(path);
+    if fd < 0 { return 0; }
+
+    var size: i32 = vfs_size(fd);
+    if size <= 0 { vfs_close(fd); return 0; }
+    if size > 4096 { size = 4096; }
+    var buf: U8Array = U8Array(size as u32);
+    var nr: i32 = vfs_read(fd, buf as u32 + 4u32, size);
+    vfs_close(fd);
+    if nr <= 0 { delete(buf); return 0; }
+
+    var pos: i32 = 0;
+    while pos < nr {
+        var ls: i32 = pos;
+        while pos < nr && get(buf, pos) != 10u8 { pos = pos + 1; }
+        cfg_parse_line(buf, ls, pos - ls);
+        pos = pos + 1;  // skip LF
+    }
+    delete(buf);
+    return 1;
+}
+
+export fn kern_config_mux() -> i32 { return g_cfg_mux; }
+export fn kern_config_init_count() -> i32 { return g_cfg_init_count; }
+export fn kern_config_init_path(idx: i32) -> u32 {
+    if idx < 0 || idx >= g_cfg_init_count { return 0u32; }
+    // Stored as U8Array header address; return data address so the
+    // caller (load_task_addr / vfs_open) sees the NUL-terminated bytes.
+    return get(g_cfg_inits, idx) + 4u32;
+}
+
 export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
     var frame_buf: U8Array = U8Array(132u32);
     var frame: u32 = frame_buf as u32 + 4u32;

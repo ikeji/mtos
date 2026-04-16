@@ -67,9 +67,22 @@ fn main() -> i32 {
     // the EXTRA_TASKS compiler binaries). Slots 3..7 are reserved for
     // sh's children / phase 7 pipelines.
     sched_init(8);
-    sched_register(0, load_task("/bin/hello"));
-    sched_register(1, load_task("/bin/hello2"));
-    sched_register(2, load_task("/bin/sh"));
+
+    // /etc/kern.conf (optional) overrides the init list + mux state.
+    read_kern_config();
+    if kern_config_mux() != 0 { uart_mux_enable(1); }
+    var n_cfg: i32 = kern_config_init_count();
+    if n_cfg > 0 {
+        var i: i32 = 0;
+        while i < n_cfg {
+            sched_register(i, load_task_addr(kern_config_init_path(i)));
+            i = i + 1;
+        }
+    } else {
+        sched_register(0, load_task("/bin/hello"));
+        sched_register(1, load_task("/bin/hello2"));
+        sched_register(2, load_task("/bin/sh"));
+    }
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
     poke32(SIO_MTIME_CTRL, 0x0Fu32);

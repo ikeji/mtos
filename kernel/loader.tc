@@ -170,6 +170,17 @@ export fn load_task(path: StringLiteral) -> u32 {
     return frame;
 }
 
+// Same as load_task but takes a raw NUL-terminated path address (used
+// by read_kern_config where the path was parsed out of a config file
+// into a U8Array, not a StringLiteral).
+export fn load_task_addr(path_addr: u32) -> u32 {
+    var fd: i32 = vfs_open(path_addr, 0);
+    if fd < 0 { return 0u32; }
+    var frame: u32 = load_fd(fd);
+    vfs_close(fd);
+    return frame;
+}
+
 // Allocate a fresh kernel-owned String that holds the same bytes as
 // src. We deliberately avoid the `dst = append(dst, c)` pattern in a
 // loop because every iteration kmallocs a new intermediate String

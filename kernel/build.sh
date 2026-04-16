@@ -243,6 +243,20 @@ printf '(imports\n'   > "$ROOT_DIR_TREE/imports_open.txt"
 printf '(self\n'      > "$ROOT_DIR_TREE/self_open.txt"
 printf ')\n'          > "$ROOT_DIR_TREE/wrap_close.txt"
 
+# Optional /etc/kern.conf. Copied from $KERN_CONFIG if set, or from
+# kernel/kern.conf if that file exists. When neither exists the kernel
+# falls back to its hardcoded init list (hello / hello2 / sh) and
+# mux-off, matching legacy behavior.
+if [ -n "$KERN_CONFIG" ] && [ -f "$KERN_CONFIG" ]; then
+    mkdir -p "$ROOT_DIR_TREE/etc"
+    cp "$KERN_CONFIG" "$ROOT_DIR_TREE/etc/kern.conf"
+    echo "kern.conf: staged from $KERN_CONFIG" >&2
+elif [ -f "$KERN_DIR/kern.conf" ]; then
+    mkdir -p "$ROOT_DIR_TREE/etc"
+    cp "$KERN_DIR/kern.conf" "$ROOT_DIR_TREE/etc/kern.conf"
+    echo "kern.conf: staged from kernel/kern.conf" >&2
+fi
+
 # M7: stage compiler source under /src so the OS can self-compile
 # parse.tc + its imports. Only staged when EXTRA_TASKS is set
 # (phase 7 testing) since these files are large.

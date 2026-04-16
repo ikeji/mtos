@@ -63,7 +63,7 @@
 - [x] テスト完了したら、okファイル(ex, build/tests/test_unit.ok )をtouchするようにして、makeが必要ないならテストの再実行しなくする。
 - [x] compile-genX.shで、中間ファイルをbuild内に残すようにする。デバッグ用に。その時ファイル名に使ったコンパイラを残す。hello.gen1.s
 - [x] lsを実装する。readdirシステムコールの実装がいる。
-- [ ] カーネル設定ファイルを用意。uart_muxのオンオフやinitプロセスを設定できる。
+- [x] カーネル設定ファイルを用意。uart_muxのオンオフやinitプロセスを設定できる。
 - [ ] coreutilsにありそうなツールをいくつか作る。ex, head tail cp du wc ls mv wc
 - [ ] procfsを作る
 - [ ] neofetchを作る
