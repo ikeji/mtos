@@ -3318,16 +3318,131 @@ close__SourceReader:
     ret
     # end of close__SourceReader
 
+    .globl scan_eot__U8Array__i32
+    .type  scan_eot__U8Array__i32, @function
+scan_eot__U8Array__i32:
+    # prologue: frame_size=32, params=2, locals=1, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    sw   zero, -20(s0)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+  .L_scan_eot__U8Array__i32_pc2:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_scan_eot__U8Array__i32_pc19
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__U8Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_scan_eot__U8Array__i32_pc14
+0:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_scan_eot__U8Array__i32_pc14:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+    j    .L_scan_eot__U8Array__i32_pc2
+  .L_scan_eot__U8Array__i32_pc19:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    neg  t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of scan_eot__U8Array__i32
+
     .globl fill__SourceReader
     .type  fill__SourceReader, @function
 fill__SourceReader:
-    # prologue: frame_size=32, params=1, locals=1, eval_depth=3
+    # prologue: frame_size=32, params=1, locals=2, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
     sw   s0, 24(sp)
     addi s0, sp, 32
     sw   a0, -12(s0)
     sw   zero, -16(s0)
+    sw   zero, -20(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3477,6 +3592,125 @@ fill__SourceReader:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call buf__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call scan_eot__U8Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_fill__SourceReader_pc61
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call buf_pos__SourceReader__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call buf_len__SourceReader__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call is_eof__SourceReader__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_fill__SourceReader_pc59
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_fill__SourceReader_pc59:
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_fill__SourceReader_pc61:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3521,11 +3755,11 @@ fill__SourceReader:
     .globl compact_and_fill__SourceReader
     .type  compact_and_fill__SourceReader, @function
 compact_and_fill__SourceReader:
-    # prologue: frame_size=64, params=1, locals=6, eval_depth=6
-    addi sp, sp, -64
-    sw   ra, 60(sp)
-    sw   s0, 56(sp)
-    addi s0, sp, 64
+    # prologue: frame_size=80, params=1, locals=8, eval_depth=6
+    addi sp, sp, -80
+    sw   ra, 76(sp)
+    sw   s0, 72(sp)
+    addi s0, sp, 80
     sw   a0, -12(s0)
     sw   zero, -16(s0)
     sw   zero, -20(s0)
@@ -3533,6 +3767,8 @@ compact_and_fill__SourceReader:
     sw   zero, -28(s0)
     sw   zero, -32(s0)
     sw   zero, -36(s0)
+    sw   zero, -40(s0)
+    sw   zero, -44(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3787,7 +4023,7 @@ compact_and_fill__SourceReader:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_compact_and_fill__SourceReader_pc113
+    j    .L_compact_and_fill__SourceReader_pc129
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -3843,19 +4079,78 @@ compact_and_fill__SourceReader:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_compact_and_fill__SourceReader_pc106
+    j    .L_compact_and_fill__SourceReader_pc122
 0:
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call scan_eot__U8Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -36(s0)
+    lw   t0, -32(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -40(s0)
+    lw   t0, -36(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_compact_and_fill__SourceReader_pc94
+0:
+    lw   t0, -36(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -40(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call is_eof__SourceReader__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+  .L_compact_and_fill__SourceReader_pc94:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -36(s0)
-  .L_compact_and_fill__SourceReader_pc80:
-    lw   t0, -36(s0)
+    sw   t0, -44(s0)
+  .L_compact_and_fill__SourceReader_pc96:
+    lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -32(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -3867,7 +4162,7 @@ compact_and_fill__SourceReader:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_compact_and_fill__SourceReader_pc99
+    j    .L_compact_and_fill__SourceReader_pc115
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -3880,7 +4175,7 @@ compact_and_fill__SourceReader:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -36(s0)
+    lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -3892,7 +4187,7 @@ compact_and_fill__SourceReader:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -36(s0)
+    lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -3909,7 +4204,7 @@ compact_and_fill__SourceReader:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -3923,16 +4218,16 @@ compact_and_fill__SourceReader:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -36(s0)
-    j    .L_compact_and_fill__SourceReader_pc80
-  .L_compact_and_fill__SourceReader_pc99:
+    sw   t0, -44(s0)
+    j    .L_compact_and_fill__SourceReader_pc96
+  .L_compact_and_fill__SourceReader_pc115:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -32(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -3948,8 +4243,8 @@ compact_and_fill__SourceReader:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_compact_and_fill__SourceReader_pc110
-  .L_compact_and_fill__SourceReader_pc106:
+    j    .L_compact_and_fill__SourceReader_pc126
+  .L_compact_and_fill__SourceReader_pc122:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3963,7 +4258,7 @@ compact_and_fill__SourceReader:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_compact_and_fill__SourceReader_pc110:
+  .L_compact_and_fill__SourceReader_pc126:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3973,7 +4268,7 @@ compact_and_fill__SourceReader:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_compact_and_fill__SourceReader_pc113:
+  .L_compact_and_fill__SourceReader_pc129:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)

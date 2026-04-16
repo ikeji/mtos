@@ -23,6 +23,20 @@ export fn close(r: SourceReader) -> void {
     return;
 }
 
+// Scan buf[0..n] for an EOT (0x04) marker. If found, return its offset;
+// otherwise -1. EOT is our stream-EOF sentinel for UART stdin on pico2
+// (where sys_read blocks forever with no data instead of returning 0).
+// Files from tmpfs/mtfs never contain 0x04, so the scan is harmless
+// for non-UART reads.
+fn scan_eot(buf: U8Array, n: i32) -> i32 {
+    var i: i32 = 0;
+    while i < n {
+        if get(buf, i) == 4u8 { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
 // Fill buffer when empty. Returns 0 if data available, 1 if EOF.
 fn fill(r: SourceReader) -> i32 {
     if buf_pos(r) < buf_len(r) { return 0; }
@@ -31,6 +45,15 @@ fn fill(r: SourceReader) -> i32 {
     if n <= 0 {
         is_eof(r, 1);
         return 1;
+    }
+    var eot: i32 = scan_eot(buf(r), n);
+    if eot >= 0 {
+        // EOT seen — truncate the buffer at EOT, stop reading further.
+        buf_pos(r, 0);
+        buf_len(r, eot);
+        is_eof(r, 1);
+        if eot == 0 { return 1; }
+        return 0;
     }
     buf_pos(r, 0);
     buf_len(r, n);
@@ -58,12 +81,17 @@ fn compact_and_fill(r: SourceReader) -> void {
         var tmp: U8Array = U8Array((space) as u32);
         var n: i32 = sys_read(rfd(r), tmp, space);
         if n > 0 {
+            // Scan for EOT (0x04) sentinel; if present truncate at it
+            // and mark EOF (same convention as fill() above).
+            var eot: i32 = scan_eot(tmp, n);
+            var copy_n: i32 = n;
+            if eot >= 0 { copy_n = eot; is_eof(r, 1); }
             var j: i32 = 0;
-            while j < n {
+            while j < copy_n {
                 set(buf(r), (remaining + j), get(tmp, j));
                 j = j + 1;
             }
-            buf_len(r, remaining + n);
+            buf_len(r, remaining + copy_n);
         } else {
             is_eof(r, 1);
         }
