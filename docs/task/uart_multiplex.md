@@ -36,24 +36,51 @@ offset | size | field
 
 ### タグ割り当て
 
+タグは概念上 **TTY 番号** を表す。現実装ではタスクスロット番号と 1:1
+対応させるが、将来 TTY はプロセスから切り離し、openat("/dev/tty<N>")
+で動的に alloc/free できる Unix 風モデルに拡張予定。タスクは複数の
+TTY を open できるし、1 TTY を複数タスクで共有することも (controlling
+TTY の考え方で) 可能。
+
 | tag | 方向 | 意味 |
 |---|---|---|
-| `KERN` | out | Kernel kputs / kdbg_switch / kdbg_exit etc. |
-| `PR00`..`PR07` | out | スロット N のタスク stdout (fd=1、UART 行き) |
-| `SE00`..`SE07` | out | スロット N のタスク stderr (fd=2) |
-| `PR00`..`PR07` | in | スロット N のタスク stdin (fd=0) 宛 data |
-| `EOF0`..`EOF7` | in | スロット N の stdin を EOF マーク (len=0 必須) |
+| `KERN` | out | Kernel kputs / kdbg_switch / kdbg_exit + 全タスクの stderr |
+| `T000`..`TFFF` | both | TTY N の I/O (4096 個まで、3 桁 hex)。out=stdout、in=stdin |
+| `T000`..`TFFF` | in、len=0 | TTY N の stdin EOF マーカ (空 payload) |
 
-スロット番号は `sched_current_idx()` が返す整数を 2 桁 10 進で埋める。
-8 slots (`sched_init(8)`) なので PR00..PR07 まで使用。将来 slot 99 まで
-拡張可能 (タグ再設計不要)。
+- TTY 番号は 3 桁 hex (0x000-0xFFF = 4096 channels)
+- 現状は **TTY N == slot N** の固定マッピング。slot 0 → T000、
+  slot 7 → T007
+- **stderr (fd=2) は常に `KERN` タグ** で出る。理由: タスクのエラー
+  出力 (km_dump_peak など) を kernel debug と同じファイルに集約した方が
+  デバッグ時に便利。XMODEM 等の protocol を stdout/stdin で走らせると
+  きに stderr debug 出力が protocol を汚染しない利点もある
+- KERN / T000-TFFF 以外のタグは reserved。将来 `ERR_` (tty-local stderr)
+  など追加する余地を残す
+
+### XMODEM 等の protocol 走行
+
+この framing は **バイナリ透過** かつ **双方向** なので、TTY 上で
+XMODEM / YMODEM / Kermit のような binary file transfer protocol を
+そのまま走らせられる。具体的には:
+
+- Host から `T002` タグで XMODEM sender の SOH/block/CRC bytes を送信
+- Pico2 上の xmodem_recv タスクが stdin から読んで処理
+- xmodem_recv が ACK/NAK を stdout (fd=1) に書くと `T002` タグで host
+  に戻る
+- stderr (fd=2) のデバッグ出力は KERN に逃げるので protocol bytes と
+  混ざらない
+
+XMODEM 1 block = 132 byte (SOH + 2 byte block ID + 128 byte data + CRC)
+< 255 byte frame payload limit なので **1 XMODEM block = 1 frame** で
+そのまま通せる。
 
 ### フレーミング例
 
-タスク (slot 2, /bin/sh) が `puts("sh$ ")` を呼ぶ:
+タスク (TTY 2, /bin/sh) が `puts("sh$ ")` を呼ぶ:
 ```
-byte: 'P' 'R' '0' '2' 0x04 's' 'h' '$' ' '
-       [tag=PR02][len=4 ][payload "sh$ "        ]
+byte: 'T' '0' '0' '2' 0x04 's' 'h' '$' ' '
+       [tag=T002][len=4 ][payload "sh$ "        ]
 ```
 
 Kernel が `kdbg_switch(2, 3)` で `[sw 2>3]\n` (9 byte) を吐く:
@@ -62,24 +89,31 @@ byte: 'K' 'E' 'R' 'N' 0x09 '[' 's' 'w' ' ' '2' '>' '3' ']' '\n'
        [tag=KERN][len=9 ][payload "[sw 2>3]\n"                  ]
 ```
 
-ホストが slot 2 に "catfile\n" (8 byte) を送る:
+ホストが TTY 2 (sh) に "catfile\n" (8 byte) を送る:
 ```
-byte: 'P' 'R' '0' '2' 0x08 'c' 'a' 't' 'f' 'i' 'l' 'e' '\n'
-       [tag=PR02][len=8 ][payload "catfile\n"               ]
+byte: 'T' '0' '0' '2' 0x08 'c' 'a' 't' 'f' 'i' 'l' 'e' '\n'
+       [tag=T002][len=8 ][payload "catfile\n"               ]
 ```
 
-ホストが slot 4 (asm_pass1) に full.s (224300 byte) を送る場合、255
+ホストが TTY 4 (asm_pass1) に full.s (224300 byte) を送る場合、255
 byte 毎に複数フレームに分割:
 ```
-[tag=PR04][len=255][payload 255 bytes]
-[tag=PR04][len=255][payload 255 bytes]
+[tag=T004][len=255][payload 255 bytes]
+[tag=T004][len=255][payload 255 bytes]
 ...
-[tag=PR04][len=X  ][payload X bytes, X=224300 mod 255 = 80]
-[tag=EOF4][len=0  ]                               ← EOF
+[tag=T004][len=X  ][payload X bytes, X=224300 mod 255 = 80]
+[tag=T004][len=0  ]                               ← len=0 で EOF
 ```
 
 **224300 / 255 = 880 フレーム** (平均 260 byte/frame)、オーバーヘッド
 5/260 ≈ 1.9%。悪くない。
+
+XMODEM block (132 byte) を TTY 3 に送る場合:
+```
+[tag=T003][len=132][SOH|blk|~blk|128 data|crc_hi|crc_lo]
+```
+そのまま 1 frame で送れる。task は `sys_read(0, buf, 132)` で一気に
+取れる (PL011 FIFO 32 byte は超えるので、UART RX ISR 実装が前提)。
 
 ## 出力側 (kernel → host)
 
@@ -188,7 +222,7 @@ log_files[tag].write(data)
 log_files[tag].flush()
 ```
 
-- タグ毎に `/tmp/pico2_logs/log.KERN`, `log.PR00`, `log.PR02`, ... を open
+- タグ毎に `/tmp/pico2_logs/log.KERN`, `log.T000`, `log.T002`, ... を open
 - frame が欠けると再同期困難なので、最初は assume-in-sync で実装し、
   デバッグが必要になったら magic byte を入れる
 
@@ -201,20 +235,42 @@ def send_frame(tag: str, data: bytes):
     assert len(data) <= 255
     uart.write(tag.encode() + bytes([len(data)]) + data)
 
-# slot 2 (sh) に "catfile\n" 送信
-send_frame("PR02", b"catfile\n")
+# TTY 2 (sh) に "catfile\n" 送信
+send_frame("T002", b"catfile\n")
 ```
 
 大きい data は 255 byte 単位で分割:
 ```python
-def send_stream(tag: str, data: bytes, eof_tag: str = None):
+def send_stream(tag: str, data: bytes, send_eof: bool = True):
     i = 0
     while i < len(data):
         chunk = data[i:i+255]
         send_frame(tag, chunk)
         i += 255
-    if eof_tag:
-        send_frame(eof_tag, b"")  # len=0 EOF
+    if send_eof:
+        send_frame(tag, b"")  # len=0 = EOF
+```
+
+### XMODEM 送信 (ホスト側)
+
+pyserial の xmodem モジュール (あるいは自前実装) をラップ:
+
+```python
+from xmodem import XMODEM
+
+def tty_write(data):
+    # 132 byte XMODEM block が来るので 1 frame で送る
+    send_frame("T003", data)
+
+def tty_read(size, timeout=1):
+    # ACK/NAK 1 byte 受信
+    frame = recv_frame()  # blocking
+    assert frame.tag == "T003"
+    return frame.data
+
+modem = XMODEM(getc=tty_read, putc=tty_write)
+with open("hello.bin", "rb") as f:
+    modem.send(f)
 ```
 
 ## 実装計画
@@ -222,9 +278,11 @@ def send_stream(tag: str, data: bytes, eof_tag: str = None):
 ### Phase 0: 設計 (本ドキュメント) — 完了
 
 - [x] フォーマット決定: 4-byte tag + 1-byte len + ≤255 byte data
-- [x] タグ命名規則: KERN / PR0N / SE0N / EOFN
-- [x] 出力: vfs_write / kputs に injection
-- [x] 入力: per-task in_buf + uart_rx_dispatch + polling で開始
+- [x] タグ命名: `KERN` / `T000`-`TFFF` (TTY 番号 3-hex)
+- [x] TTY 概念導入 (将来プロセスから分離)
+- [x] stderr は `KERN` タグに集約
+- [x] len=0 frame = stdin EOF マーカ
+- [x] XMODEM 等 protocol 透過性確認
 
 ### Phase 1: 出力多重化 (kernel → host)
 
@@ -233,7 +291,9 @@ def send_stream(tag: str, data: bytes, eof_tag: str = None):
    - `do_uart_write_raw` (現在の do_uart_write をリネーム)
    - `do_uart_write(buf, len)` を「KERN タグで raw emit する wrapper」に
 2. `kdbg_chr` の sys_write(1, ...) を uart_emit_frame("KERN", ...) に切替
-3. `vfs_write` で UART 行き判定時に uart_emit_frame("PR0N", ...) / SE0N
+3. `vfs_write` で UART 行き判定時:
+   - fd=1 → uart_emit_frame("T00N", ...) where N = slot の 3-hex digit
+   - fd=2 → uart_emit_frame("KERN", ...) (stderr is kernel-aggregated)
 4. Python host 側 `pico2_demux.py` を出力読み取り部分だけ先に実装
 5. 回帰: `make test` 141 passed 維持、test_pico2.sh を demuxer 版に書き換え
 
@@ -242,13 +302,13 @@ def send_stream(tag: str, data: bytes, eof_tag: str = None):
 1. `Task` 構造体に in_buf / in_head / in_tail / in_eof 追加
 2. `kernel_common.tc` に `uart_rx_dispatch()` を実装:
    - PL011 から frame を読んで parse
-   - tag が PR0N → slot N の in_buf に enqueue
-   - tag が EOFN → slot N の in_eof = 1 (payload 末尾に 0x04 付加)
+   - tag `T00N` で len>0 → slot N の in_buf に enqueue
+   - tag `T00N` で len=0 → slot N の in_eof = 1
 3. `vfs_read(fd=0)` を per-task in_buf から読むように切替
-4. Python driver 側: `os.write("catfile\n")` → `send_frame("PR02", b"catfile\n")`
+4. Python driver 側: `os.write("catfile\n")` → `send_frame("T002", b"catfile\n")`
 5. test_pico2.sh / test_pico2_hw.sh を demuxer 対応に書き換え
-6. source_reader.tc の 0x04 EOT 自動処理は継続 (EOFN frame が kernel
-   経由で 0x04 に変換される形で)
+6. source_reader.tc の 0x04 EOT 自動処理は継続 (kernel が in_eof 検出時
+   buffer 末尾に 0x04 付加する実装にすれば source_reader 側無改修)
 
 ### Phase 3: pico2 Hello World 再挑戦
 
