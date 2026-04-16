@@ -314,11 +314,19 @@ asm split・full split すべての pipeline で Hello World が動く。
       (+ 関連 symlink / test_split.sh / tc_asm.sh) を削除
 - [ ] **C-2 (任意)**: `pipe()` + dup2 による真のパイプサポート
       (中間ファイル経由で動いたあと、性能が問題になったら)
-- [ ] **M7**: OS 上で Gen2 コンパイラ自身を再コンパイルして
-      Gen3 に相当する一周をやる。Phase 4/5 完了後は per-stage peak
-      が全部 300 KB 以下 (asm-pass1/2 が最大 ~280 KB) なので
-      16 MB task 枠どころか pico2 の 480 KB arena 枠にも収まる。
-      時間は多めに要る見込み
+- [x] **M7-minimal** (2026-04-16): OS 上で string_buffer.tc
+      (imports なし) を Gen2 パイプラインで自己コンパイル。
+      `tests/test_phase7.sh` stage 2 で parse + sigscan + tcheck +
+      codegen + bc2asm を通して .s を生成し "# end of" マーカーで
+      検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
+      /src/string_buffer.tc を staging、/imports_open.txt も追加。
+      tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
+- [ ] **M7-full**: 同じパイプラインで parse.tc + 3 transitive
+      imports (string_buffer / source_reader / strlib) をコンパイル
+      して link。~30 個のタスクを sh から spawn するので qemu-virt
+      では 20 分以上かかり現状の test timeout に収まらない。真の
+      パイプ (`pipe()` + `dup2`、C-2) か syscall throughput 改善
+      後に再挑戦
 
 ## フェーズ8: 自己ホスト
 

@@ -238,11 +238,21 @@ cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
 # of the form (imports …) (self <a.th>) (program …). Stage three
 # tiny helper files so the OS-side `cat` pipeline can glue them
 # together without needing a printf builtin in sh.
-printf '(imports)\n' > "$ROOT_DIR_TREE/empty_imports.txt"
-printf '(self\n'    > "$ROOT_DIR_TREE/self_open.txt"
-printf ')\n'        > "$ROOT_DIR_TREE/wrap_close.txt"
+printf '(imports)\n'  > "$ROOT_DIR_TREE/empty_imports.txt"
+printf '(imports\n'   > "$ROOT_DIR_TREE/imports_open.txt"
+printf '(self\n'      > "$ROOT_DIR_TREE/self_open.txt"
+printf ')\n'          > "$ROOT_DIR_TREE/wrap_close.txt"
 
-
+# M7: stage compiler source under /src so the OS can self-compile
+# parse.tc + its imports. Only staged when EXTRA_TASKS is set
+# (phase 7 testing) since these files are large.
+if [ -n "$EXTRA_TASKS" ]; then
+    mkdir -p "$ROOT_DIR_TREE/src"
+    for src in string_buffer.tc source_reader.tc strlib.tc parse.tc; do
+        cp "$ROOT_DIR/compiler/$src" "$ROOT_DIR_TREE/src/$src"
+    done
+    echo "M7: staged /src/*.tc" >&2
+fi
 
 python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 

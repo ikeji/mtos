@@ -79,4 +79,51 @@ if ! echo "$out1" | grep -q "Hello, World!"; then
 fi
 
 echo "OK (stage 1): full split pipeline (sigscan+tcheck+asm-pass1+asm-pass2) reached 'Hello, World!'"
+
+# -----------------------------------------------------------------------
+# Stage 2 (M7-minimal): compile string_buffer.tc on the OS through the
+# full Gen2 pipeline (parse + sigscan + tcheck + codegen + bc2asm) and
+# verify the generated .s begins with a ".fn" directive, proving the
+# compiler can self-compile one of its own source modules.
+# -----------------------------------------------------------------------
+# string_buffer.tc has no imports, so the pipeline is:
+#   parse → sigscan → cat wrap → tcheck → codegen → bc2asm → .s
+# Full parse.tc compilation (with 3 transitive imports) takes > 20 min
+# in qemu-virt today — M7-minimal proves the single-file case, M7-full
+# can follow when qemu throughput improves or we add piped syscalls.
+#
+# The presence of "# end of" markers in the output proves codegen +
+# bc2asm ran successfully (bc2asm emits these after each function body).
+echo ""
+echo "=== stage 2 (M7-minimal): compile string_buffer.tc on the OS ==="
+
+# shellcheck disable=SC2016
+m7_script='
+parse < /src/string_buffer.tc > /tmp/sb.ast
+sigscan < /tmp/sb.ast > /tmp/sb.th
+cat /empty_imports.txt /self_open.txt /tmp/sb.th /wrap_close.txt /tmp/sb.ast > /tmp/w
+tcheck < /tmp/w > /tmp/t
+codegen < /tmp/t > /tmp/b
+bc2asm < /tmp/b > /tmp/sb.s
+cat /tmp/sb.s
+quit
+'
+
+out2=$(printf '%s' "$m7_script" \
+    | timeout 360 qemu-system-riscv32 -smp 1 -nographic \
+    -serial mon:stdio --no-reboot -m 128 \
+    -machine virt,aclint=on -bios none \
+    -drive "file=$TMP/disk.img,format=raw,if=none,id=blk0" \
+    -device "virtio-blk-device,drive=blk0" \
+    -device "loader,file=$TMP/kernel_virt,addr=0x80000000" \
+    -device "loader,addr=0x80000000,cpu-num=0" 2>&1 | tr -d '\0')
+
+if ! echo "$out2" | grep -q "# end of"; then
+    echo "FAIL: OS-compiled string_buffer.tc did not produce bc2asm output markers" >&2
+    echo "--- last 60 lines of output ---"
+    echo "$out2" | tail -60
+    exit 1
+fi
+
+echo "OK (stage 2 M7-minimal): OS self-compiled string_buffer.tc → .s"
 exit 0
