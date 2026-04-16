@@ -1,6 +1,6 @@
 #!/bin/bash
 # compile-gen3.sh — Compile .tc to RV32 ELF using Gen3 tools (via qemu).
-# Uses: Gen1 parse/extract-sigs (for import .th generation),
+# Uses: Gen1 parse (for import .th generation),
 #       Gen3 sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass2 (qemu).
 #
 # Usage: GEN3_DIR=/path/to/gen3 ./compile-gen3.sh [-o output] file.tc
@@ -9,7 +9,7 @@
 # binaries it calls (GEN3_DIR instead of GEN2_DIR). Used by
 # tests/test_gen3.sh to verify Gen2 == Gen3 self-hosting.
 #
-# Requires: Gen1 tools (parse, extract-sigs),
+# Requires: Gen1 tools (parse),
 #           Gen3 tools in GEN3_DIR (sigscan, tcheck, codegen, bc2asm,
 #             asm_pass1, asm_pass2),
 #           qemu-riscv32
@@ -17,7 +17,6 @@
 set -e
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSE="$ROOT_DIR/build/gen1/parse"
-EXTRACT_SIGS="$ROOT_DIR/build/gen1/extract-sigs"
 QEMU="${QEMU:-qemu-riscv32}"
 CRT0="$ROOT_DIR/compiler/crt0_tc.s"
 CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s"
@@ -94,13 +93,13 @@ done <<< "$_COLLECTED"
 
 ALL_FILES=("${IMPORT_FILES[@]}" "$TC_FILE")
 
-# Generate the shared (imports …) block via Gen1 parse + extract-sigs
-# (see compile-gen2.sh for the rationale).
+# Generate the shared (imports …) block via Gen1 parse + Gen3 sigscan.
+# sigscan emits all decls; tcheck filters with export_only=true.
 if [ ${#IMPORT_FILES[@]} -gt 0 ]; then
     {
         echo "(imports"
         for imp in "${IMPORT_FILES[@]}"; do
-            "$PARSE" "$imp" | "$EXTRACT_SIGS"
+            "$PARSE" "$imp" | "$QEMU" "$GEN3_DIR/sigscan"
         done
         echo ")"
     } > "$TMP/imports.th"

@@ -260,39 +260,7 @@ printf '(imports)\n' > "$ROOT_DIR_TREE/empty_imports.txt"
 printf '(self\n'    > "$ROOT_DIR_TREE/self_open.txt"
 printf ')\n'        > "$ROOT_DIR_TREE/wrap_close.txt"
 
-# M7: stage compiler source files and pre-generated import .th blocks
-# so the OS can compile parse.tc from source. Only staged when
-# EXTRA_TASKS is set (i.e., phase 7 testing).
-if [ -n "$EXTRA_TASKS" ]; then
-    EXTRACT_SIGS="$ROOT_DIR/build/gen1/extract-sigs"
-    COMPILER_DIR="$ROOT_DIR/compiler"
-    mkdir -p "$ROOT_DIR_TREE/src"
-    for src in string_buffer.tc source_reader.tc strlib.tc parse.tc; do
-        cp "$COMPILER_DIR/$src" "$ROOT_DIR_TREE/src/$src"
-    done
 
-    # Pre-generate import .th blocks using Gen1 parse + extract-sigs.
-    # These are the (imports ...) wrappers that tcheck expects.
-    #   imp_sb.txt:    (imports <string_buffer exports>)
-    #                  — used by source_reader.tc and strlib.tc
-    #   imp_parse.txt: (imports <string_buffer + source_reader + strlib exports>)
-    #                  — used by parse.tc
-    {
-        echo "(imports"
-        "$PARSE" "$COMPILER_DIR/string_buffer.tc" | "$EXTRACT_SIGS"
-        echo ")"
-    } > "$ROOT_DIR_TREE/imp_sb.txt"
-
-    {
-        echo "(imports"
-        "$PARSE" "$COMPILER_DIR/string_buffer.tc" | "$EXTRACT_SIGS"
-        "$PARSE" "$COMPILER_DIR/source_reader.tc" | "$EXTRACT_SIGS"
-        "$PARSE" "$COMPILER_DIR/strlib.tc"         | "$EXTRACT_SIGS"
-        echo ")"
-    } > "$ROOT_DIR_TREE/imp_parse.txt"
-
-    echo "M7: staged /src/*.tc + /imp_*.txt" >&2
-fi
 
 python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 

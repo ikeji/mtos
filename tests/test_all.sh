@@ -24,7 +24,7 @@ if command -v "$QEMU" >/dev/null 2>&1 && command -v "$RISCV_CC" >/dev/null 2>&1;
     # first since compile-gen1.sh calls them — bounce through `make`
     # which is the single source of truth for the Gen1 build rules.
     _need_gen1=0
-    for t in parse typecheck interp codegen bcrun bc2asm extract-sigs; do
+    for t in parse typecheck interp codegen bcrun bc2asm; do
         if [ ! -x "$ROOT_DIR/build/gen1/$t" ]; then _need_gen1=1; break; fi
     done
     if [ "$_need_gen1" = 1 ]; then

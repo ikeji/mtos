@@ -1,6 +1,6 @@
 #!/bin/bash
 # compile-gen2.sh — Compile .tc to RV32 ELF using Gen2 tools (via qemu).
-# Uses: Gen1 parse/extract-sigs (for import .th generation),
+# Uses: Gen1 parse (for import .th generation),
 #       Gen2 sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass2 (qemu).
 #
 # Usage: GEN2_DIR=/path/to/gen2 ./compile-gen2.sh [-o output] file.tc
@@ -17,13 +17,13 @@
 #   asm_pass1 < full.s > full.lab
 #   cat full.lab full.s | asm_pass2 > OUTFILE
 #
-# The (imports) block is built from Gen1 parse + extract-sigs for each
-# transitively imported module (extract-sigs emits only :export decls,
-# which matches tcheck's imports behaviour). The (self) block is built
-# from sigscan, which emits every top-level decl for forward-reference
+# The (imports) block is built from Gen1 parse + Gen2 sigscan for each
+# transitively imported module. sigscan emits all top-level decls, but
+# tcheck filters with export_only=true so non-export symbols are ignored.
+# The (self) block is also built from sigscan for forward-reference
 # resolution within a single module.
 #
-# Requires: Gen1 tools (parse, extract-sigs),
+# Requires: Gen1 tools (parse),
 #           Gen2 tools in GEN2_DIR (sigscan, tcheck, codegen, bc2asm,
 #             asm_pass1, asm_pass2),
 #           qemu-riscv32
@@ -31,7 +31,6 @@
 set -e
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSE="$ROOT_DIR/build/gen1/parse"
-EXTRACT_SIGS="$ROOT_DIR/build/gen1/extract-sigs"
 QEMU="${QEMU:-qemu-riscv32}"
 CRT0="${CRT0:-$ROOT_DIR/compiler/crt0_tc.s}"
 CRT0_DATA="${CRT0_DATA:-$ROOT_DIR/compiler/crt0_tc_data.s}"
@@ -131,14 +130,14 @@ done <<< "$_COLLECTED"
 ALL_FILES=("${IMPORT_FILES[@]}" "$TC_FILE")
 
 # Generate the shared (imports …) block for every compilation unit
-# using Gen1 parse + extract-sigs. extract-sigs emits only :export
-# decls, matching tcheck's "imports block = exported symbols only"
-# convention. The (self …) block is per-file and built in compile_one.
+# using Gen1 parse + Gen2 sigscan. sigscan emits all top-level decls
+# (not just :export), but tcheck filters imports with export_only=true
+# so non-export symbols are harmlessly ignored.
 if [ ${#IMPORT_FILES[@]} -gt 0 ]; then
     {
         echo "(imports"
         for imp in "${IMPORT_FILES[@]}"; do
-            "$PARSE" "$imp" | "$EXTRACT_SIGS"
+            "$PARSE" "$imp" | "$QEMU" "$GEN2_DIR/sigscan"
         done
         echo ")"
     } > "$TMP/imports.th"

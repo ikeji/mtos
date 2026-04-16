@@ -5,7 +5,7 @@ SRCS = bootstrap/lexer.c bootstrap/ast.c bootstrap/parser.c bootstrap/typecheck.
 OBJS = $(SRCS:.c=.o)
 
 # Gen1 ツール (C 製、build/gen1/ 固定。repo 直下には置かない)
-GEN1_NAMES = parse typecheck interp codegen bcrun bc2asm extract-sigs
+GEN1_NAMES = parse typecheck interp codegen bcrun bc2asm
 GEN1_TOOLS = $(addprefix build/gen1/,$(GEN1_NAMES))
 
 # Gen2 ツール (compile-gen1.sh で compiler/*.tc を RV32 ELF に。
@@ -35,9 +35,6 @@ build/gen1/bcrun: bootstrap/bcrun.c | build/gen1
 
 build/gen1/bc2asm: bootstrap/bc2asm.c | build/gen1
 	$(CC) $(CFLAGS) -o $@ bootstrap/bc2asm.c
-
-build/gen1/extract-sigs: bootstrap/extract_sigs.c bootstrap/ast.o | build/gen1
-	$(CC) $(CFLAGS) -o $@ bootstrap/extract_sigs.c bootstrap/ast.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
