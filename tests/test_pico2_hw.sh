@@ -100,7 +100,8 @@ python3 "$SCRIPT_DIR/pico2_hw_driver.py" \
     --prelude-tail "$TMP/prelude_tail.s" \
     --openocd "$OPENOCD" \
     --openocd-scripts "$OPENOCD_SCRIPTS" \
-    --log-dir "$TMP"
+    --log-dir "$TMP" \
+    --run-link
 status=$?
 echo "[run] driver exit $status"
 [ "$status" -ne 0 ] && { echo "FAIL: driver returned $status"; exit 1; }
