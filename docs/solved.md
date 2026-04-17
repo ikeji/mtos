@@ -130,3 +130,20 @@ header 値も調整する仕組みがない (固定 32 KB)。
 - 関数宣言 / 関数呼び出しの trailing comma → 修正 (b04855c)
 - struct array が asm リンカで未定義シンボル → parser で synthetic fn
   を生成して修正 (b04855c)
+
+### 8. asm セクション 16B アライン制限 (wontfix, 2026-04-17 moved)
+
+実害は qemu virt の block_virtio.tc 1 箇所のみ (12 KB waste)。
+pico2 は関係なし。修正不要と判断。
+
+### K4. UART EOF 検出不可 (limitation → mux で解決, 2026-04-17 moved)
+
+`do_uart_read` が busy-loop で EOF を区別できなかったが、
+UART mux (mx/mr) の length-prefix フレーミングで len=0 が EOF マーカー
+として機能するため、mux ON 環境では解決。mux OFF では sh の "quit"
+コマンドで代替。
+
+### 17. make test 60 秒制約 (ergonomics → 解決, 2026-04-17 moved)
+
+Make ベース incremental build 導入後、warm 33s / cold 78s まで短縮。
+60 秒制約を十分に満たしている。
