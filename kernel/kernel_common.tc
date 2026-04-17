@@ -80,6 +80,8 @@ struct Task {
     in_tail:   i32,
     in_eof:    i32,
     name:      u32,
+    t_ram_sz:  i32,
+    t_stk_sz:  i32,
 }
 
 var g_num_tasks: i32 = 0;
@@ -98,6 +100,8 @@ var g_last_img:       u32 = 0u32;
 var g_last_argv:      u32 = 0u32;
 var g_last_stdin_fd:  i32 = 0;
 var g_last_stdout_fd: i32 = 0;
+var g_last_ram_size:  i32 = 0;
+var g_last_stack_size: i32 = 0;
 
 // ===== UART frame multiplexer (docs/task/uart_multiplex.md) =====
 //
@@ -617,6 +621,8 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
     g_last_frame_buf = frame_buf as u32;
     g_last_ram       = task_ram  as u32;
     g_last_stack     = task_stack as u32;
+    g_last_ram_size  = ram_size;
+    g_last_stack_size = stack_size;
     return frame;
 }
 
@@ -631,6 +637,8 @@ export fn reset_last_alloc() -> void {
     g_last_argv      = 0u32;
     g_last_stdin_fd  = 0;
     g_last_stdout_fd = 0;
+    g_last_ram_size  = 0;
+    g_last_stack_size = 0;
     return;
 }
 
@@ -701,6 +709,18 @@ export fn task_get_wait_on(idx: i32) -> i32 {
     return wait_on(get(g_tasks, idx));
 }
 
+export fn task_get_ram_size(idx: i32) -> i32 {
+    if g_tasks as u32 == 0u32 { return 0; }
+    if idx < 0 || idx >= g_num_tasks { return 0; }
+    return t_ram_sz(get(g_tasks, idx));
+}
+
+export fn task_get_stack_size(idx: i32) -> i32 {
+    if g_tasks as u32 == 0u32 { return 0; }
+    if idx < 0 || idx >= g_num_tasks { return 0; }
+    return t_stk_sz(get(g_tasks, idx));
+}
+
 export fn task_get_name(idx: i32) -> u32 {
     if g_tasks as u32 == 0u32 { return 0u32; }
     if idx < 0 || idx >= g_num_tasks { return 0u32; }
@@ -759,6 +779,8 @@ fn slot_capture_last(idx: i32) -> void {
     argv(t, g_last_argv);
     stdin_fd(t, g_last_stdin_fd);
     stdout_fd(t, g_last_stdout_fd);
+    t_ram_sz(t, g_last_ram_size);
+    t_stk_sz(t, g_last_stack_size);
     return;
 }
 
@@ -807,7 +829,7 @@ export fn sched_init(max: i32) -> void {
         set(g_tasks, i,
             Task(0u32, STATE_UNUSED, -1,
                  0u32, 0u32, 0u32, 0u32, 0u32, 0, 0,
-                 0u32, 0, 0, 0, 0u32));
+                 0u32, 0, 0, 0, 0u32, 0, 0));
         i = i + 1;
     }
     return;

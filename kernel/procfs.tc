@@ -129,7 +129,7 @@ fn synth_tasks() -> u32 {
     var cap: i32 = 4096;
     var buf: U8Array = U8Array(cap as u32);
     var pos: i32 = 0;
-    pos = append_str(buf, pos, "SLOT STATE   FRAME      WAIT NAME\n", cap);
+    pos = append_str(buf, pos, "SLOT STATE   FRAME      WAIT RAM    STACK  NAME\n", cap);
     var n: i32 = sched_task_count();
     var i: i32 = 0;
     while i < n {
@@ -140,6 +140,10 @@ fn synth_tasks() -> u32 {
         pos = append_hex(buf, pos, task_get_frame(i), cap);
         pos = append_byte(buf, pos, ' ' as u8, cap);
         pos = append_dec(buf, pos, task_get_wait_on(i), cap);
+        pos = append_byte(buf, pos, ' ' as u8, cap);
+        pos = append_dec(buf, pos, task_get_ram_size(i), cap);
+        pos = append_byte(buf, pos, ' ' as u8, cap);
+        pos = append_dec(buf, pos, task_get_stack_size(i), cap);
         pos = append_byte(buf, pos, ' ' as u8, cap);
         var nm: u32 = task_get_name(i);
         if nm != 0u32 {

@@ -1492,7 +1492,7 @@ fn main() -> i32 {
     var strtab: U8Array = U8Array(32768u32);
     var atom_buf: U8Array = U8Array(1024u32);
     var ob: StringBuffer = StringBuffer_new(1);
-    var fntab: U32Array = U32Array(256u32);
+    var fntab: U32Array = U32Array(512u32);
     var vartab: I32Array = I32Array(640u32);
 
     g_reader = SourceReader_new(0);
