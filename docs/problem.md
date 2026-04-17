@@ -18,18 +18,6 @@
 
 ## 優先対処
 
-### K10. pico2: multi-file cat (>2 ファイル) が hang する (bug, 回避済)
-
-pico2 で `cat a b c > out` のように 3 ファイル以上を 1 コマンドで cat
-すると hang する (virt では問題なし)。
-
-- 観測: `cat /empty_imports.txt /self_open.txt > /tmp/w1` は OK (2 file)
-  だが 3 file 以上でタイムアウト。K5 の 5-file cat 問題と関連の可能性
-- **回避策**: 2-file cat chain で中間ファイルを段階的に組み立てる
-  (pico2_hw_driver.py が実装済)
-
-K5 と合わせて**優先調査**。
-
 ### K6. phase 7 デバッグトレースがデフォルト ON (ergonomics)
 
 phase 7 M6 時点でカーネルに常時出力している debug 出力:

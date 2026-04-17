@@ -151,6 +151,12 @@ redirect fd / frame / ram / stack / img / argv がリークするバグを発見
 現在の virt 環境で 5-file cat + redirect を 4 回繰り返しても再現せず、
 prelude 導入前の構成固有だったと判断。
 
+### K10. pico2 multi-file cat hang (bug → 再現せず, 2026-04-17)
+
+pico2 で cat 3+ ファイルが hang する問題。2026-04-17 に pico2 実機で
+cat 3 files / cat 4 files (redirect 付き) を確認したところ正常動作。
+K5 の sys_spawn_handler リソースリーク修正や構成変更で解消されたと判断。
+
 ### 17. make test 60 秒制約 (ergonomics → 解決, 2026-04-17 moved)
 
 Make ベース incremental build 導入後、warm 33s / cold 78s まで短縮。
