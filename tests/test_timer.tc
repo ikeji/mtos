@@ -34,7 +34,7 @@ fn main() -> i32 {
     // Set mtimecmp = mtime + small delta to trigger soon
     var mtime_lo: u32 = peek32(MTIME_LO);
     var target: u32 = mtime_lo + 100000u32;
-    poke32(MTIMECMP_HI, 0u32);
+    poke32(MTIMECMP_HI, 0);
     poke32(MTIMECMP_LO, target);
 
     // Enable interrupts: mstatus.MIE (bit 3) and mie.MTIE (bit 7)

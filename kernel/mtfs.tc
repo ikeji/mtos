@@ -87,7 +87,7 @@ export fn mtfs_mount() -> i32 {
     g_mtfs_sector = U8Array((MTFS_BLOCK_SIZE) as u32);
 
     // Read superblock
-    if block_read(0u32, g_mtfs_sector) != MTFS_BLOCK_SIZE {
+    if block_read(0, g_mtfs_sector) != MTFS_BLOCK_SIZE {
         return -1;
     }
     if le_u32(g_mtfs_sector, 0) != MTFS_MAGIC {

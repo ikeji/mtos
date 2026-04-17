@@ -154,7 +154,7 @@ export fn uart_emit_frame(tag: StringLiteral, addr: u32, n: i32) -> void {
         return;
     }
     if n <= 0 {
-        uart_emit_frame_raw(tag, 0u32, 0);
+        uart_emit_frame_raw(tag, 0, 0);
         return;
     }
     var off: i32 = 0;
@@ -819,15 +819,15 @@ fn slot_free_allocs(idx: i32) -> void {
     if ib != 0u32 { kfree(ib); }
     // Keep name alive for /proc/tasks display after task exit.
     // Name is freed when the slot is reused (sched_spawn / replace).
-    in_buf(t, 0u32);
+    in_buf(t, 0);
     in_head(t, 0);
     in_tail(t, 0);
     in_eof(t, 0);
-    frame_buf(t, 0u32);
-    ram(t, 0u32);
-    stack(t, 0u32);
-    img(t, 0u32);
-    argv(t, 0u32);
+    frame_buf(t, 0);
+    ram(t, 0);
+    stack(t, 0);
+    img(t, 0);
+    argv(t, 0);
     stdin_fd(t, 0);
     stdout_fd(t, 0);
     return;
@@ -840,9 +840,9 @@ export fn sched_init(max: i32) -> void {
     var i: i32 = 0;
     while i < max {
         set(g_tasks, i,
-            Task(0u32, STATE_UNUSED, -1,
-                 0u32, 0u32, 0u32, 0u32, 0u32, 0, 0,
-                 0u32, 0, 0, 0, 0u32, 0, 0));
+            Task(0, STATE_UNUSED, -1,
+                 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0));
         i = i + 1;
     }
     return;
@@ -977,7 +977,7 @@ fn sched_task_exit() -> u32 {
 
     slot_free_allocs(g_current);
     state(cur, STATE_DONE);
-    frame(cur, 0u32);
+    frame(cur, 0);
 
     // Wake any tasks that were waiting on the one we just finished.
     var w: i32 = 0;

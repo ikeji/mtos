@@ -56,7 +56,7 @@ export fn tmpfs_mount() -> i32 {
     g_tmpfs_files = TmpFileArray(TMPFS_MAX_FILES as u32);
     var i: i32 = 0;
     while i < TMPFS_MAX_FILES {
-        set(g_tmpfs_files, i, TmpFile(0u32, 0, 0u32, 0, 0));
+        set(g_tmpfs_files, i, TmpFile(0, 0, 0, 0, 0));
         i = i + 1;
     }
     g_tmpfs_fds = TmpfsFDArray(TMPFS_MAX_FDS as u32);
@@ -136,7 +136,7 @@ fn tmpfs_create(name_addr: u32, n: i32) -> i32 {
             poke8(nb as u32 + 4u32 + n as u32, 0u8);
             nm_addr(f, nb as u32 + 4u32);
             nlen(f, n);
-            dp(f, 0u32);
+            dp(f, 0);
             sz(f, 0);
             cp(f, 0);
             return i;

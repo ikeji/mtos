@@ -106,7 +106,7 @@ fn alloc_queue_mem() -> void {
     var p: u32 = g_mem_base;
     var end: u32 = g_mem_base + OFF_STATUS + 1u32;
     while p < end {
-        poke32(p, 0u32);
+        poke32(p, 0);
         p = p + 4u32;
     }
     return;
@@ -125,7 +125,7 @@ export fn block_init() -> i32 {
     alloc_queue_mem();
 
     // Reset
-    mmio_w(REG_STATUS, 0u32);
+    mmio_w(REG_STATUS, 0);
 
     // ACKNOWLEDGE + DRIVER
     mmio_w(REG_STATUS, STATUS_ACK);
@@ -133,18 +133,18 @@ export fn block_init() -> i32 {
 
     // Feature negotiation: accept nothing special.
     // Legacy devices still accept FEATURES_OK in the transitional init path.
-    mmio_w(REG_HOST_FEAT_SEL, 0u32);
+    mmio_w(REG_HOST_FEAT_SEL, 0);
     var feat0: u32 = mmio_r(REG_HOST_FEAT);
-    mmio_w(REG_GUEST_FEAT_SEL, 0u32);
+    mmio_w(REG_GUEST_FEAT_SEL, 0);
     mmio_w(REG_GUEST_FEAT, feat0);
 
     mmio_w(REG_STATUS, STATUS_ACK | STATUS_DRIVER | STATUS_FEATURES_OK);
 
     // Legacy guest page size
-    mmio_w(REG_GUEST_PGSIZE, 4096u32);
+    mmio_w(REG_GUEST_PGSIZE, 4096);
 
     // Queue 0 setup
-    mmio_w(REG_QUEUE_SEL, 0u32);
+    mmio_w(REG_QUEUE_SEL, 0);
     var qmax: u32 = mmio_r(REG_QUEUE_NUM_MAX);
     if qmax == 0u32 { return -1; }
     mmio_w(REG_QUEUE_NUM, QUEUE_SIZE);
@@ -180,31 +180,31 @@ export fn block_read(sector: u32, buf: U8Array) -> i32 {
 
     // virtio_blk_req header: type(u32) + reserved(u32) + sector(u64)
     poke32(hdr + 0u32,  VBLK_T_IN);
-    poke32(hdr + 4u32,  0u32);
+    poke32(hdr + 4u32,  0);
     poke32(hdr + 8u32,  sector);
-    poke32(hdr + 12u32, 0u32);
+    poke32(hdr + 12u32, 0);
 
     // Distinctive value so we can tell the device set it
     poke8(status, 0xFFu8);
 
     // Descriptor 0: header (device-readable)
     poke32(desc + 0u32,  hdr);
-    poke32(desc + 4u32,  0u32);
-    poke32(desc + 8u32,  16u32);
+    poke32(desc + 4u32,  0);
+    poke32(desc + 8u32,  16);
     poke16(desc + 12u32, DESC_F_NEXT);
     poke16(desc + 14u32, 1u16);
 
     // Descriptor 1: data buffer (device-writable for read)
     poke32(desc + 16u32, data);
-    poke32(desc + 20u32, 0u32);
-    poke32(desc + 24u32, 512u32);
+    poke32(desc + 20u32, 0);
+    poke32(desc + 24u32, 512);
     poke16(desc + 28u32, DESC_F_NEXT | DESC_F_WRITE);
     poke16(desc + 30u32, 2u16);
 
     // Descriptor 2: status byte (device-writable)
     poke32(desc + 32u32, status);
-    poke32(desc + 36u32, 0u32);
-    poke32(desc + 40u32, 1u32);
+    poke32(desc + 36u32, 0);
+    poke32(desc + 40u32, 1);
     poke16(desc + 44u32, DESC_F_WRITE);
     poke16(desc + 46u32, 0u16);
 
@@ -218,7 +218,7 @@ export fn block_read(sector: u32, buf: U8Array) -> i32 {
     poke16(avail + 2u32, (avail_idx + 1u32) as u16);
 
     // Notify device (queue index 0)
-    mmio_w(REG_QUEUE_NOTIFY, 0u32);
+    mmio_w(REG_QUEUE_NOTIFY, 0);
 
     // Poll for completion
     var timeout: i32 = 10000000;

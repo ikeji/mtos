@@ -316,7 +316,7 @@ export fn __runtime_init(bss: u32, bss_size: i32) -> void {
     // bucket_table + stat tables + large stats をゼロ初期化
     var i: i32 = 0;
     while i < KM_HEAP_OFFSET {
-        poke32(bss + i as u32, 0u32);
+        poke32(bss + i as u32, 0);
         i = i + 4;
     }
     var heap: u32 = bss + KM_HEAP_OFFSET as u32;
@@ -324,7 +324,7 @@ export fn __runtime_init(bss: u32, bss_size: i32) -> void {
     hsz = hsz & (0 - 4);
     if hsz >= KM_MIN_BLK {
         poke32(heap, hsz as u32);
-        poke32(heap + 4u32, 0u32);
+        poke32(heap + 4u32, 0);
         g_free_list = heap;
     }
     return;
@@ -394,7 +394,7 @@ fn new_array(count: i32, data_bytes: i32) -> u32 {
     }
     var ztotal: i32 = (total + 3) & (0 - 4);
     var k: i32 = 0;
-    while k < ztotal { poke32(addr + k as u32, 0u32); k = k + 4; }
+    while k < ztotal { poke32(addr + k as u32, 0); k = k + 4; }
     poke32(addr, count as u32);
     return addr;
 }
@@ -643,7 +643,7 @@ export fn print_str(s: String) -> void {
         var slen: i32 = peek32(s as u32) as i32;
         do_write(1, s as u32 + 4u32, slen);
     }
-    do_write(1, 0u32, 0);
+    do_write(1, 0, 0);
     var nl: U8Array = U8Array(1);
     poke8(nl as u32 + 4u32 + (0) as u32, (10u8) as u8);
     sys_write(1, nl, 1);

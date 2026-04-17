@@ -38,7 +38,7 @@ export fn procfs_init() -> void {
     g_procfs_fds = ProcFDArray(PROCFS_MAX_FDS as u32);
     var i: i32 = 0;
     while i < PROCFS_MAX_FDS {
-        set(g_procfs_fds, i, ProcFD(0u32, 0, 0));
+        set(g_procfs_fds, i, ProcFD(0, 0, 0));
         i = i + 1;
     }
     g_procfs_ready = 1;
@@ -276,7 +276,7 @@ export fn procfs_close(fd: i32) -> i32 {
     if fd < 0 || fd >= PROCFS_MAX_FDS { return -1; }
     var e: ProcFD = get(g_procfs_fds, fd);
     if buf(e) != 0u32 { kfree(buf(e)); }
-    buf(e, 0u32);
+    buf(e, 0);
     size(e, 0);
     pos(e, 0);
     return 0;

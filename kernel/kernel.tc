@@ -28,7 +28,7 @@ var TIMER_INTERVAL: u32 = 10000u32;
 // Provided to kernel_common (called from trap_handler)
 fn rearm_timer() -> void {
     var now: u32 = peek32(MTIME_LO);
-    poke32(MTIMECMP_HI, 0u32);
+    poke32(MTIMECMP_HI, 0);
     poke32(MTIMECMP_LO, now + TIMER_INTERVAL);
     return;
 }
@@ -60,7 +60,7 @@ fn kputs_hex8(x: u8) -> void {
 
 fn dump_sector0() -> void {
     var buf: U8Array = U8Array(512);
-    var n: i32 = block_read(0u32, buf);
+    var n: i32 = block_read(0, buf);
     if n == 512 {
         kputs("SECTOR0:");
         var i: i32 = 0;
