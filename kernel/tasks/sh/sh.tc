@@ -158,15 +158,17 @@ fn tc_token_start(buf: U8Array, pos: i32) -> i32 {
     return i;
 }
 
-// True iff only whitespace/empty appears before tok_start in buf.
+// True iff the token at tok_start is in command position: either the
+// first token on the line (only whitespace before) or the token
+// immediately after a `|` pipe operator.
 fn tc_is_first_token(buf: U8Array, tok_start: i32) -> bool {
-    var i: i32 = 0;
-    while i < tok_start {
-        var c: u8 = get(buf, i);
-        if c != ' ' as u8 && c != 9u8 { return false; }
-        i = i + 1;
+    var i: i32 = tok_start;
+    while i > 0 && (get(buf, i - 1) == ' ' as u8 || get(buf, i - 1) == 9u8) {
+        i = i - 1;
     }
-    return true;
+    if i == 0 { return true; }
+    if get(buf, i - 1) == '|' as u8 { return true; }
+    return false;
 }
 
 // Find the offset of the last '/' in buf[start..end]. Returns -1
