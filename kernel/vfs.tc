@@ -23,6 +23,9 @@ fn do_uart_write(buf: u32, len: i32) -> i32;
 fn do_uart_read(buf: u32, len: i32) -> i32;
 fn do_uart_try_read(buf: u32, len: i32) -> i32;
 
+// Runtime allocator (compiler/runtime.tc)
+fn kfree(ptr: u32) -> void;
+
 var VFS_MAX_FDS: i32 = 16;
 var VFS_PATH_MAX: i32 = 128;
 
@@ -33,6 +36,7 @@ var FS_UART:   i32 = 0;
 var FS_MTFS:   i32 = 1;
 var FS_TMPFS:  i32 = 2;
 var FS_PROCFS: i32 = 3;
+var FS_PIPE:   i32 = 4;
 
 // ===== fd table =====
 // fs_type : which FS owns this fd
@@ -52,6 +56,7 @@ var g_vfs_ready: i32 = 0;
 export fn vfs_init() -> i32 {
     if mtfs_mount() != 0 { return -1; }
     if tmpfs_mount() != 0 { return -1; }
+    pipe_init();
     g_vfs_fds = FDArray(VFS_MAX_FDS as u32);
     var i: i32 = 0;
     while i < VFS_MAX_FDS {
@@ -246,6 +251,7 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if t == FS_MTFS   { return mtfs_read(inner(e), buf_addr, n); }
     if t == FS_TMPFS  { return tmpfs_read(inner(e), buf_addr, n); }
     if t == FS_PROCFS { return procfs_read(inner(e), buf_addr, n); }
+    if t == FS_PIPE   { return pipe_read(inner(e), buf_addr, n); }
     return -1;
 }
 
@@ -278,7 +284,7 @@ export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
     if t == FS_TMPFS { return tmpfs_write(inner(e), buf_addr, n); }
-    // mtfs is read-only; no other writable FS yet.
+    if t == FS_PIPE  { return pipe_write(inner(e), buf_addr, n); }
     return -1;
 }
 
@@ -381,8 +387,146 @@ export fn vfs_close(fd: i32) -> i32 {
     if t == FS_MTFS   { mtfs_close(inner(e)); }
     if t == FS_TMPFS  { tmpfs_close(inner(e)); }
     if t == FS_PROCFS { procfs_close(inner(e)); }
+    if t == FS_PIPE   { pipe_close(inner(e)); }
     fs_type(e, FS_NONE);
     inner(e, 0);
     offset(e, 0);
+    return 0;
+}
+
+// ===== Kernel pipe (ring buffer) =====
+//
+// sys_pipe() allocates a 4 KB ring buffer and returns two VFS fds
+// (read end, write end). pipe_read returns -2 (yield) when the
+// buffer is empty but the writer is still open. pipe_write returns
+// -2 when the buffer is full. The ecall handlers retry on -2.
+// When the write end is closed, reads return 0 (EOF).
+//
+// inner encoding: pipe_idx * 2 = read end, pipe_idx * 2 + 1 = write end.
+
+var PIPE_MAX:      i32 = 4;
+var PIPE_BUF_SIZE: i32 = 4096;
+
+// Parallel arrays indexed by pipe slot (0..PIPE_MAX-1).
+var g_pipe_buf:       I32Array = 0 as I32Array;  // U8Array addr (0 = free)
+var g_pipe_cap:       I32Array = 0 as I32Array;
+var g_pipe_rpos:      I32Array = 0 as I32Array;
+var g_pipe_wpos:      I32Array = 0 as I32Array;
+var g_pipe_count:     I32Array = 0 as I32Array;
+var g_pipe_wrclosed:  I32Array = 0 as I32Array;
+var g_pipe_rdclosed:  I32Array = 0 as I32Array;
+
+fn pipe_init() -> void {
+    g_pipe_buf      = I32Array(PIPE_MAX as u32);
+    g_pipe_cap      = I32Array(PIPE_MAX as u32);
+    g_pipe_rpos     = I32Array(PIPE_MAX as u32);
+    g_pipe_wpos     = I32Array(PIPE_MAX as u32);
+    g_pipe_count    = I32Array(PIPE_MAX as u32);
+    g_pipe_wrclosed = I32Array(PIPE_MAX as u32);
+    g_pipe_rdclosed = I32Array(PIPE_MAX as u32);
+    var i: i32 = 0;
+    while i < PIPE_MAX {
+        set(g_pipe_buf, i, 0);
+        i = i + 1;
+    }
+    return;
+}
+
+fn pipe_read(inner_val: i32, buf_addr: u32, n: i32) -> i32 {
+    var idx: i32 = inner_val / 2;
+    var cnt: i32 = get(g_pipe_count, idx);
+    if cnt == 0 {
+        if get(g_pipe_wrclosed, idx) != 0 { return 0; }
+        return -2;
+    }
+    var to_read: i32 = n;
+    if to_read > cnt { to_read = cnt; }
+    var pipe_buf: U8Array = get(g_pipe_buf, idx) as u32 as U8Array;
+    var cap: i32 = get(g_pipe_cap, idx);
+    var rp: i32 = get(g_pipe_rpos, idx);
+    var i: i32 = 0;
+    while i < to_read {
+        poke8(buf_addr + i as u32, get(pipe_buf, rp));
+        rp = (rp + 1) % cap;
+        i = i + 1;
+    }
+    set(g_pipe_rpos, idx, rp);
+    set(g_pipe_count, idx, cnt - to_read);
+    return to_read;
+}
+
+fn pipe_write(inner_val: i32, buf_addr: u32, n: i32) -> i32 {
+    var idx: i32 = inner_val / 2;
+    if get(g_pipe_rdclosed, idx) != 0 { return -1; }
+    var cnt: i32 = get(g_pipe_count, idx);
+    var cap: i32 = get(g_pipe_cap, idx);
+    var avail: i32 = cap - cnt;
+    if avail == 0 { return -2; }
+    var to_write: i32 = n;
+    if to_write > avail { to_write = avail; }
+    var pipe_buf: U8Array = get(g_pipe_buf, idx) as u32 as U8Array;
+    var wp: i32 = get(g_pipe_wpos, idx);
+    var i: i32 = 0;
+    while i < to_write {
+        set(pipe_buf, wp, peek8(buf_addr + i as u32));
+        wp = (wp + 1) % cap;
+        i = i + 1;
+    }
+    set(g_pipe_wpos, idx, wp);
+    set(g_pipe_count, idx, cnt + to_write);
+    return to_write;
+}
+
+fn pipe_close(inner_val: i32) -> void {
+    var idx: i32 = inner_val / 2;
+    var is_write: i32 = inner_val % 2;
+    if is_write != 0 {
+        set(g_pipe_wrclosed, idx, 1);
+    } else {
+        set(g_pipe_rdclosed, idx, 1);
+    }
+    if get(g_pipe_wrclosed, idx) != 0 && get(g_pipe_rdclosed, idx) != 0 {
+        var ba: u32 = get(g_pipe_buf, idx) as u32;
+        if ba != 0u32 {
+            kfree(ba);
+            set(g_pipe_buf, idx, 0);
+        }
+    }
+    return;
+}
+
+export fn sys_pipe_handler(fds_addr: u32) -> i32 {
+    var idx: i32 = -1;
+    var i: i32 = 0;
+    while i < PIPE_MAX {
+        if get(g_pipe_buf, i) == 0 {
+            idx = i;
+            i = PIPE_MAX;
+        }
+        i = i + 1;
+    }
+    if idx < 0 { return -1; }
+
+    var buf: U8Array = U8Array(PIPE_BUF_SIZE as u32);
+    set(g_pipe_buf,      idx, buf as u32 as i32);
+    set(g_pipe_cap,      idx, PIPE_BUF_SIZE);
+    set(g_pipe_rpos,     idx, 0);
+    set(g_pipe_wpos,     idx, 0);
+    set(g_pipe_count,    idx, 0);
+    set(g_pipe_wrclosed, idx, 0);
+    set(g_pipe_rdclosed, idx, 0);
+
+    var rfd: i32 = alloc_vfs_fd(FS_PIPE, idx * 2);
+    var wfd: i32 = alloc_vfs_fd(FS_PIPE, idx * 2 + 1);
+    if rfd < 0 || wfd < 0 {
+        if rfd >= 0 { vfs_close(rfd); }
+        if wfd >= 0 { vfs_close(wfd); }
+        kfree(buf as u32);
+        set(g_pipe_buf, idx, 0);
+        return -1;
+    }
+
+    poke32(fds_addr, rfd as u32);
+    poke32(fds_addr + 4u32, wfd as u32);
     return 0;
 }

@@ -21,8 +21,12 @@
 import "../libtc/libtc.tc";
 
 fn do_spawn(path_addr: u32, argv_addr: u32, in_addr: u32, out_addr: u32) -> i32;
+fn do_spawn_fds(path_addr: u32, argv_addr: u32, in_fd: i32, out_fd: i32) -> i32;
 fn do_wait(slot: i32) -> i32;
 fn do_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32;
+fn do_pipe(fds_addr: u32) -> i32;
+fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
 
 // CMD_MAX bumped to 128 for the typecheck split (#54): commands like
 //   cat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt \
@@ -672,19 +676,11 @@ fn count_pipes(cmd: U8Array, n: i32, pipe_pos: I32Array) -> i32 {
     return count;
 }
 
-// Create "/tmp/_pN" as a NUL-terminated U8Array (N = idx % 4).
-fn make_pipe_path(idx: i32) -> U8Array {
-    var p: U8Array = U8Array(9);
-    set(p, 0, '/' as u8);
-    set(p, 1, 't' as u8);
-    set(p, 2, 'm' as u8);
-    set(p, 3, 'p' as u8);
-    set(p, 4, '/' as u8);
-    set(p, 5, '_' as u8);
-    set(p, 6, 'p' as u8);
-    set(p, 7, ('0' + idx % 4) as u8);
-    set(p, 8, 0u8);
-    return p;
+// Open a file path from g_in_path / g_out_path and return the VFS fd.
+// Returns 0 if the path is NULL. flags: 0 = read, 577 = write+create+trunc.
+fn open_redir_path(p: U8Array, flags: i32) -> i32 {
+    if p as u32 == 0u32 { return 0; }
+    return do_openat(0, p as u32 + 4u32, flags);
 }
 
 fn main() -> i32 {
@@ -737,19 +733,38 @@ fn main() -> i32 {
                     puts("sh: too many pipes\n");
                     delete(pipe_pos);
                 } else {
-                    // Pipeline: split at `|` tokens and chain via tmpfs
+                    // Pipeline via kernel pipe syscall. All segments
+                    // are spawned first (concurrent execution), then
+                    // waited on in order.
                     var seg_buf: U8Array = U8Array(CMD_MAX as u32);
-                    var seg_idx: i32 = 0;
-                    var seg_start: i32 = 0;
+                    var slots: I32Array = I32Array(5);
+                    var pipe_rfds: I32Array = I32Array(4);
+                    var pipe_wfds: I32Array = I32Array(4);
+                    var pipe_buf: U8Array = U8Array(8);
                     var ok: i32 = 1;
 
+                    // Create all pipes up front
+                    var pi: i32 = 0;
+                    while pi < num_pipes && ok == 1 {
+                        if do_pipe(pipe_buf as u32 + 4u32) != 0 {
+                            puts("sh: pipe failed\n");
+                            ok = 0;
+                        } else {
+                            set(pipe_rfds, pi, peek32(pipe_buf as u32 + 4u32) as i32);
+                            set(pipe_wfds, pi, peek32(pipe_buf as u32 + 8u32) as i32);
+                        }
+                        pi = pi + 1;
+                    }
+
+                    // Spawn all segments concurrently
+                    var seg_idx: i32 = 0;
+                    var seg_start: i32 = 0;
+                    var num_spawned: i32 = 0;
                     while seg_idx <= num_pipes && ok == 1 {
                         var seg_end: i32 = n;
                         if seg_idx < num_pipes {
                             seg_end = get(pipe_pos, seg_idx);
                         }
-
-                        // Copy segment into seg_buf
                         var slen: i32 = 0;
                         var j: i32 = seg_start;
                         while j < seg_end {
@@ -760,18 +775,6 @@ fn main() -> i32 {
 
                         var argv: StringArray = parse_redir(seg_buf, slen);
 
-                        // Pipe overrides: intermediate segments get
-                        // stdin from previous pipe file, stdout to
-                        // current pipe file.
-                        if seg_idx > 0 {
-                            if g_in_path as u32 != 0u32 { delete(g_in_path); }
-                            g_in_path = make_pipe_path(seg_idx - 1);
-                        }
-                        if seg_idx < num_pipes {
-                            if g_out_path as u32 != 0u32 { delete(g_out_path); }
-                            g_out_path = make_pipe_path(seg_idx);
-                        }
-
                         if !build_path(path, argv) {
                             puts("sh: empty command in pipe\n");
                             free_argv(argv);
@@ -779,20 +782,38 @@ fn main() -> i32 {
                             if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
                             ok = 0;
                         } else {
-                            var in_addr:  u32 = 0u32;
-                            var out_addr: u32 = 0u32;
-                            if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32 + 4u32; }
-                            if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32 + 4u32; }
-                            var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32,
-                                                     in_addr, out_addr);
+                            // Determine fd redirects for this segment
+                            var in_fd:  i32 = 0;
+                            var out_fd: i32 = 0;
+                            if seg_idx > 0 {
+                                in_fd = get(pipe_rfds, seg_idx - 1);
+                            }
+                            if seg_idx < num_pipes {
+                                out_fd = get(pipe_wfds, seg_idx);
+                            }
+                            // Explicit < on first segment
+                            if g_in_path as u32 != 0u32 {
+                                var ffd: i32 = open_redir_path(g_in_path, 0);
+                                if ffd > 0 { in_fd = ffd; }
+                                delete(g_in_path); g_in_path = 0 as U8Array;
+                            }
+                            // Explicit > on last segment
+                            if g_out_path as u32 != 0u32 {
+                                var ffd: i32 = open_redir_path(g_out_path, 577);
+                                if ffd > 0 { out_fd = ffd; }
+                                delete(g_out_path); g_out_path = 0 as U8Array;
+                            }
+
+                            var slot: i32 = do_spawn_fds(path as u32 + 4u32,
+                                                          argv as u32,
+                                                          in_fd, out_fd);
                             free_argv(argv);
-                            if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                            if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
                             if slot < 0 {
                                 puts("sh: pipe spawn failed\n");
                                 ok = 0;
                             } else {
-                                do_wait(slot);
+                                set(slots, seg_idx, slot);
+                                num_spawned = num_spawned + 1;
                             }
                         }
 
@@ -802,6 +823,17 @@ fn main() -> i32 {
                         seg_idx = seg_idx + 1;
                     }
 
+                    // Wait for all spawned segments
+                    var wi: i32 = 0;
+                    while wi < num_spawned {
+                        do_wait(get(slots, wi));
+                        wi = wi + 1;
+                    }
+
+                    delete(pipe_buf);
+                    delete(pipe_wfds);
+                    delete(pipe_rfds);
+                    delete(slots);
                     delete(seg_buf);
                     delete(pipe_pos);
                 }

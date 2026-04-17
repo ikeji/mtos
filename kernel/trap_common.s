@@ -91,6 +91,10 @@ _handle_ecall:
     beq  t0, t1, _ecall_mux_enable
     li   t1, 89
     beq  t0, t1, _ecall_readdir
+    li   t1, 222
+    beq  t0, t1, _ecall_pipe
+    li   t1, 219
+    beq  t0, t1, _ecall_spawn_fds
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -131,7 +135,13 @@ _ecall_write:
     lw   a2, 48(s0)         # len
     call vfs_write__i32__u32__i32
     sw   a0, 40(s0)
-    j    _ecall_leave_advance
+    li   t0, -2
+    bne  a0, t0, _ecall_leave_advance
+    # Pipe full: yield and retry the write
+    sw   zero, 40(s0)
+    call sched_yield_read
+    mv   sp, s0
+    j    _trap_restore
 
 _ecall_read:
     call _ecall_enter
@@ -245,6 +255,28 @@ _ecall_readdir:
     lw   a1, 44(s0)     # buf_addr
     lw   a2, 48(s0)     # buf_size
     call vfs_readdir__u32__u32__i32
+    sw   a0, 40(s0)
+    j    _ecall_leave_advance
+
+# ===== sys_pipe (a7 = 222) =====
+# a0 = address to write [read_fd: i32, write_fd: i32]. Returns 0/-1.
+_ecall_pipe:
+    call _ecall_enter
+    lw   a0, 40(s0)
+    call sys_pipe_handler__u32
+    sw   a0, 40(s0)
+    j    _ecall_leave_advance
+
+# ===== sys_spawn_fds (a7 = 219) =====
+# a0 = path, a1 = argv, a2 = in_fd (i32), a3 = out_fd (i32).
+# Returns slot id or -1.
+_ecall_spawn_fds:
+    call _ecall_enter
+    lw   a0, 40(s0)
+    lw   a1, 44(s0)
+    lw   a2, 48(s0)
+    lw   a3, 52(s0)
+    call sys_spawn_fds_handler__u32__u32__i32__i32
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 

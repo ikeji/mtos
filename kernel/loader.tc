@@ -397,6 +397,38 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
     return slot;
 }
 
+// Handler for sys_spawn_fds (a7 = 219). Like sys_spawn_handler but
+// takes already-open VFS fd numbers instead of file paths. Used by
+// the shell for pipe redirection: sys_pipe returns fds, the shell
+// passes them here so the child's stdin/stdout point at the pipe.
+// The child owns the fds; slot_free_allocs closes them on exit.
+export fn sys_spawn_fds_handler(path_addr: u32, argv_addr: u32,
+                                in_fd: i32, out_fd: i32) -> i32 {
+    var fd: i32 = vfs_open(path_addr, 0);
+    if fd < 0 {
+        debug_dump_path(path_addr, "spawn_fds vfs_open failed");
+        return -1;
+    }
+    var frame: u32 = load_fd(fd);
+    vfs_close(fd);
+    if frame == 0u32 {
+        debug_dump_path(path_addr, "spawn_fds load_fd failed");
+        return -1;
+    }
+
+    var kargv: u32 = clone_argv(argv_addr);
+    set_frame_argv(frame, kargv);
+    set_last_argv(kargv);
+    set_last_stdio(in_fd, out_fd);
+    var slot: i32 = sched_spawn(frame);
+    if slot >= 0 {
+        task_set_name(slot, copy_task_name(path_addr));
+    } else {
+        free_last_alloc();
+    }
+    return slot;
+}
+
 // Handler for sys_wait (a7 = 260). Blocks the current task until the
 // named slot enters STATE_DONE. Returns the next task frame to switch
 // to, or 0 if no switch is needed (target already done / invalid).

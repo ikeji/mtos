@@ -117,9 +117,21 @@ do_spawn__u32__u32__u32__u32:
     ecall
     ret
 
+    .globl do_spawn_fds__u32__u32__i32__i32
+do_spawn_fds__u32__u32__i32__i32:
+    li   a7, 219
+    ecall
+    ret
+
     .globl do_wait__i32
 do_wait__i32:
     li   a7, 260
+    ecall
+    ret
+
+    .globl do_pipe__u32
+do_pipe__u32:
+    li   a7, 222
     ecall
     ret
 
