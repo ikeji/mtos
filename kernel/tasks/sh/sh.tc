@@ -639,6 +639,52 @@ fn build_path(path: U8Array, argv: StringArray) -> bool {
     return true;
 }
 
+// --- Pipe support ---------------------------------------------------
+//
+// `cmd1 | cmd2` is implemented via tmpfs intermediate files:
+//   cmd1 > /tmp/_p0  (spawn + wait)
+//   cmd2 < /tmp/_p0  (spawn + wait)
+// Multi-stage: cmd1 | cmd2 | cmd3 chains /tmp/_p0, /tmp/_p1, ...
+// Sequential execution (not streaming). Max 4 pipes (5 segments).
+
+// Scan for standalone `|` tokens in cmd[0..n-1]. Record their byte
+// offsets in pipe_pos (up to len(pipe_pos) entries). Returns the
+// number of `|` tokens found.
+fn count_pipes(cmd: U8Array, n: i32, pipe_pos: I32Array) -> i32 {
+    var count: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        while i < n && get(cmd, i) == ' ' as u8 { i = i + 1; }
+        if i < n {
+            var start: i32 = i;
+            while i < n && get(cmd, i) != ' ' as u8 { i = i + 1; }
+            var tlen: i32 = i - start;
+            if tlen == 1 && get(cmd, start) == '|' as u8 {
+                if count < len(pipe_pos) {
+                    set(pipe_pos, count, start);
+                }
+                count = count + 1;
+            }
+        }
+    }
+    return count;
+}
+
+// Create "/tmp/_pN" as a NUL-terminated U8Array (N = idx % 4).
+fn make_pipe_path(idx: i32) -> U8Array {
+    var p: U8Array = U8Array(9);
+    set(p, 0, '/' as u8);
+    set(p, 1, 't' as u8);
+    set(p, 2, 'm' as u8);
+    set(p, 3, 'p' as u8);
+    set(p, 4, '/' as u8);
+    set(p, 5, '_' as u8);
+    set(p, 6, 'p' as u8);
+    set(p, 7, ('0' + idx % 4) as u8);
+    set(p, 8, 0u8);
+    return p;
+}
+
 fn main() -> i32 {
     puts("SH: ready\n");
     hist_init();
@@ -657,27 +703,105 @@ fn main() -> i32 {
             if eq_lit(cmd, "quit") {
                 running = 0;
             } else {
-                var argv: StringArray = parse_redir(cmd, n);
-                if !build_path(path, argv) {
-                    puts("sh: empty command\n");
-                    free_argv(argv);
-                    if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                    if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
-                } else {
-                    var in_addr:  u32 = 0u32;
-                    var out_addr: u32 = 0u32;
-                    if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32 + 4u32; }
-                    if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32 + 4u32; }
-                    var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32,
-                                             in_addr, out_addr);
-                    free_argv(argv);
-                    if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                    if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
-                    if slot < 0 {
-                        puts("sh: spawn failed\n");
+                var pipe_pos: I32Array = I32Array(4);
+                var num_pipes: i32 = count_pipes(cmd, n, pipe_pos);
+
+                if num_pipes == 0 {
+                    // No pipes: single command (existing path)
+                    delete(pipe_pos);
+                    var argv: StringArray = parse_redir(cmd, n);
+                    if !build_path(path, argv) {
+                        puts("sh: empty command\n");
+                        free_argv(argv);
+                        if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
+                        if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
                     } else {
-                        do_wait(slot);
+                        var in_addr:  u32 = 0u32;
+                        var out_addr: u32 = 0u32;
+                        if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32 + 4u32; }
+                        if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32 + 4u32; }
+                        var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32,
+                                                 in_addr, out_addr);
+                        free_argv(argv);
+                        if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
+                        if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                        if slot < 0 {
+                            puts("sh: spawn failed\n");
+                        } else {
+                            do_wait(slot);
+                        }
                     }
+                } else if num_pipes > 4 {
+                    puts("sh: too many pipes\n");
+                    delete(pipe_pos);
+                } else {
+                    // Pipeline: split at `|` tokens and chain via tmpfs
+                    var seg_buf: U8Array = U8Array(CMD_MAX as u32);
+                    var seg_idx: i32 = 0;
+                    var seg_start: i32 = 0;
+                    var ok: i32 = 1;
+
+                    while seg_idx <= num_pipes && ok == 1 {
+                        var seg_end: i32 = n;
+                        if seg_idx < num_pipes {
+                            seg_end = get(pipe_pos, seg_idx);
+                        }
+
+                        // Copy segment into seg_buf
+                        var slen: i32 = 0;
+                        var j: i32 = seg_start;
+                        while j < seg_end {
+                            set(seg_buf, slen, get(cmd, j));
+                            slen = slen + 1;
+                            j = j + 1;
+                        }
+
+                        var argv: StringArray = parse_redir(seg_buf, slen);
+
+                        // Pipe overrides: intermediate segments get
+                        // stdin from previous pipe file, stdout to
+                        // current pipe file.
+                        if seg_idx > 0 {
+                            if g_in_path as u32 != 0u32 { delete(g_in_path); }
+                            g_in_path = make_pipe_path(seg_idx - 1);
+                        }
+                        if seg_idx < num_pipes {
+                            if g_out_path as u32 != 0u32 { delete(g_out_path); }
+                            g_out_path = make_pipe_path(seg_idx);
+                        }
+
+                        if !build_path(path, argv) {
+                            puts("sh: empty command in pipe\n");
+                            free_argv(argv);
+                            if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
+                            if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                            ok = 0;
+                        } else {
+                            var in_addr:  u32 = 0u32;
+                            var out_addr: u32 = 0u32;
+                            if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32 + 4u32; }
+                            if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32 + 4u32; }
+                            var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32,
+                                                     in_addr, out_addr);
+                            free_argv(argv);
+                            if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
+                            if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                            if slot < 0 {
+                                puts("sh: pipe spawn failed\n");
+                                ok = 0;
+                            } else {
+                                do_wait(slot);
+                            }
+                        }
+
+                        if seg_idx < num_pipes {
+                            seg_start = get(pipe_pos, seg_idx) + 1;
+                        }
+                        seg_idx = seg_idx + 1;
+                    }
+
+                    delete(seg_buf);
+                    delete(pipe_pos);
                 }
             }
         }

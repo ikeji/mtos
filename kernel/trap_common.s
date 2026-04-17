@@ -138,13 +138,14 @@ _ecall_read:
     lw   a0, 40(s0)         # fd
     lw   a1, 44(s0)         # buf addr
     lw   a2, 48(s0)         # len
-    mv   s1, a0             # save fd for yield check
     call vfs_read__i32__u32__i32
     sw   a0, 40(s0)
-    # If stdin (fd=0) returned 0 bytes, yield instead of returning.
-    # Don't advance mepc so the ecall re-executes when rescheduled.
-    bnez s1, _ecall_leave_advance   # fd != 0 → normal return
-    bnez a0, _ecall_leave_advance   # got data → normal return
+    # vfs_read returns -2 when UART stdin has no data (non-blocking).
+    # Yield the timeslice and re-execute the ecall when rescheduled.
+    # All other returns (including 0 = file EOF) proceed normally.
+    li   t0, -2
+    bne  a0, t0, _ecall_leave_advance
+    sw   zero, 40(s0)       # don't expose -2 to caller
     call sched_yield_read
     mv   sp, s0
     j    _trap_restore
