@@ -348,6 +348,14 @@ asm split・full split すべての pipeline で Hello World が動く。
       :w/:q/:wq、ANSI 描画。`kernel/tasks/vi/vi.tc`
 - [x] **`make run-pico2` (2026-04-17)**: build + flash + 双方向
       UART コンソール (`tests/pico2_tty.py`)。Ctrl-a x で終了
+- [x] **OS 機能追加 (2026-04-17 後半)**:
+      - VFS: `ls /` で仮想マウントポイント (/proc, /tmp) を表示
+      - pico2_tty.py: raw mode 端末で LF → CR+LF 変換
+      - procfs: `/proc/meminfo`, `/proc/cpuinfo`, `/proc/uptime` 追加。
+        platform 毎の `read_mtime()` (virt CLINT / pico2 SIO)
+      - `/proc/tasks`: ヘッダ行 + NAME 列 (basename) + RAM/STACK 列
+      - sh: コマンドヒストリ (上下矢印、8 件リングバッファ)
+      - sh: タブ補完で複数候補の共通プレフィックスまで自動補完
 
 ## フェーズ8: 自己ホスト
 

@@ -130,6 +130,18 @@
 - **`make run-pico2` (2026-04-17)**: ビルド + flash + 双方向 UART
   コンソール。Ctrl-a x で終了。`tests/pico2_tty.py` が raw mode
   stdin ↔ /dev/ttyACM0 を select 駆動
+- **OS 機能追加 (2026-04-17 後半)**:
+  - VFS: `ls /` で /proc、/tmp が表示されるよう vfs_readdir を修正
+  - pico2_tty.py: raw mode 端末で LF → CR+LF 変換
+  - procfs 拡充: `/proc/meminfo` (peak/used)、`/proc/cpuinfo`
+    (rv32ima)、`/proc/uptime` (mtime hex)。`read_mtime()` を
+    platform 関数として virt (CLINT) / pico2 (SIO) に追加
+  - `/proc/tasks` にヘッダ行 + NAME 列 (タスクバイナリ basename) +
+    RAM/STACK 列 (arena/stack サイズ)。Task 構造体に name/t_ram_sz/
+    t_stk_sz フィールド追加。loader が spawn/exec 時にセット
+  - sh ヒストリ (上下矢印で直近 8 件を呼び出し)
+  - sh タブ補完改善 (複数候補の共通プレフィックスまで自動補完)
+  - tcheck fntab 256 → 512 に拡大 (Task 構造体のフィールド増加対応)
 
 **次の候補** (どれも独立):
 
@@ -263,7 +275,9 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       8 fds, grow-on-write, O_CREAT / O_TRUNC 対応、
                       phase 7 A)
   procfs.tc           read-only virtual FS (/proc)。/proc/tasks が
-                      スロット状態一覧 (state/frame/wait_on)。
+                      スロット状態一覧 (slot/state/frame/wait/ram/stack/
+                      name)。/proc/meminfo (peak/used)、/proc/cpuinfo
+                      (rv32ima)、/proc/uptime (mtime hex) も提供。
                       procfs_readdir で `ls /proc` にも対応
   vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close/size/
                       readdir, /bin/hello のような多階層パス, /tmp/ は
@@ -330,8 +344,9 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       /bin/catfile を exec)
     sh/sh.tc          対話シェル (sys_spawn + sys_wait + `<` / `>` +
                       絶対パス対応 + TAB 補完 (/bin コマンド + readdir
-                      パス) + echo-back + backspace。quit で終了、
-                      virt slot 2)
+                      パス、共通プレフィックス自動補完) + コマンド
+                      ヒストリ (上下矢印、8 件) + echo-back + backspace。
+                      quit で終了、virt slot 2)
     msh/msh.tc        プログラム操作用 silent sh (プロンプト/echo なし、
                       UART mux driver 用)
     libtc/libtc.tc    ユーザ空間ライブラリ (puts/str_nul/strlen)
