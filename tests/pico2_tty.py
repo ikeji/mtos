@@ -93,7 +93,9 @@ def main() -> int:
             if uart_fd in r:
                 data = os.read(uart_fd, 1024)
                 if data:
-                    os.write(1, data)
+                    # Host terminal is in raw mode — translate bare LF
+                    # to CR+LF so the cursor returns to column 0.
+                    os.write(1, data.replace(b"\n", b"\r\n"))
     except KeyboardInterrupt:
         pass
     finally:
