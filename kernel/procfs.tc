@@ -129,6 +129,7 @@ fn synth_tasks() -> u32 {
     var cap: i32 = 4096;
     var buf: U8Array = U8Array(cap as u32);
     var pos: i32 = 0;
+    pos = append_str(buf, pos, "SLOT STATE   FRAME      WAIT\n", cap);
     var n: i32 = sched_task_count();
     var i: i32 = 0;
     while i < n {
