@@ -76,24 +76,12 @@ gen3-tools: $(GEN3_TOOLS)
 
 -include $(addsuffix .d,$(GEN3_TOOLS))
 
-# ===== kernel build (Phase C) =====
+# ===== kernel build (decomposed) =====
 #
-# kernel/build.sh を monolithic に呼ぶが、正しい dependency グラフを
-# 張ることで「触っていないときは make がスキップ」する。
-#
-# 依存:
-#   - 全 kernel .tc / .s ソース
-#   - 全 task .tc ソース (transitive import は phony に頼り切らず、
-#     GNU Make の $(shell ...) で tools/collect_imports.sh から取得)
-#   - compiler/runtime.tc とその imports (runtime.s の pre-compile 元)
-#   - kernel/tasks/libtc/libtc.tc とその imports
-#   - $(GEN2_TOOLS)
-#   - kernel/build.sh 自体
-#
-# virt_kernel.bin と disk.img は同じ recipe で生成されるので grouped
-# target (`&:`) でまとめる (GNU Make 4.3+)。pico2 側の disk.img は XIP
-# に埋め込まれるので出力ファイルとしては同じ build/kernel/disk.img を
-# 共有する。`.NOTPARALLEL:` で serial 実行を強制するので race しない。
+# kernel/build.sh を per-task / disk / kernel の 3 段階に分解。
+# タスクバイナリは個別 Make ターゲットで incremental build。
+# ディスクイメージは 2 種 (標準 / extra)。カーネルバイナリは
+# ディスクと独立 (virt)。.NOTPARALLEL: で serial 実行を強制。
 
 KERNEL_TC_SOURCES := $(wildcard kernel/*.tc)
 KERNEL_S_SOURCES  := kernel/platform_virt.s kernel/platform_pico2.s \
@@ -101,39 +89,19 @@ KERNEL_S_SOURCES  := kernel/platform_virt.s kernel/platform_pico2.s \
                      kernel/crt0_pico2_data.s \
                      kernel/tasks/task_crt0.s kernel/tasks/task_data.s
 
-# compile-gen2.sh 経由のビルドが毎回 compiler/runtime.tc を pre-compile
-# するので、transitive import も含めた依存ファイル一覧を Make に渡す。
-# $(shell ...) は Makefile パース時に評価されるので tools は既に存在
-# している必要がある → git 管理下に置く。
 RUNTIME_DEPS := $(shell tools/collect_imports.sh compiler/runtime.tc 2>/dev/null)
 LIBTC_DEPS   := $(shell tools/collect_imports.sh kernel/tasks/libtc/libtc.tc 2>/dev/null)
 
 # task の定義は kernel/tasks/*/task.mk から include。各 task.mk が
-# GUEST_TASKS += <name> (常時ビルド) または EXTRA_GUEST_TASKS += <name>
-# (EXTRA_TASKS 指定時のみ) と TASK_ARENA_<name> / TASK_STACK_<name> を宣言。
-# タスク追加は「ディレクトリ + .tc + task.mk」だけで済む。
+# GUEST_TASKS += <name> または EXTRA_GUEST_TASKS += <name> と
+# TASK_ARENA_<name> / TASK_STACK_<name> を宣言。
 GUEST_TASKS :=
 EXTRA_GUEST_TASKS :=
 -include $(wildcard kernel/tasks/*/task.mk)
 ALL_TASK_NAMES := $(GUEST_TASKS) $(EXTRA_GUEST_TASKS)
 
-TASK_TC_SOURCES := $(foreach t,$(GUEST_TASKS),\
-                     $(shell tools/collect_imports.sh kernel/tasks/$(t)/$(t).tc 2>/dev/null))
-
-KERNEL_BUILD_DEPS := \
-    $(KERNEL_TC_SOURCES) \
-    $(KERNEL_S_SOURCES) \
-    $(RUNTIME_DEPS) \
-    $(LIBTC_DEPS) \
-    $(TASK_TC_SOURCES) \
-    $(GEN2_TOOLS) \
-    kernel/build.sh \
-    tools/mkfs.py \
-    tests/phase7_hello.tc tests/phase7_min.tc tests/phase7_hello_world.tc
-
-# task_sizes.sh: kernel/build.sh が source する TASKS / arena / stack 定義。
-# task.mk から自動生成。task.mk を編集すると再生成 → kernel 再ビルド。
 TASK_MK_FILES := $(wildcard kernel/tasks/*/task.mk)
+QEMU_USER := qemu-riscv32
 
 build/kernel:
 	mkdir -p $@
@@ -141,6 +109,8 @@ build/kernel:
 # `)` を Makefile 内で安全に使うためのヘルパー変数
 close_paren := )
 
+# task_sizes.sh: per-task arena/stack サイズを bash 関数で提供。
+# kernel/build.sh (後方互換) と per-task ビルドレシピが source する。
 build/kernel/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
 	@printf '%s\n' \
 	    '# auto-generated from kernel/tasks/*/task.mk' \
@@ -154,35 +124,177 @@ build/kernel/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
 	    '  *$(close_paren) echo 16384 ;;' \
 	    'esac; }' > $@
 
-KERNEL_BUILD_DEPS += build/kernel/task_sizes.sh
+# ----- Shared pre-compiled .s files -----
+# runtime.tc と libtc.tc は全タスクが共有するので 1 度だけコンパイルし、
+# compile-gen2.sh の CACHED_S_DIR 経由で各タスクビルドに渡す。
 
-build/kernel/virt_kernel.bin build/kernel/disk.img &: $(KERNEL_BUILD_DEPS) | build/kernel
-	GEN2_DIR=build/gen2 ./kernel/build.sh --target virt \
-	    -o build/kernel/virt_kernel.bin \
-	    --disk-out build/kernel/disk.img
+build/kernel/shared:
+	mkdir -p $@
 
-build/kernel/pico2_kernel.uf2: $(KERNEL_BUILD_DEPS) | build/kernel
-	GEN2_DIR=build/gen2 ./kernel/build.sh --target pico2 \
-	    -o $@
+build/kernel/shared/runtime.s: compiler/runtime.tc $(RUNTIME_DEPS) $(GEN2_TOOLS) | build/kernel/shared
+	@echo "Pre-compiling runtime.tc" >&2
+	@_ast=$$(mktemp) && _th=$$(mktemp) && \
+	build/gen1/parse $< > "$$_ast" && \
+	$(QEMU_USER) build/gen2/sigscan < "$$_ast" > "$$_th" && \
+	{ printf '(imports)\n(self\n'; cat "$$_th"; printf ')\n'; cat "$$_ast"; } \
+	    | $(QEMU_USER) build/gen2/tcheck \
+	    | $(QEMU_USER) build/gen2/codegen \
+	    | $(QEMU_USER) build/gen2/bc2asm > $@ && \
+	rm -f "$$_ast" "$$_th"
+
+build/kernel/shared/libtc.s: kernel/tasks/libtc/libtc.tc $(LIBTC_DEPS) $(GEN2_TOOLS) | build/kernel/shared
+	@echo "Pre-compiling libtc.tc" >&2
+	@_ast=$$(mktemp) && _th=$$(mktemp) && \
+	build/gen1/parse $< > "$$_ast" && \
+	$(QEMU_USER) build/gen2/sigscan < "$$_ast" > "$$_th" && \
+	{ printf '(imports)\n(self\n'; cat "$$_th"; printf ')\n'; cat "$$_ast"; } \
+	    | $(QEMU_USER) build/gen2/tcheck \
+	    | $(QEMU_USER) build/gen2/codegen \
+	    | $(QEMU_USER) build/gen2/bc2asm > $@ && \
+	rm -f "$$_ast" "$$_th"
+
+SHARED_S := build/kernel/shared/runtime.s build/kernel/shared/libtc.s
+
+# ----- Per-task binaries -----
+# 各タスクの .tc + transitive imports + 共有 .s + GEN2 ツールに依存。
+# 初回は pattern rule で起動し、.d ファイルで transitive import を追跡。
+
+build/kernel/tasks:
+	mkdir -p $@
+
+# Pattern rule に kernel/tasks/%/%.tc を書けない (% は prereq 中 1 回のみ)。
+# .tc ファイル依存は .d ファイル (tc_deps_to_d.sh) が提供する。初回は
+# .bin が存在しないので無条件にビルドされ、.d が生成される。
+build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
+    kernel/tasks/task_crt0.s kernel/tasks/task_data.s build/kernel/task_sizes.sh \
+    compile-gen2.sh | build/kernel/tasks
+	@echo "Building task: $*" >&2
+	@_tmp=$$(mktemp -d) && \
+	. build/kernel/task_sizes.sh && \
+	_arena=$$(task_arena_size $*) && \
+	_stack=$$(task_stack_size $*) && \
+	printf '    .text\n    .word %s\n    .word %s\n' "$$_arena" "$$_stack" > "$$_tmp/hdr.s" && \
+	cat "$$_tmp/hdr.s" kernel/tasks/task_crt0.s > "$$_tmp/crt0.s" && \
+	CRT0="$$_tmp/crt0.s" CRT0_DATA=kernel/tasks/task_data.s \
+	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
+	    CACHED_S_DIR=build/kernel/shared \
+	    ./compile-gen2.sh -o $@ kernel/tasks/$*/$*.tc 2>/dev/null && \
+	rm -rf "$$_tmp"
+	@tools/tc_deps_to_d.sh $@ kernel/tasks/$*/$*.tc > $@.d
+
+GUEST_TASK_BINS  := $(foreach t,$(GUEST_TASKS),build/kernel/tasks/$(t).bin)
+EXTRA_TASK_BINS  := $(foreach t,$(EXTRA_GUEST_TASKS),build/kernel/tasks/$(t).bin)
+ALL_TASK_BINS    := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
+
+-include $(addsuffix .d,$(ALL_TASK_BINS))
+
+# ----- Disk images -----
+# 標準イメージ (GUEST_TASKS) と extra イメージ (+ EXTRA_GUEST_TASKS) の 2 種。
+# virt カーネルはディスクを実行時に virtio-blk で読むので、カーネル
+# バイナリとは独立したターゲット。
+
+DISK_STATIC_DEPS := tests/phase7_hello.tc tests/phase7_min.tc \
+    tests/phase7_hello_world.tc kernel/tasks/task_crt0.s \
+    kernel/tasks/task_data.s tools/mkfs.py
+
+build/kernel/disk.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) | build/kernel
+	@echo "Building disk image: $@" >&2
+	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
+	mkdir -p "$$_r/bin" && \
+	for t in $(GUEST_TASKS); do \
+	    cp build/kernel/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
+	done && \
+	printf 'hello, mtfs\n' > "$$_r/hello.txt" && \
+	{ cp tests/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
+	{ cp tests/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
+	{ cp tests/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
+	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
+	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
+	} > "$$_r/prelude.s" && \
+	cp kernel/tasks/task_data.s "$$_r/prelude_tail.s" && \
+	printf '(imports)\n' > "$$_r/empty_imports.txt" && \
+	printf '(imports\n' > "$$_r/imports_open.txt" && \
+	printf '(self\n' > "$$_r/self_open.txt" && \
+	printf ')\n' > "$$_r/wrap_close.txt" && \
+	if [ -f kernel/kern.conf ]; then \
+	    mkdir -p "$$_r/etc" && cp kernel/kern.conf "$$_r/etc/kern.conf"; \
+	fi && \
+	python3 tools/mkfs.py $@ "$$_r" >&2 && \
+	rm -rf "$$_tmp"
+
+EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
+    compiler/strlib.tc compiler/parse.tc
+
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) | build/kernel
+	@echo "Building disk image (extra): $@" >&2
+	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
+	mkdir -p "$$_r/bin" && \
+	for t in $(GUEST_TASKS) $(EXTRA_GUEST_TASKS); do \
+	    cp build/kernel/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
+	done && \
+	printf 'hello, mtfs\n' > "$$_r/hello.txt" && \
+	{ cp tests/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
+	{ cp tests/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
+	{ cp tests/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
+	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
+	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
+	} > "$$_r/prelude.s" && \
+	cp kernel/tasks/task_data.s "$$_r/prelude_tail.s" && \
+	printf '(imports)\n' > "$$_r/empty_imports.txt" && \
+	printf '(imports\n' > "$$_r/imports_open.txt" && \
+	printf '(self\n' > "$$_r/self_open.txt" && \
+	printf ')\n' > "$$_r/wrap_close.txt" && \
+	if [ -f kernel/kern.conf ]; then \
+	    mkdir -p "$$_r/etc" && cp kernel/kern.conf "$$_r/etc/kern.conf"; \
+	fi && \
+	mkdir -p "$$_r/src" && \
+	for s in string_buffer.tc source_reader.tc strlib.tc parse.tc; do \
+	    cp compiler/$$s "$$_r/src/$$s" || exit 1; \
+	done && \
+	python3 tools/mkfs.py $@ "$$_r" >&2 && \
+	rm -rf "$$_tmp"
+
+# ----- Kernel binary -----
+# virt: ディスクイメージとは独立 (実行時に virtio-blk で読む)
+# pico2: ディスクイメージを XIP flash に埋め込む
+
+KERNEL_COMPILE_DEPS := $(KERNEL_TC_SOURCES) $(KERNEL_S_SOURCES) \
+    $(SHARED_S) $(GEN2_TOOLS) compile-gen2.sh
+
+build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
+	@echo "Building kernel: virt" >&2
+	@_tmp=$$(mktemp -d) && \
+	cat kernel/platform_virt.s kernel/trap_common.s > "$$_tmp/crt0.s" && \
+	CRT0="$$_tmp/crt0.s" CRT0_DATA=kernel/crt0_data.s \
+	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
+	    CACHED_S_DIR=build/kernel/shared \
+	    ./compile-gen2.sh -o $@ kernel/kernel.tc 2>/dev/null && \
+	rm -rf "$$_tmp"
+
+build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
+    kernel/bin2s.sh tools/bin2uf2.py | build/kernel
+	@echo "Building kernel: pico2" >&2
+	@_tmp=$$(mktemp -d) && \
+	kernel/bin2s.sh build/kernel/disk.img _mtfs_image > "$$_tmp/mtfs_image.s" && \
+	cat kernel/platform_pico2.s kernel/trap_common.s > "$$_tmp/crt0.s" && \
+	cat kernel/crt0_pico2_data.s "$$_tmp/mtfs_image.s" > "$$_tmp/kern_data.s" && \
+	CRT0="$$_tmp/crt0.s" CRT0_DATA="$$_tmp/kern_data.s" \
+	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
+	    CACHED_S_DIR=build/kernel/shared \
+	    ./compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/kernel_pico2.tc 2>/dev/null && \
+	python3 tools/bin2uf2.py "$$_tmp/kernel.bin" $@ && \
+	rm -rf "$$_tmp"
 
 virt-kernel:  build/kernel/virt_kernel.bin
 pico2-kernel: build/kernel/pico2_kernel.uf2
 
 # ===== make run — interactive virt boot =====
-#
-# `make run` builds the virt kernel and boots it under qemu-system-
-# riscv32 with a stdio serial console. Handy for trying sh commands
-# by hand (catfile / launcher / muxon + framed input / etc.). Exit
-# qemu with Ctrl-a x. Drop to the qemu monitor with Ctrl-a c.
-#
-# `make run-extra` is the same but with the full EXTRA_TASKS list
-# (compiler tools + muxon/muxoff + mx/mr) baked in, for phase 7
-# and UART-mux experiments.
 
 QEMU_SYSTEM := qemu-system-riscv32
-QEMU_ARGS   := -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
+QEMU_DISK   := build/kernel/disk.img
+QEMU_ARGS    = -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
                -machine virt,aclint=on -bios none \
-               -drive file=build/kernel/disk.img,format=raw,if=none,id=blk0 \
+               -drive file=$(QEMU_DISK),format=raw,if=none,id=blk0 \
                -device virtio-blk-device,drive=blk0 \
                -device loader,file=build/kernel/virt_kernel.bin,addr=0x80000000 \
                -device loader,addr=0x80000000,cpu-num=0
@@ -191,22 +303,15 @@ run: build/kernel/virt_kernel.bin build/kernel/disk.img
 	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
 	$(QEMU_SYSTEM) $(QEMU_ARGS)
 
-# Force a rebuild so EXTRA_TASKS changes take effect even when the
-# bin is already present (Make doesn't track env changes). The build
-# script is cheap on a warm cache (~5s).
-.PHONY: run-extra
-run-extra:
-	EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat muxon muxoff mx mr" \
-	    GEN2_DIR=build/gen2 ./kernel/build.sh --target virt \
-	    -o build/kernel/virt_kernel.bin \
-	    --disk-out build/kernel/disk.img
+# run-extra は disk-extra.img (GUEST + EXTRA タスク全部入り) を使う。
+# Make が依存を追跡するので強制リビルド不要。
+run-extra: QEMU_DISK := build/kernel/disk-extra.img
+run-extra: build/kernel/virt_kernel.bin build/kernel/disk-extra.img
 	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
 	$(QEMU_SYSTEM) $(QEMU_ARGS)
 
-# Pico 2 counterparts of `run` / `run-extra`. Requires Debug Probe
-# connected to /dev/ttyACM0 and openocd-rpi installed. The shell
-# script builds (if needed), flashes via SWD, and hands off to the
-# Python bidi TTY forwarder (tests/pico2_tty.py). Ctrl-a x quits.
+# Pico 2 counterparts. run_pico2_interactive.sh が内部でビルド or
+# make pico2-kernel を呼ぶ。--extra は kernel/build.sh 経由 (後方互換)。
 .PHONY: run-pico2 run-pico2-extra
 run-pico2:
 	@echo "[pico2] build + flash + interactive UART (Ctrl-a x to quit)"
@@ -217,11 +322,6 @@ run-pico2-extra:
 	./kernel/run_pico2_interactive.sh --extra
 
 # ===== test_asm prebuilt binaries (Phase D) =====
-#
-# tests/test_asm.sh compiles 3 small bare-metal .tc programs with
-# the virt crt0 to smoke-test the compile-gen2.sh pipeline in a raw
-# mode. Without Make caching it re-compiles them (~7 s) every run.
-# Move those builds here so make test 2 回目以降は compile をスキップ。
 
 build/test/asm:
 	mkdir -p $@
@@ -253,12 +353,9 @@ clean:
 	rm -rf build
 
 # ===== test stamp files =====
-#
-# テスト結果を stamp ファイル (build/tests/*.ok) で管理し、依存が
-# 変わっていないときは `make test` がテスト実行をスキップする。
-# 依存: ビルド成果物 + テストスクリプト + テスト入力 + golden + support
 
-BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin $(TEST_ASM_BINS)
+BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin \
+              build/kernel/disk.img $(TEST_ASM_BINS)
 
 TEST_SCRIPTS := $(wildcard tests/*.sh)
 TEST_INPUTS  := $(wildcard tests/*.tc) $(wildcard tests/import/*.tc)
