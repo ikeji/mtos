@@ -169,6 +169,43 @@ static FnSig *resolve_overload(TypeEnv *e, const char *name,
     return NULL;
 }
 
+static int is_int_type(const char *ty) {
+    return strcmp(ty, "i32") == 0 || strcmp(ty, "u32") == 0 ||
+           strcmp(ty, "u8") == 0  || strcmp(ty, "u16") == 0 ||
+           strcmp(ty, "i8") == 0  || strcmp(ty, "i16") == 0;
+}
+
+/* Like resolve_overload but allows unsuffixed integer literal args to
+   match any integer parameter type. is_lit[i] != 0 means arg i is
+   eligible for coercion. On success, updates arg_types for coerced
+   args. */
+static FnSig *resolve_overload_lit(TypeEnv *e, const char *name,
+                                    const char **arg_types, int nargs,
+                                    const int *is_lit) {
+    FnSig *matched = NULL;
+    int nmatch = 0;
+    for (FnSig *s = e->fns; s; s = s->next) {
+        if (strcmp(s->name, name) != 0) continue;
+        if (s->nparam != nargs) continue;
+        int ok = 1;
+        for (int i = 0; i < nargs; i++) {
+            if (strcmp(s->param_types[i], arg_types[i]) == 0) continue;
+            if (is_lit[i] && is_int_type(s->param_types[i])) continue;
+            ok = 0; break;
+        }
+        if (ok) { matched = s; nmatch++; }
+    }
+    if (nmatch == 1) {
+        /* Update coerced arg types */
+        for (int i = 0; i < nargs; i++) {
+            if (is_lit[i])
+                arg_types[i] = matched->param_types[i];
+        }
+        return matched;
+    }
+    return NULL;
+}
+
 /* ---- register built-ins ---- */
 
 static void register_array_builtins(TypeEnv *e, const char *arr_type,
@@ -344,10 +381,32 @@ static const char *check_expr(TypeEnv *e, AstNode *node);
 static const char *check_call(TypeEnv *e, AstNode *node, const char *fname) {
     int nargs = node->nchildren;
     const char **arg_types = nargs > 0 ? calloc(nargs, sizeof(char*)) : NULL;
+    int *is_lit = nargs > 0 ? calloc(nargs, sizeof(int)) : NULL;
+
+    /* Record which args are unsuffixed int literals before check_expr */
+    for (int i = 0; i < nargs; i++) {
+        AstNode *arg = node->children[i];
+        is_lit[i] = (strcmp(arg->kind, "int") == 0 &&
+                     !arg->type_annot && !arg->sval);
+    }
+
     for (int i = 0; i < nargs; i++) {
         arg_types[i] = check_expr(e, node->children[i]);
     }
     FnSig *sig = resolve_overload(e, fname, arg_types, nargs);
+
+    /* Phase 2: try integer literal coercion */
+    if (!sig) {
+        sig = resolve_overload_lit(e, fname, arg_types, nargs, is_lit);
+        if (sig) {
+            /* Re-annotate coerced literal nodes */
+            for (int i = 0; i < nargs; i++) {
+                if (is_lit[i])
+                    set_annot(node->children[i], arg_types[i]);
+            }
+        }
+    }
+
     if (!sig) {
         fprintf(stderr, "%s:%d: no matching overload for '%s' with %d args (",
                 e->filename, node->line, fname, nargs);
@@ -356,7 +415,6 @@ static const char *check_call(TypeEnv *e, AstNode *node, const char *fname) {
             fprintf(stderr, "%s", arg_types[i] ? arg_types[i] : "?");
         }
         fprintf(stderr, ")\n");
-        /* print available overloads */
         for (FnSig *s = e->fns; s; s = s->next) {
             if (strcmp(s->name, fname) == 0) {
                 fprintf(stderr, "  candidate: %s(", fname);
@@ -368,10 +426,12 @@ static const char *check_call(TypeEnv *e, AstNode *node, const char *fname) {
             }
         }
         free(arg_types);
+        free(is_lit);
         exit(1);
     }
     set_annot(node, sig->ret_type);
     free(arg_types);
+    free(is_lit);
     return sig->ret_type;
 }
 
