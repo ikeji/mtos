@@ -356,6 +356,12 @@ asm split・full split すべての pipeline で Hello World が動く。
       - `/proc/tasks`: ヘッダ行 + NAME 列 (basename) + RAM/STACK 列
       - sh: コマンドヒストリ (上下矢印、8 件リングバッファ)
       - sh: タブ補完で複数候補の共通プレフィックスまで自動補完
+- [x] **バグ修正 + トレース整理 (2026-04-17 後半)**:
+      - loader: sys_spawn_handler の sched_spawn 失敗時リソースリーク修正
+      - K6: TIMER_INTERVAL 1s → 1ms 復元、デバッグトレースを mux ON
+        時のみに。km_dump_peak 常時呼び出し削除
+      - K5 / K10: 再検証で再現せず solved 化
+      - problem.md 再構成 (K7 part 3 統合、K8+K9 統合)
 
 ## フェーズ8: 自己ホスト
 

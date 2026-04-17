@@ -142,14 +142,26 @@
   - sh ヒストリ (上下矢印で直近 8 件を呼び出し)
   - sh タブ補完改善 (複数候補の共通プレフィックスまで自動補完)
   - tcheck fntab 256 → 512 に拡大 (Task 構造体のフィールド増加対応)
+- **バグ修正 + 整理 (2026-04-17 後半)**:
+  - loader: `sys_spawn_handler` の `sched_spawn` 失敗時リソースリーク
+    修正 (`free_last_alloc()` 追加)。K5 (cat 5 ファイル後 spawn 失敗)
+    の根本原因と判断、現在は再現せず solved 化
+  - K10 (pico2 multi-file cat hang): pico2 実機で再検証し再現せず、
+    solved 化
+  - K6: デバッグトレース整理。TIMER_INTERVAL 1s → 1ms 復元、
+    kdbg_switch/kdbg_exit を mux ON 時のみに、kdbg_write 削除、
+    km_dump_peak の task_crt0.s 常時呼び出し削除
+  - problem.md を優先度別に再構成。K5/K10/K6 を solved.md に移動、
+    K7 part 3 を K7 本体に統合、K8+K9 を統合
 
 **次の候補** (どれも独立):
 
+- **#3 整数リテラル型推論**: tcheck で整数リテラルを文脈の型に合わせて
+  overload 解決。190 箇所の `as u32` が不要に。bootstrap typecheck.c
+  との同期変更が要る
 - **フェーズ 7 M7**: OS 上で Gen2 → Gen3 相当の一周 (コンパイラ自身を
   OS 上で再コンパイル)。時間はかかるが現状の memory peak で成立する
   はず
-- **フェーズ 7 仕上げ**: K6 debug trace のクリーンアップ、K7 pico2
-  対応 (要 K3: per-task サイズ宣言ヘッダ)
 - **bcrun.tc::vm_run AST pool outlier**: tcheck/codegen/bc2asm
   すべての peak を跳ね上げる原因が vm_run 1 関数の巨大 AST (2581
   node)。source 分解は intentionally out of scope (ユーザ指示)。
