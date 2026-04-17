@@ -17,6 +17,8 @@ import "kernel_common.tc";
 
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
+fn km_peak_bytes() -> i32;
+fn km_curr_bytes() -> i32;
 
 var PROCFS_MAX_FDS: i32 = 4;
 
@@ -145,6 +147,42 @@ fn synth_tasks() -> u32 {
     return buf as u32;
 }
 
+fn synth_meminfo() -> u32 {
+    var cap: i32 = 256;
+    var buf: U8Array = U8Array(cap as u32);
+    var pos: i32 = 0;
+    pos = append_str(buf, pos, "peak: ", cap);
+    pos = append_dec(buf, pos, km_peak_bytes(), cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    pos = append_str(buf, pos, "used: ", cap);
+    pos = append_dec(buf, pos, km_curr_bytes(), cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    poke32(buf as u32, pos as u32);
+    return buf as u32;
+}
+
+fn synth_cpuinfo() -> u32 {
+    var cap: i32 = 128;
+    var buf: U8Array = U8Array(cap as u32);
+    var pos: i32 = 0;
+    pos = append_str(buf, pos, "arch: rv32ima\n", cap);
+    poke32(buf as u32, pos as u32);
+    return buf as u32;
+}
+
+fn synth_uptime() -> u32 {
+    var cap: i32 = 64;
+    var buf: U8Array = U8Array(cap as u32);
+    var pos: i32 = 0;
+    pos = append_str(buf, pos, "mtime: ", cap);
+    // read_mtime returns u32; cast to i32 for append_dec (wraps at ~214s @10MHz)
+    var mt: u32 = kern_read_mtime();
+    pos = append_hex(buf, pos, mt, cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    poke32(buf as u32, pos as u32);
+    return buf as u32;
+}
+
 // Match path against "/proc/tasks"; return true if so.
 fn path_is(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
     var sl: i32 = len(s);
@@ -163,10 +201,16 @@ export fn procfs_open(path_addr: u32, plen: i32) -> i32 {
     var size: i32 = 0;
     if path_is(path_addr, plen, "/proc/tasks") {
         buf_hdr = synth_tasks();
-        size = peek32(buf_hdr) as i32;
+    } else if path_is(path_addr, plen, "/proc/meminfo") {
+        buf_hdr = synth_meminfo();
+    } else if path_is(path_addr, plen, "/proc/cpuinfo") {
+        buf_hdr = synth_cpuinfo();
+    } else if path_is(path_addr, plen, "/proc/uptime") {
+        buf_hdr = synth_uptime();
     } else {
         return -1;
     }
+    size = peek32(buf_hdr) as i32;
     // Allocate procfs fd
     var i: i32 = 0;
     while i < PROCFS_MAX_FDS {
@@ -222,16 +266,24 @@ export fn procfs_close(fd: i32) -> i32 {
 // Enumerate /proc entries into `buf_addr` as NUL-separated names.
 // Currently /proc exposes a single entry: "tasks". Returns the number
 // of bytes written (including trailing NULs), or -1 on error.
-export fn procfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
-    var name: StringLiteral = "tasks";
+fn readdir_append(buf_addr: u32, buf_size: i32, pos: i32, name: StringLiteral) -> i32 {
     var nlen: i32 = len(name);
-    var need: i32 = nlen + 1;  // name + NUL
-    if need > buf_size { return -1; }
+    if pos + nlen + 1 > buf_size { return pos; }
     var i: i32 = 0;
     while i < nlen {
-        poke8(buf_addr + (i as u32), get(name, i));
+        poke8(buf_addr + (pos as u32), get(name, i));
+        pos = pos + 1;
         i = i + 1;
     }
-    poke8(buf_addr + (nlen as u32), 0u8);
-    return need;
+    poke8(buf_addr + (pos as u32), 0u8);
+    return pos + 1;
+}
+
+export fn procfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
+    var pos: i32 = 0;
+    pos = readdir_append(buf_addr, buf_size, pos, "tasks");
+    pos = readdir_append(buf_addr, buf_size, pos, "meminfo");
+    pos = readdir_append(buf_addr, buf_size, pos, "cpuinfo");
+    pos = readdir_append(buf_addr, buf_size, pos, "uptime");
+    return pos;
 }

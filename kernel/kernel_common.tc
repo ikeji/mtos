@@ -21,6 +21,7 @@ fn vfs_close(fd: i32) -> i32;
 
 // Platform-provided (linked at build time)
 fn rearm_timer() -> void;
+fn read_mtime() -> u32;
 
 // Scheduler state (private to this module)
 // State values:
@@ -944,4 +945,8 @@ fn sched_task_exit() -> u32 {
         i = i + 1;
     }
     return 0u32;
+}
+
+export fn kern_read_mtime() -> u32 {
+    return read_mtime();
 }

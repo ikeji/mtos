@@ -32,6 +32,10 @@ fn rearm_timer() -> void {
     return;
 }
 
+fn read_mtime() -> u32 {
+    return peek32(SIO_MTIME_L);
+}
+
 // Mount mtfs from XIP flash and announce it to the serial console. If
 // block/vfs init fail we still start the hello/hello2/catfile tasks so
 // that a regression in the FS code does not break visible progress.

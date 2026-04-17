@@ -37,6 +37,10 @@ fn rearm_timer() -> void {
     return;
 }
 
+fn read_mtime() -> u32 {
+    return peek32(MTIME_LO);
+}
+
 // Hex output helpers (used to dump sector 0 during bring-up)
 fn kputchar(c: u8) -> void {
     var b: U8Array = U8Array(1u32);
