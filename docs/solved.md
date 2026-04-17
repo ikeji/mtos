@@ -143,6 +143,14 @@ UART mux (mx/mr) の length-prefix フレーミングで len=0 が EOF マーカ
 として機能するため、mux ON 環境では解決。mux OFF では sh の "quit"
 コマンドで代替。
 
+### K5. cat 5 ファイル後の spawn 失敗 (bug → 解決, 2026-04-17)
+
+調査の結果、`sys_spawn_handler` で `sched_spawn` が失敗した際に
+redirect fd / frame / ram / stack / img / argv がリークするバグを発見し
+修正 (`free_last_alloc()` 追加)。元の再現条件 (旧パイプライン構成) は
+現在の virt 環境で 5-file cat + redirect を 4 回繰り返しても再現せず、
+prelude 導入前の構成固有だったと判断。
+
 ### 17. make test 60 秒制約 (ergonomics → 解決, 2026-04-17 moved)
 
 Make ベース incremental build 導入後、warm 33s / cold 78s まで短縮。

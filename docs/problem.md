@@ -18,33 +18,6 @@
 
 ## 優先対処
 
-### K5. sh パイプラインで cat が 5 ファイルを連続読みした後の spawn が失敗 (bug, 回避済)
-
-phase 7 M6 のセルフコンパイルパイプライン実装中に遭遇した再現性の
-ある挙動:
-
-```
-parse ... > /tmp/1.ast
-typecheck ... > /tmp/2.tast
-codegen ... > /tmp/3.bc
-bc2asm ... > /tmp/4.s
-cat /rawhdr.s /crt0.s /runtime.s /tmp/4.s /task_data.s > /tmp/full.s
-asm < /tmp/full.s > /tmp/hw      # ← "sh: spawn failed"
-```
-
-`cat` が **5 つの** ファイル (mtfs 4 個 + tmpfs 1 個) を読み切った
-直後に `asm` を stdin redirect 付きで spawn すると、`sys_spawn_handler`
-が -1 を返す。asm 単体 (redirect なし) や、他の組み合わせ (例: cat が
-3 ファイルだけ) では再現しない。kernel arena / タスクスロット / vfs
-fd テーブルのどれを疑っても明確な原因を特定できなかった。
-
-**回避策 (実装済)**: `kernel/build.sh` で `task_crt0.s` + cached
-`runtime.s` を事前連結した `/prelude.s` を mtfs に仕込み、OS 側の
-`cat` を 3 ファイルだけ読むように減らしたら再現しなくなった。
-
-原因不明のまま残っている。VFS fd リークの可能性があり、他のシナリオで
-再発するかもしれない。**優先して原因調査する。**
-
 ### K10. pico2: multi-file cat (>2 ファイル) が hang する (bug, 回避済)
 
 pico2 で `cat a b c > out` のように 3 ファイル以上を 1 コマンドで cat
