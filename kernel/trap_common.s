@@ -138,9 +138,16 @@ _ecall_read:
     lw   a0, 40(s0)         # fd
     lw   a1, 44(s0)         # buf addr
     lw   a2, 48(s0)         # len
+    mv   s1, a0             # save fd for yield check
     call vfs_read__i32__u32__i32
     sw   a0, 40(s0)
-    j    _ecall_leave_advance
+    # If stdin (fd=0) returned 0 bytes, yield instead of returning.
+    # Don't advance mepc so the ecall re-executes when rescheduled.
+    bnez s1, _ecall_leave_advance   # fd != 0 → normal return
+    bnez a0, _ecall_leave_advance   # got data → normal return
+    call sched_yield_read
+    mv   sp, s0
+    j    _trap_restore
 
 _ecall_openat:
     call _ecall_enter

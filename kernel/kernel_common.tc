@@ -929,6 +929,26 @@ export fn sched_wait(target: i32) -> u32 {
     return 0u32;
 }
 
+// Called from _ecall_read when UART stdin returns 0 bytes.
+// Yields the current timeslice so other tasks can run while
+// waiting for UART input. mepc is NOT advanced by the caller,
+// so the ecall re-executes when this task is rescheduled.
+export fn sched_yield_read() -> void {
+    var i: i32 = 0;
+    while i < g_num_tasks {
+        var next: i32 = (g_current + 1 + i) % g_num_tasks;
+        var nt: Task = get(g_tasks, next);
+        if state(nt) == STATE_READY {
+            g_current = next;
+            set_switch_frame(frame(nt));
+            i = g_num_tasks;
+        }
+        i = i + 1;
+    }
+    rearm_timer();
+    return;
+}
+
 // Called from assembly _trap_entry on non-ecall traps
 fn trap_handler(cause: u32, epc: u32) -> void {
     if cause == 0x80000007u32 {

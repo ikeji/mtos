@@ -21,6 +21,7 @@ import "kernel_common.tc";
 // Platform UART helpers (defined in platform_*.s)
 fn do_uart_write(buf: u32, len: i32) -> i32;
 fn do_uart_read(buf: u32, len: i32) -> i32;
+fn do_uart_try_read(buf: u32, len: i32) -> i32;
 
 var VFS_MAX_FDS: i32 = 16;
 var VFS_PATH_MAX: i32 = 128;
@@ -228,6 +229,10 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd == 0 && uart_mux_is_enabled() != 0 {
         return task_input_read(sched_current_idx(), buf_addr, n);
     }
+    // Non-mux UART stdin: use non-blocking read so the ecall handler
+    // can yield the timeslice instead of spin-waiting in M-mode.
+    // trap_common.s re-executes the ecall when this returns 0.
+    if fd == 0 { return do_uart_try_read(buf_addr, n); }
     if fd >= 0 && fd < 3 { return do_uart_read(buf_addr, n); }
     if g_vfs_ready == 0 { return -1; }
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
