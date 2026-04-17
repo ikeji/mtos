@@ -246,10 +246,6 @@ export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd == 1 && g_vfs_ready != 0 {
         var redir: i32 = task_get_stdout_fd(sched_current_idx());
         if redir != 0 {
-            // Trace redirected writes so phase 7 debugging can see
-            // whether a compiler task ever manages to flush its
-            // output before crashing.
-            kdbg_write(sched_current_idx(), n);
             fd = redir;
         }
     }

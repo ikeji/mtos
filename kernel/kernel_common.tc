@@ -944,7 +944,7 @@ fn trap_handler(cause: u32, epc: u32) -> void {
             }
             i = i + 1;
         }
-        if g_current != from_slot {
+        if g_current != from_slot && g_mux_enabled != 0 {
             kdbg_switch(from_slot, g_current);
         }
         rearm_timer();
@@ -971,7 +971,9 @@ fn sched_task_exit() -> u32 {
     // sessions can see whether a task exited cleanly or not.
     var cur: Task = get(g_tasks, g_current);
     var exit_code: i32 = peek32(frame(cur) + 40u32) as i32;
-    kdbg_exit(g_current, exit_code);
+    if g_mux_enabled != 0 {
+        kdbg_exit(g_current, exit_code);
+    }
 
     slot_free_allocs(g_current);
     state(cur, STATE_DONE);
