@@ -36,7 +36,7 @@ var g_out_path: U8Array = 0 as U8Array;
 // command bytes stored in buf (not counting the NUL terminator).
 // buf must have room for CMD_MAX bytes including NUL.
 fn read_line(buf: U8Array) -> i32 {
-    var one: U8Array = U8Array(1u32);
+    var one: U8Array = U8Array(1);
     var pos: i32 = 0;
     var done: i32 = 0;
     while done == 0 {

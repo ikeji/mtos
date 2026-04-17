@@ -45,7 +45,7 @@ var g_out_path: U8Array = 0 as U8Array;
 // Echo one byte back to stdout so the user sees what they typed.
 // Kept as a separate function so read_line stays readable.
 fn echo_byte(c: u8) -> void {
-    var one: U8Array = U8Array(1u32);
+    var one: U8Array = U8Array(1);
     set(one, 0, c);
     sys_write(1, one, 1);
     delete(one);
@@ -54,7 +54,7 @@ fn echo_byte(c: u8) -> void {
 
 // Echo a backspace-space-backspace sequence to erase one char visually.
 fn echo_bs() -> void {
-    var three: U8Array = U8Array(3u32);
+    var three: U8Array = U8Array(3);
     set(three, 0, 8u8);           // \b
     set(three, 1, ' ' as u8);
     set(three, 2, 8u8);           // \b
@@ -196,7 +196,7 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
     var tok_start: i32 = tc_token_start(buf, pos);
     var base_start: i32 = tok_start;
     // dir holds the path to enumerate (NUL-terminated, <= 128 chars).
-    var dir: U8Array = U8Array(128u32);
+    var dir: U8Array = U8Array(128);
     var dir_len: i32 = 0;
     if tc_is_first_token(buf, tok_start) {
         // command completion → /bin
@@ -233,7 +233,7 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
     set(dir, dir_len, 0u8);
     var base_len: i32 = pos - base_start;
 
-    var dirbuf: U8Array = U8Array(4096u32);
+    var dirbuf: U8Array = U8Array(4096);
     var n: i32 = do_readdir(dir as u32 + 4u32,
                             dirbuf as u32 + 4u32, 4096);
     delete(dir);
@@ -381,7 +381,7 @@ fn read_byte(one: U8Array) -> i32 {
 }
 
 fn read_line(buf: U8Array) -> i32 {
-    var one: U8Array = U8Array(1u32);
+    var one: U8Array = U8Array(1);
     var pos: i32 = 0;
     var done: i32 = 0;
     var hist_idx: i32 = -1;

@@ -25,7 +25,7 @@ fn main(argv: StringArray) -> i32 {
         path_buf = str_nul("/");
     }
 
-    var buf: U8Array = U8Array(4096u32);
+    var buf: U8Array = U8Array(4096);
     var n: i32 = do_readdir(path_buf as u32 + 4u32,
                             buf as u32 + 4u32, 4096);
     if n < 0 {

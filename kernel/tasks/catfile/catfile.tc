@@ -45,7 +45,7 @@ fn main(argv: StringArray) -> i32 {
         return 1;
     }
 
-    var buf: U8Array = U8Array(64u32);
+    var buf: U8Array = U8Array(64);
     var n: i32 = sys_read(fd, buf, 64);
     if n > 0 {
         // Prefix includes argc so tests can tell default-path runs
@@ -53,7 +53,7 @@ fn main(argv: StringArray) -> i32 {
         // the digit by hand rather than calling print_i32 because
         // print_i32 always appends a newline.
         puts("CAT[");
-        var d: U8Array = U8Array(1u32);
+        var d: U8Array = U8Array(1);
         set(d, 0, (48 + len(argv)) as u8);
         sys_write(1, d, 1);
         delete(d);

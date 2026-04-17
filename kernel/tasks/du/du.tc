@@ -10,13 +10,13 @@ fn do_close(fd: i32) -> i32;
 
 fn print_u32(v: i32) -> void {
     if v == 0 {
-        var z: U8Array = U8Array(1u32);
+        var z: U8Array = U8Array(1);
         set(z, 0, '0' as u8);
         sys_write(1, z, 1);
         delete(z);
         return;
     }
-    var d: U8Array = U8Array(12u32);
+    var d: U8Array = U8Array(12);
     var n: i32 = 0;
     var x: i32 = v;
     while x > 0 {
@@ -37,7 +37,7 @@ fn print_u32(v: i32) -> void {
 }
 
 fn count_bytes(fd: i32) -> i32 {
-    var buf: U8Array = U8Array(4096u32);
+    var buf: U8Array = U8Array(4096);
     var total: i32 = 0;
     var done: i32 = 0;
     while done == 0 {
@@ -70,7 +70,7 @@ fn main(argv: StringArray) -> i32 {
             var bytes: i32 = count_bytes(fd);
             do_close(fd);
             print_u32(bytes);
-            var tab: U8Array = U8Array(1u32);
+            var tab: U8Array = U8Array(1);
             set(tab, 0, 9u8);
             sys_write(1, tab, 1);
             delete(tab);
@@ -79,7 +79,7 @@ fn main(argv: StringArray) -> i32 {
             while k < sl { set(nbuf, k, get(name, k)); k = k + 1; }
             sys_write(1, nbuf, sl);
             delete(nbuf);
-            var nl: U8Array = U8Array(1u32);
+            var nl: U8Array = U8Array(1);
             set(nl, 0, 10u8);
             sys_write(1, nl, 1);
             delete(nl);

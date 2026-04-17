@@ -42,7 +42,7 @@ fn main(argv: StringArray) -> i32 {
         delete(src_path); delete(dst_path);
         return 1;
     }
-    var buf: U8Array = U8Array(4096u32);
+    var buf: U8Array = U8Array(4096);
     var done: i32 = 0;
     while done == 0 {
         var n: i32 = sys_read(src_fd, buf, 4096);

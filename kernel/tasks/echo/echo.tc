@@ -12,7 +12,7 @@ fn main(argv: StringArray) -> i32 {
     var i: i32 = 1;
     while i < n {
         if i > 1 {
-            var sp: U8Array = U8Array(1u32);
+            var sp: U8Array = U8Array(1);
             set(sp, 0, ' ' as u8);
             sys_write(1, sp, 1);
             delete(sp);
@@ -29,7 +29,7 @@ fn main(argv: StringArray) -> i32 {
         delete(buf);
         i = i + 1;
     }
-    var nl: U8Array = U8Array(1u32);
+    var nl: U8Array = U8Array(1);
     set(nl, 0, '\n' as u8);
     sys_write(1, nl, 1);
     delete(nl);

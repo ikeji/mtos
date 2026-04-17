@@ -517,7 +517,7 @@ fn write_i32_stderr(v: i32) -> void {
     var neg: i32 = 0;
     if v < 0 { neg = 1; v = 0 - v; }
     // 桁を逆順に抽出
-    var buf: U8Array = U8Array(16u32);
+    var buf: U8Array = U8Array(16);
     var n: i32 = 0;
     while v > 0 {
         poke8(buf as u32 + 4u32 + n as u32, (48 + v % 10) as u8);
@@ -611,7 +611,7 @@ export fn km_curr_bytes() -> i32 { return g_km_curr_bytes; }
 
 // ===== Print helpers =====
 export fn print_i32(v: i32) -> void {
-    var buf: U8Array = U8Array(16u32);
+    var buf: U8Array = U8Array(16);
     var neg: i32 = 0;
     if v < 0 { neg = 1; v = 0 - v; }
     if v == 0 {
@@ -620,7 +620,7 @@ export fn print_i32(v: i32) -> void {
         delete_impl(buf as u32);
         return;
     }
-    var tmp: U8Array = U8Array(12u32);
+    var tmp: U8Array = U8Array(12);
     var i: i32 = 0;
     while v > 0 { poke8(tmp as u32 + 4u32 + (i) as u32, ((48 + v % 10) as u8) as u8); i = i + 1; v = v / 10; }
     var pos: i32 = 0;
@@ -644,7 +644,7 @@ export fn print_str(s: String) -> void {
         do_write(1, s as u32 + 4u32, slen);
     }
     do_write(1, 0u32, 0);
-    var nl: U8Array = U8Array(1u32);
+    var nl: U8Array = U8Array(1);
     poke8(nl as u32 + 4u32 + (0) as u32, (10u8) as u8);
     sys_write(1, nl, 1);
     delete_impl(nl as u32);

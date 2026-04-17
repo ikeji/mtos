@@ -402,11 +402,11 @@
       (type i32)
     )
     (block
-      (comment "var buf: U8Array = U8Array(256u32);")
+      (comment "var buf: U8Array = U8Array(256);")
       (var_decl buf
         (type U8Array)
         (call U8Array
-          (int:u32 256)
+          (int 256)
         )
       )
       (comment "g_len = sys_read(0, buf, 256);")

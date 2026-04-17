@@ -28,7 +28,7 @@ fn scan_eot_u8(buf: U8Array, n: i32) -> i32 {
 
 fn main(argv: StringArray) -> i32 {
     var nargs: i32 = len(argv);
-    var buf: U8Array = U8Array(4096u32);
+    var buf: U8Array = U8Array(4096);
     // Special form: when called with no arguments, cat streams stdin
     // to stdout, honoring 0x04 (EOT) as end-of-stream. Used by the
     // pico2 host-mediated pipeline to copy UART data into tmpfs via

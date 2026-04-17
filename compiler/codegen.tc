@@ -429,7 +429,7 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
 
     if k == NK_CALL_STMT {
         // First collect args into a temp list so we can emit types after
-        var args: I32Array = I32Array(24u32);
+        var args: I32Array = I32Array(24);
         var nargs: i32 = 0;
         var c: i32 = n_child(nodes, n);
         while c >= 0 && nargs < 24 {
@@ -654,7 +654,7 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
 
     if k == NK_CALL {
         // Collect args first so we can emit types after codegen
-        var args: I32Array = I32Array(24u32);
+        var args: I32Array = I32Array(24);
         var nargs: i32 = 0;
         var c: i32 = n_child(nodes, n);
         while c >= 0 && nargs < 24 {
@@ -837,7 +837,7 @@ fn cg_fn(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, locals: I32Array
     }
 
     g_loop_depth = 0;
-    var loop_stk: I32Array = I32Array(32u32); // up to 16 nested while loops
+    var loop_stk: I32Array = I32Array(32); // up to 16 nested while loops
     cg_block(nodes, strtab, slits, ob, loop_stk, body_n);
     delete(loop_stk);
 
@@ -906,12 +906,12 @@ fn main() -> i32 {
     //
     // Total static ≈ 52 KB (down from 256 KB strtab + 16 KB nodes
     // refs + 8 KB locals + 2 KB slits = 282 KB before).
-    var atom_buf: U8Array = U8Array(1024u32);
+    var atom_buf: U8Array = U8Array(1024);
     var out_buf: StringBuffer = StringBuffer_new(1);
-    var nodes: AstNodeArray = AstNodeArray(4096u32);
-    var strtab: U8Array = U8Array(32768u32);
-    var slits: I32Array = I32Array(512u32);
-    var locals: I32Array = I32Array(1024u32);
+    var nodes: AstNodeArray = AstNodeArray(4096);
+    var strtab: U8Array = U8Array(32768);
+    var slits: I32Array = I32Array(512);
+    var locals: I32Array = I32Array(1024);
 
     g_reader = SourceReader_new(0);
     ast_set_count(0);
@@ -986,7 +986,7 @@ fn main() -> i32 {
     // we can size the fixed buffers above. g_sp is monotonic in
     // codegen (no rollback), so g_sp at exit = the max strtab usage
     // across the whole compile.
-    var dbuf: U8Array = U8Array(64u32);
+    var dbuf: U8Array = U8Array(64);
     var dp: i32 = 0;
     if g_sp > g_max_sp { g_max_sp = g_sp; }
     set(dbuf, dp, '[' as u8); dp = dp + 1;

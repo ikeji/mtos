@@ -157,7 +157,7 @@
 .endfn
 
 .fn StringBuffer_new StringBuffer
-; return StringBuffer(U8Array(124u32), 0, 0 - 1);
+; return StringBuffer(U8Array(124), 0, 0 - 1);
   push_int 124
   call U8Array u32
   push_int 0
@@ -171,7 +171,7 @@
 
 .fn StringBuffer_new i32 StringBuffer
 .param out_fd i32
-; return StringBuffer(U8Array(1024u32), 0, out_fd);
+; return StringBuffer(U8Array(1024), 0, out_fd);
   push_int 1024
   call U8Array u32
   push_int 0
@@ -505,7 +505,7 @@ __L10:
 ; return;
   return_void
 __L11:
-; var tmp: U8Array = U8Array(12u32);
+; var tmp: U8Array = U8Array(12);
   push_int 12
   call U8Array u32
   store tmp
@@ -1015,7 +1015,7 @@ __L21:
 
 .fn SourceReader_new i32 SourceReader
 .param fd i32
-; return SourceReader(fd, U8Array(4092u32), 0, 0, 0, StringBuffer_new(), 1);
+; return SourceReader(fd, U8Array(4092), 0, 0, 0, StringBuffer_new(), 1);
   load fd
   push_int 4092
   call U8Array u32
@@ -4706,7 +4706,7 @@ __L172:
   load NK_CALL_STMT
   eq
   jump_ifnot __L173
-; var args: I32Array = I32Array(24u32);
+; var args: I32Array = I32Array(24);
   push_int 24
   call I32Array u32
   store args
@@ -5975,7 +5975,7 @@ __L243:
   load NK_CALL
   eq
   jump_ifnot __L244
-; var args: I32Array = I32Array(24u32);
+; var args: I32Array = I32Array(24);
   push_int 24
   call I32Array u32
   store args
@@ -7090,7 +7090,7 @@ __L302:
 ; g_loop_depth = 0;
   push_int 0
   store g_loop_depth
-; var loop_stk: I32Array = I32Array(32u32); // up to 16 nested while loops
+; var loop_stk: I32Array = I32Array(32); // up to 16 nested while loops
   push_int 32
   call I32Array u32
   store loop_stk
@@ -7374,7 +7374,7 @@ __L313:
 .local initval i32
 .local dbuf U8Array
 .local dp i32
-; var atom_buf: U8Array = U8Array(1024u32);
+; var atom_buf: U8Array = U8Array(1024);
   push_int 1024
   call U8Array u32
   store atom_buf
@@ -7382,19 +7382,19 @@ __L313:
   push_int 1
   call StringBuffer_new i32
   store out_buf
-; var nodes: AstNodeArray = AstNodeArray(4096u32);
+; var nodes: AstNodeArray = AstNodeArray(4096);
   push_int 4096
   call AstNodeArray u32
   store nodes
-; var strtab: U8Array = U8Array(32768u32);
+; var strtab: U8Array = U8Array(32768);
   push_int 32768
   call U8Array u32
   store strtab
-; var slits: I32Array = I32Array(512u32);
+; var slits: I32Array = I32Array(512);
   push_int 512
   call I32Array u32
   store slits
-; var locals: I32Array = I32Array(1024u32);
+; var locals: I32Array = I32Array(1024);
   push_int 1024
   call I32Array u32
   store locals
@@ -7653,7 +7653,7 @@ __L325:
   push_int 1
   call write StringBuffer i32
   pop
-; var dbuf: U8Array = U8Array(64u32);
+; var dbuf: U8Array = U8Array(64);
   push_int 64
   call U8Array u32
   store dbuf

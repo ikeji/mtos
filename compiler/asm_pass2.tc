@@ -258,7 +258,7 @@ fn main() -> i32 {
     asm_enable_stream_mode();
     rb_init();
 
-    var lab_line: U8Array = U8Array(4096u32);
+    var lab_line: U8Array = U8Array(4096);
 
     // Phase A: scan stdin to the "(lab" opener, then parse lab lines
     // until the closing ")". Uses the shared rb_* buffered reader

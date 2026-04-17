@@ -157,7 +157,7 @@
 .endfn
 
 .fn StringBuffer_new StringBuffer
-; return StringBuffer(U8Array(124u32), 0, 0 - 1);
+; return StringBuffer(U8Array(124), 0, 0 - 1);
   push_int 124
   call U8Array u32
   push_int 0
@@ -171,7 +171,7 @@
 
 .fn StringBuffer_new i32 StringBuffer
 .param out_fd i32
-; return StringBuffer(U8Array(1024u32), 0, out_fd);
+; return StringBuffer(U8Array(1024), 0, out_fd);
   push_int 1024
   call U8Array u32
   push_int 0
@@ -505,7 +505,7 @@ __L10:
 ; return;
   return_void
 __L11:
-; var tmp: U8Array = U8Array(12u32);
+; var tmp: U8Array = U8Array(12);
   push_int 12
   call U8Array u32
   store tmp
@@ -7821,98 +7821,98 @@ __L500:
 .local prog_stdin U8Array
 .local psi i32
 .local result i32
-; var src:         U8Array  = U8Array(524288u32);
+; var src:         U8Array  = U8Array(524288);
   push_int 524288
   call U8Array u32
   store src
-; var strtab:      U8Array  = U8Array(262144u32);
+; var strtab:      U8Array  = U8Array(262144);
   push_int 262144
   call U8Array u32
   store strtab
-; var string_lits: I32Array = I32Array(2048u32);
+; var string_lits: I32Array = I32Array(2048);
   push_int 2048
   call I32Array u32
   store string_lits
-; var global_vars:  I32Array = I32Array(1024u32);
+; var global_vars:  I32Array = I32Array(1024);
   push_int 1024
   call I32Array u32
   store global_vars
-; var global_inits: I32Array = I32Array(256u32);
+; var global_inits: I32Array = I32Array(256);
   push_int 256
   call I32Array u32
   store global_inits
-; var fns:         I32Array = I32Array(2560u32);
+; var fns:         I32Array = I32Array(2560);
   push_int 2560
   call I32Array u32
   store fns
-; var params_pool: I32Array = I32Array(4096u32);
+; var params_pool: I32Array = I32Array(4096);
   push_int 4096
   call I32Array u32
   store params_pool
-; var locals_pool: I32Array = I32Array(4096u32);
+; var locals_pool: I32Array = I32Array(4096);
   push_int 4096
   call I32Array u32
   store locals_pool
-; var instrs:      I32Array = I32Array(262144u32);
+; var instrs:      I32Array = I32Array(262144);
   push_int 262144
   call I32Array u32
   store instrs
-; var label_pcs:   I32Array = I32Array(16384u32);
+; var label_pcs:   I32Array = I32Array(16384);
   push_int 16384
   call I32Array u32
   store label_pcs
-; var hm:          I32Array = I32Array(2048u32);
+; var hm:          I32Array = I32Array(2048);
   push_int 2048
   call I32Array u32
   store hm
-; var hb:          U8Array  = U8Array(524288u32);
+; var hb:          U8Array  = U8Array(524288);
   push_int 524288
   call U8Array u32
   store hb
-; var hi:          I32Array = I32Array(131072u32);
+; var hi:          I32Array = I32Array(131072);
   push_int 131072
   call I32Array u32
   store hi
-; var stk_i:       I32Array = I32Array(8192u32);
+; var stk_i:       I32Array = I32Array(8192);
   push_int 8192
   call I32Array u32
   store stk_i
-; var stk_t:       I32Array = I32Array(8192u32);
+; var stk_t:       I32Array = I32Array(8192);
   push_int 8192
   call I32Array u32
   store stk_t
-; var var_i:       I32Array = I32Array(65536u32);
+; var var_i:       I32Array = I32Array(65536);
   push_int 65536
   call I32Array u32
   store var_i
-; var var_t:       I32Array = I32Array(65536u32);
+; var var_t:       I32Array = I32Array(65536);
   push_int 65536
   call I32Array u32
   store var_t
-; var gv_i:        I32Array = I32Array(512u32);
+; var gv_i:        I32Array = I32Array(512);
   push_int 512
   call I32Array u32
   store gv_i
-; var gv_t:        I32Array = I32Array(512u32);
+; var gv_t:        I32Array = I32Array(512);
   push_int 512
   call I32Array u32
   store gv_t
-; var cs:          I32Array = I32Array(2560u32);
+; var cs:          I32Array = I32Array(2560);
   push_int 2560
   call I32Array u32
   store cs
-; var arg_i:       I32Array = I32Array(64u32);
+; var arg_i:       I32Array = I32Array(64);
   push_int 64
   call I32Array u32
   store arg_i
-; var arg_t:       I32Array = I32Array(64u32);
+; var arg_t:       I32Array = I32Array(64);
   push_int 64
   call I32Array u32
   store arg_t
 ; g_in_len = 0;
   push_int 0
   store g_in_len
-; var chunk_buf: U8Array = U8Array(65536u32);
+; var chunk_buf: U8Array = U8Array(65536);
   push_int 65536
   call U8Array u32
   store chunk_buf

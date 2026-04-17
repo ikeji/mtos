@@ -18,7 +18,7 @@ fn main() -> i32 {
     print_i32(b as i32);
 
     // Builtin set/get with correct types
-    var buf: U8Array = U8Array(1u32);
+    var buf: U8Array = U8Array(1);
     set(buf, 0, 65u8);
     var c: i32 = get(buf, 0) as i32;
     print_i32(c);

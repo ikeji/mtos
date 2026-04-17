@@ -13,7 +13,7 @@ struct SourceReader {
 }
 
 export fn SourceReader_new(fd: i32) -> SourceReader {
-    return SourceReader(fd, U8Array(4092u32), 0, 0, 0, StringBuffer_new(), 1);
+    return SourceReader(fd, U8Array(4092), 0, 0, 0, StringBuffer_new(), 1);
 }
 
 export fn close(r: SourceReader) -> void {

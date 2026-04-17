@@ -9365,11 +9365,11 @@
       (type i32)
     )
     (block
-      (comment "var strtab:       U8Array  = U8Array(16384u32);")
+      (comment "var strtab:       U8Array  = U8Array(16384);")
       (var_decl strtab
         (type U8Array)
         (call U8Array
-          (int:u32 16384)
+          (int 16384)
         )
       )
       (comment "var ob:           StringBuffer = StringBuffer_new(1);")
@@ -9379,66 +9379,66 @@
           (int 1)
         )
       )
-      (comment "var string_lits:  I32Array = I32Array(512u32);")
+      (comment "var string_lits:  I32Array = I32Array(512);")
       (var_decl string_lits
         (type I32Array)
         (call I32Array
-          (int:u32 512)
+          (int 512)
         )
       )
-      (comment "var global_vars:  I32Array = I32Array(1024u32);")
+      (comment "var global_vars:  I32Array = I32Array(1024);")
       (var_decl global_vars
         (type I32Array)
         (call I32Array
-          (int:u32 1024)
+          (int 1024)
         )
       )
-      (comment "var global_inits: I32Array = I32Array(256u32);")
+      (comment "var global_inits: I32Array = I32Array(256);")
       (var_decl global_inits
         (type I32Array)
         (call I32Array
-          (int:u32 256)
+          (int 256)
         )
       )
-      (comment "var fns:          BcFuncArray = BcFuncArray(1u32);")
+      (comment "var fns:          BcFuncArray = BcFuncArray(1);")
       (var_decl fns
         (type BcFuncArray)
         (call BcFuncArray
-          (int:u32 1)
+          (int 1)
         )
       )
-      (comment "var params_pool:  I32Array = I32Array(128u32);")
+      (comment "var params_pool:  I32Array = I32Array(128);")
       (var_decl params_pool
         (type I32Array)
         (call I32Array
-          (int:u32 128)
+          (int 128)
         )
       )
-      (comment "var locals_pool:  I32Array = I32Array(512u32);")
+      (comment "var locals_pool:  I32Array = I32Array(512);")
       (var_decl locals_pool
         (type I32Array)
         (call I32Array
-          (int:u32 512)
+          (int 512)
         )
       )
-      (comment "var instrs:       I32Array = I32Array(16384u32);")
+      (comment "var instrs:       I32Array = I32Array(16384);")
       (var_decl instrs
         (type I32Array)
         (call I32Array
-          (int:u32 16384)
+          (int 16384)
         )
       )
-      (comment "var label_pcs:    I32Array = I32Array(1024u32);")
+      (comment "var label_pcs:    I32Array = I32Array(1024);")
       (var_decl label_pcs
         (type I32Array)
         (call I32Array
-          (int:u32 1024)
+          (int 1024)
         )
       )
-      (comment "g_unit_name = U8Array(64u32);")
+      (comment "g_unit_name = U8Array(64);")
       (assign g_unit_name
         (call U8Array
-          (int:u32 64)
+          (int 64)
         )
       )
       (comment "g_unit_name_len = 0;")
@@ -9507,11 +9507,11 @@
         (var ob)
         (int 1)
       )
-      (comment "var dbuf: U8Array = U8Array(96u32);")
+      (comment "var dbuf: U8Array = U8Array(96);")
       (var_decl dbuf
         (type U8Array)
         (call U8Array
-          (int:u32 96)
+          (int 96)
         )
       )
       (comment "var dp: i32 = 0;")

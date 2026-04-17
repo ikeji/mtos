@@ -137,7 +137,7 @@ fn load_fd_header_ok(arena: i32, stack: i32) -> bool {
 fn debug_dump_path(path_addr: u32, tag: StringLiteral) -> void {
     kputs(tag);
     kputs(": path=\"");
-    var one: U8Array = U8Array(1u32);
+    var one: U8Array = U8Array(1);
     var i: u32 = 0u32;
     while i < 32u32 {
         var b: u8 = peek8(path_addr + i);

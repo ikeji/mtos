@@ -313,7 +313,7 @@ __L22:
 .fn main i32
 .local buf U8Array
 .local result i32
-; var buf: U8Array = U8Array(256u32);
+; var buf: U8Array = U8Array(256);
   push_int 256
   call U8Array u32
   store buf

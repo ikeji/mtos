@@ -39,7 +39,7 @@ fn read_mtime() -> u32 {
 
 // Hex output helpers (used to dump sector 0 during bring-up)
 fn kputchar(c: u8) -> void {
-    var b: U8Array = U8Array(1u32);
+    var b: U8Array = U8Array(1);
     set(b, 0, c);
     sys_write(1, b, 1);
     delete(b);
@@ -59,7 +59,7 @@ fn kputs_hex8(x: u8) -> void {
 }
 
 fn dump_sector0() -> void {
-    var buf: U8Array = U8Array(512u32);
+    var buf: U8Array = U8Array(512);
     var n: i32 = block_read(0u32, buf);
     if n == 512 {
         kputs("SECTOR0:");
@@ -100,7 +100,7 @@ fn cat_hello_txt() -> void {
         return;
     }
 
-    var buf: U8Array = U8Array(64u32);
+    var buf: U8Array = U8Array(64);
     var n: i32 = vfs_read(fd, buf as u32 + 4u32, 64);
     if n > 0 {
         kputs("FILE:");

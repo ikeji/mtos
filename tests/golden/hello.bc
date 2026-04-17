@@ -1,7 +1,7 @@
 .bc
 .fn main i32
 .local buf U8Array
-; var buf: U8Array = U8Array(13u32);
+; var buf: U8Array = U8Array(13);
   push_int 13
   call U8Array u32
   store buf

@@ -22,7 +22,7 @@ fn parse_int(s: String) -> i32 {
 }
 
 fn head_fd(fd: i32, want_lines: i32) -> void {
-    var one: U8Array = U8Array(1u32);
+    var one: U8Array = U8Array(1);
     var emitted: i32 = 0;
     var done: i32 = 0;
     while done == 0 && emitted < want_lines {

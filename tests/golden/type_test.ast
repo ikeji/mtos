@@ -68,11 +68,11 @@
           (type i32)
         )
       )
-      (comment "var buf: U8Array = U8Array(1u32);")
+      (comment "var buf: U8Array = U8Array(1);")
       (var_decl buf
         (type U8Array)
         (call U8Array
-          (int:u32 1)
+          (int 1)
         )
       )
       (comment "set(buf, 0, 65u8);")

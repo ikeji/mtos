@@ -46,7 +46,7 @@ fn main() -> i32 {
         puts("TMP: open-read failed\n");
         return 1;
     }
-    var buf: U8Array = U8Array(64u32);
+    var buf: U8Array = U8Array(64);
     var nr: i32 = sys_read(fd, buf, 64);
     do_close(fd);
     if nr <= 0 {

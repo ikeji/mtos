@@ -6,11 +6,11 @@
       (type i32)
     )
     (block
-      (comment "var buf: U8Array = U8Array(13u32);")
+      (comment "var buf: U8Array = U8Array(13);")
       (var_decl buf
         (type U8Array)
         (call U8Array
-(int:u32 13))
+(int 13))
       )
       (comment "set(buf, 0, 72u8);   // H")
       (call_stmt set

@@ -41,7 +41,7 @@
   cast i32
   call print_i32 i32
   pop
-; var buf: U8Array = U8Array(1u32);
+; var buf: U8Array = U8Array(1);
   push_int 1
   call U8Array u32
   store buf

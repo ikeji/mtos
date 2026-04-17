@@ -1194,18 +1194,18 @@ fn main() -> i32 {
     // (instrs alone was 1 MB). emit_fn fires from inside parse_bc on
     // every .endfn, so the buffers above only need to hold one
     // function at a time.
-    var strtab:       U8Array  = U8Array(16384u32);
+    var strtab:       U8Array  = U8Array(16384);
     var ob:           StringBuffer = StringBuffer_new(1);
-    var string_lits:  I32Array = I32Array(512u32);
-    var global_vars:  I32Array = I32Array(1024u32);
-    var global_inits: I32Array = I32Array(256u32);
-    var fns:          BcFuncArray = BcFuncArray(1u32);
-    var params_pool:  I32Array = I32Array(128u32);
-    var locals_pool:  I32Array = I32Array(512u32);
-    var instrs:       I32Array = I32Array(16384u32);
-    var label_pcs:    I32Array = I32Array(1024u32);
+    var string_lits:  I32Array = I32Array(512);
+    var global_vars:  I32Array = I32Array(1024);
+    var global_inits: I32Array = I32Array(256);
+    var fns:          BcFuncArray = BcFuncArray(1);
+    var params_pool:  I32Array = I32Array(128);
+    var locals_pool:  I32Array = I32Array(512);
+    var instrs:       I32Array = I32Array(16384);
+    var label_pcs:    I32Array = I32Array(1024);
 
-    g_unit_name = U8Array(64u32);
+    g_unit_name = U8Array(64);
     g_unit_name_len = 0;
 
     // Stream stdin through SourceReader (R7). Replaces the old 524 KB
@@ -1230,7 +1230,7 @@ fn main() -> i32 {
     write(ob, 1);
 
     // Per-fn peaks for diagnostics, written byte-at-a-time to stderr.
-    var dbuf: U8Array = U8Array(96u32);
+    var dbuf: U8Array = U8Array(96);
     var dp: i32 = 0;
     set(dbuf, dp, '[' as u8); dp = dp + 1;
     set(dbuf, dp, 'b' as u8); dp = dp + 1;

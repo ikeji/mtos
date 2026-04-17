@@ -203,6 +203,30 @@ static FnSig *resolve_overload_lit(TypeEnv *e, const char *name,
         }
         return matched;
     }
+    if (nmatch > 1) {
+        /* Check if all matches have the same signature (duplicate declarations) */
+        FnSig *first = NULL;
+        int all_same = 1;
+        for (FnSig *s = e->fns; s; s = s->next) {
+            if (strcmp(s->name, name) != 0 || s->nparam != nargs) continue;
+            int ok = 1;
+            for (int i = 0; i < nargs; i++) {
+                if (strcmp(s->param_types[i], arg_types[i]) == 0) continue;
+                if (is_lit[i] && is_int_type(s->param_types[i])) continue;
+                ok = 0; break;
+            }
+            if (!ok) continue;
+            if (!first) { first = s; }
+            else if (strcmp(first->ret_type, s->ret_type) != 0) { all_same = 0; break; }
+        }
+        if (all_same && first) {
+            for (int i = 0; i < nargs; i++) {
+                if (is_lit[i])
+                    arg_types[i] = first->param_types[i];
+            }
+            return first;
+        }
+    }
     return NULL;
 }
 

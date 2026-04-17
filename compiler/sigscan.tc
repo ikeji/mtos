@@ -399,9 +399,9 @@ fn write_global_var(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, inde
 // else (kmalloc bookkeeping, SourceReader, StringBuffer scratch) is
 // small. See `[kmem peak=...]` printed at exit.
 fn main() -> i32 {
-    var nodes: AstNodeArray = AstNodeArray(64u32);
-    var strtab: U8Array = U8Array(512u32);
-    var atom_buf: U8Array = U8Array(256u32);
+    var nodes: AstNodeArray = AstNodeArray(64);
+    var strtab: U8Array = U8Array(512);
+    var atom_buf: U8Array = U8Array(256);
     var ob: StringBuffer = StringBuffer_new(1);
 
     g_reader = SourceReader_new(0);

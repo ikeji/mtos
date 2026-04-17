@@ -10,13 +10,13 @@ fn do_close(fd: i32) -> i32;
 
 fn print_u32(v: i32) -> void {
     if v == 0 {
-        var z: U8Array = U8Array(1u32);
+        var z: U8Array = U8Array(1);
         set(z, 0, '0' as u8);
         sys_write(1, z, 1);
         delete(z);
         return;
     }
-    var d: U8Array = U8Array(12u32);
+    var d: U8Array = U8Array(12);
     var n: i32 = 0;
     var x: i32 = v;
     while x > 0 {
@@ -52,7 +52,7 @@ fn read_task_stats() -> TaskStats {
     var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
     delete(path);
     if fd < 0 { return stats; }
-    var buf: U8Array = U8Array(4096u32);
+    var buf: U8Array = U8Array(4096);
     var n: i32 = sys_read(fd, buf, 4096);
     do_close(fd);
     if n <= 0 { delete(buf); return stats; }

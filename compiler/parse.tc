@@ -1631,7 +1631,7 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
     line_buf(src, struct_cmt);
     expect_tok(TK_STRUCT, src, tok);
     // Capture struct name
-    var sname_buf: U8Array = U8Array(64u32);
+    var sname_buf: U8Array = U8Array(64);
     var snlen: i32 = g_tok_slen;
     var ci: i32 = 0;
     while ci < snlen { set(sname_buf, ci, get(tok, ci)); ci = ci + 1; }
@@ -1639,9 +1639,9 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
     expect_tok(TK_LBRACE, src, tok);
 
     // Buffers for field info (max 16 fields)
-    var fnames: U8Array = U8Array(1024u32);
-    var ftypes: U8Array = U8Array(1024u32);
-    var fields: I32Array = I32Array(64u32);  // 16 fields * 4 ints
+    var fnames: U8Array = U8Array(1024);
+    var ftypes: U8Array = U8Array(1024);
+    var fields: I32Array = I32Array(64);  // 16 fields * 4 ints
     var nfields: i32 = 0;
     var fnpos: i32 = 0;
     var ftpos: i32 = 0;
@@ -1830,7 +1830,7 @@ fn pars_program(src: SourceReader, tok: U8Array, sb: StringBuffer) -> void {
 
 fn main() -> i32 {
     var src: SourceReader = SourceReader_new(0);
-    var tok_buf: U8Array = U8Array(4092u32);
+    var tok_buf: U8Array = U8Array(4092);
     var sb: StringBuffer = StringBuffer_new(1);
 
     g_line = 1;

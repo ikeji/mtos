@@ -11,13 +11,13 @@ fn do_close(fd: i32) -> i32;
 
 fn print_u32(v: i32) -> void {
     if v == 0 {
-        var z: U8Array = U8Array(1u32);
+        var z: U8Array = U8Array(1);
         set(z, 0, '0' as u8);
         sys_write(1, z, 1);
         delete(z);
         return;
     }
-    var d: U8Array = U8Array(12u32);
+    var d: U8Array = U8Array(12);
     var n: i32 = 0;
     var x: i32 = v;
     while x > 0 {
@@ -38,7 +38,7 @@ fn print_u32(v: i32) -> void {
 }
 
 fn count_fd(fd: i32, lines: U8Array, words: U8Array, bytes: U8Array) -> void {
-    var buf: U8Array = U8Array(4096u32);
+    var buf: U8Array = U8Array(4096);
     var in_word: i32 = 0;
     var l: i32 = 0;
     var w: i32 = 0;
@@ -73,7 +73,7 @@ fn count_fd(fd: i32, lines: U8Array, words: U8Array, bytes: U8Array) -> void {
 
 fn print_line(l: i32, w: i32, b: i32, name: String, has_name: bool) -> void {
     print_u32(l);
-    var sp: U8Array = U8Array(1u32);
+    var sp: U8Array = U8Array(1);
     set(sp, 0, 32u8);
     sys_write(1, sp, 1);
     print_u32(w);
@@ -91,7 +91,7 @@ fn print_line(l: i32, w: i32, b: i32, name: String, has_name: bool) -> void {
         sys_write(1, buf, nl);
         delete(buf);
     }
-    var nl2: U8Array = U8Array(1u32);
+    var nl2: U8Array = U8Array(1);
     set(nl2, 0, 10u8);
     sys_write(1, nl2, 1);
     delete(nl2);
@@ -101,9 +101,9 @@ fn print_line(l: i32, w: i32, b: i32, name: String, has_name: bool) -> void {
 
 fn main(argv: StringArray) -> i32 {
     var nargs: i32 = len(argv);
-    var lines: U8Array = U8Array(4u32);
-    var words: U8Array = U8Array(4u32);
-    var bytes: U8Array = U8Array(4u32);
+    var lines: U8Array = U8Array(4);
+    var words: U8Array = U8Array(4);
+    var bytes: U8Array = U8Array(4);
     if nargs < 2 {
         count_fd(0, lines, words, bytes);
         var l: i32 = peek32(lines as u32 + 4u32) as i32;

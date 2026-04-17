@@ -1137,14 +1137,14 @@ export fn asm_parse_meta_directive(buf: U8Array, blen: i32) -> i32 {
 fn asm_init_common() -> void {
     g_lab_names    = U8Array((MAX_NAME_POOL) as u32);
     g_labels       = LabelArray((MAX_LABELS) as u32);
-    g_sec_pos      = I32Array(4u32);
-    g_sec_base     = I32Array(4u32);
-    g_sec_size     = I32Array(4u32);
-    g_mnem         = U8Array(64u32);
-    g_ops          = I32Array(8u32);    // 4 ops x 2 (off, len)
-    g_line_buf     = U8Array(4092u32);
+    g_sec_pos      = I32Array(4);
+    g_sec_base     = I32Array(4);
+    g_sec_size     = I32Array(4);
+    g_mnem         = U8Array(64);
+    g_ops          = I32Array(8);    // 4 ops x 2 (off, len)
+    g_line_buf     = U8Array(4092);
     g_numlab       = I32Array((10 * NUM_LAB_PER_DIGIT) as u32);
-    g_numlab_count = I32Array(10u32);
+    g_numlab_count = I32Array(10);
 
     g_pos              = 0;
     g_pass             = 0;
@@ -1166,7 +1166,7 @@ export fn asm_init_pass1() -> void {
     // Pre-define __global_pointer$ in text section; its final value is
     // patched to data_base + 0x800 after the pass 1 line loop, the
     // same way single-process asm.tc did it.
-    var gp_sym: U8Array = U8Array(20u32);
+    var gp_sym: U8Array = U8Array(20);
     var gp_len: i32 = buf_set_str(gp_sym, 0, "__global_pointer$");
     define_label(gp_sym, gp_len, 0);
     delete(gp_sym);
@@ -1295,7 +1295,7 @@ export fn asm_fixup_labels() -> void {
         addr(lb, addr(lb) + get(g_sec_base, lsec));
         i = i + 1;
     }
-    var gp_sym: U8Array = U8Array(20u32);
+    var gp_sym: U8Array = U8Array(20);
     var gp_len: i32 = buf_set_str(gp_sym, 0, "__global_pointer$");
     var gp_idx: i32 = find_label(gp_sym, gp_len);
     if gp_idx >= 0 { addr(get(g_labels, gp_idx), g_gp_abs); }
@@ -1493,7 +1493,7 @@ export fn asm_write_elf_header_stream() -> void {
     var mem_size:    i32 = code_size + bss_size;
 
     var entry: i32 = 0;
-    var tmp: U8Array = U8Array(6u32);
+    var tmp: U8Array = U8Array(6);
     set(tmp, 0, '_'); set(tmp, 1, 's'); set(tmp, 2, 't');
     set(tmp, 3, 'a'); set(tmp, 4, 'r'); set(tmp, 5, 't');
     entry = label_addr(tmp, 6) + g_load_vaddr + ELF_HDR_SIZE;
@@ -1546,9 +1546,9 @@ export fn asm_write_elf() -> void {
         return;
     }
 
-    var out: U8Array = U8Array(4096u32);
+    var out: U8Array = U8Array(4096);
     var entry: i32 = 0;
-    var tmp: U8Array = U8Array(6u32);
+    var tmp: U8Array = U8Array(6);
     set(tmp, 0, '_'); set(tmp, 1, 's'); set(tmp, 2, 't');
     set(tmp, 3, 'a'); set(tmp, 4, 'r'); set(tmp, 5, 't');
     entry = label_addr(tmp, 6) + g_load_vaddr + ELF_HDR_SIZE;

@@ -8,7 +8,7 @@ fn kern_launch_task(task_sp: u32, task_id: i32) -> void;
 
 fn guest_task_1() -> void {
     // Print "TASK1_OK\n" via UART
-    var msg: U8Array = U8Array(10u32);
+    var msg: U8Array = U8Array(10);
     set(msg, 0, 'T'); set(msg, 1, 'A'); set(msg, 2, 'S');
     set(msg, 3, 'K'); set(msg, 4, '1'); set(msg, 5, '_');
     set(msg, 6, 'O'); set(msg, 7, 'K'); set(msg, 8, 10u8);
@@ -34,7 +34,7 @@ fn main() -> i32 {
     kern_launch_task(task1_sp, 1);
 
     // Print "KERN_OK\n"
-    var msg: U8Array = U8Array(9u32);
+    var msg: U8Array = U8Array(9);
     set(msg, 0, 'K'); set(msg, 1, 'E'); set(msg, 2, 'R');
     set(msg, 3, 'N'); set(msg, 4, '_'); set(msg, 5, 'O');
     set(msg, 6, 'K'); set(msg, 7, 10u8);

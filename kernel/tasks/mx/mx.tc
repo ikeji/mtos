@@ -20,7 +20,7 @@
 fn main() -> i32 {
     var CHUNK: i32 = 256;
     var buf: U8Array = U8Array(CHUNK as u32);
-    var hdr: U8Array = U8Array(2u32);
+    var hdr: U8Array = U8Array(2);
     var done: i32 = 0;
 
     while done == 0 {

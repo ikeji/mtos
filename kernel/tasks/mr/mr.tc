@@ -8,8 +8,8 @@
 // Frame size limit: 65535 bytes. Actual max written by mx is 256.
 
 fn main() -> i32 {
-    var hdr: U8Array = U8Array(2u32);
-    var buf: U8Array = U8Array(65536u32);
+    var hdr: U8Array = U8Array(2);
+    var buf: U8Array = U8Array(65536);
     var done: i32 = 0;
 
     while done == 0 {

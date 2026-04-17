@@ -26,7 +26,7 @@ fn main() -> i32 {
     asm_set_pass(1);
 
     var reader: SourceReader = SourceReader_new(0);
-    var line: U8Array = U8Array(4096u32);
+    var line: U8Array = U8Array(4096);
     var lineno: i32 = 0;
     var total_bytes: i32 = 0;
 

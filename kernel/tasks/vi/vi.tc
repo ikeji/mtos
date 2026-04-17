@@ -67,7 +67,7 @@ var g_pending_g: i32 = 0;            // first 'g' of 'gg' seen
 // ===== terminal helpers =====
 
 fn putc(c: u8) -> void {
-    var one: U8Array = U8Array(1u32);
+    var one: U8Array = U8Array(1);
     set(one, 0, c);
     sys_write(1, one, 1);
     delete(one);
@@ -81,7 +81,7 @@ fn puts_n(buf: U8Array, n: i32) -> void {
 
 fn emit_int(v: i32) -> void {
     if v == 0 { putc('0' as u8); return; }
-    var d: U8Array = U8Array(12u32);
+    var d: U8Array = U8Array(12);
     var n: i32 = 0;
     var x: i32 = v;
     while x > 0 {
@@ -355,7 +355,7 @@ fn render() -> void {
     // In normal / insert mode, position the cursor at row_col. In
     // cmdline mode we leave the cursor at end of the status line.
     if g_mode != 2 {
-        var rc: U8Array = U8Array(8u32);
+        var rc: U8Array = U8Array(8);
         row_col(g_cur, rc);
         var row: i32 = (get(rc, 0) as i32)
                      | ((get(rc, 1) as i32) << 8)
@@ -527,7 +527,7 @@ fn main(argv: StringArray) -> i32 {
     g_cmdbuf = U8Array(CMD_CAP as u32);
     load_file();
 
-    var one: U8Array = U8Array(1u32);
+    var one: U8Array = U8Array(1);
     render();
     while g_running == 1 {
         var n: i32 = sys_read(0, one, 1);

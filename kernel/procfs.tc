@@ -60,7 +60,7 @@ fn append_dec(buf: U8Array, pos: i32, v: i32, cap: i32) -> i32 {
         return append_byte(buf, pos, '0' as u8, cap);
     }
     // write digits LSB first, then reverse
-    var d: U8Array = U8Array(12u32);
+    var d: U8Array = U8Array(12);
     var n: i32 = 0;
     while x > 0 {
         set(d, n, ('0' as i32 + x % 10) as u8);
@@ -79,7 +79,7 @@ fn append_dec(buf: U8Array, pos: i32, v: i32, cap: i32) -> i32 {
 fn append_hex(buf: U8Array, pos: i32, v: u32, cap: i32) -> i32 {
     pos = append_byte(buf, pos, '0' as u8, cap);
     pos = append_byte(buf, pos, 'x' as u8, cap);
-    var d: U8Array = U8Array(8u32);
+    var d: U8Array = U8Array(8);
     var n: i32 = 0;
     var x: u32 = v;
     if x == 0u32 {

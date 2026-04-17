@@ -134,7 +134,7 @@ export fn uart_mux_enable(on: i32) -> void {
 // ASCII US (Unit Separator, 0x1F) is rare in normal text streams so
 // it lets the host demuxer resync if it drops / sees pre-mux garbage.
 fn uart_emit_frame_raw(tag: StringLiteral, addr: u32, n: i32) -> void {
-    var hdr: U8Array = U8Array(6u32);
+    var hdr: U8Array = U8Array(6);
     set(hdr, 0, 0x1Fu8);
     set(hdr, 1, get(tag, 0));
     set(hdr, 2, get(tag, 1));
@@ -238,7 +238,7 @@ fn kdbg_chr(c: u8) -> void {
 fn kdbg_dec(v: i32) -> void {
     if v < 0 { kdbg_chr('-' as u8); v = 0 - v; }
     if v == 0 { kdbg_chr('0' as u8); return; }
-    var digits: U8Array = U8Array(12u32);
+    var digits: U8Array = U8Array(12);
     var n: i32 = 0;
     while v > 0 {
         set(digits, n, (48 + v % 10) as u8);
@@ -440,7 +440,7 @@ export fn uart_rx_dispatch() -> void {
         g_rx_parse_buf = U8Array(G_RX_PARSE_CAP as u32);
         g_rx_parse_pos = 0;
     }
-    var chunk: U8Array = U8Array(64u32);
+    var chunk: U8Array = U8Array(64);
     var n: i32 = do_uart_try_read(chunk as u32 + 4u32, 64);
     var i: i32 = 0;
     while i < n {
@@ -553,11 +553,11 @@ fn cfg_parse_line(buf: U8Array, line_start: i32, line_len: i32) -> void {
 // Read /etc/kern.conf from the boot FS and populate g_cfg_*.
 // Returns 1 on success, 0 if config file is missing (defaults).
 export fn read_kern_config() -> i32 {
-    g_cfg_inits = U32Array(8u32);
+    g_cfg_inits = U32Array(8);
     g_cfg_init_count = 0;
     g_cfg_mux = 0;
 
-    var path: U8Array = U8Array(16u32);
+    var path: U8Array = U8Array(16);
     var pstr: StringLiteral = "/etc/kern.conf";
     var plen: i32 = len(pstr);
     var k: i32 = 0;
@@ -600,7 +600,7 @@ export fn kern_config_init_path(idx: i32) -> u32 {
 }
 
 export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
-    var frame_buf: U8Array = U8Array(132u32);
+    var frame_buf: U8Array = U8Array(132);
     var frame: u32 = frame_buf as u32 + 4u32;
 
     var task_ram: U8Array = U8Array((ram_size) as u32);
