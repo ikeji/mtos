@@ -147,16 +147,17 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
             # The live count must stay ≤ 96 — the current baseline
             # is ~67 (seeded tasks + VFS/block state + mtfs inode
             # cache + TmpFileArray(16)/TmpfsFDArray(8) struct slots
-            # + the persistent /tmp/demo file). A per-spawn leak
-            # would push it up by ~4 per extra spawn, so 5 leaks
-            # would reach ~87 and a regression would trip before 96.
+            # + the persistent /tmp/demo file + per-slot task name
+            # U8Arrays). A per-spawn leak would push it up by ~4
+            # per extra spawn, so 5 leaks would reach ~91 and a
+            # regression would trip before 105.
             if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
                 && [ "$fs_cat_count" -ge 3 ] && [ "$fs_cat1_count" -ge 1 ] \
                 && [ "$fs_cat2_count" -ge 2 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
                 && [ "$fs_has_tmpfs_ok" -gt 0 ] && [ "$fs_has_tmpfs_payload" -gt 0 ] \
                 && [ "$fs_has_redir" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
-                && [ -n "$fs_live" ] && [ "$fs_live" -le 96 ]; then
+                && [ -n "$fs_live" ] && [ "$fs_live" -le 105 ]; then
                 report_pass "fs_virtio: tmpdemo + catfile argv + redirect, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \

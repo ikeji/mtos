@@ -154,12 +154,16 @@ fn main() -> i32 {
         var i: i32 = 0;
         while i < n_cfg {
             sched_register(i, load_task_addr(kern_config_init_path(i)));
+            task_set_name(i, copy_task_name_addr(kern_config_init_path(i)));
             i = i + 1;
         }
     } else {
         sched_register(0, load_task("/bin/hello"));
+        task_set_name(0, copy_task_name_lit("hello"));
         sched_register(1, load_task("/bin/hello2"));
+        task_set_name(1, copy_task_name_lit("hello2"));
         sched_register(2, load_task("/bin/sh"));
+        task_set_name(2, copy_task_name_lit("sh"));
     }
 
     rearm_timer();

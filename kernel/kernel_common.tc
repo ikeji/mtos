@@ -79,6 +79,7 @@ struct Task {
     in_head:   i32,
     in_tail:   i32,
     in_eof:    i32,
+    name:      u32,
 }
 
 var g_num_tasks: i32 = 0;
@@ -700,6 +701,22 @@ export fn task_get_wait_on(idx: i32) -> i32 {
     return wait_on(get(g_tasks, idx));
 }
 
+export fn task_get_name(idx: i32) -> u32 {
+    if g_tasks as u32 == 0u32 { return 0u32; }
+    if idx < 0 || idx >= g_num_tasks { return 0u32; }
+    return name(get(g_tasks, idx));
+}
+
+export fn task_set_name(idx: i32, n: u32) -> void {
+    if g_tasks as u32 == 0u32 { return; }
+    if idx < 0 || idx >= g_num_tasks { return; }
+    var t: Task = get(g_tasks, idx);
+    var old: u32 = name(t);
+    if old != 0u32 { kfree(old); }
+    name(t, n);
+    return;
+}
+
 export fn sched_current_idx() -> i32 {
     return g_current;
 }
@@ -765,6 +782,8 @@ fn slot_free_allocs(idx: i32) -> void {
     if si != 0 { vfs_close(si); }
     if so != 0 { vfs_close(so); }
     if ib != 0u32 { kfree(ib); }
+    // Keep name alive for /proc/tasks display after task exit.
+    // Name is freed when the slot is reused (sched_spawn / replace).
     in_buf(t, 0u32);
     in_head(t, 0);
     in_tail(t, 0);
@@ -788,7 +807,7 @@ export fn sched_init(max: i32) -> void {
         set(g_tasks, i,
             Task(0u32, STATE_UNUSED, -1,
                  0u32, 0u32, 0u32, 0u32, 0u32, 0, 0,
-                 0u32, 0, 0, 0));
+                 0u32, 0, 0, 0, 0u32));
         i = i + 1;
     }
     return;

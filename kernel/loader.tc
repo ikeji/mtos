@@ -31,6 +31,50 @@ fn load_str_nul(s: StringLiteral) -> U8Array {
     return buf;
 }
 
+// Copy the basename from a NUL-terminated path at `addr` into a
+// kmalloc'd U8Array. "/bin/sh" → "sh". Returns the U8Array address.
+fn copy_task_name(addr: u32) -> u32 {
+    // Find end of string
+    var end: i32 = 0;
+    while peek8(addr + (end as u32)) != 0u8 { end = end + 1; }
+    // Find last '/'
+    var last_slash: i32 = -1;
+    var i: i32 = 0;
+    while i < end {
+        if peek8(addr + (i as u32)) == '/' as u8 { last_slash = i; }
+        i = i + 1;
+    }
+    var start: i32 = last_slash + 1;
+    var nlen: i32 = end - start;
+    if nlen <= 0 { nlen = 1; start = 0; }
+    var buf: U8Array = U8Array((nlen + 1) as u32);
+    i = 0;
+    while i < nlen {
+        set(buf, i, peek8(addr + ((start + i) as u32)));
+        i = i + 1;
+    }
+    set(buf, nlen, 0u8);
+    return buf as u32;
+}
+
+// Copy a short name literal into a kmalloc'd U8Array (NUL-terminated).
+export fn copy_task_name_lit(s: StringLiteral) -> u32 {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array((slen + 1) as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, slen, 0u8);
+    return buf as u32;
+}
+
+// Like copy_task_name but takes a raw address (for kern.conf paths).
+export fn copy_task_name_addr(addr: u32) -> u32 {
+    return copy_task_name(addr);
+}
+
 // ===== Task binary header (K3) =====
 //
 // The first 8 bytes of every task binary are a two-u32 header:
@@ -309,6 +353,7 @@ export fn sys_exec_handler(path_addr: u32, argv_addr: u32,
     set_last_argv(kargv);
     set_last_stdio(in_fd, out_fd);
     sched_replace_current(frame);
+    task_set_name(sched_current_idx(), copy_task_name(path_addr));
     return frame;
 }
 
@@ -338,7 +383,11 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
     set_frame_argv(frame, kargv);
     set_last_argv(kargv);
     set_last_stdio(in_fd, out_fd);
-    return sched_spawn(frame);
+    var slot: i32 = sched_spawn(frame);
+    if slot >= 0 {
+        task_set_name(slot, copy_task_name(path_addr));
+    }
+    return slot;
 }
 
 // Handler for sys_wait (a7 = 260). Blocks the current task until the
