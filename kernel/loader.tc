@@ -386,6 +386,13 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
         task_set_name(slot, copy_task_name(path_addr));
+    } else {
+        // sched_spawn failed (no free slots). Clean up all resources
+        // that were prepared for the child: redirect fds, argv, and
+        // the frame/ram/stack/img allocated by load_fd + make_task.
+        close_redir(in_fd);
+        close_redir(out_fd);
+        free_last_alloc();
     }
     return slot;
 }

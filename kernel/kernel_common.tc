@@ -642,6 +642,19 @@ export fn reset_last_alloc() -> void {
     return;
 }
 
+// Free all resources recorded in g_last_* (frame_buf, ram, stack, img,
+// argv, stdio fds). Called when sched_spawn fails after load_fd /
+// make_task have already allocated everything for the child.
+export fn free_last_alloc() -> void {
+    if g_last_frame_buf != 0u32 { kfree(g_last_frame_buf); }
+    if g_last_ram       != 0u32 { kfree(g_last_ram); }
+    if g_last_stack     != 0u32 { kfree(g_last_stack); }
+    if g_last_img       != 0u32 { kfree(g_last_img); }
+    free_argv_impl(g_last_argv);
+    reset_last_alloc();
+    return;
+}
+
 // Attach ownership of an image buffer (slow-path loader) to the task
 // frame being built. Called from loader.tc's load_fd after the image
 // is copied into the kmalloc buffer, before the caller snapshots
