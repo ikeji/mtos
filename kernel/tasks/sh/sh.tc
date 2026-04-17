@@ -34,6 +34,7 @@ fn do_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32;
 var CMD_MAX:  i32 = 128;
 // "/bin/" (5) + path bytes + NUL ≤ 70. argv[0] alone, no command line.
 var PATH_MAX: i32 = 70;
+var HIST_MAX: i32 = 8;
 
 // Redirect results produced by parse_redir. Globals because TC
 // functions return a single value and we need three outputs (argv
@@ -60,6 +61,69 @@ fn echo_bs() -> void {
     sys_write(1, three, 3);
     delete(three);
     return;
+}
+
+// --- History --------------------------------------------------------
+//
+// Ring buffer of the last HIST_MAX commands. Each entry is a U8Array
+// holding the raw command bytes (NUL-terminated). hist_head points
+// one past the most recent entry; hist_count is clamped to HIST_MAX.
+
+var g_hist: I32Array = 0 as I32Array;
+var g_hist_head:  i32 = 0;
+var g_hist_count: i32 = 0;
+
+fn hist_init() -> void {
+    g_hist = I32Array(HIST_MAX as u32);
+    var i: i32 = 0;
+    while i < HIST_MAX {
+        set(g_hist, i, 0);
+        i = i + 1;
+    }
+    return;
+}
+
+fn hist_push(buf: U8Array, n: i32) -> void {
+    if n == 0 { return; }
+    var entry: U8Array = U8Array((n + 1) as u32);
+    var i: i32 = 0;
+    while i < n { set(entry, i, get(buf, i)); i = i + 1; }
+    set(entry, n, 0u8);
+    var slot: i32 = g_hist_head % HIST_MAX;
+    var old: i32 = get(g_hist, slot);
+    if old != 0 { delete(old as u32 as U8Array); }
+    set(g_hist, slot, entry as u32 as i32);
+    g_hist_head = g_hist_head + 1;
+    if g_hist_count < HIST_MAX { g_hist_count = g_hist_count + 1; }
+    return;
+}
+
+// Erase `count` chars from the terminal and clear buf positions.
+fn erase_line(buf: U8Array, count: i32) -> void {
+    var i: i32 = 0;
+    while i < count { echo_bs(); i = i + 1; }
+    return;
+}
+
+// Copy history entry at index `idx` (0 = most recent) into buf.
+// Returns the new pos.
+fn hist_recall(buf: U8Array, cur_pos: i32, idx: i32) -> i32 {
+    erase_line(buf, cur_pos);
+    if idx < 0 || idx >= g_hist_count { set(buf, 0, 0u8); return 0; }
+    var slot: i32 = (g_hist_head - 1 - idx + HIST_MAX * 256) % HIST_MAX;
+    var eaddr: i32 = get(g_hist, slot);
+    if eaddr == 0 { set(buf, 0, 0u8); return 0; }
+    var entry: U8Array = eaddr as u32 as U8Array;
+    var elen: i32 = 0;
+    while get(entry, elen) != 0u8 { elen = elen + 1; }
+    var i: i32 = 0;
+    while i < elen && i < CMD_MAX - 1 {
+        set(buf, i, get(entry, i));
+        echo_byte(get(entry, i));
+        i = i + 1;
+    }
+    set(buf, i, 0u8);
+    return i;
 }
 
 // --- Tab completion -------------------------------------------------
@@ -219,10 +283,8 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
             k = k + 1;
         }
     } else if match_count > 1 {
-        // Many: print all candidates on a fresh line, then re-echo
-        // the prompt and current buffer.
-        echo_byte(13u8);
-        echo_byte(10u8);
+        // Compute the longest common prefix among all matches.
+        var common_len: i32 = first_len;
         var ii: i32 = 0;
         while ii < n {
             var ns: i32 = ii;
@@ -240,22 +302,67 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
                     jj = jj + 1;
                 }
                 if mm == 1 {
-                    var kk: i32 = 0;
-                    while kk < nl {
-                        echo_byte(get(dirbuf, ns + kk));
-                        kk = kk + 1;
+                    // Shrink common_len to match this candidate.
+                    if nl < common_len { common_len = nl; }
+                    var cc: i32 = base_len;
+                    while cc < common_len {
+                        if get(dirbuf, ns + cc) != get(dirbuf, first_start + cc) {
+                            common_len = cc;
+                        }
+                        cc = cc + 1;
                     }
-                    echo_byte(' ' as u8);
                 }
             }
         }
-        echo_byte(13u8);
-        echo_byte(10u8);
-        tc_echo_str("sh$ ");
-        var pp: i32 = 0;
-        while pp < pos {
-            echo_byte(get(buf, pp));
-            pp = pp + 1;
+        // Insert the common prefix extension.
+        var extra: i32 = common_len - base_len;
+        var k: i32 = 0;
+        while k < extra && pos < CMD_MAX - 1 {
+            var c: u8 = get(dirbuf, first_start + base_len + k);
+            set(buf, pos, c);
+            pos = pos + 1;
+            echo_byte(c);
+            k = k + 1;
+        }
+        // If there is still ambiguity (common prefix didn't uniquely
+        // resolve), show all candidates on a new line.
+        if common_len < first_len {
+            echo_byte(13u8);
+            echo_byte(10u8);
+            ii = 0;
+            while ii < n {
+                var ns2: i32 = ii;
+                while ii < n && get(dirbuf, ii) != 0u8 { ii = ii + 1; }
+                var nl2: i32 = ii - ns2;
+                if ii < n { ii = ii + 1; }
+                if nl2 >= base_len {
+                    var mm2: i32 = 1;
+                    var jj2: i32 = 0;
+                    while jj2 < base_len {
+                        if get(dirbuf, ns2 + jj2) != get(buf, base_start + jj2) {
+                            mm2 = 0;
+                            jj2 = base_len;
+                        }
+                        jj2 = jj2 + 1;
+                    }
+                    if mm2 == 1 {
+                        var kk: i32 = 0;
+                        while kk < nl2 {
+                            echo_byte(get(dirbuf, ns2 + kk));
+                            kk = kk + 1;
+                        }
+                        echo_byte(' ' as u8);
+                    }
+                }
+            }
+            echo_byte(13u8);
+            echo_byte(10u8);
+            tc_echo_str("sh$ ");
+            var pp: i32 = 0;
+            while pp < pos {
+                echo_byte(get(buf, pp));
+                pp = pp + 1;
+            }
         }
     }
     delete(dirbuf);
@@ -267,10 +374,17 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
 // Echoes each accepted byte to stdout, converts line termination to
 // CRLF for dumb terminals, and supports backspace erase. buf must
 // have room for CMD_MAX bytes including NUL.
+fn read_byte(one: U8Array) -> i32 {
+    var n: i32 = sys_read(0, one, 1);
+    if n <= 0 { return -1; }
+    return get(one, 0) as i32;
+}
+
 fn read_line(buf: U8Array) -> i32 {
     var one: U8Array = U8Array(1u32);
     var pos: i32 = 0;
     var done: i32 = 0;
+    var hist_idx: i32 = -1;
     while done == 0 {
         var n: i32 = sys_read(0, one, 1);
         if n <= 0 {
@@ -278,27 +392,45 @@ fn read_line(buf: U8Array) -> i32 {
         } else {
             var c: u8 = get(one, 0);
             if c == '\n' as u8 || c == '\r' as u8 {
-                // Echo CRLF so the next prompt starts on a fresh line
-                // even on terminals that only send bare CR.
                 echo_byte(13u8);
                 echo_byte(10u8);
                 done = 1;
             } else if c == 8u8 || c == 127u8 {
-                // Backspace / DEL: erase previous char if any.
                 if pos > 0 {
                     pos = pos - 1;
                     echo_bs();
                 }
             } else if c == 9u8 {
-                // TAB: run completion. Null-terminate first so
-                // complete() can safely read buf[base_start..pos].
                 set(buf, pos, 0u8);
                 pos = complete(buf, pos);
+            } else if c == 27u8 {
+                // ESC — expect CSI sequence: '[' then A/B/C/D
+                var c2: i32 = read_byte(one);
+                if c2 == '[' as i32 {
+                    var c3: i32 = read_byte(one);
+                    if c3 == 'A' as i32 {
+                        // Up arrow: older history
+                        if hist_idx + 1 < g_hist_count {
+                            hist_idx = hist_idx + 1;
+                            pos = hist_recall(buf, pos, hist_idx);
+                        }
+                    } else if c3 == 'B' as i32 {
+                        // Down arrow: newer history
+                        if hist_idx > 0 {
+                            hist_idx = hist_idx - 1;
+                            pos = hist_recall(buf, pos, hist_idx);
+                        } else if hist_idx == 0 {
+                            hist_idx = -1;
+                            erase_line(buf, pos);
+                            pos = 0;
+                        }
+                    }
+                    // C/D (left/right) ignored for now
+                }
             } else if c < 32u8 {
-                // Skip other C0 controls (e.g. pre-boot stale UART
-                // bytes on pico2). No echo.
+                // Skip other C0 controls
             } else if c >= 128u8 {
-                // Skip high-bit bytes (UART glitches). No echo.
+                // Skip high-bit bytes
             } else if pos < CMD_MAX - 1 {
                 set(buf, pos, c);
                 pos = pos + 1;
@@ -509,6 +641,7 @@ fn build_path(path: U8Array, argv: StringArray) -> bool {
 
 fn main() -> i32 {
     puts("SH: ready\n");
+    hist_init();
 
     var cmd:  U8Array = U8Array(CMD_MAX  as u32);
     var path: U8Array = U8Array(PATH_MAX as u32);
@@ -519,29 +652,32 @@ fn main() -> i32 {
         var n: i32 = read_line(cmd);
         if n == 0 {
             // empty line, prompt again
-        } else if eq_lit(cmd, "quit") {
-            running = 0;
         } else {
-            var argv: StringArray = parse_redir(cmd, n);
-            if !build_path(path, argv) {
-                puts("sh: empty command\n");
-                free_argv(argv);
-                if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+            hist_push(cmd, n);
+            if eq_lit(cmd, "quit") {
+                running = 0;
             } else {
-                var in_addr:  u32 = 0u32;
-                var out_addr: u32 = 0u32;
-                if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32 + 4u32; }
-                if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32 + 4u32; }
-                var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32,
-                                         in_addr, out_addr);
-                free_argv(argv);
-                if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
-                if slot < 0 {
-                    puts("sh: spawn failed\n");
+                var argv: StringArray = parse_redir(cmd, n);
+                if !build_path(path, argv) {
+                    puts("sh: empty command\n");
+                    free_argv(argv);
+                    if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
+                    if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
                 } else {
-                    do_wait(slot);
+                    var in_addr:  u32 = 0u32;
+                    var out_addr: u32 = 0u32;
+                    if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32 + 4u32; }
+                    if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32 + 4u32; }
+                    var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32,
+                                             in_addr, out_addr);
+                    free_argv(argv);
+                    if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
+                    if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                    if slot < 0 {
+                        puts("sh: spawn failed\n");
+                    } else {
+                        do_wait(slot);
+                    }
                 }
             }
         }
