@@ -327,6 +327,27 @@ asm split・full split すべての pipeline で Hello World が動く。
       では 20 分以上かかり現状の test timeout に収まらない。真の
       パイプ (`pipe()` + `dup2`、C-2) か syscall throughput 改善
       後に再挑戦
+- [x] **byte-exact self-hosting verify (2026-04-17)**:
+      `tests/phase3_verify.py` が virt 上で全 9 段 (1.ast / 1.th /
+      1.wrap / 2.tast / 3.bc / 4.s / full.s / lab.s / hw) を Gen2
+      ホスト参照とバイト完全一致確認 + /tmp/hw 実行で Hello World
+      出力を検証。`tests/pico2_verify.sh` が pico2 実機で compile
+      7 段 (1.ast 〜 full.s) をバイト完全一致確認 (link 段は pico2
+      UART stdin hang = K8 で skip)
+- [x] **UART mux (2026-04-16〜17)**: 0x1F magic + 4B tag + 1B len
+      + ≤ 255B payload フレーム化。Phase 1: output mux (kernel →
+      host)。Phase 2: input demux (host → per-task in_buf)。
+      mx/mr/muxon/muxoff タスク + msh (silent shell) を追加。
+      設計: `docs/task/uart_multiplex.md`
+- [x] **OS 機能拡充 (2026-04-17)**: ls + sys_readdir (ecall 89)、
+      /etc/kern.conf (mux/init 設定)、procfs (/proc/tasks + readdir)、
+      cat エラー報告 (stderr + exit 1)、sh TAB 補完 (/bin + readdir)、
+      neofetch (banner + task stats)
+- [x] **coreutils**: wc, head, cp, du
+- [x] **vi エディタ**: normal/insert/cmdline mode、hjkl/dd/gg、
+      :w/:q/:wq、ANSI 描画。`kernel/tasks/vi/vi.tc`
+- [x] **`make run-pico2` (2026-04-17)**: build + flash + 双方向
+      UART コンソール (`tests/pico2_tty.py`)。Ctrl-a x で終了
 
 ## フェーズ8: 自己ホスト
 

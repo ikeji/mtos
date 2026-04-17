@@ -106,6 +106,31 @@
   (少し遅いの範囲外)、kernel 本番経路は Gen2 を維持。Gen3 は
   自己ホスト確認用 Make ターゲット (`make gen3-tools`) として存在
 
+- **UART 多重化 (2026-04-16〜17)**: kernel → host は 0x1F magic +
+  4 byte tag + 1 byte len + ≤ 255 byte payload でフレーム化。host →
+  per-task in_buf (Phase 2) で入力もフレーム逆流。muxon/muxoff で
+  runtime 切替。タスク: mx (length-prefix framing), mr (decode), msh
+  (プロンプトなし sh)。設計: `docs/task/uart_multiplex.md`、
+  実装: `kernel/kernel_common.tc` (uart_emit_frame / uart_rx_dispatch /
+  task_input_read)、`tests/uart_demux.py` (ホスト側パーサー)
+- **coreutils + OS 機能 (2026-04-17)**:
+  - `ls` + sys_readdir (ecall 89)、`/etc/kern.conf` (mux / init 設定)
+  - `wc`, `head`, `cp`, `du` coreutils
+  - `procfs` (/proc/tasks: スロット状態一覧 + readdir 対応)
+  - `neofetch` (ASCII banner + /proc/tasks stats)
+  - `cat` のエラー報告 (存在しないファイル → stderr + 非 0 exit)
+  - `sh` タブ補完 (/bin コマンド + readdir パス補完)
+  - `vi` 最小 vi エディタ (normal/insert/cmdline mode、hjkl/dd/gg/
+    :w/:q/:wq、ANSI 描画)
+- **byte-exact self-hosting verify (2026-04-17)**:
+  - `tests/phase3_verify.py`: virt 上で全 9 段 (parse → asm_pass2) +
+    /tmp/hw 実行を Gen2 ホスト参照とバイト完全一致確認
+  - `tests/pico2_verify.sh`: pico2 実機で compile 7 段をバイト完全
+    一致確認 (link 段は UART stdin hang で skip)
+- **`make run-pico2` (2026-04-17)**: ビルド + flash + 双方向 UART
+  コンソール。Ctrl-a x で終了。`tests/pico2_tty.py` が raw mode
+  stdin ↔ /dev/ttyACM0 を select 駆動
+
 **次の候補** (どれも独立):
 
 - **フェーズ 7 M7**: OS 上で Gen2 → Gen3 相当の一周 (コンパイラ自身を
@@ -195,6 +220,12 @@ tests/      テストスイート
                      on OS)。sigscan + tcheck + asm_pass1 + asm_pass2
                      full split pipeline で Hello World を完走させる。
                      `make test` 非同梱、手動実行のみ
+  phase3_verify.py   virt 上で全 9 段 (parse→asm_pass2) + Hello World
+                     実行を Gen2 ホスト参照とバイト完全一致検証
+  pico2_verify.sh    pico2 実機で compile 7 段をバイト完全一致検証
+  pico2_hw_driver.py pico2 UART pipeline driver (compile + optional link)
+  pico2_tty.py       pico2 双方向 raw UART フォワーダー (Ctrl-a x 終了)
+  uart_demux.py      UART mux 0x1F フレームパーサー
   phase7_hello.tc    parse 入力: `fn main() -> i32 { return 42; }`
   phase7_min.tc      parse 段階的縮小用の最小入力
   phase7_hello_world.tc Hello World ソース (M6 のゴール)
@@ -231,12 +262,16 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
   tmpfs.tc            /tmp 用 RAM backed FS (kmalloc backed, 16 files /
                       8 fds, grow-on-write, O_CREAT / O_TRUNC 対応、
                       phase 7 A)
-  vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close/size,
-                      /bin/hello のような多階層パス, /tmp/ は tmpfs, それ
-                      以外は mtfs)。fd 0 / 1 は current task の stdin_fd /
-                      stdout_fd を参照してリダイレクトに対応 (phase 7 D)、
-                      fd 2 は常に UART 直行。リダイレクトされた write は
-                      `[w slot:len]` をトレース
+  procfs.tc           read-only virtual FS (/proc)。/proc/tasks が
+                      スロット状態一覧 (state/frame/wait_on)。
+                      procfs_readdir で `ls /proc` にも対応
+  vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close/size/
+                      readdir, /bin/hello のような多階層パス, /tmp/ は
+                      tmpfs, /proc/ は procfs, それ以外は mtfs)。
+                      fd 0 / 1 は current task の stdin_fd / stdout_fd を
+                      参照してリダイレクトに対応 (phase 7 D)、fd 2 は常に
+                      UART 直行。UART mux on のとき fd=0 は per-task
+                      in_buf 経由、fd=1 は uart_emit_tty_frame 経由
   loader.tc           tmpfs / mtfs からタスクバイナリを読み込み make_task で
                       フレーム化する起動時ローダ (load_task)。
                       vfs_xip_addr が非0なら RAM コピーせず flash 直実行。
@@ -251,10 +286,10 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       固定値は撲滅済み)。
                       sys_wait_handler (260) は呼び出し元を waiting に
   trap_common.s       共通 asm: trap entry/exit, ecall dispatch (write64 /
-                      read63 / openat56 / close57 / exit93 / spawn220 /
-                      exec221 / wait260), sched_start, kern_run_task。
-                      spawn/exec は a0..a3 を読んで handler__u32__u32__u32__u32
-                      に dispatch
+                      read63 / openat56 / close57 / readdir89 / exit93 /
+                      spawn220 / exec221 / mux_enable250 / wait260),
+                      sched_start, kern_run_task。spawn/exec は a0..a3 を
+                      読んで handler__u32__u32__u32__u32 に dispatch
   platform_virt.s     virt 固有: _start, 16550 UART, _set_kern_gp via la。
                       `__runtime_init` に渡す arena_size は 100_663_296
                       (96 MB) — crt0_data.s の .space と必ず一致させる
@@ -278,6 +313,8 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       `KEEP_TMP=1` でカーネルビルド中間 tmp dir を残せる
   bin2s.sh            raw バイナリ → .s データ変換 (PREFIX_addr 関数生成)
   run_pico2.sh        Pico 2 実機書き込み + UART キャプチャ (openocd 経由)
+  run_pico2_interactive.sh  build + flash + 双方向 UART コンソール
+                      (`make run-pico2` が呼ぶ、Ctrl-a x で終了)
   tasks/              ゲストタスク (両プラットフォーム共通)
     task_crt0.s       タスク用 crt0 (ecall syscall + .data コピー、
                       a2 を s2 で保存して main に argv として渡す、
@@ -291,15 +328,29 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       `CAT[argc]:` 付きで出力)
     launcher/launcher.tc タスク4 (pico2 slot 2、do_exec(path, 0, 0, 0) で
                       /bin/catfile を exec)
-    sh/sh.tc          最小シェル (sys_spawn + sys_wait + `<` / `>` +
-                      絶対パス対応、`|` はまだ無し。quit で終了、
+    sh/sh.tc          対話シェル (sys_spawn + sys_wait + `<` / `>` +
+                      絶対パス対応 + TAB 補完 (/bin コマンド + readdir
+                      パス) + echo-back + backspace。quit で終了、
                       virt slot 2)
+    msh/msh.tc        プログラム操作用 silent sh (プロンプト/echo なし、
+                      UART mux driver 用)
     libtc/libtc.tc    ユーザ空間ライブラリ (puts/str_nul/strlen)
     tmpdemo/tmpdemo.tc /tmp/demo を O_WRONLY|O_CREAT で書いて読み返す
                       phase 7 A 回帰テスト
     echo/echo.tc      argv[1..] を space 区切り + \n で stdout に出す
-    cat/cat.tc        argv[1..] のファイルを順に stdout に流す (phase 7
-                      M6 の prelude 連結用)
+    cat/cat.tc        argv[1..] のファイルを順に stdout に流す。存在
+                      しないファイルは stderr にエラー + exit 1
+    ls/ls.tc          ディレクトリ一覧 (sys_readdir ecall 89)
+    wc/wc.tc          行数・バイト数カウント
+    head/head.tc      先頭 N 行表示
+    cp/cp.tc          ファイルコピー
+    du/du.tc          ディレクトリ使用量
+    neofetch/neofetch.tc  ASCII banner + /proc/tasks stats
+    vi/vi.tc          最小 vi エディタ (normal/insert/cmdline、ANSI 描画)
+    mx/mx.tc          stdin → length-prefix framed stdout (UART 転送用)
+    mr/mr.tc          mx の逆: framed stdin → raw stdout
+    muxon/muxon.tc    UART mux 有効化 (ecall 250)
+    muxoff/muxoff.tc  UART mux 無効化
     parse/parse.tc       → compiler/parse.tc (symlink)
     sigscan/sigscan.tc   → compiler/sigscan.tc (symlink)
     tcheck/tcheck.tc     → compiler/tcheck.tc (symlink)
@@ -337,11 +388,18 @@ make pico2-kernel                 # build/kernel/pico2_kernel.uf2 のみ
 make test-asm-bins                # build/test/asm/*.bin (test_asm プリビルド)
 make run                          # virt kernel を対話起動 (qemu stdio serial)
 make run-extra                    # 同上 + EXTRA_TASKS (parse/…/asm_pass2/muxon/mx 等) 込み
+make run-pico2                    # pico2 kernel をビルド→flash→対話 UART
+make run-pico2-extra              # 同上 + EXTRA_TASKS 込み
 make clean                        # Gen1 + build/ まとめて消す
 ```
 
 `make run` は `qemu-system-riscv32 -machine virt` に標準入出力を繋いで
 sh と対話できる。Ctrl-a x で抜ける。Ctrl-a c で qemu モニタ。
+
+`make run-pico2` は Debug Probe 経由で pico2 をフラッシュし、
+`tests/pico2_tty.py` による双方向 UART コンソールを開く。
+Ctrl-a x で終了 (qemu と同じ escape)。
+`OPENOCD` / `UART_PORT` 環境変数で上書き可。
 
 `make test` は時間短縮のため一部テストをスキップする (FULL_TEST=1 で有効化)。
 詳細は `tests/test_all.sh` 参照。

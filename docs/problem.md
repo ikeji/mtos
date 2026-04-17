@@ -327,6 +327,16 @@ test_pico2.sh が `catfile\n` / `launcher\n` / `quit\n` を送って、
 sh + spawn + wait + exec のカスケードが一通り動くことを実機で
 確認。
 
+**pico2 compile 段 byte-exact verify (2026-04-17)**: 
+`tests/pico2_verify.sh` で pico2 上の compile pipeline (parse →
+sigscan → tcheck → codegen → bc2asm) の全 7 中間ファイルが Gen2
+ホスト参照とバイト完全一致することを確認:
+
+  1.ast(272B) 1.th(71B) 1.wrap(361B) 2.tast(294B) 3.bc(202B)
+  4.s(799B) full.s(225853B)
+
+link 段 (asm_pass1/asm_pass2) は下記 K8/K9 の理由でスキップ。
+
 残件: **compiler タスク群 (asm_pass1 430 KB / asm_pass2 441 KB 級)
 を実際に sh から spawn してパイプラインを一周するところは未着手**:
 
@@ -347,6 +357,56 @@ sh + spawn + wait + exec のカスケードが一通り動くことを実機で
 - **asm_pass2 stream-emit**: docs/task/pipeline_100kb.md で future
   と書いていた最後のステージ shrink。filesz を .lab 経由で pass2
   に渡して g_code バッファなしで write を stream 化
+
+### K8. pico2: UART stdin streaming で kernel が wedge する (bug)
+
+`tcheck > /tmp/2.tast` のように stdout だけリダイレクトし stdin は
+UART のままで起動した子タスクに、ホストから `send_stream()` でバイト列
+を流し込むと、**カーネルが完全に停止して scheduler tick が出なくなる**。
+
+- 現象: `[sw 2>0]` `[sw 0>2]` の 2 回のコンテキストスイッチだけ出て
+  以後一切の出力がない (240 秒 timeout)
+- 原因仮説: `do_uart_read` (platform_pico2.s) が最初のバイトを
+  spin-wait で待つ。バイト未着時にタイマー割り込みでスケジューラに
+  戻り、sh (sys_wait 中 = waiting) と tcheck (read blocking) だけが
+  残るとどちらも進まなくなる。virt は同じ do_uart_read だが qemu 側
+  のストリームが即座に全バイトを届けるので問題ないと思われる
+- **回避策 (実装済)**: pico2 の tcheck は UART stdin ではなく tmpfs
+  ファイルを入力に使う。`pico2_hw_driver.py` が 2-file cat chain で
+  /tmp/1.wrap を組み立て、`tcheck < /tmp/1.wrap > /tmp/2.tast` で
+  tmpfs stdin 経由にすることで wedge を回避。compile 全段が tmpfs
+  経由で動く
+- 影響: asm_pass1 / asm_pass2 は入力サイズ (225 KB+) が pico2 tmpfs
+  に収まらないため UART streaming が必須。K8 が直るまで pico2 の
+  link 段はスキップ
+
+### K9. pico2: PL011 RX FIFO overflow で長いコマンドが欠落する (bug, 回避済)
+
+sh にコマンド行 ≥ ~32 バイトを一括送信すると RX FIFO (32 byte) から
+溢れたバイトがドロップし、sh の read_line が不完全なコマンドしか受け取
+れない。
+
+- 現象: `cat /empty_imports.txt /self_open.txt > /tmp/w1` (49 byte) を
+  書くと echo が 33〜36 byte で途切れ、LF が到達しないため sh$ prompt
+  が永久に出ない
+- 原因: sh は 1 byte ずつ sys_read するため、ecall → kernel → UART
+  read → sret のラウンドトリップが ~200 µs。115200 baud では ~87 µs
+  ごとに 1 byte 着信するので、16 byte 以上のバーストで FIFO が溢れる
+- **回避策 (実装済)**: `pico2_hw_driver.py::send_stream()` を
+  CHUNK=4 / 20 ms pacing (~200 B/s) に落として sh の drain rate 内に
+  収めている
+- 本質的な修正案: PL011 RX interrupt を有効化して in_buf に取り込む、
+  または RTS/CTS フロー制御を利用する
+
+### K10. pico2: multi-file cat (>2 ファイル) が hang する (bug, 回避済)
+
+pico2 で `cat a b c > out` のように 3 ファイル以上を 1 コマンドで cat
+すると hang する (virt では問題なし)。
+
+- 観測: `cat /empty_imports.txt /self_open.txt > /tmp/w1` は OK (2 file)
+  だが 3 file 以上でタイムアウト。K5 の 5-file cat 問題と関連の可能性
+- **回避策**: 2-file cat chain で中間ファイルを段階的に組み立てる
+  (pico2_hw_driver.py が実装済)
 
 ## バイトコード / ランタイム
 
