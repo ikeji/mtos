@@ -151,6 +151,12 @@ redirect fd / frame / ram / stack / img / argv がリークするバグを発見
 現在の virt 環境で 5-file cat + redirect を 4 回繰り返しても再現せず、
 prelude 導入前の構成固有だったと判断。
 
+### K6. デバッグトレース常時 ON (ergonomics → 整理済, 2026-04-17)
+
+TIMER_INTERVAL を 1s → 1ms に復元。kdbg_switch / kdbg_exit を mux ON
+時のみに。kdbg_write (vfs redirect trace) を削除。km_dump_peak の
+task_crt0.s 常時 call を削除。kdbg_trap と OOM メッセージは残留。
+
 ### K10. pico2 multi-file cat hang (bug → 再現せず, 2026-04-17)
 
 pico2 で cat 3+ ファイルが hang する問題。2026-04-17 に pico2 実機で

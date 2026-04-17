@@ -18,31 +18,6 @@
 
 ## 優先対処
 
-### K6. phase 7 デバッグトレースがデフォルト ON (ergonomics)
-
-phase 7 M6 時点でカーネルに常時出力している debug 出力:
-
-- `kernel/kernel_common.tc`:
-  - `trap_handler` の `[sw from>to]` (タイマープリエンプトで switch したとき)
-  - `sched_task_exit` の `[x slot=code]` (タスク exit 時)
-  - 非タイマー trap で `[TRAP c=... e=... s=N]`
-- `kernel/vfs.tc`:
-  - リダイレクトされた stdout への write で `[w slot:len]`
-- `kernel/tasks/task_crt0.s`:
-  - タスク exit 前に `km_dump_peak` を呼び `[kmem peak=N live=M]`
-- `compiler/runtime.tc`:
-  - `new_array` OOM 時に `OOM: <size>\n` を stderr へ
-- `kernel/kernel.tc`:
-  - `TIMER_INTERVAL = 10000000` (1 秒 @ 10 MHz) でプリエンプトを
-    ゆっくりにしている
-
-mux ON なら per-task 出力が分離されるので混ざらない。mux OFF 時の
-整理が要る:
-- タイマー間隔を元の 1 ms (10000) に戻す
-- トレース出力を mux OFF 時は抑制 or 完全削除
-- OOM メッセージは残す (診断に便利)
-- `km_dump_peak` はタスク exit の常時 call を外す
-
 ### 3. 整数リテラルの型が文脈を見ない (ergonomics) — 実装候補
 
 `U8Array(256)` と書くと i32→u32 のミスマッチで overload 解決に失敗する。
