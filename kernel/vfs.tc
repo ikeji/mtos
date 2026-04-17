@@ -330,6 +330,19 @@ fn path_eq_or_trailing(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
     return true;
 }
 
+fn vfs_append_entry(buf_addr: u32, buf_size: i32, pos: i32, name: StringLiteral) -> i32 {
+    var nlen: i32 = len(name);
+    if pos + nlen + 1 > buf_size { return pos; }
+    var i: i32 = 0;
+    while i < nlen {
+        poke8(buf_addr + (pos as u32), get(name, i) as u8);
+        pos = pos + 1;
+        i = i + 1;
+    }
+    poke8(buf_addr + (pos as u32), 0u8);
+    return pos + 1;
+}
+
 export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
     var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
@@ -343,7 +356,14 @@ export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
     // mtfs path — walk and readdir the final inode.
     var inode: i32 = resolve_mtfs_inode(path_addr, plen);
     if inode < 0 { return -1; }
-    return mtfs_readdir(inode as u32, buf_addr, buf_size);
+    var n: i32 = mtfs_readdir(inode as u32, buf_addr, buf_size);
+    if n < 0 { return -1; }
+    // For root directory, append virtual mount points (tmp, proc).
+    if plen == 1 && peek8(path_addr) == '/' as u8 {
+        n = vfs_append_entry(buf_addr, buf_size, n, "tmp");
+        n = vfs_append_entry(buf_addr, buf_size, n, "proc");
+    }
+    return n;
 }
 
 export fn vfs_close(fd: i32) -> i32 {
