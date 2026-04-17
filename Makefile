@@ -203,6 +203,19 @@ run-extra:
 	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
 	$(QEMU_SYSTEM) $(QEMU_ARGS)
 
+# Pico 2 counterparts of `run` / `run-extra`. Requires Debug Probe
+# connected to /dev/ttyACM0 and openocd-rpi installed. The shell
+# script builds (if needed), flashes via SWD, and hands off to the
+# Python bidi TTY forwarder (tests/pico2_tty.py). Ctrl-a x quits.
+.PHONY: run-pico2 run-pico2-extra
+run-pico2:
+	@echo "[pico2] build + flash + interactive UART (Ctrl-a x to quit)"
+	./kernel/run_pico2_interactive.sh
+
+run-pico2-extra:
+	@echo "[pico2] build + flash + interactive UART (Ctrl-a x to quit)"
+	./kernel/run_pico2_interactive.sh --extra
+
 # ===== test_asm prebuilt binaries (Phase D) =====
 #
 # tests/test_asm.sh compiles 3 small bare-metal .tc programs with
@@ -283,4 +296,4 @@ update-golden-and-run-test: $(BUILD_DEPS)
 
 .PHONY: all clean test full-test update-golden update-golden-and-run-test \
         gen2-tools gen3-tools virt-kernel pico2-kernel test-asm-bins \
-        run run-extra
+        run run-extra run-pico2 run-pico2-extra
