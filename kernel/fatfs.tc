@@ -1,0 +1,439 @@
+// kernel/fatfs.tc — FAT32 filesystem driver
+//
+// Read-only for now. Supports FAT32 superfloppy format (no MBR,
+// BPB at sector 0). 8.3 filenames only, no LFN.
+// Mounted at /sd/ via VFS.
+
+// Block layer (resolved at link time to block_fat_virtio or block_sd)
+fn fat_block_read(sector: u32, buf: U8Array) -> i32;
+fn fat_block_write(sector: u32, buf: U8Array) -> i32;
+
+fn kputs(s: StringLiteral) -> void;
+
+// ===== BPB parameters (parsed at mount time) =====
+var g_fat_bps: i32 = 0;             // bytes per sector (512)
+var g_fat_spc: i32 = 0;             // sectors per cluster
+var g_fat_rsvd: u32 = 0u32;         // reserved sector count
+var g_fat_nfats: i32 = 0;           // number of FATs (usually 2)
+var g_fat_fatsz: u32 = 0u32;        // sectors per FAT
+var g_fat_root_clus: u32 = 0u32;    // root directory start cluster
+var g_fat_data_start: u32 = 0u32;   // first data sector
+var g_fat_fat_start: u32 = 0u32;    // first FAT sector
+var g_fat_ready: i32 = 0;
+
+// Shared sector buffer for FAT table reads (avoids extra alloc)
+var g_fat_secbuf: U8Array = 0 as U8Array;
+
+// ===== FD table =====
+var FATFS_MAX_FDS: i32 = 8;
+
+struct FatFD {
+    ff_start: u32,    // start cluster
+    ff_clus:  u32,    // current cluster being read
+    ff_size:  i32,    // file size in bytes
+    ff_pos:   i32,    // current read position
+    ff_clus_idx: i32, // which cluster in chain (0-based)
+    ff_active: i32,   // 1 = in use
+}
+var g_fat_fds: FatFDArray = 0 as FatFDArray;
+
+// ===== Helpers =====
+
+fn read_u16_le(buf: U8Array, off: i32) -> i32 {
+    return (get(buf, off) as i32) | ((get(buf, off + 1) as i32) << 8);
+}
+
+fn read_u32_le(buf: U8Array, off: i32) -> u32 {
+    return (get(buf, off) as u32)
+         | ((get(buf, off + 1) as u32) << 8u32)
+         | ((get(buf, off + 2) as u32) << 16u32)
+         | ((get(buf, off + 3) as u32) << 24u32);
+}
+
+fn cluster_to_sector(clus: u32) -> u32 {
+    return g_fat_data_start + (clus - 2u32) * (g_fat_spc as u32);
+}
+
+// Read a FAT32 entry for the given cluster. Returns next cluster
+// number or >= 0x0FFFFFF8 for end-of-chain.
+fn fat_get_entry(clus: u32) -> u32 {
+    var fat_offset: u32 = clus * 4u32;
+    var fat_sector: u32 = g_fat_fat_start + fat_offset / 512u32;
+    var off_in_sec: i32 = (fat_offset % 512u32) as i32;
+    if fat_block_read(fat_sector, g_fat_secbuf) != 512 { return 0x0FFFFFFFu32; }
+    return read_u32_le(g_fat_secbuf, off_in_sec) & 0x0FFFFFFFu32;
+}
+
+// Follow FAT chain from start_clus for n steps. Returns the cluster
+// at position n, or 0 if end-of-chain reached.
+fn fat_follow_chain(start_clus: u32, n: i32) -> u32 {
+    var c: u32 = start_clus;
+    var i: i32 = 0;
+    while i < n {
+        c = fat_get_entry(c);
+        if c >= 0x0FFFFFF8u32 { return 0u32; }
+        i = i + 1;
+    }
+    return c;
+}
+
+// ===== Mount =====
+
+export fn fatfs_mount() -> i32 {
+    g_fat_secbuf = U8Array(512);
+
+    // Read BPB at sector 0 (superfloppy format)
+    if fat_block_read(0, g_fat_secbuf) != 512 { return -1; }
+
+    // Validate signature
+    if get(g_fat_secbuf, 510) != 0x55u8 { return -1; }
+    if get(g_fat_secbuf, 511) != 0xAAu8 { return -1; }
+
+    g_fat_bps = read_u16_le(g_fat_secbuf, 11);
+    g_fat_spc = get(g_fat_secbuf, 13) as i32;
+    g_fat_rsvd = read_u16_le(g_fat_secbuf, 14) as u32;
+    g_fat_nfats = get(g_fat_secbuf, 16) as i32;
+    g_fat_fatsz = read_u32_le(g_fat_secbuf, 36);
+    g_fat_root_clus = read_u32_le(g_fat_secbuf, 44);
+
+    if g_fat_bps != 512 { return -1; }
+    if g_fat_spc == 0 { return -1; }
+
+    g_fat_fat_start = g_fat_rsvd;
+    g_fat_data_start = g_fat_rsvd + (g_fat_nfats as u32) * g_fat_fatsz;
+
+    // Allocate FD table
+    g_fat_fds = FatFDArray(FATFS_MAX_FDS as u32);
+    var i: i32 = 0;
+    while i < FATFS_MAX_FDS {
+        set(g_fat_fds, i, FatFD(0, 0, 0, 0, 0, 0));
+        i = i + 1;
+    }
+
+    g_fat_ready = 1;
+    return 0;
+}
+
+// ===== 8.3 filename conversion =====
+
+// Convert a name like "hello.txt" (at name_addr, nlen bytes) to
+// FAT 8.3 format in buf[0..10] (8 name + 3 ext, space-padded, uppercase).
+fn to_83(name_addr: u32, nlen: i32, buf: U8Array) -> void {
+    // Fill with spaces
+    var i: i32 = 0;
+    while i < 11 {
+        set(buf, i, ' ' as u8);
+        i = i + 1;
+    }
+
+    // Find dot position
+    var dot: i32 = -1;
+    i = 0;
+    while i < nlen {
+        if peek8(name_addr + (i as u32)) == '.' as u8 {
+            dot = i;
+        }
+        i = i + 1;
+    }
+
+    // Copy name part (before dot or entire name)
+    var name_end: i32 = nlen;
+    if dot >= 0 { name_end = dot; }
+    if name_end > 8 { name_end = 8; }
+    i = 0;
+    while i < name_end {
+        var c: u8 = peek8(name_addr + (i as u32));
+        // Uppercase
+        if c >= 'a' as u8 && c <= 'z' as u8 {
+            c = c - 32u8;
+        }
+        set(buf, i, c);
+        i = i + 1;
+    }
+
+    // Copy extension (after dot)
+    if dot >= 0 && dot + 1 < nlen {
+        var ext_start: i32 = dot + 1;
+        var ext_len: i32 = nlen - ext_start;
+        if ext_len > 3 { ext_len = 3; }
+        i = 0;
+        while i < ext_len {
+            var c: u8 = peek8(name_addr + ((ext_start + i) as u32));
+            if c >= 'a' as u8 && c <= 'z' as u8 {
+                c = c - 32u8;
+            }
+            set(buf, 8 + i, c);
+            i = i + 1;
+        }
+    }
+    return;
+}
+
+// Compare 11 bytes of 8.3 name
+fn name83_eq(buf: U8Array, dir_entry_addr: u32) -> bool {
+    var i: i32 = 0;
+    while i < 11 {
+        if get(buf, i) != peek8(dir_entry_addr + (i as u32)) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// ===== Directory scanning =====
+
+// Scan directory starting at dir_clus for a file matching name83.
+// On match, sets *out_clus and *out_size and returns 0.
+// Returns -1 if not found.
+fn dir_find(dir_clus: u32, name83: U8Array,
+            out_clus_addr: u32, out_size_addr: u32) -> i32 {
+    var clus: u32 = dir_clus;
+    var secbuf: U8Array = U8Array(512);
+
+    while clus < 0x0FFFFFF8u32 && clus >= 2u32 {
+        var sec: u32 = cluster_to_sector(clus);
+        var s: i32 = 0;
+        while s < g_fat_spc {
+            if fat_block_read(sec + (s as u32), secbuf) != 512 {
+                delete(secbuf);
+                return -1;
+            }
+            // 16 directory entries per 512-byte sector
+            var e: i32 = 0;
+            while e < 16 {
+                var off: i32 = e * 32;
+                var first_byte: u8 = get(secbuf, off);
+                // 0x00 = end of directory
+                if first_byte == 0u8 {
+                    delete(secbuf);
+                    return -1;
+                }
+                // 0xE5 = deleted entry, skip
+                if first_byte != 0xE5u8 {
+                    var attr: u8 = get(secbuf, off + 11);
+                    // Skip LFN entries (attr=0x0F) and volume labels (0x08)
+                    if attr != 0x0Fu8 && (attr & 0x08u8) == 0u8 {
+                        if name83_eq(name83, secbuf as u32 + 4u32 + (off as u32)) {
+                            var hi: u32 = read_u16_le(secbuf, off + 20) as u32;
+                            var lo: u32 = read_u16_le(secbuf, off + 26) as u32;
+                            poke32(out_clus_addr, (hi << 16u32) | lo);
+                            poke32(out_size_addr, read_u32_le(secbuf, off + 28));
+                            delete(secbuf);
+                            return 0;
+                        }
+                    }
+                }
+                e = e + 1;
+            }
+            s = s + 1;
+        }
+        clus = fat_get_entry(clus);
+    }
+    delete(secbuf);
+    return -1;
+}
+
+// ===== Open / Read / Close =====
+
+fn fatfs_alloc_fd() -> i32 {
+    var i: i32 = 0;
+    while i < FATFS_MAX_FDS {
+        var f: FatFD = get(g_fat_fds, i);
+        if ff_active(f) == 0 { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+export fn fatfs_open(name_addr: u32, nlen: i32, flags: i32) -> i32 {
+    if g_fat_ready == 0 { return -1; }
+    if nlen == 0 || nlen > 12 { return -1; }
+
+    var name83: U8Array = U8Array(11);
+    to_83(name_addr, nlen, name83);
+
+    var found_clus: u32 = 0u32;
+    var found_size: u32 = 0u32;
+    // Use stack addresses via a small temp array
+    var tmp: U32Array = U32Array(2);
+    set(tmp, 0, 0);
+    set(tmp, 1, 0);
+    var clus_addr: u32 = tmp as u32 + 4u32;
+    var size_addr: u32 = tmp as u32 + 4u32 + 4u32;
+
+    var r: i32 = dir_find(g_fat_root_clus, name83, clus_addr, size_addr);
+    delete(name83);
+
+    if r != 0 {
+        delete(tmp);
+        return -1;
+    }
+
+    found_clus = peek32(clus_addr);
+    found_size = peek32(size_addr);
+    delete(tmp);
+
+    var idx: i32 = fatfs_alloc_fd();
+    if idx < 0 { return -1; }
+
+    var f: FatFD = get(g_fat_fds, idx);
+    ff_start(f, found_clus);
+    ff_clus(f, found_clus);
+    ff_size(f, found_size as i32);
+    ff_pos(f, 0);
+    ff_clus_idx(f, 0);
+    ff_active(f, 1);
+    return idx;
+}
+
+export fn fatfs_close(fd: i32) -> i32 {
+    if fd < 0 || fd >= FATFS_MAX_FDS { return -1; }
+    var f: FatFD = get(g_fat_fds, fd);
+    if ff_active(f) == 0 { return -1; }
+    ff_active(f, 0);
+    return 0;
+}
+
+export fn fatfs_size(fd: i32) -> i32 {
+    if fd < 0 || fd >= FATFS_MAX_FDS { return -1; }
+    var f: FatFD = get(g_fat_fds, fd);
+    if ff_active(f) == 0 { return -1; }
+    return ff_size(f);
+}
+
+export fn fatfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    if fd < 0 || fd >= FATFS_MAX_FDS { return -1; }
+    var f: FatFD = get(g_fat_fds, fd);
+    if ff_active(f) == 0 { return -1; }
+
+    var remaining: i32 = ff_size(f) - ff_pos(f);
+    if remaining <= 0 { return 0; }
+    var want: i32 = n;
+    if want > remaining { want = remaining; }
+
+    var bytes_per_clus: i32 = g_fat_spc * 512;
+    var secbuf: U8Array = U8Array(512);
+    var total: i32 = 0;
+
+    while total < want {
+        var cur_clus: u32 = ff_clus(f);
+        if cur_clus < 2u32 || cur_clus >= 0x0FFFFFF8u32 {
+            delete(secbuf);
+            return total;
+        }
+
+        // Position within current cluster
+        var pos_in_clus: i32 = ff_pos(f) % bytes_per_clus;
+        var sec_in_clus: i32 = pos_in_clus / 512;
+        var off_in_sec: i32 = pos_in_clus % 512;
+
+        // Read the sector
+        var sec: u32 = cluster_to_sector(cur_clus) + (sec_in_clus as u32);
+        if fat_block_read(sec, secbuf) != 512 {
+            delete(secbuf);
+            return total;
+        }
+
+        // Copy bytes from this sector
+        var avail: i32 = 512 - off_in_sec;
+        var to_copy: i32 = want - total;
+        if to_copy > avail { to_copy = avail; }
+
+        var i: i32 = 0;
+        while i < to_copy {
+            poke8(buf_addr + (total as u32), get(secbuf, off_in_sec + i));
+            total = total + 1;
+            i = i + 1;
+        }
+        ff_pos(f, ff_pos(f) + to_copy);
+
+        // Advance to next cluster if needed
+        if ff_pos(f) % bytes_per_clus == 0 {
+            ff_clus(f, fat_get_entry(ff_clus(f)));
+            ff_clus_idx(f, ff_clus_idx(f) + 1);
+        }
+    }
+
+    delete(secbuf);
+    return total;
+}
+
+// ===== readdir =====
+
+// List files in root directory. Each entry is name + NUL.
+// Returns total bytes written to buf.
+export fn fatfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
+    if g_fat_ready == 0 { return -1; }
+
+    var clus: u32 = g_fat_root_clus;
+    var secbuf: U8Array = U8Array(512);
+    var pos: i32 = 0;
+
+    while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
+        var sec: u32 = cluster_to_sector(clus);
+        var s: i32 = 0;
+        while s < g_fat_spc {
+            if fat_block_read(sec + (s as u32), secbuf) != 512 {
+                delete(secbuf);
+                return pos;
+            }
+            var e: i32 = 0;
+            while e < 16 {
+                var off: i32 = e * 32;
+                var first_byte: u8 = get(secbuf, off);
+                if first_byte == 0u8 {
+                    delete(secbuf);
+                    return pos;
+                }
+                if first_byte != 0xE5u8 {
+                    var attr: u8 = get(secbuf, off + 11);
+                    // Skip LFN (0x0F) and volume label (0x08)
+                    if attr != 0x0Fu8 && (attr & 0x08u8) == 0u8 {
+                        // Convert 8.3 name to readable form: "HELLO   TXT" -> "hello.txt"
+                        // Name part: trim trailing spaces
+                        var name_len: i32 = 8;
+                        while name_len > 0 && get(secbuf, off + name_len - 1) == ' ' as u8 {
+                            name_len = name_len - 1;
+                        }
+                        // Ext part: trim trailing spaces
+                        var ext_len: i32 = 3;
+                        while ext_len > 0 && get(secbuf, off + 8 + ext_len - 1) == ' ' as u8 {
+                            ext_len = ext_len - 1;
+                        }
+                        var total_len: i32 = name_len;
+                        if ext_len > 0 { total_len = total_len + 1 + ext_len; }
+                        if pos + total_len + 1 <= buf_size {
+                            var k: i32 = 0;
+                            while k < name_len {
+                                var c: u8 = get(secbuf, off + k);
+                                // Lowercase
+                                if c >= 'A' as u8 && c <= 'Z' as u8 { c = c + 32u8; }
+                                poke8(buf_addr + (pos as u32), c);
+                                pos = pos + 1;
+                                k = k + 1;
+                            }
+                            if ext_len > 0 {
+                                poke8(buf_addr + (pos as u32), '.' as u8);
+                                pos = pos + 1;
+                                k = 0;
+                                while k < ext_len {
+                                    var c: u8 = get(secbuf, off + 8 + k);
+                                    if c >= 'A' as u8 && c <= 'Z' as u8 { c = c + 32u8; }
+                                    poke8(buf_addr + (pos as u32), c);
+                                    pos = pos + 1;
+                                    k = k + 1;
+                                }
+                            }
+                            poke8(buf_addr + (pos as u32), 0u8);
+                            pos = pos + 1;
+                        }
+                    }
+                }
+                e = e + 1;
+            }
+            s = s + 1;
+        }
+        clus = fat_get_entry(clus);
+    }
+    delete(secbuf);
+    return pos;
+}

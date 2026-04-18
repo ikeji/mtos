@@ -4,7 +4,9 @@
 
 import "kernel_common.tc";
 import "block_virtio.tc";
+import "block_fat_virtio.tc";
 import "mtfs.tc";
+import "fatfs.tc";
 import "vfs.tc";
 import "loader.tc";
 
@@ -133,6 +135,15 @@ fn main() -> i32 {
         return 1;
     }
     kputs("MTFS: mounted\n");
+
+    if fat_block_init() == 0 {
+        if fatfs_mount() == 0 {
+            kputs("FATFS: mounted\n");
+            vfs_set_fatfs_ready();
+        } else {
+            kputs("FATFS: mount failed\n");
+        }
+    }
 
     cat_hello_txt();
 

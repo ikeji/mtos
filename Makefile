@@ -288,25 +288,38 @@ build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
 virt-kernel:  build/kernel/virt_kernel.bin
 pico2-kernel: build/kernel/pico2_kernel.uf2
 
+# ----- FAT32 disk image (second virtio-blk drive) -----
+# mkfs.fat may live in /sbin (not in PATH by default)
+MKFS_FAT := $(shell which mkfs.fat 2>/dev/null || echo /sbin/mkfs.fat)
+
+build/kernel/fat.img: | build/kernel
+	@echo "Creating FAT32 image: $@" >&2
+	@dd if=/dev/zero of=$@ bs=1M count=33 2>/dev/null && \
+	$(MKFS_FAT) -F 32 $@ >/dev/null && \
+	printf 'hello from SD\n' | mcopy -i $@ - ::HELLO.TXT
+
 # ===== make run — interactive virt boot =====
 
 QEMU_SYSTEM := qemu-system-riscv32
 QEMU_DISK   := build/kernel/disk.img
+QEMU_FAT    := build/kernel/fat.img
 QEMU_ARGS    = -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
                -machine virt,aclint=on -bios none \
+               -drive file=$(QEMU_FAT),format=raw,if=none,id=blk1 \
+               -device virtio-blk-device,drive=blk1 \
                -drive file=$(QEMU_DISK),format=raw,if=none,id=blk0 \
                -device virtio-blk-device,drive=blk0 \
                -device loader,file=build/kernel/virt_kernel.bin,addr=0x80000000 \
                -device loader,addr=0x80000000,cpu-num=0
 
-run: build/kernel/virt_kernel.bin build/kernel/disk.img
+run: build/kernel/virt_kernel.bin build/kernel/disk.img build/kernel/fat.img
 	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
 	$(QEMU_SYSTEM) $(QEMU_ARGS)
 
 # run-extra は disk-extra.img (GUEST + EXTRA タスク全部入り) を使う。
 # Make が依存を追跡するので強制リビルド不要。
 run-extra: QEMU_DISK := build/kernel/disk-extra.img
-run-extra: build/kernel/virt_kernel.bin build/kernel/disk-extra.img
+run-extra: build/kernel/virt_kernel.bin build/kernel/disk-extra.img build/kernel/fat.img
 	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
 	$(QEMU_SYSTEM) $(QEMU_ARGS)
 

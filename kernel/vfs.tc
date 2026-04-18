@@ -16,6 +16,7 @@
 import "mtfs.tc";
 import "tmpfs.tc";
 import "procfs.tc";
+import "fatfs.tc";
 import "kernel_common.tc";
 
 // Platform UART helpers (defined in platform_*.s)
@@ -37,6 +38,14 @@ var FS_MTFS:   i32 = 1;
 var FS_TMPFS:  i32 = 2;
 var FS_PROCFS: i32 = 3;
 var FS_PIPE:   i32 = 4;
+var FS_FATFS:  i32 = 5;
+
+var g_fatfs_ready: i32 = 0;
+
+export fn vfs_set_fatfs_ready() -> void {
+    g_fatfs_ready = 1;
+    return;
+}
 
 // ===== fd table =====
 // fs_type : which FS owns this fd
@@ -75,6 +84,16 @@ fn is_tmp_path(path_addr: u32, plen: i32) -> bool {
     if peek8(path_addr + 2u32)   != 'm' as u8 { return false; }
     if peek8(path_addr + 3u32)   != 'p' as u8 { return false; }
     if peek8(path_addr + 4u32)   != '/' as u8 { return false; }
+    return true;
+}
+
+// Recognise /sd/ prefix and route to fatfs.
+fn is_sd_path(path_addr: u32, plen: i32) -> bool {
+    if plen < 4 { return false; }
+    if peek8(path_addr)          != '/' as u8 { return false; }
+    if peek8(path_addr + 1u32)   != 's' as u8 { return false; }
+    if peek8(path_addr + 2u32)   != 'd' as u8 { return false; }
+    if peek8(path_addr + 3u32)   != '/' as u8 { return false; }
     return true;
 }
 
@@ -141,6 +160,16 @@ export fn vfs_open(path_addr: u32, flags: i32) -> i32 {
         return fd;
     }
 
+    if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
+        var nlen: i32 = plen - 4;  // "/sd/" is 4 bytes
+        if nlen == 0 { return -1; }
+        var inner_fd: i32 = fatfs_open(path_addr + 4u32, nlen, flags);
+        if inner_fd < 0 { return -1; }
+        var fd: i32 = alloc_vfs_fd(FS_FATFS, inner_fd);
+        if fd < 0 { fatfs_close(inner_fd); return -1; }
+        return fd;
+    }
+
     if is_proc_path(path_addr, plen) {
         var inner_fd: i32 = procfs_open(path_addr, plen);
         if inner_fd < 0 { return -1; }
@@ -201,6 +230,7 @@ export fn vfs_size(fd: i32) -> i32 {
     if t == FS_MTFS   { return mtfs_size(inner(e)); }
     if t == FS_TMPFS  { return tmpfs_size(inner(e)); }
     if t == FS_PROCFS { return procfs_size(inner(e)); }
+    if t == FS_FATFS  { return fatfs_size(inner(e)); }
     return -1;
 }
 
@@ -252,6 +282,7 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if t == FS_TMPFS  { return tmpfs_read(inner(e), buf_addr, n); }
     if t == FS_PROCFS { return procfs_read(inner(e), buf_addr, n); }
     if t == FS_PIPE   { return pipe_read(inner(e), buf_addr, n); }
+    if t == FS_FATFS  { return fatfs_read(inner(e), buf_addr, n); }
     return -1;
 }
 
@@ -365,6 +396,9 @@ export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
     if path_eq_or_trailing(path_addr, plen, "/proc") {
         return procfs_readdir(buf_addr, buf_size);
     }
+    if path_eq_or_trailing(path_addr, plen, "/sd") && g_fatfs_ready != 0 {
+        return fatfs_readdir(buf_addr, buf_size);
+    }
     // mtfs path — walk and readdir the final inode.
     var inode: i32 = resolve_mtfs_inode(path_addr, plen);
     if inode < 0 { return -1; }
@@ -374,6 +408,9 @@ export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
     if plen == 1 && peek8(path_addr) == '/' as u8 {
         n = vfs_append_entry(buf_addr, buf_size, n, "tmp");
         n = vfs_append_entry(buf_addr, buf_size, n, "proc");
+        if g_fatfs_ready != 0 {
+            n = vfs_append_entry(buf_addr, buf_size, n, "sd");
+        }
     }
     return n;
 }
@@ -388,6 +425,7 @@ export fn vfs_close(fd: i32) -> i32 {
     if t == FS_TMPFS  { tmpfs_close(inner(e)); }
     if t == FS_PROCFS { procfs_close(inner(e)); }
     if t == FS_PIPE   { pipe_close(inner(e)); }
+    if t == FS_FATFS  { fatfs_close(inner(e)); }
     fs_type(e, FS_NONE);
     inner(e, 0);
     offset(e, 0);

@@ -1,0 +1,227 @@
+// kernel/block_fat_virtio.tc — second virtio-blk driver for FAT32 disk
+//
+// Same interface as block_virtio.tc but finds the SECOND virtio-blk
+// device on the bus. Exports fat_block_* to avoid symbol collision
+// with the first driver. Supports both read and write.
+
+var FAT_VIRTIO_BASE:   u32 = 0x10001000u32;
+var FAT_VIRTIO_STRIDE: u32 = 0x1000u32;
+var FAT_VIRTIO_SLOTS:  i32 = 8;
+var FAT_VIRTIO_MAGIC:  u32 = 0x74726976u32;
+var FAT_DEVICE_ID_BLOCK: u32 = 2u32;
+
+// Register offsets (legacy virtio-mmio)
+var FAT_REG_MAGIC:         u32 = 0x000u32;
+var FAT_REG_VERSION:       u32 = 0x004u32;
+var FAT_REG_DEVICE_ID:     u32 = 0x008u32;
+var FAT_REG_HOST_FEAT:     u32 = 0x010u32;
+var FAT_REG_HOST_FEAT_SEL: u32 = 0x014u32;
+var FAT_REG_GUEST_FEAT:    u32 = 0x020u32;
+var FAT_REG_GUEST_FEAT_SEL:u32 = 0x024u32;
+var FAT_REG_GUEST_PGSIZE:  u32 = 0x028u32;
+var FAT_REG_QUEUE_SEL:     u32 = 0x030u32;
+var FAT_REG_QUEUE_NUM_MAX: u32 = 0x034u32;
+var FAT_REG_QUEUE_NUM:     u32 = 0x038u32;
+var FAT_REG_QUEUE_ALIGN:   u32 = 0x03Cu32;
+var FAT_REG_QUEUE_PFN:     u32 = 0x040u32;
+var FAT_REG_QUEUE_NOTIFY:  u32 = 0x050u32;
+var FAT_REG_INT_STATUS:    u32 = 0x060u32;
+var FAT_REG_INT_ACK:       u32 = 0x064u32;
+var FAT_REG_STATUS:        u32 = 0x070u32;
+
+var FAT_STATUS_ACK:         u32 = 1u32;
+var FAT_STATUS_DRIVER:      u32 = 2u32;
+var FAT_STATUS_DRIVER_OK:   u32 = 4u32;
+var FAT_STATUS_FEATURES_OK: u32 = 8u32;
+
+var FAT_VBLK_T_IN:  u32 = 0u32;
+var FAT_VBLK_T_OUT: u32 = 1u32;
+
+var FAT_DESC_F_NEXT:  u16 = 1u16;
+var FAT_DESC_F_WRITE: u16 = 2u16;
+
+var FAT_QUEUE_SIZE:  u32 = 8u32;
+var FAT_QUEUE_ALIGN: u32 = 4096u32;
+var FAT_OFF_DESC:    u32 = 0u32;
+var FAT_OFF_AVAIL:   u32 = 128u32;
+var FAT_OFF_USED:    u32 = 4096u32;
+var FAT_OFF_HDR:     u32 = 4168u32;
+var FAT_OFF_DATA:    u32 = 4184u32;
+var FAT_OFF_STATUS:  u32 = 4696u32;
+var FAT_MEM_RESERVE: i32 = 12288;
+
+var g_fat_blk_base:    u32 = 0u32;
+var g_fat_blk_ready:   i32 = 0;
+var g_fat_mem_buf:  U8Array = 0 as U8Array;
+var g_fat_mem_base: u32 = 0u32;
+
+fn fat_mmio_r(off: u32) -> u32 {
+    return peek32(g_fat_blk_base + off);
+}
+
+fn fat_mmio_w(off: u32, val: u32) -> void {
+    poke32(g_fat_blk_base + off, val);
+    return;
+}
+
+// Find the Nth virtio-blk device (0-indexed). skip=1 finds the second.
+fn fat_scan_for_block(skip: i32) -> i32 {
+    var found: i32 = 0;
+    var i: i32 = 0;
+    while i < FAT_VIRTIO_SLOTS {
+        var base: u32 = FAT_VIRTIO_BASE + (i as u32) * FAT_VIRTIO_STRIDE;
+        if peek32(base + FAT_REG_MAGIC) == FAT_VIRTIO_MAGIC {
+            if peek32(base + FAT_REG_DEVICE_ID) == FAT_DEVICE_ID_BLOCK {
+                if found == skip {
+                    g_fat_blk_base = base;
+                    return 0;
+                }
+                found = found + 1;
+            }
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+fn fat_alloc_queue_mem() -> void {
+    g_fat_mem_buf = U8Array(FAT_MEM_RESERVE as u32);
+    var raw: u32 = (g_fat_mem_buf as u32) + 4u32;
+    g_fat_mem_base = (raw + 0xFFFu32) & 0xFFFFF000u32;
+    var p: u32 = g_fat_mem_base;
+    var end: u32 = g_fat_mem_base + FAT_OFF_STATUS + 1u32;
+    while p < end {
+        poke32(p, 0);
+        p = p + 4u32;
+    }
+    return;
+}
+
+export fn fat_block_init() -> i32 {
+    g_fat_blk_base = 0u32;
+    g_fat_blk_ready = 0;
+
+    // Find the second virtio-blk device (skip=1)
+    if fat_scan_for_block(1) != 0 { return -1; }
+
+    // Legacy transport only
+    if peek32(g_fat_blk_base + FAT_REG_VERSION) != 1u32 { return -1; }
+
+    fat_alloc_queue_mem();
+
+    fat_mmio_w(FAT_REG_STATUS, 0);
+    fat_mmio_w(FAT_REG_STATUS, FAT_STATUS_ACK);
+    fat_mmio_w(FAT_REG_STATUS, FAT_STATUS_ACK | FAT_STATUS_DRIVER);
+
+    fat_mmio_w(FAT_REG_HOST_FEAT_SEL, 0);
+    var feat0: u32 = fat_mmio_r(FAT_REG_HOST_FEAT);
+    fat_mmio_w(FAT_REG_GUEST_FEAT_SEL, 0);
+    fat_mmio_w(FAT_REG_GUEST_FEAT, feat0);
+    fat_mmio_w(FAT_REG_STATUS, FAT_STATUS_ACK | FAT_STATUS_DRIVER | FAT_STATUS_FEATURES_OK);
+    fat_mmio_w(FAT_REG_GUEST_PGSIZE, 4096);
+
+    fat_mmio_w(FAT_REG_QUEUE_SEL, 0);
+    var qmax: u32 = fat_mmio_r(FAT_REG_QUEUE_NUM_MAX);
+    if qmax == 0u32 { return -1; }
+    fat_mmio_w(FAT_REG_QUEUE_NUM, FAT_QUEUE_SIZE);
+    fat_mmio_w(FAT_REG_QUEUE_ALIGN, FAT_QUEUE_ALIGN);
+    fat_mmio_w(FAT_REG_QUEUE_PFN, g_fat_mem_base >> 12u32);
+    fat_mmio_w(FAT_REG_STATUS, FAT_STATUS_ACK | FAT_STATUS_DRIVER | FAT_STATUS_FEATURES_OK | FAT_STATUS_DRIVER_OK);
+
+    g_fat_blk_ready = 1;
+    return 0;
+}
+
+// Submit a virtio-blk request (read or write) and poll for completion.
+fn fat_blk_request(req_type: u32, sector: u32, buf: U8Array) -> i32 {
+    if g_fat_blk_ready == 0 { return -1; }
+
+    var desc:   u32 = g_fat_mem_base + FAT_OFF_DESC;
+    var avail:  u32 = g_fat_mem_base + FAT_OFF_AVAIL;
+    var used:   u32 = g_fat_mem_base + FAT_OFF_USED;
+    var hdr:    u32 = g_fat_mem_base + FAT_OFF_HDR;
+    var data:   u32 = g_fat_mem_base + FAT_OFF_DATA;
+    var status: u32 = g_fat_mem_base + FAT_OFF_STATUS;
+
+    // virtio_blk_req header
+    poke32(hdr + 0u32, req_type);
+    poke32(hdr + 4u32, 0);
+    poke32(hdr + 8u32, sector);
+    poke32(hdr + 12u32, 0);
+
+    poke8(status, 0xFFu8);
+
+    // For write: copy data into the queue buffer first
+    if req_type == FAT_VBLK_T_OUT {
+        var k: i32 = 0;
+        while k < 512 {
+            poke8(data + (k as u32), get(buf, k));
+            k = k + 1;
+        }
+    }
+
+    // Descriptor 0: header (device-readable)
+    poke32(desc + 0u32, hdr);
+    poke32(desc + 4u32, 0);
+    poke32(desc + 8u32, 16);
+    poke16(desc + 12u32, FAT_DESC_F_NEXT);
+    poke16(desc + 14u32, 1u16);
+
+    // Descriptor 1: data buffer
+    poke32(desc + 16u32, data);
+    poke32(desc + 20u32, 0);
+    poke32(desc + 24u32, 512);
+    if req_type == FAT_VBLK_T_IN {
+        // Read: device writes to buffer
+        poke16(desc + 28u32, FAT_DESC_F_NEXT | FAT_DESC_F_WRITE);
+    } else {
+        // Write: device reads from buffer
+        poke16(desc + 28u32, FAT_DESC_F_NEXT);
+    }
+    poke16(desc + 30u32, 2u16);
+
+    // Descriptor 2: status byte (device-writable)
+    poke32(desc + 32u32, status);
+    poke32(desc + 36u32, 0);
+    poke32(desc + 40u32, 1);
+    poke16(desc + 44u32, FAT_DESC_F_WRITE);
+    poke16(desc + 46u32, 0u16);
+
+    var last_used: u32 = peek16(used + 2u32) as u32;
+
+    var avail_idx: u32 = peek16(avail + 2u32) as u32;
+    var slot_off: u32 = 4u32 + (avail_idx & 7u32) * 2u32;
+    poke16(avail + slot_off, 0u16);
+    poke16(avail + 2u32, (avail_idx + 1u32) as u16);
+
+    fat_mmio_w(FAT_REG_QUEUE_NOTIFY, 0);
+
+    // Poll for completion
+    var timeout: i32 = 10000000;
+    while timeout > 0 {
+        var new_used: u32 = peek16(used + 2u32) as u32;
+        if new_used != last_used {
+            var s: u8 = peek8(status);
+            if s != 0u8 { return -1; }
+            // For read: copy data out
+            if req_type == FAT_VBLK_T_IN {
+                var j: i32 = 0;
+                while j < 512 {
+                    set(buf, j, peek8(data + (j as u32)));
+                    j = j + 1;
+                }
+            }
+            return 512;
+        }
+        timeout = timeout - 1;
+    }
+    return -1;
+}
+
+export fn fat_block_read(sector: u32, buf: U8Array) -> i32 {
+    return fat_blk_request(FAT_VBLK_T_IN, sector, buf);
+}
+
+export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
+    return fat_blk_request(FAT_VBLK_T_OUT, sector, buf);
+}
