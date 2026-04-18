@@ -416,6 +416,16 @@ export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
     return n;
 }
 
+export fn vfs_unlink(path_addr: u32) -> i32 {
+    if g_vfs_ready == 0 { return -1; }
+    var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
+    if plen == 0 { return -1; }
+    if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
+        return fatfs_delete(path_addr + 4u32, plen - 4);
+    }
+    return -1;
+}
+
 export fn vfs_close(fd: i32) -> i32 {
     if fd >= 0 && fd < 3 { return 0; }   // stdio is always open
     if g_vfs_ready == 0 { return -1; }

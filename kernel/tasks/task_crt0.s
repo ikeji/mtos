@@ -142,6 +142,14 @@ do_nanosleep__i32:
     ecall
     ret
 
+# do_unlink(path: U8Array) → i32 — remove a file.
+    .globl do_unlink__U8Array
+do_unlink__U8Array:
+    addi a0, a0, 4          # skip U8Array length header
+    li   a7, 87
+    ecall
+    ret
+
 # do_mux_enable(on: i32) → void — toggle UART frame multiplexing.
 # See docs/task/uart_multiplex.md.
     .globl do_mux_enable__i32

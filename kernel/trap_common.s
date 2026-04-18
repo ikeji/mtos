@@ -97,6 +97,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_spawn_fds
     li   t1, 101
     beq  t0, t1, _ecall_nanosleep
+    li   t1, 87
+    beq  t0, t1, _ecall_unlink
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -175,6 +177,13 @@ _ecall_close:
     call _ecall_enter
     lw   a0, 40(s0)         # fd
     call vfs_close__i32
+    sw   a0, 40(s0)
+    j    _ecall_leave_advance
+
+_ecall_unlink:
+    call _ecall_enter
+    lw   a0, 40(s0)         # path addr (task's a0)
+    call vfs_unlink__u32
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 

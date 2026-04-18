@@ -1,0 +1,3 @@
+GUEST_TASKS += rm
+TASK_ARENA_rm := 16384
+TASK_STACK_rm := 8192

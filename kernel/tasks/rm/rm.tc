@@ -1,0 +1,52 @@
+// rm.tc — remove files
+//
+// Usage: rm <file> [file2 ...]
+// Calls sys_unlink (ecall 87) for each argument.
+
+import "../libtc/libtc.tc";
+
+fn do_unlink(path: U8Array) -> i32;
+
+// Copy a String into a NUL-terminated U8Array.
+fn string_to_nul(s: String) -> U8Array {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array((slen + 1) as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, slen, 0u8);
+    return buf;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var argc: i32 = len(argv);
+    if argc < 2 {
+        puts("rm: missing operand\n");
+        return 1;
+    }
+    var ret: i32 = 0;
+    var i: i32 = 1;
+    while i < argc {
+        var s: String = get(argv, i);
+        var path: U8Array = string_to_nul(s);
+        var r: i32 = do_unlink(path);
+        if r != 0 {
+            puts("rm: cannot remove: ");
+            var j: i32 = 0;
+            while j < len(s) {
+                var c: U8Array = U8Array(1);
+                set(c, 0, get(s, j));
+                sys_write(1, c, 1);
+                delete(c);
+                j = j + 1;
+            }
+            puts("\n");
+            ret = 1;
+        }
+        delete(path);
+        i = i + 1;
+    }
+    return ret;
+}

@@ -387,6 +387,66 @@ fn dir_update(dir_sec: u32, dir_off: i32, start_clus: u32, size: u32) -> i32 {
     return 0;
 }
 
+// Free all clusters in a FAT chain starting at start_clus.
+fn fat_free_chain(start_clus: u32) -> void {
+    var c: u32 = start_clus;
+    while c >= 2u32 && c < 0x0FFFFFF8u32 {
+        var next: u32 = fat_get_entry(c);
+        fat_set_entry(c, 0);
+        // Update hint if this cluster is before current hint
+        if c < g_fat_next_free { g_fat_next_free = c; }
+        c = next;
+    }
+    return;
+}
+
+// Mark a directory entry as deleted (first byte = 0xE5).
+fn dir_delete(dir_sec: u32, dir_off: i32) -> i32 {
+    var secbuf: U8Array = U8Array(512);
+    if fat_block_read(dir_sec, secbuf) != 512 { delete(secbuf); return -1; }
+    set(secbuf, dir_off, 0xE5u8);
+    if fat_block_write(dir_sec, secbuf) != 512 { delete(secbuf); return -1; }
+    delete(secbuf);
+    return 0;
+}
+
+// Delete a file by name. Frees FAT chain and marks dir entry as deleted.
+export fn fatfs_delete(name_addr: u32, nlen: i32) -> i32 {
+    if g_fat_ready == 0 { return -1; }
+    if nlen == 0 || nlen > 12 { return -1; }
+
+    var name83: U8Array = U8Array(11);
+    to_83(name_addr, nlen, name83);
+
+    var tmp: U32Array = U32Array(4);
+    set(tmp, 0, 0);
+    set(tmp, 1, 0);
+    set(tmp, 2, 0);
+    set(tmp, 3, 0);
+    var clus_addr: u32 = tmp as u32 + 4u32;
+    var size_addr: u32 = tmp as u32 + 4u32 + 4u32;
+    var dsec_addr: u32 = tmp as u32 + 4u32 + 8u32;
+    var doff_addr: u32 = tmp as u32 + 4u32 + 12u32;
+
+    var r: i32 = dir_find(g_fat_root_clus, name83, clus_addr, size_addr,
+                          dsec_addr, doff_addr);
+    delete(name83);
+    if r != 0 { delete(tmp); return -1; }
+
+    var start_clus: u32 = peek32(clus_addr);
+    var dir_sec: u32 = peek32(dsec_addr);
+    var dir_off: i32 = peek32(doff_addr) as i32;
+    delete(tmp);
+
+    // Free FAT chain
+    if start_clus >= 2u32 {
+        fat_free_chain(start_clus);
+    }
+    // Mark directory entry as deleted
+    dir_delete(dir_sec, dir_off);
+    return 0;
+}
+
 // ===== Open / Read / Close =====
 
 fn fatfs_alloc_fd() -> i32 {
@@ -445,8 +505,11 @@ export fn fatfs_open(name_addr: u32, nlen: i32, flags: i32) -> i32 {
     var dir_off: i32 = peek32(doff_addr) as i32;
     delete(tmp);
 
-    // O_TRUNC: reset size to 0 (clusters are leaked for simplicity)
+    // O_TRUNC: free existing clusters and reset size to 0
     if (flags & FATFS_O_TRUNC) != 0 {
+        if found_clus >= 2u32 {
+            fat_free_chain(found_clus);
+        }
         found_size = 0u32;
         found_clus = 0u32;
         dir_update(dir_sec, dir_off, 0, 0);
