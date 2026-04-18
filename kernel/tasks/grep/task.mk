@@ -1,0 +1,3 @@
+GUEST_TASKS += grep
+TASK_ARENA_grep := 16384
+TASK_STACK_grep := 8192
