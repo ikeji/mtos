@@ -1,8 +1,7 @@
 // kernel/fatfs.tc — FAT32 filesystem driver
 //
-// Read-only for now. Supports FAT32 superfloppy format (no MBR,
-// BPB at sector 0). 8.3 filenames only, no LFN.
-// Mounted at /sd/ via VFS.
+// Read/write FAT32 superfloppy format (no MBR, BPB at sector 0).
+// 8.3 filenames only, no LFN. Mounted at /sd/ via VFS.
 
 // Block layer (resolved at link time to block_fat_virtio or block_sd)
 fn fat_block_read(sector: u32, buf: U8Array) -> i32;
@@ -28,13 +27,22 @@ var g_fat_secbuf: U8Array = 0 as U8Array;
 var FATFS_MAX_FDS: i32 = 8;
 
 struct FatFD {
-    ff_start: u32,    // start cluster
-    ff_clus:  u32,    // current cluster being read
+    ff_start: u32,    // start cluster (0 = empty file)
+    ff_clus:  u32,    // current cluster being read/written
     ff_size:  i32,    // file size in bytes
-    ff_pos:   i32,    // current read position
+    ff_pos:   i32,    // current position
     ff_clus_idx: i32, // which cluster in chain (0-based)
     ff_active: i32,   // 1 = in use
+    ff_wr:    i32,    // 1 = writable
+    ff_dirty: i32,    // 1 = modified, update dir entry on close
+    ff_dir_sec: u32,  // sector containing directory entry
+    ff_dir_off: i32,  // offset of dir entry within sector (0..480)
 }
+
+var FATFS_O_WRONLY: i32 = 1;
+var FATFS_O_RDWR:   i32 = 2;
+var FATFS_O_CREAT:  i32 = 64;
+var FATFS_O_TRUNC:  i32 = 512;
 var g_fat_fds: FatFDArray = 0 as FatFDArray;
 
 // ===== Helpers =====
@@ -77,6 +85,76 @@ fn fat_follow_chain(start_clus: u32, n: i32) -> u32 {
     return c;
 }
 
+fn write_u16_le(buf: U8Array, off: i32, val: i32) -> void {
+    set(buf, off,     (val & 0xFF) as u8);
+    set(buf, off + 1, ((val >> 8) & 0xFF) as u8);
+    return;
+}
+
+fn write_u32_le(buf: U8Array, off: i32, val: u32) -> void {
+    set(buf, off,     (val & 0xFFu32) as u8);
+    set(buf, off + 1, ((val >> 8u32) & 0xFFu32) as u8);
+    set(buf, off + 2, ((val >> 16u32) & 0xFFu32) as u8);
+    set(buf, off + 3, ((val >> 24u32) & 0xFFu32) as u8);
+    return;
+}
+
+// Write a FAT32 entry. Updates both FATs if num_fats == 2.
+fn fat_set_entry(clus: u32, val: u32) -> i32 {
+    var fat_offset: u32 = clus * 4u32;
+    var fat_sector: u32 = g_fat_fat_start + fat_offset / 512u32;
+    var off_in_sec: i32 = (fat_offset % 512u32) as i32;
+
+    if fat_block_read(fat_sector, g_fat_secbuf) != 512 { return -1; }
+    // Preserve top 4 bits of existing entry
+    var old: u32 = read_u32_le(g_fat_secbuf, off_in_sec) & 0xF0000000u32;
+    write_u32_le(g_fat_secbuf, off_in_sec, old | (val & 0x0FFFFFFFu32));
+    if fat_block_write(fat_sector, g_fat_secbuf) != 512 { return -1; }
+
+    // Update FAT 2 if present
+    if g_fat_nfats >= 2 {
+        var fat2_sector: u32 = fat_sector + g_fat_fatsz;
+        if fat_block_read(fat2_sector, g_fat_secbuf) != 512 { return -1; }
+        write_u32_le(g_fat_secbuf, off_in_sec, old | (val & 0x0FFFFFFFu32));
+        if fat_block_write(fat2_sector, g_fat_secbuf) != 512 { return -1; }
+    }
+    return 0;
+}
+
+// Total data clusters on the volume (for bounds checking in alloc).
+var g_fat_total_clusters: u32 = 0u32;
+// Hint: next free cluster to try (avoids O(n) scan from 2 every time).
+var g_fat_next_free: u32 = 2u32;
+
+// Allocate one free cluster. Marks it as end-of-chain (0x0FFFFFFF).
+// Returns cluster number or 0 on failure.
+fn fat_alloc_cluster() -> u32 {
+    var start: u32 = g_fat_next_free;
+    var c: u32 = start;
+    // Scan forward from hint, wrapping around
+    while c < g_fat_total_clusters + 2u32 {
+        var entry: u32 = fat_get_entry(c);
+        if entry == 0u32 {
+            fat_set_entry(c, 0x0FFFFFFFu32);
+            g_fat_next_free = c + 1u32;
+            return c;
+        }
+        c = c + 1u32;
+    }
+    // Wrap around from cluster 2 to start
+    c = 2u32;
+    while c < start {
+        var entry: u32 = fat_get_entry(c);
+        if entry == 0u32 {
+            fat_set_entry(c, 0x0FFFFFFFu32);
+            g_fat_next_free = c + 1u32;
+            return c;
+        }
+        c = c + 1u32;
+    }
+    return 0u32;  // disk full
+}
+
 // ===== Mount =====
 
 export fn fatfs_mount() -> i32 {
@@ -102,11 +180,16 @@ export fn fatfs_mount() -> i32 {
     g_fat_fat_start = g_fat_rsvd;
     g_fat_data_start = g_fat_rsvd + (g_fat_nfats as u32) * g_fat_fatsz;
 
+    // Compute total data clusters. BPB TotSec32 is at offset 32.
+    var tot_sec: u32 = read_u32_le(g_fat_secbuf, 32);
+    var data_sec: u32 = tot_sec - g_fat_data_start;
+    g_fat_total_clusters = data_sec / (g_fat_spc as u32);
+
     // Allocate FD table
     g_fat_fds = FatFDArray(FATFS_MAX_FDS as u32);
     var i: i32 = 0;
     while i < FATFS_MAX_FDS {
-        set(g_fat_fds, i, FatFD(0, 0, 0, 0, 0, 0));
+        set(g_fat_fds, i, FatFD(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         i = i + 1;
     }
 
@@ -182,10 +265,12 @@ fn name83_eq(buf: U8Array, dir_entry_addr: u32) -> bool {
 // ===== Directory scanning =====
 
 // Scan directory starting at dir_clus for a file matching name83.
-// On match, sets *out_clus and *out_size and returns 0.
-// Returns -1 if not found.
+// On match, sets out fields and returns 0. Returns -1 if not found.
+// out_dir_sec_addr / out_dir_off_addr track where the dir entry lives
+// so we can update it on close.
 fn dir_find(dir_clus: u32, name83: U8Array,
-            out_clus_addr: u32, out_size_addr: u32) -> i32 {
+            out_clus_addr: u32, out_size_addr: u32,
+            out_dir_sec_addr: u32, out_dir_off_addr: u32) -> i32 {
     var clus: u32 = dir_clus;
     var secbuf: U8Array = U8Array(512);
 
@@ -193,30 +278,29 @@ fn dir_find(dir_clus: u32, name83: U8Array,
         var sec: u32 = cluster_to_sector(clus);
         var s: i32 = 0;
         while s < g_fat_spc {
-            if fat_block_read(sec + (s as u32), secbuf) != 512 {
+            var cur_sec: u32 = sec + (s as u32);
+            if fat_block_read(cur_sec, secbuf) != 512 {
                 delete(secbuf);
                 return -1;
             }
-            // 16 directory entries per 512-byte sector
             var e: i32 = 0;
             while e < 16 {
                 var off: i32 = e * 32;
                 var first_byte: u8 = get(secbuf, off);
-                // 0x00 = end of directory
                 if first_byte == 0u8 {
                     delete(secbuf);
                     return -1;
                 }
-                // 0xE5 = deleted entry, skip
                 if first_byte != 0xE5u8 {
                     var attr: u8 = get(secbuf, off + 11);
-                    // Skip LFN entries (attr=0x0F) and volume labels (0x08)
                     if attr != 0x0Fu8 && (attr & 0x08u8) == 0u8 {
                         if name83_eq(name83, secbuf as u32 + 4u32 + (off as u32)) {
                             var hi: u32 = read_u16_le(secbuf, off + 20) as u32;
                             var lo: u32 = read_u16_le(secbuf, off + 26) as u32;
                             poke32(out_clus_addr, (hi << 16u32) | lo);
                             poke32(out_size_addr, read_u32_le(secbuf, off + 28));
+                            poke32(out_dir_sec_addr, cur_sec);
+                            poke32(out_dir_off_addr, off as u32);
                             delete(secbuf);
                             return 0;
                         }
@@ -230,6 +314,77 @@ fn dir_find(dir_clus: u32, name83: U8Array,
     }
     delete(secbuf);
     return -1;
+}
+
+// Create a new directory entry in root directory. Finds a free slot
+// (first_byte == 0x00 or 0xE5). Writes the 8.3 name + attr=0x20 (archive).
+// Sets out_dir_sec_addr and out_dir_off_addr. Returns 0 on success.
+fn dir_create(name83: U8Array,
+              out_dir_sec_addr: u32, out_dir_off_addr: u32) -> i32 {
+    var clus: u32 = g_fat_root_clus;
+    var secbuf: U8Array = U8Array(512);
+
+    while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
+        var sec: u32 = cluster_to_sector(clus);
+        var s: i32 = 0;
+        while s < g_fat_spc {
+            var cur_sec: u32 = sec + (s as u32);
+            if fat_block_read(cur_sec, secbuf) != 512 {
+                delete(secbuf);
+                return -1;
+            }
+            var e: i32 = 0;
+            while e < 16 {
+                var off: i32 = e * 32;
+                var fb: u8 = get(secbuf, off);
+                if fb == 0u8 || fb == 0xE5u8 {
+                    // Found a free slot. Zero it out, then write name.
+                    var z: i32 = 0;
+                    while z < 32 {
+                        set(secbuf, off + z, 0u8);
+                        z = z + 1;
+                    }
+                    // Copy 8.3 name
+                    var k: i32 = 0;
+                    while k < 11 {
+                        set(secbuf, off + k, get(name83, k));
+                        k = k + 1;
+                    }
+                    // Attr = 0x20 (archive)
+                    set(secbuf, off + 11, 0x20u8);
+                    // Start cluster = 0, size = 0 (will be updated on close)
+                    if fat_block_write(cur_sec, secbuf) != 512 {
+                        delete(secbuf);
+                        return -1;
+                    }
+                    poke32(out_dir_sec_addr, cur_sec);
+                    poke32(out_dir_off_addr, off as u32);
+                    delete(secbuf);
+                    return 0;
+                }
+                e = e + 1;
+            }
+            s = s + 1;
+        }
+        clus = fat_get_entry(clus);
+    }
+    delete(secbuf);
+    return -1;  // directory full
+}
+
+// Update a directory entry's start cluster and file size on disk.
+fn dir_update(dir_sec: u32, dir_off: i32, start_clus: u32, size: u32) -> i32 {
+    var secbuf: U8Array = U8Array(512);
+    if fat_block_read(dir_sec, secbuf) != 512 { delete(secbuf); return -1; }
+    // FstClusHI (offset 20, 2 bytes)
+    write_u16_le(secbuf, dir_off + 20, ((start_clus >> 16u32) & 0xFFFFu32) as i32);
+    // FstClusLO (offset 26, 2 bytes)
+    write_u16_le(secbuf, dir_off + 26, (start_clus & 0xFFFFu32) as i32);
+    // FileSize (offset 28, 4 bytes)
+    write_u32_le(secbuf, dir_off + 28, size);
+    if fat_block_write(dir_sec, secbuf) != 512 { delete(secbuf); return -1; }
+    delete(secbuf);
+    return 0;
 }
 
 // ===== Open / Read / Close =====
@@ -251,26 +406,56 @@ export fn fatfs_open(name_addr: u32, nlen: i32, flags: i32) -> i32 {
     var name83: U8Array = U8Array(11);
     to_83(name_addr, nlen, name83);
 
-    var found_clus: u32 = 0u32;
-    var found_size: u32 = 0u32;
-    // Use stack addresses via a small temp array
-    var tmp: U32Array = U32Array(2);
+    // tmp[0]=clus, tmp[1]=size, tmp[2]=dir_sec, tmp[3]=dir_off
+    var tmp: U32Array = U32Array(4);
     set(tmp, 0, 0);
     set(tmp, 1, 0);
+    set(tmp, 2, 0);
+    set(tmp, 3, 0);
     var clus_addr: u32 = tmp as u32 + 4u32;
     var size_addr: u32 = tmp as u32 + 4u32 + 4u32;
+    var dsec_addr: u32 = tmp as u32 + 4u32 + 8u32;
+    var doff_addr: u32 = tmp as u32 + 4u32 + 12u32;
 
-    var r: i32 = dir_find(g_fat_root_clus, name83, clus_addr, size_addr);
-    delete(name83);
+    var r: i32 = dir_find(g_fat_root_clus, name83, clus_addr, size_addr,
+                          dsec_addr, doff_addr);
 
     if r != 0 {
-        delete(tmp);
-        return -1;
+        // File not found
+        if (flags & FATFS_O_CREAT) == 0 {
+            delete(name83);
+            delete(tmp);
+            return -1;
+        }
+        // Create new directory entry
+        if dir_create(name83, dsec_addr, doff_addr) != 0 {
+            delete(name83);
+            delete(tmp);
+            return -1;
+        }
+        // New file: cluster=0, size=0
+        poke32(clus_addr, 0);
+        poke32(size_addr, 0);
+    }
+    delete(name83);
+
+    var found_clus: u32 = peek32(clus_addr);
+    var found_size: u32 = peek32(size_addr);
+    var dir_sec: u32 = peek32(dsec_addr);
+    var dir_off: i32 = peek32(doff_addr) as i32;
+    delete(tmp);
+
+    // O_TRUNC: reset size to 0 (clusters are leaked for simplicity)
+    if (flags & FATFS_O_TRUNC) != 0 {
+        found_size = 0u32;
+        found_clus = 0u32;
+        dir_update(dir_sec, dir_off, 0, 0);
     }
 
-    found_clus = peek32(clus_addr);
-    found_size = peek32(size_addr);
-    delete(tmp);
+    var wr_bit: i32 = 0;
+    if (flags & FATFS_O_WRONLY) != 0 || (flags & FATFS_O_RDWR) != 0 {
+        wr_bit = 1;
+    }
 
     var idx: i32 = fatfs_alloc_fd();
     if idx < 0 { return -1; }
@@ -282,6 +467,10 @@ export fn fatfs_open(name_addr: u32, nlen: i32, flags: i32) -> i32 {
     ff_pos(f, 0);
     ff_clus_idx(f, 0);
     ff_active(f, 1);
+    ff_wr(f, wr_bit);
+    ff_dirty(f, 0);
+    ff_dir_sec(f, dir_sec);
+    ff_dir_off(f, dir_off);
     return idx;
 }
 
@@ -289,6 +478,11 @@ export fn fatfs_close(fd: i32) -> i32 {
     if fd < 0 || fd >= FATFS_MAX_FDS { return -1; }
     var f: FatFD = get(g_fat_fds, fd);
     if ff_active(f) == 0 { return -1; }
+    // Flush directory entry if file was written
+    if ff_dirty(f) != 0 {
+        dir_update(ff_dir_sec(f), ff_dir_off(f),
+                   ff_start(f), ff_size(f) as u32);
+    }
     ff_active(f, 0);
     return 0;
 }
@@ -353,6 +547,97 @@ export fn fatfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
         }
     }
 
+    delete(secbuf);
+    return total;
+}
+
+// ===== Write =====
+
+export fn fatfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    if fd < 0 || fd >= FATFS_MAX_FDS { return -1; }
+    var f: FatFD = get(g_fat_fds, fd);
+    if ff_active(f) == 0 || ff_wr(f) == 0 { return -1; }
+
+    var bytes_per_clus: i32 = g_fat_spc * 512;
+    var secbuf: U8Array = U8Array(512);
+    var total: i32 = 0;
+
+    while total < n {
+        // Ensure we have a current cluster
+        if ff_start(f) == 0u32 {
+            // Empty file, allocate first cluster
+            var nc: u32 = fat_alloc_cluster();
+            if nc == 0u32 { delete(secbuf); return total; }
+            ff_start(f, nc);
+            ff_clus(f, nc);
+            ff_clus_idx(f, 0);
+        }
+
+        // If we crossed into a new cluster, advance the chain
+        var target_clus_idx: i32 = ff_pos(f) / bytes_per_clus;
+        while ff_clus_idx(f) < target_clus_idx {
+            var next: u32 = fat_get_entry(ff_clus(f));
+            if next >= 0x0FFFFFF8u32 {
+                // Need to allocate a new cluster and link it
+                var nc: u32 = fat_alloc_cluster();
+                if nc == 0u32 { delete(secbuf); return total; }
+                fat_set_entry(ff_clus(f), nc);
+                next = nc;
+            }
+            ff_clus(f, next);
+            ff_clus_idx(f, ff_clus_idx(f) + 1);
+        }
+
+        var cur_clus: u32 = ff_clus(f);
+        var pos_in_clus: i32 = ff_pos(f) % bytes_per_clus;
+        var sec_in_clus: i32 = pos_in_clus / 512;
+        var off_in_sec: i32 = pos_in_clus % 512;
+
+        var sec: u32 = cluster_to_sector(cur_clus) + (sec_in_clus as u32);
+
+        // If partial sector write, read existing data first
+        if off_in_sec != 0 || (n - total) < 512 {
+            fat_block_read(sec, secbuf);
+        }
+
+        // Copy data into sector buffer
+        var avail: i32 = 512 - off_in_sec;
+        var to_copy: i32 = n - total;
+        if to_copy > avail { to_copy = avail; }
+
+        var i: i32 = 0;
+        while i < to_copy {
+            set(secbuf, off_in_sec + i, peek8(buf_addr + (total as u32)));
+            total = total + 1;
+            i = i + 1;
+        }
+
+        // Write sector to disk
+        if fat_block_write(sec, secbuf) != 512 {
+            delete(secbuf);
+            return total - to_copy;
+        }
+
+        ff_pos(f, ff_pos(f) + to_copy);
+
+        // Update size if we wrote past the end
+        if ff_pos(f) > ff_size(f) {
+            ff_size(f, ff_pos(f));
+        }
+
+        // If we filled this cluster, advance to next
+        if ff_pos(f) % bytes_per_clus == 0 {
+            var next: u32 = fat_get_entry(ff_clus(f));
+            if next >= 0x0FFFFFF8u32 {
+                // Will allocate on next iteration if needed
+            } else {
+                ff_clus(f, next);
+                ff_clus_idx(f, ff_clus_idx(f) + 1);
+            }
+        }
+    }
+
+    ff_dirty(f, 1);
     delete(secbuf);
     return total;
 }
