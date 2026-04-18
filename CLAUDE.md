@@ -154,21 +154,45 @@
   - problem.md を優先度別に再構成。K5/K10/K6 を solved.md に移動、
     K7 part 3 を K7 本体に統合、K8+K9 を統合
 
+- **#3 整数リテラル型推論 (2026-04-18)**: tcheck.tc と
+  bootstrap/typecheck.c に 2 段階オーバーロード解決を実装。
+  Phase 1: exact match、Phase 2: サフィックスなし整数リテラル引数を
+  相手型に coerce して再解決。~180 箇所の `u32` サフィックスを除去
+- **非ブロッキング UART stdin (2026-04-18)**: sh の sys_read が
+  ecall ハンドラ内で do_uart_read をスピンウェイトしていた問題を修正。
+  vfs_read が do_uart_try_read を使い、データなし時は -2 (sentinel)
+  を返す。ecall ハンドラは -2 で sched_yield_read → 再実行。
+  UART empty と file EOF を区別するため -2 sentinel 方式を採用
+- **kernel/build.sh 解体 (2026-04-18)**: Makefile を per-task
+  ターゲットに分解。共有モジュール (runtime.s / libtc.s) の
+  プリコンパイル、per-task binary (`build/kernel/tasks/<name>.bin` +
+  `.d` 依存追跡)、ディスクイメージ 2 種 (disk.img = GUEST_TASKS /
+  disk-extra.img = + EXTRA_GUEST_TASKS)、カーネルバイナリのディスク
+  分離。1 task 変更で ~6s (旧 ~71s)。`make run-extra` は proper
+  Make 依存に移行 (`.PHONY` 強制リビルド廃止)。kernel/build.sh は
+  後方互換で残存
+- **パイプ syscall (2026-04-18)**: `sys_pipe` (ecall 222) が 4 KB
+  リングバッファを作成し read/write 両端の VFS fd を返す。
+  `sys_spawn_fds` (ecall 219) が fd ベースの spawn (パイプ fd を
+  子タスクに渡す)。pipe_read は空なら -2 yield、writer closed なら
+  0 (EOF)。pipe_write は満杯なら -2 yield。ecall_write にも -2
+  yield チェック追加。sh がパイプラインの全段を同時 spawn → 全段
+  wait で concurrent 実行。`echo hello | cat | wc` 等が動作
+- **sh タブ補完改善 (2026-04-18)**: `|` の直後のトークンもコマンド
+  位置として認識し /bin から補完
+
 **次の候補** (どれも独立):
 
-- **#3 整数リテラル型推論**: tcheck で整数リテラルを文脈の型に合わせて
-  overload 解決。190 箇所の `as u32` が不要に。bootstrap typecheck.c
-  との同期変更が要る
-- **フェーズ 7 M7**: OS 上で Gen2 → Gen3 相当の一周 (コンパイラ自身を
-  OS 上で再コンパイル)。時間はかかるが現状の memory peak で成立する
-  はず
+- **フェーズ 7 M7-full**: OS 上で Gen2 → Gen3 相当の一周 (コンパイラ
+  自身を OS 上で再コンパイル)。パイプ syscall 導入で中間ファイル経由
+  より高速化できる可能性あり
 - **bcrun.tc::vm_run AST pool outlier**: tcheck/codegen/bc2asm
   すべての peak を跳ね上げる原因が vm_run 1 関数の巨大 AST (2581
   node)。source 分解は intentionally out of scope (ユーザ指示)。
   現状 252 KB peak は phase 7 OS の 16 MB task 枠に収まる
 - **フェーズ 8**: OS 全体を独自言語で書く
 
-問題詳細は `docs/problem.md` (#7 / K3 / K5 / K6 / K7)、
+問題詳細は `docs/problem.md`、
 phase 7 実装記録は `docs/task/phase7_compiler_on_os.md`、
 pipeline メモリ削減計画は `docs/task/pipeline_100kb.md`、
 .lab 中間フォーマットは `docs/lab_format.md`。
@@ -305,6 +329,8 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       は 4 引数 ABI (path, argv, in_path, out_path) で
                       kernel 側が redirect ファイルを open し argv を
                       StringArray clone してからスロットを作成。
+                      sys_spawn_fds_handler (219) は fd ベースの spawn
+                      (パイプ fd を子タスクに直接渡す)。
                       K3 案C: タスクバイナリの先頭 8 バイトに
                       `.word arena_size; .word stack_size` の header が
                       あり、`load_fd` がそれを読んで `make_task(entry+8,
@@ -312,10 +338,10 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       固定値は撲滅済み)。
                       sys_wait_handler (260) は呼び出し元を waiting に
   trap_common.s       共通 asm: trap entry/exit, ecall dispatch (write64 /
-                      read63 / openat56 / close57 / readdir89 / exit93 /
-                      spawn220 / exec221 / mux_enable250 / wait260),
-                      sched_start, kern_run_task。spawn/exec は a0..a3 を
-                      読んで handler__u32__u32__u32__u32 に dispatch
+                      read63 / openat56 / close57 / readdir89 / exit93 / pipe222 /
+                      spawn_fds219 / spawn220 / exec221 / mux_enable250 /
+                      wait260), sched_start, kern_run_task。read/write
+                      は -2 yield 対応 (pipe backpressure / UART empty)
   platform_virt.s     virt 固有: _start, 16550 UART, _set_kern_gp via la。
                       `__runtime_init` に渡す arena_size は 100_663_296
                       (96 MB) — crt0_data.s の .space と必ず一致させる
@@ -355,8 +381,10 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
     launcher/launcher.tc タスク4 (pico2 slot 2、do_exec(path, 0, 0, 0) で
                       /bin/catfile を exec)
     sh/sh.tc          対話シェル (sys_spawn + sys_wait + `<` / `>` +
-                      絶対パス対応 + TAB 補完 (/bin コマンド + readdir
-                      パス、共通プレフィックス自動補完) + コマンド
+                      `|` パイプ (sys_pipe + sys_spawn_fds で concurrent
+                      実行、max 4 pipes) + 絶対パス対応 + TAB 補完
+                      (/bin コマンド + readdir パス + `|` 後のコマンド
+                      補完、共通プレフィックス自動補完) + コマンド
                       ヒストリ (上下矢印、8 件) + echo-back + backspace。
                       quit で終了、virt slot 2)
     msh/msh.tc        プログラム操作用 silent sh (プロンプト/echo なし、

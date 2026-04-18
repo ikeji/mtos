@@ -312,8 +312,10 @@ asm split・full split すべての pipeline で Hello World が動く。
       tc_run.sh を sigscan + tcheck + asm_pass1 + asm_pass2 に
       切り替え、`compiler/typecheck.tc` / `compiler/asm.tc`
       (+ 関連 symlink / test_split.sh / tc_asm.sh) を削除
-- [ ] **C-2 (任意)**: `pipe()` + dup2 による真のパイプサポート
-      (中間ファイル経由で動いたあと、性能が問題になったら)
+- [x] **C-2**: `sys_pipe` (ecall 222) + `sys_spawn_fds` (ecall 219)
+      によるカーネルパイプ。4 KB リングバッファ、pipe_read/write は
+      -2 yield で非ブロッキング、writer close で EOF。sh が全段を
+      concurrent spawn して wait。`echo hello | cat | wc` 等が動作
 - [x] **M7-minimal** (2026-04-16): OS 上で string_buffer.tc
       (imports なし) を Gen2 パイプラインで自己コンパイル。
       `tests/test_phase7.sh` stage 2 で parse + sigscan + tcheck +
@@ -362,6 +364,19 @@ asm split・full split すべての pipeline で Hello World が動く。
         時のみに。km_dump_peak 常時呼び出し削除
       - K5 / K10: 再検証で再現せず solved 化
       - problem.md 再構成 (K7 part 3 統合、K8+K9 統合)
+- [x] **#3 整数リテラル型推論 (2026-04-18)**: tcheck.tc / typecheck.c
+      に 2 段階オーバーロード解決。~180 箇所の u32 サフィックス除去
+- [x] **非ブロッキング UART stdin (2026-04-18)**: sh の stdin 読み込み
+      が他タスクをブロックする問題を修正。do_uart_try_read + -2
+      sentinel + sched_yield_read で yield and retry
+- [x] **kernel/build.sh 解体 (2026-04-18)**: Makefile を per-task
+      ターゲットに分解。1 task 変更で ~6s (旧 ~71s)。disk.img /
+      disk-extra.img の 2 種。`make run-extra` は proper Make 依存に移行
+- [x] **パイプ syscall (2026-04-18)**: sys_pipe (ecall 222) +
+      sys_spawn_fds (ecall 219)。4 KB リングバッファ、-2 yield で
+      非ブロッキング。sh が `|` で concurrent pipeline 実行
+- [x] **sh 補完改善 (2026-04-18)**: `|` 後のトークンを /bin コマンド
+      補完対象に
 
 ## フェーズ8: 自己ホスト
 

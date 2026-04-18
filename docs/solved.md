@@ -179,6 +179,14 @@ Phase 1: exact match (従来通り)。Phase 2: exact match 失敗時に
 変数経由 (`var n: i32 = 256; f(n)`) は従来通りエラー。
 
 `U8Array(256u32)` → `U8Array(256)` のように配列コンストラクタや
-poke/peek 等の直接リテラル引数から u32 サフィックスを ~180 ��所除去。
+poke/peek 等の直接リテラル引数から u32 サフィックスを ~180 箇所除去。
 変数の `as u32` キャストやバイナリ演算内のサフィックスは対象外
 (関数呼び出し引数位置のリテラルのみ)。
+
+### UART stdin ブロック (bug → 解決, 2026-04-18)
+
+sh の `sys_read(0, buf, 1)` が ecall ハンドラ内の `do_uart_read` で
+M-mode スピンウェイトし、hello/hello2 等の他タスクが実行されなかった。
+`do_uart_try_read` (非ブロッキング) + -2 sentinel + `sched_yield_read`
+で yield and retry に変更。-2 sentinel により UART empty と file EOF
+(リダイレクト時の tmpfs/pipe EOF) を区別。
