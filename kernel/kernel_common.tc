@@ -948,7 +948,11 @@ export fn sched_yield_read() -> void {
         }
         i = i + 1;
     }
-    rearm_timer();
+    // Note: do NOT call rearm_timer() here. The timer is rearmed by
+    // the trap_handler's timer interrupt branch. Calling it here would
+    // push mtimecmp forward on every -2 yield iteration, preventing
+    // the timer from ever firing (and thus preventing sleeping tasks
+    // from being woken).
     return;
 }
 
@@ -1030,6 +1034,19 @@ fn sched_task_exit() -> u32 {
         var nt: Task = get(g_tasks, next);
         if state(nt) == STATE_READY {
             g_current = next;
+            return frame(nt);
+        }
+        i = i + 1;
+    }
+    // No READY task found. If any task is SLEEPING, return its frame
+    // so the system keeps running until a timer interrupt wakes it.
+    // The sleeping task's ecall will re-execute and yield; eventually
+    // the timer handler wakes it and it resumes normally.
+    i = 0;
+    while i < g_num_tasks {
+        var nt: Task = get(g_tasks, i);
+        if state(nt) == STATE_SLEEPING {
+            g_current = i;
             return frame(nt);
         }
         i = i + 1;
