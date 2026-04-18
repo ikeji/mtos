@@ -22,6 +22,7 @@ fn vfs_close(fd: i32) -> i32;
 // Platform-provided (linked at build time)
 fn rearm_timer() -> void;
 fn read_mtime() -> u32;
+fn ticks_per_ms() -> u32;
 
 // Scheduler state (private to this module)
 // State values:
@@ -29,10 +30,11 @@ fn read_mtime() -> u32;
 //   1 = done     — task exited; slot can be reused by sched_spawn
 //   2 = unused   — never filled; slot can be reused by sched_spawn
 //   3 = waiting  — blocked in sys_wait; wakes when its target goes done
-var STATE_READY:   i32 = 0;
-var STATE_DONE:    i32 = 1;
-var STATE_UNUSED:  i32 = 2;
-var STATE_WAITING: i32 = 3;
+var STATE_READY:    i32 = 0;
+var STATE_DONE:     i32 = 1;
+var STATE_UNUSED:   i32 = 2;
+var STATE_WAITING:  i32 = 3;
+var STATE_SLEEPING: i32 = 4;
 
 // Per-task process-table entry. Each scheduler slot owns one Task
 // instance; sched_init allocates them up-front and we mutate fields
@@ -82,6 +84,7 @@ struct Task {
     name:      u32,
     t_ram_sz:  i32,
     t_stk_sz:  i32,
+    wake_time: u32,
 }
 
 var g_num_tasks: i32 = 0;
@@ -842,7 +845,7 @@ export fn sched_init(max: i32) -> void {
         set(g_tasks, i,
             Task(0, STATE_UNUSED, -1,
                  0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0, 0));
+                 0, 0, 0, 0, 0, 0, 0, 0));
         i = i + 1;
     }
     return;
@@ -952,6 +955,17 @@ export fn sched_yield_read() -> void {
 // Called from assembly _trap_entry on non-ecall traps
 fn trap_handler(cause: u32, epc: u32) -> void {
     if cause == 0x80000007u32 {
+        // Wake sleeping tasks whose wake_time has arrived
+        var now: u32 = read_mtime();
+        var w: i32 = 0;
+        while w < g_num_tasks {
+            var wt: Task = get(g_tasks, w);
+            if state(wt) == STATE_SLEEPING && now >= wake_time(wt) {
+                state(wt, STATE_READY);
+            }
+            w = w + 1;
+        }
+
         var from_slot: i32 = g_current;
         var i: i32 = 0;
         while i < g_num_tasks {
@@ -1021,6 +1035,28 @@ fn sched_task_exit() -> u32 {
         i = i + 1;
     }
     return 0u32;
+}
+
+// sys_nanosleep: sleep for `ms` milliseconds. Uses the -2 yield
+// pattern: first call sets wake_time and returns -2, re-executions
+// check whether wake_time has passed. The timer interrupt handler
+// sets sleeping tasks back to READY once their time arrives.
+export fn sys_nanosleep_handler(ms: i32) -> i32 {
+    var cur: Task = get(g_tasks, g_current);
+    if wake_time(cur) == 0u32 {
+        // First call: compute wake time and sleep
+        var ticks: u32 = (ms as u32) * ticks_per_ms();
+        wake_time(cur, read_mtime() + ticks);
+        state(cur, STATE_SLEEPING);
+        return -2;
+    }
+    // Re-execute after being woken by timer handler
+    if read_mtime() >= wake_time(cur) {
+        wake_time(cur, 0);
+        return 0;
+    }
+    // Still sleeping (shouldn't normally reach here, but safe)
+    return -2;
 }
 
 export fn kern_read_mtime() -> u32 {

@@ -1,0 +1,53 @@
+// count.tc — print numbers 1 to 100 with a 1-second pause between each.
+//
+// Demonstrates the nanosleep syscall. Each line prints the number
+// followed by a newline to stdout.
+
+import "../libtc/libtc.tc";
+
+fn do_nanosleep(ms: i32) -> i32;
+
+fn print_int(n: i32) -> void {
+    // Max digits for i32: 10 digits + sign + newline
+    var buf: U8Array = U8Array(12);
+    var pos: i32 = 0;
+    if n == 0 {
+        set(buf, 0, '0' as u8);
+        pos = 1;
+    } else {
+        // Build digits in reverse
+        var tmp: U8Array = U8Array(12);
+        var tpos: i32 = 0;
+        var v: i32 = n;
+        while v > 0 {
+            set(tmp, tpos, ('0' as i32 + v % 10) as u8);
+            v = v / 10;
+            tpos = tpos + 1;
+        }
+        // Reverse into buf
+        var i: i32 = tpos - 1;
+        while i >= 0 {
+            set(buf, pos, get(tmp, i));
+            pos = pos + 1;
+            i = i - 1;
+        }
+        delete(tmp);
+    }
+    set(buf, pos, '\n' as u8);
+    pos = pos + 1;
+    sys_write(1, buf, pos);
+    delete(buf);
+    return;
+}
+
+fn main() -> i32 {
+    var i: i32 = 1;
+    while i <= 100 {
+        print_int(i);
+        if i < 100 {
+            do_nanosleep(1000);
+        }
+        i = i + 1;
+    }
+    return 0;
+}

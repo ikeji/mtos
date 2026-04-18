@@ -1,0 +1,3 @@
+GUEST_TASKS += count
+TASK_ARENA_count := 16384
+TASK_STACK_count := 8192

@@ -135,6 +135,13 @@ do_pipe__u32:
     ecall
     ret
 
+# do_nanosleep(ms: i32) → i32 — sleep for ms milliseconds.
+    .globl do_nanosleep__i32
+do_nanosleep__i32:
+    li   a7, 101
+    ecall
+    ret
+
 # do_mux_enable(on: i32) → void — toggle UART frame multiplexing.
 # See docs/task/uart_multiplex.md.
     .globl do_mux_enable__i32

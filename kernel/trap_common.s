@@ -95,6 +95,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_pipe
     li   t1, 219
     beq  t0, t1, _ecall_spawn_fds
+    li   t1, 101
+    beq  t0, t1, _ecall_nanosleep
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -279,6 +281,20 @@ _ecall_spawn_fds:
     call sys_spawn_fds_handler__u32__u32__i32__i32
     sw   a0, 40(s0)
     j    _ecall_leave_advance
+
+# ===== sys_nanosleep (a7 = 101) =====
+# a0 = milliseconds. Returns 0 on success. Uses -2 yield pattern.
+_ecall_nanosleep:
+    call _ecall_enter
+    lw   a0, 40(s0)         # ms
+    call sys_nanosleep_handler__i32
+    sw   a0, 40(s0)
+    li   t0, -2
+    bne  a0, t0, _ecall_leave_advance
+    sw   zero, 40(s0)
+    call sched_yield_read
+    mv   sp, s0
+    j    _trap_restore
 
 _ecall_exit:
     # Call TC sched_task_exit() to get next task frame (0 = all done)

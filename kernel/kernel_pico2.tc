@@ -36,6 +36,11 @@ fn read_mtime() -> u32 {
     return peek32(SIO_MTIME_L);
 }
 
+// SIO timer: 1 MHz, so 1000 ticks per millisecond
+fn ticks_per_ms() -> u32 {
+    return 1000u32;
+}
+
 // Mount mtfs from XIP flash and announce it to the serial console. If
 // block/vfs init fail we still start the hello/hello2/catfile tasks so
 // that a regression in the FS code does not break visible progress.
