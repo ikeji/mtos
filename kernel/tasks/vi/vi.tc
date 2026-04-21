@@ -97,6 +97,85 @@ fn emit_int(v: i32) -> void {
     return;
 }
 
+// ===== UTF-8 helpers =====
+
+// Byte count for a UTF-8 lead byte (1–4).
+fn utf8_len(c: u8) -> i32 {
+    if c < 128u8 { return 1; }
+    if c < 0xC0u8 { return 1; }   // continuation byte — treat as 1
+    if c < 0xE0u8 { return 2; }
+    if c < 0xF0u8 { return 3; }
+    return 4;
+}
+
+// True if c is a UTF-8 continuation byte (10xxxxxx).
+fn is_cont(c: u8) -> bool {
+    return c >= 0x80u8 && c < 0xC0u8;
+}
+
+// Decode a UTF-8 codepoint starting at g_buf[off].
+fn utf8_decode_at(off: i32) -> i32 {
+    var c0: i32 = get(g_buf, off) as i32;
+    if c0 < 128 { return c0; }
+    var n: i32 = utf8_len(c0 as u8);
+    if off + n > g_len { return 0xFFFD; }  // truncated
+    if n == 2 {
+        return ((c0 & 0x1F) << 6)
+             | (get(g_buf, off + 1) as i32 & 0x3F);
+    }
+    if n == 3 {
+        return ((c0 & 0x0F) << 12)
+             | ((get(g_buf, off + 1) as i32 & 0x3F) << 6)
+             | (get(g_buf, off + 2) as i32 & 0x3F);
+    }
+    return ((c0 & 0x07) << 18)
+         | ((get(g_buf, off + 1) as i32 & 0x3F) << 12)
+         | ((get(g_buf, off + 2) as i32 & 0x3F) << 6)
+         | (get(g_buf, off + 3) as i32 & 0x3F);
+}
+
+// Display width of a Unicode codepoint (1 or 2).
+fn char_width(cp: i32) -> i32 {
+    if cp >= 0x1100 && cp <= 0x115F { return 2; }
+    if cp >= 0x2E80 && cp <= 0x9FFF { return 2; }
+    if cp >= 0xF900 && cp <= 0xFAFF { return 2; }
+    if cp >= 0xFE10 && cp <= 0xFE6F { return 2; }
+    if cp >= 0xFF01 && cp <= 0xFF60 { return 2; }
+    if cp >= 0xFFE0 && cp <= 0xFFE6 { return 2; }
+    return 1;
+}
+
+// Display columns from g_buf[from] to g_buf[to] (same line, 0-based).
+fn display_col(from: i32, to: i32) -> i32 {
+    var col: i32 = 0;
+    var i: i32 = from;
+    while i < to && i < g_len {
+        var c: u8 = get(g_buf, i);
+        if c == 10u8 { return col; }
+        if !is_cont(c) {
+            col = col + char_width(utf8_decode_at(i));
+        }
+        i = i + 1;
+    }
+    return col;
+}
+
+// Find byte offset in line starting at ls for target display column.
+fn byte_at_dcol(ls: i32, target: i32) -> i32 {
+    var col: i32 = 0;
+    var i: i32 = ls;
+    while i < g_len && get(g_buf, i) != 10u8 {
+        var c: u8 = get(g_buf, i);
+        if !is_cont(c) {
+            var w: i32 = char_width(utf8_decode_at(i));
+            if col + w > target { return i; }
+            col = col + w;
+        }
+        i = i + 1;
+    }
+    return i;
+}
+
 // Clear screen + home cursor. TC string literals don't interpret
 // \xHH escapes, so we emit the ESC bytes raw (ESC [ 2 J ESC [ H).
 fn clear_screen() -> void {
@@ -133,13 +212,19 @@ fn line_end_at(off: i32) -> i32 {
 }
 
 // Row + col (both 1-based) for a given byte offset.
+// col counts display columns (CJK = 2, ASCII = 1).
 fn row_col(off: i32, out_row_col: U8Array) -> void {
     var row: i32 = 1;
     var col: i32 = 1;
     var i: i32 = 0;
     while i < off {
-        if get(g_buf, i) == 10u8 { row = row + 1; col = 1; }
-        else { col = col + 1; }
+        var c: u8 = get(g_buf, i);
+        if c == 10u8 {
+            row = row + 1;
+            col = 1;
+        } else if !is_cont(c) {
+            col = col + char_width(utf8_decode_at(i));
+        }
         i = i + 1;
     }
     // Pack: bytes 0..3 = row (u32 LE), 4..7 = col.
@@ -171,30 +256,38 @@ fn insert_byte(c: u8) -> void {
     return;
 }
 
-// Delete the byte at g_cur (no-op at end).
+// Delete the character at g_cur (full UTF-8 sequence, no-op at end).
 fn delete_byte_at_cur() -> void {
     if g_cur >= g_len { return; }
+    var n: i32 = utf8_len(get(g_buf, g_cur));
+    if g_cur + n > g_len { n = g_len - g_cur; }
     var i: i32 = g_cur;
-    while i < g_len - 1 {
-        set(g_buf, i, get(g_buf, i + 1));
+    while i + n < g_len {
+        set(g_buf, i, get(g_buf, i + n));
         i = i + 1;
     }
-    g_len = g_len - 1;
+    g_len = g_len - n;
     g_modified = 1;
     return;
 }
 
-// Delete the byte *before* the cursor (used by backspace in insert
-// mode). Returns true if anything was deleted.
+// Delete the character *before* the cursor (full UTF-8 sequence).
+// Returns true if anything was deleted.
 fn delete_byte_before_cur() -> bool {
     if g_cur == 0 { return false; }
-    var i: i32 = g_cur - 1;
-    while i < g_len - 1 {
-        set(g_buf, i, get(g_buf, i + 1));
+    // Find start of previous character by skipping continuation bytes.
+    var start: i32 = g_cur - 1;
+    while start > 0 && is_cont(get(g_buf, start)) {
+        start = start - 1;
+    }
+    var n: i32 = g_cur - start;
+    var i: i32 = start;
+    while i + n < g_len {
+        set(g_buf, i, get(g_buf, i + n));
         i = i + 1;
     }
-    g_len = g_len - 1;
-    g_cur = g_cur - 1;
+    g_len = g_len - n;
+    g_cur = start;
     g_modified = 1;
     return true;
 }
@@ -225,39 +318,40 @@ fn delete_line() -> void {
 fn move_left() -> void {
     if g_cur == 0 { return; }
     if get(g_buf, g_cur - 1) == 10u8 { return; }
+    // Skip back over continuation bytes to the lead byte.
     g_cur = g_cur - 1;
+    while g_cur > 0 && is_cont(get(g_buf, g_cur)) {
+        g_cur = g_cur - 1;
+    }
     return;
 }
 
 fn move_right() -> void {
     if g_cur >= g_len { return; }
     if get(g_buf, g_cur) == 10u8 { return; }
-    g_cur = g_cur + 1;
+    // Advance past the full UTF-8 character.
+    var n: i32 = utf8_len(get(g_buf, g_cur));
+    g_cur = g_cur + n;
+    if g_cur > g_len { g_cur = g_len; }
     return;
 }
 
 fn move_up() -> void {
     var ls: i32 = line_start_at(g_cur);
     if ls == 0 { return; }
-    var col: i32 = g_cur - ls;
+    var dcol: i32 = display_col(ls, g_cur);
     var prev_start: i32 = line_start_at(ls - 1);
-    var prev_end: i32 = line_end_at(prev_start);
-    var prev_len: i32 = prev_end - prev_start;
-    if col > prev_len { col = prev_len; }
-    g_cur = prev_start + col;
+    g_cur = byte_at_dcol(prev_start, dcol);
     return;
 }
 
 fn move_down() -> void {
     var ls: i32 = line_start_at(g_cur);
     var le: i32 = line_end_at(ls);
-    if le >= g_len { return; }         // no next line
-    var col: i32 = g_cur - ls;
+    if le >= g_len { return; }
+    var dcol: i32 = display_col(ls, g_cur);
     var next_start: i32 = le + 1;
-    var next_end: i32 = line_end_at(next_start);
-    var next_len: i32 = next_end - next_start;
-    if col > next_len { col = next_len; }
-    g_cur = next_start + col;
+    g_cur = byte_at_dcol(next_start, dcol);
     return;
 }
 
@@ -436,7 +530,9 @@ fn handle_normal(c: u8) -> void {
     else if c == 'I' as u8 { move_line_start(); g_mode = 1; }
     else if c == 'a' as u8 {
         if g_cur < g_len && get(g_buf, g_cur) != 10u8 {
-            g_cur = g_cur + 1;
+            var n: i32 = utf8_len(get(g_buf, g_cur));
+            g_cur = g_cur + n;
+            if g_cur > g_len { g_cur = g_len; }
         }
         g_mode = 1;
     }
@@ -463,11 +559,16 @@ fn handle_normal(c: u8) -> void {
 fn handle_insert(c: u8) -> void {
     if c == 27u8 {
         // ESC → back to normal mode. Vi pulls the cursor one
-        // position left on exit unless we're at col 0.
+        // character left on exit unless we're at col 0.
         g_mode = 0;
         if g_cur > 0 {
             var ls: i32 = line_start_at(g_cur);
-            if g_cur > ls { g_cur = g_cur - 1; }
+            if g_cur > ls {
+                g_cur = g_cur - 1;
+                while g_cur > ls && is_cont(get(g_buf, g_cur)) {
+                    g_cur = g_cur - 1;
+                }
+            }
         }
         return;
     }
