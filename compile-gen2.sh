@@ -196,6 +196,8 @@ done
     cat "$CRT0"
     cat "$TMP/runtime.s"
     cat "${ASM_FILES[@]}"
+    # EXTRA_S: additional .s files to include (e.g. data tables)
+    for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done
     cat "$CRT0_DATA"
 } > "$TMP/full.s"
 

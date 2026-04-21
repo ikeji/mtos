@@ -178,6 +178,7 @@ build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
 	CRT0="$$_tmp/crt0.s" CRT0_DATA=kernel/tasks/task_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
+	    EXTRA_S="$(TASK_EXTRA_S_$*)" \
 	    ./compile-gen2.sh -o $@ kernel/tasks/$*/$*.tc 2>/dev/null && \
 	rm -rf "$$_tmp"
 	@tools/tc_deps_to_d.sh $@ kernel/tasks/$*/$*.tc > $@.d
