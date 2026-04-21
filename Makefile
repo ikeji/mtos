@@ -272,11 +272,12 @@ build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	    ./compile-gen2.sh -o $@ kernel/kernel.tc 2>/dev/null && \
 	rm -rf "$$_tmp"
 
-build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
-    kernel/bin2s.sh tools/bin2uf2.py | build/kernel
-	@echo "Building kernel: pico2" >&2
+PICO2_DISK = build/kernel/disk.img
+# Recipe shared by pico2_kernel.uf2 and pico2_kernel_extra.uf2.
+define PICO2_KERNEL_RECIPE
+	@echo "Building kernel: pico2 (disk=$(PICO2_DISK))" >&2
 	@_tmp=$$(mktemp -d) && \
-	kernel/bin2s.sh build/kernel/disk.img _mtfs_image > "$$_tmp/mtfs_image.s" && \
+	kernel/bin2s.sh $(PICO2_DISK) _mtfs_image > "$$_tmp/mtfs_image.s" && \
 	cat kernel/platform_pico2.s kernel/trap_common.s > "$$_tmp/crt0.s" && \
 	cat kernel/crt0_pico2_data.s "$$_tmp/mtfs_image.s" > "$$_tmp/kern_data.s" && \
 	CRT0="$$_tmp/crt0.s" CRT0_DATA="$$_tmp/kern_data.s" \
@@ -285,9 +286,20 @@ build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
 	    ./compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/kernel_pico2.tc 2>/dev/null && \
 	python3 tools/bin2uf2.py "$$_tmp/kernel.bin" $@ && \
 	rm -rf "$$_tmp"
+endef
+
+build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
+    kernel/bin2s.sh tools/bin2uf2.py | build/kernel
+	$(PICO2_KERNEL_RECIPE)
+
+build/kernel/pico2_kernel_extra.uf2: PICO2_DISK := build/kernel/disk-extra.img
+build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-extra.img \
+    kernel/bin2s.sh tools/bin2uf2.py | build/kernel
+	$(PICO2_KERNEL_RECIPE)
 
 virt-kernel:  build/kernel/virt_kernel.bin
 pico2-kernel: build/kernel/pico2_kernel.uf2
+pico2-kernel-extra: build/kernel/pico2_kernel_extra.uf2
 
 # ----- FAT32 disk image (second virtio-blk drive) -----
 # mkfs.fat may live in /sbin (not in PATH by default)
@@ -324,16 +336,16 @@ run-extra: build/kernel/virt_kernel.bin build/kernel/disk-extra.img build/kernel
 	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
 	$(QEMU_SYSTEM) $(QEMU_ARGS)
 
-# Pico 2 counterparts. run_pico2_interactive.sh が内部でビルド or
-# make pico2-kernel を呼ぶ。--extra は kernel/build.sh 経由 (後方互換)。
+# Pico 2 counterparts. Make builds the UF2, then run_pico2_interactive.sh
+# flashes and opens the UART console.
 .PHONY: run-pico2 run-pico2-extra
-run-pico2:
-	@echo "[pico2] build + flash + interactive UART (Ctrl-a x to quit)"
-	./kernel/run_pico2_interactive.sh
+run-pico2: build/kernel/pico2_kernel.uf2
+	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
+	UF2=build/kernel/pico2_kernel.uf2 ./kernel/run_pico2_interactive.sh --no-build
 
-run-pico2-extra:
-	@echo "[pico2] build + flash + interactive UART (Ctrl-a x to quit)"
-	./kernel/run_pico2_interactive.sh --extra
+run-pico2-extra: build/kernel/pico2_kernel_extra.uf2
+	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
+	UF2=build/kernel/pico2_kernel_extra.uf2 ./kernel/run_pico2_interactive.sh --no-build
 
 # ===== test_asm prebuilt binaries (Phase D) =====
 
@@ -406,5 +418,5 @@ update-golden-and-run-test: $(BUILD_DEPS)
 .NOTPARALLEL:
 
 .PHONY: all clean test full-test update-golden update-golden-and-run-test \
-        gen2-tools gen3-tools virt-kernel pico2-kernel test-asm-bins \
-        run run-extra run-pico2 run-pico2-extra
+        gen2-tools gen3-tools virt-kernel pico2-kernel pico2-kernel-extra \
+        test-asm-bins run run-extra run-pico2 run-pico2-extra
