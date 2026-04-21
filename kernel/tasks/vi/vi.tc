@@ -24,7 +24,13 @@
 //
 // Insert-mode: any printable byte is inserted at cursor. Backspace
 // deletes the previous byte. Tab is inserted literally. Enter inserts
-// a newline.
+// a newline. Ctrl+J enters TUT-code mode for Japanese input;
+// ESC exits TUT mode back to insert mode.
+//
+// TUT-code: two-stroke hiragana input (consonant + vowel).
+//   Consonants: R=あ E=か S=さ D=た F=な T=は W=ま Q=や G=ら A=わ
+//   Vowels:     K=-a  I=-i  U=-u  H=-e  J=-o
+//   FL=ん, consonant+L+vowel=voiced (e.g. ELK=が), T+L+T+vowel=ぱ行
 //
 // Cmdline-mode (after ':'):
 //   w        — write buffer back to the file
@@ -65,6 +71,13 @@ var g_msg_len: i32 = 0;
 var g_pending_d: i32 = 0;            // first 'd' of 'dd' seen
 var g_pending_g: i32 = 0;            // first 'g' of 'gg' seen
 var g_pending_Z: i32 = 0;            // first 'Z' of 'ZZ' seen
+
+// TUT-code input state: 0=off, 1=waiting consonant, 2=got consonant,
+// 3=got consonant+L (voiced), 4=got T+L+T (semi-voiced)
+var g_tut: i32 = 0;
+var g_tut_k1: i32 = 0;              // consonant row (0-9)
+var g_tut_uv: U8Array = 0 as U8Array;  // unvoiced table (50 bytes)
+var g_tut_vo: U8Array = 0 as U8Array;  // voiced/small table (50 bytes)
 
 // ===== terminal helpers =====
 
@@ -380,6 +393,161 @@ fn move_eof() -> void {
     return;
 }
 
+// ===== TUT-code input =====
+
+fn tut_set5(tbl: U8Array, row: i32,
+            a: i32, b: i32, c: i32, d: i32, e: i32) -> void {
+    var base: i32 = row * 5;
+    set(tbl, base, a as u8);
+    set(tbl, base + 1, b as u8);
+    set(tbl, base + 2, c as u8);
+    set(tbl, base + 3, d as u8);
+    set(tbl, base + 4, e as u8);
+    return;
+}
+
+fn tut_init() -> void {
+    g_tut_uv = U8Array(50);
+    g_tut_vo = U8Array(50);
+    //                       -a   -i   -u   -e   -o
+    tut_set5(g_tut_uv, 0, 0x42,0x44,0x46,0x48,0x4A); // R あ行
+    tut_set5(g_tut_uv, 1, 0x4B,0x4D,0x4F,0x51,0x53); // E か行
+    tut_set5(g_tut_uv, 2, 0x55,0x57,0x59,0x5B,0x5D); // S さ行
+    tut_set5(g_tut_uv, 3, 0x5F,0x61,0x64,0x66,0x68); // D た行
+    tut_set5(g_tut_uv, 4, 0x6A,0x6B,0x6C,0x6D,0x6E); // F な行
+    tut_set5(g_tut_uv, 5, 0x6F,0x72,0x75,0x78,0x7B); // T は行
+    tut_set5(g_tut_uv, 6, 0x7E,0x7F,0x80,0x81,0x82); // W ま行
+    tut_set5(g_tut_uv, 7, 0x84,   0,0x86,   0,0x88); // Q や行
+    tut_set5(g_tut_uv, 8, 0x89,0x8A,0x8B,0x8C,0x8D); // G ら行
+    tut_set5(g_tut_uv, 9, 0x8F,0x90,   0,0x91,0x92); // A わ行
+
+    tut_set5(g_tut_vo, 0, 0x41,0x43,0x45,0x47,0x49); // R ぁ行 (small)
+    tut_set5(g_tut_vo, 1, 0x4C,0x4E,0x50,0x52,0x54); // E が行
+    tut_set5(g_tut_vo, 2, 0x56,0x58,0x5A,0x5C,0x5E); // S ざ行
+    tut_set5(g_tut_vo, 3, 0x60,0x62,0x63,0x67,0x69); // D だ行 (u=っ)
+    tut_set5(g_tut_vo, 4,    0,   0,   0,   0,   0); // F (none)
+    tut_set5(g_tut_vo, 5, 0x70,0x73,0x76,0x79,0x7C); // T ば行
+    tut_set5(g_tut_vo, 6,    0,   0,   0,   0,   0); // W (none)
+    tut_set5(g_tut_vo, 7, 0x83,   0,0x85,   0,0x87); // Q ゃ行 (small)
+    tut_set5(g_tut_vo, 8,    0,   0,   0,   0,   0); // G (none)
+    tut_set5(g_tut_vo, 9, 0x8E,   0,   0,   0,   0); // A ゎ (small)
+    return;
+}
+
+fn tut_consonant(c: u8) -> i32 {
+    if c == 'r' as u8 || c == 'R' as u8 { return 0; }
+    if c == 'e' as u8 || c == 'E' as u8 { return 1; }
+    if c == 's' as u8 || c == 'S' as u8 { return 2; }
+    if c == 'd' as u8 || c == 'D' as u8 { return 3; }
+    if c == 'f' as u8 || c == 'F' as u8 { return 4; }
+    if c == 't' as u8 || c == 'T' as u8 { return 5; }
+    if c == 'w' as u8 || c == 'W' as u8 { return 6; }
+    if c == 'q' as u8 || c == 'Q' as u8 { return 7; }
+    if c == 'g' as u8 || c == 'G' as u8 { return 8; }
+    if c == 'a' as u8 || c == 'A' as u8 { return 9; }
+    return -1;
+}
+
+fn tut_vowel(c: u8) -> i32 {
+    if c == 'k' as u8 || c == 'K' as u8 { return 0; }
+    if c == 'i' as u8 || c == 'I' as u8 { return 1; }
+    if c == 'u' as u8 || c == 'U' as u8 { return 2; }
+    if c == 'h' as u8 || c == 'H' as u8 { return 3; }
+    if c == 'j' as u8 || c == 'J' as u8 { return 4; }
+    return -1;
+}
+
+fn is_tut_l(c: u8) -> bool {
+    return c == 'l' as u8 || c == 'L' as u8;
+}
+
+// Insert a Unicode codepoint as UTF-8 bytes.
+fn insert_codepoint(cp: i32) -> void {
+    if cp < 0x80 {
+        insert_byte(cp as u8);
+    } else if cp < 0x800 {
+        insert_byte((0xC0 | (cp >> 6)) as u8);
+        insert_byte((0x80 | (cp & 0x3F)) as u8);
+    } else {
+        insert_byte((0xE0 | (cp >> 12)) as u8);
+        insert_byte((0x80 | ((cp >> 6) & 0x3F)) as u8);
+        insert_byte((0x80 | (cp & 0x3F)) as u8);
+    }
+    return;
+}
+
+fn handle_tut(c: u8) -> void {
+    // ESC: exit TUT mode, stay in insert mode
+    if c == 27u8 { g_tut = 0; return; }
+    // Ctrl+J: also exit TUT mode
+    if c == 10u8 { g_tut = 0; return; }
+    // Backspace: delete previous character normally
+    if c == 8u8 || c == 127u8 { delete_byte_before_cur(); return; }
+    // Enter: insert newline
+    if c == '\r' as u8 { insert_byte('\n' as u8); return; }
+
+    if g_tut == 1 {
+        // Waiting for consonant key
+        var row: i32 = tut_consonant(c);
+        if row >= 0 { g_tut_k1 = row; g_tut = 2; }
+        return;
+    }
+
+    if g_tut == 2 {
+        // Got consonant, waiting for vowel or L
+        if is_tut_l(c) {
+            if g_tut_k1 == 4 {
+                // FL → ん
+                insert_codepoint(0x3093);
+                g_tut = 1;
+                return;
+            }
+            g_tut = 3;
+            return;
+        }
+        var col: i32 = tut_vowel(c);
+        if col >= 0 {
+            var off: i32 = get(g_tut_uv, g_tut_k1 * 5 + col) as i32;
+            if off != 0 { insert_codepoint(0x3000 + off); }
+            g_tut = 1;
+            return;
+        }
+        // Another consonant? Start over.
+        var row: i32 = tut_consonant(c);
+        if row >= 0 { g_tut_k1 = row; return; }
+        g_tut = 1;
+        return;
+    }
+
+    if g_tut == 3 {
+        // Consonant + L: voiced/small kana
+        // Semi-voiced: T+L then T → state 4
+        if g_tut_k1 == 5 && (c == 't' as u8 || c == 'T' as u8) {
+            g_tut = 4;
+            return;
+        }
+        var col: i32 = tut_vowel(c);
+        if col >= 0 {
+            var off: i32 = get(g_tut_vo, g_tut_k1 * 5 + col) as i32;
+            if off != 0 { insert_codepoint(0x3000 + off); }
+            g_tut = 1;
+            return;
+        }
+        g_tut = 1;
+        return;
+    }
+
+    if g_tut == 4 {
+        // T+L+T + vowel → ぱ行 (0x3071 + col*3)
+        var col: i32 = tut_vowel(c);
+        if col >= 0 { insert_codepoint(0x3071 + col * 3); }
+        g_tut = 1;
+        return;
+    }
+
+    return;
+}
+
 // ===== file I/O =====
 
 fn set_msg(s: StringLiteral) -> void {
@@ -438,7 +606,10 @@ fn render() -> void {
     }
     // Status line: mode indicator on row 24 (or wherever we are).
     puts("\r\n-- ");
-    if g_mode == 1 { puts("INSERT"); }
+    if g_mode == 1 {
+        if g_tut > 0 { puts("INSERT TUT"); }
+        else { puts("INSERT"); }
+    }
     else if g_mode == 2 {
         puts(":");
         if g_cmdlen > 0 { puts_n(g_cmdbuf, g_cmdlen); }
@@ -568,8 +739,8 @@ fn handle_normal(c: u8) -> void {
 
 fn handle_insert(c: u8) -> void {
     if c == 27u8 {
-        // ESC → back to normal mode. Vi pulls the cursor one
-        // character left on exit unless we're at col 0.
+        // ESC → if TUT active, exit TUT only; else exit insert mode.
+        if g_tut > 0 { g_tut = 0; return; }
         g_mode = 0;
         if g_cur > 0 {
             var ls: i32 = line_start_at(g_cur);
@@ -582,13 +753,22 @@ fn handle_insert(c: u8) -> void {
         }
         return;
     }
+    // TUT mode active: route all keys to TUT handler.
+    if g_tut > 0 {
+        handle_tut(c);
+        return;
+    }
+    // Ctrl+J: enter TUT mode.
+    if c == 10u8 {
+        g_tut = 1;
+        return;
+    }
     if c == 8u8 || c == 127u8 {
         delete_byte_before_cur();
         return;
     }
     if c == '\r' as u8 { c = '\n' as u8; }
-    // Accept LF, TAB and any printable byte. Reject other C0 controls
-    // so bogus bytes don't end up in the file.
+    // Accept LF (from CR), TAB and any printable byte.
     if c == 10u8 || c == 9u8 || c >= 32u8 { insert_byte(c); }
     return;
 }
@@ -636,6 +816,7 @@ fn main(argv: StringArray) -> i32 {
 
     g_buf = U8Array(BUF_CAP as u32);
     g_cmdbuf = U8Array(CMD_CAP as u32);
+    tut_init();
     load_file();
 
     var one: U8Array = U8Array(1);
@@ -661,6 +842,8 @@ fn main(argv: StringArray) -> i32 {
 
     delete(g_buf);
     delete(g_cmdbuf);
+    delete(g_tut_uv);
+    delete(g_tut_vo);
     delete(g_path);
     if g_msg as u32 != 0u32 { delete(g_msg); }
     return 0;
