@@ -169,10 +169,16 @@ for task in $TASKS; do
     # at offsets 0 and 4 of the binary, with _start at offset 8.
     emit_task_header "$task" "$TMP/${task}_hdr.s"
     cat "$TMP/${task}_hdr.s" "$TASK_CRT0" > "$TMP/${task}_crt0.s"
+    # Collect per-task extra .s files (e.g. vi/tut_data.s)
+    _extra_s=""
+    for _es in "$KERN_DIR/tasks/$task"/*.s; do
+        [ -f "$_es" ] && [ "$_es" != "$KERN_DIR/tasks/$task/$task.s" ] && _extra_s="$_extra_s $_es"
+    done
     CRT0="$TMP/${task}_crt0.s" \
     CRT0_DATA="$TASK_DATA" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$GEN2_DIR" \
+    EXTRA_S="$_extra_s" \
         "$ROOT_DIR/compile-gen2.sh" -o "$TMP/$task.bin" \
         "$KERN_DIR/tasks/$task/$task.tc" 2>/dev/null
     if [ ! -s "$TMP/$task.bin" ]; then

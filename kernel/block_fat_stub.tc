@@ -1,0 +1,8 @@
+// block_fat_stub.tc — stub FAT block driver for platforms without
+// a second block device (e.g. Pico 2). fatfs.tc calls these via
+// body-less declarations; this stub makes the linker happy and
+// returns errors so fatfs_mount() simply fails gracefully.
+
+export fn fat_block_init() -> i32 { return -1; }
+export fn fat_block_read(sector: u32, buf: U8Array) -> i32 { return -1; }
+export fn fat_block_write(sector: u32, buf: U8Array) -> i32 { return -1; }

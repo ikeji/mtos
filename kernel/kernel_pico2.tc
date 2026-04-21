@@ -2,6 +2,7 @@
 
 import "kernel_common.tc";
 import "block_flash.tc";
+import "block_fat_stub.tc";
 import "mtfs.tc";
 import "vfs.tc";
 import "loader.tc";
