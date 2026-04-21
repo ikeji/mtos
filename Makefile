@@ -284,6 +284,9 @@ define PICO2_KERNEL_RECIPE
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    ./compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/kernel_pico2.tc 2>/dev/null && \
+	_ksz=$$(wc -c < "$$_tmp/kernel.bin") && \
+	_dsz=$$(wc -c < $(PICO2_DISK)) && \
+	printf '  kernel.bin: %s bytes, disk: %s bytes\n' "$$_ksz" "$$_dsz" >&2 && \
 	python3 tools/bin2uf2.py "$$_tmp/kernel.bin" $@ && \
 	rm -rf "$$_tmp"
 endef
