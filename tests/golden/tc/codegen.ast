@@ -976,143 +976,28 @@
             (type i32)
             (var g_sp)
           )
-          (comment "var ch: u8 = peek_in();")
-          (var_decl ch
-            (type u8)
-            (call peek_in)
+          (comment "var b: i32 = read_string_char(g_reader);")
+          (var_decl b
+            (type i32)
+            (call read_string_char
+              (var g_reader)
+            )
           )
-          (comment "while ch != '\"' && ch != 0u8 {")
+          (comment "while b >= 0 {")
           (while
-            (binop &&
-              (binop !=
-                (var ch)
-                (int:u8 34)
-              )
-              (binop !=
-                (var ch)
-                (int:u8 0)
-              )
+            (binop >=
+              (var b)
+              (int 0)
             )
             (block
-              (comment "if ch == '\\\\' {")
-              (if
-                (binop ==
-                  (var ch)
-                  (int:u8 92)
-                )
-                (block
-                  (comment "next(g_reader);")
-                  (call_stmt next
-                    (var g_reader)
-                  )
-                  (comment "var esc: u8 = peek_in();")
-                  (var_decl esc
-                    (type u8)
-                    (call peek_in)
-                  )
-                  (comment "if esc == 'n'  { ch = 10u8; }")
-                  (if
-                    (binop ==
-                      (var esc)
-                      (int:u8 110)
-                    )
-                    (block
-                      (assign ch
-                        (int:u8 10)
-                      )
-                    )
-                  )
-                  (comment "if esc == 't'  { ch = 9u8; }")
-                  (if
-                    (binop ==
-                      (var esc)
-                      (int:u8 116)
-                    )
-                    (block
-                      (assign ch
-                        (int:u8 9)
-                      )
-                    )
-                  )
-                  (comment "if esc == 'r'  { ch = 13u8; }")
-                  (if
-                    (binop ==
-                      (var esc)
-                      (int:u8 114)
-                    )
-                    (block
-                      (assign ch
-                        (int:u8 13)
-                      )
-                    )
-                  )
-                  (comment "if esc == '\\\\' { ch = '\\\\'; }")
-                  (if
-                    (binop ==
-                      (var esc)
-                      (int:u8 92)
-                    )
-                    (block
-                      (assign ch
-                        (int:u8 92)
-                      )
-                    )
-                  )
-                  (comment "if esc == '\"'  { ch = '\"'; }")
-                  (if
-                    (binop ==
-                      (var esc)
-                      (int:u8 34)
-                    )
-                    (block
-                      (assign ch
-                        (int:u8 34)
-                      )
-                    )
-                  )
-                  (comment "if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\\\' && esc != '\"' { ch = esc; }")
-                  (if
-                    (binop &&
-                      (binop &&
-                        (binop &&
-                          (binop &&
-                            (binop !=
-                              (var esc)
-                              (int:u8 110)
-                            )
-                            (binop !=
-                              (var esc)
-                              (int:u8 116)
-                            )
-                          )
-                          (binop !=
-                            (var esc)
-                            (int:u8 114)
-                          )
-                        )
-                        (binop !=
-                          (var esc)
-                          (int:u8 92)
-                        )
-                      )
-                      (binop !=
-                        (var esc)
-                        (int:u8 34)
-                      )
-                    )
-                    (block
-                      (assign ch
-                        (var esc)
-                      )
-                    )
-                  )
-                )
-              )
-              (comment "set(strtab, g_sp, ch);")
+              (comment "set(strtab, g_sp, b as u8);")
               (call_stmt set
                 (var strtab)
                 (var g_sp)
-                (var ch)
+                (cast
+                  (var b)
+                  (type u8)
+                )
               )
               (comment "g_sp = g_sp + 1;")
               (assign g_sp
@@ -1121,20 +1006,18 @@
                   (int 1)
                 )
               )
-              (comment "next(g_reader);")
-              (call_stmt next
-                (var g_reader)
-              )
-              (comment "ch = peek_in();")
-              (assign ch
-                (call peek_in)
+              (comment "b = read_string_char(g_reader);")
+              (assign b
+                (call read_string_char
+                  (var g_reader)
+                )
               )
             )
           )
-          (comment "if ch == '\"' { next(g_reader); } // consume closing '\"'")
+          (comment "if peek_in() == '\"' { next(g_reader); } // consume closing '\"'")
           (if
             (binop ==
-              (var ch)
+              (call peek_in)
               (int:u8 34)
             )
             (block

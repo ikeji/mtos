@@ -4959,6 +4959,350 @@ line_buf_reset__SourceReader:
     ret
     # end of line_buf_reset__SourceReader
 
+    .globl read_string_char__SourceReader
+    .type  read_string_char__SourceReader, @function
+read_string_char__SourceReader:
+    # prologue: frame_size=32, params=1, locals=2, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   zero, -16(s0)
+    sw   zero, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -16(s0)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_string_char__SourceReader_pc10
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    neg  t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_read_string_char__SourceReader_pc10:
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 34
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_string_char__SourceReader_pc17
+0:
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    neg  t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_read_string_char__SourceReader_pc17:
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 92
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    snez t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_string_char__SourceReader_pc27
+0:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_read_string_char__SourceReader_pc27:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call peek__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call next__SourceReader
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 110
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_string_char__SourceReader_pc42
+0:
+    li   t0, 10
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_read_string_char__SourceReader_pc42:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 116
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_string_char__SourceReader_pc48
+0:
+    li   t0, 9
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_read_string_char__SourceReader_pc48:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 114
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_string_char__SourceReader_pc54
+0:
+    li   t0, 13
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_read_string_char__SourceReader_pc54:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 92
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_string_char__SourceReader_pc61
+0:
+    li   t0, 92
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_read_string_char__SourceReader_pc61:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 34
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    seqz t0, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_read_string_char__SourceReader_pc68
+0:
+    li   t0, 34
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+  .L_read_string_char__SourceReader_pc68:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of read_string_char__SourceReader
+
     .globl line_buf__SourceReader__StringBuffer
     .type  line_buf__SourceReader__StringBuffer, @function
 line_buf__SourceReader__StringBuffer:

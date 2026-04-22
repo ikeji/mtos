@@ -138,6 +138,34 @@ export fn line_buf_reset(r: SourceReader) -> void {
 
 // Emit current line text into sb.
 // Includes: text from line start (in line buffer),
+// Consume one byte of an S-expression string literal body, decoding
+// escape sequences. The caller must have already advanced past the
+// opening '"'. Returns -1 on EOF or when the closing '"' is reached
+// (both of which leave the reader positioned on the terminator so
+// the caller can consume it). Returns the decoded byte value
+// otherwise. Matches the escape set emitted by parse.tc:
+//   \n \t \r \\ \" — mapped to newline/tab/CR/backslash/quote
+//   \<any other>   — the other byte verbatim (future-proof no-op)
+export fn read_string_char(r: SourceReader) -> i32 {
+    var c: u8 = peek(r);
+    if c == 0u8 { return -1; }
+    if c == '"' { return -1; }
+    if c != '\\' {
+        next(r);
+        return c as i32;
+    }
+    // Escape: consume '\', peek the mapped char, consume it.
+    next(r);
+    var esc: u8 = peek(r);
+    next(r);
+    if esc == 'n'  { return 10; }
+    if esc == 't'  { return 9; }
+    if esc == 'r'  { return 13; }
+    if esc == '\\' { return '\\' as i32; }
+    if esc == '"'  { return '"'  as i32; }
+    return esc as i32;
+}
+
 // plus unconsumed bytes in buf up to next newline.
 export fn line_buf(r: SourceReader, sb: StringBuffer) -> void {
     // 1. Copy accumulated part from line StringBuffer

@@ -195,24 +195,13 @@ fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
         // String value
         next(g_reader);
         var ss: i32 = g_sp;
-        var ch: u8 = peek_in();
-        while ch != '"' && ch != 0u8 {
-            if ch == '\\' {
-                next(g_reader);
-                var esc: u8 = peek_in();
-                if esc == 'n'  { ch = 10u8; }
-                if esc == 't'  { ch = 9u8; }
-                if esc == 'r'  { ch = 13u8; }
-                if esc == '\\' { ch = '\\'; }
-                if esc == '"'  { ch = '"'; }
-                if esc != 'n' && esc != 't' && esc != 'r' && esc != '\\' && esc != '"' { ch = esc; }
-            }
-            set(strtab, g_sp, ch);
+        var b: i32 = read_string_char(g_reader);
+        while b >= 0 {
+            set(strtab, g_sp, b as u8);
             g_sp = g_sp + 1;
-            next(g_reader);
-            ch = peek_in();
+            b = read_string_char(g_reader);
         }
-        if ch == '"' { next(g_reader); }
+        if peek_in() == '"' { next(g_reader); }
         n_set_ss(nodes, n, ss);
         n_set_sl(nodes, n, g_sp - ss);
         skip_ws_in();

@@ -1594,6 +1594,107 @@ __L23:
   return_void
 .endfn
 
+.fn read_string_char SourceReader i32
+.param r SourceReader
+.local c u8
+.local esc u8
+; var c: u8 = peek(r);
+  load r
+  call peek SourceReader
+  store c
+; if c == 0u8 { return -1; }
+  load c
+  push_int 0
+  eq
+  jump_ifnot __L24
+  push_int 1
+  neg
+  return
+__L24:
+; if c == '"' { return -1; }
+  load c
+  push_int 34
+  eq
+  jump_ifnot __L25
+  push_int 1
+  neg
+  return
+__L25:
+; if c != '\\' {
+  load c
+  push_int 92
+  ne
+  jump_ifnot __L26
+; next(r);
+  load r
+  call next SourceReader
+  pop
+; return c as i32;
+  load c
+  cast i32
+  return
+__L26:
+; next(r);
+  load r
+  call next SourceReader
+  pop
+; var esc: u8 = peek(r);
+  load r
+  call peek SourceReader
+  store esc
+; next(r);
+  load r
+  call next SourceReader
+  pop
+; if esc == 'n'  { return 10; }
+  load esc
+  push_int 110
+  eq
+  jump_ifnot __L27
+  push_int 10
+  return
+__L27:
+; if esc == 't'  { return 9; }
+  load esc
+  push_int 116
+  eq
+  jump_ifnot __L28
+  push_int 9
+  return
+__L28:
+; if esc == 'r'  { return 13; }
+  load esc
+  push_int 114
+  eq
+  jump_ifnot __L29
+  push_int 13
+  return
+__L29:
+; if esc == '\\' { return '\\' as i32; }
+  load esc
+  push_int 92
+  eq
+  jump_ifnot __L30
+  push_int 92
+  cast i32
+  return
+__L30:
+; if esc == '"'  { return '"'  as i32; }
+  load esc
+  push_int 34
+  eq
+  jump_ifnot __L31
+  push_int 34
+  cast i32
+  return
+__L31:
+; return esc as i32;
+  load esc
+  cast i32
+  return
+  return_void
+.endfn
+
 .fn line_buf SourceReader StringBuffer void
 .param r SourceReader
 .param sb StringBuffer
@@ -1616,11 +1717,11 @@ __L23:
   push_int 0
   store i
 ; while i < n {
-__L24:
+__L32:
   load i
   load n
   lt
-  jump_ifnot __L25
+  jump_ifnot __L33
 ; emit_char(sb, char_at(lb, i));
   load sb
   load lb
@@ -1633,8 +1734,8 @@ __L24:
   push_int 1
   add
   store i
-  jump __L24
-__L25:
+  jump __L32
+__L33:
 ; compact_and_fill(r);
   load r
   call compact_and_fill SourceReader
@@ -1651,21 +1752,21 @@ __L25:
   push_int 0
   store done
 ; while p < lim && done == 0 {
-__L26:
+__L34:
   load p
   load lim
   lt
-  jump_ifnot __L28
+  jump_ifnot __L36
   load done
   push_int 0
   eq
-  jump_ifnot __L28
+  jump_ifnot __L36
   push_int 1
-  jump __L29
-__L28:
+  jump __L37
+__L36:
   push_int 0
-__L29:
-  jump_ifnot __L27
+__L37:
+  jump_ifnot __L35
 ; var c: u8 = get(buf(r), p);
   load r
   call buf SourceReader
@@ -1676,20 +1777,20 @@ __L29:
   load c
   push_int 10
   eq
-  jump_ifnot __L30
+  jump_ifnot __L38
   push_int 1
   store done
-  jump __L31
-__L30:
+  jump __L39
+__L38:
   load c
   push_int 13
   eq
-  jump_ifnot __L32
+  jump_ifnot __L40
 ; else if c == 13u8 { done = 1; }
   push_int 1
   store done
-  jump __L33
-__L32:
+  jump __L41
+__L40:
 ; else { emit_char(sb, c); p = p + 1; }
   load sb
   load c
@@ -1699,10 +1800,10 @@ __L32:
   push_int 1
   add
   store p
-__L33:
-__L31:
-  jump __L26
-__L27:
+__L41:
+__L39:
+  jump __L34
+__L35:
 ; return;
   return_void
   return_void
