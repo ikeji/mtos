@@ -198,7 +198,14 @@ DISK_STATIC_DEPS := tests/phase7_hello.tc tests/phase7_min.tc \
     tests/phase7_hello_world.tc kernel/tasks/task_crt0.s \
     kernel/tasks/task_data.s tools/mkfs.py
 
-build/kernel/disk.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) | build/kernel
+# disk.img は kernel/kern.conf があれば /etc/kern.conf としてステージする
+# (なければカーネル側のハードコード init にフォールバック)。
+# disk-demo.img は tests/fixtures/kern_demo.conf を強制ステージして、
+# test_os.sh が kern.conf 駆動の init を検証できるようにする。
+build/kernel/disk.img:      DISK_KERN_CONF := $(wildcard kernel/kern.conf)
+build/kernel/disk-demo.img: DISK_KERN_CONF := tests/fixtures/kern_demo.conf
+
+build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) | build/kernel
 	@echo "Building disk image: $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -217,11 +224,13 @@ build/kernel/disk.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) | buil
 	printf '(imports\n' > "$$_r/imports_open.txt" && \
 	printf '(self\n' > "$$_r/self_open.txt" && \
 	printf ')\n' > "$$_r/wrap_close.txt" && \
-	if [ -f kernel/kern.conf ]; then \
-	    mkdir -p "$$_r/etc" && cp kernel/kern.conf "$$_r/etc/kern.conf"; \
+	if [ -n "$(DISK_KERN_CONF)" ] && [ -f "$(DISK_KERN_CONF)" ]; then \
+	    mkdir -p "$$_r/etc" && cp "$(DISK_KERN_CONF)" "$$_r/etc/kern.conf"; \
 	fi && \
 	python3 tools/mkfs.py $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
+
+build/kernel/disk-demo.img: tests/fixtures/kern_demo.conf
 
 EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     compiler/strlib.tc compiler/parse.tc
@@ -300,9 +309,18 @@ build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-ex
     kernel/bin2s.sh tools/bin2uf2.py | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
+# demo UF2: disk-demo.img の /etc/kern.conf で hello + hello2 + sh を
+# seed する。`make run-pico2-demo` で kern.conf 駆動 init が実機で
+# 動くことを確認できる。
+build/kernel/pico2_kernel_demo.uf2: PICO2_DISK := build/kernel/disk-demo.img
+build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-demo.img \
+    kernel/bin2s.sh tools/bin2uf2.py | build/kernel
+	$(PICO2_KERNEL_RECIPE)
+
 virt-kernel:  build/kernel/virt_kernel.bin
 pico2-kernel: build/kernel/pico2_kernel.uf2
 pico2-kernel-extra: build/kernel/pico2_kernel_extra.uf2
+pico2-kernel-demo: build/kernel/pico2_kernel_demo.uf2
 
 # ----- FAT32 disk image (second virtio-blk drive) -----
 # mkfs.fat may live in /sbin (not in PATH by default)
@@ -384,7 +402,8 @@ clean:
 # ===== test stamp files =====
 
 BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin \
-              build/kernel/disk.img $(TEST_ASM_BINS)
+              build/kernel/disk.img build/kernel/disk-demo.img \
+              $(TEST_ASM_BINS)
 
 TEST_SCRIPTS := $(wildcard tests/*.sh)
 TEST_INPUTS  := $(wildcard tests/*.tc) $(wildcard tests/import/*.tc)

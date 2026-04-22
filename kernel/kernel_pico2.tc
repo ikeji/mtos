@@ -64,27 +64,17 @@ fn main() -> i32 {
 
     mount_fs();
 
-    // 8 scheduler slots so the scheduler layout matches kernel.tc
-    // (virt). On Pico 2 only the first three are seeded: the
-    // launcher demos sys_exec("/bin/catfile") via XIP fast path,
-    // and the rest of the slots stay STATE_UNUSED unless something
-    // calls sys_spawn.
-    // 8 scheduler slots. Slot 0/1: hello/hello2 demo tasks that print
-    // A/B in a preempted interleave. Slot 2: /bin/sh — interactive
-    // shell reading from UART (fd 0). The Debug Probe CDC-ACM line is
-    // bidirectional, so a connected host can type commands and spawn
-    // any of the embedded tasks (hello, launcher, catfile, or any of
-    // the EXTRA_TASKS compiler binaries). Slots 3..7 are reserved for
-    // sh's children / phase 7 pipelines.
+    // 8 scheduler slots. Slot 0 seeds /bin/sh — the Debug Probe's
+    // CDC-ACM line is bidirectional, so a connected host can type
+    // commands and spawn any task from the image (hello, launcher,
+    // catfile, or the EXTRA_TASKS compiler binaries). /etc/kern.conf
+    // can add more seed tasks if needed; the remaining slots stay
+    // STATE_UNUSED until sh's sys_spawn fills them.
     sched_init(8);
 
     if start_init_tasks() == 0 {
-        sched_register(0, load_task("/bin/hello"));
-        task_set_name(0, to_cstr("hello"));
-        sched_register(1, load_task("/bin/hello2"));
-        task_set_name(1, to_cstr("hello2"));
-        sched_register(2, load_task("/bin/sh"));
-        task_set_name(2, to_cstr("sh"));
+        sched_register(0, load_task("/bin/sh"));
+        task_set_name(0, to_cstr("sh"));
     }
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)

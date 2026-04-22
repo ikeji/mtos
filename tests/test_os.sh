@@ -70,15 +70,19 @@ if [ "${FULL_TEST:-0}" = "1" ] && command -v qemu-system-riscv32 >/dev/null 2>&1
 fi
 
 # --- Kernel + mtfs disk image: the Make build owns these now
-#     (build/kernel/virt_kernel.bin + build/kernel/disk.img). This
-#     script is run via `make test`, which ensures they are up to
-#     date. When someone invokes this script standalone without
-#     the Make wrapper, fall back to building into a local tmp
-#     directory. ---
+#     (build/kernel/virt_kernel.bin + build/kernel/disk-demo.img).
+#     disk-demo.img stages tests/fixtures/kern_demo.conf so init tasks
+#     are driven by /etc/kern.conf (hello + hello2 + sh), exercising
+#     both the kern.conf loader and the A/B preemption demo. The
+#     plain make-run image (disk.img) is sh-only. This script is run
+#     via `make test`, which ensures both are built.
+#     When someone invokes this script standalone without the Make
+#     wrapper, fall back to building into a local tmp directory. ---
 KERNEL_BIN="$ROOT_DIR/build/kernel/virt_kernel.bin"
-KERNEL_DISK="$ROOT_DIR/build/kernel/disk.img"
+KERNEL_DISK="$ROOT_DIR/build/kernel/disk-demo.img"
 if [ ! -s "$KERNEL_BIN" ] || [ ! -s "$KERNEL_DISK" ]; then
     if command -v qemu-system-riscv32 >/dev/null 2>&1; then
+        KERN_CONFIG="$ROOT_DIR/tests/fixtures/kern_demo.conf" \
         GEN2_DIR="$_GEN2_TMP" \
             "$ROOT_DIR/kernel/build.sh" --target virt \
             -o "$TMP/kernel_virt" --disk-out "$TMP/disk.img" 2>/dev/null
@@ -87,11 +91,14 @@ if [ ! -s "$KERNEL_BIN" ] || [ ! -s "$KERNEL_DISK" ]; then
     fi
 fi
 
-# --- fs_virtio: attach the mtfs disk, boot kernel_virt, verify it
-#     reads sector 0 (mtfs superblock), mounts mtfs, cats /hello.txt
-#     via its in-kernel demo, loads /bin/sh from the FS and drives it
-#     through a scripted command sequence to cover tmpfs / argv /
-#     redirect + spawn/wait leak accounting. ---
+# --- fs_virtio: attach the demo mtfs disk (init=/bin/hello +
+#     init=/bin/hello2 + init=/bin/sh via /etc/kern.conf), boot
+#     kernel_virt, verify it reads sector 0 (mtfs superblock),
+#     mounts mtfs, cats /hello.txt via its in-kernel demo, runs the
+#     kern.conf-driven init list, and drives sh through a scripted
+#     command sequence to cover tmpfs / argv / redirect + spawn/wait
+#     leak accounting. hello/hello2 emitting A/B doubles as a
+#     preemption check. ---
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_DISK" ]; then
     t0=$(time_ms)
@@ -117,10 +124,13 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # We only check the mtfs magic bytes in SECTOR0: total_blocks varies
     # with how many files the image contains.
     expected="SECTOR0: 4d 54 46 53"
-    # The shell prompt + catfile output interleave under preemption,
-    # so check each piece separately rather than as a single substring.
-    # catfile prints "CAT[<argc>]:" so we can distinguish default runs
-    # (argc=1) from explicit-argv runs (argc=2).
+    # The shell prompt + catfile output + A/B get interleaved under
+    # preemption, so check each piece separately rather than as a
+    # single substring. catfile prints "CAT[<argc>]:" so we can
+    # distinguish default runs (argc=1) from explicit-argv runs
+    # (argc=2).
+    fs_has_a=$(echo "$fs_out" | grep -c "A")
+    fs_has_b=$(echo "$fs_out" | grep -c "B")
     fs_cat_count=$(echo "$fs_out" | grep -c 'CAT\[')
     fs_cat1_count=$(echo "$fs_out" | grep -c 'CAT\[1\]:')
     fs_cat2_count=$(echo "$fs_out" | grep -c 'CAT\[2\]:')
@@ -140,23 +150,24 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     case "$fs_out" in
         *"BLOCK: virtio-blk detected"*"$expected"*"MTFS: mounted"*"FILE:hello, mtfs"*"all tasks done"*)
             # The 5 catfile spawns mean we expect ≥5 CAT: outputs.
-            # The live count must stay ≤ 96 — the current baseline
-            # is ~67 (seeded tasks + VFS/block state + mtfs inode
-            # cache + TmpFileArray(16)/TmpfsFDArray(8) struct slots
-            # + the persistent /tmp/demo file + per-slot task name
-            # U8Arrays). A per-spawn leak would push it up by ~4
-            # per extra spawn, so 5 leaks would reach ~91 and a
-            # regression would trip before 105.
-            if [ "$fs_cat_count" -ge 3 ] && [ "$fs_cat1_count" -ge 1 ] \
+            # The live count must stay ≤ 110 — the current baseline
+            # is ~104 (3 kern.conf init tasks + VFS/block state +
+            # mtfs inode cache + TmpFileArray(16)/TmpfsFDArray(8)
+            # struct slots + /tmp/demo persistent file + per-slot
+            # task name U8Arrays + kern.conf g_cfg_inits StringArray).
+            # A per-spawn leak would push it up by ~4 per extra spawn,
+            # so a regression trips before 110.
+            if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
+                && [ "$fs_cat_count" -ge 3 ] && [ "$fs_cat1_count" -ge 1 ] \
                 && [ "$fs_cat2_count" -ge 2 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
                 && [ "$fs_has_tmpfs_ok" -gt 0 ] && [ "$fs_has_tmpfs_payload" -gt 0 ] \
                 && [ "$fs_has_redir" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
-                && [ -n "$fs_live" ] && [ "$fs_live" -le 105 ]; then
-                report_pass "fs_virtio: tmpdemo + catfile argv + redirect, live=$fs_live" "$elapsed"
+                && [ -n "$fs_live" ] && [ "$fs_live" -le 110 ]; then
+                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir live=$fs_live mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)
