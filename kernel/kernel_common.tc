@@ -119,6 +119,21 @@ var g_last_stack_size: i32 = 0;
 // Called from kputs / kdbg_chr (both KERN-tagged) and vfs_write
 // (T00N-tagged for the current slot's fd=1 UART path).
 
+// Copy a StringLiteral into a kmalloc'd U8Array followed by a NUL
+// byte. Used by kernel code that hands paths to vfs_open et al.
+// Caller must delete() the result.
+export fn to_cstr(s: StringLiteral) -> U8Array {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array((slen + 1) as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, slen, 0u8);
+    return buf;
+}
+
 // Low-level UART write (platform_virt.s / platform_pico2.s).
 fn do_uart_write(buf: u32, len: i32) -> i32;
 

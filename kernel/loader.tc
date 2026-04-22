@@ -19,18 +19,6 @@ fn do_uart_write(buf: u32, len: i32) -> i32;
 
 // Copy a string literal into a NUL-terminated U8Array in kernel RAM.
 // Caller is responsible for delete().
-fn load_str_nul(s: StringLiteral) -> U8Array {
-    var slen: i32 = len(s);
-    var buf: U8Array = U8Array((slen + 1) as u32);
-    var i: i32 = 0;
-    while i < slen {
-        set(buf, i, get(s, i));
-        i = i + 1;
-    }
-    set(buf, slen, 0u8);
-    return buf;
-}
-
 // Copy the basename from a NUL-terminated path at `addr` into a
 // kmalloc'd U8Array. "/bin/sh" → "sh". Returns the U8Array address.
 fn copy_task_name(addr: u32) -> u32 {
@@ -204,7 +192,7 @@ fn load_fd(fd: i32) -> u32 {
 // Returns 0 on any failure, otherwise a frame pointer ready for
 // sched_register. Task sizes come from the binary header.
 export fn load_task(path: StringLiteral) -> u32 {
-    var pbuf: U8Array = load_str_nul(path);
+    var pbuf: U8Array = to_cstr(path);
     var fd: i32 = vfs_open(pbuf as u32 + 4u32, 0);
     delete(pbuf);
     if fd < 0 { return 0u32; }
