@@ -154,13 +154,13 @@ var g_cur_line: i32 = 0;
 // Output format:
 //   asm:<line>: <your message>
 //     at: <verbatim source line>
-fn asm_err_begin(eb: StringBuffer) -> void {
+export fn asm_err_begin(eb: StringBuffer) -> void {
     emit_string(eb, "asm:");
     if g_cur_line > 0 { emit_int(eb, g_cur_line); }
     emit_string(eb, ": ");
     return;
 }
-fn asm_err_end(eb: StringBuffer) -> void {
+export fn asm_err_end(eb: StringBuffer) -> void {
     if g_cur_line > 0 {
         emit_string(eb, "\n  at: ");
         emit_n(eb, g_line_buf, 0, g_line_buf_len);

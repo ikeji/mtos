@@ -154,7 +154,7 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
     var lineno: i32 = 0;
     var budget: i32 = source_bytes;
     while budget > 0 {
-        var llen: i32 = rb_read_line(line, 4096, budget);
+        var llen: i32 = rb_read_line(line, 4092, budget);
         budget = g_budget_after;
         if llen < 0 { break; }
         if llen > 0 {
@@ -242,7 +242,15 @@ fn rb_read_line(buf: U8Array, buf_cap: i32, byte_budget: i32) -> i32 {
         } else {
             saw_byte = 1;
             budget = budget - 1;
-            if llen < buf_cap { set(buf, llen, c as u8); }
+            if llen >= buf_cap {
+                var eb: StringBuffer = StringBuffer_new();
+                asm_err_begin(eb);
+                emit_string(eb, "line too long (max ");
+                emit_int(eb, buf_cap);
+                emit_string(eb, " bytes)");
+                asm_err_end(eb);
+            }
+            set(buf, llen, c as u8);
             llen = llen + 1;
             if c == 10 { done = 1; }
         }
@@ -258,7 +266,7 @@ fn main() -> i32 {
     asm_enable_stream_mode();
     rb_init();
 
-    var lab_line: U8Array = U8Array(4096);
+    var lab_line: U8Array = U8Array(4092);
 
     // Phase A: scan stdin to the "(lab" opener, then parse lab lines
     // until the closing ")". Uses the shared rb_* buffered reader
@@ -269,7 +277,7 @@ fn main() -> i32 {
     // keep the same reader state.
     var saw_open: i32 = 0;
     while saw_open == 0 {
-        var llen: i32 = rb_read_line(lab_line, 4096, 0x7FFFFFFF);
+        var llen: i32 = rb_read_line(lab_line, 4092, 0x7FFFFFFF);
         if llen < 0 { break; }
         if llen >= 4 && cmp(lab_line, 0, "(lab") {
             saw_open = 1;
@@ -278,7 +286,7 @@ fn main() -> i32 {
 
     var done: i32 = 0;
     while done == 0 {
-        var llen2: i32 = rb_read_line(lab_line, 4096, 0x7FFFFFFF);
+        var llen2: i32 = rb_read_line(lab_line, 4092, 0x7FFFFFFF);
         if llen2 < 0 { break; }
         if llen2 > 0 {
             if parse_lab_line(lab_line, llen2) == 1 { done = 1; }

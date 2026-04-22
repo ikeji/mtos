@@ -26,7 +26,9 @@ fn main() -> i32 {
     asm_set_pass(1);
 
     var reader: SourceReader = SourceReader_new(0);
-    var line: U8Array = U8Array(4096);
+    // g_line_buf in asm_common is 4092 bytes. Keep `line` allocation
+    // the same so a line that fits in `line` fits in g_line_buf too.
+    var line: U8Array = U8Array(4092);
     var lineno: i32 = 0;
     var total_bytes: i32 = 0;
 
@@ -39,7 +41,13 @@ fn main() -> i32 {
         var eol: i32 = 0;
         while eol == 0 && at_eof(reader) == false {
             var c: u8 = next(reader);
-            if llen < 4096 { set(line, llen, c); }
+            if llen >= 4092 {
+                var eb: StringBuffer = StringBuffer_new();
+                asm_err_begin(eb);
+                emit_string(eb, "line too long (max 4092 bytes)");
+                asm_err_end(eb);
+            }
+            set(line, llen, c);
             llen = llen + 1;
             if c == 10u8 { eol = 1; }
         }
