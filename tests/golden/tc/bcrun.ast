@@ -422,6 +422,411 @@
       (return)
     )
   )
+  (fn bc_fatal_lit
+    (params
+      (param msg
+        (type StringLiteral)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "var mlen: i32 = len(msg);")
+      (var_decl mlen
+        (type i32)
+        (call len
+          (var msg)
+        )
+      )
+      (comment "var buf: U8Array = U8Array((mlen + 8) as u32);")
+      (var_decl buf
+        (type U8Array)
+        (call U8Array
+          (cast
+            (binop +
+              (var mlen)
+              (int 8)
+            )
+            (type u32)
+          )
+        )
+      )
+      (comment "var i: i32 = 0;")
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (comment "set(buf, i, 'b' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 98)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "set(buf, i, 'c' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 99)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "set(buf, i, ':' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 58)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "set(buf, i, ' ' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 32)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "var k: i32 = 0;")
+      (var_decl k
+        (type i32)
+        (int 0)
+      )
+      (comment "while k < mlen { set(buf, i, get(msg, k)); i = i + 1; k = k + 1; }")
+      (while
+        (binop <
+          (var k)
+          (var mlen)
+        )
+        (block
+          (call_stmt set
+            (var buf)
+            (var i)
+            (call get
+              (var msg)
+              (var k)
+            )
+          )
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+          (assign k
+            (binop +
+              (var k)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "set(buf, i, 10u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (int:u8 10)
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "sys_write(2, buf, i);")
+      (call_stmt sys_write
+        (int 2)
+        (var buf)
+        (var i)
+      )
+      (comment "delete(buf);")
+      (call_stmt delete
+        (var buf)
+      )
+      (comment "sys_exit(1);")
+      (call_stmt sys_exit
+        (int 1)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn bc_fatal_name
+    (params
+      (param msg
+        (type StringLiteral)
+      )
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "var mlen: i32 = len(msg);")
+      (var_decl mlen
+        (type i32)
+        (call len
+          (var msg)
+        )
+      )
+      (comment "var buf: U8Array = U8Array((mlen + sl + 10) as u32);")
+      (var_decl buf
+        (type U8Array)
+        (call U8Array
+          (cast
+            (binop +
+              (binop +
+                (var mlen)
+                (var sl)
+              )
+              (int 10)
+            )
+            (type u32)
+          )
+        )
+      )
+      (comment "var i: i32 = 0;")
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (comment "set(buf, i, 'b' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 98)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "set(buf, i, 'c' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 99)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "set(buf, i, ':' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 58)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "set(buf, i, ' ' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 32)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "var k: i32 = 0;")
+      (var_decl k
+        (type i32)
+        (int 0)
+      )
+      (comment "while k < mlen { set(buf, i, get(msg, k)); i = i + 1; k = k + 1; }")
+      (while
+        (binop <
+          (var k)
+          (var mlen)
+        )
+        (block
+          (call_stmt set
+            (var buf)
+            (var i)
+            (call get
+              (var msg)
+              (var k)
+            )
+          )
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+          (assign k
+            (binop +
+              (var k)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "set(buf, i, ' ' as u8); i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (cast
+          (int:u8 32)
+          (type u8)
+        )
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "set(buf, i, 39u8);      i = i + 1;  // '")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (int:u8 39)
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "k = 0;")
+      (assign k
+        (int 0)
+      )
+      (comment "while k < sl { set(buf, i, get(strtab, ss + k)); i = i + 1; k = k + 1; }")
+      (while
+        (binop <
+          (var k)
+          (var sl)
+        )
+        (block
+          (call_stmt set
+            (var buf)
+            (var i)
+            (call get
+              (var strtab)
+              (binop +
+                (var ss)
+                (var k)
+              )
+            )
+          )
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+          (assign k
+            (binop +
+              (var k)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "set(buf, i, 39u8);      i = i + 1;  // '")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (int:u8 39)
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "set(buf, i, 10u8);      i = i + 1;")
+      (call_stmt set
+        (var buf)
+        (var i)
+        (int:u8 10)
+      )
+      (assign i
+        (binop +
+          (var i)
+          (int 1)
+        )
+      )
+      (comment "sys_write(2, buf, i);")
+      (call_stmt sys_write
+        (int 2)
+        (var buf)
+        (var i)
+      )
+      (comment "delete(buf);")
+      (call_stmt delete
+        (var buf)
+      )
+      (comment "sys_exit(1);")
+      (call_stmt sys_exit
+        (int 1)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
   (fn stab_eq
     (params
       (param strtab
@@ -5847,18 +6252,18 @@
                               )
                             )
                           )
-                          (comment "if gidx < 0 { stk_push(stk_i,stk_t,0,TAG_INT); }")
+                          (comment "if gidx < 0 { bc_fatal_name(\"undefined variable on load\", strtab, sss, ssl); }")
                           (if
                             (binop <
                               (var gidx)
                               (int 0)
                             )
                             (block
-                              (call_stmt stk_push
-                                (var stk_i)
-                                (var stk_t)
-                                (int 0)
-                                (var TAG_INT)
+                              (call_stmt bc_fatal_name
+                                (str "undefined variable on load")
+                                (var strtab)
+                                (var sss)
+                                (var ssl)
                               )
                             )
                           )
@@ -5973,6 +6378,21 @@
                                   (int 1)
                                 )
                                 (var pt)
+                              )
+                            )
+                          )
+                          (comment "if gidx < 0 { bc_fatal_name(\"undefined variable on store\", strtab, sss, ssl); }")
+                          (if
+                            (binop <
+                              (var gidx)
+                              (int 0)
+                            )
+                            (block
+                              (call_stmt bc_fatal_name
+                                (str "undefined variable on store")
+                                (var strtab)
+                                (var sss)
+                                (var ssl)
                               )
                             )
                           )
@@ -8014,6 +8434,30 @@
                           )
                         )
                       )
+                      (comment "if (op==OP_DIV || op==OP_MOD) && b2 == 0 { bc_fatal_lit(\"divide by zero\"); }")
+                      (if
+                        (binop &&
+                          (binop ||
+                            (binop ==
+                              (var op)
+                              (var OP_DIV)
+                            )
+                            (binop ==
+                              (var op)
+                              (var OP_MOD)
+                            )
+                          )
+                          (binop ==
+                            (var b2)
+                            (int 0)
+                          )
+                        )
+                        (block
+                          (call_stmt bc_fatal_lit
+                            (str "divide by zero")
+                          )
+                        )
+                      )
                       (comment "if op==OP_DIV { r2=a2/b2; }")
                       (if
                         (binop ==
@@ -8158,6 +8602,18 @@
                       (var_decl a5
                         (type i32)
                         (var g_pop_ival)
+                      )
+                      (comment "if b5 == 0 { bc_fatal_lit(\"divide by zero (unsigned)\"); }")
+                      (if
+                        (binop ==
+                          (var b5)
+                          (int 0)
+                        )
+                        (block
+                          (call_stmt bc_fatal_lit
+                            (str "divide by zero (unsigned)")
+                          )
+                        )
                       )
                       (comment "udivmod32(a5, b5);")
                       (call_stmt udivmod32
