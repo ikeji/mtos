@@ -23,15 +23,25 @@ fn print_i32(v: i32) -> void;
 var MTIMECMP_LO: u32 = 0x02004000u32;
 var MTIMECMP_HI: u32 = 0x02004004u32;
 var MTIME_LO: u32    = 0x0200BFF8u32;
+var MTIME_HI: u32    = 0x0200BFFCu32;
 // qemu virt CLINT mtime runs at 10 MHz by default, so 10_000 ticks
 // ≈ 1 ms between preemptions.
 var TIMER_INTERVAL: u32 = 10000u32;
 
-// Provided to kernel_common (called from trap_handler)
+// Provided to kernel_common (called from trap_handler). 64-bit
+// mtimecmp update: (a) guard against a spurious interrupt during the
+// low / high writes by parking MTIMECMP_HI at 0xFFFFFFFF first;
+// (b) read mtime_hi and carry so that past the 32-bit wrap
+// (~7 min @ 10 MHz) the comparator stays ahead of mtime instead of
+// hanging the scheduler.
 fn rearm_timer() -> void {
-    var now: u32 = peek32(MTIME_LO);
-    poke32(MTIMECMP_HI, 0);
-    poke32(MTIMECMP_LO, now + TIMER_INTERVAL);
+    poke32(MTIMECMP_HI, 0xFFFFFFFFu32);
+    var lo: u32 = peek32(MTIME_LO);
+    var hi: u32 = peek32(MTIME_HI);
+    var new_lo: u32 = lo + TIMER_INTERVAL;
+    if new_lo < lo { hi = hi + 1u32; }
+    poke32(MTIMECMP_LO, new_lo);
+    poke32(MTIMECMP_HI, hi);
     return;
 }
 

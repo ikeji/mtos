@@ -960,12 +960,19 @@ export fn sched_yield_read() -> void {
 // Called from assembly _trap_entry on non-ecall traps
 fn trap_handler(cause: u32, epc: u32) -> void {
     if cause == 0x80000007u32 {
-        // Wake sleeping tasks whose wake_time has arrived
+        // Wake sleeping tasks whose wake_time has arrived. read_mtime
+        // only returns the low 32 bits of the monotonic counter, so
+        // the naive `now >= wake_time` breaks once mtime wraps. Use
+        // the wraparound-safe signed-diff form: for any sleep
+        // duration < 2^31 ticks, (now - wake_time) as i32 is
+        // negative while wake is pending and non-negative once the
+        // wake time has passed, regardless of whether either half
+        // has wrapped since wake_time was set.
         var now: u32 = read_mtime();
         var w: i32 = 0;
         while w < g_num_tasks {
             var wt: Task = get(g_tasks, w);
-            if state(wt) == STATE_SLEEPING && now >= wake_time(wt) {
+            if state(wt) == STATE_SLEEPING && (now - wake_time(wt)) as i32 >= 0 {
                 state(wt, STATE_READY);
             }
             w = w + 1;
@@ -1062,14 +1069,21 @@ fn sched_task_exit() -> u32 {
 export fn sys_nanosleep_handler(ms: i32) -> i32 {
     var cur: Task = get(g_tasks, g_current);
     if wake_time(cur) == 0u32 {
-        // First call: compute wake time and sleep
+        // First call: compute wake time and sleep. `wake_time == 0`
+        // is the "not sleeping" sentinel, so bump past 0 if the
+        // natural value lands there (boot-time mtime=0 with ms=0, or
+        // a rare wrap-to-zero). Adds at most one tick (100 ns on
+        // virt, 1 us on pico2), within nanosleep's stated precision.
         var ticks: u32 = (ms as u32) * ticks_per_ms();
-        wake_time(cur, read_mtime() + ticks);
+        var wt: u32 = read_mtime() + ticks;
+        if wt == 0u32 { wt = 1u32; }
+        wake_time(cur, wt);
         state(cur, STATE_SLEEPING);
         return -2;
     }
-    // Re-execute after being woken by timer handler
-    if read_mtime() >= wake_time(cur) {
+    // Re-execute after being woken by timer handler. Use the same
+    // wraparound-safe compare as trap_handler.
+    if (read_mtime() - wake_time(cur)) as i32 >= 0 {
         wake_time(cur, 0);
         return 0;
     }
