@@ -458,16 +458,18 @@ export fn uart_rx_dispatch() -> void {
     return;
 }
 
-// vfs_read(fd=0) entry when mux is on. Busy-polls uart_rx_dispatch
-// until this slot's input buffer has bytes, or EOF is set.
+// vfs_read(fd=0) entry when mux is on. Do one uart_rx_dispatch to
+// drain anything pending on the PL011 FIFO into the per-slot ring
+// buffer, then either return bytes or yield with -2 so other tasks
+// get the M-mode. The previous implementation busy-looped on
+// uart_rx_dispatch, which starved every other task while mie was
+// masked inside the trap handler.
 export fn task_input_read(slot: i32, buf_addr: u32, want: i32) -> i32 {
     if slot < 0 || slot >= g_num_tasks { return -1; }
     if want <= 0 { return 0; }
+    uart_rx_dispatch();
     var t: Task = get(g_tasks, slot);
-    while in_head(t) == in_tail(t) && in_eof(t) == 0 {
-        uart_rx_dispatch();
-        t = get(g_tasks, slot);
-    }
+    if in_head(t) == in_tail(t) && in_eof(t) == 0 { return -2; }
     var tbuf: u32 = in_buf(t);
     if tbuf == 0u32 {
         // No data ever, EOF
@@ -920,15 +922,45 @@ export fn sched_wait(target: i32) -> u32 {
     state(cur, STATE_WAITING);
     wait_on(cur, target);
 
-    var i: i32 = 0;
-    while i < g_num_tasks {
-        var next: i32 = (g_current + 1 + i) % g_num_tasks;
-        var nt: Task = get(g_tasks, next);
-        if state(nt) == STATE_READY {
-            g_current = next;
-            return frame(nt);
+    // Find the next READY task. If every task is either WAITING or
+    // SLEEPING, poll mtime in a tight loop and wake any sleeper whose
+    // wake_time has arrived. Without this the scheduler would return
+    // 0 (= no-switch), the ecall handler would resume the caller with
+    // state=WAITING, and nothing would drive the sleepers forward —
+    // trap_handler's wake loop only runs on timer interrupts, which
+    // we have mie-masked while in the ecall.
+    var done: i32 = 0;
+    while done == 0 {
+        var i: i32 = 0;
+        while i < g_num_tasks {
+            var next: i32 = (g_current + 1 + i) % g_num_tasks;
+            var nt: Task = get(g_tasks, next);
+            if state(nt) == STATE_READY {
+                g_current = next;
+                return frame(nt);
+            }
+            i = i + 1;
         }
-        i = i + 1;
+        // No READY task. Advance sleepers whose wake_time has arrived.
+        var now: u32 = read_mtime();
+        var w: i32 = 0;
+        while w < g_num_tasks {
+            var wt: Task = get(g_tasks, w);
+            if state(wt) == STATE_SLEEPING && (now - wake_time(wt)) as i32 >= 0 {
+                state(wt, STATE_READY);
+            }
+            w = w + 1;
+        }
+        // If no task is sleeping either, we'd spin forever here.
+        // sched_wait on a target that can never run is a caller bug;
+        // return 0 so the ecall handler can advance mepc instead.
+        var any_sleeping: i32 = 0;
+        var s: i32 = 0;
+        while s < g_num_tasks {
+            if state(get(g_tasks, s)) == STATE_SLEEPING { any_sleeping = 1; }
+            s = s + 1;
+        }
+        if any_sleeping == 0 { done = 1; }
     }
     return 0u32;
 }
@@ -993,6 +1025,12 @@ fn trap_handler(cause: u32, epc: u32) -> void {
         if g_current != from_slot && g_mux_enabled != 0 {
             kdbg_switch(from_slot, g_current);
         }
+        // In mux mode, task_input_read no longer busy-loops on
+        // uart_rx_dispatch — it does one drain and returns -2 if the
+        // ring buffer is empty. Periodic timer ticks keep UART bytes
+        // flowing into the per-task buffers so readers make progress
+        // even if only one task is doing input right now.
+        if g_mux_enabled != 0 { uart_rx_dispatch(); }
         rearm_timer();
         return;
     }
