@@ -3717,9 +3717,9 @@ udivmod32__i32__i32:
     ret
     # end of udivmod32__i32__i32
 
-    .globl bc_fatal_lit__StringLiteral
-    .type  bc_fatal_lit__StringLiteral, @function
-bc_fatal_lit__StringLiteral:
+    .globl bc_fatal__StringLiteral
+    .type  bc_fatal__StringLiteral, @function
+bc_fatal__StringLiteral:
     # prologue: frame_size=48, params=1, locals=4, eval_depth=4
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -3925,7 +3925,7 @@ bc_fatal_lit__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-  .L_bc_fatal_lit__StringLiteral_pc53:
+  .L_bc_fatal__StringLiteral_pc53:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -3941,7 +3941,7 @@ bc_fatal_lit__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_bc_fatal_lit__StringLiteral_pc73
+    j    .L_bc_fatal__StringLiteral_pc73
 0:
     lw   t0, -20(s0)
     addi sp, sp, -4
@@ -3999,8 +3999,8 @@ bc_fatal_lit__StringLiteral:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -28(s0)
-    j    .L_bc_fatal_lit__StringLiteral_pc53
-  .L_bc_fatal_lit__StringLiteral_pc73:
+    j    .L_bc_fatal__StringLiteral_pc53
+  .L_bc_fatal__StringLiteral_pc73:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4078,11 +4078,11 @@ bc_fatal_lit__StringLiteral:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of bc_fatal_lit__StringLiteral
+    # end of bc_fatal__StringLiteral
 
-    .globl bc_fatal_name__StringLiteral__U8Array__i32__i32
-    .type  bc_fatal_name__StringLiteral__U8Array__i32__i32, @function
-bc_fatal_name__StringLiteral__U8Array__i32__i32:
+    .globl bc_fatal__StringLiteral__U8Array__i32__i32
+    .type  bc_fatal__StringLiteral__U8Array__i32__i32, @function
+bc_fatal__StringLiteral__U8Array__i32__i32:
     # prologue: frame_size=64, params=4, locals=4, eval_depth=5
     addi sp, sp, -64
     sw   ra, 60(sp)
@@ -4300,7 +4300,7 @@ bc_fatal_name__StringLiteral__U8Array__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -40(s0)
-  .L_bc_fatal_name__StringLiteral__U8Array__i32__i32_pc55:
+  .L_bc_fatal__StringLiteral__U8Array__i32__i32_pc55:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4316,7 +4316,7 @@ bc_fatal_name__StringLiteral__U8Array__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_bc_fatal_name__StringLiteral__U8Array__i32__i32_pc75
+    j    .L_bc_fatal__StringLiteral__U8Array__i32__i32_pc75
 0:
     lw   t0, -32(s0)
     addi sp, sp, -4
@@ -4374,8 +4374,8 @@ bc_fatal_name__StringLiteral__U8Array__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -40(s0)
-    j    .L_bc_fatal_name__StringLiteral__U8Array__i32__i32_pc55
-  .L_bc_fatal_name__StringLiteral__U8Array__i32__i32_pc75:
+    j    .L_bc_fatal__StringLiteral__U8Array__i32__i32_pc55
+  .L_bc_fatal__StringLiteral__U8Array__i32__i32_pc75:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4451,7 +4451,7 @@ bc_fatal_name__StringLiteral__U8Array__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -40(s0)
-  .L_bc_fatal_name__StringLiteral__U8Array__i32__i32_pc96:
+  .L_bc_fatal__StringLiteral__U8Array__i32__i32_pc96:
     lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4467,7 +4467,7 @@ bc_fatal_name__StringLiteral__U8Array__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_bc_fatal_name__StringLiteral__U8Array__i32__i32_pc118
+    j    .L_bc_fatal__StringLiteral__U8Array__i32__i32_pc118
 0:
     lw   t0, -32(s0)
     addi sp, sp, -4
@@ -4534,8 +4534,8 @@ bc_fatal_name__StringLiteral__U8Array__i32__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -40(s0)
-    j    .L_bc_fatal_name__StringLiteral__U8Array__i32__i32_pc96
-  .L_bc_fatal_name__StringLiteral__U8Array__i32__i32_pc118:
+    j    .L_bc_fatal__StringLiteral__U8Array__i32__i32_pc96
+  .L_bc_fatal__StringLiteral__U8Array__i32__i32_pc118:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -4645,7 +4645,7 @@ bc_fatal_name__StringLiteral__U8Array__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of bc_fatal_name__StringLiteral__U8Array__i32__i32
+    # end of bc_fatal__StringLiteral__U8Array__i32__i32
 
     .globl stab_eq__U8Array__i32__i32__i32__i32
     .type  stab_eq__U8Array__i32__i32__i32__i32, @function
@@ -17908,7 +17908,7 @@ vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call bc_fatal_name__StringLiteral__U8Array__i32__i32
+    call bc_fatal__StringLiteral__U8Array__i32__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -18231,7 +18231,7 @@ vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call bc_fatal_name__StringLiteral__U8Array__i32__i32
+    call bc_fatal__StringLiteral__U8Array__i32__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23597,7 +23597,7 @@ vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call bc_fatal_lit__StringLiteral
+    call bc_fatal__StringLiteral
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -23985,7 +23985,7 @@ vm_run__U8Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32Array__I32
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call bc_fatal_lit__StringLiteral
+    call bc_fatal__StringLiteral
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

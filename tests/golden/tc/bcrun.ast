@@ -422,7 +422,7 @@
       (return)
     )
   )
-  (fn bc_fatal_lit
+  (fn bc_fatal
     (params
       (param msg
         (type StringLiteral)
@@ -581,7 +581,7 @@
       (return)
     )
   )
-  (fn bc_fatal_name
+  (fn bc_fatal
     (params
       (param msg
         (type StringLiteral)
@@ -6252,14 +6252,14 @@
                               )
                             )
                           )
-                          (comment "if gidx < 0 { bc_fatal_name(\"undefined variable on load\", strtab, sss, ssl); }")
+                          (comment "if gidx < 0 { bc_fatal(\"undefined variable on load\", strtab, sss, ssl); }")
                           (if
                             (binop <
                               (var gidx)
                               (int 0)
                             )
                             (block
-                              (call_stmt bc_fatal_name
+                              (call_stmt bc_fatal
                                 (str "undefined variable on load")
                                 (var strtab)
                                 (var sss)
@@ -6381,14 +6381,14 @@
                               )
                             )
                           )
-                          (comment "if gidx < 0 { bc_fatal_name(\"undefined variable on store\", strtab, sss, ssl); }")
+                          (comment "if gidx < 0 { bc_fatal(\"undefined variable on store\", strtab, sss, ssl); }")
                           (if
                             (binop <
                               (var gidx)
                               (int 0)
                             )
                             (block
-                              (call_stmt bc_fatal_name
+                              (call_stmt bc_fatal
                                 (str "undefined variable on store")
                                 (var strtab)
                                 (var sss)
@@ -8434,7 +8434,7 @@
                           )
                         )
                       )
-                      (comment "if (op==OP_DIV || op==OP_MOD) && b2 == 0 { bc_fatal_lit(\"divide by zero\"); }")
+                      (comment "if (op==OP_DIV || op==OP_MOD) && b2 == 0 { bc_fatal(\"divide by zero\"); }")
                       (if
                         (binop &&
                           (binop ||
@@ -8453,7 +8453,7 @@
                           )
                         )
                         (block
-                          (call_stmt bc_fatal_lit
+                          (call_stmt bc_fatal
                             (str "divide by zero")
                           )
                         )
@@ -8603,14 +8603,14 @@
                         (type i32)
                         (var g_pop_ival)
                       )
-                      (comment "if b5 == 0 { bc_fatal_lit(\"divide by zero (unsigned)\"); }")
+                      (comment "if b5 == 0 { bc_fatal(\"divide by zero (unsigned)\"); }")
                       (if
                         (binop ==
                           (var b5)
                           (int 0)
                         )
                         (block
-                          (call_stmt bc_fatal_lit
+                          (call_stmt bc_fatal
                             (str "divide by zero (unsigned)")
                           )
                         )

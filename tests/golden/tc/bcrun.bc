@@ -1320,7 +1320,7 @@ __L1:
   return_void
 .endfn
 
-.fn bc_fatal_lit StringLiteral void
+.fn bc_fatal StringLiteral void
 .param msg StringLiteral
 .local mlen i32
 .local buf U8Array
@@ -1439,7 +1439,7 @@ __L5:
   return_void
 .endfn
 
-.fn bc_fatal_name StringLiteral U8Array i32 i32 void
+.fn bc_fatal StringLiteral U8Array i32 i32 void
 .param msg StringLiteral
 .param strtab U8Array
 .param ss i32
@@ -5773,7 +5773,7 @@ __L273:
   call stk_push I32Array I32Array i32 i32
   pop
 __L275:
-; if gidx < 0 { bc_fatal_name("undefined variable on load", strtab, sss, ssl); }
+; if gidx < 0 { bc_fatal("undefined variable on load", strtab, sss, ssl); }
   load gidx
   push_int 0
   lt
@@ -5782,7 +5782,7 @@ __L275:
   load strtab
   load sss
   load ssl
-  call bc_fatal_name StringLiteral U8Array i32 i32
+  call bc_fatal StringLiteral U8Array i32 i32
   pop
 __L276:
 __L274:
@@ -5871,7 +5871,7 @@ __L278:
   call set I32Array i32 i32
   pop
 __L280:
-; if gidx < 0 { bc_fatal_name("undefined variable on store", strtab, sss, ssl); }
+; if gidx < 0 { bc_fatal("undefined variable on store", strtab, sss, ssl); }
   load gidx
   push_int 0
   lt
@@ -5880,7 +5880,7 @@ __L280:
   load strtab
   load sss
   load ssl
-  call bc_fatal_name StringLiteral U8Array i32 i32
+  call bc_fatal StringLiteral U8Array i32 i32
   pop
 __L281:
 __L279:
@@ -7559,7 +7559,7 @@ __L440:
   mul
   store r2
 __L441:
-; if (op==OP_DIV || op==OP_MOD) && b2 == 0 { bc_fatal_lit("divide by zero"); }
+; if (op==OP_DIV || op==OP_MOD) && b2 == 0 { bc_fatal("divide by zero"); }
   load op
   load OP_DIV
   eq
@@ -7585,7 +7585,7 @@ __L443:
 __L444:
   jump_ifnot __L442
   push_str 39
-  call bc_fatal_lit StringLiteral
+  call bc_fatal StringLiteral
   pop
 __L442:
 ; if op==OP_DIV { r2=a2/b2; }
@@ -7695,13 +7695,13 @@ __L456:
   pop
   load g_pop_ival
   store a5
-; if b5 == 0 { bc_fatal_lit("divide by zero (unsigned)"); }
+; if b5 == 0 { bc_fatal("divide by zero (unsigned)"); }
   load b5
   push_int 0
   eq
   jump_ifnot __L457
   push_str 40
-  call bc_fatal_lit StringLiteral
+  call bc_fatal StringLiteral
   pop
 __L457:
 ; udivmod32(a5, b5);

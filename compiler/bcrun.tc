@@ -113,7 +113,7 @@ fn udivmod32(a: i32, b: i32) -> void {
 // pipeline), so stderr writes go to the user's terminal. A silent
 // fallback on lookup miss or divide-by-zero masks genuine codegen bugs
 // -- exit loudly instead.
-fn bc_fatal_lit(msg: StringLiteral) -> void {
+fn bc_fatal(msg: StringLiteral) -> void {
     var mlen: i32 = len(msg);
     var buf: U8Array = U8Array((mlen + 8) as u32);
     var i: i32 = 0;
@@ -129,7 +129,7 @@ fn bc_fatal_lit(msg: StringLiteral) -> void {
     sys_exit(1);
     return;
 }
-fn bc_fatal_name(msg: StringLiteral, strtab: U8Array, ss: i32, sl: i32) -> void {
+fn bc_fatal(msg: StringLiteral, strtab: U8Array, ss: i32, sl: i32) -> void {
     var mlen: i32 = len(msg);
     var buf: U8Array = U8Array((mlen + sl + 10) as u32);
     var i: i32 = 0;
@@ -751,7 +751,7 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                         if gidx >= 0 {
                             stk_push(stk_i,stk_t, get(gv_i,(gidx*2+0)), get(gv_t,(gidx*2+1)));
                         }
-                        if gidx < 0 { bc_fatal_name("undefined variable on load", strtab, sss, ssl); }
+                        if gidx < 0 { bc_fatal("undefined variable on load", strtab, sss, ssl); }
                     }
                 }
                 if op == OP_STORE {
@@ -767,7 +767,7 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                             set(gv_i,(gidx*2+0),pv);
                             set(gv_t,(gidx*2+1),pt);
                         }
-                        if gidx < 0 { bc_fatal_name("undefined variable on store", strtab, sss, ssl); }
+                        if gidx < 0 { bc_fatal("undefined variable on store", strtab, sss, ssl); }
                     }
                 }
                 if op == OP_CALL {
@@ -1007,7 +1007,7 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                     if op==OP_ADD { r2=a2+b2; }
                     if op==OP_SUB { r2=a2-b2; }
                     if op==OP_MUL { r2=a2*b2; }
-                    if (op==OP_DIV || op==OP_MOD) && b2 == 0 { bc_fatal_lit("divide by zero"); }
+                    if (op==OP_DIV || op==OP_MOD) && b2 == 0 { bc_fatal("divide by zero"); }
                     if op==OP_DIV { r2=a2/b2; }
                     if op==OP_MOD { r2=a2%b2; }
                     if op==OP_AND { r2=a2&b2; }
@@ -1022,7 +1022,7 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                     // interpreted as u32.
                     stk_pop(stk_i,stk_t); var b5: i32=g_pop_ival;
                     stk_pop(stk_i,stk_t); var a5: i32=g_pop_ival;
-                    if b5 == 0 { bc_fatal_lit("divide by zero (unsigned)"); }
+                    if b5 == 0 { bc_fatal("divide by zero (unsigned)"); }
                     udivmod32(a5, b5);
                     var r5: i32 = g_udiv_q;
                     if op == OP_MOD_U { r5 = g_udiv_r; }
