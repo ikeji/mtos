@@ -83,34 +83,9 @@ var g_tut_vo: U8Array = 0 as U8Array;    // voiced/small table (50 bytes)
 
 // ===== terminal helpers =====
 
-fn putc(c: u8) -> void {
-    var one: U8Array = U8Array(1);
-    set(one, 0, c);
-    sys_write(1, one, 1);
-    delete(one);
-    return;
-}
-
+// (putchar, print moved to libtc/libtc.tc; emit_int / putc renamed.)
 fn puts_n(buf: U8Array, n: i32) -> void {
     if n > 0 { sys_write(1, buf, n); }
-    return;
-}
-
-fn emit_int(v: i32) -> void {
-    if v == 0 { putc('0' as u8); return; }
-    var d: U8Array = U8Array(12);
-    var n: i32 = 0;
-    var x: i32 = v;
-    while x > 0 {
-        set(d, n, ('0' as i32 + x % 10) as u8);
-        n = n + 1;
-        x = x / 10;
-    }
-    while n > 0 {
-        n = n - 1;
-        putc(get(d, n));
-    }
-    delete(d);
     return;
 }
 
@@ -196,19 +171,19 @@ fn byte_at_dcol(ls: i32, target: i32) -> i32 {
 // Clear screen + home cursor. TC string literals don't interpret
 // \xHH escapes, so we emit the ESC bytes raw (ESC [ 2 J ESC [ H).
 fn clear_screen() -> void {
-    putc(27u8); putc('[' as u8); putc('2' as u8); putc('J' as u8);
-    putc(27u8); putc('[' as u8); putc('H' as u8);
+    putchar(27u8); putchar('[' as u8); putchar('2' as u8); putchar('J' as u8);
+    putchar(27u8); putchar('[' as u8); putchar('H' as u8);
     return;
 }
 
 // Move cursor to row (1-based), col (1-based).
 fn goto_xy(row: i32, col: i32) -> void {
-    putc(27u8);                      // ESC
-    putc('[' as u8);
-    emit_int(row);
-    putc(';' as u8);
-    emit_int(col);
-    putc('H' as u8);
+    putchar(27u8);                      // ESC
+    putchar('[' as u8);
+    print(row);
+    putchar(';' as u8);
+    print(col);
+    putchar('H' as u8);
     return;
 }
 
@@ -634,8 +609,8 @@ fn render() -> void {
     puts_n(g_buf, g_len);
     // Make sure the status line always starts on a fresh row.
     if g_len > 0 && get(g_buf, g_len - 1) != 10u8 {
-        putc(13u8);
-        putc(10u8);
+        putchar(13u8);
+        putchar(10u8);
     }
     // Status line: mode indicator on row 24 (or wherever we are).
     puts("\r\n-- ");

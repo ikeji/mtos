@@ -9,33 +9,7 @@ import "../libtc/libtc.tc";
 fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
-fn print_u32(v: i32) -> void {
-    if v == 0 {
-        var z: U8Array = U8Array(1);
-        set(z, 0, '0' as u8);
-        sys_write(1, z, 1);
-        delete(z);
-        return;
-    }
-    var d: U8Array = U8Array(12);
-    var n: i32 = 0;
-    var x: i32 = v;
-    while x > 0 {
-        set(d, n, ('0' as i32 + x % 10) as u8);
-        n = n + 1;
-        x = x / 10;
-    }
-    var out: U8Array = U8Array(n as u32);
-    var i: i32 = 0;
-    while i < n {
-        set(out, i, get(d, n - 1 - i));
-        i = i + 1;
-    }
-    sys_write(1, out, n);
-    delete(out);
-    delete(d);
-    return;
-}
+// (print moved to libtc/libtc.tc)
 
 fn count_fd(fd: i32, lines: U8Array, words: U8Array, bytes: U8Array) -> void {
     var buf: U8Array = U8Array(4096);
@@ -72,13 +46,13 @@ fn count_fd(fd: i32, lines: U8Array, words: U8Array, bytes: U8Array) -> void {
 }
 
 fn print_line(l: i32, w: i32, b: i32, name: String, has_name: bool) -> void {
-    print_u32(l);
+    print(l);
     var sp: U8Array = U8Array(1);
     set(sp, 0, 32u8);
     sys_write(1, sp, 1);
-    print_u32(w);
+    print(w);
     sys_write(1, sp, 1);
-    print_u32(b);
+    print(b);
     if has_name {
         sys_write(1, sp, 1);
         var nl: i32 = len(name);
