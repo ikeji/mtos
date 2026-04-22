@@ -32,8 +32,8 @@
 |---|---|---|---|
 | B1 | `g_hist: I32Array` (sh.tc) | **採用** | `StringArray` に変更、エントリを `String` で管理 |
 | B2 | `g_pipe_*` parallel arrays (vfs.tc) | **採用** | `struct Pipe` + `PipeArray` に統合 |
-| B3 | `params_pool` / `locals_pool` / `instrs` (bc2asm.tc + bcrun.tc) | **採用** | `struct StrRef` + `struct BcInstr` を両ファイルに導入 |
-| B4 | `vartab` / `fntab` (tcheck.tc) | **採用** | vartab → `VarEntry` + `VarEntryArray`。fntab 固定部を `FnEntry` 化、params は別 I32Array |
+| B3 | `params_pool` / `locals_pool` / `instrs` (bc2asm.tc + bcrun.tc) | **部分採用** | pools のみ struct 化 (bc2asm: `StrRef` / bcrun: `VarRef`)。`instrs` は dense に 16 K slot × 4 i32 で流れているため、struct array 化するとポインタ間接 + ヘッダで ~320 KB になり現在 (260 KB) より悪化するので見送り |
+| B4 | `vartab` / `fntab` (tcheck.tc) | **部分採用** | vartab のみ struct 化 (`VarEntry` + `VarEntryArray`)。fntab は np 依存の可変長レコードで、固定部 + params 別アロケーションに分割すると kmalloc が 1→2 に増え節約にならないので見送り |
 | B5 | `fi: I32Array` (parse.tc) | **採用** | `struct FieldInfo` + `FieldInfoArray` |
 | B6 | `string_lits` / `global_vars` / `global_inits` (bc2asm.tc) | **採用** | `StrRef` 再利用、`struct GlobalVar { name, ty, init }` で 3 配列を 1 本化 |
 | B7 | `g_cfg_inits: U32Array` (kernel_common.tc) | **採用** | `StringArray` に変更 |

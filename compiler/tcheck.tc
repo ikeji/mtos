@@ -138,12 +138,6 @@ var g_last_cmt_sl: i32 = 0;
 var FN_MAX_PARAMS: i32 = 21;
 
 // vartab stride: name_ss(0), name_sl(1), type_ss(2), type_sl(3), scope(4) = 5 fields per entry
-var VAR_STRIDE: i32 = 5;
-var VAR_NSS: i32 = 0;
-var VAR_NSL: i32 = 1;
-var VAR_TSS: i32 = 2;
-var VAR_TSL: i32 = 3;
-var VAR_SCO: i32 = 4;
 
 // ===== Output helpers =====
 // ===== Input reading (via SourceReader) =====
@@ -409,21 +403,15 @@ fn ft_set_psl(fntab: U32Array, fi: i32, pi: i32, v: i32) -> void {
     return;
 }
 
-// ===== vartab accessors =====
-// vartab stride=5: [nss, nsl, tss, tsl, sco]
-fn vt_nss(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_NSS)); }
-fn vt_nsl(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_NSL)); }
-fn vt_tss(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_TSS)); }
-fn vt_tsl(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_TSL)); }
-fn vt_sco(vartab: I32Array, vi: i32) -> i32 { return get(vartab, (vi*VAR_STRIDE+VAR_SCO)); }
-
-fn vt_set(vartab: I32Array, vi: i32, nss: i32, nsl: i32, tss: i32, tsl: i32, sco: i32) -> void {
-    set(vartab, (vi*VAR_STRIDE+VAR_NSS), nss);
-    set(vartab, (vi*VAR_STRIDE+VAR_NSL), nsl);
-    set(vartab, (vi*VAR_STRIDE+VAR_TSS), tss);
-    set(vartab, (vi*VAR_STRIDE+VAR_TSL), tsl);
-    set(vartab, (vi*VAR_STRIDE+VAR_SCO), sco);
-    return;
+// ===== vartab =====
+// One VarEntry per active variable (parameter / local). scope is used
+// by pop_scope to drop everything added at or past a given depth.
+struct VarEntry {
+    nss: i32,
+    nsl: i32,
+    tss: i32,
+    tsl: i32,
+    sco: i32,
 }
 
 // ===== Scope management =====
@@ -432,8 +420,8 @@ fn push_scope() -> void {
     return;
 }
 
-fn pop_scope(vartab: I32Array) -> void {
-    while g_var_count > 0 && vt_sco(vartab, (g_var_count-1)) >= g_scope_depth {
+fn pop_scope(vartab: VarEntryArray) -> void {
+    while g_var_count > 0 && sco(get(vartab, g_var_count-1)) >= g_scope_depth {
         g_var_count = g_var_count - 1;
     }
     g_scope_depth = g_scope_depth - 1;
@@ -441,12 +429,13 @@ fn pop_scope(vartab: I32Array) -> void {
 }
 
 // ===== Variable lookup/add =====
-fn var_find(strtab: U8Array, vartab: I32Array, name_ss: i32, name_sl: i32) -> bool {
+fn var_find(strtab: U8Array, vartab: VarEntryArray, name_ss: i32, name_sl: i32) -> bool {
     var i: i32 = g_var_count - 1;
     while i >= 0 {
-        if strtab_eq(strtab, vt_nss(vartab, i), vt_nsl(vartab, i), name_ss, name_sl) {
-            g_type_ss = vt_tss(vartab, i);
-            g_type_sl = vt_tsl(vartab, i);
+        var v: VarEntry = get(vartab, i);
+        if strtab_eq(strtab, nss(v), nsl(v), name_ss, name_sl) {
+            g_type_ss = tss(v);
+            g_type_sl = tsl(v);
             return true;
         }
         i = i - 1;
@@ -454,8 +443,11 @@ fn var_find(strtab: U8Array, vartab: I32Array, name_ss: i32, name_sl: i32) -> bo
     return false;
 }
 
-fn var_add(strtab: U8Array, vartab: I32Array, nss: i32, nsl: i32, tss: i32, tsl: i32) -> void {
-    vt_set(vartab, g_var_count, nss, nsl, tss, tsl, g_scope_depth);
+fn var_add(strtab: U8Array, vartab: VarEntryArray, nss: i32, nsl: i32, tss: i32, tsl: i32) -> void {
+    var v: VarEntry = get(vartab, g_var_count);
+    nss(v, nss); nsl(v, nsl);
+    tss(v, tss); tsl(v, tsl);
+    sco(v, g_scope_depth);
     g_var_count = g_var_count + 1;
     return;
 }
@@ -769,7 +761,7 @@ fn resolve_overload(strtab: U8Array, fntab: U32Array,
 // ===== Type check expressions =====
 // Result type is stored in g_type_ss / g_type_sl.
 // Also annotates node n with its type.
-fn check_expr(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, n: i32) -> void {
+fn check_expr(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray, n: i32) -> void {
     if n < 0 {
         g_type_ss = -1;
         g_type_sl = 0;
@@ -911,7 +903,7 @@ fn err(buf: U8Array, pos: i32, strtab: U8Array, ss: i32, sl: i32) -> i32 {
     return pos + sl;
 }
 
-fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array,
+fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray,
                    n: i32, fname_ss: i32, fname_sl: i32) -> void {
     var nargs: i32 = n_nchildren(nodes, n);
     var arg_tss: I32Array = I32Array(24);
@@ -998,7 +990,7 @@ fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab
     return;
 }
 
-fn check_stmt(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, n: i32) -> void {
+fn check_stmt(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray, n: i32) -> void {
     var k: i32 = n_kind(nodes, n);
 
     if k == NK_VAR_DECL {
@@ -1099,7 +1091,7 @@ fn check_stmt(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32
     return;
 }
 
-fn check_block(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, blk_n: i32) -> void {
+fn check_block(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray, blk_n: i32) -> void {
     var c: i32 = n_child(nodes, blk_n);
     while c >= 0 {
         check_stmt(nodes, strtab, fntab, vartab, c);
@@ -1108,7 +1100,7 @@ fn check_block(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I3
     return;
 }
 
-fn check_fn(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, fn_n: i32) -> void {
+fn check_fn(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray, fn_n: i32) -> void {
     var params_n: i32 = n_child(nodes, fn_n);
     var ret_n: i32 = -1;
     var body_n: i32 = -1;
@@ -1348,7 +1340,7 @@ fn collect_self_th(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, self_n
     return;
 }
 
-fn collect_decls(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, root: i32) -> void {
+fn collect_decls(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray, root: i32) -> void {
     var c: i32 = n_child(nodes, root);
     while c >= 0 {
         var ck: i32 = n_kind(nodes, c);
@@ -1363,7 +1355,7 @@ fn collect_decls(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: 
     return;
 }
 
-fn check_program(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: I32Array, root: i32) -> void {
+fn check_program(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray, root: i32) -> void {
     var c: i32 = n_child(nodes, root);
     while c >= 0 {
         var ck: i32 = n_kind(nodes, c);
@@ -1663,7 +1655,9 @@ fn main() -> i32 {
     var atom_buf: U8Array = U8Array(1024);
     var ob: StringBuffer = StringBuffer_new(1);
     var fntab: U32Array = U32Array(512);
-    var vartab: I32Array = I32Array(640);
+    var vartab: VarEntryArray = VarEntryArray(128u32);
+    var vti: i32 = 0;
+    while vti < 128 { set(vartab, vti, VarEntry(0, 0, 0, 0, 0)); vti = vti + 1; }
 
     g_reader = SourceReader_new(0);
     ast_set_count(0);
