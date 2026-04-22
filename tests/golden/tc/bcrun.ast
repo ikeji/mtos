@@ -2524,74 +2524,187 @@
       (return)
     )
   )
-  (fn pl_name_ss
+  (struct VarRef
+    (field name_ss
+      (type i32)
+    )
+    (field name_sl
+      (type i32)
+    )
+    (field ty_ss
+      (type i32)
+    )
+    (field ty_sl
+      (type i32)
+    )
+  )
+  (fn VarRef
     (params
-      (param pool
-        (type I32Array)
-      )
-      (param i
+      (param __a0
         (type i32)
+      )
+      (param __a1
+        (type i32)
+      )
+      (param __a2
+        (type i32)
+      )
+      (param __a3
+        (type i32)
+      )
+    )
+    (ret
+      (type VarRef)
+    )
+    (block
+      (var_decl __p
+        (type U32Array)
+        (call U32Array
+          (int:u32 4)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 0)
+        (cast
+          (var __a0)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 1)
+        (cast
+          (var __a1)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 2)
+        (cast
+          (var __a2)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 3)
+        (cast
+          (var __a3)
+          (type u32)
+        )
+      )
+      (return
+        (cast
+          (var __p)
+          (type VarRef)
+        )
+      )
+    )
+  )
+  (fn name_ss
+    (params
+      (param __p
+        (type VarRef)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool, (i*4+0)); }")
       (return
-        (call get
-          (var pool)
-          (binop +
-            (binop *
-              (var i)
-              (int 4)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 0)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn pl_name_sl
+  (fn name_sl
     (params
-      (param pool
-        (type I32Array)
-      )
-      (param i
-        (type i32)
+      (param __p
+        (type VarRef)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool, (i*4+1)); }")
       (return
-        (call get
-          (var pool)
-          (binop +
-            (binop *
-              (var i)
-              (int 4)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 1)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn pl_set
+  (fn ty_ss
     (params
-      (param pool
-        (type I32Array)
+      (param __p
+        (type VarRef)
       )
-      (param i
-        (type i32)
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 2)
+          )
+          (type i32)
+        )
       )
-      (param f
-        (type i32)
+    )
+  )
+  (fn ty_sl
+    (params
+      (param __p
+        (type VarRef)
       )
-      (param v
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 3)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn name_ss
+    (params
+      (param __p
+        (type VarRef)
+      )
+      (param __v
         (type i32)
       )
     )
@@ -2599,17 +2712,232 @@
       (type void)
     )
     (block
-      (comment "fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool, (i*4+f), v); return; }")
       (call_stmt set
-        (var pool)
-        (binop +
-          (binop *
-            (var i)
-            (int 4)
-          )
-          (var f)
+        (cast
+          (var __p)
+          (type U32Array)
         )
-        (var v)
+        (int 0)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn name_sl
+    (params
+      (param __p
+        (type VarRef)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 1)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn ty_ss
+    (params
+      (param __p
+        (type VarRef)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 2)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn ty_sl
+    (params
+      (param __p
+        (type VarRef)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 3)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __p
+        (type VarRef)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+      )
+      (return)
+    )
+  )
+  (fn VarRefArray
+    (params
+      (param __n
+        (type u32)
+      )
+    )
+    (ret
+      (type VarRefArray)
+    )
+    (block
+      (return
+        (cast
+          (call U32Array
+            (var __n)
+          )
+          (type VarRefArray)
+        )
+      )
+    )
+  )
+  (fn len
+    (params
+      (param __a
+        (type VarRefArray)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call len
+          (cast
+            (var __a)
+            (type U32Array)
+          )
+        )
+      )
+    )
+  )
+  (fn get
+    (params
+      (param __a
+        (type VarRefArray)
+      )
+      (param __i
+        (type i32)
+      )
+    )
+    (ret
+      (type VarRef)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __a)
+              (type U32Array)
+            )
+            (var __i)
+          )
+          (type VarRef)
+        )
+      )
+    )
+  )
+  (fn set
+    (params
+      (param __a
+        (type VarRefArray)
+      )
+      (param __i
+        (type i32)
+      )
+      (param __v
+        (type VarRef)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+        (var __i)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __a
+        (type VarRefArray)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __a)
+          (type U32Array)
+        )
       )
       (return)
     )
@@ -3391,10 +3719,10 @@
         (type I32Array)
       )
       (param params_pool
-        (type I32Array)
+        (type VarRefArray)
       )
       (param locals_pool
-        (type I32Array)
+        (type VarRefArray)
       )
       (param instrs
         (type I32Array)
@@ -4073,32 +4401,30 @@
                           (var ty_ss)
                         )
                       )
-                      (comment "pl_set(params_pool, g_nparams, 0, nm_ss);")
-                      (call_stmt pl_set
-                        (var params_pool)
-                        (var g_nparams)
-                        (int 0)
+                      (comment "var vp: VarRef = get(params_pool, g_nparams);")
+                      (var_decl vp
+                        (type VarRef)
+                        (call get
+                          (var params_pool)
+                          (var g_nparams)
+                        )
+                      )
+                      (comment "name_ss(vp, nm_ss); name_sl(vp, nm_sl);")
+                      (call_stmt name_ss
+                        (var vp)
                         (var nm_ss)
                       )
-                      (comment "pl_set(params_pool, g_nparams, 1, nm_sl);")
-                      (call_stmt pl_set
-                        (var params_pool)
-                        (var g_nparams)
-                        (int 1)
+                      (call_stmt name_sl
+                        (var vp)
                         (var nm_sl)
                       )
-                      (comment "pl_set(params_pool, g_nparams, 2, ty_ss);")
-                      (call_stmt pl_set
-                        (var params_pool)
-                        (var g_nparams)
-                        (int 2)
+                      (comment "ty_ss(vp, ty_ss);   ty_sl(vp, ty_sl);")
+                      (call_stmt ty_ss
+                        (var vp)
                         (var ty_ss)
                       )
-                      (comment "pl_set(params_pool, g_nparams, 3, ty_sl);")
-                      (call_stmt pl_set
-                        (var params_pool)
-                        (var g_nparams)
-                        (int 3)
+                      (call_stmt ty_sl
+                        (var vp)
                         (var ty_sl)
                       )
                       (comment "g_nparams = g_nparams + 1;")
@@ -4182,32 +4508,30 @@
                           (var ty_ss)
                         )
                       )
-                      (comment "pl_set(locals_pool, g_nlocals, 0, nm_ss);")
-                      (call_stmt pl_set
-                        (var locals_pool)
-                        (var g_nlocals)
-                        (int 0)
+                      (comment "var vl: VarRef = get(locals_pool, g_nlocals);")
+                      (var_decl vl
+                        (type VarRef)
+                        (call get
+                          (var locals_pool)
+                          (var g_nlocals)
+                        )
+                      )
+                      (comment "name_ss(vl, nm_ss); name_sl(vl, nm_sl);")
+                      (call_stmt name_ss
+                        (var vl)
                         (var nm_ss)
                       )
-                      (comment "pl_set(locals_pool, g_nlocals, 1, nm_sl);")
-                      (call_stmt pl_set
-                        (var locals_pool)
-                        (var g_nlocals)
-                        (int 1)
+                      (call_stmt name_sl
+                        (var vl)
                         (var nm_sl)
                       )
-                      (comment "pl_set(locals_pool, g_nlocals, 2, ty_ss);")
-                      (call_stmt pl_set
-                        (var locals_pool)
-                        (var g_nlocals)
-                        (int 2)
+                      (comment "ty_ss(vl, ty_ss);   ty_sl(vl, ty_sl);")
+                      (call_stmt ty_ss
+                        (var vl)
                         (var ty_ss)
                       )
-                      (comment "pl_set(locals_pool, g_nlocals, 3, ty_sl);")
-                      (call_stmt pl_set
-                        (var locals_pool)
-                        (var g_nlocals)
-                        (int 3)
+                      (call_stmt ty_sl
+                        (var vl)
                         (var ty_sl)
                       )
                       (comment "g_nlocals = g_nlocals + 1;")
@@ -5120,18 +5444,18 @@
         (type I32Array)
       )
       (param params_pool
-        (type I32Array)
+        (type VarRefArray)
       )
       (param locals_pool
-        (type I32Array)
+        (type VarRefArray)
       )
       (param fi
         (type i32)
       )
-      (param name_ss
+      (param q_ss
         (type i32)
       )
-      (param name_sl
+      (param q_sl
         (type i32)
       )
     )
@@ -5183,26 +5507,29 @@
           (var np)
         )
         (block
-          (comment "if stab_eq(strtab, pl_name_ss(params_pool,pb+i), pl_name_sl(params_pool,pb+i), name_ss, name_sl) {")
+          (comment "var vp: VarRef = get(params_pool, pb+i);")
+          (var_decl vp
+            (type VarRef)
+            (call get
+              (var params_pool)
+              (binop +
+                (var pb)
+                (var i)
+              )
+            )
+          )
+          (comment "if stab_eq(strtab, name_ss(vp), name_sl(vp), q_ss, q_sl) {")
           (if
             (call stab_eq
               (var strtab)
-              (call pl_name_ss
-                (var params_pool)
-                (binop +
-                  (var pb)
-                  (var i)
-                )
+              (call name_ss
+                (var vp)
               )
-              (call pl_name_sl
-                (var params_pool)
-                (binop +
-                  (var pb)
-                  (var i)
-                )
+              (call name_sl
+                (var vp)
               )
-              (var name_ss)
-              (var name_sl)
+              (var q_ss)
+              (var q_sl)
             )
             (block
               (comment "return i;")
@@ -5231,26 +5558,29 @@
           (var nl)
         )
         (block
-          (comment "if stab_eq(strtab, pl_name_ss(locals_pool,lb+i), pl_name_sl(locals_pool,lb+i), name_ss, name_sl) {")
+          (comment "var vl: VarRef = get(locals_pool, lb+i);")
+          (var_decl vl
+            (type VarRef)
+            (call get
+              (var locals_pool)
+              (binop +
+                (var lb)
+                (var i)
+              )
+            )
+          )
+          (comment "if stab_eq(strtab, name_ss(vl), name_sl(vl), q_ss, q_sl) {")
           (if
             (call stab_eq
               (var strtab)
-              (call pl_name_ss
-                (var locals_pool)
-                (binop +
-                  (var lb)
-                  (var i)
-                )
+              (call name_ss
+                (var vl)
               )
-              (call pl_name_sl
-                (var locals_pool)
-                (binop +
-                  (var lb)
-                  (var i)
-                )
+              (call name_sl
+                (var vl)
               )
-              (var name_ss)
-              (var name_sl)
+              (var q_ss)
+              (var q_sl)
             )
             (block
               (comment "return np + i;")
@@ -5683,10 +6013,10 @@
         (type I32Array)
       )
       (param params_pool
-        (type I32Array)
+        (type VarRefArray)
       )
       (param locals_pool
-        (type I32Array)
+        (type VarRefArray)
       )
       (param instrs
         (type I32Array)
@@ -9452,18 +9782,78 @@
           (int 2560)
         )
       )
-      (comment "var params_pool: I32Array = I32Array(4096);")
+      (comment "var params_pool: VarRefArray = VarRefArray(1024u32);")
       (var_decl params_pool
-        (type I32Array)
-        (call I32Array
-          (int 4096)
+        (type VarRefArray)
+        (call VarRefArray
+          (int:u32 1024)
         )
       )
-      (comment "var locals_pool: I32Array = I32Array(4096);")
+      (comment "var locals_pool: VarRefArray = VarRefArray(1024u32);")
       (var_decl locals_pool
-        (type I32Array)
-        (call I32Array
-          (int 4096)
+        (type VarRefArray)
+        (call VarRefArray
+          (int:u32 1024)
+        )
+      )
+      (comment "var ppi: i32 = 0;")
+      (var_decl ppi
+        (type i32)
+        (int 0)
+      )
+      (comment "while ppi < 1024 { set(params_pool, ppi, VarRef(0, 0, 0, 0)); ppi = ppi + 1; }")
+      (while
+        (binop <
+          (var ppi)
+          (int 1024)
+        )
+        (block
+          (call_stmt set
+            (var params_pool)
+            (var ppi)
+            (call VarRef
+              (int 0)
+              (int 0)
+              (int 0)
+              (int 0)
+            )
+          )
+          (assign ppi
+            (binop +
+              (var ppi)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "var lpi: i32 = 0;")
+      (var_decl lpi
+        (type i32)
+        (int 0)
+      )
+      (comment "while lpi < 1024 { set(locals_pool, lpi, VarRef(0, 0, 0, 0)); lpi = lpi + 1; }")
+      (while
+        (binop <
+          (var lpi)
+          (int 1024)
+        )
+        (block
+          (call_stmt set
+            (var locals_pool)
+            (var lpi)
+            (call VarRef
+              (int 0)
+              (int 0)
+              (int 0)
+              (int 0)
+            )
+          )
+          (assign lpi
+            (binop +
+              (var lpi)
+              (int 1)
+            )
+          )
         )
       )
       (comment "var instrs:      I32Array = I32Array(262144);")

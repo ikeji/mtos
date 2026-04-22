@@ -315,10 +315,16 @@ fn fn_instr_base(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+8)); }
 fn fn_ninstr(fns: I32Array, fi: i32) -> i32 { return get(fns, (fi*10+9)); }
 fn fn_set(fns: I32Array, fi: i32, f: i32, v: i32) -> void { set(fns, (fi*10+f), v); return; }
 
-// ===== Param/local pool: 4 ints each =====
-fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool, (i*4+0)); }
-fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool, (i*4+1)); }
-fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool, (i*4+f), v); return; }
+// ===== Param/local pool =====
+// One entry per param or local, carrying both the name slice and the
+// type slice into strtab. bcrun keeps the type around for builtin
+// dispatch checks (bc2asm only reads the name).
+struct VarRef {
+    name_ss: i32,
+    name_sl: i32,
+    ty_ss:   i32,
+    ty_sl:   i32,
+}
 
 // ===== Instruction pool: 4 ints each (op, ival, sarg_ss, sarg_sl) =====
 fn ins_op(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs, ((base+pc)*4+0)); }
@@ -385,7 +391,7 @@ fn parse_lnum(src: U8Array, from: i32, to: i32) -> i32 {
 // ===== BC parser =====
 fn parse_bc(src: U8Array, strtab: U8Array,
             string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
-            fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
+            fns: I32Array, params_pool: VarRefArray, locals_pool: VarRefArray,
             instrs: I32Array, label_pcs: I32Array) -> void {
     var cur_fn: i32 = -1;
     var done: i32 = 0;
@@ -472,10 +478,9 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     var nm_sl: i32 = tok_len(nm_ss);
                     var ty_ss: i32 = next_tok(src, strtab);
                     var ty_sl: i32 = tok_len(ty_ss);
-                    pl_set(params_pool, g_nparams, 0, nm_ss);
-                    pl_set(params_pool, g_nparams, 1, nm_sl);
-                    pl_set(params_pool, g_nparams, 2, ty_ss);
-                    pl_set(params_pool, g_nparams, 3, ty_sl);
+                    var vp: VarRef = get(params_pool, g_nparams);
+                    name_ss(vp, nm_ss); name_sl(vp, nm_sl);
+                    ty_ss(vp, ty_ss);   ty_sl(vp, ty_sl);
                     g_nparams = g_nparams + 1;
                     if cur_fn >= 0 { fn_set(fns, cur_fn, 5, fn_nparam(fns, cur_fn) + 1); }
                     skip_line(src);
@@ -486,10 +491,9 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     var nm_sl: i32 = tok_len(nm_ss);
                     var ty_ss: i32 = next_tok(src, strtab);
                     var ty_sl: i32 = tok_len(ty_ss);
-                    pl_set(locals_pool, g_nlocals, 0, nm_ss);
-                    pl_set(locals_pool, g_nlocals, 1, nm_sl);
-                    pl_set(locals_pool, g_nlocals, 2, ty_ss);
-                    pl_set(locals_pool, g_nlocals, 3, ty_sl);
+                    var vl: VarRef = get(locals_pool, g_nlocals);
+                    name_ss(vl, nm_ss); name_sl(vl, nm_sl);
+                    ty_ss(vl, ty_ss);   ty_sl(vl, ty_sl);
                     g_nlocals = g_nlocals + 1;
                     if cur_fn >= 0 { fn_set(fns, cur_fn, 7, fn_nlocal(fns, cur_fn) + 1); }
                     skip_line(src);
@@ -612,22 +616,24 @@ fn parse_bc(src: U8Array, strtab: U8Array,
 }
 
 // ===== Variable lookup =====
-fn var_find_local(strtab: U8Array, fns: I32Array, params_pool: I32Array, locals_pool: I32Array,
-                  fi: i32, name_ss: i32, name_sl: i32) -> i32 {
+fn var_find_local(strtab: U8Array, fns: I32Array, params_pool: VarRefArray, locals_pool: VarRefArray,
+                  fi: i32, q_ss: i32, q_sl: i32) -> i32 {
     var pb: i32 = fn_param_base(fns, fi);
     var np: i32 = fn_nparam(fns, fi);
     var lb: i32 = fn_local_base(fns, fi);
     var nl: i32 = fn_nlocal(fns, fi);
     var i: i32 = 0;
     while i < np {
-        if stab_eq(strtab, pl_name_ss(params_pool,pb+i), pl_name_sl(params_pool,pb+i), name_ss, name_sl) {
+        var vp: VarRef = get(params_pool, pb+i);
+        if stab_eq(strtab, name_ss(vp), name_sl(vp), q_ss, q_sl) {
             return i;
         }
         i = i + 1;
     }
     i = 0;
     while i < nl {
-        if stab_eq(strtab, pl_name_ss(locals_pool,lb+i), pl_name_sl(locals_pool,lb+i), name_ss, name_sl) {
+        var vl: VarRef = get(locals_pool, lb+i);
+        if stab_eq(strtab, name_ss(vl), name_sl(vl), q_ss, q_sl) {
             return np + i;
         }
         i = i + 1;
@@ -680,7 +686,7 @@ fn cs_pop(cs: I32Array) -> void {
 
 // ===== Main VM =====
 fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
-          fns: I32Array, params_pool: I32Array, locals_pool: I32Array, instrs: I32Array,
+          fns: I32Array, params_pool: VarRefArray, locals_pool: VarRefArray, instrs: I32Array,
           hm: I32Array, hb: U8Array, hi: I32Array,
           stk_i: I32Array, stk_t: I32Array, var_i: I32Array, var_t: I32Array,
           gv_i: I32Array, gv_t: I32Array, cs: I32Array,
@@ -1111,8 +1117,14 @@ fn main() -> i32 {
     var global_vars:  I32Array = I32Array(1024);
     var global_inits: I32Array = I32Array(256);
     var fns:         I32Array = I32Array(2560);
-    var params_pool: I32Array = I32Array(4096);
-    var locals_pool: I32Array = I32Array(4096);
+    // Pools: pre-allocate every slot so .fn / .endfn updates reuse the
+    // existing VarRef objects instead of churning kmalloc.
+    var params_pool: VarRefArray = VarRefArray(1024u32);
+    var locals_pool: VarRefArray = VarRefArray(1024u32);
+    var ppi: i32 = 0;
+    while ppi < 1024 { set(params_pool, ppi, VarRef(0, 0, 0, 0)); ppi = ppi + 1; }
+    var lpi: i32 = 0;
+    while lpi < 1024 { set(locals_pool, lpi, VarRef(0, 0, 0, 0)); lpi = lpi + 1; }
     var instrs:      I32Array = I32Array(262144);
     var label_pcs:   I32Array = I32Array(16384);
     var hm:          I32Array = I32Array(2048);
