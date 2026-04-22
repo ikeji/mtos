@@ -4,10 +4,10 @@ fn main() -> i32 {
     var n: u8 = '\n';
     var t: u8 = '\t';
     var q: u8 = '\'';
-    print_i32(a as i32);
-    print_i32(z as i32);
-    print_i32(n as i32);
-    print_i32(t as i32);
-    print_i32(q as i32);
+    print(a as i32);
+    print(z as i32);
+    print(n as i32);
+    print(t as i32);
+    print(q as i32);
     return 0;
 }

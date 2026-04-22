@@ -31,8 +31,8 @@
               (int 0)
             )
             (block
-              (comment "print_str(\"FizzBuzz\");")
-              (call_stmt print_str
+              (comment "print(\"FizzBuzz\");")
+              (call_stmt print
                 (str "FizzBuzz")
               )
             )
@@ -47,8 +47,8 @@
                   (int 0)
                 )
                 (block
-                  (comment "print_str(\"Fizz\");")
-                  (call_stmt print_str
+                  (comment "print(\"Fizz\");")
+                  (call_stmt print
                     (str "Fizz")
                   )
                 )
@@ -63,14 +63,14 @@
                       (int 0)
                     )
                     (block
-                      (comment "print_str(\"Buzz\");")
-                      (call_stmt print_str
+                      (comment "print(\"Buzz\");")
+                      (call_stmt print
                         (str "Buzz")
                       )
                     )
                     (block
-                      (comment "print_i32(i);")
-                      (call_stmt print_i32
+                      (comment "print(i);")
+                      (call_stmt print
                         (var i)
                       )
                     )

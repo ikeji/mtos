@@ -52,7 +52,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call print_i32__i32
+    call print__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -65,7 +65,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call print_i32__i32
+    call print__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -78,7 +78,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call print_i32__i32
+    call print__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -91,7 +91,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call print_i32__i32
+    call print__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -104,7 +104,7 @@ main:
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
-    call print_i32__i32
+    call print__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)

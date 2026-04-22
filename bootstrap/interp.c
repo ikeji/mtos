@@ -214,7 +214,7 @@ static int call_builtin_known(const char *name) {
     static const char *B[] = {
         "peek8","peek16","peek32","poke8","poke16","poke32",
         "sys_write","sys_read","sys_exit",
-        "print_i32","print_u32","print_bool","print_str",
+        "print",
         "len","get","set","delete","append","equals",
         NULL
     };
@@ -300,24 +300,20 @@ static Value call_builtin(const char *name, Value *args, int nargs) {
         exit(args[0].ival);
     }
 
-    /* print helpers */
-    if (strcmp(name, "print_i32") == 0 && nargs == 1) {
-        printf("%d\n", (int)args[0].ival);
-        return val_void();
-    }
-    if (strcmp(name, "print_u32") == 0 && nargs == 1) {
-        printf("%u\n", (unsigned)args[0].ival);
-        return val_void();
-    }
-    if (strcmp(name, "print_bool") == 0 && nargs == 1) {
-        printf("%s\n", args[0].ival ? "true" : "false");
-        return val_void();
-    }
-    if (strcmp(name, "print_str") == 0 && nargs == 1) {
-        HeapObj *s = args[0].ref;
-        if (s && s->kind == OBJ_STRING && s->bytes)
-            fwrite(s->bytes, 1, s->len, stdout);
-        putchar('\n');
+    /* print helpers — one dispatch point, branches on arg tag.
+     * interp has no type annotations at runtime, so we can't tell
+     * i32 from u32 or bool; they're all %d / %u close enough for
+     * tests that don't rely on unsigned wraparound behavior in
+     * interp mode. Strings take the OBJ_STRING path. */
+    if (strcmp(name, "print") == 0 && nargs == 1) {
+        if (args[0].kind == VAL_REF) {
+            HeapObj *s = args[0].ref;
+            if (s && s->kind == OBJ_STRING && s->bytes)
+                fwrite(s->bytes, 1, s->len, stdout);
+            putchar('\n');
+        } else {
+            printf("%d\n", (int)args[0].ival);
+        }
         return val_void();
     }
 

@@ -16,9 +16,9 @@ fn main() -> i32 {
     set(data(mb), 0, 65 as u8);
     set(data(mb), 1, 66 as u8);
     pos(mb, 2);
-    print_i32(len(mb));
-    print_i32(get(mb, 0) as i32);
-    print_i32(get(mb, 1) as i32);
+    print(len(mb));
+    print(get(mb, 0) as i32);
+    print(get(mb, 1) as i32);
     delete(data(mb));
     delete(mb);
     return 0;

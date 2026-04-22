@@ -610,7 +610,7 @@ export fn km_peak_bytes() -> i32 { return g_km_peak_bytes; }
 export fn km_curr_bytes() -> i32 { return g_km_curr_bytes; }
 
 // ===== Print helpers =====
-export fn print_i32(v: i32) -> void {
+export fn print(v: i32) -> void {
     var buf: U8Array = U8Array(16);
     var neg: i32 = 0;
     if v < 0 { neg = 1; v = 0 - v; }
@@ -633,12 +633,38 @@ export fn print_i32(v: i32) -> void {
     delete_impl(buf as u32);
     return;
 }
-export fn print_u32(v: u32) -> void { print_i32(v as i32); return; }
-export fn print_bool(v: bool) -> void {
-    if v { print_i32(1); } else { print_i32(0); }
+// u32 version uses unsigned arithmetic so values >= 0x80000000 print
+// as their true decimal instead of a negative number (which the naive
+// cast-to-i32 path would produce).
+export fn print(v: u32) -> void {
+    var buf: U8Array = U8Array(16);
+    if v == 0u32 {
+        poke8(buf as u32 + 4u32 + (0) as u32, ('0') as u8); poke8(buf as u32 + 4u32 + (1) as u32, (10u8) as u8);
+        sys_write(1, buf, 2);
+        delete_impl(buf as u32);
+        return;
+    }
+    var tmp: U8Array = U8Array(12);
+    var i: i32 = 0;
+    while v > 0u32 {
+        poke8(tmp as u32 + 4u32 + (i) as u32, ((48u32 + v % 10u32) as u8));
+        i = i + 1;
+        v = v / 10u32;
+    }
+    var pos: i32 = 0;
+    var j: i32 = i - 1;
+    while j >= 0 { poke8(buf as u32 + 4u32 + (pos) as u32, peek8(tmp as u32 + 4u32 + (j) as u32) as u8); pos = pos + 1; j = j - 1; }
+    poke8(buf as u32 + 4u32 + (pos) as u32, (10u8) as u8); pos = pos + 1;
+    sys_write(1, buf, pos);
+    delete_impl(tmp as u32);
+    delete_impl(buf as u32);
     return;
 }
-export fn print_str(s: String) -> void {
+export fn print(v: bool) -> void {
+    if v { print(1); } else { print(0); }
+    return;
+}
+export fn print(s: String) -> void {
     if s as u32 != 0u32 {
         var slen: i32 = peek32(s as u32) as i32;
         do_write(1, s as u32 + 4u32, slen);
@@ -650,7 +676,7 @@ export fn print_str(s: String) -> void {
     delete_impl(nl as u32);
     return;
 }
-export fn print_str(s: StringLiteral) -> void { print_str(s as String); return; }
+export fn print(s: StringLiteral) -> void { print(s as String); return; }
 
 // ===== String operations =====
 export fn append(s: String, c: u8) -> String {

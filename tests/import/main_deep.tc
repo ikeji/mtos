@@ -2,6 +2,6 @@ import "deep_b.tc";
 
 fn main() -> i32 {
     var result: i32 = deep_add(5);
-    print_i32(result);
+    print(result);
     return 0;
 }

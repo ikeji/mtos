@@ -6470,7 +6470,7 @@
                         (type u8)
                         (int:u8 0)
                       )
-                      (comment "var c3: u8 = 0u8; var c4: u8 = 0u8; var c5: u8 = 0u8; var c6: u8 = 0u8;")
+                      (comment "var c3: u8 = 0u8; var c4: u8 = 0u8; var c5: u8 = 0u8; var c6: u8 = 0u8; var c7: u8 = 0u8;")
                       (var_decl c3
                         (type u8)
                         (int:u8 0)
@@ -6484,6 +6484,10 @@
                         (int:u8 0)
                       )
                       (var_decl c6
+                        (type u8)
+                        (int:u8 0)
+                      )
+                      (var_decl c7
                         (type u8)
                         (int:u8 0)
                       )
@@ -6605,6 +6609,24 @@
                               (binop +
                                 (var sss)
                                 (int 6)
+                              )
+                            )
+                          )
+                        )
+                      )
+                      (comment "if ssl > 7 { c7 = get(strtab, (sss+7)); }")
+                      (if
+                        (binop >
+                          (var ssl)
+                          (int 7)
+                        )
+                        (block
+                          (assign c7
+                            (call get
+                              (var strtab)
+                              (binop +
+                                (var sss)
+                                (int 7)
                               )
                             )
                           )
@@ -7037,39 +7059,63 @@
                           )
                         )
                       )
-                      (comment "if bhandled==0 && c0=='p'&&c1=='r'&&c2=='i' {")
+                      (comment "if bhandled==0 && c0=='p'&&c1=='r'&&c2=='i'&&c3=='n'&&c4=='t'&&c5=='_'&&c6=='_' {")
                       (if
                         (binop &&
                           (binop &&
                             (binop &&
-                              (binop ==
-                                (var bhandled)
-                                (int 0)
+                              (binop &&
+                                (binop &&
+                                  (binop &&
+                                    (binop &&
+                                      (binop ==
+                                        (var bhandled)
+                                        (int 0)
+                                      )
+                                      (binop ==
+                                        (var c0)
+                                        (int:u8 112)
+                                      )
+                                    )
+                                    (binop ==
+                                      (var c1)
+                                      (int:u8 114)
+                                    )
+                                  )
+                                  (binop ==
+                                    (var c2)
+                                    (int:u8 105)
+                                  )
+                                )
+                                (binop ==
+                                  (var c3)
+                                  (int:u8 110)
+                                )
                               )
                               (binop ==
-                                (var c0)
-                                (int:u8 112)
+                                (var c4)
+                                (int:u8 116)
                               )
                             )
                             (binop ==
-                              (var c1)
-                              (int:u8 114)
+                              (var c5)
+                              (int:u8 95)
                             )
                           )
                           (binop ==
-                            (var c2)
-                            (int:u8 105)
+                            (var c6)
+                            (int:u8 95)
                           )
                         )
                         (block
-                          (comment "if c6=='i' { print_i32(get(arg_i,0)); }")
+                          (comment "if c7=='i' { print(get(arg_i,0)); }")
                           (if
                             (binop ==
-                              (var c6)
+                              (var c7)
                               (int:u8 105)
                             )
                             (block
-                              (call_stmt print_i32
+                              (call_stmt print
                                 (call get
                                   (var arg_i)
                                   (int 0)
@@ -7077,14 +7123,14 @@
                               )
                             )
                           )
-                          (comment "if c6=='u' { print_u32(get(arg_i,0) as u32); }")
+                          (comment "if c7=='u' { print(get(arg_i,0) as u32); }")
                           (if
                             (binop ==
-                              (var c6)
+                              (var c7)
                               (int:u8 117)
                             )
                             (block
-                              (call_stmt print_u32
+                              (call_stmt print
                                 (cast
                                   (call get
                                     (var arg_i)
@@ -7095,14 +7141,14 @@
                               )
                             )
                           )
-                          (comment "if c6=='b'  { print_bool(get(arg_i,0) != 0); }")
+                          (comment "if c7=='b' { print(get(arg_i,0) != 0); }")
                           (if
                             (binop ==
-                              (var c6)
+                              (var c7)
                               (int:u8 98)
                             )
                             (block
-                              (call_stmt print_bool
+                              (call_stmt print
                                 (binop !=
                                   (call get
                                     (var arg_i)
@@ -7113,11 +7159,11 @@
                               )
                             )
                           )
-                          (comment "if c6=='s' {")
+                          (comment "if c7=='S' {")
                           (if
                             (binop ==
-                              (var c6)
-                              (int:u8 115)
+                              (var c7)
+                              (int:u8 83)
                             )
                             (block
                               (comment "var obj: i32 = get(arg_i,0);")

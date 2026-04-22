@@ -782,7 +782,7 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
 
                     // Check if builtin
                     var c0: u8 = 0u8; var c1: u8 = 0u8; var c2: u8 = 0u8;
-                    var c3: u8 = 0u8; var c4: u8 = 0u8; var c5: u8 = 0u8; var c6: u8 = 0u8;
+                    var c3: u8 = 0u8; var c4: u8 = 0u8; var c5: u8 = 0u8; var c6: u8 = 0u8; var c7: u8 = 0u8;
                     if ssl > 0 { c0 = get(strtab, sss); }
                     if ssl > 1 { c1 = get(strtab, (sss+1)); }
                     if ssl > 2 { c2 = get(strtab, (sss+2)); }
@@ -790,6 +790,7 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                     if ssl > 4 { c4 = get(strtab, (sss+4)); }
                     if ssl > 5 { c5 = get(strtab, (sss+5)); }
                     if ssl > 6 { c6 = get(strtab, (sss+6)); }
+                    if ssl > 7 { c7 = get(strtab, (sss+7)); }
 
                     var r_ival: i32 = 0; var r_tag: i32 = TAG_INT;
                     var bhandled: i32 = 0;
@@ -852,13 +853,14 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                         if c4=='e' { sys_exit(get(arg_i,0)); }
                         bhandled = 1;
                     }
-                    // print_i32/u32/bool/str: p=112 r=114 i=105
-                    if bhandled==0 && c0=='p'&&c1=='r'&&c2=='i' {
-                        // c6: i=105(print_i32), u=117(print_u32), b=98(print_bool), s=115(print_str)
-                        if c6=='i' { print_i32(get(arg_i,0)); }
-                        if c6=='u' { print_u32(get(arg_i,0) as u32); }
-                        if c6=='b'  { print_bool(get(arg_i,0) != 0); }
-                        if c6=='s' {
+                    // print__TYPE: mangled name starts "print__", c7 is
+                    // the first char of TYPE. i=i32, u=u32, b=bool,
+                    // S=String (ssl=13) or StringLiteral (ssl>13).
+                    if bhandled==0 && c0=='p'&&c1=='r'&&c2=='i'&&c3=='n'&&c4=='t'&&c5=='_'&&c6=='_' {
+                        if c7=='i' { print(get(arg_i,0)); }
+                        if c7=='u' { print(get(arg_i,0) as u32); }
+                        if c7=='b' { print(get(arg_i,0) != 0); }
+                        if c7=='S' {
                             var obj: i32 = get(arg_i,0);
                             var base: i32 = hm_base(hm,obj);
                             var osize: i32 = hm_size(hm,obj);

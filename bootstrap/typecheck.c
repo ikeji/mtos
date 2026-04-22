@@ -335,11 +335,11 @@ static void register_builtins(TypeEnv *e) {
     const char *pb[] = {"bool"};
     const char *pstr[] = {"String"};
     const char *pstrl[] = {"StringLiteral"};
-    register_fn(e, "print_i32", pi, 1, "void");
-    register_fn(e, "print_u32", pu, 1, "void");
-    register_fn(e, "print_bool", pb, 1, "void");
-    register_fn(e, "print_str", pstr, 1, "void");
-    register_fn(e, "print_str", pstrl, 1, "void");
+    register_fn(e, "print", pi, 1, "void");
+    register_fn(e, "print", pu, 1, "void");
+    register_fn(e, "print", pb, 1, "void");
+    register_fn(e, "print", pstr, 1, "void");
+    register_fn(e, "print", pstrl, 1, "void");
 }
 
 /* ---- forward pass: collect all function/struct/global signatures ---- */

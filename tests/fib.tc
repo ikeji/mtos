@@ -7,6 +7,6 @@ fn fib(n: i32) -> i32 {
 
 fn main() -> i32 {
     var result: i32 = fib(10);
-    print_i32(result);
+    print(result);
     return result;
 }

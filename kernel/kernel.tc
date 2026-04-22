@@ -17,7 +17,7 @@ fn sched_start(frame: u32) -> void;
 
 // Runtime allocator stats (compiler/runtime.tc)
 fn km_live_count() -> i32;
-fn print_i32(v: i32) -> void;
+fn print(v: i32) -> void;
 
 // CLINT MMIO (qemu virt)
 var MTIMECMP_LO: u32 = 0x02004000u32;
@@ -179,6 +179,6 @@ fn main() -> i32 {
     // per-task frame_buf/ram/stack/img would push this count up
     // linearly with the number of spawn/wait cycles.
     kputs("KERN: live=");
-    print_i32(km_live_count());
+    print(km_live_count());
     return 0;
 }

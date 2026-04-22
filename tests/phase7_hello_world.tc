@@ -5,6 +5,6 @@
 // syntax added for phase 7.
 
 fn main() -> i32 {
-    print_str("Hello, World!");
+    print("Hello, World!");
     return 0;
 }

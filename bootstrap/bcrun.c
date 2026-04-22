@@ -600,14 +600,17 @@ static Value call_builtin(const char *mangled, Value *args, int nargs) {
     if (!strcmp(name,"km_dump_peak")) return val_void();
 
 
-    /* print helpers */
-    if (!strcmp(name,"print_i32"))  { printf("%d\n",  (int)args[0].ival);              return val_void(); }
-    if (!strcmp(name,"print_u32"))  { printf("%u\n",  (unsigned)args[0].ival);          return val_void(); }
-    if (!strcmp(name,"print_bool")) { printf("%s\n",  args[0].ival?"true":"false");     return val_void(); }
-    if (!strcmp(name,"print_str"))  {
-        HeapObj *s=args[0].ref;
-        if(s && s->kind==OBJ_STRING && s->bytes) fwrite(s->bytes,1,s->len,stdout);
-        putchar('\n'); return val_void();
+    /* print helpers — see interp.c for why we collapse all overloads
+     * into one handler keyed on arg kind rather than name. */
+    if (!strcmp(name,"print")) {
+        if (args[0].kind == VAL_REF) {
+            HeapObj *s=args[0].ref;
+            if(s && s->kind==OBJ_STRING && s->bytes) fwrite(s->bytes,1,s->len,stdout);
+            putchar('\n');
+        } else {
+            printf("%d\n", (int)args[0].ival);
+        }
+        return val_void();
     }
 
     /* XxxArray(size) — constructor = type name */

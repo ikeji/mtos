@@ -173,28 +173,28 @@ static HeapObj new_array(int count, int data_bytes) {
 
 /* ===== Print helpers ===== */
 
-void print_i32__i32(int32_t v) {
+void print__i32(int32_t v) {
     char buf[16]; int len = i32_to_str(v, buf);
     do_write(1, buf, len);
 }
 
-void print_u32__u32(uint32_t v) {
+void print__u32(uint32_t v) {
     char buf[16]; int len = u32_to_str(v, buf);
     do_write(1, buf, len);
 }
 
-void print_bool__bool(int32_t v) {
+void print__bool(int32_t v) {
     if (v) do_write(1, "true\n",  5);
     else   do_write(1, "false\n", 6);
 }
 
-void print_str__String(HeapObj s) {
+void print__String(HeapObj s) {
     if (s) do_write(1, (char*)OBJ_DATA(s), OBJ_COUNT(s));
     do_write(1, "\n", 1);
 }
 
-void print_str__StringLiteral(HeapObj s) {
-    print_str__String(s);
+void print__StringLiteral(HeapObj s) {
+    print__String(s);
 }
 
 /* km_dump_peak — no-op stub on host. The TC runtime (compiler/runtime.tc)

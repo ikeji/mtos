@@ -61,21 +61,21 @@ __L1:
   push_int 42
   call classify i32
   store d
-; print_i32(a);
+; print(a);
   load a
-  call print_i32 i32
+  call print i32
   pop
-; print_i32(b);
+; print(b);
   load b
-  call print_i32 i32
+  call print i32
   pop
-; print_i32(c);
+; print(c);
   load c
-  call print_i32 i32
+  call print i32
   pop
-; print_i32(d);
+; print(d);
   load d
-  call print_i32 i32
+  call print i32
   pop
 ; return 0;
   push_int 0

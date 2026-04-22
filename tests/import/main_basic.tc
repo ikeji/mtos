@@ -3,6 +3,6 @@ import "lib.tc";
 fn main() -> i32 {
     var x: i32 = add(3, 4);
     var y: i32 = mul(x, 2);
-    print_i32(y);
+    print(y);
     return 0;
 }

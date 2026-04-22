@@ -15,9 +15,9 @@ fn main() -> i32 {
     var b: i32 = classify(0);
     var c: i32 = classify(7);
     var d: i32 = classify(42);
-    print_i32(a);
-    print_i32(b);
-    print_i32(c);
-    print_i32(d);
+    print(a);
+    print(b);
+    print(c);
+    print(d);
     return 0;
 }

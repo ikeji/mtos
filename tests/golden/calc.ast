@@ -424,8 +424,8 @@
           (var buf)
         )
       )
-      (comment "print_i32(result);")
-      (call_stmt print_i32
+      (comment "print(result);")
+      (call_stmt print
         (var result)
       )
       (comment "delete(buf);")

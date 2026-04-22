@@ -2,11 +2,11 @@ struct Point { x: i32, y: i32 }
 
 fn main() -> i32 {
     var p: Point = Point(3, 4);
-    print_i32(x(p));
-    print_i32(y(p));
+    print(x(p));
+    print(y(p));
     x(p, 10);
     y(p, 20);
-    print_i32(x(p) + y(p));
+    print(x(p) + y(p));
     delete(p);
     return 0;
 }

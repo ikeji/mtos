@@ -3,6 +3,6 @@ import "types.tc";
 fn main() -> i32 {
     var p: Point = make_point(10, 20);
     var sum: i32 = point_x(p) + point_y(p);
-    print_i32(sum);
+    print(sum);
     return 0;
 }

@@ -2,6 +2,6 @@ import "middle.tc";
 
 fn main() -> i32 {
     var x: i32 = middle_val();
-    print_i32(x);
+    print(x);
     return 0;
 }

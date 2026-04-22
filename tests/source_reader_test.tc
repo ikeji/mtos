@@ -4,11 +4,11 @@ import "../compiler/source_reader.tc";
 
 fn assert_eq(name: StringLiteral, actual: i32, expected: i32) -> void {
     if actual == expected {
-        print_i32(1);
+        print(1);
     } else {
-        print_i32(0);
+        print(0);
         // print actual for debugging
-        print_i32(actual);
+        print(actual);
     }
     return;
 }

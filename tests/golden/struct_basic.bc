@@ -134,15 +134,15 @@
   push_int 4
   call Point i32 i32
   store p
-; print_i32(x(p));
+; print(x(p));
   load p
   call x Point
-  call print_i32 i32
+  call print i32
   pop
-; print_i32(y(p));
+; print(y(p));
   load p
   call y Point
-  call print_i32 i32
+  call print i32
   pop
 ; x(p, 10);
   load p
@@ -154,13 +154,13 @@
   push_int 20
   call y Point i32
   pop
-; print_i32(x(p) + y(p));
+; print(x(p) + y(p));
   load p
   call x Point
   load p
   call y Point
   add
-  call print_i32 i32
+  call print i32
   pop
 ; delete(p);
   load p

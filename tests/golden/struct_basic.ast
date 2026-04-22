@@ -301,14 +301,14 @@
           (int 4)
         )
       )
-      (comment "print_i32(x(p));")
-      (call_stmt print_i32
+      (comment "print(x(p));")
+      (call_stmt print
         (call x
           (var p)
         )
       )
-      (comment "print_i32(y(p));")
-      (call_stmt print_i32
+      (comment "print(y(p));")
+      (call_stmt print
         (call y
           (var p)
         )
@@ -323,8 +323,8 @@
         (var p)
         (int 20)
       )
-      (comment "print_i32(x(p) + y(p));")
-      (call_stmt print_i32
+      (comment "print(x(p) + y(p));")
+      (call_stmt print
         (binop +
           (call x
             (var p)

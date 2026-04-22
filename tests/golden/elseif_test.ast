@@ -91,20 +91,20 @@
           (int 42)
         )
       )
-      (comment "print_i32(a);")
-      (call_stmt print_i32
+      (comment "print(a);")
+      (call_stmt print
         (var a)
       )
-      (comment "print_i32(b);")
-      (call_stmt print_i32
+      (comment "print(b);")
+      (call_stmt print
         (var b)
       )
-      (comment "print_i32(c);")
-      (call_stmt print_i32
+      (comment "print(c);")
+      (call_stmt print
         (var c)
       )
-      (comment "print_i32(d);")
-      (call_stmt print_i32
+      (comment "print(d);")
+      (call_stmt print
         (var d)
       )
       (comment "return 0;")

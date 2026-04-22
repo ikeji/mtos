@@ -77,7 +77,7 @@ fn main() -> i32 {
     var buf: U8Array = U8Array(256);
     g_len = sys_read(0, buf, 256);
     var result: i32 = parse_add(buf);
-    print_i32(result);
+    print(result);
     delete(buf);
     return 0;
 }

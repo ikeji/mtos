@@ -30,9 +30,9 @@ __L0:
   push_int 10
   call fib i32
   store result
-; print_i32(result);
+; print(result);
   load result
-  call print_i32 i32
+  call print i32
   pop
 ; return result;
   load result
