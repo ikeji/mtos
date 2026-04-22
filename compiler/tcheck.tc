@@ -1491,7 +1491,7 @@ fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i3
 
 // Push a decimal i32 into buf at pos and return the new position.
 // Used by the diagnostic peak dump in main(). Avoids depending on
-// runtime helpers like write_i32_stderr that aren't exported.
+// runtime helpers like eprint that aren't exported.
 fn dump_dec(buf: U8Array, pos: i32, v: i32) -> i32 {
     if v < 0 {
         set(buf, pos, '-' as u8);

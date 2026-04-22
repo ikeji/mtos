@@ -334,7 +334,7 @@ export fn __runtime_init(bss: u32, bss_size: i32) -> void {
 //
 // On OOM we print a diagnostic to fd 2 (stderr) before exiting so the
 // caller — human or OS log scraper — can tell memory exhaustion apart
-// from a normal sys_exit(1). We deliberately avoid write_i32_stderr
+// from a normal sys_exit(1). We deliberately avoid eprint
 // here because it allocates a 16-byte scratch buffer via U8Array(16),
 // which would recurse straight back into this OOM branch. Instead we
 // render the size into a small stack-backed U32Array whose allocation
@@ -440,11 +440,11 @@ export fn len(o: StringLiteral) -> i32 { if o as u32 == 0u32 { return 0; } retur
 fn set_check(addr: u32, i: i32) -> void {
     var n: i32 = peek32(addr) as i32;
     if (i as u32) >= (n as u32) {
-        write_str_stderr("set: ");
-        write_i32_stderr(i);
-        write_str_stderr(" out of bounds (len=");
-        write_i32_stderr(n);
-        write_str_stderr(")\n");
+        eprint("set: ");
+        eprint(i);
+        eprint(" out of bounds (len=");
+        eprint(n);
+        eprint(")\n");
         do_exit(1);
     }
     return;
@@ -506,7 +506,7 @@ export fn sys_read(fd: i32, buf: U8Array, slen: i32) -> i32 {
 }
 
 // i32 を 10 進文字列に変換し stderr に書く (改行なし)
-fn write_i32_stderr(v: i32) -> void {
+fn eprint(v: i32) -> void {
     // 16 バイトのスタックバッファ (peek/poke で sp 付近に書く代わりに
     // グローバル的に g_bucket_base 末尾の未使用域を借りる…のは危険なので
     // ここでは小さい U8Array を使う。ダンプは終了直前なので問題ない)
@@ -534,7 +534,7 @@ fn write_i32_stderr(v: i32) -> void {
     return;
 }
 
-fn write_str_stderr(s: StringLiteral) -> void {
+fn eprint(s: StringLiteral) -> void {
     do_write(2, s as u32 + 4u32, len(s));
     return;
 }
@@ -556,30 +556,30 @@ export fn km_live_count() -> i32 {
 }
 
 export fn km_dump_stats() -> void {
-    write_str_stderr("\nkmalloc stats (bucket: peak/total):\n");
+    eprint("\nkmalloc stats (bucket: peak/total):\n");
     var i: i32 = 0;
     while i < KM_NBUCKETS {
         var peak: i32 = peek32(stat_addr(i, 1)) as i32;
         var total: i32 = peek32(stat_addr(i, 2)) as i32;
         if peak == 0 && total == 0 { i = i + 1; continue; }
-        write_str_stderr("  ");
-        write_i32_stderr(bucket_user_size(i));
-        write_str_stderr(": ");
-        write_i32_stderr(peak);
-        write_str_stderr("/");
-        write_i32_stderr(total);
-        write_str_stderr("\n");
+        eprint("  ");
+        eprint(bucket_user_size(i));
+        eprint(": ");
+        eprint(peak);
+        eprint("/");
+        eprint(total);
+        eprint("\n");
         i = i + 1;
     }
     var base: u32 = g_bucket_base + KM_LARGE_STAT_OFFSET as u32;
     var lp: i32 = peek32(base + 4u32) as i32;
     var lt: i32 = peek32(base + 8u32) as i32;
     if lp > 0 || lt > 0 {
-        write_str_stderr("  large: ");
-        write_i32_stderr(lp);
-        write_str_stderr("/");
-        write_i32_stderr(lt);
-        write_str_stderr("\n");
+        eprint("  large: ");
+        eprint(lp);
+        eprint("/");
+        eprint(lt);
+        eprint("\n");
     }
     return;
 }
@@ -598,11 +598,11 @@ export fn sys_exit(code: i32) -> void { do_exit(code); return; }
 // traces can see actual per-task memory usage without being drowned
 // in 14 lines of per-bucket stats.
 export fn km_dump_peak() -> void {
-    write_str_stderr("[kmem peak=");
-    write_i32_stderr(g_km_peak_bytes);
-    write_str_stderr(" live=");
-    write_i32_stderr(g_km_curr_bytes);
-    write_str_stderr("]\n");
+    eprint("[kmem peak=");
+    eprint(g_km_peak_bytes);
+    eprint(" live=");
+    eprint(g_km_curr_bytes);
+    eprint("]\n");
     return;
 }
 
