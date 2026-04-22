@@ -57,6 +57,12 @@ fn peek16(addr: u32) -> u16;       // task_crt0.s builtin
 var BUF_CAP: i32 = 16384;      // max file size in bytes
 var CMD_CAP: i32 = 128;        // max cmdline length
 
+// Fixed screen geometry: we don't query the terminal (would require
+// reading the ESC[6n response back through stdin), so pick the
+// classic 80x24 and keep the bottom row for the status line.
+var SCREEN_ROWS: i32 = 24;
+var TEXT_ROWS:   i32 = 23;    // SCREEN_ROWS - 1 (status line)
+
 // ===== global editor state =====
 
 var g_buf: U8Array = 0 as U8Array;   // file content
@@ -74,6 +80,11 @@ var g_msg_len: i32 = 0;
 var g_pending_d: i32 = 0;            // first 'd' of 'dd' seen
 var g_pending_g: i32 = 0;            // first 'g' of 'gg' seen
 var g_pending_Z: i32 = 0;            // first 'Z' of 'ZZ' seen
+
+// 1-based logical row of the first visible line (vertical scroll).
+// scroll_to_cursor() adjusts this before each render so g_cur's row
+// is always on screen.
+var g_top_line: i32 = 1;
 
 // Single-level undo (classic vi, not vim's tree): save_undo snapshots
 // the full buffer right before a mutation, and u swaps g_buf <->
@@ -210,6 +221,45 @@ fn line_end_at(off: i32) -> i32 {
     var i: i32 = off;
     while i < g_len && get(g_buf, i) != 10u8 { i = i + 1; }
     return i;
+}
+
+// Byte offset of the start of the 1-based logical line `target`.
+// target <= 1 returns 0; past-last returns g_len.
+fn line_start_of(target: i32) -> i32 {
+    if target <= 1 { return 0; }
+    var row: i32 = 1;
+    var i: i32 = 0;
+    while i < g_len {
+        if get(g_buf, i) == 10u8 {
+            row = row + 1;
+            if row == target { return i + 1; }
+        }
+        i = i + 1;
+    }
+    return g_len;
+}
+
+// 1-based logical row of byte offset `off`.
+fn row_of(off: i32) -> i32 {
+    var row: i32 = 1;
+    var i: i32 = 0;
+    while i < off {
+        if get(g_buf, i) == 10u8 { row = row + 1; }
+        i = i + 1;
+    }
+    return row;
+}
+
+// Adjust g_top_line so g_cur is inside the visible [top, top+TEXT_ROWS-1]
+// window. Called at the top of render().
+fn scroll_to_cursor() -> void {
+    var cur_row: i32 = row_of(g_cur);
+    if cur_row < g_top_line { g_top_line = cur_row; }
+    if cur_row >= g_top_line + TEXT_ROWS {
+        g_top_line = cur_row - TEXT_ROWS + 1;
+    }
+    if g_top_line < 1 { g_top_line = 1; }
+    return;
 }
 
 // Row + col (both 1-based) for a given byte offset.
@@ -648,16 +698,49 @@ fn save_file() -> bool {
 
 // ===== rendering =====
 
+// Write g_buf[start..start+n] to stdout one byte at a time. Lines in
+// TC source get slurped off of a U8Array via offset, but sys_write
+// always writes from the data pointer at buf+4 offset 0 — it has no
+// offset argument — so a per-byte loop is the shortest path that
+// doesn't require an intermediate copy.
+fn write_range(start: i32, n: i32) -> void {
+    var i: i32 = 0;
+    while i < n {
+        putchar(get(g_buf, start + i));
+        i = i + 1;
+    }
+    return;
+}
+
 fn render() -> void {
     clear_screen();
-    puts_n(g_buf, g_len);
-    // Make sure the status line always starts on a fresh row.
-    if g_len > 0 && get(g_buf, g_len - 1) != 10u8 {
-        putchar(13u8);
-        putchar(10u8);
+    scroll_to_cursor();
+
+    // Visible byte range: lines [g_top_line .. g_top_line + TEXT_ROWS).
+    var vstart: i32 = line_start_of(g_top_line);
+    var vend:   i32 = line_start_of(g_top_line + TEXT_ROWS);
+    write_range(vstart, vend - vstart);
+
+    // Pad to status line: if the visible region ended before filling
+    // TEXT_ROWS (short file), emit LFs so the status line lands on the
+    // bottom row and cursor positioning stays predictable.
+    var visible_rows: i32 = 0;
+    var k: i32 = vstart;
+    while k < vend {
+        if get(g_buf, k) == 10u8 { visible_rows = visible_rows + 1; }
+        k = k + 1;
     }
-    // Status line: mode indicator on row 24 (or wherever we are).
-    puts("\r\n-- ");
+    if vend > vstart && get(g_buf, vend - 1) != 10u8 {
+        visible_rows = visible_rows + 1;
+        putchar(13u8); putchar(10u8);
+    }
+    while visible_rows < TEXT_ROWS {
+        putchar(13u8); putchar(10u8);
+        visible_rows = visible_rows + 1;
+    }
+
+    // Status line on row SCREEN_ROWS.
+    puts("-- ");
     if g_mode == 1 {
         if g_tut > 0 { puts("INSERT TUT"); }
         else { puts("INSERT"); }
@@ -671,20 +754,24 @@ fn render() -> void {
     if g_msg as u32 != 0u32 && g_msg_len > 0 {
         puts_n(g_msg, g_msg_len);
     }
-    // In normal / insert mode, position the cursor at row_col. In
-    // cmdline mode we leave the cursor at end of the status line.
+
+    // In normal / insert mode, position the cursor. Screen row is the
+    // cursor's logical row minus g_top_line, +1 for 1-based ANSI.
     if g_mode != 2 {
         var rc: U8Array = U8Array(8);
         row_col(g_cur, rc);
-        var row: i32 = (get(rc, 0) as i32)
-                     | ((get(rc, 1) as i32) << 8)
-                     | ((get(rc, 2) as i32) << 16)
-                     | ((get(rc, 3) as i32) << 24);
+        var logical_row: i32 = (get(rc, 0) as i32)
+                             | ((get(rc, 1) as i32) << 8)
+                             | ((get(rc, 2) as i32) << 16)
+                             | ((get(rc, 3) as i32) << 24);
         var col: i32 = (get(rc, 4) as i32)
                      | ((get(rc, 5) as i32) << 8)
                      | ((get(rc, 6) as i32) << 16)
                      | ((get(rc, 7) as i32) << 24);
-        goto_xy(row, col);
+        var screen_row: i32 = logical_row - g_top_line + 1;
+        if screen_row < 1 { screen_row = 1; }
+        if screen_row > TEXT_ROWS { screen_row = TEXT_ROWS; }
+        goto_xy(screen_row, col);
         delete(rc);
     }
     return;
