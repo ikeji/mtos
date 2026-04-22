@@ -17,7 +17,7 @@ fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
 // Scan buf[0..n] for 0x04 (EOT) byte. Returns its offset or -1.
-fn scan_eot_u8(buf: U8Array, n: i32) -> i32 {
+fn scan_eot(buf: U8Array, n: i32) -> i32 {
     var k: i32 = 0;
     while k < n {
         if get(buf, k) == 4u8 { return k; }
@@ -40,7 +40,7 @@ fn main(argv: StringArray) -> i32 {
             if n <= 0 {
                 done = 1;
             } else {
-                var eot: i32 = scan_eot_u8(buf, n);
+                var eot: i32 = scan_eot(buf, n);
                 if eot >= 0 {
                     if eot > 0 { sys_write(1, buf, eot); }
                     done = 1;
