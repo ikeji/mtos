@@ -273,7 +273,10 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
         if nr == 0 { return -2; }
         return nr;
     }
-    if fd >= 0 && fd < 3 { return do_uart_read(buf_addr, n); }
+    // fd 1 (stdout) and fd 2 (stderr) are not readable. Falling through
+    // to do_uart_read would block the task on input when it asked for
+    // output — surface the error instead.
+    if fd == 1 || fd == 2 { return -1; }
     if g_vfs_ready == 0 { return -1; }
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);

@@ -82,6 +82,11 @@ fn main() -> i32 {
     read_kern_config();
     if kern_config_mux() != 0 { uart_mux_enable(1); }
     var n_cfg: i32 = kern_config_init_count();
+    var n_slots: i32 = sched_task_count();
+    if n_cfg > n_slots {
+        kputs("KERN: kern.conf init count exceeds sched slots, truncating\n");
+        n_cfg = n_slots;
+    }
     if n_cfg > 0 {
         var i: i32 = 0;
         while i < n_cfg {

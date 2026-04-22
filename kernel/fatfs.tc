@@ -111,11 +111,14 @@ fn fat_set_entry(clus: u32, val: u32) -> i32 {
     write_u32_le(g_fat_secbuf, off_in_sec, old | (val & 0x0FFFFFFFu32));
     if fat_block_write(fat_sector, g_fat_secbuf) != 512 { return -1; }
 
-    // Update FAT 2 if present
+    // Update FAT 2 if present. Re-read FAT2's own top 4 bits so that if
+    // FAT1 and FAT2 ever diverge (corruption) we don't propagate FAT1's
+    // reserved bits onto FAT2's entry.
     if g_fat_nfats >= 2 {
         var fat2_sector: u32 = fat_sector + g_fat_fatsz;
         if fat_block_read(fat2_sector, g_fat_secbuf) != 512 { return -1; }
-        write_u32_le(g_fat_secbuf, off_in_sec, old | (val & 0x0FFFFFFFu32));
+        var old2: u32 = read_u32_le(g_fat_secbuf, off_in_sec) & 0xF0000000u32;
+        write_u32_le(g_fat_secbuf, off_in_sec, old2 | (val & 0x0FFFFFFFu32));
         if fat_block_write(fat2_sector, g_fat_secbuf) != 512 { return -1; }
     }
     return 0;
@@ -658,9 +661,13 @@ export fn fatfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
 
         var sec: u32 = cluster_to_sector(cur_clus) + (sec_in_clus as u32);
 
-        // If partial sector write, read existing data first
+        // If partial sector write, read existing data first. A failed
+        // read would otherwise leak stale secbuf contents into the write.
         if off_in_sec != 0 || (n - total) < 512 {
-            fat_block_read(sec, secbuf);
+            if fat_block_read(sec, secbuf) != 512 {
+                delete(secbuf);
+                return -1;
+            }
         }
 
         // Copy data into sector buffer

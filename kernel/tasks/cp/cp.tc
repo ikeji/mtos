@@ -44,14 +44,22 @@ fn main(argv: StringArray) -> i32 {
     }
     var buf: U8Array = U8Array(4096);
     var done: i32 = 0;
+    var err: i32 = 0;
     while done == 0 {
         var n: i32 = sys_read(src_fd, buf, 4096);
         if n <= 0 { done = 1; }
-        else { sys_write(dst_fd, buf, n); }
+        else {
+            var w: i32 = sys_write(dst_fd, buf, n);
+            if w != n {
+                puts("cp: write failed (short write)\n");
+                err = 1;
+                done = 1;
+            }
+        }
     }
     delete(buf);
     do_close(src_fd);
     do_close(dst_fd);
     delete(src_path); delete(dst_path);
-    return 0;
+    return err;
 }

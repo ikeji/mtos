@@ -856,6 +856,7 @@ export fn sched_init(max: i32) -> void {
 // g_last_* allocation bases still describe this exact frame —
 // sched_register snapshots them into the slot's Task struct.
 export fn sched_register(idx: i32, f: u32) -> void {
+    if idx < 0 || idx >= g_num_tasks { return; }
     var t: Task = get(g_tasks, idx);
     frame(t, f);
     state(t, STATE_READY);

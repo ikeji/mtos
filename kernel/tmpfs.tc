@@ -247,6 +247,10 @@ fn tmpfs_grow(f: TmpFile, need_bytes: i32) -> void {
 
 export fn tmpfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd < 0 || fd >= TMPFS_MAX_FDS { return -1; }
+    // Guard against huge / negative n that would overflow tf_pos + n as
+    // i32 and cause need < cp(f), skipping the grow and writing OOB.
+    // 16 MB is well above any realistic single-shot write on this OS.
+    if n < 0 || n > 16777216 { return -1; }
     var e: TmpfsFD = get(g_tmpfs_fds, fd);
     var ino: i32 = tf_ino(e);
     if ino < 0 || tf_wr(e) == 0 { return -1; }
