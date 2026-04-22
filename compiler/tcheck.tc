@@ -1187,6 +1187,21 @@ fn collect_fn(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, fn_n: i32) 
             np = np + 1;
             pc1 = n_sib(nodes, pc1);
         }
+        if pc1 >= 0 {
+            var ebuf: U8Array = U8Array(128);
+            var ep: i32 = 0;
+            ep = err_lit(ebuf, ep, "tcheck: too many parameters (max=");
+            var d: U8Array = U8Array(12);
+            var dn: i32 = 0;
+            var x: i32 = FN_MAX_PARAMS;
+            while x > 0 { set(d, dn, ('0' as i32 + x % 10) as u8); dn = dn + 1; x = x / 10; }
+            while dn > 0 { dn = dn - 1; set(ebuf, ep, get(d, dn)); ep = ep + 1; }
+            delete(d);
+            ep = err_lit(ebuf, ep, ")\n");
+            sys_write(2, ebuf, ep);
+            delete(ebuf);
+            sys_exit(1);
+        }
     }
 
     var fi: i32 = g_fn_count;
@@ -1243,6 +1258,21 @@ fn collect_struct(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, struct_
     while fc1 >= 0 && nfp < FN_MAX_PARAMS {
         nfp = nfp + 1;
         fc1 = n_sib(nodes, fc1);
+    }
+    if fc1 >= 0 {
+        var ebuf2: U8Array = U8Array(128);
+        var ep2: i32 = 0;
+        ep2 = err_lit(ebuf2, ep2, "tcheck: struct has too many fields (max=");
+        var d2: U8Array = U8Array(12);
+        var dn2: i32 = 0;
+        var x2: i32 = FN_MAX_PARAMS;
+        while x2 > 0 { set(d2, dn2, ('0' as i32 + x2 % 10) as u8); dn2 = dn2 + 1; x2 = x2 / 10; }
+        while dn2 > 0 { dn2 = dn2 - 1; set(ebuf2, ep2, get(d2, dn2)); ep2 = ep2 + 1; }
+        delete(d2);
+        ep2 = err_lit(ebuf2, ep2, ")\n");
+        sys_write(2, ebuf2, ep2);
+        delete(ebuf2);
+        sys_exit(1);
     }
 
     // Register constructor.

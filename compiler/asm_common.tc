@@ -320,17 +320,27 @@ fn define_numlab(digit: i32, addr: i32) -> void {
 }
 
 // Nb: backward reference — last definition at or before current pc
+fn numlab_miss(digit: i32, dir: u8) -> void {
+    var eb: StringBuffer = StringBuffer_new();
+    asm_err_begin(eb);
+    emit_string(eb, "undefined numeric label '");
+    emit_int(eb, digit);
+    emit_char(eb, dir);
+    emit_string(eb, "'");
+    asm_err_end(eb);
+    return;
+}
+
 fn numlab_back(digit: i32, pc: i32) -> i32 {
     var cnt: i32 = get(g_numlab_count, digit);
-    var result: i32 = 0;
     var i: i32 = cnt - 1;
-    var found: i32 = 0;
-    while i >= 0 && found == 0 {
+    while i >= 0 {
         var addr: i32 = get(g_numlab, (digit * NUM_LAB_PER_DIGIT + i));
-        if addr <= pc { result = addr; found = 1; }
-        else { i = i - 1; }
+        if addr <= pc { return addr; }
+        i = i - 1;
     }
-    return result;
+    numlab_miss(digit, 'b');
+    return 0;
 }
 
 // Nf: forward reference — first definition after current pc
@@ -342,6 +352,7 @@ fn numlab_fwd(digit: i32, pc: i32) -> i32 {
         if addr > pc { return addr; }
         i = i + 1;
     }
+    numlab_miss(digit, 'f');
     return 0;
 }
 
@@ -1410,6 +1421,20 @@ export fn asm_dump_lab_state() -> void {
 
 // ===== .lab install (pass 2 reader → in-memory state) =====
 export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: i32) -> void {
+    if g_nlabels >= MAX_LABELS {
+        var eb: StringBuffer = StringBuffer_new();
+        asm_err_begin(eb);
+        emit_string(eb, "lab: label table full: MAX_LABELS=");
+        emit_int(eb, MAX_LABELS);
+        asm_err_end(eb);
+    }
+    if g_lab_name_pos + nlen > MAX_NAME_POOL {
+        var eb2: StringBuffer = StringBuffer_new();
+        asm_err_begin(eb2);
+        emit_string(eb2, "lab: name pool full: MAX_NAME_POOL=");
+        emit_int(eb2, MAX_NAME_POOL);
+        asm_err_end(eb2);
+    }
     var idx: i32 = g_nlabels;
     g_nlabels = g_nlabels + 1;
     var noff: i32 = g_lab_name_pos;
@@ -1425,6 +1450,13 @@ export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: 
 
 export fn asm_install_numlab_from_lab(digit: i32, addrv: i32) -> void {
     var cnt: i32 = get(g_numlab_count, digit);
+    if cnt >= NUM_LAB_PER_DIGIT {
+        var eb: StringBuffer = StringBuffer_new();
+        asm_err_begin(eb);
+        emit_string(eb, "lab: numlab overflow: digit ");
+        emit_int(eb, digit);
+        asm_err_end(eb);
+    }
     set(g_numlab, (digit * NUM_LAB_PER_DIGIT + cnt), addrv);
     set(g_numlab_count, digit, cnt + 1);
     return;
