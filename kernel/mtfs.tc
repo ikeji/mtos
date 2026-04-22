@@ -7,6 +7,8 @@
 // The block backend is injected at link time: virt uses block_virtio.tc,
 // Pico 2 uses block_flash.tc. mtfs itself only needs block_read.
 
+import "kernel_common.tc";
+
 fn block_read(sector: u32, buf: U8Array) -> i32;
 fn block_xip_base() -> u32;
 
@@ -48,25 +50,12 @@ struct MtfsFD {
 }
 var g_mtfs_fds: MtfsFDArray = 0 as MtfsFDArray;
 
-// ===== Little-endian u32 helpers =====
-fn le_u32(buf: U8Array, off: i32) -> u32 {
-    var b0: u32 = get(buf, off + 0) as u32;
-    var b1: u32 = get(buf, off + 1) as u32;
-    var b2: u32 = get(buf, off + 2) as u32;
-    var b3: u32 = get(buf, off + 3) as u32;
-    return b0 | (b1 << 8u32) | (b2 << 16u32) | (b3 << 24u32);
-}
-
 fn inode_base(inode: u32) -> i32 {
     return (inode as i32) * MTFS_INODE_SIZE;
 }
 
 fn inode_byte(inode: u32, off: i32) -> u8 {
     return get(g_mtfs_inodes, inode_base(inode) + off);
-}
-
-fn inode_u32(inode: u32, off: i32) -> u32 {
-    return le_u32(g_mtfs_inodes, inode_base(inode) + off);
 }
 
 fn clear_fd_table() -> void {
@@ -90,15 +79,15 @@ export fn mtfs_mount() -> i32 {
     if block_read(0, g_mtfs_sector) != MTFS_BLOCK_SIZE {
         return -1;
     }
-    if le_u32(g_mtfs_sector, 0) != MTFS_MAGIC {
+    if read_le32(g_mtfs_sector, 0) != MTFS_MAGIC {
         return -1;
     }
-    // le_u32 offset 4 = version (ignored)
+    // offset 4 = version (ignored)
     // offset 8 = block_size (assumed 512)
-    g_mtfs_total_blocks = le_u32(g_mtfs_sector, 12);
-    g_mtfs_inode_count  = le_u32(g_mtfs_sector, 16);
-    g_mtfs_inode_start  = le_u32(g_mtfs_sector, 20);
-    g_mtfs_data_start   = le_u32(g_mtfs_sector, 24);
+    g_mtfs_total_blocks = read_le32(g_mtfs_sector, 12);
+    g_mtfs_inode_count  = read_le32(g_mtfs_sector, 16);
+    g_mtfs_inode_start  = read_le32(g_mtfs_sector, 20);
+    g_mtfs_data_start   = read_le32(g_mtfs_sector, 24);
 
     // Allocate inode cache and fill it one block at a time
     var cache_bytes: i32 = (g_mtfs_inode_count as i32) * MTFS_INODE_SIZE;
@@ -139,7 +128,7 @@ export fn mtfs_lookup(parent_inode: u32, name: U8Array, name_len: i32) -> i32 {
     if g_mtfs_mounted == 0 { return -1; }
     var i: u32 = 1u32;
     while i < g_mtfs_inode_count {
-        if inode_u32(i, INO_PARENT) == parent_inode {
+        if read_le32(g_mtfs_inodes, inode_base(i) + INO_PARENT) == parent_inode {
             var ok: bool = true;
             var j: i32 = 0;
             while j < name_len && j < 32 {
@@ -173,7 +162,7 @@ export fn mtfs_readdir(dir_inode: u32, buf_addr: u32, buf_size: i32) -> i32 {
     var pos: i32 = 0;
     var i: u32 = 1u32;
     while i < g_mtfs_inode_count {
-        if inode_u32(i, INO_PARENT) == dir_inode {
+        if read_le32(g_mtfs_inodes, inode_base(i) + INO_PARENT) == dir_inode {
             var nlen: i32 = 0;
             while nlen < 32 && inode_byte(i, nlen) != 0u8 {
                 nlen = nlen + 1;
@@ -200,7 +189,7 @@ export fn mtfs_open(inode_num: u32) -> i32 {
     // Without this, a trailing-slash path like "/bin/" would resolve
     // to the bin directory inode and load_fd would misread its
     // contents as a K3 task header (K7-3 root cause candidate).
-    if inode_u32(inode_num, INO_FLAGS) != 0u32 { return -1; }
+    if read_le32(g_mtfs_inodes, inode_base(inode_num) + INO_FLAGS) != 0u32 { return -1; }
     var i: i32 = 0;
     while i < MTFS_MAX_FDS {
         var e: MtfsFD = get(g_mtfs_fds, i);
@@ -219,7 +208,7 @@ export fn mtfs_size(fd: i32) -> i32 {
     var e: MtfsFD = get(g_mtfs_fds, fd);
     var inum: i32 = ino(e);
     if inum < 0 { return -1; }
-    return inode_u32(inum as u32, INO_SIZE) as i32;
+    return read_le32(g_mtfs_inodes, inode_base(inum as u32) + INO_SIZE) as i32;
 }
 
 // Read up to n bytes into a raw buffer address.
@@ -233,8 +222,8 @@ export fn mtfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     var inum: i32 = ino(e);
     if inum < 0 { return -1; }
 
-    var size: i32 = inode_u32(inum as u32, INO_SIZE) as i32;
-    var start: u32 = inode_u32(inum as u32, INO_START);
+    var size: i32 = read_le32(g_mtfs_inodes, inode_base(inum as u32) + INO_SIZE) as i32;
+    var start: u32 = read_le32(g_mtfs_inodes, inode_base(inum as u32) + INO_START);
     var offset: i32 = pos(e);
 
     var remaining: i32 = size - offset;
@@ -292,6 +281,6 @@ export fn mtfs_xip_addr(fd: i32) -> u32 {
     if inum < 0 { return 0u32; }
     var base: u32 = block_xip_base();
     if base == 0u32 { return 0u32; }
-    var start: u32 = inode_u32(inum as u32, INO_START);
+    var start: u32 = read_le32(g_mtfs_inodes, inode_base(inum as u32) + INO_START);
     return base + (g_mtfs_data_start + start) * (MTFS_BLOCK_SIZE as u32);
 }

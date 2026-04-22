@@ -119,6 +119,34 @@ var g_last_stack_size: i32 = 0;
 // Called from kputs / kdbg_chr (both KERN-tagged) and vfs_write
 // (T00N-tagged for the current slot's fd=1 UART path).
 
+// Little-endian int helpers shared by mtfs / fatfs. Both FS formats
+// store multi-byte values little-endian regardless of host ordering,
+// so the read/write functions work against raw buffer offsets.
+export fn read_le32(buf: U8Array, off: i32) -> u32 {
+    return (get(buf, off) as u32)
+         | ((get(buf, off + 1) as u32) << 8u32)
+         | ((get(buf, off + 2) as u32) << 16u32)
+         | ((get(buf, off + 3) as u32) << 24u32);
+}
+
+export fn write_le32(buf: U8Array, off: i32, val: u32) -> void {
+    set(buf, off,     (val & 0xFFu32) as u8);
+    set(buf, off + 1, ((val >> 8u32)  & 0xFFu32) as u8);
+    set(buf, off + 2, ((val >> 16u32) & 0xFFu32) as u8);
+    set(buf, off + 3, ((val >> 24u32) & 0xFFu32) as u8);
+    return;
+}
+
+export fn read_le16(buf: U8Array, off: i32) -> i32 {
+    return (get(buf, off) as i32) | ((get(buf, off + 1) as i32) << 8);
+}
+
+export fn write_le16(buf: U8Array, off: i32, val: i32) -> void {
+    set(buf, off,     (val & 0xFF) as u8);
+    set(buf, off + 1, ((val >> 8) & 0xFF) as u8);
+    return;
+}
+
 // Copy a StringLiteral into a kmalloc'd U8Array followed by a NUL
 // byte. Used by kernel code that hands paths to vfs_open et al.
 // Caller must delete() the result.
