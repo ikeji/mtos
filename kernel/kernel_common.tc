@@ -754,19 +754,19 @@ export fn task_get_stack_size(idx: i32) -> i32 {
     return t_stk_sz(get(g_tasks, idx));
 }
 
-export fn task_get_name(idx: i32) -> u32 {
-    if g_tasks as u32 == 0u32 { return 0u32; }
-    if idx < 0 || idx >= g_num_tasks { return 0u32; }
-    return name(get(g_tasks, idx));
+export fn task_get_name(idx: i32) -> U8Array {
+    if g_tasks as u32 == 0u32 { return 0 as U8Array; }
+    if idx < 0 || idx >= g_num_tasks { return 0 as U8Array; }
+    return name(get(g_tasks, idx)) as U8Array;
 }
 
-export fn task_set_name(idx: i32, n: u32) -> void {
+export fn task_set_name(idx: i32, n: U8Array) -> void {
     if g_tasks as u32 == 0u32 { return; }
     if idx < 0 || idx >= g_num_tasks { return; }
     var t: Task = get(g_tasks, idx);
     var old: u32 = name(t);
     if old != 0u32 { kfree(old); }
-    name(t, n);
+    name(t, n as u32);
     return;
 }
 

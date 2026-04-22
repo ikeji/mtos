@@ -158,14 +158,14 @@ fn synth_tasks() -> u32 {
         pos = append_byte(buf, pos, ' ' as u8, cap);
         pos = append_dec(buf, pos, task_get_stack_size(i), cap);
         pos = append_byte(buf, pos, ' ' as u8, cap);
-        var nm: u32 = task_get_name(i);
-        if nm != 0u32 {
-            // name is a U8Array: 4-byte length prefix + NUL-terminated data
-            var nlen: i32 = peek32(nm) as i32;
-            if nlen > 0 { nlen = nlen - 1; } // exclude NUL
+        var nm: U8Array = task_get_name(i);
+        if nm as u32 != 0u32 {
+            // name is NUL-terminated; exclude the trailing NUL
+            var nlen: i32 = len(nm);
+            if nlen > 0 { nlen = nlen - 1; }
             var j: i32 = 0;
             while j < nlen {
-                pos = append_byte(buf, pos, peek8(nm + 4u32 + (j as u32)), cap);
+                pos = append_byte(buf, pos, get(nm, j), cap);
                 j = j + 1;
             }
         } else {

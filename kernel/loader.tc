@@ -17,15 +17,12 @@ import "kernel_common.tc";
 // raw UART emission even when vfs state is suspect.
 fn do_uart_write(buf: u32, len: i32) -> i32;
 
-// Copy a string literal into a NUL-terminated U8Array in kernel RAM.
-// Caller is responsible for delete().
 // Copy the basename from a NUL-terminated path at `addr` into a
-// kmalloc'd U8Array. "/bin/sh" → "sh". Returns the U8Array address.
-fn copy_task_name(addr: u32) -> u32 {
-    // Find end of string
+// kmalloc'd U8Array. "/bin/sh" → "sh". Caller stores the result via
+// task_set_name, which owns the free.
+export fn basename_copy(addr: u32) -> U8Array {
     var end: i32 = 0;
     while peek8(addr + (end as u32)) != 0u8 { end = end + 1; }
-    // Find last '/'
     var last_slash: i32 = -1;
     var i: i32 = 0;
     while i < end {
@@ -42,25 +39,7 @@ fn copy_task_name(addr: u32) -> u32 {
         i = i + 1;
     }
     set(buf, nlen, 0u8);
-    return buf as u32;
-}
-
-// Copy a short name literal into a kmalloc'd U8Array (NUL-terminated).
-export fn copy_task_name_lit(s: StringLiteral) -> u32 {
-    var slen: i32 = len(s);
-    var buf: U8Array = U8Array((slen + 1) as u32);
-    var i: i32 = 0;
-    while i < slen {
-        set(buf, i, get(s, i));
-        i = i + 1;
-    }
-    set(buf, slen, 0u8);
-    return buf as u32;
-}
-
-// Like copy_task_name but takes a raw address (for kern.conf paths).
-export fn copy_task_name_addr(addr: u32) -> u32 {
-    return copy_task_name(addr);
+    return buf;
 }
 
 // ===== Task binary header (K3) =====
@@ -231,7 +210,7 @@ export fn start_init_tasks() -> i32 {
     var i: i32 = 0;
     while i < n_cfg {
         sched_register(i, load_task_addr(kern_config_init_path(i)));
-        task_set_name(i, copy_task_name_addr(kern_config_init_path(i)));
+        task_set_name(i, basename_copy(kern_config_init_path(i)));
         i = i + 1;
     }
     return n_cfg;
@@ -365,7 +344,7 @@ export fn sys_exec_handler(path_addr: u32, argv_addr: u32,
     set_last_argv(kargv);
     set_last_stdio(in_fd, out_fd);
     sched_replace_current(frame);
-    task_set_name(sched_current_idx(), copy_task_name(path_addr));
+    task_set_name(sched_current_idx(), basename_copy(path_addr));
     return frame;
 }
 
@@ -397,7 +376,7 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
     set_last_stdio(in_fd, out_fd);
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
-        task_set_name(slot, copy_task_name(path_addr));
+        task_set_name(slot, basename_copy(path_addr));
     } else {
         // sched_spawn failed (no free slots). Clean up all resources
         // that were prepared for the child: redirect fds, argv, and
@@ -434,7 +413,7 @@ export fn sys_spawn_fds_handler(path_addr: u32, argv_addr: u32,
     set_last_stdio(in_fd, out_fd);
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
-        task_set_name(slot, copy_task_name(path_addr));
+        task_set_name(slot, basename_copy(path_addr));
     } else {
         free_last_alloc();
     }

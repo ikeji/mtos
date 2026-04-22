@@ -80,11 +80,11 @@ fn main() -> i32 {
 
     if start_init_tasks() == 0 {
         sched_register(0, load_task("/bin/hello"));
-        task_set_name(0, copy_task_name_lit("hello"));
+        task_set_name(0, to_cstr("hello"));
         sched_register(1, load_task("/bin/hello2"));
-        task_set_name(1, copy_task_name_lit("hello2"));
+        task_set_name(1, to_cstr("hello2"));
         sched_register(2, load_task("/bin/sh"));
-        task_set_name(2, copy_task_name_lit("sh"));
+        task_set_name(2, to_cstr("sh"));
     }
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
