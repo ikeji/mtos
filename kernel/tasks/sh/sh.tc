@@ -210,29 +210,32 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
         while i < sl { set(dir, i, get(s, i)); i = i + 1; }
         dir_len = sl;
     } else {
+        // Non-first tokens must be absolute paths — the shell has no
+        // CWD concept, so `ls tmp` fails even if "tmp" exists at "/".
+        // Require a leading '/' before attempting path completion to
+        // avoid completing the user into an unrunnable command.
+        if get(buf, tok_start) != '/' as u8 {
+            delete(dir);
+            return pos;
+        }
         var slash_idx: i32 = tab_last_slash(buf, tok_start, pos);
-        if slash_idx < 0 {
+        // dir = buf[tok_start..slash_idx] (no trailing /), except
+        // for the root ("/xxx" → dir "/").
+        var start: i32 = tok_start;
+        var end: i32 = slash_idx;
+        if end == start {
+            // Path starts with '/', dir is "/"
             set(dir, 0, '/' as u8);
             dir_len = 1;
         } else {
-            // dir = buf[tok_start..slash_idx] (no trailing /), except
-            // for the root ("/xxx" → dir "/").
-            var start: i32 = tok_start;
-            var end: i32 = slash_idx;
-            if end == start {
-                // Path starts with '/', dir is "/"
-                set(dir, 0, '/' as u8);
-                dir_len = 1;
-            } else {
-                var k: i32 = 0;
-                while start + k < end {
-                    set(dir, k, get(buf, start + k));
-                    k = k + 1;
-                }
-                dir_len = end - start;
+            var k: i32 = 0;
+            while start + k < end {
+                set(dir, k, get(buf, start + k));
+                k = k + 1;
             }
-            base_start = slash_idx + 1;
+            dir_len = end - start;
         }
+        base_start = slash_idx + 1;
     }
     set(dir, dir_len, 0u8);
     var base_len: i32 = pos - base_start;
