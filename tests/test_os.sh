@@ -89,10 +89,9 @@ fi
 
 # --- fs_virtio: attach the mtfs disk, boot kernel_virt, verify it
 #     reads sector 0 (mtfs superblock), mounts mtfs, cats /hello.txt
-#     via its in-kernel demo, loads /bin/hello, /bin/hello2, /bin/sh
-#     from the FS and runs them preemptively. The shell reads a
-#     single command from stdin — we pipe "catfile\n" so it execs
-#     /bin/catfile. ---
+#     via its in-kernel demo, loads /bin/sh from the FS and drives it
+#     through a scripted command sequence to cover tmpfs / argv /
+#     redirect + spawn/wait leak accounting. ---
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_DISK" ]; then
     t0=$(time_ms)
@@ -118,13 +117,10 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # We only check the mtfs magic bytes in SECTOR0: total_blocks varies
     # with how many files the image contains.
     expected="SECTOR0: 4d 54 46 53"
-    # The shell prompt + catfile output + A/B get interleaved under
-    # preemption, so check each piece separately rather than as a
-    # single substring. catfile prints "CAT[<argc>]:" so we can
-    # distinguish default runs (argc=1) from explicit-argv runs
-    # (argc=2).
-    fs_has_a=$(echo "$fs_out" | grep -c "A")
-    fs_has_b=$(echo "$fs_out" | grep -c "B")
+    # The shell prompt + catfile output interleave under preemption,
+    # so check each piece separately rather than as a single substring.
+    # catfile prints "CAT[<argc>]:" so we can distinguish default runs
+    # (argc=1) from explicit-argv runs (argc=2).
     fs_cat_count=$(echo "$fs_out" | grep -c 'CAT\[')
     fs_cat1_count=$(echo "$fs_out" | grep -c 'CAT\[1\]:')
     fs_cat2_count=$(echo "$fs_out" | grep -c 'CAT\[2\]:')
@@ -151,8 +147,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
             # U8Arrays). A per-spawn leak would push it up by ~4
             # per extra spawn, so 5 leaks would reach ~91 and a
             # regression would trip before 105.
-            if [ "$fs_has_a" -gt 0 ] && [ "$fs_has_b" -gt 0 ] \
-                && [ "$fs_cat_count" -ge 3 ] && [ "$fs_cat1_count" -ge 1 ] \
+            if [ "$fs_cat_count" -ge 3 ] && [ "$fs_cat1_count" -ge 1 ] \
                 && [ "$fs_cat2_count" -ge 2 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
                 && [ "$fs_has_tmpfs_ok" -gt 0 ] && [ "$fs_has_tmpfs_payload" -gt 0 ] \
                 && [ "$fs_has_redir" -gt 0 ] \
@@ -161,7 +156,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 report_pass "fs_virtio: tmpdemo + catfile argv + redirect, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir live=$fs_live mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)

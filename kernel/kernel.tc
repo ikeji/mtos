@@ -143,10 +143,10 @@ fn main() -> i32 {
 
     cat_hello_txt();
 
-    // 8 scheduler slots: slots 0..2 seed hello, hello2, and /bin/sh,
-    // the remaining 5 are reserved for sys_spawn children of the
-    // shell. The shell loops: prompt → do_spawn("/bin/<cmd>") →
-    // do_wait(slot) → prompt ... until it reads "quit".
+    // 8 scheduler slots: slot 0 seeds /bin/sh, the remaining 7 are
+    // reserved for sys_spawn children of the shell. The shell loops:
+    // prompt → do_spawn("/bin/<cmd>") → do_wait(slot) → prompt ...
+    // until it reads "quit".
     //
     // Per-task arena / stack sizes come from the 8-byte header at the
     // start of each task binary (see loader.tc's K3 section) — no more
@@ -158,12 +158,8 @@ fn main() -> i32 {
     // start_init_tasks returns the number of slots populated from the
     // config, or 0 if no config was present.
     if start_init_tasks() == 0 {
-        sched_register(0, load_task("/bin/hello"));
-        task_set_name(0, to_cstr("hello"));
-        sched_register(1, load_task("/bin/hello2"));
-        task_set_name(1, to_cstr("hello2"));
-        sched_register(2, load_task("/bin/sh"));
-        task_set_name(2, to_cstr("sh"));
+        sched_register(0, load_task("/bin/sh"));
+        task_set_name(0, to_cstr("sh"));
     }
 
     rearm_timer();
