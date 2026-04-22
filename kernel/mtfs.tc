@@ -242,13 +242,19 @@ export fn mtfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     var want: i32 = n;
     if want > remaining { want = remaining; }
 
+    // Per-call scratch buffer. Sharing g_mtfs_sector between concurrent
+    // mtfs_read calls would race — task A could have the buffer filled
+    // with sector X, get preempted, task B reads sector Y over it, and
+    // task A's copy-out would see Y's contents.
+    var scratch: U8Array = U8Array((MTFS_BLOCK_SIZE) as u32);
     var copied: i32 = 0;
     while copied < want {
         var file_pos: i32 = offset + copied;
         var block_idx: i32 = file_pos / MTFS_BLOCK_SIZE;
         var in_block:  i32 = file_pos - block_idx * MTFS_BLOCK_SIZE;
         var disk_block: u32 = g_mtfs_data_start + start + (block_idx as u32);
-        if block_read(disk_block, g_mtfs_sector) != MTFS_BLOCK_SIZE {
+        if block_read(disk_block, scratch) != MTFS_BLOCK_SIZE {
+            delete(scratch);
             return -1;
         }
         var chunk: i32 = MTFS_BLOCK_SIZE - in_block;
@@ -256,11 +262,12 @@ export fn mtfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
         var k: i32 = 0;
         while k < chunk {
             poke8(buf_addr + (copied + k) as u32,
-                  get(g_mtfs_sector, in_block + k));
+                  get(scratch, in_block + k));
             k = k + 1;
         }
         copied = copied + chunk;
     }
+    delete(scratch);
 
     pos(e, offset + copied);
     return copied;

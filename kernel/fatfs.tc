@@ -21,7 +21,6 @@ var g_fat_fat_start: u32 = 0u32;    // first FAT sector
 var g_fat_ready: i32 = 0;
 
 // Shared sector buffer for FAT table reads (avoids extra alloc)
-var g_fat_secbuf: U8Array = 0 as U8Array;
 
 // ===== FD table =====
 var FATFS_MAX_FDS: i32 = 8;
@@ -68,8 +67,14 @@ fn fat_get_entry(clus: u32) -> u32 {
     var fat_offset: u32 = clus * 4u32;
     var fat_sector: u32 = g_fat_fat_start + fat_offset / 512u32;
     var off_in_sec: i32 = (fat_offset % 512u32) as i32;
-    if fat_block_read(fat_sector, g_fat_secbuf) != 512 { return 0x0FFFFFFFu32; }
-    return read_u32_le(g_fat_secbuf, off_in_sec) & 0x0FFFFFFFu32;
+    var secbuf: U8Array = U8Array(512u32);
+    if fat_block_read(fat_sector, secbuf) != 512 {
+        delete(secbuf);
+        return 0x0FFFFFFFu32;
+    }
+    var v: u32 = read_u32_le(secbuf, off_in_sec) & 0x0FFFFFFFu32;
+    delete(secbuf);
+    return v;
 }
 
 // Follow FAT chain from start_clus for n steps. Returns the cluster
@@ -105,22 +110,24 @@ fn fat_set_entry(clus: u32, val: u32) -> i32 {
     var fat_sector: u32 = g_fat_fat_start + fat_offset / 512u32;
     var off_in_sec: i32 = (fat_offset % 512u32) as i32;
 
-    if fat_block_read(fat_sector, g_fat_secbuf) != 512 { return -1; }
+    var secbuf: U8Array = U8Array(512u32);
+    if fat_block_read(fat_sector, secbuf) != 512 { delete(secbuf); return -1; }
     // Preserve top 4 bits of existing entry
-    var old: u32 = read_u32_le(g_fat_secbuf, off_in_sec) & 0xF0000000u32;
-    write_u32_le(g_fat_secbuf, off_in_sec, old | (val & 0x0FFFFFFFu32));
-    if fat_block_write(fat_sector, g_fat_secbuf) != 512 { return -1; }
+    var old: u32 = read_u32_le(secbuf, off_in_sec) & 0xF0000000u32;
+    write_u32_le(secbuf, off_in_sec, old | (val & 0x0FFFFFFFu32));
+    if fat_block_write(fat_sector, secbuf) != 512 { delete(secbuf); return -1; }
 
     // Update FAT 2 if present. Re-read FAT2's own top 4 bits so that if
     // FAT1 and FAT2 ever diverge (corruption) we don't propagate FAT1's
     // reserved bits onto FAT2's entry.
     if g_fat_nfats >= 2 {
         var fat2_sector: u32 = fat_sector + g_fat_fatsz;
-        if fat_block_read(fat2_sector, g_fat_secbuf) != 512 { return -1; }
-        var old2: u32 = read_u32_le(g_fat_secbuf, off_in_sec) & 0xF0000000u32;
-        write_u32_le(g_fat_secbuf, off_in_sec, old2 | (val & 0x0FFFFFFFu32));
-        if fat_block_write(fat2_sector, g_fat_secbuf) != 512 { return -1; }
+        if fat_block_read(fat2_sector, secbuf) != 512 { delete(secbuf); return -1; }
+        var old2: u32 = read_u32_le(secbuf, off_in_sec) & 0xF0000000u32;
+        write_u32_le(secbuf, off_in_sec, old2 | (val & 0x0FFFFFFFu32));
+        if fat_block_write(fat2_sector, secbuf) != 512 { delete(secbuf); return -1; }
     }
+    delete(secbuf);
     return 0;
 }
 
@@ -161,30 +168,33 @@ fn fat_alloc_cluster() -> u32 {
 // ===== Mount =====
 
 export fn fatfs_mount() -> i32 {
-    g_fat_secbuf = U8Array(512);
+    // One-shot BPB read. No preemption concern — runs at boot before
+    // any other task is scheduled — but we still use local scratch so
+    // the old g_fat_secbuf global can go away entirely.
+    var secbuf: U8Array = U8Array(512u32);
 
     // Read BPB at sector 0 (superfloppy format)
-    if fat_block_read(0, g_fat_secbuf) != 512 { return -1; }
+    if fat_block_read(0, secbuf) != 512 { delete(secbuf); return -1; }
 
     // Validate signature
-    if get(g_fat_secbuf, 510) != 0x55u8 { return -1; }
-    if get(g_fat_secbuf, 511) != 0xAAu8 { return -1; }
+    if get(secbuf, 510) != 0x55u8 { delete(secbuf); return -1; }
+    if get(secbuf, 511) != 0xAAu8 { delete(secbuf); return -1; }
 
-    g_fat_bps = read_u16_le(g_fat_secbuf, 11);
-    g_fat_spc = get(g_fat_secbuf, 13) as i32;
-    g_fat_rsvd = read_u16_le(g_fat_secbuf, 14) as u32;
-    g_fat_nfats = get(g_fat_secbuf, 16) as i32;
-    g_fat_fatsz = read_u32_le(g_fat_secbuf, 36);
-    g_fat_root_clus = read_u32_le(g_fat_secbuf, 44);
+    g_fat_bps = read_u16_le(secbuf, 11);
+    g_fat_spc = get(secbuf, 13) as i32;
+    g_fat_rsvd = read_u16_le(secbuf, 14) as u32;
+    g_fat_nfats = get(secbuf, 16) as i32;
+    g_fat_fatsz = read_u32_le(secbuf, 36);
+    g_fat_root_clus = read_u32_le(secbuf, 44);
 
-    if g_fat_bps != 512 { return -1; }
-    if g_fat_spc == 0 { return -1; }
+    if g_fat_bps != 512 { delete(secbuf); return -1; }
+    if g_fat_spc == 0 { delete(secbuf); return -1; }
 
     g_fat_fat_start = g_fat_rsvd;
     g_fat_data_start = g_fat_rsvd + (g_fat_nfats as u32) * g_fat_fatsz;
 
     // Compute total data clusters. BPB TotSec32 is at offset 32.
-    var tot_sec: u32 = read_u32_le(g_fat_secbuf, 32);
+    var tot_sec: u32 = read_u32_le(secbuf, 32);
     var data_sec: u32 = tot_sec - g_fat_data_start;
     g_fat_total_clusters = data_sec / (g_fat_spc as u32);
 
@@ -197,6 +207,7 @@ export fn fatfs_mount() -> i32 {
     }
 
     g_fat_ready = 1;
+    delete(secbuf);
     return 0;
 }
 
