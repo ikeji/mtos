@@ -77,36 +77,25 @@ export fn vfs_init() -> i32 {
 }
 
 // Recognise the /tmp/ prefix and route to tmpfs.
+fn path_has_prefix(path_addr: u32, plen: i32, prefix: StringLiteral) -> bool {
+    var pl: i32 = len(prefix);
+    if plen < pl { return false; }
+    var i: i32 = 0;
+    while i < pl {
+        if peek8(path_addr + (i as u32)) != get(prefix, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
 fn is_tmp_path(path_addr: u32, plen: i32) -> bool {
-    if plen < 5 { return false; }
-    if peek8(path_addr)          != '/' as u8 { return false; }
-    if peek8(path_addr + 1u32)   != 't' as u8 { return false; }
-    if peek8(path_addr + 2u32)   != 'm' as u8 { return false; }
-    if peek8(path_addr + 3u32)   != 'p' as u8 { return false; }
-    if peek8(path_addr + 4u32)   != '/' as u8 { return false; }
-    return true;
+    return path_has_prefix(path_addr, plen, "/tmp/");
 }
-
-// Recognise /sd/ prefix and route to fatfs.
 fn is_sd_path(path_addr: u32, plen: i32) -> bool {
-    if plen < 4 { return false; }
-    if peek8(path_addr)          != '/' as u8 { return false; }
-    if peek8(path_addr + 1u32)   != 's' as u8 { return false; }
-    if peek8(path_addr + 2u32)   != 'd' as u8 { return false; }
-    if peek8(path_addr + 3u32)   != '/' as u8 { return false; }
-    return true;
+    return path_has_prefix(path_addr, plen, "/sd/");
 }
-
-// Recognise /proc/ prefix and route to procfs.
 fn is_proc_path(path_addr: u32, plen: i32) -> bool {
-    if plen < 6 { return false; }
-    if peek8(path_addr)          != '/' as u8 { return false; }
-    if peek8(path_addr + 1u32)   != 'p' as u8 { return false; }
-    if peek8(path_addr + 2u32)   != 'r' as u8 { return false; }
-    if peek8(path_addr + 3u32)   != 'o' as u8 { return false; }
-    if peek8(path_addr + 4u32)   != 'c' as u8 { return false; }
-    if peek8(path_addr + 5u32)   != '/' as u8 { return false; }
-    return true;
+    return path_has_prefix(path_addr, plen, "/proc/");
 }
 
 // strnlen over raw memory. Scans at most max bytes.

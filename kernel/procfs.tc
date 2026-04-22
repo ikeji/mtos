@@ -47,9 +47,21 @@ export fn procfs_init() -> void {
 
 // ===== helpers =====
 
+var g_procfs_warned: i32 = 0;
+
 fn append_byte(buf: U8Array, pos: i32, c: u8, cap: i32) -> i32 {
-    if pos < cap { set(buf, pos, c); }
-    return pos + 1;
+    if pos < cap {
+        set(buf, pos, c);
+        return pos + 1;
+    }
+    // Overflow: don't advance pos past cap. The final poke32(buf, pos)
+    // then writes a correct length and procfs_read stays in bounds.
+    // Emit a one-shot warning so a subsequent truncation is noticed.
+    if g_procfs_warned == 0 {
+        kputs("procfs: output buffer truncated\n");
+        g_procfs_warned = 1;
+    }
+    return pos;
 }
 
 fn append_dec(buf: U8Array, pos: i32, v: i32, cap: i32) -> i32 {

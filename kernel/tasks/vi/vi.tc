@@ -587,10 +587,23 @@ fn load_file() -> void {
         return;
     }
     var n: i32 = sys_read(fd, g_buf, BUF_CAP);
-    do_close(fd);
-    if n < 0 { g_len = 0; return; }
+    if n < 0 { do_close(fd); g_len = 0; return; }
     g_len = n;
-    set_msg("[read]");
+    // If we filled the buffer, the file may be larger. Try to read one
+    // more byte: >0 means truncation, 0 means the file fit exactly.
+    if n == BUF_CAP {
+        var probe: U8Array = U8Array(1u32);
+        var extra: i32 = sys_read(fd, probe, 1);
+        delete(probe);
+        if extra > 0 {
+            set_msg("[read, truncated: file exceeds 16KB]");
+        } else {
+            set_msg("[read]");
+        }
+    } else {
+        set_msg("[read]");
+    }
+    do_close(fd);
     return;
 }
 
