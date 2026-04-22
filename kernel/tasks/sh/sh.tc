@@ -478,7 +478,7 @@ fn count_tokens(buf: U8Array, n: i32) -> i32 {
 // intermediate String and leaks the prior one. Allocate once via
 // U8Array (String shares its len-prefixed layout) and poke the
 // length to exclude the NUL terminator so len()/delete() behave.
-fn copy_range(buf: U8Array, start: i32, n: i32) -> String {
+fn substr(buf: U8Array, start: i32, n: i32) -> String {
     var s: U8Array = U8Array((n + 1) as u32);
     poke32(s as u32, n as u32);
     var i: i32 = 0;
@@ -492,7 +492,7 @@ fn copy_range(buf: U8Array, start: i32, n: i32) -> String {
 
 // Copy buf[start..start+n] into a NUL-terminated U8Array, used for
 // redirect paths (do_spawn wants a char* pointer, not a String).
-fn copy_range_u8(buf: U8Array, start: i32, n: i32) -> U8Array {
+fn subcstr(buf: U8Array, start: i32, n: i32) -> U8Array {
     var s: U8Array = U8Array((n + 1) as u32);
     var i: i32 = 0;
     while i < n {
@@ -549,12 +549,12 @@ fn parse_redir(cmd: U8Array, n: i32) -> StringArray {
     }
 
     if in_start >= 0 {
-        g_in_path = copy_range_u8(cmd, in_start, in_len);
+        g_in_path = subcstr(cmd, in_start, in_len);
     } else {
         g_in_path = 0 as U8Array;
     }
     if out_start >= 0 {
-        g_out_path = copy_range_u8(cmd, out_start, out_len);
+        g_out_path = subcstr(cmd, out_start, out_len);
     } else {
         g_out_path = 0 as U8Array;
     }
@@ -581,7 +581,7 @@ fn parse_redir(cmd: U8Array, n: i32) -> StringArray {
             } else if tlen2 == 1 && get(cmd, start2) == '>' as u8 {
                 want_out = 1;
             } else {
-                set(argv, idx, copy_range(cmd, start2, tlen2));
+                set(argv, idx, substr(cmd, start2, tlen2));
                 idx = idx + 1;
             }
         }
