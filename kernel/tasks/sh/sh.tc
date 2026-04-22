@@ -144,7 +144,7 @@ fn hist_recall(buf: U8Array, cur_pos: i32, idx: i32) -> i32 {
 //
 // Keep the helpers local to sh.tc; they're not useful elsewhere.
 
-fn tc_is_path_char(c: u8) -> bool {
+fn tab_is_path_char(c: u8) -> bool {
     if c >= 'a' as u8 && c <= 'z' as u8 { return true; }
     if c >= 'A' as u8 && c <= 'Z' as u8 { return true; }
     if c >= '0' as u8 && c <= '9' as u8 { return true; }
@@ -154,9 +154,9 @@ fn tc_is_path_char(c: u8) -> bool {
 }
 
 // Walk backwards from pos to find the start of the current token.
-fn tc_token_start(buf: U8Array, pos: i32) -> i32 {
+fn tab_token_start(buf: U8Array, pos: i32) -> i32 {
     var i: i32 = pos;
-    while i > 0 && tc_is_path_char(get(buf, i - 1)) {
+    while i > 0 && tab_is_path_char(get(buf, i - 1)) {
         i = i - 1;
     }
     return i;
@@ -165,7 +165,7 @@ fn tc_token_start(buf: U8Array, pos: i32) -> i32 {
 // True iff the token at tok_start is in command position: either the
 // first token on the line (only whitespace before) or the token
 // immediately after a `|` pipe operator.
-fn tc_is_first_token(buf: U8Array, tok_start: i32) -> bool {
+fn tab_is_first_token(buf: U8Array, tok_start: i32) -> bool {
     var i: i32 = tok_start;
     while i > 0 && (get(buf, i - 1) == ' ' as u8 || get(buf, i - 1) == 9u8) {
         i = i - 1;
@@ -177,7 +177,7 @@ fn tc_is_first_token(buf: U8Array, tok_start: i32) -> bool {
 
 // Find the offset of the last '/' in buf[start..end]. Returns -1
 // when the range contains no slash.
-fn tc_last_slash(buf: U8Array, start: i32, end: i32) -> i32 {
+fn tab_last_slash(buf: U8Array, start: i32, end: i32) -> i32 {
     var i: i32 = end - 1;
     while i >= start {
         if get(buf, i) == '/' as u8 { return i; }
@@ -188,7 +188,7 @@ fn tc_last_slash(buf: U8Array, start: i32, end: i32) -> i32 {
 
 // Echo one byte via sh's existing helper (fd=1). Wrapped here so
 // the many spots below stay terse.
-fn tc_echo_str(s: StringLiteral) -> void {
+fn tab_echo_str(s: StringLiteral) -> void {
     var sl: i32 = len(s);
     var i: i32 = 0;
     while i < sl { echo_byte(get(s, i)); i = i + 1; }
@@ -199,12 +199,12 @@ fn tc_echo_str(s: StringLiteral) -> void {
 // The caller keeps pos at the end of buf; we inject the completion
 // bytes into buf and echo them so sh's outer state stays consistent.
 fn complete(buf: U8Array, pos: i32) -> i32 {
-    var tok_start: i32 = tc_token_start(buf, pos);
+    var tok_start: i32 = tab_token_start(buf, pos);
     var base_start: i32 = tok_start;
     // dir holds the path to enumerate (NUL-terminated, <= 128 chars).
     var dir: U8Array = U8Array(128);
     var dir_len: i32 = 0;
-    if tc_is_first_token(buf, tok_start) {
+    if tab_is_first_token(buf, tok_start) {
         // command completion → /bin
         var s: StringLiteral = "/bin";
         var sl: i32 = len(s);
@@ -212,7 +212,7 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
         while i < sl { set(dir, i, get(s, i)); i = i + 1; }
         dir_len = sl;
     } else {
-        var slash_idx: i32 = tc_last_slash(buf, tok_start, pos);
+        var slash_idx: i32 = tab_last_slash(buf, tok_start, pos);
         if slash_idx < 0 {
             set(dir, 0, '/' as u8);
             dir_len = 1;
@@ -363,7 +363,7 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
             }
             echo_byte(13u8);
             echo_byte(10u8);
-            tc_echo_str("sh$ ");
+            tab_echo_str("sh$ ");
             var pp: i32 = 0;
             while pp < pos {
                 echo_byte(get(buf, pp));
