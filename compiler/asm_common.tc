@@ -238,7 +238,76 @@ fn lab_name_eq(idx: i32, name: U8Array, nlen: i32) -> bool {
     return true;
 }
 
+// Hash table over g_labels, populated on demand by asm_finalize_labels.
+// g_lab_hash holds "label index + 1" (0 = empty slot). Linear probing.
+// LAB_HASH_SIZE must be a power of 2 and strictly larger than
+// MAX_LABELS so open addressing never runs out of slots.
+var LAB_HASH_SIZE:  i32 = 16384;
+var LAB_HASH_MASK:  i32 = 16383;
+var g_lab_hash:     I32Array = 0 as I32Array;
+var g_lab_hash_ok:  i32 = 0;
+
+fn lab_hash_name(buf: U8Array, off: i32, nlen: i32) -> i32 {
+    var h: i32 = 0;
+    var i: i32 = 0;
+    while i < nlen {
+        h = (h * 31) + (get(buf, off + i) as i32);
+        i = i + 1;
+    }
+    return h & LAB_HASH_MASK;
+}
+
+fn lab_hash_name_u8(buf: U8Array, nlen: i32) -> i32 {
+    var h: i32 = 0;
+    var i: i32 = 0;
+    while i < nlen {
+        h = (h * 31) + (get(buf, i) as i32);
+        i = i + 1;
+    }
+    return h & LAB_HASH_MASK;
+}
+
+// Build g_lab_hash from the current g_labels contents. Called once
+// after the .lab has been fully loaded in pass 2; pass 1's
+// define_label still uses the linear search because it accumulates
+// labels incrementally. This turns pass 2's per-reference find_label
+// from O(n_labels) into O(1) amortised — measured 18 M comparisons
+// on the self-host build.
+export fn asm_finalize_labels() -> void {
+    if g_lab_hash as u32 == 0u32 {
+        g_lab_hash = I32Array((LAB_HASH_SIZE) as u32);
+    }
+    var i: i32 = 0;
+    while i < LAB_HASH_SIZE {
+        set(g_lab_hash, i, 0);
+        i = i + 1;
+    }
+    i = 0;
+    while i < g_nlabels {
+        var lb: Label = get(g_labels, i);
+        var noff: i32 = name_off(lb);
+        var nlen: i32 = name_len(lb);
+        var h: i32 = lab_hash_name(g_lab_names, noff, nlen);
+        while get(g_lab_hash, h) != 0 {
+            h = (h + 1) & LAB_HASH_MASK;
+        }
+        set(g_lab_hash, h, i + 1);
+        i = i + 1;
+    }
+    g_lab_hash_ok = 1;
+    return;
+}
+
 fn find_label(name: U8Array, nlen: i32) -> i32 {
+    if g_lab_hash_ok == 1 {
+        var h: i32 = lab_hash_name_u8(name, nlen);
+        while get(g_lab_hash, h) != 0 {
+            var idx: i32 = get(g_lab_hash, h) - 1;
+            if lab_name_eq(idx, name, nlen) { return idx; }
+            h = (h + 1) & LAB_HASH_MASK;
+        }
+        return 0 - 1;
+    }
     var i: i32 = 0;
     while i < g_nlabels {
         if lab_name_eq(i, name, nlen) { return i; }

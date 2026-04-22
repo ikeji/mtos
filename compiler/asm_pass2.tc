@@ -293,6 +293,11 @@ fn main() -> i32 {
         }
     }
 
+    // All labels installed; build the hash table for O(1) find_label
+    // during encoding. pass 1's define_label still uses linear search
+    // but runs on a smaller working set.
+    asm_finalize_labels();
+
     // Phase B: emit the ELF header upfront (raw mode skips this).
     // filesz/memsz/entry come entirely from the .lab, and `raw` /
     // `load_base` meta directives were captured by asm_pass1 from
