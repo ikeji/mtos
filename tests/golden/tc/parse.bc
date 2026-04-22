@@ -2175,7 +2175,6 @@ __L25:
 .global g_tok_neg i32 0
 .global g_tok_line i32 1
 .global g_last_comment_line i32 0
-.global FI_STRIDE i32 4
 
 .fn tok_cmp U8Array i32 StringLiteral bool
 .param tok U8Array
@@ -10209,115 +10208,195 @@ __L399:
   return_void
 .endfn
 
-.fn fi_name_off I32Array i32 i32
-.param fi I32Array
-.param idx i32
-; fn fi_name_off(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4)); }
-  load fi
-  load idx
+.fn FieldInfo i32 i32 i32 i32 FieldInfo
+.param __a0 i32
+.param __a1 i32
+.param __a2 i32
+.param __a3 i32
+.local __p U32Array
   push_int 4
-  mul
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fi_name_len I32Array i32 i32
-.param fi I32Array
-.param idx i32
-; fn fi_name_len(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 1)); }
-  load fi
-  load idx
-  push_int 4
-  mul
+  call U32Array u32
+  store __p
+  load __p
+  push_int 0
+  load __a0
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
   push_int 1
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fi_type_off I32Array i32 i32
-.param fi I32Array
-.param idx i32
-; fn fi_type_off(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 2)); }
-  load fi
-  load idx
-  push_int 4
-  mul
-  push_int 2
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fi_type_len I32Array i32 i32
-.param fi I32Array
-.param idx i32
-; fn fi_type_len(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 3)); }
-  load fi
-  load idx
-  push_int 4
-  mul
-  push_int 3
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn fi_set I32Array i32 i32 i32 i32 i32 void
-.param fi I32Array
-.param idx i32
-.param noff i32
-.param nlen i32
-.param toff i32
-.param tlen i32
-; set(fi, (idx * 4), noff);
-  load fi
-  load idx
-  push_int 4
-  mul
-  load noff
-  call set I32Array i32 i32
+  load __a1
+  cast u32
+  call set U32Array i32 u32
   pop
-; set(fi, (idx * 4 + 1), nlen);
-  load fi
-  load idx
-  push_int 4
-  mul
+  load __p
+  push_int 2
+  load __a2
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 3
+  load __a3
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  return
+  return_void
+.endfn
+
+.fn name_off FieldInfo i32
+.param __p FieldInfo
+  load __p
+  push_int 0
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn name_len FieldInfo i32
+.param __p FieldInfo
+  load __p
   push_int 1
-  add
-  load nlen
-  call set I32Array i32 i32
-  pop
-; set(fi, (idx * 4 + 2), toff);
-  load fi
-  load idx
-  push_int 4
-  mul
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn type_off FieldInfo i32
+.param __p FieldInfo
+  load __p
   push_int 2
-  add
-  load toff
-  call set I32Array i32 i32
-  pop
-; set(fi, (idx * 4 + 3), tlen);
-  load fi
-  load idx
-  push_int 4
-  mul
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn type_len FieldInfo i32
+.param __p FieldInfo
+  load __p
   push_int 3
-  add
-  load tlen
-  call set I32Array i32 i32
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn name_off FieldInfo i32 void
+.param __p FieldInfo
+.param __v i32
+  load __p
+  push_int 0
+  load __v
+  cast u32
+  call set U32Array i32 u32
   pop
-; return;
   return_void
   return_void
 .endfn
 
-.fn emit_struct_ctor StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array I32Array i32 void
+.fn name_len FieldInfo i32 void
+.param __p FieldInfo
+.param __v i32
+  load __p
+  push_int 1
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn type_off FieldInfo i32 void
+.param __p FieldInfo
+.param __v i32
+  load __p
+  push_int 2
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn type_len FieldInfo i32 void
+.param __p FieldInfo
+.param __v i32
+  load __p
+  push_int 3
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete FieldInfo void
+.param __p FieldInfo
+  load __p
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn FieldInfoArray u32 FieldInfoArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len FieldInfoArray i32
+.param __a FieldInfoArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get FieldInfoArray i32 FieldInfo
+.param __a FieldInfoArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set FieldInfoArray i32 FieldInfo void
+.param __a FieldInfoArray
+.param __i i32
+.param __v FieldInfo
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete FieldInfoArray void
+.param __a FieldInfoArray
+  load __a
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn emit_struct_ctor StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array FieldInfoArray i32 void
 .param sb StringBuffer
 .param indent i32
 .param cmt StringBuffer
@@ -10325,7 +10404,7 @@ __L399:
 .param snlen i32
 .param fnames U8Array
 .param ftypes U8Array
-.param fields I32Array
+.param fields FieldInfoArray
 .param nfields i32
 .local i i32
 .local k i32
@@ -10424,15 +10503,17 @@ __L402:
   add
   call emit_indent StringBuffer i32
   pop
-; emit_type(sb, ftypes, fi_type_off(fields, i), fi_type_len(fields, i)); emit_nl(sb);
+; emit_type(sb, ftypes, type_off(get(fields, i)), type_len(get(fields, i))); emit_nl(sb);
   load sb
   load ftypes
   load fields
   load i
-  call fi_type_off I32Array i32
+  call get FieldInfoArray i32
+  call type_off FieldInfo
   load fields
   load i
-  call fi_type_len I32Array i32
+  call get FieldInfoArray i32
+  call type_len FieldInfo
   call emit_type StringBuffer U8Array i32 i32
   pop
   load sb
@@ -11101,7 +11182,7 @@ __L405:
   return_void
 .endfn
 
-.fn emit_struct_getter StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array I32Array i32 void
+.fn emit_struct_getter StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array FieldInfoArray i32 void
 .param sb StringBuffer
 .param indent i32
 .param cmt StringBuffer
@@ -11109,31 +11190,35 @@ __L405:
 .param snlen i32
 .param fnames U8Array
 .param ftypes U8Array
-.param fields I32Array
+.param fields FieldInfoArray
 .param fidx i32
 .local fnoff i32
 .local fnlen i32
 .local ftoff i32
 .local ftlen i32
-; var fnoff: i32 = fi_name_off(fields, fidx);
+; var fnoff: i32 = name_off(get(fields, fidx));
   load fields
   load fidx
-  call fi_name_off I32Array i32
+  call get FieldInfoArray i32
+  call name_off FieldInfo
   store fnoff
-; var fnlen: i32 = fi_name_len(fields, fidx);
+; var fnlen: i32 = name_len(get(fields, fidx));
   load fields
   load fidx
-  call fi_name_len I32Array i32
+  call get FieldInfoArray i32
+  call name_len FieldInfo
   store fnlen
-; var ftoff: i32 = fi_type_off(fields, fidx);
+; var ftoff: i32 = type_off(get(fields, fidx));
   load fields
   load fidx
-  call fi_type_off I32Array i32
+  call get FieldInfoArray i32
+  call type_off FieldInfo
   store ftoff
-; var ftlen: i32 = fi_type_len(fields, fidx);
+; var ftlen: i32 = type_len(get(fields, fidx));
   load fields
   load fidx
-  call fi_type_len I32Array i32
+  call get FieldInfoArray i32
+  call type_len FieldInfo
   store ftlen
 ; emit_indent(sb, indent);
   load sb
@@ -11566,7 +11651,7 @@ __L405:
   return_void
 .endfn
 
-.fn emit_struct_setter StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array I32Array i32 void
+.fn emit_struct_setter StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array FieldInfoArray i32 void
 .param sb StringBuffer
 .param indent i32
 .param cmt StringBuffer
@@ -11574,31 +11659,35 @@ __L405:
 .param snlen i32
 .param fnames U8Array
 .param ftypes U8Array
-.param fields I32Array
+.param fields FieldInfoArray
 .param fidx i32
 .local fnoff i32
 .local fnlen i32
 .local ftoff i32
 .local ftlen i32
-; var fnoff: i32 = fi_name_off(fields, fidx);
+; var fnoff: i32 = name_off(get(fields, fidx));
   load fields
   load fidx
-  call fi_name_off I32Array i32
+  call get FieldInfoArray i32
+  call name_off FieldInfo
   store fnoff
-; var fnlen: i32 = fi_name_len(fields, fidx);
+; var fnlen: i32 = name_len(get(fields, fidx));
   load fields
   load fidx
-  call fi_name_len I32Array i32
+  call get FieldInfoArray i32
+  call name_len FieldInfo
   store fnlen
-; var ftoff: i32 = fi_type_off(fields, fidx);
+; var ftoff: i32 = type_off(get(fields, fidx));
   load fields
   load fidx
-  call fi_type_off I32Array i32
+  call get FieldInfoArray i32
+  call type_off FieldInfo
   store ftoff
-; var ftlen: i32 = fi_type_len(fields, fidx);
+; var ftlen: i32 = type_len(get(fields, fidx));
   load fields
   load fidx
-  call fi_type_len I32Array i32
+  call get FieldInfoArray i32
+  call type_len FieldInfo
   store ftlen
 ; emit_indent(sb, indent);
   load sb
@@ -12057,7 +12146,7 @@ __L405:
 .local ci i32
 .local fnames U8Array
 .local ftypes U8Array
-.local fields I32Array
+.local fields FieldInfoArray
 .local nfields i32
 .local fnpos i32
 .local ftpos i32
@@ -12131,9 +12220,9 @@ __L407:
   push_int 1024
   call U8Array u32
   store ftypes
-; var fields: I32Array = I32Array(64);  // 16 fields * 4 ints
-  push_int 64
-  call I32Array u32
+; var fields: FieldInfoArray = FieldInfoArray(16u32);
+  push_int 16
+  call FieldInfoArray u32
   store fields
 ; var nfields: i32 = 0;
   push_int 0
@@ -12287,14 +12376,15 @@ __L419:
   load ftpos
   call type_tok_name U8Array U8Array i32
   store ftl
-; fi_set(fields, nfields, fnpos, fname_len, ftpos, ftl);
+; set(fields, nfields, FieldInfo(fnpos, fname_len, ftpos, ftl));
   load fields
   load nfields
   load fnpos
   load fname_len
   load ftpos
   load ftl
-  call fi_set I32Array i32 i32 i32 i32 i32
+  call FieldInfo i32 i32 i32 i32
+  call set FieldInfoArray i32 FieldInfo
   pop
 ; fnpos = fnpos + fname_len;
   load fnpos
@@ -12419,7 +12509,7 @@ __L409:
   load ftypes
   load fields
   load nfields
-  call emit_struct_ctor StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array I32Array i32
+  call emit_struct_ctor StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array FieldInfoArray i32
   pop
 ; var gi: i32 = 0;
   push_int 0
@@ -12444,7 +12534,7 @@ __L420:
   load ftypes
   load fields
   load gi
-  call emit_struct_getter StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array I32Array i32
+  call emit_struct_getter StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array FieldInfoArray i32
   pop
 ; gi = gi + 1;
   load gi
@@ -12476,7 +12566,7 @@ __L422:
   load ftypes
   load fields
   load si
-  call emit_struct_setter StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array I32Array i32
+  call emit_struct_setter StringBuffer i32 StringBuffer U8Array i32 U8Array U8Array FieldInfoArray i32
   pop
 ; si = si + 1;
   load si
@@ -12928,7 +13018,7 @@ __L423:
   call delete U8Array
   pop
   load fields
-  call delete I32Array
+  call delete FieldInfoArray
   pop
 ; destroy(struct_cmt);
   load struct_cmt

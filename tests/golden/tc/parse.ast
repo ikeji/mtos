@@ -9682,137 +9682,187 @@
       (return)
     )
   )
-  (var_decl FI_STRIDE
-    (type i32)
-    (int 4)
+  (struct FieldInfo
+    (field name_off
+      (type i32)
+    )
+    (field name_len
+      (type i32)
+    )
+    (field type_off
+      (type i32)
+    )
+    (field type_len
+      (type i32)
+    )
   )
-  (fn fi_name_off
+  (fn FieldInfo
     (params
-      (param fi
-        (type I32Array)
+      (param __a0
+        (type i32)
       )
-      (param idx
+      (param __a1
+        (type i32)
+      )
+      (param __a2
+        (type i32)
+      )
+      (param __a3
         (type i32)
       )
     )
     (ret
-      (type i32)
+      (type FieldInfo)
     )
     (block
-      (comment "fn fi_name_off(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4)); }")
+      (var_decl __p
+        (type U32Array)
+        (call U32Array
+          (int:u32 4)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 0)
+        (cast
+          (var __a0)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 1)
+        (cast
+          (var __a1)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 2)
+        (cast
+          (var __a2)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 3)
+        (cast
+          (var __a3)
+          (type u32)
+        )
+      )
       (return
-        (call get
-          (var fi)
-          (binop *
-            (var idx)
-            (int 4)
-          )
+        (cast
+          (var __p)
+          (type FieldInfo)
         )
       )
     )
   )
-  (fn fi_name_len
+  (fn name_off
     (params
-      (param fi
-        (type I32Array)
-      )
-      (param idx
-        (type i32)
+      (param __p
+        (type FieldInfo)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fi_name_len(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 1)); }")
       (return
-        (call get
-          (var fi)
-          (binop +
-            (binop *
-              (var idx)
-              (int 4)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 0)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn name_len
+    (params
+      (param __p
+        (type FieldInfo)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 1)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fi_type_off
+  (fn type_off
     (params
-      (param fi
-        (type I32Array)
-      )
-      (param idx
-        (type i32)
+      (param __p
+        (type FieldInfo)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fi_type_off(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 2)); }")
       (return
-        (call get
-          (var fi)
-          (binop +
-            (binop *
-              (var idx)
-              (int 4)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 2)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fi_type_len
+  (fn type_len
     (params
-      (param fi
-        (type I32Array)
-      )
-      (param idx
-        (type i32)
+      (param __p
+        (type FieldInfo)
       )
     )
     (ret
       (type i32)
     )
     (block
-      (comment "fn fi_type_len(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 3)); }")
       (return
-        (call get
-          (var fi)
-          (binop +
-            (binop *
-              (var idx)
-              (int 4)
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
             )
             (int 3)
           )
+          (type i32)
         )
       )
     )
   )
-  (fn fi_set
+  (fn name_off
     (params
-      (param fi
-        (type I32Array)
+      (param __p
+        (type FieldInfo)
       )
-      (param idx
-        (type i32)
-      )
-      (param noff
-        (type i32)
-      )
-      (param nlen
-        (type i32)
-      )
-      (param toff
-        (type i32)
-      )
-      (param tlen
+      (param __v
         (type i32)
       )
     )
@@ -9820,52 +9870,233 @@
       (type void)
     )
     (block
-      (comment "set(fi, (idx * 4), noff);")
       (call_stmt set
-        (var fi)
-        (binop *
-          (var idx)
-          (int 4)
+        (cast
+          (var __p)
+          (type U32Array)
         )
-        (var noff)
+        (int 0)
+        (cast
+          (var __v)
+          (type u32)
+        )
       )
-      (comment "set(fi, (idx * 4 + 1), nlen);")
+      (return)
+    )
+  )
+  (fn name_len
+    (params
+      (param __p
+        (type FieldInfo)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
       (call_stmt set
-        (var fi)
-        (binop +
-          (binop *
-            (var idx)
-            (int 4)
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 1)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn type_off
+    (params
+      (param __p
+        (type FieldInfo)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 2)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn type_len
+    (params
+      (param __p
+        (type FieldInfo)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 3)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __p
+        (type FieldInfo)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+      )
+      (return)
+    )
+  )
+  (fn FieldInfoArray
+    (params
+      (param __n
+        (type u32)
+      )
+    )
+    (ret
+      (type FieldInfoArray)
+    )
+    (block
+      (return
+        (cast
+          (call U32Array
+            (var __n)
           )
-          (int 1)
+          (type FieldInfoArray)
         )
-        (var nlen)
       )
-      (comment "set(fi, (idx * 4 + 2), toff);")
-      (call_stmt set
-        (var fi)
-        (binop +
-          (binop *
-            (var idx)
-            (int 4)
+    )
+  )
+  (fn len
+    (params
+      (param __a
+        (type FieldInfoArray)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call len
+          (cast
+            (var __a)
+            (type U32Array)
           )
-          (int 2)
         )
-        (var toff)
       )
-      (comment "set(fi, (idx * 4 + 3), tlen);")
-      (call_stmt set
-        (var fi)
-        (binop +
-          (binop *
-            (var idx)
-            (int 4)
+    )
+  )
+  (fn get
+    (params
+      (param __a
+        (type FieldInfoArray)
+      )
+      (param __i
+        (type i32)
+      )
+    )
+    (ret
+      (type FieldInfo)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __a)
+              (type U32Array)
+            )
+            (var __i)
           )
-          (int 3)
+          (type FieldInfo)
         )
-        (var tlen)
       )
-      (comment "return;")
+    )
+  )
+  (fn set
+    (params
+      (param __a
+        (type FieldInfoArray)
+      )
+      (param __i
+        (type i32)
+      )
+      (param __v
+        (type FieldInfo)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+        (var __i)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __a
+        (type FieldInfoArray)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+      )
       (return)
     )
   )
@@ -9893,7 +10124,7 @@
         (type U8Array)
       )
       (param fields
-        (type I32Array)
+        (type FieldInfoArray)
       )
       (param nfields
         (type i32)
@@ -10004,17 +10235,21 @@
               (int 3)
             )
           )
-          (comment "emit_type(sb, ftypes, fi_type_off(fields, i), fi_type_len(fields, i)); emit_nl(sb);")
+          (comment "emit_type(sb, ftypes, type_off(get(fields, i)), type_len(get(fields, i))); emit_nl(sb);")
           (call_stmt emit_type
             (var sb)
             (var ftypes)
-            (call fi_type_off
-              (var fields)
-              (var i)
+            (call type_off
+              (call get
+                (var fields)
+                (var i)
+              )
             )
-            (call fi_type_len
-              (var fields)
-              (var i)
+            (call type_len
+              (call get
+                (var fields)
+                (var i)
+              )
             )
           )
           (call_stmt emit_nl
@@ -10743,7 +10978,7 @@
         (type U8Array)
       )
       (param fields
-        (type I32Array)
+        (type FieldInfoArray)
       )
       (param fidx
         (type i32)
@@ -10753,36 +10988,44 @@
       (type void)
     )
     (block
-      (comment "var fnoff: i32 = fi_name_off(fields, fidx);")
+      (comment "var fnoff: i32 = name_off(get(fields, fidx));")
       (var_decl fnoff
         (type i32)
-        (call fi_name_off
-          (var fields)
-          (var fidx)
+        (call name_off
+          (call get
+            (var fields)
+            (var fidx)
+          )
         )
       )
-      (comment "var fnlen: i32 = fi_name_len(fields, fidx);")
+      (comment "var fnlen: i32 = name_len(get(fields, fidx));")
       (var_decl fnlen
         (type i32)
-        (call fi_name_len
-          (var fields)
-          (var fidx)
+        (call name_len
+          (call get
+            (var fields)
+            (var fidx)
+          )
         )
       )
-      (comment "var ftoff: i32 = fi_type_off(fields, fidx);")
+      (comment "var ftoff: i32 = type_off(get(fields, fidx));")
       (var_decl ftoff
         (type i32)
-        (call fi_type_off
-          (var fields)
-          (var fidx)
+        (call type_off
+          (call get
+            (var fields)
+            (var fidx)
+          )
         )
       )
-      (comment "var ftlen: i32 = fi_type_len(fields, fidx);")
+      (comment "var ftlen: i32 = type_len(get(fields, fidx));")
       (var_decl ftlen
         (type i32)
-        (call fi_type_len
-          (var fields)
-          (var fidx)
+        (call type_len
+          (call get
+            (var fields)
+            (var fidx)
+          )
         )
       )
       (comment "emit_indent(sb, indent);")
@@ -11259,7 +11502,7 @@
         (type U8Array)
       )
       (param fields
-        (type I32Array)
+        (type FieldInfoArray)
       )
       (param fidx
         (type i32)
@@ -11269,36 +11512,44 @@
       (type void)
     )
     (block
-      (comment "var fnoff: i32 = fi_name_off(fields, fidx);")
+      (comment "var fnoff: i32 = name_off(get(fields, fidx));")
       (var_decl fnoff
         (type i32)
-        (call fi_name_off
-          (var fields)
-          (var fidx)
+        (call name_off
+          (call get
+            (var fields)
+            (var fidx)
+          )
         )
       )
-      (comment "var fnlen: i32 = fi_name_len(fields, fidx);")
+      (comment "var fnlen: i32 = name_len(get(fields, fidx));")
       (var_decl fnlen
         (type i32)
-        (call fi_name_len
-          (var fields)
-          (var fidx)
+        (call name_len
+          (call get
+            (var fields)
+            (var fidx)
+          )
         )
       )
-      (comment "var ftoff: i32 = fi_type_off(fields, fidx);")
+      (comment "var ftoff: i32 = type_off(get(fields, fidx));")
       (var_decl ftoff
         (type i32)
-        (call fi_type_off
-          (var fields)
-          (var fidx)
+        (call type_off
+          (call get
+            (var fields)
+            (var fidx)
+          )
         )
       )
-      (comment "var ftlen: i32 = fi_type_len(fields, fidx);")
+      (comment "var ftlen: i32 = type_len(get(fields, fidx));")
       (var_decl ftlen
         (type i32)
-        (call fi_type_len
-          (var fields)
-          (var fidx)
+        (call type_len
+          (call get
+            (var fields)
+            (var fidx)
+          )
         )
       )
       (comment "emit_indent(sb, indent);")
@@ -11868,11 +12119,11 @@
           (int 1024)
         )
       )
-      (comment "var fields: I32Array = I32Array(64);  // 16 fields * 4 ints")
+      (comment "var fields: FieldInfoArray = FieldInfoArray(16u32);")
       (var_decl fields
-        (type I32Array)
-        (call I32Array
-          (int 64)
+        (type FieldInfoArray)
+        (call FieldInfoArray
+          (int:u32 16)
         )
       )
       (comment "var nfields: i32 = 0;")
@@ -12065,14 +12316,16 @@
                   (var ftpos)
                 )
               )
-              (comment "fi_set(fields, nfields, fnpos, fname_len, ftpos, ftl);")
-              (call_stmt fi_set
+              (comment "set(fields, nfields, FieldInfo(fnpos, fname_len, ftpos, ftl));")
+              (call_stmt set
                 (var fields)
                 (var nfields)
-                (var fnpos)
-                (var fname_len)
-                (var ftpos)
-                (var ftl)
+                (call FieldInfo
+                  (var fnpos)
+                  (var fname_len)
+                  (var ftpos)
+                  (var ftl)
+                )
               )
               (comment "fnpos = fnpos + fname_len;")
               (assign fnpos

@@ -1431,28 +1431,22 @@ fn emit_struct_array_fns(sb: StringBuffer, indent: i32, cmt: StringBuffer,
 //       ...
 //       return __p as StructName;
 //   }
-// ===== Field info table: I32Array with stride 4 =====
-// Layout per field: [name_off, name_len, type_off, type_len]
-var FI_STRIDE: i32 = 4;
-
-fn fi_name_off(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4)); }
-fn fi_name_len(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 1)); }
-fn fi_type_off(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 2)); }
-fn fi_type_len(fi: I32Array, idx: i32) -> i32 { return get(fi, (idx * 4 + 3)); }
-
-fn fi_set(fi: I32Array, idx: i32, noff: i32, nlen: i32, toff: i32, tlen: i32) -> void {
-    set(fi, (idx * 4), noff);
-    set(fi, (idx * 4 + 1), nlen);
-    set(fi, (idx * 4 + 2), toff);
-    set(fi, (idx * 4 + 3), tlen);
-    return;
+// ===== Field info table =====
+// One FieldInfo per struct field, carrying the (offset, length) pair
+// into the shared fnames / ftypes byte buffers. Used by the struct
+// synthetic-fn emitters below.
+struct FieldInfo {
+    name_off: i32,
+    name_len: i32,
+    type_off: i32,
+    type_len: i32,
 }
 
 fn emit_struct_ctor(
     sb: StringBuffer, indent: i32,
     cmt: StringBuffer,
     sbuf: U8Array, snlen: i32,
-    fnames: U8Array, ftypes: U8Array, fields: I32Array,
+    fnames: U8Array, ftypes: U8Array, fields: FieldInfoArray,
     nfields: i32
 ) -> void {
     emit_indent(sb, indent);
@@ -1468,7 +1462,7 @@ fn emit_struct_ctor(
         emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
         emit_string(sb, "__a"); emit_int(sb, i); emit_nl(sb);
         emit_indent(sb, indent + 3);
-        emit_type(sb, ftypes, fi_type_off(fields, i), fi_type_len(fields, i)); emit_nl(sb);
+        emit_type(sb, ftypes, type_off(get(fields, i)), type_len(get(fields, i))); emit_nl(sb);
         emit_indent(sb, indent + 2);
         emit_char(sb, ')'); emit_nl(sb);
         i = i + 1;
@@ -1538,13 +1532,13 @@ fn emit_struct_getter(
     sb: StringBuffer, indent: i32,
     cmt: StringBuffer,
     sbuf: U8Array, snlen: i32,
-    fnames: U8Array, ftypes: U8Array, fields: I32Array,
+    fnames: U8Array, ftypes: U8Array, fields: FieldInfoArray,
     fidx: i32
 ) -> void {
-    var fnoff: i32 = fi_name_off(fields, fidx);
-    var fnlen: i32 = fi_name_len(fields, fidx);
-    var ftoff: i32 = fi_type_off(fields, fidx);
-    var ftlen: i32 = fi_type_len(fields, fidx);
+    var fnoff: i32 = name_off(get(fields, fidx));
+    var fnlen: i32 = name_len(get(fields, fidx));
+    var ftoff: i32 = type_off(get(fields, fidx));
+    var ftlen: i32 = type_len(get(fields, fidx));
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
     emit_n(sb, fnames, fnoff, fnlen); emit_nl(sb);
@@ -1586,13 +1580,13 @@ fn emit_struct_setter(
     sb: StringBuffer, indent: i32,
     cmt: StringBuffer,
     sbuf: U8Array, snlen: i32,
-    fnames: U8Array, ftypes: U8Array, fields: I32Array,
+    fnames: U8Array, ftypes: U8Array, fields: FieldInfoArray,
     fidx: i32
 ) -> void {
-    var fnoff: i32 = fi_name_off(fields, fidx);
-    var fnlen: i32 = fi_name_len(fields, fidx);
-    var ftoff: i32 = fi_type_off(fields, fidx);
-    var ftlen: i32 = fi_type_len(fields, fidx);
+    var fnoff: i32 = name_off(get(fields, fidx));
+    var fnlen: i32 = name_len(get(fields, fidx));
+    var ftoff: i32 = type_off(get(fields, fidx));
+    var ftlen: i32 = type_len(get(fields, fidx));
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "fn"); emit_char(sb, ' ');
     emit_n(sb, fnames, fnoff, fnlen); emit_nl(sb);
@@ -1642,7 +1636,7 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
     // Buffers for field info (max 16 fields)
     var fnames: U8Array = U8Array(1024);
     var ftypes: U8Array = U8Array(1024);
-    var fields: I32Array = I32Array(64);  // 16 fields * 4 ints
+    var fields: FieldInfoArray = FieldInfoArray(16u32);
     var nfields: i32 = 0;
     var fnpos: i32 = 0;
     var ftpos: i32 = 0;
@@ -1673,7 +1667,7 @@ fn pars_struct_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i
             expect_tok(TK_COLON, src, tok);
             // Capture type name (peek current token BEFORE pars_type advances)
             var ftl: i32 = type_tok_name(tok, ftypes, ftpos);
-            fi_set(fields, nfields, fnpos, fname_len, ftpos, ftl);
+            set(fields, nfields, FieldInfo(fnpos, fname_len, ftpos, ftl));
             fnpos = fnpos + fname_len;
             ftpos = ftpos + ftl;
             emit_nl(sb);
