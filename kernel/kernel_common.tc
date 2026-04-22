@@ -553,7 +553,7 @@ fn vfs_size(fd: i32) -> i32;
 fn vfs_read(fd: i32, buf: u32, n: i32) -> i32;
 fn vfs_close(fd: i32) -> i32;
 
-var g_cfg_inits:     U32Array = 0 as U32Array;
+var g_cfg_inits:     StringArray = 0 as StringArray;
 var g_cfg_init_count: i32 = 0;
 var g_cfg_mux:        i32 = 0;
 
@@ -583,6 +583,10 @@ fn cfg_parse_line(buf: U8Array, line_start: i32, line_len: i32) -> void {
         var path_len:   i32 = line_len - 5;
         if path_len <= 0 { return; }
         if g_cfg_init_count >= 8 { return; }
+        // Build a String — allocate U8Array(path_len+1) for NUL-term
+        // space, copy bytes, then overwrite the header count field
+        // with path_len so String semantics match (len(s) returns
+        // string length, not buffer size).
         var pbuf: U8Array = U8Array((path_len + 1) as u32);
         var j: i32 = 0;
         while j < path_len {
@@ -590,7 +594,8 @@ fn cfg_parse_line(buf: U8Array, line_start: i32, line_len: i32) -> void {
             j = j + 1;
         }
         set(pbuf, path_len, 0u8);
-        set(g_cfg_inits, g_cfg_init_count, pbuf as u32);
+        poke32(pbuf as u32, path_len as u32);
+        set(g_cfg_inits, g_cfg_init_count, pbuf as u32 as String);
         g_cfg_init_count = g_cfg_init_count + 1;
         return;
     }
@@ -601,7 +606,7 @@ fn cfg_parse_line(buf: U8Array, line_start: i32, line_len: i32) -> void {
 // Read /etc/kern.conf from the boot FS and populate g_cfg_*.
 // Returns 1 on success, 0 if config file is missing (defaults).
 export fn read_kern_config() -> i32 {
-    g_cfg_inits = U32Array(8);
+    g_cfg_inits = StringArray(8);
     g_cfg_init_count = 0;
     g_cfg_mux = 0;
 
@@ -642,9 +647,11 @@ export fn kern_config_mux() -> i32 { return g_cfg_mux; }
 export fn kern_config_init_count() -> i32 { return g_cfg_init_count; }
 export fn kern_config_init_path(idx: i32) -> u32 {
     if idx < 0 || idx >= g_cfg_init_count { return 0u32; }
-    // Stored as U8Array header address; return data address so the
-    // caller (load_task_addr / vfs_open) sees the NUL-terminated bytes.
-    return get(g_cfg_inits, idx) + 4u32;
+    // Strip the String header to hand vfs_open / load_task_addr the
+    // NUL-terminated data directly — they take raw u32 addresses.
+    var s: String = get(g_cfg_inits, idx);
+    if s as u32 == 0u32 { return 0u32; }
+    return s as u32 + 4u32;
 }
 
 export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
