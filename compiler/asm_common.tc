@@ -257,7 +257,7 @@ fn lab_hash_name(buf: U8Array, off: i32, nlen: i32) -> i32 {
     return h & LAB_HASH_MASK;
 }
 
-fn lab_hash_name_u8(buf: U8Array, nlen: i32) -> i32 {
+fn lab_hash_name(buf: U8Array, nlen: i32) -> i32 {
     var h: i32 = 0;
     var i: i32 = 0;
     while i < nlen {
@@ -300,7 +300,7 @@ export fn asm_finalize_labels() -> void {
 
 fn find_label(name: U8Array, nlen: i32) -> i32 {
     if g_lab_hash_ok == 1 {
-        var h: i32 = lab_hash_name_u8(name, nlen);
+        var h: i32 = lab_hash_name(name, nlen);
         while get(g_lab_hash, h) != 0 {
             var idx: i32 = get(g_lab_hash, h) - 1;
             if lab_name_eq(idx, name, nlen) { return idx; }
