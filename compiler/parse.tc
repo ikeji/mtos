@@ -1190,7 +1190,7 @@ fn emit_type_arr(sb: StringBuffer, sbuf: U8Array, snlen: i32) -> void {
 }
 
 // Emit (param NAME (type T)) at indent, where T is a bare StringLiteral.
-fn emit_param_lit(sb: StringBuffer, indent: i32, name: StringLiteral, tname: StringLiteral) -> void {
+fn emit_param(sb: StringBuffer, indent: i32, name: StringLiteral, tname: StringLiteral) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
     emit_string(sb, name); emit_nl(sb);
@@ -1215,9 +1215,10 @@ fn emit_param_arr(sb: StringBuffer, indent: i32, name: StringLiteral,
     return;
 }
 
-// Emit (param NAME (type StructName)).
-fn emit_param_struct(sb: StringBuffer, indent: i32, name: StringLiteral,
-                     sbuf: U8Array, snlen: i32) -> void {
+// Emit (param NAME (type StructName)) where the type name comes from
+// buf[0..snlen] (no tstart offset).
+fn emit_param(sb: StringBuffer, indent: i32, name: StringLiteral,
+              sbuf: U8Array, snlen: i32) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "param"); emit_char(sb, ' ');
     emit_string(sb, name); emit_nl(sb);
@@ -1230,7 +1231,7 @@ fn emit_param_struct(sb: StringBuffer, indent: i32, name: StringLiteral,
 }
 
 // Emit (ret (type T)) block.
-fn emit_ret_lit(sb: StringBuffer, indent: i32, tname: StringLiteral) -> void {
+fn emit_ret(sb: StringBuffer, indent: i32, tname: StringLiteral) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
     emit_indent(sb, indent + 1);
@@ -1251,7 +1252,7 @@ fn emit_ret_arr(sb: StringBuffer, indent: i32, sbuf: U8Array, snlen: i32) -> voi
     return;
 }
 
-fn emit_ret_struct(sb: StringBuffer, indent: i32, sbuf: U8Array, snlen: i32) -> void {
+fn emit_ret(sb: StringBuffer, indent: i32, sbuf: U8Array, snlen: i32) -> void {
     emit_indent(sb, indent);
     emit_char(sb, '('); emit_string(sb, "ret"); emit_nl(sb);
     emit_indent(sb, indent + 1);
@@ -1285,7 +1286,7 @@ fn emit_struct_array_fns(sb: StringBuffer, indent: i32, cmt: StringBuffer,
     emit_n(sb, sbuf, 0, snlen); emit_string(sb, "Array"); emit_nl(sb);
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
-    emit_param_lit(sb, indent + 2, "__n", "u32"); emit_nl(sb);
+    emit_param(sb, indent + 2, "__n", "u32"); emit_nl(sb);
     emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
     emit_ret_arr(sb, indent + 1, sbuf, snlen); emit_nl(sb);
     emit_indent(sb, indent + 1);
@@ -1318,7 +1319,7 @@ fn emit_struct_array_fns(sb: StringBuffer, indent: i32, cmt: StringBuffer,
     emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
     emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_nl(sb);
     emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
-    emit_ret_lit(sb, indent + 1, "i32"); emit_nl(sb);
+    emit_ret(sb, indent + 1, "i32"); emit_nl(sb);
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
     emit_indent(sb, indent + 2);
@@ -1341,9 +1342,9 @@ fn emit_struct_array_fns(sb: StringBuffer, indent: i32, cmt: StringBuffer,
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
     emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_nl(sb);
-    emit_param_lit(sb, indent + 2, "__i", "i32"); emit_nl(sb);
+    emit_param(sb, indent + 2, "__i", "i32"); emit_nl(sb);
     emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
-    emit_ret_struct(sb, indent + 1, sbuf, snlen); emit_nl(sb);
+    emit_ret(sb, indent + 1, sbuf, snlen); emit_nl(sb);
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
     emit_indent(sb, indent + 2);
@@ -1376,10 +1377,10 @@ fn emit_struct_array_fns(sb: StringBuffer, indent: i32, cmt: StringBuffer,
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
     emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_nl(sb);
-    emit_param_lit(sb, indent + 2, "__i", "i32"); emit_nl(sb);
-    emit_param_struct(sb, indent + 2, "__v", sbuf, snlen); emit_nl(sb);
+    emit_param(sb, indent + 2, "__i", "i32"); emit_nl(sb);
+    emit_param(sb, indent + 2, "__v", sbuf, snlen); emit_nl(sb);
     emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
-    emit_ret_lit(sb, indent + 1, "void"); emit_nl(sb);
+    emit_ret(sb, indent + 1, "void"); emit_nl(sb);
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
     // (call_stmt set (cast __a U32Array) (var __i) (cast __v u32))
@@ -1408,7 +1409,7 @@ fn emit_struct_array_fns(sb: StringBuffer, indent: i32, cmt: StringBuffer,
     emit_char(sb, '('); emit_string(sb, "params"); emit_nl(sb);
     emit_param_arr(sb, indent + 2, "__a", sbuf, snlen); emit_nl(sb);
     emit_indent(sb, indent + 1); emit_char(sb, ')'); emit_nl(sb);
-    emit_ret_lit(sb, indent + 1, "void"); emit_nl(sb);
+    emit_ret(sb, indent + 1, "void"); emit_nl(sb);
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "block"); emit_nl(sb);
     emit_indent(sb, indent + 2);

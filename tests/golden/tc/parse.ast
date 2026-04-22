@@ -7750,7 +7750,7 @@
       (return)
     )
   )
-  (fn emit_param_lit
+  (fn emit_param
     (params
       (param sb
         (type StringBuffer)
@@ -7921,7 +7921,7 @@
       (return)
     )
   )
-  (fn emit_param_struct
+  (fn emit_param
     (params
       (param sb
         (type StringBuffer)
@@ -8018,7 +8018,7 @@
       (return)
     )
   )
-  (fn emit_ret_lit
+  (fn emit_ret
     (params
       (param sb
         (type StringBuffer)
@@ -8165,7 +8165,7 @@
       (return)
     )
   )
-  (fn emit_ret_struct
+  (fn emit_ret
     (params
       (param sb
         (type StringBuffer)
@@ -8334,8 +8334,8 @@
       (call_stmt emit_nl
         (var sb)
       )
-      (comment "emit_param_lit(sb, indent + 2, \"__n\", \"u32\"); emit_nl(sb);")
-      (call_stmt emit_param_lit
+      (comment "emit_param(sb, indent + 2, \"__n\", \"u32\"); emit_nl(sb);")
+      (call_stmt emit_param
         (var sb)
         (binop +
           (var indent)
@@ -8666,8 +8666,8 @@
       (call_stmt emit_nl
         (var sb)
       )
-      (comment "emit_ret_lit(sb, indent + 1, \"i32\"); emit_nl(sb);")
-      (call_stmt emit_ret_lit
+      (comment "emit_ret(sb, indent + 1, \"i32\"); emit_nl(sb);")
+      (call_stmt emit_ret
         (var sb)
         (binop +
           (var indent)
@@ -8883,8 +8883,8 @@
       (call_stmt emit_nl
         (var sb)
       )
-      (comment "emit_param_lit(sb, indent + 2, \"__i\", \"i32\"); emit_nl(sb);")
-      (call_stmt emit_param_lit
+      (comment "emit_param(sb, indent + 2, \"__i\", \"i32\"); emit_nl(sb);")
+      (call_stmt emit_param
         (var sb)
         (binop +
           (var indent)
@@ -8911,8 +8911,8 @@
       (call_stmt emit_nl
         (var sb)
       )
-      (comment "emit_ret_struct(sb, indent + 1, sbuf, snlen); emit_nl(sb);")
-      (call_stmt emit_ret_struct
+      (comment "emit_ret(sb, indent + 1, sbuf, snlen); emit_nl(sb);")
+      (call_stmt emit_ret
         (var sb)
         (binop +
           (var indent)
@@ -9231,8 +9231,8 @@
       (call_stmt emit_nl
         (var sb)
       )
-      (comment "emit_param_lit(sb, indent + 2, \"__i\", \"i32\"); emit_nl(sb);")
-      (call_stmt emit_param_lit
+      (comment "emit_param(sb, indent + 2, \"__i\", \"i32\"); emit_nl(sb);")
+      (call_stmt emit_param
         (var sb)
         (binop +
           (var indent)
@@ -9244,8 +9244,8 @@
       (call_stmt emit_nl
         (var sb)
       )
-      (comment "emit_param_struct(sb, indent + 2, \"__v\", sbuf, snlen); emit_nl(sb);")
-      (call_stmt emit_param_struct
+      (comment "emit_param(sb, indent + 2, \"__v\", sbuf, snlen); emit_nl(sb);")
+      (call_stmt emit_param
         (var sb)
         (binop +
           (var indent)
@@ -9273,8 +9273,8 @@
       (call_stmt emit_nl
         (var sb)
       )
-      (comment "emit_ret_lit(sb, indent + 1, \"void\"); emit_nl(sb);")
-      (call_stmt emit_ret_lit
+      (comment "emit_ret(sb, indent + 1, \"void\"); emit_nl(sb);")
+      (call_stmt emit_ret
         (var sb)
         (binop +
           (var indent)
@@ -9541,8 +9541,8 @@
       (call_stmt emit_nl
         (var sb)
       )
-      (comment "emit_ret_lit(sb, indent + 1, \"void\"); emit_nl(sb);")
-      (call_stmt emit_ret_lit
+      (comment "emit_ret(sb, indent + 1, \"void\"); emit_nl(sb);")
+      (call_stmt emit_ret
         (var sb)
         (binop +
           (var indent)

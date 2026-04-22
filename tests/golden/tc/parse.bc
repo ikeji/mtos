@@ -8443,7 +8443,7 @@ __L399:
   return_void
 .endfn
 
-.fn emit_param_lit StringBuffer i32 StringLiteral StringLiteral void
+.fn emit_param StringBuffer i32 StringLiteral StringLiteral void
 .param sb StringBuffer
 .param indent i32
 .param name StringLiteral
@@ -8584,7 +8584,7 @@ __L399:
   return_void
 .endfn
 
-.fn emit_param_struct StringBuffer i32 StringLiteral U8Array i32 void
+.fn emit_param StringBuffer i32 StringLiteral U8Array i32 void
 .param sb StringBuffer
 .param indent i32
 .param name StringLiteral
@@ -8665,7 +8665,7 @@ __L399:
   return_void
 .endfn
 
-.fn emit_ret_lit StringBuffer i32 StringLiteral void
+.fn emit_ret StringBuffer i32 StringLiteral void
 .param sb StringBuffer
 .param indent i32
 .param tname StringLiteral
@@ -8786,7 +8786,7 @@ __L399:
   return_void
 .endfn
 
-.fn emit_ret_struct StringBuffer i32 U8Array i32 void
+.fn emit_ret StringBuffer i32 U8Array i32 void
 .param sb StringBuffer
 .param indent i32
 .param sbuf U8Array
@@ -8924,14 +8924,14 @@ __L399:
   load sb
   call emit_nl StringBuffer
   pop
-; emit_param_lit(sb, indent + 2, "__n", "u32"); emit_nl(sb);
+; emit_param(sb, indent + 2, "__n", "u32"); emit_nl(sb);
   load sb
   load indent
   push_int 2
   add
   push_str 47
   push_str 10
-  call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
+  call emit_param StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
   call emit_nl StringBuffer
@@ -9240,13 +9240,13 @@ __L399:
   load sb
   call emit_nl StringBuffer
   pop
-; emit_ret_lit(sb, indent + 1, "i32"); emit_nl(sb);
+; emit_ret(sb, indent + 1, "i32"); emit_nl(sb);
   load sb
   load indent
   push_int 1
   add
   push_str 13
-  call emit_ret_lit StringBuffer i32 StringLiteral
+  call emit_ret StringBuffer i32 StringLiteral
   pop
   load sb
   call emit_nl StringBuffer
@@ -9447,14 +9447,14 @@ __L399:
   load sb
   call emit_nl StringBuffer
   pop
-; emit_param_lit(sb, indent + 2, "__i", "i32"); emit_nl(sb);
+; emit_param(sb, indent + 2, "__i", "i32"); emit_nl(sb);
   load sb
   load indent
   push_int 2
   add
   push_str 52
   push_str 13
-  call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
+  call emit_param StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
   call emit_nl StringBuffer
@@ -9473,14 +9473,14 @@ __L399:
   load sb
   call emit_nl StringBuffer
   pop
-; emit_ret_struct(sb, indent + 1, sbuf, snlen); emit_nl(sb);
+; emit_ret(sb, indent + 1, sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 1
   add
   load sbuf
   load snlen
-  call emit_ret_struct StringBuffer i32 U8Array i32
+  call emit_ret StringBuffer i32 U8Array i32
   pop
   load sb
   call emit_nl StringBuffer
@@ -9779,19 +9779,19 @@ __L399:
   load sb
   call emit_nl StringBuffer
   pop
-; emit_param_lit(sb, indent + 2, "__i", "i32"); emit_nl(sb);
+; emit_param(sb, indent + 2, "__i", "i32"); emit_nl(sb);
   load sb
   load indent
   push_int 2
   add
   push_str 52
   push_str 13
-  call emit_param_lit StringBuffer i32 StringLiteral StringLiteral
+  call emit_param StringBuffer i32 StringLiteral StringLiteral
   pop
   load sb
   call emit_nl StringBuffer
   pop
-; emit_param_struct(sb, indent + 2, "__v", sbuf, snlen); emit_nl(sb);
+; emit_param(sb, indent + 2, "__v", sbuf, snlen); emit_nl(sb);
   load sb
   load indent
   push_int 2
@@ -9799,7 +9799,7 @@ __L399:
   push_str 54
   load sbuf
   load snlen
-  call emit_param_struct StringBuffer i32 StringLiteral U8Array i32
+  call emit_param StringBuffer i32 StringLiteral U8Array i32
   pop
   load sb
   call emit_nl StringBuffer
@@ -9818,13 +9818,13 @@ __L399:
   load sb
   call emit_nl StringBuffer
   pop
-; emit_ret_lit(sb, indent + 1, "void"); emit_nl(sb);
+; emit_ret(sb, indent + 1, "void"); emit_nl(sb);
   load sb
   load indent
   push_int 1
   add
   push_str 15
-  call emit_ret_lit StringBuffer i32 StringLiteral
+  call emit_ret StringBuffer i32 StringLiteral
   pop
   load sb
   call emit_nl StringBuffer
@@ -10074,13 +10074,13 @@ __L399:
   load sb
   call emit_nl StringBuffer
   pop
-; emit_ret_lit(sb, indent + 1, "void"); emit_nl(sb);
+; emit_ret(sb, indent + 1, "void"); emit_nl(sb);
   load sb
   load indent
   push_int 1
   add
   push_str 15
-  call emit_ret_lit StringBuffer i32 StringLiteral
+  call emit_ret StringBuffer i32 StringLiteral
   pop
   load sb
   call emit_nl StringBuffer

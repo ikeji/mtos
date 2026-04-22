@@ -25245,9 +25245,9 @@ emit_type_arr__StringBuffer__U8Array__i32:
     ret
     # end of emit_type_arr__StringBuffer__U8Array__i32
 
-    .globl emit_param_lit__StringBuffer__i32__StringLiteral__StringLiteral
-    .type  emit_param_lit__StringBuffer__i32__StringLiteral__StringLiteral, @function
-emit_param_lit__StringBuffer__i32__StringLiteral__StringLiteral:
+    .globl emit_param__StringBuffer__i32__StringLiteral__StringLiteral
+    .type  emit_param__StringBuffer__i32__StringLiteral__StringLiteral, @function
+emit_param__StringBuffer__i32__StringLiteral__StringLiteral:
     # prologue: frame_size=48, params=4, locals=0, eval_depth=3
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -25463,7 +25463,7 @@ emit_param_lit__StringBuffer__i32__StringLiteral__StringLiteral:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_param_lit__StringBuffer__i32__StringLiteral__StringLiteral
+    # end of emit_param__StringBuffer__i32__StringLiteral__StringLiteral
 
     .globl emit_param_arr__StringBuffer__i32__StringLiteral__U8Array__i32
     .type  emit_param_arr__StringBuffer__i32__StringLiteral__U8Array__i32, @function
@@ -25638,9 +25638,9 @@ emit_param_arr__StringBuffer__i32__StringLiteral__U8Array__i32:
     ret
     # end of emit_param_arr__StringBuffer__i32__StringLiteral__U8Array__i32
 
-    .globl emit_param_struct__StringBuffer__i32__StringLiteral__U8Array__i32
-    .type  emit_param_struct__StringBuffer__i32__StringLiteral__U8Array__i32, @function
-emit_param_struct__StringBuffer__i32__StringLiteral__U8Array__i32:
+    .globl emit_param__StringBuffer__i32__StringLiteral__U8Array__i32
+    .type  emit_param__StringBuffer__i32__StringLiteral__U8Array__i32, @function
+emit_param__StringBuffer__i32__StringLiteral__U8Array__i32:
     # prologue: frame_size=48, params=5, locals=0, eval_depth=4
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -25865,11 +25865,11 @@ emit_param_struct__StringBuffer__i32__StringLiteral__U8Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_param_struct__StringBuffer__i32__StringLiteral__U8Array__i32
+    # end of emit_param__StringBuffer__i32__StringLiteral__U8Array__i32
 
-    .globl emit_ret_lit__StringBuffer__i32__StringLiteral
-    .type  emit_ret_lit__StringBuffer__i32__StringLiteral, @function
-emit_ret_lit__StringBuffer__i32__StringLiteral:
+    .globl emit_ret__StringBuffer__i32__StringLiteral
+    .type  emit_ret__StringBuffer__i32__StringLiteral, @function
+emit_ret__StringBuffer__i32__StringLiteral:
     # prologue: frame_size=32, params=3, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -26058,7 +26058,7 @@ emit_ret_lit__StringBuffer__i32__StringLiteral:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_ret_lit__StringBuffer__i32__StringLiteral
+    # end of emit_ret__StringBuffer__i32__StringLiteral
 
     .globl emit_ret_arr__StringBuffer__i32__U8Array__i32
     .type  emit_ret_arr__StringBuffer__i32__U8Array__i32, @function
@@ -26206,9 +26206,9 @@ emit_ret_arr__StringBuffer__i32__U8Array__i32:
     ret
     # end of emit_ret_arr__StringBuffer__i32__U8Array__i32
 
-    .globl emit_ret_struct__StringBuffer__i32__U8Array__i32
-    .type  emit_ret_struct__StringBuffer__i32__U8Array__i32, @function
-emit_ret_struct__StringBuffer__i32__U8Array__i32:
+    .globl emit_ret__StringBuffer__i32__U8Array__i32
+    .type  emit_ret__StringBuffer__i32__U8Array__i32, @function
+emit_ret__StringBuffer__i32__U8Array__i32:
     # prologue: frame_size=48, params=4, locals=0, eval_depth=4
     addi sp, sp, -48
     sw   ra, 44(sp)
@@ -26406,7 +26406,7 @@ emit_ret_struct__StringBuffer__i32__U8Array__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of emit_ret_struct__StringBuffer__i32__U8Array__i32
+    # end of emit_ret__StringBuffer__i32__U8Array__i32
 
     .globl emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32
     .type  emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32, @function
@@ -26624,7 +26624,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_param_lit__StringBuffer__i32__StringLiteral__StringLiteral
+    call emit_param__StringBuffer__i32__StringLiteral__StringLiteral
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -27586,7 +27586,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call emit_ret_lit__StringBuffer__i32__StringLiteral
+    call emit_ret__StringBuffer__i32__StringLiteral
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28219,7 +28219,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_param_lit__StringBuffer__i32__StringLiteral__StringLiteral
+    call emit_param__StringBuffer__i32__StringLiteral__StringLiteral
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -28302,7 +28302,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_ret_struct__StringBuffer__i32__U8Array__i32
+    call emit_ret__StringBuffer__i32__U8Array__i32
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -29236,7 +29236,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   a1, 8(sp)
     lw   a2, 4(sp)
     lw   a3, 0(sp)
-    call emit_param_lit__StringBuffer__i32__StringLiteral__StringLiteral
+    call emit_param__StringBuffer__i32__StringLiteral__StringLiteral
     addi sp, sp, 16
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -29279,7 +29279,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   a2, 8(sp)
     lw   a3, 4(sp)
     lw   a4, 0(sp)
-    call emit_param_struct__StringBuffer__i32__StringLiteral__U8Array__i32
+    call emit_param__StringBuffer__i32__StringLiteral__U8Array__i32
     addi sp, sp, 20
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -29358,7 +29358,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call emit_ret_lit__StringBuffer__i32__StringLiteral
+    call emit_ret__StringBuffer__i32__StringLiteral
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -30135,7 +30135,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   a0, 8(sp)
     lw   a1, 4(sp)
     lw   a2, 0(sp)
-    call emit_ret_lit__StringBuffer__i32__StringLiteral
+    call emit_ret__StringBuffer__i32__StringLiteral
     addi sp, sp, 12
     addi sp, sp, -4
     sw   a0, 0(sp)
