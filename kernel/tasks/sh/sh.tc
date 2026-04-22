@@ -783,29 +783,52 @@ fn main() -> i32 {
                             if seg_idx < num_pipes {
                                 out_fd = get(pipe_wfds, seg_idx);
                             }
-                            // Explicit < on first segment
+                            // Explicit < on first segment. A failed
+                            // open aborts the whole pipeline — keeping
+                            // the pipe-fd input would silently hide the
+                            // missing redirect source.
+                            var redir_ok: i32 = 1;
                             if g_in_path as u32 != 0u32 {
                                 var ffd: i32 = open_redir_path(g_in_path, 0);
-                                if ffd > 0 { in_fd = ffd; }
+                                if ffd < 0 {
+                                    eputs("sh: ");
+                                    sys_write(2, g_in_path, strlen(g_in_path));
+                                    eputs(": open failed\n");
+                                    redir_ok = 0;
+                                } else {
+                                    in_fd = ffd;
+                                }
                                 delete(g_in_path); g_in_path = 0 as U8Array;
                             }
                             // Explicit > on last segment
-                            if g_out_path as u32 != 0u32 {
+                            if redir_ok == 1 && g_out_path as u32 != 0u32 {
                                 var ffd: i32 = open_redir_path(g_out_path, 577);
-                                if ffd > 0 { out_fd = ffd; }
+                                if ffd < 0 {
+                                    eputs("sh: ");
+                                    sys_write(2, g_out_path, strlen(g_out_path));
+                                    eputs(": open failed\n");
+                                    redir_ok = 0;
+                                } else {
+                                    out_fd = ffd;
+                                }
                                 delete(g_out_path); g_out_path = 0 as U8Array;
                             }
 
-                            var slot: i32 = do_spawn_fds(path as u32 + 4u32,
-                                                          argv as u32,
-                                                          in_fd, out_fd);
-                            free_argv(argv);
-                            if slot < 0 {
-                                puts("sh: pipe spawn failed\n");
+                            if redir_ok == 0 {
+                                free_argv(argv);
                                 ok = 0;
                             } else {
-                                set(slots, seg_idx, slot);
-                                num_spawned = num_spawned + 1;
+                                var slot: i32 = do_spawn_fds(path as u32 + 4u32,
+                                                              argv as u32,
+                                                              in_fd, out_fd);
+                                free_argv(argv);
+                                if slot < 0 {
+                                    puts("sh: pipe spawn failed\n");
+                                    ok = 0;
+                                } else {
+                                    set(slots, seg_idx, slot);
+                                    num_spawned = num_spawned + 1;
+                                }
                             }
                         }
 
@@ -813,6 +836,20 @@ fn main() -> i32 {
                             seg_start = get(pipe_pos, seg_idx) + 1;
                         }
                         seg_idx = seg_idx + 1;
+                    }
+
+                    // Close the parent's copies of every pipe fd (the
+                    // kernel dup'd them into each child at spawn time).
+                    // Without this the writer's write end stays open in
+                    // the shell so the reader never sees EOF.
+                    // Also covers the failure path: pi holds the number
+                    // of pipe pairs already created even when the
+                    // creation loop was cut short by ok=0.
+                    var pci: i32 = 0;
+                    while pci < pi {
+                        do_close(get(pipe_rfds, pci));
+                        do_close(get(pipe_wfds, pci));
+                        pci = pci + 1;
                     }
 
                     // Wait for all spawned segments
