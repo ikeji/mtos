@@ -4669,55 +4669,6 @@ __L115:
   return_void
 .endfn
 
-.fn pl_name_ss I32Array i32 i32
-.param pool I32Array
-.param i i32
-; fn pl_name_ss(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+0)); }
-  load pool
-  load i
-  push_int 4
-  mul
-  push_int 0
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn pl_name_sl I32Array i32 i32
-.param pool I32Array
-.param i i32
-; fn pl_name_sl(pool: I32Array, i: i32) -> i32 { return get(pool,(i*4+1)); }
-  load pool
-  load i
-  push_int 4
-  mul
-  push_int 1
-  add
-  call get I32Array i32
-  return
-  return_void
-.endfn
-
-.fn pl_set I32Array i32 i32 i32 void
-.param pool I32Array
-.param i i32
-.param f i32
-.param v i32
-; fn pl_set(pool: I32Array, i: i32, f: i32, v: i32) -> void { set(pool,(i*4+f),v); return; }
-  load pool
-  load i
-  push_int 4
-  mul
-  load f
-  add
-  load v
-  call set I32Array i32 i32
-  pop
-  return_void
-  return_void
-.endfn
-
 .fn ins_op I32Array i32 i32 i32
 .param instrs I32Array
 .param base i32
@@ -4884,13 +4835,13 @@ __L117:
   return_void
 .endfn
 
-.fn parse_bc U8Array StrRefArray GlobalVarArray BcFuncArray I32Array I32Array I32Array I32Array StringBuffer void
+.fn parse_bc U8Array StrRefArray GlobalVarArray BcFuncArray StrRefArray StrRefArray I32Array I32Array StringBuffer void
 .param strtab U8Array
 .param string_lits StrRefArray
 .param globals GlobalVarArray
 .param fns BcFuncArray
-.param params_pool I32Array
-.param locals_pool I32Array
+.param params_pool StrRefArray
+.param locals_pool StrRefArray
 .param instrs I32Array
 .param label_pcs I32Array
 .param ob StringBuffer
@@ -4915,7 +4866,9 @@ __L117:
 .local gi i32
 .local prev_under i32
 .local ui i32
+.local pr StrRef
 .local cf BcFunc
+.local lr StrRef
 .local d3b u8
 .local ib i32
 .local ni i32
@@ -5452,18 +5405,19 @@ __L171:
   load ty_ss
   call discard_tok i32
   pop
-; pl_set(params_pool,g_nparams,0,nm_ss); pl_set(params_pool,g_nparams,1,nm_sl);
+; var pr: StrRef = get(params_pool, g_nparams);
   load params_pool
   load g_nparams
-  push_int 0
+  call get StrRefArray i32
+  store pr
+; ss(pr, nm_ss); sl(pr, nm_sl);
+  load pr
   load nm_ss
-  call pl_set I32Array i32 i32 i32
+  call ss StrRef i32
   pop
-  load params_pool
-  load g_nparams
-  push_int 1
+  load pr
   load nm_sl
-  call pl_set I32Array i32 i32 i32
+  call sl StrRef i32
   pop
 ; g_nparams=g_nparams+1;
   load g_nparams
@@ -5526,18 +5480,19 @@ __L175:
   load ty_ss
   call discard_tok i32
   pop
-; pl_set(locals_pool,g_nlocals,0,nm_ss); pl_set(locals_pool,g_nlocals,1,nm_sl);
+; var lr: StrRef = get(locals_pool, g_nlocals);
   load locals_pool
   load g_nlocals
-  push_int 0
+  call get StrRefArray i32
+  store lr
+; ss(lr, nm_ss); sl(lr, nm_sl);
+  load lr
   load nm_ss
-  call pl_set I32Array i32 i32 i32
+  call ss StrRef i32
   pop
-  load locals_pool
-  load g_nlocals
-  push_int 1
+  load lr
   load nm_sl
-  call pl_set I32Array i32 i32 i32
+  call sl StrRef i32
   pop
 ; g_nlocals=g_nlocals+1;
   load g_nlocals
@@ -5713,7 +5668,7 @@ __L186:
   load string_lits
   load cur_fn
   load ob
-  call emit_fn U8Array BcFuncArray I32Array I32Array I32Array StrRefArray i32 StringBuffer
+  call emit_fn U8Array BcFuncArray StrRefArray StrRefArray I32Array StrRefArray i32 StringBuffer
   pop
 ; if g_stab_pos > g_max_stab { g_max_stab = g_stab_pos; }
   load g_stab_pos
@@ -6330,11 +6285,11 @@ __L125:
   return_void
 .endfn
 
-.fn is_local U8Array BcFuncArray I32Array I32Array i32 i32 i32 i32
+.fn is_local U8Array BcFuncArray StrRefArray StrRefArray i32 i32 i32 i32
 .param strtab U8Array
 .param fns BcFuncArray
-.param params_pool I32Array
-.param locals_pool I32Array
+.param params_pool StrRefArray
+.param locals_pool StrRefArray
 .param fi i32
 .param nm_ss i32
 .param nm_sl i32
@@ -6374,18 +6329,20 @@ __L248:
   load np
   lt
   jump_ifnot __L249
-; if stab_eq(strtab,pl_name_ss(params_pool,pb+i),pl_name_sl(params_pool,pb+i),nm_ss,nm_sl) { return 1; }
+; if stab_eq(strtab,ss(get(params_pool, pb+i)),sl(get(params_pool, pb+i)),nm_ss,nm_sl) { return 1; }
   load strtab
   load params_pool
   load pb
   load i
   add
-  call pl_name_ss I32Array i32
+  call get StrRefArray i32
+  call ss StrRef
   load params_pool
   load pb
   load i
   add
-  call pl_name_sl I32Array i32
+  call get StrRefArray i32
+  call sl StrRef
   load nm_ss
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
@@ -6409,18 +6366,20 @@ __L251:
   load nl
   lt
   jump_ifnot __L252
-; if stab_eq(strtab,pl_name_ss(locals_pool,lb+i),pl_name_sl(locals_pool,lb+i),nm_ss,nm_sl) { return 1; }
+; if stab_eq(strtab,ss(get(locals_pool, lb+i)),sl(get(locals_pool, lb+i)),nm_ss,nm_sl) { return 1; }
   load strtab
   load locals_pool
   load lb
   load i
   add
-  call pl_name_ss I32Array i32
+  call get StrRefArray i32
+  call ss StrRef
   load locals_pool
   load lb
   load i
   add
-  call pl_name_sl I32Array i32
+  call get StrRefArray i32
+  call sl StrRef
   load nm_ss
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
@@ -6441,11 +6400,11 @@ __L252:
   return_void
 .endfn
 
-.fn var_offset U8Array BcFuncArray I32Array I32Array i32 i32 i32 i32
+.fn var_offset U8Array BcFuncArray StrRefArray StrRefArray i32 i32 i32 i32
 .param strtab U8Array
 .param fns BcFuncArray
-.param params_pool I32Array
-.param locals_pool I32Array
+.param params_pool StrRefArray
+.param locals_pool StrRefArray
 .param fi i32
 .param nm_ss i32
 .param nm_sl i32
@@ -6485,18 +6444,20 @@ __L254:
   load np
   lt
   jump_ifnot __L255
-; if stab_eq(strtab,pl_name_ss(params_pool,pb+i),pl_name_sl(params_pool,pb+i),nm_ss,nm_sl) {
+; if stab_eq(strtab,ss(get(params_pool, pb+i)),sl(get(params_pool, pb+i)),nm_ss,nm_sl) {
   load strtab
   load params_pool
   load pb
   load i
   add
-  call pl_name_ss I32Array i32
+  call get StrRefArray i32
+  call ss StrRef
   load params_pool
   load pb
   load i
   add
-  call pl_name_sl I32Array i32
+  call get StrRefArray i32
+  call sl StrRef
   load nm_ss
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
@@ -6527,18 +6488,20 @@ __L257:
   load nl
   lt
   jump_ifnot __L258
-; if stab_eq(strtab,pl_name_ss(locals_pool,lb+i),pl_name_sl(locals_pool,lb+i),nm_ss,nm_sl) {
+; if stab_eq(strtab,ss(get(locals_pool, lb+i)),sl(get(locals_pool, lb+i)),nm_ss,nm_sl) {
   load strtab
   load locals_pool
   load lb
   load i
   add
-  call pl_name_ss I32Array i32
+  call get StrRefArray i32
+  call ss StrRef
   load locals_pool
   load lb
   load i
   add
-  call pl_name_sl I32Array i32
+  call get StrRefArray i32
+  call sl StrRef
   load nm_ss
   load nm_sl
   call stab_eq U8Array i32 i32 i32 i32
@@ -7175,11 +7138,11 @@ __L294:
   return_void
 .endfn
 
-.fn emit_fn U8Array BcFuncArray I32Array I32Array I32Array StrRefArray i32 StringBuffer void
+.fn emit_fn U8Array BcFuncArray StrRefArray StrRefArray I32Array StrRefArray i32 StringBuffer void
 .param strtab U8Array
 .param fns BcFuncArray
-.param params_pool I32Array
-.param locals_pool I32Array
+.param params_pool StrRefArray
+.param locals_pool StrRefArray
 .param instrs I32Array
 .param string_lits StrRefArray
 .param fi i32
@@ -7724,7 +7687,7 @@ __L335:
   load fi
   load sss
   load ssl
-  call is_local U8Array BcFuncArray I32Array I32Array i32 i32 i32
+  call is_local U8Array BcFuncArray StrRefArray StrRefArray i32 i32 i32
   push_int 1
   eq
   jump_ifnot __L337
@@ -7736,7 +7699,7 @@ __L335:
   load fi
   load sss
   load ssl
-  call var_offset U8Array BcFuncArray I32Array I32Array i32 i32 i32
+  call var_offset U8Array BcFuncArray StrRefArray StrRefArray i32 i32 i32
   store off
 ; e_lw(ob); eregt0(ob); eNs0nl(off,ob);
   load ob
@@ -7805,7 +7768,7 @@ __L336:
   load fi
   load sss
   load ssl
-  call is_local U8Array BcFuncArray I32Array I32Array i32 i32 i32
+  call is_local U8Array BcFuncArray StrRefArray StrRefArray i32 i32 i32
   push_int 1
   eq
   jump_ifnot __L340
@@ -7817,7 +7780,7 @@ __L336:
   load fi
   load sss
   load ssl
-  call var_offset U8Array BcFuncArray I32Array I32Array i32 i32 i32
+  call var_offset U8Array BcFuncArray StrRefArray StrRefArray i32 i32 i32
   store off
 ; e_sw(ob); eregt0(ob); eNs0nl(off,ob);
   load ob
@@ -9577,8 +9540,10 @@ __L412:
 .local string_lits StrRefArray
 .local globals GlobalVarArray
 .local fns BcFuncArray
-.local params_pool I32Array
-.local locals_pool I32Array
+.local params_pool StrRefArray
+.local locals_pool StrRefArray
+.local ppi i32
+.local lpi i32
 .local instrs I32Array
 .local label_pcs I32Array
 .local dbuf U8Array
@@ -9603,14 +9568,58 @@ __L412:
   push_int 1
   call BcFuncArray u32
   store fns
-; var params_pool:  I32Array = I32Array(128);
-  push_int 128
-  call I32Array u32
+; var params_pool:  StrRefArray = StrRefArray(32u32);
+  push_int 32
+  call StrRefArray u32
   store params_pool
-; var locals_pool:  I32Array = I32Array(512);
-  push_int 512
-  call I32Array u32
+; var locals_pool:  StrRefArray = StrRefArray(128u32);
+  push_int 128
+  call StrRefArray u32
   store locals_pool
+; var ppi: i32 = 0;
+  push_int 0
+  store ppi
+; while ppi < 32 { set(params_pool, ppi, StrRef(0, 0)); ppi = ppi + 1; }
+__L413:
+  load ppi
+  push_int 32
+  lt
+  jump_ifnot __L414
+  load params_pool
+  load ppi
+  push_int 0
+  push_int 0
+  call StrRef i32 i32
+  call set StrRefArray i32 StrRef
+  pop
+  load ppi
+  push_int 1
+  add
+  store ppi
+  jump __L413
+__L414:
+; var lpi: i32 = 0;
+  push_int 0
+  store lpi
+; while lpi < 128 { set(locals_pool, lpi, StrRef(0, 0)); lpi = lpi + 1; }
+__L415:
+  load lpi
+  push_int 128
+  lt
+  jump_ifnot __L416
+  load locals_pool
+  load lpi
+  push_int 0
+  push_int 0
+  call StrRef i32 i32
+  call set StrRefArray i32 StrRef
+  pop
+  load lpi
+  push_int 1
+  add
+  store lpi
+  jump __L415
+__L416:
 ; var instrs:       I32Array = I32Array(16384);
   push_int 16384
   call I32Array u32
@@ -9666,7 +9675,7 @@ __L412:
   load instrs
   load label_pcs
   load ob
-  call parse_bc U8Array StrRefArray GlobalVarArray BcFuncArray I32Array I32Array I32Array I32Array StringBuffer
+  call parse_bc U8Array StrRefArray GlobalVarArray BcFuncArray StrRefArray StrRefArray I32Array I32Array StringBuffer
   pop
 ; close(g_reader);
   load g_reader
