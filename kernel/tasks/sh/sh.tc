@@ -73,30 +73,30 @@ fn echo_bs() -> void {
 // holding the raw command bytes (NUL-terminated). hist_head points
 // one past the most recent entry; hist_count is clamped to HIST_MAX.
 
-var g_hist: I32Array = 0 as I32Array;
+var g_hist: StringArray = 0 as StringArray;
 var g_hist_head:  i32 = 0;
 var g_hist_count: i32 = 0;
 
 fn hist_init() -> void {
-    g_hist = I32Array(HIST_MAX as u32);
-    var i: i32 = 0;
-    while i < HIST_MAX {
-        set(g_hist, i, 0);
-        i = i + 1;
-    }
+    g_hist = StringArray(HIST_MAX as u32);
+    // Slots default to null String, which hist_recall / hist_push
+    // treat as "empty". No per-slot init needed.
     return;
 }
 
 fn hist_push(buf: U8Array, n: i32) -> void {
     if n == 0 { return; }
-    var entry: U8Array = U8Array((n + 1) as u32);
+    // Build a String for this command: U8Array(n+1), copy bytes, NUL,
+    // then patch the header count to n so len(s) is the string length.
+    var pbuf: U8Array = U8Array((n + 1) as u32);
     var i: i32 = 0;
-    while i < n { set(entry, i, get(buf, i)); i = i + 1; }
-    set(entry, n, 0u8);
+    while i < n { set(pbuf, i, get(buf, i)); i = i + 1; }
+    set(pbuf, n, 0u8);
+    poke32(pbuf as u32, n as u32);
     var slot: i32 = g_hist_head % HIST_MAX;
-    var old: i32 = get(g_hist, slot);
-    if old != 0 { delete(old as u32 as U8Array); }
-    set(g_hist, slot, entry as u32 as i32);
+    var old: String = get(g_hist, slot);
+    if old as u32 != 0u32 { delete(old as u32 as U8Array); }
+    set(g_hist, slot, pbuf as u32 as String);
     g_hist_head = g_hist_head + 1;
     if g_hist_count < HIST_MAX { g_hist_count = g_hist_count + 1; }
     return;
@@ -115,11 +115,9 @@ fn hist_recall(buf: U8Array, cur_pos: i32, idx: i32) -> i32 {
     erase_line(buf, cur_pos);
     if idx < 0 || idx >= g_hist_count { set(buf, 0, 0u8); return 0; }
     var slot: i32 = (g_hist_head - 1 - idx + HIST_MAX * 256) % HIST_MAX;
-    var eaddr: i32 = get(g_hist, slot);
-    if eaddr == 0 { set(buf, 0, 0u8); return 0; }
-    var entry: U8Array = eaddr as u32 as U8Array;
-    var elen: i32 = 0;
-    while get(entry, elen) != 0u8 { elen = elen + 1; }
+    var entry: String = get(g_hist, slot);
+    if entry as u32 == 0u32 { set(buf, 0, 0u8); return 0; }
+    var elen: i32 = len(entry);
     var i: i32 = 0;
     while i < elen && i < CMD_MAX - 1 {
         set(buf, i, get(entry, i));
