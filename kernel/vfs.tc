@@ -448,26 +448,23 @@ export fn vfs_close(fd: i32) -> i32 {
 var PIPE_MAX:      i32 = 4;
 var PIPE_BUF_SIZE: i32 = 4096;
 
-// Parallel arrays indexed by pipe slot (0..PIPE_MAX-1).
-var g_pipe_buf:       I32Array = 0 as I32Array;  // U8Array addr (0 = free)
-var g_pipe_cap:       I32Array = 0 as I32Array;
-var g_pipe_rpos:      I32Array = 0 as I32Array;
-var g_pipe_wpos:      I32Array = 0 as I32Array;
-var g_pipe_count:     I32Array = 0 as I32Array;
-var g_pipe_wrclosed:  I32Array = 0 as I32Array;
-var g_pipe_rdclosed:  I32Array = 0 as I32Array;
+struct Pipe {
+    buf:       u32,    // U8Array addr (0 = free slot)
+    cap:       i32,
+    rpos:      i32,
+    wpos:      i32,
+    count:     i32,
+    wrclosed:  i32,
+    rdclosed:  i32,
+}
+
+var g_pipes: PipeArray = 0 as PipeArray;
 
 fn pipe_init() -> void {
-    g_pipe_buf      = I32Array(PIPE_MAX as u32);
-    g_pipe_cap      = I32Array(PIPE_MAX as u32);
-    g_pipe_rpos     = I32Array(PIPE_MAX as u32);
-    g_pipe_wpos     = I32Array(PIPE_MAX as u32);
-    g_pipe_count    = I32Array(PIPE_MAX as u32);
-    g_pipe_wrclosed = I32Array(PIPE_MAX as u32);
-    g_pipe_rdclosed = I32Array(PIPE_MAX as u32);
+    g_pipes = PipeArray(PIPE_MAX as u32);
     var i: i32 = 0;
     while i < PIPE_MAX {
-        set(g_pipe_buf, i, 0);
+        set(g_pipes, i, Pipe(0u32, 0, 0, 0, 0, 0, 0));
         i = i + 1;
     }
     return;
@@ -475,62 +472,63 @@ fn pipe_init() -> void {
 
 fn pipe_read(inner_val: i32, buf_addr: u32, n: i32) -> i32 {
     var idx: i32 = inner_val / 2;
-    var cnt: i32 = get(g_pipe_count, idx);
-    if cnt == 0 {
-        if get(g_pipe_wrclosed, idx) != 0 { return 0; }
+    var p: Pipe = get(g_pipes, idx);
+    if count(p) == 0 {
+        if wrclosed(p) != 0 { return 0; }
         return -2;
     }
     var to_read: i32 = n;
-    if to_read > cnt { to_read = cnt; }
-    var pipe_buf: U8Array = get(g_pipe_buf, idx) as u32 as U8Array;
-    var cap: i32 = get(g_pipe_cap, idx);
-    var rp: i32 = get(g_pipe_rpos, idx);
+    if to_read > count(p) { to_read = count(p); }
+    var pipe_buf: U8Array = buf(p) as U8Array;
+    var cap_: i32 = cap(p);
+    var rp: i32 = rpos(p);
     var i: i32 = 0;
     while i < to_read {
         poke8(buf_addr + i as u32, get(pipe_buf, rp));
-        rp = (rp + 1) % cap;
+        rp = (rp + 1) % cap_;
         i = i + 1;
     }
-    set(g_pipe_rpos, idx, rp);
-    set(g_pipe_count, idx, cnt - to_read);
+    rpos(p, rp);
+    count(p, count(p) - to_read);
     return to_read;
 }
 
 fn pipe_write(inner_val: i32, buf_addr: u32, n: i32) -> i32 {
     var idx: i32 = inner_val / 2;
-    if get(g_pipe_rdclosed, idx) != 0 { return -1; }
-    var cnt: i32 = get(g_pipe_count, idx);
-    var cap: i32 = get(g_pipe_cap, idx);
-    var avail: i32 = cap - cnt;
+    var p: Pipe = get(g_pipes, idx);
+    if rdclosed(p) != 0 { return -1; }
+    var cap_: i32 = cap(p);
+    var avail: i32 = cap_ - count(p);
     if avail == 0 { return -2; }
     var to_write: i32 = n;
     if to_write > avail { to_write = avail; }
-    var pipe_buf: U8Array = get(g_pipe_buf, idx) as u32 as U8Array;
-    var wp: i32 = get(g_pipe_wpos, idx);
+    var pipe_buf: U8Array = buf(p) as U8Array;
+    var wp: i32 = wpos(p);
     var i: i32 = 0;
     while i < to_write {
         set(pipe_buf, wp, peek8(buf_addr + i as u32));
-        wp = (wp + 1) % cap;
+        wp = (wp + 1) % cap_;
         i = i + 1;
     }
-    set(g_pipe_wpos, idx, wp);
-    set(g_pipe_count, idx, cnt + to_write);
+    wpos(p, wp);
+    count(p, count(p) + to_write);
     return to_write;
 }
 
 fn pipe_close(inner_val: i32) -> void {
     var idx: i32 = inner_val / 2;
     var is_write: i32 = inner_val % 2;
+    var p: Pipe = get(g_pipes, idx);
     if is_write != 0 {
-        set(g_pipe_wrclosed, idx, 1);
+        wrclosed(p, 1);
     } else {
-        set(g_pipe_rdclosed, idx, 1);
+        rdclosed(p, 1);
     }
-    if get(g_pipe_wrclosed, idx) != 0 && get(g_pipe_rdclosed, idx) != 0 {
-        var ba: u32 = get(g_pipe_buf, idx) as u32;
+    if wrclosed(p) != 0 && rdclosed(p) != 0 {
+        var ba: u32 = buf(p);
         if ba != 0u32 {
             kfree(ba);
-            set(g_pipe_buf, idx, 0);
+            buf(p, 0u32);
         }
     }
     return;
@@ -540,7 +538,7 @@ export fn sys_pipe_handler(fds_addr: u32) -> i32 {
     var idx: i32 = -1;
     var i: i32 = 0;
     while i < PIPE_MAX {
-        if get(g_pipe_buf, i) == 0 {
+        if buf(get(g_pipes, i)) == 0u32 {
             idx = i;
             i = PIPE_MAX;
         }
@@ -548,22 +546,23 @@ export fn sys_pipe_handler(fds_addr: u32) -> i32 {
     }
     if idx < 0 { return -1; }
 
-    var buf: U8Array = U8Array(PIPE_BUF_SIZE as u32);
-    set(g_pipe_buf,      idx, buf as u32 as i32);
-    set(g_pipe_cap,      idx, PIPE_BUF_SIZE);
-    set(g_pipe_rpos,     idx, 0);
-    set(g_pipe_wpos,     idx, 0);
-    set(g_pipe_count,    idx, 0);
-    set(g_pipe_wrclosed, idx, 0);
-    set(g_pipe_rdclosed, idx, 0);
+    var pbuf: U8Array = U8Array(PIPE_BUF_SIZE as u32);
+    var p: Pipe = get(g_pipes, idx);
+    buf(p,       pbuf as u32);
+    cap(p,       PIPE_BUF_SIZE);
+    rpos(p,      0);
+    wpos(p,      0);
+    count(p,     0);
+    wrclosed(p,  0);
+    rdclosed(p,  0);
 
     var rfd: i32 = alloc_vfs_fd(FS_PIPE, idx * 2);
     var wfd: i32 = alloc_vfs_fd(FS_PIPE, idx * 2 + 1);
     if rfd < 0 || wfd < 0 {
         if rfd >= 0 { vfs_close(rfd); }
         if wfd >= 0 { vfs_close(wfd); }
-        kfree(buf as u32);
-        set(g_pipe_buf, idx, 0);
+        kfree(pbuf as u32);
+        buf(p, 0u32);
         return -1;
     }
 
