@@ -12,22 +12,13 @@ var O_WRONLY: i32 = 1;
 var O_CREAT:  i32 = 64;
 var O_TRUNC:  i32 = 512;
 
-fn str_to_nul(s: String) -> U8Array {
-    var sl: i32 = len(s);
-    var p: U8Array = U8Array((sl + 1) as u32);
-    var i: i32 = 0;
-    while i < sl { set(p, i, get(s, i)); i = i + 1; }
-    set(p, sl, 0u8);
-    return p;
-}
-
 fn main(argv: StringArray) -> i32 {
     if len(argv) < 3 {
         puts("cp: usage: cp <src> <dst>\n");
         return 1;
     }
-    var src_path: U8Array = str_to_nul(get(argv, 1));
-    var dst_path: U8Array = str_to_nul(get(argv, 2));
+    var src_path: U8Array = to_cstr(get(argv, 1));
+    var dst_path: U8Array = to_cstr(get(argv, 2));
     var src_fd: i32 = do_openat(0, src_path as u32 + 4u32, 0);
     if src_fd < 0 {
         puts("cp: src open failed\n");

@@ -451,15 +451,7 @@ fn read_line(buf: U8Array) -> i32 {
 
 // Compare a NUL-terminated byte sequence in buf against a string
 // literal. Returns true iff they match exactly.
-fn eq_lit(buf: U8Array, s: StringLiteral) -> bool {
-    var slen: i32 = len(s);
-    var i: i32 = 0;
-    while i < slen {
-        if get(buf, i) != get(s, i) { return false; }
-        i = i + 1;
-    }
-    return get(buf, slen) == 0u8;
-}
+// (eq moved to libtc/libtc.tc)
 
 // Count tokens in buf[0..n], treating runs of spaces as separators.
 fn count_tokens(buf: U8Array, n: i32) -> i32 {
@@ -698,7 +690,7 @@ fn main() -> i32 {
             // empty line, prompt again
         } else {
             hist_push(cmd, n);
-            if eq_lit(cmd, "quit") {
+            if eq(cmd, "quit") {
                 running = 0;
             } else {
                 var pipe_pos: I32Array = I32Array(4);

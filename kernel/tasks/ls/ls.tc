@@ -22,7 +22,7 @@ fn main(argv: StringArray) -> i32 {
         }
         set(path_buf, slen, 0u8);
     } else {
-        path_buf = str_nul("/");
+        path_buf = to_cstr("/");
     }
 
     var buf: U8Array = U8Array(4096);

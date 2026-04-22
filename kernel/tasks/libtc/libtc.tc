@@ -3,13 +3,6 @@
 // Guest tasks are raw binaries separate from the kernel ELF, so symbol
 // collisions with kernel_common (e.g. kputs) do not happen at link time.
 // We therefore keep the names short (no u_/lib_ prefix).
-//
-// Provides:
-//   puts(s)     — write a string literal to stdout (fd 1).
-//   str_nul(s)  — copy a string literal into a freshly-allocated
-//                 U8Array followed by a NUL byte. Caller must delete().
-//   strlen(buf) — return the length of a NUL-terminated byte sequence
-//                 inside a U8Array (scans up to the array length).
 
 export fn puts(s: StringLiteral) -> void {
     var slen: i32 = len(s);
@@ -24,7 +17,40 @@ export fn puts(s: StringLiteral) -> void {
     return;
 }
 
-export fn str_nul(s: StringLiteral) -> U8Array {
+// eputs — write a string literal to fd 2 (stderr). Pairs with puts for
+// the common "task failed with message" pattern without needing to
+// allocate / free / juggle fds at each call site.
+export fn eputs(s: StringLiteral) -> void {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array(slen as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    sys_write(2, buf, slen);
+    delete(buf);
+    return;
+}
+
+// putchar — write a single byte to stdout. Replaces the common
+// U8Array(1) + set + sys_write + delete pattern seen in several tasks.
+export fn putchar(c: u8) -> void {
+    var buf: U8Array = U8Array(1u32);
+    set(buf, 0, c);
+    sys_write(1, buf, 1);
+    delete(buf);
+    return;
+}
+
+// to_cstr — copy a string into a freshly-allocated U8Array followed by
+// a terminating NUL byte. Used for filenames and other values passed
+// to syscalls that read until NUL. Caller must delete() the result.
+//
+// Two overloads: StringLiteral for compile-time strings and String for
+// runtime strings (e.g. argv entries). Avoids ad-hoc str_to_nul /
+// string_to_nul helpers in individual tasks.
+export fn to_cstr(s: StringLiteral) -> U8Array {
     var slen: i32 = len(s);
     var buf: U8Array = U8Array((slen + 1) as u32);
     var i: i32 = 0;
@@ -36,6 +62,54 @@ export fn str_nul(s: StringLiteral) -> U8Array {
     return buf;
 }
 
+export fn to_cstr(s: String) -> U8Array {
+    var slen: i32 = len(s);
+    var buf: U8Array = U8Array((slen + 1) as u32);
+    var i: i32 = 0;
+    while i < slen {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, slen, 0u8);
+    return buf;
+}
+
+// print — emit a signed decimal integer to stdout. Replaces the
+// per-task print_u32 / print_int / emit_int helpers that all duplicated
+// the same digit-reversal loop.
+export fn print(v: i32) -> void {
+    var int32_min: i32 = (0 - 2147483647) - 1;
+    if v == int32_min {
+        puts("-2147483648");
+        return;
+    }
+    if v < 0 {
+        putchar('-' as u8);
+        v = 0 - v;
+    }
+    if v == 0 {
+        putchar('0' as u8);
+        return;
+    }
+    var tmp: U8Array = U8Array(12u32);
+    var dlen: i32 = 0;
+    while v > 0 {
+        set(tmp, dlen, ('0' as i32 + v % 10) as u8);
+        dlen = dlen + 1;
+        v = v / 10;
+    }
+    var buf: U8Array = U8Array(dlen as u32);
+    var k: i32 = 0;
+    while k < dlen {
+        set(buf, k, get(tmp, dlen - 1 - k));
+        k = k + 1;
+    }
+    sys_write(1, buf, dlen);
+    delete(buf);
+    delete(tmp);
+    return;
+}
+
 export fn strlen(buf: U8Array) -> i32 {
     var cap: i32 = len(buf);
     var i: i32 = 0;
@@ -44,4 +118,17 @@ export fn strlen(buf: U8Array) -> i32 {
         i = i + 1;
     }
     return cap;
+}
+
+// eq — compare a NUL-terminated U8Array against a StringLiteral.
+// Returns true iff the bytes match exactly and buf[len(s)] == 0. Used
+// by shells and argv-consuming tasks for "does this command equal X".
+export fn eq(buf: U8Array, s: StringLiteral) -> bool {
+    var slen: i32 = len(s);
+    var i: i32 = 0;
+    while i < slen {
+        if get(buf, i) != get(s, i) { return false; }
+        i = i + 1;
+    }
+    return get(buf, slen) == 0u8;
 }

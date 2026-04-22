@@ -101,11 +101,9 @@ fn main(argv: StringArray) -> i32 {
             set(path, sl, 0u8);
             var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
             if fd < 0 {
-                sys_write(2, str_nul("grep: "), 6);
+                eputs("grep: ");
                 sys_write(2, path, sl);
-                var msg: U8Array = str_nul(": open failed\n");
-                sys_write(2, msg, 14);
-                delete(msg);
+                eputs(": open failed\n");
                 error = 1;
             } else {
                 if grep_fd(fd, pat, pat_len) != 0 { found = 1; }

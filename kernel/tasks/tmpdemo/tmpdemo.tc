@@ -16,7 +16,7 @@ var O_CREAT:  i32 = 64;
 var O_TRUNC:  i32 = 512;
 
 fn main() -> i32 {
-    var path: U8Array = str_nul("/tmp/demo");
+    var path: U8Array = to_cstr("/tmp/demo");
 
     // --- Write ---
     var fd: i32 = do_openat(0, path as u32 + 4u32,
@@ -26,7 +26,7 @@ fn main() -> i32 {
         delete(path);
         return 1;
     }
-    var payload: U8Array = str_nul("hello tmpfs\n");
+    var payload: U8Array = to_cstr("hello tmpfs\n");
     // strlen: str_nul reserves +1 for NUL, len() reports bytes incl NUL.
     // Use len() - 1 to get the actual payload length.
     var plen: i32 = len(payload) - 1;
