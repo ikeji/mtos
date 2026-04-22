@@ -146,21 +146,6 @@ var VAR_TSL: i32 = 3;
 var VAR_SCO: i32 = 4;
 
 // ===== Output helpers =====
-fn ob_str_escaped(strtab: U8Array, start: i32, slen: i32, ob: StringBuffer) -> void {
-    var i: i32 = 0;
-    while i < slen {
-        var c: u8 = get(strtab, (start + i));
-        if c == '"'  { emit_string(ob, "\\\""); }
-        else { if c == '\\' { emit_string(ob, "\\\\"); }
-        else { if c == 10u8 { emit_string(ob, "\\n"); }
-        else { if c == 13u8 { emit_string(ob, "\\r"); }
-        else { if c == 9u8  { emit_string(ob, "\\t"); }
-        else { emit_char(ob, c); }}}}}
-        i = i + 1;
-    }
-    return;
-}
-
 // ===== Input reading (via SourceReader) =====
 fn peek_in() -> u8 {
     return peek(g_reader);
@@ -1487,11 +1472,11 @@ fn write_node(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i3
         }
     } else if k == NK_STR {
         emit_string(ob, " \"");
-        ob_str_escaped(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
+        emit_escaped(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
         emit_char(ob, '"');
     } else if k == NK_COMMENT {
         emit_string(ob, " \"");
-        ob_str_escaped(strtab, n_ss(nodes, n), n_sl(nodes, n), ob);
+        emit_escaped(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
         emit_char(ob, '"');
     } else if n_sl(nodes, n) > 0 {
         emit_char(ob, ' ');

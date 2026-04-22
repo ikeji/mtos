@@ -83,6 +83,12 @@ export fn emit_string(sb: StringBuffer, s: String) -> void {
 }
 
 // Emit the decimal representation of an integer.
+// Shared scratch buffer for emit_int's digit reversal. Lazily
+// allocated on first call; reused for the process lifetime to avoid
+// a kmalloc+kfree round trip on every integer emitted by the hot
+// bc2asm / asm path.
+var g_emit_int_tmp: U8Array = 0 as U8Array;
+
 export fn emit_int(sb: StringBuffer, val: i32) -> void {
     // Special-case INT32_MIN: `0 - val` would overflow and leave val
     // unchanged, so the digit loop below would produce no output.
@@ -104,7 +110,8 @@ export fn emit_int(sb: StringBuffer, val: i32) -> void {
         emit_char(sb, '0');
         return;
     }
-    var tmp: U8Array = U8Array(12);
+    if g_emit_int_tmp as u32 == 0u32 { g_emit_int_tmp = U8Array(12u32); }
+    var tmp: U8Array = g_emit_int_tmp;
     var dlen: i32 = 0;
     var v: i32 = val;
     while v > 0 {
@@ -117,7 +124,25 @@ export fn emit_int(sb: StringBuffer, val: i32) -> void {
         emit_char(sb, get(tmp, i));
         i = i - 1;
     }
-    delete(tmp);
+    return;
+}
+
+// Emit a slice of strtab with S-expression escape encoding (the inverse
+// of source_reader's read_string_char): " \ \n \r \t get backslashed,
+// other bytes pass through verbatim. Matches the format that parse.tc
+// emits and that tcheck.tc / codegen.tc consume.
+export fn emit_escaped(sb: StringBuffer, strtab: U8Array, start: i32, slen: i32) -> void {
+    var i: i32 = 0;
+    while i < slen {
+        var c: u8 = get(strtab, (start + i));
+        if c == '"'  { emit_string(sb, "\\\""); }
+        else { if c == '\\' { emit_string(sb, "\\\\"); }
+        else { if c == 10u8 { emit_string(sb, "\\n"); }
+        else { if c == 13u8 { emit_string(sb, "\\r"); }
+        else { if c == 9u8  { emit_string(sb, "\\t"); }
+        else { emit_char(sb, c); }}}}}
+        i = i + 1;
+    }
     return;
 }
 

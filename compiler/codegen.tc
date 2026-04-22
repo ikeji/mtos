@@ -48,22 +48,6 @@ var g_slc: i32 = 0;       // string literal count
 var g_locc: i32 = 0;      // locals count
 var g_loop_depth: i32 = 0; // nesting depth of while loops (for break/continue)
 
-// ===== Output helpers =====
-fn ob_st_escaped(strtab: U8Array, start: i32, slen: i32, ob: StringBuffer) -> void {
-    var i: i32 = 0;
-    while i < slen {
-        var c: u8 = get(strtab, (start + i));
-        if c == '"'  { emit_string(ob, "\\\""); }
-        else { if c == '\\' { emit_string(ob, "\\\\"); }
-        else { if c == 10u8 { emit_string(ob, "\\n"); }
-        else { if c == 13u8 { emit_string(ob, "\\r"); }
-        else { if c == 9u8  { emit_string(ob, "\\t"); }
-        else { emit_char(ob, c); }}}}}
-        i = i + 1;
-    }
-    return;
-}
-
 // ===== Input reading (via SourceReader) =====
 fn peek_in() -> u8 {
     return peek(g_reader);
@@ -861,7 +845,7 @@ fn emit_string_table(strtab: U8Array, slits: I32Array, ob: StringBuffer) -> void
             emit_string(ob, ".string ");
             emit_int(ob, i);
             emit_string(ob, " \"");
-            ob_st_escaped(strtab, ss, sl, ob);
+            emit_escaped(ob, strtab, ss, sl);
             emit_char(ob, '"');emit_nl(ob);
             i = i + 1;
         }

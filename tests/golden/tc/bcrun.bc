@@ -1,4 +1,7 @@
 .bc
+; globals
+.global g_emit_int_tmp U8Array 0
+
 .fn StringBuffer U8Array i32 i32 StringBuffer
 .param __a0 U8Array
 .param __a1 i32
@@ -505,9 +508,18 @@ __L10:
 ; return;
   return_void
 __L11:
-; var tmp: U8Array = U8Array(12);
+; if g_emit_int_tmp as u32 == 0u32 { g_emit_int_tmp = U8Array(12u32); }
+  load g_emit_int_tmp
+  cast u32
+  push_int 0
+  eq
+  jump_ifnot __L12
   push_int 12
   call U8Array u32
+  store g_emit_int_tmp
+__L12:
+; var tmp: U8Array = g_emit_int_tmp;
+  load g_emit_int_tmp
   store tmp
 ; var dlen: i32 = 0;
   push_int 0
@@ -516,11 +528,11 @@ __L11:
   load val
   store v
 ; while v > 0 {
-__L12:
+__L13:
   load v
   push_int 0
   gt
-  jump_ifnot __L13
+  jump_ifnot __L14
 ; set(tmp, dlen, (48 + v % 10) as u8);
   load tmp
   load dlen
@@ -542,19 +554,19 @@ __L12:
   push_int 10
   div
   store v
-  jump __L12
-__L13:
+  jump __L13
+__L14:
 ; var i: i32 = dlen - 1;
   load dlen
   push_int 1
   sub
   store i
 ; while i >= 0 {
-__L14:
+__L15:
   load i
   push_int 0
   ge
-  jump_ifnot __L15
+  jump_ifnot __L16
 ; emit_char(sb, get(tmp, i));
   load sb
   load tmp
@@ -567,12 +579,108 @@ __L14:
   push_int 1
   sub
   store i
-  jump __L14
-__L15:
-; delete(tmp);
-  load tmp
-  call delete U8Array
+  jump __L15
+__L16:
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn emit_escaped StringBuffer U8Array i32 i32 void
+.param sb StringBuffer
+.param strtab U8Array
+.param start i32
+.param slen i32
+.local i i32
+.local c u8
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < slen {
+__L17:
+  load i
+  load slen
+  lt
+  jump_ifnot __L18
+; var c: u8 = get(strtab, (start + i));
+  load strtab
+  load start
+  load i
+  add
+  call get U8Array i32
+  store c
+; if c == '"'  { emit_string(sb, "\\\""); }
+  load c
+  push_int 34
+  eq
+  jump_ifnot __L19
+  load sb
+  push_str 0
+  call emit_string StringBuffer StringLiteral
   pop
+  jump __L20
+__L19:
+; else { if c == '\\' { emit_string(sb, "\\\\"); }
+  load c
+  push_int 92
+  eq
+  jump_ifnot __L21
+  load sb
+  push_str 1
+  call emit_string StringBuffer StringLiteral
+  pop
+  jump __L22
+__L21:
+; else { if c == 10u8 { emit_string(sb, "\\n"); }
+  load c
+  push_int 10
+  eq
+  jump_ifnot __L23
+  load sb
+  push_str 2
+  call emit_string StringBuffer StringLiteral
+  pop
+  jump __L24
+__L23:
+; else { if c == 13u8 { emit_string(sb, "\\r"); }
+  load c
+  push_int 13
+  eq
+  jump_ifnot __L25
+  load sb
+  push_str 3
+  call emit_string StringBuffer StringLiteral
+  pop
+  jump __L26
+__L25:
+; else { if c == 9u8  { emit_string(sb, "\\t"); }
+  load c
+  push_int 9
+  eq
+  jump_ifnot __L27
+  load sb
+  push_str 4
+  call emit_string StringBuffer StringLiteral
+  pop
+  jump __L28
+__L27:
+; else { emit_char(sb, c); }}}}}
+  load sb
+  load c
+  call emit_char StringBuffer u8
+  pop
+__L28:
+__L26:
+__L24:
+__L22:
+__L20:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L17
+__L18:
 ; return;
   return_void
   return_void
@@ -588,11 +696,11 @@ __L15:
   push_int 0
   store i
 ; while i < n {
-__L16:
+__L29:
   load i
   load n
   lt
-  jump_ifnot __L17
+  jump_ifnot __L30
 ; emit_char(sb, get(src, (start + i)));
   load sb
   load src
@@ -607,8 +715,8 @@ __L16:
   push_int 1
   add
   store i
-  jump __L16
-__L17:
+  jump __L29
+__L30:
 ; return;
   return_void
   return_void
@@ -628,11 +736,11 @@ __L17:
   push_int 0
   store i
 ; while i < spaces {
-__L18:
+__L31:
   load i
   load spaces
   lt
-  jump_ifnot __L19
+  jump_ifnot __L32
 ; emit_char(sb, ' ');
   load sb
   push_int 32
@@ -643,8 +751,8 @@ __L18:
   push_int 1
   add
   store i
-  jump __L18
-__L19:
+  jump __L31
+__L32:
 ; return;
   return_void
   return_void
@@ -663,11 +771,11 @@ __L19:
   push_int 0
   store i
 ; while i < n {
-__L20:
+__L33:
   load i
   load n
   lt
-  jump_ifnot __L21
+  jump_ifnot __L34
 ; emit_char(dst, get(buf(src), i));
   load dst
   load src
@@ -681,8 +789,8 @@ __L20:
   push_int 1
   add
   store i
-  jump __L20
-__L21:
+  jump __L33
+__L34:
 ; return;
   return_void
   return_void
@@ -736,6 +844,13 @@ __L21:
   return_void
   return_void
 .endfn
+
+; string table
+.string 0 "\\\""
+.string 1 "\\\\"
+.string 2 "\\n"
+.string 3 "\\r"
+.string 4 "\\t"
 
 .fn is_digit u8 bool
 .param c u8

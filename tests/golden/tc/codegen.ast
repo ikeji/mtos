@@ -150,141 +150,6 @@
     (type i32)
     (int 0)
   )
-  (fn ob_st_escaped
-    (params
-      (param strtab
-        (type U8Array)
-      )
-      (param start
-        (type i32)
-      )
-      (param slen
-        (type i32)
-      )
-      (param ob
-        (type StringBuffer)
-      )
-    )
-    (ret
-      (type void)
-    )
-    (block
-      (comment "var i: i32 = 0;")
-      (var_decl i
-        (type i32)
-        (int 0)
-      )
-      (comment "while i < slen {")
-      (while
-        (binop <
-          (var i)
-          (var slen)
-        )
-        (block
-          (comment "var c: u8 = get(strtab, (start + i));")
-          (var_decl c
-            (type u8)
-            (call get
-              (var strtab)
-              (binop +
-                (var start)
-                (var i)
-              )
-            )
-          )
-          (comment "if c == '\"'  { emit_string(ob, \"\\\\\\\"\"); }")
-          (if
-            (binop ==
-              (var c)
-              (int:u8 34)
-            )
-            (block
-              (call_stmt emit_string
-                (var ob)
-                (str "\\\"")
-              )
-            )
-            (block
-              (comment "else { if c == '\\\\' { emit_string(ob, \"\\\\\\\\\"); }")
-              (if
-                (binop ==
-                  (var c)
-                  (int:u8 92)
-                )
-                (block
-                  (call_stmt emit_string
-                    (var ob)
-                    (str "\\\\")
-                  )
-                )
-                (block
-                  (comment "else { if c == 10u8 { emit_string(ob, \"\\\\n\"); }")
-                  (if
-                    (binop ==
-                      (var c)
-                      (int:u8 10)
-                    )
-                    (block
-                      (call_stmt emit_string
-                        (var ob)
-                        (str "\\n")
-                      )
-                    )
-                    (block
-                      (comment "else { if c == 13u8 { emit_string(ob, \"\\\\r\"); }")
-                      (if
-                        (binop ==
-                          (var c)
-                          (int:u8 13)
-                        )
-                        (block
-                          (call_stmt emit_string
-                            (var ob)
-                            (str "\\r")
-                          )
-                        )
-                        (block
-                          (comment "else { if c == 9u8  { emit_string(ob, \"\\\\t\"); }")
-                          (if
-                            (binop ==
-                              (var c)
-                              (int:u8 9)
-                            )
-                            (block
-                              (call_stmt emit_string
-                                (var ob)
-                                (str "\\t")
-                              )
-                            )
-                            (block
-                              (comment "else { emit_char(ob, c); }}}}}")
-                              (call_stmt emit_char
-                                (var ob)
-                                (var c)
-                              )
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-          (comment "i = i + 1;")
-          (assign i
-            (binop +
-              (var i)
-              (int 1)
-            )
-          )
-        )
-      )
-      (comment "return;")
-      (return)
-    )
-  )
   (fn peek_in
     (params)
     (ret
@@ -5678,12 +5543,12 @@
                 (var ob)
                 (str " \"")
               )
-              (comment "ob_st_escaped(strtab, ss, sl, ob);")
-              (call_stmt ob_st_escaped
+              (comment "emit_escaped(ob, strtab, ss, sl);")
+              (call_stmt emit_escaped
+                (var ob)
                 (var strtab)
                 (var ss)
                 (var sl)
-                (var ob)
               )
               (comment "emit_char(ob, '\"');emit_nl(ob);")
               (call_stmt emit_char

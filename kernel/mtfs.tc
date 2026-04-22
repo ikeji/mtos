@@ -119,14 +119,17 @@ export fn mtfs_mount() -> i32 {
         bi = bi + 1u32;
     }
 
-    // FD table: allocate structs once, mark all slots free
+    // FD table: construct all slots in a free state in one loop. The
+    // MtfsFD constructor writes ino=-1 and pos=0, so the explicit
+    // clear_fd_table() call that used to follow this loop was
+    // redundant. (Swapping the order to "allocate + clear" would deref
+    // null — struct arrays start out as null pointer slots.)
     g_mtfs_fds = MtfsFDArray(MTFS_MAX_FDS as u32);
     var k: i32 = 0;
     while k < MTFS_MAX_FDS {
         set(g_mtfs_fds, k, MtfsFD(-1, 0));
         k = k + 1;
     }
-    clear_fd_table();
 
     g_mtfs_mounted = 1;
     return 0;
