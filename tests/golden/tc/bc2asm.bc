@@ -4075,6 +4075,292 @@ __L115:
   return_void
 .endfn
 
+.fn StrRef i32 i32 StrRef
+.param __a0 i32
+.param __a1 i32
+.local __p U32Array
+  push_int 2
+  call U32Array u32
+  store __p
+  load __p
+  push_int 0
+  load __a0
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 1
+  load __a1
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  return
+  return_void
+.endfn
+
+.fn ss StrRef i32
+.param __p StrRef
+  load __p
+  push_int 0
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn sl StrRef i32
+.param __p StrRef
+  load __p
+  push_int 1
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn ss StrRef i32 void
+.param __p StrRef
+.param __v i32
+  load __p
+  push_int 0
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn sl StrRef i32 void
+.param __p StrRef
+.param __v i32
+  load __p
+  push_int 1
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete StrRef void
+.param __p StrRef
+  load __p
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn StrRefArray u32 StrRefArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len StrRefArray i32
+.param __a StrRefArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get StrRefArray i32 StrRef
+.param __a StrRefArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set StrRefArray i32 StrRef void
+.param __a StrRefArray
+.param __i i32
+.param __v StrRef
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete StrRefArray void
+.param __a StrRefArray
+  load __a
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn GlobalVar i32 i32 i32 GlobalVar
+.param __a0 i32
+.param __a1 i32
+.param __a2 i32
+.local __p U32Array
+  push_int 3
+  call U32Array u32
+  store __p
+  load __p
+  push_int 0
+  load __a0
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 1
+  load __a1
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  push_int 2
+  load __a2
+  cast u32
+  call set U32Array i32 u32
+  pop
+  load __p
+  return
+  return_void
+.endfn
+
+.fn name_ss GlobalVar i32
+.param __p GlobalVar
+  load __p
+  push_int 0
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn name_sl GlobalVar i32
+.param __p GlobalVar
+  load __p
+  push_int 1
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn init GlobalVar i32
+.param __p GlobalVar
+  load __p
+  push_int 2
+  call get U32Array i32
+  cast i32
+  return
+  return_void
+.endfn
+
+.fn name_ss GlobalVar i32 void
+.param __p GlobalVar
+.param __v i32
+  load __p
+  push_int 0
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn name_sl GlobalVar i32 void
+.param __p GlobalVar
+.param __v i32
+  load __p
+  push_int 1
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn init GlobalVar i32 void
+.param __p GlobalVar
+.param __v i32
+  load __p
+  push_int 2
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete GlobalVar void
+.param __p GlobalVar
+  load __p
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn GlobalVarArray u32 GlobalVarArray
+.param __n u32
+  load __n
+  call U32Array u32
+  return
+  return_void
+.endfn
+
+.fn len GlobalVarArray i32
+.param __a GlobalVarArray
+  load __a
+  call len U32Array
+  return
+  return_void
+.endfn
+
+.fn get GlobalVarArray i32 GlobalVar
+.param __a GlobalVarArray
+.param __i i32
+  load __a
+  load __i
+  call get U32Array i32
+  return
+  return_void
+.endfn
+
+.fn set GlobalVarArray i32 GlobalVar void
+.param __a GlobalVarArray
+.param __i i32
+.param __v GlobalVar
+  load __a
+  load __i
+  load __v
+  cast u32
+  call set U32Array i32 u32
+  pop
+  return_void
+  return_void
+.endfn
+
+.fn delete GlobalVarArray void
+.param __a GlobalVarArray
+  load __a
+  call delete U32Array
+  pop
+  return_void
+  return_void
+.endfn
+
 .fn BcFunc i32 i32 i32 i32 i32 i32 i32 i32 BcFunc
 .param __a0 i32
 .param __a1 i32
@@ -4598,11 +4884,10 @@ __L117:
   return_void
 .endfn
 
-.fn parse_bc U8Array I32Array I32Array I32Array BcFuncArray I32Array I32Array I32Array I32Array StringBuffer void
+.fn parse_bc U8Array StrRefArray GlobalVarArray BcFuncArray I32Array I32Array I32Array I32Array StringBuffer void
 .param strtab U8Array
-.param string_lits I32Array
-.param global_vars I32Array
-.param global_inits I32Array
+.param string_lits StrRefArray
+.param globals GlobalVarArray
 .param fns BcFuncArray
 .param params_pool I32Array
 .param locals_pool I32Array
@@ -4860,25 +5145,13 @@ __L149:
   load slit_ss
   sub
   store slit_sl
-; set(string_lits,(idx*2+0),slit_ss);
+; set(string_lits, idx, StrRef(slit_ss, slit_sl));
   load string_lits
   load idx
-  push_int 2
-  mul
-  push_int 0
-  add
   load slit_ss
-  call set I32Array i32 i32
-  pop
-; set(string_lits,(idx*2+1),slit_sl);
-  load string_lits
-  load idx
-  push_int 2
-  mul
-  push_int 1
-  add
   load slit_sl
-  call set I32Array i32 i32
+  call StrRef i32 i32
+  call set StrRefArray i32 StrRef
   pop
 ; if idx+1>g_nstrings { g_nstrings=idx+1; }
   load idx
@@ -4956,31 +5229,14 @@ __L154:
 ; var gi: i32=g_nglobals;
   load g_nglobals
   store gi
-; set(global_vars,(gi*4+0),nm_ss);
-  load global_vars
+; set(globals, gi, GlobalVar(nm_ss, nm_sl, iv));
+  load globals
   load gi
-  push_int 4
-  mul
-  push_int 0
-  add
   load nm_ss
-  call set I32Array i32 i32
-  pop
-; set(global_vars,(gi*4+1),nm_sl);
-  load global_vars
-  load gi
-  push_int 4
-  mul
-  push_int 1
-  add
   load nm_sl
-  call set I32Array i32 i32
-  pop
-; set(global_inits,gi,iv);
-  load global_inits
-  load gi
   load iv
-  call set I32Array i32 i32
+  call GlobalVar i32 i32 i32
+  call set GlobalVarArray i32 GlobalVar
   pop
 ; g_nglobals=g_nglobals+1; skip_line();
   load g_nglobals
@@ -5457,7 +5713,7 @@ __L186:
   load string_lits
   load cur_fn
   load ob
-  call emit_fn U8Array BcFuncArray I32Array I32Array I32Array I32Array i32 StringBuffer
+  call emit_fn U8Array BcFuncArray I32Array I32Array I32Array StrRefArray i32 StringBuffer
   pop
 ; if g_stab_pos > g_max_stab { g_max_stab = g_stab_pos; }
   load g_stab_pos
@@ -6919,13 +7175,13 @@ __L294:
   return_void
 .endfn
 
-.fn emit_fn U8Array BcFuncArray I32Array I32Array I32Array I32Array i32 StringBuffer void
+.fn emit_fn U8Array BcFuncArray I32Array I32Array I32Array StrRefArray i32 StringBuffer void
 .param strtab U8Array
 .param fns BcFuncArray
 .param params_pool I32Array
 .param locals_pool I32Array
 .param instrs I32Array
-.param string_lits I32Array
+.param string_lits StrRefArray
 .param fi i32
 .param ob StringBuffer
 .local nm_ss i32
@@ -8954,19 +9210,20 @@ __L332:
   return_void
 .endfn
 
-.fn emit_data_and_rodata U8Array I32Array I32Array I32Array StringBuffer void
+.fn emit_data_and_rodata U8Array StrRefArray GlobalVarArray StringBuffer void
 .param strtab U8Array
-.param string_lits I32Array
-.param global_vars I32Array
-.param global_inits I32Array
+.param string_lits StrRefArray
+.param globals GlobalVarArray
 .param ob StringBuffer
 .local gi i32
+.local g GlobalVar
 .local nm_ss i32
 .local nm_sl i32
 .local initval i32
 .local si i32
-.local ss i32
-.local sl i32
+.local r StrRef
+.local rs i32
+.local rl i32
 ; if g_nglobals > 0 {
   load g_nglobals
   push_int 0
@@ -8993,28 +9250,22 @@ __L400:
   load g_nglobals
   lt
   jump_ifnot __L401
-; var nm_ss: i32=get(global_vars,(gi*4+0));
-  load global_vars
+; var g: GlobalVar = get(globals, gi);
+  load globals
   load gi
-  push_int 4
-  mul
-  push_int 0
-  add
-  call get I32Array i32
+  call get GlobalVarArray i32
+  store g
+; var nm_ss: i32 = name_ss(g);
+  load g
+  call name_ss GlobalVar
   store nm_ss
-; var nm_sl: i32=get(global_vars,(gi*4+1));
-  load global_vars
-  load gi
-  push_int 4
-  mul
-  push_int 1
-  add
-  call get I32Array i32
+; var nm_sl: i32 = name_sl(g);
+  load g
+  call name_sl GlobalVar
   store nm_sl
-; var initval: i32=get(global_inits,gi);
-  load global_inits
-  load gi
-  call get I32Array i32
+; var initval: i32 = init(g);
+  load g
+  call init GlobalVar
   store initval
 ; e4(ob);
   load ob
@@ -9102,24 +9353,19 @@ __L403:
   load g_nstrings
   lt
   jump_ifnot __L404
-; var ss: i32=get(string_lits,(si*2+0));
+; var r: StrRef = get(string_lits, si);
   load string_lits
   load si
-  push_int 2
-  mul
-  push_int 0
-  add
-  call get I32Array i32
-  store ss
-; var sl: i32=get(string_lits,(si*2+1));
-  load string_lits
-  load si
-  push_int 2
-  mul
-  push_int 1
-  add
-  call get I32Array i32
-  store sl
+  call get StrRefArray i32
+  store r
+; var rs: i32 = ss(r);
+  load r
+  call ss StrRef
+  store rs
+; var rl: i32 = sl(r);
+  load r
+  call sl StrRef
+  store rl
 ; e4(ob);emit_string(ob, ".align 4");emit_nl(ob);
   load ob
   call e4 StringBuffer
@@ -9143,7 +9389,7 @@ __L403:
   load ob
   call emit_nl StringBuffer
   pop
-; e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_nl(ob);
+; e4(ob);emit_string(ob, ".word ");emit_int(ob, rl);emit_nl(ob);
   load ob
   call e4 StringBuffer
   pop
@@ -9152,7 +9398,7 @@ __L403:
   call emit_string StringBuffer StringLiteral
   pop
   load ob
-  load sl
+  load rl
   call emit_int StringBuffer i32
   pop
   load ob
@@ -9166,10 +9412,10 @@ __L403:
   push_str 117
   call emit_string StringBuffer StringLiteral
   pop
-; emit_strdata(strtab,ss,sl,ob); emit_nl(ob);
+; emit_strdata(strtab,rs,rl,ob); emit_nl(ob);
   load strtab
-  load ss
-  load sl
+  load rs
+  load rl
   load ob
   call emit_strdata U8Array i32 i32 StringBuffer
   pop
@@ -9328,9 +9574,8 @@ __L412:
 .fn main i32
 .local strtab U8Array
 .local ob StringBuffer
-.local string_lits I32Array
-.local global_vars I32Array
-.local global_inits I32Array
+.local string_lits StrRefArray
+.local globals GlobalVarArray
 .local fns BcFuncArray
 .local params_pool I32Array
 .local locals_pool I32Array
@@ -9346,18 +9591,14 @@ __L412:
   push_int 1
   call StringBuffer_new i32
   store ob
-; var string_lits:  I32Array = I32Array(512);
-  push_int 512
-  call I32Array u32
-  store string_lits
-; var global_vars:  I32Array = I32Array(1024);
-  push_int 1024
-  call I32Array u32
-  store global_vars
-; var global_inits: I32Array = I32Array(256);
+; var string_lits:  StrRefArray    = StrRefArray(256u32);
   push_int 256
-  call I32Array u32
-  store global_inits
+  call StrRefArray u32
+  store string_lits
+; var globals:      GlobalVarArray = GlobalVarArray(256u32);
+  push_int 256
+  call GlobalVarArray u32
+  store globals
 ; var fns:          BcFuncArray = BcFuncArray(1);
   push_int 1
   call BcFuncArray u32
@@ -9415,30 +9656,28 @@ __L412:
   load ob
   call emit_nl StringBuffer
   pop
-; parse_bc(strtab,string_lits,global_vars,global_inits,
+; parse_bc(strtab, string_lits, globals,
   load strtab
   load string_lits
-  load global_vars
-  load global_inits
+  load globals
   load fns
   load params_pool
   load locals_pool
   load instrs
   load label_pcs
   load ob
-  call parse_bc U8Array I32Array I32Array I32Array BcFuncArray I32Array I32Array I32Array I32Array StringBuffer
+  call parse_bc U8Array StrRefArray GlobalVarArray BcFuncArray I32Array I32Array I32Array I32Array StringBuffer
   pop
 ; close(g_reader);
   load g_reader
   call close SourceReader
   pop
-; emit_data_and_rodata(strtab, string_lits, global_vars, global_inits, ob);
+; emit_data_and_rodata(strtab, string_lits, globals, ob);
   load strtab
   load string_lits
-  load global_vars
-  load global_inits
+  load globals
   load ob
-  call emit_data_and_rodata U8Array I32Array I32Array I32Array StringBuffer
+  call emit_data_and_rodata U8Array StrRefArray GlobalVarArray StringBuffer
   pop
 ; write(ob, 1);
   load ob

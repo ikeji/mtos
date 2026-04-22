@@ -389,6 +389,25 @@ fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     return -1;
 }
 
+// ===== String reference =====
+// Slice into the per-function strtab used for .string literals (and,
+// reused by B3, for function param / local names).
+struct StrRef {
+    ss: i32,
+    sl: i32,
+}
+
+// ===== Global variable =====
+// One entry per `.global` directive. Only the name tokens and the
+// initial value are consulted by emit_data_and_rodata; the .global
+// type token is read-and-discarded during parsing, so we don't carry
+// it through.
+struct GlobalVar {
+    name_ss: i32,
+    name_sl: i32,
+    init:    i32,
+}
+
 // ===== Function table =====
 // One BcFunc per `.fn` directive in the input bytecode. Previously a
 // flat I32Array(10 * N) with hand-indexed accessors and two wasted
@@ -450,7 +469,7 @@ fn parse_lnum_stream(stop: u8) -> i32 {
 // `__<unit>_strobj<N>` label prefix used by e_strobj survives the
 // rollback.
 fn parse_bc(strtab: U8Array,
-            string_lits: I32Array, global_vars: I32Array, global_inits: I32Array,
+            string_lits: StrRefArray, globals: GlobalVarArray,
             fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
             instrs: I32Array, label_pcs: I32Array, ob: StringBuffer) -> void {
     // strtab_save is set on the FIRST .fn directive — everything
@@ -479,8 +498,7 @@ fn parse_bc(strtab: U8Array,
                     discard_tok(idx_ss); skip_spaces();
                     var slit_ss: i32=read_strlit(strtab);
                     var slit_sl: i32=g_stab_pos-slit_ss;
-                    set(string_lits,(idx*2+0),slit_ss);
-                    set(string_lits,(idx*2+1),slit_sl);
+                    set(string_lits, idx, StrRef(slit_ss, slit_sl));
                     if idx+1>g_nstrings { g_nstrings=idx+1; }
                     skip_line();
                     // If we've already started fn-streaming, advance
@@ -496,9 +514,7 @@ fn parse_bc(strtab: U8Array,
                     var iv_ss: i32=next_tok(strtab); var iv_sl: i32=tok_len(iv_ss);
                     var iv: i32=int_from_stab(strtab,iv_ss,iv_sl); discard_tok(iv_ss);
                     var gi: i32=g_nglobals;
-                    set(global_vars,(gi*4+0),nm_ss);
-                    set(global_vars,(gi*4+1),nm_sl);
-                    set(global_inits,gi,iv);
+                    set(globals, gi, GlobalVar(nm_ss, nm_sl, iv));
                     g_nglobals=g_nglobals+1; skip_line();
                     // Same protection as .string above: globals can be
                     // interleaved with fns (real example:
@@ -813,7 +829,7 @@ fn max_eval_depth(fns: BcFuncArray, instrs: I32Array, fi: i32) -> i32 {
 
 // ===== Emit one function =====
 fn emit_fn(strtab: U8Array, fns: BcFuncArray, params_pool: I32Array, locals_pool: I32Array,
-           instrs: I32Array, string_lits: I32Array, fi: i32, ob: StringBuffer) -> void {
+           instrs: I32Array, string_lits: StrRefArray, fi: i32, ob: StringBuffer) -> void {
     var nm_ss: i32=name_ss(get(fns, fi));
     var nm_sl: i32=name_sl(get(fns, fi));
     var np: i32=nparam(get(fns, fi));
@@ -1106,8 +1122,8 @@ fn emit_fn(strtab: U8Array, fns: BcFuncArray, params_pool: I32Array, locals_pool
 // literals). The .text section is emitted **during** parse_bc as each
 // .fn / .endfn pair is parsed, so this function only handles what's
 // left after the per-function streaming loop finishes.
-fn emit_data_and_rodata(strtab: U8Array, string_lits: I32Array,
-                        global_vars: I32Array, global_inits: I32Array,
+fn emit_data_and_rodata(strtab: U8Array, string_lits: StrRefArray,
+                        globals: GlobalVarArray,
                         ob: StringBuffer) -> void {
     // .data: globals (after .text for asm.tc compatibility)
     if g_nglobals > 0 {
@@ -1115,9 +1131,10 @@ fn emit_data_and_rodata(strtab: U8Array, string_lits: I32Array,
         emit_string(ob, ".data");emit_nl(ob);
         var gi: i32=0;
         while gi<g_nglobals {
-            var nm_ss: i32=get(global_vars,(gi*4+0));
-            var nm_sl: i32=get(global_vars,(gi*4+1));
-            var initval: i32=get(global_inits,gi);
+            var g: GlobalVar = get(globals, gi);
+            var nm_ss: i32 = name_ss(g);
+            var nm_sl: i32 = name_sl(g);
+            var initval: i32 = init(g);
             // "    .globl NAME\n"
             e4(ob);
             emit_string(ob, ".globl "); emit_n(ob, strtab,nm_ss,nm_sl); emit_nl(ob);
@@ -1135,13 +1152,14 @@ fn emit_data_and_rodata(strtab: U8Array, string_lits: I32Array,
         emit_string(ob, ".section .rodata");emit_nl(ob);
         var si: i32=0;
         while si<g_nstrings {
-            var ss: i32=get(string_lits,(si*2+0));
-            var sl: i32=get(string_lits,(si*2+1));
+            var r: StrRef = get(string_lits, si);
+            var rs: i32 = ss(r);
+            var rl: i32 = sl(r);
             e4(ob);emit_string(ob, ".align 4");emit_nl(ob);
             e_strobj(si, ob); emit_char(ob, ':');emit_nl(ob);
-            e4(ob);emit_string(ob, ".word ");emit_int(ob, sl);emit_nl(ob);
+            e4(ob);emit_string(ob, ".word ");emit_int(ob, rl);emit_nl(ob);
             e4(ob);emit_string(ob, ".string ");
-            emit_strdata(strtab,ss,sl,ob); emit_nl(ob);
+            emit_strdata(strtab,rs,rl,ob); emit_nl(ob);
             si=si+1;
         }
         emit_nl(ob);
@@ -1196,9 +1214,8 @@ fn main() -> i32 {
     // function at a time.
     var strtab:       U8Array  = U8Array(16384);
     var ob:           StringBuffer = StringBuffer_new(1);
-    var string_lits:  I32Array = I32Array(512);
-    var global_vars:  I32Array = I32Array(1024);
-    var global_inits: I32Array = I32Array(256);
+    var string_lits:  StrRefArray    = StrRefArray(256u32);
+    var globals:      GlobalVarArray = GlobalVarArray(256u32);
     var fns:          BcFuncArray = BcFuncArray(1);
     var params_pool:  I32Array = I32Array(128);
     var locals_pool:  I32Array = I32Array(512);
@@ -1218,15 +1235,15 @@ fn main() -> i32 {
     e4(ob); emit_string(ob, ".align 2"); emit_nl(ob);
     emit_nl(ob);
 
-    parse_bc(strtab,string_lits,global_vars,global_inits,
-             fns,params_pool,locals_pool,instrs,label_pcs,ob);
+    parse_bc(strtab, string_lits, globals,
+             fns, params_pool, locals_pool, instrs, label_pcs, ob);
 
     close(g_reader);
 
     // .data + .rodata at the end (asm.tc reorders so position is
     // semantically irrelevant, but matching the legacy order keeps
     // diffs clean for the test_split.sh harness).
-    emit_data_and_rodata(strtab, string_lits, global_vars, global_inits, ob);
+    emit_data_and_rodata(strtab, string_lits, globals, ob);
     write(ob, 1);
 
     // Per-fn peaks for diagnostics, written byte-at-a-time to stderr.

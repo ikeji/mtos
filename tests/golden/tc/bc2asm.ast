@@ -2764,6 +2764,647 @@
       )
     )
   )
+  (struct StrRef
+    (field ss
+      (type i32)
+    )
+    (field sl
+      (type i32)
+    )
+  )
+  (fn StrRef
+    (params
+      (param __a0
+        (type i32)
+      )
+      (param __a1
+        (type i32)
+      )
+    )
+    (ret
+      (type StrRef)
+    )
+    (block
+      (var_decl __p
+        (type U32Array)
+        (call U32Array
+          (int:u32 2)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 0)
+        (cast
+          (var __a0)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 1)
+        (cast
+          (var __a1)
+          (type u32)
+        )
+      )
+      (return
+        (cast
+          (var __p)
+          (type StrRef)
+        )
+      )
+    )
+  )
+  (fn ss
+    (params
+      (param __p
+        (type StrRef)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 0)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn sl
+    (params
+      (param __p
+        (type StrRef)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 1)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn ss
+    (params
+      (param __p
+        (type StrRef)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 0)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn sl
+    (params
+      (param __p
+        (type StrRef)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 1)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __p
+        (type StrRef)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+      )
+      (return)
+    )
+  )
+  (fn StrRefArray
+    (params
+      (param __n
+        (type u32)
+      )
+    )
+    (ret
+      (type StrRefArray)
+    )
+    (block
+      (return
+        (cast
+          (call U32Array
+            (var __n)
+          )
+          (type StrRefArray)
+        )
+      )
+    )
+  )
+  (fn len
+    (params
+      (param __a
+        (type StrRefArray)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call len
+          (cast
+            (var __a)
+            (type U32Array)
+          )
+        )
+      )
+    )
+  )
+  (fn get
+    (params
+      (param __a
+        (type StrRefArray)
+      )
+      (param __i
+        (type i32)
+      )
+    )
+    (ret
+      (type StrRef)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __a)
+              (type U32Array)
+            )
+            (var __i)
+          )
+          (type StrRef)
+        )
+      )
+    )
+  )
+  (fn set
+    (params
+      (param __a
+        (type StrRefArray)
+      )
+      (param __i
+        (type i32)
+      )
+      (param __v
+        (type StrRef)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+        (var __i)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __a
+        (type StrRefArray)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+      )
+      (return)
+    )
+  )
+  (struct GlobalVar
+    (field name_ss
+      (type i32)
+    )
+    (field name_sl
+      (type i32)
+    )
+    (field init
+      (type i32)
+    )
+  )
+  (fn GlobalVar
+    (params
+      (param __a0
+        (type i32)
+      )
+      (param __a1
+        (type i32)
+      )
+      (param __a2
+        (type i32)
+      )
+    )
+    (ret
+      (type GlobalVar)
+    )
+    (block
+      (var_decl __p
+        (type U32Array)
+        (call U32Array
+          (int:u32 3)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 0)
+        (cast
+          (var __a0)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 1)
+        (cast
+          (var __a1)
+          (type u32)
+        )
+      )
+      (call_stmt set
+        (var __p)
+        (int 2)
+        (cast
+          (var __a2)
+          (type u32)
+        )
+      )
+      (return
+        (cast
+          (var __p)
+          (type GlobalVar)
+        )
+      )
+    )
+  )
+  (fn name_ss
+    (params
+      (param __p
+        (type GlobalVar)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 0)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn name_sl
+    (params
+      (param __p
+        (type GlobalVar)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 1)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn init
+    (params
+      (param __p
+        (type GlobalVar)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __p)
+              (type U32Array)
+            )
+            (int 2)
+          )
+          (type i32)
+        )
+      )
+    )
+  )
+  (fn name_ss
+    (params
+      (param __p
+        (type GlobalVar)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 0)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn name_sl
+    (params
+      (param __p
+        (type GlobalVar)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 1)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn init
+    (params
+      (param __p
+        (type GlobalVar)
+      )
+      (param __v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+        (int 2)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __p
+        (type GlobalVar)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __p)
+          (type U32Array)
+        )
+      )
+      (return)
+    )
+  )
+  (fn GlobalVarArray
+    (params
+      (param __n
+        (type u32)
+      )
+    )
+    (ret
+      (type GlobalVarArray)
+    )
+    (block
+      (return
+        (cast
+          (call U32Array
+            (var __n)
+          )
+          (type GlobalVarArray)
+        )
+      )
+    )
+  )
+  (fn len
+    (params
+      (param __a
+        (type GlobalVarArray)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (return
+        (call len
+          (cast
+            (var __a)
+            (type U32Array)
+          )
+        )
+      )
+    )
+  )
+  (fn get
+    (params
+      (param __a
+        (type GlobalVarArray)
+      )
+      (param __i
+        (type i32)
+      )
+    )
+    (ret
+      (type GlobalVar)
+    )
+    (block
+      (return
+        (cast
+          (call get
+            (cast
+              (var __a)
+              (type U32Array)
+            )
+            (var __i)
+          )
+          (type GlobalVar)
+        )
+      )
+    )
+  )
+  (fn set
+    (params
+      (param __a
+        (type GlobalVarArray)
+      )
+      (param __i
+        (type i32)
+      )
+      (param __v
+        (type GlobalVar)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt set
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+        (var __i)
+        (cast
+          (var __v)
+          (type u32)
+        )
+      )
+      (return)
+    )
+  )
+  (fn delete
+    (params
+      (param __a
+        (type GlobalVarArray)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (call_stmt delete
+        (cast
+          (var __a)
+          (type U32Array)
+        )
+      )
+      (return)
+    )
+  )
   (struct BcFunc
     (field name_ss
       (type i32)
@@ -3804,13 +4445,10 @@
         (type U8Array)
       )
       (param string_lits
-        (type I32Array)
+        (type StrRefArray)
       )
-      (param global_vars
-        (type I32Array)
-      )
-      (param global_inits
-        (type I32Array)
+      (param globals
+        (type GlobalVarArray)
       )
       (param fns
         (type BcFuncArray)
@@ -4076,29 +4714,14 @@
                           (var slit_ss)
                         )
                       )
-                      (comment "set(string_lits,(idx*2+0),slit_ss);")
+                      (comment "set(string_lits, idx, StrRef(slit_ss, slit_sl));")
                       (call_stmt set
                         (var string_lits)
-                        (binop +
-                          (binop *
-                            (var idx)
-                            (int 2)
-                          )
-                          (int 0)
+                        (var idx)
+                        (call StrRef
+                          (var slit_ss)
+                          (var slit_sl)
                         )
-                        (var slit_ss)
-                      )
-                      (comment "set(string_lits,(idx*2+1),slit_sl);")
-                      (call_stmt set
-                        (var string_lits)
-                        (binop +
-                          (binop *
-                            (var idx)
-                            (int 2)
-                          )
-                          (int 1)
-                        )
-                        (var slit_sl)
                       )
                       (comment "if idx+1>g_nstrings { g_nstrings=idx+1; }")
                       (if
@@ -4204,35 +4827,15 @@
                         (type i32)
                         (var g_nglobals)
                       )
-                      (comment "set(global_vars,(gi*4+0),nm_ss);")
+                      (comment "set(globals, gi, GlobalVar(nm_ss, nm_sl, iv));")
                       (call_stmt set
-                        (var global_vars)
-                        (binop +
-                          (binop *
-                            (var gi)
-                            (int 4)
-                          )
-                          (int 0)
-                        )
-                        (var nm_ss)
-                      )
-                      (comment "set(global_vars,(gi*4+1),nm_sl);")
-                      (call_stmt set
-                        (var global_vars)
-                        (binop +
-                          (binop *
-                            (var gi)
-                            (int 4)
-                          )
-                          (int 1)
-                        )
-                        (var nm_sl)
-                      )
-                      (comment "set(global_inits,gi,iv);")
-                      (call_stmt set
-                        (var global_inits)
+                        (var globals)
                         (var gi)
-                        (var iv)
+                        (call GlobalVar
+                          (var nm_ss)
+                          (var nm_sl)
+                          (var iv)
+                        )
                       )
                       (comment "g_nglobals=g_nglobals+1; skip_line();")
                       (assign g_nglobals
@@ -6585,7 +7188,7 @@
         (type I32Array)
       )
       (param string_lits
-        (type I32Array)
+        (type StrRefArray)
       )
       (param fi
         (type i32)
@@ -8888,13 +9491,10 @@
         (type U8Array)
       )
       (param string_lits
-        (type I32Array)
+        (type StrRefArray)
       )
-      (param global_vars
-        (type I32Array)
-      )
-      (param global_inits
-        (type I32Array)
+      (param globals
+        (type GlobalVarArray)
       )
       (param ob
         (type StringBuffer)
@@ -8935,40 +9535,33 @@
               (var g_nglobals)
             )
             (block
-              (comment "var nm_ss: i32=get(global_vars,(gi*4+0));")
+              (comment "var g: GlobalVar = get(globals, gi);")
+              (var_decl g
+                (type GlobalVar)
+                (call get
+                  (var globals)
+                  (var gi)
+                )
+              )
+              (comment "var nm_ss: i32 = name_ss(g);")
               (var_decl nm_ss
                 (type i32)
-                (call get
-                  (var global_vars)
-                  (binop +
-                    (binop *
-                      (var gi)
-                      (int 4)
-                    )
-                    (int 0)
-                  )
+                (call name_ss
+                  (var g)
                 )
               )
-              (comment "var nm_sl: i32=get(global_vars,(gi*4+1));")
+              (comment "var nm_sl: i32 = name_sl(g);")
               (var_decl nm_sl
                 (type i32)
-                (call get
-                  (var global_vars)
-                  (binop +
-                    (binop *
-                      (var gi)
-                      (int 4)
-                    )
-                    (int 1)
-                  )
+                (call name_sl
+                  (var g)
                 )
               )
-              (comment "var initval: i32=get(global_inits,gi);")
+              (comment "var initval: i32 = init(g);")
               (var_decl initval
                 (type i32)
-                (call get
-                  (var global_inits)
-                  (var gi)
+                (call init
+                  (var g)
                 )
               )
               (comment "e4(ob);")
@@ -9065,32 +9658,26 @@
               (var g_nstrings)
             )
             (block
-              (comment "var ss: i32=get(string_lits,(si*2+0));")
-              (var_decl ss
-                (type i32)
+              (comment "var r: StrRef = get(string_lits, si);")
+              (var_decl r
+                (type StrRef)
                 (call get
                   (var string_lits)
-                  (binop +
-                    (binop *
-                      (var si)
-                      (int 2)
-                    )
-                    (int 0)
-                  )
+                  (var si)
                 )
               )
-              (comment "var sl: i32=get(string_lits,(si*2+1));")
-              (var_decl sl
+              (comment "var rs: i32 = ss(r);")
+              (var_decl rs
                 (type i32)
-                (call get
-                  (var string_lits)
-                  (binop +
-                    (binop *
-                      (var si)
-                      (int 2)
-                    )
-                    (int 1)
-                  )
+                (call ss
+                  (var r)
+                )
+              )
+              (comment "var rl: i32 = sl(r);")
+              (var_decl rl
+                (type i32)
+                (call sl
+                  (var r)
                 )
               )
               (comment "e4(ob);emit_string(ob, \".align 4\");emit_nl(ob);")
@@ -9116,7 +9703,7 @@
               (call_stmt emit_nl
                 (var ob)
               )
-              (comment "e4(ob);emit_string(ob, \".word \");emit_int(ob, sl);emit_nl(ob);")
+              (comment "e4(ob);emit_string(ob, \".word \");emit_int(ob, rl);emit_nl(ob);")
               (call_stmt e4
                 (var ob)
               )
@@ -9126,7 +9713,7 @@
               )
               (call_stmt emit_int
                 (var ob)
-                (var sl)
+                (var rl)
               )
               (call_stmt emit_nl
                 (var ob)
@@ -9139,11 +9726,11 @@
                 (var ob)
                 (str ".string ")
               )
-              (comment "emit_strdata(strtab,ss,sl,ob); emit_nl(ob);")
+              (comment "emit_strdata(strtab,rs,rl,ob); emit_nl(ob);")
               (call_stmt emit_strdata
                 (var strtab)
-                (var ss)
-                (var sl)
+                (var rs)
+                (var rl)
                 (var ob)
               )
               (call_stmt emit_nl
@@ -9379,25 +9966,18 @@
           (int 1)
         )
       )
-      (comment "var string_lits:  I32Array = I32Array(512);")
+      (comment "var string_lits:  StrRefArray    = StrRefArray(256u32);")
       (var_decl string_lits
-        (type I32Array)
-        (call I32Array
-          (int 512)
+        (type StrRefArray)
+        (call StrRefArray
+          (int:u32 256)
         )
       )
-      (comment "var global_vars:  I32Array = I32Array(1024);")
-      (var_decl global_vars
-        (type I32Array)
-        (call I32Array
-          (int 1024)
-        )
-      )
-      (comment "var global_inits: I32Array = I32Array(256);")
-      (var_decl global_inits
-        (type I32Array)
-        (call I32Array
-          (int 256)
+      (comment "var globals:      GlobalVarArray = GlobalVarArray(256u32);")
+      (var_decl globals
+        (type GlobalVarArray)
+        (call GlobalVarArray
+          (int:u32 256)
         )
       )
       (comment "var fns:          BcFuncArray = BcFuncArray(1);")
@@ -9477,12 +10057,11 @@
       (call_stmt emit_nl
         (var ob)
       )
-      (comment "parse_bc(strtab,string_lits,global_vars,global_inits,")
+      (comment "parse_bc(strtab, string_lits, globals,")
       (call_stmt parse_bc
         (var strtab)
         (var string_lits)
-        (var global_vars)
-        (var global_inits)
+        (var globals)
         (var fns)
         (var params_pool)
         (var locals_pool)
@@ -9494,12 +10073,11 @@
       (call_stmt close
         (var g_reader)
       )
-      (comment "emit_data_and_rodata(strtab, string_lits, global_vars, global_inits, ob);")
+      (comment "emit_data_and_rodata(strtab, string_lits, globals, ob);")
       (call_stmt emit_data_and_rodata
         (var strtab)
         (var string_lits)
-        (var global_vars)
-        (var global_inits)
+        (var globals)
         (var ob)
       )
       (comment "write(ob, 1);")
