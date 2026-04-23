@@ -491,6 +491,18 @@ export fn sys_write(fd: i32, buf: U8Array, slen: i32) -> i32 {
     return do_write(fd, data, count);
 }
 
+// String / StringLiteral overloads: the count header already carries
+// the content length, so callers don't need to pass it separately or
+// cast through U8Array.
+export fn sys_write(fd: i32, s: String) -> i32 {
+    if s as u32 == 0u32 { return 0 - 1; }
+    return do_write(fd, s as u32 + 4u32, len(s));
+}
+
+export fn sys_write(fd: i32, s: StringLiteral) -> i32 {
+    return do_write(fd, s as u32 + 4u32, len(s));
+}
+
 export fn sys_read(fd: i32, buf: U8Array, slen: i32) -> i32 {
     if buf as u32 == 0u32 { return 0 - 1; }
     var count: i32 = peek32(buf as u32) as i32;

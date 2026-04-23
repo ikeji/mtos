@@ -322,12 +322,16 @@ static void register_builtins(TypeEnv *e) {
     }
 
     /* sys calls */
-    const char *sys_w[] = {"i32","U8Array","i32"};
-    const char *sys_r[] = {"i32","U8Array","i32"};
-    const char *sys_e[] = {"i32"};
-    register_fn(e, "sys_write", sys_w, 3, "i32");
-    register_fn(e, "sys_read", sys_r, 3, "i32");
-    register_fn(e, "sys_exit", sys_e, 1, "void");
+    const char *sys_w[]  = {"i32","U8Array","i32"};
+    const char *sys_ws[] = {"i32","String"};
+    const char *sys_wl[] = {"i32","StringLiteral"};
+    const char *sys_r[]  = {"i32","U8Array","i32"};
+    const char *sys_e[]  = {"i32"};
+    register_fn(e, "sys_write", sys_w,  3, "i32");
+    register_fn(e, "sys_write", sys_ws, 2, "i32");
+    register_fn(e, "sys_write", sys_wl, 2, "i32");
+    register_fn(e, "sys_read",  sys_r,  3, "i32");
+    register_fn(e, "sys_exit",  sys_e,  1, "void");
 
     /* print helpers */
     const char *pi[] = {"i32"};

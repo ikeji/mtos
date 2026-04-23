@@ -97,7 +97,7 @@ fn main(argv: StringArray) -> i32 {
             var fd: i32 = do_openat(0, name as u32, 0);
             if fd < 0 {
                 eputs("grep: ");
-                sys_write(2, name as u32 as U8Array, len(name));
+                sys_write(2, name);
                 eputs(": open failed\n");
                 error = 1;
             } else {

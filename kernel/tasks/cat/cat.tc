@@ -73,7 +73,7 @@ fn main(argv: StringArray) -> i32 {
             //   cat: <path>: open failed
             // fd=2 is always UART; no task-output redirection.
             eputs("cat: ");
-            sys_write(2, arg as u32 as U8Array, len(arg));
+            sys_write(2, arg);
             eputs(": open failed\n");
             status = 1;
         }

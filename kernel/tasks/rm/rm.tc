@@ -20,7 +20,7 @@ fn main(argv: StringArray) -> i32 {
         var r: i32 = do_unlink(s as u32);
         if r != 0 {
             puts("rm: cannot remove: ");
-            sys_write(1, s as u32 as U8Array, len(s));
+            sys_write(1, s);
             puts("\n");
             ret = 1;
         }

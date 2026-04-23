@@ -24,10 +24,9 @@ fn main() -> i32 {
         return 1;
     }
     var payload: StringLiteral = "hello tmpfs\n";
-    var plen: i32 = len(payload);
-    var nw: i32 = sys_write(fd, payload as u32 as U8Array, plen);
+    var nw: i32 = sys_write(fd, payload);
     do_close(fd);
-    if nw != plen {
+    if nw != len(payload) {
         puts("TMP: short write\n");
         return 1;
     }

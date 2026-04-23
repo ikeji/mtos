@@ -252,8 +252,8 @@ fn main() -> i32 {
             if !build_path(path, argv) {
                 eputs("msh: empty command\n");
                 free_argv(argv);
-                if g_in_path  as u32 != 0u32 { delete(g_in_path  as u32 as U8Array); g_in_path  = 0 as String; }
-                if g_out_path as u32 != 0u32 { delete(g_out_path as u32 as U8Array); g_out_path = 0 as String; }
+                if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
+                if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
             } else {
                 var in_addr:  u32 = 0u32;
                 var out_addr: u32 = 0u32;
@@ -262,8 +262,8 @@ fn main() -> i32 {
                 var slot: i32 = do_spawn(path as u32, argv as u32,
                                          in_addr, out_addr);
                 free_argv(argv);
-                if g_in_path  as u32 != 0u32 { delete(g_in_path  as u32 as U8Array); g_in_path  = 0 as String; }
-                if g_out_path as u32 != 0u32 { delete(g_out_path as u32 as U8Array); g_out_path = 0 as String; }
+                if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
+                if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
                 if slot < 0 {
                     eputs("msh: spawn failed\n");
                 } else {

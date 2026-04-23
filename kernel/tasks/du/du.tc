@@ -42,7 +42,7 @@ fn main(argv: StringArray) -> i32 {
             set(tab, 0, 9u8);
             sys_write(1, tab, 1);
             delete(tab);
-            sys_write(1, name as u32 as U8Array, len(name));
+            sys_write(1, name);
             var nl: U8Array = U8Array(1);
             set(nl, 0, 10u8);
             sys_write(1, nl, 1);
