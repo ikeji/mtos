@@ -74,6 +74,31 @@ sh (32 KB) + asm_pass2 (512 KB) + stacks ≈ 570 KB で 480 KB arena に
 収まらない。小さい compiler task (parse 64 KB, sigscan 32 KB) は
 理論上 spawn 可能。K8/K9 の pico2 UART 問題が先にある。
 
+### 30. tmpfs に unlink が無い (limitation)
+
+`kernel/vfs.tc::vfs_unlink` は `is_sd_path` (FATFS) しか扱わず、
+tmpfs / mtfs / procfs では `-1` を返す。`rm /tmp/x` を実行すると
+"cannot remove" が出る。rm タスク自体は正常で kernel 側に
+`tmpfs_unlink` が無いだけ。
+
+対処: `kernel/tmpfs.tc` に `tmpfs_unlink(name_addr, nlen)` を追加、
+`vfs_unlink` が `is_tmp_path` ブランチで呼び出す。mtfs は read-only
+なので -1 のままで良い。
+
+### 31. sh に CWD 概念が無い → 相対パスが動かない (limitation)
+
+`cat foo.txt` のような相対パスは `/bin/cat foo.txt` として spawn
+されるが、cat の `do_openat(0, "foo.txt", 0)` は `/foo.txt` ではなく
+**パスそのまま** を vfs に渡す (vfs は先頭 `/` チェックで絶対パス扱い
+する)。絶対パスしか解決できない。
+
+回避策: tab 補完側で relative token の補完を skip するようにして
+(2026-04-22)、ユーザを誤導しないように。
+
+対処: kernel / loader 側に CWD を持たせて `sys_chdir` を追加するか、
+vfs 側で `/` 始まりでないパスを `/` に前置する spec にする。
+優先度低 (phase 8 スコープ)。
+
 ### K8+K9. pico2: UART RX の根本問題 (bug, 回避済)
 
 **K8**: 子タスクが UART stdin を直接 spin-wait すると kernel が wedge。

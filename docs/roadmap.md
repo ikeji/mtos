@@ -377,6 +377,31 @@ asm split・full split すべての pipeline で Hello World が動く。
       非ブロッキング。sh が `|` で concurrent pipeline 実行
 - [x] **sh 補完改善 (2026-04-18)**: `|` 後のトークンを /bin コマンド
       補完対象に
+- [x] **sh 補完の追加改善 (2026-04-22)**: ユニーク補完が directory
+      なら末尾 `/` を付与、相対パスは補完しない
+- [x] **vi ユーザビリティ (2026-04-22)**: `u` 1 段 undo + 80×24 viewport
+      + 縦スクロール (`g_top_line`)
+- [x] **kern.conf 駆動 init (2026-04-22〜23)**: `kernel.tc` /
+      `kernel_pico2.tc` の default seed を sh のみに絞り、
+      hello/hello2 demo は `tests/fixtures/kern_demo.conf` 経由に移動。
+      `build/kernel/disk-demo.img` / `build/kernel/pico2_kernel_demo.uf2`
+      で kern.conf 駆動 init を実機/qemu で検証
+- [x] **U8Array-as-String 片付け (2026-04-22〜23)**:
+      `docs/task/u8array_as_string.md` で監査し、2 段階で整理。
+      (1) poke32 による String ヘッダ偽造を `libtc::string_from_bytes`
+      に集約 (sh/msh の `substr` 撤去)、(2) C-string 撤廃 —
+      `do_openat / do_readdir / do_unlink / do_spawn / do_exec /
+      do_spawn_fds` の stub と kernel vfs_open / vfs_readdir /
+      vfs_unlink / sys_exec_handler / sys_spawn_handler が
+      `path: String` を直接取るよう変更。NUL スキャン廃止、
+      `strnlen_addr` 削除。libtc に全 do_* forward decl を集約、
+      `to_cstr` / `strlen` / NUL-based `eq` を撤去、`sys_write` に
+      String / StringLiteral overload。u32 キャスト ~40 箇所減
+- [x] **未使用関数 12 個削除 (2026-04-23)**: リファクタ残骸の
+      `is_sys_exit` / `sval_eq` / `wrap_binop` / `emit_cast_var_tbuf` /
+      `ft_set_np` / `reg_fn0` / tcheck の bulk-AST エントリ 4 本 /
+      `fat_follow_chain` / `do_uart_read` 前方宣言を撤去。
+      -1600 行 (goldens 再生成込み)
 
 ## フェーズ8: 自己ホスト
 

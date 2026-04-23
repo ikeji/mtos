@@ -180,6 +180,51 @@
   wait で concurrent 実行。`echo hello | cat | wc` 等が動作
 - **sh タブ補完改善 (2026-04-18)**: `|` の直後のトークンもコマンド
   位置として認識し /bin から補完
+- **sh タブ補完の追加改善 (2026-04-22)**: ユニーク補完が directory
+  なら末尾に `/` を付与。相対パスは補完しない (絶対パスしか解決できない
+  ため誤導しない)
+- **vi ユーザビリティ (2026-04-22)**: `u` で 1 段 undo (`x/dd/i/I/a/A/o/O`
+  直前のバッファをスワップで復元)、80×24 固定 viewport + `g_top_line`
+  で縦スクロール対応 (1 画面超ファイルでも表示が崩れない)
+- **kern.conf 駆動 init (2026-04-22〜23)**: `kernel.tc` /
+  `kernel_pico2.tc` のデフォルト seed を sh のみに縮小。
+  `make run` / `make run-pico2` は起動直後 `sh$` プロンプトのみ。
+  hello/hello2 を立ち上げたいときは `tests/fixtures/kern_demo.conf`
+  相当の `init=/bin/hello` 行入り kern.conf を staging する。
+  `tests/test_os.sh` は `build/kernel/disk-demo.img` (Makefile の
+  `DISK_KERN_CONF` 上書き) で A/B preempt + kern.conf 駆動 init を
+  同時に検証。pico2 側にも `build/kernel/pico2_kernel_demo.uf2`
+  を用意 (`make pico2-kernel-demo`)
+- **U8Array-as-String 監査 + 片付け (2026-04-22〜23)**:
+  `docs/task/u8array_as_string.md`。
+  - **(1) poke32 による String ヘッダ偽造を 1 箇所に集約**:
+    sh.tc / msh.tc の `substr` と `hist_push` に散らばっていた
+    `U8Array(n+1) + poke32 + as String` idiom を
+    `libtc/libtc.tc` の `string_from_bytes(buf, off, n) -> String`
+    に吸収 (commit 0be0625)
+  - **(2) C-string 撤廃 — path syscall は String 型**: ecall stub
+    (do_openat / do_readdir / do_unlink / do_spawn / do_exec /
+    do_spawn_fds) と kernel 側 handler (vfs_open / vfs_readdir /
+    vfs_unlink / sys_exec_handler / sys_spawn_handler) が
+    `path: String` を取るよう変更。`path_head(addr)` が
+    `peek32` で count を読むので NUL スキャン撤去、
+    `strnlen_addr` 削除。`task_crt0.s` は `do_openat__i32__String__i32`
+    と `do_openat__i32__StringLiteral__i32` を同一本体に alias。
+    `libtc.tc` が全 do_* forward decl を `export fn ...;` で
+    集約したので各タスクから重複宣言が消えた。`to_cstr` / `strlen` /
+    `eq(U8Array, StringLiteral)` を libtc から撤去し、`eq` は
+    `(U8Array, n, StringLiteral)` ベースに。`sys_write(fd, String)`
+    と `sys_write(fd, StringLiteral)` overload を追加して
+    `as u32 as U8Array` 系のダブルキャストも一掃。
+    call site で `/foo` リテラルや String 変数を syscall にそのまま
+    渡せるようになり、u32 キャスト ~40 箇所減 (commits f682f4f /
+    a5dcbce / f2101d1)
+- **未使用関数 12 個削除 (2026-04-23)**: `bc2asm::is_sys_exit` /
+  `codegen::sval_eq` / `parse::wrap_binop` / `emit_cast_var_tbuf` /
+  `tcheck::ft_set_np` / `reg_fn0` / `collect_imports_th` /
+  `collect_self_th` / `collect_decls` / `check_program` /
+  `fatfs::fat_follow_chain` / `vfs::do_uart_read` forward decl を
+  撤去。goldens 再生成、net -1600 行 (commit 805d603)
 
 **次の候補** (どれも独立):
 
@@ -278,6 +323,11 @@ tests/      テストスイート
   phase7_min.tc      parse 段階的縮小用の最小入力
   phase7_hello_world.tc Hello World ソース (M6 のゴール)
   virt_crt0.s        qemu-system-riscv32 -M virt 用 crt0（16550 UART + SiFive test 終了）
+  fixtures/          テスト用設定ファイル
+    kern_demo.conf   init=/bin/hello + hello2 + sh な kern.conf。
+                     Makefile の `build/kernel/disk-demo.img` /
+                     `build/kernel/pico2_kernel_demo.uf2` がこれを
+                     /etc/kern.conf としてステージする
 docs/       仕様・設計ドキュメント
   ast_format.md      AST ファイルフォーマット（.ast/.tast/.th）
   bc_format.md       バイトコード形式仕様
@@ -389,7 +439,11 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       quit で終了、virt slot 2)
     msh/msh.tc        プログラム操作用 silent sh (プロンプト/echo なし、
                       UART mux driver 用)
-    libtc/libtc.tc    ユーザ空間ライブラリ (puts/str_nul/strlen)
+    libtc/libtc.tc    ユーザ空間ライブラリ (puts/eputs/putchar/print/
+                      string_from_bytes/eq)。path-taking do_* syscall
+                      stub の forward decl (String / StringLiteral
+                      overload) も集約し、タスクは `import` だけで全部
+                      見える
     tmpdemo/tmpdemo.tc /tmp/demo を O_WRONLY|O_CREAT で書いて読み返す
                       phase 7 A 回帰テスト
     echo/echo.tc      argv[1..] を space 区切り + \n で stdout に出す
@@ -438,14 +492,24 @@ make update-golden                # goldenファイルを再生成
 make update-golden-and-run-test   # golden 再生成してからテスト実行
 make gen2-tools                   # build/gen2/* のみビルド (incremental)
 make gen3-tools                   # build/gen3/* のみビルド (自己ホスト確認用)
-make virt-kernel                  # build/kernel/virt_kernel.bin + disk.img のみ
+make virt-kernel                  # build/kernel/virt_kernel.bin のみ
 make pico2-kernel                 # build/kernel/pico2_kernel.uf2 のみ
+make pico2-kernel-extra           # + EXTRA_TASKS 込みの UF2
+make pico2-kernel-demo            # + disk-demo.img (kern.conf 駆動 init) 込み
 make test-asm-bins                # build/test/asm/*.bin (test_asm プリビルド)
 make run                          # virt kernel を対話起動 (qemu stdio serial)
 make run-extra                    # 同上 + EXTRA_TASKS (parse/…/asm_pass2/muxon/mx 等) 込み
 make run-pico2                    # pico2 kernel をビルド→flash→対話 UART
 make run-pico2-extra              # 同上 + EXTRA_TASKS 込み
 make clean                        # Gen1 + build/ まとめて消す
+#
+# ディスクイメージ 3 種:
+#   build/kernel/disk.img       標準 (kern.conf 省略 → kernel の default
+#                               seed = sh only)
+#   build/kernel/disk-extra.img + EXTRA_GUEST_TASKS
+#   build/kernel/disk-demo.img  + tests/fixtures/kern_demo.conf を
+#                               /etc/kern.conf としてステージ
+#                               (test_os.sh が使用)
 ```
 
 `make run` は `qemu-system-riscv32 -machine virt` に標準入出力を繋いで
@@ -582,9 +646,14 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 - `tests/test_import.sh` — 複数ファイル import/export のテスト
 - `tests/test_asm.sh` — hello2.tc / test_timer.tc を `; raw` モードで compile-gen2.sh にかけ、
   qemu-system-riscv32 -M virt で実行（CSR エンコード、タイマ割り込み検証含む）
-- `tests/test_os.sh` — OS コンポーネントテスト。`make test` では fs_virtio
-  (mtfs マウント + `/bin/*` ローダ + preempt + sh 経由 sys_exec end-to-end)
-  のみを実行。`FULL_TEST=1` で kmalloc と kernel1 協調タスクも追加
+- `tests/test_os.sh` — OS コンポーネントテスト。`make test` では
+  fs_virtio を実行: `build/kernel/disk-demo.img` (=
+  `tests/fixtures/kern_demo.conf` で `init=/bin/hello` +
+  `/bin/hello2` + `/bin/sh` を seed した disk) でブートし、
+  kern.conf 駆動 init (A/B preempt 可視化) + tmpfs 書き戻し (tmpdemo)
+  + catfile argv + `>` リダイレクト + spawn/wait leak canary
+  (`KERN: live=...`) を同時に検証。`FULL_TEST=1` で kmalloc と
+  kernel1 協調タスクも追加
 - `tests/test_pico2.sh` — Pico 2 実機テスト。`make test` には含まれない。
   Debug Probe + openocd-rpi が接続された状態で
   `GEN2_DIR=/tmp/gen2 tests/test_pico2.sh` と起動すると、pico2 カーネルを
@@ -593,13 +662,13 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
   を grep して検証する。環境変数 `OPENOCD` / `UART_PORT` で上書き可。
 - `tests/test_phase7.sh` — phase 7 自己ホスト実行テスト。`make test` に
   は含まれない。`GEN2_DIR=/tmp/gen2 tests/test_phase7.sh` と起動すると、
-  `EXTRA_TASKS="parse typecheck codegen bc2asm asm cat"` でカーネルを
-  ビルドし、2 ステージを qemu virt で検証する:
-  stage 1 は `parse < /phase7.tc → ... → bc2asm > /tmp/4.s` の 4 段
-  パイプライン (`[w slot:len]` + `[x slot=0]` マーカーで検証)、
-  stage 2 は `cat /prelude.s /tmp/4.s /prelude_tail.s` を通して asm に
-  食わせて `/tmp/hw` を作り、sh の絶対パス実行で "Hello, World!" が
-  UART に出ることを確認する
+  `EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat"`
+  でカーネルをビルドし、2 ステージを qemu virt で検証する:
+  stage 1 は `parse → sigscan → cat wrap → tcheck → codegen → bc2asm`
+  パイプラインで `.s` を生成 (`[w slot:len]` + `[x slot=0]` マーカー
+  で検証)、stage 2 は prelude を cat して asm_pass1/pass2 に通して
+  `/tmp/hw` を作り、sh の絶対パス実行で "Hello, World!" が UART に
+  出ることを確認する
 - `tests/phase7_hello.tc` / `phase7_min.tc` / `phase7_hello_world.tc` —
   phase 7 のテスト入力。それぞれ kernel/build.sh が `/phase7.tc` /
   `/phase7_min.tc` / `/hw.tc` として mtfs に staging する
@@ -607,8 +676,9 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 
 ### Gen2 ツールのビルド
 - `build_gen2_tool` は `compile-gen1.sh` を使用（GCC リンカ + runtime_syscall.c）
-- `ensure_gen2_tools` は qemu-riscv32 + riscv-gcc が必要。parse / typecheck /
-  codegen / bc2asm / bcrun / asm を Gen2 として一式ビルドする。
+- `ensure_gen2_tools` は qemu-riscv32 + riscv-gcc が必要。parse /
+  sigscan / tcheck / codegen / bc2asm / bcrun / asm_pass1 / asm_pass2
+  を Gen2 として一式ビルドする。
 - `tests/test_asm.sh` は追加で qemu-system-riscv32 が必要（無ければ SKIP）。
 
 ### テスト内容
@@ -685,12 +755,15 @@ GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target pico2 -o kernel.uf2
 ビルドフロー (両ターゲット共通):
 1. Step 0: `runtime.tc` と `libtc.tc` を 1 度だけコンパイルし `CACHED_S_DIR`
    経由で各タスクビルドで共有 (phase 7 で導入、-8.8 s)
-2. ゲストタスク (target 別 TASKS リスト — virt は
-   hello/hello2/catfile/sh/tmpdemo/echo、pico2 は hello/hello2/catfile/launcher)
-   を raw バイナリにコンパイル。各タスクには `task_arena_size()` /
-   `task_stack_size()` の値を `.word` 2 本の header として prepend する
-   (K3 案C)。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1
-   asm_pass2 cat"` を渡すと phase 7 のコンパイラタスク群を追加できる
+2. ゲストタスク (kernel/tasks/*/task.mk が GUEST_TASKS に積む:
+   hello, hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head,
+   cp, du, grep, rm, neofetch, vi, launcher, count, mx, mr, muxon,
+   muxoff) を raw バイナリにコンパイル。各タスクには
+   `task_arena_size()` / `task_stack_size()` の値を `.word` 2 本の
+   header として prepend する (K3 案C)。`EXTRA_TASKS="parse sigscan
+   tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` を渡すと phase 7
+   のコンパイラタスク群を追加できる。起動時 seed task は現在 sh のみ
+   (hello/hello2 を足したいときは kern.conf 経由)
 3. `tools/mkfs.py` で `/bin/<task>` + `/hello.txt` + phase 7 の test 入力
    (`/phase7.tc` / `/hw.tc`) + OS 側 linker 用 `/prelude.s` (= `; raw` +
    `.word 32768; .word 8192` + task_crt0.s + cached runtime.s) +
@@ -702,8 +775,9 @@ GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target pico2 -o kernel.uf2
 6. 起動時にカーネルの `loader.tc` (`load_task`) が `/bin/*` を VFS で開き、
    先頭 8 バイトの K3 header (`arena_size / stack_size`) を読んで
    `make_task(entry+8, arena, stack)` を呼ぶ。XIP 可能なら flash 上の
-   アドレスを直接 entry にし、そうでなければ RAM にコピーする。pico2 は
-   spawn/exec 経由の動的タスクは未対応 (problem.md K7)
+   アドレスを直接 entry にし、そうでなければ RAM にコピーする。pico2
+   でも dynamic spawn/exec は動く (K7 part 1/2 完了、残件は part 3 の
+   phase 7 コンパイラ完走 — `docs/problem.md` 参照)
 
 qemu virt で実行:
 ```bash
@@ -720,8 +794,14 @@ Pico 2 実機で実行 (Debug Probe + openocd-rpi):
 ```
 
 タスクは ecall で syscall を発行 (Linux 互換 ABI: a7=56 openat,
-a7=57 close, a7=63 read, a7=64 write, a7=93 exit, a7=220 clone/spawn,
-a7=221 execve, a7=260 wait4)。
+a7=57 close, a7=63 read, a7=64 write, a7=87 unlink, a7=89 readdir,
+a7=93 exit, a7=101 nanosleep, a7=219 spawn_fds, a7=220 clone/spawn,
+a7=221 execve, a7=222 pipe, a7=250 mux_enable, a7=260 wait4)。
+**path 引数は NUL 終端 C-string ではなく String layout (4 バイト count
++ bytes) を直接渡す**: `do_openat(dirfd, path: String, flags)` のように
+`task_crt0.s` の stub は String / StringLiteral 2 種の mangled name を
+同一本体に alias、kernel vfs_open は `peek32(addr)` で長さを読む。
+read/write のバッファは従来どおり `(buf: U8Array, len)` ペア。
 カーネルの ecall handler (trap_common.s) がアセンブリでディスパッチし、
 read/write/openat/close は `kernel/vfs.tc` 経由で mtfs / UART に振り分け、
 exec は `kernel/loader.tc` の `sys_exec_handler` が呼び出し元の
