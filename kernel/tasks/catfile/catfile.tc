@@ -12,19 +12,13 @@
 
 import "../libtc/libtc.tc";
 
-// Assembly-provided syscall stubs (kernel/tasks/task_crt0.s)
-fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
-
 fn main(argv: StringArray) -> i32 {
-    var path_addr: u32 = 0u32;
+    var fd: i32 = -1;
     if len(argv) >= 2 {
-        path_addr = get(argv, 1) as u32;
+        fd = do_openat(0, get(argv, 1), 0);
     } else {
-        path_addr = "/hello.txt" as u32;
+        fd = do_openat(0, "/hello.txt", 0);
     }
-
-    var fd: i32 = do_openat(0, path_addr, 0);
     if fd < 0 {
         puts("CAT: open failed\n");
         return 1;

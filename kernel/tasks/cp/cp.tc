@@ -5,9 +5,6 @@
 
 import "../libtc/libtc.tc";
 
-fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
-
 var O_WRONLY: i32 = 1;
 var O_CREAT:  i32 = 64;
 var O_TRUNC:  i32 = 512;
@@ -17,12 +14,12 @@ fn main(argv: StringArray) -> i32 {
         puts("cp: usage: cp <src> <dst>\n");
         return 1;
     }
-    var src_fd: i32 = do_openat(0, get(argv, 1) as u32, 0);
+    var src_fd: i32 = do_openat(0, get(argv, 1), 0);
     if src_fd < 0 {
         puts("cp: src open failed\n");
         return 1;
     }
-    var dst_fd: i32 = do_openat(0, get(argv, 2) as u32,
+    var dst_fd: i32 = do_openat(0, get(argv, 2),
                                 O_WRONLY | O_CREAT | O_TRUNC);
     if dst_fd < 0 {
         puts("cp: dst open failed\n");

@@ -13,9 +13,6 @@
 
 import "../libtc/libtc.tc";
 
-fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
-
 // Scan buf[0..n] for 0x04 (EOT) byte. Returns its offset or -1.
 fn scan_eot(buf: U8Array, n: i32) -> i32 {
     var k: i32 = 0;
@@ -56,7 +53,7 @@ fn main(argv: StringArray) -> i32 {
     var status: i32 = 0;
     while i < nargs {
         var arg: String = get(argv, i);
-        var fd: i32 = do_openat(0, arg as u32, 0);
+        var fd: i32 = do_openat(0, arg, 0);
         if fd >= 0 {
             var done: i32 = 0;
             while done == 0 {

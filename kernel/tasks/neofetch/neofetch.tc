@@ -5,8 +5,6 @@
 
 import "../libtc/libtc.tc";
 
-fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
 
 // (print moved to libtc/libtc.tc)
 
@@ -22,7 +20,7 @@ struct TaskStats {
 
 fn read_task_stats() -> TaskStats {
     var stats: TaskStats = TaskStats(0, 0, 0, 0, 0);
-    var fd: i32 = do_openat(0, "/proc/tasks" as u32, 0);
+    var fd: i32 = do_openat(0, "/proc/tasks", 0);
     if fd < 0 { return stats; }
     var buf: U8Array = U8Array(4096);
     var n: i32 = sys_read(fd, buf, 4096);

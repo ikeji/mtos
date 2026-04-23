@@ -6,8 +6,6 @@
 
 import "../libtc/libtc.tc";
 
-fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
 
 // (print moved to libtc/libtc.tc)
 
@@ -88,7 +86,7 @@ fn main(argv: StringArray) -> i32 {
         var i: i32 = 1;
         while i < nargs {
             var name: String = get(argv, i);
-            var fd: i32 = do_openat(0, name as u32, 0);
+            var fd: i32 = do_openat(0, name, 0);
             if fd < 0 {
                 puts("wc: open failed\n");
             } else {

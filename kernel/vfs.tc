@@ -137,11 +137,12 @@ fn alloc_vfs_fd(fs: i32, inner_fd: i32) -> i32 {
 // accepted and skipped. Each component is looked up under the
 // running parent inode, so /bin/hello descends into the "bin"
 // directory first.
-export fn vfs_open(path_addr: u32, flags: i32) -> i32 {
+export fn vfs_open(path: String, flags: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
-    var plen: i32 = path_head(path_addr);
+    if path as u32 == 0u32 { return -1; }
+    var plen: i32 = path_head(path as u32);
     if plen <= 0 { return -1; }
-    path_addr = path_addr + 4u32;
+    var path_addr: u32 = path as u32 + 4u32;
 
     if is_tmp_path(path_addr, plen) {
         var nlen: i32 = plen - 5;  // "/tmp/" is 5 bytes
@@ -383,11 +384,12 @@ fn vfs_append_entry(buf_addr: u32, buf_size: i32, pos: i32, name: StringLiteral)
     return pos + 1;
 }
 
-export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
+export fn vfs_readdir(path: String, buf_addr: u32, buf_size: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
-    var plen: i32 = path_head(path_addr);
+    if path as u32 == 0u32 { return -1; }
+    var plen: i32 = path_head(path as u32);
     if plen <= 0 { return -1; }
-    path_addr = path_addr + 4u32;
+    var path_addr: u32 = path as u32 + 4u32;
     if path_eq_or_trailing(path_addr, plen, "/tmp") {
         return tmpfs_readdir(buf_addr, buf_size);
     }
@@ -413,11 +415,12 @@ export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
     return n;
 }
 
-export fn vfs_unlink(path_addr: u32) -> i32 {
+export fn vfs_unlink(path: String) -> i32 {
     if g_vfs_ready == 0 { return -1; }
-    var plen: i32 = path_head(path_addr);
+    if path as u32 == 0u32 { return -1; }
+    var plen: i32 = path_head(path as u32);
     if plen <= 0 { return -1; }
-    path_addr = path_addr + 4u32;
+    var path_addr: u32 = path as u32 + 4u32;
     if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
         return fatfs_delete(path_addr + 4u32, plen - 4);
     }

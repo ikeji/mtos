@@ -6,8 +6,6 @@
 
 import "../libtc/libtc.tc";
 
-fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
 
 // Check if line[0..line_len] contains pat[0..pat_len] as a substring.
 fn contains(line: U8Array, line_len: i32, pat: U8Array, pat_len: i32) -> i32 {
@@ -94,7 +92,7 @@ fn main(argv: StringArray) -> i32 {
         var i: i32 = 2;
         while i < nargs {
             var name: String = get(argv, i);
-            var fd: i32 = do_openat(0, name as u32, 0);
+            var fd: i32 = do_openat(0, name, 0);
             if fd < 0 {
                 eputs("grep: ");
                 sys_write(2, name);

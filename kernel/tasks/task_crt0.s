@@ -87,8 +87,13 @@ do_read__i32__u32__i32:
     ecall
     ret
 
-    .globl do_openat__i32__u32__i32
-do_openat__i32__u32__i32:
+# do_openat(dirfd, path, flags) → fd. `path` is a length-prefixed
+# byte block (String / StringLiteral); kernel/vfs.tc vfs_open reads
+# the count from the header.
+    .globl do_openat__i32__String__i32
+    .globl do_openat__i32__StringLiteral__i32
+do_openat__i32__String__i32:
+do_openat__i32__StringLiteral__i32:
     li   a7, 56
     ecall
     ret
@@ -105,20 +110,29 @@ do_exit__i32:
     ecall
     ret
 
-    .globl do_exec__u32__u32__u32__u32
-do_exec__u32__u32__u32__u32:
+# do_exec / do_spawn / do_spawn_fds — path / in / out are length-
+# prefixed String / StringLiteral; argv is a StringArray address
+# (u32). Each overload aliases the same ecall body.
+    .globl do_exec__String__u32__String__String
+    .globl do_exec__StringLiteral__u32__String__String
+do_exec__String__u32__String__String:
+do_exec__StringLiteral__u32__String__String:
     li   a7, 221
     ecall
     ret
 
-    .globl do_spawn__u32__u32__u32__u32
-do_spawn__u32__u32__u32__u32:
+    .globl do_spawn__String__u32__String__String
+    .globl do_spawn__StringLiteral__u32__String__String
+do_spawn__String__u32__String__String:
+do_spawn__StringLiteral__u32__String__String:
     li   a7, 220
     ecall
     ret
 
-    .globl do_spawn_fds__u32__u32__i32__i32
-do_spawn_fds__u32__u32__i32__i32:
+    .globl do_spawn_fds__String__u32__i32__i32
+    .globl do_spawn_fds__StringLiteral__u32__i32__i32
+do_spawn_fds__String__u32__i32__i32:
+do_spawn_fds__StringLiteral__u32__i32__i32:
     li   a7, 219
     ecall
     ret
@@ -142,11 +156,11 @@ do_nanosleep__i32:
     ecall
     ret
 
-# do_unlink(path_addr: u32) → i32 — remove a file. path_addr points
-# at a length-prefixed byte block (String / StringLiteral layout);
-# kernel/vfs.tc vfs_unlink reads the count from the header.
-    .globl do_unlink__u32
-do_unlink__u32:
+# do_unlink(path) → i32 — remove a file.
+    .globl do_unlink__String
+    .globl do_unlink__StringLiteral
+do_unlink__String:
+do_unlink__StringLiteral:
     li   a7, 87
     ecall
     ret
@@ -159,10 +173,12 @@ do_mux_enable__i32:
     ecall
     ret
 
-# do_readdir(path_addr, buf_addr, buf_size) → bytes_written / -1.
+# do_readdir(path, buf_addr, buf_size) → bytes_written / -1.
 # Writes NUL-terminated directory entry names into buf.
-    .globl do_readdir__u32__u32__i32
-do_readdir__u32__u32__i32:
+    .globl do_readdir__String__u32__i32
+    .globl do_readdir__StringLiteral__u32__i32
+do_readdir__String__u32__i32:
+do_readdir__StringLiteral__u32__i32:
     li   a7, 89
     ecall
     ret

@@ -4,6 +4,37 @@
 // collisions with kernel_common (e.g. kputs) do not happen at link time.
 // We therefore keep the names short (no u_/lib_ prefix).
 
+// Path-taking syscall stubs (kernel/tasks/task_crt0.s). Exported as
+// forward decls so each task that `import`s libtc.tc picks them up.
+// The String / StringLiteral pairs alias the same asm body — callers
+// can hand either a runtime String (argv entry, g_in_path) or a
+// compile-time "/foo" literal straight through without a u32 cast.
+export fn do_openat(dirfd: i32, path: String,        flags: i32) -> i32;
+export fn do_openat(dirfd: i32, path: StringLiteral, flags: i32) -> i32;
+export fn do_readdir(path: String,        buf_addr: u32, buf_size: i32) -> i32;
+export fn do_readdir(path: StringLiteral, buf_addr: u32, buf_size: i32) -> i32;
+export fn do_unlink(path: String)        -> i32;
+export fn do_unlink(path: StringLiteral) -> i32;
+export fn do_spawn(path: String,        argv_addr: u32,
+                   in_path: String, out_path: String) -> i32;
+export fn do_spawn(path: StringLiteral, argv_addr: u32,
+                   in_path: String, out_path: String) -> i32;
+export fn do_exec(path: String,        argv_addr: u32,
+                  in_path: String, out_path: String) -> i32;
+export fn do_exec(path: StringLiteral, argv_addr: u32,
+                  in_path: String, out_path: String) -> i32;
+export fn do_spawn_fds(path: String,        argv_addr: u32,
+                       in_fd: i32, out_fd: i32) -> i32;
+export fn do_spawn_fds(path: StringLiteral, argv_addr: u32,
+                       in_fd: i32, out_fd: i32) -> i32;
+
+// Non-path syscall stubs that tasks commonly reach for. Exported as
+// forward decls for the same reason as above.
+export fn do_close(fd: i32) -> i32;
+export fn do_wait(slot: i32) -> i32;
+export fn do_pipe(fds_addr: u32) -> i32;
+export fn do_mux_enable(on: i32) -> void;
+
 export fn puts(s: StringLiteral) -> void {
     var slen: i32 = len(s);
     var buf: U8Array = U8Array(slen as u32);

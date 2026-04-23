@@ -17,17 +17,15 @@ import "kernel_common.tc";
 // raw UART emission even when vfs state is suspect.
 fn do_uart_write(buf: u32, len: i32) -> i32;
 
-// Copy the basename from a length-prefixed path at `addr` (String /
-// StringLiteral layout: 4-byte count header + bytes) into a kmalloc'd
-// U8Array. "/bin/sh" → "sh". Caller stores the result via
-// task_set_name, which owns the free.
-export fn basename_copy(addr: u32) -> U8Array {
-    var end: i32 = peek32(addr) as i32;
-    var data: u32 = addr + 4u32;
+// Copy the basename from a path into a kmalloc'd U8Array.
+// "/bin/sh" → "sh". Caller stores the result via task_set_name, which
+// owns the free.
+export fn basename_copy(path: String) -> U8Array {
+    var end: i32 = len(path);
     var last_slash: i32 = -1;
     var i: i32 = 0;
     while i < end {
-        if peek8(data + (i as u32)) == '/' as u8 { last_slash = i; }
+        if get(path, i) == '/' as u8 { last_slash = i; }
         i = i + 1;
     }
     var start: i32 = last_slash + 1;
@@ -36,7 +34,7 @@ export fn basename_copy(addr: u32) -> U8Array {
     var buf: U8Array = U8Array((nlen + 1) as u32);
     i = 0;
     while i < nlen {
-        set(buf, i, peek8(data + ((start + i) as u32)));
+        set(buf, i, get(path, start + i));
         i = i + 1;
     }
     set(buf, nlen, 0u8);
@@ -98,21 +96,23 @@ fn load_fd_header_ok(arena: i32, stack: i32) -> bool {
     return true;
 }
 
-// Debug helper for K7-3: dump the path at path_addr (length-prefixed)
-// to UART as a sequence of escaped bytes. Used on spawn/exec failure
-// so we can see exactly what path the kernel was handed. `tag`
-// distinguishes the call site (e.g., "spawn" vs "exec").
-fn debug_dump_path(path_addr: u32, tag: StringLiteral) -> void {
+// Debug helper for K7-3: dump the path to UART as a sequence of
+// escaped bytes. Used on spawn/exec failure so we can see exactly
+// what path the kernel was handed. `tag` distinguishes the call site
+// (e.g., "spawn" vs "exec").
+fn debug_dump_path(path: String, tag: StringLiteral) -> void {
     kputs(tag);
     kputs(": path=\"");
+    if path as u32 == 0u32 {
+        kputs("(null)\"\n");
+        return;
+    }
     var one: U8Array = U8Array(1);
-    var plen: i32 = peek32(path_addr) as i32;
-    if plen < 0 { plen = 0; }
+    var plen: i32 = len(path);
     if plen > 64 { plen = 64; }
-    var data: u32 = path_addr + 4u32;
     var i: i32 = 0;
     while i < plen {
-        var b: u8 = peek8(data + (i as u32));
+        var b: u8 = get(path, i);
         if b < 32u8 || b >= 127u8 {
             kputs("?");
         } else {
@@ -174,7 +174,7 @@ fn load_fd(fd: i32) -> u32 {
 // Returns 0 on any failure, otherwise a frame pointer ready for
 // sched_register. Task sizes come from the binary header.
 export fn load_task(path: StringLiteral) -> u32 {
-    var fd: i32 = vfs_open(path as u32, 0);
+    var fd: i32 = vfs_open(path as String, 0);
     if fd < 0 { return 0u32; }
 
     var frame: u32 = load_fd(fd);
@@ -182,11 +182,10 @@ export fn load_task(path: StringLiteral) -> u32 {
     return frame;
 }
 
-// Same as load_task but takes a raw length-prefixed path address
-// (used by read_kern_config where the path was parsed out of a
-// config file into a String, not a StringLiteral).
-export fn load_task_addr(path_addr: u32) -> u32 {
-    var fd: i32 = vfs_open(path_addr, 0);
+// Same as load_task but takes a runtime String (e.g. one parsed out
+// of /etc/kern.conf).
+export fn load_task_addr(path: String) -> u32 {
+    var fd: i32 = vfs_open(path, 0);
     if fd < 0 { return 0u32; }
     var frame: u32 = load_fd(fd);
     vfs_close(fd);
@@ -273,14 +272,14 @@ var LOADER_O_WRONLY: i32 = 1;
 var LOADER_O_CREAT:  i32 = 64;
 var LOADER_O_TRUNC:  i32 = 512;
 
-// Open an optional redirect path (may be 0u32 = "not set"). Returns
-// the VFS fd on success, 0 if addr is 0, or -1 on error. `wr` is 1
-// for stdout (write-create-truncate) or 0 for stdin (read-only).
-fn open_redir(addr: u32, wr: i32) -> i32 {
-    if addr == 0u32 { return 0; }
+// Open an optional redirect path (may be 0 = "not set"). Returns
+// the VFS fd on success, 0 if path is null, or -1 on error. `wr` is
+// 1 for stdout (write-create-truncate) or 0 for stdin (read-only).
+fn open_redir(path: String, wr: i32) -> i32 {
+    if path as u32 == 0u32 { return 0; }
     var flags: i32 = 0;
     if wr != 0 { flags = LOADER_O_WRONLY | LOADER_O_CREAT | LOADER_O_TRUNC; }
-    var fd: i32 = vfs_open(addr, flags);
+    var fd: i32 = vfs_open(path, flags);
     if fd < 0 { return -1; }
     return fd;
 }
@@ -321,22 +320,22 @@ fn close_redir(fd: i32) -> void {
 // (called at the top of load_fd) still wipes any previous g_last_*,
 // so the in_fd / out_fd we opened earlier live on the kernel's TC
 // stack until we re-install them via set_last_stdio.
-export fn sys_exec_handler(path_addr: u32, argv_addr: u32,
-                           in_addr: u32, out_addr: u32) -> u32 {
-    var in_fd: i32 = open_redir(in_addr, 0);
+export fn sys_exec_handler(path: String, argv_addr: u32,
+                           in_path: String, out_path: String) -> u32 {
+    var in_fd: i32 = open_redir(in_path, 0);
     if in_fd < 0 { return 0u32; }
-    var out_fd: i32 = open_redir(out_addr, 1);
+    var out_fd: i32 = open_redir(out_path, 1);
     if out_fd < 0 { close_redir(in_fd); return 0u32; }
 
-    var fd: i32 = vfs_open(path_addr, 0);
+    var fd: i32 = vfs_open(path, 0);
     if fd < 0 {
-        debug_dump_path(path_addr, "exec vfs_open failed");
+        debug_dump_path(path, "exec vfs_open failed");
         close_redir(in_fd); close_redir(out_fd); return 0u32;
     }
     var frame: u32 = load_fd(fd);
     vfs_close(fd);
     if frame == 0u32 {
-        debug_dump_path(path_addr, "exec load_fd failed");
+        debug_dump_path(path, "exec load_fd failed");
         close_redir(in_fd); close_redir(out_fd); return 0u32;
     }
 
@@ -345,29 +344,29 @@ export fn sys_exec_handler(path_addr: u32, argv_addr: u32,
     set_last_argv(kargv);
     set_last_stdio(in_fd, out_fd);
     sched_replace_current(frame);
-    task_set_name(sched_current_idx(), basename_copy(path_addr));
+    task_set_name(sched_current_idx(), basename_copy(path));
     return frame;
 }
 
 // Handler for sys_spawn (a7 = 220). Loads the given path into a new
 // scheduler slot and returns the slot index, or -1 on failure. Caller
 // keeps running. argv_addr / in_addr / out_addr mirror the exec path.
-export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
-                            in_addr: u32, out_addr: u32) -> i32 {
-    var in_fd: i32 = open_redir(in_addr, 0);
+export fn sys_spawn_handler(path: String, argv_addr: u32,
+                            in_path: String, out_path: String) -> i32 {
+    var in_fd: i32 = open_redir(in_path, 0);
     if in_fd < 0 { return -1; }
-    var out_fd: i32 = open_redir(out_addr, 1);
+    var out_fd: i32 = open_redir(out_path, 1);
     if out_fd < 0 { close_redir(in_fd); return -1; }
 
-    var fd: i32 = vfs_open(path_addr, 0);
+    var fd: i32 = vfs_open(path, 0);
     if fd < 0 {
-        debug_dump_path(path_addr, "spawn vfs_open failed");
+        debug_dump_path(path, "spawn vfs_open failed");
         close_redir(in_fd); close_redir(out_fd); return -1;
     }
     var frame: u32 = load_fd(fd);
     vfs_close(fd);
     if frame == 0u32 {
-        debug_dump_path(path_addr, "spawn load_fd failed");
+        debug_dump_path(path, "spawn load_fd failed");
         close_redir(in_fd); close_redir(out_fd); return -1;
     }
 
@@ -377,7 +376,7 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
     set_last_stdio(in_fd, out_fd);
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
-        task_set_name(slot, basename_copy(path_addr));
+        task_set_name(slot, basename_copy(path));
     } else {
         // sched_spawn failed (no free slots). Clean up all resources
         // that were prepared for the child: redirect fds, argv, and
@@ -394,17 +393,17 @@ export fn sys_spawn_handler(path_addr: u32, argv_addr: u32,
 // the shell for pipe redirection: sys_pipe returns fds, the shell
 // passes them here so the child's stdin/stdout point at the pipe.
 // The child owns the fds; slot_free_allocs closes them on exit.
-export fn sys_spawn_fds_handler(path_addr: u32, argv_addr: u32,
+export fn sys_spawn_fds_handler(path: String, argv_addr: u32,
                                 in_fd: i32, out_fd: i32) -> i32 {
-    var fd: i32 = vfs_open(path_addr, 0);
+    var fd: i32 = vfs_open(path, 0);
     if fd < 0 {
-        debug_dump_path(path_addr, "spawn_fds vfs_open failed");
+        debug_dump_path(path, "spawn_fds vfs_open failed");
         return -1;
     }
     var frame: u32 = load_fd(fd);
     vfs_close(fd);
     if frame == 0u32 {
-        debug_dump_path(path_addr, "spawn_fds load_fd failed");
+        debug_dump_path(path, "spawn_fds load_fd failed");
         return -1;
     }
 
@@ -414,7 +413,7 @@ export fn sys_spawn_fds_handler(path_addr: u32, argv_addr: u32,
     set_last_stdio(in_fd, out_fd);
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
-        task_set_name(slot, basename_copy(path_addr));
+        task_set_name(slot, basename_copy(path));
     } else {
         free_last_alloc();
     }

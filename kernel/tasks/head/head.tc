@@ -6,8 +6,6 @@
 
 import "../libtc/libtc.tc";
 
-fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
 
 fn parse_int(s: String) -> i32 {
     var n: i32 = 0;
@@ -60,7 +58,7 @@ fn main(argv: StringArray) -> i32 {
     if path_idx < 0 {
         head_fd(0, want);
     } else {
-        var fd: i32 = do_openat(0, get(argv, path_idx) as u32, 0);
+        var fd: i32 = do_openat(0, get(argv, path_idx), 0);
         if fd < 0 {
             puts("head: open failed\n");
             return 1;

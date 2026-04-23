@@ -12,16 +12,11 @@
 
 import "../libtc/libtc.tc";
 
-// Assembly-provided syscall stubs (kernel/tasks/task_crt0.s)
-fn do_exec(path_addr: u32, argv_addr: u32, in_addr: u32, out_addr: u32) -> i32;
-fn do_spawn(path_addr: u32, argv_addr: u32, in_addr: u32, out_addr: u32) -> i32;
-fn do_wait(slot: i32) -> i32;
-
 fn main() -> i32 {
     // Step 1: dynamic spawn + wait. Validates that pico2's sys_spawn
     // path can kmalloc a task_ram / task_stack / frame_buf from the
     // kernel arena for a child binary declared via the K3 header.
-    var slot: i32 = do_spawn("/bin/hello2" as u32, 0, 0, 0);
+    var slot: i32 = do_spawn("/bin/hello2", 0, 0 as String, 0 as String);
     if slot < 0 {
         puts("LAUNCHER: spawn failed\n");
     } else {
@@ -33,7 +28,7 @@ fn main() -> i32 {
     // Step 2: exec /bin/catfile as before. catfile reads /hello.txt
     // via the mtfs XIP backend and prints it to stdout, so the pico2
     // test still sees its CAT:hello, mtfs line.
-    do_exec("/bin/catfile" as u32, 0, 0, 0);
+    do_exec("/bin/catfile", 0, 0 as String, 0 as String);
     puts("LAUNCHER: exec failed\n");
     return 1;
 }

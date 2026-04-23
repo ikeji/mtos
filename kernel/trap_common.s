@@ -169,7 +169,7 @@ _ecall_openat:
     # a0 = task's dirfd (ignored)
     lw   a0, 44(s0)         # path addr (task's a1)
     lw   a1, 48(s0)         # flags    (task's a2)
-    call vfs_open__u32__i32
+    call vfs_open__String__i32
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 
@@ -183,7 +183,7 @@ _ecall_close:
 _ecall_unlink:
     call _ecall_enter
     lw   a0, 40(s0)         # path addr (task's a0)
-    call vfs_unlink__u32
+    call vfs_unlink__String
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 
@@ -202,7 +202,7 @@ _ecall_exec:
     lw   a1, 44(s0)         # argv addr (task's a1, 0 if none)
     lw   a2, 48(s0)         # in_path addr (task's a2, 0 if none)
     lw   a3, 52(s0)         # out_path addr (task's a3, 0 if none)
-    call sys_exec_handler__u32__u32__u32__u32
+    call sys_exec_handler__String__u32__String__String
     beqz a0, _exec_failed
     la   t0, _switch_frame
     sw   a0, 0(t0)
@@ -226,7 +226,7 @@ _ecall_spawn:
     lw   a1, 44(s0)
     lw   a2, 48(s0)
     lw   a3, 52(s0)
-    call sys_spawn_handler__u32__u32__u32__u32
+    call sys_spawn_handler__String__u32__String__String
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 
@@ -265,7 +265,7 @@ _ecall_readdir:
     lw   a0, 40(s0)     # path_addr
     lw   a1, 44(s0)     # buf_addr
     lw   a2, 48(s0)     # buf_size
-    call vfs_readdir__u32__u32__i32
+    call vfs_readdir__String__u32__i32
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 
@@ -287,7 +287,7 @@ _ecall_spawn_fds:
     lw   a1, 44(s0)
     lw   a2, 48(s0)
     lw   a3, 52(s0)
-    call sys_spawn_fds_handler__u32__u32__i32__i32
+    call sys_spawn_fds_handler__String__u32__i32__i32
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 

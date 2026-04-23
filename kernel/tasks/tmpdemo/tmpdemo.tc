@@ -7,9 +7,6 @@
 
 import "../libtc/libtc.tc";
 
-fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
-
 // Linux O_* subset understood by kernel/tmpfs.tc
 var O_WRONLY: i32 = 1;
 var O_CREAT:  i32 = 64;
@@ -17,7 +14,7 @@ var O_TRUNC:  i32 = 512;
 
 fn main() -> i32 {
     // --- Write ---
-    var fd: i32 = do_openat(0, "/tmp/demo" as u32,
+    var fd: i32 = do_openat(0, "/tmp/demo",
                             O_WRONLY | O_CREAT | O_TRUNC);
     if fd < 0 {
         puts("TMP: open-write failed\n");
@@ -32,7 +29,7 @@ fn main() -> i32 {
     }
 
     // --- Read back ---
-    fd = do_openat(0, "/tmp/demo" as u32, 0);
+    fd = do_openat(0, "/tmp/demo", 0);
     if fd < 0 {
         puts("TMP: open-read failed\n");
         return 1;

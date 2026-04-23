@@ -550,7 +550,7 @@ export fn uart_mux_is_enabled() -> i32 {
 // If the config file is missing or can't be opened, platform main()
 // falls back to its hardcoded defaults (hello / hello2 / sh).
 
-fn vfs_open(path_addr: u32, flags: i32) -> i32;
+fn vfs_open(path: String, flags: i32) -> i32;
 fn vfs_size(fd: i32) -> i32;
 fn vfs_read(fd: i32, buf: u32, n: i32) -> i32;
 fn vfs_close(fd: i32) -> i32;
@@ -612,7 +612,7 @@ export fn read_kern_config() -> i32 {
     g_cfg_init_count = 0;
     g_cfg_mux = 0;
 
-    var fd: i32 = vfs_open("/etc/kern.conf" as u32, 0);
+    var fd: i32 = vfs_open("/etc/kern.conf" as String, 0);
     if fd < 0 { return 0; }
 
     var size: i32 = vfs_size(fd);
@@ -636,12 +636,9 @@ export fn read_kern_config() -> i32 {
 
 export fn kern_config_mux() -> i32 { return g_cfg_mux; }
 export fn kern_config_init_count() -> i32 { return g_cfg_init_count; }
-export fn kern_config_init_path(idx: i32) -> u32 {
-    if idx < 0 || idx >= g_cfg_init_count { return 0u32; }
-    // Return the String address with its count header intact so
-    // vfs_open / load_task_addr can read the length directly.
-    var s: String = get(g_cfg_inits, idx);
-    return s as u32;
+export fn kern_config_init_path(idx: i32) -> String {
+    if idx < 0 || idx >= g_cfg_init_count { return 0 as String; }
+    return get(g_cfg_inits, idx);
 }
 
 export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
