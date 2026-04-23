@@ -14,23 +14,11 @@
 
 ## カテゴリ別
 
-### (1) poke32 で U8Array に String ヘッダを偽造 — 高優先度
+### (1) poke32 で U8Array に String ヘッダを偽造 — **解消済 (commit 0be0625)**
 
-TC には `String` を `(buf, len)` から構築する API がないので、
-`U8Array` を確保して `poke32(buf as u32, len as u32)` で先頭 4 バイトに
-count を焼きこみ、`as String` キャストで返している。
-
-| 箇所 | 関数 | 備考 |
-|---|---|---|
-| `kernel/tasks/sh/sh.tc:87-103` | `hist_push` | ヒストリ保存のため n バイトを String 化 |
-| `kernel/tasks/sh/sh.tc:517-527` | `substr(buf, start, n) -> String` | コマンドライン部分切り出し |
-| `kernel/tasks/msh/msh.tc:100-110` | `substr` | sh と完全に同型 |
-
-**回避可能か**: 回避可能。`runtime.tc` に
-`string_from_slice(buf: U8Array, off: i32, n: i32) -> String` (or
-`U8Array` → `String` キャスト ABI) を置けば一箇所にまとめられる。
-あるいは「`U8Array(n+1) + poke32 + as String`」を TC 言語組込みの
-String コンストラクタ化する方向もある。
+`libtc/libtc.tc` に `string_from_bytes(buf: U8Array, off: i32, n: i32) -> String`
+を追加し、sh.tc / msh.tc の重複 `substr` を撤去。poke32 は libtc 内の
+一箇所にだけ残る。hist_push も同 helper に寄せた。
 
 ### (2) NUL 終端 U8Array (= C-string) を値として持ち回る — 設計的に残したい
 
@@ -118,10 +106,7 @@ type より dimension の問題 (`String` が欲しいわけではない)。
 
 ## 採用候補 (優先度順)
 
-### 高: poke32 String 偽造をユーティリティに集約
-sh.tc / msh.tc に 3 箇所ある `U8Array(n+1) + poke32 + as String` を
-`runtime.tc` の `string_dup_bytes(buf: U8Array, off, n) -> String` (仮称)
-に吸収。ついでに `hist_push` の manual 構築も置き換え。
+### ~~高: poke32 String 偽造をユーティリティに集約~~ 済
 
 ### 中: sh/msh の argv を String 化
 今は `cmd: U8Array` + `start/len` の組から `substr` で String を
