@@ -20,24 +20,20 @@
 を追加し、sh.tc / msh.tc の重複 `substr` を撤去。poke32 は libtc 内の
 一箇所にだけ残る。hist_push も同 helper に寄せた。
 
-### (2) NUL 終端 U8Array (= C-string) を値として持ち回る — 設計的に残したい
+### (2) NUL 終端 U8Array (= C-string) — **撤廃済 (commit f682f4f)**
 
-syscall (open, exec, spawn) はバイト列 + NUL を要求するので、
-`U8Array` を「C-string bag」として保持するのは境界として正当。
-ただし、**String と両立できる箇所では String に寄せる**余地がある。
+syscall (openat, readdir, unlink, exec, spawn, spawn_fds) が受け取る
+パスを String / StringLiteral layout (4 バイト count + bytes) に揃えた。
+- kernel/vfs.tc の path 入口は `peek32` でカウントを読み、以降は
+  `addr+4` のデータ部を従来どおり処理
+- `libtc.tc` の `to_cstr` / `strlen` は削除 (`eq` は長さ引数を
+  取る形に変更)
+- `sh/msh` の `g_in_path/g_out_path` を `String` 化、`subcstr` 撤去
+- タスクは `"/path" as u32` / `string_var as u32` を直接 syscall に
+  渡せるようになった (`+4u32` も `to_cstr` も不要)
 
-| 箇所 | 状態 |
-|---|---|
-| `kernel/tasks/sh/sh.tc:46-47` `g_in_path/g_out_path: U8Array` | リダイレクト先パスを NUL 終端で保持 → syscall に渡す。境界ラッパーとして残したい |
-| `kernel/tasks/sh/sh.tc:531-547` `subcstr` | `substr` の NUL 終端版。`g_in_path/g_out_path` への書き込み用 |
-| `kernel/tasks/msh/msh.tc:32-33, 114-128` | sh と同じ |
-| `kernel/tasks/libtc/libtc.tc:53-77` `to_cstr(String) / to_cstr(StringLiteral)` | **意図通り**。String ↔ C-string の正式な変換点 |
-| `kernel/tasks/libtc/libtc.tc:111-142` `strlen / eq(U8Array, StringLiteral)` | C-string ヘルパ。意図通り |
-
-**方針**: `to_cstr` / `strlen` / `eq` は「C-string API 層」として
-明示的に残す。一方、`substr` と `subcstr` が両方存在するのは、
-呼び出し側で「どちらを使うべきか」が不明瞭なので整理の余地あり
-(例: argv は String で持ち、syscall 直前に to_cstr する、など)。
+kernel 内部の `task_set_name` は依然 U8Array NUL 終端で動いている
+が、ユーザ境界には露出しない。
 
 ### (3) 関数引数の `(buf: U8Array, len: i32)` パターン — 中優先度
 
@@ -108,16 +104,9 @@ type より dimension の問題 (`String` が欲しいわけではない)。
 
 ### ~~高: poke32 String 偽造をユーティリティに集約~~ 済
 
-### 中: sh/msh の argv を String 化
-今は `cmd: U8Array` + `start/len` の組から `substr` で String を
-切り出して argv に詰めている。argv の型が StringArray な以上
-ここは String で統一できる。副作用で `hist_push(buf, n)` も
-`hist_push(s: String)` に変えられる。
+### ~~中: sh/msh の argv を String 化~~ 済 (commit f682f4f で argv は既に String)
 
-### 中: `g_in_path / g_out_path` を String + to_cstr 変換点に集約
-現在は U8Array (NUL 終端) で保持 → そのまま syscall に渡している。
-String で持って syscall 直前に `to_cstr(g_in_path)` する形に
-揃えれば `subcstr` は消せる。
+### ~~中: `g_in_path / g_out_path` を String + to_cstr 変換点に集約~~ 済 (commit f682f4f、syscall 自体が String-layout を受けるので変換点すら不要)
 
 ### 保留: strtab の (ss, sl) パターン
 意図された設計。`docs/design_decisions.md` に「strtab + (ss, sl) は
