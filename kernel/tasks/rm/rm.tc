@@ -5,7 +5,7 @@
 
 import "../libtc/libtc.tc";
 
-fn do_unlink(path: U8Array) -> i32;
+fn do_unlink(path_addr: u32) -> i32;
 
 fn main(argv: StringArray) -> i32 {
     var argc: i32 = len(argv);
@@ -17,22 +17,13 @@ fn main(argv: StringArray) -> i32 {
     var i: i32 = 1;
     while i < argc {
         var s: String = get(argv, i);
-        var path: U8Array = to_cstr(s);
-        var r: i32 = do_unlink(path);
+        var r: i32 = do_unlink(s as u32);
         if r != 0 {
             puts("rm: cannot remove: ");
-            var j: i32 = 0;
-            while j < len(s) {
-                var c: U8Array = U8Array(1);
-                set(c, 0, get(s, j));
-                sys_write(1, c, 1);
-                delete(c);
-                j = j + 1;
-            }
+            sys_write(1, s as u32 as U8Array, len(s));
             puts("\n");
             ret = 1;
         }
-        delete(path);
         i = i + 1;
     }
     return ret;

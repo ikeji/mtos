@@ -17,16 +17,17 @@ import "kernel_common.tc";
 // raw UART emission even when vfs state is suspect.
 fn do_uart_write(buf: u32, len: i32) -> i32;
 
-// Copy the basename from a NUL-terminated path at `addr` into a
-// kmalloc'd U8Array. "/bin/sh" → "sh". Caller stores the result via
+// Copy the basename from a length-prefixed path at `addr` (String /
+// StringLiteral layout: 4-byte count header + bytes) into a kmalloc'd
+// U8Array. "/bin/sh" → "sh". Caller stores the result via
 // task_set_name, which owns the free.
 export fn basename_copy(addr: u32) -> U8Array {
-    var end: i32 = 0;
-    while peek8(addr + (end as u32)) != 0u8 { end = end + 1; }
+    var end: i32 = peek32(addr) as i32;
+    var data: u32 = addr + 4u32;
     var last_slash: i32 = -1;
     var i: i32 = 0;
     while i < end {
-        if peek8(addr + (i as u32)) == '/' as u8 { last_slash = i; }
+        if peek8(data + (i as u32)) == '/' as u8 { last_slash = i; }
         i = i + 1;
     }
     var start: i32 = last_slash + 1;
@@ -35,7 +36,7 @@ export fn basename_copy(addr: u32) -> U8Array {
     var buf: U8Array = U8Array((nlen + 1) as u32);
     i = 0;
     while i < nlen {
-        set(buf, i, peek8(addr + ((start + i) as u32)));
+        set(buf, i, peek8(data + ((start + i) as u32)));
         i = i + 1;
     }
     set(buf, nlen, 0u8);
@@ -97,26 +98,28 @@ fn load_fd_header_ok(arena: i32, stack: i32) -> bool {
     return true;
 }
 
-// Debug helper for K7-3: dump up to 32 bytes at path_addr to UART as a
-// sequence of escaped bytes. Used on spawn/exec failure so we can see
-// exactly what path string the kernel was handed. `tag` distinguishes
-// the call site (e.g., "spawn" vs "exec").
+// Debug helper for K7-3: dump the path at path_addr (length-prefixed)
+// to UART as a sequence of escaped bytes. Used on spawn/exec failure
+// so we can see exactly what path the kernel was handed. `tag`
+// distinguishes the call site (e.g., "spawn" vs "exec").
 fn debug_dump_path(path_addr: u32, tag: StringLiteral) -> void {
     kputs(tag);
     kputs(": path=\"");
     var one: U8Array = U8Array(1);
-    var i: u32 = 0u32;
-    while i < 32u32 {
-        var b: u8 = peek8(path_addr + i);
-        if b == 0u8 {
-            kputs("\\0");
-        } else if b < 32u8 || b >= 127u8 {
+    var plen: i32 = peek32(path_addr) as i32;
+    if plen < 0 { plen = 0; }
+    if plen > 64 { plen = 64; }
+    var data: u32 = path_addr + 4u32;
+    var i: i32 = 0;
+    while i < plen {
+        var b: u8 = peek8(data + (i as u32));
+        if b < 32u8 || b >= 127u8 {
             kputs("?");
         } else {
             set(one, 0, b);
             do_uart_write(one as u32 + 4u32, 1);
         }
-        i = i + 1u32;
+        i = i + 1;
     }
     delete(one);
     kputs("\"\n");
@@ -171,9 +174,7 @@ fn load_fd(fd: i32) -> u32 {
 // Returns 0 on any failure, otherwise a frame pointer ready for
 // sched_register. Task sizes come from the binary header.
 export fn load_task(path: StringLiteral) -> u32 {
-    var pbuf: U8Array = to_cstr(path);
-    var fd: i32 = vfs_open(pbuf as u32 + 4u32, 0);
-    delete(pbuf);
+    var fd: i32 = vfs_open(path as u32, 0);
     if fd < 0 { return 0u32; }
 
     var frame: u32 = load_fd(fd);
@@ -181,9 +182,9 @@ export fn load_task(path: StringLiteral) -> u32 {
     return frame;
 }
 
-// Same as load_task but takes a raw NUL-terminated path address (used
-// by read_kern_config where the path was parsed out of a config file
-// into a U8Array, not a StringLiteral).
+// Same as load_task but takes a raw length-prefixed path address
+// (used by read_kern_config where the path was parsed out of a
+// config file into a String, not a StringLiteral).
 export fn load_task_addr(path_addr: u32) -> u32 {
     var fd: i32 = vfs_open(path_addr, 0);
     if fd < 0 { return 0u32; }

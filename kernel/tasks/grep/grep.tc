@@ -94,22 +94,16 @@ fn main(argv: StringArray) -> i32 {
         var i: i32 = 2;
         while i < nargs {
             var name: String = get(argv, i);
-            var sl: i32 = len(name);
-            var path: U8Array = U8Array((sl + 1) as u32);
-            var j: i32 = 0;
-            while j < sl { set(path, j, get(name, j)); j = j + 1; }
-            set(path, sl, 0u8);
-            var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
+            var fd: i32 = do_openat(0, name as u32, 0);
             if fd < 0 {
                 eputs("grep: ");
-                sys_write(2, path, sl);
+                sys_write(2, name as u32 as U8Array, len(name));
                 eputs(": open failed\n");
                 error = 1;
             } else {
                 if grep_fd(fd, pat, pat_len) != 0 { found = 1; }
                 do_close(fd);
             }
-            delete(path);
             i = i + 1;
         }
     }

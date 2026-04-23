@@ -148,8 +148,10 @@ export fn write_le16(buf: U8Array, off: i32, val: i32) -> void {
 }
 
 // Copy a StringLiteral into a kmalloc'd U8Array followed by a NUL
-// byte. Used by kernel code that hands paths to vfs_open et al.
-// Caller must delete() the result.
+// byte. Kernel uses this to build task name buffers (task_set_name
+// owns the deletion); procfs reads back via len(nm) - 1 to strip the
+// trailing NUL. Not used for vfs_open paths any more — those take
+// length-prefixed addresses directly.
 export fn to_cstr(s: StringLiteral) -> U8Array {
     var slen: i32 = len(s);
     var buf: U8Array = U8Array((slen + 1) as u32);
@@ -610,18 +612,7 @@ export fn read_kern_config() -> i32 {
     g_cfg_init_count = 0;
     g_cfg_mux = 0;
 
-    var path: U8Array = U8Array(16);
-    var pstr: StringLiteral = "/etc/kern.conf";
-    var plen: i32 = len(pstr);
-    var k: i32 = 0;
-    while k < plen {
-        set(path, k, get(pstr, k));
-        k = k + 1;
-    }
-    set(path, plen, 0u8);
-
-    var fd: i32 = vfs_open(path as u32 + 4u32, 0);
-    delete(path);
+    var fd: i32 = vfs_open("/etc/kern.conf" as u32, 0);
     if fd < 0 { return 0; }
 
     var size: i32 = vfs_size(fd);
@@ -647,11 +638,10 @@ export fn kern_config_mux() -> i32 { return g_cfg_mux; }
 export fn kern_config_init_count() -> i32 { return g_cfg_init_count; }
 export fn kern_config_init_path(idx: i32) -> u32 {
     if idx < 0 || idx >= g_cfg_init_count { return 0u32; }
-    // Strip the String header to hand vfs_open / load_task_addr the
-    // NUL-terminated data directly — they take raw u32 addresses.
+    // Return the String address with its count header intact so
+    // vfs_open / load_task_addr can read the length directly.
     var s: String = get(g_cfg_inits, idx);
-    if s as u32 == 0u32 { return 0u32; }
-    return s as u32 + 4u32;
+    return s as u32;
 }
 
 export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {

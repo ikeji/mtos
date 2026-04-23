@@ -43,37 +43,6 @@ export fn putchar(c: u8) -> void {
     return;
 }
 
-// to_cstr — copy a string into a freshly-allocated U8Array followed by
-// a terminating NUL byte. Used for filenames and other values passed
-// to syscalls that read until NUL. Caller must delete() the result.
-//
-// Two overloads: StringLiteral for compile-time strings and String for
-// runtime strings (e.g. argv entries). Avoids ad-hoc str_to_nul /
-// string_to_nul helpers in individual tasks.
-export fn to_cstr(s: StringLiteral) -> U8Array {
-    var slen: i32 = len(s);
-    var buf: U8Array = U8Array((slen + 1) as u32);
-    var i: i32 = 0;
-    while i < slen {
-        set(buf, i, get(s, i));
-        i = i + 1;
-    }
-    set(buf, slen, 0u8);
-    return buf;
-}
-
-export fn to_cstr(s: String) -> U8Array {
-    var slen: i32 = len(s);
-    var buf: U8Array = U8Array((slen + 1) as u32);
-    var i: i32 = 0;
-    while i < slen {
-        set(buf, i, get(s, i));
-        i = i + 1;
-    }
-    set(buf, slen, 0u8);
-    return buf;
-}
-
 // print — emit a signed decimal integer to stdout. Replaces the
 // per-task print_u32 / print_int / emit_int helpers that all duplicated
 // the same digit-reversal loop.
@@ -110,27 +79,19 @@ export fn print(v: i32) -> void {
     return;
 }
 
-export fn strlen(buf: U8Array) -> i32 {
-    var cap: i32 = len(buf);
-    var i: i32 = 0;
-    while i < cap {
-        if get(buf, i) == 0u8 { return i; }
-        i = i + 1;
-    }
-    return cap;
-}
-
-// eq — compare a NUL-terminated U8Array against a StringLiteral.
-// Returns true iff the bytes match exactly and buf[len(s)] == 0. Used
-// by shells and argv-consuming tasks for "does this command equal X".
-export fn eq(buf: U8Array, s: StringLiteral) -> bool {
+// eq — compare the first `n` bytes of `buf` against a StringLiteral.
+// Returns true iff n == len(s) and the bytes match exactly. Used by
+// shells for `if eq(cmd, n, "quit")` style dispatch — n is the
+// logical length of the command that was typed.
+export fn eq(buf: U8Array, n: i32, s: StringLiteral) -> bool {
     var slen: i32 = len(s);
+    if n != slen { return false; }
     var i: i32 = 0;
     while i < slen {
         if get(buf, i) != get(s, i) { return false; }
         i = i + 1;
     }
-    return get(buf, slen) == 0u8;
+    return true;
 }
 
 // string_from_bytes — copy n bytes starting at buf[off] into a

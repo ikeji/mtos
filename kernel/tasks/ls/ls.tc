@@ -9,28 +9,17 @@ import "../libtc/libtc.tc";
 fn do_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32;
 
 fn main(argv: StringArray) -> i32 {
-    // Determine target path: argv[1] if given, else "/".
-    var path_buf: U8Array = 0 as U8Array;
+    var path_addr: u32 = 0u32;
     if len(argv) >= 2 {
-        var arg: String = get(argv, 1);
-        var slen: i32 = len(arg);
-        path_buf = U8Array((slen + 1) as u32);
-        var i: i32 = 0;
-        while i < slen {
-            set(path_buf, i, get(arg, i));
-            i = i + 1;
-        }
-        set(path_buf, slen, 0u8);
+        path_addr = get(argv, 1) as u32;
     } else {
-        path_buf = to_cstr("/");
+        path_addr = "/" as u32;
     }
 
     var buf: U8Array = U8Array(4096);
-    var n: i32 = do_readdir(path_buf as u32 + 4u32,
-                            buf as u32 + 4u32, 4096);
+    var n: i32 = do_readdir(path_addr, buf as u32 + 4u32, 4096);
     if n < 0 {
         puts("ls: readdir failed\n");
-        delete(path_buf);
         delete(buf);
         return 1;
     }
@@ -53,7 +42,6 @@ fn main(argv: StringArray) -> i32 {
         }
         i = i + 1;   // skip NUL
     }
-    delete(path_buf);
     delete(buf);
     return 0;
 }

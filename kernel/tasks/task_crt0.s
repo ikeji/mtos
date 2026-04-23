@@ -142,10 +142,11 @@ do_nanosleep__i32:
     ecall
     ret
 
-# do_unlink(path: U8Array) → i32 — remove a file.
-    .globl do_unlink__U8Array
-do_unlink__U8Array:
-    addi a0, a0, 4          # skip U8Array length header
+# do_unlink(path_addr: u32) → i32 — remove a file. path_addr points
+# at a length-prefixed byte block (String / StringLiteral layout);
+# kernel/vfs.tc vfs_unlink reads the count from the header.
+    .globl do_unlink__u32
+do_unlink__u32:
     li   a7, 87
     ecall
     ret

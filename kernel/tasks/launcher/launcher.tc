@@ -21,9 +21,7 @@ fn main() -> i32 {
     // Step 1: dynamic spawn + wait. Validates that pico2's sys_spawn
     // path can kmalloc a task_ram / task_stack / frame_buf from the
     // kernel arena for a child binary declared via the K3 header.
-    var spawn_path: U8Array = to_cstr("/bin/hello2");
-    var slot: i32 = do_spawn(spawn_path as u32 + 4u32, 0, 0, 0);
-    delete(spawn_path);
+    var slot: i32 = do_spawn("/bin/hello2" as u32, 0, 0, 0);
     if slot < 0 {
         puts("LAUNCHER: spawn failed\n");
     } else {
@@ -35,9 +33,7 @@ fn main() -> i32 {
     // Step 2: exec /bin/catfile as before. catfile reads /hello.txt
     // via the mtfs XIP backend and prints it to stdout, so the pico2
     // test still sees its CAT:hello, mtfs line.
-    var path: U8Array = to_cstr("/bin/catfile");
-    do_exec(path as u32 + 4u32, 0, 0, 0);
-    delete(path);
+    do_exec("/bin/catfile" as u32, 0, 0, 0);
     puts("LAUNCHER: exec failed\n");
     return 1;
 }

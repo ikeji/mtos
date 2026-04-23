@@ -60,14 +60,7 @@ fn main(argv: StringArray) -> i32 {
     if path_idx < 0 {
         head_fd(0, want);
     } else {
-        var name: String = get(argv, path_idx);
-        var sl: i32 = len(name);
-        var path: U8Array = U8Array((sl + 1) as u32);
-        var j: i32 = 0;
-        while j < sl { set(path, j, get(name, j)); j = j + 1; }
-        set(path, sl, 0u8);
-        var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
-        delete(path);
+        var fd: i32 = do_openat(0, get(argv, path_idx) as u32, 0);
         if fd < 0 {
             puts("head: open failed\n");
             return 1;

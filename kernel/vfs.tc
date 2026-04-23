@@ -98,14 +98,16 @@ fn is_proc_path(path_addr: u32, plen: i32) -> bool {
     return path_has_prefix(path_addr, plen, "/proc/");
 }
 
-// strnlen over raw memory. Scans at most max bytes.
-fn strnlen_addr(addr: u32, max: i32) -> i32 {
-    var i: i32 = 0;
-    while i < max {
-        if peek8(addr + (i as u32)) == 0u8 { return i; }
-        i = i + 1;
-    }
-    return max;
+// Path arguments arrive as length-prefixed byte blocks (the String /
+// StringLiteral memory layout): 4-byte count header, then `count`
+// bytes of payload. `path_head` returns the length and advances a
+// pointer past the header so the caller can read the payload via
+// peek8. Returns -1 if the header is obviously bogus.
+fn path_head(addr: u32) -> i32 {
+    var plen: i32 = peek32(addr) as i32;
+    if plen < 0 { return -1; }
+    if plen > VFS_PATH_MAX { return -1; }
+    return plen;
 }
 
 // Allocate a VFS fd slot (index 3+). Returns -1 on exhaustion.
@@ -124,11 +126,12 @@ fn alloc_vfs_fd(fs: i32, inner_fd: i32) -> i32 {
     return -1;
 }
 
-// Open a file at the given path. Path is a null-terminated byte
-// string in task memory at path_addr (virt / pico2 have ID mapping,
-// so kernel can read it directly). Paths under /tmp/ route to tmpfs
-// and may pass O_CREAT / O_TRUNC / O_WRONLY / O_RDWR in flags. All
-// other paths go to mtfs (read-only); flags are ignored there.
+// Open a file at the given path. Path is a length-prefixed byte
+// block (String/StringLiteral layout) in task memory at path_addr
+// (virt / pico2 have ID mapping, so kernel can read it directly).
+// Paths under /tmp/ route to tmpfs and may pass O_CREAT / O_TRUNC /
+// O_WRONLY / O_RDWR in flags. All other paths go to mtfs
+// (read-only); flags are ignored there.
 //
 // mtfs path components are separated by '/'. A leading '/' is
 // accepted and skipped. Each component is looked up under the
@@ -136,8 +139,9 @@ fn alloc_vfs_fd(fs: i32, inner_fd: i32) -> i32 {
 // directory first.
 export fn vfs_open(path_addr: u32, flags: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
-    var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
-    if plen == 0 { return -1; }
+    var plen: i32 = path_head(path_addr);
+    if plen <= 0 { return -1; }
+    path_addr = path_addr + 4u32;
 
     if is_tmp_path(path_addr, plen) {
         var nlen: i32 = plen - 5;  // "/tmp/" is 5 bytes
@@ -381,8 +385,9 @@ fn vfs_append_entry(buf_addr: u32, buf_size: i32, pos: i32, name: StringLiteral)
 
 export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
-    var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
-    if plen == 0 { return -1; }
+    var plen: i32 = path_head(path_addr);
+    if plen <= 0 { return -1; }
+    path_addr = path_addr + 4u32;
     if path_eq_or_trailing(path_addr, plen, "/tmp") {
         return tmpfs_readdir(buf_addr, buf_size);
     }
@@ -410,8 +415,9 @@ export fn vfs_readdir(path_addr: u32, buf_addr: u32, buf_size: i32) -> i32 {
 
 export fn vfs_unlink(path_addr: u32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
-    var plen: i32 = strnlen_addr(path_addr, VFS_PATH_MAX);
-    if plen == 0 { return -1; }
+    var plen: i32 = path_head(path_addr);
+    if plen <= 0 { return -1; }
+    path_addr = path_addr + 4u32;
     if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
         return fatfs_delete(path_addr + 4u32, plen - 4);
     }

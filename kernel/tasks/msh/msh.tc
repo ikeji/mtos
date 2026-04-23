@@ -29,8 +29,8 @@ var PATH_MAX: i32 = 70;
 // Redirect results produced by parse_redir. Globals because TC
 // functions return a single value and we need three outputs (argv
 // + in_path + out_path). Cleared after each do_spawn.
-var g_in_path:  U8Array = 0 as U8Array;
-var g_out_path: U8Array = 0 as U8Array;
+var g_in_path:  String = 0 as String;
+var g_out_path: String = 0 as String;
 
 // Read characters from stdin until LF / CR. Returns the number of
 // command bytes stored in buf (not counting the NUL terminator).
@@ -92,22 +92,9 @@ fn count_tokens(buf: U8Array, n: i32) -> i32 {
     return count;
 }
 
-// Copy buf[start..start+n] into a NUL-terminated U8Array, used for
-// redirect paths (do_spawn wants a char* pointer, not a String).
-fn subcstr(buf: U8Array, start: i32, n: i32) -> U8Array {
-    var s: U8Array = U8Array((n + 1) as u32);
-    var i: i32 = 0;
-    while i < n {
-        set(s, i, get(buf, start + i));
-        i = i + 1;
-    }
-    set(s, n, 0u8);
-    return s;
-}
-
 // Scan cmd[0..n] into:
-//   - g_in_path  (U8Array NUL-terminated, 0 if no `<`)
-//   - g_out_path (U8Array NUL-terminated, 0 if no `>`)
+//   - g_in_path  (String, 0 if no `<`)
+//   - g_out_path (String, 0 if no `>`)
 //   - a returned StringArray of argv tokens (excluding the redirect
 //     operators and their operands)
 //
@@ -151,14 +138,14 @@ fn parse_redir(cmd: U8Array, n: i32) -> StringArray {
     }
 
     if in_start >= 0 {
-        g_in_path = subcstr(cmd, in_start, in_len);
+        g_in_path = string_from_bytes(cmd, in_start, in_len);
     } else {
         g_in_path = 0 as U8Array;
     }
     if out_start >= 0 {
-        g_out_path = subcstr(cmd, out_start, out_len);
+        g_out_path = string_from_bytes(cmd, out_start, out_len);
     } else {
-        g_out_path = 0 as U8Array;
+        g_out_path = 0 as String;
     }
 
     // Pass 2: fill argv (only the non-redirect tokens).
@@ -214,28 +201,34 @@ fn build_path(path: U8Array, argv: StringArray) -> bool {
     var head: String = get(argv, 0);
     var hlen: i32 = len(head);
     if hlen == 0 { return false; }
+    // poke8 so we can write past the previous iteration's count.
+    var base: u32 = path as u32 + 4u32;
+    var total: i32 = 0;
     if get(head, 0) == '/' as u8 {
         if hlen + 1 > PATH_MAX { return false; }
         var i: i32 = 0;
         while i < hlen {
-            set(path, i, get(head, i));
+            poke8(base + (i as u32), get(head, i));
             i = i + 1;
         }
-        set(path, hlen, 0u8);
-        return true;
+        poke8(base + (hlen as u32), 0u8);
+        total = hlen;
+    } else {
+        if hlen + 5 + 1 > PATH_MAX { return false; }
+        poke8(base,        '/' as u8);
+        poke8(base + 1u32, 'b' as u8);
+        poke8(base + 2u32, 'i' as u8);
+        poke8(base + 3u32, 'n' as u8);
+        poke8(base + 4u32, '/' as u8);
+        var i: i32 = 0;
+        while i < hlen {
+            poke8(base + ((5 + i) as u32), get(head, i));
+            i = i + 1;
+        }
+        poke8(base + ((5 + hlen) as u32), 0u8);
+        total = 5 + hlen;
     }
-    if hlen + 5 + 1 > PATH_MAX { return false; }
-    set(path, 0, '/' as u8);
-    set(path, 1, 'b' as u8);
-    set(path, 2, 'i' as u8);
-    set(path, 3, 'n' as u8);
-    set(path, 4, '/' as u8);
-    var i: i32 = 0;
-    while i < hlen {
-        set(path, 5 + i, get(head, i));
-        i = i + 1;
-    }
-    set(path, 5 + hlen, 0u8);
+    poke32(path as u32, total as u32);
     return true;
 }
 
@@ -252,25 +245,25 @@ fn main() -> i32 {
         var n: i32 = read_line(cmd);
         if n == 0 {
             // empty line, read next
-        } else if eq(cmd, "quit") {
+        } else if eq(cmd, n, "quit") {
             running = 0;
         } else {
             var argv: StringArray = parse_redir(cmd, n);
             if !build_path(path, argv) {
                 eputs("msh: empty command\n");
                 free_argv(argv);
-                if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                if g_in_path  as u32 != 0u32 { delete(g_in_path  as u32 as U8Array); g_in_path  = 0 as String; }
+                if g_out_path as u32 != 0u32 { delete(g_out_path as u32 as U8Array); g_out_path = 0 as String; }
             } else {
                 var in_addr:  u32 = 0u32;
                 var out_addr: u32 = 0u32;
-                if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32 + 4u32; }
-                if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32 + 4u32; }
-                var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32,
+                if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32; }
+                if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32; }
+                var slot: i32 = do_spawn(path as u32, argv as u32,
                                          in_addr, out_addr);
                 free_argv(argv);
-                if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                if g_in_path  as u32 != 0u32 { delete(g_in_path  as u32 as U8Array); g_in_path  = 0 as String; }
+                if g_out_path as u32 != 0u32 { delete(g_out_path as u32 as U8Array); g_out_path = 0 as String; }
                 if slot < 0 {
                     eputs("msh: spawn failed\n");
                 } else {

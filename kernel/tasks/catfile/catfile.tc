@@ -17,15 +17,14 @@ fn do_openat(dirfd: i32, path_addr: u32, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
 fn main(argv: StringArray) -> i32 {
-    var path_buf: U8Array = 0 as U8Array;
+    var path_addr: u32 = 0u32;
     if len(argv) >= 2 {
-        path_buf = to_cstr(get(argv, 1));
+        path_addr = get(argv, 1) as u32;
     } else {
-        path_buf = to_cstr("/hello.txt");
+        path_addr = "/hello.txt" as u32;
     }
 
-    var fd: i32 = do_openat(0, path_buf as u32 + 4u32, 0);
-    delete(path_buf);
+    var fd: i32 = do_openat(0, path_addr, 0);
     if fd < 0 {
         puts("CAT: open failed\n");
         return 1;

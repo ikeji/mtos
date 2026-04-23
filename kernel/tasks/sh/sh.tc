@@ -42,9 +42,11 @@ var HIST_MAX: i32 = 8;
 
 // Redirect results produced by parse_redir. Globals because TC
 // functions return a single value and we need three outputs (argv
-// + in_path + out_path). Cleared after each do_spawn.
-var g_in_path:  U8Array = 0 as U8Array;
-var g_out_path: U8Array = 0 as U8Array;
+// + in_path + out_path). Cleared after each do_spawn. Stored as
+// String so the count header is the content length and the values
+// can be passed straight to do_openat / sys_write.
+var g_in_path:  String = 0 as String;
+var g_out_path: String = 0 as String;
 
 // Echo one byte back to stdout so the user sees what they typed.
 // Kept as a separate function so read_line stays readable.
@@ -231,10 +233,13 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
         base_start = slash_idx + 1;
     }
     set(dir, dir_len, 0u8);
+    // Patch dir's count header to the content length so do_readdir
+    // (which consumes a String-layout path) reads the right size.
+    poke32(dir as u32, dir_len as u32);
     var base_len: i32 = pos - base_start;
 
     var dirbuf: U8Array = U8Array(4096);
-    var n: i32 = do_readdir(dir as u32 + 4u32,
+    var n: i32 = do_readdir(dir as u32,
                             dirbuf as u32 + 4u32, 4096);
     if n <= 0 { delete(dir); delete(dirbuf); return pos; }
 
@@ -306,7 +311,8 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
                 nk = nk + 1;
             }
             set(cp, cpos, 0u8);
-            var fd: i32 = do_openat(0, cp as u32 + 4u32, 0);
+            poke32(cp as u32, cpos as u32);
+            var fd: i32 = do_openat(0, cp as u32, 0);
             delete(cp);
             if fd < 0 {
                 set(buf, pos, '/' as u8);
@@ -502,22 +508,9 @@ fn count_tokens(buf: U8Array, n: i32) -> i32 {
     return count;
 }
 
-// Copy buf[start..start+n] into a NUL-terminated U8Array, used for
-// redirect paths (do_spawn wants a char* pointer, not a String).
-fn subcstr(buf: U8Array, start: i32, n: i32) -> U8Array {
-    var s: U8Array = U8Array((n + 1) as u32);
-    var i: i32 = 0;
-    while i < n {
-        set(s, i, get(buf, start + i));
-        i = i + 1;
-    }
-    set(s, n, 0u8);
-    return s;
-}
-
 // Scan cmd[0..n] into:
-//   - g_in_path  (U8Array NUL-terminated, 0 if no `<`)
-//   - g_out_path (U8Array NUL-terminated, 0 if no `>`)
+//   - g_in_path  (String, 0 if no `<`)
+//   - g_out_path (String, 0 if no `>`)
 //   - a returned StringArray of argv tokens (excluding the redirect
 //     operators and their operands)
 //
@@ -561,14 +554,14 @@ fn parse_redir(cmd: U8Array, n: i32) -> StringArray {
     }
 
     if in_start >= 0 {
-        g_in_path = subcstr(cmd, in_start, in_len);
+        g_in_path = string_from_bytes(cmd, in_start, in_len);
     } else {
         g_in_path = 0 as U8Array;
     }
     if out_start >= 0 {
-        g_out_path = subcstr(cmd, out_start, out_len);
+        g_out_path = string_from_bytes(cmd, out_start, out_len);
     } else {
-        g_out_path = 0 as U8Array;
+        g_out_path = 0 as String;
     }
 
     // Pass 2: fill argv (only the non-redirect tokens).
@@ -616,36 +609,48 @@ fn free_argv(sa: StringArray) -> void {
     return;
 }
 
-// Write the path to execute into `path`. If argv[0] starts with '/'
-// we treat it as an absolute path (used by phase 7 to run freshly
-// compiled binaries out of /tmp). Otherwise we prepend "/bin/".
+// Write the path to execute into `path` in String layout: bytes at
+// offsets 0..n with the count header poked in afterwards so callers
+// can hand `path as u32` straight to do_spawn / do_exec. Returns
+// true on success. If argv[0] starts with '/' we treat it as an
+// absolute path (used by phase 7 to run freshly compiled binaries
+// out of /tmp). Otherwise we prepend "/bin/".
 fn build_path(path: U8Array, argv: StringArray) -> bool {
     if len(argv) == 0 { return false; }
     var head: String = get(argv, 0);
     var hlen: i32 = len(head);
     if hlen == 0 { return false; }
+    // Use poke8 so we can write past the current count header — the
+    // previous iteration's build_path shrank `path`'s count to the
+    // last path's length, which would make set() trip its bounds
+    // check for any longer path this time around.
+    var base: u32 = path as u32 + 4u32;
+    var total: i32 = 0;
     if get(head, 0) == '/' as u8 {
         if hlen + 1 > PATH_MAX { return false; }
         var i: i32 = 0;
         while i < hlen {
-            set(path, i, get(head, i));
+            poke8(base + (i as u32), get(head, i));
             i = i + 1;
         }
-        set(path, hlen, 0u8);
-        return true;
+        poke8(base + (hlen as u32), 0u8);
+        total = hlen;
+    } else {
+        if hlen + 5 + 1 > PATH_MAX { return false; }
+        poke8(base,          '/' as u8);
+        poke8(base + 1u32,   'b' as u8);
+        poke8(base + 2u32,   'i' as u8);
+        poke8(base + 3u32,   'n' as u8);
+        poke8(base + 4u32,   '/' as u8);
+        var i: i32 = 0;
+        while i < hlen {
+            poke8(base + ((5 + i) as u32), get(head, i));
+            i = i + 1;
+        }
+        poke8(base + ((5 + hlen) as u32), 0u8);
+        total = 5 + hlen;
     }
-    if hlen + 5 + 1 > PATH_MAX { return false; }
-    set(path, 0, '/' as u8);
-    set(path, 1, 'b' as u8);
-    set(path, 2, 'i' as u8);
-    set(path, 3, 'n' as u8);
-    set(path, 4, '/' as u8);
-    var i: i32 = 0;
-    while i < hlen {
-        set(path, 5 + i, get(head, i));
-        i = i + 1;
-    }
-    set(path, 5 + hlen, 0u8);
+    poke32(path as u32, total as u32);
     return true;
 }
 
@@ -682,9 +687,9 @@ fn count_pipes(cmd: U8Array, n: i32, pipe_pos: I32Array) -> i32 {
 
 // Open a file path from g_in_path / g_out_path and return the VFS fd.
 // Returns 0 if the path is NULL. flags: 0 = read, 577 = write+create+trunc.
-fn open_redir_path(p: U8Array, flags: i32) -> i32 {
+fn open_redir_path(p: String, flags: i32) -> i32 {
     if p as u32 == 0u32 { return 0; }
-    return do_openat(0, p as u32 + 4u32, flags);
+    return do_openat(0, p as u32, flags);
 }
 
 fn main() -> i32 {
@@ -702,7 +707,7 @@ fn main() -> i32 {
             // empty line, prompt again
         } else {
             hist_push(cmd, n);
-            if eq(cmd, "quit") {
+            if eq(cmd, n, "quit") {
                 running = 0;
             } else {
                 var pipe_pos: I32Array = I32Array(4);
@@ -715,18 +720,18 @@ fn main() -> i32 {
                     if !build_path(path, argv) {
                         puts("sh: empty command\n");
                         free_argv(argv);
-                        if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                        if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                        if g_in_path  as u32 != 0u32 { delete(g_in_path  as u32 as U8Array); g_in_path  = 0 as String; }
+                        if g_out_path as u32 != 0u32 { delete(g_out_path as u32 as U8Array); g_out_path = 0 as String; }
                     } else {
                         var in_addr:  u32 = 0u32;
                         var out_addr: u32 = 0u32;
-                        if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32 + 4u32; }
-                        if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32 + 4u32; }
-                        var slot: i32 = do_spawn(path as u32 + 4u32, argv as u32,
+                        if g_in_path  as u32 != 0u32 { in_addr  = g_in_path  as u32; }
+                        if g_out_path as u32 != 0u32 { out_addr = g_out_path as u32; }
+                        var slot: i32 = do_spawn(path as u32, argv as u32,
                                                  in_addr, out_addr);
                         free_argv(argv);
-                        if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                        if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                        if g_in_path  as u32 != 0u32 { delete(g_in_path  as u32 as U8Array); g_in_path  = 0 as String; }
+                        if g_out_path as u32 != 0u32 { delete(g_out_path as u32 as U8Array); g_out_path = 0 as String; }
                         if slot < 0 {
                             puts("sh: spawn failed\n");
                         } else {
@@ -782,8 +787,8 @@ fn main() -> i32 {
                         if !build_path(path, argv) {
                             puts("sh: empty command in pipe\n");
                             free_argv(argv);
-                            if g_in_path  as u32 != 0u32 { delete(g_in_path);  g_in_path  = 0 as U8Array; }
-                            if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as U8Array; }
+                            if g_in_path  as u32 != 0u32 { delete(g_in_path  as u32 as U8Array); g_in_path  = 0 as String; }
+                            if g_out_path as u32 != 0u32 { delete(g_out_path as u32 as U8Array); g_out_path = 0 as String; }
                             ok = 0;
                         } else {
                             // Determine fd redirects for this segment
@@ -804,33 +809,33 @@ fn main() -> i32 {
                                 var ffd: i32 = open_redir_path(g_in_path, 0);
                                 if ffd < 0 {
                                     eputs("sh: ");
-                                    sys_write(2, g_in_path, strlen(g_in_path));
+                                    sys_write(2, g_in_path as u32 as U8Array, len(g_in_path));
                                     eputs(": open failed\n");
                                     redir_ok = 0;
                                 } else {
                                     in_fd = ffd;
                                 }
-                                delete(g_in_path); g_in_path = 0 as U8Array;
+                                delete(g_in_path as u32 as U8Array); g_in_path = 0 as String;
                             }
                             // Explicit > on last segment
                             if redir_ok == 1 && g_out_path as u32 != 0u32 {
                                 var ffd: i32 = open_redir_path(g_out_path, 577);
                                 if ffd < 0 {
                                     eputs("sh: ");
-                                    sys_write(2, g_out_path, strlen(g_out_path));
+                                    sys_write(2, g_out_path as u32 as U8Array, len(g_out_path));
                                     eputs(": open failed\n");
                                     redir_ok = 0;
                                 } else {
                                     out_fd = ffd;
                                 }
-                                delete(g_out_path); g_out_path = 0 as U8Array;
+                                delete(g_out_path as u32 as U8Array); g_out_path = 0 as String;
                             }
 
                             if redir_ok == 0 {
                                 free_argv(argv);
                                 ok = 0;
                             } else {
-                                var slot: i32 = do_spawn_fds(path as u32 + 4u32,
+                                var slot: i32 = do_spawn_fds(path as u32,
                                                               argv as u32,
                                                               in_fd, out_fd);
                                 free_argv(argv);

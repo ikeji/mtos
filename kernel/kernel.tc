@@ -95,9 +95,7 @@ fn dump_sector0() -> void {
 }
 
 fn cat_hello_txt() -> void {
-    var path: U8Array = to_cstr("/hello.txt");
-    var fd: i32 = vfs_open(path as u32 + 4u32, 0);
-    delete(path);
+    var fd: i32 = vfs_open("/hello.txt" as u32, 0);
     if fd < 0 {
         kputs("MTFS: hello.txt not found\n");
         return;

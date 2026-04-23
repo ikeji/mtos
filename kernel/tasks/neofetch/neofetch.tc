@@ -22,9 +22,7 @@ struct TaskStats {
 
 fn read_task_stats() -> TaskStats {
     var stats: TaskStats = TaskStats(0, 0, 0, 0, 0);
-    var path: U8Array = to_cstr("/proc/tasks");
-    var fd: i32 = do_openat(0, path as u32 + 4u32, 0);
-    delete(path);
+    var fd: i32 = do_openat(0, "/proc/tasks" as u32, 0);
     if fd < 0 { return stats; }
     var buf: U8Array = U8Array(4096);
     var n: i32 = sys_read(fd, buf, 4096);

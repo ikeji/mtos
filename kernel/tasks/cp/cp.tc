@@ -17,20 +17,16 @@ fn main(argv: StringArray) -> i32 {
         puts("cp: usage: cp <src> <dst>\n");
         return 1;
     }
-    var src_path: U8Array = to_cstr(get(argv, 1));
-    var dst_path: U8Array = to_cstr(get(argv, 2));
-    var src_fd: i32 = do_openat(0, src_path as u32 + 4u32, 0);
+    var src_fd: i32 = do_openat(0, get(argv, 1) as u32, 0);
     if src_fd < 0 {
         puts("cp: src open failed\n");
-        delete(src_path); delete(dst_path);
         return 1;
     }
-    var dst_fd: i32 = do_openat(0, dst_path as u32 + 4u32,
+    var dst_fd: i32 = do_openat(0, get(argv, 2) as u32,
                                 O_WRONLY | O_CREAT | O_TRUNC);
     if dst_fd < 0 {
         puts("cp: dst open failed\n");
         do_close(src_fd);
-        delete(src_path); delete(dst_path);
         return 1;
     }
     var buf: U8Array = U8Array(4096);
@@ -51,6 +47,5 @@ fn main(argv: StringArray) -> i32 {
     delete(buf);
     do_close(src_fd);
     do_close(dst_fd);
-    delete(src_path); delete(dst_path);
     return err;
 }
