@@ -219,16 +219,6 @@ fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
 }
 
 // ===== String comparison helpers =====
-fn sval_eq(strtab: U8Array, ss: i32, sl: i32, b: U8Array, bl: i32) -> bool {
-    if sl != bl { return false; }
-    var i: i32 = 0;
-    while i < sl {
-        if get(strtab, (ss+i)) != get(b, i) { return false; }
-        i = i + 1;
-    }
-    return true;
-}
-
 // Compare node sval with a 1/2/3/... char sequence
 fn sv1(strtab: U8Array, ss: i32, sl: i32, c0: u8) -> bool {
     if sl != 1 { return false; }

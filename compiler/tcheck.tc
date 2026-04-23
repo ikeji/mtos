@@ -389,7 +389,6 @@ fn ft_psl(fntab: U32Array, fi: i32, pi: i32) -> i32 {
 
 fn ft_set_nss(fntab: U32Array, fi: i32, v: i32) -> void { poke32(ft_h(fntab, fi) +  0u32, v as u32); return; }
 fn ft_set_nsl(fntab: U32Array, fi: i32, v: i32) -> void { poke32(ft_h(fntab, fi) +  4u32, v as u32); return; }
-fn ft_set_np(fntab: U32Array, fi: i32, v: i32) -> void  { poke32(ft_h(fntab, fi) +  8u32, v as u32); return; }
 fn ft_set_rss(fntab: U32Array, fi: i32, v: i32) -> void { poke32(ft_h(fntab, fi) + 12u32, v as u32); return; }
 fn ft_set_rsl(fntab: U32Array, fi: i32, v: i32) -> void { poke32(ft_h(fntab, fi) + 16u32, v as u32); return; }
 fn ft_set_pss(fntab: U32Array, fi: i32, pi: i32, v: i32) -> void {
@@ -487,13 +486,6 @@ fn reg_fn(strtab: U8Array, fntab: U32Array, name: StringLiteral, pts: StringArra
         ft_set_psl(fntab, fi, i, len(pt));
         i = i + 1;
     }
-    return;
-}
-
-fn reg_fn0(strtab: U8Array, fntab: U32Array, name: StringLiteral, ret: StringLiteral) -> void {
-    var pts: StringArray = StringArray(1);
-    reg_fn(strtab, fntab, name, pts, 0, ret);
-    delete(pts);
     return;
 }
 
@@ -1285,101 +1277,6 @@ fn is_export_annot(nodes: AstNodeArray, strtab: U8Array, n: i32) -> bool {
     if get(strtab, (tass+4)) != 'r' as u8 { return false; }
     if get(strtab, (tass+5)) != 't' as u8 { return false; }
     return true;
-}
-
-// Collect declarations from an imports node (.th from another module).
-// The imports node contains (program ...) sub-nodes, one per .th file.
-// Only `(fn:export ...)` and `(struct ...)` are registered. Non-export
-// fns and `(var_decl ...)` from imports are deliberately ignored.
-fn collect_imports_th(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, imports_n: i32) -> void {
-    var prog: i32 = n_child(nodes, imports_n);
-    while prog >= 0 {
-        var c: i32 = n_child(nodes, prog);
-        while c >= 0 {
-            var ck: i32 = n_kind(nodes, c);
-            if ck == NK_FN {
-                if is_export_annot(nodes, strtab, c) {
-                    collect_fn(nodes, strtab, fntab, c);
-                }
-            }
-            if ck == NK_STRUCT {
-                // Register struct type name. collect_struct with no
-                // field children registers a 0-arg constructor —
-                // harmless and matches the legacy behaviour.
-                collect_struct(nodes, strtab, fntab, c);
-            }
-            c = n_sib(nodes, c);
-        }
-        prog = n_sib(nodes, prog);
-    }
-    return;
-}
-
-// Collect declarations from the (self ...) wrapper. Unlike imports,
-// EVERY fn and struct in the contained (program ...) is registered.
-// Globals are NOT registered here — typecheck.tc adds them in source
-// order during check_program, so to keep .tast output byte-identical
-// (some forward-referenced globals would otherwise gain a `:type`
-// annotation they don't have under typecheck.tc), tcheck mirrors that
-// per-top-level adding via the main streaming loop.
-fn collect_self_th(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, self_n: i32) -> void {
-    var prog: i32 = n_child(nodes, self_n);
-    while prog >= 0 {
-        var c: i32 = n_child(nodes, prog);
-        while c >= 0 {
-            var ck: i32 = n_kind(nodes, c);
-            if ck == NK_FN {
-                collect_fn(nodes, strtab, fntab, c);
-            }
-            if ck == NK_STRUCT {
-                collect_struct(nodes, strtab, fntab, c);
-            }
-            // var_decl deliberately skipped — see comment above.
-            c = n_sib(nodes, c);
-        }
-        prog = n_sib(nodes, prog);
-    }
-    return;
-}
-
-fn collect_decls(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray, root: i32) -> void {
-    var c: i32 = n_child(nodes, root);
-    while c >= 0 {
-        var ck: i32 = n_kind(nodes, c);
-        if ck == NK_FN {
-            collect_fn(nodes, strtab, fntab, c);
-        }
-        if ck == NK_STRUCT {
-            collect_struct(nodes, strtab, fntab, c);
-        }
-        c = n_sib(nodes, c);
-    }
-    return;
-}
-
-fn check_program(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray, root: i32) -> void {
-    var c: i32 = n_child(nodes, root);
-    while c >= 0 {
-        var ck: i32 = n_kind(nodes, c);
-        if ck == NK_FN {
-            check_fn(nodes, strtab, fntab, vartab, c);
-        }
-        if ck == NK_VAR_DECL {
-            var gtype_n: i32 = n_child(nodes, c);
-            if gtype_n >= 0 {
-                var gt_ss: i32 = n_ss(nodes, gtype_n);
-                var gt_sl: i32 = n_sl(nodes, gtype_n);
-                var_add(strtab, vartab, n_ss(nodes, c), n_sl(nodes, c), gt_ss, gt_sl);
-                // Do NOT annotate global var_decl (matches C typecheck behavior)
-                var ginit: i32 = n_sib(nodes, gtype_n);
-                if ginit >= 0 {
-                    check_expr(nodes, strtab, fntab, vartab, ginit);
-                }
-            }
-        }
-        c = n_sib(nodes, c);
-    }
-    return;
 }
 
 // ===== AST writer =====

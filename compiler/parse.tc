@@ -413,18 +413,6 @@ fn expect_tok(kind: i32, src: SourceReader, tok: U8Array) -> void {
 
 // ===== Expression parsers (flat output, no indent) =====
 
-// Write binop wrapper around a saved left expression
-fn wrap_binop(left_buf: U8Array, left_len: i32, op: i32,
-              src: SourceReader, tok: U8Array, sb: StringBuffer) -> void {
-    // (binop OP LEFT RIGHT)
-    emit_char(sb, '('); emit_string(sb, "binop"); emit_char(sb, ' ');
-    emit_op(sb, op);
-    emit_nl(sb);  // newline (for readability, downstream ignores whitespace)
-    emit_n(sb, left_buf, 0, left_len);
-    emit_nl(sb);
-    return;
-}
-
 fn pars_primary(src: SourceReader, tok: U8Array, sb: StringBuffer) -> void {
     if g_tok == TK_INT_LIT {
         emit_char(sb, '('); emit_string(sb, "int");
@@ -1151,22 +1139,6 @@ fn emit_cast_var(sb: StringBuffer, indent: i32, name: StringLiteral, tname: Stri
     emit_indent(sb, indent + 1);
     emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
     emit_string(sb, tname); emit_char(sb, ')'); emit_nl(sb);
-    emit_indent(sb, indent);
-    emit_char(sb, ')');
-    return;
-}
-
-// Emit (cast (var NAME) (type T)) where T comes from tbuf[tstart..].
-fn emit_cast_var_tbuf(sb: StringBuffer, indent: i32, name: StringLiteral, tbuf: U8Array, tstart: i32, tlen: i32) -> void {
-    emit_indent(sb, indent);
-    emit_char(sb, '('); emit_string(sb, "cast"); emit_nl(sb);
-    emit_indent(sb, indent + 1);
-    emit_char(sb, '('); emit_string(sb, "var"); emit_char(sb, ' ');
-    emit_string(sb, name); emit_char(sb, ')'); emit_nl(sb);
-    emit_indent(sb, indent + 1);
-    emit_char(sb, '('); emit_string(sb, "type"); emit_char(sb, ' ');
-    emit_n(sb, tbuf, tstart, tlen);
-    emit_char(sb, ')'); emit_nl(sb);
     emit_indent(sb, indent);
     emit_char(sb, ')');
     return;

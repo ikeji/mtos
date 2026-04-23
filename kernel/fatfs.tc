@@ -68,19 +68,6 @@ fn fat_get_entry(clus: u32) -> u32 {
     return v;
 }
 
-// Follow FAT chain from start_clus for n steps. Returns the cluster
-// at position n, or 0 if end-of-chain reached.
-fn fat_follow_chain(start_clus: u32, n: i32) -> u32 {
-    var c: u32 = start_clus;
-    var i: i32 = 0;
-    while i < n {
-        c = fat_get_entry(c);
-        if c >= 0x0FFFFFF8u32 { return 0u32; }
-        i = i + 1;
-    }
-    return c;
-}
-
 // Write a FAT32 entry. Updates both FATs if num_fats == 2.
 fn fat_set_entry(clus: u32, val: u32) -> i32 {
     var fat_offset: u32 = clus * 4u32;

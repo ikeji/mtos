@@ -744,18 +744,6 @@ fn var_offset(strtab: U8Array, fns: BcFuncArray, params_pool: StrRefArray, local
     return 0;
 }
 
-// ===== Builtin detection (works with mangled names: checks base name before first __) =====
-// is_builtin removed — all calls use mangled names directly.
-fn is_sys_exit(strtab: U8Array, ss: i32, sl: i32) -> i32 {
-    // "sys_exit" = 115,121,115,95,101,120,105,116 — check base name length == 8
-    var bsl: i32 = base_name_len(strtab, ss, sl);
-    if bsl!=8 { return 0; }
-    if get(strtab,ss)!='s' { return 0; }
-    if get(strtab,(ss+4))!='e' { return 0; }
-    if get(strtab,(ss+5))!='x' { return 0; }
-    return 1;
-}
-
 // ===== is_jump_target =====
 fn is_jump_target(instrs: I32Array, ibase: i32, ni: i32, pc: i32) -> i32 {
     var j: i32=0;

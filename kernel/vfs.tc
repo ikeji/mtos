@@ -21,7 +21,6 @@ import "kernel_common.tc";
 
 // Platform UART helpers (defined in platform_*.s)
 fn do_uart_write(buf: u32, len: i32) -> i32;
-fn do_uart_read(buf: u32, len: i32) -> i32;
 fn do_uart_try_read(buf: u32, len: i32) -> i32;
 
 // Runtime allocator (compiler/runtime.tc)

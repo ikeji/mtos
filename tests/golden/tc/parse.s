@@ -13709,123 +13709,6 @@ expect_tok__i32__SourceReader__U8Array:
     ret
     # end of expect_tok__i32__SourceReader__U8Array
 
-    .globl wrap_binop__U8Array__i32__i32__SourceReader__U8Array__StringBuffer
-    .type  wrap_binop__U8Array__i32__i32__SourceReader__U8Array__StringBuffer, @function
-wrap_binop__U8Array__i32__i32__SourceReader__U8Array__StringBuffer:
-    # prologue: frame_size=48, params=6, locals=0, eval_depth=4
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    sw   a3, -24(s0)
-    sw   a4, -28(s0)
-    sw   a5, -32(s0)
-    lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 40
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_string__StringBuffer__StringLiteral
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_op__StringBuffer__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    call emit_nl__StringBuffer
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 12(sp)
-    lw   a1, 8(sp)
-    lw   a2, 4(sp)
-    lw   a3, 0(sp)
-    call emit_n__StringBuffer__U8Array__i32__i32
-    addi sp, sp, 16
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    call emit_nl__StringBuffer
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of wrap_binop__U8Array__i32__i32__SourceReader__U8Array__StringBuffer
-
     .globl pars_primary__SourceReader__U8Array__StringBuffer
     .type  pars_primary__SourceReader__U8Array__StringBuffer, @function
 pars_primary__SourceReader__U8Array__StringBuffer:
@@ -13877,7 +13760,7 @@ pars_primary__SourceReader__U8Array__StringBuffer:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj32
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -14036,7 +13919,7 @@ pars_primary__SourceReader__U8Array__StringBuffer:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj33
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj32
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -14834,7 +14717,7 @@ pars_primary__SourceReader__U8Array__StringBuffer:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj33
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -15197,7 +15080,7 @@ pars_postfix__SourceReader__U8Array__StringBuffer:
     lw   t0, -28(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -15383,7 +15266,7 @@ pars_unary__SourceReader__U8Array__StringBuffer:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -15513,7 +15396,7 @@ pars_unary__SourceReader__U8Array__StringBuffer:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -15815,7 +15698,7 @@ pars_mul__SourceReader__U8Array__StringBuffer:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -16126,7 +16009,7 @@ pars_add__SourceReader__U8Array__StringBuffer:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -16437,7 +16320,7 @@ pars_shift__SourceReader__U8Array__StringBuffer:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -16706,7 +16589,7 @@ pars_bitand__SourceReader__U8Array__StringBuffer:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -16975,7 +16858,7 @@ pars_bitxor__SourceReader__U8Array__StringBuffer:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -17244,7 +17127,7 @@ pars_bitor__SourceReader__U8Array__StringBuffer:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -17677,7 +17560,7 @@ pars_compare__SourceReader__U8Array__StringBuffer:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -17944,7 +17827,7 @@ pars_logic_and__SourceReader__U8Array__StringBuffer:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -18213,7 +18096,7 @@ pars_expr__SourceReader__U8Array__StringBuffer:
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -20589,7 +20472,7 @@ pars_ident_stmt__SourceReader__U8Array__StringBuffer__i32:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj36
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -24529,7 +24412,7 @@ emit_cast_var__StringBuffer__i32__StringLiteral__StringLiteral:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -24777,306 +24660,6 @@ emit_cast_var__StringBuffer__i32__StringLiteral__StringLiteral:
     addi sp, t0, 0
     ret
     # end of emit_cast_var__StringBuffer__i32__StringLiteral__StringLiteral
-
-    .globl emit_cast_var_tbuf__StringBuffer__i32__StringLiteral__U8Array__i32__i32
-    .type  emit_cast_var_tbuf__StringBuffer__i32__StringLiteral__U8Array__i32__i32, @function
-emit_cast_var_tbuf__StringBuffer__i32__StringLiteral__U8Array__i32__i32:
-    # prologue: frame_size=48, params=6, locals=0, eval_depth=4
-    addi sp, sp, -48
-    sw   ra, 44(sp)
-    sw   s0, 40(sp)
-    addi s0, sp, 48
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    sw   a2, -20(s0)
-    sw   a3, -24(s0)
-    sw   a4, -28(s0)
-    sw   a5, -32(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_indent__StringBuffer__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 40
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_string__StringBuffer__StringLiteral
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    call emit_nl__StringBuffer
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_indent__StringBuffer__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 40
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj19
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_string__StringBuffer__StringLiteral
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -20(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_string__StringBuffer__StringLiteral
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 41
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    call emit_nl__StringBuffer
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t1, 0(sp)
-    lw   t0, 4(sp)
-    addi sp, sp, 8
-    add  t0, t0, t1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_indent__StringBuffer__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 40
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj37
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_string__StringBuffer__StringLiteral
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 32
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -24(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -28(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -32(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 12(sp)
-    lw   a1, 8(sp)
-    lw   a2, 4(sp)
-    lw   a3, 0(sp)
-    call emit_n__StringBuffer__U8Array__i32__i32
-    addi sp, sp, 16
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 41
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    call emit_nl__StringBuffer
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_indent__StringBuffer__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 41
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call emit_char__StringBuffer__u8
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of emit_cast_var_tbuf__StringBuffer__i32__StringLiteral__U8Array__i32__i32
 
     .globl emit_comment_line__StringBuffer__i32__StringBuffer
     .type  emit_comment_line__StringBuffer__i32__StringBuffer, @function
@@ -26873,7 +26456,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -26930,7 +26513,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj33
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -27752,7 +27335,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj33
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -28468,7 +28051,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -28525,7 +28108,7 @@ emit_struct_array_fns__StringBuffer__i32__StringBuffer__U8Array__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj33
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -32156,7 +31739,7 @@ emit_struct_ctor__StringBuffer__i32__StringBuffer__U8Array__i32__U8Array__U8Arra
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj33
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -32652,7 +32235,7 @@ emit_struct_ctor__StringBuffer__i32__StringBuffer__U8Array__i32__U8Array__U8Arra
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj32
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -32748,7 +32331,7 @@ emit_struct_ctor__StringBuffer__i32__StringBuffer__U8Array__i32__U8Array__U8Arra
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -33198,7 +32781,7 @@ emit_struct_ctor__StringBuffer__i32__StringBuffer__U8Array__i32__U8Array__U8Arra
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -34486,7 +34069,7 @@ emit_struct_getter__StringBuffer__i32__StringBuffer__U8Array__i32__U8Array__U8Ar
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -34543,7 +34126,7 @@ emit_struct_getter__StringBuffer__i32__StringBuffer__U8Array__i32__U8Array__U8Ar
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj33
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -34665,7 +34248,7 @@ emit_struct_getter__StringBuffer__i32__StringBuffer__U8Array__i32__U8Array__U8Ar
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj32
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -36228,7 +35811,7 @@ emit_struct_setter__StringBuffer__i32__StringBuffer__U8Array__i32__U8Array__U8Ar
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj32
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj31
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -38608,7 +38191,7 @@ pars_struct_decl__SourceReader__U8Array__StringBuffer__i32:
     lw   t0, -20(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    la   t0, __StringBuffer__U8Array__i32__i32_strobj35
+    la   t0, __StringBuffer__U8Array__i32__i32_strobj34
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -40159,28 +39742,28 @@ __StringBuffer__U8Array__i32__i32_strobj30:
     .string "parse: unexpected"
     .align 4
 __StringBuffer__U8Array__i32__i32_strobj31:
-    .word 5
-    .string "binop"
-    .align 4
-__StringBuffer__U8Array__i32__i32_strobj32:
     .word 3
     .string "int"
     .align 4
-__StringBuffer__U8Array__i32__i32_strobj33:
+__StringBuffer__U8Array__i32__i32_strobj32:
     .word 3
     .string "str"
     .align 4
-__StringBuffer__U8Array__i32__i32_strobj34:
+__StringBuffer__U8Array__i32__i32_strobj33:
     .word 4
     .string "call"
     .align 4
-__StringBuffer__U8Array__i32__i32_strobj35:
+__StringBuffer__U8Array__i32__i32_strobj34:
     .word 4
     .string "cast"
     .align 4
-__StringBuffer__U8Array__i32__i32_strobj36:
+__StringBuffer__U8Array__i32__i32_strobj35:
     .word 5
     .string "unary"
+    .align 4
+__StringBuffer__U8Array__i32__i32_strobj36:
+    .word 5
+    .string "binop"
     .align 4
 __StringBuffer__U8Array__i32__i32_strobj37:
     .word 4
