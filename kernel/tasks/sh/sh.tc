@@ -86,17 +86,10 @@ fn hist_init() -> void {
 
 fn hist_push(buf: U8Array, n: i32) -> void {
     if n == 0 { return; }
-    // Build a String for this command: U8Array(n+1), copy bytes, NUL,
-    // then patch the header count to n so len(s) is the string length.
-    var pbuf: U8Array = U8Array((n + 1) as u32);
-    var i: i32 = 0;
-    while i < n { set(pbuf, i, get(buf, i)); i = i + 1; }
-    set(pbuf, n, 0u8);
-    poke32(pbuf as u32, n as u32);
     var slot: i32 = g_hist_head % HIST_MAX;
     var old: String = get(g_hist, slot);
     if old as u32 != 0u32 { delete(old as u32 as U8Array); }
-    set(g_hist, slot, pbuf as u32 as String);
+    set(g_hist, slot, string_from_bytes(buf, 0, n));
     g_hist_head = g_hist_head + 1;
     if g_hist_count < HIST_MAX { g_hist_count = g_hist_count + 1; }
     return;
@@ -509,23 +502,6 @@ fn count_tokens(buf: U8Array, n: i32) -> i32 {
     return count;
 }
 
-// Copy buf[start..start+n] into a new String. We skip the
-// append-in-a-loop pattern because each append kmallocs a new
-// intermediate String and leaks the prior one. Allocate once via
-// U8Array (String shares its len-prefixed layout) and poke the
-// length to exclude the NUL terminator so len()/delete() behave.
-fn substr(buf: U8Array, start: i32, n: i32) -> String {
-    var s: U8Array = U8Array((n + 1) as u32);
-    poke32(s as u32, n as u32);
-    var i: i32 = 0;
-    while i < n {
-        set(s, i, get(buf, start + i));
-        i = i + 1;
-    }
-    poke8(s as u32 + 4u32 + n as u32, 0u8);
-    return s as String;
-}
-
 // Copy buf[start..start+n] into a NUL-terminated U8Array, used for
 // redirect paths (do_spawn wants a char* pointer, not a String).
 fn subcstr(buf: U8Array, start: i32, n: i32) -> U8Array {
@@ -617,7 +593,7 @@ fn parse_redir(cmd: U8Array, n: i32) -> StringArray {
             } else if tlen2 == 1 && get(cmd, start2) == '>' as u8 {
                 want_out = 1;
             } else {
-                set(argv, idx, substr(cmd, start2, tlen2));
+                set(argv, idx, string_from_bytes(cmd, start2, tlen2));
                 idx = idx + 1;
             }
         }

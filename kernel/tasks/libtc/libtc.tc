@@ -132,3 +132,20 @@ export fn eq(buf: U8Array, s: StringLiteral) -> bool {
     }
     return get(buf, slen) == 0u8;
 }
+
+// string_from_bytes — copy n bytes starting at buf[off] into a
+// freshly-allocated String. Encapsulates the "U8Array(n+1) + poke32
+// the count header + cast to String" idiom previously duplicated in
+// sh.tc / msh.tc as substr/hist_push. Caller owns the returned String
+// and must delete() it (via `as U8Array`) when done.
+export fn string_from_bytes(buf: U8Array, off: i32, n: i32) -> String {
+    var s: U8Array = U8Array((n + 1) as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(s, i, get(buf, off + i));
+        i = i + 1;
+    }
+    set(s, n, 0u8);
+    poke32(s as u32, n as u32);
+    return s as String;
+}
