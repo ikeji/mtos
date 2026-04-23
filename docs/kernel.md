@@ -1,172 +1,212 @@
-# カーネル設計（案）
+# カーネル設計
 
 ## 方針
 
-- モノリシックカーネル（シンプルさ優先）
-- メモリ保護は最小限（RP2350にはMPUあり、後から追加も可）
-- システムコールは少数に絞る
+- モノリシック、M-mode 単一空間 (MMU / PMP なし)
+- プリエンプティブ round-robin スケジューリング (mtime タイマ割り込み)
+- virt と pico2 の両 platform で同一 `kernel/*.tc` が動き、platform
+  固有コードは `kernel/platform_{virt,pico2}.s` と
+  `kernel/kernel.tc` / `kernel/kernel_pico2.tc` にだけ入れる
+- `ecall` で Linux 互換番号のシステムコール (write=64, read=63,
+  openat=56, close=57, unlink=87, readdir=89, exit=93, nanosleep=101,
+  spawn_fds=219, spawn=220, execve=221, pipe=222, mux_enable=250,
+  wait4=260) を提供
 
 ## ハードウェア構成
 
-ボード: **WaveShare Core2350B2-Kit**
+### qemu virt (開発 / CI)
 
-| リソース | サイズ | 用途 |
-|---|---|---|
-| 内蔵 SRAM | 520KB | カーネル・プロセステーブル・スタック |
-| 外付け PSRAM | 8MB | ユーザプロセスヒープ・tmpfs |
-| 外付け Flash | 16MB | OSイメージ・永続ファイルシステム |
+- qemu-system-riscv32 -M virt, `-bios none`, `-m 128`
+- 16550 UART (0x10000000) / CLINT mtime 10 MHz / SiFive test finisher
+- kernel arena = 96 MB の `__arena .space` (`kernel/crt0_data.s`)。
+  phase 7 に必要な peak は 500 KB 程度で、拡大の余地は大きい
+- ブロックデバイス: `-drive file=disk.img,if=none,id=drv0 -device
+  virtio-blk-device,drive=drv0` で mtfs / FAT ディスクを接続
 
-- Flash: CS0 → XIP 0x10000000
-- PSRAM: CS1 → XIP 0x11000000（キャッシュあり）/ 0x15000000（キャッシュなし）
-- ヒープ・tmpfsは常にキャッシュなしアドレス（0x15000000）で統一する
-  - キャッシュありアドレス（0x11000000）はコードXIP等の読み出し専用に限定
-  - これによりキャッシュコヒーレンシ問題を回避し、カーネル・ユーザともにアドレス管理をシンプルに保つ
+### Raspberry Pi Pico 2 (実機)
 
-## メモリマップ
+- RP2350B (Hazard3 RISC-V dual-core、現在は core0 のみ使用)
+- 内蔵 SRAM 520 KB。そのうち **kernel arena 480 KB** (`crt0_pico2_data.s`)
+- 外付 Flash 2 MB。OS イメージ + mtfs image を XIP (0x10000000)
+- UART は Debug Probe 経由の PL011 (TX=GP0 / RX=GP1、115200 8N1、
+  CDC-ACM として /dev/ttyACM0)
+
+## メモリ配置
+
+実装で使っている割り当て:
 
 ```
-0x00000000 - 0x00003FFF  ROM（ブートローダ、8KB）
+virt (qemu):
+  0x80000000  OS イメージ (text + rodata + data + bss)
+              bss 内 __arena = 96 MB
+              ここから kmalloc が bump + free-list で切り出す
 
-0x10000000 - 0x10FFFFFF  Flash（16MB、CS0 XIP）
-  0x10000000 - 0x100FFFFF  OSカーネルイメージ（1MB）
-  0x10100000 - 0x10FFFFFF  永続ファイルシステム（15MB）
-
-0x11000000 - 0x118FFFFF  PSRAM（8MB、CS1 XIP キャッシュあり、読み出し専用用途）
-
-0x15000000 - 0x158FFFFF  PSRAM（キャッシュなし、同一物理メモリのエイリアス）
-  0x15000000 - 0x151FFFFF  ユーザプロセスヒープ（2MB、brkで管理）
-  0x15200000 - 0x153FFFFF  tmpfs（2MB）
-  0x15400000 - 0x158FFFFF  予備（4MB）
-
-0x20000000 - 0x20081FFF  内蔵 SRAM（520KB）
-  0x20000000 - 0x2000FFFF  カーネルコード・データ・ヒープ（64KB）
-  0x20010000 - 0x20081FFF  プロセス管理・スタック領域（456KB）
-
-0x40000000 -             ペリフェラルレジスタ
+pico2:
+  0x10000000  Flash (XIP) : kernel text + rodata + 埋め込み mtfs image
+  0x20000000  SRAM        : kernel data + bss + arena (480 KB)
 ```
+
+- タスクごとに (arena, stack) を `make_task` で切り出す。既定値
+  は廃止済 (K3 案C)。**タスクバイナリの先頭 8 byte** に
+  `.word arena_size; .word stack_size` ヘッダが入っており、
+  `loader.tc::load_fd` がそれを読んで `make_task(entry+8, arena,
+  stack)` を呼ぶ。`task_arena_size()` / `task_stack_size()` を
+  `kernel/build.sh` が per-task で header.s として emit、task_crt0.s
+  の前にリンクしている
+- XIP 可能な backend (pico2 の flash) では `vfs_xip_addr` が非 0 を
+  返す。`load_fd` が RAM コピーを skip して Flash 上の entry を直接
+  `make_task` に渡すので、text は Flash のまま実行される
 
 ## メモリ管理
 
-### カーネルヒープ（内蔵 SRAM）
+### kmalloc / kfree (`compiler/runtime.tc`)
 
-- シンプルなフリーリストアロケータ
-- `kmalloc` / `kfree`
-- カーネル内部のデータ構造（プロセステーブル等）に使用
+- 単一 arena の bump アロケータ + 小ブロック free-list
+- `km_dump_peak` / `km_live_count` で peak / live の計測
+- タスクの arena も同じ kmalloc から確保される (親プロセスが子の
+  frame_buf / ram / stack / img / argv を free する責任)。`make_task`
+  直後に `g_last_*` に alloc 元を保存し、`sched_register /
+  sched_spawn / sys_exec_handler` がスロットに引き渡す
 
-### ユーザプロセスヒープ（PSRAM、brkモデル）
+### タスク構造体
 
-各プロセスは PSRAM 上に連続したヒープ領域を持つ。
-`sys_brk` でヒープの終端アドレスを伸縮し、`malloc`/`free` はユーザランドで実装する。
-
-```
-プロセスのヒープ領域:
-  heap_start  (プロセス起動時にカーネルが割り当て)
-  heap_end    (sys_brkで変更)
-```
-
-- プロセス終了時にカーネルが `heap_start`〜`heap_end` を一括解放
-- `malloc`/`free` のバグでメモリリークが起きても、プロセス終了時にすべて回収される
-- ユーザランドの `malloc`/`free` はフリーリストアロケータとして実装
-
-### tmpfs（PSRAM）
-
-- PSRAM 上の固定領域（2MB）を揮発性ファイルシステムとして使用
-- パイプやシェルの一時ファイル、コンパイル中間ファイル（.ast, .bc, .s）の置き場に使う
-- 永続FSと同じ API（open/read/write/close）でアクセスできる
-- 電源断で消える
-
-## プロセス管理
-
-### プロセス構造体
+`kernel_common.tc::Task`:
 
 ```
-struct Process {
-    pid:        u32
-    state:      u32    // 0=Ready, 1=Running, 2=Blocked, 3=Dead
-    sp:         u32    // 保存されたスタックポインタ
-    stack_top:  u32    // スタック領域の先頭アドレス（内蔵SRAM）
-    heap_start: u32    // ヒープ領域の先頭アドレス（PSRAM）
-    heap_end:   u32    // ヒープの現在の終端アドレス（sys_brkで変更）
-    heap_max:   u32    // ヒープの最大サイズ上限
-    entry:      u32    // エントリポイントアドレス
+struct Task {
+    frame:     u32,   // 保存された trap frame (コンテキスト)
+    state:     i32,   // 0=ready 1=running 2=waiting 3=done ...
+    wait_on:   i32,   // sys_wait で待っている子スロット
+    frame_buf: u32,   // kmalloc 元ポインタ (clean up 用)
+    ram:       u32,   // arena 先頭 (kmalloc 元)
+    stack:     u32,   // stack 先頭 (kmalloc 元)
+    img:       u32,   // RAM に展開した image ポインタ (XIP 時 0)
+    argv:      u32,   // StringArray
+    stdin_fd:  i32,   // redirect された fd (既定 0=UART)
+    stdout_fd: i32,   // redirect された fd (既定 1=UART)
+    in_buf:    u32,   // UART mux 時の per-task in ring (lazy alloc)
+    in_head:   i32,
+    in_tail:   i32,
+    in_eof:    i32,
+    name:      u32,   // /bin/<name> の表示用コピー
+    t_ram_sz:  i32,   // ヘッダ由来 arena サイズ
+    t_stk_sz:  i32,   // ヘッダ由来 stack サイズ
+    wake_time: u32,   // nanosleep の起床 mtime
 }
 ```
 
-### スケジューラ
+- `g_tasks` は `TaskArray`、`g_current` が active スロット
+- スロットの free/used 判定は `state` フィールド経由 (`sched_*`)
 
-- ラウンドロビン（シンプルさ優先）
-- RISC-V mtime タイマ割り込みで切り替え
-- コンテキストスイッチは汎用レジスタ全保存（ra, sp, s0〜s11, a0〜a7, t0〜t6）
+## スケジューラ
 
-## システムコール一覧（案）
+- round-robin。タイマ割り込みで `trap_handler` (kernel_common.tc) が
+  次の ready スロットを探して `_trap_restore` で切り替える
+- `sched_spawn` / `sched_task_exit` / `sched_wait` で状態遷移
+- `sys_read` / `pipe_read` / `pipe_write` が待ちたいときは `-2`
+  sentinel を返して ecall ハンドラが `sched_yield_read` → 再実行。
+  M-mode 割り込み無効のまま spin せず、他スロットに制御を戻す
 
-| 番号 | 名前 | 説明 |
+## ファイルシステム (VFS)
+
+`kernel/vfs.tc` が 1 段の dispatch レイヤ:
+
+| prefix | 実装 | 特性 |
 |---|---|---|
-| 0 | `sys_exit` | プロセス終了（ヒープを一括解放） |
-| 1 | `sys_write` | ファイルディスクリプタへ書き込み |
-| 2 | `sys_read` | ファイルディスクリプタから読み込み |
-| 3 | `sys_open` | ファイルを開く（永続FS・tmpfs共通） |
-| 4 | `sys_close` | ファイルを閉じる |
-| 5 | `sys_fork` | プロセスを複製（ヒープもコピー） |
-| 6 | `sys_execve` | プログラムをロードして実行（path, argv, envp） |
-| 7 | `sys_wait` | 子プロセスの終了を待つ |
-| 8 | `sys_brk` | ヒープ終端アドレスを変更（ユーザmallocの基盤） |
-| 9 | `sys_getpid` | プロセスIDを取得 |
-| 10 | `sys_pipe` | パイプを作成（fd[0]=読み出し、fd[1]=書き込み） |
-| 11 | `sys_dup2` | fdを複製（パイプを標準入出力に繋ぐために使う） |
+| `/tmp/...`  | `tmpfs.tc`  | RAM backed, kmalloc backed, grow-on-write, O_CREAT/O_TRUNC |
+| `/proc/...` | `procfs.tc` | read-only virtual (tasks, meminfo, cpuinfo, uptime) |
+| (その他絶対パス) | `mtfs.tc` | read-only、Flash に埋め込んだ MyTinyFS |
+| `/fat/...` / SD 系 | `fatfs.tc` + `block_fat_virtio.tc` | FAT (bring-up 中) |
 
-システムコールは RISC-V の `ecall` 命令で呼び出す。
-引数は a0〜a5、システムコール番号は a7、戻り値は a0。
+fd=0 / fd=1 は current task の `stdin_fd` / `stdout_fd` を参照して
+`<` / `>` リダイレクトに対応。fd=2 stderr は常に UART 直行。
+UART mux ON のときは fd=1 が tag 付きフレームで emit され、fd=0 は
+per-task `in_buf` 経由で入力される。
 
-`malloc`/`free` はユーザランドライブラリとして実装し、`sys_brk` を使ってヒープを管理する。
-カーネルは `sys_malloc`/`sys_free` を提供しない。
+## システムコール一覧
 
-### パイプの実装
+`trap_common.s::_handle_ecall` で a7 → ハンドラの dispatch。
 
-- パイプバッファはカーネルヒープ（内蔵SRAM）上に固定サイズ（例: 512B）で確保
-- 書き込み側が満杯なら書き込みプロセスをブロック、読み出し側が空なら読み出しプロセスをブロック
-- 書き込み側 fd が全て閉じられたら読み出し側は EOF を返す
-- シェルの `|` 演算子は `sys_pipe` + `sys_fork` + `sys_dup2` + `sys_execve` の組み合わせで実現
+| a7 | 名前 | ハンドラ | 備考 |
+|---|---|---|---|
+| 56 | openat | `vfs_open` | **path は String layout**。fd=-1 失敗 |
+| 57 | close  | `vfs_close` | |
+| 63 | read   | `vfs_read` | empty ＆ UART 等は `-2` で sched yield |
+| 64 | write  | `vfs_write` | pipe 満杯は `-2` yield |
+| 87 | unlink | `vfs_unlink` | tmpfs は未実装 (#30) |
+| 89 | readdir | `vfs_readdir` | mtfs / procfs / tmpfs 対応 |
+| 93 | exit   | (trap_common の schedule 分岐) | `km_dump_peak` で peak を stderr に |
+| 101 | nanosleep | `sched_nanosleep` | wake_time + state=waiting |
+| 219 | spawn_fds | `sys_spawn_fds_handler` | パイプ fd を子に渡す spawn |
+| 220 | spawn  | `sys_spawn_handler` | 4 引数 ABI (path, argv, in_path, out_path) |
+| 221 | execve | `sys_exec_handler`  | 同じ 4 引数 ABI |
+| 222 | pipe   | `sys_pipe_handler`  | 4 KB ring を作って [read_fd, write_fd] を返す |
+| 250 | mux_enable | `sys_mux_enable` | UART フレーミング有効化 (runtime 切替) |
+| 260 | wait4  | `sys_wait_handler`  | 呼び出し元を waiting に |
+
+**path は NUL 終端の C-string ではなく `String` layout (4 バイト
+count + bytes)** を直接渡す。`task_crt0.s` の stub は
+`do_openat__i32__String__i32` と `do_openat__i32__StringLiteral__i32`
+を同一本体に alias、kernel 側は `peek32(addr)` で count を読む。
+
+## ローダ (`kernel/loader.tc`)
+
+1. `load_task(path)` が VFS で path を open
+2. `load_fd(fd)` が先頭 8 バイトを read し `.word arena; .word stack`
+   を取り出す (K3 案C)
+3. XIP 可能ならその flash アドレス + 8 を entry に、そうでなければ
+   RAM に image をコピーして entry に
+4. `make_task(entry, arena, stack)` が stack を積んで frame を構築、
+   `g_last_*` を埋めた状態で returna
+5. `sched_register` / `sched_spawn` / `sys_exec_handler` が
+   `g_last_*` を対応 Task に移してスロットを ready 化
+
+ELF ではなく `compile-gen2.sh` が `; raw` で吐く生バイナリ + 8 byte
+header。再配置情報なしで済むように asm_pass2 が gp 相対 la を
+常用する。
 
 ## 割り込み・例外処理
 
-- RISC-V の Machine Mode で動作
-- mtvec にトラップハンドラを登録
-- 対応する割り込み:
-  - タイマ割り込み（mtime）: スケジューリング用
-  - 外部割り込み（UART等）: I/O用
-  - `ecall`: システムコール
-  - 例外（不正命令、アクセス違反等）: プロセス強制終了
+- M-mode で動作。mtvec に `_trap_entry` (trap_common.s) を登録
+- 対応する割り込み / 例外:
+  - タイマ (CLINT / SIO mtime): round-robin preempt
+  - 外部 (UART RX、pico2 で PL011 interrupt 有効化は TODO)
+  - `ecall`: syscall
+  - fault / illegal / ...: `trap_handler` が task を殺して次に切り替え
+- platform 差分は `rearm_timer()` と `read_mtime()` でラップ
+  (kernel.tc: CLINT; kernel_pico2.tc: SIO MTIME)
 
-## ローダ（ユーザプロセスの起動）
+## UART 多重化
 
-ユーザプロセスの ELF は PIC（Position Independent Code）としてコンパイルされており、
-すべてのアドレス参照がPC相対になっている。そのためローダの処理はシンプルになる。
+host ←→ kernel 双方で `1F <tag:4> <len:1> <payload:N>` フレームを
+使う。kernel 側の `uart_emit_frame` (`kernel_common.tc`) が kputs /
+kdbg_chr は `KERN` タグ、per-task fd=1 は `T00N` (N = slot hex) タグで
+wrap する。RX 側は `uart_rx_dispatch` が tag を見て対応 Task の
+`in_buf` に enqueue。
 
-```
-1. .text / .rodata → Flash上のまま（コピーしない、XIP実行）
-2. .data を Flash から PSRAM にコピー
-3. .bss を PSRAM にゼロ初期化
-4. gp レジスタを .data/.bss の中央付近に設定
-5. スタック領域を内蔵 SRAM から割り当て
-6. ヒープ開始アドレス（heap_start）を PSRAM から割り当て
-7. プロセス構造体を初期化（heap_end = heap_start、sys_brkで伸ばす）
-8. エントリポイント（main）にジャンプ
-```
-
-再配置処理が不要で `.text` のコピーもないため、ローダの実装がシンプルかつ高速になる。
-カーネル自身は固定アドレスにリンクされているため PIC ではない。
+ランタイム切替: userspace から `muxon` / `muxoff` タスク (ecall 250)。
+実装詳細は `docs/task/uart_multiplex.md`。
 
 ## ブートシーケンス
 
 ```
-1. RP2350 ROM ブートローダが Flash から OS イメージをロード（XIP）
-2. カーネルエントリ（_start）: スタック設定、BSS初期化
-3. ペリフェラル初期化（UART、QSPI、タイマ）
-4. PSRAM 初期化・動作確認
-5. メモリ管理初期化（カーネルヒープ、PSRAMアロケータ、tmpfs）
-6. プロセス管理初期化
-7. ファイルシステムマウント（Flash 上の永続FS）
-8. init プロセス起動（シェルを起動）
-9. スケジューラ開始
+1. platform_*.s の _start: stack 設定、BSS 初期化、__runtime_init で
+   kmalloc arena 登録 (arena_size は crt0_data.s の .space と一致)
+2. kernel_main (kernel.tc / kernel_pico2.tc): UART 初期化、mtvec 登録
+3. block デバイス初期化 (virtio-mmio または flash XIP backend)
+4. mtfs_mount → VFS ready
+5. /etc/kern.conf を読む (省略時は /bin/sh のみ seed)
+   - init=/bin/... 行で起動時タスクを指定
+   - mux=on で UART mux を有効化
+6. sched_start で最初のスロットに切り替え、mtime タイマ起動
 ```
+
+詳細は以下を参照:
+- `docs/task/kernel_design.md` — 初期設計メモ
+- `docs/task/kernel_platform_split.md` — virt / pico2 共通化の経緯
+- `docs/task/phase6_userland.md` — ユーザランド / sh の設計
+- `docs/task/phase7_compiler_on_os.md` — phase 7 (compiler on OS)
+- `docs/task/pipeline_100kb.md` — compiler タスクのメモリ削減
+- `docs/filesystem.md` — VFS + mtfs 詳細
+- `docs/task/uart_multiplex.md` — UART mux フォーマット
+- `docs/task/pico2_port.md` / `docs/task/pico2_tc_runtime.md` — pico2 移植
