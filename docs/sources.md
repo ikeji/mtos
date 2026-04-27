@@ -262,6 +262,7 @@ libtc は全タスクが import する user ライブラリ。
 | `compiler.md` | コンパイラパイプライン設計 |
 | `kernel.md` | OS カーネル設計 / 実装 |
 | `filesystem.md` | VFS + MyTinyFS 設計 + フェーズ5 実装計画 |
+| `pico2_hardware.md` | Pico 2 開発基板ガイド (配線、Debug Probe、書き込み、UART) |
 | `design_decisions.md` | 意図して残している挙動の設計判断集 |
 | `problem.md` | 未解決バグ / limitation / ergonomics リスト |
 | `solved.md` | 解決済み問題のログ |

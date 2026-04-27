@@ -70,3 +70,5 @@ sh から実行して "Hello, World!" を出せる。pico2 実機でも compile 
 7 段までは byte-exact で走る (link 段の実機完走は K7 残件)。
 
 詳細は `docs/roadmap.md` / `docs/problem.md` / `docs/task/` 参照。
+Pico 2 実機の配線・openocd 環境・実機テスト手順は
+`docs/pico2_hardware.md` にまとめてある。

@@ -1,0 +1,339 @@
+# Raspberry Pi Pico 2 開発基板ガイド
+
+本プロジェクトの実機ターゲットである Raspberry Pi Pico 2 の **ハード
+ウェア構成と運用手順** をまとめたもの。OS / コンパイラのソフト側
+移植記録は `docs/task/pico2_port.md` と
+`docs/task/pico2_tc_runtime.md` を参照。
+
+## ボード概要
+
+| 項目 | 値 |
+|---|---|
+| MCU | RP2350B (Raspberry Pi 製) |
+| CPU | Hazard3 RISC-V dual-core (RV32IMA + Zicsr 等)。本 OS は core0 のみ使用 |
+| クロック | XOSC 12 MHz → PLL 150 MHz (本プロジェクトは XOSC のまま 12 MHz で運用) |
+| 内蔵 SRAM | 520 KB @ `0x20000000` (10 バンク + SCRATCH_X/Y) |
+| 外付 Flash | 4 MB @ `0x10000000` (Execute-In-Place / QSPI) |
+| USB | USB 2.0 FS (ブートローダ + BOOTSEL UF2) |
+| 入力 | BOOTSEL ボタン |
+| GPIO | 26 本 (UART/SPI/I2C/PIO 等を自由割り当て可) |
+| デバッグ | 3 ピン SWD コネクタ (基板の短辺) |
+
+ARM Cortex-M33 デュアルコアモードと RISC-V Hazard3 デュアルコアモード
+の切替が可能。本プロジェクトは RISC-V モード固定 (UF2 family ID
+`0xE48BFF5A`)。切替は IMAGE_DEF メタデータで指定し、Boot ROM が読み
+取って起動コアを決める。
+
+## 必要な機材
+
+| 用途 | 物 | 備考 |
+|---|---|---|
+| ターゲット | Raspberry Pi Pico 2 (RP2350B) | 量産品でよい |
+| デバッガ + UART | Raspberry Pi Debug Probe | CMSIS-DAP 互換、ホストから `/dev/ttyACM0` (UART CDC-ACM) として見える |
+| 配線 | Debug Probe 付属 3 ピンケーブル × 2 (SWD + UART) | JST-SH 1.0 mm 3 ピン |
+| ホスト | Linux PC | macOS でも openocd-rpi が動けば可 |
+| 電源 | Debug Probe 経由 USB | 本体の USB を別途繋いでもよい |
+
+USB-シリアル変換器 + ジャンパでも代用できるが、Debug Probe を使うと
+SWD と UART を 1 デバイスでまとめられる + openocd 経由で flash 書き
+込みも 1 コマンドで終わるので推奨。
+
+## ピン配線
+
+### Pico 2 側
+
+| 機能 | Pico 2 | 備考 |
+|---|---|---|
+| UART0 TX | GP0 | コードから kernel が出すログ |
+| UART0 RX | GP1 | host → kernel の入力 (sh のコマンド等) |
+| GND | GND ピン | Debug Probe の GND と共通 |
+| SWCLK | SWCLK | 短辺 3 ピンコネクタの中央 |
+| SWDIO | SWDIO | 短辺 3 ピンコネクタの片端 |
+| SWGND | GND | 短辺 3 ピンコネクタの逆端 |
+
+### Debug Probe 側 (CMSIS-DAP)
+
+| 端子 | 接続先 |
+|---|---|
+| `D` 列 SC (SWCLK) | Pico 2 SWCLK |
+| `D` 列 SD (SWDIO) | Pico 2 SWDIO |
+| `D` 列 GND | Pico 2 SWGND |
+| `U` 列 TX | Pico 2 GP1 (RX) ← クロス接続 |
+| `U` 列 RX | Pico 2 GP0 (TX) ← クロス接続 |
+| `U` 列 GND | Pico 2 GND |
+
+UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 付属
+の 3 ピンケーブルはコネクタ向きで自然にクロスする配線になっている。
+
+## ホスト側ソフトウェア環境
+
+### 必須
+
+```bash
+# Raspberry Pi 製 fork の openocd (RP2350 RISC-V 対応版)
+~/opt/openocd-rpi/bin/openocd --version
+# → Open On-Chip Debugger 0.12.0+dev-... (rp2350)
+
+# CDC-ACM デバイス確認
+ls -l /dev/ttyACM0
+# → crw-rw---- 1 root dialout ...
+```
+
+`openocd-rpi` は RP2350 の RISC-V コアに対応した Raspberry Pi の
+fork。upstream の OpenOCD には未マージなので必ずこの fork を使う。
+ビルド方法は Raspberry Pi の公式手順を参照
+(`pico-sdk` の `pico-setup` か、`build_openocd_rpi` 系のスクリプト)。
+
+dialout グループに自分のユーザを入れておくと毎回 sudo しなくて済む:
+
+```bash
+sudo usermod -aG dialout "$USER"
+# ログインし直す
+```
+
+### あると便利
+
+- `picotool` — UF2 ↔ ELF/bin 変換、reboot コマンド等。本プロジェクト
+  のスクリプトは picotool が無くても動くようフォールバックを持つ
+- `python3` — `pico2_tty.py` (双方向 UART) と `uart_demux.py`
+  (UART mux フレーム解析) で必須
+
+## 起動とメモリレイアウト
+
+### Boot ROM の流れ
+
+1. リセット解除直後、ROM が Flash 先頭 4 KB を走査して
+   `PICOBIN_BLOCK_MARKER_START` (`0xFFFFDED3`) を探す
+2. IMAGE_DEF ブロックを読んで CPU アーキテクチャ (RISC-V / ARM) と
+   エントリポイントを決定
+3. `_start` にジャンプ。ペリフェラルはすべてリセット状態 (XOSC /
+   PLL / UART / GPIO 全部 off)
+
+本プロジェクトの IMAGE_DEF は `kernel/platform_pico2.s` 先頭で
+RISC-V + EXE フラグ付きの 32 byte ブロックとして埋め込んでいる。
+
+### XIP Flash と SRAM
+
+```
+0x10000000 ── Flash (XIP, 4 MB) ──
+              IMAGE_DEF ブロック (32 B)
+              kernel text + rodata
+              + 埋め込み mtfs image (タスク binary 群、/etc/kern.conf 等)
+                ↑ kernel/build.sh が `_mtfs_image_addr` 経由で参照
+0x10400000 ── Flash 末尾
+
+0x20000000 ── SRAM (520 KB) ──
+              kernel data + bss
+              + __arena .space (480 KB、kmalloc バックエンド)
+              + stack (SRAM 末尾から下方向)
+0x20082000 ── SRAM 末尾 (初期 SP)
+```
+
+- text と rodata は Flash の XIP で実行 (SRAM 消費ゼロ)
+- data / bss / stack のみ SRAM
+- kernel arena は `kernel/crt0_pico2_data.s` の `__arena .space` で
+  480 KB に固定。タスクの (arena, stack) はこの中から `make_task`
+  が切り出す
+- 動的 spawn したタスクは一旦 SRAM に image をコピー…ではなく、
+  `vfs_xip_addr` が非 0 を返す mtfs バックエンド経由なら **Flash
+  上の image をそのまま entry に渡す** (XIP 直実行) ので、text は
+  Flash のまま走る
+
+詳しくは `docs/kernel.md`「メモリ配置」と
+`docs/task/pico2_tc_runtime.md` を参照。
+
+## 書き込み方法
+
+### 方法 A: BOOTSEL UF2 (1 回限りのテスト向け)
+
+1. Pico 2 を USB ケーブルで PC に繋ぐ前に **BOOTSEL ボタンを押下**
+2. 押したまま USB 接続。`RP2350` というマスストレージとして
+   マウントされる
+3. `build/kernel/pico2_kernel.uf2` をドラッグ&ドロップ
+4. Pico 2 が自動再起動。BOOTSEL マウントは消える
+
+UART を別経路 (Debug Probe 等) で開いていればログが見える。
+
+### 方法 B: openocd SWD (開発中の高速サイクル)
+
+`make run-pico2` が一連を自動化する。内部では:
+
+1. `make pico2-kernel` で `build/kernel/pico2_kernel.uf2` をビルド
+2. UF2 → raw bin に変換 (`run_pico2_interactive.sh` 内 Python)
+3. openocd で `program $BIN 0x10000000 verify` → `reset run`
+4. `tests/pico2_tty.py` で `/dev/ttyACM0` に raw mode 双方向 UART
+   セッションを開く (`Ctrl-a x` で終了)
+
+```bash
+# 通常版
+make run-pico2
+
+# EXTRA_TASKS (parse/sigscan/.../asm_pass2) 込みの kernel
+make run-pico2-extra
+```
+
+環境変数で上書き:
+
+```bash
+OPENOCD=/path/to/openocd \
+OPENOCD_SCRIPTS=/path/to/scripts \
+UART_PORT=/dev/ttyACM1 \
+make run-pico2
+```
+
+### 方法 C: 自前 openocd コマンド (デバッグ用)
+
+```bash
+~/opt/openocd-rpi/bin/openocd \
+    -s ~/opt/openocd-rpi/share/openocd/scripts \
+    -f interface/cmsis-dap.cfg \
+    -f target/rp2350-riscv.cfg \
+    -c "adapter speed 5000" \
+    -c "init" \
+    -c "reset halt" \
+    -c "program kernel.bin 0x10000000 verify" \
+    -c "reset run" \
+    -c "exit"
+```
+
+`mdw` でメモリダンプ、`reset halt` で停止して step デバッグも可能。
+
+```bash
+# 接続テスト + SIO CPUID 表示
+~/opt/openocd-rpi/bin/openocd \
+    -s ~/opt/openocd-rpi/share/openocd/scripts \
+    -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
+    -c "init; halt; mdw 0xd0000000 4; exit"
+```
+
+## UART アクセス
+
+### 基本
+
+- ボーレート: **115200 8N1**
+- ホスト側デバイス: `/dev/ttyACM0` (Debug Probe の CDC-ACM)
+- 物理層: PL011 UART0 (Pico 2 内蔵)、kernel 側ドライバは
+  `kernel/platform_pico2.s` + `kernel/kernel_pico2.tc`
+
+stty で raw モードに固定:
+
+```bash
+stty -F /dev/ttyACM0 115200 cs8 -cstopb -parenb raw -echo -crtscts
+```
+
+### 双方向対話
+
+`tests/pico2_tty.py` がエスケープ ([Ctrl-a] x で終了)、LF → CR+LF
+変換、select 駆動の双方向フォワーダを提供する。`make run-pico2`
+が内部で呼ぶ。
+
+```bash
+python3 tests/pico2_tty.py /dev/ttyACM0 115200
+```
+
+### ワンショット送信
+
+```bash
+# 送信
+printf 'catfile\n' > /dev/ttyACM0
+
+# 受信 (タイムアウト付き)
+timeout 5 cat /dev/ttyACM0
+```
+
+シェルが直接 stty を踏むと前回の echo 設定が残ることがあるので、
+`tests/test_pico2.sh` のように都度 `stty raw -echo` を打ち直す。
+
+### UART 多重化 (任意)
+
+mux 有効時、kernel と各タスクの fd=1 を 1 ストリームに束ねる
+0x1F フレーム形式で出力する (詳細: `docs/task/uart_multiplex.md`)。
+
+```bash
+# kernel 側で muxon を起動
+muxon
+
+# host 側でフレームをデコード
+python3 tests/uart_demux.py < /dev/ttyACM0
+```
+
+タスクからは `mx` (length-prefix framing) と `mr` (decode) で
+バイナリを安全に行き来できる。
+
+## 実機テスト
+
+`make test` には含まれない手動テスト:
+
+| スクリプト | 内容 |
+|---|---|
+| `tests/test_pico2.sh` | flash → sh ↔ catfile / launcher / quit を UART で対話検証 (~98 秒) |
+| `tests/pico2_verify.sh` | compile 7 段の中間ファイルを Gen2 ホスト参照と byte-exact 比較 (link 段は K7 で UART hang のため skip) |
+| `tests/test_pico2_hw.sh` | UART pipeline driver 経由の end-to-end コンパイル |
+
+すべて `GEN2_DIR=build/gen2 ./tests/test_pico2.sh` のように起動。
+SKIP 条件: `GEN2_DIR` 未設定 / `openocd` 未存在 / `/dev/ttyACM0`
+未存在 (Debug Probe を抜くと自動 SKIP)。
+
+## トラブルシューティング
+
+### `Verified OK` が出ない
+
+- Debug Probe ↔ Pico 2 の SWD 結線確認 (特に GND)
+- BOOTSEL 状態で USB マスストレージとして見えているなら openocd
+  経由のフラッシュは失敗する。BOOTSEL を抜いて再接続
+- `adapter speed` を下げる (5000 → 1000)
+- openocd 自体が古い場合は upstream OpenOCD だと RP2350 RISC-V を
+  認識しない。必ず `openocd-rpi` fork を使う
+
+### `/dev/ttyACM0` が出ない
+
+- Debug Probe の USB ケーブルを別ポートに繋ぎ替え
+- `dmesg | tail` で `cdc_acm` ドライバが ttyACM0 をアタッチして
+  いるか確認
+- dialout グループに入っていないと open に失敗する。`groups` で
+  確認
+
+### UART に何も出ない
+
+- 配線方向 (TX↔RX クロス) を再確認
+- ボーレート不一致 (Debug Probe は 115200 固定)
+- kernel が起動していない可能性。openocd で `halt` → `mdw 0x10000000`
+  で IMAGE_DEF (`0xFFFFDED3` マジック) が読めるか確認
+- 既に何かが走っていて UART を消費している可能性。`stty -F
+  /dev/ttyACM0 -echo` で echo を切り、ブラウザの screen / minicom
+  などが残っていないか確認
+
+### 入力した文字が反応しない
+
+- raw mode が外れている (`stty echo` になっている等)
+- mux 有効時は raw bytes ではなくフレームで送る必要がある (msh /
+  mx 経由か、uart_demux.py 経由)
+- sh はデフォルトで echo back する。echo back が出ないなら kernel
+  か sh が hang している可能性
+
+### kernel が永久 hang
+
+- `~/opt/openocd-rpi/bin/openocd ... -c "halt; reg pc; bt"` で停止
+  位置を確認
+- `[sw N>M]` などスケジューラトレースが出ているなら kernel は生き
+  ている。タスクが `do_uart_read` で待ち続けているだけかもしれない
+  (sh は入力待ち)
+
+## 参考リンク
+
+- RP2350 Datasheet: <https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf>
+- Pico 2 / Pico-series Datasheet: <https://datasheets.raspberrypi.com/pico/pico-2-datasheet.pdf>
+- Debug Probe: <https://www.raspberrypi.com/products/debug-probe/>
+- 公式 Hazard3 仕様: <https://github.com/Wren6991/Hazard3>
+- ベアメタル参考実装:
+  - <https://github.com/wolfmanjm/RISC-V-RP2350-baremetal>
+  - <https://github.com/igormichalak/bare-metal-rp2350>
+
+## 関連ドキュメント
+
+- `docs/overview.md` — プロジェクト全体像
+- `docs/kernel.md` — メモリ配置・スケジューラ・VFS
+- `docs/task/pico2_port.md` — Pico 2 移植プラン (PSRAM 検討等の経緯)
+- `docs/task/pico2_tc_runtime.md` — text=Flash / data=SRAM 分離の
+  設計、IMAGE_DEF とクロック初期化の詳細
+- `docs/task/uart_multiplex.md` — 0x1F フレーム形式の仕様
