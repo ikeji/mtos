@@ -1,0 +1,163 @@
+// sdprobe.tc — RP2350 SPI0 SD card connectivity probe.
+//
+// User-space MMIO probe: takes SPI0 out of reset, configures GP4-7
+// (FUNCSEL=1 for SPI0_RX/SCK/TX, GP5 as SIO output for CS), drives
+// 80 init clocks with CS=H, then sends CMD0 and prints R1.
+//
+// Expected on a healthy 4 GB SDHC card with the Catalex-style module
+// from docs/pico2_hardware.md:
+//   SD: probe start
+//   SD: SPI0 reset cleared
+//   SD: GPIO configured
+//   SD: SPI0 enabled @ ~400 kHz
+//   SD: CMD0 R1 = 0x01
+//   SD: OK -- card in idle state
+//
+// Anything other than 0x01 means wiring or init sequence is wrong.
+
+import "../libtc/libtc.tc";
+
+// ----- MMIO base addresses (RP2350) -----
+var RESETS_BASE:     u32 = 0x40020000u32;
+var RESETS_CLR:      u32 = 0x40023000u32;
+var RESETS_DONE:     u32 = 0x40020008u32;
+var IO_BANK0_BASE:   u32 = 0x40028000u32;
+var PADS_BANK0_SET:  u32 = 0x4003A000u32;
+var PADS_BANK0_CLR:  u32 = 0x4003B000u32;
+var SIO_BASE:        u32 = 0xD0000000u32;
+var SPI0_BASE:       u32 = 0x40080000u32;
+
+// RESETS bit 18 = SPI0 on RP2350 (datasheet 7.2.1).
+var RESETS_BIT_SPI0: u32 = 0x40000u32;
+
+// SIO GPIO control offsets.
+var SIO_GPIO_OUT_SET: u32 = 0x18u32;
+var SIO_GPIO_OUT_CLR: u32 = 0x20u32;
+var SIO_GPIO_OE_SET:  u32 = 0x38u32;
+
+var GP5_MASK: u32 = 0x20u32;  // 1 << 5
+
+// ----- helpers -----
+
+fn print_hex2(v: u32) -> void {
+    var hi: u32 = (v >> 4u32) & 0xFu32;
+    var lo: u32 = v & 0xFu32;
+    var c1: u8;
+    var c2: u8;
+    if hi < 10u32 { c1 = ('0' as u32 + hi) as u8; }
+    else          { c1 = ('A' as u32 + hi - 10u32) as u8; }
+    if lo < 10u32 { c2 = ('0' as u32 + lo) as u8; }
+    else          { c2 = ('A' as u32 + lo - 10u32) as u8; }
+    putchar(c1);
+    putchar(c2);
+    return;
+}
+
+// Block until SPI TX FIFO has space, write byte, block until RX FIFO
+// has data, return received byte. SSPSR @ +0x0C: bit 1 = TNF (TX not
+// full), bit 2 = RNE (RX not empty).
+fn spi_xfer(b: u8) -> u8 {
+    while (peek32(SPI0_BASE + 0x0Cu32) & 0x2u32) == 0u32 { }
+    poke32(SPI0_BASE + 0x08u32, b as u32);
+    while (peek32(SPI0_BASE + 0x0Cu32) & 0x4u32) == 0u32 { }
+    return peek32(SPI0_BASE + 0x08u32) as u8;
+}
+
+fn cs_high() -> void {
+    poke32(SIO_BASE + SIO_GPIO_OUT_SET, GP5_MASK);
+    return;
+}
+fn cs_low() -> void {
+    poke32(SIO_BASE + SIO_GPIO_OUT_CLR, GP5_MASK);
+    return;
+}
+
+// ----- main -----
+
+fn main() -> i32 {
+    puts("SD: probe start\n");
+
+    // 1. Take SPI0 out of reset.
+    poke32(RESETS_CLR, RESETS_BIT_SPI0);
+    while (peek32(RESETS_DONE) & RESETS_BIT_SPI0) == 0u32 { }
+    puts("SD: SPI0 reset cleared\n");
+
+    // 2. Pre-drive CS high before turning the GPIO output on, so the
+    //    line never glitches low. SIO GPIO_OUT register stays sticky
+    //    even while OE=0.
+    poke32(SIO_BASE + SIO_GPIO_OUT_SET, GP5_MASK);
+
+    // 3. IO_BANK0 funcsel: GP4/6/7 → SPI0 (FUNCSEL=1), GP5 → SIO (=5).
+    //    GPIOn_CTRL is at IO_BANK0 + 0x04 + n*8.
+    poke32(IO_BANK0_BASE + 0x024u32, 1u32);  // GP4: SPI0 RX
+    poke32(IO_BANK0_BASE + 0x02Cu32, 5u32);  // GP5: SIO (CS)
+    poke32(IO_BANK0_BASE + 0x034u32, 1u32);  // GP6: SPI0 SCK
+    poke32(IO_BANK0_BASE + 0x03Cu32, 1u32);  // GP7: SPI0 TX
+
+    // 4. Clear PAD ISO on GP4-7 (RISC-V boot default = 1).
+    //    PADS_BANK0_GPIOn is at PADS_BANK0 + 0x04 + n*4. The CLR alias
+    //    atomically clears bit 8 (ISO).
+    poke32(PADS_BANK0_CLR + 0x14u32, 0x100u32);  // GP4
+    poke32(PADS_BANK0_CLR + 0x18u32, 0x100u32);  // GP5
+    poke32(PADS_BANK0_CLR + 0x1Cu32, 0x100u32);  // GP6
+    poke32(PADS_BANK0_CLR + 0x20u32, 0x100u32);  // GP7
+    // GP4 (MISO): IE=1 so we can read the SD's response.
+    poke32(PADS_BANK0_SET + 0x14u32, 0x40u32);   // bit 6 = IE
+
+    // 5. Enable GP5 as output (SIO_GPIO_OE bit 5).
+    poke32(SIO_BASE + SIO_GPIO_OE_SET, GP5_MASK);
+    puts("SD: GPIO configured\n");
+
+    // 6. Configure SPI0 (PL022).
+    //   SSPCPSR  +0x10 = clock prescale (must be even). 30 → 12 MHz / 30 = 400 kHz
+    //   SSPCR0   +0x00 = DSS=0x07 (8-bit), SPI mode 0 (SPO=SPH=0), SCR=0
+    //   SSPCR1   +0x04 = SSE bit 1 (enable). MS bit 2 stays 0 (master).
+    poke32(SPI0_BASE + 0x10u32, 30u32);
+    poke32(SPI0_BASE + 0x00u32, 0x07u32);
+    poke32(SPI0_BASE + 0x04u32, 0x02u32);
+    puts("SD: SPI0 enabled @ ~400 kHz\n");
+
+    // 7. SD spec: ≥74 clock cycles with CS=H, MOSI=H before the first
+    //    command. Send 10 dummy 0xFF bytes (= 80 clocks).
+    cs_high();
+    var i: i32 = 0;
+    while i < 10 {
+        spi_xfer(0xFFu8);
+        i = i + 1;
+    }
+
+    // 8. CMD0 (GO_IDLE_STATE): 0x40 0x00 0x00 0x00 0x00 0x95.
+    //    The 0x95 is a precomputed CRC7-with-end-bit for an all-zero
+    //    argument. CRC checking is mandatory only for CMD0/CMD8;
+    //    after that the card runs in CRC-off mode by default.
+    cs_low();
+    spi_xfer(0x40u8);
+    spi_xfer(0x00u8);
+    spi_xfer(0x00u8);
+    spi_xfer(0x00u8);
+    spi_xfer(0x00u8);
+    spi_xfer(0x95u8);
+
+    // 9. Poll for R1. The card may insert up to 8 idle bytes (NCR)
+    //    before responding. Keep clocking 0xFF until bit 7 clears.
+    var r1: u8 = 0xFFu8;
+    var tries: i32 = 0;
+    while tries < 16 {
+        r1 = spi_xfer(0xFFu8);
+        if (r1 as u32 & 0x80u32) == 0u32 { break; }
+        tries = tries + 1;
+    }
+    cs_high();
+    spi_xfer(0xFFu8);  // 8 trailing clocks after deselect
+
+    puts("SD: CMD0 R1 = 0x");
+    print_hex2(r1 as u32);
+    puts("\n");
+
+    if r1 == 0x01u8 {
+        puts("SD: OK -- card in idle state\n");
+        return 0;
+    }
+    puts("SD: FAIL -- expected 0x01\n");
+    return 1;
+}
