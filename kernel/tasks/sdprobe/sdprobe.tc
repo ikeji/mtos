@@ -161,6 +161,35 @@ fn main() -> i32 {
     puts(" (expect 00 / 01)\n");
     poke32(SIO_BASE + 0x40u32, 0x20u32);    // GPIO_OE_CLR: GP5
 
+    // Same drive check for SCK (GP6) and MOSI (GP7).
+    poke32(SIO_BASE + 0x20u32, 0x40u32);    // SCK=0
+    poke32(SIO_BASE + 0x38u32, 0x40u32);    // OE GP6
+    spin = 0; while spin < 200 { spin = spin + 1; }
+    var sck_lo: u32 = (peek32(SIO_BASE + 0x04u32) >> 6u32) & 1u32;
+    poke32(SIO_BASE + 0x18u32, 0x40u32);    // SCK=1
+    spin = 0; while spin < 200 { spin = spin + 1; }
+    var sck_hi: u32 = (peek32(SIO_BASE + 0x04u32) >> 6u32) & 1u32;
+    poke32(SIO_BASE + 0x40u32, 0x40u32);    // OE clear
+    puts("SD: SCK drive lo->in=");
+    print_hex2(sck_lo);
+    puts(" hi->in=");
+    print_hex2(sck_hi);
+    puts("\n");
+
+    poke32(SIO_BASE + 0x20u32, 0x80u32);    // MOSI=0
+    poke32(SIO_BASE + 0x38u32, 0x80u32);    // OE GP7
+    spin = 0; while spin < 200 { spin = spin + 1; }
+    var mosi_lo: u32 = (peek32(SIO_BASE + 0x04u32) >> 7u32) & 1u32;
+    poke32(SIO_BASE + 0x18u32, 0x80u32);    // MOSI=1
+    spin = 0; while spin < 200 { spin = spin + 1; }
+    var mosi_hi: u32 = (peek32(SIO_BASE + 0x04u32) >> 7u32) & 1u32;
+    poke32(SIO_BASE + 0x40u32, 0x80u32);    // OE clear
+    puts("SD: MOSI drive lo->in=");
+    print_hex2(mosi_lo);
+    puts(" hi->in=");
+    print_hex2(mosi_hi);
+    puts("\n");
+
     // 1. Take SPI0 out of reset.
     poke32(RESETS_CLR, RESETS_BIT_SPI0);
     while (peek32(RESETS_DONE) & RESETS_BIT_SPI0) == 0u32 { }
