@@ -11,7 +11,7 @@
 |---|---|
 | MCU | RP2350B (Raspberry Pi 製) |
 | CPU | Hazard3 RISC-V dual-core (RV32IMA + Zicsr 等)。本 OS は core0 のみ使用 |
-| クロック | XOSC 12 MHz → PLL 150 MHz (本プロジェクトは XOSC のまま 12 MHz で運用) |
+| クロック | XOSC 12 MHz (本プロジェクトは PLL_SYS 未使用、CPU も周辺もずっと 12 MHz) |
 | 内蔵 SRAM | 520 KB @ `0x20000000` (10 バンク + SCRATCH_X/Y) |
 | 外付 Flash | 4 MB @ `0x10000000` (Execute-In-Place / QSPI) |
 | USB | USB 2.0 FS (ブートローダ + BOOTSEL UF2) |
@@ -23,6 +23,14 @@ ARM Cortex-M33 デュアルコアモードと RISC-V Hazard3 デュアルコア�
 の切替が可能。本プロジェクトは RISC-V モード固定 (UF2 family ID
 `0xE48BFF5A`)。切替は IMAGE_DEF メタデータで指定し、Boot ROM が読み
 取って起動コアを決める。
+
+クロックは bringup 時の最小構成のまま PLL_SYS を有効化しておらず、
+**CPU も周辺も XOSC 直 12 MHz で動いている** (`kernel/platform_pico2.s`
+は XOSC を有効化して `clk_peri` を XOSC ソースに切り替えるだけで、
+`clk_sys` 切替や PLL_SYS の FBDIV 設定はしていない)。150 MHz が
+必要になったら PLL_SYS を有効化して `clk_sys` を切り替える手順を
+足すだけで上げられるが、phase 7 の compile pipeline 完走でも処理時間
+は支配項ではないので未対応。
 
 ## 必要な機材
 
