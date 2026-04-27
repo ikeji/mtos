@@ -86,12 +86,22 @@ fn main() -> i32 {
     poke32(IO_BANK0_BASE + 0x024u32, 5u32);          // GP4: SIO
     poke32(PADS_BANK0_CLR + 0x14u32, 0x100u32);      // clear ISO
     poke32(PADS_BANK0_SET + 0x14u32, 0x40u32);       // IE=1
-    // GPIO_IN @ SIO + 0x04
-    var gp_in: u32 = peek32(SIO_BASE + 0x04u32);
-    var miso_lvl: u32 = (gp_in >> 4u32) & 0x1u32;
-    puts("SD: MISO idle level = ");
-    print_hex2(miso_lvl);
-    puts(" (expect 01 if module powered)\n");
+    // (a) bare read: just IE=1, PUE=0, PDE=0
+    var gp_in_a: u32 = peek32(SIO_BASE + 0x04u32);
+    var miso_a: u32 = (gp_in_a >> 4u32) & 0x1u32;
+    puts("SD: MISO no-pull = ");
+    print_hex2(miso_a);
+    puts("\n");
+    // (b) enable internal PUE, give the level a moment to settle
+    poke32(PADS_BANK0_SET + 0x14u32, 0x08u32);       // bit 3 = PUE
+    var spin: i32 = 0;
+    while spin < 1000 { spin = spin + 1; }
+    var gp_in_b: u32 = peek32(SIO_BASE + 0x04u32);
+    var miso_b: u32 = (gp_in_b >> 4u32) & 0x1u32;
+    puts("SD: MISO w/ PUE = ");
+    print_hex2(miso_b);
+    puts(" (01 = floating/unpowered, 00 = shorted to GND)\n");
+    poke32(PADS_BANK0_CLR + 0x14u32, 0x08u32);       // clear PUE before SPI
 
     // 1. Take SPI0 out of reset.
     poke32(RESETS_CLR, RESETS_BIT_SPI0);
