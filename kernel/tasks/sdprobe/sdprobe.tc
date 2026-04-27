@@ -77,6 +77,22 @@ fn cs_low() -> void {
 fn main() -> i32 {
     puts("SD: probe start\n");
 
+    // 0. Quick power-rail check: configure GP4 as plain SIO input
+    //    (FUNCSEL=5), no internal pull, and read its level. The module
+    //    has an external 10 kohm pull-up to its own VCC; if VCC is
+    //    present, MISO must read 1. Reading 0 means the module is
+    //    unpowered (LDO input < 4.7 V from the AMS1117 dropout floor,
+    //    or no 5V wire at all).
+    poke32(IO_BANK0_BASE + 0x024u32, 5u32);          // GP4: SIO
+    poke32(PADS_BANK0_CLR + 0x14u32, 0x100u32);      // clear ISO
+    poke32(PADS_BANK0_SET + 0x14u32, 0x40u32);       // IE=1
+    // GPIO_IN @ SIO + 0x04
+    var gp_in: u32 = peek32(SIO_BASE + 0x04u32);
+    var miso_lvl: u32 = (gp_in >> 4u32) & 0x1u32;
+    puts("SD: MISO idle level = ");
+    print_hex2(miso_lvl);
+    puts(" (expect 01 if module powered)\n");
+
     // 1. Take SPI0 out of reset.
     poke32(RESETS_CLR, RESETS_BIT_SPI0);
     while (peek32(RESETS_DONE) & RESETS_BIT_SPI0) == 0u32 { }
@@ -138,26 +154,80 @@ fn main() -> i32 {
     spi_xfer(0x00u8);
     spi_xfer(0x95u8);
 
-    // 9. Poll for R1. The card may insert up to 8 idle bytes (NCR)
-    //    before responding. Keep clocking 0xFF until bit 7 clears.
+    // 9. Read 16 bytes after CMD0 — print raw to diagnose alignment.
+    //    First non-0xFF byte with bit 7 clear is R1.
+    puts("SD: CMD0 raw rx =");
     var r1: u8 = 0xFFu8;
-    var tries: i32 = 0;
-    while tries < 16 {
-        r1 = spi_xfer(0xFFu8);
-        if (r1 as u32 & 0x80u32) == 0u32 { break; }
-        tries = tries + 1;
+    var got_r1: i32 = 0;
+    var k: i32 = 0;
+    while k < 16 {
+        var b: u8 = spi_xfer(0xFFu8);
+        putchar(' ' as u8);
+        print_hex2(b as u32);
+        if got_r1 == 0 {
+            if (b as u32 & 0x80u32) == 0u32 {
+                r1 = b;
+                got_r1 = 1;
+            }
+        }
+        k = k + 1;
     }
+    puts("\n");
     cs_high();
-    spi_xfer(0xFFu8);  // 8 trailing clocks after deselect
+    spi_xfer(0xFFu8);
 
     puts("SD: CMD0 R1 = 0x");
     print_hex2(r1 as u32);
     puts("\n");
 
-    if r1 == 0x01u8 {
-        puts("SD: OK -- card in idle state\n");
+    // 10. CMD8 (SEND_IF_COND): mandatory before ACMD41 for SDHC/SDXC.
+    //     Frame: 0x48 0x00 0x00 0x01 0xAA 0x87.
+    //     0x01 = 2.7-3.6V supply, 0xAA = check pattern. CRC7+end = 0x87.
+    //     Reply is R7 (5 bytes): R1 + 4-byte echo of argument.
+    cs_low();
+    spi_xfer(0xFFu8);
+    spi_xfer(0x48u8);
+    spi_xfer(0x00u8);
+    spi_xfer(0x00u8);
+    spi_xfer(0x01u8);
+    spi_xfer(0xAAu8);
+    spi_xfer(0x87u8);
+
+    puts("SD: CMD8 raw rx =");
+    var r1b: u8 = 0xFFu8;
+    var seen8: i32 = 0;
+    var trailing: i32 = 0;
+    var j: i32 = 0;
+    // Read up to 16 bytes; once we see R1 (bit 7 == 0), grab next 4 as
+    // R7 trailing bytes.
+    while j < 16 {
+        var bb: u8 = spi_xfer(0xFFu8);
+        putchar(' ' as u8);
+        print_hex2(bb as u32);
+        if seen8 == 0 {
+            if (bb as u32 & 0x80u32) == 0u32 {
+                r1b = bb;
+                seen8 = 1;
+                trailing = 4;
+            }
+        } else {
+            if trailing > 0 { trailing = trailing - 1; }
+            if trailing == 0 { break; }
+        }
+        j = j + 1;
+    }
+    puts("\n");
+    cs_high();
+    spi_xfer(0xFFu8);
+
+    puts("SD: CMD8 R1 = 0x");
+    print_hex2(r1b as u32);
+    puts("\n");
+
+    if r1 == 0x01u8 && r1b == 0x01u8 {
+        puts("SD: OK -- v2 SDHC card, ready for ACMD41\n");
         return 0;
     }
-    puts("SD: FAIL -- expected 0x01\n");
+    puts("SD: smoke test inconclusive -- inspect raw bytes above\n");
     return 1;
 }
