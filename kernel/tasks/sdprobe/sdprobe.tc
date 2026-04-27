@@ -309,6 +309,103 @@ fn main() -> i32 {
         puts("SD: PARTIAL -- CMD0 OK, CMD8 inconclusive\n");
         return 1;
     }
-    puts("SD: smoke test inconclusive -- inspect raw bytes above\n");
+
+    // ----- Bit-bang fallback -----
+    // SPI peripheral failed. Switch GP4-7 to plain SIO and bit-bang
+    // CMD0 manually. If THIS also yields all 0xFF, the issue is
+    // physical (card / module / wiring), not the SPI peripheral.
+    puts("SD: bit-bang fallback...\n");
+
+    // Reset SPI0 and reconfigure GP4-7 as SIO.
+    poke32(0x40023000u32, 0x40000u32);   // RESETS_SET (0x40021000+0x2000 alias)
+    spin = 0; while spin < 1000 { spin = spin + 1; }
+    var ggn: i32 = 4;
+    while ggn <= 7 {
+        poke32(IO_BANK0_BASE + (0x04u32 + (ggn as u32) * 8u32), 5u32);  // SIO
+        ggn = ggn + 1;
+    }
+    // GP4 = MISO (input only). GP5/6/7 = CS/SCK/MOSI (outputs).
+    poke32(SIO_BASE + 0x18u32, 0xE0u32);  // OUT_SET: CS=1, SCK=0, MOSI=1
+    poke32(SIO_BASE + 0x20u32, 0x40u32);  // OUT_CLR: SCK=0
+    poke32(SIO_BASE + 0x38u32, 0xE0u32);  // OE_SET: GP5/6/7 outputs
+    poke32(SIO_BASE + 0x40u32, 0x10u32);  // OE_CLR: GP4 input
+    spin = 0; while spin < 1000 { spin = spin + 1; }
+
+    // 80 init clocks with CS=H, MOSI=H
+    var ic: i32 = 0;
+    while ic < 80 {
+        poke32(SIO_BASE + 0x18u32, 0x40u32);  // SCK high
+        spin = 0; while spin < 5 { spin = spin + 1; }
+        poke32(SIO_BASE + 0x20u32, 0x40u32);  // SCK low
+        spin = 0; while spin < 5 { spin = spin + 1; }
+        ic = ic + 1;
+    }
+
+    // CS low, send CMD0 (6 bytes: 0x40 0x00 0x00 0x00 0x00 0x95) MSB first
+    poke32(SIO_BASE + 0x20u32, 0x20u32);  // CS low
+    spin = 0; while spin < 50 { spin = spin + 1; }
+    var cmd: i32 = 0;
+    while cmd < 6 {
+        var byteval: i32 = 0;
+        if cmd == 0 { byteval = 0x40; }
+        if cmd == 5 { byteval = 0x95; }
+        var bit: i32 = 7;
+        while bit >= 0 {
+            // setup MOSI before rising edge
+            if ((byteval >> bit) & 1) == 1 {
+                poke32(SIO_BASE + 0x18u32, 0x80u32);  // MOSI high
+            } else {
+                poke32(SIO_BASE + 0x20u32, 0x80u32);  // MOSI low
+            }
+            spin = 0; while spin < 3 { spin = spin + 1; }
+            poke32(SIO_BASE + 0x18u32, 0x40u32);  // SCK high
+            spin = 0; while spin < 5 { spin = spin + 1; }
+            poke32(SIO_BASE + 0x20u32, 0x40u32);  // SCK low
+            spin = 0; while spin < 3 { spin = spin + 1; }
+            bit = bit - 1;
+        }
+        cmd = cmd + 1;
+    }
+
+    // Now clock out 0xFF and read MISO 16 times
+    poke32(SIO_BASE + 0x18u32, 0x80u32);  // MOSI high (idle)
+    puts("SD: bb CMD0 rx =");
+    var bb_r1: u8 = 0xFFu8;
+    var bb_seen: i32 = 0;
+    var bbk: i32 = 0;
+    while bbk < 16 {
+        var bv: i32 = 0;
+        var bb: i32 = 7;
+        while bb >= 0 {
+            poke32(SIO_BASE + 0x18u32, 0x40u32);  // SCK high (sample edge)
+            spin = 0; while spin < 5 { spin = spin + 1; }
+            var miso: i32 = ((peek32(SIO_BASE + 0x04u32) >> 4u32) & 1u32) as i32;
+            bv = bv | (miso << bb);
+            poke32(SIO_BASE + 0x20u32, 0x40u32);  // SCK low
+            spin = 0; while spin < 5 { spin = spin + 1; }
+            bb = bb - 1;
+        }
+        putchar(' ' as u8);
+        print_hex2(bv as u32);
+        if bb_seen == 0 {
+            if (bv & 0x80) == 0 {
+                bb_r1 = bv as u8;
+                bb_seen = 1;
+            }
+        }
+        bbk = bbk + 1;
+    }
+    puts("\n");
+    poke32(SIO_BASE + 0x18u32, 0x20u32);  // CS high
+    puts("SD: bb CMD0 R1 = 0x");
+    print_hex2(bb_r1 as u32);
+    puts("\n");
+
+    if bb_r1 == 0x01u8 {
+        puts("SD: BB OK -- card responds to bit-banged CMD0! SPI periph misconfig\n");
+        return 0;
+    }
+    puts("SD: smoke test inconclusive -- both SPI and bit-bang silent\n");
+    puts("SD: most likely card not seated / module bad / wiring physically wrong\n");
     return 1;
 }
