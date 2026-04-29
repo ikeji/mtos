@@ -365,6 +365,40 @@ bcrun.tc を OS 上で再コンパイルしたいなら、まず **vartab を 25
 に拡大** + AST pool 分割 (vm_run を関数分解、現状 ユーザ指示で out of
 scope) が要る。それは別タスク。
 
+### 実装後の実測 (2026-04-29 追記)
+
+arena 縮小を実装 (commit 後述) して tcc-driven をリトライ:
+
+| 段 | 結果 |
+|---|---|
+| parse     | 48 s (OK) |
+| sigscan   | 20 s (OK) |
+| cat-wrap  | 23 s (OK) |
+| **tcheck**    | **33 s, peak 74 KB (OOM 解消!)** |
+| codegen   | 25 s (OK) |
+| bc2asm    | 26 s (OK) |
+| cat-link  | **738 s** (sh 駆動 ~25 s の 30 倍!) |
+| asm_pass1 | **3841 s = 64 分** (sh 駆動 27 s の 142 倍!) |
+| cat-p2    | **3044 s** (途中で OOM) |
+| asm_pass2 | OOM (320 KB arena 維持なので余裕 79 KB) |
+
+**進歩**: tcheck の OOM は arena 縮小で解消、本来意図した stage は
+全部 alloc できるように。
+
+**残課題**:
+
+1. **asm_pass2 が依然 OOM**: 320 KB 維持なので sh + tcc + asm_pass2 =
+   401 KB / 480 KB の構造的不可能。tcc 駆動のまま asm_pass2 を通す
+   なら、tcc を `do_exec` で asm_pass2 に置き換える必要 (ただし帰還
+   後の `wc /sd/a.out` ができなくなる)。
+2. **cat / asm_pass1 の異常遅延** (14〜140 倍): tcc が kernel arena
+   中央に 25 KB 居座ることで、alloc/free が free list を長く歩く
+   症状と推測。`compiler/runtime.tc::large_alloc` は first-fit + 隣接
+   merge だが、tcc が中央にあると merge できない。
+
+→ **やはり「tcc を sh の組み込みコマンド化」が筋が良い**。tcc 自体
+の実装は維持して、性能リファレンスとしての位置づけ。
+
 ### 補足: 「断片化」より「絶対値ギリギリ」が支配項
 
 正確には両方が効くが、絶対量の余裕でほぼ決まる:
