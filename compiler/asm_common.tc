@@ -38,8 +38,13 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // MAX_NAME_POOL: ~90-110 KB measured for self-host, so 131072 (128 KB)
 // gives a comfortable margin. Both sizes control asm_pass1's peak
 // (see docs/task/pipeline_100kb.md § asm_pass1).
+//
+// 2026-04-30: 131072 → 98304 (96 KB, -32 KB) to cut asm_pass1/2 peak
+// for the OS-self-host arena budget. Measured g_lab_name_pos peaks
+// at ~90 KB so 96 KB leaves ~6 KB headroom; if the self-host pool
+// outgrows this the fixed-buffer error message kicks in cleanly.
 var MAX_LABELS:    i32 = 4096;
-var MAX_NAME_POOL: i32 = 131072;
+var MAX_NAME_POOL: i32 = 98304;
 // Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
 // definitions; the g_numlab table is `digit * NUM_LAB_PER_DIGIT + idx`.
 // Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
@@ -242,8 +247,11 @@ fn lab_name_eq(idx: i32, name: U8Array, nlen: i32) -> bool {
 // g_lab_hash holds "label index + 1" (0 = empty slot). Linear probing.
 // LAB_HASH_SIZE must be a power of 2 and strictly larger than
 // MAX_LABELS so open addressing never runs out of slots.
-var LAB_HASH_SIZE:  i32 = 16384;
-var LAB_HASH_MASK:  i32 = 16383;
+// 2026-04-30: 16384 → 8192 (-32 KB) since MAX_LABELS=4096 only ever
+// fills half of the 16k slots; 8k still gives 50% load factor at the
+// limit which keeps linear-probe runs short.
+var LAB_HASH_SIZE:  i32 = 8192;
+var LAB_HASH_MASK:  i32 = 8191;
 var g_lab_hash:     I32Array = 0 as I32Array;
 var g_lab_hash_ok:  i32 = 0;
 
