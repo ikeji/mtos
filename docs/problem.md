@@ -53,44 +53,31 @@ intrinsic 化すれば解消。解決すれば #6 (get 境界チェック) も�
 
 いつやるか: 「遅くてどうしようもない」状態になったら。現状は実害なし。
 
-### K7. pico2 で phase 7 コンパイラを完走させる (limitation)
+### K7. pico2 で phase 7 コンパイラを完走させる ✅ **解決 (2026-04-29)**
 
-**part 1+2 完了**: pico2 で spawn/wait/exec + sh が動く。
-**compile 段 byte-exact verify 完了 (2026-04-17)**: parse→bc2asm の
-7 段がホスト参照とバイト完全一致。
+完成: pico2 実機上で OS 自身のコンパイラパイプラインが
+parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2
+を全段完走させ、生成された `/sd/HW` を実行して `Hello, World!`
+を出力 (合計 127 秒)。
 
-**part 3 — SD カード経由で進行中 (2026-04-29)**:
-SD カード SPI ドライバ + MBR 対応 fatfs を導入 (commit 37c99c7) し、
-中間ファイルを `/sd/` に書く形に切替えた。`/tmp/` (480 KB SRAM
-tmpfs) ではなく SD ストレージなのでパイプラインのメモリ要件は緩和。
-parse → sigscan → tcheck → codegen → bc2asm までは実機で正常動作
-を確認 (`tests/pico2_pipeline_drive.py` で `sh$` プロンプト同期)。
+決め手は 3 つの組み合わせ:
 
-**残件 1: ~~asm_pass1 が遅い~~ → 解決 (2026-04-29)**:
-真因は **CPU clock 12 MHz** (PLL_SYS 未使用)。`kernel/platform_pico2.s`
-で PLL_SYS を bring-up し clk_sys を 150 MHz に切替えた結果、asm_pass1
-単独実行が 310s → 27s (11.5×) に短縮。SD write 速度自体は ~5 KB/s
-のままだが、asm_pass1 の出力は 11 KB なので影響なし。
+1. **SD カード SPI ストレージ追加** (commit 37c99c7):
+   `block_sd.tc` + MBR 対応 fatfs。中間ファイル (1.ast / 2.tast /
+   3.bc / 4.s / full.s / lab.s / p2.in / HW) を `/sd/` に書くこと
+   で 480 KB SRAM tmpfs 制約を回避。
+2. **PLL_SYS で CPU を 150 MHz 化** (commit cf22718):
+   それまで PLL 未使用で clk_sys ≈ 12 MHz だったため asm_pass1 単独
+   で 310s。150 MHz 化で 27s に短縮 (11.5×)。
+3. **`tests/pico2_pipeline_drive.py` でプロンプト同期 UART** (commit 5dfa631):
+   PL011 RX FIFO 32 byte は sh が sys_wait 中に drain されない。
+   `sh$ ` プロンプトを見て次行を送ることで FIFO overflow を回避。
 
-**残件 1b: full pipeline での task 連続 spawn 時の OOM**:
-parse → sigscan → cat → tcheck → ... と 7 タスク連続 spawn したあと
-asm_pass1 が `OOM: 327684` (= asm_pass1 の task arena 320 KB ぴったり)
-で落ちる。単独 spawn では同じ asm_pass1 が問題なく完走するので、
-**spawn 間で kernel arena が leak してる** 強い疑い。
-`free_last_alloc` または `slot_free_allocs` の cleanup path を疑う。
-
-**残件 2: UART RX FIFO オーバーラン**:
-PL011 の FIFO は 32 byte。sh が `sys_wait` 中は誰も draining しない
-ので、fixed-sleep でコマンドを送ると後半が捨てられる。回避策として
-`tests/pico2_pipeline_drive.py` が `sh$ ` プロンプトを見て次行を
-送る方式にしてある (`--per-char-delay 0.005` 併用)。pico2 kernel に
-UART RX 割り込み + ring buffer を入れれば本質的に解決する。
-
-**残件 3: arena サイズの絶対値**:
-sh (32 KB) + asm_pass2 (512 KB) + stacks ≈ 570 KB で 480 KB arena に
-収まらない。`/sd` 化によって中間ファイル分は解放されたが、各 task
-の arena 自体は変わらないので限界はそのまま。task arena を縮める
-別の最適化が必要 (small-payload optimization, etc.)。
+残った副次的課題は別エントリへ:
+- ~~part 3 OOM 中継~~: 後続テストで再現せず、最初の観測は別テストの状態残りだった疑い (要再現確認)
+- UART RX FIFO に IRQ + ring buffer (本質的解決): K8+K9 と統合して別途
+- arena 絶対サイズ: 各 task arena が大きいため pipeline でも依然
+  ギリギリ。phase 8 で task 内コード/データ分離を再検討するなら自然に縮む
 
 ### 30. tmpfs に unlink が無い (limitation)
 

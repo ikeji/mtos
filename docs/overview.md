@@ -63,11 +63,12 @@ GCC / GNU as / GNU ld は使わない。`asm_pass1/pass2` が「アセンブラ�
 フェーズ8: OS 全体を独自言語で記述し、OS 上でビルド                      [未着手]
 ```
 
-現状は **フェーズ 7 M6 + Phase 1/2/3 パイプラインメモリ削減完了** 段階で、
-qemu virt 上で `parse → sigscan → tcheck → codegen → bc2asm →
-asm_pass1 → asm_pass2` の 7 段を回して `/tmp/hw` に吐いた raw binary を
-sh から実行して "Hello, World!" を出せる。pico2 実機でも compile 段の
-7 段までは byte-exact で走る (link 段の実機完走は K7 残件)。
+現状は **フェーズ 7 完走 (K7 解決、2026-04-29)** 段階。qemu virt と
+**pico2 実機の両方**で `parse → sigscan → tcheck → codegen → bc2asm →
+asm_pass1 → asm_pass2` の 7 段を回し、生成バイナリを sh から実行して
+"Hello, World!" を出せる。pico2 では SD カード (`/sd/`) を中間ファイル
+ストレージに使い、PLL_SYS で CPU を 150 MHz に上げることで合計 127 秒
+で完走する (K7 解決の詳細は `docs/solved.md`)。
 
 詳細は `docs/roadmap.md` / `docs/problem.md` / `docs/task/` 参照。
 Pico 2 実機の配線・openocd 環境・実機テスト手順は

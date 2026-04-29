@@ -57,6 +57,49 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass2 から g_code を
 
 ## カーネル / OS
 
+### K7. pico2 で phase 7 コンパイラを完走 — 完了 (2026-04-29)
+
+実機 Pico 2 上で OS 自身の compile pipeline が完全に走り、生成
+バイナリを実行できるようになった:
+
+```
+parse → sigscan → cat → tcheck → codegen → bc2asm → cat
+       → asm_pass1 → cat → asm_pass2 → /sd/HW
+=> Hello, World!
+合計 127 秒
+```
+
+決め手は 3 点の組み合わせ:
+
+1. **SD カード SPI ストレージ** (commit 37c99c7)
+   `kernel/block_sd.tc` + MBR 対応 `kernel/fatfs.tc`。`/sd/<path>`
+   経由で SD に読み書きできるようになり、中間ファイル
+   (1.ast / 2.tast / 3.bc / 4.s / full.s / lab.s / p2.in / HW) を
+   全部 SD に流せるようになった。これで 480 KB SRAM tmpfs 縛りが
+   外れ、phase 7 の I/O 量が無制限に。
+
+2. **PLL_SYS bring-up で CPU を 150 MHz 化** (commit cf22718)
+   それまで `kernel/platform_pico2.s` は PLL 未使用で clk_sys ≈ 12 MHz。
+   asm_pass1 単独で 310 秒もかかっていた (CPU バウンド)。XOSC 12 MHz
+   × FBDIV(125) → POSTDIV(5,2) で clk_sys 150 MHz に切替えた結果、
+   同じ asm_pass1 が 27 秒に短縮 (11.5×)。clk_peri は XOSC 直 12 MHz
+   のまま据え置いて UART/SPI baud は無変更。
+
+3. **プロンプト同期 UART ドライブ** (commit 5dfa631)
+   PL011 RX FIFO は 32 byte。sh が `sys_wait` 中は drain されない
+   ので fixed-sleep のテストでは長行が捨てられた。
+   `tests/pico2_pipeline_drive.py` が `sh$ ` プロンプトを見て次行を
+   送る方式に切替えて回避。
+
+旁ら必要だった副次修正:
+- `bootstrap/runtime_syscall.c` の 16-byte pool を 256 → 32768
+  に拡大 (commit b8049d2)。`make pico2-kernel-extra` が asm_pass1
+  自身を Gen2 で compile する際の bucket 0 OOM 解消。
+
+副次の運用 limitation (phase 8 で再検討):
+- UART RX FIFO に IRQ + ring buffer は未対応 (K8+K9 と統合)
+- task arena 絶対サイズの限界 (asm_pass2 で 320 KB) は維持
+
 ### K3. タスクサイズ宣言 — 案C 完了 (2026-04-15)
 
 タスクバイナリの先頭 8 バイトに `.word arena_size; .word stack_size`
