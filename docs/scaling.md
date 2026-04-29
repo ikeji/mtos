@@ -298,6 +298,41 @@ sh + tcc + child の 3 タスクが同時 alive になり、kernel arena が
 sh の組み込みコマンドにする」** が一番素直 (sh + child の 2 タスク
 構造を維持)。
 
+### 補足: そもそも task arena を切り過ぎている
+
+`docs/task/pipeline_100kb.md` の目標は各段 **80 KB 程度**:
+
+| 段 | 目標 | 実 peak (Hello World) | 実 peak (worst = bcrun.tc::vm_run) | task.mk arena |
+|---|---:|---:|---:|---:|
+| tcheck    |  80 KB |  74 KB | 244 KB | **320 KB** |
+| codegen   |  50 KB |  77 KB | 246 KB | **320 KB** |
+| bc2asm    |  35 KB | 113 KB | 124 KB | **192 KB** |
+| asm_pass1 |  45 KB | 224 KB | 268 KB | **320 KB** |
+| asm_pass2 |  45 KB | 298 KB | 280 KB | **320 KB** |
+
+Hello World の実 peak は概ね目標 100 KB 級だが、**task arena 予約は
+worst case (bcrun.tc::vm_run) を見越して 320 KB に取っている**。
+これが多重 task 同時 alive を阻む元凶。
+
+bcrun.tc::vm_run は OS 側の 1 関数で AstNode 2581 個を持つ outlier
+(`docs/task/pipeline_100kb.md` §AST pool outlier)。phase 7 の
+Hello World レベルでは出てこない。
+
+### 提案: arena を Hello World 級に絞る
+
+`tests/test_pico2_phase7_sd.sh` 相当の用途では、各段の peak が判明
+しているので **arena を 96〜144 KB に縮める**選択が筋:
+
+- tcheck: 320 → **96 KB** (peak 74 KB + 30% margin)
+- codegen: 320 → **128 KB** (peak 77 KB)
+- bc2asm: 192 → **144 KB** (peak 113 KB)
+- asm_pass1: 320 → **288 KB** (peak 224 KB)
+- asm_pass2: 320 KB は維持 (peak 298 KB)
+
+bcrun.tc を OS 上で再コンパイルしないなら問題なし。再コンパイル
+が必要なら、`pipeline_100kb.md` §AST pool outlier の改修
+(vm_run を関数分解 = ユーザ指示で out of scope) が先に必要。
+
 ### 補足: 「断片化」より「絶対値ギリギリ」が支配項
 
 正確には両方が効くが、絶対量の余裕でほぼ決まる:
