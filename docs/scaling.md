@@ -206,6 +206,98 @@ OOM: 327684                 ← tcheck spawn 失敗
 本番の self-host は sh-driven (`tests/test_pico2_phase7_sd.sh` 又は
 manually) で。
 
+## Q4: `/prelude.s` とは
+
+OS 内 mtfs に `/prelude.s` として埋め込まれている定型 asm 文字列。
+**タスクバイナリの「先頭ボイラープレート」を一切プリビルド** しておく
+ためのもので、`kernel/build.sh` (Step 0 / Step 7) が各 task の build
+前に下記を 1 度だけ生成して mtfs にステージ:
+
+```
+/prelude.s   = '; raw\n'                 ← asm_pass2 の出力モード指示
+             + '.word 32768\n.word 8192' ← /sd/HW のタスクヘッダ
+                                          (arena=32 KB, stack=8 KB)
+             + task_crt0.s               ← ecall stub + peek/poke + main 呼び出し
+             + cached runtime.s          ← compiler/runtime.tc のプリコンパイル
+
+/prelude_tail.s = task_data.s            ← .bss .space (32 KB の __arena)
+```
+
+`cat /prelude.s /sd/4.s /prelude_tail.s > /sd/full.s` が phase 7
+パイプラインの「**疑似リンクステップ**」: ユーザコード `.s` の前後に
+crt0 + runtime + bss を貼って一つの完結アセンブリに仕立てる。
+
+サイズ: **`/prelude.s` ≈ 234 KB** (`runtime.s` が大半を占める)。
+これが asm_pass1 で 1 回、asm_pass2 で 3 回読まれるので、実は phase 7
+のボトルネックの大半が「同じ 234 KB を何度も SD から読む」になって
+いる。`runtime.s` を Flash XIP の rodata にしてアドレス渡しできれば
+劇的に速くなるはず (将来課題)。
+
+詳細は `kernel/build.sh` の Step 0 と Step 7 を参照。
+
+## Q5: `tcc` の必要メモリ量
+
+### 静的宣言 (`kernel/tasks/tcc/task.mk`)
+
+```
+TASK_ARENA_tcc := 16384   # 16 KB
+TASK_STACK_tcc := 8192    # 8 KB
+```
+
+タスクヘッダ 8 byte + arena 16 KB + stack 8 KB = **24 KB ちょうど**。
+
+### 実行時の内部使用
+
+`tcc.tc` の関数内ローカル変数:
+- 4 KB U8Array (cat 用 read buffer): 1 個
+- StringArray(1) + String("xxx"): 各段で 4〜8 個、合計 ~200 byte
+- `s_lit` で生成した String: 各 path で n+1+4 byte
+
+合計 ~5 KB を tcc 自身の 16 KB arena から消費。十分余裕あり。
+
+### Kernel arena 側の影響 (こちらが本命)
+
+tcc がタスクとして alive な間、kernel arena (480 KB) から:
+- frame_buf: ~360 byte
+- ram (= 上記 16 KB)
+- stack (= 上記 8 KB)
+- argv_clone (sh が tcc に渡した argv のコピー): ~50 byte
+- name buffer ("tcc"): ~10 byte
+- 合計 **~25 KB** が常駐
+
+更に tcc が child を spawn すると:
+- child の frame_buf + ram + stack + argv + name
+- tcheck の場合 ~340 KB
+
+sh + tcc + tcheck 同時 alive 時の kernel arena 占有:
+| タスク | 占有 |
+|---|---|
+| sh | ~40 KB |
+| tcc | ~25 KB |
+| 子タスク (tcheck) | ~340 KB |
+| **合計** | **~405 KB / 480 KB** |
+
+**残 75 KB は free だが、断片化していて contiguous で取り出せない**
+ことがあり、tcheck の 320 KB ram alloc が失敗する (実機で観測。
+`OOM: 327684`)。
+
+参考に sh-driven の場合:
+| タスク | 占有 |
+|---|---|
+| sh | ~40 KB |
+| 子タスク (tcheck) | ~340 KB |
+| **合計** | **~380 KB** |
+
+→ 100 KB の余裕。
+
+### 結論
+
+tcc 自身は **24 KB** の小さいタスク。問題は tcc を経由することで
+sh + tcc + child の 3 タスクが同時 alive になり、kernel arena が
+ギリギリになること。Q3 で示した 3 通りの解決策のうち、**「tcc を
+sh の組み込みコマンドにする」** が一番素直 (sh + child の 2 タスク
+構造を維持)。
+
 ## 関連ドキュメント
 
 - `docs/task/pipeline_100kb.md` — Phase 1/2/3 のメモリ削減経緯
