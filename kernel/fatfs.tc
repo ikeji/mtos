@@ -1,7 +1,10 @@
 // kernel/fatfs.tc — FAT32 filesystem driver
 //
-// Read/write FAT32 superfloppy format (no MBR, BPB at sector 0).
-// 8.3 filenames only, no LFN. Mounted at /sd/ via VFS.
+// Supports either superfloppy (BPB at sector 0, used by qemu virtio
+// disk images) or MBR-partitioned media (the default for SD cards
+// formatted by Windows/macOS/dd; BPB sits at the partition's first
+// LBA listed in the MBR partition table). 8.3 filenames only, no LFN.
+// Mounted at /sd/ via VFS.
 
 import "kernel_common.tc";
 
@@ -137,12 +140,50 @@ export fn fatfs_mount() -> i32 {
     // the old g_fat_secbuf global can go away entirely.
     var secbuf: U8Array = U8Array(512u32);
 
-    // Read BPB at sector 0 (superfloppy format)
+    // Read sector 0 first.
     if fat_block_read(0, secbuf) != 512 { delete(secbuf); return -1; }
 
-    // Validate signature
+    // Validate end signature regardless of whether it's BPB or MBR.
     if get(secbuf, 510) != 0x55u8 { delete(secbuf); return -1; }
     if get(secbuf, 511) != 0xAAu8 { delete(secbuf); return -1; }
+
+    // Distinguish superfloppy (BPB at sector 0) from MBR. FAT BPB
+    // always starts with a jump instruction: 0xEB ?? 0x90 (short jump)
+    // or 0xE9 ?? ?? (near jump). Anything else triggers MBR fallback.
+    var b0: u8 = get(secbuf, 0);
+    var bpb_lba: u32 = 0u32;
+    var is_bpb: i32 = 0;
+    if b0 == 0xEBu8 {
+        if get(secbuf, 2) == 0x90u8 { is_bpb = 1; }
+    }
+    if b0 == 0xE9u8 { is_bpb = 1; }
+
+    if is_bpb == 0 {
+        // Treat as MBR: walk the 4 partition entries at offset 446.
+        // Each is 16 bytes; type byte at +4, LBA start at +8 (LE32).
+        var p: i32 = 0;
+        while p < 4 {
+            var entry_off: i32 = 446 + p * 16;
+            var ptype: u8 = get(secbuf, entry_off + 4);
+            // Accept FAT12/16/32 partition types.
+            if ptype == 0x01u8
+            || ptype == 0x04u8
+            || ptype == 0x06u8
+            || ptype == 0x0Bu8
+            || ptype == 0x0Cu8
+            || ptype == 0x0Eu8
+            || ptype == 0x0Fu8 {
+                bpb_lba = read_le32(secbuf, entry_off + 8);
+                break;
+            }
+            p = p + 1;
+        }
+        if bpb_lba == 0u32 { delete(secbuf); return -1; }
+        // Re-read at partition start.
+        if fat_block_read(bpb_lba, secbuf) != 512 { delete(secbuf); return -1; }
+        if get(secbuf, 510) != 0x55u8 { delete(secbuf); return -1; }
+        if get(secbuf, 511) != 0xAAu8 { delete(secbuf); return -1; }
+    }
 
     g_fat_bps = read_le16(secbuf, 11);
     g_fat_spc = get(secbuf, 13) as i32;
@@ -154,12 +195,17 @@ export fn fatfs_mount() -> i32 {
     if g_fat_bps != 512 { delete(secbuf); return -1; }
     if g_fat_spc == 0 { delete(secbuf); return -1; }
 
-    g_fat_fat_start = g_fat_rsvd;
-    g_fat_data_start = g_fat_rsvd + (g_fat_nfats as u32) * g_fat_fatsz;
+    // For MBR layout, both the FAT and data regions are inside the
+    // partition that starts at bpb_lba. Add the partition offset so
+    // every later sector number is an absolute LBA.
+    g_fat_fat_start = bpb_lba + g_fat_rsvd;
+    g_fat_data_start = bpb_lba + g_fat_rsvd + (g_fat_nfats as u32) * g_fat_fatsz;
 
-    // Compute total data clusters. BPB TotSec32 is at offset 32.
+    // Compute total data clusters. BPB TotSec32 (offset 32) is the
+    // size of THIS partition in sectors, so use partition-relative
+    // arithmetic for the cluster count.
     var tot_sec: u32 = read_le32(secbuf, 32);
-    var data_sec: u32 = tot_sec - g_fat_data_start;
+    var data_sec: u32 = tot_sec - g_fat_rsvd - (g_fat_nfats as u32) * g_fat_fatsz;
     g_fat_total_clusters = data_sec / (g_fat_spc as u32);
 
     // Allocate FD table

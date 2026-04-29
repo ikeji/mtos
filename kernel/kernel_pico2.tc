@@ -2,7 +2,8 @@
 
 import "kernel_common.tc";
 import "block_flash.tc";
-import "block_fat_stub.tc";
+import "block_sd.tc";
+import "fatfs.tc";
 import "mtfs.tc";
 import "vfs.tc";
 import "loader.tc";
@@ -56,6 +57,21 @@ fn mount_fs() -> void {
         return;
     }
     kputs("MTFS: mounted\r\n");
+
+    // Try to bring up the SPI SD card. Failure is non-fatal: kernel
+    // boots fine without /sd, and the user can re-run sdprobe to
+    // diagnose. Success makes /sd available via fatfs.
+    if fat_block_init() == 0 {
+        kputs("SD: card init OK\r\n");
+        if fatfs_mount() == 0 {
+            kputs("FATFS: mounted\r\n");
+            vfs_set_fatfs_ready();
+        } else {
+            kputs("FATFS: mount failed (no FAT?)\r\n");
+        }
+    } else {
+        kputs("SD: card init failed (no card / wiring?)\r\n");
+    }
     return;
 }
 
