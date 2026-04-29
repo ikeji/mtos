@@ -7334,8 +7334,8 @@ __L280:
   push_int 1
   call StringBuffer_new i32
   store out_buf
-; var nodes: AstNodeArray = AstNodeArray(4096);
-  push_int 4096
+; var nodes: AstNodeArray = AstNodeArray(2048);
+  push_int 2048
   call AstNodeArray u32
   store nodes
 ; var strtab: U8Array = U8Array(32768);

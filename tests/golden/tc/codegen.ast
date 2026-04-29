@@ -5589,11 +5589,11 @@
           (int 1)
         )
       )
-      (comment "var nodes: AstNodeArray = AstNodeArray(4096);")
+      (comment "var nodes: AstNodeArray = AstNodeArray(2048);")
       (var_decl nodes
         (type AstNodeArray)
         (call AstNodeArray
-          (int 4096)
+          (int 2048)
         )
       )
       (comment "var strtab: U8Array = U8Array(32768);")
