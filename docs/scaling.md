@@ -298,6 +298,27 @@ sh + tcc + child の 3 タスクが同時 alive になり、kernel arena が
 sh の組み込みコマンドにする」** が一番素直 (sh + child の 2 タスク
 構造を維持)。
 
+### 補足: 「断片化」より「絶対値ギリギリ」が支配項
+
+正確には両方が効くが、絶対量の余裕でほぼ決まる:
+
+| | sh-driven | tcc-driven |
+|---|---|---|
+| sh 占有 | 40 KB | 40 KB |
+| tcc 占有 | — | 25 KB |
+| 子 (tcheck) | 336 KB | 336 KB |
+| **Σ alive** | **376 KB** | **401 KB** |
+| **kernel 480 KB - Σ** | **+104 KB** | **+79 KB** |
+
+sh-driven は 104 KB の余裕があるため断片化があっても通る。
+tcc-driven は 79 KB しか残らない上、tcc が arena の中ほどに居座る
+ことで前後の free を分断 → 子の 320 KB ram alloc が contiguous で
+取れず詰まる。
+
+つまり「フラグメントが問題」というより
+**「ベースラインがギリギリで構造的に 3 タスク alive にできない」**
+が本質。
+
 ## 関連ドキュメント
 
 - `docs/task/pipeline_100kb.md` — Phase 1/2/3 のメモリ削減経緯
