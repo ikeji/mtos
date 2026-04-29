@@ -508,9 +508,58 @@ tcc-driven は 79 KB しか残らない上、tcc が arena の中ほどに居座
 **「ベースラインがギリギリで構造的に 3 タスク alive にできない」**
 が本質。
 
+## ベースライン: 10s / 100 KB 最適化計画 (2026-04-30)
+
+`tests/bench_pipeline.sh` で計測した Gen3 + qemu-riscv32 の per-stage
+peak memory + 時間。**ターゲット: 各段 ≤ 10 sec (pico2 実機) / ≤ 100 KB
+(bcrun.tc を除く worst case = bc2asm.tc)**。bench は host 計測なので
+時間は相対的な指標、メモリは pico2 でも同じ。
+
+### hello.tc (366 byte, 入力小)
+
+| 段 | time_ms (virt) | peak_kb | 100 KB 目標 |
+|---|---:|---:|---:|
+| parse     |   20 | (no km_dump_peak) | ✓ (旧 14 KB) |
+| sigscan   |   16 |   9 | ✓ |
+| tcheck    |   28 |  73 | ✓ |
+| codegen   |   24 |  76 | ✓ |
+| bc2asm    |   30 | 111 | ❌ +11% |
+| asm_pass1 | 1161 | 218 | ❌ 2.2× |
+| asm_pass2 | 1785 | 298 | ❌ 3.0× |
+
+### bc2asm.tc (~50 KB, 実 worst case)
+
+| 段 | time_ms (virt) | peak_kb | 100 KB 目標 |
+|---|---:|---:|---:|
+| parse     | 3488 | (no km_dump_peak) | (前回測定 ~14 KB 一定) |
+| sigscan   | 1021 |  10 | ✓ |
+| tcheck    | 1836 | 190 | ❌ 1.9× |
+| codegen   | 1542 | 185 | ❌ 1.9× |
+| bc2asm    | 2414 | 122 | ❌ +22% |
+| asm_pass1 | 5056 | 249 | ❌ 2.5× |
+| asm_pass2 | 6710 | 328 | ❌ 3.3× |
+
+### 削減対象優先順 (gap が大きい順)
+
+1. **asm_pass2** (298/328 KB → 100 KB): g_lab_names 128 KB 固定 +
+   g_labels 64 KB が支配。per-label kmalloc 化で ~50 KB 級まで
+   削減可能 (`docs/task/pipeline_100kb.md` 残課題)
+2. **asm_pass1** (218/249 KB → 100 KB): asm_pass2 と同じラベル表が
+   支配。同じ shrink で連動して落ちる
+3. **tcheck** (73/190 KB → 100 KB): hello.tc は OK だが bc2asm.tc は
+   過大。AstNodeArray(3072) を 2048 に + per-fn strtab 32 KB → 16 KB
+4. **codegen** (76/185 KB → 100 KB): tcheck と同様の対策
+5. **bc2asm** (111/122 KB → 100 KB): instrs U32Array(4096) を実測
+   高水位に基づき縮小
+
+時間ターゲット (pico2 10s) は別途 pico2 での timing 計測後に検討。
+host virt の wall time は相対指標として shrink 前後の差を確認するのに
+使う。
+
 ## 関連ドキュメント
 
 - `docs/task/pipeline_100kb.md` — Phase 1/2/3 のメモリ削減経緯
 - `docs/compiler.md` — 各段の peak と algorithm
 - `docs/lab_format.md` — asm_pass1/pass2 が共有する .lab 中間形式
 - `docs/solved.md` K7 — pico2 phase 7 完走の経緯
+- `tests/bench_pipeline.sh` — per-stage memory/time 回帰計測
