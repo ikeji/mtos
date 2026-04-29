@@ -9,9 +9,14 @@
 
 # 現在のフェーズ
 
-`docs/roadmap.md` 参照。**フェーズ 7 M1〜M6 + Phase 1/2/3 パイプライン
-メモリ削減まで到達**: OS 上で Hello World を自己コンパイル + 自己実行
-できる状態。以下が完了済:
+`docs/roadmap.md` 参照。**フェーズ 7 完走 (K7 解決、2026-04-29)**:
+qemu virt と **pico2 実機の両方**で OS 自身のコンパイラパイプラインが
+parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 を
+完走、生成バイナリで "Hello, World!" を出せる。pico2 では SD カード
+(`/sd/`) を中間ファイルストレージに使い、PLL_SYS で CPU 150 MHz 動作、
+合計 ~125 秒で完走 (詳細: `docs/solved.md` の K7 エントリ)。
+
+以下が完了済:
 
 - フェーズ 7 B: argc/argv (kernel 側で StringArray 構築 → crt0)
 - フェーズ 7 A: tmpfs (/tmp, kmalloc backed, grow-on-write)
@@ -226,21 +231,46 @@
   `fatfs::fat_follow_chain` / `vfs::do_uart_read` forward decl を
   撤去。goldens 再生成、net -1600 行 (commit 805d603)
 
+- **K7 完走 (pico2 phase 7 self-host) — 2026-04-29**:
+  - `kernel/block_sd.tc` (SD SPI ドライバ) + MBR 対応 `fatfs.tc` 実装
+    (commit 37c99c7)。`/sd/<path>` で OS から読み書き可能に
+  - `bootstrap/runtime_syscall.c` の 16-byte pool を 256→32768 に拡大
+    (commit b8049d2): `make pico2-kernel-extra` で asm_pass1 自身を
+    Gen2 build する際の bucket 0 OOM 解消
+  - `platform_pico2.s` に PLL_SYS bring-up 追加 (commit cf22718):
+    XOSC 12 MHz → VCO 1500 MHz / POSTDIV 5×2 = clk_sys 150 MHz、
+    asm_pass1 単独 310 s → 27 s (11.5×)
+  - `tests/pico2_pipeline_drive.py` (commit 5dfa631): プロンプト
+    同期送信ドライバ。PL011 RX FIFO 32 byte overflow 回避用
+  - `tests/test_pico2_phase7_sd.sh`: 実機 phase 7 通し検証
+  - `tests/test_pico2_sd.sh`: SD 永続性検証 (Phase A: write/read、
+    Phase B: reset 後の persistence)
+  - 合計 ~125 秒で `/sd/HW` を生成して実行、"Hello, World!" 出力
+  - 詳細: `docs/solved.md` K7 エントリ、`docs/scaling.md` (per-stage
+    timing と tcc-driven slowdown 調査)
+
 **次の候補** (どれも独立):
 
 - **フェーズ 7 M7-full**: OS 上で Gen2 → Gen3 相当の一周 (コンパイラ
   自身を OS 上で再コンパイル)。パイプ syscall 導入で中間ファイル経由
   より高速化できる可能性あり
-- **bcrun.tc::vm_run AST pool outlier**: tcheck/codegen/bc2asm
-  すべての peak を跳ね上げる原因が vm_run 1 関数の巨大 AST (2581
-  node)。source 分解は intentionally out of scope (ユーザ指示)。
-  現状 252 KB peak は phase 7 OS の 16 MB task 枠に収まる
+- **tcc-driven 固有の slowdown 調査**: sh-driven asm_pass1 ~27 s に
+  対して tcc-driven は 3841 s (142×)、cat-link は 10 s → 738 s (74×)。
+  inline I/O + 後続 task の組み合わせで激遅化。tcc を sh の組み込み
+  コマンド化すれば回避可能 (`docs/scaling.md` Q3 解決方向)
+- **echo / spawn baseline の高さ**: PLL 150 MHz 下でも `echo hello
+  world` (12 byte UART 出力) で ~11 秒。TC ABI の関数呼び出しコスト
+  が支配的。ABI 最適化 / inline 化が必要
+- **bcrun.tc::vm_run の vartab=128 制限**: 現在の tcheck では bcrun.tc
+  自身が vartab overflow で compile 不可。pipeline の現実的 worst case
+  は bc2asm.tc (nc=1656) に格下げされた (`docs/scaling.md` Q5)
 - **フェーズ 8**: OS 全体を独自言語で書く
 
 問題詳細は `docs/problem.md`、
 phase 7 実装記録は `docs/task/phase7_compiler_on_os.md`、
 pipeline メモリ削減計画は `docs/task/pipeline_100kb.md`、
-.lab 中間フォーマットは `docs/lab_format.md`。
+.lab 中間フォーマットは `docs/lab_format.md`、
+スケーリング分析は `docs/scaling.md`。
 
 ---
 

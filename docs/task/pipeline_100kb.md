@@ -81,12 +81,18 @@ asm ≈ 9.5 MB、bc2asm ≈ 1.4 MB で、どちらも pico2 では到底載ら�
    走らせた結果。詳細な per-input テーブルは下の「ステージ別実測表」
    を参照。
 
+**注 (2026-04-29 追加)**: 下表の「bcrun.tc が 244 KB の outlier」は
+**現在の tcheck では再現しない**。tcheck の vartab=128 上限に
+bcrun.tc::vm_run が引っかかって compile 不可 (`get: 128 out of bounds`)。
+現実の worst case は **bc2asm.tc** (per-fn nc=1656、tcheck peak 推定
+~170 KB)。詳細は `docs/scaling.md` Q5。
+
 | ステージ | 現在 | 目標 | 実測 | 主なやること |
 |---|---:|---:|---:|---|
 | parse     |  14 KB |  15 KB | **14 KB**       | 維持 |
 | sigscan   | (新規) |  20 KB | **9〜11 KB**    | extract_sigs.tc 派生、**top-level を全部** (非 export 含む) .th に出す。block / field / 式は読み捨て (#62 完了)。入力に関係なくほぼ一定 |
-| tcheck    | 717 KB |  80 KB | **74〜244 KB**  | typecheck から派生、per-top-level reset + per-fn strtab rollback + **per-fn kmalloc fntab** (#51, #63, #64 完了)。残り bottleneck は vm_run の 2581 nodes (3072-slot AstNode pool) のみ。bcrun.tc が 244 KB の outlier |
-| codegen   | 303 KB |  50 KB | **79〜246 KB**  | strtab を perm/ephemeral 2 cursor 化 + per-top-level rollback (#59 完了)。同じく bcrun.tc::vm_run の AstNode pool が outlier |
+| tcheck    | 717 KB |  80 KB | **74〜244 KB**  | typecheck から派生、per-top-level reset + per-fn strtab rollback + **per-fn kmalloc fntab** (#51, #63, #64 完了)。残り bottleneck は vm_run の 2581 nodes (3072-slot AstNode pool) のみ。bcrun.tc が 244 KB の outlier (現在は vartab=128 で bcrun 自身が compile 不可、現実の worst case は bc2asm.tc ~170 KB) |
+| codegen   | 303 KB |  50 KB | **79〜246 KB**  | strtab を perm/ephemeral 2 cursor 化 + per-top-level rollback (#59 完了)。同じく bcrun.tc::vm_run の AstNode pool が outlier (上記 tcheck 注と同じ) |
 | bc2asm    | 1.4 MB |  35 KB | **118〜124 KB** | **per-function emission** + per-fn strtab rollback (#60 完了)。入力に関係なくほぼ一定 |
 | asm-pass1 | (新規) |  45 KB | **227〜268 KB** | asm から派生、label collector のみ。`.lab` を出力 (#56)。2026-04-16 に MAX_LABELS 16384→4096 と MAX_NAME_POOL 256K→128K でさらに shrink。g_lab_names 128 KB + g_labels 64 KB が支配 |
 | asm-pass2 | (新規) |  45 KB | **260〜280 KB** | asm から派生、`.lab` を読んで encoder。Phase 5 (2026-04-16) で **g_code を廃止**し、source を 3 回 re-scan して target section を 4 KB buf 経由で直接 stdout に stream emit。旧 4.6 MB (MAX_CODE 固定) → Phase 4 で filesz 動的確保 (400 KB 台) → Phase 5 で 260 KB 台まで削減 |

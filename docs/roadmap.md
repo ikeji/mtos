@@ -263,14 +263,24 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
       - `fs_virtio` が "catfile\nquit\n" をパイプしてシェルループ + 2
         コマンド処理 (spawn/wait → exit) + SH: bye を検証
 
-## フェーズ7: ネイティブコンパイラをOS上で動かす
+## フェーズ7: ネイティブコンパイラをOS上で動かす ✅ **完走 (2026-04-29)**
 
 詳細な実装計画と前提機能 (A〜F / M1〜M7) は
-`docs/task/phase7_compiler_on_os.md`、実測ピークメモリと残課題は
-`docs/problem.md` K3 / K5 / K6 / K7 を参照。
-**M1〜M6 + パイプライン 100 KB 計画 (Phase 1 + 2 + 3) まで完了**、
-qemu virt 上の 4 stage test_phase7.sh で、旧パス・typecheck split・
-asm split・full split すべての pipeline で Hello World が動く。
+`docs/task/phase7_compiler_on_os.md`、K7 解決の経緯は
+`docs/solved.md`、per-stage timing は `docs/scaling.md` を参照。
+
+**qemu virt + pico2 実機の両方で完走**:
+- virt: `test_phase7.sh` で 4 stage 全 pipeline 動作
+- **pico2 実機: `tests/test_pico2_phase7_sd.sh` で `/sd/` 経由 phase 7
+  通し、~125 秒で `/sd/HW` を実行して "Hello, World!" 出力 (K7 解決、
+  commit cf22718 + 37c99c7 + b8049d2 + 5dfa631)**
+
+K7 解決の決め手 3 点:
+1. `kernel/block_sd.tc` + MBR 対応 fatfs で SD カードを永続ストレージ化
+2. PLL_SYS bring-up で CPU 150 MHz 化 (asm_pass1 単独 310 → 27 秒、
+   11.5×)
+3. `tests/pico2_pipeline_drive.py` でプロンプト同期 UART (PL011 RX
+   FIFO 32 byte overflow を回避)
 
 - [x] **B**: argc/argv を kernel 側で StringArray として構築し
       crt0 経由で main に渡す。`fn main(argv: StringArray)` と

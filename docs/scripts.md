@@ -51,9 +51,10 @@ make update-golden
 
 # make test に含まれない (手動実行):
 tests/test_phase7.sh     ← phase 7 self-hosted pipeline (OS 上で Hello World コンパイル)
-tests/test_pico2.sh      ← pico2 実機テスト (Debug Probe 経由)
-tests/test_pico2_sd.sh   ← pico2 実機 SD カード SPI + FAT 書き込み/永続性テスト
-tests/test_pico2_hw.sh   ← pico2 実機 UART pipeline driver
+tests/test_pico2.sh           ← pico2 実機テスト (Debug Probe 経由)
+tests/test_pico2_sd.sh        ← pico2 実機 SD カード SPI + FAT 書き込み/永続性テスト
+tests/test_pico2_phase7_sd.sh ← pico2 実機 phase 7 self-host (parse→…→asm_pass2 → /sd/HW)
+tests/test_pico2_hw.sh        ← pico2 実機 UART pipeline driver
 tests/pico2_verify.sh    ← pico2 実機で compile 7 段の byte-exact 検証
 ```
 
@@ -112,6 +113,7 @@ tests/pico2_verify.sh    ← pico2 実機で compile 7 段の byte-exact 検証
 | `test_phase7.sh`         | phase 7 自己ホスト実行テスト (手動)。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` で kernel をビルドし、qemu virt で 2 ステージ検証 (compile → link → run "Hello, World!") |
 | `test_pico2.sh`          | pico2 実機テスト (手動、`make test` に含まれない)。Debug Probe + openocd-rpi で flash し、UART の MTFS / CAT / launcher ログを grep |
 | `test_pico2_sd.sh`       | pico2 実機 SD カードテスト (手動)。Phase A: kernel flash → `echo TAG > /sd/T.TXT` → `cat` で読み返し。Phase B: re-flash せず reset のみで `cat /sd/T.TXT` が同 TAG を返す = 永続化検証 |
+| `test_pico2_phase7_sd.sh`| pico2 実機 phase 7 self-host テスト (手動)。`EXTRA_TASKS` 入りのカーネルを flash し、`pico2_pipeline_drive.py` で `parse → ... → asm_pass2 → /sd/HW → "Hello, World!"` を駆動。`/sd/` に中間ファイル staging。総時間 ~125 秒 (K7 達成版、commit 666d306) |
 | `test_pico2_hw.sh`       | pico2 実機 UART pipeline テスト (手動) |
 | `pico2_verify.sh`        | pico2 実機で compile 7 段の byte-exact 検証 (手動、link 段は K7 の UART 問題で skip) |
 | `update_golden.sh`       | golden 再生成 (rv32 ネイティブ高速化) |
@@ -123,6 +125,7 @@ tests/pico2_verify.sh    ← pico2 実機で compile 7 段の byte-exact 検証
 | `phase3_verify.py` | virt 上で全 9 段 (parse → asm_pass2) + /tmp/hw 実行を Gen2 ホスト参照と byte-exact 検証 |
 | `pico2_hw_driver.py` | pico2 UART pipeline driver (compile + optional link) |
 | `pico2_tty.py` | pico2 双方向 raw UART フォワーダー (Ctrl-a x で終了、LF→CR+LF 変換) |
+| `pico2_pipeline_drive.py` | sh プロンプト同期コマンド送信ドライバ。`sh$ ` を見て次行を送るので PL011 RX FIFO (32 byte) overflow しない。`tests/test_pico2_phase7_sd.sh` 等から使用 |
 | `uart_demux.py` | UART mux 0x1F フレームパーサー |
 
 ### test_common.sh の提供する機能

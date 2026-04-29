@@ -1,9 +1,24 @@
 # SD カード (SPI) 接続計画
 
+**ステータス: 実装完了 (2026-04-29、commit 37c99c7)**
+
+下記の Step 1〜4 (SPI ドライバ → ブロックレイヤ → FAT32 → VFS 統合)
+は全て実装され、`/sd/<path>` で OS から読み書きできるようになった。
+K7 (pico2 phase 7 self-host) も達成済 (`docs/solved.md`)。
+
+実装ファイル:
+- `kernel/block_sd.tc` — SPI0 + GP4-7 経由の SD カードドライバ
+- `kernel/fatfs.tc` — MBR / superfloppy 両対応 FAT32
+- `tests/test_pico2_sd.sh` — 永続性検証 (Phase A: write/read、Phase B:
+  reset 後の persistence)
+- `tests/test_pico2_phase7_sd.sh` — phase 7 self-host 統合テスト
+
+64GB 以上の SDXC は exFAT デフォルトなので FAT32 にリフォーマット
+必要 (`docs/pico2_hardware.md` の「SD カード フォーマット注意」参照)。
+
 ハード結線・モジュール選定・電源容量の注意は
-`docs/pico2_hardware.md` の「SD カード (SPI0、計画中)」節に
-コピーしてある。本ドキュメントは OS 側の実装計画 (SPI ドライバ →
-ブロックレイヤ → FAT32 → VFS 統合) にフォーカスする。
+`docs/pico2_hardware.md` の「SD カード ピン配線」節を参照。
+以下は元の実装計画 (アーカイブ)。
 
 ## 目的
 

@@ -1,9 +1,18 @@
-# フェーズ7: OS 上でコンパイラを動かす
+# フェーズ7: OS 上でコンパイラを動かす — ✅ **完走 (K7 解決 2026-04-29)**
 
 ゴール: 自作カーネル (qemu virt もしくは Pico 2) の上で `parse` /
 `typecheck` / `codegen` / `bc2asm` を実行し、`.tc` ソースから `.s` を
 生成できるようにする。最終的には自己ホストループ (OS 上の Gen2 で
 Gen3 を再ビルド) まで持っていきたい。
+
+**ステータス**: qemu virt は M6 で 2026-04-14 達成。**pico2 実機は
+2026-04-29 に K7 を解決して達成**: SD カード SPI ドライバ + PLL_SYS
+150 MHz + プロンプト同期 UART で `parse → ... → asm_pass2 → /sd/HW`
+を約 125 秒で完走、生成バイナリで "Hello, World!" 出力。詳細は
+`docs/solved.md` の K7 エントリと `docs/scaling.md` (per-stage timing
+分析と tcc-driven slowdown 調査)。
+
+以下は K7 解決前の実装記録 (アーカイブ)。
 
 現状 (2026-04-14): カーネルは mtfs (read-only) から `/bin/*` をロード
 して実行できる。タスクは `make_task` で 16K RAM / 8K stack を割り当て、

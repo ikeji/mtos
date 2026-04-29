@@ -98,7 +98,7 @@ docs/       ドキュメント
 | `tmpfs.tc` | RAM backed FS (kmalloc backed、grow-on-write、O_CREAT / O_TRUNC 対応) |
 | `mtfs.tc` | MyTinyFS read-only ドライバ (mount/lookup/open/read/close) |
 | `procfs.tc` | read-only virtual FS (`/proc/tasks`, `meminfo`, `cpuinfo`, `uptime`) |
-| `fatfs.tc` | FAT ドライバ (SD bring-up 中) |
+| `fatfs.tc` | FAT12/16/32 ドライバ。MBR / superfloppy 両対応。`/sd/` mount 用 |
 | `loader.tc` | K3 案C 8 byte header 読みと make_task 呼び出し。`sys_exec_handler` / `sys_spawn_handler` / `sys_spawn_fds_handler` 実装 |
 | `trap_common.s` | trap entry/exit + ecall dispatch (write64 / read63 / openat56 / close57 / readdir89 / exit93 / pipe222 / spawn_fds219 / spawn220 / exec221 / mux250 / wait260) |
 
@@ -121,6 +121,7 @@ docs/       ドキュメント
 | `platform_pico2.s` | pico2 固有: IMAGE_DEF, XOSC, PL011, .data コピー |
 | `crt0_pico2_data.s` | pico2 用 BSS (`__arena` 480 KB) |
 | `block_flash.tc` | XIP flash block デバイスドライバ (`_mtfs_image_addr` 経由) |
+| `block_sd.tc` | SD カード SPI0 backend。CMD0→CMD8→ACMD41→CMD58 init + CMD17/CMD24 read/write。`fat_block_init/read/write` を export し fatfs.tc から使われる (commit 37c99c7) |
 
 ### ビルドスクリプト
 
@@ -164,6 +165,8 @@ libtc は全タスクが import する user ライブラリ。
 | `muxon/muxon.tc` | UART mux 有効化 (ecall 250) |
 | `muxoff/muxoff.tc` | UART mux 無効化 |
 | `parse/`, `sigscan/`, `tcheck/`, `codegen/`, `bc2asm/`, `asm_pass1/`, `asm_pass2/` | `compiler/*.tc` への symlink。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` を渡したときだけビルドされ `/bin/<name>` として mtfs に入る (test_phase7.sh が参照) |
+| `sdprobe/sdprobe.tc` | SD SPI smoke test (CMD0/CMD8 応答 + 線間 crosstalk + bit-bang fallback)。MMIO 直叩き |
+| `tcc/tcc.tc` | OS 内 phase 7 driver。引数に `.tc` を取り `parse → ... → asm_pass2` を sequential spawn、各段の所要時間を `now_us()` で計測。出力は `/sd/a.out`。実機では sh-driven より遅い (詳細 `docs/scaling.md`) |
 
 ---
 
@@ -267,6 +270,7 @@ libtc は全タスクが import する user ライブラリ。
 | `problem.md` | 未解決バグ / limitation / ergonomics リスト |
 | `solved.md` | 解決済み問題のログ |
 | `roadmap.md` | 開発ロードマップ |
+| `scaling.md` | OS self-host コンパイル時のメモリ / 時間スケーリング分析 (Q1-Q5)、tcc-driven slowdown の調査ログ |
 | `tinyc_cheatsheet.md` | TinyC 構文クイックリファレンス |
 | `ast_format.md` | AST ファイルフォーマット (.ast / .tast / .th) |
 | `bc_format.md` | バイトコードフォーマット仕様 |

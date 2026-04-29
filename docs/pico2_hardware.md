@@ -74,10 +74,44 @@ SWD と UART を 1 デバイスでまとめられる + openocd 経由で flash �
 UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 付属
 の 3 ピンケーブルはコネクタ向きで自然にクロスする配線になっている。
 
-### SD カード (SPI0、計画中)
+### SD カード (SPI0、実装済み 2026-04-29)
 
-実装は `docs/task/sdcard.md` の Step 1〜5 で進める予定。配線は以下で
-予約済み (UART0 / SWD / 既存 GPIO のいずれとも干渉しない):
+実装は `kernel/block_sd.tc` (CMD0/CMD8/ACMD41/CMD58 init + CMD17/CMD24
+read/write) + `kernel/fatfs.tc` (MBR / superfloppy 対応 FAT32) で完成。
+`/sd/<path>` で OS から読み書き可能。`tests/test_pico2_sd.sh` が永続性
+を検証。詳細は `docs/solved.md` の K7 エントリ。
+
+### SD カード フォーマット注意
+
+我々の `fatfs.tc` は **FAT12/16/32 のみ**サポート。**exFAT 非対応**。
+
+工場出荷フォーマット:
+- 32 GB 以下 (SDSC/SDHC) → デフォルト FAT32 ✓ そのまま使える
+- **64 GB 以上 (SDXC) → デフォルト exFAT** ✗ FAT32 にリフォーマット必要
+
+SDXC カードを FAT32 で使う方法 (Linux):
+
+```bash
+# 1. SD カードを PC に接続 (USB SD リーダー等)
+lsblk                                       # /dev/sdX を確認
+# 2. パーティション 1 つ作成
+sudo parted /dev/sdX --script mklabel msdos mkpart primary fat32 1MiB 100%
+# 3. FAT32 でフォーマット (-F 32 を明示、Windows GUI は 32 GB 以下しか
+#    FAT32 化できないが mkfs.fat にその制限はない)
+sudo mkfs.fat -F 32 /dev/sdX1
+sudo eject /dev/sdX
+```
+
+mac は `diskutil eraseDisk FAT32 SD MBR /dev/diskN`。
+
+カード挿入後、kernel ブート時に `FATFS: mounted` が出れば OK。
+`FATFS: mount failed (no FAT?)` が出る場合は exFAT または非標準
+フォーマット。
+
+### SD カード ピン配線
+
+実装の詳細は `docs/task/sdcard.md`。ピン配線 (UART0 / SWD / 既存 GPIO
+のいずれとも干渉しない):
 
 | 信号 | Pico 2 GPIO | Pin | 物理位置 | SD モジュール側 | 備考 |
 |---|---|---|---|---|---|

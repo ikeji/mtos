@@ -116,7 +116,7 @@ struct Task {
 | `/tmp/...`  | `tmpfs.tc`  | RAM backed, kmalloc backed, grow-on-write, O_CREAT/O_TRUNC |
 | `/proc/...` | `procfs.tc` | read-only virtual (tasks, meminfo, cpuinfo, uptime) |
 | (その他絶対パス) | `mtfs.tc` | read-only、Flash に埋め込んだ MyTinyFS |
-| `/fat/...` / SD 系 | `fatfs.tc` + `block_fat_virtio.tc` | FAT (bring-up 中) |
+| `/sd/...`   | `fatfs.tc` + `block_sd.tc` (pico2) / `block_fat_virtio.tc` (virt) | FAT12/16/32 read/write、MBR / superfloppy 両対応 |
 
 fd=0 / fd=1 は current task の `stdin_fd` / `stdout_fd` を参照して
 `<` / `>` リダイレクトに対応。fd=2 stderr は常に UART 直行。
