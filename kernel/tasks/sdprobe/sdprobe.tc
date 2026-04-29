@@ -1,41 +1,27 @@
-// sdprobe.tc — RP2350 SPI0 SD card connectivity probe.
+// sdprobe.tc — RP2350 SPI0 SD card full bring-up.
 //
-// User-space MMIO probe: takes SPI0 out of reset, configures GP4-7
-// (FUNCSEL=1 for SPI0_RX/SCK/TX, GP5 as SIO output for CS), drives
-// 80 init clocks with CS=H, then sends CMD0 and prints R1.
+// RISC-V port of hardware-check/sd_probe.c. Drives the same CMD0 →
+// CMD8 → ACMD41 → CMD58 → CMD17 sequence and reads LBA 0.
 //
-// Expected on a healthy 4 GB SDHC card with the Catalex-style module
-// from docs/pico2_hardware.md:
-//   SD: probe start
-//   SD: SPI0 reset cleared
-//   SD: GPIO configured
-//   SD: SPI0 enabled @ ~400 kHz
-//   SD: CMD0 R1 = 0x01
-//   SD: OK -- card in idle state
-//
-// Anything other than 0x01 means wiring or init sequence is wrong.
+// Wiring (docs/pico2_hardware.md):
+//   GP4 (Pin 6)  → MISO
+//   GP5 (Pin 7)  → CS    (manual SIO output)
+//   GP6 (Pin 9)  → SCK
+//   GP7 (Pin 10) → MOSI
+//   3V3 (Pin 36) → module 3V3
+//   GND          → GND
 
 import "../libtc/libtc.tc";
 
-// ----- MMIO base addresses (RP2350) -----
-var RESETS_BASE:     u32 = 0x40020000u32;
-var RESETS_CLR:      u32 = 0x40023000u32;
-var RESETS_DONE:     u32 = 0x40020008u32;
-var IO_BANK0_BASE:   u32 = 0x40028000u32;
-var PADS_BANK0_SET:  u32 = 0x4003A000u32;
-var PADS_BANK0_CLR:  u32 = 0x4003B000u32;
-var SIO_BASE:        u32 = 0xD0000000u32;
-var SPI0_BASE:       u32 = 0x40080000u32;
-
-// RESETS bit 18 = SPI0 on RP2350 (datasheet 7.2.1).
-var RESETS_BIT_SPI0: u32 = 0x40000u32;
-
-// SIO GPIO control offsets.
-var SIO_GPIO_OUT_SET: u32 = 0x18u32;
-var SIO_GPIO_OUT_CLR: u32 = 0x20u32;
-var SIO_GPIO_OE_SET:  u32 = 0x38u32;
-
-var GP5_MASK: u32 = 0x20u32;  // 1 << 5
+// ----- MMIO -----
+var RESETS_CLR:    u32 = 0x40023000u32;
+var RESETS_DONE:   u32 = 0x40020008u32;
+var IO_BANK0_BASE: u32 = 0x40028000u32;
+var PADS_BANK0_CLR: u32 = 0x4003B000u32;
+var PADS_BANK0_SET: u32 = 0x4003A000u32;
+var SIO_BASE:      u32 = 0xD0000000u32;
+var SPI0_BASE:     u32 = 0x40080000u32;
+var RESETS_BIT_SPI0: u32 = 0x40000u32;  // bit 18
 
 // ----- helpers -----
 
@@ -53,9 +39,7 @@ fn print_hex2(v: u32) -> void {
     return;
 }
 
-// Block until SPI TX FIFO has space, write byte, block until RX FIFO
-// has data, return received byte. SSPSR @ +0x0C: bit 1 = TNF (TX not
-// full), bit 2 = RNE (RX not empty).
+// SSPSR @ +0x0C bit 1 = TNF, bit 2 = RNE.
 fn spi_xfer(b: u8) -> u8 {
     while (peek32(SPI0_BASE + 0x0Cu32) & 0x2u32) == 0u32 { }
     poke32(SPI0_BASE + 0x08u32, b as u32);
@@ -63,378 +47,225 @@ fn spi_xfer(b: u8) -> u8 {
     return peek32(SPI0_BASE + 0x08u32) as u8;
 }
 
-fn cs_high() -> void {
-    poke32(SIO_BASE + SIO_GPIO_OUT_SET, GP5_MASK);
-    return;
+fn cs_low()  -> void { poke32(SIO_BASE + 0x20u32, 0x20u32); return; }
+fn cs_high() -> void { poke32(SIO_BASE + 0x18u32, 0x20u32); return; }
+
+// Send 6-byte SD command, return R1.
+fn send_cmd(cmd: i32, arg: u32, crc: u8) -> u8 {
+    cs_low();
+    spi_xfer(0xFFu8);
+    spi_xfer((0x40 | cmd) as u8);
+    spi_xfer((arg >> 24u32) as u8);
+    spi_xfer((arg >> 16u32) as u8);
+    spi_xfer((arg >>  8u32) as u8);
+    spi_xfer( arg            as u8);
+    spi_xfer(crc);
+    var r1: u8 = 0xFFu8;
+    var i: i32 = 0;
+    while i < 16 {
+        r1 = spi_xfer(0xFFu8);
+        if (r1 as u32 & 0x80u32) == 0u32 { break; }
+        i = i + 1;
+    }
+    return r1;
 }
-fn cs_low() -> void {
-    poke32(SIO_BASE + SIO_GPIO_OUT_CLR, GP5_MASK);
+
+fn cs_high_clk() -> void {
+    cs_high();
+    spi_xfer(0xFFu8);
     return;
 }
 
-// ----- main -----
+fn busy_spin(n: i32) -> void {
+    var i: i32 = 0;
+    while i < n { i = i + 1; }
+    return;
+}
 
 fn main() -> i32 {
-    puts("SD: probe start\n");
-
-    // 0. Quick power-rail check: configure GP4 as plain SIO input
-    //    (FUNCSEL=5), no internal pull, and read its level. The module
-    //    has an external 10 kohm pull-up to its own VCC; if VCC is
-    //    present, MISO must read 1. Reading 0 means the module is
-    //    unpowered (LDO input < 4.7 V from the AMS1117 dropout floor,
-    //    or no 5V wire at all).
-    // Configure GP4-7 all as SIO inputs (no pulls, IE=1) so we can
-    // check the static state of every line we plan to use for SPI.
-    var gn: i32 = 4;
-    while gn <= 7 {
-        poke32(IO_BANK0_BASE + (0x04u32 + (gn as u32) * 8u32), 5u32);
-        poke32(PADS_BANK0_CLR + (0x04u32 + (gn as u32) * 4u32), 0x10Cu32);  // clear ISO+PDE+PUE
-        poke32(PADS_BANK0_SET + (0x04u32 + (gn as u32) * 4u32), 0x40u32);    // IE=1
-        gn = gn + 1;
-    }
-    // Disable any output drive
-    poke32(SIO_BASE + 0x40u32, 0xF0u32);    // GPIO_OE_CLR for GP4-7
-    var spin: i32 = 0;
-    while spin < 200 { spin = spin + 1; }
-
-    var gp_all: u32 = peek32(SIO_BASE + 0x04u32);
-    var v4: u32 = (gp_all >> 4u32) & 1u32;
-    var v5: u32 = (gp_all >> 5u32) & 1u32;
-    var v6: u32 = (gp_all >> 6u32) & 1u32;
-    var v7: u32 = (gp_all >> 7u32) & 1u32;
-    puts("SD: lines no-pull GP4(MISO)=");
-    print_hex2(v4);
-    puts(" GP5(CS)=");
-    print_hex2(v5);
-    puts(" GP6(SCK)=");
-    print_hex2(v6);
-    puts(" GP7(MOSI)=");
-    print_hex2(v7);
-    puts("\n");
-
-    // Enable internal PUE on all four; settle.
-    gn = 4;
-    while gn <= 7 {
-        poke32(PADS_BANK0_SET + (0x04u32 + (gn as u32) * 4u32), 0x08u32);
-        gn = gn + 1;
-    }
-    spin = 0;
-    while spin < 1000 { spin = spin + 1; }
-    var gp_pue: u32 = peek32(SIO_BASE + 0x04u32);
-    var p4: u32 = (gp_pue >> 4u32) & 1u32;
-    var p5: u32 = (gp_pue >> 5u32) & 1u32;
-    var p6: u32 = (gp_pue >> 6u32) & 1u32;
-    var p7: u32 = (gp_pue >> 7u32) & 1u32;
-    puts("SD: lines w/ PUE GP4=");
-    print_hex2(p4);
-    puts(" GP5=");
-    print_hex2(p5);
-    puts(" GP6=");
-    print_hex2(p6);
-    puts(" GP7=");
-    print_hex2(p7);
-    puts("\n");
-
-    // Clear PUE (back to bare input)
-    gn = 4;
-    while gn <= 7 {
-        poke32(PADS_BANK0_CLR + (0x04u32 + (gn as u32) * 4u32), 0x08u32);
-        gn = gn + 1;
-    }
-
-    // CS drive verification: drive GP5 low, read it back from
-    // GPIO_IN. If our drive isn't taking effect, GP5 stays at the
-    // floating/pulled level.
-    poke32(SIO_BASE + 0x20u32, 0x20u32);    // GPIO_OUT_CLR: GP5=0
-    poke32(SIO_BASE + 0x38u32, 0x20u32);    // GPIO_OE_SET: GP5 driven
-    spin = 0;
-    while spin < 200 { spin = spin + 1; }
-    var cs_lo_in: u32 = (peek32(SIO_BASE + 0x04u32) >> 5u32) & 1u32;
-    poke32(SIO_BASE + 0x18u32, 0x20u32);    // GPIO_OUT_SET: GP5=1
-    spin = 0;
-    while spin < 200 { spin = spin + 1; }
-    var cs_hi_in: u32 = (peek32(SIO_BASE + 0x04u32) >> 5u32) & 1u32;
-    puts("SD: CS drive lo->in=");
-    print_hex2(cs_lo_in);
-    puts(" hi->in=");
-    print_hex2(cs_hi_in);
-    puts(" (expect 00 / 01)\n");
-    poke32(SIO_BASE + 0x40u32, 0x20u32);    // GPIO_OE_CLR: GP5
-
-    // Same drive check for SCK (GP6) and MOSI (GP7).
-    poke32(SIO_BASE + 0x20u32, 0x40u32);    // SCK=0
-    poke32(SIO_BASE + 0x38u32, 0x40u32);    // OE GP6
-    spin = 0; while spin < 200 { spin = spin + 1; }
-    var sck_lo: u32 = (peek32(SIO_BASE + 0x04u32) >> 6u32) & 1u32;
-    poke32(SIO_BASE + 0x18u32, 0x40u32);    // SCK=1
-    spin = 0; while spin < 200 { spin = spin + 1; }
-    var sck_hi: u32 = (peek32(SIO_BASE + 0x04u32) >> 6u32) & 1u32;
-    poke32(SIO_BASE + 0x40u32, 0x40u32);    // OE clear
-    puts("SD: SCK drive lo->in=");
-    print_hex2(sck_lo);
-    puts(" hi->in=");
-    print_hex2(sck_hi);
-    puts("\n");
-
-    poke32(SIO_BASE + 0x20u32, 0x80u32);    // MOSI=0
-    poke32(SIO_BASE + 0x38u32, 0x80u32);    // OE GP7
-    spin = 0; while spin < 200 { spin = spin + 1; }
-    var mosi_lo: u32 = (peek32(SIO_BASE + 0x04u32) >> 7u32) & 1u32;
-    poke32(SIO_BASE + 0x18u32, 0x80u32);    // MOSI=1
-    spin = 0; while spin < 200 { spin = spin + 1; }
-    var mosi_hi: u32 = (peek32(SIO_BASE + 0x04u32) >> 7u32) & 1u32;
-    poke32(SIO_BASE + 0x40u32, 0x80u32);    // OE clear
-    puts("SD: MOSI drive lo->in=");
-    print_hex2(mosi_lo);
-    puts(" hi->in=");
-    print_hex2(mosi_hi);
-    puts("\n");
+    puts("\n=== sdprobe v3 (TC RISC-V): full SD bring-up ===\n");
 
     // 1. Take SPI0 out of reset.
     poke32(RESETS_CLR, RESETS_BIT_SPI0);
     while (peek32(RESETS_DONE) & RESETS_BIT_SPI0) == 0u32 { }
-    puts("SD: SPI0 reset cleared\n");
 
-    // 2. Pre-drive CS high before turning the GPIO output on, so the
-    //    line never glitches low. SIO GPIO_OUT register stays sticky
-    //    even while OE=0.
-    poke32(SIO_BASE + SIO_GPIO_OUT_SET, GP5_MASK);
+    // 2. CS pre-high before output enable.
+    poke32(SIO_BASE + 0x18u32, 0x20u32);
 
-    // 3. IO_BANK0 funcsel: GP4/6/7 → SPI0 (FUNCSEL=1), GP5 → SIO (=5).
-    //    GPIOn_CTRL is at IO_BANK0 + 0x04 + n*8.
-    poke32(IO_BANK0_BASE + 0x024u32, 1u32);  // GP4: SPI0 RX
-    poke32(IO_BANK0_BASE + 0x02Cu32, 5u32);  // GP5: SIO (CS)
-    poke32(IO_BANK0_BASE + 0x034u32, 1u32);  // GP6: SPI0 SCK
-    poke32(IO_BANK0_BASE + 0x03Cu32, 1u32);  // GP7: SPI0 TX
+    // 3. GPIO funcsel: GP4/6/7 = SPI0 (1), GP5 = SIO (5).
+    poke32(IO_BANK0_BASE + 0x024u32, 1u32);  // GP4 RX
+    poke32(IO_BANK0_BASE + 0x02Cu32, 5u32);  // GP5 SIO/CS
+    poke32(IO_BANK0_BASE + 0x034u32, 1u32);  // GP6 SCK
+    poke32(IO_BANK0_BASE + 0x03Cu32, 1u32);  // GP7 TX
 
-    // 4. Clear PAD ISO on GP4-7 (RISC-V boot default = 1).
-    //    PADS_BANK0_GPIOn is at PADS_BANK0 + 0x04 + n*4. The CLR alias
-    //    atomically clears bit 8 (ISO).
-    poke32(PADS_BANK0_CLR + 0x14u32, 0x100u32);  // GP4
-    poke32(PADS_BANK0_CLR + 0x18u32, 0x100u32);  // GP5
-    poke32(PADS_BANK0_CLR + 0x1Cu32, 0x100u32);  // GP6
-    poke32(PADS_BANK0_CLR + 0x20u32, 0x100u32);  // GP7
-    // GP4 (MISO): IE=1 so we can read the SD's response.
-    poke32(PADS_BANK0_SET + 0x14u32, 0x40u32);   // bit 6 = IE
+    // 4. PAD: clear ISO, set IE for inputs, enable PUE on MISO.
+    poke32(PADS_BANK0_CLR + 0x14u32, 0x100u32);  // GP4 ISO=0
+    poke32(PADS_BANK0_CLR + 0x18u32, 0x100u32);
+    poke32(PADS_BANK0_CLR + 0x1Cu32, 0x100u32);
+    poke32(PADS_BANK0_CLR + 0x20u32, 0x100u32);
+    poke32(PADS_BANK0_SET + 0x14u32, 0x48u32);   // GP4: IE=1 + PUE=1
 
-    // 5. Enable GP5 as output (SIO_GPIO_OE bit 5).
-    poke32(SIO_BASE + SIO_GPIO_OE_SET, GP5_MASK);
-    puts("SD: GPIO configured\n");
+    // 5. CS as SIO output, drive high.
+    poke32(SIO_BASE + 0x38u32, 0x20u32);  // OE_SET: GP5 driven
 
-    // 6. Configure SPI0 (PL022).
-    //   SSPCPSR  +0x10 = clock prescale (must be even). 200 → 12 MHz / 200 = 60 kHz
-    //                    Slow enough that breadboard / wiring quality isn't a factor.
-    //   SSPCR0   +0x00 = DSS=0x07 (8-bit), SPI mode 0 (SPO=SPH=0), SCR=0
-    //   SSPCR1   +0x04 = SSE bit 1 (enable). MS bit 2 stays 0 (master).
-    poke32(SPI0_BASE + 0x10u32, 200u32);
-    poke32(SPI0_BASE + 0x00u32, 0x07u32);
-    poke32(SPI0_BASE + 0x04u32, 0x02u32);
-    puts("SD: SPI0 enabled @ ~60 kHz (slow, breadboard friendly)\n");
+    // 6. SPI0: 400 kHz init clock. clk_peri = 12 MHz (XOSC, no PLL).
+    //    CPSR=30, SCR=0 → 12M / 30 = 400 kHz.
+    poke32(SPI0_BASE + 0x10u32, 30u32);   // SSPCPSR
+    poke32(SPI0_BASE + 0x00u32, 0x07u32); // SSPCR0: 8-bit, mode 0
+    poke32(SPI0_BASE + 0x04u32, 0x02u32); // SSPCR1: SSE
+    puts("SPI0 @ 400 kHz initialized.\n");
 
-    // 7. SD spec: ≥74 clock cycles with CS=H, MOSI=H before the first
-    //    command. Some cards want hundreds of clocks before they wake
-    //    cleanly, so send 200 dummy bytes (= 1600 clocks).
+    // 7. 80 init clocks with CS=H, MOSI=H.
     cs_high();
     var i: i32 = 0;
-    while i < 200 {
-        spi_xfer(0xFFu8);
-        i = i + 1;
-    }
+    while i < 10 { spi_xfer(0xFFu8); i = i + 1; }
 
-    // 8. CMD0 (GO_IDLE_STATE): 0x40 0x00 0x00 0x00 0x00 0x95.
-    //    Try up to 5 times. After each attempt deselect, send dummy
-    //    bytes (clocks card past pending state), and retry.
+    // 8. CMD0: enter idle.
     var r1: u8 = 0xFFu8;
     var attempt: i32 = 0;
     while attempt < 5 {
-        cs_low();
-        spi_xfer(0xFFu8);  // extra clock byte after CS goes low
-        spi_xfer(0x40u8);
-        spi_xfer(0x00u8);
-        spi_xfer(0x00u8);
-        spi_xfer(0x00u8);
-        spi_xfer(0x00u8);
-        spi_xfer(0x95u8);
-
-        var got_r1: i32 = 0;
-        puts("SD: CMD0[");
-        print_hex2(attempt as u32);
-        puts("] rx =");
-        var k: i32 = 0;
-        while k < 16 {
-            var b: u8 = spi_xfer(0xFFu8);
-            putchar(' ' as u8);
-            print_hex2(b as u32);
-            if got_r1 == 0 {
-                if (b as u32 & 0x80u32) == 0u32 {
-                    r1 = b;
-                    got_r1 = 1;
-                }
-            }
-            k = k + 1;
-        }
-        puts("\n");
-        cs_high();
-        // 16 dummy clocks after CS=H to give the card time to settle
-        spi_xfer(0xFFu8);
-        spi_xfer(0xFFu8);
+        r1 = send_cmd(0, 0u32, 0x95u8);
+        cs_high_clk();
         if r1 == 0x01u8 { break; }
+        busy_spin(2000);
         attempt = attempt + 1;
     }
+    puts("CMD0 R1 = 0x"); print_hex2(r1 as u32);
+    if r1 == 0x01u8 { puts(" (idle OK)\n"); }
+    else            { puts(" (FAIL)\n"); return 1; }
 
-    puts("SD: CMD0 final R1 = 0x");
-    print_hex2(r1 as u32);
-    puts("\n");
-
-    // 10. CMD8 (SEND_IF_COND): mandatory before ACMD41 for SDHC/SDXC.
-    //     Frame: 0x48 0x00 0x00 0x01 0xAA 0x87.
-    //     0x01 = 2.7-3.6V supply, 0xAA = check pattern. CRC7+end = 0x87.
-    //     Reply is R7 (5 bytes): R1 + 4-byte echo of argument.
+    // 9. CMD8: voltage check / v2 detect.
     cs_low();
     spi_xfer(0xFFu8);
     spi_xfer(0x48u8);
-    spi_xfer(0x00u8);
-    spi_xfer(0x00u8);
-    spi_xfer(0x01u8);
-    spi_xfer(0xAAu8);
+    spi_xfer(0x00u8); spi_xfer(0x00u8); spi_xfer(0x01u8); spi_xfer(0xAAu8);
     spi_xfer(0x87u8);
+    var cmd8_r1: u8 = 0xFFu8;
+    var k: i32 = 0;
+    while k < 16 {
+        cmd8_r1 = spi_xfer(0xFFu8);
+        if (cmd8_r1 as u32 & 0x80u32) == 0u32 { break; }
+        k = k + 1;
+    }
+    var e0: u8 = 0u8; var e1: u8 = 0u8; var e2: u8 = 0u8; var e3: u8 = 0u8;
+    if cmd8_r1 != 0xFFu8 {
+        e0 = spi_xfer(0xFFu8);
+        e1 = spi_xfer(0xFFu8);
+        e2 = spi_xfer(0xFFu8);
+        e3 = spi_xfer(0xFFu8);
+    }
+    cs_high_clk();
+    puts("CMD8 R1 = 0x"); print_hex2(cmd8_r1 as u32);
+    puts(" echo = ");
+    print_hex2(e0 as u32); putchar(' ' as u8);
+    print_hex2(e1 as u32); putchar(' ' as u8);
+    print_hex2(e2 as u32); putchar(' ' as u8);
+    print_hex2(e3 as u32);
+    putchar('\n' as u8);
+    var v2: i32 = 0;
+    if cmd8_r1 == 0x01u8 {
+        if e2 == 0x01u8 {
+            if e3 == 0xAAu8 { v2 = 1; }
+        }
+    }
 
-    puts("SD: CMD8 raw rx =");
-    var r1b: u8 = 0xFFu8;
-    var seen8: i32 = 0;
-    var trailing: i32 = 0;
-    var j: i32 = 0;
-    // Read up to 16 bytes; once we see R1 (bit 7 == 0), grab next 4 as
-    // R7 trailing bytes.
-    while j < 16 {
-        var bb: u8 = spi_xfer(0xFFu8);
-        putchar(' ' as u8);
-        print_hex2(bb as u32);
-        if seen8 == 0 {
-            if (bb as u32 & 0x80u32) == 0u32 {
-                r1b = bb;
-                seen8 = 1;
-                trailing = 4;
+    // 10. ACMD41 init loop (CMD55 + ACMD41).
+    puts("ACMD41 init...\n");
+    var inited: i32 = 0;
+    var arg41: u32 = 0u32;
+    if v2 == 1 { arg41 = 0x40000000u32; }
+    var iter: i32 = 0;
+    while iter < 1000 {
+        var r55: u8 = send_cmd(55, 0u32, 0x65u8);
+        cs_high_clk();
+        var r41: u8 = send_cmd(41, arg41, 0x77u8);
+        cs_high_clk();
+        if r41 == 0x00u8 {
+            inited = 1;
+            puts("Card initialized after iter=");
+            print_hex2(iter as u32);
+            putchar('\n' as u8);
+            break;
+        }
+        busy_spin(50000);
+        iter = iter + 1;
+    }
+    if inited == 0 { puts("ACMD41 timeout\n"); return 1; }
+
+    // 11. CMD58: read OCR, detect SDHC.
+    var sdhc: i32 = 0;
+    if v2 == 1 {
+        cs_low();
+        spi_xfer(0xFFu8);
+        spi_xfer(0x7Au8);  // 0x40 | 58
+        spi_xfer(0u8); spi_xfer(0u8); spi_xfer(0u8); spi_xfer(0u8);
+        spi_xfer(0xFDu8);
+        var r58: u8 = 0xFFu8;
+        var m: i32 = 0;
+        while m < 16 {
+            r58 = spi_xfer(0xFFu8);
+            if (r58 as u32 & 0x80u32) == 0u32 { break; }
+            m = m + 1;
+        }
+        var o0: u8 = spi_xfer(0xFFu8);
+        var o1: u8 = spi_xfer(0xFFu8);
+        var o2: u8 = spi_xfer(0xFFu8);
+        var o3: u8 = spi_xfer(0xFFu8);
+        cs_high_clk();
+        if (o0 as u32 & 0x40u32) != 0u32 { sdhc = 1; }
+        puts("CMD58 R1=0x"); print_hex2(r58 as u32);
+        puts(" OCR=");
+        print_hex2(o0 as u32); putchar(' ' as u8);
+        print_hex2(o1 as u32); putchar(' ' as u8);
+        print_hex2(o2 as u32); putchar(' ' as u8);
+        print_hex2(o3 as u32);
+        if sdhc == 1 { puts(" (SDHC)\n"); } else { puts(" (SDSC)\n"); }
+    }
+
+    // 12. Bump SPI clock. CPSR=2 → 12M / 2 = 6 MHz (max with XOSC).
+    poke32(SPI0_BASE + 0x10u32, 2u32);
+    puts("SPI bumped to ~6 MHz\n");
+
+    // 13. CMD17: read LBA 0.
+    var r17: u8 = send_cmd(17, 0u32, 0xFFu8);
+    puts("CMD17 R1=0x"); print_hex2(r17 as u32); putchar('\n' as u8);
+    if r17 == 0x00u8 {
+        // Wait for data token 0xFE
+        var tok: u8 = 0xFFu8;
+        var w: i32 = 0;
+        while w < 5000 {
+            tok = spi_xfer(0xFFu8);
+            if tok != 0xFFu8 { break; }
+            w = w + 1;
+        }
+        puts("data token = 0x"); print_hex2(tok as u32); putchar('\n' as u8);
+        if tok == 0xFEu8 {
+            // Read 512 bytes; print first 16 + the boot signature.
+            var b510: u8 = 0u8; var b511: u8 = 0u8;
+            var bb: i32 = 0;
+            puts("first 16 bytes:");
+            while bb < 512 {
+                var v: u8 = spi_xfer(0xFFu8);
+                if bb < 16 {
+                    putchar(' ' as u8);
+                    print_hex2(v as u32);
+                }
+                if bb == 510 { b510 = v; }
+                if bb == 511 { b511 = v; }
+                bb = bb + 1;
             }
-        } else {
-            if trailing > 0 { trailing = trailing - 1; }
-            if trailing == 0 { break; }
+            spi_xfer(0xFFu8); spi_xfer(0xFFu8);  // CRC
+            putchar('\n' as u8);
+            puts("boot sig [510]=0x"); print_hex2(b510 as u32);
+            puts(" [511]=0x"); print_hex2(b511 as u32);
+            if b510 == 0x55u8 {
+                if b511 == 0xAAu8 { puts(" OK\n"); }
+                else              { puts(" (no sig)\n"); }
+            } else { puts(" (no sig)\n"); }
         }
-        j = j + 1;
     }
-    puts("\n");
-    cs_high();
-    spi_xfer(0xFFu8);
+    cs_high_clk();
 
-    puts("SD: CMD8 R1 = 0x");
-    print_hex2(r1b as u32);
-    puts("\n");
-
-    if r1 == 0x01u8 && r1b == 0x01u8 {
-        puts("SD: OK -- v2 SDHC card, ready for ACMD41\n");
-        return 0;
-    }
-    if r1 == 0x01u8 {
-        puts("SD: PARTIAL -- CMD0 OK, CMD8 inconclusive\n");
-        return 1;
-    }
-
-    // ----- Bit-bang fallback -----
-    // SPI peripheral failed. Switch GP4-7 to plain SIO and bit-bang
-    // CMD0 manually. If THIS also yields all 0xFF, the issue is
-    // physical (card / module / wiring), not the SPI peripheral.
-    puts("SD: bit-bang fallback...\n");
-
-    // Reset SPI0 and reconfigure GP4-7 as SIO.
-    poke32(0x40023000u32, 0x40000u32);   // RESETS_SET (0x40021000+0x2000 alias)
-    spin = 0; while spin < 1000 { spin = spin + 1; }
-    var ggn: i32 = 4;
-    while ggn <= 7 {
-        poke32(IO_BANK0_BASE + (0x04u32 + (ggn as u32) * 8u32), 5u32);  // SIO
-        ggn = ggn + 1;
-    }
-    // GP4 = MISO (input only). GP5/6/7 = CS/SCK/MOSI (outputs).
-    poke32(SIO_BASE + 0x18u32, 0xE0u32);  // OUT_SET: CS=1, SCK=0, MOSI=1
-    poke32(SIO_BASE + 0x20u32, 0x40u32);  // OUT_CLR: SCK=0
-    poke32(SIO_BASE + 0x38u32, 0xE0u32);  // OE_SET: GP5/6/7 outputs
-    poke32(SIO_BASE + 0x40u32, 0x10u32);  // OE_CLR: GP4 input
-    spin = 0; while spin < 1000 { spin = spin + 1; }
-
-    // 80 init clocks with CS=H, MOSI=H
-    var ic: i32 = 0;
-    while ic < 80 {
-        poke32(SIO_BASE + 0x18u32, 0x40u32);  // SCK high
-        spin = 0; while spin < 5 { spin = spin + 1; }
-        poke32(SIO_BASE + 0x20u32, 0x40u32);  // SCK low
-        spin = 0; while spin < 5 { spin = spin + 1; }
-        ic = ic + 1;
-    }
-
-    // CS low, send CMD0 (6 bytes: 0x40 0x00 0x00 0x00 0x00 0x95) MSB first
-    poke32(SIO_BASE + 0x20u32, 0x20u32);  // CS low
-    spin = 0; while spin < 50 { spin = spin + 1; }
-    var cmd: i32 = 0;
-    while cmd < 6 {
-        var byteval: i32 = 0;
-        if cmd == 0 { byteval = 0x40; }
-        if cmd == 5 { byteval = 0x95; }
-        var bit: i32 = 7;
-        while bit >= 0 {
-            // setup MOSI before rising edge
-            if ((byteval >> bit) & 1) == 1 {
-                poke32(SIO_BASE + 0x18u32, 0x80u32);  // MOSI high
-            } else {
-                poke32(SIO_BASE + 0x20u32, 0x80u32);  // MOSI low
-            }
-            spin = 0; while spin < 3 { spin = spin + 1; }
-            poke32(SIO_BASE + 0x18u32, 0x40u32);  // SCK high
-            spin = 0; while spin < 5 { spin = spin + 1; }
-            poke32(SIO_BASE + 0x20u32, 0x40u32);  // SCK low
-            spin = 0; while spin < 3 { spin = spin + 1; }
-            bit = bit - 1;
-        }
-        cmd = cmd + 1;
-    }
-
-    // Now clock out 0xFF and read MISO 16 times
-    poke32(SIO_BASE + 0x18u32, 0x80u32);  // MOSI high (idle)
-    puts("SD: bb CMD0 rx =");
-    var bb_r1: u8 = 0xFFu8;
-    var bb_seen: i32 = 0;
-    var bbk: i32 = 0;
-    while bbk < 16 {
-        var bv: i32 = 0;
-        var bb: i32 = 7;
-        while bb >= 0 {
-            poke32(SIO_BASE + 0x18u32, 0x40u32);  // SCK high (sample edge)
-            spin = 0; while spin < 5 { spin = spin + 1; }
-            var miso: i32 = ((peek32(SIO_BASE + 0x04u32) >> 4u32) & 1u32) as i32;
-            bv = bv | (miso << bb);
-            poke32(SIO_BASE + 0x20u32, 0x40u32);  // SCK low
-            spin = 0; while spin < 5 { spin = spin + 1; }
-            bb = bb - 1;
-        }
-        putchar(' ' as u8);
-        print_hex2(bv as u32);
-        if bb_seen == 0 {
-            if (bv & 0x80) == 0 {
-                bb_r1 = bv as u8;
-                bb_seen = 1;
-            }
-        }
-        bbk = bbk + 1;
-    }
-    puts("\n");
-    poke32(SIO_BASE + 0x18u32, 0x20u32);  // CS high
-    puts("SD: bb CMD0 R1 = 0x");
-    print_hex2(bb_r1 as u32);
-    puts("\n");
-
-    if bb_r1 == 0x01u8 {
-        puts("SD: BB OK -- card responds to bit-banged CMD0! SPI periph misconfig\n");
-        return 0;
-    }
-    puts("SD: smoke test inconclusive -- both SPI and bit-bang silent\n");
-    puts("SD: most likely card not seated / module bad / wiring physically wrong\n");
-    return 1;
+    puts("=== bring-up complete ===\n");
+    return 0;
 }
