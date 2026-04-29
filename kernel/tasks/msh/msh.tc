@@ -9,6 +9,17 @@
 // redirects, `quit` exits, empty lines are ignored. Errors go to
 // stderr (fd=2 → KERN tag under mux) instead of stdout so a driver's
 // T00N log only contains child output.
+//
+// Script mode (`msh /path/to/script.sh`): when invoked with argv[1],
+// open it as the command source and run with implicit `set -ex`:
+//   - Each line is traced to stderr as `[ T.TTT] >> CMD` before the
+//     spawn and `[ T.TTT] << exit=N dt=D.DDD` after the wait.
+//   - Lines starting with `#` (after optional leading whitespace) and
+//     blank lines are skipped.
+//   - On the first non-zero exit the script aborts and msh returns
+//     that exit code so wrappers can detect failure.
+// Without argv[1] msh keeps the original silent UART behavior used by
+// the host UART-mux driver.
 
 import "../libtc/libtc.tc";
 
@@ -30,18 +41,31 @@ var PATH_MAX: i32 = 70;
 var g_in_path:  String = 0 as String;
 var g_out_path: String = 0 as String;
 
-// Read characters from stdin until LF / CR. Returns the number of
-// command bytes stored in buf (not counting the NUL terminator).
+// Script mode state. g_script_fd >= 0 means commands come from a file
+// (argv[1]). g_start_us is the boot-relative time msh entered script
+// mode, used as the "0.000" reference for [T.TTT] trace prefixes.
+var g_script_fd: i32 = -1;
+var g_start_us:  u32 = 0u32;
+
+// Read characters from the active command source until LF / CR.
+// Source = g_script_fd if script mode, else fd 0 (UART). Returns the
+// number of bytes stored in buf (excluding NUL terminator), or -1 on
+// EOF with no bytes read (only meaningful in script mode; UART read
+// blocks indefinitely so it never returns EOF here).
 // buf must have room for CMD_MAX bytes including NUL.
 fn read_line(buf: U8Array) -> i32 {
+    var fd: i32 = 0;
+    if g_script_fd >= 0 { fd = g_script_fd; }
     var one: U8Array = U8Array(1);
     var pos: i32 = 0;
+    var got_any: i32 = 0;
     var done: i32 = 0;
     while done == 0 {
-        var n: i32 = sys_read(0, one, 1);
+        var n: i32 = sys_read(fd, one, 1);
         if n <= 0 {
             done = 1;
         } else {
+            got_any = 1;
             var c: u8 = get(one, 0);
             if c == '\n' as u8 || c == '\r' as u8 {
                 done = 1;
@@ -63,6 +87,7 @@ fn read_line(buf: U8Array) -> i32 {
     }
     delete(one);
     set(buf, pos, 0u8);
+    if got_any == 0 { return -1; }
     return pos;
 }
 
@@ -234,40 +259,190 @@ fn build_path(path: U8Array, argv: StringArray) -> bool {
 // pollute the stdout stream that drivers capture.
 // (eputs moved to libtc/libtc.tc)
 
-fn main() -> i32 {
+// Emit `v` as a zero-padded `width`-digit decimal to fd. Used by
+// trace_ts to format the milliseconds field.
+fn emit_dec_pad(fd: i32, v: u32, width: i32) -> void {
+    var buf: U8Array = U8Array(width as u32);
+    var i: i32 = width - 1;
+    while i >= 0 {
+        set(buf, i, ('0' as i32 + (v % 10u32) as i32) as u8);
+        v = v / 10u32;
+        i = i - 1;
+    }
+    sys_write(fd, buf, width);
+    delete(buf);
+    return;
+}
+
+// Emit `v` as a decimal to fd, no padding (1+ digits). 0 prints as "0".
+fn emit_dec(fd: i32, v: u32) -> void {
+    if v == 0u32 {
+        var b: U8Array = U8Array(1u32);
+        set(b, 0, '0' as u8);
+        sys_write(fd, b, 1);
+        delete(b);
+        return;
+    }
+    var tmp: U8Array = U8Array(12u32);
+    var dlen: i32 = 0;
+    while v > 0u32 {
+        set(tmp, dlen, ('0' as i32 + (v % 10u32) as i32) as u8);
+        dlen = dlen + 1;
+        v = v / 10u32;
+    }
+    var out: U8Array = U8Array(dlen as u32);
+    var k: i32 = 0;
+    while k < dlen {
+        set(out, k, get(tmp, dlen - 1 - k));
+        k = k + 1;
+    }
+    sys_write(fd, out, dlen);
+    delete(out);
+    delete(tmp);
+    return;
+}
+
+// Print a microseconds value as "S.MMM" to fd 2 (stderr): seconds in
+// minimal decimal, then '.', then 3-digit zero-padded ms.
+fn emit_secms(us: u32) -> void {
+    emit_dec(2, us / 1000000u32);
+    eputs(".");
+    emit_dec_pad(2, (us / 1000u32) % 1000u32, 3);
+    return;
+}
+
+// Print "[ S.MMM] " to stderr, where the time is measured from
+// g_start_us (msh script-mode start).
+fn trace_ts() -> void {
+    var us: u32 = do_uptime_us() - g_start_us;
+    eputs("[");
+    emit_secms(us);
+    eputs("] ");
+    return;
+}
+
+// Echo the raw command bytes (no NUL, no editing) to fd 2.
+fn echo_cmd(buf: U8Array, n: i32) -> void {
+    sys_write(2, buf, n);
+    return;
+}
+
+// Returns 1 if the line is whitespace-only or starts with '#'
+// (after optional leading whitespace). Used to skip comments and
+// blank lines silently in script mode.
+fn is_skip_line(buf: U8Array, n: i32) -> i32 {
+    var i: i32 = 0;
+    while i < n && (get(buf, i) == ' ' as u8 || get(buf, i) == 9u8) {
+        i = i + 1;
+    }
+    if i >= n { return 1; }
+    if get(buf, i) == '#' as u8 { return 1; }
+    return 0;
+}
+
+fn main(argv: StringArray) -> i32 {
+    // Script mode: argv[0] is the binary name (/bin/msh),
+    // argv[1] (if present) is the script path.
+    var script_mode: i32 = 0;
+    if len(argv) >= 2 {
+        var spath: String = get(argv, 1);
+        var fd: i32 = do_openat(-100, spath, 0);
+        if fd < 0 {
+            eputs("msh: cannot open script\n");
+            return 1;
+        }
+        g_script_fd = fd;
+        g_start_us = do_uptime_us();
+        script_mode = 1;
+    }
+
     var cmd:  U8Array = U8Array(CMD_MAX  as u32);
     var path: U8Array = U8Array(PATH_MAX as u32);
 
     var running: i32 = 1;
+    var rc: i32 = 0;
+    var line_no: i32 = 0;
+
     while running == 1 {
         var n: i32 = read_line(cmd);
-        if n == 0 {
-            // empty line, read next
+        if n < 0 {
+            // EOF (script mode only — UART blocks indefinitely).
+            running = 0;
+        } else if script_mode == 1 && is_skip_line(cmd, n) == 1 {
+            line_no = line_no + 1;
+            // skip blank / comment line silently
+        } else if n == 0 {
+            // interactive: empty line, read next
         } else if eq(cmd, n, "quit") {
             running = 0;
         } else {
-            var argv: StringArray = parse_redir(cmd, n);
-            if !build_path(path, argv) {
+            line_no = line_no + 1;
+            var args: StringArray = parse_redir(cmd, n);
+            if !build_path(path, args) {
                 eputs("msh: empty command\n");
-                free_argv(argv);
+                free_argv(args);
                 if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
                 if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
             } else {
-                var slot: i32 = do_spawn(path as String, argv as u32,
+                var t_start: u32 = 0u32;
+                if script_mode == 1 {
+                    trace_ts();
+                    eputs(">> ");
+                    echo_cmd(cmd, n);
+                    eputs("\n");
+                    t_start = do_uptime_us();
+                }
+                var slot: i32 = do_spawn(path as String, args as u32,
                                          g_in_path, g_out_path);
-                free_argv(argv);
+                free_argv(args);
                 if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
                 if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
                 if slot < 0 {
                     eputs("msh: spawn failed\n");
+                    if script_mode == 1 {
+                        running = 0;
+                        rc = 1;
+                    }
                 } else {
-                    do_wait(slot);
+                    var ec: i32 = do_wait(slot);
+                    if script_mode == 1 {
+                        var dt: u32 = do_uptime_us() - t_start;
+                        trace_ts();
+                        eputs("<< exit=");
+                        if ec < 0 {
+                            eputs("-");
+                            emit_dec(2, (0 - ec) as u32);
+                        } else {
+                            emit_dec(2, ec as u32);
+                        }
+                        eputs(" dt=");
+                        emit_secms(dt);
+                        eputs("\n");
+                        if ec != 0 {
+                            eputs("msh: aborting at line ");
+                            emit_dec(2, line_no as u32);
+                            eputs(" (exit=");
+                            if ec < 0 {
+                                eputs("-");
+                                emit_dec(2, (0 - ec) as u32);
+                            } else {
+                                emit_dec(2, ec as u32);
+                            }
+                            eputs(")\n");
+                            running = 0;
+                            rc = ec;
+                        }
+                    }
                 }
             }
         }
     }
 
+    if g_script_fd >= 0 {
+        do_close(g_script_fd);
+        g_script_fd = -1;
+    }
     delete(cmd);
     delete(path);
-    return 0;
+    return rc;
 }

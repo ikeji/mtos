@@ -177,4 +177,59 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     esac
 fi
 
+# --- msh script mode: verifies set -ex tracing, # comment skip,
+#     blank-line skip, and exit-code propagation via two fixtures
+#     (msh_smoke.sh and msh_abort.sh) staged in disk-demo.img.
+if command -v qemu-system-riscv32 >/dev/null 2>&1 \
+    && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_DISK" ]; then
+    # --- smoke: 3 echos with 1 comment + 1 blank line in between ---
+    t0=$(time_ms)
+    smoke_out=$(printf 'msh /msh_smoke.sh\nquit\n' \
+        | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -drive "file=$KERNEL_DISK,format=raw,if=none,id=blk0" \
+        -device "virtio-blk-device,drive=blk0" \
+        -device "loader,file=$KERNEL_BIN,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+    elapsed=$(( $(time_ms) - t0 ))
+    s_first=$(echo "$smoke_out" | grep -c '^first$')
+    s_second=$(echo "$smoke_out" | grep -c '^second$')
+    s_third=$(echo "$smoke_out" | grep -c '^third$')
+    s_traces=$(echo "$smoke_out" | grep -c '>> echo ')
+    s_exits=$(echo "$smoke_out" | grep -c 'exit=0 dt=')
+    s_abort=$(echo "$smoke_out" | grep -c 'aborting')
+    if [ "$s_first" -ge 1 ] && [ "$s_second" -ge 1 ] && [ "$s_third" -ge 1 ] \
+        && [ "$s_traces" -ge 3 ] && [ "$s_exits" -ge 3 ] && [ "$s_abort" -eq 0 ]; then
+        report_pass "msh script smoke (3 echos, comment+blank skipped)" "$elapsed"
+    else
+        report_fail_msg "msh script smoke" \
+            "first=$s_first second=$s_second third=$s_third traces=$s_traces exits=$s_exits abort=$s_abort"
+    fi
+
+    # --- abort: cat on missing file → exit=1 → set -e aborts before
+    #     the third command runs ---
+    t0=$(time_ms)
+    abort_out=$(printf 'msh /msh_abort.sh\nquit\n' \
+        | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -drive "file=$KERNEL_DISK,format=raw,if=none,id=blk0" \
+        -device "virtio-blk-device,drive=blk0" \
+        -device "loader,file=$KERNEL_BIN,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+    elapsed=$(( $(time_ms) - t0 ))
+    a_before=$(echo "$abort_out" | grep -c '^before$')
+    a_never=$(echo "$abort_out" | grep -c '^never_printed$')
+    a_exit1=$(echo "$abort_out" | grep -c 'exit=1 dt=')
+    a_aborts=$(echo "$abort_out" | grep -c 'msh: aborting at line')
+    if [ "$a_before" -ge 1 ] && [ "$a_never" -eq 0 ] \
+        && [ "$a_exit1" -ge 1 ] && [ "$a_aborts" -ge 1 ]; then
+        report_pass "msh script abort (set -e on cat /nope exit=1)" "$elapsed"
+    else
+        report_fail_msg "msh script abort" \
+            "before=$a_before never=$a_never exit1=$a_exit1 aborts=$a_aborts"
+    fi
+fi
+
 print_results

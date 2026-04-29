@@ -216,6 +216,8 @@ build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S)
 	{ cp tests/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
 	{ cp tests/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
 	{ cp tests/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
 	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
@@ -230,6 +232,7 @@ build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S)
 	python3 tools/mkfs.py $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
+build/kernel/disk.img build/kernel/disk-demo.img: tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh
 build/kernel/disk-demo.img: tests/fixtures/kern_demo.conf
 
 EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
