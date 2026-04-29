@@ -76,7 +76,7 @@ static const int pool_size[NPOOLS] = {
     1048576, 2097152, 4194304
 };
 static const int pool_count[NPOOLS] = {
-    256, 32768, 32768, 128, 64, 256, 64, 64, 32, 16,
+    32768, 32768, 32768, 128, 64, 256, 64, 64, 32, 16,
     32, 8, 8, 4, 8, 4, 4, 4, 2
 };
 /* bucket 2 (64-byte) was bumped from 256 to 32768 to hold the
