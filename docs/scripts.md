@@ -52,6 +52,7 @@ make update-golden
 # make test に含まれない (手動実行):
 tests/test_phase7.sh     ← phase 7 self-hosted pipeline (OS 上で Hello World コンパイル)
 tests/test_pico2.sh      ← pico2 実機テスト (Debug Probe 経由)
+tests/test_pico2_sd.sh   ← pico2 実機 SD カード SPI + FAT 書き込み/永続性テスト
 tests/test_pico2_hw.sh   ← pico2 実機 UART pipeline driver
 tests/pico2_verify.sh    ← pico2 実機で compile 7 段の byte-exact 検証
 ```
@@ -110,6 +111,7 @@ tests/pico2_verify.sh    ← pico2 実機で compile 7 段の byte-exact 検証
 | `test_os.sh`             | OS コンポーネントテスト。`make test` では `fs_virtio` を実行: `disk-demo.img` でブートして kern.conf 駆動 init + tmpfs 書き戻し + `catfile argv` + `>` リダイレクト + spawn/wait leak canary (`KERN: live=...`) を同時検証。`FULL_TEST=1` で kmalloc / kernel1 協調タスクを追加 |
 | `test_phase7.sh`         | phase 7 自己ホスト実行テスト (手動)。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` で kernel をビルドし、qemu virt で 2 ステージ検証 (compile → link → run "Hello, World!") |
 | `test_pico2.sh`          | pico2 実機テスト (手動、`make test` に含まれない)。Debug Probe + openocd-rpi で flash し、UART の MTFS / CAT / launcher ログを grep |
+| `test_pico2_sd.sh`       | pico2 実機 SD カードテスト (手動)。Phase A: kernel flash → `echo TAG > /sd/T.TXT` → `cat` で読み返し。Phase B: re-flash せず reset のみで `cat /sd/T.TXT` が同 TAG を返す = 永続化検証 |
 | `test_pico2_hw.sh`       | pico2 実機 UART pipeline テスト (手動) |
 | `pico2_verify.sh`        | pico2 実機で compile 7 段の byte-exact 検証 (手動、link 段は K7 の UART 問題で skip) |
 | `update_golden.sh`       | golden 再生成 (rv32 ネイティブ高速化) |
