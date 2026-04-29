@@ -29404,7 +29404,7 @@ main:
     sw   t0, -44(s0)
     j    .L_main_pc41
   .L_main_pc57:
-    li   t0, 16384
+    li   t0, 8192
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)

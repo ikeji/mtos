@@ -1185,20 +1185,26 @@ fn main() -> i32 {
     // sp=... pa=... lo=...]") across compiler/*.tc, with ~25%
     // headroom:
     //
-    //   strtab       max sp 12219 (bc2asm.tc)        → 16384  (16 KB)
+    //   strtab       max sp 12252 (bc2asm.tc)        → 16384  (16 KB)
     //   string_lits  ≤ 256 literals × 2 i32          → 512    (2 KB)
     //   global_vars  ≤ 256 globals × 4 i32           → 1024   (4 KB)
     //   global_inits ≤ 256 i32                       → 256    (1 KB)
     //   fns          single live BcFunc              → 1       slot
     //   params_pool  21 max × 4 i32 (bcrun::vm_run)  → 128    (512 B)
     //   locals_pool  bcrun::vm_run uses many         → 512    (2 KB)
-    //   instrs       bcrun::vm_run > 2048 ins        → 16384 (64 KB)
+    //   instrs       bc2asm.tc max in=1705 × 4 fields → 8192 (32 KB)
     //   label_pcs    ≤ 256 labels per fn             → 1024   (4 KB)
     //
-    // Total static ≈ 62 KB, down from the previous 1.4 MB peak
+    // Total static ≈ 30 KB, down from the previous 1.4 MB peak
     // (instrs alone was 1 MB). emit_fn fires from inside parse_bc on
     // every .endfn, so the buffers above only need to hold one
     // function at a time.
+    //
+    // 2026-04-30: instrs 16384 → 8192 (-32 KB) for the 100 KB target.
+    // Sized off bc2asm.tc max in=1705 (the realistic worst case per
+    // docs/scaling.md, since bcrun.tc is no longer compilable).
+    // instrs is stride-4 (op, ival, ss, sl per instruction) so 8192
+    // = 2048 instructions, ~20% over the worst case.
     var strtab:       U8Array  = U8Array(16384);
     var ob:           StringBuffer = StringBuffer_new(1);
     var string_lits:  StrRefArray    = StrRefArray(256u32);
@@ -1215,7 +1221,7 @@ fn main() -> i32 {
     while ppi < 32 { set(params_pool, ppi, StrRef(0, 0)); ppi = ppi + 1; }
     var lpi: i32 = 0;
     while lpi < 128 { set(locals_pool, lpi, StrRef(0, 0)); lpi = lpi + 1; }
-    var instrs:       I32Array = I32Array(16384);
+    var instrs:       I32Array = I32Array(8192);
     var label_pcs:    I32Array = I32Array(1024);
 
     g_unit_name = U8Array(64);

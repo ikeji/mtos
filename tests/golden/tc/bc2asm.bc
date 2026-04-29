@@ -9561,8 +9561,8 @@ __L411:
   store lpi
   jump __L411
 __L412:
-; var instrs:       I32Array = I32Array(16384);
-  push_int 16384
+; var instrs:       I32Array = I32Array(8192);
+  push_int 8192
   call I32Array u32
   store instrs
 ; var label_pcs:    I32Array = I32Array(1024);

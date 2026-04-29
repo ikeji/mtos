@@ -9897,11 +9897,11 @@
           )
         )
       )
-      (comment "var instrs:       I32Array = I32Array(16384);")
+      (comment "var instrs:       I32Array = I32Array(8192);")
       (var_decl instrs
         (type I32Array)
         (call I32Array
-          (int 16384)
+          (int 8192)
         )
       )
       (comment "var label_pcs:    I32Array = I32Array(1024);")
