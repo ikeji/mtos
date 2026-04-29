@@ -59,20 +59,31 @@ intrinsic 化すれば解消。解決すれば #6 (get 境界チェック) も�
 **compile 段 byte-exact verify 完了 (2026-04-17)**: parse→bc2asm の
 7 段がホスト参照とバイト完全一致。
 
-**part 3 未解決 — EXTRA_TASKS + sh spawn で OOM**:
-pico2 kernel を EXTRA_TASKS 付きでビルドすると、sh の sys_spawn で
-何を spawn しても OOM (`524292`)。seeded load_task は正常。
-診断では path が `/bin/\0catfile` のような不正バイト列に見え、
-mtfs_lookup が誤マッチして asm_pass1 の header (arena=524288) を読み
-512 KB の kmalloc → arena (480 KB) OOM。仮説:
-1. mtfs_lookup が inode 数増加で誤マッチ
-2. UART RX stale bytes で sh の path buffer が壊れる
-3. vfs_open の path parser 誤動作
+**part 3 — SD カード経由で進行中 (2026-04-29)**:
+SD カード SPI ドライバ + MBR 対応 fatfs を導入 (commit 37c99c7) し、
+中間ファイルを `/sd/` に書く形に切替えた。`/tmp/` (480 KB SRAM
+tmpfs) ではなく SD ストレージなのでパイプラインのメモリ要件は緩和。
+parse → sigscan → tcheck → codegen → bc2asm までは実機で正常動作
+を確認 (`tests/pico2_pipeline_drive.py` で `sh$` プロンプト同期)。
 
-**残件 — arena サイズ問題**:
+**残件 1: asm_pass1 が `/sd` 入出力で著しく遅い**:
+小さい (Hello World 数 KB) `/sd/full.s` を入力にしても asm_pass1 が
+5 分以上完了しない。fatfs read/write、block_sd の write busy-wait、
+SourceReader 風 streaming read のどこかに pathological な相互作用が
+ある模様。`tests/test_pico2_phase7_sd.sh` がタイムアウト。
+
+**残件 2: UART RX FIFO オーバーラン**:
+PL011 の FIFO は 32 byte。sh が `sys_wait` 中は誰も draining しない
+ので、fixed-sleep でコマンドを送ると後半が捨てられる。回避策として
+`tests/pico2_pipeline_drive.py` が `sh$ ` プロンプトを見て次行を
+送る方式にしてある (`--per-char-delay 0.005` 併用)。pico2 kernel に
+UART RX 割り込み + ring buffer を入れれば本質的に解決する。
+
+**残件 3: arena サイズの絶対値**:
 sh (32 KB) + asm_pass2 (512 KB) + stacks ≈ 570 KB で 480 KB arena に
-収まらない。小さい compiler task (parse 64 KB, sigscan 32 KB) は
-理論上 spawn 可能。K8/K9 の pico2 UART 問題が先にある。
+収まらない。`/sd` 化によって中間ファイル分は解放されたが、各 task
+の arena 自体は変わらないので限界はそのまま。task arena を縮める
+別の最適化が必要 (small-payload optimization, etc.)。
 
 ### 30. tmpfs に unlink が無い (limitation)
 
