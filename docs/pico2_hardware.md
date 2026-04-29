@@ -24,13 +24,14 @@ ARM Cortex-M33 デュアルコアモードと RISC-V Hazard3 デュアルコア�
 `0xE48BFF5A`)。切替は IMAGE_DEF メタデータで指定し、Boot ROM が読み
 取って起動コアを決める。
 
-クロックは bringup 時の最小構成のまま PLL_SYS を有効化しておらず、
-**CPU も周辺も XOSC 直 12 MHz で動いている** (`kernel/platform_pico2.s`
-は XOSC を有効化して `clk_peri` を XOSC ソースに切り替えるだけで、
-`clk_sys` 切替や PLL_SYS の FBDIV 設定はしていない)。150 MHz が
-必要になったら PLL_SYS を有効化して `clk_sys` を切り替える手順を
-足すだけで上げられるが、phase 7 の compile pipeline 完走でも処理時間
-は支配項ではないので未対応。
+クロック構成 (2026-04-29 PLL_SYS 有効化):
+- **clk_sys = 150 MHz** (XOSC 12 MHz × 125 / (5 × 2))
+- **clk_peri = 12 MHz** (XOSC 直、UART/SPI baud 計算を維持)
+
+`kernel/platform_pico2.s` の `_start` で XOSC 安定後に PLL_SYS bring-up
+(REFDIV=1, FBDIV=125, POSTDIV1=5/POSTDIV2=2) → CLK_SYS の SRC を
+AUX = PLL_SYS に glitchless 切替。phase 7 の compiler pipeline で
+asm_pass1 単独実行が **310s → 27s (11.5×)** に短縮された。
 
 ## 必要な機材
 

@@ -66,11 +66,18 @@ tmpfs) ではなく SD ストレージなのでパイプラインのメモリ要
 parse → sigscan → tcheck → codegen → bc2asm までは実機で正常動作
 を確認 (`tests/pico2_pipeline_drive.py` で `sh$` プロンプト同期)。
 
-**残件 1: asm_pass1 が `/sd` 入出力で著しく遅い**:
-小さい (Hello World 数 KB) `/sd/full.s` を入力にしても asm_pass1 が
-5 分以上完了しない。fatfs read/write、block_sd の write busy-wait、
-SourceReader 風 streaming read のどこかに pathological な相互作用が
-ある模様。`tests/test_pico2_phase7_sd.sh` がタイムアウト。
+**残件 1: ~~asm_pass1 が遅い~~ → 解決 (2026-04-29)**:
+真因は **CPU clock 12 MHz** (PLL_SYS 未使用)。`kernel/platform_pico2.s`
+で PLL_SYS を bring-up し clk_sys を 150 MHz に切替えた結果、asm_pass1
+単独実行が 310s → 27s (11.5×) に短縮。SD write 速度自体は ~5 KB/s
+のままだが、asm_pass1 の出力は 11 KB なので影響なし。
+
+**残件 1b: full pipeline での task 連続 spawn 時の OOM**:
+parse → sigscan → cat → tcheck → ... と 7 タスク連続 spawn したあと
+asm_pass1 が `OOM: 327684` (= asm_pass1 の task arena 320 KB ぴったり)
+で落ちる。単独 spawn では同じ asm_pass1 が問題なく完走するので、
+**spawn 間で kernel arena が leak してる** 強い疑い。
+`free_last_alloc` または `slot_free_allocs` の cleanup path を疑う。
 
 **残件 2: UART RX FIFO オーバーラン**:
 PL011 の FIFO は 32 byte。sh が `sys_wait` 中は誰も draining しない

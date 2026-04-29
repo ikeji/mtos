@@ -36,7 +36,51 @@ _start:
 1:  lw   t1, 0x04(t0)
     bge  t1, zero, 1b
 
-    # clk_peri → XOSC
+    # PLL_SYS bring-up: 12 MHz XOSC × FBDIV(125) = 1500 MHz VCO,
+    # then POSTDIV1(5) × POSTDIV2(2) = /10 → 150 MHz clk_sys.
+    # Sequence mirrors pico-sdk's hardware_pll::pll_init().
+    # 1. Take PLL_SYS out of reset (RESETS bit 14).
+    li   t0, 0x40023000        # RESETS_CLR alias
+    li   t1, 0x4000            # 1<<14 = PLL_SYS
+    sw   t1, 0(t0)
+    li   t0, 0x40020008        # RESET_DONE
+6:  lw   t2, 0(t0)
+    and  t2, t2, t1
+    bne  t2, t1, 6b
+    # 2. Load REFDIV=1 (CS) and FBDIV_INT=125 before powering up VCO.
+    li   t0, 0x40050000        # PLL_SYS base
+    li   t1, 1
+    sw   t1, 0x00(t0)          # CS: REFDIV=1
+    li   t1, 125
+    sw   t1, 0x08(t0)          # FBDIV_INT
+    # 3. Power on PLL + VCO: clear PD (bit 0) and VCOPD (bit 5) of PWR.
+    li   t2, 0x40053004        # PLL_SYS PWR_CLR alias
+    li   t1, 0x21
+    sw   t1, 0(t2)
+    # 4. Wait LOCK (CS bit 31). Spin until set.
+7:  lw   t1, 0x00(t0)
+    bge  t1, zero, 7b          # branch if bit 31 == 0 (not locked yet)
+    # 5. Set POSTDIV1=5, POSTDIV2=2 (PRIM register at +0x0C).
+    #    Bits [18:16] = POSTDIV1, bits [14:12] = POSTDIV2.
+    li   t1, 0x52000           # (5<<16) | (2<<12)
+    sw   t1, 0x0C(t0)
+    # 6. Power on POSTDIV (clear bit 3 in PWR).
+    li   t1, 0x08
+    sw   t1, 0(t2)
+
+    # Switch clk_sys → AUX (= PLL_SYS, AUXSRC=0 by default).
+    # CLK_SYS_CTRL @ CLOCKS+0x3C, bit 0 = SRC. Glitchless mux:
+    # going clk_ref→AUX is safe because both sides are running.
+    li   t0, 0x4001003C
+    li   t1, 1
+    sw   t1, 0(t0)
+    li   t0, 0x40010044        # CLK_SYS_SELECTED
+8:  lw   t1, 0(t0)
+    andi t1, t1, 2             # bit 1 = AUX selected
+    beqz t1, 8b
+
+    # clk_peri → XOSC. Leave at 12 MHz so UART baud divider (which we
+    # set up next) and SD SPI prescale still work without rework.
     li   t0, 0x40010048
     sw   zero, 0(t0)
     li   t1, 0x880
