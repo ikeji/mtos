@@ -5607,24 +5607,22 @@ line_buf__SourceReader__StringBuffer:
     ret
     # end of line_buf__SourceReader__StringBuffer
 
-    .globl AstNode__i32__i32__i32__i32__i32__i32__i32__i32
-    .type  AstNode__i32__i32__i32__i32__i32__i32__i32__i32, @function
-AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
-    # prologue: frame_size=64, params=8, locals=1, eval_depth=3
-    addi sp, sp, -64
-    sw   ra, 60(sp)
-    sw   s0, 56(sp)
-    addi s0, sp, 64
+    .globl AstNode__i32__i32__i32__i32__i32__i32
+    .type  AstNode__i32__i32__i32__i32__i32__i32, @function
+AstNode__i32__i32__i32__i32__i32__i32:
+    # prologue: frame_size=48, params=6, locals=1, eval_depth=3
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
     sw   a3, -24(s0)
     sw   a4, -28(s0)
     sw   a5, -32(s0)
-    sw   a6, -36(s0)
-    sw   a7, -40(s0)
-    sw   zero, -44(s0)
-    li   t0, 8
+    sw   zero, -36(s0)
+    li   t0, 6
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -5634,8 +5632,8 @@ AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -44(s0)
-    lw   t0, -44(s0)
+    sw   t0, -36(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -5656,7 +5654,7 @@ AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -44(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -5677,7 +5675,7 @@ AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -44(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 2
@@ -5698,7 +5696,7 @@ AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -44(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 3
@@ -5719,7 +5717,7 @@ AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -44(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 4
@@ -5740,7 +5738,7 @@ AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -44(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 5
@@ -5761,49 +5759,7 @@ AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -44(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 6
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -36(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__U32Array__i32__u32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -44(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 7
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -40(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__U32Array__i32__u32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
@@ -5819,7 +5775,7 @@ AstNode__i32__i32__i32__i32__i32__i32__i32__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of AstNode__i32__i32__i32__i32__i32__i32__i32__i32
+    # end of AstNode__i32__i32__i32__i32__i32__i32
 
     .globl kind__AstNode
     .type  kind__AstNode, @function
@@ -5861,9 +5817,9 @@ kind__AstNode:
     ret
     # end of kind__AstNode
 
-    .globl ss__AstNode
-    .type  ss__AstNode, @function
-ss__AstNode:
+    .globl ss_sl__AstNode
+    .type  ss_sl__AstNode, @function
+ss_sl__AstNode:
     # prologue: frame_size=32, params=1, locals=0, eval_depth=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -5899,47 +5855,7 @@ ss__AstNode:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of ss__AstNode
-
-    .globl sl__AstNode
-    .type  sl__AstNode, @function
-sl__AstNode:
-    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 2
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__U32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of sl__AstNode
+    # end of ss_sl__AstNode
 
     .globl ival__AstNode
     .type  ival__AstNode, @function
@@ -5953,7 +5869,7 @@ ival__AstNode:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 3
+    li   t0, 2
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -5993,7 +5909,7 @@ first_child__AstNode:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 4
+    li   t0, 3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -6033,7 +5949,7 @@ next_sibling__AstNode:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 5
+    li   t0, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -6061,9 +5977,9 @@ next_sibling__AstNode:
     ret
     # end of next_sibling__AstNode
 
-    .globl tass__AstNode
-    .type  tass__AstNode, @function
-tass__AstNode:
+    .globl tass_tasl__AstNode
+    .type  tass_tasl__AstNode, @function
+tass_tasl__AstNode:
     # prologue: frame_size=32, params=1, locals=0, eval_depth=2
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -6073,7 +5989,7 @@ tass__AstNode:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 6
+    li   t0, 5
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
@@ -6099,47 +6015,7 @@ tass__AstNode:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of tass__AstNode
-
-    .globl tasl__AstNode
-    .type  tasl__AstNode, @function
-tasl__AstNode:
-    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 7
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 4(sp)
-    lw   a1, 0(sp)
-    call get__U32Array__i32
-    addi sp, sp, 8
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    mv   a0, t0
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of tasl__AstNode
+    # end of tass_tasl__AstNode
 
     .globl kind__AstNode__i32
     .type  kind__AstNode__i32, @function
@@ -6184,9 +6060,9 @@ kind__AstNode__i32:
     ret
     # end of kind__AstNode__i32
 
-    .globl ss__AstNode__i32
-    .type  ss__AstNode__i32, @function
-ss__AstNode__i32:
+    .globl ss_sl__AstNode__i32
+    .type  ss_sl__AstNode__i32, @function
+ss_sl__AstNode__i32:
     # prologue: frame_size=32, params=2, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -6225,50 +6101,7 @@ ss__AstNode__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of ss__AstNode__i32
-
-    .globl sl__AstNode__i32
-    .type  sl__AstNode__i32, @function
-sl__AstNode__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 2
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__U32Array__i32__u32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of sl__AstNode__i32
+    # end of ss_sl__AstNode__i32
 
     .globl ival__AstNode__i32
     .type  ival__AstNode__i32, @function
@@ -6283,7 +6116,7 @@ ival__AstNode__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 3
+    li   t0, 2
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
@@ -6326,7 +6159,7 @@ first_child__AstNode__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 4
+    li   t0, 3
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
@@ -6369,7 +6202,7 @@ next_sibling__AstNode__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 5
+    li   t0, 4
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
@@ -6399,9 +6232,9 @@ next_sibling__AstNode__i32:
     ret
     # end of next_sibling__AstNode__i32
 
-    .globl tass__AstNode__i32
-    .type  tass__AstNode__i32, @function
-tass__AstNode__i32:
+    .globl tass_tasl__AstNode__i32
+    .type  tass_tasl__AstNode__i32, @function
+tass_tasl__AstNode__i32:
     # prologue: frame_size=32, params=2, locals=0, eval_depth=3
     addi sp, sp, -32
     sw   ra, 28(sp)
@@ -6412,7 +6245,7 @@ tass__AstNode__i32:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 6
+    li   t0, 5
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
@@ -6440,50 +6273,7 @@ tass__AstNode__i32:
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of tass__AstNode__i32
-
-    .globl tasl__AstNode__i32
-    .type  tasl__AstNode__i32, @function
-tasl__AstNode__i32:
-    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
-    sw   a0, -12(s0)
-    sw   a1, -16(s0)
-    lw   t0, -12(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 7
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -16(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 8(sp)
-    lw   a1, 4(sp)
-    lw   a2, 0(sp)
-    call set__U32Array__i32__u32
-    addi sp, sp, 12
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    addi sp, sp, 4
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    mv   t0, s0
-    lw   ra, -4(t0)
-    lw   s0, -8(t0)
-    addi sp, t0, 0
-    ret
-    # end of tasl__AstNode__i32
+    # end of tass_tasl__AstNode__i32
 
     .globl delete__AstNode
     .type  delete__AstNode, @function
@@ -6745,10 +6535,155 @@ ast_set_count__i32:
     ret
     # end of ast_set_count__i32
 
+    .globl pack_pair__i32__i32
+    .type  pack_pair__i32__i32, @function
+pack_pair__i32__i32:
+    # prologue: frame_size=32, params=2, locals=0, eval_depth=3
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    sw   a1, -16(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65535
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    and  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sll  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65535
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    and  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    or   t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of pack_pair__i32__i32
+
+    .globl unpack_hi__i32
+    .type  unpack_hi__i32, @function
+unpack_hi__i32:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sra  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of unpack_hi__i32
+
+    .globl unpack_lo__i32
+    .type  unpack_lo__i32, @function
+unpack_lo__i32:
+    # prologue: frame_size=32, params=1, locals=0, eval_depth=2
+    addi sp, sp, -32
+    sw   ra, 28(sp)
+    sw   s0, 24(sp)
+    addi s0, sp, 32
+    sw   a0, -12(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sll  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sra  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of unpack_lo__i32
+
     .globl alloc_node__AstNodeArray__i32
     .type  alloc_node__AstNodeArray__i32, @function
 alloc_node__AstNodeArray__i32:
-    # prologue: frame_size=64, params=2, locals=1, eval_depth=10
+    # prologue: frame_size=64, params=2, locals=2, eval_depth=8
     addi sp, sp, -64
     sw   ra, 60(sp)
     sw   s0, 56(sp)
@@ -6756,6 +6691,7 @@ alloc_node__AstNodeArray__i32:
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   zero, -20(s0)
+    sw   zero, -24(s0)
     la   t1, g_nc
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -6780,6 +6716,30 @@ alloc_node__AstNodeArray__i32:
     addi sp, sp, 4
     la   t1, g_nc
     sw   t0, 0(t1)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call pack_pair__i32__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -6789,12 +6749,7 @@ alloc_node__AstNodeArray__i32:
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    neg  t0, t0
+    lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
@@ -6806,40 +6761,35 @@ alloc_node__AstNodeArray__i32:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    neg  t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    neg  t0, t0
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    li   t0, 1
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    neg  t0, t0
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   a0, 28(sp)
-    lw   a1, 24(sp)
-    lw   a2, 20(sp)
-    lw   a3, 16(sp)
-    lw   a4, 12(sp)
-    lw   a5, 8(sp)
-    lw   a6, 4(sp)
-    lw   a7, 0(sp)
-    call AstNode__i32__i32__i32__i32__i32__i32__i32__i32
-    addi sp, sp, 32
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sub  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 20(sp)
+    lw   a1, 16(sp)
+    lw   a2, 12(sp)
+    lw   a3, 8(sp)
+    lw   a4, 4(sp)
+    lw   a5, 0(sp)
+    call AstNode__i32__i32__i32__i32__i32__i32
+    addi sp, sp, 24
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 8(sp)
@@ -7022,7 +6972,12 @@ n_ss__AstNodeArray__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    call ss__AstNode
+    call ss_sl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call unpack_hi__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7064,7 +7019,12 @@ n_sl__AstNodeArray__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    call sl__AstNode
+    call ss_sl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call unpack_lo__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7232,7 +7192,12 @@ n_tass__AstNodeArray__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    call tass__AstNode
+    call tass_tasl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call unpack_hi__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7274,7 +7239,12 @@ n_tasl__AstNodeArray__i32:
     addi sp, sp, -4
     sw   a0, 0(sp)
     lw   a0, 0(sp)
-    call tasl__AstNode
+    call tass_tasl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 0(sp)
+    call unpack_lo__i32
     addi sp, sp, 4
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7341,14 +7311,16 @@ n_sk__AstNodeArray__i32__i32:
     .globl n_set_ss__AstNodeArray__i32__i32
     .type  n_set_ss__AstNodeArray__i32__i32, @function
 n_set_ss__AstNodeArray__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=2, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
+    sw   zero, -24(s0)
+    sw   zero, -28(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7361,12 +7333,65 @@ n_set_ss__AstNodeArray__i32__i32:
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call ss_sl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -28(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65535
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    and  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sll  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65535
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    and  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    or   t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call ss__AstNode__i32
+    call ss_sl__AstNode__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7386,14 +7411,16 @@ n_set_ss__AstNodeArray__i32__i32:
     .globl n_set_sl__AstNodeArray__i32__i32
     .type  n_set_sl__AstNodeArray__i32__i32, @function
 n_set_sl__AstNodeArray__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=2, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
+    sw   zero, -24(s0)
+    sw   zero, -28(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7406,12 +7433,65 @@ n_set_sl__AstNodeArray__i32__i32:
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call ss_sl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -28(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sra  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sll  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65535
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    and  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    or   t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call sl__AstNode__i32
+    call ss_sl__AstNode__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7566,14 +7646,16 @@ n_set_sib__AstNodeArray__i32__i32:
     .globl n_set_tass__AstNodeArray__i32__i32
     .type  n_set_tass__AstNodeArray__i32__i32, @function
 n_set_tass__AstNodeArray__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=2, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
+    sw   zero, -24(s0)
+    sw   zero, -28(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7586,12 +7668,65 @@ n_set_tass__AstNodeArray__i32__i32:
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call tass_tasl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -28(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65535
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    and  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sll  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65535
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    and  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    or   t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call tass__AstNode__i32
+    call tass_tasl__AstNode__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -7611,14 +7746,16 @@ n_set_tass__AstNodeArray__i32__i32:
     .globl n_set_tasl__AstNodeArray__i32__i32
     .type  n_set_tasl__AstNodeArray__i32__i32, @function
 n_set_tasl__AstNodeArray__i32__i32:
-    # prologue: frame_size=32, params=3, locals=0, eval_depth=2
-    addi sp, sp, -32
-    sw   ra, 28(sp)
-    sw   s0, 24(sp)
-    addi s0, sp, 32
+    # prologue: frame_size=48, params=3, locals=2, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
     sw   a0, -12(s0)
     sw   a1, -16(s0)
     sw   a2, -20(s0)
+    sw   zero, -24(s0)
+    sw   zero, -28(s0)
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -7631,12 +7768,65 @@ n_set_tasl__AstNodeArray__i32__i32:
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call tass_tasl__AstNode
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -28(s0)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -28(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sra  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 16
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    sll  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
     lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 65535
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    and  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    or   t0, t0, t1
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 4(sp)
     lw   a1, 0(sp)
-    call tasl__AstNode__i32
+    call tass_tasl__AstNode__i32
     addi sp, sp, 8
     addi sp, sp, -4
     sw   a0, 0(sp)

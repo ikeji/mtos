@@ -1812,17 +1812,15 @@ __L35:
 ; globals
 .global g_nc i32 0
 
-.fn AstNode i32 i32 i32 i32 i32 i32 i32 i32 AstNode
+.fn AstNode i32 i32 i32 i32 i32 i32 AstNode
 .param __a0 i32
 .param __a1 i32
 .param __a2 i32
 .param __a3 i32
 .param __a4 i32
 .param __a5 i32
-.param __a6 i32
-.param __a7 i32
 .local __p U32Array
-  push_int 8
+  push_int 6
   call U32Array u32
   store __p
   load __p
@@ -1862,18 +1860,6 @@ __L35:
   call set U32Array i32 u32
   pop
   load __p
-  push_int 6
-  load __a6
-  cast u32
-  call set U32Array i32 u32
-  pop
-  load __p
-  push_int 7
-  load __a7
-  cast u32
-  call set U32Array i32 u32
-  pop
-  load __p
   return
   return_void
 .endfn
@@ -1888,7 +1874,7 @@ __L35:
   return_void
 .endfn
 
-.fn ss AstNode i32
+.fn ss_sl AstNode i32
 .param __p AstNode
   load __p
   push_int 1
@@ -1898,7 +1884,7 @@ __L35:
   return_void
 .endfn
 
-.fn sl AstNode i32
+.fn ival AstNode i32
 .param __p AstNode
   load __p
   push_int 2
@@ -1908,7 +1894,7 @@ __L35:
   return_void
 .endfn
 
-.fn ival AstNode i32
+.fn first_child AstNode i32
 .param __p AstNode
   load __p
   push_int 3
@@ -1918,7 +1904,7 @@ __L35:
   return_void
 .endfn
 
-.fn first_child AstNode i32
+.fn next_sibling AstNode i32
 .param __p AstNode
   load __p
   push_int 4
@@ -1928,30 +1914,10 @@ __L35:
   return_void
 .endfn
 
-.fn next_sibling AstNode i32
+.fn tass_tasl AstNode i32
 .param __p AstNode
   load __p
   push_int 5
-  call get U32Array i32
-  cast i32
-  return
-  return_void
-.endfn
-
-.fn tass AstNode i32
-.param __p AstNode
-  load __p
-  push_int 6
-  call get U32Array i32
-  cast i32
-  return
-  return_void
-.endfn
-
-.fn tasl AstNode i32
-.param __p AstNode
-  load __p
-  push_int 7
   call get U32Array i32
   cast i32
   return
@@ -1971,7 +1937,7 @@ __L35:
   return_void
 .endfn
 
-.fn ss AstNode i32 void
+.fn ss_sl AstNode i32 void
 .param __p AstNode
 .param __v i32
   load __p
@@ -1984,7 +1950,7 @@ __L35:
   return_void
 .endfn
 
-.fn sl AstNode i32 void
+.fn ival AstNode i32 void
 .param __p AstNode
 .param __v i32
   load __p
@@ -1997,7 +1963,7 @@ __L35:
   return_void
 .endfn
 
-.fn ival AstNode i32 void
+.fn first_child AstNode i32 void
 .param __p AstNode
 .param __v i32
   load __p
@@ -2010,7 +1976,7 @@ __L35:
   return_void
 .endfn
 
-.fn first_child AstNode i32 void
+.fn next_sibling AstNode i32 void
 .param __p AstNode
 .param __v i32
   load __p
@@ -2023,37 +1989,11 @@ __L35:
   return_void
 .endfn
 
-.fn next_sibling AstNode i32 void
+.fn tass_tasl AstNode i32 void
 .param __p AstNode
 .param __v i32
   load __p
   push_int 5
-  load __v
-  cast u32
-  call set U32Array i32 u32
-  pop
-  return_void
-  return_void
-.endfn
-
-.fn tass AstNode i32 void
-.param __p AstNode
-.param __v i32
-  load __p
-  push_int 6
-  load __v
-  cast u32
-  call set U32Array i32 u32
-  pop
-  return_void
-  return_void
-.endfn
-
-.fn tasl AstNode i32 void
-.param __p AstNode
-.param __v i32
-  load __p
-  push_int 7
   load __v
   cast u32
   call set U32Array i32 u32
@@ -2136,10 +2076,50 @@ __L35:
   return_void
 .endfn
 
+.fn pack_pair i32 i32 i32
+.param hi i32
+.param lo i32
+; return ((hi & 0xFFFF) << 16) | (lo & 0xFFFF);
+  load hi
+  push_int 65535
+  and
+  push_int 16
+  shl
+  load lo
+  push_int 65535
+  and
+  or
+  return
+  return_void
+.endfn
+
+.fn unpack_hi i32 i32
+.param p i32
+; fn unpack_hi(p: i32) -> i32 { return p >> 16; }
+  load p
+  push_int 16
+  shr
+  return
+  return_void
+.endfn
+
+.fn unpack_lo i32 i32
+.param p i32
+; fn unpack_lo(p: i32) -> i32 { return (p << 16) >> 16; }
+  load p
+  push_int 16
+  shl
+  push_int 16
+  shr
+  return
+  return_void
+.endfn
+
 .fn alloc_node AstNodeArray i32 i32
 .param arr AstNodeArray
 .param k i32
 .local idx i32
+.local ss_sl_init i32
 ; var idx: i32 = g_nc;
   load g_nc
   store idx
@@ -2148,22 +2128,27 @@ __L35:
   push_int 1
   add
   store g_nc
-; set(arr, idx, AstNode(k, -1, 0, 0, -1, -1, -1, 0));
+; var ss_sl_init: i32 = pack_pair(0 - 1, 0);
+  push_int 0
+  push_int 1
+  sub
+  push_int 0
+  call pack_pair i32 i32
+  store ss_sl_init
+; set(arr, idx, AstNode(k, ss_sl_init, 0, 0 - 1, 0 - 1, ss_sl_init));
   load arr
   load idx
   load k
-  push_int 1
-  neg
+  load ss_sl_init
   push_int 0
   push_int 0
   push_int 1
-  neg
-  push_int 1
-  neg
-  push_int 1
-  neg
+  sub
   push_int 0
-  call AstNode i32 i32 i32 i32 i32 i32 i32 i32
+  push_int 1
+  sub
+  load ss_sl_init
+  call AstNode i32 i32 i32 i32 i32 i32
   call set AstNodeArray i32 AstNode
   pop
 ; return idx;
@@ -2220,11 +2205,12 @@ __L1:
 .fn n_ss AstNodeArray i32 i32
 .param arr AstNodeArray
 .param n i32
-; export fn n_ss(arr: AstNodeArray, n: i32) -> i32 { return ss(get(arr, n)); }
+; export fn n_ss(arr: AstNodeArray, n: i32) -> i32 { return unpack_hi(ss_sl(get(arr, n))); }
   load arr
   load n
   call get AstNodeArray i32
-  call ss AstNode
+  call ss_sl AstNode
+  call unpack_hi i32
   return
   return_void
 .endfn
@@ -2232,11 +2218,12 @@ __L1:
 .fn n_sl AstNodeArray i32 i32
 .param arr AstNodeArray
 .param n i32
-; export fn n_sl(arr: AstNodeArray, n: i32) -> i32 { return sl(get(arr, n)); }
+; export fn n_sl(arr: AstNodeArray, n: i32) -> i32 { return unpack_lo(ss_sl(get(arr, n))); }
   load arr
   load n
   call get AstNodeArray i32
-  call sl AstNode
+  call ss_sl AstNode
+  call unpack_lo i32
   return
   return_void
 .endfn
@@ -2280,11 +2267,12 @@ __L1:
 .fn n_tass AstNodeArray i32 i32
 .param arr AstNodeArray
 .param n i32
-; export fn n_tass(arr: AstNodeArray, n: i32) -> i32 { return tass(get(arr, n)); }
+; export fn n_tass(arr: AstNodeArray, n: i32) -> i32 { return unpack_hi(tass_tasl(get(arr, n))); }
   load arr
   load n
   call get AstNodeArray i32
-  call tass AstNode
+  call tass_tasl AstNode
+  call unpack_hi i32
   return
   return_void
 .endfn
@@ -2292,11 +2280,12 @@ __L1:
 .fn n_tasl AstNodeArray i32 i32
 .param arr AstNodeArray
 .param n i32
-; export fn n_tasl(arr: AstNodeArray, n: i32) -> i32 { return tasl(get(arr, n)); }
+; export fn n_tasl(arr: AstNodeArray, n: i32) -> i32 { return unpack_lo(tass_tasl(get(arr, n))); }
   load arr
   load n
   call get AstNodeArray i32
-  call tasl AstNode
+  call tass_tasl AstNode
+  call unpack_lo i32
   return
   return_void
 .endfn
@@ -2320,13 +2309,31 @@ __L1:
 .param arr AstNodeArray
 .param n i32
 .param v i32
-; export fn n_set_ss(arr: AstNodeArray, n: i32, v: i32) -> void { ss(get(arr, n), v); return; }
+.local node AstNode
+.local p i32
+; var node: AstNode = get(arr, n);
   load arr
   load n
   call get AstNodeArray i32
+  store node
+; var p: i32 = ss_sl(node);
+  load node
+  call ss_sl AstNode
+  store p
+; ss_sl(node, ((v & 0xFFFF) << 16) | (p & 0xFFFF));
+  load node
   load v
-  call ss AstNode i32
+  push_int 65535
+  and
+  push_int 16
+  shl
+  load p
+  push_int 65535
+  and
+  or
+  call ss_sl AstNode i32
   pop
+; return;
   return_void
   return_void
 .endfn
@@ -2335,13 +2342,31 @@ __L1:
 .param arr AstNodeArray
 .param n i32
 .param v i32
-; export fn n_set_sl(arr: AstNodeArray, n: i32, v: i32) -> void { sl(get(arr, n), v); return; }
+.local node AstNode
+.local p i32
+; var node: AstNode = get(arr, n);
   load arr
   load n
   call get AstNodeArray i32
+  store node
+; var p: i32 = ss_sl(node);
+  load node
+  call ss_sl AstNode
+  store p
+; ss_sl(node, ((p >> 16) << 16) | (v & 0xFFFF));
+  load node
+  load p
+  push_int 16
+  shr
+  push_int 16
+  shl
   load v
-  call sl AstNode i32
+  push_int 65535
+  and
+  or
+  call ss_sl AstNode i32
   pop
+; return;
   return_void
   return_void
 .endfn
@@ -2395,13 +2420,31 @@ __L1:
 .param arr AstNodeArray
 .param n i32
 .param v i32
-; export fn n_set_tass(arr: AstNodeArray, n: i32, v: i32) -> void { tass(get(arr, n), v); return; }
+.local node AstNode
+.local p i32
+; var node: AstNode = get(arr, n);
   load arr
   load n
   call get AstNodeArray i32
+  store node
+; var p: i32 = tass_tasl(node);
+  load node
+  call tass_tasl AstNode
+  store p
+; tass_tasl(node, ((v & 0xFFFF) << 16) | (p & 0xFFFF));
+  load node
   load v
-  call tass AstNode i32
+  push_int 65535
+  and
+  push_int 16
+  shl
+  load p
+  push_int 65535
+  and
+  or
+  call tass_tasl AstNode i32
   pop
+; return;
   return_void
   return_void
 .endfn
@@ -2410,13 +2453,31 @@ __L1:
 .param arr AstNodeArray
 .param n i32
 .param v i32
-; export fn n_set_tasl(arr: AstNodeArray, n: i32, v: i32) -> void { tasl(get(arr, n), v); return; }
+.local node AstNode
+.local p i32
+; var node: AstNode = get(arr, n);
   load arr
   load n
   call get AstNodeArray i32
+  store node
+; var p: i32 = tass_tasl(node);
+  load node
+  call tass_tasl AstNode
+  store p
+; tass_tasl(node, ((p >> 16) << 16) | (v & 0xFFFF));
+  load node
+  load p
+  push_int 16
+  shr
+  push_int 16
+  shl
   load v
-  call tasl AstNode i32
+  push_int 65535
+  and
+  or
+  call tass_tasl AstNode i32
   pop
+; return;
   return_void
   return_void
 .endfn
