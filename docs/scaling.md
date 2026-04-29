@@ -515,42 +515,67 @@ peak memory + 時間。**ターゲット: 各段 ≤ 10 sec (pico2 実機) / ≤
 (bcrun.tc を除く worst case = bc2asm.tc)**。bench は host 計測なので
 時間は相対的な指標、メモリは pico2 でも同じ。
 
-### hello.tc (366 byte, 入力小)
+### 進捗 (2026-04-30 メモリ削減 Phase 1)
 
-| 段 | time_ms (virt) | peak_kb | 100 KB 目標 |
+bc2asm/tcheck/codegen は 100 KB ターゲット達成 or それに近づいた。
+asm_pass1/2 は 150 KB 圏まで削減 (100 KB は構造的に困難)。
+
+#### hello.tc (366 byte, 入力小)
+
+| 段 | baseline | 現在 | 100 KB |
 |---|---:|---:|---:|
-| parse     |   20 | (no km_dump_peak) | ✓ (旧 14 KB) |
-| sigscan   |   16 |   9 | ✓ |
-| tcheck    |   28 |  73 | ✓ |
-| codegen   |   24 |  76 | ✓ |
-| bc2asm    |   30 | 111 | ❌ +11% |
-| asm_pass1 | 1161 | 218 | ❌ 2.2× |
-| asm_pass2 | 1785 | 298 | ❌ 3.0× |
+| parse     |   - |   - | ✓ (旧 14 KB) |
+| sigscan   |   9 |   9 | ✓ |
+| tcheck    |  73 |  69 | ✓ |
+| codegen   |  76 |  68 | ✓ |
+| bc2asm    | 111 |  79 | ✓ |
+| asm_pass1 | 218 | 186 | ❌ 1.9× |
+| asm_pass2 | 298 | 234 | ❌ 2.3× |
 
-### bc2asm.tc (~50 KB, 実 worst case)
+#### bc2asm.tc (~50 KB, 実 worst case)
 
-| 段 | time_ms (virt) | peak_kb | 100 KB 目標 |
+| 段 | baseline | 現在 | 100 KB |
 |---|---:|---:|---:|
-| parse     | 3488 | (no km_dump_peak) | (前回測定 ~14 KB 一定) |
-| sigscan   | 1021 |  10 | ✓ |
-| tcheck    | 1836 | 190 | ❌ 1.9× |
-| codegen   | 1542 | 185 | ❌ 1.9× |
-| bc2asm    | 2414 | 122 | ❌ +22% |
-| asm_pass1 | 5056 | 249 | ❌ 2.5× |
-| asm_pass2 | 6710 | 328 | ❌ 3.3× |
+| parse     |   - |   - | (~14 KB 一定) |
+| sigscan   |  10 |  10 | ✓ |
+| tcheck    | 190 | 135 | ❌ 1.4× |
+| codegen   | 185 | 126 | ❌ 1.3× |
+| bc2asm    | 122 |  90 | ✓ |
+| asm_pass1 | 249 | 217 | ❌ 2.2× |
+| asm_pass2 | 328 | 264 | ❌ 2.6× |
 
-### 削減対象優先順 (gap が大きい順)
+### 適用した削減 (commit 順)
 
-1. **asm_pass2** (298/328 KB → 100 KB): g_lab_names 128 KB 固定 +
-   g_labels 64 KB が支配。per-label kmalloc 化で ~50 KB 級まで
-   削減可能 (`docs/task/pipeline_100kb.md` 残課題)
-2. **asm_pass1** (218/249 KB → 100 KB): asm_pass2 と同じラベル表が
-   支配。同じ shrink で連動して落ちる
-3. **tcheck** (73/190 KB → 100 KB): hello.tc は OK だが bc2asm.tc は
-   過大。AstNodeArray(3072) を 2048 に + per-fn strtab 32 KB → 16 KB
-4. **codegen** (76/185 KB → 100 KB): tcheck と同様の対策
-5. **bc2asm** (111/122 KB → 100 KB): instrs U32Array(4096) を実測
-   高水位に基づき縮小
+1. **bc2asm.tc instrs 16384 → 8192** (-32 KB): 実 in=1705 max に対し
+   2048 命令分で 20% margin。bcrun.tc は除外。
+2. **tcheck/codegen AstNodeArray pool 3072/4096 → 2048** (-4/-8 KB):
+   ref array shrink、bcrun.tc 除外で十分。
+3. **AstNode struct repack 8 → 6 i32 fields** (-50 KB): ss/sl と
+   tass/tasl を 16+16 bit pack。`32 → 64 byte bucket` の per-node
+   オーバーヘッド削減。importer は n_ss / n_sl 経由なので透過。
+4. **asm_common name pool 128 → 96 KB + hash 64 → 32 KB** (-32/-64 KB):
+   MAX_NAME_POOL を実測 90 KB に近い 96 KB に絞る。LAB_HASH_SIZE は
+   MAX_LABELS の 2x で十分なので 16384 → 8192。
+
+### 残 gap と原因
+
+- **tcheck/codegen 26〜35 KB 超過**: 32 KB strtab (per-fn rollback 後
+  の sp_max=26244 に合わせ済み) + per-fn kmalloc'd fntab + transients
+  が支配。strtab を perm/ephemeral 分離するか kmalloc per-fn 化する
+  refactor で削減可。
+- **asm_pass1/2 86〜164 KB 超過**: g_lab_names 96 KB + g_labels 64 KB
+  + g_numlab 40 KB の固定上限が支配。NUM_LAB_PER_DIGIT を 512 に
+  絞ろうとしたが asm_pass1.tc 自身が digit 0 で 512 超 → 1024 維持。
+  per-label kmalloc 化で実 peak のみ払う形にすれば最大 30 KB 削減
+  可能。
+
+### 削減対象優先順 (残)
+
+1. **asm_pass2** (234/264 KB → 100 KB): per-label kmalloc 化が必要。
+   構造的に 100 KB は厳しく、150 KB が現実線
+2. **asm_pass1** (186/217 KB → 100 KB): asm_pass2 と同じ
+3. **tcheck/codegen** (135/126 KB → 100 KB): strtab 構造変更が必要
+4. **parse の km_dump_peak 追加**: 現状未測定
 
 時間ターゲット (pico2 10s) は別途 pico2 での timing 計測後に検討。
 host virt の wall time は相対指標として shrink 前後の差を確認するのに
