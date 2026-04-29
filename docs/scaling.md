@@ -302,36 +302,68 @@ sh の組み込みコマンドにする」** が一番素直 (sh + child の 2 �
 
 `docs/task/pipeline_100kb.md` の目標は各段 **80 KB 程度**:
 
-| 段 | 目標 | 実 peak (Hello World) | 実 peak (worst = bcrun.tc::vm_run) | task.mk arena |
-|---|---:|---:|---:|---:|
-| tcheck    |  80 KB |  74 KB | 244 KB | **320 KB** |
-| codegen   |  50 KB |  77 KB | 246 KB | **320 KB** |
-| bc2asm    |  35 KB | 113 KB | 124 KB | **192 KB** |
-| asm_pass1 |  45 KB | 224 KB | 268 KB | **320 KB** |
-| asm_pass2 |  45 KB | 298 KB | 280 KB | **320 KB** |
+| 段 | 目標 | 実 peak (Hello World) | task.mk arena |
+|---|---:|---:|---:|
+| tcheck    |  80 KB |  74 KB | **320 KB** |
+| codegen   |  50 KB |  77 KB | **320 KB** |
+| bc2asm    |  35 KB | 113 KB | **192 KB** |
+| asm_pass1 |  45 KB | 224 KB | **320 KB** |
+| asm_pass2 |  45 KB | 298 KB | **320 KB** |
 
 Hello World の実 peak は概ね目標 100 KB 級だが、**task arena 予約は
-worst case (bcrun.tc::vm_run) を見越して 320 KB に取っている**。
+worst case を見越して 320 KB に取っている**。
 これが多重 task 同時 alive を阻む元凶。
 
-bcrun.tc::vm_run は OS 側の 1 関数で AstNode 2581 個を持つ outlier
-(`docs/task/pipeline_100kb.md` §AST pool outlier)。phase 7 の
-Hello World レベルでは出てこない。
+#### bcrun.tc は実は worst case ではない (2026-04-29 再測定)
 
-### 提案: arena を Hello World 級に絞る
+歴史的に「tcheck worst case = bcrun.tc::vm_run の 244 KB peak」と
+記録されているが、現在の Gen2 tcheck は **vartab=128 上限** に当たって
+bcrun.tc を tcheck 通せない (vm_run の局所変数 > 128 で `get: 128 out
+of bounds`)。よって今や bcrun.tc は「コンパイル不可」であって、
+worst case として参照する意味がない。
 
-`tests/test_pico2_phase7_sd.sh` 相当の用途では、各段の peak が判明
-しているので **arena を 96〜144 KB に縮める**選択が筋:
+ホスト Gen2 で各 compiler ファイルを tcheck し、per-function node
+最大値 (`nc`) を測ったもの:
 
-- tcheck: 320 → **96 KB** (peak 74 KB + 30% margin)
-- codegen: 320 → **128 KB** (peak 77 KB)
-- bc2asm: 192 → **144 KB** (peak 113 KB)
-- asm_pass1: 320 → **288 KB** (peak 224 KB)
-- asm_pass2: 320 KB は維持 (peak 298 KB)
+| ファイル | nc (peak fn) | tcheck 結果 |
+|---|---:|---|
+| ast_node.tc      |   87 | OK |
+| asm_pass1.tc     |  148 | OK |
+| string_buffer.tc |  164 | OK |
+| source_reader.tc |  164 | OK |
+| sigscan.tc       |  381 | OK |
+| asm_pass2.tc     |  389 | OK |
+| tcheck.tc        |  607 | OK |
+| codegen.tc       |  854 | OK |
+| **bc2asm.tc**    | **1656** | **OK ← 現実の worst case** |
+| bcrun.tc         | — | vartab overflow (compile 不可) |
 
-bcrun.tc を OS 上で再コンパイルしないなら問題なし。再コンパイル
-が必要なら、`pipeline_100kb.md` §AST pool outlier の改修
-(vm_run を関数分解 = ユーザ指示で out of scope) が先に必要。
+Hello World は nc=11 で peak 74 KB。peak は per-fn の AstNode pool +
+strtab に支配されるので、おおよそ nc に線形:
+- nc=11 → 74 KB (Hello World)
+- nc=1656 → **170 KB 程度** (bc2asm.tc 自身、推定)
+
+つまり**現実の OS self-host で必要な tcheck arena は 200 KB 程度
+で十分**。320 KB は依然オーバー。
+
+### 提案: arena を bc2asm.tc 級に絞る
+
+OS 全体を self-host する用途を想定して各段 arena を:
+
+| 段 | 提案 | 理由 |
+|---|---:|---|
+| tcheck    | **224 KB** | bc2asm.tc tcheck 推定 170 KB + 30% margin |
+| codegen   | **128 KB** | Hello World 77 KB + bc2asm.tc 想定でも < 128 KB |
+| bc2asm    | **144 KB** | Hello World peak 113 KB に余裕付き |
+| asm_pass1 | **288 KB** | peak 224 KB (固定 label pool 128 KB が支配) |
+| asm_pass2 | **320 KB 維持** | peak 298 KB に余裕なし |
+
+これで sh + tcc + tcheck = 40 + 25 + 240 = **305 KB / 480 KB**、
+余裕 175 KB。tcc-driven が動くようになる見込み。
+
+bcrun.tc を OS 上で再コンパイルしたいなら、まず **vartab を 256 以上
+に拡大** + AST pool 分割 (vm_run を関数分解、現状 ユーザ指示で out of
+scope) が要る。それは別タスク。
 
 ### 補足: 「断片化」より「絶対値ギリギリ」が支配項
 
