@@ -1,0 +1,231 @@
+// tcc.tc — TC compiler driver running on the OS itself.
+//
+// Usage (from sh): tcc <source.tc>
+// Output: /sd/a.out (raw RV32 binary, 8-byte arena/stack header
+// stripped on the way to becoming an executable image).
+//
+// Drives the full self-hosted compile pipeline:
+//
+//   parse → sigscan → cat-wrap → tcheck → codegen → bc2asm
+//        → cat (prelude + .s + tail) → asm_pass1
+//        → cat (lab + full × 3) → asm_pass2 → /sd/a.out
+//
+// Intermediate files live under /sd/_*.* and are NOT cleaned up on
+// exit so they're inspectable for debugging. Each spawned child
+// stage's wall time (microseconds → ms) is printed to stdout so the
+// user can see where the pipeline spends its time.
+
+import "../libtc/libtc.tc";
+
+// SIO MTIME at 1 MHz — readable from user space because there's no
+// MMU. Same approach as sdprobe.tc.
+var SIO_MTIME_L: u32 = 0xD00001B0u32;
+
+fn now_us() -> u32 {
+    return peek32(SIO_MTIME_L);
+}
+
+// --- Output helpers ---
+
+fn print_u32(v: u32) -> void {
+    print(v as i32);
+    return;
+}
+
+fn print_stage_ms(label: StringLiteral, dt_us: u32) -> void {
+    var ms: u32 = dt_us / 1000u32;
+    puts("  ");
+    puts(label);
+    var pad: i32 = 14 - len(label);
+    while pad > 0 { putchar(' ' as u8); pad = pad - 1; }
+    print_u32(ms);
+    puts(" ms\n");
+    return;
+}
+
+// --- StringLiteral → String helper ---
+
+fn s_lit(s: StringLiteral) -> String {
+    var n: i32 = len(s);
+    var u: U8Array = U8Array((n) as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(u, i, get(s, i));
+        i = i + 1;
+    }
+    var r: String = string_from_bytes(u, 0, n);
+    delete(u);
+    return r;
+}
+
+// --- argv builder for child stages ---
+// All stages read stdin / write stdout, so argv needs only argv[0]
+// for cosmetic reasons (task name, kmem dump label, etc.).
+
+fn argv1(name: StringLiteral) -> StringArray {
+    var sa: StringArray = StringArray(1u32);
+    set(sa, 0, s_lit(name));
+    return sa;
+}
+
+fn free_argv(sa: StringArray) -> void {
+    var n: i32 = len(sa);
+    var i: i32 = 0;
+    while i < n {
+        delete(get(sa, i) as U8Array);
+        i = i + 1;
+    }
+    delete(sa);
+    return;
+}
+
+// --- Inline file copy: copy bytes from in_path to ofd until EOF ---
+
+fn copy_to_fd(ofd: i32, in_path: StringLiteral, buf: U8Array) -> i32 {
+    var ifd: i32 = do_openat(0, in_path, 0);
+    if ifd < 0 {
+        eputs("tcc: open failed: ");
+        eputs(in_path);
+        eputs("\n");
+        return -1;
+    }
+    var total: i32 = 0;
+    while true {
+        var n: i32 = sys_read(ifd, buf, 4096);
+        if n <= 0 { break; }
+        sys_write(ofd, buf, n);
+        total = total + n;
+    }
+    do_close(ifd);
+    return total;
+}
+
+// --- run a single pipeline stage with stdin/stdout redirection ---
+//
+// Returns elapsed time in microseconds, or 0xFFFFFFFF on spawn/wait
+// failure.
+
+fn run_stage(label: StringLiteral, bin: StringLiteral,
+             in_path: StringLiteral, out_path: StringLiteral) -> u32 {
+    var t0: u32 = now_us();
+    var sa: StringArray = argv1(label);
+    var in_s: String = s_lit(in_path);
+    var out_s: String = s_lit(out_path);
+    var slot: i32 = do_spawn(bin, sa as u32, in_s, out_s);
+    delete(in_s as U8Array);
+    delete(out_s as U8Array);
+    if slot < 0 {
+        free_argv(sa);
+        eputs("tcc: spawn failed: ");
+        eputs(label);
+        eputs("\n");
+        return 0xFFFFFFFFu32;
+    }
+    // do_wait owns the spawn-side argv; the kernel cloned it into
+    // the child's frame, so we still own our `sa` and free it.
+    var rc: i32 = do_wait(slot);
+    free_argv(sa);
+    var t1: u32 = now_us();
+    return t1 - t0;
+}
+
+// --- main ---
+
+fn main(argv: StringArray) -> i32 {
+    if len(argv) < 2 {
+        eputs("usage: tcc <source.tc>\n");
+        return 1;
+    }
+    var src: String = get(argv, 1);
+
+    var t_start: u32 = now_us();
+    puts("tcc: stage timings\n");
+
+    // Stage 1: parse < src > /sd/_1.ast
+    //
+    // The child needs to read `src` (whatever path the caller gave
+    // us). We don't know if it's String or StringLiteral so we route
+    // it through s_lit conversion via copy when needed; here it's
+    // already a String from argv so just pass it through.
+    var t0: u32 = now_us();
+    var sa1: StringArray = argv1("parse");
+    var out_p1: String = s_lit("/sd/_1.ast");
+    var slot1: i32 = do_spawn("/bin/parse", sa1 as u32, src, out_p1);
+    delete(out_p1 as U8Array);
+    if slot1 < 0 { free_argv(sa1); eputs("tcc: parse spawn failed\n"); return 1; }
+    do_wait(slot1);
+    free_argv(sa1);
+    print_stage_ms("parse", now_us() - t0);
+
+    // Stage 2: sigscan < /sd/_1.ast > /sd/_1.th
+    var dt: u32 = run_stage("sigscan", "/bin/sigscan",
+                            "/sd/_1.ast", "/sd/_1.th");
+    print_stage_ms("sigscan", dt);
+
+    // Stage 3: cat-wrap (5 inputs, inline)
+    t0 = now_us();
+    var ofd: i32 = do_openat(0, "/sd/_1.wr", 1 | 64 | 512);
+    if ofd < 0 { eputs("tcc: cant open /sd/_1.wr\n"); return 1; }
+    var buf: U8Array = U8Array(4096u32);
+    copy_to_fd(ofd, "/empty_imports.txt", buf);
+    copy_to_fd(ofd, "/self_open.txt",     buf);
+    copy_to_fd(ofd, "/sd/_1.th",          buf);
+    copy_to_fd(ofd, "/wrap_close.txt",    buf);
+    copy_to_fd(ofd, "/sd/_1.ast",         buf);
+    do_close(ofd);
+    print_stage_ms("cat-wrap", now_us() - t0);
+
+    // Stage 4: tcheck < /sd/_1.wr > /sd/_2.tast
+    dt = run_stage("tcheck", "/bin/tcheck",
+                   "/sd/_1.wr", "/sd/_2.tast");
+    print_stage_ms("tcheck", dt);
+
+    // Stage 5: codegen
+    dt = run_stage("codegen", "/bin/codegen",
+                   "/sd/_2.tast", "/sd/_3.bc");
+    print_stage_ms("codegen", dt);
+
+    // Stage 6: bc2asm
+    dt = run_stage("bc2asm", "/bin/bc2asm",
+                   "/sd/_3.bc", "/sd/_4.s");
+    print_stage_ms("bc2asm", dt);
+
+    // Stage 7: cat-link (prelude + .s + tail, inline)
+    t0 = now_us();
+    ofd = do_openat(0, "/sd/_full.s", 1 | 64 | 512);
+    if ofd < 0 { eputs("tcc: cant open /sd/_full.s\n"); return 1; }
+    copy_to_fd(ofd, "/prelude.s",        buf);
+    copy_to_fd(ofd, "/sd/_4.s",          buf);
+    copy_to_fd(ofd, "/prelude_tail.s",   buf);
+    do_close(ofd);
+    print_stage_ms("cat-link", now_us() - t0);
+
+    // Stage 8: asm_pass1
+    dt = run_stage("asm_pass1", "/bin/asm_pass1",
+                   "/sd/_full.s", "/sd/_lab.s");
+    print_stage_ms("asm_pass1", dt);
+
+    // Stage 9: cat-p2 (lab + full×3, inline)
+    t0 = now_us();
+    ofd = do_openat(0, "/sd/_p2.in", 1 | 64 | 512);
+    if ofd < 0 { eputs("tcc: cant open /sd/_p2.in\n"); return 1; }
+    copy_to_fd(ofd, "/sd/_lab.s",  buf);
+    copy_to_fd(ofd, "/sd/_full.s", buf);
+    copy_to_fd(ofd, "/sd/_full.s", buf);
+    copy_to_fd(ofd, "/sd/_full.s", buf);
+    do_close(ofd);
+    print_stage_ms("cat-p2", now_us() - t0);
+
+    // Stage 10: asm_pass2 → /sd/a.out
+    dt = run_stage("asm_pass2", "/bin/asm_pass2",
+                   "/sd/_p2.in", "/sd/a.out");
+    print_stage_ms("asm_pass2", dt);
+
+    delete(buf);
+
+    var t_end: u32 = now_us();
+    puts("\ntcc: total ");
+    print_u32((t_end - t_start) / 1000u32);
+    puts(" ms → /sd/a.out\n");
+    return 0;
+}
