@@ -90,13 +90,33 @@ fn copy_to_fd(ofd: i32, in_path: StringLiteral, buf: U8Array) -> i32 {
         return -1;
     }
     var total: i32 = 0;
+    var iters: i32 = 0;
+    var t_read: u32 = 0u32;
+    var t_write: u32 = 0u32;
     while true {
+        var t0: u32 = now_us();
         var n: i32 = sys_read(ifd, buf, 4096);
+        var t1: u32 = now_us();
         if n <= 0 { break; }
         sys_write(ofd, buf, n);
+        var t2: u32 = now_us();
+        t_read = t_read + (t1 - t0);
+        t_write = t_write + (t2 - t1);
         total = total + n;
+        iters = iters + 1;
     }
     do_close(ifd);
+    eputs("    [");
+    eputs(in_path);
+    eputs(": ");
+    print_u32(total as u32);
+    eputs("B in ");
+    print_u32(iters as u32);
+    eputs(" iter, read=");
+    print_u32(t_read / 1000u32);
+    eputs("ms write=");
+    print_u32(t_write / 1000u32);
+    eputs("ms]\n");
     return total;
 }
 

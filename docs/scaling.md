@@ -399,6 +399,37 @@ arena 縮小を実装 (commit 後述) して tcc-driven をリトライ:
 → **やはり「tcc を sh の組み込みコマンド化」が筋が良い**。tcc 自体
 の実装は維持して、性能リファレンスとしての位置づけ。
 
+### 補足: 異常遅延の追加観測 (2026-04-29 instrumented tcc)
+
+`copy_to_fd` の各 sys_read/sys_write を `now_us()` で挟んで実測:
+
+```
+/prelude.s (mtfs XIP, 234 KB):
+  read   = 99970 ms / 59 iter = 1694 ms per 4 KB read
+  write  = 628105 ms / 59 iter = 10645 ms per 4 KB write
+/sd/_full.s (cat-p2 で 3 回読み):
+  1 回目: read=240.6 s write=780.3 s
+  2 回目: read=240.7 s write=752.4 s
+  3 回目: read=240.7 s write=739.9 s
+```
+
+3 回とも同じ時間 → **fragmentation や状態依存ではない。定常的に遅い**。
+
+理論計算: mtfs_read + block_read の byte-by-byte ループは 1 byte
+あたり ~200 ns (150 MHz 時)、4 KB なら 1.6 ms 程度のはず。実測 1.7 sec
+は **1000× 遅い**。
+
+仮説:
+1. **CPU が実際は 150 MHz で動いていない** (sh-driven asm_pass1 は
+   27s なので少なくとも sh コンテキストでは PLL 効いてる)
+2. **TC compiler の呼び出し ABI が想定より遥かに重い** (関数呼び出し
+   per-byte で何百サイクルも)
+3. **kernel 側の何か** (fatfs / block_sd / scheduler) が tcc コンテキスト
+   下でだけ著しく時間を食う
+
+未解明。次セッションで kernel に per-syscall タイマーを仕込んで切り
+分け予定。
+
 ### 補足: 「断片化」より「絶対値ギリギリ」が支配項
 
 正確には両方が効くが、絶対量の余裕でほぼ決まる:
