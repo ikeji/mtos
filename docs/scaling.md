@@ -399,6 +399,63 @@ arena 縮小を実装 (commit 後述) して tcc-driven をリトライ:
 → **やはり「tcc を sh の組み込みコマンド化」が筋が良い**。tcc 自体
 の実装は維持して、性能リファレンスとしての位置づけ。
 
+### 訂正: K7 当時の per-stage timing は実は遅かった (2026-04-30)
+
+最初「K7 時の sh-driven full pipeline 127 s」に対して各段が <1 s で
+完走するイメージで議論していたが、`tcc-driven parse 48 s` を見て
+「sh-driven なら 1 s のはずなのに 48× 遅い」と誤った前提で深堀り
+した。実機で sh-driven full pipeline を再走したところ **123 s** で、
+K7 とほぼ同じ:
+
+```
+parse → sigscan → cat-wrap → tcheck → codegen → bc2asm
+     → cat-link → asm_pass1 → cat-p2 → asm_pass2 → /sd/HW
+
+sh-driven, with PLL_SYS @ 150 MHz: 123 sec (K7 era 127 sec)
+```
+
+つまり K7 当時から各段の所要時間はこの程度だった。逆算すると:
+
+| 段 | 所要 (推定) |
+|---|---:|
+| parse | ~31 s |
+| sigscan | ~10 s |
+| cat-wrap | ~5 s |
+| tcheck | ~5 s |
+| codegen | ~5 s |
+| bc2asm | ~5 s |
+| cat-link | ~10 s |
+| asm_pass1 | ~27 s |
+| cat-p2 | ~10 s |
+| asm_pass2 | ~15 s |
+| /sd/HW exec | ~1 s |
+
+`echo hello world` (UART 出力のみ、12 byte) でも **11 s かかる**。
+これが今 PLL_SYS 150 MHz 下での spawn + tiny task の baseline。
+将来の最適化対象 (おそらく TC ABI の関数呼び出しコストの高さが
+原因)。
+
+### 残った tcc-driven 固有の slowdown
+
+sh-driven baseline と比較した tcc-driven 倍率:
+
+| 段 | sh-driven | tcc-driven | 倍率 |
+|---|---:|---:|---:|
+| parse | 31 s | 48 s | 1.5× (許容) |
+| asm_pass1 | 27 s | 3841 s | **142×** |
+| cat-link | 10 s | 738 s | **74×** |
+
+parse の 1.5× は spawn overhead の僅かな差で説明できるが、
+**inline で大量データを扱う段** (cat-link) と **後続の重 task**
+(asm_pass1) で激遅。
+
+仮説: tcc が `do_openat` / `sys_read` / `sys_write` を inline で
+大量に呼ぶと、毎回 tcc の task arena から 4 KB buffer 経由でデータ
+が往復する。kernel arena 側でも fatfs の secbuf alloc/free が
+繰り返される。sh-driven cat だと子プロセスとして spawn されて専有
+arena で動くため、kernel ↔ user の境界を超える allocation pattern
+が違う可能性。
+
 ### 補足: 異常遅延の追加観測 (2026-04-29 instrumented tcc)
 
 `copy_to_fd` の各 sys_read/sys_write を `now_us()` で挟んで実測:
