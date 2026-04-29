@@ -85,6 +85,11 @@ struct Task {
     t_ram_sz:  i32,
     t_stk_sz:  i32,
     wake_time: u32,
+    // Exit code captured on STATE_DONE transition. Read by parents
+    // that call sys_wait *after* the child has already exited; for
+    // parents that block in sys_wait, the kernel pokes their saved
+    // a0 directly when waking them in sched_task_exit.
+    exit_code: i32,
 }
 
 var g_num_tasks: i32 = 0;
@@ -884,7 +889,7 @@ export fn sched_init(max: i32) -> void {
         set(g_tasks, i,
             Task(0, STATE_UNUSED, -1,
                  0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0, 0, 0));
+                 0, 0, 0, 0, 0, 0, 0, 0, 0));
         i = i + 1;
     }
     return;
@@ -952,8 +957,22 @@ export fn sched_spawn(f: u32) -> i32 {
 // context-switch to it. If the target is already done we return 0 to
 // signal "no switch needed" and leave the caller in STATE_READY.
 export fn sched_wait(target: i32) -> u32 {
-    if target < 0 || target >= g_num_tasks { return 0u32; }
-    if state(get(g_tasks, target)) == STATE_DONE { return 0u32; }
+    if target < 0 || target >= g_num_tasks {
+        // Bad slot id: leave caller's a0 as -1 to distinguish from a
+        // legitimate exit_code=0. The trap handler no longer zeroes
+        // a0 unconditionally, so this poke survives the resume.
+        poke32(frame(get(g_tasks, g_current)) + 40u32, 0xFFFFFFFFu32);
+        return 0u32;
+    }
+    if state(get(g_tasks, target)) == STATE_DONE {
+        // Target already exited; deliver the saved exit_code via the
+        // caller's saved a0 so msh set -e and similar drivers can
+        // see real failures.
+        var tt: Task = get(g_tasks, target);
+        var cur_t: Task = get(g_tasks, g_current);
+        poke32(frame(cur_t) + 40u32, exit_code(tt) as u32);
+        return 0u32;
+    }
 
     var cur: Task = get(g_tasks, g_current);
     state(cur, STATE_WAITING);
@@ -1091,22 +1110,33 @@ fn sched_task_exit() -> u32 {
     // the frame, then trace "[x slot=code]" so parse-on-OS debug
     // sessions can see whether a task exited cleanly or not.
     var cur: Task = get(g_tasks, g_current);
-    var exit_code: i32 = peek32(frame(cur) + 40u32) as i32;
+    var ec: i32 = peek32(frame(cur) + 40u32) as i32;
     if g_mux_enabled != 0 {
-        kdbg_exit(g_current, exit_code);
+        kdbg_exit(g_current, ec);
     }
+
+    // Persist on the slot so a future sys_wait that arrives after
+    // STATE_DONE can still report the right value (msh set -e relies
+    // on this; parents that already blocked in sys_wait get it via
+    // the frame[40] poke below before they resume).
+    exit_code(cur, ec);
 
     slot_free_allocs(g_current);
     state(cur, STATE_DONE);
     frame(cur, 0);
 
     // Wake any tasks that were waiting on the one we just finished.
+    // Overwrite their saved a0 with the child's exit code so they
+    // see it as the return value of sys_wait (the trap handler used
+    // to zero a0 here; we removed that so the kernel-set value
+    // survives).
     var w: i32 = 0;
     while w < g_num_tasks {
         var wt: Task = get(g_tasks, w);
         if state(wt) == STATE_WAITING && wait_on(wt) == g_current {
             state(wt, STATE_READY);
             wait_on(wt, -1);
+            poke32(frame(wt) + 40u32, ec as u32);
         }
         w = w + 1;
     }

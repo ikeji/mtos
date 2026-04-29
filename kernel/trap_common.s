@@ -251,7 +251,12 @@ _ecall_wait:
     call _ecall_enter
     lw   a0, 40(s0)
     call sys_wait_handler__i32
-    sw   zero, 40(s0)        # saved a0 = 0 (success)
+    # NOTE: do NOT clobber a0 here. sched_wait pokes the caller's
+    # frame[40] with the target's exit_code (already-done path) or
+    # leaves it for sched_task_exit to fill in when the target later
+    # exits and wakes the caller (still-running path). Either way,
+    # the trap_restore at the end loads a0 from frame[40] and the
+    # caller sees the real exit code.
     beqz a0, _wait_no_switch
     la   t0, _switch_frame
     sw   a0, 0(t0)
