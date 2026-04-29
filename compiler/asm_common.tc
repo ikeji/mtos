@@ -48,9 +48,13 @@ var MAX_NAME_POOL: i32 = 98304;
 // Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
 // definitions; the g_numlab table is `digit * NUM_LAB_PER_DIGIT + idx`.
 // Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
-// for every conditional branch). 1024/digit is the original safe
-// value and worth preserving — shrinking to 256 silently overflowed
-// into digit 1 and corrupted jump targets at boot.
+// for every conditional branch).
+//
+// 2026-04-30: tried 512, asm_pass1.tc itself overflowed digit 0
+// (>512 conditional branches in the assembler source). Reverted
+// to 1024 — the kernel's measured 404 max underestimated; compiling
+// the assembler itself is the real worst case. The bounds check in
+// define_numlab below catches future regressions cleanly.
 var NUM_LAB_PER_DIGIT: i32 = 1024;
 
 // ===== Output mode (set by ; raw / ; load_base directives) =====
