@@ -183,6 +183,14 @@ do_readdir__StringLiteral__u32__i32:
     ecall
     ret
 
+# do_uptime_us() → u32 — microseconds since boot (low 32 bits, wraps
+# at ~71 min). Conversion to us is done in kernel/kern_uptime_us.
+    .globl do_uptime_us
+do_uptime_us:
+    li   a7, 270
+    ecall
+    ret
+
 # peek/poke builtins
     .globl peek8__u32
 peek8__u32:

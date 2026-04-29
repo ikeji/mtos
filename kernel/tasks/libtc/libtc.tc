@@ -34,6 +34,7 @@ export fn do_close(fd: i32) -> i32;
 export fn do_wait(slot: i32) -> i32;
 export fn do_pipe(fds_addr: u32) -> i32;
 export fn do_mux_enable(on: i32) -> void;
+export fn do_uptime_us() -> u32;
 
 export fn puts(s: StringLiteral) -> void {
     var slen: i32 = len(s);

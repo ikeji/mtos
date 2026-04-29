@@ -1169,3 +1169,10 @@ export fn sys_nanosleep_handler(ms: i32) -> i32 {
 export fn kern_read_mtime() -> u32 {
     return read_mtime();
 }
+
+// Microseconds since boot (low 32 bits). ticks_per_ms is platform-
+// specific (virt 10000, pico2 1000); divide by 1000 to get
+// ticks-per-us. Wraps at ~71 minutes regardless of platform.
+export fn kern_uptime_us() -> u32 {
+    return read_mtime() / (ticks_per_ms() / 1000u32);
+}

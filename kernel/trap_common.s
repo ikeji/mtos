@@ -99,6 +99,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_nanosleep
     li   t1, 87
     beq  t0, t1, _ecall_unlink
+    li   t1, 270
+    beq  t0, t1, _ecall_uptime_us
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -184,6 +186,13 @@ _ecall_unlink:
     call _ecall_enter
     lw   a0, 40(s0)         # path addr (task's a0)
     call vfs_unlink__String
+    sw   a0, 40(s0)
+    j    _ecall_leave_advance
+
+# sys_uptime_us (a7 = 270) — returns microseconds since boot in a0.
+_ecall_uptime_us:
+    call _ecall_enter
+    call kern_uptime_us
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 
