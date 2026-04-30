@@ -188,7 +188,15 @@ fn run(src_path: String, strip_out_path: String) -> i32 {
     }
 
     var reader: SourceReader = SourceReader_new(src_fd);
+    // Pass 1a collects refs inline (backward ones resolved
+    // immediately, forward ones queued in g_def_*) so we don't need
+    // a second source walk. The g_collecting_refs gate is on for
+    // the duration of pass 1a in argv mode; for stdin mode it stays
+    // off and pass1_scan_operand_refs is a no-op (refs would be
+    // unused on the host path anyway).
+    if have_path != 0 { asm_set_collecting_refs(1); }
     var total_bytes: i32 = process_source(reader);
+    if have_path != 0 { asm_set_collecting_refs(0); }
     close(reader);
     if have_path != 0 { do_close(src_fd); }
 
@@ -197,29 +205,22 @@ fn run(src_path: String, strip_out_path: String) -> i32 {
     asm_set_src_bytes(total_bytes);
 
     if have_path != 0 {
-        // Phase 3 second source pass: every label is now in g_labels
-        // so find_label resolves forward refs. Walk the source again
-        // through asm_run_line — define_label is idempotent, so we
-        // don't grow g_labels — just record the previously-deferred
-        // edges (now backward) into g_refs.
-        var fd2: i32 = do_openat(0 - 100, src_path, 0);
-        if fd2 >= 0 {
-            asm_reset_for_ref_pass();
-            asm_set_collecting_refs(1);
-            var reader2: SourceReader = SourceReader_new(fd2);
-            process_source(reader2);
-            close(reader2);
-            do_close(fd2);
-            asm_set_collecting_refs(0);
+        // Build the label hash table now so the deferred-ref drain +
+        // Phase 5's per-line define_label-revisit are O(1). Pass 2
+        // calls asm_finalize_labels too (after reading .lab); doing
+        // it here is benign — the table is rebuilt from the same
+        // g_labels content.
+        asm_finalize_labels();
 
-            // The ref-pass reset every label's addr back to its
-            // intra-section position. Re-run base + fixup so labels
-            // are absolute again before BFS / Phase 5.
-            asm_compute_sec_bases();
-            asm_fixup_labels();
-        }
+        // Drain the forward-ref queue. Each entry is now resolvable
+        // via the hash, so this is O(N_deferred) amortised.
+        asm_resolve_deferred_refs();
 
         asm_compute_live();
+        // Done with the ref graph + deferred queue. Free ~88 KB so
+        // Phase 5's strip-pass StringBuffer + line buffer fit in the
+        // asm_pass1 arena (200 KB on pico2).
+        asm_release_ref_state();
 
             // Phase 5: emit stripped source if the caller asked for
             // it. The strip walk produces live-only sec_pos values,

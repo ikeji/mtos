@@ -196,11 +196,25 @@ var g_collecting_refs: i32 = 0;
 // — locals follow owner liveness, directives are always kept.
 var g_label_just_defined: i32 = 0;
 
-// (Deferred forward-ref queue removed; we use a 2nd source pass
-// instead. The queue's MAX_DEFERRED + name pool ate too much arena
-// for the self-host build — every label appears as a forward ref
-// somewhere, and the 90+ KB queue pushed asm_pass1 OOM. Two source
-// reads of /sd/full.s cost ~30 s on pico2 SD but stay correct.)
+// Deferred forward-ref queue. record_ref appends (owner, name) here
+// when find_label fails (target not yet defined); resolve_deferred
+// drains the queue after pass 1a once every label is in g_labels.
+// Replaces the 2nd full source walk that the original Phase 3
+// design used — same data, no SD round trip.
+//
+// Sized for the current self-host worst case (~1500 forward refs
+// in runtime.s + tasks). MAX_DEFERRED 2048 = 1.5× margin; pool
+// initial 4 KB doubles on demand. Memory cost: 3 × 2048 × 4 =
+// 24 KB I32Arrays + name pool ~30-60 KB. Easily fits in the
+// 196 KB asm_pass1 task arena.
+var MAX_DEFERRED: i32 = 2048;
+var g_def_owner:    I32Array = 0 as I32Array;
+var g_def_name_off: I32Array = 0 as I32Array;
+var g_def_name_len: I32Array = 0 as I32Array;
+var g_ndeferred: i32 = 0;
+var g_def_pool: U8Array = 0 as U8Array;
+var g_def_pool_pos: i32 = 0;
+var DEF_POOL_INITIAL_KB: i32 = 4;
 
 // Liveness bitmap: 1 bit per label (MAX_LABELS = 4096 → 4096/32 = 128
 // i32 words = 512 bytes). Populated by asm_compute_live() via BFS
@@ -340,22 +354,131 @@ export fn asm_set_g_pos(v: i32) -> void { g_pos = v; return; }
 export fn asm_set_sec_pos(sec: i32, v: i32) -> void { set(g_sec_pos, sec, v); return; }
 export fn asm_clear_label_just_defined() -> void { g_label_just_defined = 0; return; }
 export fn asm_label_just_defined() -> i32 { return g_label_just_defined; }
-export fn asm_set_collecting_refs(v: i32) -> void { g_collecting_refs = v; return; }
+export fn asm_set_collecting_refs(v: i32) -> void {
+    g_collecting_refs = v;
+    if v != 0 { ensure_ref_state(); }
+    return;
+}
 
-// Record a (from = g_owner_idx) → (to = find_label(name)) edge if
-// the target is already in g_labels (backward ref). Forward refs
-// (target not yet defined) are silently dropped here — the second
-// source pass in asm_pass1.run picks them up by re-walking the
-// source through asm_run_line after every label is established.
+// Lazily allocate the ref + deferred-queue state. asm_init_common no
+// longer pre-allocates these (~88 KB total) so pass 2 / stdin pass 1
+// — neither of which collects refs — don't pay the cost. First
+// asm_set_collecting_refs(1) wires it up.
+fn ensure_ref_state() -> void {
+    if g_refs as u32 != 0u32 { return; }
+    g_refs         = I32Array((MAX_REFS) as u32);
+    g_def_owner    = I32Array((MAX_DEFERRED) as u32);
+    g_def_name_off = I32Array((MAX_DEFERRED) as u32);
+    g_def_name_len = I32Array((MAX_DEFERRED) as u32);
+    g_def_pool     = U8Array((DEF_POOL_INITIAL_KB * 1024) as u32);
+    return;
+}
+
+// Grow the deferred name pool (dynamic, doubling) to fit `needed` bytes.
+fn ensure_def_pool_capacity(needed: i32) -> void {
+    var cap: i32 = len(g_def_pool);
+    if needed <= cap { return; }
+    var new_cap: i32 = cap * 2;
+    if new_cap < needed { new_cap = needed; }
+    var new_buf: U8Array = U8Array(new_cap as u32);
+    var i: i32 = 0;
+    while i < g_def_pool_pos {
+        set(new_buf, i, get(g_def_pool, i));
+        i = i + 1;
+    }
+    delete(g_def_pool);
+    g_def_pool = new_buf;
+    return;
+}
+
+// Record a (from = g_owner_idx) → (to = name) edge. If the target
+// is already in g_labels (backward ref) we resolve and append to
+// g_refs immediately. If it's not yet defined (forward ref) we copy
+// the name into g_def_pool and queue the (owner, off, len) tuple
+// for resolve_deferred to pick up at end of pass 1a.
 fn record_ref(name: U8Array, nlen: i32) -> void {
     if g_pass != 1 { return; }
+    if g_collecting_refs == 0 { return; }
     if g_phase4_active != 0 { return; }
     if g_owner_idx < 0 { return; }
     var idx: i32 = find_label(name, nlen);
-    if idx < 0 { return; }
-    if g_nrefs >= MAX_REFS { return; }
-    set(g_refs, g_nrefs, (g_owner_idx << 16) | (idx & 0xFFFF));
-    g_nrefs = g_nrefs + 1;
+    if idx >= 0 {
+        if g_nrefs >= MAX_REFS { return; }
+        set(g_refs, g_nrefs, (g_owner_idx << 16) | (idx & 0xFFFF));
+        g_nrefs = g_nrefs + 1;
+        return;
+    }
+    if g_ndeferred >= MAX_DEFERRED { return; }
+    ensure_def_pool_capacity(g_def_pool_pos + nlen);
+    var off: i32 = g_def_pool_pos;
+    var i: i32 = 0;
+    while i < nlen { set(g_def_pool, (off + i), get(name, i)); i = i + 1; }
+    g_def_pool_pos = g_def_pool_pos + nlen;
+    set(g_def_owner,    g_ndeferred, g_owner_idx);
+    set(g_def_name_off, g_ndeferred, off);
+    set(g_def_name_len, g_ndeferred, nlen);
+    g_ndeferred = g_ndeferred + 1;
+    return;
+}
+
+// Resolve every entry queued in the deferred-ref buffer and append
+// the resolved edges to g_refs. Called once after pass 1a's source
+// walk so every label is now in g_labels. By that time
+// asm_finalize_labels() has built g_lab_hash, so each find_label
+// is O(1) — the original 2-source-pass design's biggest cost was
+// the linear find_label per operand, which this lifts.
+export fn asm_resolve_deferred_refs() -> void {
+    var d: i32 = 0;
+    while d < g_ndeferred {
+        var owner: i32  = get(g_def_owner, d);
+        var off: i32    = get(g_def_name_off, d);
+        var nlen: i32   = get(g_def_name_len, d);
+        var tmp: U8Array = U8Array(nlen as u32);
+        var i: i32 = 0;
+        while i < nlen { set(tmp, i, get(g_def_pool, (off + i))); i = i + 1; }
+        var idx: i32 = find_label(tmp, nlen);
+        delete(tmp);
+        if idx >= 0 {
+            if g_nrefs < MAX_REFS {
+                set(g_refs, g_nrefs, (owner << 16) | (idx & 0xFFFF));
+                g_nrefs = g_nrefs + 1;
+            }
+        }
+        d = d + 1;
+    }
+    g_ndeferred = 0;
+    g_def_pool_pos = 0;
+    return;
+}
+
+// Release the ref-graph + deferred-queue state. Call this after
+// asm_compute_live() — Phase 5 (source strip) doesn't read g_refs or
+// the deferred queue, and freeing ~88 KB here is the difference
+// between fitting in the asm_pass1 arena and OOM during strip.
+export fn asm_release_ref_state() -> void {
+    if g_refs as u32 != 0u32 {
+        delete(g_refs);
+        g_refs = 0 as I32Array;
+    }
+    if g_def_owner as u32 != 0u32 {
+        delete(g_def_owner);
+        g_def_owner = 0 as I32Array;
+    }
+    if g_def_name_off as u32 != 0u32 {
+        delete(g_def_name_off);
+        g_def_name_off = 0 as I32Array;
+    }
+    if g_def_name_len as u32 != 0u32 {
+        delete(g_def_name_len);
+        g_def_name_len = 0 as I32Array;
+    }
+    if g_def_pool as u32 != 0u32 {
+        delete(g_def_pool);
+        g_def_pool = 0 as U8Array;
+    }
+    g_nrefs = 0;
+    g_ndeferred = 0;
+    g_def_pool_pos = 0;
     return;
 }
 
@@ -1603,7 +1726,13 @@ fn asm_init_common() -> void {
     g_numlab_zero  = I32Array((NUM_LAB_PER_DIGIT) as u32);
     g_numlab_other = I32Array((9 * NUMLAB_OTHER_PER_DIGIT) as u32);
     g_numlab_count = I32Array(10);
-    g_refs         = I32Array((MAX_REFS) as u32);
+    // g_refs / g_def_* lazily allocated by ensure_ref_state() the
+    // first time asm_set_collecting_refs(1) is called. ~88 KB.
+    g_refs         = 0 as I32Array;
+    g_def_owner    = 0 as I32Array;
+    g_def_name_off = 0 as I32Array;
+    g_def_name_len = 0 as I32Array;
+    g_def_pool     = 0 as U8Array;
 
     g_pos              = 0;
     g_pass             = 0;
@@ -1615,6 +1744,8 @@ fn asm_init_common() -> void {
     g_cur_line         = 0;
     g_nrefs            = 0;
     g_owner_idx        = 0 - 1;
+    g_ndeferred        = 0;
+    g_def_pool_pos     = 0;
     set(g_sec_pos, 0, 0);
     set(g_sec_pos, 1, 0);
     set(g_sec_pos, 2, 0);

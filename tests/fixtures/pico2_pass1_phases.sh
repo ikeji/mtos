@@ -15,3 +15,4 @@ cat /prelude.s /sd/4.s /prelude_tail.s > /sd/full.s
 asm_pass1 < /sd/full.s > /sd/lab.s.A
 asm_pass1 /sd/full.s > /sd/lab.s.B
 asm_pass1 /sd/full.s /sd/strip.s > /sd/lab.s.C
+echo BENCH_DONE
