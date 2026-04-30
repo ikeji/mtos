@@ -26,9 +26,6 @@ fn km_dump_peak() -> void;
 // (host) and kernel/tasks/task_crt0.s (OS).
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
-// Direct write syscall (bypasses StringBuffer) for emitting source
-// lines verbatim from the strip pass.
-fn sys_write(fd: i32, buf: U8Array, n: i32) -> i32;
 
 // Process the source coming from `reader` line by line. Calls
 // asm_run_line which (in pass 1) collects labels, advances section
@@ -87,6 +84,11 @@ fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
     // count cursors so no pre-strip entries linger.
     asm_clear_numlab_counts();
 
+    // Streaming output buffer: emits to out_fd once a 1 KB chunk is
+    // ready, vs raw sys_write per source line which costs a fatfs
+    // round-trip every emit. emit_n auto-flushes when the buffer fills.
+    var sb: StringBuffer = StringBuffer_new(out_fd);
+
     var line: U8Array = U8Array(4092);
     var lineno: i32 = 0;
     var total_emitted: i32 = 0;
@@ -112,7 +114,7 @@ fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
             // very top of the source and never advance any cursor —
             // emit verbatim and skip asm_run_line.
             if asm_parse_meta_directive(line, llen) == 1 {
-                sys_write(out_fd, line, llen);
+                emit_n(sb, line, 0, llen);
                 total_emitted = total_emitted + llen;
             } else {
                 // Snapshot the per-line state so we can rewind a dead
@@ -142,7 +144,7 @@ fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
                 // .align). Always keep — these don't move the cursor.
 
                 if keep != 0 {
-                    sys_write(out_fd, line, llen);
+                    emit_n(sb, line, 0, llen);
                     total_emitted = total_emitted + llen;
                 } else if bytes_added > 0 {
                     // Rewind cursor advances so the live-only sec_pos
@@ -153,6 +155,10 @@ fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
             }
         }
     }
+    // Flush the trailing buffer contents to out_fd. write() takes an fd
+    // argument; passing the same out_fd we constructed the SB with.
+    write(sb, out_fd);
+    destroy(sb);
     delete(line);
     asm_end_strip_pass();
     return total_emitted;
