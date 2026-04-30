@@ -515,37 +515,39 @@ peak memory + 時間。**ターゲット: 各段 ≤ 10 sec (pico2 実機) / ≤
 (bcrun.tc を除く worst case = bc2asm.tc)**。bench は host 計測なので
 時間は相対的な指標、メモリは pico2 でも同じ。
 
-### 進捗 (2026-04-30 メモリ削減 Phase 1)
+### 進捗 (2026-04-30 メモリ削減 Phase 1+2)
 
-bc2asm/tcheck/codegen は 100 KB ターゲット達成 or それに近づいた。
-asm_pass1/2 は 150 KB 圏まで削減 (100 KB は構造的に困難)。
+bc2asm 達成。tcheck/codegen は 100 KB に約 30 KB の差。
+asm_pass1 hello は 150 KB 達成。asm_pass1 bc2asm + asm_pass2 はそれぞれ
+~15 KB / ~50 KB の差で 150 KB 圏内。
 
 #### hello.tc (366 byte, 入力小)
 
-| 段 | baseline | 現在 | 100 KB |
-|---|---:|---:|---:|
-| parse     |   - |   - | ✓ (旧 14 KB) |
-| sigscan   |   9 |   9 | ✓ |
-| tcheck    |  73 |  69 | ✓ |
-| codegen   |  76 |  68 | ✓ |
-| bc2asm    | 111 |  79 | ✓ |
-| asm_pass1 | 218 | 186 | ❌ 1.9× |
-| asm_pass2 | 298 | 234 | ❌ 2.3× |
+| 段 | baseline | 現在 | 100 KB | 150 KB |
+|---|---:|---:|---:|---:|
+| parse     |   - |   - | ✓ (旧 14 KB) | ✓ |
+| sigscan   |   9 |   9 | ✓ | ✓ |
+| tcheck    |  73 |  69 | ✓ | ✓ |
+| codegen   |  76 |  68 | ✓ | ✓ |
+| bc2asm    | 111 |  79 | ✓ | ✓ |
+| asm_pass1 | 218 | **149** | ❌ 1.5× | ✓ |
+| asm_pass2 | 298 | 168 | ❌ 1.7× | 残 18 KB |
 
 #### bc2asm.tc (~50 KB, 実 worst case)
 
-| 段 | baseline | 現在 | 100 KB |
-|---|---:|---:|---:|
-| parse     |   - |   - | (~14 KB 一定) |
-| sigscan   |  10 |  10 | ✓ |
-| tcheck    | 190 | 135 | ❌ 1.4× |
-| codegen   | 185 | 126 | ❌ 1.3× |
-| bc2asm    | 122 |  90 | ✓ |
-| asm_pass1 | 249 | 217 | ❌ 2.2× |
-| asm_pass2 | 328 | 264 | ❌ 2.6× |
+| 段 | baseline | 現在 | 100 KB | 150 KB |
+|---|---:|---:|---:|---:|
+| parse     |   - |   - | (~14 KB 一定) | ✓ |
+| sigscan   |  10 |  10 | ✓ | ✓ |
+| tcheck    | 190 | 135 | ❌ 1.4× | 残 -15 KB |
+| codegen   | 185 | 126 | ❌ 1.3× | ✓ |
+| bc2asm    | 122 |  90 | ✓ | ✓ |
+| asm_pass1 | 249 | 165 | ❌ 1.7× | 残 15 KB |
+| asm_pass2 | 328 | 197 | ❌ 2.0× | 残 47 KB |
 
 ### 適用した削減 (commit 順)
 
+**Phase 1 — 既存 cap の縮小:**
 1. **bc2asm.tc instrs 16384 → 8192** (-32 KB): 実 in=1705 max に対し
    2048 命令分で 20% margin。bcrun.tc は除外。
 2. **tcheck/codegen AstNodeArray pool 3072/4096 → 2048** (-4/-8 KB):
@@ -557,25 +559,39 @@ asm_pass1/2 は 150 KB 圏まで削減 (100 KB は構造的に困難)。
    MAX_NAME_POOL を実測 90 KB に近い 96 KB に絞る。LAB_HASH_SIZE は
    MAX_LABELS の 2x で十分なので 16384 → 8192。
 
+**Phase 2 — 構造再設計:**
+5. **Label struct bit-pack 4 → 2 i32** (-17 KB on bc2asm.tc): 16 byte
+   payload → 8 byte payload で `32 → 16 byte bucket`、per-label cost を
+   半減。name_off (18 bits) + name_len (8 bits) + section (2 bits) を
+   1 i32 に詰める。3000 labels なら 48 KB 削減。
+6. **numlab storage を digit 0 / others 分離** (-33 KB): 実測 digit 0
+   が >500 で digit 1-9 は ~0-1。固定 10×1024 配列 (40 KB) を
+   {1024 digit 0} + {9×64 others} = ~7 KB に。
+7. **LAB_HASH を finalize 時に動的サイズ** (-16〜28 KB on asm_pass2):
+   実 g_nlabels の next-pow-2 × 2 で alloc。hello.tc は 64 entries =
+   256 B、bc2asm.tc は 2048 entries = 8 KB 使用 (旧 32 KB 固定)。
+
 ### 残 gap と原因
 
-- **tcheck/codegen 26〜35 KB 超過**: 32 KB strtab (per-fn rollback 後
+- **tcheck bc2asm.tc 35 KB 超過**: 32 KB strtab (per-fn rollback 後
   の sp_max=26244 に合わせ済み) + per-fn kmalloc'd fntab + transients
   が支配。strtab を perm/ephemeral 分離するか kmalloc per-fn 化する
   refactor で削減可。
-- **asm_pass1/2 86〜164 KB 超過**: g_lab_names 96 KB + g_labels 64 KB
-  + g_numlab 40 KB の固定上限が支配。NUM_LAB_PER_DIGIT を 512 に
-  絞ろうとしたが asm_pass1.tc 自身が digit 0 で 512 超 → 1024 維持。
-  per-label kmalloc 化で実 peak のみ払う形にすれば最大 30 KB 削減
-  可能。
+- **codegen bc2asm.tc 26 KB 超過**: tcheck と同じ strtab 由来
+- **asm_pass1 bc2asm.tc 15 KB 超過**: g_lab_names 96 KB が支配。
+  実 usage 44 KB なので動的サイズ化で 50 KB 削減可能だが、pass1 は
+  入力読みながら累積 alloc するので動的化は技術的に困難。
+- **asm_pass2 47 KB 超過**: pass1 と同じ + LAB_HASH (動的なので
+  入力依存)。
 
 ### 削減対象優先順 (残)
 
-1. **asm_pass2** (234/264 KB → 100 KB): per-label kmalloc 化が必要。
-   構造的に 100 KB は厳しく、150 KB が現実線
-2. **asm_pass1** (186/217 KB → 100 KB): asm_pass2 と同じ
-3. **tcheck/codegen** (135/126 KB → 100 KB): strtab 構造変更が必要
-4. **parse の km_dump_peak 追加**: 現状未測定
+1. **g_lab_names 動的化** (asm_pass1/2 50 KB 削減見込): pass1 は
+   累積 alloc なので「初期 32 KB + 必要に応じて re-alloc + memcpy」
+   pattern。複雑だが効果大
+2. **strtab restructure** (tcheck/codegen 30 KB 削減): per-fn 完全
+   分離、または perm/ephemeral cursor
+3. **parse の km_dump_peak 追加**: 現状未測定
 
 時間ターゲット (pico2 10s) は別途 pico2 での timing 計測後に検討。
 host virt の wall time は相対指標として shrink 前後の差を確認するのに
