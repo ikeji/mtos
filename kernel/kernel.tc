@@ -49,6 +49,10 @@ fn read_mtime() -> u32 {
     return peek32(MTIME_LO);
 }
 
+fn read_mtime_hi() -> u32 {
+    return peek32(MTIME_HI);
+}
+
 // 10 MHz CLINT: 10000 ticks per millisecond
 fn ticks_per_ms() -> u32 {
     return 10000u32;

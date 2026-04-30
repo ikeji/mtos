@@ -1,3 +1,3 @@
 EXTRA_GUEST_TASKS += codegen
-TASK_ARENA_codegen := 327680
+TASK_ARENA_codegen := 131072
 TASK_STACK_codegen := 16384

@@ -1,3 +1,3 @@
 EXTRA_GUEST_TASKS += tcheck
-TASK_ARENA_tcheck := 327680
+TASK_ARENA_tcheck := 131072
 TASK_STACK_tcheck := 16384

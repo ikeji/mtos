@@ -22,6 +22,7 @@ fn vfs_close(fd: i32) -> i32;
 // Platform-provided (linked at build time)
 fn rearm_timer() -> void;
 fn read_mtime() -> u32;
+fn read_mtime_hi() -> u32;
 fn ticks_per_ms() -> u32;
 
 // Scheduler state (private to this module)
@@ -1200,9 +1201,27 @@ export fn kern_read_mtime() -> u32 {
     return read_mtime();
 }
 
-// Microseconds since boot (low 32 bits). ticks_per_ms is platform-
-// specific (virt 10000, pico2 1000); divide by 1000 to get
-// ticks-per-us. Wraps at ~71 minutes regardless of platform.
+// Microseconds since boot (low 32 bits — wraps at ~71 minutes).
+// Reads 64-bit mtime so the divide-by-ticks-per-us doesn't lose data
+// when the low 32 bits of the hardware counter have wrapped (every
+// ~33 sec on pico2 with MTIME at 131.5 MHz). Standard "hi-lo-hi
+// reread" pattern handles the rare race where a wrap happens between
+// the two reads.
+//
+// Math: us = (hi << 32 | lo) / div, low 32 bits
+//     = hi × (2^32 / div) + (hi × (2^32 % div) + lo) / div
+// 2^32 itself doesn't fit in u32, so we compute (2^32 / div) and
+// (2^32 % div) from max_u32 = 2^32 - 1 with a carry adjustment.
 export fn kern_uptime_us() -> u32 {
-    return read_mtime() / (ticks_per_ms() / 1000u32);
+    var hi: u32 = read_mtime_hi();
+    var lo: u32 = read_mtime();
+    var hi2: u32 = read_mtime_hi();
+    if hi != hi2 { lo = read_mtime(); hi = hi2; }
+    var div: u32 = ticks_per_ms() / 1000u32;
+    if div == 0u32 { div = 1u32; }
+    var max_u32: u32 = 0u32 - 1u32;            // 0xFFFFFFFF = 2^32 - 1
+    var hf: u32 = max_u32 / div;               // floor((2^32-1) / div)
+    var hr: u32 = max_u32 - hf * div + 1u32;   // (2^32-1)%div + 1 = 2^32 % div + carry
+    if hr >= div { hf = hf + 1u32; hr = hr - div; }
+    return hi * hf + (hi * hr + lo) / div;
 }

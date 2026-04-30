@@ -38,9 +38,24 @@ fn read_mtime() -> u32 {
     return peek32(SIO_MTIME_L);
 }
 
-// SIO timer: 1 MHz, so 1000 ticks per millisecond
+fn read_mtime_hi() -> u32 {
+    return peek32(SIO_MTIME_H);
+}
+
+// SIO MTIME tick rate: empirically ~131.5 MHz (calibrated 2026-04-30
+// by timing 99 × nanosleep(1000ms) — 99 wall seconds were expected
+// at 1 MHz but actually elapsed in 0.753 seconds, giving 131.5 MHz).
+// The original 1000 (= 1 MHz) assumption was wrong; MTIME isn't
+// driven by the TICK generator's 1 us pulse but by something close
+// to clk_sys (PLL_SYS @ 150 MHz, so ~88% of clk_sys — likely an
+// internal /1.14 divisor on the AUX path, exact source TBD).
+//
+// 131500 / 1000 = 131 (integer divide in kern_uptime_us); 0.4%
+// rounding error is fine for the trace-prefix "[T.TTT]" use case.
+// Affects nanosleep too: it now sleeps the requested wall time
+// (count.tc with 99 × 1-sec sleeps takes 99 wall sec, as intended).
 fn ticks_per_ms() -> u32 {
-    return 1000u32;
+    return 131500u32;
 }
 
 // Mount mtfs from XIP flash and announce it to the serial console. If

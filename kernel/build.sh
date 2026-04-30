@@ -211,6 +211,14 @@ fi
 if [ -f "$ROOT_DIR/tests/phase7_hello_world.tc" ]; then
     cp "$ROOT_DIR/tests/phase7_hello_world.tc" "$ROOT_DIR_TREE/hw.tc"
 fi
+# msh script-mode fixtures: smoke / abort tests + the per-stage
+# pipeline benchmark driven by tests/test_pico2_bench.sh. Always
+# staged so the same kernel build can be exercised without rebuilding.
+for f in msh_smoke.sh msh_abort.sh pico2_bench.sh; do
+    if [ -f "$ROOT_DIR/tests/fixtures/$f" ]; then
+        cp "$ROOT_DIR/tests/fixtures/$f" "$ROOT_DIR_TREE/$f"
+    fi
+done
 # Phase 7 OS-side linker prelude: the task_crt0.s + runtime.s glue
 # is the same for every compile-on-OS build, so we pre-concatenate
 # it into a single /prelude.s file inside the mtfs image. The OS-
