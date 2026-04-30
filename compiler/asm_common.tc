@@ -171,7 +171,7 @@ fn make_label(noff: i32, nlen: i32, addrv: i32, sec: i32) -> Label {
 // MAX_LABELS = 4096 (12 bits), 16 bits per id has plenty of margin.
 // MAX_REFS = 8192 covers the runtime.s + crt0 self-host build with
 // some headroom; if a future build trips it we'll bump or grow.
-var MAX_REFS: i32 = 8192;
+var MAX_REFS: i32 = 16384;
 var g_refs: I32Array = 0 as I32Array;
 var g_nrefs: i32 = 0;
 var g_owner_idx: i32 = 0 - 1;  // -1 = no current owner (section root)
@@ -179,6 +179,19 @@ var g_owner_idx: i32 = 0 - 1;  // -1 = no current owner (section root)
 // so pass1_scan_operand_refs and downstream paths know not to grow
 // g_refs again — BFS already ran, refs are frozen.
 var g_phase4_active: i32 = 0;
+
+// Phase 5 walker hint: define_label sets this to 1, the walker clears
+// it before each asm_run_line. Lets the walker tell apart a label-
+// only line (where bytes_added == 0 and owner_changed == 0 for
+// `.L_*` locals) from a true non-emit directive (.globl/.type/etc)
+// — locals follow owner liveness, directives are always kept.
+var g_label_just_defined: i32 = 0;
+
+// (Deferred forward-ref queue removed; we use a 2nd source pass
+// instead. The queue's MAX_DEFERRED + name pool ate too much arena
+// for the self-host build — every label appears as a forward ref
+// somewhere, and the 90+ KB queue pushed asm_pass1 OOM. Two source
+// reads of /sd/full.s cost ~30 s on pico2 SD but stay correct.)
 
 // Liveness bitmap: 1 bit per label (MAX_LABELS = 4096 → 4096/32 = 128
 // i32 words = 512 bytes). Populated by asm_compute_live() via BFS
@@ -316,16 +329,20 @@ export fn asm_current_section() -> i32 { return g_current_section; }
 export fn asm_sec_pos(sec: i32) -> i32 { return get(g_sec_pos, sec); }
 export fn asm_set_g_pos(v: i32) -> void { g_pos = v; return; }
 export fn asm_set_sec_pos(sec: i32, v: i32) -> void { set(g_sec_pos, sec, v); return; }
+export fn asm_clear_label_just_defined() -> void { g_label_just_defined = 0; return; }
+export fn asm_label_just_defined() -> i32 { return g_label_just_defined; }
 
 // Record a (from = g_owner_idx) → (to = find_label(name)) edge if
-// the target is already defined. Forward refs are silently ignored
-// for Phase 1 — they will be picked up by a later pass over the
-// source once the 2-pass plan is implemented.
+// the target is already in g_labels (backward ref). Forward refs
+// (target not yet defined) are silently dropped here — the second
+// source pass in asm_pass1.run picks them up by re-walking the
+// source through asm_run_line after every label is established.
 fn record_ref(name: U8Array, nlen: i32) -> void {
     if g_pass != 1 { return; }
+    if g_phase4_active != 0 { return; }
     if g_owner_idx < 0 { return; }
     var idx: i32 = find_label(name, nlen);
-    if idx < 0 { return; }   // forward ref, defer
+    if idx < 0 { return; }
     if g_nrefs >= MAX_REFS { return; }
     set(g_refs, g_nrefs, (g_owner_idx << 16) | (idx & 0xFFFF));
     g_nrefs = g_nrefs + 1;
@@ -642,6 +659,7 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
         }
     }
     if is_local == 0 { g_owner_idx = idx; }
+    g_label_just_defined = 1;
     return;
 }
 
@@ -1821,17 +1839,44 @@ export fn asm_dump_lab_state() -> void {
     }
 
     // Dead-strip Phase 4: when the live bitmap exists (asm_compute_live
-    // ran), filter out labels not in the live set. asm_pass2 only
-    // resolves references to live targets — dead labels are unreachable
-    // and would just waste hash table slots. When BFS hasn't run
-    // (host stdin pipe, no argv source), the bitmap is null and every
-    // label is dumped (current behavior).
+    // ran), filter out labels not in the live set. Two exceptions:
+    // - bitmap absent (host stdin pipe, no argv source) → keep every
+    //   label (current behavior).
+    // - `.L_*` local labels → always keep. They're per-function jump
+    //   targets and BFS doesn't always propagate liveness through
+    //   them cleanly (the owner-skip rule keeps the bytes alive but
+    //   the label entry itself can fall outside the closure). Since
+    //   each entry is a couple of bytes in the .lab and references
+    //   to dead local labels are themselves stripped, including all
+    //   of them costs almost nothing and avoids subtle "undefined
+    //   label" pop-ups in asm_pass2.
     var have_live: i32 = 0;
     if g_label_live as u32 != 0u32 { have_live = 1; }
     var li: i32 = 0;
     while li < g_nlabels {
         var skip: i32 = 0;
-        if have_live == 1 { if live_get(li) == 0 { skip = 1; } }
+        if have_live == 1 {
+            if live_get(li) == 0 {
+                // Local `.L_*` labels ride along with their containing
+                // function — keep unconditionally so asm_pass2 always
+                // resolves intra-function jump targets even if BFS
+                // didn't propagate live through the local edge.
+                var lb_chk: Label = get(g_labels, li);
+                var noff: i32 = name_off(lb_chk);
+                var nlen: i32 = name_len(lb_chk);
+                var is_local: i32 = 0;
+                if nlen >= 3 {
+                    if get(g_lab_names, noff) == '.' as u8 {
+                        if get(g_lab_names, (noff + 1)) == 'L' as u8 {
+                            if get(g_lab_names, (noff + 2)) == '_' as u8 {
+                                is_local = 1;
+                            }
+                        }
+                    }
+                }
+                if is_local == 0 { skip = 1; }
+            }
+        }
         if skip == 0 {
             var lb: Label = get(g_labels, li);
             emit_string(sb, "lab ");

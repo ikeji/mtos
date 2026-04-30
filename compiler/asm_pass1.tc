@@ -123,6 +123,7 @@ fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
                 var pre_sec: i32     = asm_current_section();
                 var pre_secpos: i32  = asm_sec_pos(pre_sec);
                 var pre_owner: i32   = asm_owner_idx();
+                asm_clear_label_just_defined();
                 asm_run_line(line, llen, lineno);
                 var post_secpos: i32 = asm_sec_pos(pre_sec);
                 var bytes_added: i32 = post_secpos - pre_secpos;
@@ -130,18 +131,22 @@ fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
                 if asm_current_section() != pre_sec { section_changed = 1; }
                 var owner_changed:   i32 = 0;
                 if asm_owner_idx() != pre_owner { owner_changed = 1; }
+                var label_defined: i32 = asm_label_just_defined();
 
                 var keep: i32 = 1;
                 if section_changed != 0 {
                     // Section directive: always keep, owner reset to -1.
-                } else if owner_changed != 0 || bytes_added > 0 {
-                    // Either a label define and/or instruction/data: keep
-                    // iff the (now-current) owner is live. Section-root
-                    // owners (idx == -1) are treated as live.
+                } else if label_defined != 0 || bytes_added > 0 {
+                    // A label was just defined (named or `.L_*` local)
+                    // and/or instruction/data emitted bytes. In either
+                    // case the line belongs to whatever owner is current
+                    // post-line; keep iff that owner is live. Section-
+                    // root owners (idx == -1) are unconditionally live.
                     if owner_is_live() == 0 { keep = 0; }
                 }
                 // else: non-emit directive (.globl / .type / .size /
-                // .align). Always keep — these don't move the cursor.
+                // .align). Always keep — these don't move the cursor
+                // and don't define labels.
 
                 if keep != 0 {
                     emit_n(sb, line, 0, llen);
@@ -192,11 +197,11 @@ fn run(src_path: String, strip_out_path: String) -> i32 {
     asm_set_src_bytes(total_bytes);
 
     if have_path != 0 {
-        // Phase 3 second pass: now that every label is in g_labels
-        // we can resolve forward refs that pass 1a missed. Reset the
-        // ref counter, the section cursors, and g_owner_idx; leave
-        // g_labels / g_lab_names alone (define_label is idempotent
-        // on duplicates so re-walking the source doesn't grow them).
+        // Phase 3 second source pass: every label is now in g_labels
+        // so find_label resolves forward refs. Walk the source again
+        // through asm_run_line — define_label is idempotent, so we
+        // don't grow g_labels — just record the previously-deferred
+        // edges (now backward) into g_refs.
         var fd2: i32 = do_openat(0 - 100, src_path, 0);
         if fd2 >= 0 {
             asm_reset_for_ref_pass();
@@ -205,16 +210,14 @@ fn run(src_path: String, strip_out_path: String) -> i32 {
             close(reader2);
             do_close(fd2);
 
-            // The ref-pass walked through asm_run_line which calls
-            // define_label, which resets every label's addr back to
-            // its intra-section position. Re-run base + fixup so
-            // labels are absolute again before the .lab dump (and
-            // before Phase 5 — which expects to start from the
-            // correct post-pass-1a state).
+            // The ref-pass reset every label's addr back to its
+            // intra-section position. Re-run base + fixup so labels
+            // are absolute again before BFS / Phase 5.
             asm_compute_sec_bases();
             asm_fixup_labels();
+        }
 
-            asm_compute_live();
+        asm_compute_live();
 
             // Phase 5: emit stripped source if the caller asked for
             // it. The strip walk produces live-only sec_pos values,
@@ -246,7 +249,6 @@ fn run(src_path: String, strip_out_path: String) -> i32 {
                     }
                 }
             }
-        }
     }
 
     asm_dump_lab_state();
