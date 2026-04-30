@@ -1736,16 +1736,28 @@ export fn asm_dump_lab_state() -> void {
         i = i + 1;
     }
 
+    // Dead-strip Phase 4: when the live bitmap exists (asm_compute_live
+    // ran), filter out labels not in the live set. asm_pass2 only
+    // resolves references to live targets — dead labels are unreachable
+    // and would just waste hash table slots. When BFS hasn't run
+    // (host stdin pipe, no argv source), the bitmap is null and every
+    // label is dumped (current behavior).
+    var have_live: i32 = 0;
+    if g_label_live as u32 != 0u32 { have_live = 1; }
     var li: i32 = 0;
     while li < g_nlabels {
-        var lb: Label = get(g_labels, li);
-        emit_string(sb, "lab ");
-        dump_int(sb, addr(lb));
-        emit_char(sb, ' ');
-        dump_int(sb, section(lb));
-        emit_char(sb, ' ');
-        emit_n(sb, g_lab_names, name_off(lb), name_len(lb));
-        emit_nl(sb);
+        var skip: i32 = 0;
+        if have_live == 1 { if live_get(li) == 0 { skip = 1; } }
+        if skip == 0 {
+            var lb: Label = get(g_labels, li);
+            emit_string(sb, "lab ");
+            dump_int(sb, addr(lb));
+            emit_char(sb, ' ');
+            dump_int(sb, section(lb));
+            emit_char(sb, ' ');
+            emit_n(sb, g_lab_names, name_off(lb), name_len(lb));
+            emit_nl(sb);
+        }
         li = li + 1;
     }
 
