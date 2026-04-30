@@ -33,6 +33,24 @@ do_exit__i32:
     ecall
     ret
 
+    /* openat / close — needed by asm_pass1's dead-strip 2nd source
+     * pass when invoked with an argv source path. Linux ABI uses
+     * NUL-terminated path; TC strings are [u32 count][bytes][NUL]
+     * so skipping the count prefix gets a valid C string. */
+    .globl do_openat__i32__String__i32
+do_openat__i32__String__i32:
+    addi a1, a1, 4
+    li   a3, 0
+    li   a7, 56
+    ecall
+    ret
+
+    .globl do_close__i32
+do_close__i32:
+    li   a7, 57
+    ecall
+    ret
+
     .bss
     .align 4
     .space 8192

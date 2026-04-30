@@ -259,10 +259,24 @@ export fn asm_compute_live() -> void {
     return;
 }
 
-// Phase 3 will call this from asm_pass1 after asm_compute_live()
-// to filter the .lab dump. For now (Phase 2 isolated) it's defined
-// but unused.
 export fn asm_label_is_live(idx: i32) -> i32 { return live_get(idx); }
+
+// Reset state that varies per source pass so asm_pass1 can re-walk
+// the source for the Phase 3 forward-ref second pass. Clears g_pos
+// + section cursors + ref counter + owner; leaves g_labels and
+// g_lab_names intact (define_label is idempotent on existing
+// labels so re-walking doesn't grow them).
+export fn asm_reset_for_ref_pass() -> void {
+    g_pos              = 0;
+    g_current_section  = 0;
+    g_owner_idx        = 0 - 1;
+    g_nrefs            = 0;
+    set(g_sec_pos, 0, 0);
+    set(g_sec_pos, 1, 0);
+    set(g_sec_pos, 2, 0);
+    set(g_sec_pos, 3, 0);
+    return;
+}
 
 // Record a (from = g_owner_idx) → (to = find_label(name)) edge if
 // the target is already defined. Forward refs are silently ignored

@@ -35,6 +35,29 @@ do_exit__i32:
     ecall
     ret
 
+# do_openat / do_close for Gen2/Gen3 host so asm_pass1 can re-read
+# the source file when given a path argument (dead-strip 2nd pass).
+# Linux openat ABI: (dirfd, path*, flags, mode). We pass mode=0 since
+# the kernel ignores it for read-only opens. AT_FDCWD = -100 lets the
+# caller use plain "foo.s" without path resolution.
+    .globl do_openat__i32__String__i32
+do_openat__i32__String__i32:
+    # a0=dirfd, a1=path_addr (4-byte length prefix), a2=flags
+    # Linux openat takes a NUL-terminated C string; our String layout
+    # has [u32 count][bytes...] but the bytes after count are ASCII
+    # and we'll add a NUL when staging path strings (see callers).
+    addi a1, a1, 4              # skip count prefix → bytes pointer
+    li   a3, 0                  # mode = 0
+    li   a7, 56
+    ecall
+    ret
+
+    .globl do_close__i32
+do_close__i32:
+    li   a7, 57
+    ecall
+    ret
+
 # peek/poke builtins
     .globl peek8__u32
 peek8__u32:

@@ -1,16 +1,17 @@
 // asm_pass1.tc — label collector half of the asm split (Phase 2 #56).
 //
-// Reads a `.s` source from stdin one line at a time, runs the
-// asm_common encoder in pass-1 mode (which collects labels and
-// section sizes without emitting any code bytes), then writes the
-// resulting label / section state to stdout in the wrapped .lab
-// format documented in docs/lab_format.md.
+// Reads a `.s` source one line at a time and writes a `.lab`
+// (docs/lab_format.md) so asm-pass2 can encode the binary in one
+// linear scan.
 //
-// The companion `asm-pass2` reads stdin = `.lab` followed by the
-// same source, installs the labels into its own state, runs pass 2,
-// and emits the ELF/raw binary. Both halves share asm_common.tc; the
-// only thing this file does is drive the input loop and call the
-// public entry points.
+// Source path:
+//   - With argv[1] set (OS-side, msh script invoking
+//     `asm_pass1 /sd/full.s`): re-readable file, the dead-strip
+//     Phase 3 second source pass is enabled, refs include forward
+//     edges, and the .lab dump filters by the live bitmap.
+//   - Without argv (host stdin pipe via compile-gen2.sh / kernel
+//     build): single source pass, dead-strip skipped (we keep all
+//     labels). Host has plenty of memory and isn't size-bound.
 
 import "asm_common.tc";
 import "string_buffer.tc";
@@ -21,22 +22,20 @@ import "source_reader.tc";
 // bootstrap/runtime_syscall.c.
 fn km_dump_peak() -> void;
 
-fn main() -> i32 {
-    asm_init_pass1();
-    asm_set_pass(1);
+// File-open syscalls. Forward decls; bodies live in compiler/crt0_tc.s
+// (host) and kernel/tasks/task_crt0.s (OS).
+fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
 
-    var reader: SourceReader = SourceReader_new(0);
-    // g_line_buf in asm_common is 4092 bytes. Keep `line` allocation
-    // the same so a line that fits in `line` fits in g_line_buf too.
+// Process the source coming from `reader` line by line. Calls
+// asm_run_line which (in pass 1) collects labels, advances section
+// cursors, and records reference-graph edges via record_ref.
+fn process_source(reader: SourceReader) -> i32 {
     var line: U8Array = U8Array(4092);
     var lineno: i32 = 0;
     var total_bytes: i32 = 0;
 
     while at_eof(reader) == false {
-        // Read one source line into `line`. We keep reading until LF
-        // (or EOF) and store everything including the LF so meta
-        // directive matching has the same view as single-process
-        // asm.tc.
         var llen: i32 = 0;
         var eol: i32 = 0;
         while eol == 0 && at_eof(reader) == false {
@@ -55,29 +54,70 @@ fn main() -> i32 {
         if llen == 0 { } else {
             lineno = lineno + 1;
             if asm_parse_meta_directive(line, llen) == 1 {
-                // Discard meta directive lines just like read_all_lines
-                // did in single-process asm.tc.
+                // Discard meta directive lines.
             } else {
                 asm_run_line(line, llen, lineno);
             }
         }
     }
-    close(reader);
     delete(line);
+    return total_bytes;
+}
+
+// run — actual work, parameterised by the source path. Path 0 means
+// "no path, use stdin". Same body whether main is called via the
+// argv-aware mangling or the bare-name fallback.
+fn run(src_path: String) -> i32 {
+    asm_init_pass1();
+    asm_set_pass(1);
+
+    var src_fd: i32 = 0;
+    var have_path: i32 = 0;
+    if src_path as u32 != 0u32 {
+        var fd: i32 = do_openat(0 - 100, src_path, 0);  // AT_FDCWD, O_RDONLY
+        if fd >= 0 {
+            src_fd = fd;
+            have_path = 1;
+        }
+    }
+
+    var reader: SourceReader = SourceReader_new(src_fd);
+    var total_bytes: i32 = process_source(reader);
+    close(reader);
+    if have_path != 0 { do_close(src_fd); }
 
     asm_compute_sec_bases();
     asm_fixup_labels();
-    // Stash the source byte count so asm_dump_lab_state can emit it
-    // as a `src_bytes N` line for asm_pass2 to consume.
     asm_set_src_bytes(total_bytes);
-    // Dead-strip Phase 2: compute live set from the reference graph
-    // collected during the source scan above. Phase 3-4 will wire
-    // the live bitmap into asm_dump_lab_state and asm_pass2's emit
-    // loop; Phase 2 just builds it so memory + correctness can be
-    // verified independently.
-    asm_compute_live();
+
+    if have_path != 0 {
+        // Phase 3 second pass: now that every label is in g_labels
+        // we can resolve forward refs that pass 1a missed. Reset the
+        // ref counter, the section cursors, and g_owner_idx; leave
+        // g_labels / g_lab_names alone (define_label is idempotent
+        // on duplicates so re-walking the source doesn't grow them).
+        var fd2: i32 = do_openat(0 - 100, src_path, 0);
+        if fd2 >= 0 {
+            asm_reset_for_ref_pass();
+            var reader2: SourceReader = SourceReader_new(fd2);
+            process_source(reader2);
+            close(reader2);
+            do_close(fd2);
+            asm_compute_live();
+        }
+    }
+
     asm_dump_lab_state();
 
     km_dump_peak();
     return 0;
+}
+
+fn main() -> i32 { return run(0 as String); }
+fn main(argv: StringArray) -> i32 {
+    var path: String = 0 as String;
+    if argv as u32 != 0u32 {
+        if len(argv) >= 2 { path = get(argv, 1); }
+    }
+    return run(path);
 }
