@@ -26,6 +26,9 @@ fn km_dump_peak() -> void;
 // (host) and kernel/tasks/task_crt0.s (OS).
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
+// Direct write syscall (bypasses StringBuffer) for emitting source
+// lines verbatim from the strip pass.
+fn sys_write(fd: i32, buf: U8Array, n: i32) -> i32;
 
 // Process the source coming from `reader` line by line. Calls
 // asm_run_line which (in pass 1) collects labels, advances section
@@ -64,10 +67,102 @@ fn process_source(reader: SourceReader) -> i32 {
     return total_bytes;
 }
 
-// run — actual work, parameterised by the source path. Path 0 means
-// "no path, use stdin". Same body whether main is called via the
-// argv-aware mangling or the bare-name fallback.
-fn run(src_path: String) -> i32 {
+// True if a line emitted by the current owner should appear in the
+// stripped source. Section-root owners (-1) are unconditionally live.
+fn owner_is_live() -> i32 {
+    if asm_owner_idx() < 0 { return 1; }
+    return asm_label_is_live(asm_owner_idx());
+}
+
+// Phase 5 / dead-strip 3rd source pass: emit only the source bytes
+// whose owning symbol survived BFS. Walks the source through the
+// existing asm_run_line tokenizer / state machine, then either keeps
+// the line (and the cursor advances it produced) or rewinds the
+// state for dead-owner skips. Returns the byte count written to
+// out_fd so the caller can update src_bytes for the .lab.
+fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
+    asm_reset_for_strip_pass();
+    // numlab table is rebuilt live-only by the strip walk (define_numlab
+    // is gated by g_phase4_active to skip dead owners). Reset the
+    // count cursors so no pre-strip entries linger.
+    asm_clear_numlab_counts();
+
+    var line: U8Array = U8Array(4092);
+    var lineno: i32 = 0;
+    var total_emitted: i32 = 0;
+
+    while at_eof(reader) == false {
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(reader) == false {
+            var c: u8 = next(reader);
+            if llen >= 4092 {
+                var eb: StringBuffer = StringBuffer_new();
+                asm_err_begin(eb);
+                emit_string(eb, "line too long (max 4092 bytes)");
+                asm_err_end(eb);
+            }
+            set(line, llen, c);
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        if llen == 0 { } else {
+            lineno = lineno + 1;
+            // Meta directives (`; raw`, `; load_base`) live at the
+            // very top of the source and never advance any cursor —
+            // emit verbatim and skip asm_run_line.
+            if asm_parse_meta_directive(line, llen) == 1 {
+                sys_write(out_fd, line, llen);
+                total_emitted = total_emitted + llen;
+            } else {
+                // Snapshot the per-line state so we can rewind a dead
+                // line's cursor advances after asm_run_line ran.
+                var pre_pos: i32     = asm_g_pos();
+                var pre_sec: i32     = asm_current_section();
+                var pre_secpos: i32  = asm_sec_pos(pre_sec);
+                var pre_owner: i32   = asm_owner_idx();
+                asm_run_line(line, llen, lineno);
+                var post_secpos: i32 = asm_sec_pos(pre_sec);
+                var bytes_added: i32 = post_secpos - pre_secpos;
+                var section_changed: i32 = 0;
+                if asm_current_section() != pre_sec { section_changed = 1; }
+                var owner_changed:   i32 = 0;
+                if asm_owner_idx() != pre_owner { owner_changed = 1; }
+
+                var keep: i32 = 1;
+                if section_changed != 0 {
+                    // Section directive: always keep, owner reset to -1.
+                } else if owner_changed != 0 || bytes_added > 0 {
+                    // Either a label define and/or instruction/data: keep
+                    // iff the (now-current) owner is live. Section-root
+                    // owners (idx == -1) are treated as live.
+                    if owner_is_live() == 0 { keep = 0; }
+                }
+                // else: non-emit directive (.globl / .type / .size /
+                // .align). Always keep — these don't move the cursor.
+
+                if keep != 0 {
+                    sys_write(out_fd, line, llen);
+                    total_emitted = total_emitted + llen;
+                } else if bytes_added > 0 {
+                    // Rewind cursor advances so the live-only sec_pos
+                    // ends up correct.
+                    asm_set_g_pos(pre_pos);
+                    asm_set_sec_pos(pre_sec, pre_secpos);
+                }
+            }
+        }
+    }
+    delete(line);
+    asm_end_strip_pass();
+    return total_emitted;
+}
+
+// run — actual work, parameterised by the source path and (optional)
+// stripped-output path. Both 0 means "no path, use stdin"; in that
+// mode dead-strip is skipped entirely. With src_path set, Phase 3 + BFS
+// run; with strip_out_path also set, Phase 5 emits a stripped source.
+fn run(src_path: String, strip_out_path: String) -> i32 {
     asm_init_pass1();
     asm_set_pass(1);
 
@@ -104,6 +199,37 @@ fn run(src_path: String) -> i32 {
             close(reader2);
             do_close(fd2);
             asm_compute_live();
+
+            // Phase 5: emit stripped source if the caller asked for
+            // it. The strip walk produces live-only sec_pos values,
+            // so we rerun asm_compute_sec_bases / asm_fixup_labels
+            // afterwards to get the new section bases and
+            // re-absolute-ify live label addresses.
+            // O_WRONLY|O_CREAT|O_TRUNC = 1|64|512 = 577.
+            if strip_out_path as u32 != 0u32 {
+                var out_fd: i32 = do_openat(0 - 100, strip_out_path, 577);
+                if out_fd >= 0 {
+                    var fd3: i32 = do_openat(0 - 100, src_path, 0);
+                    if fd3 >= 0 {
+                        var reader3: SourceReader = SourceReader_new(fd3);
+                        var stripped_bytes: i32 = emit_stripped(reader3, out_fd);
+                        close(reader3);
+                        do_close(fd3);
+                        do_close(out_fd);
+
+                        // Recompute base / fixup with live-only sizes.
+                        // asm_fixup_labels skips dead labels (live
+                        // bitmap exists) so they keep their pre-strip
+                        // absolute address — irrelevant since the
+                        // .lab dump filters dead anyway.
+                        asm_compute_sec_bases();
+                        asm_fixup_labels();
+                        asm_set_src_bytes(stripped_bytes);
+                    } else {
+                        do_close(out_fd);
+                    }
+                }
+            }
         }
     }
 
@@ -113,11 +239,13 @@ fn run(src_path: String) -> i32 {
     return 0;
 }
 
-fn main() -> i32 { return run(0 as String); }
+fn main() -> i32 { return run(0 as String, 0 as String); }
 fn main(argv: StringArray) -> i32 {
     var path: String = 0 as String;
+    var strip_out: String = 0 as String;
     if argv as u32 != 0u32 {
         if len(argv) >= 2 { path = get(argv, 1); }
+        if len(argv) >= 3 { strip_out = get(argv, 2); }
     }
-    return run(path);
+    return run(path, strip_out);
 }

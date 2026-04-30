@@ -175,6 +175,10 @@ var MAX_REFS: i32 = 8192;
 var g_refs: I32Array = 0 as I32Array;
 var g_nrefs: i32 = 0;
 var g_owner_idx: i32 = 0 - 1;  // -1 = no current owner (section root)
+// Phase 5 (stripped source emit) flag. Set during the 3rd source pass
+// so pass1_scan_operand_refs and downstream paths know not to grow
+// g_refs again — BFS already ran, refs are frozen.
+var g_phase4_active: i32 = 0;
 
 // Liveness bitmap: 1 bit per label (MAX_LABELS = 4096 → 4096/32 = 128
 // i32 words = 512 bytes). Populated by asm_compute_live() via BFS
@@ -278,6 +282,41 @@ export fn asm_reset_for_ref_pass() -> void {
     return;
 }
 
+// Reset for Phase 5 (stripped source emit). Same as ref-pass except
+// g_refs stays — BFS has already consumed them and we don't want to
+// double-record. The phase4_active flag silences pass1_scan_operand_refs
+// for the duration so g_refs doesn't grow.
+export fn asm_reset_for_strip_pass() -> void {
+    g_pos              = 0;
+    g_current_section  = 0;
+    g_owner_idx        = 0 - 1;
+    set(g_sec_pos, 0, 0);
+    set(g_sec_pos, 1, 0);
+    set(g_sec_pos, 2, 0);
+    set(g_sec_pos, 3, 0);
+    g_phase4_active    = 1;
+    return;
+}
+
+// End the strip pass — restore state so asm_compute_sec_bases /
+// asm_fixup_labels run normally on the live-only sec_pos values
+// produced by the strip walk.
+export fn asm_end_strip_pass() -> void {
+    g_phase4_active = 0;
+    return;
+}
+
+
+// Read-only accessors used by asm_pass1.tc's Phase 5 walker, which
+// observes asm_run_line's per-line state changes to decide whether
+// to emit the source line or rewind the cursor for a dead-owner skip.
+export fn asm_g_pos() -> i32 { return g_pos; }
+export fn asm_owner_idx() -> i32 { return g_owner_idx; }
+export fn asm_current_section() -> i32 { return g_current_section; }
+export fn asm_sec_pos(sec: i32) -> i32 { return get(g_sec_pos, sec); }
+export fn asm_set_g_pos(v: i32) -> void { g_pos = v; return; }
+export fn asm_set_sec_pos(sec: i32, v: i32) -> void { set(g_sec_pos, sec, v); return; }
+
 // Record a (from = g_owner_idx) → (to = find_label(name)) edge if
 // the target is already defined. Forward refs are silently ignored
 // for Phase 1 — they will be picked up by a later pass over the
@@ -307,6 +346,15 @@ var NUMLAB_OTHER_PER_DIGIT: i32 = 64;  // digits 1-9 — each almost
 var g_numlab_zero:  I32Array = 0 as I32Array;
 var g_numlab_other: I32Array = 0 as I32Array;
 var g_numlab_count: I32Array = 0 as I32Array;  // count per digit (10 entries)
+
+// Drop every numlab entry. Phase 5 calls this before its source walk
+// so the strip pass rebuilds the table with only live-owner entries
+// (define_numlab is gated by g_phase4_active to skip dead owners).
+export fn asm_clear_numlab_counts() -> void {
+    var i: i32 = 0;
+    while i < 10 { set(g_numlab_count, i, 0); i = i + 1; }
+    return;
+}
 
 // numlab_capacity / numlab_get / numlab_set: digit-aware accessors.
 // `define_numlab` and `find_numlab*` go through these so the split
@@ -600,6 +648,15 @@ fn label_addr(name: U8Array, nlen: i32) -> i32 {
 
 // ===== Numeric label support =====
 fn define_numlab(digit: i32, addr: i32) -> void {
+    // Phase 5 gate: numeric labels under a dead owner must NOT enter
+    // the numlab table. Otherwise a stale Nb/Nf binding from a dead
+    // function could shadow the live function's resolution. Section-
+    // root owners (g_owner_idx == -1) are always treated as live.
+    if g_phase4_active != 0 {
+        if g_owner_idx >= 0 {
+            if live_get(g_owner_idx) == 0 { return; }
+        }
+    }
     var cnt: i32 = get(g_numlab_count, digit);
     var cap: i32 = numlab_capacity(digit);
     if cnt >= cap {
@@ -836,6 +893,7 @@ fn parse_label_op(op_idx: i32) -> i32 {
 // second source pass to resolve those.
 fn pass1_scan_operand_refs() -> void {
     if g_pass != 1 { return; }
+    if g_phase4_active != 0 { return; }
     if g_owner_idx < 0 { return; }
     var i: i32 = 0;
     while i < g_nops {
@@ -1650,11 +1708,25 @@ export fn asm_compute_sec_bases() -> void {
 // into absolute (PIC code-relative) addresses. Also patches the
 // magic __global_pointer$ label to data_base + 0x800. Pass 1 only.
 export fn asm_fixup_labels() -> void {
+    // When the live bitmap exists (Phase 5 just ran), the strip pass
+    // re-defined live labels with intra-section addresses; we only
+    // re-add sec_base to those. Dead labels still hold their old
+    // post-Phase-1a absolute addresses and must NOT be touched again
+    // (otherwise sec_base gets double-added). Dead labels are filtered
+    // out of the .lab dump anyway so their stale addresses don't
+    // matter. When the bitmap is null (host stdin path, Phase 1a
+    // call), every label gets fixed up — current behavior.
+    var have_live: i32 = 0;
+    if g_label_live as u32 != 0u32 { have_live = 1; }
     var i: i32 = 0;
     while i < g_nlabels {
-        var lb: Label = get(g_labels, i);
-        var lsec: i32 = section(lb);
-        addr(lb, addr(lb) + get(g_sec_base, lsec));
+        var skip: i32 = 0;
+        if have_live == 1 { if live_get(i) == 0 { skip = 1; } }
+        if skip == 0 {
+            var lb: Label = get(g_labels, i);
+            var lsec: i32 = section(lb);
+            addr(lb, addr(lb) + get(g_sec_base, lsec));
+        }
         i = i + 1;
     }
     var gp_sym: U8Array = U8Array(20);
