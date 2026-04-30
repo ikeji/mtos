@@ -12,7 +12,7 @@ tcheck < /sd/1.wr > /sd/2.tast
 codegen < /sd/2.tast > /sd/3.bc
 bc2asm < /sd/3.bc > /sd/4.s
 cat /prelude.s /sd/4.s /prelude_tail.s > /sd/full.s
-asm_pass1 < /sd/full.s > /sd/lab.s
-cat /sd/lab.s /sd/full.s /sd/full.s /sd/full.s > /sd/p2.in
+asm_pass1 /sd/full.s /sd/strip.s > /sd/lab.s
+cat /sd/lab.s /sd/strip.s /sd/strip.s /sd/strip.s > /sd/p2.in
 asm_pass2 < /sd/p2.in > /sd/HW
 /sd/HW

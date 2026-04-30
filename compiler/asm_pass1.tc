@@ -198,6 +198,16 @@ fn run(src_path: String, strip_out_path: String) -> i32 {
             process_source(reader2);
             close(reader2);
             do_close(fd2);
+
+            // The ref-pass walked through asm_run_line which calls
+            // define_label, which resets every label's addr back to
+            // its intra-section position. Re-run base + fixup so
+            // labels are absolute again before the .lab dump (and
+            // before Phase 5 — which expects to start from the
+            // correct post-pass-1a state).
+            asm_compute_sec_bases();
+            asm_fixup_labels();
+
             asm_compute_live();
 
             // Phase 5: emit stripped source if the caller asked for

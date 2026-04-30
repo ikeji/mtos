@@ -626,10 +626,22 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
         addr(lb, addr);
         section(lb, g_current_section);
     }
-    // Dead-strip Phase 1: bytes emitted between this label and the
-    // next become this label's. parse_label_op / .word symbol-operand
-    // handlers call record_ref(g_owner_idx → target).
-    g_owner_idx = idx;
+    // Dead-strip Phase 1 owner update: bytes emitted between this
+    // label and the next become this label's. EXCEPT for compiler-
+    // emitted local labels of the form `.L_FNAME_pcN` (bc2asm prefix)
+    // — those are intra-function jump targets, semantically part of
+    // their containing function. Keeping the previous owner means
+    // when FNAME is live, the bytes (and the local label itself)
+    // ride along instead of needing their own ref edges.
+    var is_local: i32 = 0;
+    if nlen >= 3 {
+        if get(name, 0) == '.' as u8 {
+            if get(name, 1) == 'L' as u8 {
+                if get(name, 2) == '_' as u8 { is_local = 1; }
+            }
+        }
+    }
+    if is_local == 0 { g_owner_idx = idx; }
     return;
 }
 
