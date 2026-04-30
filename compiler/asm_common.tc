@@ -180,6 +180,15 @@ var g_owner_idx: i32 = 0 - 1;  // -1 = no current owner (section root)
 // g_refs again — BFS already ran, refs are frozen.
 var g_phase4_active: i32 = 0;
 
+// Ref-collection gate: only the explicit ref-collection pass (Phase 3
+// 2nd source walk after every label is in g_labels) needs to call
+// pass1_scan_operand_refs. Skipping it during pass 1a and stdin/host
+// paths — where refs are never consumed — drops the O(N_labels)
+// find_label cost that would otherwise turn pass 1a from 26 s to
+// 56 s on pico2 just from register-name lookups failing. Set by
+// asm_pass1.tc immediately around the ref-pass process_source call.
+var g_collecting_refs: i32 = 0;
+
 // Phase 5 walker hint: define_label sets this to 1, the walker clears
 // it before each asm_run_line. Lets the walker tell apart a label-
 // only line (where bytes_added == 0 and owner_changed == 0 for
@@ -331,6 +340,7 @@ export fn asm_set_g_pos(v: i32) -> void { g_pos = v; return; }
 export fn asm_set_sec_pos(sec: i32, v: i32) -> void { set(g_sec_pos, sec, v); return; }
 export fn asm_clear_label_just_defined() -> void { g_label_just_defined = 0; return; }
 export fn asm_label_just_defined() -> i32 { return g_label_just_defined; }
+export fn asm_set_collecting_refs(v: i32) -> void { g_collecting_refs = v; return; }
 
 // Record a (from = g_owner_idx) → (to = find_label(name)) edge if
 // the target is already in g_labels (backward ref). Forward refs
@@ -923,6 +933,7 @@ fn parse_label_op(op_idx: i32) -> i32 {
 // second source pass to resolve those.
 fn pass1_scan_operand_refs() -> void {
     if g_pass != 1 { return; }
+    if g_collecting_refs == 0 { return; }
     if g_phase4_active != 0 { return; }
     if g_owner_idx < 0 { return; }
     var i: i32 = 0;

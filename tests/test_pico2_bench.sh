@@ -100,17 +100,21 @@ CATPID=$!
 # Give cat a moment to attach.
 sleep 0.5
 
-# Send msh command. msh will read /pico2_bench.sh from disk and run
+# Allow the caller to override which msh script to run (e.g., the
+# pass1_phases breakdown).
+SCRIPT="${BENCH_SCRIPT:-/pico2_bench.sh}"
+# Send msh command. msh will read the script from disk and run
 # the pipeline; per-command [T.TTT] traces flow back through stderr
 # (UART) and end up in $LOG.
-printf 'msh /pico2_bench.sh\n' > "$UART_PORT"
+printf 'msh %s\n' "$SCRIPT" > "$UART_PORT"
 
 # Wait for the pipeline to finish. A successful run prints
 # "Hello, World!" from the executed /sd/HW. Poll for it with a
 # generous timeout (the K7 baseline took ~125 s).
-deadline=$(( $(date +%s) + 600 ))
+TERM_PATTERN="${BENCH_TERMINATE:-Hello, World!}"
+deadline=$(( $(date +%s) + 900 ))
 while [ "$(date +%s)" -lt "$deadline" ]; do
-    if grep -q "Hello, World!" "$LOG" 2>/dev/null; then break; fi
+    if grep -q "$TERM_PATTERN" "$LOG" 2>/dev/null; then break; fi
     if grep -q "msh: aborting" "$LOG" 2>/dev/null; then break; fi
     sleep 2
 done

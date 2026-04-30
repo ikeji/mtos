@@ -205,10 +205,12 @@ fn run(src_path: String, strip_out_path: String) -> i32 {
         var fd2: i32 = do_openat(0 - 100, src_path, 0);
         if fd2 >= 0 {
             asm_reset_for_ref_pass();
+            asm_set_collecting_refs(1);
             var reader2: SourceReader = SourceReader_new(fd2);
             process_source(reader2);
             close(reader2);
             do_close(fd2);
+            asm_set_collecting_refs(0);
 
             // The ref-pass reset every label's addr back to its
             // intra-section position. Re-run base + fixup so labels
