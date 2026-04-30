@@ -515,35 +515,34 @@ peak memory + 時間。**ターゲット: 各段 ≤ 10 sec (pico2 実機) / ≤
 (bcrun.tc を除く worst case = bc2asm.tc)**。bench は host 計測なので
 時間は相対的な指標、メモリは pico2 でも同じ。
 
-### 進捗 (2026-04-30 メモリ削減 Phase 1+2)
+### 進捗 (2026-04-30 メモリ削減 Phase 1+2+3)
 
-bc2asm 達成。tcheck/codegen は 100 KB に約 30 KB の差。
-asm_pass1 hello は 150 KB 達成。asm_pass1 bc2asm + asm_pass2 はそれぞれ
-~15 KB / ~50 KB の差で 150 KB 圏内。
+hello.tc は **全段 100 KB 達成**。bc2asm.tc は bc2asm/codegen 達成、
+tcheck/asm_pass1/asm_pass2 が残 26〜74 KB。
 
 #### hello.tc (366 byte, 入力小)
 
-| 段 | baseline | 現在 | 100 KB | 150 KB |
-|---|---:|---:|---:|---:|
-| parse     |   - |   - | ✓ (旧 14 KB) | ✓ |
-| sigscan   |   9 |   9 | ✓ | ✓ |
-| tcheck    |  73 |  69 | ✓ | ✓ |
-| codegen   |  76 |  68 | ✓ | ✓ |
-| bc2asm    | 111 |  79 | ✓ | ✓ |
-| asm_pass1 | 218 | **149** | ❌ 1.5× | ✓ |
-| asm_pass2 | 298 | 168 | ❌ 1.7× | 残 18 KB |
+| 段 | baseline | 現在 | 100 KB |
+|---|---:|---:|---:|
+| parse     |   - |   - | ✓ (旧 14 KB) |
+| sigscan   |   9 |   9 | ✓ |
+| tcheck    |  73 |  69 | ✓ |
+| codegen   |  76 |  68 | ✓ |
+| bc2asm    | 111 |  79 | ✓ |
+| asm_pass1 | 218 |  **67** | ✓ |
+| asm_pass2 | 298 |  **80** | ✓ |
 
 #### bc2asm.tc (~50 KB, 実 worst case)
 
-| 段 | baseline | 現在 | 100 KB | 150 KB |
-|---|---:|---:|---:|---:|
-| parse     |   - |   - | (~14 KB 一定) | ✓ |
-| sigscan   |  10 |  10 | ✓ | ✓ |
-| tcheck    | 190 | 135 | ❌ 1.4× | 残 -15 KB |
-| codegen   | 185 | 126 | ❌ 1.3× | ✓ |
-| bc2asm    | 122 |  90 | ✓ | ✓ |
-| asm_pass1 | 249 | 165 | ❌ 1.7× | 残 15 KB |
-| asm_pass2 | 328 | 197 | ❌ 2.0× | 残 47 KB |
+| 段 | baseline | 現在 | 100 KB |
+|---|---:|---:|---:|
+| parse     |   - |   - | (~14 KB 一定) |
+| sigscan   |  10 |  10 | ✓ |
+| tcheck    | 190 | 135 | ❌ 1.4× |
+| codegen   | 185 | 126 | ❌ 1.3× |
+| bc2asm    | 122 |  90 | ✓ |
+| asm_pass1 | 249 | 163 | ❌ 1.6× |
+| asm_pass2 | 328 | 174 | ❌ 1.7× |
 
 ### 適用した削減 (commit 順)
 
@@ -571,6 +570,14 @@ asm_pass1 hello は 150 KB 達成。asm_pass1 bc2asm + asm_pass2 はそれぞれ
    実 g_nlabels の next-pow-2 × 2 で alloc。hello.tc は 64 entries =
    256 B、bc2asm.tc は 2048 entries = 8 KB 使用 (旧 32 KB 固定)。
 
+**Phase 3 — 動的 buffer:**
+8. **g_lab_names を 4 KB 初期 + x2 grow に** (-82/-88 KB on hello.tc):
+   `MAX_NAME_POOL=96 KB` 固定 → `NAME_POOL_INITIAL_KB=4 KB` から動的
+   grow。hello.tc は 35 byte 使用なので grow せず初期 4 KB のまま。
+   bc2asm.tc は 4→8→16→32→64 KB grow で最終 64 KB (旧 96 KB)。grow 中の
+   transient peak は old+new で旧 cap 同等なので大きい入力では効果は
+   小さいが、小〜中入力で劇的削減。
+
 ### 残 gap と原因
 
 - **tcheck bc2asm.tc 35 KB 超過**: 32 KB strtab (per-fn rollback 後
@@ -578,17 +585,16 @@ asm_pass1 hello は 150 KB 達成。asm_pass1 bc2asm + asm_pass2 はそれぞれ
   が支配。strtab を perm/ephemeral 分離するか kmalloc per-fn 化する
   refactor で削減可。
 - **codegen bc2asm.tc 26 KB 超過**: tcheck と同じ strtab 由来
-- **asm_pass1 bc2asm.tc 15 KB 超過**: g_lab_names 96 KB が支配。
-  実 usage 44 KB なので動的サイズ化で 50 KB 削減可能だが、pass1 は
-  入力読みながら累積 alloc するので動的化は技術的に困難。
-- **asm_pass2 47 KB 超過**: pass1 と同じ + LAB_HASH (動的なので
-  入力依存)。
+- **asm_pass1 bc2asm.tc 63 KB 超過**: 動的 grow しても 32→64 KB
+  grow 中の transient peak (32+64=96 KB) が支配。realloc 相当が
+  あれば transient peak を 64 KB に抑えられるが、現 kmalloc 未対応。
+- **asm_pass2 bc2asm.tc 74 KB 超過**: pass1 と同じ + LAB_HASH 8 KB
 
 ### 削減対象優先順 (残)
 
-1. **g_lab_names 動的化** (asm_pass1/2 50 KB 削減見込): pass1 は
-   累積 alloc なので「初期 32 KB + 必要に応じて re-alloc + memcpy」
-   pattern。複雑だが効果大
+1. **realloc-style in-place grow** (asm_pass1/2 ~30 KB 削減): kmalloc
+   に "extend large block in place" を追加すれば transient peak が
+   消える。kernel arena 全体に影響する大きい変更。
 2. **strtab restructure** (tcheck/codegen 30 KB 削減): per-fn 完全
    分離、または perm/ephemeral cursor
 3. **parse の km_dump_peak 追加**: 現状未測定
