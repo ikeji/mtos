@@ -157,6 +157,40 @@ fn make_label(noff: i32, nlen: i32, addrv: i32, sec: i32) -> Label {
     return Label(p, addrv);
 }
 
+// ===== Reference graph (for dead-strip) =====
+//
+// docs/task/asm_dead_strip.md Phase 1: while pass1 is reading source,
+// each operand that names a defined symbol records a (from_idx →
+// to_idx) edge in g_refs. The owner of the current line is tracked
+// in g_owner_idx (updated on label define / section change). Forward
+// refs (target not yet defined when ref is seen) are skipped here;
+// they will need a 2nd source pass once the design lands. For now
+// the graph is collected but not yet consumed.
+//
+// Encoding: each edge is one i32 = (from_idx << 16) | to_idx. With
+// MAX_LABELS = 4096 (12 bits), 16 bits per id has plenty of margin.
+// MAX_REFS = 8192 covers the runtime.s + crt0 self-host build with
+// some headroom; if a future build trips it we'll bump or grow.
+var MAX_REFS: i32 = 8192;
+var g_refs: I32Array = 0 as I32Array;
+var g_nrefs: i32 = 0;
+var g_owner_idx: i32 = 0 - 1;  // -1 = no current owner (section root)
+
+// Record a (from = g_owner_idx) → (to = find_label(name)) edge if
+// the target is already defined. Forward refs are silently ignored
+// for Phase 1 — they will be picked up by a later pass over the
+// source once the 2-pass plan is implemented.
+fn record_ref(name: U8Array, nlen: i32) -> void {
+    if g_pass != 1 { return; }
+    if g_owner_idx < 0 { return; }
+    var idx: i32 = find_label(name, nlen);
+    if idx < 0 { return; }   // forward ref, defer
+    if g_nrefs >= MAX_REFS { return; }
+    set(g_refs, g_nrefs, (g_owner_idx << 16) | (idx & 0xFFFF));
+    g_nrefs = g_nrefs + 1;
+    return;
+}
+
 // Numeric labels (0:..9:). Split storage by digit because measured
 // usage is wildly skewed: bc2asm.tc full.s has 373 `0:` defs and
 // 0-1 across the other 9 digits; asm_pass1.tc itself reaches >512
@@ -442,6 +476,10 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
         addr(lb, addr);
         section(lb, g_current_section);
     }
+    // Dead-strip Phase 1: bytes emitted between this label and the
+    // next become this label's. parse_label_op / .word symbol-operand
+    // handlers call record_ref(g_owner_idx → target).
+    g_owner_idx = idx;
     return;
 }
 
@@ -667,6 +705,10 @@ fn parse_label_op(op_idx: i32) -> i32 {
     }
     // Check for numeric label reference: Nb or Nf
     if len == 2 && is_digit(get(g_line_buf, off)) {
+        // Pass 1: numeric labels are per-function local jumps that
+        // don't affect the dead-strip ref graph; bypass the table
+        // lookup (which would error on undefined-yet-forward refs).
+        if g_pass == 1 { return 0; }
         var digit: i32 = get(g_line_buf, off) as i32 - 48;
         var dir: u8 = get(g_line_buf, (off + 1));
         var pc: i32 = g_pos;
@@ -681,6 +723,40 @@ fn parse_label_op(op_idx: i32) -> i32 {
     if g_pass == 2 { addr = label_addr(tmp, len); }
     delete(tmp);
     return addr;
+}
+
+// Dead-strip Phase 1: walk every operand of the current line and
+// record (g_owner_idx → find_label(operand)) for operands that name
+// an already-defined symbol. Register names ("a0", "ra"), immediates
+// ("100", "-32"), and numeric labels ("0f", "0b") naturally short-
+// circuit because find_label returns -1 for them. Forward refs are
+// missed for now (target not yet defined when seen) — Phase 3 adds a
+// second source pass to resolve those.
+fn pass1_scan_operand_refs() -> void {
+    if g_pass != 1 { return; }
+    if g_owner_idx < 0 { return; }
+    var i: i32 = 0;
+    while i < g_nops {
+        var off: i32 = get(g_ops, (i * 2));
+        var len: i32 = get(g_ops, (i * 2 + 1));
+        while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+            off = off + 1; len = len - 1;
+        }
+        if len > 0 {
+            var c0: u8 = get(g_line_buf, off);
+            // Skip operands that obviously aren't symbol names: digits,
+            // signs, and quote-delimited strings.
+            if !(c0 >= '0' && c0 <= '9') && c0 != '-' && c0 != '"' {
+                var tmp: U8Array = U8Array((len) as u32);
+                var j: i32 = 0;
+                while j < len { set(tmp, j, get(g_line_buf, (off + j))); j = j + 1; }
+                record_ref(tmp, len);
+                delete(tmp);
+            }
+        }
+        i = i + 1;
+    }
+    return;
 }
 
 // Return the section id of the label referenced by operand op_idx,
@@ -1087,7 +1163,11 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
 
     // Directives
     if get(g_mnem, 0) == '.' {
-        if mnem_eq(".text") { g_current_section = 0; return; }
+        // Dead-strip Phase 1: every section change resets the owner
+        // sentinel so the first labelless bytes after the directive
+        // (rare — usually a label follows) are attributed to "no
+        // owner". record_ref skips those refs.
+        if mnem_eq(".text") { g_current_section = 0; g_owner_idx = 0 - 1; return; }
         if mnem_eq(".section") {
             // .section .rodata / .data / .bss / .text / other
             // Look at the first operand to pick a section id.
@@ -1103,11 +1183,12 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
                     g_current_section = 3;
                 }
             }
+            g_owner_idx = 0 - 1;
             return;
         }
-        if mnem_eq(".rodata") { g_current_section = 1; return; }
-        if mnem_eq(".data") { g_current_section = 2; return; }
-        if mnem_eq(".bss") { g_current_section = 3; return; }
+        if mnem_eq(".rodata") { g_current_section = 1; g_owner_idx = 0 - 1; return; }
+        if mnem_eq(".data") { g_current_section = 2; g_owner_idx = 0 - 1; return; }
+        if mnem_eq(".bss") { g_current_section = 3; g_owner_idx = 0 - 1; return; }
         if mnem_eq(".globl") || mnem_eq(".type") || mnem_eq(".size") ||
            mnem_eq(".option") || mnem_eq(".attribute") || mnem_eq(".file") ||
            mnem_eq(".ident") || mnem_eq(".p2align") { return; }
@@ -1170,7 +1251,8 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
                 if (c0 >= '0' && c0 <= '9') || c0 == '-' {
                     emit32(parse_imm_op(0));
                 } else {
-                    // Label
+                    // Label — symbol reference for dead-strip too
+                    if g_pass == 1 { pass1_scan_operand_refs(); }
                     if g_pass == 2 { emit32(parse_label_op(0)); }
                     else { g_pos = g_pos + 4; }
                 }
@@ -1252,7 +1334,12 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
 
     // Instructions
     var sz: i32 = asm_instr();
-    if g_pass == 1 { g_pos = g_pos + sz; }
+    if g_pass == 1 {
+        // Dead-strip Phase 1: record symbol references after the
+        // operand parser has populated g_ops for this line.
+        pass1_scan_operand_refs();
+        g_pos = g_pos + sz;
+    }
     return;
 }
 
@@ -1315,6 +1402,7 @@ fn asm_init_common() -> void {
     g_numlab_zero  = I32Array((NUM_LAB_PER_DIGIT) as u32);
     g_numlab_other = I32Array((9 * NUMLAB_OTHER_PER_DIGIT) as u32);
     g_numlab_count = I32Array(10);
+    g_refs         = I32Array((MAX_REFS) as u32);
 
     g_pos              = 0;
     g_pass             = 0;
@@ -1324,6 +1412,8 @@ fn asm_init_common() -> void {
     g_code_end         = 0;
     g_bss_pos          = 0;
     g_cur_line         = 0;
+    g_nrefs            = 0;
+    g_owner_idx        = 0 - 1;
     set(g_sec_pos, 0, 0);
     set(g_sec_pos, 1, 0);
     set(g_sec_pos, 2, 0);
