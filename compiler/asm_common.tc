@@ -176,6 +176,94 @@ var g_refs: I32Array = 0 as I32Array;
 var g_nrefs: i32 = 0;
 var g_owner_idx: i32 = 0 - 1;  // -1 = no current owner (section root)
 
+// Liveness bitmap: 1 bit per label (MAX_LABELS = 4096 → 4096/32 = 128
+// i32 words = 512 bytes). Populated by asm_compute_live() via BFS
+// from the hardcoded root list. Phase 3-4 will use this to filter
+// .lab output and have asm_pass2 skip dead bytes.
+var g_label_live: I32Array = 0 as I32Array;
+var LIVE_BITMAP_WORDS: i32 = 128;  // MAX_LABELS / 32
+
+fn live_get(idx: i32) -> i32 {
+    if idx < 0 || idx >= MAX_LABELS { return 0; }
+    var word: i32 = idx / 32;
+    var bit:  i32 = idx % 32;
+    return (get(g_label_live, word) >> bit) & 1;
+}
+
+fn live_set(idx: i32) -> void {
+    if idx < 0 || idx >= MAX_LABELS { return; }
+    var word: i32 = idx / 32;
+    var bit:  i32 = idx % 32;
+    var w: i32 = get(g_label_live, word);
+    set(g_label_live, word, w | (1 << bit));
+    return;
+}
+
+// Mark a single root: find the label by name, mark live if found.
+// Missing roots are silently ignored (e.g. __global_pointer$ doesn't
+// exist in user-only inputs that don't link the runtime).
+fn live_mark_root(name: U8Array, nlen: i32) -> void {
+    var idx: i32 = find_label(name, nlen);
+    if idx >= 0 { live_set(idx); }
+    return;
+}
+
+// Compute live set: seed with roots, then iterate fixed-point over
+// g_refs. Each pass walks the (from, to) pairs and propagates the
+// live bit forward. Stops when no new labels became live. With ~5K
+// refs and a typical 3-5 fixed-point passes the cost is negligible
+// vs the source scan.
+export fn asm_compute_live() -> void {
+    // Lazy-allocate the bitmap; pass1 paths that don't call BFS skip it.
+    if g_label_live as u32 == 0u32 {
+        g_label_live = I32Array((LIVE_BITMAP_WORDS) as u32);
+    }
+    // Clear bitmap (in case asm_pass1/asm_pass2 rerun within a single
+    // process — unlikely today but harmless).
+    var i: i32 = 0;
+    while i < LIVE_BITMAP_WORDS { set(g_label_live, i, 0); i = i + 1; }
+
+    // Roots: every binary needs these alive regardless of what the
+    // user code references. Names match the hand-written crt0 paths
+    // (compiler/crt0_tc.s for host, kernel/tasks/task_crt0.s for OS).
+    var rb: U8Array = U8Array(40);
+    var rl: i32 = 0;
+
+    rl = buf_set_str(rb, 0, "_start");                           live_mark_root(rb, rl);
+    rl = buf_set_str(rb, 0, "main");                             live_mark_root(rb, rl);
+    rl = buf_set_str(rb, 0, "main__StringArray");                live_mark_root(rb, rl);
+    rl = buf_set_str(rb, 0, "__runtime_init__u32__i32");         live_mark_root(rb, rl);
+    rl = buf_set_str(rb, 0, "__global_pointer$");                live_mark_root(rb, rl);
+    rl = buf_set_str(rb, 0, "__data_end");                       live_mark_root(rb, rl);
+
+    delete(rb);
+
+    // Fixed-point propagation. Each iteration walks all edges; if a
+    // live owner has a non-live target, mark the target. Repeat until
+    // a full pass adds nothing.
+    var changed: i32 = 1;
+    while changed != 0 {
+        changed = 0;
+        var r: i32 = 0;
+        while r < g_nrefs {
+            var pair: i32 = get(g_refs, r);
+            var from_idx: i32 = (pair >> 16) & 0xFFFF;
+            var to_idx:   i32 = pair & 0xFFFF;
+            if live_get(from_idx) == 1 && live_get(to_idx) == 0 {
+                live_set(to_idx);
+                changed = 1;
+            }
+            r = r + 1;
+        }
+    }
+    return;
+}
+
+// Phase 3 will call this from asm_pass1 after asm_compute_live()
+// to filter the .lab dump. For now (Phase 2 isolated) it's defined
+// but unused.
+export fn asm_label_is_live(idx: i32) -> i32 { return live_get(idx); }
+
 // Record a (from = g_owner_idx) → (to = find_label(name)) edge if
 // the target is already defined. Forward refs are silently ignored
 // for Phase 1 — they will be picked up by a later pass over the

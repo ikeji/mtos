@@ -70,6 +70,12 @@ fn main() -> i32 {
     // Stash the source byte count so asm_dump_lab_state can emit it
     // as a `src_bytes N` line for asm_pass2 to consume.
     asm_set_src_bytes(total_bytes);
+    // Dead-strip Phase 2: compute live set from the reference graph
+    // collected during the source scan above. Phase 3-4 will wire
+    // the live bitmap into asm_dump_lab_state and asm_pass2's emit
+    // loop; Phase 2 just builds it so memory + correctness can be
+    // verified independently.
+    asm_compute_live();
     asm_dump_lab_state();
 
     km_dump_peak();
