@@ -116,16 +116,47 @@ var g_src_bytes:       i32 = 0;        // source byte count emitted by pass1 in 
 // arrays g_lab_offs / g_lab_lens / g_lab_addrs / g_lab_section /
 // g_lab_is_bss were collapsed here; is_bss was dead anyway so we
 // dropped it.
+//
+// 2026-04-30: bit-packed name_off + name_len + section into a single
+// i32 to halve the per-entry kmalloc cost (struct went from 4 i32 +
+// 4 B hdr = 20 B = 32 B bucket → 2 i32 + 4 B hdr = 12 B = 16 B
+// bucket). For 3000+ labels in a self-host build this saves ~48 KB
+// of asm_pass1/pass2 peak. Field widths:
+//   name_off  18 bits (256 KB max — MAX_NAME_POOL is 96 KB so plenty)
+//   name_len   8 bits (255 max — even mangled symbols stay under 80)
+//   section    2 bits (0=text 1=rodata 2=data 3=bss)
 struct Label {
-    name_off: i32,
-    name_len: i32,
-    addr:     i32,
-    section:  i32,  // 0=text 1=rodata 2=data 3=bss
+    packed: i32,   // (name_off & 0x3FFFF) | ((name_len & 0xFF) << 18)
+                   // | ((section & 0x3) << 26)
+    addr:   i32,
 }
 var g_lab_names: U8Array = 0 as U8Array;      // packed name storage
 var g_labels: LabelArray = 0 as LabelArray;
 var g_nlabels: i32 = 0;
 var g_lab_name_pos: i32 = 0;
+
+// Label bit-pack helpers. The synthetic API only generates packed()
+// and addr() getters/setters; these wrappers preserve the old
+// name_off / name_len / section call shape so existing call sites
+// don't need to know about the packing.
+fn name_off(lb: Label) -> i32 { return packed(lb) & 0x3FFFF; }
+fn name_len(lb: Label) -> i32 { return (packed(lb) >> 18) & 0xFF; }
+fn section(lb: Label) -> i32 { return (packed(lb) >> 26) & 0x3; }
+// Setter for section only (name_off/name_len never change after the
+// label is first defined; section can flip when define_label hits a
+// duplicate and rebinds it). Clears bits 26-27 by masking with the
+// 26-bit max (~26-bit-set = 0x3FFFFFF) and ORs the new value in.
+fn section(lb: Label, sec: i32) -> void {
+    var p: i32 = packed(lb);
+    packed(lb, (p & 0x3FFFFFF) | ((sec & 0x3) << 26));
+    return;
+}
+fn make_label(noff: i32, nlen: i32, addrv: i32, sec: i32) -> Label {
+    var p: i32 = (noff & 0x3FFFF)
+               | ((nlen & 0xFF) << 18)
+               | ((sec & 0x3) << 26);
+    return Label(p, addrv);
+}
 
 // Numeric labels: 10 digits x NUM_LAB_PER_DIGIT entries each
 // g_numlab[digit * NUM_LAB_PER_DIGIT + count] = address
@@ -360,7 +391,7 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
             i = i + 1;
         }
         g_lab_name_pos = g_lab_name_pos + nlen;
-        set(g_labels, idx, Label(noff, nlen, addr, g_current_section));
+        set(g_labels, idx, make_label(noff, nlen, addr, g_current_section));
     } else {
         var lb: Label = get(g_labels, idx);
         addr(lb, addr);
@@ -1525,7 +1556,7 @@ export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: 
         i = i + 1;
     }
     g_lab_name_pos = g_lab_name_pos + nlen;
-    set(g_labels, idx, Label(noff, nlen, addrv, sec));
+    set(g_labels, idx, make_label(noff, nlen, addrv, sec));
     return;
 }
 
