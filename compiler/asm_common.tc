@@ -35,16 +35,15 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // MAX_LABELS: 4096 is enough for the current self-host build (measured
 // ~2800-3200 labels when compiling a full compiler source). Raising
 // this triggers a 16 B × N alloc in g_labels so stay conservative.
-// MAX_NAME_POOL: ~90-110 KB measured for self-host, so 131072 (128 KB)
-// gives a comfortable margin. Both sizes control asm_pass1's peak
-// (see docs/task/pipeline_100kb.md § asm_pass1).
 //
-// 2026-04-30: 131072 → 98304 (96 KB, -32 KB) to cut asm_pass1/2 peak
-// for the OS-self-host arena budget. Measured g_lab_name_pos peaks
-// at ~90 KB so 96 KB leaves ~6 KB headroom; if the self-host pool
-// outgrows this the fixed-buffer error message kicks in cleanly.
-var MAX_LABELS:    i32 = 4096;
-var MAX_NAME_POOL: i32 = 98304;
+// NAME_POOL_INITIAL_KB: starting capacity of the byte pool that holds
+// label names, in KB. Grows exponentially via ensure_name_pool_capacity
+// so small inputs (hello.tc uses 35 bytes total) only pay the initial
+// 4 KB and large inputs amortise the resize cost. Replaces the old
+// MAX_NAME_POOL fixed cap (was 96 KB pre-allocated regardless of
+// usage); for hello.tc that saved ~92 KB of asm_pass1/asm_pass2 peak.
+var MAX_LABELS:           i32 = 4096;
+var NAME_POOL_INITIAL_KB: i32 = 4;
 // Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
 // definitions; the g_numlab table is `digit * NUM_LAB_PER_DIGIT + idx`.
 // Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
@@ -394,6 +393,26 @@ fn find_label(name: U8Array, nlen: i32) -> i32 {
     return 0 - 1;
 }
 
+// Grow g_lab_names to hold at least `needed` bytes. Doubles the
+// existing capacity each time, so amortised cost is O(1) per byte.
+// Replaces the old fixed-cap design — there's no upper bound now;
+// memory is bounded only by the task arena.
+fn ensure_name_pool_capacity(needed: i32) -> void {
+    var cap: i32 = len(g_lab_names);
+    if needed <= cap { return; }
+    var new_cap: i32 = cap * 2;
+    if new_cap < needed { new_cap = needed; }
+    var new_buf: U8Array = U8Array(new_cap as u32);
+    var i: i32 = 0;
+    while i < g_lab_name_pos {
+        set(new_buf, i, get(g_lab_names, i));
+        i = i + 1;
+    }
+    delete(g_lab_names);
+    g_lab_names = new_buf;
+    return;
+}
+
 fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
     var idx: i32 = find_label(name, nlen);
     if idx < 0 {
@@ -407,16 +426,7 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
             emit_string(eb, "')");
             asm_err_end(eb);
         }
-        if g_lab_name_pos + nlen > MAX_NAME_POOL {
-            var eb2: StringBuffer = StringBuffer_new();
-            asm_err_begin(eb2);
-            emit_string(eb2, "label name pool full: MAX_NAME_POOL=");
-            emit_int(eb2, MAX_NAME_POOL);
-            emit_string(eb2, " reached (at '");
-            emit_n(eb2, name, 0, nlen);
-            emit_string(eb2, "')");
-            asm_err_end(eb2);
-        }
+        ensure_name_pool_capacity(g_lab_name_pos + nlen);
         idx = g_nlabels;
         g_nlabels = g_nlabels + 1;
         var noff: i32 = g_lab_name_pos;
@@ -1294,7 +1304,7 @@ export fn asm_parse_meta_directive(buf: U8Array, blen: i32) -> i32 {
 // emit32 only write to g_code when g_pass == 2), so asm_init_pass1
 // skips that 4 MB allocation. Pass 2 needs everything.
 fn asm_init_common() -> void {
-    g_lab_names    = U8Array((MAX_NAME_POOL) as u32);
+    g_lab_names    = U8Array((NAME_POOL_INITIAL_KB * 1024) as u32);
     g_labels       = LabelArray((MAX_LABELS) as u32);
     g_sec_pos      = I32Array(4);
     g_sec_base     = I32Array(4);
@@ -1577,13 +1587,7 @@ export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: 
         emit_int(eb, MAX_LABELS);
         asm_err_end(eb);
     }
-    if g_lab_name_pos + nlen > MAX_NAME_POOL {
-        var eb2: StringBuffer = StringBuffer_new();
-        asm_err_begin(eb2);
-        emit_string(eb2, "lab: name pool full: MAX_NAME_POOL=");
-        emit_int(eb2, MAX_NAME_POOL);
-        asm_err_end(eb2);
-    }
+    ensure_name_pool_capacity(g_lab_name_pos + nlen);
     var idx: i32 = g_nlabels;
     g_nlabels = g_nlabels + 1;
     var noff: i32 = g_lab_name_pos;
