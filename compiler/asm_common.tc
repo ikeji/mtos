@@ -158,10 +158,37 @@ fn make_label(noff: i32, nlen: i32, addrv: i32, sec: i32) -> Label {
     return Label(p, addrv);
 }
 
-// Numeric labels: 10 digits x NUM_LAB_PER_DIGIT entries each
-// g_numlab[digit * NUM_LAB_PER_DIGIT + count] = address
-var g_numlab: I32Array = 0 as I32Array;
+// Numeric labels (0:..9:). Split storage by digit because measured
+// usage is wildly skewed: bc2asm.tc full.s has 373 `0:` defs and
+// 0-1 across the other 9 digits; asm_pass1.tc itself reaches >512
+// for digit 0 (which is why NUM_LAB_PER_DIGIT can't drop). Putting
+// every digit on the same flat 1024 stride wasted 9 × 1020 entries.
+// Now: digit 0 → g_numlab_zero (1024 entries), digits 1-9 →
+// g_numlab_other (NUMLAB_OTHER_PER_DIGIT entries each, base
+// (digit-1) × stride). Saves ~32 KB peak on asm_pass1/asm_pass2.
+var NUMLAB_OTHER_PER_DIGIT: i32 = 64;  // digits 1-9 — each almost
+                                       // never gets more than a
+                                       // handful in real source
+var g_numlab_zero:  I32Array = 0 as I32Array;
+var g_numlab_other: I32Array = 0 as I32Array;
 var g_numlab_count: I32Array = 0 as I32Array;  // count per digit (10 entries)
+
+// numlab_capacity / numlab_get / numlab_set: digit-aware accessors.
+// `define_numlab` and `find_numlab*` go through these so the split
+// storage is invisible to callers.
+fn numlab_capacity(digit: i32) -> i32 {
+    if digit == 0 { return NUM_LAB_PER_DIGIT; }
+    return NUMLAB_OTHER_PER_DIGIT;
+}
+fn numlab_get(digit: i32, idx: i32) -> i32 {
+    if digit == 0 { return get(g_numlab_zero, idx); }
+    return get(g_numlab_other, (digit - 1) * NUMLAB_OTHER_PER_DIGIT + idx);
+}
+fn numlab_set(digit: i32, idx: i32, val: i32) -> void {
+    if digit == 0 { set(g_numlab_zero, idx, val); return; }
+    set(g_numlab_other, (digit - 1) * NUMLAB_OTHER_PER_DIGIT + idx, val);
+    return;
+}
 
 // Per-line parse state. Each call to asm_process_line copies the
 // caller's line into g_line_buf, sets g_line_buf_len, then runs the
@@ -416,17 +443,18 @@ fn label_addr(name: U8Array, nlen: i32) -> i32 {
 // ===== Numeric label support =====
 fn define_numlab(digit: i32, addr: i32) -> void {
     var cnt: i32 = get(g_numlab_count, digit);
-    if cnt >= NUM_LAB_PER_DIGIT {
+    var cap: i32 = numlab_capacity(digit);
+    if cnt >= cap {
         var eb: StringBuffer = StringBuffer_new();
         asm_err_begin(eb);
         emit_string(eb, "numlab overflow: digit ");
         emit_int(eb, digit);
-        emit_string(eb, " exceeded NUM_LAB_PER_DIGIT (");
-        emit_int(eb, NUM_LAB_PER_DIGIT);
+        emit_string(eb, " exceeded capacity (");
+        emit_int(eb, cap);
         emit_string(eb, ")");
         asm_err_end(eb);
     }
-    set(g_numlab, (digit * NUM_LAB_PER_DIGIT + cnt), addr);
+    numlab_set(digit, cnt, addr);
     set(g_numlab_count, digit, cnt + 1);
     return;
 }
@@ -447,7 +475,7 @@ fn numlab_back(digit: i32, pc: i32) -> i32 {
     var cnt: i32 = get(g_numlab_count, digit);
     var i: i32 = cnt - 1;
     while i >= 0 {
-        var addr: i32 = get(g_numlab, (digit * NUM_LAB_PER_DIGIT + i));
+        var addr: i32 = numlab_get(digit, i);
         if addr <= pc { return addr; }
         i = i - 1;
     }
@@ -460,7 +488,7 @@ fn numlab_fwd(digit: i32, pc: i32) -> i32 {
     var cnt: i32 = get(g_numlab_count, digit);
     var i: i32 = 0;
     while i < cnt {
-        var addr: i32 = get(g_numlab, (digit * NUM_LAB_PER_DIGIT + i));
+        var addr: i32 = numlab_get(digit, i);
         if addr > pc { return addr; }
         i = i + 1;
     }
@@ -1266,7 +1294,8 @@ fn asm_init_common() -> void {
     g_mnem         = U8Array(64);
     g_ops          = I32Array(8);    // 4 ops x 2 (off, len)
     g_line_buf     = U8Array(4092);
-    g_numlab       = I32Array((10 * NUM_LAB_PER_DIGIT) as u32);
+    g_numlab_zero  = I32Array((NUM_LAB_PER_DIGIT) as u32);
+    g_numlab_other = I32Array((9 * NUMLAB_OTHER_PER_DIGIT) as u32);
     g_numlab_count = I32Array(10);
 
     g_pos              = 0;
@@ -1518,7 +1547,7 @@ export fn asm_dump_lab_state() -> void {
             emit_string(sb, "num ");
             dump_int(sb, d);
             emit_char(sb, ' ');
-            dump_int(sb, get(g_numlab, (d * NUM_LAB_PER_DIGIT + k)));
+            dump_int(sb, numlab_get(d, k));
             emit_nl(sb);
             k = k + 1;
         }
@@ -1562,14 +1591,14 @@ export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: 
 
 export fn asm_install_numlab_from_lab(digit: i32, addrv: i32) -> void {
     var cnt: i32 = get(g_numlab_count, digit);
-    if cnt >= NUM_LAB_PER_DIGIT {
+    if cnt >= numlab_capacity(digit) {
         var eb: StringBuffer = StringBuffer_new();
         asm_err_begin(eb);
         emit_string(eb, "lab: numlab overflow: digit ");
         emit_int(eb, digit);
         asm_err_end(eb);
     }
-    set(g_numlab, (digit * NUM_LAB_PER_DIGIT + cnt), addrv);
+    numlab_set(digit, cnt, addrv);
     set(g_numlab_count, digit, cnt + 1);
     return;
 }
