@@ -54,7 +54,7 @@ var NAME_POOL_INITIAL_KB: i32 = 4;
 // to 1024 — the kernel's measured 404 max underestimated; compiling
 // the assembler itself is the real worst case. The bounds check in
 // define_numlab below catches future regressions cleanly.
-var NUM_LAB_PER_DIGIT: i32 = 1024;
+var NUM_LAB_PER_DIGIT: i32 = 2048;
 
 // ===== Output mode (set by ; raw / ; load_base directives) =====
 var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
@@ -2149,6 +2149,23 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
     emit_string(sb, "(idx"); emit_nl(sb);
     emit_string(sb, "; idx v1"); emit_nl(sb);
 
+    // Meta directives picked up from `; raw` / `; load_base` lines in
+    // the source. These are global state that the link step needs;
+    // the prelude has them so its idx must carry them through.
+    emit_string(sb, "raw ");
+    dump_int(sb, g_raw_mode);
+    emit_nl(sb);
+    emit_string(sb, "load_base ");
+    dump_int(sb, g_load_vaddr);
+    emit_nl(sb);
+    // Source byte count of this idx's input. asm-pass2's per-section
+    // stream loop reads exactly src_bytes bytes per pass, so the link
+    // step needs (prelude_src_bytes + user_src_bytes). Loader adds
+    // this into the running total.
+    emit_string(sb, "src_bytes ");
+    dump_int(sb, g_src_bytes);
+    emit_nl(sb);
+
     // Per-file section size contributions. Same as g_sec_pos at the
     // end of pass 1a (each section's intra cursor).
     var i: i32 = 0;
@@ -2419,3 +2436,219 @@ export fn asm_write_elf() -> void {
     delete(out);
     return;
 }
+
+// ===== .idx loader (per-file pre-link metadata) =====
+//
+// Reads a `.idx` (docs/idx_format.md) and merges its contents into
+// the current asm-pass1 state. Used by `asm_pass1 --load-idx
+// <prelude.idx>` to skip walking the prelude source on every OS-side
+// compile (kernel build pre-links the prelude once, OS resumes from
+// the .idx).
+//
+// Merge semantics:
+// - secsize <s> <size>: this file added `size` bytes to section s.
+//   We snapshot g_sec_pos[s] at the start of the load and finalise
+//   each section's per-file contribution into g_sec_pos[s] = snap[s]
+//   + size.
+// - lab <intra> <s> <name>: install at absolute intra (within the
+//   current accumulated layout) = snap[s] + intra. Section is `s`.
+//   Goes through asm_install_label_from_lab so duplicates get the
+//   addr/section update (last-wins; matches define_label).
+// - num <digit> <intra> <s>: install via asm_install_numlab_from_lab
+//   with intra value = snap[s] + intra.
+// - ref <owner_name> <target_name>: look up owner in g_labels (must
+//   already be loaded from this idx's lab lines, which precede
+//   refs in the on-disk layout). For the target, try find_label —
+//   if it hits, append edge (owner_idx, target_idx) to g_refs;
+//   otherwise queue as deferred (resolved at link time once the
+//   user source has been processed).
+fn idx_is_ws(c: u8) -> bool { return c == ' ' || c == 9u8; }
+fn idx_is_digit(c: u8) -> bool { return c >= '0' && c <= '9'; }
+
+fn idx_skip_ws(buf: U8Array, p: i32, end: i32) -> i32 {
+    while p < end && idx_is_ws(get(buf, p)) { p = p + 1; }
+    return p;
+}
+
+// Parse a non-negative i32 starting at p. Returns the value via
+// g_idx_int, the new cursor via g_idx_cur.
+var g_idx_int: i32 = 0;
+var g_idx_cur: i32 = 0;
+fn idx_parse_dec(buf: U8Array, p: i32, end: i32) -> void {
+    var neg: i32 = 0;
+    if p < end && get(buf, p) == '-' { neg = 1; p = p + 1; }
+    var v: i32 = 0;
+    while p < end && idx_is_digit(get(buf, p)) {
+        v = v * 10 + (get(buf, p) as i32 - 48);
+        p = p + 1;
+    }
+    if neg == 1 { v = 0 - v; }
+    g_idx_int = v;
+    g_idx_cur = p;
+    return;
+}
+
+// Find end-of-token (whitespace / newline / end). Returns end cursor.
+fn idx_token_end(buf: U8Array, p: i32, end: i32) -> i32 {
+    while p < end && !idx_is_ws(get(buf, p))
+                  && get(buf, p) != 10u8 && get(buf, p) != 13u8 {
+        p = p + 1;
+    }
+    return p;
+}
+
+// Trim trailing CR / LF / WS from a (start, end) name slice.
+fn idx_trim_end(buf: U8Array, start: i32, end: i32) -> i32 {
+    while end > start {
+        var tc: u8 = get(buf, end - 1);
+        if tc != 10u8 && tc != 13u8 && tc != ' ' && tc != 9u8 { return end; }
+        end = end - 1;
+    }
+    return end;
+}
+
+// Process one `.idx` line. snap[] is the per-file section_pos
+// snapshot taken at load start. Returns 1 if the closing `)` was
+// seen.
+fn idx_process_line(buf: U8Array, blen: i32, snap: I32Array) -> i32 {
+    var p: i32 = idx_skip_ws(buf, 0, blen);
+    if p >= blen { return 0; }
+    var c: u8 = get(buf, p);
+    if c == 10u8 || c == 13u8 { return 0; }
+    if c == ';' { return 0; }
+    if c == '(' { return 0; }
+    if c == ')' { return 1; }
+
+    if blen - p >= 4 && cmp(buf, p, "raw ") {
+        idx_parse_dec(buf, p + 4, blen);
+        asm_install_raw_mode(g_idx_int);
+        return 0;
+    }
+    if blen - p >= 10 && cmp(buf, p, "load_base ") {
+        idx_parse_dec(buf, p + 10, blen);
+        asm_install_load_base(g_idx_int);
+        return 0;
+    }
+    if blen - p >= 10 && cmp(buf, p, "src_bytes ") {
+        idx_parse_dec(buf, p + 10, blen);
+        asm_set_src_bytes(g_src_bytes + g_idx_int);
+        return 0;
+    }
+    if blen - p >= 8 && cmp(buf, p, "secsize ") {
+        idx_parse_dec(buf, p + 8, blen);
+        var sec_id: i32 = g_idx_int;
+        idx_parse_dec(buf, idx_skip_ws(buf, g_idx_cur, blen), blen);
+        var sec_sz: i32 = g_idx_int;
+        if sec_id >= 0 && sec_id < 4 {
+            set(g_sec_pos, sec_id, get(snap, sec_id) + sec_sz);
+        }
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "lab ") {
+        idx_parse_dec(buf, p + 4, blen);
+        var laddr: i32 = g_idx_int;
+        idx_parse_dec(buf, idx_skip_ws(buf, g_idx_cur, blen), blen);
+        var lsec: i32 = g_idx_int;
+        var ns: i32 = idx_skip_ws(buf, g_idx_cur, blen);
+        var ne: i32 = idx_trim_end(buf, ns, blen);
+        var nlen: i32 = ne - ns;
+        if nlen > 0 && lsec >= 0 && lsec < 4 {
+            var name: U8Array = U8Array((nlen) as u32);
+            var i: i32 = 0;
+            while i < nlen { set(name, i, get(buf, (ns + i))); i = i + 1; }
+            asm_install_label_from_lab(name, nlen, get(snap, lsec) + laddr, lsec);
+            delete(name);
+        }
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "num ") {
+        idx_parse_dec(buf, p + 4, blen);
+        var dig: i32 = g_idx_int;
+        idx_parse_dec(buf, idx_skip_ws(buf, g_idx_cur, blen), blen);
+        var nintra: i32 = g_idx_int;
+        idx_parse_dec(buf, idx_skip_ws(buf, g_idx_cur, blen), blen);
+        var nsec: i32 = g_idx_int;
+        if dig >= 0 && dig < 10 && nsec >= 0 && nsec < 4 {
+            asm_install_numlab_from_lab(dig, get(snap, nsec) + nintra);
+        }
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "ref ") {
+        var os: i32 = idx_skip_ws(buf, p + 4, blen);
+        var oe: i32 = idx_token_end(buf, os, blen);
+        var olen: i32 = oe - os;
+        var ts: i32 = idx_skip_ws(buf, oe, blen);
+        var te: i32 = idx_trim_end(buf, ts, blen);
+        var tlen: i32 = te - ts;
+        if olen > 0 && tlen > 0 {
+            // Look up owner. Skip silently if not found (shouldn't
+            // happen — labs precede refs in the dump).
+            var oname: U8Array = U8Array((olen) as u32);
+            var i: i32 = 0;
+            while i < olen { set(oname, i, get(buf, (os + i))); i = i + 1; }
+            var owner_idx: i32 = find_label(oname, olen);
+            delete(oname);
+            if owner_idx >= 0 {
+                // record_ref uses g_owner_idx as the source; set it
+                // around the call. Need ref state allocated +
+                // g_collecting_refs on (set elsewhere by caller).
+                var saved_owner: i32 = g_owner_idx;
+                g_owner_idx = owner_idx;
+                var tname: U8Array = U8Array((tlen) as u32);
+                var j: i32 = 0;
+                while j < tlen { set(tname, j, get(buf, (ts + j))); j = j + 1; }
+                record_ref(tname, tlen);
+                delete(tname);
+                g_owner_idx = saved_owner;
+            }
+        }
+        return 0;
+    }
+    return 0;
+}
+
+export fn asm_load_idx(path: String) -> i32 {
+    var fd: i32 = do_openat(0 - 100, path, 0);
+    if fd < 0 { return 0 - 1; }
+    // Snapshot per-section cursors so this idx's intra addrs map to
+    // (snap + intra) absolute-within-current-layout values.
+    var snap: I32Array = I32Array(4);
+    set(snap, 0, get(g_sec_pos, 0));
+    set(snap, 1, get(g_sec_pos, 1));
+    set(snap, 2, get(g_sec_pos, 2));
+    set(snap, 3, get(g_sec_pos, 3));
+
+    // Make sure g_refs / deferred queue exist before record_ref
+    // runs from inside idx_process_line.
+    asm_set_collecting_refs(1);
+
+    var reader: SourceReader = SourceReader_new(fd);
+    var line: U8Array = U8Array(4092);
+    var done: i32 = 0;
+    while done == 0 && at_eof(reader) == false {
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(reader) == false {
+            var c: u8 = next(reader);
+            if llen < 4092 { set(line, llen, c); }
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        if llen > 4092 { llen = 4092; }
+        if llen > 0 {
+            if idx_process_line(line, llen, snap) != 0 { done = 1; }
+        }
+    }
+    delete(line);
+    delete(snap);
+    close(reader);
+    do_close(fd);
+    return 0;
+}
+
+// Forward decls — bodies live in the per-platform crt0 (host
+// bootstrap/crt0.s, OS task_crt0.s). asm_pass1 already declares them
+// for its src open path, but asm_load_idx in this file (asm_common)
+// also needs them.
+fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;

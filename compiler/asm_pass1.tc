@@ -179,9 +179,22 @@ fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
 // processes the source through pass 1a only and writes a `.idx`
 // (per-file metadata: secsize / labels intra / refs by name) instead
 // of going through BFS / fixup / strip / lab dump.
-fn run(src_path: String, strip_out_path: String, emit_idx_path: String) -> i32 {
+//
+// load_idx_path: optional pre-link state file. When set, the listed
+// `.idx` is loaded (labels / refs / secsize) before the source walk
+// so the user.s starts with the prelude state already in place. Used
+// to skip the prelude source walk on every OS-side compile (kernel
+// build pre-emits prelude.idx, OS asm_pass1 just loads it).
+fn run(src_path: String, strip_out_path: String,
+       emit_idx_path: String, load_idx_path: String) -> i32 {
     asm_init_pass1();
     asm_set_pass(1);
+
+    // Load pre-link state if asked. Must happen after asm_init_pass1
+    // (so g_labels etc. exist) but before the source walk.
+    if load_idx_path as u32 != 0u32 {
+        asm_load_idx(load_idx_path);
+    }
 
     var src_fd: i32 = 0;
     var have_path: i32 = 0;
@@ -224,6 +237,7 @@ fn run(src_path: String, strip_out_path: String, emit_idx_path: String) -> i32 {
     if emit_idx_path as u32 != 0u32 {
         asm_finalize_labels();           // hash for fast deferred drain
         asm_resolve_deferred_refs();     // intra-file forward refs only
+        asm_set_src_bytes(total_bytes);  // captured into idx for link
         var out_fd: i32 = do_openat(0 - 100, emit_idx_path, 577);
         if out_fd >= 0 {
             asm_dump_idx_state(out_fd);
@@ -235,7 +249,10 @@ fn run(src_path: String, strip_out_path: String, emit_idx_path: String) -> i32 {
 
     asm_compute_sec_bases();
     asm_fixup_labels();
-    asm_set_src_bytes(total_bytes);
+    // Accumulate user.s bytes onto whatever load_idx set (prelude
+    // src_bytes). asm_pass2's per-section stream loop reads
+    // src_bytes per pass, so this needs the full prelude+user total.
+    asm_set_src_bytes(asm_get_src_bytes() + total_bytes);
 
     if have_path != 0 {
         // Build the label hash table now so the deferred-ref drain +
@@ -293,36 +310,56 @@ fn run(src_path: String, strip_out_path: String, emit_idx_path: String) -> i32 {
     return 0;
 }
 
-fn main() -> i32 { return run(0 as String, 0 as String, 0 as String); }
+fn main() -> i32 { return run(0 as String, 0 as String, 0 as String, 0 as String); }
+
+// Compare a 0..n-bytes prefix of `s` against a literal pattern given
+// as raw bytes baked in via 4-byte chunks. Used by main(argv) below
+// to recognise `--emit-idx` / `--load-idx` flags without dragging in
+// a full string library.
+fn arg_eq(s: String, pat: StringLiteral) -> i32 {
+    var ns: i32 = len(s);
+    var np: i32 = len(pat);
+    if ns != np { return 0; }
+    var i: i32 = 0;
+    while i < np {
+        if get(s, i) != get(pat, i) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
 fn main(argv: StringArray) -> i32 {
     // CLI shapes:
-    //   asm_pass1                                     stdin → .lab on stdout
-    //   asm_pass1 src.s                               read src, .lab on stdout
-    //   asm_pass1 src.s strip.s                       read src, dead-strip → strip.s, .lab on stdout
-    //   asm_pass1 --emit-idx out.idx src.s            extract pass only → .idx
+    //   asm_pass1                                       stdin → .lab on stdout
+    //   asm_pass1 src.s                                 read src, .lab on stdout
+    //   asm_pass1 src.s strip.s                         dead-strip → strip.s, .lab on stdout
+    //   asm_pass1 --emit-idx out.idx src.s              extract pass only → .idx
+    //   asm_pass1 --load-idx in.idx src.s [strip.s]     load prelude state then process src
     var path: String = 0 as String;
     var strip_out: String = 0 as String;
     var emit_idx: String = 0 as String;
+    var load_idx: String = 0 as String;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
-        // Detect --emit-idx <path> <src> first; otherwise positional.
-        if argc >= 4 {
-            var arg1: String = get(argv, 1);
-            var n1: i32 = len(arg1);
-            if n1 == 10 &&
-               get(arg1, 0) == '-' as u8 && get(arg1, 1) == '-' as u8 &&
-               get(arg1, 2) == 'e' as u8 && get(arg1, 3) == 'm' as u8 &&
-               get(arg1, 4) == 'i' as u8 && get(arg1, 5) == 't' as u8 &&
-               get(arg1, 6) == '-' as u8 && get(arg1, 7) == 'i' as u8 &&
-               get(arg1, 8) == 'd' as u8 && get(arg1, 9) == 'x' as u8 {
-                emit_idx = get(argv, 2);
-                path     = get(argv, 3);
+        var consumed: i32 = 1;  // skip argv[0] (program name)
+        // First pass: peel off any --emit-idx <path> / --load-idx <path>
+        // flags from the start (only one of each, in either order).
+        var keep_scanning: i32 = 1;
+        while keep_scanning != 0 && consumed < argc {
+            var a: String = get(argv, consumed);
+            if arg_eq(a, "--emit-idx") != 0 && consumed + 1 < argc {
+                emit_idx = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--load-idx") != 0 && consumed + 1 < argc {
+                load_idx = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else {
+                keep_scanning = 0;
             }
         }
-        if emit_idx as u32 == 0u32 {
-            if argc >= 2 { path = get(argv, 1); }
-            if argc >= 3 { strip_out = get(argv, 2); }
-        }
+        // Positional: src [strip]
+        if consumed < argc { path = get(argv, consumed); consumed = consumed + 1; }
+        if consumed < argc { strip_out = get(argv, consumed); consumed = consumed + 1; }
     }
-    return run(path, strip_out, emit_idx);
+    return run(path, strip_out, emit_idx, load_idx);
 }
