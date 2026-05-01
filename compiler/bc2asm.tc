@@ -226,6 +226,34 @@ fn name_eq(strtab: U8Array, ss: i32, sl: i32, pat: StringLiteral) -> bool {
     return true;
 }
 
+// Helper: emit a typed get inline.
+//   stride_log2: 0=byte, 1=halfword, 2=word
+//   load_op: "lbu" / "lb" / "lhu" / "lh" / "lw"
+// Computes a0 = mem[a0 + (a1 << stride_log2) + 4]. The +4 skips
+// the count prefix that count-prefixed arrays / Strings carry.
+fn emit_inline_get(stride_log2: i32, load_op: StringLiteral, ob: StringBuffer) -> void {
+    if stride_log2 != 0 {
+        e4(ob); emit_string(ob, "slli a1, a1, ");
+        emit_int(ob, stride_log2); emit_nl(ob);
+    }
+    e4(ob); emit_string(ob, "add  a0, a0, a1"); emit_nl(ob);
+    e4(ob); emit_string(ob, load_op);
+    emit_string(ob, " a0, 4(a0)"); emit_nl(ob);
+    return;
+}
+// Helper: emit a typed set inline. Similar to get but uses a2 as
+// the value and a store opcode (sb/sh/sw).
+fn emit_inline_set(stride_log2: i32, store_op: StringLiteral, ob: StringBuffer) -> void {
+    if stride_log2 != 0 {
+        e4(ob); emit_string(ob, "slli a1, a1, ");
+        emit_int(ob, stride_log2); emit_nl(ob);
+    }
+    e4(ob); emit_string(ob, "add  a0, a0, a1"); emit_nl(ob);
+    e4(ob); emit_string(ob, store_op);
+    emit_string(ob, " a2, 4(a0)"); emit_nl(ob);
+    return;
+}
+
 // Try to emit an inline body for known builtins. Returns 1 if
 // inlined (caller skips the `call` emit), 0 to fall through.
 fn try_inline_builtin(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: StringBuffer) -> i32 {
@@ -255,6 +283,63 @@ fn try_inline_builtin(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: StringBuffer)
         e4(ob); emit_string(ob, "sw   a1, 0(a0)"); emit_nl(ob);
         return 1;
     }
+
+    // get(<typed-array>, i32) — same shape (arr in a0, idx in a1),
+    // result in a0. Stride and load opcode vary by element type.
+    // Address: arr + (i << stride_log2) + 4 (count-prefix skip).
+    if name_eq(strtab, nm_ss, nm_sl, "get__U8Array__i32") {
+        emit_inline_get(0, "lbu ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__I8Array__i32") {
+        emit_inline_get(0, "lb  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__U16Array__i32") {
+        emit_inline_get(1, "lhu ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__I16Array__i32") {
+        emit_inline_get(1, "lh  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__U32Array__i32") {
+        emit_inline_get(2, "lw  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__I32Array__i32") {
+        emit_inline_get(2, "lw  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__StringArray__i32") {
+        emit_inline_get(2, "lw  ", ob); return 1;
+    }
+    // String / StringLiteral get returns u8 (single byte at +4+i).
+    if name_eq(strtab, nm_ss, nm_sl, "get__String__i32") {
+        emit_inline_get(0, "lbu ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__StringLiteral__i32") {
+        emit_inline_get(0, "lbu ", ob); return 1;
+    }
+
+    // set(<typed-array>, i32, <val>) — arr a0, idx a1, val a2.
+    if name_eq(strtab, nm_ss, nm_sl, "set__U8Array__i32__u8") {
+        emit_inline_set(0, "sb  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__I8Array__i32__i8") {
+        emit_inline_set(0, "sb  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__U16Array__i32__u16") {
+        emit_inline_set(1, "sh  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__I16Array__i32__i16") {
+        emit_inline_set(1, "sh  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__U32Array__i32__u32") {
+        emit_inline_set(2, "sw  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__I32Array__i32__i32") {
+        emit_inline_set(2, "sw  ", ob); return 1;
+    }
+
+    // len() carries an explicit null check in runtime.tc (returns 0
+    // when the arg is null), so a 1-instr inline would change
+    // semantics on null-array access. Keep the call.
+
     return 0;
 }
 

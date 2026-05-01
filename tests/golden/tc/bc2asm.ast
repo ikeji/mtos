@@ -1182,6 +1182,150 @@
       )
     )
   )
+  (fn emit_inline_get
+    (params
+      (param stride_log2
+        (type i32)
+      )
+      (param load_op
+        (type StringLiteral)
+      )
+      (param ob
+        (type StringBuffer)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "if stride_log2 != 0 {")
+      (if
+        (binop !=
+          (var stride_log2)
+          (int 0)
+        )
+        (block
+          (comment "e4(ob); emit_string(ob, \"slli a1, a1, \");")
+          (call_stmt e4
+            (var ob)
+          )
+          (call_stmt emit_string
+            (var ob)
+            (str "slli a1, a1, ")
+          )
+          (comment "emit_int(ob, stride_log2); emit_nl(ob);")
+          (call_stmt emit_int
+            (var ob)
+            (var stride_log2)
+          )
+          (call_stmt emit_nl
+            (var ob)
+          )
+        )
+      )
+      (comment "e4(ob); emit_string(ob, \"add  a0, a0, a1\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "add  a0, a0, a1")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, load_op);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (var load_op)
+      )
+      (comment "emit_string(ob, \" a0, 4(a0)\"); emit_nl(ob);")
+      (call_stmt emit_string
+        (var ob)
+        (str " a0, 4(a0)")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn emit_inline_set
+    (params
+      (param stride_log2
+        (type i32)
+      )
+      (param store_op
+        (type StringLiteral)
+      )
+      (param ob
+        (type StringBuffer)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "if stride_log2 != 0 {")
+      (if
+        (binop !=
+          (var stride_log2)
+          (int 0)
+        )
+        (block
+          (comment "e4(ob); emit_string(ob, \"slli a1, a1, \");")
+          (call_stmt e4
+            (var ob)
+          )
+          (call_stmt emit_string
+            (var ob)
+            (str "slli a1, a1, ")
+          )
+          (comment "emit_int(ob, stride_log2); emit_nl(ob);")
+          (call_stmt emit_int
+            (var ob)
+            (var stride_log2)
+          )
+          (call_stmt emit_nl
+            (var ob)
+          )
+        )
+      )
+      (comment "e4(ob); emit_string(ob, \"add  a0, a0, a1\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "add  a0, a0, a1")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, store_op);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (var store_op)
+      )
+      (comment "emit_string(ob, \" a2, 4(a0)\"); emit_nl(ob);")
+      (call_stmt emit_string
+        (var ob)
+        (str " a2, 4(a0)")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
   (fn try_inline_builtin
     (params
       (param strtab
@@ -1352,6 +1496,306 @@
             (var ob)
           )
           (comment "return 1;")
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__U8Array__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__U8Array__i32")
+        )
+        (block
+          (comment "emit_inline_get(0, \"lbu \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 0)
+            (str "lbu ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__I8Array__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__I8Array__i32")
+        )
+        (block
+          (comment "emit_inline_get(0, \"lb  \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 0)
+            (str "lb  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__U16Array__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__U16Array__i32")
+        )
+        (block
+          (comment "emit_inline_get(1, \"lhu \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 1)
+            (str "lhu ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__I16Array__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__I16Array__i32")
+        )
+        (block
+          (comment "emit_inline_get(1, \"lh  \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 1)
+            (str "lh  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__U32Array__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__U32Array__i32")
+        )
+        (block
+          (comment "emit_inline_get(2, \"lw  \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 2)
+            (str "lw  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__I32Array__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__I32Array__i32")
+        )
+        (block
+          (comment "emit_inline_get(2, \"lw  \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 2)
+            (str "lw  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__StringArray__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__StringArray__i32")
+        )
+        (block
+          (comment "emit_inline_get(2, \"lw  \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 2)
+            (str "lw  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__String__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__String__i32")
+        )
+        (block
+          (comment "emit_inline_get(0, \"lbu \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 0)
+            (str "lbu ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"get__StringLiteral__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "get__StringLiteral__i32")
+        )
+        (block
+          (comment "emit_inline_get(0, \"lbu \", ob); return 1;")
+          (call_stmt emit_inline_get
+            (int 0)
+            (str "lbu ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"set__U8Array__i32__u8\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "set__U8Array__i32__u8")
+        )
+        (block
+          (comment "emit_inline_set(0, \"sb  \", ob); return 1;")
+          (call_stmt emit_inline_set
+            (int 0)
+            (str "sb  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"set__I8Array__i32__i8\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "set__I8Array__i32__i8")
+        )
+        (block
+          (comment "emit_inline_set(0, \"sb  \", ob); return 1;")
+          (call_stmt emit_inline_set
+            (int 0)
+            (str "sb  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"set__U16Array__i32__u16\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "set__U16Array__i32__u16")
+        )
+        (block
+          (comment "emit_inline_set(1, \"sh  \", ob); return 1;")
+          (call_stmt emit_inline_set
+            (int 1)
+            (str "sh  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"set__I16Array__i32__i16\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "set__I16Array__i32__i16")
+        )
+        (block
+          (comment "emit_inline_set(1, \"sh  \", ob); return 1;")
+          (call_stmt emit_inline_set
+            (int 1)
+            (str "sh  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"set__U32Array__i32__u32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "set__U32Array__i32__u32")
+        )
+        (block
+          (comment "emit_inline_set(2, \"sw  \", ob); return 1;")
+          (call_stmt emit_inline_set
+            (int 2)
+            (str "sw  ")
+            (var ob)
+          )
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"set__I32Array__i32__i32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "set__I32Array__i32__i32")
+        )
+        (block
+          (comment "emit_inline_set(2, \"sw  \", ob); return 1;")
+          (call_stmt emit_inline_set
+            (int 2)
+            (str "sw  ")
+            (var ob)
+          )
           (return
             (int 1)
           )
