@@ -40,10 +40,11 @@ kernel/tasks/task_data.s                                │
 ─────────────────────────────────────────────────────────────
 /hw.tc ──parse──▶ /sd/1.ast ──sigscan──▶ /sd/1.th
                        │                       │
-                       ▼  cat (wrap)           ▼
-        empty_imports.txt + self_open.txt + 1.th + wrap_close.txt + 1.ast
-                       │
-                       ▼ tcheck
+                       └───────────────────────┴──┐
+                                                  ▼ tcheck --tgth /sd/1.th
+                                                           --tgt /sd/1.ast
+                                                           --out /sd/2.tast
+                                                  ▼
                    /sd/2.tast ──codegen──▶ /sd/3.bc ──bc2asm──▶ /sd/4.s
                                                                     │
         /sd/4.s + /prelude_tail.s ─[cat]─▶ /sd/u.s ◀────────────────┘
@@ -70,6 +71,13 @@ kernel/tasks/task_data.s                                │
 
 ここで asm_pass2 が prelude.s を 3 回 walk するのが重い（~50 s）。
 
+**注**: 2026-05-01 に tcheck が file-args (`--exth` / `--tgth` /
+`--tgt` / `--out`) 対応になり cat-wrap step が不要になった
+(commit 775a004)。同じ file-args パターンを **asm_pass1 / asm_pass2
+にも適用するのが pre-encode の前提**：asm_pass2 が複数の入力ファイル
+（prelude.bin × 3 + user.strip）を取れるよう、stdin パイプ前提から
+脱却する必要がある。
+
 ## 提案するデータフロー
 
 ```
@@ -84,12 +92,12 @@ prelude.s ── asm_pass1 + asm_pass2 (host) ──▶ prelude.text.bin    (~50
 
 [OS-side compile]
 ─────────────────────────────────────────────────────────────
-parse → sigscan → cat → tcheck → codegen → bc2asm → cat (user+tail)
+parse → sigscan → tcheck (file-args) → codegen → bc2asm → cat (user+tail)
                                                             │
                                                             ▼
                                                         /sd/u.s
                                                             │
-                                                            ▼ asm_pass1 (変更なし、.idx 経由)
+                                                            ▼ asm_pass1 (--load-idx)
                                                             ▼
                                                       /sd/lab.s + /sd/u.strip
                                                             │
@@ -169,8 +177,7 @@ asm_pass2 は `src raw` を memcpy、`src asm` を encode、`reloc` を最後に
 |---|---|---|
 | parse | /hw.tc | /sd/1.ast |
 | sigscan | /sd/1.ast | /sd/1.th |
-| cat (wrap) | empty_imports + self_open + 1.th + wrap_close + 1.ast | /sd/1.wr |
-| tcheck | /sd/1.wr | /sd/2.tast |
+| **tcheck** | **--tgth /sd/1.th --tgt /sd/1.ast --out /sd/2.tast** *(file-args 対応済 commit 775a004)* | /sd/2.tast |
 | codegen | /sd/2.tast | /sd/3.bc |
 | bc2asm | /sd/3.bc | /sd/4.s |
 | cat | /sd/4.s + /prelude_tail.s | /sd/u.s |
@@ -188,6 +195,22 @@ asm_pass2 の変更：
 - 全 section emit 後、reloc table を読んで該当 offset を patch
 
 ## 段階的実装プラン
+
+**前提ステップ**（CLI を file-args に統一）：
+
+| step | 内容 | 状態 |
+|---|---|---|
+| 0a | tcheck `--exth/--tgth/--tgt/--out` | ✅ 完了 (commit 775a004) |
+| 0b | asm_pass1 `--lab-out / --strip-out / --user-src` 等の整理 | TODO |
+| 0c | asm_pass2 `--lab / --src-raw <path> <sec> / --src-asm <path> / --out` | TODO |
+
+asm_pass1 / asm_pass2 を stdin/stdout 前提から脱却させて**複数入力
+ファイルを引数で受け取れる**ようにする。pre-encode 設計では
+asm_pass2 が `prelude.{text,rodata,data}.bin` + `/sd/u.strip` の
+4 ファイルを section 順に combine するので、stdin パイプは表現
+不能。
+
+**本体ステップ**：
 
 | step | 内容 | commit 単位 |
 |---|---|---|
@@ -223,3 +246,25 @@ asm_pass2 の変更：
 - [docs/idx_format.md](../idx_format.md) — `.idx` フォーマット
 - [docs/task/asm_pass_split.md](asm_pass_split.md) — 4-pass 整理
 - [docs/scaling.md](../scaling.md) — phase 7 のステージ別計測
+
+## CLI まとめ（file-args への移行ロードマップ）
+
+| tool | 現状 | 移行後 |
+|---|---|---|
+| parse | stdin → stdout | （要検討、まだ stdin） |
+| sigscan | stdin → stdout | （要検討、まだ stdin） |
+| tcheck | stdin → stdout | ✅ `--exth/--tgth/--tgt/--out` |
+| codegen | stdin → stdout | （要検討） |
+| bc2asm | stdin → stdout | （要検討） |
+| asm_pass1 | argv (`/path/to/src.s [strip.s]`) + `--load-idx`/`--emit-idx` | 既に file-args（pre-encode で `--emit-bin` 追加） |
+| asm_pass2 | stdin (`.lab + 3 × source`) → stdout | `--lab + --src-raw × N + --src-asm × N + --out` |
+
+stdin/stdout 中心の Unix-pipe 風 vs 明示的 file-args の選択：
+- **Unix-pipe**: 並列性・組合せ性が高い。1 in / 1 out の単純フィルタ向き
+- **file-args**: 多入力 / 多出力 / 複雑な組合せ向き。OS 側の SD 経由
+  パイプラインでは file-args の方がオーバーヘッド少ない（pipe syscall
+  もあるが file 介した方が直接的）
+
+asm_pass2 は **多入力**を扱う必要があるので file-args 必須。tcheck
+も実質 3 入力なので file-args が綺麗。parse / sigscan / codegen /
+bc2asm は 1 in / 1 out なので stdin 維持で問題ない。
