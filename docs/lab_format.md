@@ -20,9 +20,13 @@ per-file 中間状態は [`.idx` フォーマット](idx_format.md) を参照。
 | key | 形式 | 意味 |
 |---|---|---|
 | `;`  | `; ...` | 行コメント。`asm-pass1` が出力する `; lab v1` は仕様バージョン (現在 v1) |
+| `raw` / `load_base` / `src_bytes` | `raw <0\|1>` 等 | meta 状態（`; raw` ディレクティブ等を asm-pass2 に渡す） |
 | `sec` | `sec <id> <base> <size>` | セクション情報。4 個固定 |
+| `src` | `src <path>`（≡ `src asm <path>`） | asm-pass2 が open + tokenize + encode する入力 .s。複数可、順序は text→rodata→data エミット時の section base 計算順 |
+| `src raw` | `src raw <path> <section_id>` | **(v2)** asm-pass2 がそのまま memcpy する pre-encoded バイナリ。section_id は 0=text / 1=rodata / 2=data |
 | `lab` | `lab <addr> <section> <name>` | 通常ラベル (関数名・global var・string literal 等) |
 | `num` | `num <digit> <addr>` | 数値ラベル `0:`〜`9:` の 1 定義 |
+| `reloc` | `reloc <offset> <kind> <name>` | **(v2)** pre-encoded `src raw` セクション内の placeholder を、リンク時に label `<name>` の最終アドレスで patch する指示 |
 
 行末は LF (`\n`)。空行は無視。
 
@@ -69,6 +73,74 @@ num <digit> <addr>
 asm-pass1 は **ソース順** に出力する (= 同じ digit の複数定義が、
 ソースの出現順に並ぶ)。`numlab_back` / `numlab_fwd` は出現順前提なので、
 asm-pass2 は読んだ順に append すれば正しい挙動になる。
+
+### `src` / `src asm <path>` (任意個、v1 後方互換 + v2 で意味付け)
+
+```
+src <path>             ; v1 と v2 共通
+src asm <path>         ; v2 で明示的なエイリアス
+```
+
+- `path`: asm-pass2 が `do_openat` で開いて読み、tokenize + encode する
+  asm ソース。複数行可。
+
+asm-pass2 は宣言順に open し、各セクションパス（text→rodata→data）で
+全 src を順に walk。target_section にマッチする bytes を emit。
+
+### `src raw <path> <section_id>` (任意個、v2)
+
+```
+src raw <path> <section_id>
+```
+
+- `path`: pre-encoded バイナリ。bytes はそのまま `<section_id>` の bytes
+  として連結される（tokenize / encode しない）
+- `section_id`: 0=text, 1=rodata, 2=data
+
+bss (id=3) には raw bytes は出さない（zero-fill 専用）。
+
+複数の raw / asm が混在する場合、`.lab` 内の宣言順に concat される。
+セクション境界は **明示的に各 `src raw` が `section_id` を指定**するの
+で、asm ソース内の `.text` / `.data` ディレクティブとは独立。
+
+例：prelude pre-encode の典型例
+```
+src raw /prelude.text.bin 0
+src raw /prelude.rodata.bin 1
+src raw /prelude.data.bin 2
+src asm /sd/u.strip
+```
+
+asm-pass2 はテキストセクション emit 時：
+1. `prelude.text.bin` を memcpy
+2. `/sd/u.strip` を tokenize + encode、`.text` 部分の bytes を append
+3. （reloc があれば最後に patch）
+
+### `reloc <offset> <kind> <name>` (任意個、v2)
+
+```
+reloc <offset> <kind> <name>
+```
+
+- `offset`: text section 内の絶対オフセット (バイト)
+- `kind`: 命令形式
+  - `0`: J-type 21-bit PC-relative (jal)
+  - `1`: U+I 32-bit PC-relative (auipc + jalr ペア; offset は auipc を指す)
+- `name`: target ラベル名
+
+**目的**: pre-encoded prelude.text.bin のうち、user 側ラベルを参照する
+命令の placeholder (オフセット 0 で encode 済み) を、リンク時に最終
+アドレスで上書きする。例：
+
+```
+reloc 84 1 main__StringArray
+```
+
+= prelude.text.bin の offset 84 にある `auipc + jalr` ペアの即値 32 bit
+を、`main__StringArray` の最終アドレス - 84 (PC) で計算した値で patch。
+
+asm-pass2 は全 src を emit してから reloc を順に適用する。複数 reloc
+は独立で順序非依存。
 
 ## サンプル
 
@@ -140,8 +212,10 @@ asm-pass2 は `.s` を **stream で再度読む** ので、行ごとの section 
 
 ## バージョン
 
-- v1: 本書記載の形式 (`; lab v1`)
+- v1: `sec` / `lab` / `num` / `src` の基本形式
+- v2: `src raw <path> <id>` + `reloc <offset> <kind> <name>` を追加
+  (prelude pre-encode 対応、docs/task/asm_pre_encode.md)
 
-互換性のない変更時にバージョンを上げる。reader はヘッダコメントの
-バージョンを照合しなくても動くが、明示的に `; lab v1` の有無で
-spec mismatch を検出する余地がある。
+reader はヘッダコメントのバージョンを照合しなくても動く（不要な行種別
+は無視）が、明示的に `; lab v1` / `; lab v2` で spec mismatch を検出
+する余地がある。v2 reader は v1 ファイルを問題なく読める（後方互換）。
