@@ -9,6 +9,10 @@
 asm.tc が 1 プロセスで持っている 2-pass 状態を、ファイル境界で切る
 ためのフォーマット。docs/task/pipeline_100kb.md §5 「asm 分割」を参照。
 
+`.lab` は **link 後の最終形** (絶対アドレス、live のみ)。link 前の
+per-file 中間状態は [`.idx` フォーマット](idx_format.md) を参照。
+4 段パスの整理は [docs/task/asm_pass_split.md](task/asm_pass_split.md)。
+
 ## 行の種別
 
 各行は 1 個のキーワード (空白区切りの先頭トークン) で識別する:
