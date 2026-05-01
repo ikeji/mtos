@@ -206,8 +206,63 @@ fn base_name_len(strtab: U8Array, ss: i32, sl: i32) -> i32 {
     }
     return sl;
 }
-// "    call NAME\n"  (all calls use full mangled name directly)
+// peek*/poke* are 1-instruction wrappers around lw/lh/lbu/sw/sh/sb,
+// each defined in crt0_tc.s as a 2-instruction stub (lw + ret). The
+// emit cost per call is jal/ret + the load/store. Inlining them at
+// bc2asm time replaces `call peek32__u32` with a single `lw a0,
+// 0(a0)` (similarly for the others), saving the call/ret jump and
+// the leaf frame on every peek/poke. asm_pass2's full.s self-build
+// makes ~600 such calls per source pass; eliminating them ~halves
+// the per-line dispatch overhead in tight runtime loops (kmalloc,
+// String accessors, label table reads).
+fn name_eq(strtab: U8Array, ss: i32, sl: i32, pat: StringLiteral) -> bool {
+    var pl: i32 = len(pat);
+    if sl != pl { return false; }
+    var i: i32 = 0;
+    while i < pl {
+        if get(strtab, (ss + i)) != get(pat, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Try to emit an inline body for known builtins. Returns 1 if
+// inlined (caller skips the `call` emit), 0 to fall through.
+fn try_inline_builtin(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: StringBuffer) -> i32 {
+    // peek* (single u32 arg → result in a0): rd = mem[a0]
+    if name_eq(strtab, nm_ss, nm_sl, "peek8__u32") {
+        e4(ob); emit_string(ob, "lbu  a0, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "peek16__u32") {
+        e4(ob); emit_string(ob, "lhu  a0, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "peek32__u32") {
+        e4(ob); emit_string(ob, "lw   a0, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    // poke* (u32 addr + value → void, value in a1): mem[a0] = a1
+    if name_eq(strtab, nm_ss, nm_sl, "poke8__u32__u8") {
+        e4(ob); emit_string(ob, "sb   a1, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "poke16__u32__u16") {
+        e4(ob); emit_string(ob, "sh   a1, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "poke32__u32__u32") {
+        e4(ob); emit_string(ob, "sw   a1, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    return 0;
+}
+
+// "    call NAME\n"  (all calls use full mangled name directly).
+// peek/poke are inlined to a single lw/lbu/lhu/sw/sb/sh; everything
+// else gets the normal `call NAME` emit.
 fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: StringBuffer) -> void {
+    if try_inline_builtin(strtab, nm_ss, nm_sl, ob) != 0 { return; }
     e4(ob);emit_string(ob, "call ");
     emit_n(ob, strtab, nm_ss, nm_sl);
     emit_nl(ob);

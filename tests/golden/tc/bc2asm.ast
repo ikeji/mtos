@@ -1096,6 +1096,273 @@
       )
     )
   )
+  (fn name_eq
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param ss
+        (type i32)
+      )
+      (param sl
+        (type i32)
+      )
+      (param pat
+        (type StringLiteral)
+      )
+    )
+    (ret
+      (type bool)
+    )
+    (block
+      (comment "var pl: i32 = len(pat);")
+      (var_decl pl
+        (type i32)
+        (call len
+          (var pat)
+        )
+      )
+      (comment "if sl != pl { return false; }")
+      (if
+        (binop !=
+          (var sl)
+          (var pl)
+        )
+        (block
+          (return
+            (bool false)
+          )
+        )
+      )
+      (comment "var i: i32 = 0;")
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (comment "while i < pl {")
+      (while
+        (binop <
+          (var i)
+          (var pl)
+        )
+        (block
+          (comment "if get(strtab, (ss + i)) != get(pat, i) { return false; }")
+          (if
+            (binop !=
+              (call get
+                (var strtab)
+                (binop +
+                  (var ss)
+                  (var i)
+                )
+              )
+              (call get
+                (var pat)
+                (var i)
+              )
+            )
+            (block
+              (return
+                (bool false)
+              )
+            )
+          )
+          (comment "i = i + 1;")
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "return true;")
+      (return
+        (bool true)
+      )
+    )
+  )
+  (fn try_inline_builtin
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param nm_ss
+        (type i32)
+      )
+      (param nm_sl
+        (type i32)
+      )
+      (param ob
+        (type StringBuffer)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"peek8__u32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "peek8__u32")
+        )
+        (block
+          (comment "e4(ob); emit_string(ob, \"lbu  a0, 0(a0)\"); emit_nl(ob);")
+          (call_stmt e4
+            (var ob)
+          )
+          (call_stmt emit_string
+            (var ob)
+            (str "lbu  a0, 0(a0)")
+          )
+          (call_stmt emit_nl
+            (var ob)
+          )
+          (comment "return 1;")
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"peek16__u32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "peek16__u32")
+        )
+        (block
+          (comment "e4(ob); emit_string(ob, \"lhu  a0, 0(a0)\"); emit_nl(ob);")
+          (call_stmt e4
+            (var ob)
+          )
+          (call_stmt emit_string
+            (var ob)
+            (str "lhu  a0, 0(a0)")
+          )
+          (call_stmt emit_nl
+            (var ob)
+          )
+          (comment "return 1;")
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"peek32__u32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "peek32__u32")
+        )
+        (block
+          (comment "e4(ob); emit_string(ob, \"lw   a0, 0(a0)\"); emit_nl(ob);")
+          (call_stmt e4
+            (var ob)
+          )
+          (call_stmt emit_string
+            (var ob)
+            (str "lw   a0, 0(a0)")
+          )
+          (call_stmt emit_nl
+            (var ob)
+          )
+          (comment "return 1;")
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"poke8__u32__u8\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "poke8__u32__u8")
+        )
+        (block
+          (comment "e4(ob); emit_string(ob, \"sb   a1, 0(a0)\"); emit_nl(ob);")
+          (call_stmt e4
+            (var ob)
+          )
+          (call_stmt emit_string
+            (var ob)
+            (str "sb   a1, 0(a0)")
+          )
+          (call_stmt emit_nl
+            (var ob)
+          )
+          (comment "return 1;")
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"poke16__u32__u16\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "poke16__u32__u16")
+        )
+        (block
+          (comment "e4(ob); emit_string(ob, \"sh   a1, 0(a0)\"); emit_nl(ob);")
+          (call_stmt e4
+            (var ob)
+          )
+          (call_stmt emit_string
+            (var ob)
+            (str "sh   a1, 0(a0)")
+          )
+          (call_stmt emit_nl
+            (var ob)
+          )
+          (comment "return 1;")
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "if name_eq(strtab, nm_ss, nm_sl, \"poke32__u32__u32\") {")
+      (if
+        (call name_eq
+          (var strtab)
+          (var nm_ss)
+          (var nm_sl)
+          (str "poke32__u32__u32")
+        )
+        (block
+          (comment "e4(ob); emit_string(ob, \"sw   a1, 0(a0)\"); emit_nl(ob);")
+          (call_stmt e4
+            (var ob)
+          )
+          (call_stmt emit_string
+            (var ob)
+            (str "sw   a1, 0(a0)")
+          )
+          (call_stmt emit_nl
+            (var ob)
+          )
+          (comment "return 1;")
+          (return
+            (int 1)
+          )
+        )
+      )
+      (comment "return 0;")
+      (return
+        (int 0)
+      )
+    )
+  )
   (fn asm_call_fn
     (params
       (param strtab
@@ -1115,6 +1382,21 @@
       (type void)
     )
     (block
+      (comment "if try_inline_builtin(strtab, nm_ss, nm_sl, ob) != 0 { return; }")
+      (if
+        (binop !=
+          (call try_inline_builtin
+            (var strtab)
+            (var nm_ss)
+            (var nm_sl)
+            (var ob)
+          )
+          (int 0)
+        )
+        (block
+          (return)
+        )
+      )
       (comment "e4(ob);emit_string(ob, \"call \");")
       (call_stmt e4
         (var ob)
