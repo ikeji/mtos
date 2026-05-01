@@ -1578,7 +1578,7 @@ fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
     // i32, so a 0-param fn costs 20 B and the 21-param vm_run costs
     // 188 B instead of every fn paying 188 B.
     var nodes: AstNodeArray = AstNodeArray(2048);
-    var strtab: U8Array = U8Array(32768);
+    var strtab: U8Array = U8Array(49152);
     var atom_buf: U8Array = U8Array(1024);
     // Output target: stdout for stdin mode, --out file for file mode.
     var out_fd: i32 = 1;
@@ -1588,9 +1588,9 @@ fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
     }
     var ob: StringBuffer = StringBuffer_new(out_fd);
     var fntab: U32Array = U32Array(512);
-    var vartab: VarEntryArray = VarEntryArray(128u32);
+    var vartab: VarEntryArray = VarEntryArray(256u32);
     var vti: i32 = 0;
-    while vti < 128 { set(vartab, vti, VarEntry(0, 0, 0, 0, 0)); vti = vti + 1; }
+    while vti < 256 { set(vartab, vti, VarEntry(0, 0, 0, 0, 0)); vti = vti + 1; }
 
     // In stdin mode g_reader is the single concatenated wrap; in file
     // mode each phase opens its own file and points g_reader at it.

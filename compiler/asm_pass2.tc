@@ -202,6 +202,16 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
     asm_set_pass(2);
     asm_pass2_reset_cursors();
 
+    // --emit-bin mode: redirect this section's bytes to its dedicated
+    // .bin file. Each section pass overwrites g_out_fd at start.
+    var per_sec_fd: i32 = 0;
+    if sec_target == 0 { per_sec_fd = asm_get_text_bin_fd(); }
+    if sec_target == 1 { per_sec_fd = asm_get_rodata_bin_fd(); }
+    if sec_target == 2 { per_sec_fd = asm_get_data_bin_fd(); }
+    if per_sec_fd > 0 {
+        asm_set_out_fd(per_sec_fd);
+    }
+
     var lineno: i32 = 0;
 
     if g_n_src_paths > 0 {
@@ -362,7 +372,9 @@ fn rb_read_line(buf: U8Array, buf_cap: i32, byte_budget: i32) -> i32 {
 }
 
 // ===== Main =====
-fn run_pass2(lab_path: String, out_path: String) -> i32 {
+fn run_pass2(lab_path: String, out_path: String,
+             text_bin: String, rodata_bin: String,
+             data_bin: String, reloc_out: String) -> i32 {
     asm_init_pass2();
     asm_enable_stream_mode();
     rb_init();
@@ -384,6 +396,29 @@ fn run_pass2(lab_path: String, out_path: String) -> i32 {
         var out_fd: i32 = do_openat(0 - 100, out_path, 577);
         if out_fd < 0 { sys_exit(21); }
         asm_set_out_fd(out_fd);
+    }
+    // Per-section --text-bin / --rodata-bin / --data-bin --reloc-out:
+    // emit-bin mode used at kernel-build time to pre-encode the prelude
+    // into raw section binaries plus a relocation table.
+    if text_bin as u32 != 0u32 {
+        var fd_t: i32 = do_openat(0 - 100, text_bin, 577);
+        if fd_t < 0 { sys_exit(22); }
+        asm_set_text_bin_fd(fd_t);
+    }
+    if rodata_bin as u32 != 0u32 {
+        var fd_r: i32 = do_openat(0 - 100, rodata_bin, 577);
+        if fd_r < 0 { sys_exit(23); }
+        asm_set_rodata_bin_fd(fd_r);
+    }
+    if data_bin as u32 != 0u32 {
+        var fd_d: i32 = do_openat(0 - 100, data_bin, 577);
+        if fd_d < 0 { sys_exit(24); }
+        asm_set_data_bin_fd(fd_d);
+    }
+    if reloc_out as u32 != 0u32 {
+        var fd_l: i32 = do_openat(0 - 100, reloc_out, 577);
+        if fd_l < 0 { sys_exit(25); }
+        asm_set_reloc_fd(fd_l);
     }
 
     var lab_line: U8Array = U8Array(4092);
@@ -443,7 +478,7 @@ fn run_pass2(lab_path: String, out_path: String) -> i32 {
 }
 
 fn main() -> i32 {
-    return run_pass2(0 as String, 0 as String);
+    return run_pass2(0 as String, 0 as String, 0 as String, 0 as String, 0 as String, 0 as String);
 }
 
 fn arg_eq(s: String, pat: StringLiteral) -> i32 {
@@ -460,11 +495,22 @@ fn arg_eq(s: String, pat: StringLiteral) -> i32 {
 
 // File-args entry:
 //   asm_pass2 --lab path.lab --out path.bin
+//   asm_pass2 --lab prelude.lab \
+//              --text-bin prelude.text.bin \
+//              --rodata-bin prelude.rodata.bin \
+//              --data-bin prelude.data.bin \
+//              --reloc-out prelude.reloc
 // Either flag is optional — without --lab we fall back to stdin
 // (legacy compile-gen2.sh path); without --out we write to stdout.
+// --text-bin / --rodata-bin / --data-bin / --reloc-out activate the
+// pre-encode mode used at kernel-build time.
 fn main(argv: StringArray) -> i32 {
     var lab: String = 0 as String;
     var out: String = 0 as String;
+    var text_bin:   String = 0 as String;
+    var rodata_bin: String = 0 as String;
+    var data_bin:   String = 0 as String;
+    var reloc_out:  String = 0 as String;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var i: i32 = 1;
@@ -474,10 +520,18 @@ fn main(argv: StringArray) -> i32 {
                 lab = get(argv, i + 1); i = i + 2;
             } else if arg_eq(a, "--out") != 0 && i + 1 < argc {
                 out = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--text-bin") != 0 && i + 1 < argc {
+                text_bin = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--rodata-bin") != 0 && i + 1 < argc {
+                rodata_bin = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--data-bin") != 0 && i + 1 < argc {
+                data_bin = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--reloc-out") != 0 && i + 1 < argc {
+                reloc_out = get(argv, i + 1); i = i + 2;
             } else {
                 i = i + 1;
             }
         }
     }
-    return run_pass2(lab, out);
+    return run_pass2(lab, out, text_bin, rodata_bin, data_bin, reloc_out);
 }

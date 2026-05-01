@@ -112,6 +112,29 @@ var g_section_emitted: i32 = 0;        // bytes emitted in the current target se
 // when invoked with file-args.
 var g_out_fd:          i32 = 1;
 export fn asm_set_out_fd(fd: i32) -> void { g_out_fd = fd; return; }
+
+// Per-section emit fds for --emit-bin mode. When non-zero, the
+// asm-pass2 section pass for that section writes to the file
+// instead of g_out_fd. Set up by run_pass2 from the
+// --text-bin / --rodata-bin / --data-bin flags. Reset to 0
+// when not in emit-bin mode.
+var g_text_bin_fd:   i32 = 0;
+var g_rodata_bin_fd: i32 = 0;
+var g_data_bin_fd:   i32 = 0;
+// Reloc output fd: where to write `reloc <offset> <kind> <name>`
+// lines as the encoder detects PC-relative refs that change with
+// user-side text size (la to rodata / __global_pointer$, call to
+// main / main__StringArray).
+var g_reloc_fd:      i32 = 0;
+var g_reloc_count:   i32 = 0;
+export fn asm_set_text_bin_fd(fd: i32)   -> void { g_text_bin_fd   = fd; return; }
+export fn asm_set_rodata_bin_fd(fd: i32) -> void { g_rodata_bin_fd = fd; return; }
+export fn asm_set_data_bin_fd(fd: i32)   -> void { g_data_bin_fd   = fd; return; }
+export fn asm_set_reloc_fd(fd: i32)      -> void { g_reloc_fd      = fd; return; }
+export fn asm_get_text_bin_fd()   -> i32 { return g_text_bin_fd; }
+export fn asm_get_rodata_bin_fd() -> i32 { return g_rodata_bin_fd; }
+export fn asm_get_data_bin_fd()   -> i32 { return g_data_bin_fd; }
+export fn asm_get_reloc_count() -> i32 { return g_reloc_count; }
 var g_src_bytes:       i32 = 0;        // source byte count emitted by pass1 in the .lab so pass2 knows where each copy ends
 
 // Label table. g_lab_names is a shared packed-byte pool that every
