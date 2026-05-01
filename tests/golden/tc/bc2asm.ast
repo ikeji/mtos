@@ -9904,11 +9904,11 @@
           (int 8192)
         )
       )
-      (comment "var label_pcs:    I32Array = I32Array(1024);")
+      (comment "var label_pcs:    I32Array = I32Array(2048);")
       (var_decl label_pcs
         (type I32Array)
         (call I32Array
-          (int 1024)
+          (int 2048)
         )
       )
       (comment "g_unit_name = U8Array(64);")

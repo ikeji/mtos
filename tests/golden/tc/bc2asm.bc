@@ -9565,8 +9565,8 @@ __L412:
   push_int 8192
   call I32Array u32
   store instrs
-; var label_pcs:    I32Array = I32Array(1024);
-  push_int 1024
+; var label_pcs:    I32Array = I32Array(2048);
+  push_int 2048
   call I32Array u32
   store label_pcs
 ; g_unit_name = U8Array(64);

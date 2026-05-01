@@ -1222,7 +1222,7 @@ fn main() -> i32 {
     var lpi: i32 = 0;
     while lpi < 128 { set(locals_pool, lpi, StrRef(0, 0)); lpi = lpi + 1; }
     var instrs:       I32Array = I32Array(8192);
-    var label_pcs:    I32Array = I32Array(1024);
+    var label_pcs:    I32Array = I32Array(2048);
 
     g_unit_name = U8Array(64);
     g_unit_name_len = 0;

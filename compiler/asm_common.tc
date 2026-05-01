@@ -54,7 +54,7 @@ var NAME_POOL_INITIAL_KB: i32 = 4;
 // to 1024 — the kernel's measured 404 max underestimated; compiling
 // the assembler itself is the real worst case. The bounds check in
 // define_numlab below catches future regressions cleanly.
-var NUM_LAB_PER_DIGIT: i32 = 2048;
+var NUM_LAB_PER_DIGIT: i32 = 4096;
 
 // ===== Output mode (set by ; raw / ; load_base directives) =====
 var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
@@ -1029,39 +1029,72 @@ fn parse_reg_op(op_idx: i32) -> i32 {
             stripping = 0;
         }
     }
-    // Match register names
-    if reg_eq(g_line_buf, off, len, "zero") || reg_eq(g_line_buf, off, len, "x0") { return 0; }
-    if reg_eq(g_line_buf, off, len, "ra") { return 1; }
-    if reg_eq(g_line_buf, off, len, "sp") { return 2; }
-    if reg_eq(g_line_buf, off, len, "gp") { return 3; }
-    if reg_eq(g_line_buf, off, len, "tp") { return 4; }
-    if reg_eq(g_line_buf, off, len, "t0") { return 5; }
-    if reg_eq(g_line_buf, off, len, "t1") { return 6; }
-    if reg_eq(g_line_buf, off, len, "t2") { return 7; }
-    if reg_eq(g_line_buf, off, len, "s0") || reg_eq(g_line_buf, off, len, "fp") { return 8; }
-    if reg_eq(g_line_buf, off, len, "s1") { return 9; }
-    if reg_eq(g_line_buf, off, len, "a0") { return 10; }
-    if reg_eq(g_line_buf, off, len, "a1") { return 11; }
-    if reg_eq(g_line_buf, off, len, "a2") { return 12; }
-    if reg_eq(g_line_buf, off, len, "a3") { return 13; }
-    if reg_eq(g_line_buf, off, len, "a4") { return 14; }
-    if reg_eq(g_line_buf, off, len, "a5") { return 15; }
-    if reg_eq(g_line_buf, off, len, "a6") { return 16; }
-    if reg_eq(g_line_buf, off, len, "a7") { return 17; }
-    if reg_eq(g_line_buf, off, len, "s2") { return 18; }
-    if reg_eq(g_line_buf, off, len, "s3") { return 19; }
-    if reg_eq(g_line_buf, off, len, "s4") { return 20; }
-    if reg_eq(g_line_buf, off, len, "s5") { return 21; }
-    if reg_eq(g_line_buf, off, len, "s6") { return 22; }
-    if reg_eq(g_line_buf, off, len, "s7") { return 23; }
-    if reg_eq(g_line_buf, off, len, "s8") { return 24; }
-    if reg_eq(g_line_buf, off, len, "s9") { return 25; }
-    if reg_eq(g_line_buf, off, len, "s10") { return 26; }
-    if reg_eq(g_line_buf, off, len, "s11") { return 27; }
-    if reg_eq(g_line_buf, off, len, "t3") { return 28; }
-    if reg_eq(g_line_buf, off, len, "t4") { return 29; }
-    if reg_eq(g_line_buf, off, len, "t5") { return 30; }
-    if reg_eq(g_line_buf, off, len, "t6") { return 31; }
+    // Match register names. Direct char-level dispatch — avoids the
+    // ~32 reg_eq calls (with their per-call StringLiteral length
+    // probe + byte-compare loop) that the linear cascade did. Each
+    // case here is a few inline byte checks so the common path is a
+    // handful of cycles.
+    if len < 2 || len > 4 { return 0 - 1; }
+    var c0: u8 = get(g_line_buf, off);
+    var c1: u8 = get(g_line_buf, (off + 1));
+
+    // x<digit>[<digit>] — RISC-V x-form (x0..x31).
+    if c0 == 'x' as u8 {
+        if c1 < '0' as u8 || c1 > '9' as u8 { return 0 - 1; }
+        if len == 2 { return c1 as i32 - 48; }
+        if len == 3 {
+            var c2: u8 = get(g_line_buf, (off + 2));
+            if c2 < '0' as u8 || c2 > '9' as u8 { return 0 - 1; }
+            var n: i32 = (c1 as i32 - 48) * 10 + (c2 as i32 - 48);
+            if n > 31 { return 0 - 1; }
+            return n;
+        }
+        return 0 - 1;
+    }
+
+    // Length-2 ABI names.
+    if len == 2 {
+        if c0 == 'r' as u8 && c1 == 'a' as u8 { return 1; }
+        if c0 == 's' as u8 && c1 == 'p' as u8 { return 2; }
+        if c0 == 'g' as u8 && c1 == 'p' as u8 { return 3; }
+        if c0 == 't' as u8 && c1 == 'p' as u8 { return 4; }
+        if c0 == 'f' as u8 && c1 == 'p' as u8 { return 8; }  // fp = s0
+        // a0..a7 → 10..17
+        if c0 == 'a' as u8 && c1 >= '0' as u8 && c1 <= '7' as u8 {
+            return 10 + (c1 as i32 - 48);
+        }
+        // t0..t6 → 5,6,7,28,29,30,31
+        if c0 == 't' as u8 && c1 >= '0' as u8 && c1 <= '6' as u8 {
+            var d: i32 = c1 as i32 - 48;
+            if d <= 2 { return 5 + d; }
+            return 25 + d;  // t3=28, t4=29, t5=30, t6=31
+        }
+        // s0..s9 → 8, 9, 18..25
+        if c0 == 's' as u8 && c1 >= '0' as u8 && c1 <= '9' as u8 {
+            var ds: i32 = c1 as i32 - 48;
+            if ds == 0 { return 8; }
+            if ds == 1 { return 9; }
+            return 16 + ds;  // s2=18 .. s9=25
+        }
+        return 0 - 1;
+    }
+
+    // Length-3: s10, s11.
+    if len == 3 {
+        if c0 == 's' as u8 && c1 == '1' as u8 {
+            var c2s: u8 = get(g_line_buf, (off + 2));
+            if c2s == '0' as u8 { return 26; }
+            if c2s == '1' as u8 { return 27; }
+        }
+        return 0 - 1;
+    }
+
+    // Length-4: zero.
+    if c0 == 'z' as u8 && c1 == 'e' as u8 &&
+       get(g_line_buf, (off + 2)) == 'r' as u8 &&
+       get(g_line_buf, (off + 3)) == 'o' as u8 {
+        return 0;
+    }
     return 0 - 1;
 }
 
@@ -1305,162 +1338,157 @@ fn mnem_eq(name: StringLiteral) -> bool {
 }
 
 // ===== Process instruction: returns byte count =====
+//
+// Bucketed by first character of the mnemonic so each line walks
+// roughly ~5-15 mnem_eq calls instead of all ~80. The buckets are
+// just stylistic — mnem_eq remains the workhorse — but the early
+// dispatch on g_mnem[0] cuts the average comparison count by ~5×.
 fn asm_instr() -> i32 {
     var pc: i32 = g_pos;
+    if g_mnem_len == 0 { return 0; }
+    var c0: u8 = get(g_mnem, 0);
 
-    // R-type
-    if mnem_eq("add")   { if g_pass==2 { emit32(enc_r(51,0,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("sub")   { if g_pass==2 { emit32(enc_r(51,0,32,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("and")   { if g_pass==2 { emit32(enc_r(51,7,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("or")    { if g_pass==2 { emit32(enc_r(51,6,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("xor")   { if g_pass==2 { emit32(enc_r(51,4,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("sll")   { if g_pass==2 { emit32(enc_r(51,1,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("srl")   { if g_pass==2 { emit32(enc_r(51,5,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("sra")   { if g_pass==2 { emit32(enc_r(51,5,32,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("slt")   { if g_pass==2 { emit32(enc_r(51,2,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("sltu")  { if g_pass==2 { emit32(enc_r(51,3,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("mul")   { if g_pass==2 { emit32(enc_r(51,0,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("mulhu") { if g_pass==2 { emit32(enc_r(51,3,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("div")   { if g_pass==2 { emit32(enc_r(51,4,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("divu")  { if g_pass==2 { emit32(enc_r(51,5,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("rem")   { if g_pass==2 { emit32(enc_r(51,6,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-    if mnem_eq("remu")  { if g_pass==2 { emit32(enc_r(51,7,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
-
-    // I-type ALU
-    if mnem_eq("addi")  { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("andi")  { if g_pass==2 { emit32(enc_i(19,7,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("ori")   { if g_pass==2 { emit32(enc_i(19,6,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("xori")  { if g_pass==2 { emit32(enc_i(19,4,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("slti")  { if g_pass==2 { emit32(enc_i(19,2,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("sltiu") { if g_pass==2 { emit32(enc_i(19,3,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("slli")  { if g_pass==2 { emit32(enc_i(19,1,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("srli")  { if g_pass==2 { emit32(enc_i(19,5,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("srai")  { if g_pass==2 { emit32(enc_i(19,5,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2) | 1024)); } return 4; }
-
-    // Load
-    if mnem_eq("lw")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,2,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
-    if mnem_eq("lh")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,1,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
-    if mnem_eq("lb")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,0,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
-    if mnem_eq("lbu") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,4,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
-    if mnem_eq("lhu") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,5,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
-
-    // Store
-    if mnem_eq("sw") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(2,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
-    if mnem_eq("sh") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(1,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
-    if mnem_eq("sb") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(0,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
-
-    // U-type
-    if mnem_eq("lui") { if g_pass==2 { emit32(enc_u(55,parse_reg_op(0),parse_imm_op(1)<<12)); } return 4; }
-
-    // Branch
-    if mnem_eq("beq") { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("bne") { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("blt") { if g_pass==2 { emit32(enc_b(4,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("bge") { if g_pass==2 { emit32(enc_b(5,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("bltu"){ if g_pass==2 { emit32(enc_b(6,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("bgeu"){ if g_pass==2 { emit32(enc_b(7,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-
-    // Pseudo: ble/bgt/bleu/bgtu (swap operands)
-    if mnem_eq("ble")  { if g_pass==2 { emit32(enc_b(5,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("bgt")  { if g_pass==2 { emit32(enc_b(4,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("bleu") { if g_pass==2 { emit32(enc_b(7,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("bgtu") { if g_pass==2 { emit32(enc_b(6,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
-    if mnem_eq("beqz") { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
-    if mnem_eq("bnez") { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
-
-    // Pseudo: li
-    if mnem_eq("li") {
-        var imm: i32 = parse_imm_op(1);
-        var rd: i32 = parse_reg_op(0);
-        if imm >= 0 - 2048 && imm < 2048 {
-            if g_pass==2 { emit32(enc_i(19,0,rd,0,imm)); }
+    if c0 == 'a' as u8 {
+        if mnem_eq("add")   { if g_pass==2 { emit32(enc_r(51,0,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("addi")  { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+        if mnem_eq("and")   { if g_pass==2 { emit32(enc_r(51,7,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("andi")  { if g_pass==2 { emit32(enc_i(19,7,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    } else if c0 == 'b' as u8 {
+        if mnem_eq("beq")  { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bne")  { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("blt")  { if g_pass==2 { emit32(enc_b(4,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bge")  { if g_pass==2 { emit32(enc_b(5,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bltu") { if g_pass==2 { emit32(enc_b(6,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bgeu") { if g_pass==2 { emit32(enc_b(7,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("ble")  { if g_pass==2 { emit32(enc_b(5,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bgt")  { if g_pass==2 { emit32(enc_b(4,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bleu") { if g_pass==2 { emit32(enc_b(7,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bgtu") { if g_pass==2 { emit32(enc_b(6,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("beqz") { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
+        if mnem_eq("bnez") { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
+    } else if c0 == 'c' as u8 {
+        if mnem_eq("call") || mnem_eq("tail") {
+            var rd: i32 = 1;
+            if mnem_eq("tail") { rd = 0; }
+            if g_pass==2 {
+                var off: i32 = parse_label_op(0) - pc;
+                emit32(enc_u(23,rd,hi20(off)<<12));
+                emit32(enc_i(103,0,rd,rd,lo12(off)));
+            }
+            return 8;
+        }
+        if mnem_eq("csrrw") { if g_pass==2 { emit32(enc_i(115,1,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+        if mnem_eq("csrrs") { if g_pass==2 { emit32(enc_i(115,2,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+        if mnem_eq("csrrc") { if g_pass==2 { emit32(enc_i(115,3,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
+        if mnem_eq("csrr")  { if g_pass==2 { emit32(enc_i(115,2,parse_reg_op(0),0,parse_imm_op(1))); } return 4; }
+        if mnem_eq("csrw")  { if g_pass==2 { emit32(enc_i(115,1,0,parse_reg_op(1),parse_imm_op(0))); } return 4; }
+    } else if c0 == 'd' as u8 {
+        if mnem_eq("div")   { if g_pass==2 { emit32(enc_r(51,4,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("divu")  { if g_pass==2 { emit32(enc_r(51,5,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+    } else if c0 == 'e' as u8 {
+        if mnem_eq("ecall") { if g_pass==2 { emit32(115); } return 4; }
+    } else if c0 == 'j' as u8 {
+        if mnem_eq("j") {
+            var off: i32 = 0;
+            if g_pass==2 { off = parse_label_op(0) - pc; emit32(enc_j(0,off)); }
             return 4;
         }
-        if g_pass==2 {
-            emit32(enc_u(55,rd,hi20(imm)<<12));
-            emit32(enc_i(19,0,rd,rd,lo12(imm)));
-        }
-        return 8;
-    }
-
-    // Pseudo: mv, ret, nop, neg, not, seqz, snez
-    if mnem_eq("mv")   { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),0)); } return 4; }
-    if mnem_eq("ret")  { if g_pass==2 { emit32(enc_i(103,0,0,1,0)); } return 4; }
-    if mnem_eq("nop")  { if g_pass==2 { emit32(enc_i(19,0,0,0,0)); } return 4; }
-    if mnem_eq("neg")  { if g_pass==2 { emit32(enc_r(51,0,32,parse_reg_op(0),0,parse_reg_op(1))); } return 4; }
-    if mnem_eq("not")  { if g_pass==2 { emit32(enc_i(19,4,parse_reg_op(0),parse_reg_op(1),0-1)); } return 4; }
-    if mnem_eq("seqz") { if g_pass==2 { emit32(enc_i(19,3,parse_reg_op(0),parse_reg_op(1),1)); } return 4; }
-    if mnem_eq("snez") { if g_pass==2 { emit32(enc_r(51,3,0,parse_reg_op(0),0,parse_reg_op(1))); } return 4; }
-
-    // Pseudo: j, jr, call, tail, la
-    if mnem_eq("j") {
-        var off: i32 = 0;
-        if g_pass==2 { off = parse_label_op(0) - pc; emit32(enc_j(0,off)); }
-        return 4;
-    }
-    if mnem_eq("jr") { if g_pass==2 { emit32(enc_i(103,0,0,parse_reg_op(0),0)); } return 4; }
-    // jalr rd, rs1, imm  (I-type, opcode=103, funct3=0)
-    if mnem_eq("jalr") { if g_pass==2 { emit32(enc_i(103,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
-    if mnem_eq("call") || mnem_eq("tail") {
-        var rd: i32 = 1;
-        if mnem_eq("tail") { rd = 0; }
-        if g_pass==2 {
-            var off: i32 = parse_label_op(0) - pc;
-            emit32(enc_u(23,rd,hi20(off)<<12));
-            emit32(enc_i(103,0,rd,rd,lo12(off)));
-        }
-        return 8;
-    }
-    if mnem_eq("la") {
-        var rd: i32 = parse_reg_op(0);
-        if g_pass==2 {
-            var target: i32 = parse_label_op(1);
-            var tsec: i32 = parse_label_op_section(1);
-            // data/bss labels are always addressed via gp-relative; on Pico 2
-            // the PC-relative form would give a Flash address, which is
-            // wrong (the memory actually lives in SRAM). If the label ends
-            // up outside gp's ±2KB window, that's a linker bug in the crt0
-            // layout and we fail hard with the label name.
-            if tsec == 2 || tsec == 3 {
-                var gpoff: i32 = target - g_gp_abs;
-                if gpoff < (0 - 2048) || gpoff > 2047 {
-                    var eb1: StringBuffer = StringBuffer_new(1);
-                    asm_err_begin(eb1);
-                    emit_string(eb1, "gp-relative la out of 12-bit range for label '");
-                    var lop_off: i32 = get(g_ops, 2);
-                    var lop_len: i32 = get(g_ops, 3);
-                    emit_n(eb1, g_line_buf, lop_off, lop_len);
-                    emit_string(eb1, "'");
-                    asm_err_end(eb1);
-                }
-                // auipc rd, 0 (rd = pc, overwritten by next addi)
-                emit32(enc_u(23, rd, 0));
-                // addi rd, gp, gpoff   (gp = x3)
-                emit32(enc_i(19, 0, rd, 3, gpoff));
-            } else {
-                var off: i32 = target - pc;
-                emit32(enc_u(23,rd,hi20(off)<<12));
-                emit32(enc_i(19,0,rd,rd,lo12(off)));
+        if mnem_eq("jr")   { if g_pass==2 { emit32(enc_i(103,0,0,parse_reg_op(0),0)); } return 4; }
+        if mnem_eq("jalr") { if g_pass==2 { emit32(enc_i(103,0,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    } else if c0 == 'l' as u8 {
+        if mnem_eq("lw")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,2,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+        if mnem_eq("lh")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,1,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+        if mnem_eq("lb")  { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,0,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+        if mnem_eq("lbu") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,4,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+        if mnem_eq("lhu") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_i(3,5,parse_reg_op(0),g_mem_reg,imm)); } return 4; }
+        if mnem_eq("lui") { if g_pass==2 { emit32(enc_u(55,parse_reg_op(0),parse_imm_op(1)<<12)); } return 4; }
+        if mnem_eq("li") {
+            var imm: i32 = parse_imm_op(1);
+            var rd: i32 = parse_reg_op(0);
+            if imm >= 0 - 2048 && imm < 2048 {
+                if g_pass==2 { emit32(enc_i(19,0,rd,0,imm)); }
+                return 4;
             }
+            if g_pass==2 {
+                emit32(enc_u(55,rd,hi20(imm)<<12));
+                emit32(enc_i(19,0,rd,rd,lo12(imm)));
+            }
+            return 8;
         }
-        return 8;
+        if mnem_eq("la") {
+            var rd: i32 = parse_reg_op(0);
+            if g_pass==2 {
+                var target: i32 = parse_label_op(1);
+                var tsec: i32 = parse_label_op_section(1);
+                if tsec == 2 || tsec == 3 {
+                    var gpoff: i32 = target - g_gp_abs;
+                    if gpoff < (0 - 2048) || gpoff > 2047 {
+                        var eb1: StringBuffer = StringBuffer_new(1);
+                        asm_err_begin(eb1);
+                        emit_string(eb1, "gp-relative la out of 12-bit range for label '");
+                        var lop_off: i32 = get(g_ops, 2);
+                        var lop_len: i32 = get(g_ops, 3);
+                        emit_n(eb1, g_line_buf, lop_off, lop_len);
+                        emit_string(eb1, "'");
+                        asm_err_end(eb1);
+                    }
+                    emit32(enc_u(23, rd, 0));
+                    emit32(enc_i(19, 0, rd, 3, gpoff));
+                } else {
+                    var off: i32 = target - pc;
+                    emit32(enc_u(23,rd,hi20(off)<<12));
+                    emit32(enc_i(19,0,rd,rd,lo12(off)));
+                }
+            }
+            return 8;
+        }
+    } else if c0 == 'm' as u8 {
+        if mnem_eq("mul")   { if g_pass==2 { emit32(enc_r(51,0,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("mulhu") { if g_pass==2 { emit32(enc_r(51,3,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("mret")  { if g_pass==2 { emit32(0x30200073); } return 4; }
+        if mnem_eq("mv")    { if g_pass==2 { emit32(enc_i(19,0,parse_reg_op(0),parse_reg_op(1),0)); } return 4; }
+    } else if c0 == 'n' as u8 {
+        if mnem_eq("neg") { if g_pass==2 { emit32(enc_r(51,0,32,parse_reg_op(0),0,parse_reg_op(1))); } return 4; }
+        if mnem_eq("not") { if g_pass==2 { emit32(enc_i(19,4,parse_reg_op(0),parse_reg_op(1),0-1)); } return 4; }
+        if mnem_eq("nop") { if g_pass==2 { emit32(enc_i(19,0,0,0,0)); } return 4; }
+    } else if c0 == 'o' as u8 {
+        if mnem_eq("or")  { if g_pass==2 { emit32(enc_r(51,6,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("ori") { if g_pass==2 { emit32(enc_i(19,6,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+    } else if c0 == 'r' as u8 {
+        if mnem_eq("rem")  { if g_pass==2 { emit32(enc_r(51,6,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("remu") { if g_pass==2 { emit32(enc_r(51,7,1,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("ret")  { if g_pass==2 { emit32(enc_i(103,0,0,1,0)); } return 4; }
+    } else if c0 == 's' as u8 {
+        if mnem_eq("sub")   { if g_pass==2 { emit32(enc_r(51,0,32,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("sll")   { if g_pass==2 { emit32(enc_r(51,1,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("slli")  { if g_pass==2 { emit32(enc_i(19,1,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+        if mnem_eq("srl")   { if g_pass==2 { emit32(enc_r(51,5,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("srli")  { if g_pass==2 { emit32(enc_i(19,5,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+        if mnem_eq("sra")   { if g_pass==2 { emit32(enc_r(51,5,32,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("srai")  { if g_pass==2 { emit32(enc_i(19,5,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2) | 1024)); } return 4; }
+        if mnem_eq("slt")   { if g_pass==2 { emit32(enc_r(51,2,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("sltu")  { if g_pass==2 { emit32(enc_r(51,3,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("slti")  { if g_pass==2 { emit32(enc_i(19,2,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+        if mnem_eq("sltiu") { if g_pass==2 { emit32(enc_i(19,3,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
+        if mnem_eq("sw") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(2,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+        if mnem_eq("sh") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(1,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+        if mnem_eq("sb") { if g_pass==2 { var imm:i32=parse_mem_off(1); emit32(enc_s(0,g_mem_reg,parse_reg_op(0),imm)); } return 4; }
+        if mnem_eq("snez") { if g_pass==2 { emit32(enc_r(51,3,0,parse_reg_op(0),0,parse_reg_op(1))); } return 4; }
+        if mnem_eq("seqz") { if g_pass==2 { emit32(enc_i(19,3,parse_reg_op(0),parse_reg_op(1),1)); } return 4; }
+    } else if c0 == 't' as u8 {
+        // tail handled in 'c' bucket alongside call (shared body)
+        if mnem_eq("tail") {
+            if g_pass==2 {
+                var off: i32 = parse_label_op(0) - pc;
+                emit32(enc_u(23,0,hi20(off)<<12));
+                emit32(enc_i(103,0,0,0,lo12(off)));
+            }
+            return 8;
+        }
+    } else if c0 == 'x' as u8 {
+        if mnem_eq("xor")  { if g_pass==2 { emit32(enc_r(51,4,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
+        if mnem_eq("xori") { if g_pass==2 { emit32(enc_i(19,4,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
     }
-
-    // ecall / mret
-    if mnem_eq("ecall") { if g_pass==2 { emit32(115); } return 4; }
-    if mnem_eq("mret")  { if g_pass==2 { emit32(0x30200073); } return 4; }
-
-    // CSR instructions (opcode=115, I-type encoding)
-    // csrrw rd, csr, rs1  (funct3=1)
-    if mnem_eq("csrrw") { if g_pass==2 { emit32(enc_i(115,1,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
-    // csrrs rd, csr, rs1  (funct3=2)
-    if mnem_eq("csrrs") { if g_pass==2 { emit32(enc_i(115,2,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
-    // csrrc rd, csr, rs1  (funct3=3)
-    if mnem_eq("csrrc") { if g_pass==2 { emit32(enc_i(115,3,parse_reg_op(0),parse_reg_op(2),parse_imm_op(1))); } return 4; }
-    // csrr rd, csr  -> csrrs rd, csr, x0  (pseudo)
-    if mnem_eq("csrr")  { if g_pass==2 { emit32(enc_i(115,2,parse_reg_op(0),0,parse_imm_op(1))); } return 4; }
-    // csrw csr, rs1 -> csrrw x0, csr, rs1 (pseudo)
-    if mnem_eq("csrw")  { if g_pass==2 { emit32(enc_i(115,1,0,parse_reg_op(1),parse_imm_op(0))); } return 4; }
 
     // Unknown instruction
     var eb: StringBuffer = StringBuffer_new();
