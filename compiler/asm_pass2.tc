@@ -362,10 +362,29 @@ fn rb_read_line(buf: U8Array, buf_cap: i32, byte_budget: i32) -> i32 {
 }
 
 // ===== Main =====
-fn main() -> i32 {
+fn run_pass2(lab_path: String, out_path: String) -> i32 {
     asm_init_pass2();
     asm_enable_stream_mode();
     rb_init();
+
+    // --lab path: read .lab from a file instead of stdin. The src
+    // lines inside the .lab still drive multi-source open, so the
+    // pipeline goes from "single concatenated stdin" to "lab file →
+    // src files referenced therein".
+    if lab_path as u32 != 0u32 {
+        var lab_fd: i32 = do_openat(0 - 100, lab_path, 0);
+        if lab_fd < 0 { sys_exit(20); }
+        rb_switch_fd(lab_fd);
+        // Note: the fd stays open until run_section_pass switches it;
+        // we leak it to the kernel close-on-exit. Acceptable on host
+        // / OS task exit.
+    }
+    // --out path: redirect the binary write target.
+    if out_path as u32 != 0u32 {
+        var out_fd: i32 = do_openat(0 - 100, out_path, 577);
+        if out_fd < 0 { sys_exit(21); }
+        asm_set_out_fd(out_fd);
+    }
 
     var lab_line: U8Array = U8Array(4092);
 
@@ -421,4 +440,44 @@ fn main() -> i32 {
 
     km_dump_peak();
     return 0;
+}
+
+fn main() -> i32 {
+    return run_pass2(0 as String, 0 as String);
+}
+
+fn arg_eq(s: String, pat: StringLiteral) -> i32 {
+    var ns: i32 = len(s);
+    var np: i32 = len(pat);
+    if ns != np { return 0; }
+    var i: i32 = 0;
+    while i < np {
+        if get(s, i) != get(pat, i) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+// File-args entry:
+//   asm_pass2 --lab path.lab --out path.bin
+// Either flag is optional — without --lab we fall back to stdin
+// (legacy compile-gen2.sh path); without --out we write to stdout.
+fn main(argv: StringArray) -> i32 {
+    var lab: String = 0 as String;
+    var out: String = 0 as String;
+    if argv as u32 != 0u32 {
+        var argc: i32 = len(argv);
+        var i: i32 = 1;
+        while i < argc {
+            var a: String = get(argv, i);
+            if arg_eq(a, "--lab") != 0 && i + 1 < argc {
+                lab = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--out") != 0 && i + 1 < argc {
+                out = get(argv, i + 1); i = i + 2;
+            } else {
+                i = i + 1;
+            }
+        }
+    }
+    return run_pass2(lab, out);
 }

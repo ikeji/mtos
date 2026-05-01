@@ -203,7 +203,8 @@ fn emit_stripped(reader: SourceReader, out_fd: i32,
 // to skip the prelude source walk on every OS-side compile (kernel
 // build pre-emits prelude.idx, OS asm_pass1 just loads it).
 fn run(src_path: String, strip_out_path: String,
-       emit_idx_path: String, load_idx_path: String) -> i32 {
+       emit_idx_path: String, load_idx_path: String,
+       lab_out_path: String) -> i32 {
     asm_init_pass1();
     asm_set_pass(1);
 
@@ -356,13 +357,24 @@ fn run(src_path: String, strip_out_path: String,
     // here exactly once.
     asm_fixup_labels();
 
-    asm_dump_lab_state();
+    if lab_out_path as u32 != 0u32 {
+        // O_WRONLY|O_CREAT|O_TRUNC = 1|64|512 = 577.
+        var lab_fd: i32 = do_openat(0 - 100, lab_out_path, 577);
+        if lab_fd >= 0 {
+            asm_dump_lab_state_to(lab_fd);
+            do_close(lab_fd);
+        }
+    } else {
+        asm_dump_lab_state();
+    }
 
     km_dump_peak();
     return 0;
 }
 
-fn main() -> i32 { return run(0 as String, 0 as String, 0 as String, 0 as String); }
+fn main() -> i32 {
+    return run(0 as String, 0 as String, 0 as String, 0 as String, 0 as String);
+}
 
 // Compare a 0..n-bytes prefix of `s` against a literal pattern given
 // as raw bytes baked in via 4-byte chunks. Used by main(argv) below
@@ -389,16 +401,18 @@ fn main(argv: StringArray) -> i32 {
     //   asm_pass1 --load-idx in.idx src.s [strip.s]     load prelude state then process src
     //   asm_pass1 --load-idx in.idx --idx-source p.s ... emit `src p.s` into the .lab so
     //                                                     pass2 can open the prelude directly
+    //   asm_pass1 --lab-out path.lab ...                .lab to a file instead of stdout
     var path: String = 0 as String;
     var strip_out: String = 0 as String;
     var emit_idx: String = 0 as String;
     var load_idx: String = 0 as String;
     var idx_source: String = 0 as String;
+    var lab_out: String = 0 as String;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var consumed: i32 = 1;  // skip argv[0] (program name)
         // First pass: peel off any --emit-idx <path> / --load-idx <path>
-        // / --idx-source <path> flags from the start.
+        // / --idx-source <path> / --lab-out <path> flags from the start.
         var keep_scanning: i32 = 1;
         while keep_scanning != 0 && consumed < argc {
             var a: String = get(argv, consumed);
@@ -410,6 +424,9 @@ fn main(argv: StringArray) -> i32 {
                 consumed = consumed + 2;
             } else if arg_eq(a, "--idx-source") != 0 && consumed + 1 < argc {
                 idx_source = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--lab-out") != 0 && consumed + 1 < argc {
+                lab_out = get(argv, consumed + 1);
                 consumed = consumed + 2;
             } else {
                 keep_scanning = 0;
@@ -431,5 +448,5 @@ fn main(argv: StringArray) -> i32 {
         // as the second src so pass2 can read it.
         asm_set_src_path2(path);
     }
-    return run(path, strip_out, emit_idx, load_idx);
+    return run(path, strip_out, emit_idx, load_idx, lab_out);
 }

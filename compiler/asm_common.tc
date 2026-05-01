@@ -107,6 +107,11 @@ var g_out_buf:         U8Array = 0 as U8Array;  // 4 KB stdout buffer
 var g_out_pos:         i32 = 0;        // bytes currently in g_out_buf
 var g_out_buf_size:    i32 = 4096;
 var g_section_emitted: i32 = 0;        // bytes emitted in the current target section this pass
+// Where pass2 writes the encoded binary. Defaults to stdout (fd 1)
+// for the legacy pipeline; asm_pass2 sets this to the --out file fd
+// when invoked with file-args.
+var g_out_fd:          i32 = 1;
+export fn asm_set_out_fd(fd: i32) -> void { g_out_fd = fd; return; }
 var g_src_bytes:       i32 = 0;        // source byte count emitted by pass1 in the .lab so pass2 knows where each copy ends
 
 // Label table. g_lab_names is a shared packed-byte pool that every
@@ -703,7 +708,7 @@ export fn asm_err_end(eb: StringBuffer) -> void {
 // when the buffer fills and from asm_flush_output at section end.
 fn flush_out_buf() -> void {
     if g_out_pos > 0 {
-        sys_write(1, g_out_buf, g_out_pos);
+        sys_write(g_out_fd, g_out_buf, g_out_pos);
         g_out_pos = 0;
     }
     return;
@@ -2099,7 +2104,15 @@ export fn asm_pass2_reset_cursors() -> void {
 fn dump_int(sb: StringBuffer, v: i32) -> void { emit_int(sb, v); return; }
 
 export fn asm_dump_lab_state() -> void {
-    var sb: StringBuffer = StringBuffer_new(1);
+    asm_dump_lab_state_to(1);
+    return;
+}
+
+// fd-parameterised variant — used by asm_pass1 when `--lab-out path`
+// is given so the .lab goes to a file instead of stdout. The
+// existing zero-arg variant stays for the host stdin pipeline.
+export fn asm_dump_lab_state_to(out_fd: i32) -> void {
+    var sb: StringBuffer = StringBuffer_new(out_fd);
     emit_string(sb, "(lab"); emit_nl(sb);
     emit_string(sb, "; lab v1"); emit_nl(sb);
 
@@ -2214,7 +2227,7 @@ export fn asm_dump_lab_state() -> void {
     }
 
     emit_char(sb, ')'); emit_nl(sb);
-    write(sb, 1);
+    write(sb, out_fd);
     destroy(sb);
     return;
 }
@@ -2503,7 +2516,7 @@ export fn asm_write_elf_header_stream() -> void {
     write_le32(out, 76, 7);
     write_le32(out, 80, 4096);
 
-    sys_write(1, out, ELF_HDR_SIZE);
+    sys_write(g_out_fd, out, ELF_HDR_SIZE);
     delete(out);
     return;
 }
@@ -2518,7 +2531,7 @@ export fn asm_write_elf() -> void {
                          get(g_sec_size, 2) + get(g_sec_size, 3);
 
     if g_raw_mode == 1 {
-        sys_write(1, g_code, code_size);
+        sys_write(g_out_fd, g_code, code_size);
         return;
     }
 
@@ -2557,8 +2570,8 @@ export fn asm_write_elf() -> void {
     write_le32(out, 76, 7);
     write_le32(out, 80, 4096);
 
-    sys_write(1, out, ELF_HDR_SIZE);
-    sys_write(1, g_code, code_size);
+    sys_write(g_out_fd, out, ELF_HDR_SIZE);
+    sys_write(g_out_fd, g_code, code_size);
     delete(out);
     return;
 }
