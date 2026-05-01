@@ -47,6 +47,10 @@ import "source_reader.tc";
 import "ast_node.tc";
 import "strlib.tc";
 
+// File-open syscalls (forward decls; bodies in crt0_tc.s / task_crt0.s).
+fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
 // Runtime helper, linked from runtime.tc. Prints per-task kmalloc peak
 // and live byte counts to stderr. No-op on bootstrap (host) builds —
 // see bootstrap/runtime_syscall.c.
@@ -1510,6 +1514,24 @@ fn read_self_wrapper(nodes: AstNodeArray, strtab: U8Array,
     return;
 }
 
+// File-args mode: read raw .th content (a sequence of `(program ...)`
+// blocks) until EOF and stream-register each. Used when --exth /
+// --tgth files are passed directly without the legacy (imports ... )
+// / (self ... ) wrappers.
+fn read_programs_until_eof(nodes: AstNodeArray, strtab: U8Array,
+                           fntab: U32Array, atom: U8Array,
+                           export_only: bool) -> void {
+    skip_ws_in();
+    while at_eof(g_reader) == false && peek_in() == '(' {
+        var pk: i32 = read_open_kind(atom);
+        if pk != NK_PROGRAM { sys_exit(11); }
+        stream_register_program(nodes, strtab, fntab, atom, export_only);
+        read_close_paren();
+        skip_ws_in();
+    }
+    return;
+}
+
 // ===== Main =====
 //
 // Streaming pipeline:
@@ -1528,7 +1550,12 @@ fn read_self_wrapper(nodes: AstNodeArray, strtab: U8Array,
 // The (imports ...) and (self ...) wrappers are MANDATORY in the input
 // even when empty — the driver scripts always emit them — so the
 // reader can advance through them by byte without needing lookahead.
-fn main() -> i32 {
+// File-mode args. When use_files != 0 the run reads from
+// exth/tgth/tgt files directly (raw .th + .ast, no legacy
+// (imports …) / (self …) wrappers) and writes to out_fd, skipping
+// the cat-wrap pre-step that the OS-side msh pipeline used to need.
+fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
+             tgt_path: String, out_path: String) -> i32 {
     // Buffer sizes derived from measured peaks across all compiler/*.tc
     // files (with the per-fn strtab rollback further down), ~25%
     // headroom:
@@ -1553,13 +1580,23 @@ fn main() -> i32 {
     var nodes: AstNodeArray = AstNodeArray(2048);
     var strtab: U8Array = U8Array(32768);
     var atom_buf: U8Array = U8Array(1024);
-    var ob: StringBuffer = StringBuffer_new(1);
+    // Output target: stdout for stdin mode, --out file for file mode.
+    var out_fd: i32 = 1;
+    if use_files != 0 {
+        out_fd = do_openat(0 - 100, out_path, 577);
+        if out_fd < 0 { sys_exit(12); }
+    }
+    var ob: StringBuffer = StringBuffer_new(out_fd);
     var fntab: U32Array = U32Array(512);
     var vartab: VarEntryArray = VarEntryArray(128u32);
     var vti: i32 = 0;
     while vti < 128 { set(vartab, vti, VarEntry(0, 0, 0, 0, 0)); vti = vti + 1; }
 
-    g_reader = SourceReader_new(0);
+    // In stdin mode g_reader is the single concatenated wrap; in file
+    // mode each phase opens its own file and points g_reader at it.
+    if use_files == 0 {
+        g_reader = SourceReader_new(0);
+    }
     ast_set_count(0);
     g_sp = 0;
     g_fn_count = 0;
@@ -1573,14 +1610,42 @@ fn main() -> i32 {
     register_builtins(strtab, fntab);
 
     // Phase 1: imports.
-    read_imports_wrapper(nodes, strtab, fntab, atom_buf);
+    if use_files != 0 {
+        // Open --exth (raw .th, no outer wrap). May be empty/null
+        // for inputs that import nothing.
+        if exth_path as u32 != 0u32 {
+            var fd_e: i32 = do_openat(0 - 100, exth_path, 0);
+            if fd_e >= 0 {
+                g_reader = SourceReader_new(fd_e);
+                read_programs_until_eof(nodes, strtab, fntab, atom_buf, true);
+                close(g_reader);
+                do_close(fd_e);
+            }
+        }
+    } else {
+        read_imports_wrapper(nodes, strtab, fntab, atom_buf);
+    }
     reset_node_pool(nodes);
 
     // Phase 2: self.
-    read_self_wrapper(nodes, strtab, fntab, atom_buf);
+    if use_files != 0 {
+        var fd_s: i32 = do_openat(0 - 100, tgth_path, 0);
+        if fd_s < 0 { sys_exit(13); }
+        g_reader = SourceReader_new(fd_s);
+        read_programs_until_eof(nodes, strtab, fntab, atom_buf, false);
+        close(g_reader);
+        do_close(fd_s);
+    } else {
+        read_self_wrapper(nodes, strtab, fntab, atom_buf);
+    }
     reset_node_pool(nodes);
 
-    // Phase 3: open (program ... and emit the header to stdout.
+    // Phase 3: open (program ... from --tgt (or stdin).
+    if use_files != 0 {
+        var fd_t: i32 = do_openat(0 - 100, tgt_path, 0);
+        if fd_t < 0 { sys_exit(14); }
+        g_reader = SourceReader_new(fd_t);
+    }
     var pk: i32 = read_open_kind(atom_buf);
     if pk != NK_PROGRAM { sys_exit(6); }
     emit_string(ob, "(program");
@@ -1664,10 +1729,11 @@ fn main() -> i32 {
 
     emit_char(ob, ')');
     emit_nl(ob);
-    write(ob, 1);
+    write(ob, out_fd);
 
     delete(nodes); delete(strtab); delete(atom_buf); destroy(ob);
     delete(fntab); delete(vartab); close(g_reader);
+    if use_files != 0 { do_close(out_fd); }
 
     // Per-top-level peaks. Used to size the fixed buffers above.
     var dbuf: U8Array = U8Array(96);
@@ -1702,4 +1768,55 @@ fn main() -> i32 {
 
     km_dump_peak();
     return 0;
+}
+
+// Stdin entry: legacy wrap-on-stdin pipeline (compile-gen2.sh /
+// kernel/build.sh / golden tests use this).
+fn main() -> i32 {
+    return main_impl(0, 0 as String, 0 as String, 0 as String, 0 as String);
+}
+
+fn arg_eq(s: String, pat: StringLiteral) -> i32 {
+    var ns: i32 = len(s);
+    var np: i32 = len(pat);
+    if ns != np { return 0; }
+    var i: i32 = 0;
+    while i < np {
+        if get(s, i) != get(pat, i) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+// File-args entry:
+//   tcheck --exth ext.th --tgth tgt.th --tgt tgt.ast --out tgt.tast
+// --exth is optional (omitted = no imports). Other three are required.
+fn main(argv: StringArray) -> i32 {
+    var exth: String = 0 as String;
+    var tgth: String = 0 as String;
+    var tgt:  String = 0 as String;
+    var out:  String = 0 as String;
+    if argv as u32 != 0u32 {
+        var argc: i32 = len(argv);
+        var i: i32 = 1;
+        while i < argc {
+            var a: String = get(argv, i);
+            if arg_eq(a, "--exth") != 0 && i + 1 < argc {
+                exth = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--tgth") != 0 && i + 1 < argc {
+                tgth = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--tgt") != 0 && i + 1 < argc {
+                tgt = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--out") != 0 && i + 1 < argc {
+                out = get(argv, i + 1); i = i + 2;
+            } else {
+                i = i + 1;  // unknown flag — skip
+            }
+        }
+    }
+    // If no file flags given, fall back to stdin mode (matches main()).
+    if tgth as u32 == 0u32 && tgt as u32 == 0u32 && out as u32 == 0u32 {
+        return main_impl(0, 0 as String, 0 as String, 0 as String, 0 as String);
+    }
+    return main_impl(1, exth, tgth, tgt, out);
 }
