@@ -221,6 +221,15 @@ var DEF_POOL_INITIAL_KB: i32 = 4;
 // from the hardcoded root list. Phase 3-4 will use this to filter
 // .lab output and have asm_pass2 skip dead bytes.
 var g_label_live: I32Array = 0 as I32Array;
+
+// Number of labels that came from one or more --load-idx files. The
+// link step marks every one of them live regardless of BFS reach,
+// because asm-pass2 still walks the prelude source byte-for-byte
+// and would error on any label it sees that isn't in the .lab. We
+// concede prelude dead-strip for the simplicity of "prelude is
+// always whole". Set by asm_load_idx after each file is parsed; BFS
+// reads it to seed those rows live.
+var g_idx_loaded_count: i32 = 0;
 var LIVE_BITMAP_WORDS: i32 = 128;  // MAX_LABELS / 32
 
 fn live_get(idx: i32) -> i32 {
@@ -277,6 +286,19 @@ export fn asm_compute_live() -> void {
     rl = buf_set_str(rb, 0, "__data_end");                       live_mark_root(rb, rl);
 
     delete(rb);
+
+    // Conservative roots: every label loaded from a `.idx` file is
+    // unconditionally live. asm-pass2 walks the prelude source
+    // byte-for-byte and would error on a label define it sees that
+    // isn't in the .lab dump, so we concede prelude dead-strip and
+    // pin every idx-loaded entry. User-side labels remain subject
+    // to BFS the normal way (refs from these idx roots reach into
+    // user code transitively, just like the standard roots above).
+    var ir: i32 = 0;
+    while ir < g_idx_loaded_count {
+        live_set(ir);
+        ir = ir + 1;
+    }
 
     // Fixed-point propagation. Each iteration walks all edges; if a
     // live owner has a non-live target, mark the target. Repeat until
@@ -572,6 +594,31 @@ var g_numlab_count: I32Array = 0 as I32Array;  // count per digit (10 entries)
 export fn asm_clear_numlab_counts() -> void {
     var i: i32 = 0;
     while i < 10 { set(g_numlab_count, i, 0); i = i + 1; }
+    return;
+}
+
+// Truncate per-digit numlab counts to a given prefix length. Used by
+// Phase 5 in --load-idx mode: the prelude numlabs (loaded first) need
+// to survive the user-side strip rebuild because asm-pass2 still sees
+// the prelude source byte-for-byte and would error on any `Nb`/`Nf`
+// reference into the prelude that has no entry. The full clear that
+// non-idx mode uses would drop those.
+export fn asm_truncate_numlab_counts(prefix: I32Array) -> void {
+    var i: i32 = 0;
+    while i < 10 {
+        set(g_numlab_count, i, get(prefix, i));
+        i = i + 1;
+    }
+    return;
+}
+
+// Snapshot per-digit numlab counts into a pre-allocated I32Array(10).
+export fn asm_snapshot_numlab_counts(out: I32Array) -> void {
+    var i: i32 = 0;
+    while i < 10 {
+        set(out, i, get(g_numlab_count, i));
+        i = i + 1;
+    }
     return;
 }
 
@@ -2183,13 +2230,42 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
     var li: i32 = 0;
     while li < g_nlabels {
         var lb: Label = get(g_labels, li);
-        emit_string(sb, "lab ");
-        dump_int(sb, addr(lb));
-        emit_char(sb, ' ');
-        dump_int(sb, section(lb));
-        emit_char(sb, ' ');
-        emit_n(sb, g_lab_names, name_off(lb), name_len(lb));
-        emit_nl(sb);
+        // Skip __global_pointer$ — it's a synthetic label created
+        // by asm_init_pass1 in every asm-pass1 run, so emitting it
+        // into the idx would cause a duplicate definition when load
+        // installs it again on top of the synthetic.
+        var nlen_lb: i32 = name_len(lb);
+        var noff_lb: i32 = name_off(lb);
+        var is_gp: i32 = 0;
+        if nlen_lb == 17 &&
+           get(g_lab_names, noff_lb) == '_' as u8 &&
+           get(g_lab_names, noff_lb + 1) == '_' as u8 &&
+           get(g_lab_names, noff_lb + 2) == 'g' as u8 &&
+           get(g_lab_names, noff_lb + 3) == 'l' as u8 &&
+           get(g_lab_names, noff_lb + 4) == 'o' as u8 &&
+           get(g_lab_names, noff_lb + 5) == 'b' as u8 &&
+           get(g_lab_names, noff_lb + 6) == 'a' as u8 &&
+           get(g_lab_names, noff_lb + 7) == 'l' as u8 &&
+           get(g_lab_names, noff_lb + 8) == '_' as u8 &&
+           get(g_lab_names, noff_lb + 9) == 'p' as u8 &&
+           get(g_lab_names, noff_lb + 10) == 'o' as u8 &&
+           get(g_lab_names, noff_lb + 11) == 'i' as u8 &&
+           get(g_lab_names, noff_lb + 12) == 'n' as u8 &&
+           get(g_lab_names, noff_lb + 13) == 't' as u8 &&
+           get(g_lab_names, noff_lb + 14) == 'e' as u8 &&
+           get(g_lab_names, noff_lb + 15) == 'r' as u8 &&
+           get(g_lab_names, noff_lb + 16) == '$' as u8 {
+            is_gp = 1;
+        }
+        if is_gp == 0 {
+            emit_string(sb, "lab ");
+            dump_int(sb, addr(lb));
+            emit_char(sb, ' ');
+            dump_int(sb, section(lb));
+            emit_char(sb, ' ');
+            emit_n(sb, g_lab_names, noff_lb, nlen_lb);
+            emit_nl(sb);
+        }
         li = li + 1;
     }
 
@@ -2643,6 +2719,12 @@ export fn asm_load_idx(path: String) -> i32 {
     delete(snap);
     close(reader);
     do_close(fd);
+    // Mark every label loaded so far as "from idx" so BFS keeps
+    // them alive. We snapshot g_nlabels post-parse (instead of
+    // tracking per-label) since labels are only added — never
+    // reordered — and asm-pass1 always loads idx files before
+    // walking user.s, so this index range stays stable.
+    g_idx_loaded_count = g_nlabels;
     return 0;
 }
 

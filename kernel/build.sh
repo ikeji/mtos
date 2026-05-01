@@ -214,7 +214,7 @@ fi
 # msh script-mode fixtures: smoke / abort tests + the per-stage
 # pipeline benchmark driven by tests/test_pico2_bench.sh. Always
 # staged so the same kernel build can be exercised without rebuilding.
-for f in msh_smoke.sh msh_abort.sh pico2_bench.sh pico2_pass1_phases.sh pico2_compile_sb.sh; do
+for f in msh_smoke.sh msh_abort.sh pico2_bench.sh pico2_pass1_phases.sh pico2_compile_sb.sh pico2_bench_idx.sh; do
     if [ -f "$ROOT_DIR/tests/fixtures/$f" ]; then
         cp "$ROOT_DIR/tests/fixtures/$f" "$ROOT_DIR_TREE/$f"
     fi
@@ -247,6 +247,22 @@ PRELUDE_STACK=8192
     cat "$CACHE_DIR/runtime.s"
 } > "$ROOT_DIR_TREE/prelude.s"
 cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
+
+# Pre-link the prelude into a `.idx` (docs/idx_format.md) so the
+# OS-side asm-pass1 can skip the prelude source walk. The prelude is
+# fixed at kernel-build time — running asm-pass1 --emit-idx once
+# here saves ~95 s per OS-side compile (full prelude walk).
+GEN2_ASM_PASS1="${GEN2_DIR:-build/gen2}/asm_pass1"
+if [ -x "$GEN2_ASM_PASS1" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
+    qemu-riscv32 "$GEN2_ASM_PASS1" \
+        --emit-idx "$ROOT_DIR_TREE/prelude.idx" \
+        "$ROOT_DIR_TREE/prelude.s" \
+        || { echo "WARNING: prelude.idx generation failed" >&2; rm -f "$ROOT_DIR_TREE/prelude.idx"; }
+    if [ -s "$ROOT_DIR_TREE/prelude.idx" ]; then
+        chmod 644 "$ROOT_DIR_TREE/prelude.idx" 2>/dev/null || true
+        echo "prelude.idx: $(wc -c < "$ROOT_DIR_TREE/prelude.idx") bytes" >&2
+    fi
+fi
 
 # Phase 1 typecheck split (#54): tcheck consumes a wrapped stdin
 # of the form (imports …) (self <a.th>) (program …). Stage three

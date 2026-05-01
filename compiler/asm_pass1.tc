@@ -77,12 +77,29 @@ fn owner_is_live() -> i32 {
 // the line (and the cursor advances it produced) or rewinds the
 // state for dead-owner skips. Returns the byte count written to
 // out_fd so the caller can update src_bytes for the .lab.
-fn emit_stripped(reader: SourceReader, out_fd: i32) -> i32 {
+fn emit_stripped(reader: SourceReader, out_fd: i32,
+                 idx_secsize: I32Array, idx_numlab_counts: I32Array) -> i32 {
     asm_reset_for_strip_pass();
+    // If a prelude was loaded from a .idx, seed g_sec_pos with its
+    // per-section contributions so user.s labels' intra offsets stay
+    // correctly above the prelude. asm_pass2 walks (prelude + user)
+    // and the section_base computation needs the full picture.
+    if idx_secsize as u32 != 0u32 {
+        asm_set_sec_pos(0, get(idx_secsize, 0));
+        asm_set_sec_pos(1, get(idx_secsize, 1));
+        asm_set_sec_pos(2, get(idx_secsize, 2));
+        asm_set_sec_pos(3, get(idx_secsize, 3));
+    }
     // numlab table is rebuilt live-only by the strip walk (define_numlab
     // is gated by g_phase4_active to skip dead owners). Reset the
-    // count cursors so no pre-strip entries linger.
-    asm_clear_numlab_counts();
+    // count cursors so no pre-strip entries linger. With --load-idx,
+    // truncate to the prelude's count instead of zero so prelude
+    // numlabs survive (the user-only strip can't re-emit them).
+    if idx_numlab_counts as u32 != 0u32 {
+        asm_truncate_numlab_counts(idx_numlab_counts);
+    } else {
+        asm_clear_numlab_counts();
+    }
 
     // Streaming output buffer: emits to out_fd once a 1 KB chunk is
     // ready, vs raw sys_write per source line which costs a fatfs
@@ -192,8 +209,32 @@ fn run(src_path: String, strip_out_path: String,
 
     // Load pre-link state if asked. Must happen after asm_init_pass1
     // (so g_labels etc. exist) but before the source walk.
+    var idx_src_bytes: i32 = 0;
+    var idx_secsize: I32Array = 0 as I32Array;
+    var idx_numlab_counts: I32Array = 0 as I32Array;
     if load_idx_path as u32 != 0u32 {
         asm_load_idx(load_idx_path);
+        // asm_load_idx accumulates the idx's `src_bytes` line into
+        // g_src_bytes. Snapshot it so Phase 5's strip recomputation
+        // can re-add the prelude bytes (asm_pass2 still walks the
+        // full prelude, so its per-section stream loop needs
+        // prelude_bytes + user_strip_bytes per pass).
+        idx_src_bytes = asm_get_src_bytes();
+        // Snapshot the prelude's per-section contributions. Phase 5's
+        // strip walker resets g_sec_pos to 0 and only sees user.s,
+        // so we re-seed these post-reset to keep section_base
+        // calculations honest.
+        idx_secsize = I32Array(4);
+        set(idx_secsize, 0, asm_sec_pos(0));
+        set(idx_secsize, 1, asm_sec_pos(1));
+        set(idx_secsize, 2, asm_sec_pos(2));
+        set(idx_secsize, 3, asm_sec_pos(3));
+        // Snapshot per-digit numlab counts so Phase 5 can preserve
+        // prelude numlabs (the user-only strip walk would otherwise
+        // wipe them and asm-pass2 would fail on `Nb`/`Nf` refs into
+        // the prelude).
+        idx_numlab_counts = I32Array(10);
+        asm_snapshot_numlab_counts(idx_numlab_counts);
     }
 
     var src_fd: i32 = 0;
@@ -247,8 +288,12 @@ fn run(src_path: String, strip_out_path: String,
         return 0;
     }
 
+    // First sec_base computation: needed if BFS doesn't run (host
+    // stdin path); also harmless if strip runs (we recompute after).
+    // We do NOT call asm_fixup_labels here — labels stay at intra
+    // until the final fixup at the end of run() so the strip walker
+    // can re-derive sec_pos cleanly without double-adding bases.
     asm_compute_sec_bases();
-    asm_fixup_labels();
     // Accumulate user.s bytes onto whatever load_idx set (prelude
     // src_bytes). asm_pass2's per-section stream loop reads
     // src_bytes per pass, so this needs the full prelude+user total.
@@ -284,25 +329,32 @@ fn run(src_path: String, strip_out_path: String,
                     var fd3: i32 = do_openat(0 - 100, src_path, 0);
                     if fd3 >= 0 {
                         var reader3: SourceReader = SourceReader_new(fd3);
-                        var stripped_bytes: i32 = emit_stripped(reader3, out_fd);
+                        var stripped_bytes: i32 = emit_stripped(reader3, out_fd, idx_secsize, idx_numlab_counts);
                         close(reader3);
                         do_close(fd3);
                         do_close(out_fd);
 
-                        // Recompute base / fixup with live-only sizes.
-                        // asm_fixup_labels skips dead labels (live
-                        // bitmap exists) so they keep their pre-strip
-                        // absolute address — irrelevant since the
-                        // .lab dump filters dead anyway.
+                        // Recompute base with live-only sizes; the
+                        // final fixup happens once below, after this
+                        // block, so labels survive a single intra →
+                        // absolute step.
                         asm_compute_sec_bases();
-                        asm_fixup_labels();
-                        asm_set_src_bytes(stripped_bytes);
+                        // Add prelude bytes back; pass2 walks
+                        // prelude.s in full plus user_strip per pass.
+                        asm_set_src_bytes(idx_src_bytes + stripped_bytes);
                     } else {
                         do_close(out_fd);
                     }
                 }
             }
     }
+
+    // Single fixup pass at the end — turns intra addresses into
+    // absolutes using whatever sec_base is current (post-strip if
+    // strip ran, otherwise the initial compute). This is the only
+    // fixup; both the host stdin path and the load_idx path land
+    // here exactly once.
+    asm_fixup_labels();
 
     asm_dump_lab_state();
 
