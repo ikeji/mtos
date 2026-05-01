@@ -214,7 +214,7 @@ fi
 # msh script-mode fixtures: smoke / abort tests + the per-stage
 # pipeline benchmark driven by tests/test_pico2_bench.sh. Always
 # staged so the same kernel build can be exercised without rebuilding.
-for f in msh_smoke.sh msh_abort.sh pico2_bench.sh pico2_pass1_phases.sh; do
+for f in msh_smoke.sh msh_abort.sh pico2_bench.sh pico2_pass1_phases.sh pico2_compile_sb.sh; do
     if [ -f "$ROOT_DIR/tests/fixtures/$f" ]; then
         cp "$ROOT_DIR/tests/fixtures/$f" "$ROOT_DIR_TREE/$f"
     fi
