@@ -112,6 +112,7 @@ var g_section_emitted: i32 = 0;        // bytes emitted in the current target se
 // when invoked with file-args.
 var g_out_fd:          i32 = 1;
 export fn asm_set_out_fd(fd: i32) -> void { g_out_fd = fd; return; }
+export fn asm_get_out_fd() -> i32 { return g_out_fd; }
 
 // Per-section emit fds for --emit-bin mode. When non-zero, the
 // asm-pass2 section pass for that section writes to the file
@@ -1268,6 +1269,70 @@ fn pass1_scan_operand_refs() -> void {
     return;
 }
 
+// Emit `reloc <offset> <kind> <name>\n` to g_reloc_fd. `op_idx` selects
+// which operand to read the name from (the label being referenced).
+// Used by asm_pass2 in --emit-bin mode to record PC-relative slots
+// that need patching at link/load time when the prelude is reused
+// in front of differently-sized user code.
+export fn asm_emit_reloc(offset: i32, kind: i32, op_idx: i32) -> void {
+    if g_reloc_fd <= 0 { return; }
+    var noff: i32 = get(g_ops, (op_idx * 2));
+    var nlen: i32 = get(g_ops, (op_idx * 2 + 1));
+    while nlen > 0 && (get(g_line_buf, noff) == ' ' || get(g_line_buf, noff) == 9u8) {
+        noff = noff + 1; nlen = nlen - 1;
+    }
+    var buf: U8Array = U8Array(96);
+    var p: i32 = 0;
+    set(buf, p, 'r' as u8); p = p + 1;
+    set(buf, p, 'e' as u8); p = p + 1;
+    set(buf, p, 'l' as u8); p = p + 1;
+    set(buf, p, 'o' as u8); p = p + 1;
+    set(buf, p, 'c' as u8); p = p + 1;
+    set(buf, p, ' ' as u8); p = p + 1;
+    var v1: i32 = offset;
+    if v1 == 0 { set(buf, p, '0' as u8); p = p + 1; }
+    else {
+        var n1: i32 = 0; var t1: i32 = v1;
+        while t1 > 0 { n1 = n1 + 1; t1 = t1 / 10; }
+        var i1: i32 = n1 - 1;
+        while i1 >= 0 {
+            set(buf, p + i1, (48 + (v1 % 10)) as u8);
+            v1 = v1 / 10;
+            i1 = i1 - 1;
+        }
+        p = p + n1;
+    }
+    set(buf, p, ' ' as u8); p = p + 1;
+    set(buf, p, (48 + kind) as u8); p = p + 1;
+    set(buf, p, ' ' as u8); p = p + 1;
+    var k: i32 = 0;
+    while k < nlen { set(buf, p, get(g_line_buf, noff + k)); p = p + 1; k = k + 1; }
+    set(buf, p, 10u8); p = p + 1;
+    sys_write(g_reloc_fd, buf, p);
+    delete(buf);
+    g_reloc_count = g_reloc_count + 1;
+    return;
+}
+
+// Return 1 if g_line_buf[name_off..+nlen] equals StringLiteral pat.
+// Used to recognize __global_pointer$ / main / main__StringArray
+// during reloc emission.
+fn asm_label_name_eq(op_idx: i32, pat: StringLiteral) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var nlen: i32 = get(g_ops, (op_idx * 2 + 1));
+    while nlen > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; nlen = nlen - 1;
+    }
+    var pl: i32 = len(pat);
+    if nlen != pl { return 0; }
+    var i: i32 = 0;
+    while i < pl {
+        if get(g_line_buf, off + i) != get(pat, i) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
 // Return the section id of the label referenced by operand op_idx,
 // or 0 (SEC_TEXT) for numeric labels and unknown labels.
 fn parse_label_op_section(op_idx: i32) -> i32 {
@@ -1399,6 +1464,12 @@ fn asm_instr() -> i32 {
             var rd: i32 = 1;
             if mnem_eq("tail") { rd = 0; }
             if g_pass==2 {
+                if g_reloc_fd > 0 && g_target_section == 0 {
+                    if asm_label_name_eq(0, "main") != 0 ||
+                       asm_label_name_eq(0, "main__StringArray") != 0 {
+                        asm_emit_reloc(g_section_emitted, 1, 0);
+                    }
+                }
                 var off: i32 = parse_label_op(0) - pc;
                 emit32(enc_u(23,rd,hi20(off)<<12));
                 emit32(enc_i(103,0,rd,rd,lo12(off)));
@@ -1463,6 +1534,12 @@ fn asm_instr() -> i32 {
                     emit32(enc_u(23, rd, 0));
                     emit32(enc_i(19, 0, rd, 3, gpoff));
                 } else {
+                    if g_reloc_fd > 0 && g_target_section == 0 {
+                        if tsec == 1 ||
+                           asm_label_name_eq(1, "__global_pointer$") != 0 {
+                            asm_emit_reloc(g_section_emitted, 1, 1);
+                        }
+                    }
                     var off: i32 = target - pc;
                     emit32(enc_u(23,rd,hi20(off)<<12));
                     emit32(enc_i(19,0,rd,rd,lo12(off)));

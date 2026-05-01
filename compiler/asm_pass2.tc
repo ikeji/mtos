@@ -203,7 +203,10 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
     asm_pass2_reset_cursors();
 
     // --emit-bin mode: redirect this section's bytes to its dedicated
-    // .bin file. Each section pass overwrites g_out_fd at start.
+    // .bin file. Each section pass overwrites g_out_fd at start —
+    // we save the previous fd in saved_fd so other passes are not
+    // affected if only some sections have a per-section bin file.
+    var saved_fd: i32 = asm_get_out_fd();
     var per_sec_fd: i32 = 0;
     if sec_target == 0 { per_sec_fd = asm_get_text_bin_fd(); }
     if sec_target == 1 { per_sec_fd = asm_get_rodata_bin_fd(); }
@@ -266,6 +269,10 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
     // Pad the target section with zeros up to its aligned size and
     // flush the output buffer. asm_flush_section_padding does both.
     asm_flush_section_padding();
+    // Restore the previous output fd so subsequent section passes
+    // and final ELF emission continue to write where the caller
+    // expects.
+    asm_set_out_fd(saved_fd);
     return;
 }
 
@@ -459,7 +466,13 @@ fn run_pass2(lab_path: String, out_path: String,
     // the source body during pass 1 and written to the .lab as
     // their own lines — parse_lab_line has already installed them
     // via asm_install_raw_mode / asm_install_load_base.
-    asm_write_elf_header_stream();
+    //
+    // --emit-bin mode: skip the ELF header — section bytes go to
+    // their dedicated per-section .bin files, not stdout.
+    if text_bin as u32 == 0u32 && rodata_bin as u32 == 0u32 &&
+       data_bin as u32 == 0u32 {
+        asm_write_elf_header_stream();
+    }
 
     // Phase C: 3 × source passes, one per target section (text,
     // rodata, data). The caller concatenated the source 3 times

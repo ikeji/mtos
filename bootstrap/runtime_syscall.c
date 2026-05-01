@@ -215,9 +215,14 @@ HeapObj _build_argv_stringarray(int32_t argc, char **argv) {
         const char *s = argv[i];
         int32_t n = 0;
         while (s[n]) n++;
-        HeapObj str = new_array(n, n);
+        /* Allocate one extra byte so the data area ends with a NUL — TC
+         * code uses len(str) for the logical length, but the do_openat
+         * stub strips the count prefix and hands the raw bytes to the
+         * Linux openat() syscall, which expects a NUL-terminated path. */
+        HeapObj str = new_array(n, n + 1);
         char *dst = (char *)OBJ_DATA(str);
         for (int32_t j = 0; j < n; j++) dst[j] = s[j];
+        dst[n] = 0;
         slots[i] = (uint32_t)(uintptr_t)str;
     }
     return sa;
