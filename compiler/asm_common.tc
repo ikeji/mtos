@@ -2122,6 +2122,110 @@ export fn asm_dump_lab_state() -> void {
     return;
 }
 
+// ===== .idx dump (per-file pre-link metadata) =====
+//
+// See docs/idx_format.md. Called instead of asm_dump_lab_state when
+// asm-pass1 is invoked in `--emit-idx` mode (extract pass only — no
+// BFS, no fixup, no strip). The label table is dumped with intra
+// addresses (= the per-section offset within this file's
+// contribution); refs are dumped as (owner_name, target_name) pairs
+// since label idx values aren't stable across files (merge re-numbers
+// them).
+//
+// Numlabs are dumped with intra + section so the link step can
+// rebase them when section_base is known. The current pass-1a
+// `define_numlab(digit, g_pos)` already records the intra value
+// (g_pos = sec_pos at the time), but doesn't record section. To
+// match the post-merge numlab table semantics we also need to know
+// which section the numlab lives in — for now we approximate by
+// trusting numlab-back/fwd's same-section closure (numeric labels
+// are always intra-function). When the pre-link prelude contains
+// only one section per numlab digit, this is exact; the worst case
+// is an asm where digit N is defined in both .text and .data, which
+// asm-pass1's current model already collapses unsafely. So we record
+// the section that was active at the time of the dump (g_current_section).
+export fn asm_dump_idx_state(out_fd: i32) -> void {
+    var sb: StringBuffer = StringBuffer_new(out_fd);
+    emit_string(sb, "(idx"); emit_nl(sb);
+    emit_string(sb, "; idx v1"); emit_nl(sb);
+
+    // Per-file section size contributions. Same as g_sec_pos at the
+    // end of pass 1a (each section's intra cursor).
+    var i: i32 = 0;
+    while i < 4 {
+        emit_string(sb, "secsize ");
+        dump_int(sb, i);
+        emit_char(sb, ' ');
+        dump_int(sb, get(g_sec_pos, i));
+        emit_nl(sb);
+        i = i + 1;
+    }
+
+    // All labels with intra addresses + section. No live filter (BFS
+    // hasn't run yet).
+    var li: i32 = 0;
+    while li < g_nlabels {
+        var lb: Label = get(g_labels, li);
+        emit_string(sb, "lab ");
+        dump_int(sb, addr(lb));
+        emit_char(sb, ' ');
+        dump_int(sb, section(lb));
+        emit_char(sb, ' ');
+        emit_n(sb, g_lab_names, name_off(lb), name_len(lb));
+        emit_nl(sb);
+        li = li + 1;
+    }
+
+    // Numeric labels: intra + section. Section is the one that was
+    // active when define_numlab was called — currently we don't track
+    // that explicitly per-numlab, so we assume numlabs are .text
+    // (digit 0 is by far the most common; bc2asm's `0:` after a
+    // branch lands in .text). Future-proof by recording 0 (text);
+    // re-derive from source order on the link side if needed.
+    var d: i32 = 0;
+    while d < 10 {
+        var cnt: i32 = get(g_numlab_count, d);
+        var k: i32 = 0;
+        while k < cnt {
+            emit_string(sb, "num ");
+            dump_int(sb, d);
+            emit_char(sb, ' ');
+            dump_int(sb, numlab_get(d, k));
+            emit_char(sb, ' ');
+            dump_int(sb, 0);  // section: assume text (see comment)
+            emit_nl(sb);
+            k = k + 1;
+        }
+        d = d + 1;
+    }
+
+    // Ref edges as (owner_name, target_name) pairs. Look both up by
+    // idx; skip if either has no entry (shouldn't happen for refs
+    // recorded in g_refs, but be safe).
+    var r: i32 = 0;
+    while r < g_nrefs {
+        var pair: i32 = get(g_refs, r);
+        var from_idx: i32 = (pair >> 16) & 0xFFFF;
+        var to_idx:   i32 = pair & 0xFFFF;
+        if from_idx >= 0 && from_idx < g_nlabels &&
+           to_idx >= 0 && to_idx < g_nlabels {
+            var from_lb: Label = get(g_labels, from_idx);
+            var to_lb: Label   = get(g_labels, to_idx);
+            emit_string(sb, "ref ");
+            emit_n(sb, g_lab_names, name_off(from_lb), name_len(from_lb));
+            emit_char(sb, ' ');
+            emit_n(sb, g_lab_names, name_off(to_lb), name_len(to_lb));
+            emit_nl(sb);
+        }
+        r = r + 1;
+    }
+
+    emit_char(sb, ')'); emit_nl(sb);
+    write(sb, out_fd);
+    destroy(sb);
+    return;
+}
+
 // ===== .lab install (pass 2 reader → in-memory state) =====
 export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: i32) -> void {
     if g_nlabels >= MAX_LABELS {

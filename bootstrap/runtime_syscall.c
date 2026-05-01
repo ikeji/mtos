@@ -203,6 +203,26 @@ void print__StringLiteral(HeapObj s) {
  * calls this on the OS to print "[kmem peak=N live=M]" before exit. */
 void km_dump_peak(void) {}
 
+/* Convert Linux-ABI argv (C-string array) into a TC StringArray (each
+ * element a count-prefixed String). Called from bootstrap/crt0.s
+ * before `call main` so a `fn main(argv: StringArray)` definition can
+ * read CLI args (used by asm-pass1 --emit-idx for prelude pre-link
+ * at kernel-build time). */
+HeapObj _build_argv_stringarray(int32_t argc, char **argv) {
+    HeapObj sa = new_array(argc, argc > 0 ? argc * 4 : 4);
+    uint32_t *slots = (uint32_t *)OBJ_DATA(sa);
+    for (int32_t i = 0; i < argc; i++) {
+        const char *s = argv[i];
+        int32_t n = 0;
+        while (s[n]) n++;
+        HeapObj str = new_array(n, n);
+        char *dst = (char *)OBJ_DATA(str);
+        for (int32_t j = 0; j < n; j++) dst[j] = s[j];
+        slots[i] = (uint32_t)(uintptr_t)str;
+    }
+    return sa;
+}
+
 /* kmalloc — TC-level raw byte allocator. tcheck.tc uses this to
  * carve per-fn fntab entries (variable size) instead of paying the
  * worst-case stride for every fn. The TC runtime has its own
