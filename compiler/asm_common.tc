@@ -391,6 +391,59 @@ fn ensure_def_pool_capacity(needed: i32) -> void {
     return;
 }
 
+// Return 1 if `name` is a RISC-V register ABI name (zero/ra/sp/gp/
+// tp/fp, t0-t6, s0-s11, a0-a7) or x-form (x0..x31). The deferred
+// forward-ref queue would otherwise fill up with reg-operand misses
+// from scan_operand_refs (every instruction has 2-3 reg operands ×
+// thousands of source lines).
+fn is_riscv_register(name: U8Array, nlen: i32) -> i32 {
+    if nlen < 2 || nlen > 4 { return 0; }
+    var c0: u8 = get(name, 0);
+    var c1: u8 = get(name, 1);
+
+    // x0..x31
+    if c0 == 'x' as u8 {
+        if c1 < '0' as u8 || c1 > '9' as u8 { return 0; }
+        if nlen == 2 { return 1; }
+        if nlen == 3 {
+            var c2: u8 = get(name, 2);
+            if c2 < '0' as u8 || c2 > '9' as u8 { return 0; }
+            return 1;
+        }
+        return 0;
+    }
+
+    // ra, sp, gp, tp, fp (2 chars)
+    if nlen == 2 {
+        if c0 == 'r' as u8 && c1 == 'a' as u8 { return 1; }
+        if c0 == 's' as u8 && c1 == 'p' as u8 { return 1; }
+        if c0 == 'g' as u8 && c1 == 'p' as u8 { return 1; }
+        if c0 == 't' as u8 && c1 == 'p' as u8 { return 1; }
+        if c0 == 'f' as u8 && c1 == 'p' as u8 { return 1; }
+        // a0-a7, t0-t6, s0-s9 (single-digit)
+        if c1 >= '0' as u8 && c1 <= '9' as u8 {
+            if c0 == 'a' as u8 || c0 == 't' as u8 || c0 == 's' as u8 { return 1; }
+        }
+        return 0;
+    }
+
+    // s10, s11, t0-t6 (3 chars only valid for s10/s11)
+    if nlen == 3 {
+        if c0 == 's' as u8 && c1 == '1' as u8 {
+            var d2: u8 = get(name, 2);
+            if d2 == '0' as u8 || d2 == '1' as u8 { return 1; }
+        }
+        return 0;
+    }
+
+    // zero (4 chars)
+    if nlen == 4 {
+        if c0 == 'z' as u8 && c1 == 'e' as u8
+           && get(name, 2) == 'r' as u8 && get(name, 3) == 'o' as u8 { return 1; }
+    }
+    return 0;
+}
+
 // Record a (from = g_owner_idx) → (to = name) edge. If the target
 // is already in g_labels (backward ref) we resolve and append to
 // g_refs immediately. If it's not yet defined (forward ref) we copy
@@ -408,7 +461,23 @@ fn record_ref(name: U8Array, nlen: i32) -> void {
         g_nrefs = g_nrefs + 1;
         return;
     }
-    if g_ndeferred >= MAX_DEFERRED { return; }
+    // Register names dominate the operand stream (every instruction
+    // has 1-3 reg operands × 11 K source lines on the self-host build
+    // = ~20 K reg-name lookups). Without filtering, every miss
+    // queues into g_def_*, blowing past MAX_DEFERRED in seconds.
+    // Drop them here — they will never be in g_labels by the time
+    // resolve_deferred runs either, so queueing was pure waste.
+    if is_riscv_register(name, nlen) != 0 { return; }
+    if g_ndeferred >= MAX_DEFERRED {
+        var eb2: StringBuffer = StringBuffer_new();
+        asm_err_begin(eb2);
+        emit_string(eb2, "deferred queue full: MAX_DEFERRED=");
+        emit_int(eb2, MAX_DEFERRED);
+        emit_string(eb2, " reached (at '");
+        emit_n(eb2, name, 0, nlen);
+        emit_string(eb2, "')");
+        asm_err_end(eb2);
+    }
     ensure_def_pool_capacity(g_def_pool_pos + nlen);
     var off: i32 = g_def_pool_pos;
     var i: i32 = 0;
