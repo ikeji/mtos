@@ -387,15 +387,18 @@ fn main(argv: StringArray) -> i32 {
     //   asm_pass1 src.s strip.s                         dead-strip → strip.s, .lab on stdout
     //   asm_pass1 --emit-idx out.idx src.s              extract pass only → .idx
     //   asm_pass1 --load-idx in.idx src.s [strip.s]     load prelude state then process src
+    //   asm_pass1 --load-idx in.idx --idx-source p.s ... emit `src p.s` into the .lab so
+    //                                                     pass2 can open the prelude directly
     var path: String = 0 as String;
     var strip_out: String = 0 as String;
     var emit_idx: String = 0 as String;
     var load_idx: String = 0 as String;
+    var idx_source: String = 0 as String;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var consumed: i32 = 1;  // skip argv[0] (program name)
         // First pass: peel off any --emit-idx <path> / --load-idx <path>
-        // flags from the start (only one of each, in either order).
+        // / --idx-source <path> flags from the start.
         var keep_scanning: i32 = 1;
         while keep_scanning != 0 && consumed < argc {
             var a: String = get(argv, consumed);
@@ -405,6 +408,9 @@ fn main(argv: StringArray) -> i32 {
             } else if arg_eq(a, "--load-idx") != 0 && consumed + 1 < argc {
                 load_idx = get(argv, consumed + 1);
                 consumed = consumed + 2;
+            } else if arg_eq(a, "--idx-source") != 0 && consumed + 1 < argc {
+                idx_source = get(argv, consumed + 1);
+                consumed = consumed + 2;
             } else {
                 keep_scanning = 0;
             }
@@ -412,6 +418,18 @@ fn main(argv: StringArray) -> i32 {
         // Positional: src [strip]
         if consumed < argc { path = get(argv, consumed); consumed = consumed + 1; }
         if consumed < argc { strip_out = get(argv, consumed); consumed = consumed + 1; }
+    }
+    // Tell asm_dump_lab_state which source files asm-pass2 should
+    // open. When the prelude is loaded from idx, the prelude path
+    // comes via --idx-source and is the first src. The strip output
+    // (or raw user source if no strip) is the second.
+    if idx_source as u32 != 0u32 { asm_set_src_path1(idx_source); }
+    if strip_out as u32 != 0u32 {
+        asm_set_src_path2(strip_out);
+    } else if path as u32 != 0u32 && idx_source as u32 != 0u32 {
+        // load-idx mode without strip: still record the user source
+        // as the second src so pass2 can read it.
+        asm_set_src_path2(path);
     }
     return run(path, strip_out, emit_idx, load_idx);
 }

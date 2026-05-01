@@ -33,6 +33,30 @@ import "strlib.tc";
 
 fn km_dump_peak() -> void;
 
+// File-open syscalls (forward decls — bodies in crt0_tc.s / task_crt0.s).
+fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+// Source-file paths captured from the .lab's `src` lines. Each entry
+// is a String the .lab parser allocates from the lab line bytes.
+// When non-empty, run_section_pass opens these in order instead of
+// reading from stdin (the cat-p2 concat step then becomes redundant).
+var g_src_paths: U32Array = 0 as U32Array;
+var g_n_src_paths: i32 = 0;
+var SRC_PATHS_CAP: i32 = 8;
+
+fn record_src_path(p: String) -> void {
+    if g_src_paths as u32 == 0u32 {
+        g_src_paths = U32Array((SRC_PATHS_CAP) as u32);
+        g_n_src_paths = 0;
+    }
+    if g_n_src_paths < SRC_PATHS_CAP {
+        set(g_src_paths, g_n_src_paths, p as u32);
+        g_n_src_paths = g_n_src_paths + 1;
+    }
+    return;
+}
+
 // ===== .lab parsing helpers =====
 
 fn is_ws(c: u8) -> bool { return c == ' ' || c == 9u8; }
@@ -100,6 +124,33 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         asm_set_src_bytes(g_lab_int);
         return 0;
     }
+    if blen - p >= 4 && cmp(buf, p, "src ") {
+        // src <path>  — file pass-2 should open directly. Trim the
+        // trailing newline before allocating the path string.
+        var ps: i32 = skip_ws(buf, p + 4, blen);
+        var pe: i32 = blen;
+        var trimming_p: i32 = 1;
+        while trimming_p == 1 && pe > ps {
+            var tc_p: u8 = get(buf, pe - 1);
+            if tc_p == 10u8 || tc_p == 13u8 || tc_p == ' ' || tc_p == 9u8 {
+                pe = pe - 1;
+            } else {
+                trimming_p = 0;
+            }
+        }
+        var plen: i32 = pe - ps;
+        if plen > 0 {
+            // U8Array(N) has the same on-wire layout as TC's String
+            // (count-prefixed buffer), so we can cast the array as
+            // a String once the bytes are filled. The path needs to
+            // outlive parse_lab_line, so don't delete it.
+            var path_buf: U8Array = U8Array((plen) as u32);
+            var pi: i32 = 0;
+            while pi < plen { set(path_buf, pi, get(buf, ps + pi)); pi = pi + 1; }
+            record_src_path(path_buf as String);
+        }
+        return 0;
+    }
     if blen - p >= 4 && cmp(buf, p, "num ") {
         parse_dec(buf, p + 4, blen);
         var dig: i32 = g_lab_int;
@@ -152,17 +203,52 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
     asm_pass2_reset_cursors();
 
     var lineno: i32 = 0;
-    var budget: i32 = source_bytes;
-    while budget > 0 {
-        var llen: i32 = rb_read_line(line, 4092, budget);
-        budget = g_budget_after;
-        if llen < 0 { break; }
-        if llen > 0 {
-            lineno = lineno + 1;
-            if asm_parse_meta_directive(line, llen) == 1 {
-                // pragmas only affect g_raw_mode / g_load_vaddr
-            } else {
-                asm_run_line(line, llen, lineno);
+
+    if g_n_src_paths > 0 {
+        // Multi-source mode: open each src path in order, walk via
+        // the same rb_* fast reader we use for stdin (just point its
+        // fd at the freshly-opened file). Eliminates the cat-p2
+        // concat step — pass2 reads /prelude.s (XIP flash) and
+        // /sd/u.strip directly per section pass.
+        var pi: i32 = 0;
+        while pi < g_n_src_paths {
+            var p_addr: u32 = get(g_src_paths, pi);
+            var path: String = p_addr as String;
+            var fd: i32 = do_openat(0 - 100, path, 0);
+            if fd >= 0 {
+                rb_switch_fd(fd);
+                var done: i32 = 0;
+                while done == 0 {
+                    var llen2: i32 = rb_read_line(line, 4092, 0x7FFFFFFF);
+                    if llen2 < 0 { done = 1; }
+                    if llen2 > 0 {
+                        lineno = lineno + 1;
+                        if asm_parse_meta_directive(line, llen2) == 1 {
+                            // pragmas only
+                        } else {
+                            asm_run_line(line, llen2, lineno);
+                        }
+                    }
+                }
+                do_close(fd);
+            }
+            pi = pi + 1;
+        }
+    } else {
+        // Stdin / single-source mode: caller concatenated the source
+        // 3 times after the .lab; src_bytes bounds each pass.
+        var budget: i32 = source_bytes;
+        while budget > 0 {
+            var llen: i32 = rb_read_line(line, 4092, budget);
+            budget = g_budget_after;
+            if llen < 0 { break; }
+            if llen > 0 {
+                lineno = lineno + 1;
+                if asm_parse_meta_directive(line, llen) == 1 {
+                    // pragmas only affect g_raw_mode / g_load_vaddr
+                } else {
+                    asm_run_line(line, llen, lineno);
+                }
             }
         }
     }
@@ -189,9 +275,24 @@ var g_buf:     U8Array = 0 as U8Array;
 var g_buf_pos: i32 = 0;
 var g_buf_len: i32 = 0;
 var g_buf_eof: i32 = 0;
+// rb_fill reads from this fd. Defaults to 0 (stdin) so the legacy
+// single-source path keeps working; multi-src run_section_pass
+// switches it via rb_switch_fd before each file.
+var g_rb_fd: i32 = 0;
 
 fn rb_init() -> void {
     g_buf     = U8Array((G_BUF_CAP) as u32);
+    g_buf_pos = 0;
+    g_buf_len = 0;
+    g_buf_eof = 0;
+    g_rb_fd   = 0;
+    return;
+}
+
+// Switch the underlying fd, discard any read-ahead, clear EOF. Used
+// to point the shared reader at a freshly-opened src file.
+fn rb_switch_fd(fd: i32) -> void {
+    g_rb_fd   = fd;
     g_buf_pos = 0;
     g_buf_len = 0;
     g_buf_eof = 0;
@@ -202,7 +303,7 @@ fn rb_init() -> void {
 fn rb_fill() -> i32 {
     if g_buf_pos < g_buf_len { return 0; }
     if g_buf_eof == 1 { return 1; }
-    var n: i32 = sys_read(0, g_buf, G_BUF_CAP);
+    var n: i32 = sys_read(g_rb_fd, g_buf, G_BUF_CAP);
     if n <= 0 {
         g_buf_eof = 1;
         return 1;

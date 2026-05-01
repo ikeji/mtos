@@ -222,6 +222,14 @@ var DEF_POOL_INITIAL_KB: i32 = 4;
 // .lab output and have asm_pass2 skip dead bytes.
 var g_label_live: I32Array = 0 as I32Array;
 
+// Source-file paths emitted into the .lab as `src <path>` lines so
+// asm-pass2 can open them directly instead of reading from stdin.
+// Up to 2 entries (prelude + user_strip in the load-idx flow).
+var g_src_path1: String = 0 as String;
+var g_src_path2: String = 0 as String;
+export fn asm_set_src_path1(p: String) -> void { g_src_path1 = p; return; }
+export fn asm_set_src_path2(p: String) -> void { g_src_path2 = p; return; }
+
 // Number of labels that came from one or more --load-idx files. The
 // link step marks every one of them live regardless of BFS reach,
 // because asm-pass2 still walks the prelude source byte-for-byte
@@ -2094,6 +2102,20 @@ export fn asm_dump_lab_state() -> void {
         dump_int(sb, get(g_sec_size, i));
         emit_nl(sb);
         i = i + 1;
+    }
+
+    // src lines: paths that asm-pass2 opens directly (eliminating
+    // the cat-p2 concat pre-step). Order matters — pass2 walks them
+    // in this order, so prelude must come before user_strip.
+    if g_src_path1 as u32 != 0u32 {
+        emit_string(sb, "src ");
+        emit_string(sb, g_src_path1);
+        emit_nl(sb);
+    }
+    if g_src_path2 as u32 != 0u32 {
+        emit_string(sb, "src ");
+        emit_string(sb, g_src_path2);
+        emit_nl(sb);
     }
 
     // Dead-strip Phase 4: when the live bitmap exists (asm_compute_live
