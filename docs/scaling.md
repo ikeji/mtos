@@ -430,10 +430,20 @@ sh-driven, with PLL_SYS @ 150 MHz: 123 sec (K7 era 127 sec)
 | asm_pass2 | ~15 s |
 | /sd/HW exec | ~1 s |
 
-`echo hello world` (UART 出力のみ、12 byte) でも **11 s かかる**。
-これが今 PLL_SYS 150 MHz 下での spawn + tiny task の baseline。
-将来の最適化対象 (おそらく TC ABI の関数呼び出しコストの高さが
-原因)。
+~~`echo hello world` (UART 出力のみ、12 byte) でも 11 s かかる。~~
+
+**訂正 (2026-05-01)**: msh-driven 最新計測では `echo BENCH_DONE` が
+**10 ms**。spawn + tiny task の baseline は数十 ms。先ほどの 11 s は
+tcc-driven 検証時の数字か、あるいは PLL_SYS 150 MHz 化前の旧値。
+sh/msh から起動した tiny task の spawn コストは無視できる範囲。
+
+`tests/test_pico2_bench.sh` の最新結果より:
+- `echo BENCH_DONE` = 0.010 s
+- `parse < /hw.tc > /sd/1.ast` (6-line input) = 0.21 s (処理含む)
+- `sigscan < /sd/1.ast > /sd/1.th` = 0.11 s
+
+なので spawn overhead 自体は無視でき、**残るコストは個別 task の
+本体実行時間 + SD I/O**。
 
 ### 残った tcc-driven 固有の slowdown
 
