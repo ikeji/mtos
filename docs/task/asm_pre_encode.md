@@ -212,15 +212,31 @@ asm_pass2 が `prelude.{text,rodata,data}.bin` + `/sd/u.strip` の
 
 **本体ステップ**：
 
-| step | 内容 | commit 単位 |
+| step | 内容 | 状態 |
 |---|---|---|
-| 1 | `.lab` フォーマット拡張（`src raw` / `reloc`）+ docs 更新 | 1 |
-| 2 | asm_pass1 に `--emit-bin` モード追加（per-section encode） | 1 |
-| 3 | asm_pass2 で `src raw` を memcpy 対応 | 1 |
-| 4 | asm_pass2 で reloc patch 対応 | 1 |
-| 5 | kernel/build.sh で host 側 prelude pre-encode 実行 + mtfs ステージ | 1 |
-| 6 | `pico2_bench_idx.sh` を新パイプラインに切替、ベンチ | 1 |
-| 7 | virt phase 7 + pico2 実機検証、必要なら docs/scaling.md 更新 | 1 |
+| 1 | `.lab` フォーマット拡張（`src raw` / `reloc`）+ docs 更新 | ✅ commit 2aa3f0a |
+| 2 | asm_pass2 に `--emit-bin` モード追加 + reloc detect | ✅ commit 2f6097d |
+| 3 | asm_pass2 で `src raw` を memcpy 対応 | ✅ commit 692d8c1 |
+| 4 | asm_pass2 で reloc patch 対応 | ✅ commit 749a0f6 |
+| 5 | Makefile で host 側 prelude pre-encode 実行 + mtfs ステージ | ✅ commit d7b5e72 |
+| 6 | asm_pass1 `--prelude-*` flags + `pico2_bench_idx.sh` 切替 | ✅ commit 40ee22f |
+| 7 | virt phase 7 + pico2 実機検証 | 🚧 partial |
+
+**Step 7 の状態 (2026-05-02)**:
+
+- `tests/test_phase7.sh` (legacy stdin pipeline; 結果として
+  `--prelude-*` flag を使わない経路): **stage 1 + stage 2
+  PASS** (Hello, World! + M7-minimal の OS 上 string_buffer.tc
+  コンパイル)。Hello World pipeline 自体は引き続き動作している
+- 新パイプライン (`asm_pass1 --prelude-text-bin ... + asm_pass2
+  --lab/--out`): asm_pass1 task は v2 .lab を正しく出力するが、
+  asm_pass2 が memcpy + reloc-patch した `/tmp/HW` は load して
+  実行はされるが何も出力しない。reloc patcher の offset 計算か、
+  prelude の dead-strip 抜きで全関数を含めることによる二次効果が
+  疑われる (legacy 18 KB 対 pre-encode 44 KB)。tcheck の packed
+  16-bit sentinel 修正 (ast_node.tc unpack_hi、commit 6295afc)
+  までは asm_pass2 task 自体が `parse_mem_off__?` で build しなかった
+- pico2 実機検証は未実施 (Debug Probe + SD card 必要、CI 不可)
 
 各 step は単独で revert 可能。step 3-4 の間は asm_pass2 が中間状態
 （src raw あるけど reloc 無し）になるが、`reloc` 行が空なら fallback
