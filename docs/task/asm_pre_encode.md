@@ -224,18 +224,23 @@ asm_pass2 が `prelude.{text,rodata,data}.bin` + `/sd/u.strip` の
 
 **Step 7 の状態 (2026-05-02)**:
 
-- `tests/test_phase7.sh` (legacy stdin pipeline; 結果として
-  `--prelude-*` flag を使わない経路): **stage 1 + stage 2
-  PASS** (Hello, World! + M7-minimal の OS 上 string_buffer.tc
-  コンパイル)。Hello World pipeline 自体は引き続き動作している
+- `tests/test_phase7.sh` (legacy stdin pipeline): **stage 1 +
+  stage 2 PASS** (Hello, World! + M7-minimal 経由の OS 上
+  string_buffer.tc コンパイル)
 - 新パイプライン (`asm_pass1 --prelude-text-bin ... + asm_pass2
-  --lab/--out`): asm_pass1 task は v2 .lab を正しく出力するが、
-  asm_pass2 が memcpy + reloc-patch した `/tmp/HW` は load して
-  実行はされるが何も出力しない。reloc patcher の offset 計算か、
-  prelude の dead-strip 抜きで全関数を含めることによる二次効果が
-  疑われる (legacy 18 KB 対 pre-encode 44 KB)。tcheck の packed
-  16-bit sentinel 修正 (ast_node.tc unpack_hi、commit 6295afc)
-  までは asm_pass2 task 自体が `parse_mem_off__?` で build しなかった
+  --lab/--out`): **virt 上で end-to-end PASS**。
+  asm_pass1 が v2 .lab を出力 → asm_pass2 が prelude.text.bin
+  を memcpy + reloc-patch → `/tmp/HW` が `Hello, World!` を出力。
+  実装途中で踏んだ 2 つの toolchain regression:
+  - tcheck の 16-bit packed sentinel が strtab > 32 KB で
+    sign-extend → tcheck が int リテラルに `?` 型を付ける →
+    asm_pass1 / asm_pass2 OS-task build が `parse_mem_off__?`
+    で linker error。`ast_node.tc::unpack_hi` を logical shift に
+    切替で解決 (commit 6295afc)
+  - `j main` の reloc が kind=1 (auipc+jalr) しか cover していなく、
+    task_crt0 の `main__StringArray: j main` が pre-encode 時の
+    stub アドレスのまま固定されて Hello World が出ない。J-type
+    kind=0 reloc を追加で解決 (commit 30498eb)
 - pico2 実機検証は未実施 (Debug Probe + SD card 必要、CI 不可)
 
 各 step は単独で revert 可能。step 3-4 の間は asm_pass2 が中間状態
