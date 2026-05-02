@@ -31,7 +31,7 @@ import "../libtc/libtc.tc";
 // silently truncating past byte 63, which mangled the redirect target
 // (e.g. ">/tmp/y.txt" → ">/tmp/y" → catfile open failed). PATH_MAX
 // stays at 70 because individual paths still fit.
-var CMD_MAX:  i32 = 128;
+var CMD_MAX:  i32 = 512;
 // "/bin/" (5) + path bytes + NUL ≤ 70. argv[0] alone, no command line.
 var PATH_MAX: i32 = 70;
 
