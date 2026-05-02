@@ -9,11 +9,6 @@ tcheck --tgth /sd/1.th --tgt /sd/1.ast --out /sd/2.tast
 codegen < /sd/2.tast > /sd/3.bc
 bc2asm < /sd/3.bc > /sd/4.s
 cat /sd/4.s /prelude_tail.s > /sd/u.s
-asm_pass1 --load-idx /prelude.idx --idx-source /prelude.s \
-    --prelude-text-bin   /prelude.text.bin \
-    --prelude-rodata-bin /prelude.rodata.bin \
-    --prelude-data-bin   /prelude.data.bin \
-    --prelude-reloc      /prelude.reloc \
-    --lab-out /sd/lab.s /sd/u.s /sd/u.strip
+asm_pass1 --load-idx /prelude.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --lab-out /sd/lab.s /sd/u.s /sd/u.strip
 asm_pass2 --lab /sd/lab.s --out /sd/HW
 /sd/HW

@@ -245,6 +245,7 @@ build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S)
 	{ cp tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_bench.sh "$$_r/pico2_bench.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
 	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
@@ -260,13 +261,13 @@ build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S)
 	python3 tools/mkfs.py $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
-build/kernel/disk.img build/kernel/disk-demo.img: tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh
+build/kernel/disk.img build/kernel/disk-demo.img: tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh
 build/kernel/disk-demo.img: tests/fixtures/kern_demo.conf
 
 EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     compiler/strlib.tc compiler/parse.tc
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -280,6 +281,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_bench.sh "$$_r/pico2_bench.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
 	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
