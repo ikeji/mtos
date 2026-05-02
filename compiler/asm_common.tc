@@ -138,21 +138,6 @@ export fn asm_advance_section_pass2(n: i32) -> void {
     return;
 }
 
-// Reloc patcher entry points: asm_pass2 looks up label addresses
-// and computes RV32 imm fields for `src raw` post-memcpy patching.
-export fn asm_find_label_idx(name: U8Array, nlen: i32) -> i32 {
-    return find_label(name, nlen);
-}
-export fn asm_label_addr_at(idx: i32) -> i32 {
-    return addr(get(g_labels, idx));
-}
-export fn asm_get_sec_base(sec: i32) -> i32 {
-    return get(g_sec_base, sec);
-}
-export fn asm_get_target_section() -> i32 { return g_target_section; }
-export fn asm_hi20(v: i32) -> i32 { return hi20(v); }
-export fn asm_lo12(v: i32) -> i32 { return lo12(v); }
-
 // Per-section emit fds for --emit-bin mode. When non-zero, the
 // asm-pass2 section pass for that section writes to the file
 // instead of g_out_fd. Set up by run_pass2 from the
@@ -1367,23 +1352,51 @@ export fn asm_emit_reloc(offset: i32, kind: i32, op_idx: i32) -> void {
     return;
 }
 
-// Return 1 if g_line_buf[name_off..+nlen] equals StringLiteral pat.
-// Used to recognize __global_pointer$ / main / main__StringArray
-// during reloc emission.
-fn asm_label_name_eq(op_idx: i32, pat: StringLiteral) -> i32 {
+// Return 1 if the operand at op_idx matches one of the externally-
+// resolved symbols whose call/la slot the prelude pre-encode mode
+// records in the .reloc table. The hard-coded sym indices (instead
+// of a StringLiteral parameter) avoid a tcheck overload-resolution
+// regression that produces `?`-typed annotations on int literals
+// when this file is compiled with a `pat: StringLiteral` overload
+// in scope.
+//   sym=0 → "main"               (4 bytes)
+//   sym=1 → "main__StringArray"  (17 bytes)
+//   sym=2 → "__global_pointer$"  (17 bytes)
+fn asm_label_is_extern(op_idx: i32, sym: i32) -> i32 {
     var off: i32 = get(g_ops, (op_idx * 2));
     var nlen: i32 = get(g_ops, (op_idx * 2 + 1));
     while nlen > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
         off = off + 1; nlen = nlen - 1;
     }
-    var pl: i32 = len(pat);
-    if nlen != pl { return 0; }
-    var i: i32 = 0;
-    while i < pl {
-        if get(g_line_buf, off + i) != get(pat, i) { return 0; }
-        i = i + 1;
+    if sym == 0 {
+        if nlen != 4 { return 0; }
+        if get(g_line_buf, off    ) != 'm' as u8 { return 0; }
+        if get(g_line_buf, off + 1) != 'a' as u8 { return 0; }
+        if get(g_line_buf, off + 2) != 'i' as u8 { return 0; }
+        if get(g_line_buf, off + 3) != 'n' as u8 { return 0; }
+        return 1;
     }
-    return 1;
+    if sym == 1 {
+        if nlen != 17 { return 0; }
+        if get(g_line_buf, off    ) != 'm' as u8 { return 0; }
+        if get(g_line_buf, off + 1) != 'a' as u8 { return 0; }
+        if get(g_line_buf, off + 2) != 'i' as u8 { return 0; }
+        if get(g_line_buf, off + 3) != 'n' as u8 { return 0; }
+        if get(g_line_buf, off + 4) != '_' as u8 { return 0; }
+        if get(g_line_buf, off + 5) != '_' as u8 { return 0; }
+        if get(g_line_buf, off + 6) != 'S' as u8 { return 0; }
+        return 1;
+    }
+    if sym == 2 {
+        if nlen != 17 { return 0; }
+        if get(g_line_buf, off    ) != '_' as u8 { return 0; }
+        if get(g_line_buf, off + 1) != '_' as u8 { return 0; }
+        if get(g_line_buf, off + 2) != 'g' as u8 { return 0; }
+        if get(g_line_buf, off + 3) != 'l' as u8 { return 0; }
+        if get(g_line_buf, off + 16) != '$' as u8 { return 0; }
+        return 1;
+    }
+    return 0;
 }
 
 // Return the section id of the label referenced by operand op_idx,
@@ -1471,6 +1484,24 @@ fn lo12(v: i32) -> i32 {
     return lo;
 }
 
+// Reloc patcher entry points: asm_pass2 looks up label addresses
+// and computes RV32 imm fields for `src raw` post-memcpy patching.
+// Defined here (after struct Label / g_labels / hi20 / lo12 are all
+// in scope) so the type checker can resolve get(g_labels, _) without
+// forward-reference quirks.
+export fn asm_find_label_idx(name: U8Array, nlen: i32) -> i32 {
+    return find_label(name, nlen);
+}
+export fn asm_label_addr_at(idx: i32) -> i32 {
+    return addr(get(g_labels, idx));
+}
+export fn asm_get_sec_base(sec: i32) -> i32 {
+    return get(g_sec_base, sec);
+}
+export fn asm_get_target_section() -> i32 { return g_target_section; }
+export fn asm_hi20(v: i32) -> i32 { return hi20(v); }
+export fn asm_lo12(v: i32) -> i32 { return lo12(v); }
+
 // ===== Mnemonic comparison =====
 fn mnem_eq(name: StringLiteral) -> bool {
     var nlen: i32 = len(name);
@@ -1524,8 +1555,8 @@ fn asm_instr() -> i32 {
                 // and explode on the undefined label.
                 var is_extern_call: i32 = 0;
                 if g_reloc_fd > 0 {
-                    if asm_label_name_eq(0, "main") != 0 ||
-                       asm_label_name_eq(0, "main__StringArray") != 0 {
+                    if asm_label_is_extern(0, 0) != 0 ||
+                       asm_label_is_extern(0, 1) != 0 {
                         is_extern_call = 1;
                         if g_target_section == 0 {
                             asm_emit_reloc(g_section_emitted, 1, 0);
@@ -1601,7 +1632,7 @@ fn asm_instr() -> i32 {
                 } else {
                     if g_reloc_fd > 0 && g_target_section == 0 {
                         if tsec == 1 ||
-                           asm_label_name_eq(1, "__global_pointer$") != 0 {
+                           asm_label_is_extern(1, 2) != 0 {
                             asm_emit_reloc(g_section_emitted, 1, 1);
                         }
                     }

@@ -225,6 +225,9 @@ define PRELUDE_PRE_ENCODE
         2>/dev/null && \
     chmod 644 "$$_r/prelude.text.bin" "$$_r/prelude.rodata.bin" \
               "$$_r/prelude.data.bin" "$$_r/prelude.reloc" && \
+    qemu-riscv32 build/gen2/asm_pass1 \
+        --emit-idx "$$_r/prelude.idx" "$$_r/prelude.s" 2>/dev/null && \
+    chmod 644 "$$_r/prelude.idx" && \
     rm -f "$$_pre_lab" "$$_r/prelude_full.s"
 endef
 

@@ -21,14 +21,14 @@
 import "../libtc/libtc.tc";
 
 
-// CMD_MAX bumped to 128 for the typecheck split (#54): commands like
-//   cat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt \
-//       /tmp/1.ast > /tmp/1.wrap
-// run ~85 chars, well past the original 64-byte limit. read_line was
-// silently truncating past byte 63, which mangled the redirect target
-// (e.g. ">/tmp/y.txt" → ">/tmp/y" → catfile open failed). PATH_MAX
-// stays at 70 because individual paths still fit.
-var CMD_MAX:  i32 = 128;
+// CMD_MAX bumped to 512 for prelude pre-encode (Step 6 of pre-encode):
+// the new asm_pass1 invocation passes 9 paths via --load-idx /
+// --idx-source / --prelude-text-bin / --prelude-rodata-bin /
+// --prelude-data-bin / --prelude-reloc / --lab-out plus 2 positional
+// args, totalling ~290 chars. Earlier history: 128 covered the
+// typecheck-split cat (#54), 64 covered single-arg commands.
+// PATH_MAX stays at 70 because individual paths still fit.
+var CMD_MAX:  i32 = 512;
 // "/bin/" (5) + path bytes + NUL ≤ 70. argv[0] alone, no command line.
 var PATH_MAX: i32 = 70;
 var HIST_MAX: i32 = 8;
