@@ -162,60 +162,109 @@ fn raw_memcpy_section(path: String) -> i32 {
     if g_n_relocs > 0 && asm_get_target_section() == 0 { apply_relocs = 1; }
 
     if apply_relocs == 1 {
-        // Buffered + patch path. Start at 64 KB and double on overflow
-        // — prelude.text.bin is typically 40-100 KB. Pico2 budget on
-        // pre-encode worst case is OK because we only reach this path
-        // when the .lab actually has reloc records.
-        var cap: i32 = 65536;
-        var buf: U8Array = U8Array(cap as u32);
-        var pos: i32 = 0;
-        var tmp: U8Array = U8Array(4096);
-        var done: i32 = 0;
-        while done == 0 {
-            var n: i32 = sys_read(fd, tmp, 4096);
-            if n <= 0 { done = 1; }
-            else {
-                if pos + n > cap {
-                    var new_cap: i32 = cap;
-                    while new_cap < pos + n { new_cap = new_cap * 2; }
-                    var nb: U8Array = U8Array(new_cap as u32);
-                    var ci: i32 = 0;
-                    while ci < pos { set(nb, ci, get(buf, ci)); ci = ci + 1; }
-                    delete(buf);
-                    buf = nb;
-                    cap = new_cap;
-                }
-                var k: i32 = 0;
-                while k < n { set(buf, pos + k, get(tmp, k)); k = k + 1; }
-                pos = pos + n;
-            }
-        }
-        delete(tmp);
-        // Section base for the text section (sec 0 always at 0 for
-        // the output of asm_pass1, which places text first).
+        // Streaming + patch path. Read the bin in 4 KB chunks into an
+        // 8 KB sliding window so a 4-or-8-byte reloc near a chunk
+        // boundary stays contiguous. Pre-resolve all label addresses
+        // up front (so a missing label aborts before any half-written
+        // bytes hit the output).
+        //
+        // Layout: win[0..keep) carries leftover from the previous
+        // chunk; sys_read appends the new chunk via a 4 KB scratch
+        // buffer at win[keep..]. After patching we emit win[0..emit)
+        // and shift win[emit..keep+nr) → win[0..) for the next round.
+        // The hold-back size is 7 (longest reloc kind=1 minus 1) so
+        // any reloc starting inside the held region is patched on
+        // the next iteration when its tail is in the window.
         var sec_base: i32 = asm_get_sec_base(0);
+        var pre_addrs: I32Array = I32Array(g_n_relocs as u32);
         var ri: i32 = 0;
         while ri < g_n_relocs {
-            var roff: i32 = get(g_reloc_offs, ri);
-            var rkind: i32 = get(g_reloc_kinds, ri);
             var name_addr: u32 = get(g_reloc_names, ri);
             var name: U8Array = name_addr as U8Array;
             var nlen: i32 = len(name);
             var taddr: i32 = lookup_label_addr(name, nlen);
-            if taddr < 0 {
-                sys_exit(30);
-            }
-            if rkind == 1 {
-                patch_reloc_at(buf, roff, sec_base, taddr);
-            }
-            if rkind == 0 {
-                patch_reloc_j_at(buf, roff, sec_base, taddr);
-            }
+            if taddr < 0 { sys_exit(30); }
+            set(pre_addrs, ri, taddr);
             ri = ri + 1;
         }
-        sys_write(out_fd, buf, pos);
-        total = pos;
-        delete(buf);
+        var WIN:    i32 = 8192;
+        var io:     U8Array = U8Array(4096);
+        var win:    U8Array = U8Array(WIN as u32);
+        var keep:   i32 = 0;       // bytes already in win[0..keep)
+        var chunk_off: i32 = 0;    // bin offset of win[0]
+        var done_r: i32 = 0;
+        while done_r == 0 {
+            var nr: i32 = sys_read(fd, io, 4096);
+            if nr <= 0 {
+                if keep > 0 {
+                    // Final flush: any remaining relocs within
+                    // win[0..keep) get patched here.
+                    var rk: i32 = 0;
+                    while rk < g_n_relocs {
+                        var r_off: i32 = get(g_reloc_offs, rk);
+                        var r_kind: i32 = get(g_reloc_kinds, rk);
+                        var w_off: i32 = r_off - chunk_off;
+                        var ln: i32 = 4;
+                        if r_kind == 1 { ln = 8; }
+                        if w_off >= 0 && w_off + ln <= keep {
+                            var ta: i32 = get(pre_addrs, rk);
+                            if r_kind == 1 {
+                                patch_reloc_at(win, w_off, sec_base, ta);
+                            } else {
+                                patch_reloc_j_at(win, w_off, sec_base, ta);
+                            }
+                        }
+                        rk = rk + 1;
+                    }
+                    sys_write(out_fd, win, keep);
+                    total = total + keep;
+                }
+                done_r = 1;
+            } else {
+                // Append io[0..nr) to win[keep..]
+                var ai: i32 = 0;
+                while ai < nr { set(win, keep + ai, get(io, ai)); ai = ai + 1; }
+                var win_len: i32 = keep + nr;
+                var emit_end: i32 = win_len - 7;
+                if emit_end < 0 { emit_end = 0; }
+                // Patch every reloc that fits fully in [0..emit_end).
+                var rj: i32 = 0;
+                while rj < g_n_relocs {
+                    var roff: i32 = get(g_reloc_offs, rj);
+                    var rkind: i32 = get(g_reloc_kinds, rj);
+                    var win_off: i32 = roff - chunk_off;
+                    if win_off >= 0 {
+                        var len_needed: i32 = 4;
+                        if rkind == 1 { len_needed = 8; }
+                        if win_off + len_needed <= emit_end {
+                            var ta2: i32 = get(pre_addrs, rj);
+                            if rkind == 1 {
+                                patch_reloc_at(win, win_off, sec_base, ta2);
+                            } else {
+                                patch_reloc_j_at(win, win_off, sec_base, ta2);
+                            }
+                        }
+                    }
+                    rj = rj + 1;
+                }
+                if emit_end > 0 {
+                    sys_write(out_fd, win, emit_end);
+                    total = total + emit_end;
+                    var ti: i32 = 0;
+                    while ti < win_len - emit_end {
+                        set(win, ti, get(win, emit_end + ti));
+                        ti = ti + 1;
+                    }
+                    keep = win_len - emit_end;
+                    chunk_off = chunk_off + emit_end;
+                } else {
+                    keep = win_len;
+                }
+            }
+        }
+        delete(io);
+        delete(win);
+        delete(pre_addrs);
     } else {
         // Streaming pass-through (no relocs to apply).
         var buf2: U8Array = U8Array(4096);
