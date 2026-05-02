@@ -111,6 +111,38 @@ fn patch_reloc_at(buf: U8Array, rel_off: i32, sec_base: i32, target: i32) -> voi
     return;
 }
 
+// Apply one reloc kind=0 (J-type single 32-bit instruction at offset
+// rel_off within `buf`). Replaces imm[20|10:1|11|19:12] with the new
+// pc-relative offset; opcode + rd are preserved.
+fn patch_reloc_j_at(buf: U8Array, rel_off: i32, sec_base: i32, target: i32) -> void {
+    var pc: i32 = sec_base + rel_off;
+    var off: i32 = target - pc;
+    var w: i32 =
+        (get(buf, rel_off + 0) as i32) |
+        ((get(buf, rel_off + 1) as i32) << 8) |
+        ((get(buf, rel_off + 2) as i32) << 16) |
+        ((get(buf, rel_off + 3) as i32) << 24);
+    // Mask out imm bits — keep bits 11:0 (opcode + rd):
+    // imm encoding is bits 31|30:21|20|19:12, so the mask we KEEP is
+    // bits 11:0 which is 0xFFF.
+    w = w & 0xFFF;
+    // Reconstruct J-type imm from `off`:
+    //   imm[20]   → bit 31
+    //   imm[10:1] → bits 30:21
+    //   imm[11]   → bit 20
+    //   imm[19:12]→ bits 19:12
+    var b20:    i32 = (off >> 20) & 1;
+    var b10_1:  i32 = (off >> 1)  & 1023;
+    var b11:    i32 = (off >> 11) & 1;
+    var b19_12: i32 = (off >> 12) & 255;
+    w = w | (b20 << 31) | (b10_1 << 21) | (b11 << 20) | (b19_12 << 12);
+    set(buf, rel_off + 0, (w & 255) as u8);
+    set(buf, rel_off + 1, ((w >> 8) & 255) as u8);
+    set(buf, rel_off + 2, ((w >> 16) & 255) as u8);
+    set(buf, rel_off + 3, ((w >> 24) & 255) as u8);
+    return;
+}
+
 // Pre-encoded section bytes: open `path`, copy its contents straight
 // to g_out_fd in 4 KB chunks (no per-byte emit_stream overhead), then
 // nudge the section cursor / emitted counter so subsequent asm src
@@ -175,6 +207,9 @@ fn raw_memcpy_section(path: String) -> i32 {
             }
             if rkind == 1 {
                 patch_reloc_at(buf, roff, sec_base, taddr);
+            }
+            if rkind == 0 {
+                patch_reloc_j_at(buf, roff, sec_base, taddr);
             }
             ri = ri + 1;
         }

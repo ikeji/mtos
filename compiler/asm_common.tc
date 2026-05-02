@@ -1585,7 +1585,28 @@ fn asm_instr() -> i32 {
     } else if c0 == 'j' as u8 {
         if mnem_eq("j") {
             var off: i32 = 0;
-            if g_pass==2 { off = parse_label_op(0) - pc; emit32(enc_j(0,off)); }
+            if g_pass==2 {
+                // Pre-encode mode: `j main` from task_crt0's
+                // main__StringArray stub needs a kind=0 (J-type) reloc
+                // because main is user-defined and its address is
+                // unknown at pre-encode time. Without this the prelude
+                // bin holds a tiny placeholder offset (4 bytes) and
+                // the post-link binary jumps to nowhere useful.
+                var is_extern_j: i32 = 0;
+                if g_reloc_fd > 0 {
+                    if asm_label_is_extern(0, 0) != 0 ||
+                       asm_label_is_extern(0, 1) != 0 {
+                        is_extern_j = 1;
+                        if g_target_section == 0 {
+                            asm_emit_reloc(g_section_emitted, 0, 0);
+                        }
+                    }
+                }
+                if is_extern_j == 0 {
+                    off = parse_label_op(0) - pc;
+                }
+                emit32(enc_j(0,off));
+            }
             return 4;
         }
         if mnem_eq("jr")   { if g_pass==2 { emit32(enc_i(103,0,0,parse_reg_op(0),0)); } return 4; }
