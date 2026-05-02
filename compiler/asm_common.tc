@@ -138,6 +138,21 @@ export fn asm_advance_section_pass2(n: i32) -> void {
     return;
 }
 
+// Reloc patcher entry points: asm_pass2 looks up label addresses
+// and computes RV32 imm fields for `src raw` post-memcpy patching.
+export fn asm_find_label_idx(name: U8Array, nlen: i32) -> i32 {
+    return find_label(name, nlen);
+}
+export fn asm_label_addr_at(idx: i32) -> i32 {
+    return addr(get(g_labels, idx));
+}
+export fn asm_get_sec_base(sec: i32) -> i32 {
+    return get(g_sec_base, sec);
+}
+export fn asm_get_target_section() -> i32 { return g_target_section; }
+export fn asm_hi20(v: i32) -> i32 { return hi20(v); }
+export fn asm_lo12(v: i32) -> i32 { return lo12(v); }
+
 // Per-section emit fds for --emit-bin mode. When non-zero, the
 // asm-pass2 section pass for that section writes to the file
 // instead of g_out_fd. Set up by run_pass2 from the
@@ -1488,13 +1503,25 @@ fn asm_instr() -> i32 {
             var rd: i32 = 1;
             if mnem_eq("tail") { rd = 0; }
             if g_pass==2 {
-                if g_reloc_fd > 0 && g_target_section == 0 {
+                // Detect extern target by name regardless of which
+                // section pass we're in — every section pass walks
+                // the full source, so a `call main` inside a non-
+                // text section pass would still hit parse_label_op
+                // and explode on the undefined label.
+                var is_extern_call: i32 = 0;
+                if g_reloc_fd > 0 {
                     if asm_label_name_eq(0, "main") != 0 ||
                        asm_label_name_eq(0, "main__StringArray") != 0 {
-                        asm_emit_reloc(g_section_emitted, 1, 0);
+                        is_extern_call = 1;
+                        if g_target_section == 0 {
+                            asm_emit_reloc(g_section_emitted, 1, 0);
+                        }
                     }
                 }
-                var off: i32 = parse_label_op(0) - pc;
+                var off: i32 = 0;
+                if is_extern_call == 0 {
+                    off = parse_label_op(0) - pc;
+                }
                 emit32(enc_u(23,rd,hi20(off)<<12));
                 emit32(enc_i(103,0,rd,rd,lo12(off)));
             }

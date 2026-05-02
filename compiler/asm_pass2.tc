@@ -37,28 +37,134 @@ fn km_dump_peak() -> void;
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
+// Lookup label `name` in the asm_common label table. Returns the
+// label's absolute address (PIC), or sentinel value 0 - 1 if not
+// found (callers should not encounter this — apply_relocs aborts).
+fn lookup_label_addr(name: U8Array, nlen: i32) -> i32 {
+    var idx: i32 = asm_find_label_idx(name, nlen);
+    if idx < 0 { return 0 - 1; }
+    return asm_label_addr_at(idx);
+}
+
+// Apply one reloc kind=1 (auipc + addi/jalr pair, 8 bytes) at offset
+// rel_off within `buf`. The original bytes were encoded with imm=0
+// (or arbitrary placeholder) — we replace bits 31:12 of the auipc
+// and bits 31:20 of the addi/jalr with hi20/lo12 of (target - pc),
+// where pc = sec_base + rel_off.
+fn patch_reloc_at(buf: U8Array, rel_off: i32, sec_base: i32, target: i32) -> void {
+    var pc: i32 = sec_base + rel_off;
+    var off: i32 = target - pc;
+    // hi20: imm[31:12] of auipc
+    var auipc_w: i32 =
+        (get(buf, rel_off + 0) as i32) |
+        ((get(buf, rel_off + 1) as i32) << 8) |
+        ((get(buf, rel_off + 2) as i32) << 16) |
+        ((get(buf, rel_off + 3) as i32) << 24);
+    auipc_w = (auipc_w & 4095) | (asm_hi20(off) << 12);
+    set(buf, rel_off + 0, (auipc_w & 255) as u8);
+    set(buf, rel_off + 1, ((auipc_w >> 8) & 255) as u8);
+    set(buf, rel_off + 2, ((auipc_w >> 16) & 255) as u8);
+    set(buf, rel_off + 3, ((auipc_w >> 24) & 255) as u8);
+    // lo12: imm[31:20] of addi/jalr
+    var lo_w: i32 =
+        (get(buf, rel_off + 4) as i32) |
+        ((get(buf, rel_off + 5) as i32) << 8) |
+        ((get(buf, rel_off + 6) as i32) << 16) |
+        ((get(buf, rel_off + 7) as i32) << 24);
+    lo_w = (lo_w & 1048575) | ((asm_lo12(off) & 4095) << 20);
+    set(buf, rel_off + 4, (lo_w & 255) as u8);
+    set(buf, rel_off + 5, ((lo_w >> 8) & 255) as u8);
+    set(buf, rel_off + 6, ((lo_w >> 16) & 255) as u8);
+    set(buf, rel_off + 7, ((lo_w >> 24) & 255) as u8);
+    return;
+}
+
 // Pre-encoded section bytes: open `path`, copy its contents straight
 // to g_out_fd in 4 KB chunks (no per-byte emit_stream overhead), then
 // nudge the section cursor / emitted counter so subsequent asm src
 // entries in the same section encode at the correct PC.
+//
+// When relocs are present and we're in the text section, buffer the
+// file into memory first, apply each reloc patch, then sys_write
+// the patched bytes.
 fn raw_memcpy_section(path: String) -> i32 {
     asm_flush_out_buf_export();
     var fd: i32 = do_openat(0 - 100, path, 0);
     if fd < 0 { return 0; }
-    var buf: U8Array = U8Array(4096);
     var out_fd: i32 = asm_get_out_fd();
     var total: i32 = 0;
-    var done: i32 = 0;
-    while done == 0 {
-        var n: i32 = sys_read(fd, buf, 4096);
-        if n <= 0 { done = 1; }
-        else {
-            sys_write(out_fd, buf, n);
-            total = total + n;
+
+    var apply_relocs: i32 = 0;
+    if g_n_relocs > 0 && asm_get_target_section() == 0 { apply_relocs = 1; }
+
+    if apply_relocs == 1 {
+        // Buffered + patch path. Start at 64 KB and double on overflow
+        // — prelude.text.bin is typically 40-100 KB. Pico2 budget on
+        // pre-encode worst case is OK because we only reach this path
+        // when the .lab actually has reloc records.
+        var cap: i32 = 65536;
+        var buf: U8Array = U8Array(cap as u32);
+        var pos: i32 = 0;
+        var tmp: U8Array = U8Array(4096);
+        var done: i32 = 0;
+        while done == 0 {
+            var n: i32 = sys_read(fd, tmp, 4096);
+            if n <= 0 { done = 1; }
+            else {
+                if pos + n > cap {
+                    var new_cap: i32 = cap;
+                    while new_cap < pos + n { new_cap = new_cap * 2; }
+                    var nb: U8Array = U8Array(new_cap as u32);
+                    var ci: i32 = 0;
+                    while ci < pos { set(nb, ci, get(buf, ci)); ci = ci + 1; }
+                    delete(buf);
+                    buf = nb;
+                    cap = new_cap;
+                }
+                var k: i32 = 0;
+                while k < n { set(buf, pos + k, get(tmp, k)); k = k + 1; }
+                pos = pos + n;
+            }
         }
+        delete(tmp);
+        // Section base for the text section (sec 0 always at 0 for
+        // the output of asm_pass1, which places text first).
+        var sec_base: i32 = asm_get_sec_base(0);
+        var ri: i32 = 0;
+        while ri < g_n_relocs {
+            var roff: i32 = get(g_reloc_offs, ri);
+            var rkind: i32 = get(g_reloc_kinds, ri);
+            var name_addr: u32 = get(g_reloc_names, ri);
+            var name: U8Array = name_addr as U8Array;
+            var nlen: i32 = len(name);
+            var taddr: i32 = lookup_label_addr(name, nlen);
+            if taddr < 0 {
+                sys_exit(30);
+            }
+            if rkind == 1 {
+                patch_reloc_at(buf, roff, sec_base, taddr);
+            }
+            ri = ri + 1;
+        }
+        sys_write(out_fd, buf, pos);
+        total = pos;
+        delete(buf);
+    } else {
+        // Streaming pass-through (no relocs to apply).
+        var buf2: U8Array = U8Array(4096);
+        var done2: i32 = 0;
+        while done2 == 0 {
+            var n2: i32 = sys_read(fd, buf2, 4096);
+            if n2 <= 0 { done2 = 1; }
+            else {
+                sys_write(out_fd, buf2, n2);
+                total = total + n2;
+            }
+        }
+        delete(buf2);
     }
+
     do_close(fd);
-    delete(buf);
     asm_advance_section_pass2(total);
     return total;
 }
@@ -78,6 +184,33 @@ var g_src_kinds: U32Array = 0 as U32Array;
 var g_src_secs:  I32Array = 0 as I32Array;
 var g_n_src_paths: i32 = 0;
 var SRC_PATHS_CAP: i32 = 8;
+
+// Reloc records: parallel arrays. Capacity 256 covers a typical
+// prelude (libtc + crt0 + runtime) which has at most a few dozen
+// la-to-rodata + call-to-main relocations.
+var RELOCS_CAP: i32 = 256;
+var g_reloc_offs:  I32Array = 0 as I32Array;
+var g_reloc_kinds: I32Array = 0 as I32Array;
+// Each name is a U8Array (count-prefixed) cast to u32 — same trick
+// as src_paths. Lifetime: persists until run_pass2 returns.
+var g_reloc_names: U32Array = 0 as U32Array;
+var g_n_relocs: i32 = 0;
+
+fn record_reloc(off: i32, kind: i32, name: U8Array) -> void {
+    if g_reloc_offs as u32 == 0u32 {
+        g_reloc_offs  = I32Array((RELOCS_CAP) as u32);
+        g_reloc_kinds = I32Array((RELOCS_CAP) as u32);
+        g_reloc_names = U32Array((RELOCS_CAP) as u32);
+        g_n_relocs = 0;
+    }
+    if g_n_relocs < RELOCS_CAP {
+        set(g_reloc_offs,  g_n_relocs, off);
+        set(g_reloc_kinds, g_n_relocs, kind);
+        set(g_reloc_names, g_n_relocs, name as u32);
+        g_n_relocs = g_n_relocs + 1;
+    }
+    return;
+}
 
 fn record_src_path(p: String, kind: i32, sec: i32) -> void {
     if g_src_paths as u32 == 0u32 {
@@ -221,6 +354,32 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         }
         return 0;
     }
+    if blen - p >= 6 && cmp(buf, p, "reloc ") {
+        // reloc <off> <kind> <name>
+        parse_dec(buf, p + 6, blen);
+        var roff: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var rkind: i32 = g_lab_int;
+        var ns_r: i32 = skip_ws(buf, g_lab_cur, blen);
+        var ne_r: i32 = blen;
+        var trim_r: i32 = 1;
+        while trim_r == 1 && ne_r > ns_r {
+            var tc_r: u8 = get(buf, ne_r - 1);
+            if tc_r == 10u8 || tc_r == 13u8 || tc_r == ' ' || tc_r == 9u8 {
+                ne_r = ne_r - 1;
+            } else {
+                trim_r = 0;
+            }
+        }
+        var nlen_r: i32 = ne_r - ns_r;
+        if nlen_r > 0 {
+            var name: U8Array = U8Array((nlen_r) as u32);
+            var ri: i32 = 0;
+            while ri < nlen_r { set(name, ri, get(buf, ns_r + ri)); ri = ri + 1; }
+            record_reloc(roff, rkind, name);
+        }
+        return 0;
+    }
     if blen - p >= 4 && cmp(buf, p, "num ") {
         parse_dec(buf, p + 4, blen);
         var dig: i32 = g_lab_int;
@@ -353,7 +512,15 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
 
     // Pad the target section with zeros up to its aligned size and
     // flush the output buffer. asm_flush_section_padding does both.
-    asm_flush_section_padding();
+    //
+    // --emit-bin mode: skip the per-section padding so the bin file
+    // contains exactly the encoded source bytes. The link-time
+    // asm_pass2 invocation re-pads after concatenating user code.
+    if per_sec_fd > 0 {
+        asm_flush_output();
+    } else {
+        asm_flush_section_padding();
+    }
     // Restore the previous output fd so subsequent section passes
     // and final ELF emission continue to write where the caller
     // expects.
