@@ -37,21 +37,59 @@ fn km_dump_peak() -> void;
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
+// Pre-encoded section bytes: open `path`, copy its contents straight
+// to g_out_fd in 4 KB chunks (no per-byte emit_stream overhead), then
+// nudge the section cursor / emitted counter so subsequent asm src
+// entries in the same section encode at the correct PC.
+fn raw_memcpy_section(path: String) -> i32 {
+    asm_flush_out_buf_export();
+    var fd: i32 = do_openat(0 - 100, path, 0);
+    if fd < 0 { return 0; }
+    var buf: U8Array = U8Array(4096);
+    var out_fd: i32 = asm_get_out_fd();
+    var total: i32 = 0;
+    var done: i32 = 0;
+    while done == 0 {
+        var n: i32 = sys_read(fd, buf, 4096);
+        if n <= 0 { done = 1; }
+        else {
+            sys_write(out_fd, buf, n);
+            total = total + n;
+        }
+    }
+    do_close(fd);
+    delete(buf);
+    asm_advance_section_pass2(total);
+    return total;
+}
+
 // Source-file paths captured from the .lab's `src` lines. Each entry
 // is a String the .lab parser allocates from the lab line bytes.
 // When non-empty, run_section_pass opens these in order instead of
 // reading from stdin (the cat-p2 concat step then becomes redundant).
+//
+// v2 .lab adds two flavors:
+//   `src <path>` / `src asm <path>`: open + tokenize + encode (kind=0)
+//   `src raw <path> <sec>`:          memcpy raw bytes directly (kind=1)
+// Parallel arrays keep kind / section_id alongside the path so the
+// section pass can dispatch by kind without re-parsing.
 var g_src_paths: U32Array = 0 as U32Array;
+var g_src_kinds: U32Array = 0 as U32Array;
+var g_src_secs:  I32Array = 0 as I32Array;
 var g_n_src_paths: i32 = 0;
 var SRC_PATHS_CAP: i32 = 8;
 
-fn record_src_path(p: String) -> void {
+fn record_src_path(p: String, kind: i32, sec: i32) -> void {
     if g_src_paths as u32 == 0u32 {
         g_src_paths = U32Array((SRC_PATHS_CAP) as u32);
+        g_src_kinds = U32Array((SRC_PATHS_CAP) as u32);
+        g_src_secs  = I32Array((SRC_PATHS_CAP) as u32);
         g_n_src_paths = 0;
     }
     if g_n_src_paths < SRC_PATHS_CAP {
         set(g_src_paths, g_n_src_paths, p as u32);
+        set(g_src_kinds, g_n_src_paths, kind as u32);
+        set(g_src_secs,  g_n_src_paths, sec);
         g_n_src_paths = g_n_src_paths + 1;
     }
     return;
@@ -125,17 +163,40 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         return 0;
     }
     if blen - p >= 4 && cmp(buf, p, "src ") {
-        // src <path>  — file pass-2 should open directly. Trim the
-        // trailing newline before allocating the path string.
-        var ps: i32 = skip_ws(buf, p + 4, blen);
+        // src <path>             — kind=asm (alias `src asm <path>`)
+        // src raw <path> <sec>   — kind=raw, memcpy as section <sec>
+        // Trim the trailing newline before allocating the path string.
+        var src_kind: i32 = 0;
+        var src_sec:  i32 = 0;
+        var rest: i32 = skip_ws(buf, p + 4, blen);
+        if blen - rest >= 4 && cmp(buf, rest, "raw ") {
+            src_kind = 1;
+            rest = skip_ws(buf, rest + 4, blen);
+        } else if blen - rest >= 4 && cmp(buf, rest, "asm ") {
+            // explicit alias — same as bare `src <path>`
+            rest = skip_ws(buf, rest + 4, blen);
+        }
+        var ps: i32 = rest;
+        // For raw entries the section_id follows the path: scan
+        // forward to the next whitespace as the path end.
         var pe: i32 = blen;
-        var trimming_p: i32 = 1;
-        while trimming_p == 1 && pe > ps {
-            var tc_p: u8 = get(buf, pe - 1);
-            if tc_p == 10u8 || tc_p == 13u8 || tc_p == ' ' || tc_p == 9u8 {
-                pe = pe - 1;
-            } else {
-                trimming_p = 0;
+        if src_kind == 1 {
+            var pp: i32 = ps;
+            while pp < blen && is_ws(get(buf, pp)) == false {
+                pp = pp + 1;
+            }
+            pe = pp;
+            parse_dec(buf, skip_ws(buf, pe, blen), blen);
+            src_sec = g_lab_int;
+        } else {
+            var trimming_p: i32 = 1;
+            while trimming_p == 1 && pe > ps {
+                var tc_p: u8 = get(buf, pe - 1);
+                if tc_p == 10u8 || tc_p == 13u8 || tc_p == ' ' || tc_p == 9u8 {
+                    pe = pe - 1;
+                } else {
+                    trimming_p = 0;
+                }
             }
         }
         var plen: i32 = pe - ps;
@@ -143,11 +204,20 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
             // U8Array(N) has the same on-wire layout as TC's String
             // (count-prefixed buffer), so we can cast the array as
             // a String once the bytes are filled. The path needs to
-            // outlive parse_lab_line, so don't delete it.
-            var path_buf: U8Array = U8Array((plen) as u32);
+            // outlive parse_lab_line, so don't delete it. Allocate one
+            // extra byte so the data area ends with a NUL — the host
+            // do_openat stub strips the count prefix and hands the
+            // bytes to Linux openat() unchanged.
+            var path_buf: U8Array = U8Array((plen + 1) as u32);
             var pi: i32 = 0;
             while pi < plen { set(path_buf, pi, get(buf, ps + pi)); pi = pi + 1; }
-            record_src_path(path_buf as String);
+            set(path_buf, plen, 0u8);
+            // String layout has a 4-byte count up front; U8Array(N)
+            // already wrote N as the count. We want the logical length
+            // to be plen (without the trailing NUL we just appended).
+            // U8Array(plen+1) wrote plen+1 — patch it down to plen.
+            poke32(path_buf as u32, plen as u32);
+            record_src_path(path_buf as String, src_kind, src_sec);
         }
         return 0;
     }
@@ -223,27 +293,42 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
         // fd at the freshly-opened file). Eliminates the cat-p2
         // concat step — pass2 reads /prelude.s (XIP flash) and
         // /sd/u.strip directly per section pass.
+        //
+        // v2 .lab: each entry is either kind=0 (asm — open + tokenize
+        // + encode, current behavior) or kind=1 (raw — memcpy bytes
+        // straight to g_out_fd when its section_id matches sec_target).
+        // Raw entries that don't match are skipped entirely; their
+        // bytes were already accounted for by asm_pass1 in the .lab's
+        // sec sizes.
         var pi: i32 = 0;
         while pi < g_n_src_paths {
             var p_addr: u32 = get(g_src_paths, pi);
             var path: String = p_addr as String;
-            var fd: i32 = do_openat(0 - 100, path, 0);
-            if fd >= 0 {
-                rb_switch_fd(fd);
-                var done: i32 = 0;
-                while done == 0 {
-                    var llen2: i32 = rb_read_line(line, 4092, 0x7FFFFFFF);
-                    if llen2 < 0 { done = 1; }
-                    if llen2 > 0 {
-                        lineno = lineno + 1;
-                        if asm_parse_meta_directive(line, llen2) == 1 {
-                            // pragmas only
-                        } else {
-                            asm_run_line(line, llen2, lineno);
+            var kind:  u32 = get(g_src_kinds, pi);
+            var ksec:  i32 = get(g_src_secs,  pi);
+            if kind == 1u32 {
+                if ksec == sec_target {
+                    raw_memcpy_section(path);
+                }
+            } else {
+                var fd: i32 = do_openat(0 - 100, path, 0);
+                if fd >= 0 {
+                    rb_switch_fd(fd);
+                    var done: i32 = 0;
+                    while done == 0 {
+                        var llen2: i32 = rb_read_line(line, 4092, 0x7FFFFFFF);
+                        if llen2 < 0 { done = 1; }
+                        if llen2 > 0 {
+                            lineno = lineno + 1;
+                            if asm_parse_meta_directive(line, llen2) == 1 {
+                                // pragmas only
+                            } else {
+                                asm_run_line(line, llen2, lineno);
+                            }
                         }
                     }
+                    do_close(fd);
                 }
-                do_close(fd);
             }
             pi = pi + 1;
         }
