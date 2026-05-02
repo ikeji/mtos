@@ -205,7 +205,30 @@ DISK_STATIC_DEPS := tests/phase7_hello.tc tests/phase7_min.tc \
 build/kernel/disk.img:      DISK_KERN_CONF := $(wildcard kernel/kern.conf)
 build/kernel/disk-demo.img: DISK_KERN_CONF := tests/fixtures/kern_demo.conf
 
-build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) | build/kernel
+# Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
+# at kernel-build time we run asm_pass1 + asm_pass2 --emit-bin on the
+# concatenation of prelude.s + prelude_tail.s (the same bookends the
+# user code is sandwiched between at OS-runtime link) so OS-side
+# asm_pass2 can `src raw` memcpy + reloc-patch instead of
+# re-tokenising the ~10000-line prelude.
+# `_r` is the staging dir set by the disk-image recipe.
+define PRELUDE_PRE_ENCODE
+    cat "$$_r/prelude.s" "$$_r/prelude_tail.s" > "$$_r/prelude_full.s" && \
+    _pre_lab=$$(mktemp) && \
+    qemu-riscv32 build/gen2/asm_pass1 < "$$_r/prelude_full.s" > "$$_pre_lab" 2>/dev/null && \
+    { cat "$$_pre_lab"; cat "$$_r/prelude_full.s"; cat "$$_r/prelude_full.s"; cat "$$_r/prelude_full.s"; } | \
+    qemu-riscv32 build/gen2/asm_pass2 \
+        --text-bin   "$$_r/prelude.text.bin" \
+        --rodata-bin "$$_r/prelude.rodata.bin" \
+        --data-bin   "$$_r/prelude.data.bin" \
+        --reloc-out  "$$_r/prelude.reloc" \
+        2>/dev/null && \
+    chmod 644 "$$_r/prelude.text.bin" "$$_r/prelude.rodata.bin" \
+              "$$_r/prelude.data.bin" "$$_r/prelude.reloc" && \
+    rm -f "$$_pre_lab" "$$_r/prelude_full.s"
+endef
+
+build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 | build/kernel
 	@echo "Building disk image: $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -223,6 +246,7 @@ build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S)
 	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
 	cp kernel/tasks/task_data.s "$$_r/prelude_tail.s" && \
+	$(PRELUDE_PRE_ENCODE) && \
 	printf '(imports)\n' > "$$_r/empty_imports.txt" && \
 	printf '(imports\n' > "$$_r/imports_open.txt" && \
 	printf '(self\n' > "$$_r/self_open.txt" && \
@@ -239,7 +263,7 @@ build/kernel/disk-demo.img: tests/fixtures/kern_demo.conf
 EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     compiler/strlib.tc compiler/parse.tc
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -257,6 +281,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
 	cp kernel/tasks/task_data.s "$$_r/prelude_tail.s" && \
+	$(PRELUDE_PRE_ENCODE) && \
 	printf '(imports)\n' > "$$_r/empty_imports.txt" && \
 	printf '(imports\n' > "$$_r/imports_open.txt" && \
 	printf '(self\n' > "$$_r/self_open.txt" && \

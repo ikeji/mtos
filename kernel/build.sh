@@ -253,6 +253,7 @@ cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
 # fixed at kernel-build time — running asm-pass1 --emit-idx once
 # here saves ~95 s per OS-side compile (full prelude walk).
 GEN2_ASM_PASS1="${GEN2_DIR:-build/gen2}/asm_pass1"
+GEN2_ASM_PASS2="${GEN2_DIR:-build/gen2}/asm_pass2"
 if [ -x "$GEN2_ASM_PASS1" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
     qemu-riscv32 "$GEN2_ASM_PASS1" \
         --emit-idx "$ROOT_DIR_TREE/prelude.idx" \
@@ -262,6 +263,46 @@ if [ -x "$GEN2_ASM_PASS1" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
         chmod 644 "$ROOT_DIR_TREE/prelude.idx" 2>/dev/null || true
         echo "prelude.idx: $(wc -c < "$ROOT_DIR_TREE/prelude.idx") bytes" >&2
     fi
+fi
+
+# Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
+# at kernel-build time we run asm_pass1 + asm_pass2 --emit-bin on the
+# prelude alone to produce per-section raw .bin files plus a reloc table.
+# OS-side asm_pass2 then memcpies these straight into the output instead
+# of re-tokenizing the ~10000-line prelude — the original speedup target
+# was 56 s → ~15 s on pico2 phase 7.
+if [ -x "$GEN2_ASM_PASS1" ] && [ -x "$GEN2_ASM_PASS2" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
+    _pre_lab=$(mktemp)
+    qemu-riscv32 "$GEN2_ASM_PASS1" --lab-out "$_pre_lab" \
+        "$ROOT_DIR_TREE/prelude.s" 2>/dev/null \
+        || { echo "WARNING: prelude pre-encode pass1 failed" >&2; rm -f "$_pre_lab"; }
+    if [ -s "$_pre_lab" ]; then
+        # Concatenate .lab + 3 source copies (asm_pass2's stream loop
+        # reads src_bytes per section pass and we need three copies).
+        {
+            cat "$_pre_lab"
+            cat "$ROOT_DIR_TREE/prelude.s"
+            cat "$ROOT_DIR_TREE/prelude.s"
+            cat "$ROOT_DIR_TREE/prelude.s"
+        } | qemu-riscv32 "$GEN2_ASM_PASS2" \
+            --text-bin   "$ROOT_DIR_TREE/prelude.text.bin" \
+            --rodata-bin "$ROOT_DIR_TREE/prelude.rodata.bin" \
+            --data-bin   "$ROOT_DIR_TREE/prelude.data.bin" \
+            --reloc-out  "$ROOT_DIR_TREE/prelude.reloc" \
+            2>/dev/null \
+            || echo "WARNING: prelude pre-encode pass2 failed" >&2
+        chmod 644 "$ROOT_DIR_TREE/prelude.text.bin" \
+                  "$ROOT_DIR_TREE/prelude.rodata.bin" \
+                  "$ROOT_DIR_TREE/prelude.data.bin" \
+                  "$ROOT_DIR_TREE/prelude.reloc" 2>/dev/null || true
+        if [ -s "$ROOT_DIR_TREE/prelude.text.bin" ]; then
+            echo "prelude.text.bin:   $(wc -c < "$ROOT_DIR_TREE/prelude.text.bin") bytes" >&2
+            echo "prelude.rodata.bin: $(wc -c < "$ROOT_DIR_TREE/prelude.rodata.bin") bytes" >&2
+            echo "prelude.data.bin:   $(wc -c < "$ROOT_DIR_TREE/prelude.data.bin") bytes" >&2
+            echo "prelude.reloc:      $(wc -l < "$ROOT_DIR_TREE/prelude.reloc") relocs" >&2
+        fi
+    fi
+    rm -f "$_pre_lab"
 fi
 
 # Phase 1 typecheck split (#54): tcheck consumes a wrapped stdin

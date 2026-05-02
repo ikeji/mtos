@@ -408,11 +408,17 @@ fn main(argv: StringArray) -> i32 {
     var load_idx: String = 0 as String;
     var idx_source: String = 0 as String;
     var lab_out: String = 0 as String;
+    var prelude_text_bin:   String = 0 as String;
+    var prelude_rodata_bin: String = 0 as String;
+    var prelude_data_bin:   String = 0 as String;
+    var prelude_reloc:      String = 0 as String;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var consumed: i32 = 1;  // skip argv[0] (program name)
         // First pass: peel off any --emit-idx <path> / --load-idx <path>
-        // / --idx-source <path> / --lab-out <path> flags from the start.
+        // / --idx-source <path> / --lab-out <path> /
+        // --prelude-text-bin <p> / --prelude-rodata-bin <p> /
+        // --prelude-data-bin <p> / --prelude-reloc <p> flags.
         var keep_scanning: i32 = 1;
         while keep_scanning != 0 && consumed < argc {
             var a: String = get(argv, consumed);
@@ -427,6 +433,18 @@ fn main(argv: StringArray) -> i32 {
                 consumed = consumed + 2;
             } else if arg_eq(a, "--lab-out") != 0 && consumed + 1 < argc {
                 lab_out = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--prelude-text-bin") != 0 && consumed + 1 < argc {
+                prelude_text_bin = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--prelude-rodata-bin") != 0 && consumed + 1 < argc {
+                prelude_rodata_bin = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--prelude-data-bin") != 0 && consumed + 1 < argc {
+                prelude_data_bin = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--prelude-reloc") != 0 && consumed + 1 < argc {
+                prelude_reloc = get(argv, consumed + 1);
                 consumed = consumed + 2;
             } else {
                 keep_scanning = 0;
@@ -448,5 +466,12 @@ fn main(argv: StringArray) -> i32 {
         // as the second src so pass2 can read it.
         asm_set_src_path2(path);
     }
+    // Pre-encode (Step 5): when prelude bins are wired, the lab dump
+    // emits `src raw` triplets in place of `src <prelude.s>` and
+    // splices the prelude reloc file in just before the closing `)`.
+    if prelude_text_bin   as u32 != 0u32 { asm_set_prelude_text_bin(prelude_text_bin); }
+    if prelude_rodata_bin as u32 != 0u32 { asm_set_prelude_rodata_bin(prelude_rodata_bin); }
+    if prelude_data_bin   as u32 != 0u32 { asm_set_prelude_data_bin(prelude_data_bin); }
+    if prelude_reloc      as u32 != 0u32 { asm_set_prelude_reloc(prelude_reloc); }
     return run(path, strip_out, emit_idx, load_idx, lab_out);
 }
