@@ -37,6 +37,38 @@ fn km_dump_peak() -> void;
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
+// Source-file paths captured from the .lab's `src` lines. Each entry
+// is a String the .lab parser allocates from the lab line bytes.
+// When non-empty, run_section_pass opens these in order instead of
+// reading from stdin (the cat-p2 concat step then becomes redundant).
+//
+// v2 .lab adds two flavors:
+//   `src <path>` / `src asm <path>`: open + tokenize + encode (kind=0)
+//   `src raw <path> <sec>`:          memcpy raw bytes directly (kind=1)
+// Parallel arrays keep kind / section_id alongside the path so the
+// section pass can dispatch by kind without re-parsing.
+//
+// Declared up front so raw_memcpy_section / record_src_path /
+// record_reloc see them as I32Array / U32Array (not `?`); tcheck
+// resolves global var types lazily and forward-references through
+// fn bodies sometimes lose the type tag.
+var g_src_paths: U32Array = 0 as U32Array;
+var g_src_kinds: U32Array = 0 as U32Array;
+var g_src_secs:  I32Array = 0 as I32Array;
+var g_n_src_paths: i32 = 0;
+var SRC_PATHS_CAP: i32 = 8;
+
+// Reloc records: parallel arrays. Capacity 256 covers a typical
+// prelude (libtc + crt0 + runtime) which has at most a few dozen
+// la-to-rodata + call-to-main relocations.
+var RELOCS_CAP: i32 = 256;
+var g_reloc_offs:  I32Array = 0 as I32Array;
+var g_reloc_kinds: I32Array = 0 as I32Array;
+// Each name is a U8Array (count-prefixed) cast to u32 — same trick
+// as src_paths. Lifetime: persists until run_pass2 returns.
+var g_reloc_names: U32Array = 0 as U32Array;
+var g_n_relocs: i32 = 0;
+
 // Lookup label `name` in the asm_common label table. Returns the
 // label's absolute address (PIC), or sentinel value 0 - 1 if not
 // found (callers should not encounter this — apply_relocs aborts).
@@ -168,33 +200,6 @@ fn raw_memcpy_section(path: String) -> i32 {
     asm_advance_section_pass2(total);
     return total;
 }
-
-// Source-file paths captured from the .lab's `src` lines. Each entry
-// is a String the .lab parser allocates from the lab line bytes.
-// When non-empty, run_section_pass opens these in order instead of
-// reading from stdin (the cat-p2 concat step then becomes redundant).
-//
-// v2 .lab adds two flavors:
-//   `src <path>` / `src asm <path>`: open + tokenize + encode (kind=0)
-//   `src raw <path> <sec>`:          memcpy raw bytes directly (kind=1)
-// Parallel arrays keep kind / section_id alongside the path so the
-// section pass can dispatch by kind without re-parsing.
-var g_src_paths: U32Array = 0 as U32Array;
-var g_src_kinds: U32Array = 0 as U32Array;
-var g_src_secs:  I32Array = 0 as I32Array;
-var g_n_src_paths: i32 = 0;
-var SRC_PATHS_CAP: i32 = 8;
-
-// Reloc records: parallel arrays. Capacity 256 covers a typical
-// prelude (libtc + crt0 + runtime) which has at most a few dozen
-// la-to-rodata + call-to-main relocations.
-var RELOCS_CAP: i32 = 256;
-var g_reloc_offs:  I32Array = 0 as I32Array;
-var g_reloc_kinds: I32Array = 0 as I32Array;
-// Each name is a U8Array (count-prefixed) cast to u32 — same trick
-// as src_paths. Lifetime: persists until run_pass2 returns.
-var g_reloc_names: U32Array = 0 as U32Array;
-var g_n_relocs: i32 = 0;
 
 fn record_reloc(off: i32, kind: i32, name: U8Array) -> void {
     if g_reloc_offs as u32 == 0u32 {

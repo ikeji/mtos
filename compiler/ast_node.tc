@@ -77,12 +77,26 @@ export fn ast_set_count(v: i32) -> void { g_nc = v; return; }
 
 // pack_pair / unpack_hi / unpack_lo — combine/split two 16-bit values
 // into / out of a single i32. Used to halve AstNode struct size by
-// putting (ss, sl) and (tass, tasl) into one slot each. arithmetic
-// right shift sign-extends so -1 sentinels round-trip correctly.
+// putting (ss, sl) and (tass, tasl) into one slot each.
+//
+// 2026-05-02: unpack_hi must use *logical* (unsigned) right shift so
+// 16-bit values 32768..65535 round-trip as positive integers. Earlier
+// the comment claimed arithmetic-shift sign-extension was needed for
+// the -1 sentinel — but pack truncates `hi & 0xFFFF` to 16 bits, so
+// -1 only round-trips because -1 & 0xFFFF == 0xFFFF and the
+// arithmetic >>16 of 0xFFFF0000 happens to give -1. With self-host
+// strtab usage now climbing past 32 KB (the asm_common.tc compile
+// reaches sp ~34 KB), legitimate hi values 32768+ were silently
+// turning into negative ss values, which write_node / codegen then
+// treated as "no annotation" → bogus `?` types in the .bc, producing
+// e.g. `call parse_mem_off__?` linker errors at the OS-task build of
+// asm_pass1 / asm_pass2. Sentinel detection now uses `tasl == 0` /
+// `sl == 0` (which the constructors guarantee for "no annotation");
+// pair this with `tass < 0` / `ss < 0` checks already present.
 fn pack_pair(hi: i32, lo: i32) -> i32 {
     return ((hi & 0xFFFF) << 16) | (lo & 0xFFFF);
 }
-fn unpack_hi(p: i32) -> i32 { return p >> 16; }
+fn unpack_hi(p: i32) -> i32 { return ((p as u32) >> 16u32) as i32; }
 fn unpack_lo(p: i32) -> i32 { return (p << 16) >> 16; }
 
 // alloc_node — claim the next slot in the pool and fill it with the

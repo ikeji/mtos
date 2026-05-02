@@ -913,7 +913,7 @@ fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab
     var child: i32 = n_child(nodes, n);
     var ai: i32 = 0;
     while child >= 0 && ai < 24 {
-        if n_kind(nodes, child) == NK_INT && n_tass(nodes, child) < 0 {
+        if n_kind(nodes, child) == NK_INT && n_tasl(nodes, child) == 0 {
             set(is_lit, ai, 1);
         } else {
             set(is_lit, ai, 0);
@@ -1187,7 +1187,7 @@ fn collect_fn(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, fn_n: i32) 
             rt_sl = n_sl(nodes, type_child2);
         }
     }
-    if rt_ss < 0 {
+    if rt_sl == 0 {
         rt_ss = st_add_str(strtab, "void");
         rt_sl = 4;
     }
@@ -1273,7 +1273,7 @@ fn collect_struct(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, struct_
 fn is_export_annot(nodes: AstNodeArray, strtab: U8Array, n: i32) -> bool {
     var tass: i32 = n_tass(nodes, n);
     var tasl: i32 = n_tasl(nodes, n);
-    if tass < 0 || tasl != 6 { return false; }
+    if tasl != 6 { return false; }
     if get(strtab, tass)     != 'e' as u8 { return false; }
     if get(strtab, (tass+1)) != 'x' as u8 { return false; }
     if get(strtab, (tass+2)) != 'p' as u8 { return false; }
@@ -1578,7 +1578,7 @@ fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
     // i32, so a 0-param fn costs 20 B and the 21-param vm_run costs
     // 188 B instead of every fn paying 188 B.
     var nodes: AstNodeArray = AstNodeArray(2048);
-    var strtab: U8Array = U8Array(49152);
+    var strtab: U8Array = U8Array(65536);
     var atom_buf: U8Array = U8Array(1024);
     // Output target: stdout for stdin mode, --out file for file mode.
     var out_fd: i32 = 1;

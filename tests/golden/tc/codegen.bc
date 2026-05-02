@@ -2095,10 +2095,12 @@ __L35:
 
 .fn unpack_hi i32 i32
 .param p i32
-; fn unpack_hi(p: i32) -> i32 { return p >> 16; }
+; fn unpack_hi(p: i32) -> i32 { return ((p as u32) >> 16u32) as i32; }
   load p
+  cast u32
   push_int 16
-  shr
+  shr_u
+  cast i32
   return
   return_void
 .endfn
