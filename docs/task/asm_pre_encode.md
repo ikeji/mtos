@@ -241,7 +241,31 @@ asm_pass2 が `prelude.{text,rodata,data}.bin` + `/sd/u.strip` の
     task_crt0 の `main__StringArray: j main` が pre-encode 時の
     stub アドレスのまま固定されて Hello World が出ない。J-type
     kind=0 reloc を追加で解決 (commit 30498eb)
-- pico2 実機検証は未実施 (Debug Probe + SD card 必要、CI 不可)
+- pico2 実機検証 (PLL_SYS 150 MHz, msh-driven, /sd/ intermediates):
+
+  | stage              | legacy `pico2_bench.sh` | pre-encode `pico2_bench_idx.sh` | speedup |
+  |--------------------|------------------------:|--------------------------------:|--------:|
+  | parse              | 0.173 s                 | 0.173 s                         | 1×      |
+  | sigscan            | 0.080 s                 | 0.080 s                         | 1×      |
+  | cat (wrap)         | 0.106 s                 | (n/a, file-args)                | -       |
+  | tcheck             | 0.159 s                 | 0.183 s                         | ~1×     |
+  | codegen            | 0.111 s                 | 0.110 s                         | 1×      |
+  | bc2asm             | 0.119 s                 | 0.118 s                         | 1×      |
+  | cat (link prelude) | 4.554 s                 | 0.453 s (only user+tail)        | **10×** |
+  | asm_pass1          | 52.217 s                | **2.110 s** (--load-idx + bins) | **25×** |
+  | cat (lab+strip×3)  | 8.155 s                 | (n/a, file-args lab.s)          | -       |
+  | _running total_    | _65.7 s_                | _3.2 s_                         | **20×** |
+  | asm_pass2          | OOM at 327684           | OOM at 327684                   | -       |
+
+  asm_pass1 上で 25× を観測。cat-link は user.s + prelude_tail.s
+  しか連結しないので 10× (legacy は 234 KB の prelude も連結)。
+  asm_pass2 は legacy/pre-encode 両方で OOM。OOM サイズが常に
+  arena_size+4 になるパターンで、`U8Array(arena_size)` 相当の
+  単一アロケーションが pre-encode work で増えている (master
+  2aa3f0a の 200704 で動いていた asm_pass2 が、HEAD では
+  327680 でも 458752 でも arena ピッタリの要求で OOM)。
+  原因の特定は follow-up: 主犯と思われる allocation を計測する
+  にはタスク内 km_dump 系の instrumentation が要る
 
 各 step は単独で revert 可能。step 3-4 の間は asm_pass2 が中間状態
 （src raw あるけど reloc 無し）になるが、`reloc` 行が空なら fallback
