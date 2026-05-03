@@ -257,10 +257,26 @@ fn run(src_path: String, strip_out_path: String,
     // unused on the host path anyway).
     //
     // .idx emit also enables ref collection so the dump captures the
-    // per-file ref edges.
+    // per-file ref edges. Strip output requires ref collection too
+    // (dead-strip BFS feeds the strip walker). When neither emit-idx
+    // nor strip is requested we skip ref collection — saves ~88 KB
+    // peak (g_refs 64 KB + g_def_* 24 KB) which lets parse.tc-sized
+    // M7-full compiles fit in a 320 KB asm_pass1 task arena.
     var collect_refs: i32 = 0;
-    if have_path != 0 { collect_refs = 1; }
+    if strip_out_path as u32 != 0u32 { collect_refs = 1; }
     if emit_idx_path as u32 != 0u32 { collect_refs = 1; }
+    // asm_load_idx unconditionally calls asm_set_collecting_refs(1) so it
+    // can record the prelude refs into g_refs. When we won't be doing
+    // dead-strip (collect_refs == 0) those prelude refs are dead weight
+    // — drop the ~88 KB of ref+def state right now to free up arena
+    // space for the rest of asm_pass1's work (g_lab_names doubling
+    // hits 32→64 KB hard during M7-full parse.tc walks). Also flip
+    // g_collecting_refs back off so pass1_scan_operand_refs becomes a
+    // no-op for the user.s walk.
+    if collect_refs == 0 {
+        asm_set_collecting_refs(0);
+        asm_release_ref_state();
+    }
     if collect_refs != 0 { asm_set_collecting_refs(1); }
     var total_bytes: i32 = process_source(reader);
     if collect_refs != 0 { asm_set_collecting_refs(0); }
@@ -312,11 +328,17 @@ fn run(src_path: String, strip_out_path: String,
         // via the hash, so this is O(N_deferred) amortised.
         asm_resolve_deferred_refs();
 
-        asm_compute_live();
-        // Done with the ref graph + deferred queue. Free ~88 KB so
-        // Phase 5's strip-pass StringBuffer + line buffer fit in the
-        // asm_pass1 arena (200 KB on pico2).
-        asm_release_ref_state();
+        // Dead-strip / live BFS only runs when refs were collected.
+        // Skipping it (M7-full path with no strip_out) keeps every
+        // label in the .lab — asm_dump_lab_state checks if
+        // g_label_live is null and emits all labels unfiltered.
+        if collect_refs != 0 {
+            asm_compute_live();
+            // Done with the ref graph + deferred queue. Free ~88 KB so
+            // Phase 5's strip-pass StringBuffer + line buffer fit in the
+            // asm_pass1 arena (200 KB on pico2).
+            asm_release_ref_state();
+        }
 
             // Phase 5: emit stripped source if the caller asked for
             // it. The strip walk produces live-only sec_pos values,

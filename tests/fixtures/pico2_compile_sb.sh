@@ -1,16 +1,15 @@
-# Compile compiler/string_buffer.tc front-end + link on the OS.
-# string_buffer.tc has no imports so we can wrap with empty_imports
-# directly. The default `main` stub in task_crt0.s makes the linked
-# binary just exit 0 — useful for measuring the full
-# parse → asm_pass2 cost end-to-end on a real compiler source.
+# Compile compiler/string_buffer.tc with pre-encoded prelude on pico2.
+# string_buffer.tc has no imports so tcheck takes only --tgth.
+# The default `main` stub in task_crt0.s makes the linked binary
+# just exit 0 — this is the M7-minimal stepping stone toward
+# compiling parse.tc + transitive imports.
 parse < /src/string_buffer.tc > /sd/sb.ast
 sigscan < /sd/sb.ast > /sd/sb.th
-cat /empty_imports.txt /self_open.txt /sd/sb.th /wrap_close.txt /sd/sb.ast > /sd/sb.wr
-tcheck < /sd/sb.wr > /sd/sb.tast
+tcheck --tgth /sd/sb.th --tgt /sd/sb.ast --out /sd/sb.tast
 codegen < /sd/sb.tast > /sd/sb.bc
 bc2asm < /sd/sb.bc > /sd/sb.s
-cat /prelude.s /sd/sb.s /prelude_tail.s > /sd/sb.full
-asm_pass1 /sd/sb.full /sd/sb.strip > /sd/sb.lab
-cat /sd/sb.lab /sd/sb.strip /sd/sb.strip /sd/sb.strip > /sd/sb.p2in
-asm_pass2 < /sd/sb.p2in > /sd/sb.bin
-echo BENCH_DONE
+cat /sd/sb.s /prelude_tail.s > /sd/sb_user.s
+asm_pass1 --load-idx /prelude.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --lab-out /sd/sb.lab /sd/sb_user.s /sd/sb_user.strip
+asm_pass2 --lab /sd/sb.lab --out /sd/sb.bin
+wc /sd/sb.bin
+echo COMPILE_SB_DONE

@@ -7,7 +7,7 @@
 #   0x20000120 .. ~0x2007E100: kernel .bss + __arena
 #   0x20080000 .. 0x20082000:   kernel stack (8 KB reserved in platform_pico2.s)
 #
-# __arena at 516096 B (504 KB). Leaves ~8 KB slack between the end of
+# __arena at 520192 B (504 KB). Leaves ~8 KB slack between the end of
 # bss and the kernel stack so the kernel's own scratch has room to grow.
 # Sized to hold one full compiler task (asm_pass1 430 KB / asm_pass2
 # 441 KB peak + stack + img) on pico2 plus headroom for kmalloc
@@ -27,4 +27,4 @@ _switch_frame:
     .space 4
     .globl __arena
 __arena:
-    .space 516096
+    .space 520192
