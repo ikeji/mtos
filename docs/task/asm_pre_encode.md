@@ -220,9 +220,9 @@ asm_pass2 が `prelude.{text,rodata,data}.bin` + `/sd/u.strip` の
 | 4 | asm_pass2 で reloc patch 対応 | ✅ commit 749a0f6 |
 | 5 | Makefile で host 側 prelude pre-encode 実行 + mtfs ステージ | ✅ commit d7b5e72 |
 | 6 | asm_pass1 `--prelude-*` flags + `pico2_bench_idx.sh` 切替 | ✅ commit 40ee22f |
-| 7 | virt phase 7 + pico2 実機検証 | 🚧 partial |
+| 7 | virt phase 7 + pico2 実機検証 | ✅ 完了 (2026-05-03) |
 
-**Step 7 の状態 (2026-05-02)**:
+**Step 7 の状態 (2026-05-03)**:
 
 - `tests/test_phase7.sh` (legacy stdin pipeline): **stage 1 +
   stage 2 PASS** (Hello, World! + M7-minimal 経由の OS 上
