@@ -387,6 +387,17 @@ fn new_array(count: i32, data_bytes: i32) -> u32 {
             oom_push_char(scratch, ':' as u8);
             oom_push_char(scratch, ' ' as u8);
             oom_push_dec(scratch, total);
+            // Diagnostic: also dump peak/live so we can tell if we're
+            // OOM'ing because of a single big alloc vs cumulative
+            // smaller allocs vs fragmentation.
+            oom_push_char(scratch, ' ' as u8);
+            oom_push_char(scratch, 'p' as u8);
+            oom_push_char(scratch, '=' as u8);
+            oom_push_dec(scratch, g_km_peak_bytes);
+            oom_push_char(scratch, ' ' as u8);
+            oom_push_char(scratch, 'l' as u8);
+            oom_push_char(scratch, '=' as u8);
+            oom_push_dec(scratch, g_km_curr_bytes);
             oom_push_char(scratch, 10u8);
             kfree(scratch);
         }

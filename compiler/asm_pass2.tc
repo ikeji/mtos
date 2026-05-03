@@ -827,6 +827,20 @@ fn run_pass2(lab_path: String, out_path: String,
 
     delete(lab_line);
 
+    // Close output fds so fatfs flushes the directory entry size update
+    // before sys_exit. Without these closes, /sd/HW shows 0 bytes in the
+    // directory even though sectors were written.
+    var out_fd_final: i32 = asm_get_out_fd();
+    if out_fd_final > 1 { do_close(out_fd_final); }
+    var fd_t: i32 = asm_get_text_bin_fd();
+    if fd_t > 0 { do_close(fd_t); }
+    var fd_r: i32 = asm_get_rodata_bin_fd();
+    if fd_r > 0 { do_close(fd_r); }
+    var fd_d: i32 = asm_get_data_bin_fd();
+    if fd_d > 0 { do_close(fd_d); }
+    var fd_l: i32 = asm_get_reloc_fd();
+    if fd_l > 0 { do_close(fd_l); }
+
     km_dump_peak();
     return 0;
 }

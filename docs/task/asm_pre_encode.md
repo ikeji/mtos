@@ -255,17 +255,23 @@ asm_pass2 が `prelude.{text,rodata,data}.bin` + `/sd/u.strip` の
   | asm_pass1          | 52.217 s                | **2.110 s** (--load-idx + bins) | **25×** |
   | cat (lab+strip×3)  | 8.155 s                 | (n/a, file-args lab.s)          | -       |
   | _running total_    | _65.7 s_                | _3.2 s_                         | **20×** |
-  | asm_pass2          | OOM at 327684           | OOM at 327684                   | -       |
+  | asm_pass2          | OOM at 327684           | **1.81 s** (288 KB arena)       | -       |
+  | /sd/HW (run)       | -                       | 0.252 s                         | -       |
+  | _full pre-encode_  | _-_                     | **~6.6 s**                      | -       |
 
   asm_pass1 上で 25× を観測。cat-link は user.s + prelude_tail.s
   しか連結しないので 10× (legacy は 234 KB の prelude も連結)。
-  asm_pass2 は legacy/pre-encode 両方で OOM。OOM サイズが常に
-  arena_size+4 になるパターンで、`U8Array(arena_size)` 相当の
-  単一アロケーションが pre-encode work で増えている (master
-  2aa3f0a の 200704 で動いていた asm_pass2 が、HEAD では
-  327680 でも 458752 でも arena ピッタリの要求で OOM)。
-  原因の特定は follow-up: 主犯と思われる allocation を計測する
-  にはタスク内 km_dump 系の instrumentation が要る
+
+  **asm_pass2 OOM 解決 (2026-05-03)**: kernel arena を 480→504 KB
+  (`__arena .space 491520→516096`) に拡大、`make_task` で task_ram
+  を frame_buf より先に kmalloc して断片化を緩和、asm_pass2 task
+  arena を 327680→294912 に縮小 (測定 peak 122 KB だが 320 KB だと
+  kernel 側の最大 free chunk に収まらず断片化で OOM)、さらに
+  asm_pass2 が `--out` の fd を `do_close` してから sys_exit
+  するように修正 (close を忘れると fatfs の dir entry size が
+  0 のまま → /sd/HW を spawn できない)。OOM の真因は kernel
+  arena 内の断片化で、`l=112964` (sh+msh+kernel state) を引いた
+  free 378 KB の中に 295 KB 連続 chunk が残るが 332 KB は残らない
 
 各 step は単独で revert 可能。step 3-4 の間は asm_pass2 が中間状態
 （src raw あるけど reloc 無し）になるが、`reloc` 行が空なら fallback

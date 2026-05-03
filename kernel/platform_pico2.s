@@ -148,7 +148,7 @@ _start:
 
     # runtime init — arena size must match crt0_pico2_data.s's __arena .space
     la   a0, __arena
-    li   a1, 491520
+    li   a1, 516096
     call __runtime_init__u32__i32
 
     # trap vector

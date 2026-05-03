@@ -4,14 +4,16 @@
 #
 # Pico 2 SRAM: 0x20000000 .. 0x20082000 (520 KB). Layout:
 #   0x20000000 .. 0x20000120: .data (small, copied from flash, ~288 B)
-#   0x20000120 .. ~0x20078100: kernel .bss + __arena
+#   0x20000120 .. ~0x2007E100: kernel .bss + __arena
 #   0x20080000 .. 0x20082000:   kernel stack (8 KB reserved in platform_pico2.s)
 #
-# __arena at 491520 B (480 KB). Leaves ~32 KB slack between the end of
+# __arena at 516096 B (504 KB). Leaves ~8 KB slack between the end of
 # bss and the kernel stack so the kernel's own scratch has room to grow.
 # Sized to hold one full compiler task (asm_pass1 430 KB / asm_pass2
-# 441 KB peak + stack + img) on pico2. Must stay in sync with
-# platform_pico2.s's `li a1, N` runtime_init argument.
+# 441 KB peak + stack + img) on pico2 plus headroom for kmalloc
+# fragmentation across many spawn/exit cycles in a compiler pipeline
+# run. Must stay in sync with platform_pico2.s's `li a1, N`
+# runtime_init argument.
     .data
     .globl __data_end
 __data_end:
@@ -25,4 +27,4 @@ _switch_frame:
     .space 4
     .globl __arena
 __arena:
-    .space 491520
+    .space 516096
