@@ -272,18 +272,27 @@ fi
 # of re-tokenizing the ~10000-line prelude — the original speedup target
 # was 56 s → ~15 s on pico2 phase 7.
 if [ -x "$GEN2_ASM_PASS1" ] && [ -x "$GEN2_ASM_PASS2" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
+    # Pre-encode runs on prelude.s + prelude_tail.s combined so __data_end
+    # / __bss_start / __arena are all defined at pass1 time. Same input
+    # the OS-side asm_pass2 will see at compile time (prelude memcpy +
+    # user code + prelude_tail).
+    _pre_full=$(mktemp)
+    cat "$ROOT_DIR_TREE/prelude.s" "$ROOT_DIR_TREE/prelude_tail.s" > "$_pre_full"
     _pre_lab=$(mktemp)
-    qemu-riscv32 "$GEN2_ASM_PASS1" --lab-out "$_pre_lab" \
-        "$ROOT_DIR_TREE/prelude.s" 2>/dev/null \
+    # stdin mode (no path arg) skips dead-strip — every prelude label is
+    # needed at OS-link time, even those only referenced from user code
+    # (e.g. do_write / do_read syscall stubs). Same as Makefile's
+    # PRELUDE_PRE_ENCODE block.
+    qemu-riscv32 "$GEN2_ASM_PASS1" < "$_pre_full" > "$_pre_lab" 2>/dev/null \
         || { echo "WARNING: prelude pre-encode pass1 failed" >&2; rm -f "$_pre_lab"; }
     if [ -s "$_pre_lab" ]; then
         # Concatenate .lab + 3 source copies (asm_pass2's stream loop
         # reads src_bytes per section pass and we need three copies).
         {
             cat "$_pre_lab"
-            cat "$ROOT_DIR_TREE/prelude.s"
-            cat "$ROOT_DIR_TREE/prelude.s"
-            cat "$ROOT_DIR_TREE/prelude.s"
+            cat "$_pre_full"
+            cat "$_pre_full"
+            cat "$_pre_full"
         } | qemu-riscv32 "$GEN2_ASM_PASS2" \
             --text-bin   "$ROOT_DIR_TREE/prelude.text.bin" \
             --rodata-bin "$ROOT_DIR_TREE/prelude.rodata.bin" \
@@ -302,7 +311,7 @@ if [ -x "$GEN2_ASM_PASS1" ] && [ -x "$GEN2_ASM_PASS2" ] && command -v qemu-riscv
             echo "prelude.reloc:      $(wc -l < "$ROOT_DIR_TREE/prelude.reloc") relocs" >&2
         fi
     fi
-    rm -f "$_pre_lab"
+    rm -f "$_pre_lab" "$_pre_full"
 fi
 
 # Phase 1 typecheck split (#54): tcheck consumes a wrapped stdin
