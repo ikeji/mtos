@@ -333,12 +333,18 @@ K7 解決の決め手 3 点:
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
-- [ ] **M7-full**: 同じパイプラインで parse.tc + 3 transitive
-      imports (string_buffer / source_reader / strlib) をコンパイル
-      して link。~30 個のタスクを sh から spawn するので qemu-virt
-      では 20 分以上かかり現状の test timeout に収まらない。真の
-      パイプ (`pipe()` + `dup2`、C-2) か syscall throughput 改善
-      後に再挑戦
+- [x] **M7-full** (2026-05-03): pico2 実機で parse.tc + 3 transitive
+      imports (string_buffer / source_reader / strlib) を compile し
+      `/sd/parse.bin` 207 KB を生成。各 .tc に対して
+      parse → sigscan → tcheck → codegen → bc2asm (4 ファイル) を
+      回し、最後に asm_pass1/asm_pass2 で全 .s + prelude_tail.s を
+      link。bench `tests/fixtures/pico2_compile_parse.sh`、合計
+      ~440 s (PLL_SYS 150 MHz)。前提: kernel arena 504→508 KB、
+      tcheck task arena 128→256 KB、asm_pass1 が --strip-out 不要時
+      に ref+def state を即 release (~88 KB peak 削減)。pre-encode
+      は prelude にしか効かないので user.s 巨大化で asm_pass2 が
+      192 s 占める — ここの 3-pass user.s rescan を畳み込めれば
+      もう一段速くなる
 - [x] **byte-exact self-hosting verify (2026-04-17)**:
       `tests/phase3_verify.py` が virt 上で全 9 段 (1.ast / 1.th /
       1.wrap / 2.tast / 3.bc / 4.s / full.s / lab.s / hw) を Gen2
