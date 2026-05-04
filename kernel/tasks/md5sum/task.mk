@@ -1,0 +1,3 @@
+EXTRA_GUEST_TASKS += md5sum
+TASK_ARENA_md5sum := 16384
+TASK_STACK_md5sum := 8192
