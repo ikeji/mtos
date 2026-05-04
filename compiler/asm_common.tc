@@ -2037,6 +2037,89 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
             g_pos = g_pos + n;
             return;
         }
+        if mnem_eq(".incbin") {
+            // .incbin SIZE "path"
+            // Emits SIZE bytes from the file at "path". Used to embed
+            // large binary blobs (e.g. mtfs disk image) without the
+            // 7×-overhead of bin2s `.byte` text. Pass 1 advances g_pos
+            // by SIZE; pass 2 opens the file and streams bytes through
+            // emit8.
+            var inc_size: i32 = 0;
+            if g_nops >= 1 { inc_size = parse_imm_op(0); }
+            var should_emit: i32 = 0;
+            if g_pass == 2 {
+                if g_stream_mode == 0 { should_emit = 1; }
+                else { if g_current_section == g_target_section { should_emit = 1; } }
+            }
+            if should_emit == 1 && g_nops >= 2 {
+                var path_off: i32 = get(g_ops, 2);
+                var path_len: i32 = get(g_ops, 3);
+                if path_len > 0 && get(g_line_buf, path_off) == 34u8 {
+                    path_off = path_off + 1;
+                    path_len = path_len - 1;
+                }
+                var qe: i32 = 0;
+                var qfound: i32 = 0;
+                while qe < path_len && qfound == 0 {
+                    if get(g_line_buf, (path_off + qe)) == 34u8 {
+                        qfound = 1;
+                        path_len = qe;
+                    } else {
+                        qe = qe + 1;
+                    }
+                }
+                // Build a String header for do_openat. Layout:
+                //   [4-byte count][path_len bytes payload][1 byte NUL]
+                // The NUL is required by the bootstrap C runtime's
+                // openat stub (it strips the count and treats the rest
+                // as a C string). U8Array(N+1) gives us room for the
+                // payload plus one trailing zero. Writes happen before
+                // poke32 because set_check uses the count field as the
+                // bound — shrinking it earlier rejects path-byte writes.
+                var pbuf: U8Array = U8Array((path_len + 1) as u32);
+                var pi: i32 = 0;
+                while pi < path_len {
+                    set(pbuf, pi, get(g_line_buf, (path_off + pi)));
+                    pi = pi + 1;
+                }
+                set(pbuf, path_len, 0u8);
+                poke32(pbuf as u32, path_len as u32);
+                var path_str: String = pbuf as u32 as String;
+                var fd: i32 = do_openat(0 - 100, path_str, 0);
+                if fd >= 0 {
+                    var iobuf: U8Array = U8Array(4096u32);
+                    var emitted: i32 = 0;
+                    var done_in: i32 = 0;
+                    while emitted < inc_size && done_in == 0 {
+                        var want: i32 = 4096;
+                        if want > inc_size - emitted { want = inc_size - emitted; }
+                        var got: i32 = sys_read(fd, iobuf, want);
+                        if got <= 0 { done_in = 1; }
+                        else {
+                            var bi: i32 = 0;
+                            while bi < got {
+                                emit8(get(iobuf, bi) as i32);
+                                bi = bi + 1;
+                            }
+                            emitted = emitted + got;
+                        }
+                    }
+                    do_close(fd);
+                    if emitted < inc_size {
+                        while emitted < inc_size {
+                            emit8(0);
+                            emitted = emitted + 1;
+                        }
+                    }
+                } else {
+                    var ii: i32 = 0;
+                    while ii < inc_size { emit8(0); ii = ii + 1; }
+                }
+                return;
+            }
+            g_pos = g_pos + inc_size;
+            return;
+        }
         // Unknown directive: ignore
         return;
     }
