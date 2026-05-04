@@ -6,11 +6,16 @@
 # straight into .rodata as the embedded mtfs blob. Then asm_pass1 +
 # asm_pass2 link it into /sd/kernel.bin and md5 the result.
 #
-# Prereqs on /sd (produced by earlier benches + a host-side staging):
-#   /sd/runtime.s, /sd/libtc.s
-#   /sd/kc.s, /sd/bf.s, /sd/bs.s, /sd/ff.s, /sd/mf.s, /sd/tf.s,
-#   /sd/pf.s, /sd/vf.s, /sd/ld.s, /sd/kp.s
-#   /sd/disk.img  (= host build/kernel/disk.img, copied by user)
+# Prereqs:
+#   /sd/runtime.s, /sd/libtc.s,
+#   /sd/{kc,bf,bs,ff,mf,tf,pf,vf,ld,kp}.s — produced by the per-stage
+#   compile benches (pico2_compile_runtime/libtc/kern/kern2.sh).
+#   /sd/disk.img — host build/kernel/disk.img. Copy by mounting the
+#   SD card on the host before flashing (see Makefile rule). The
+#   .incbin in /src/mtfs_wrap.s reads from this path at link time.
+# Pico 2's 4 MB flash can't fit a kernel.uf2 carrying both
+# disk-extra.img (4 MB+) and the build/kernel/disk.img copy, so the
+# build/kernel/disk.img cannot be staged inside the disk image.
 #
 # Order (matches compile-gen2.sh for kernel_pico2.tc):
 #   ; raw
