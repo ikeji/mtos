@@ -1499,6 +1499,7 @@ export fn asm_label_addr_at(idx: i32) -> i32 {
 export fn asm_get_sec_base(sec: i32) -> i32 {
     return get(g_sec_base, sec);
 }
+export fn asm_get_gp_abs() -> i32 { return g_gp_abs; }
 export fn asm_get_target_section() -> i32 { return g_target_section; }
 export fn asm_hi20(v: i32) -> i32 { return hi20(v); }
 export fn asm_lo12(v: i32) -> i32 { return lo12(v); }
@@ -1638,6 +1639,15 @@ fn asm_instr() -> i32 {
                 var target: i32 = parse_label_op(1);
                 var tsec: i32 = parse_label_op_section(1);
                 if tsec == 2 || tsec == 3 {
+                    // gp-relative la for data/bss target. In pre-encode mode,
+                    // the gpoff baked here is computed from prelude-only
+                    // sections — when the OS-side link concatenates user.s
+                    // the data_base shifts and gpoff goes stale. Emit a
+                    // kind=2 reloc so asm_pass2 patches the addi imm with
+                    // the link-time `target - g_gp_abs`.
+                    if g_reloc_fd > 0 && g_target_section == 0 {
+                        asm_emit_reloc(g_section_emitted, 2, 1);
+                    }
                     var gpoff: i32 = target - g_gp_abs;
                     if gpoff < (0 - 2048) || gpoff > 2047 {
                         var eb1: StringBuffer = StringBuffer_new(1);
