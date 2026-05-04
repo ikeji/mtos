@@ -158,6 +158,11 @@ export fn fat_block_init() -> i32 {
     }
     if done == 0 { return -2; }
 
+    // 10b. CMD59 disable CRC checking (some cards leave it on after CMD8).
+    // Argument 0 → CRC off. CRC for CMD59(0) is 0x91.
+    sd_cmd(59, 0u32, 0x91u8);
+    sd_cs_high_clk();
+
     // 11. CMD58: read OCR, detect SDHC.
     g_sd_sdhc = 0;
     if v2 == 1 {
@@ -239,9 +244,9 @@ export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
     // Data response: token format `xxx0sssY` (lower 5 bits = `0sss1`).
     // 0x05 = accepted, 0x0B = CRC error, 0x0D = write error. Some cards
     // delay the token by an extra clock or two; poll up to 8 bytes for
-    // a non-FF response before giving up. Treat anything that isn't
-    // a known error code as accepted (rather than strictly == 0x05) —
-    // matches what the Linux SPI SD driver does.
+    // a non-FF response before giving up. We strictly require the
+    // accepted code (0x05) — accepting anything else risks treating a
+    // dropped block as written, which silently corrupts the FS later.
     var resp: u8 = 0xFFu8;
     var rp: i32 = 0;
     while rp < 8 {
@@ -249,13 +254,10 @@ export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
         if resp != 0xFFu8 { break; }
         rp = rp + 1;
     }
-    var resp5: u32 = resp as u32 & 0x1Fu32;
-    if resp5 == 0x0Bu32 || resp5 == 0x0Du32 {
+    if (resp as u32 & 0x1Fu32) != 0x05u32 {
         sd_cs_high_clk();
         return -1;
     }
-    // Accept 0x05 or any other non-error pattern. The card holds MISO
-    // low during the write itself; we wait for that below regardless.
 
     // Wait while card is busy (MISO held low while writing).
     var w: i32 = 0;

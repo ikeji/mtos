@@ -1,8 +1,7 @@
-# Run the OS-compiled /sd/parse.bin produced by pico2_compile_parse.sh
-# and verify it produces the same AST as the in-tree /bin/parse when
-# given /hw.tc as input. Byte-exact comparison would need a cmp tool
-# we don't have on pico2, so we wc both files and cat the test output
-# for visual inspection.
+# Run /sd/parse.bin on /hw.tc and compare its output (AST) against
+# the in-tree /bin/parse run on the same input. Byte-exact compare
+# isn't possible without a cmp tool, but identical sizes (wc) plus
+# both runs reaching exit=0 is a solid behaviour smoke test.
 parse < /hw.tc > /sd/ref.ast
 wc /sd/ref.ast
 /sd/parse.bin < /hw.tc > /sd/test.ast
