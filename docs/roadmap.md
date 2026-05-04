@@ -333,6 +333,15 @@ K7 解決の決め手 3 点:
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
+- [x] **Gen3 セルフホスト on pico2** (2026-05-05): 7 ツール全部
+      (parse / sigscan / tcheck / codegen / bc2asm / asm_pass1 /
+      asm_pass2) を pico2 実機で再ビルドし、host gen2 build と
+      byte-exact md5 一致を確認。各ツール bench は
+      `tests/fixtures/pico2_compile_<tool>.sh`、合計 ~6300 秒
+      (~105 分)。fatfs の 8.3 制限で `ac_imports.th` →
+      `ac_imp.th`、`asm_pass1.bin` → `ap1.bin` 等の rename が
+      必要だったほか、codegen task arena を 128 KB → 192 KB に
+      拡大 (bc2asm.tc サイズが parse.tc 比 1.5 倍 で 126 KB peak)。
 - [x] **M7-full** (2026-05-04): pico2 実機で parse.tc + 3 transitive
       imports (string_buffer / source_reader / strlib) を compile し
       `/sd/parse.bin` 207 KB を生成、生成バイナリを実機で実行して
