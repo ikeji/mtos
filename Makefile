@@ -265,9 +265,12 @@ build/kernel/disk.img build/kernel/disk-demo.img: tests/fixtures/msh_smoke.sh te
 build/kernel/disk-demo.img: tests/fixtures/kern_demo.conf
 
 EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
-    compiler/strlib.tc compiler/parse.tc
+    compiler/strlib.tc compiler/ast_node.tc compiler/asm_common.tc \
+    compiler/parse.tc compiler/sigscan.tc compiler/tcheck.tc \
+    compiler/codegen.tc compiler/bc2asm.tc compiler/asm_pass1.tc \
+    compiler/asm_pass2.tc
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass1.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -284,6 +287,12 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_sb.sh "$$_r/pico2_compile_sb.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_parse.sh "$$_r/pico2_compile_parse.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_sigscan.sh "$$_r/pico2_compile_sigscan.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_tcheck.sh "$$_r/pico2_compile_tcheck.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_codegen.sh "$$_r/pico2_compile_codegen.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_bc2asm.sh "$$_r/pico2_compile_bc2asm.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_asm_pass1.sh "$$_r/pico2_compile_asm_pass1.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_asm_pass2.sh "$$_r/pico2_compile_asm_pass2.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_run_parse.sh "$$_r/pico2_run_parse.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_run_sb.sh "$$_r/pico2_run_sb.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_md5_test.sh "$$_r/pico2_md5_test.sh" 2>/dev/null || true; } && \
@@ -300,7 +309,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	    mkdir -p "$$_r/etc" && cp kernel/kern.conf "$$_r/etc/kern.conf"; \
 	fi && \
 	mkdir -p "$$_r/src" && \
-	for s in string_buffer.tc source_reader.tc strlib.tc parse.tc; do \
+	for s in string_buffer.tc source_reader.tc strlib.tc ast_node.tc asm_common.tc parse.tc sigscan.tc tcheck.tc codegen.tc bc2asm.tc asm_pass1.tc asm_pass2.tc; do \
 	    cp compiler/$$s "$$_r/src/$$s" || exit 1; \
 	done && \
 	python3 tools/mkfs.py $@ "$$_r" >&2 && \
