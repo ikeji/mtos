@@ -333,6 +333,14 @@ K7 解決の決め手 3 点:
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
+- [x] **Gen3 完全閉路 on pico2** (2026-05-05): 19 .tc files 全部
+      (7 コンパイラツール + runtime + libtc + 10 カーネルモジュール
+      = 全 .tc ソース) を pico2 実機で再ビルドし、host gen2 と
+      byte-exact md5 一致。コンパイラツールは linked .bin で、
+      ランタイムとカーネルモジュールは .s で比較。bench
+      `tests/fixtures/pico2_compile_*.sh`。残りは platform.s /
+      trap_common.s / crt0_pico2_data.s (手書き asm、コンパイラ
+      無関係) とディスクイメージのみ — 全コード部の self-host 完成。
 - [x] **Gen3 セルフホスト on pico2** (2026-05-05): 7 ツール全部
       (parse / sigscan / tcheck / codegen / bc2asm / asm_pass1 /
       asm_pass2) を pico2 実機で再ビルドし、host gen2 build と
