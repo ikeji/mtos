@@ -134,6 +134,16 @@ fn fat_alloc_cluster() -> u32 {
 
 // ===== Mount =====
 
+// Diagnostic codes returned by fatfs_mount on failure. Helps tell apart
+// "SD I/O didn't return 512 bytes" from "FAT BPB looked invalid" without
+// hooking up a full kernel printk.
+//   -2: sector 0 read length != 512
+//   -3: sector 0 missing 0x55AA boot signature
+//   -4: MBR walked, no FAT-typed partition entry found
+//   -5: partition-start sector read length != 512
+//   -6: partition-start sector missing 0x55AA boot signature
+//   -7: BPB bytes-per-sector != 512
+//   -8: BPB sectors-per-cluster == 0
 export fn fatfs_mount() -> i32 {
     // One-shot BPB read. No preemption concern — runs at boot before
     // any other task is scheduled — but we still use local scratch so
@@ -141,11 +151,11 @@ export fn fatfs_mount() -> i32 {
     var secbuf: U8Array = U8Array(512u32);
 
     // Read sector 0 first.
-    if fat_block_read(0, secbuf) != 512 { delete(secbuf); return -1; }
+    if fat_block_read(0, secbuf) != 512 { delete(secbuf); return 0 - 2; }
 
     // Validate end signature regardless of whether it's BPB or MBR.
-    if get(secbuf, 510) != 0x55u8 { delete(secbuf); return -1; }
-    if get(secbuf, 511) != 0xAAu8 { delete(secbuf); return -1; }
+    if get(secbuf, 510) != 0x55u8 { delete(secbuf); return 0 - 3; }
+    if get(secbuf, 511) != 0xAAu8 { delete(secbuf); return 0 - 3; }
 
     // Distinguish superfloppy (BPB at sector 0) from MBR. FAT BPB
     // always starts with a jump instruction: 0xEB ?? 0x90 (short jump)
@@ -178,11 +188,11 @@ export fn fatfs_mount() -> i32 {
             }
             p = p + 1;
         }
-        if bpb_lba == 0u32 { delete(secbuf); return -1; }
+        if bpb_lba == 0u32 { delete(secbuf); return 0 - 4; }
         // Re-read at partition start.
-        if fat_block_read(bpb_lba, secbuf) != 512 { delete(secbuf); return -1; }
-        if get(secbuf, 510) != 0x55u8 { delete(secbuf); return -1; }
-        if get(secbuf, 511) != 0xAAu8 { delete(secbuf); return -1; }
+        if fat_block_read(bpb_lba, secbuf) != 512 { delete(secbuf); return 0 - 5; }
+        if get(secbuf, 510) != 0x55u8 { delete(secbuf); return 0 - 6; }
+        if get(secbuf, 511) != 0xAAu8 { delete(secbuf); return 0 - 6; }
     }
 
     g_fat_bps = read_le16(secbuf, 11);
@@ -192,8 +202,8 @@ export fn fatfs_mount() -> i32 {
     g_fat_fatsz = read_le32(secbuf, 36);
     g_fat_root_clus = read_le32(secbuf, 44);
 
-    if g_fat_bps != 512 { delete(secbuf); return -1; }
-    if g_fat_spc == 0 { delete(secbuf); return -1; }
+    if g_fat_bps != 512 { delete(secbuf); return 0 - 7; }
+    if g_fat_spc == 0 { delete(secbuf); return 0 - 8; }
 
     // For MBR layout, both the FAT and data regions are inside the
     // partition that starts at bpb_lba. Add the partition offset so

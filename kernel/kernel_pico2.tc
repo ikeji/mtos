@@ -11,6 +11,7 @@ import "loader.tc";
 fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;
 fn sched_start(frame: u32) -> void;
+fn do_uart_write(buf: u32, len: i32) -> i32;
 
 // RP2350 SIO timer (from pico-sdk)
 var SIO_MTIME_CTRL: u32 = 0xD00001A4u32;
@@ -78,11 +79,23 @@ fn mount_fs() -> void {
     // diagnose. Success makes /sd available via fatfs.
     if fat_block_init() == 0 {
         kputs("SD: card init OK\r\n");
-        if fatfs_mount() == 0 {
+        var mret: i32 = fatfs_mount();
+        if mret == 0 {
             kputs("FATFS: mounted\r\n");
             vfs_set_fatfs_ready();
         } else {
-            kputs("FATFS: mount failed (no FAT?)\r\n");
+            // Spell out which step in fatfs_mount tripped — far more
+            // useful than a single "no FAT?" when triaging cards.
+            kputs("FATFS: mount failed (code=");
+            if mret == 0 - 2 { kputs("-2 sec0_read"); }
+            else if mret == 0 - 3 { kputs("-3 sec0_sig"); }
+            else if mret == 0 - 4 { kputs("-4 mbr_no_part"); }
+            else if mret == 0 - 5 { kputs("-5 part_read"); }
+            else if mret == 0 - 6 { kputs("-6 part_sig"); }
+            else if mret == 0 - 7 { kputs("-7 bps"); }
+            else if mret == 0 - 8 { kputs("-8 spc"); }
+            else { kputs("?"); }
+            kputs(")\r\n");
         }
     } else {
         kputs("SD: card init failed (no card / wiring?)\r\n");
