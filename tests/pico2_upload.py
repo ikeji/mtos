@@ -16,7 +16,7 @@ For a 1.4 MB disk image the upload takes ~140 s at 115200 baud.
 import os, struct, sys, time
 import termios, fcntl
 
-CHUNK = 256
+CHUNK = 64
 
 def tty_open(dev: str):
     fd = os.open(dev, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
@@ -89,7 +89,11 @@ def main():
         chunk = data[off:off + CHUNK]
         write_all(fd, struct.pack("<H", len(chunk)) + chunk)
         sent += len(chunk)
-        if (off // CHUNK) % 64 == 0:
+        # Pace below the PL011 RX FIFO depth so mr's polling read
+        # can keep up. CHUNK + 2-byte header at 115200 baud takes
+        # ~5.7 ms; sleep so the device has time to drain.
+        time.sleep(0.006)
+        if (off // CHUNK) % 256 == 0:
             elapsed = time.time() - t0
             rate = sent / elapsed if elapsed > 0 else 0
             print(f"  {sent}/{len(data)} bytes ({rate/1024:.1f} KiB/s)",
