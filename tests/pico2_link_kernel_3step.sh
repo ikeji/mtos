@@ -13,7 +13,27 @@ KERNEL_UF2="${KERNEL_UF2:-$ROOT/build/kernel/pico2_kernel_extra.uf2}"
 OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
 UART_PORT="${UART_PORT:-/dev/ttyACM0}"
-HOST_REF_MD5="${HOST_REF_MD5:-f21e5f2e018ee4102040de06f58fd216}"
+# If unset, compute the host reference kernel.bin md5 by running
+# the same compile pipeline locally with an empty mtfs blob (matches
+# what the on-device step3 produces). Allows the orchestrator to
+# stay correct even when fatfs.tc / kernel modules change.
+if [ -z "${HOST_REF_MD5:-}" ]; then
+    _hbtmp=$(mktemp -d)
+    cat "$ROOT/kernel/platform_pico2.s" "$ROOT/kernel/trap_common.s" \
+        > "$_hbtmp/crt0.s"
+    printf '    .rodata\n    .align 4\n    .globl _mtfs_image_start\n_mtfs_image_start:\n    .globl _mtfs_image_end\n_mtfs_image_end:\n    .globl _mtfs_image_size\n_mtfs_image_size:\n    .word 0\n    .text\n    .globl _mtfs_image_addr\n_mtfs_image_addr:\n    la   a0, _mtfs_image_start\n    ret\n' \
+        > "$_hbtmp/wrap.s"
+    cat "$ROOT/kernel/crt0_pico2_data.s" "$_hbtmp/wrap.s" \
+        > "$_hbtmp/data.s"
+    CRT0="$_hbtmp/crt0.s" CRT0_DATA="$_hbtmp/data.s" ASM_PROLOGUE="; raw" \
+    GEN2_DIR="$ROOT/build/gen2" \
+    CACHED_S_DIR="$ROOT/build/kernel/shared" \
+        "$ROOT/compile-gen2.sh" -o "$_hbtmp/kernel.bin" \
+        "$ROOT/kernel/kernel_pico2.tc" 2>/dev/null
+    HOST_REF_MD5=$(md5sum "$_hbtmp/kernel.bin" | awk '{print $1}')
+    rm -rf "$_hbtmp"
+    echo "host reference (computed): $HOST_REF_MD5" >&2
+fi
 
 TMP=$(mktemp -d)
 echo "TMP=$TMP" >&2
