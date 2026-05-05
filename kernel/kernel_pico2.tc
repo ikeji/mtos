@@ -123,12 +123,32 @@ fn dump_mtfs_to_sd() -> void {
     set(name, 4, 'm' as u8);
     set(name, 5, 'g' as u8);
     var name_addr: u32 = name as u32 + 4u32;
+    // Check size + first 64 bytes of /sd/dx.img against the
+    // embedded blob; only skip the slow byte copy if both match.
+    // Size alone isn't enough — disk-extra.img content changes
+    // between builds without changing size.
     var skip: i32 = 0;
     var rfd: i32 = fatfs_open(name_addr, 6, 0);
     if rfd >= 0 {
         var existing: i32 = fatfs_size(rfd);
+        if existing == img_size {
+            var probe: U8Array = U8Array(64);
+            var pn: i32 = fatfs_read(rfd, probe as u32 + 4u32, 64);
+            if pn == 64 {
+                var match: i32 = 1;
+                var pi: i32 = 0;
+                while pi < 64 {
+                    if get(probe, pi) != peek8(img_addr + (pi as u32)) {
+                        match = 0;
+                        pi = 64;
+                    }
+                    pi = pi + 1;
+                }
+                if match == 1 { skip = 1; }
+            }
+            delete(probe);
+        }
         fatfs_close(rfd);
-        if existing == img_size { skip = 1; }
     }
     if skip == 0 {
         var fd: i32 = fatfs_open(name_addr, 6, 64 | 512 | 1);
