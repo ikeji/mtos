@@ -103,7 +103,13 @@ device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
   ファイルが入る
 - **asm_pass1 --lab-out + 位置引数で `src` 行を `.lab` に
   emit** (commit 0c9a9a4): cat /sd/full.lab + 3×/sd/full.s →
-  /sd/p2_in.s の中間ファイル (13 MB / 305 s) を撤廃
+  /sd/p2_in.s の中間ファイル (13 MB / 305 s) を撤廃。
+  実機 v8 検証: kernel.bin md5 `7805e7348...` / kernel.uf2 md5
+  `d4be5e9e...` が host と完全一致 (~50 min total、v6 比 ~5 min 短縮)
+- **dumper 1 KB content probe** (commit 60050f7): mtfs 先頭 64 B
+  だけだと superblock layout が同じ別ビルドで誤判定するので 1 KB
+  (= superblock + 16 inode entries) に拡大、disk-extra.img の
+  ファイル増減を確実に検出する
 - **DROP_TASKS Makefile knob**: vi/tcc/sdprobe/neofetch/
   count/tmpdemo/launcher を外して disk-extra.img を 3.5 MB に
   抑え、kernel + dumper + bin2uf2 が 4 MiB flash に収まる
