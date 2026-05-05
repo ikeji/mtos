@@ -98,6 +98,12 @@ LIBTC_DEPS   := $(shell tools/collect_imports.sh kernel/tasks/libtc/libtc.tc 2>/
 GUEST_TASKS :=
 EXTRA_GUEST_TASKS :=
 -include $(wildcard kernel/tasks/*/task.mk)
+# DROP_TASKS allows shaving disk-extra.img to fit pico2's 4 MiB
+# flash when the kernel itself grew (e.g. dumper + bin2uf2). The
+# default empty list keeps every task; CI / day-to-day builds are
+# untouched. Self-build pipeline kernels pass DROP_TASKS=vi+tcc+...
+GUEST_TASKS       := $(filter-out $(DROP_TASKS),$(GUEST_TASKS))
+EXTRA_GUEST_TASKS := $(filter-out $(DROP_TASKS),$(EXTRA_GUEST_TASKS))
 ALL_TASK_NAMES := $(GUEST_TASKS) $(EXTRA_GUEST_TASKS)
 
 TASK_MK_FILES := $(wildcard kernel/tasks/*/task.mk)
@@ -338,6 +344,11 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/fixtures/pico2_cleanup_sd.sh "$$_r/pico2_cleanup_sd.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_dir_grow_test.sh "$$_r/pico2_dir_grow_test.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_dir_grow_test2.sh "$$_r/pico2_dir_grow_test2.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_dumper_test.sh "$$_r/pico2_dumper_test.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_self_step1.sh "$$_r/pico2_self_step1.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_self_step2.sh "$$_r/pico2_self_step2.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_self_step3.sh "$$_r/pico2_self_step3.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_self_step4.sh "$$_r/pico2_self_step4.sh" 2>/dev/null || true; } && \
 	python3 tools/mkfs.py $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 

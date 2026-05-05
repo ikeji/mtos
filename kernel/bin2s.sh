@@ -58,3 +58,9 @@ echo "    .globl ${PREFIX}_addr"
 echo "${PREFIX}_addr:"
 echo "    la   a0, ${PREFIX}_start"
 echo "    ret"
+# Companion helper: returns the byte size as a u32 value (vs the
+# address of the .word slot, which ${PREFIX}_size already exposes).
+echo "    .globl ${PREFIX}_size_value"
+echo "${PREFIX}_size_value:"
+echo "    li   a0, $SIZE"
+echo "    ret"

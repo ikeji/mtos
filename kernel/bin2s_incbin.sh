@@ -34,13 +34,21 @@ if [ ! -f "$INFILE" ]; then
 fi
 
 SIZE=$(wc -c < "$INFILE")
+# Pad SIZE to a fixed width so the wrapper .s file's text length
+# is stable across builds — the .incbin literal expands at link
+# time to the exact byte count regardless of how SIZE is spelled,
+# and asm_common's parse_imm_op skips leading whitespace. This
+# matters when the wrapper itself is staged inside the disk image
+# we're describing: a stable wrapper size lets the on-device
+# self-replicate path produce bytes identical to the host build.
+SIZE_PAD=$(printf '%10d' "$SIZE")
 
 cat <<EOF
     .rodata
     .align 4
     .globl ${PREFIX}_start
 ${PREFIX}_start:
-    .incbin $SIZE "$BLOB_PATH"
+    .incbin $SIZE_PAD "$BLOB_PATH"
     .globl ${PREFIX}_end
 ${PREFIX}_end:
     .globl ${PREFIX}_size
@@ -50,5 +58,9 @@ ${PREFIX}_size:
     .globl ${PREFIX}_addr
 ${PREFIX}_addr:
     la   a0, ${PREFIX}_start
+    ret
+    .globl ${PREFIX}_size_value
+${PREFIX}_size_value:
+    li   a0, $SIZE
     ret
 EOF

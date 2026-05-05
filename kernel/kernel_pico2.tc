@@ -12,6 +12,8 @@ fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;
 fn sched_start(frame: u32) -> void;
 fn do_uart_write(buf: u32, len: i32) -> i32;
+fn _mtfs_image_addr() -> u32;
+fn _mtfs_image_size_value() -> u32;
 
 // RP2350 SIO timer (from pico-sdk)
 var SIO_MTIME_CTRL: u32 = 0xD00001A4u32;
@@ -62,6 +64,129 @@ fn ticks_per_ms() -> u32 {
 // Mount mtfs from XIP flash and announce it to the serial console. If
 // block/vfs init fail we still start the hello/hello2/catfile tasks so
 // that a regression in the FS code does not break visible progress.
+// Write `s` (a StringLiteral) to fatfs fd. Used by the wrap.s
+// emitter below.
+fn dump_str(fd: i32, s: StringLiteral) -> void {
+    var n: i32 = len(s);
+    var buf: U8Array = U8Array((n + 1) as u32);
+    var i: i32 = 0;
+    while i < n { set(buf, i, get(s, i)); i = i + 1; }
+    fatfs_write(fd, buf as u32 + 4u32, n);
+    delete(buf);
+    return;
+}
+
+// Emit a single decimal digit `d` (0..9) to fatfs fd.
+fn dump_digit(fd: i32, d: i32) -> void {
+    var buf: U8Array = U8Array(1);
+    set(buf, 0, ('0' as u8) + (d as u8));
+    fatfs_write(fd, buf as u32 + 4u32, 1);
+    delete(buf);
+    return;
+}
+
+// Emit a positive i32 as decimal text to fatfs fd.
+fn dump_dec(fd: i32, v: i32) -> void {
+    if v == 0 { dump_digit(fd, 0); return; }
+    var digits: U8Array = U8Array(12);
+    var n: i32 = 0;
+    var x: i32 = v;
+    while x > 0 {
+        set(digits, n, (x % 10) as u8);
+        x = x / 10;
+        n = n + 1;
+    }
+    while n > 0 {
+        n = n - 1;
+        dump_digit(fd, get(digits, n) as i32);
+    }
+    delete(digits);
+    return;
+}
+
+// dump_mtfs_to_sd — copy the kernel-embedded mtfs blob (the
+// `_mtfs_image_*` block bin2s_incbin staged) onto /sd/dx.img and
+// emit a matching /sd/wrap.s with `.incbin <SIZE> "/sd/dx.img"`
+// so the on-device self-replicate bench can cat it directly into
+// full.s without asking the user to swap the SD card.
+// Idempotent: if /sd/dx.img already has the right size we skip
+// the (slow) byte copy.
+fn dump_mtfs_to_sd() -> void {
+    var img_addr: u32 = _mtfs_image_addr();
+    var img_size: i32 = _mtfs_image_size_value() as i32;
+
+    var name: U8Array = U8Array(6);
+    set(name, 0, 'd' as u8);
+    set(name, 1, 'x' as u8);
+    set(name, 2, '.' as u8);
+    set(name, 3, 'i' as u8);
+    set(name, 4, 'm' as u8);
+    set(name, 5, 'g' as u8);
+    var name_addr: u32 = name as u32 + 4u32;
+    var skip: i32 = 0;
+    var rfd: i32 = fatfs_open(name_addr, 6, 0);
+    if rfd >= 0 {
+        var existing: i32 = fatfs_size(rfd);
+        fatfs_close(rfd);
+        if existing == img_size { skip = 1; }
+    }
+    if skip == 0 {
+        var fd: i32 = fatfs_open(name_addr, 6, 64 | 512 | 1);
+        if fd < 0 {
+            kputs("DUMP: fatfs_open /sd/dx.img failed\r\n");
+            delete(name);
+            return;
+        }
+        var BUF: i32 = 4096;
+        var buf: U8Array = U8Array((BUF) as u32);
+        var buf_payload: u32 = buf as u32 + 4u32;
+        var off: i32 = 0;
+        while off < img_size {
+            var want: i32 = BUF;
+            if want > img_size - off { want = img_size - off; }
+            var i: i32 = 0;
+            while i < want {
+                set(buf, i, peek8(img_addr + (off as u32) + (i as u32)));
+                i = i + 1;
+            }
+            var w: i32 = fatfs_write(fd, buf_payload, want);
+            if w != want {
+                kputs("DUMP: short write — abort\r\n");
+                fatfs_close(fd);
+                delete(buf);
+                delete(name);
+                return;
+            }
+            off = off + want;
+        }
+        fatfs_close(fd);
+        delete(buf);
+        kputs("DUMP: /sd/dx.img staged\r\n");
+    }
+    delete(name);
+
+    // Emit /sd/wrap.s — a tiny .s wrapper that .incbin's /sd/dx.img
+    // with the correct size. Bench scripts cat it into full.s.
+    var wname: U8Array = U8Array(6);
+    set(wname, 0, 'w' as u8);
+    set(wname, 1, 'r' as u8);
+    set(wname, 2, 'a' as u8);
+    set(wname, 3, 'p' as u8);
+    set(wname, 4, '.' as u8);
+    set(wname, 5, 's' as u8);
+    var wfd: i32 = fatfs_open(wname as u32 + 4u32, 6, 64 | 512 | 1);
+    if wfd >= 0 {
+        dump_str(wfd, "    .rodata\n    .align 4\n    .globl _mtfs_image_start\n_mtfs_image_start:\n    .incbin ");
+        dump_dec(wfd, img_size);
+        dump_str(wfd, " \"/sd/dx.img\"\n    .globl _mtfs_image_end\n_mtfs_image_end:\n    .globl _mtfs_image_size\n_mtfs_image_size:\n    .word ");
+        dump_dec(wfd, img_size);
+        dump_str(wfd, "\n    .text\n    .globl _mtfs_image_addr\n_mtfs_image_addr:\n    la   a0, _mtfs_image_start\n    ret\n");
+        fatfs_close(wfd);
+    }
+    delete(wname);
+    return;
+}
+
 fn mount_fs() -> void {
     if block_init() != 0 {
         kputs("BLOCK: flash init failed\r\n");
@@ -83,6 +208,7 @@ fn mount_fs() -> void {
         if mret == 0 {
             kputs("FATFS: mounted\r\n");
             vfs_set_fatfs_ready();
+            dump_mtfs_to_sd();
         } else {
             // Spell out which step in fatfs_mount tripped — far more
             // useful than a single "no FAT?" when triaging cards.
