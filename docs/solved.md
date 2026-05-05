@@ -57,6 +57,62 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass2 から g_code を
 
 ## カーネル / OS
 
+### K13. Pico 2 が自分の UF2 を byte-exact に self-replicate — 完了 (2026-05-06)
+
+Pico 2 実機がフラッシュ済の UF2 を起点に、自分が動かすファームウェアを
+最初から最後まで自前で生成し、host gen2 build と byte-for-byte 完全一致
+させる閉ループを達成 (~50 min)。
+
+```
+host   kernel.bin md5: 026d825ca32e4d40a67b182505c36d48
+device /sd/k.bin md5:  026d825ca32e4d40a67b182505c36d48
+host   kernel.uf2 md5: 4a639e26b7fbd057654ec5ac63fbf09a
+device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
+```
+
+`tests/pico2_self_replicate.sh` orchestrator が openocd reset で
+ステップ間を区切りつつ:
+
+1. boot dumper (`kernel_pico2.tc::dump_mtfs_to_sd`) が起動時に
+   embedded mtfs を `/sd/dx.img` に dump し、対応する `/sd/wrap.s`
+   を emit。Size + 先頭 64 byte content match で skip 判定 (3 s)。
+2. `pico2_compile_runtime/libtc/kern/kern2.sh` で /sd 上の .s 群を
+   現ソースから regenerate (~14 min)。
+3. cat 16 files → /sd/full.s (302 s)
+4. asm_pass1 が `--lab-out /sd/full.lab /sd/full.s` で `src` 行を
+   `.lab` に bake (232 s)
+5. asm_pass2 が `--lab /sd/full.lab --out /sd/k.bin` で /sd/full.s を
+   3 回直接読んでリンク (800 s)
+6. bin2uf2 task が /sd/k.bin → /sd/k.uf2 を変換 (758 s)
+
+決め手の実装:
+
+- **`bin2uf2` task** (`kernel/tasks/bin2uf2/bin2uf2.tc`):
+  `tools/bin2uf2.py` の TC port、qemu virt で 6 KB fixture を
+  byte-exact verify 済 (commit b9067cd)
+- **`.incbin SIZE "path"` directive** (`compiler/asm_common.tc`):
+  bin2s.sh の `.byte` 列挙の代わりに binary file を直接埋め込み、
+  巨大な mtfs blob を XIP flash に低コストで載せる (commit 5958574)
+- **bin2s_incbin.sh / bin2s.sh の `_mtfs_image_size_value` helper**:
+  TC dumper が peek32 を介さずに blob size を取れる
+- **boot-time mtfs dumper**: kernel が起動時に `_mtfs_image_*` を
+  `/sd/dx.img` + `/sd/wrap.s` として複製。size+content 64 B 比較
+  で再 dump 判定 (commit fb9c7fb)
+- **fatfs `dir_create` chain growth** (commit 773b746):
+  FAT root cluster 128 entries 上限を撤廃、自己再生中に増える
+  ファイルが入る
+- **asm_pass1 --lab-out + 位置引数で `src` 行を `.lab` に
+  emit** (commit 0c9a9a4): cat /sd/full.lab + 3×/sd/full.s →
+  /sd/p2_in.s の中間ファイル (13 MB / 305 s) を撤廃
+- **DROP_TASKS Makefile knob**: vi/tcc/sdprobe/neofetch/
+  count/tmpdemo/launcher を外して disk-extra.img を 3.5 MB に
+  抑え、kernel + dumper + bin2uf2 が 4 MiB flash に収まる
+
+副次的に閉じた issue: K11 の pico2 mr upload hang は「kernel が
+disk image を /sd に dump する」内部経路に置き換わったため、
+host から大容量を UART で送らずに済むようになった (K11 自体は
+未解決のまま、回避経路が確立)。
+
 ### K7. pico2 で phase 7 コンパイラを完走 — 完了 (2026-04-29)
 
 実機 Pico 2 上で OS 自身の compile pipeline が完全に走り、生成
