@@ -126,3 +126,37 @@ baud rate (87µs/byte) に追いつかず FIFO 溢れ。
 **回避策 (実装済)**:
 - K8: tmpfs 経由の入力で spin-wait を回避
 - K9: pico2_hw_driver.py で 4 byte / 20ms ペーシング
+
+### K11. mr 経由の大容量 UART upload が device をハング (bug, 回避済)
+
+**症状**: `mr > /sd/<file>` で 1 KB 以上のフレームを送ると、データ
+転送自体は完走 (md5sum で確認済) するが、その後 sh が応答しなくなる。
+openocd reset run でも復帰せず、USB 電源サイクルが必要。
+
+**観測**: PC は kernel 内で busy-spin 様の動きを見せる
+(0x10017c00 付近を周回)。fatfs_close での FAT chain walk + dir entry
+update は完了している (file は読み戻せる)。
+
+**仮説**: K8+K9 の延長線。mr の sys_write が大量の SD CMD24 を伴い、
+SD コントローラがビジー応答を継続する間に sh の sys_wait と
+タイマー割り込みの競合で wedge する。または mr 終了後の sh 復帰
+ハンドラが UART RX overflow で stale 入力を読んで誤動作。
+
+**回避策 (実装済)**:
+- 大容量 (>1.4 MB の disk.img 等) は host 側で SD カードを抜いて
+  manual cp で staging。`tests/pico2_link_kernel_run.sh` の
+  `SKIP_UPLOAD=1` 経路。
+
+**対処案**: K8+K9 の根本解決 (PL011 RX interrupt + kernel ring
+buffer) を入れれば mr upload も自動的に安定する見込み。
+
+### K12. fatfs ファイル名 8.3 制限 (limitation)
+
+`kernel/fatfs.tc::fatfs_open` は `nlen > 12` で -1 を返す。
+basename ≤ 8 char + `.` + ext ≤ 3 char しか作れず、`kernel_nodisk.bin`
+(17 char) のような名前で sh の `>` redirect は "spawn failed" になる。
+
+**対処**: ベンチ側で `knod.bin` 等に rename (短縮) して回避。
+LFN (Long File Name) サポートは fatfs 改造範囲が大きいので保留。
+
+**確認済の制約**: pico2 self-build benches は全て 8.3 互換名で書く。
