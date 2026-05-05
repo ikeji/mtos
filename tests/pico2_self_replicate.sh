@@ -81,6 +81,27 @@ echo "=== Initial flash ===" >&2
 flash_kernel
 sleep 6  # extra time for boot-time dumper to write /sd/dx.img
 
+# Optional Step 0: refresh the on-/sd kernel-module .s files.
+# Needed when kernel/*.tc has changed since /sd was last seeded
+# — otherwise the link mixes new dumper code with stale fatfs.s
+# etc and the resulting kernel.bin won't match the host build.
+# REFRESH_KERN_MODS=1 to enable; default off (assumes /sd is fresh).
+if [ "${REFRESH_KERN_MODS:-0}" = "1" ]; then
+    echo "=== Step 0a: refresh runtime.s on /sd ===" >&2
+    run_step /pico2_compile_runtime.sh COMPILE_RUNTIME_DONE
+    echo "=== Reset + Step 0b: refresh libtc.s on /sd ===" >&2
+    reset_only; sleep 4
+    run_step /pico2_compile_libtc.sh COMPILE_LIBTC_DONE
+    echo "=== Reset + Step 0c: refresh kernel-leaf .s on /sd ===" >&2
+    reset_only; sleep 4
+    run_step /pico2_compile_kern.sh COMPILE_KERN_LEAVES_DONE
+    echo "=== Reset + Step 0d: refresh kernel-import .s on /sd ===" >&2
+    reset_only; sleep 4
+    run_step /pico2_compile_kern2.sh COMPILE_KERN2_DONE
+    echo "=== Reset before Step 1 ===" >&2
+    reset_only; sleep 4
+fi
+
 echo "=== Step 1: cat → /sd/full.s (with /sd/dx.img blob) ===" >&2
 run_step /pico2_self_step1.sh SELF_STEP1_DONE
 
