@@ -29,6 +29,50 @@ for i in range(0, len(data), 512):
 open(sys.argv[2], "wb").write(out)
 PY
 
+# Freeze the host reference at orchestrator start: rebuild kernel.bin
+# (un-padded) from CURRENT sources + the disk-extra.img EMBEDDED in
+# $KERNEL_UF2 (so we compare apples-to-apples — the device dumps
+# /sd/dx.img from that exact mtfs blob in flash). We extract the
+# disk image by locating the MTFS magic + total-blocks header
+# inside the just-extracted kernel.bin.
+python3 - "$TMP/kernel.bin" "$TMP/disk-extra.img" <<'PY'
+import sys, struct
+with open(sys.argv[1], "rb") as f: data = f.read()
+idx = data.find(b'MTFS')
+if idx < 0:
+    print("no MTFS magic in kernel.bin", file=sys.stderr); sys.exit(1)
+total_blocks = struct.unpack_from('<I', data, idx + 12)[0]
+size = total_blocks * 512
+# bin2s.sh emits the actual file size, not block-aligned. We have
+# only block-rounded view from the embedded image; the host file
+# may be 0..511 bytes shorter. Walk the size_value `li` literal —
+# it's `_mtfs_image_size_value: li a0, $SIZE; ret`, encoded as
+# lui+addi (or just addi if SIZE fits 12-bit). Easier: grep the
+# .word $SIZE that bin2s.sh / wrap.s emit right before the helper.
+# That .word is _mtfs_image_size and sits 4 bytes after the blob.
+end_of_blob = idx + size
+size_word = struct.unpack_from('<I', data, end_of_blob)[0]
+# Sanity: size_word should equal the original file size, ≤ size.
+if size_word == 0 or size_word > size:
+    size_word = size
+with open(sys.argv[2], "wb") as f: f.write(data[idx:idx + size_word])
+print(f"disk-extra.img extracted: {size_word} bytes (block_aligned={size})",
+      file=sys.stderr)
+PY
+kernel/bin2s.sh "$TMP/disk-extra.img" _mtfs_image > "$TMP/mtfs.s" 2>/dev/null
+cat "$ROOT/kernel/platform_pico2.s" "$ROOT/kernel/trap_common.s" > "$TMP/host_crt0.s"
+cat "$ROOT/kernel/crt0_pico2_data.s" "$TMP/mtfs.s" > "$TMP/host_data.s"
+CRT0="$TMP/host_crt0.s" CRT0_DATA="$TMP/host_data.s" ASM_PROLOGUE="; raw" \
+    GEN2_DIR="$ROOT/build/gen2" \
+    CACHED_S_DIR="$ROOT/build/kernel/shared" \
+    "$ROOT/compile-gen2.sh" -o "$TMP/host_k.bin" \
+    "$ROOT/kernel/kernel_pico2.tc" 2>/dev/null
+python3 "$ROOT/tools/bin2uf2.py" "$TMP/host_k.bin" "$TMP/host_k.uf2" >/dev/null
+HOST_BIN_MD5=$(md5sum "$TMP/host_k.bin" | awk '{print $1}')
+HOST_UF2_MD5=$(md5sum "$TMP/host_k.uf2" | awk '{print $1}')
+echo "frozen host kernel.bin md5: $HOST_BIN_MD5" >&2
+echo "frozen host kernel.uf2 md5: $HOST_UF2_MD5" >&2
+
 flash_kernel() {
     "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
         -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
@@ -120,9 +164,6 @@ reset_only
 sleep 4
 run_step /pico2_self_step4.sh SELF_STEP4_DONE
 
-# Compute host reference.
-HOST_BIN_MD5=$(md5sum "$TMP/kernel.bin" | awk '{print $1}')
-HOST_UF2_MD5=$(md5sum "$KERNEL_UF2" | awk '{print $1}')
 DEV_BIN_MD5=$(grep -oE '^[0-9a-f]{32}  /sd/k\.bin' "$TMP"/uart_*step3*.log | awk '{print $1}' | tail -1)
 DEV_UF2_MD5=$(grep -oE '^[0-9a-f]{32}  /sd/k\.uf2' "$TMP"/uart_*step4*.log | awk '{print $1}' | tail -1)
 
