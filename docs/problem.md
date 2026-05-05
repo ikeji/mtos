@@ -127,20 +127,30 @@ baud rate (87µs/byte) に追いつかず FIFO 溢れ。
 - K8: tmpfs 経由の入力で spin-wait を回避
 - K9: pico2_hw_driver.py で 4 byte / 20ms ペーシング
 
-### K11. mr 経由の大容量 UART upload が device をハング (bug, 回避済)
+### K11. pico2 mr 経由の大容量 UART upload が device をハング (bug, 回避済)
 
-**症状**: `mr > /sd/<file>` で 1 KB 以上のフレームを送ると、データ
-転送自体は完走 (md5sum で確認済) するが、その後 sh が応答しなくなる。
-openocd reset run でも復帰せず、USB 電源サイクルが必要。
+**症状**: pico2 で `mr > /sd/<file>` に 1 KB 以上送ると、転送自体は
+完走するが、その後 sh が応答しなくなる。openocd reset run でも
+復帰せず、USB 電源サイクルが必要。
 
 **観測**: PC は kernel 内で busy-spin 様の動きを見せる
 (0x10017c00 付近を周回)。fatfs_close での FAT chain walk + dir entry
 update は完了している (file は読み戻せる)。
 
-**仮説**: K8+K9 の延長線。mr の sys_write が大量の SD CMD24 を伴い、
-SD コントローラがビジー応答を継続する間に sh の sys_wait と
-タイマー割り込みの競合で wedge する。または mr 終了後の sh 復帰
-ハンドラが UART RX overflow で stale 入力を読んで誤動作。
+**qemu virt では再現しない** (2026-05-05 確認、`tests/qemu_mr_scale.py`)。
+qemu virt + plain `-serial stdio` で 256〜65536 byte の mr upload は
+全部 OK。pico2 固有の現象。
+
+**注意**: qemu の `-serial mon:stdio` は Ctrl-A (= 0x01) を escape
+として横取りするため、framed payload に 0x01 が含まれると qemu が
+食べてしまう。最初これを K11 と勘違いしたが別問題で、回避は
+qemu 側で `-serial stdio` 単独 (`-monitor null`) を使うこと。
+
+**仮説 (pico2 側、未解決)**: K8+K9 の延長線。mr の sys_write が
+大量の SD CMD24 を伴い、SD コントローラがビジー応答を継続する間に
+sh の sys_wait と タイマー割り込みの競合で wedge する。または
+mr 終了後の sh 復帰ハンドラが UART RX overflow で stale 入力を
+読んで誤動作。
 
 **回避策 (実装済)**:
 - 大容量 (>1.4 MB の disk.img 等) は host 側で SD カードを抜いて
