@@ -333,20 +333,27 @@ K7 解決の決め手 3 点:
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
-- [x] **Pico 2 self-built kernel.bin (no-disk)** (2026-05-05):
+- [x] **Pico 2 self-built kernel.bin (no-disk variant)** (2026-05-05):
       `asm_pass2` がフルカーネル input (16 ファイル concat — platform_pico2.s
       + trap_common.s + runtime.s + 10 カーネルモジュール .s +
       crt0_pico2_data.s + 空 mtfs wrapper) を pico2 実機で処理し、
       host gen2 build と byte-exact 一致 (md5 `f21e5f2e018ee4102040de06f58fd216`、
-      270 KB)。bench: `tests/fixtures/pico2_link_kernel_step{1,2,3}.sh`、
-      step ごとに reset を挟む (cat 多用後の kernel arena fragmentation で
-      asm_pass2 の 288 KB ram_size alloc が失敗するため)。
-      残件: `.incbin` で `/sd/disk.img` を埋めた full-disk variant
-      (md5 `709a6f88189c0fa17e5dc548d4bdb785`) — 1.4 MB upload を
-      手動 SD swap で staging する必要あり。
-      副次的に判明した制約: fatfs `dir_create` が root cluster の
-      最初の 128 entries 分しか割り当てない (chain extension
-      未実装) ため、長期間 /sd を使うと "spawn failed" 多発。
+      270 KB)。3-step orchestrator
+      `tests/pico2_link_kernel_3step.sh` で end-to-end 自動化、
+      step ごとに openocd reset を挟む (cat 多用後の kernel arena
+      fragmentation で asm_pass2 の 288 KB ram_size alloc が
+      失敗するため)。所要時間 ~20 分、ピーク kmem 200 KB、
+      asm_pass2 単独 531 s。残件: `.incbin` で `/sd/disk.img` を埋めた
+      full-disk variant (md5 `709a6f88189c0fa17e5dc548d4bdb785`) —
+      1.4 MB upload を手動 SD swap で staging する必要あり。
+      副次的に判明した制約 2 件:
+        (1) fatfs `dir_create` が FAT root cluster の最初の 128
+            entries 分しか割り当てない (chain extension 未実装) ため、
+            長期間 /sd を使うと "spawn failed" 多発。
+            `tests/fixtures/pico2_cleanup_sd.sh` で削減可。
+        (2) fatfs.tc の 8.3 制限により出力ファイル名は basename
+            ≤ 8 char + ext ≤ 3 char に収める必要あり。
+            `kernel_nodisk.bin` (17 char) は不可、`knod.bin` で運用。
 - [x] **Gen3 完全閉路 on pico2** (2026-05-05): 19 .tc files 全部
       (7 コンパイラツール + runtime + libtc + 10 カーネルモジュール
       = 全 .tc ソース) を pico2 実機で再ビルドし、host gen2 と
