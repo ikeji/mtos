@@ -1,8 +1,6 @@
-# Self-replicate step 3: asm_pass2 → /sd/k.bin (the linked kernel
-# with the disk image embedded). Needs fresh reset after step 2 to
-# clear kernel arena fragmentation.
-rm /sd/full.s
-rm /sd/full.lab
-asm_pass2 < /sd/p2_in.s > /sd/k.bin
+# Self-replicate step 3: asm_pass2 link → /sd/k.bin via --lab/--out.
+# Reads /sd/full.lab + opens the `src /sd/full.s` paths recorded
+# inside it, three times (once per emit section).
+asm_pass2 --lab /sd/full.lab --out /sd/k.bin
 md5sum /sd/k.bin
 echo SELF_STEP3_DONE

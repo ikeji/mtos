@@ -487,6 +487,12 @@ fn main(argv: StringArray) -> i32 {
         // load-idx mode without strip: still record the user source
         // as the second src so pass2 can read it.
         asm_set_src_path2(path);
+    } else if path as u32 != 0u32 {
+        // Plain `asm_pass1 <src> --lab-out <lab>`: bake a src line
+        // referencing <src> into the .lab so asm_pass2 can pick it
+        // up directly per section pass — eliminates the "cat lab +
+        // 3 × src | asm_pass2" choreography on the OS side.
+        asm_set_src_path1(path);
     }
     // Pre-encode (Step 5): when prelude bins are wired, the lab dump
     // emits `src raw` triplets in place of `src <prelude.s>` and

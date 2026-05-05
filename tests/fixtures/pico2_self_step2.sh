@@ -1,6 +1,10 @@
-# Self-replicate step 2: asm_pass1 + cat for asm_pass2 input.
-asm_pass1 < /sd/full.s > /sd/full.lab
+# Self-replicate step 2: asm_pass1 produces /sd/full.lab.
+#
+# Pass `--lab-out` and the source path positionally so asm_pass1
+# bakes a `src /sd/full.s` line into the .lab. asm_pass2 in step 3
+# then opens /sd/full.s directly per section pass — no need to
+# concatenate three copies into /sd/p2_in.s (saved ~5 min and a
+# 13 MB intermediate file).
+asm_pass1 --lab-out /sd/full.lab /sd/full.s
 md5sum /sd/full.lab
-cat /sd/full.lab /sd/full.s /sd/full.s /sd/full.s > /sd/p2_in.s
-md5sum /sd/p2_in.s
 echo SELF_STEP2_DONE
