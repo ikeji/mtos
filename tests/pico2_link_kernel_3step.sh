@@ -40,6 +40,12 @@ flash_kernel() {
         -c "program $TMP/kernel.bin 0x10000000 verify" \
         -c "exit" > "$TMP/oocd.log" 2>&1
     grep -q "Verified OK" "$TMP/oocd.log" || { tail -20 "$TMP/oocd.log" >&2; exit 1; }
+    # programming halts the cores; we need a separate reset run to
+    # actually start the kernel.
+    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
+        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
+        -c "adapter speed 5000" -c "init" -c "reset run" -c "exit" \
+        > /dev/null 2>&1
 }
 
 reset_only() {
@@ -94,7 +100,7 @@ reset_only
 sleep 4
 run_step /pico2_link_kernel_step3.sh STEP3_DONE
 
-DEV_MD5=$(grep -oE '^[0-9a-f]{32}  /sd/kernel_nodisk\.bin' "$TMP"/uart_*step3*.log | awk '{print $1}' | tail -1)
+DEV_MD5=$(grep -oE '^[0-9a-f]{32}  /sd/knod\.bin' "$TMP"/uart_*step3*.log | awk '{print $1}' | tail -1)
 echo
 echo "host reference md5: $HOST_REF_MD5"
 echo "device produced md5: ${DEV_MD5:-<missing>}"
