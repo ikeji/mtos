@@ -181,6 +181,12 @@ fn dump_mtfs_to_sd() -> void {
         dump_str(wfd, " \"/sd/dx.img\"\n    .globl _mtfs_image_end\n_mtfs_image_end:\n    .globl _mtfs_image_size\n_mtfs_image_size:\n    .word ");
         dump_dec(wfd, img_size);
         dump_str(wfd, "\n    .text\n    .globl _mtfs_image_addr\n_mtfs_image_addr:\n    la   a0, _mtfs_image_start\n    ret\n");
+        // Companion helper that returns the byte size as a value
+        // (matches bin2s.sh / bin2s_incbin.sh — kernel_pico2's
+        // dumper code calls it).
+        dump_str(wfd, "    .globl _mtfs_image_size_value\n_mtfs_image_size_value:\n    li   a0, ");
+        dump_dec(wfd, img_size);
+        dump_str(wfd, "\n    ret\n");
         fatfs_close(wfd);
     }
     delete(wname);
