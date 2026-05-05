@@ -90,9 +90,10 @@ def main():
         write_all(fd, struct.pack("<H", len(chunk)) + chunk)
         sent += len(chunk)
         # Pace below the PL011 RX FIFO depth so mr's polling read
-        # can keep up. CHUNK + 2-byte header at 115200 baud takes
-        # ~5.7 ms; sleep so the device has time to drain.
-        time.sleep(0.006)
+        # can keep up. 64+2 bytes at 115200 baud takes ~5.7 ms; we
+        # also need fatfs cluster writes (CMD24 ~10 ms) to drain
+        # without queueing a backlog in the kernel TTY buffer.
+        time.sleep(0.020)
         if (off // CHUNK) % 256 == 0:
             elapsed = time.time() - t0
             rate = sent / elapsed if elapsed > 0 else 0

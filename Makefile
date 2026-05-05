@@ -272,7 +272,7 @@ EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     kernel/tasks/libtc/libtc.tc \
     kernel/platform_pico2.s kernel/trap_common.s kernel/crt0_pico2_data.s
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass1.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_link_kernel.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass1.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_link_kernel.sh tests/fixtures/pico2_link_kernel_nodisk.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -326,7 +326,10 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	cp kernel/trap_common.s "$$_r/src/trap_common.s" && \
 	cp kernel/crt0_pico2_data.s "$$_r/src/crt0_pico2_data.s" && \
 	kernel/bin2s_incbin.sh build/kernel/disk.img _mtfs_image /sd/disk.img > "$$_r/src/mtfs_wrap.s" && \
+	printf '    .rodata\n    .align 4\n    .globl _mtfs_image_start\n_mtfs_image_start:\n    .globl _mtfs_image_end\n_mtfs_image_end:\n    .globl _mtfs_image_size\n_mtfs_image_size:\n    .word 0\n    .text\n    .globl _mtfs_image_addr\n_mtfs_image_addr:\n    la   a0, _mtfs_image_start\n    ret\n' > "$$_r/src/mtfs_wrap_nodisk.s" && \
+	printf '; raw\n' > "$$_r/src/raw.s" && \
 	{ cp tests/fixtures/pico2_link_kernel.sh "$$_r/pico2_link_kernel.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_link_kernel_nodisk.sh "$$_r/pico2_link_kernel_nodisk.sh" 2>/dev/null || true; } && \
 	python3 tools/mkfs.py $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
