@@ -333,23 +333,49 @@ K7 解決の決め手 3 点:
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
-- [x] **Pico 2 self-built kernel.uf2 end-to-end** (2026-05-05):
-      4-step pipeline (`tests/pico2_self_replicate.sh`):
-      - boot-time `dump_mtfs_to_sd` が `_mtfs_image_*` を `/sd/dx.img`
-        に copy + `/sd/wrap.s` を生成 (~3 s)
-      - step1: `cat` で /sd/full.s 構築 (85 s)
-      - step2: asm_pass1 + cat → /sd/p2_in.s (462 s)
-      - step3: asm_pass2 → /sd/k.bin = 3.7 MB (757 s)
-      - step4: `bin2uf2` task → /sd/k.uf2 = 7.6 MB (499 s)
-      合計 ~30 min。kernel.uf2 が pico2 内で完成。
-      bin2uf2 task は `tools/bin2uf2.py` の TC ポート、qemu virt で
-      6 KB fixture が byte-exact 動作確認済 (commit b9067cd)。
-      flash サイズ調整のため `DROP_TASKS="vi tcc sdprobe neofetch
-      count tmpdemo launcher"` で disk-extra.img を 3.5 MB に slim 化。
-      残: `/sd/{kc,...,kp}.s` 古いと kernel.bin が host と byte-exact
-      しない (現在の kernel に含まれる dumper を /sd 上で再生成する
-      必要あり)。`REFRESH_KERN_MODS=1` で `pico2_compile_kern{,2}.sh`
-      を step 0 で走らせれば一致見込。
+- [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06):
+      `REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` で
+      end-to-end 自動化、~55 分で host gen2 build と byte-exact
+      一致した kernel.bin + kernel.uf2 を pico2 が自前で生成。
+
+      ```
+      host   kernel.bin md5: 026d825ca32e4d40a67b182505c36d48
+      device /sd/k.bin md5:  026d825ca32e4d40a67b182505c36d48  ✓
+      host   kernel.uf2 md5: 4a639e26b7fbd057654ec5ac63fbf09a
+      device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a  ✓
+      ```
+
+      パイプライン (8 ステップ、各ステップ間で openocd reset):
+      - step 0a: `pico2_compile_runtime.sh` → /sd/runtime.s (58 s)
+      - step 0b: `pico2_compile_libtc.sh` → /sd/libtc.s (8 s)
+      - step 0c: `pico2_compile_kern.sh` → /sd/{kc,bf,bs,tf}.s (325 s)
+      - step 0d: `pico2_compile_kern2.sh` → /sd/{ff,mf,pf,vf,ld,kp}.s (439 s)
+      - boot dumper: `_mtfs_image_*` → /sd/dx.img + /sd/wrap.s (3 s、
+        サイズ + 先頭 64 B コンテンツ照合で skip 判定)
+      - step 1: cat → /sd/full.s = 4.3 MB (302 s)
+      - step 2: asm_pass1 + cat → /sd/p2_in.s = 13 MB (805 s)
+      - step 3: asm_pass2 → /sd/k.bin = 3.8 MB (800 s、kmem 203 KB)
+      - step 4: `bin2uf2` → /sd/k.uf2 = 7.6 MB (758 s)
+
+      実装の決め手:
+      - `bin2uf2` task (`kernel/tasks/bin2uf2/bin2uf2.tc`):
+        `tools/bin2uf2.py` の TC port、qemu virt で byte-exact
+        確認済 (commit b9067cd, b495864, fb9c7fb)
+      - boot-time dumper (`kernel_pico2.tc::dump_mtfs_to_sd`):
+        `_mtfs_image_*` を /sd に copy + 一致する `.incbin` wrapper を
+        emit。size + 先頭 64 B 照合で再 dump 判定 (commit fb9c7fb)
+      - `bin2s.sh` / `bin2s_incbin.sh` に `_mtfs_image_size_value`
+        helper 追加 (TC から peek32 不要で size 取得)
+      - `DROP_TASKS` Makefile knob で disk-extra.img を 3.5 MB に
+        slim 化、kernel + dumper + bin2uf2 が 4 MiB flash に収まる
+      - `tests/pico2_self_replicate.sh` orchestrator が
+        `REFRESH_KERN_MODS=1` で /sd の .s 群を必ず最新版に揃え、
+        host reference は build/kernel/disk-extra.img + 現ソースから
+        compile-gen2.sh で同時生成して比較 (commit 2c648fb, 8a74fe6)
+- [x] **Pico 2 self-built kernel.uf2 (initial)** (2026-05-05):
+      pico2 上で自前の kernel.uf2 完成 (~30 min、ただし kernel
+      sources 変更後に /sd の .s 群が古いと byte-exact 不一致)。
+      上の 2026-05-06 milestone で REFRESH 込みフローに昇格。
 - [x] **Pico 2 self-built kernel.bin (no-disk variant)** (2026-05-05):
       `asm_pass2` がフルカーネル input (16 ファイル concat — platform_pico2.s
       + trap_common.s + runtime.s + 10 カーネルモジュール .s +
