@@ -357,6 +357,7 @@ fn dir_create(name83: U8Array,
               out_dir_sec_addr: u32, out_dir_off_addr: u32) -> i32 {
     var clus: u32 = g_fat_root_clus;
     var secbuf: U8Array = U8Array(512);
+    var prev_clus: u32 = 0u32;  // last clus before chain end (for grow)
 
     while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
         var sec: u32 = cluster_to_sector(clus);
@@ -400,10 +401,54 @@ fn dir_create(name83: U8Array,
             }
             s = s + 1;
         }
+        prev_clus = clus;
         clus = fat_get_entry(clus);
     }
+
+    // Existing directory cluster chain is full. Allocate a fresh
+    // cluster, link it into the FAT chain, zero its first sector,
+    // and place the new entry at offset 0. Without this growth path
+    // a busy /sd traps every `> /sd/foo` once the first 128 entries
+    // fill (4 KB cluster ÷ 32-byte entry).
+    if prev_clus < 2u32 || prev_clus >= 0x0FFFFFF8u32 {
+        delete(secbuf);
+        return -1;
+    }
+    var new_clus: u32 = fat_alloc_cluster();
+    if new_clus < 2u32 {
+        delete(secbuf);
+        return -1;
+    }
+    fat_set_entry(prev_clus, new_clus);
+    // Zero the new directory cluster — every sector — so dir_find
+    // sees the entries past the first one as terminator (fb==0).
+    var z2: i32 = 0;
+    while z2 < 512 { set(secbuf, z2, 0u8); z2 = z2 + 1; }
+    var new_sec: u32 = cluster_to_sector(new_clus);
+    var ns: i32 = 0;
+    while ns < g_fat_spc {
+        if fat_block_write(new_sec + (ns as u32), secbuf) != 512 {
+            delete(secbuf);
+            return -1;
+        }
+        ns = ns + 1;
+    }
+    // Now write the actual entry at offset 0 of the freshly-zeroed
+    // first sector.
+    var k2: i32 = 0;
+    while k2 < 11 {
+        set(secbuf, k2, get(name83, k2));
+        k2 = k2 + 1;
+    }
+    set(secbuf, 11, 0x20u8);
+    if fat_block_write(new_sec, secbuf) != 512 {
+        delete(secbuf);
+        return -1;
+    }
+    poke32(out_dir_sec_addr, new_sec);
+    poke32(out_dir_off_addr, 0u32);
     delete(secbuf);
-    return -1;  // directory full
+    return 0;
 }
 
 // Update a directory entry's start cluster and file size on disk.
