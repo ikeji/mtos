@@ -9,12 +9,19 @@
 
 # 現在のフェーズ
 
-`docs/roadmap.md` 参照。**フェーズ 7 完走 (K7 解決、2026-04-29)**:
-qemu virt と **pico2 実機の両方**で OS 自身のコンパイラパイプラインが
+`docs/roadmap.md` 参照。**Pico 2 self-replicate (K13 解決、2026-05-06)**:
+pico2 実機が自前のコンパイラ・カーネルだけで kernel.bin と kernel.uf2 を
+**byte-exact** で再生成する。host gen2 build と md5 完全一致を確認した
+状態で `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` が end-to-end
+~26 min (REFRESH 込み) / ~12 min (no REFRESH) で完走 (詳細:
+`docs/solved.md` の K13 エントリ、`docs/roadmap.md` 2026-05-06 milestone)。
+これでコンパイラ + カーネル全ソースが pico2 でセルフホストし、
+ホスト PC は触媒として一度ソースを置いた後は更新時にしか登場しない。
+
+その手前のマイルストーン: **フェーズ 7 完走 (K7 解決、2026-04-29)** —
+qemu virt と pico2 実機の両方で OS 自身のコンパイラパイプラインが
 parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 を
-完走、生成バイナリで "Hello, World!" を出せる。pico2 では SD カード
-(`/sd/`) を中間ファイルストレージに使い、PLL_SYS で CPU 150 MHz 動作、
-合計 ~125 秒で完走 (詳細: `docs/solved.md` の K7 エントリ)。
+完走、生成バイナリで "Hello, World!" を出す (詳細: `docs/solved.md` K7)。
 
 以下が完了済:
 
@@ -249,25 +256,90 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
   - 詳細: `docs/solved.md` K7 エントリ、`docs/scaling.md` (per-stage
     timing と tcc-driven slowdown 調査)
 
+- **M7-full + Gen3 セルフホスト on pico2 (2026-05-04〜05)**:
+  parse + transitive imports → 全 7 ツール (parse / sigscan / tcheck /
+  codegen / bc2asm / asm_pass1 / asm_pass2) → 19 .tc 全部 (7 ツール +
+  runtime + libtc + 10 カーネルモジュール) を pico2 実機で再ビルド、
+  host gen2 build と byte-exact md5 一致を順に達成。fatfs 8.3 制限で
+  `asm_pass1.bin → ap1.bin` 等の rename + tcheck arena 128→256 KB +
+  asm_pass1 が --strip-out 不要時に ref+def を即 release (~88 KB peak
+  削減) + SD CRC を CMD59 で off + reloc kind=2 (gp-relative la) 追加
+  などが効いた。詳細: `docs/roadmap.md` 2026-05-04/05 milestones
+- **K13 完走 (pico2 self-replicate) — 2026-05-06**:
+  - **byte-exact**: pico2 が自前で生成する kernel.bin / kernel.uf2 が
+    host gen2 build と md5 完全一致 (例: kernel.bin
+    `026d825ca32e4d40a67b182505c36d48`、kernel.uf2
+    `4a639e26b7fbd057654ec5ac63fbf09a`)
+  - **オーケストレータ**: `tests/pico2_self_replicate.sh` が 8 ステップ
+    (0a〜0d で .s 群更新 + step 1〜4 でリンク) を openocd reset で
+    挟みながら自動化。`REFRESH_KERN_MODS=1` で /sd の中間 .s を
+    現ソースから再生成し、host reference は build/kernel/disk-extra.img +
+    現ソースから compile-gen2.sh で同時生成して比較。step 単位の
+    fixture は `tests/fixtures/pico2_self_step{1,2,3,4}.sh`
+  - **`bin2uf2` task** (`kernel/tasks/bin2uf2/bin2uf2.tc`):
+    `tools/bin2uf2.py` の TC port (RP2350 RISC-V family_id 0xE48BFF5A、
+    256 B payload / 512 B block)。fatfs に rewind がないので 2 pass
+    (count + emit) で実装、qemu virt で byte-exact 確認済 (commits
+    b9067cd, fb9c7fb)
+  - **boot-time mtfs dumper** (`kernel/kernel_pico2.tc::dump_mtfs_to_sd`):
+    `_mtfs_image_*` を /sd/dx.img に copy + 一致する `.incbin` wrapper
+    `/sd/wrap.s` を emit。サイズ + 先頭 1 KB のコンテンツ照合で skip
+    判定 (commit 60050f7)。これにより mr 経由の大容量 UART upload
+    (K11 ハング) を完全に迂回
+  - **`bin2s.sh` / `bin2s_incbin.sh`** に `_mtfs_image_size_value`
+    helper を追加 — TC から `peek32` 不要で size 取得、dumper の
+    wrap.s emitter と整合
+  - **`.incbin SIZE "path"` ディレクティブ** (asm_common.tc、
+    commit 5958574): リンク時にファイルからバイト列を読み込む。
+    `_mtfs_image_*` 実体を full.s に含めずに参照できる (1.4 MB 縮約)
+  - **asm_pass1 `--lab-out` + 位置引数最適化** (commit 0c9a9a4):
+    位置引数で `.s` パスのみ指定すると `.lab` 中に `src <path>` 行を
+    bake、後段 cat-3x を撤廃 (~5 min 短縮)
+  - **fatfs FAT sector write-back cache** (commit 27ec588):
+    `g_fat_cache_*` で同一 FAT セクタ連続書き込みをキャッシュ、
+    `fatfs_close` / `fatfs_delete` で flush。シーケンシャル cluster
+    allocation が支配的な write 経路を ~50% 高速化 (v9 36 min →
+    v10 26 min)
+  - **fatfs `dir_create` chain growth** (commit 773b746):
+    root cluster の最初の cluster が満杯になったら FAT chain を
+    growth する。長期間 /sd を使っても spawn 失敗が出なくなった
+  - **`DROP_TASKS` Makefile knob**: disk-extra.img を 3.5 MB に slim
+    化、kernel + dumper + bin2uf2 が 4 MiB flash に収まる
+  - **8.3 ファイル名運用**: `kernel.bin → k.bin`、`kernel_nodisk.bin →
+    knod.bin`、各種 `.s` も短縮 (K12 limitation)
+  - パイプライン timing 短縮の経緯: v6 ~55 min → v8 ~50 min
+    (cat-3x 撤廃) → v9 ~36 min (REFRESH skip) → v10 ~26 min
+    (fatfs FAT cache)
+  - 詳細: `docs/solved.md` K13 エントリ、`docs/roadmap.md`
+    2026-05-06 milestone
+
 **次の候補** (どれも独立):
 
-- **フェーズ 7 M7-full**: OS 上で Gen2 → Gen3 相当の一周 (コンパイラ
-  自身を OS 上で再コンパイル)。パイプ syscall 導入で中間ファイル経由
-  より高速化できる可能性あり
-- **tcc-driven 固有の slowdown 調査**: sh-driven asm_pass1 ~27 s に
-  対して tcc-driven は 3841 s (142×)、cat-link は 10 s → 738 s (74×)。
-  inline I/O + 後続 task の組み合わせで激遅化。tcc を sh の組み込み
-  コマンド化すれば回避可能 (`docs/scaling.md` Q3 解決方向)
+- **フェーズ 8**: OS 全体を独自言語で書く。今は手書き asm
+  (`platform_*.s`, `trap_common.s`, `crt0_*_data.s`) と Python ツール
+  (`tools/mkfs.py`, `tools/bin2uf2.py` ← TC 版あり) が残るのみ
+- **K11 (mr upload hang) の根本原因調査**: 現在は boot-time dumper で
+  迂回済だが、UART 大容量転送が device をハングさせる原因は未特定。
+  `tests/qemu_mr_scale.py` が qemu virt 上で再現を試みるが qemu 単独
+  では再現せず — pico2 PL011 / DMA 経路に固有の何か (`docs/problem.md`
+  K11 参照)
+- **K12 (fatfs 8.3 制限)**: long-name dirent の実装、または mtfs と
+  同じ可変長ファイル名スキームへの移行
 - **echo / spawn baseline の高さ**: PLL 150 MHz 下でも `echo hello
   world` (12 byte UART 出力) で ~11 秒。TC ABI の関数呼び出しコスト
   が支配的。ABI 最適化 / inline 化が必要
 - **bcrun.tc::vm_run の vartab=128 制限**: 現在の tcheck では bcrun.tc
   自身が vartab overflow で compile 不可。pipeline の現実的 worst case
   は bc2asm.tc (nc=1656) に格下げされた (`docs/scaling.md` Q5)
-- **フェーズ 8**: OS 全体を独自言語で書く
+- **tcc-driven 固有の slowdown 調査**: sh-driven asm_pass1 ~27 s に
+  対して tcc-driven は 3841 s (142×)、cat-link は 10 s → 738 s (74×)。
+  inline I/O + 後続 task の組み合わせで激遅化。tcc を sh の組み込み
+  コマンド化すれば回避可能 (`docs/scaling.md` Q3 解決方向)
 
 問題詳細は `docs/problem.md`、
-phase 7 実装記録は `docs/task/phase7_compiler_on_os.md`、
+self-replicate 全体像は `docs/roadmap.md` の 2026-05-06 milestone と
+`docs/solved.md` K13、phase 7 実装記録は
+`docs/task/phase7_compiler_on_os.md`、
 pipeline メモリ削減計画は `docs/task/pipeline_100kb.md`、
 .lab 中間フォーマットは `docs/lab_format.md`、
 スケーリング分析は `docs/scaling.md`。
@@ -383,7 +455,13 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
   kernel.tc           virt 用 main + rearm_timer + mtfs マウント/read デモ。
                       TIMER_INTERVAL は 10_000_000 (1 秒 @ 10 MHz) に
                       落として phase 7 debug マーカーを読みやすく
-  kernel_pico2.tc     Pico 2 用 main + rearm_timer (SIO MTIME)
+  kernel_pico2.tc     Pico 2 用 main + rearm_timer (SIO MTIME) +
+                      `dump_mtfs_to_sd()`: 起動時に `_mtfs_image_*` を
+                      /sd/dx.img + /sd/wrap.s (`.incbin` wrapper +
+                      `_mtfs_image_size_value` helper) として吐く。
+                      サイズ + 先頭 1 KB 内容照合で skip 判定し idempotent。
+                      self-replicate パイプラインから K11 (mr UART
+                      upload hang) を完全迂回するための仕組み
   block_virtio.tc     virtio-mmio (legacy v1) block デバイスドライバ (virt)
   block_flash.tc      XIP flash block デバイスドライバ (pico2、_mtfs_image_addr 経由)
   mtfs.tc             MyTinyFS read-only ドライバ (mount/lookup/open/read/close)
@@ -443,7 +521,13 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       `/wrap_close.txt` として staging — sh 側で
                       cat して tcheck の wrap 入力を組み立てる。
                       `KEEP_TMP=1` でカーネルビルド中間 tmp dir を残せる
-  bin2s.sh            raw バイナリ → .s データ変換 (PREFIX_addr 関数生成)
+  bin2s.sh            raw バイナリ → .s データ変換 (PREFIX_addr 関数 +
+                      PREFIX_size_value helper を生成)
+  bin2s_incbin.sh     bin2s.sh の `.incbin` 版。size を Make 段階で
+                      `wc -c` で測り `.incbin SIZE "path"` を含む .s を
+                      emit。kernel build で disk-extra.img を埋め込む
+                      経路と self-replicate dumper の wrap.s が同一
+                      フォーマット
   run_pico2.sh        Pico 2 実機書き込み + UART キャプチャ (openocd 経由)
   run_pico2_interactive.sh  build + flash + 双方向 UART コンソール
                       (`make run-pico2` が呼ぶ、Ctrl-a x で終了)
@@ -490,6 +574,11 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
     mr/mr.tc          mx の逆: framed stdin → raw stdout
     muxon/muxon.tc    UART mux 有効化 (ecall 250)
     muxoff/muxoff.tc  UART mux 無効化
+    bin2uf2/bin2uf2.tc raw bin → UF2 コンバータ (TC port of
+                      tools/bin2uf2.py、RP2350 RISC-V family_id
+                      0xE48BFF5A、256 B payload / 512 B block)。
+                      fatfs に rewind がないので 2 pass (count + emit)。
+                      self-replicate step 4 で /sd/k.bin → /sd/k.uf2
     parse/parse.tc       → compiler/parse.tc (symlink)
     sigscan/sigscan.tc   → compiler/sigscan.tc (symlink)
     tcheck/tcheck.tc     → compiler/tcheck.tc (symlink)
@@ -526,6 +615,9 @@ make virt-kernel                  # build/kernel/virt_kernel.bin のみ
 make pico2-kernel                 # build/kernel/pico2_kernel.uf2 のみ
 make pico2-kernel-extra           # + EXTRA_TASKS 込みの UF2
 make pico2-kernel-demo            # + disk-demo.img (kern.conf 駆動 init) 込み
+# DROP_TASKS="vi neofetch" のように tasks を除外できる knob あり。
+# self-replicate 用 disk-extra.img を 4 MiB flash に収めるのに使う
+# (例: DROP_TASKS="vi neofetch grep cp du head" make pico2-kernel-extra)
 make test-asm-bins                # build/test/asm/*.bin (test_asm プリビルド)
 make run                          # virt kernel を対話起動 (qemu stdio serial)
 make run-extra                    # 同上 + EXTRA_TASKS (parse/…/asm_pass2/muxon/mx 等) 込み
@@ -702,6 +794,19 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 - `tests/phase7_hello.tc` / `phase7_min.tc` / `phase7_hello_world.tc` —
   phase 7 のテスト入力。それぞれ kernel/build.sh が `/phase7.tc` /
   `/phase7_min.tc` / `/hw.tc` として mtfs に staging する
+- `tests/pico2_self_replicate.sh` — Pico 2 self-replicate orchestrator。
+  `make test` には含まれない。`[REFRESH_KERN_MODS=1] GEN2_DIR=/tmp/gen2
+  tests/pico2_self_replicate.sh` で 8 ステップ (step 0a〜0d で
+  runtime / libtc / kern モジュール .s を /sd に staging、step 1〜4
+  で full.s 連結 → asm_pass1 → asm_pass2 → bin2uf2) を openocd reset
+  で挟みながら自動実行し、生成 kernel.bin / kernel.uf2 が host gen2
+  build と md5 完全一致することを検証する。各 step の fixture は
+  `tests/fixtures/pico2_self_step{1,2,3,4}.sh`。所要時間 ~26 min
+  (REFRESH 込み) / ~12 min (no REFRESH)
+- `tests/qemu_mr_scale.py` — K11 (mr 経由 UART upload hang) 再現を
+  qemu virt で試す regression test。`-serial stdio` (Ctrl-A escape
+  なし、`-monitor null` 併用) を使う点に注意 — `-serial mon:stdio` だと
+  qemu モニタが Ctrl-A を吸収しフレーム化バイトが消える
 - `tests/test_common.sh` — 共通ライブラリ（パス、カウンタ、Gen2 ツールビルド等）
 
 ### Gen2 ツールのビルド
@@ -758,10 +863,18 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 - CSR 命令: `csrrw`, `csrrs`, `csrrc`, `csrr` (疑似), `csrw` (疑似), `mret`
 - `jalr rd, rs1, imm` (I-type 間接ジャンプ)
 - `.byte val[,val...]` (1行4バイトまで)、`.rodata` (短縮形)
+- `.incbin SIZE "path"` — リンク時にファイルから `SIZE` バイトを読み
+  current section に埋め込む。kernel build で `_mtfs_image_*` を
+  full.s に直接連結せず `.incbin` で参照する経路と、self-replicate の
+  /sd/wrap.s から /sd/dx.img を埋める経路が同フォーマット
 - stdin 先頭ディレクティブ:
   - `; raw` — ELF ヘッダを出さず、code 部分だけを raw bin として出力
   - `; load_base 0xHHHHHHHH` — ELF 出力時の `e_entry`/`p_vaddr`/`p_paddr` を
     この値ベースに設定（デフォルト 0x10000）
+- asm_pass1 引数: `--lab-out <path>` で .lab 出力先を指定 (デフォルト
+  stdout)。位置引数として `.s` パスを渡すと .lab 中に `src <path>`
+  行を bake、後段の cat-3x なしで asm_pass2 が source を再 open できる
+  (self-replicate step 2 の最適化)
 
 ## compile-gen2.sh の環境変数
 デフォルトは Linux ELF 用の crt0 だが、以下を設定すると別ターゲット

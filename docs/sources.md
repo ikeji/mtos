@@ -128,7 +128,8 @@ docs/       ドキュメント
 | ファイル | 説明 |
 |----------|------|
 | `build.sh` | virt / pico2 共通ビルド (`--target virt|pico2` + `-o` + `--disk-out` + `EXTRA_TASKS`) |
-| `bin2s.sh` | raw バイナリ → `.s` データ変換 |
+| `bin2s.sh` | raw バイナリ → `.s` データ変換 (`PREFIX_addr` + `PREFIX_size_value` helper) |
+| `bin2s_incbin.sh` | 同上の `.incbin SIZE "path"` 版。kernel build / self-replicate dumper の wrap.s と同フォーマット |
 | `run_pico2.sh` | Debug Probe 経由で pico2 に flash + UART キャプチャ |
 | `run_pico2_interactive.sh` | build + flash + 双方向 UART コンソール (`make run-pico2`) |
 
@@ -167,6 +168,7 @@ libtc は全タスクが import する user ライブラリ。
 | `parse/`, `sigscan/`, `tcheck/`, `codegen/`, `bc2asm/`, `asm_pass1/`, `asm_pass2/` | `compiler/*.tc` への symlink。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` を渡したときだけビルドされ `/bin/<name>` として mtfs に入る (test_phase7.sh が参照) |
 | `sdprobe/sdprobe.tc` | SD SPI smoke test (CMD0/CMD8 応答 + 線間 crosstalk + bit-bang fallback)。MMIO 直叩き |
 | `tcc/tcc.tc` | OS 内 phase 7 driver。引数に `.tc` を取り `parse → ... → asm_pass2` を sequential spawn、各段の所要時間を `now_us()` で計測。出力は `/sd/a.out`。実機では sh-driven より遅い (詳細 `docs/scaling.md`) |
+| `bin2uf2/bin2uf2.tc` | `tools/bin2uf2.py` の TC port (RP2350 RISC-V family_id 0xE48BFF5A、256 B payload / 512 B block)。fatfs に rewind がないので 2 pass (count + emit)。self-replicate step 4 で /sd/k.bin → /sd/k.uf2 |
 
 ---
 
@@ -237,6 +239,9 @@ libtc は全タスクが import する user ライブラリ。
 | `test_phase7.sh` | phase 7 self-hosted (compile → link → run "Hello, World!" on OS) |
 | `test_pico2.sh` / `test_pico2_hw.sh` | pico2 実機テスト (手動) |
 | `pico2_verify.sh` | pico2 実機で compile 7 段の byte-exact 検証 (手動) |
+| `pico2_self_replicate.sh` | pico2 self-replicate orchestrator (kernel.bin + kernel.uf2 を実機自前で再生成して host gen2 build と md5 一致を検証、手動) |
+| `fixtures/pico2_self_step{1,2,3,4}.sh` | self-replicate の各ステップ fixture (full.s 連結 / asm_pass1 / asm_pass2 / bin2uf2) |
+| `qemu_mr_scale.py` | K11 (mr UART upload hang) qemu virt 再現テスト (`-serial stdio`、`-monitor null`) |
 | `update_golden.sh` | golden 再生成 |
 | `phase3_verify.py` | virt 上で全 9 段 byte-exact 検証 |
 | `pico2_hw_driver.py` | pico2 UART pipeline driver |
