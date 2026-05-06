@@ -218,6 +218,11 @@ do_uart_read__u32__i32:
     .globl do_uart_try_read__u32__i32
 do_uart_try_read__u32__i32:
     li   t0, 0x40070000
+    # Clear UARTECR (OE / BE / FE / PE) so the error flags don't
+    # accumulate. PL011 leaves these set until explicitly cleared,
+    # which can mask the kernel's view of whether we're currently
+    # taking on overruns vs. just seeing stale flags from a past one.
+    sw   zero, 0x04(t0)
     beqz a1, 5f
     mv   t2, a1
     mv   t3, a0

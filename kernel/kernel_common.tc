@@ -415,7 +415,7 @@ var g_rx_parse_pos: i32 = 0;
 //
 // Both mux-on (uart_rx_dispatch) and mux-off (vfs_read fd=0) paths
 // pop from this ring instead of touching do_uart_try_read directly.
-var G_UART_RX_CAP:  i32 = 1024;
+var G_UART_RX_CAP:  i32 = 4096;
 var g_uart_rx_buf:  U8Array = 0 as U8Array;
 var g_uart_rx_head: i32 = 0;
 var g_uart_rx_tail: i32 = 0;

@@ -9,6 +9,14 @@
 // SPI clock to ~6 MHz. After init, fat_block_read/write use CMD17 /
 // CMD24 against block-addressed (SDHC) or byte-addressed (SDSC) LBAs.
 
+// Drain the kernel UART RX ring from inside SD busy-waits. Without
+// this, fat_block_write spends ~10 ms in a single ecall with
+// hardware-cleared mstatus.MIE, the timer trap can't fire, and the
+// PL011 32-byte RX FIFO overflows under sustained input. See K11 in
+// docs/problem.md. uart_rx_drain itself is just a non-blocking PL011
+// FIFO drain into a kernel ring buffer — cheap to call frequently.
+fn uart_rx_drain() -> void;
+
 // ----- MMIO -----
 var SD_RESETS_CLR:    u32 = 0x40023000u32;
 var SD_RESETS_DONE:   u32 = 0x40020008u32;
@@ -29,7 +37,19 @@ fn sd_spi_xfer(b: u8) -> u8 {
     while (peek32(SD_SPI0 + 0x0Cu32) & 0x2u32) == 0u32 { }
     poke32(SD_SPI0 + 0x08u32, b as u32);
     while (peek32(SD_SPI0 + 0x0Cu32) & 0x4u32) == 0u32 { }
-    return peek32(SD_SPI0 + 0x08u32) as u8;
+    var v: u8 = peek32(SD_SPI0 + 0x08u32) as u8;
+    // Drain UART RX every SPI byte. Any SD path (block_read /
+    // block_write / sd_busy_spin / fatfs FAT walk / cluster alloc)
+    // funnels through here, so a single drain hook covers them all.
+    // Without this, fatfs_open during do_spawn (~10 ms of FAT + dir
+    // traffic in M-mode with mstatus.MIE=0) overruns the PL011 FIFO
+    // before mr even starts — that was the actual K11 wedge for
+    // 128 byte uploads, not the data-phase write loop. The drain is
+    // a non-blocking PL011 status read + at most one byte copy
+    // into the kernel ring; ~10 cycles when idle, swamped by the
+    // SPI transfer itself (~10 us at 6 MHz with kernel overhead).
+    uart_rx_drain();
+    return v;
 }
 
 fn sd_cs_low()  -> void { poke32(SD_SIO + 0x20u32, 0x20u32); return; }
@@ -259,7 +279,9 @@ export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
         return -1;
     }
 
-    // Wait while card is busy (MISO held low while writing).
+    // Wait while card is busy (MISO held low while writing). SD CMD24
+    // sector-write completion is typically 1-10 ms at SPI 6 MHz; the
+    // sd_spi_xfer hook keeps the PL011 RX FIFO drained while we wait.
     var w: i32 = 0;
     while w < 1000000 {
         var bb: u8 = sd_spi_xfer(0xFFu8);

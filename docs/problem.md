@@ -125,13 +125,26 @@ MIE=0 で timer が masked のため drain 不能 → K11 が依然再現**
 (実機検証 2026-05-06、`tests/pico2_k11_reproduce.py` で 256 byte
 upload 後 sh が応答せず、UARTRSR の OE flag が立つことを観測)。
 
-**Phase 2 候補 (未着手)**:
-- A: SD/fatfs の busy-wait (block_sd の SPI poll, sd_wait_busy 等) の
-  内側で `uart_rx_drain()` を呼ぶ。narrow + cheap、K11 の主因経路を
-  ピンポイントで救済
-- B: PL011 RX interrupt + ネスト trap。trap_common.s に nested-trap
-  対応 (mscratch 退避 + 専用 nested 用 trap stack) を入れて、ecall
-  実行中も RX IRQ 駆動で drain 可能にする。systemic + 高コスト
+**Phase 2A (2026-05-06、commits: pending)**: narrow drain hooks。
+`block_sd::sd_spi_xfer` と `do_uart_try_read` (platform_pico2.s) に
+処理を追加:
+- `sd_spi_xfer` 末尾で `uart_rx_drain()` を呼ぶ。SD 経路 (block_read /
+  block_write / fat_alloc_cluster の FAT walk / dir_create の dir
+  scan) はすべてここを通るので、SPI 1 byte 毎に drain される
+- `do_uart_try_read` 先頭で UARTECR (0x40070004) に書き込み、PL011
+  の OE/BE/FE/PE flag を毎回 clear。stale な error flag が混乱を生む
+  のを防ぐ
+- ring buffer を 1 KB → 4 KB に拡大、burst 耐性を上げる
+
+実機検証: K11 wedge は **256 → 8 KB upload 改善 (32x)**。tests/
+pico2_k11_reproduce.py で 256 / 1024 / 4096 / 8192 byte 全 PASS。
+16 KB はまだ fail (mr が早期 EOS 検知して残バイトが sh の入力に流れる
+モード — 完全 wedge ではないが期待通りでない)。
+
+**Phase 2B (未着手)**: PL011 RX interrupt + ネスト trap。
+trap_common.s に nested-trap 対応 (mscratch 退避 + 専用 nested 用
+trap stack) を入れて、ecall 実行中も RX IRQ 駆動で drain 可能にする。
+systemic + 高コスト。K11 が完全に必要な場合は実装する
 
 **回避策 (実装済)**:
 - K8/K9: Phase 1 で大きく改善
@@ -170,6 +183,9 @@ qemu 側で `-serial stdio` 単独 (`-monitor null`) を使うこと。
 
 Phase 1 (kernel ring buffer + timer-tick drain) では **timer trap 自体が
 ecall 中は走らないため drain 不能** で K11 は救えない。
+Phase 2A (sd_spi_xfer drain hook) で 8 KB upload まで救済 (256 → 8 KB
+で 32x 改善)。16 KB 以上は依然失敗 — mr が早期 EOS 誤検知して残バイトが
+sh の入力に流れる別モード。詳細は K8+K9 エントリの Phase 2A 記述を参照。
 
 **Phase 2 候補**:
 - A: block_sd の SPI poll loop / sd_wait_busy で `uart_rx_drain()` を
