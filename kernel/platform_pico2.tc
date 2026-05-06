@@ -1,0 +1,69 @@
+// kernel/platform_pico2.tc — Pico 2 (RP2350) UART helpers in TC.
+//
+// Phase 8: takes over PL011 read/write helpers from platform_pico2.s.
+// _start, the IMAGE_DEF block, XOSC bring-up, PLL_SYS bring-up, .data
+// copy, and _set_kern_gp / _park / do_exit stay in asm — they run
+// before the TC environment is initialised. Anything that just walks
+// memory-mapped registers can be plain TC.
+
+var PL011_BASE:  u32 = 0x40070000u32;
+var PL011_DR:    u32 = 0x40070000u32;
+var PL011_ECR:   u32 = 0x40070004u32;
+var PL011_FR:    u32 = 0x40070018u32;
+
+var FR_TXFF: u32 = 0x20u32;  // TX FIFO full
+var FR_RXFE: u32 = 0x10u32;  // RX FIFO empty
+
+export fn do_uart_write(buf: u32, len: i32) -> i32 {
+    var i: i32 = 0;
+    while i < len {
+        // Wait for TX FIFO to have room.
+        var busy: i32 = 1;
+        while busy != 0 {
+            if (peek32(PL011_FR) & FR_TXFF) == 0u32 { busy = 0; }
+        }
+        poke32(PL011_DR, peek8(buf + (i as u32)) as u32);
+        i = i + 1;
+    }
+    return len;
+}
+
+export fn do_uart_read(buf: u32, len: i32) -> i32 {
+    if len <= 0 { return 0; }
+    var got: i32 = 0;
+    var ready: i32 = 0;
+    while ready == 0 {
+        if (peek32(PL011_FR) & FR_RXFE) == 0u32 { ready = 1; }
+    }
+    poke8(buf, peek8(PL011_DR) as u8);
+    got = 1;
+    while got < len {
+        if (peek32(PL011_FR) & FR_RXFE) != 0u32 { return got; }
+        poke8(buf + (got as u32), peek8(PL011_DR) as u8);
+        got = got + 1;
+    }
+    return got;
+}
+
+// Non-blocking. Clears UARTECR on every entry so OE / BE / FE / PE
+// don't accumulate — see kernel UART RX ring buffer notes in
+// kernel_common.tc / docs/problem.md K8+K9.
+export fn do_uart_try_read(buf: u32, len: i32) -> i32 {
+    poke32(PL011_ECR, 0u32);
+    if len <= 0 { return 0; }
+    var got: i32 = 0;
+    while got < len {
+        if (peek32(PL011_FR) & FR_RXFE) != 0u32 { return got; }
+        poke8(buf + (got as u32), peek8(PL011_DR) as u8);
+        got = got + 1;
+    }
+    return got;
+}
+
+export fn do_write(fd: i32, buf: u32, len: i32) -> i32 {
+    return do_uart_write(buf, len);
+}
+
+export fn do_read(fd: i32, buf: u32, len: i32) -> i32 {
+    return do_uart_read(buf, len);
+}

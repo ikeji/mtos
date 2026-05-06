@@ -1,6 +1,7 @@
 // kernel_pico2.tc — preemptive multitasking kernel for RP2350 (Pico 2)
 
 import "kernel_common.tc";
+import "platform_pico2.tc";
 import "block_flash.tc";
 import "block_sd.tc";
 import "fatfs.tc";

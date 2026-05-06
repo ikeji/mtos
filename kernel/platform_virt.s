@@ -33,77 +33,11 @@ _set_kern_gp:
     la   gp, __global_pointer$
     ret
 
-# ===== UART write (16550 TX) =====
-    .globl do_uart_write__u32__i32
-do_uart_write__u32__i32:
-    li   t0, 0x10000000
-    mv   t2, a1
-1:  beqz t2, 2f
-    lbu  t1, 0(a0)
-    sb   t1, 0(t0)
-    addi a0, a0, 1
-    addi t2, t2, -1
-    j    1b
-2:  mv   a0, a1
-    ret
-
-# ===== UART read (16550 RX) =====
-    .globl do_uart_read__u32__i32
-do_uart_read__u32__i32:
-    li   t0, 0x10000000
-    beqz a1, 5f
-    mv   t2, a1
-    mv   t3, a0
-3:  lbu  t1, 5(t0)            # LSR
-    andi t1, t1, 1            # Data Ready
-    beqz t1, 3b
-    lbu  t1, 0(t0)            # RBR
-    sb   t1, 0(t3)
-    addi t3, t3, 1
-    addi t2, t2, -1
-4:  beqz t2, 5f
-    lbu  t1, 5(t0)
-    andi t1, t1, 1
-    beqz t1, 5f
-    lbu  t1, 0(t0)
-    sb   t1, 0(t3)
-    addi t3, t3, 1
-    addi t2, t2, -1
-    j    4b
-5:  sub  a0, a1, t2
-    ret
-
-# Non-blocking UART read. Reads up to `a1` bytes, returns actual count
-# (0 if RX FIFO empty). Used by uart_rx_dispatch (Phase 2 mux).
-    .globl do_uart_try_read__u32__i32
-do_uart_try_read__u32__i32:
-    li   t0, 0x10000000
-    beqz a1, 6f
-    mv   t2, a1
-    mv   t3, a0
-7:  beqz t2, 6f
-    lbu  t1, 5(t0)            # LSR
-    andi t1, t1, 1            # Data Ready
-    beqz t1, 6f
-    lbu  t1, 0(t0)
-    sb   t1, 0(t3)
-    addi t3, t3, 1
-    addi t2, t2, -1
-    j    7b
-6:  sub  a0, a1, t2
-    ret
-
-# ===== Kernel runtime stubs (sys_write/read/exit from kernel itself) =====
-    .globl do_write__i32__u32__i32
-do_write__i32__u32__i32:
-    mv   a0, a1
-    mv   a1, a2
-    j    do_uart_write__u32__i32
-    .globl do_read__i32__u32__i32
-do_read__i32__u32__i32:
-    mv   a0, a1
-    mv   a1, a2
-    j    do_uart_read__u32__i32
+# ===== Kernel runtime stubs =====
+# do_uart_write / do_uart_read / do_uart_try_read / do_write / do_read
+# moved to kernel/platform_virt.tc (Phase 8). Only do_exit needs raw
+# asm — the kernel exit path never returns and must not touch the TC
+# runtime, so we just park here.
     .globl do_exit__i32
 do_exit__i32:
     j    _park

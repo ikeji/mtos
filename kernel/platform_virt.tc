@@ -1,0 +1,62 @@
+// kernel/platform_virt.tc — virt-specific kernel runtime in TC.
+//
+// Phase 8: takes over the UART read/write helpers that used to live
+// in platform_virt.s. _start, _set_kern_gp, and _park stay in asm
+// since they run before the TC environment is initialised. Anything
+// that just walks memory-mapped registers can be plain TC, with
+// peek8/poke8 from trap_common.s as the underlying primitive.
+
+var UART_DR:  u32 = 0x10000000u32;  // 16550 RBR/THR
+var UART_LSR: u32 = 0x10000005u32;  // line status: bit 0 = Data Ready
+
+export fn do_uart_write(buf: u32, len: i32) -> i32 {
+    var i: i32 = 0;
+    while i < len {
+        poke8(UART_DR, peek8(buf + (i as u32)) as u8);
+        i = i + 1;
+    }
+    return len;
+}
+
+// Blocking read: spins until at least one byte arrives, then drains
+// the rest of the FIFO up to `len` bytes. Returns bytes actually read.
+export fn do_uart_read(buf: u32, len: i32) -> i32 {
+    if len <= 0 { return 0; }
+    var got: i32 = 0;
+    // Wait for the first byte.
+    var ready: i32 = 0;
+    while ready == 0 {
+        if (peek8(UART_LSR) as u32 & 1u32) != 0u32 { ready = 1; }
+    }
+    poke8(buf, peek8(UART_DR) as u8);
+    got = 1;
+    // Drain whatever's already queued up, without blocking.
+    while got < len {
+        if (peek8(UART_LSR) as u32 & 1u32) == 0u32 { return got; }
+        poke8(buf + (got as u32), peek8(UART_DR) as u8);
+        got = got + 1;
+    }
+    return got;
+}
+
+// Non-blocking: returns 0 if FIFO empty, else drains up to `len` bytes.
+export fn do_uart_try_read(buf: u32, len: i32) -> i32 {
+    if len <= 0 { return 0; }
+    var got: i32 = 0;
+    while got < len {
+        if (peek8(UART_LSR) as u32 & 1u32) == 0u32 { return got; }
+        poke8(buf + (got as u32), peek8(UART_DR) as u8);
+        got = got + 1;
+    }
+    return got;
+}
+
+// Kernel-side syscall stubs: kernel TC code calls these (e.g.
+// loader.tc → do_write) and they route to the platform UART.
+export fn do_write(fd: i32, buf: u32, len: i32) -> i32 {
+    return do_uart_write(buf, len);
+}
+
+export fn do_read(fd: i32, buf: u32, len: i32) -> i32 {
+    return do_uart_read(buf, len);
+}

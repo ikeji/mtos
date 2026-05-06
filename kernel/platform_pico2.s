@@ -169,86 +169,11 @@ _set_kern_gp:
     li   gp, 0x20000800
     ret
 
-# ===== UART write (PL011 TX) =====
-    .globl do_uart_write__u32__i32
-do_uart_write__u32__i32:
-    li   t0, 0x40070000
-    mv   t2, a1
-1:  beqz t2, 2f
-4:  lw   t1, 0x18(t0)         # UARTFR
-    andi t1, t1, 0x20         # TXFF
-    bnez t1, 4b
-    lbu  t1, 0(a0)
-    sw   t1, 0x00(t0)         # UARTDR
-    addi a0, a0, 1
-    addi t2, t2, -1
-    j    1b
-2:  mv   a0, a1
-    ret
-
-# ===== UART read (PL011 RX) =====
-    .globl do_uart_read__u32__i32
-do_uart_read__u32__i32:
-    li   t0, 0x40070000
-    beqz a1, 8f
-    mv   t2, a1
-    mv   t3, a0
-6:  lw   t1, 0x18(t0)         # UARTFR
-    andi t1, t1, 0x10         # RXFE
-    bnez t1, 6b
-    lbu  t1, 0(t0)            # UARTDR
-    sb   t1, 0(t3)
-    addi t3, t3, 1
-    addi t2, t2, -1
-7:  beqz t2, 8f
-    lw   t1, 0x18(t0)
-    andi t1, t1, 0x10
-    bnez t1, 8f
-    lbu  t1, 0(t0)
-    sb   t1, 0(t3)
-    addi t3, t3, 1
-    addi t2, t2, -1
-    j    7b
-8:  sub  a0, a1, t2
-    ret
-
-# Non-blocking UART read. Reads up to `a1` bytes, returns actual count
-# read (0 if FIFO empty). Used by uart_rx_dispatch (Phase 2 mux) so
-# the kernel can drain frames without blocking on first byte.
-    .globl do_uart_try_read__u32__i32
-do_uart_try_read__u32__i32:
-    li   t0, 0x40070000
-    # Clear UARTECR (OE / BE / FE / PE) so the error flags don't
-    # accumulate. PL011 leaves these set until explicitly cleared,
-    # which can mask the kernel's view of whether we're currently
-    # taking on overruns vs. just seeing stale flags from a past one.
-    sw   zero, 0x04(t0)
-    beqz a1, 5f
-    mv   t2, a1
-    mv   t3, a0
-4:  beqz t2, 5f
-    lw   t1, 0x18(t0)
-    andi t1, t1, 0x10         # RXFE
-    bnez t1, 5f               # FIFO empty → bail
-    lbu  t1, 0(t0)
-    sb   t1, 0(t3)
-    addi t3, t3, 1
-    addi t2, t2, -1
-    j    4b
-5:  sub  a0, a1, t2
-    ret
-
 # ===== Kernel runtime stubs =====
-    .globl do_write__i32__u32__i32
-do_write__i32__u32__i32:
-    mv   a0, a1
-    mv   a1, a2
-    j    do_uart_write__u32__i32
-    .globl do_read__i32__u32__i32
-do_read__i32__u32__i32:
-    mv   a0, a1
-    mv   a1, a2
-    j    do_uart_read__u32__i32
+# do_uart_write / do_uart_read / do_uart_try_read / do_write / do_read
+# moved to kernel/platform_pico2.tc (Phase 8). do_exit stays here
+# since the kernel exit path never returns and must not touch the TC
+# runtime — we just park.
     .globl do_exit__i32
 do_exit__i32:
     j    _park

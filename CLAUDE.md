@@ -316,7 +316,8 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
 **次の候補** (どれも独立):
 
 - **フェーズ 8**: OS 全体を独自言語で書く。残るのは手書き asm のみ
-  (`platform_*.s`, `trap_common.s`, `crt0_*_data.s`, `task_crt0.s`)。
+  (`platform_*.s` の boot/CSR 部分、`trap_common.s`, `crt0_*_data.s`,
+  `task_crt0.s`)。
   - 2026-05-06 (a): `tools/bin2uf2.py` を `tools/bin2uf2.tc` に port、
     `build/gen2/bin2uf2` (RV32 ELF + qemu-riscv32) で kernel build /
     self-replicate / qemu_bin2uf2_test 全部置換。byte-exact (md5
@@ -333,6 +334,14 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
     追加、host runtime arena を 48 → 96 MB + bucket 12/13 容量を増強
     (約 100 ファイル × 最大 300 KB の disk-extra が同時に in-memory
     で保持できるよう)
+  - 2026-05-06 (c): `platform_virt.s` (109 行) と `platform_pico2.s`
+    (254 行) の UART R/W helpers (do_uart_write / do_uart_read /
+    do_uart_try_read / do_write / do_read) を `kernel/platform_virt.tc`
+    と `kernel/platform_pico2.tc` に TC 化。`peek8`/`poke8` 経由で
+    16550 / PL011 の memory-mapped レジスタを叩く。残存 asm は boot
+    (`_start`、CSR 初期化、`_set_kern_gp`、`_park`、`do_exit`、IMAGE_DEF
+    block、XOSC / PLL_SYS bring-up、.data → SRAM コピー)。asm 363
+    → 222 行 (-141)、新 TC 131 行
 - **K11 (mr upload hang) の根本原因調査**: 現在は boot-time dumper で
   迂回済だが、UART 大容量転送が device をハングさせる原因は未特定。
   `tests/qemu_mr_scale.py` が qemu virt 上で再現を試みるが qemu 単独
