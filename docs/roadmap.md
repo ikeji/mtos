@@ -337,7 +337,9 @@ K7 解決の決め手 3 点:
       `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` で
       end-to-end 自動化、host gen2 build と byte-exact 一致した
       kernel.bin + kernel.uf2 を pico2 が自前で生成。最新版で
-      ~36 min (REFRESH skip + asm_pass1 cat-3x 撤廃)。
+      ~26 min (REFRESH 込み) / ~12 min (no REFRESH)。
+      Pipeline 短縮の経緯: v6 ~55 min → v8 ~50 min (cat-3x 撤廃) →
+      v9 ~36 min (REFRESH skip) → v10 ~26 min (fatfs FAT 書き込みキャッシュ)。
 
       ```
       host   kernel.bin md5: 026d825ca32e4d40a67b182505c36d48

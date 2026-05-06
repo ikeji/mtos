@@ -110,6 +110,14 @@ device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
   同じソースから生成済みなら `REFRESH_KERN_MODS=0` (default) で
   step 0a-d を skip でき、~14 分短縮 (~50 min → ~36 min)。byte-exact
   は維持。ソースを触ったときだけ `REFRESH_KERN_MODS=1` で再生成。
+- **fatfs FAT セクタ書き込みキャッシュ** (commit 27ec588): 連続する
+  クラスタ割り当てで fat_get_entry / fat_set_entry が同じ FAT セクタを
+  毎回 read-modify-write していた (FAT1 + FAT2 で 4 SD ops/cluster) 部分を
+  per-sector write-back cache に置き換え。fatfs_close / fatfs_delete
+  で flush。実機 v10 検証: ~50 min → ~26 min (REFRESH 込みで 1.9× 速)。
+  step 1 cat (302→78 s, 3.9×)、step 2 asm_pass1 (311→97 s, 3.2×)、
+  step 0c kern_leaves (323→105 s, 3.0×) が特に速くなる。byte-exact
+  維持 (md5 `5dc55910...` host == device)。
 - **dumper 1 KB content probe** (commit 60050f7): mtfs 先頭 64 B
   だけだと superblock layout が同じ別ビルドで誤判定するので 1 KB
   (= superblock + 16 inode entries) に拡大、disk-extra.img の
