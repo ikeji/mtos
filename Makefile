@@ -58,6 +58,15 @@ build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) tools/collect_imports.sh tool
 	./compile-gen1.sh -o $@ $<
 	./tools/tc_deps_to_d.sh $@ $< > $@.d
 
+# Phase 8: mkfs host tool ported to TC. Reads a directory tree and
+# emits a flat MyTinyFS image, byte-exact with tools/mkfs.py
+# (including its 4-byte-per-real-inode tail truncation so existing
+# md5 fixtures still match). Uses statx (291) for path stat — qemu
+# RISC-V user mode doesn't implement fstat (80) or newfstatat (79).
+build/gen2/mkfs: tools/mkfs.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh bootstrap/crt0.s bootstrap/runtime_syscall.c | build/gen2
+	./compile-gen1.sh -o $@ $<
+	./tools/tc_deps_to_d.sh $@ $< > $@.d
+
 gen2-tools: $(GEN2_TOOLS)
 
 # .d の内容を取り込む。Phase B で導入。初回ビルドでは存在しないので
@@ -210,7 +219,7 @@ ALL_TASK_BINS    := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
 
 DISK_STATIC_DEPS := tests/phase7_hello.tc tests/phase7_min.tc \
     tests/phase7_hello_world.tc kernel/tasks/task_crt0.s \
-    kernel/tasks/task_data.s tools/mkfs.py
+    kernel/tasks/task_data.s build/gen2/mkfs
 
 # disk.img は kernel/kern.conf があれば /etc/kern.conf としてステージする
 # (なければカーネル側のハードコード init にフォールバック)。
@@ -272,7 +281,7 @@ build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S)
 	if [ -n "$(DISK_KERN_CONF)" ] && [ -f "$(DISK_KERN_CONF)" ]; then \
 	    mkdir -p "$$_r/etc" && cp "$(DISK_KERN_CONF)" "$$_r/etc/kern.conf"; \
 	fi && \
-	python3 tools/mkfs.py $@ "$$_r" >&2 && \
+	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
 build/kernel/disk.img build/kernel/disk-demo.img: tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh
@@ -357,7 +366,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/fixtures/pico2_self_step2.sh "$$_r/pico2_self_step2.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_self_step3.sh "$$_r/pico2_self_step3.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_self_step4.sh "$$_r/pico2_self_step4.sh" 2>/dev/null || true; } && \
-	python3 tools/mkfs.py $@ "$$_r" >&2 && \
+	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
 # ----- Kernel binary -----

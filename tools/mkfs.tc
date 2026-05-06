@@ -1,0 +1,687 @@
+// tools/mkfs.tc — MyTinyFS image builder, host port.
+//
+// TC port of tools/mkfs.py for Phase 8. Walks a host directory tree
+// at <rootdir>, packs each file/subdir into a 64-byte mtfs inode,
+// and writes a flat disk image to <output>. Byte-exact with the
+// Python original — same DFS order (alphabetical sort per dir),
+// same superblock layout (see docs/filesystem.md), same 1-block
+// inode-table minimum for empty-ish trees.
+//
+// Usage:
+//   mkfs <output> <rootdir>
+//
+// Built by compile-gen1.sh into build/gen2/mkfs (RV32 ELF) and run
+// via qemu-riscv32 from the kernel build path. Linux syscalls used:
+// openat, read, write, close, getdents64, newfstatat (61, 79).
+
+fn do_openat(dirfd: i32, path: String,        flags: i32) -> i32;
+fn do_openat(dirfd: i32, path: StringLiteral, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+fn do_getdents64(fd: i32, buf: u32, count: i32) -> i32;
+fn do_statx(dirfd: i32, path: String, flags: i32, mask: i32, sxbuf: u32) -> i32;
+
+var BLOCK_SIZE: i32 = 512;
+var INODE_SIZE: i32 = 64;
+var INODES_PER_BLOCK: i32 = 8;       // 512 / 64
+var MAGIC: u32 = 0x5346544Du32;      // 'MTFS' little-endian
+var FLAG_FILE: u32 = 0u32;
+var FLAG_DIR:  u32 = 1u32;
+// (0 - 100) = -100. We compute it inline (`0 - 100`) at every call
+// site since the codegen path that initialises globals from a
+// constant expression here ended up storing 0, not -100.
+var O_RDONLY:    i32 = 0;
+var O_WRONLY:    i32 = 1;
+var O_CREAT:     i32 = 64;
+var O_TRUNC:     i32 = 512;
+var O_DIRECTORY: i32 = 0x10000;
+// linux struct statx fields:
+//   28: stx_mode  (u16)
+//   40: stx_size  (u64, low 32 bits used here)
+var STX_MODE_OFFSET: i32 = 28;
+var STX_SIZE_OFFSET: i32 = 40;
+var STATX_BASIC: i32 = 0x7ff;  // mode + size + ino + ...
+var S_IFMT:  u32 = 0xF000u32;
+var S_IFDIR: u32 = 0x4000u32;
+var S_IFREG: u32 = 0x8000u32;
+
+// ===== Entry list (we need 2 passes: collect + emit) =====
+
+struct Entry {
+    name: U8Array,
+    name_len: i32,
+    parent_inode: i32,
+    is_dir: i32,
+    data: U8Array,
+    data_len: i32,
+    start_block: i32,  // filled in build_image
+}
+
+// Used by list_dir_sorted to gather + sort names before we know
+// which entries are dirs (and thus need recursion). U8Array inside
+// a struct gives us auto-generated DirNameArray with set/get/delete.
+struct DirName {
+    name: U8Array,
+    nlen: i32,
+}
+
+// ===== Output buffer =====
+
+var g_out: U8Array = 0 as U8Array;
+var g_out_size: i32 = 0;
+// Logical (un-truncated) total_blocks, kept for the meta-line print
+// so we report the same number as the Python original.
+var g_total_blocks: i32 = 0;
+
+fn out_set8(off: i32, v: u8) -> void {
+    set(g_out, off, v);
+    return;
+}
+fn out_set32(off: i32, v: u32) -> void {
+    set(g_out, off,     (v        & 0xFFu32) as u8);
+    set(g_out, off + 1, ((v >>  8u32) & 0xFFu32) as u8);
+    set(g_out, off + 2, ((v >> 16u32) & 0xFFu32) as u8);
+    set(g_out, off + 3, ((v >> 24u32) & 0xFFu32) as u8);
+    return;
+}
+
+// ===== StringBuffer for path append =====
+
+fn err(s: StringLiteral) -> void {
+    var n: i32 = len(s);
+    var buf: U8Array = U8Array((n) as u32);
+    var i: i32 = 0;
+    while i < n { set(buf, i, get(s, i)); i = i + 1; }
+    sys_write(2, buf, n);
+    delete(buf);
+    return;
+}
+
+fn err_int(v: i32) -> void {
+    var buf: U8Array = U8Array(16);
+    var neg: i32 = 0;
+    var x: i32 = v;
+    if x < 0 { neg = 1; x = 0 - x; }
+    var n: i32 = 0;
+    if x == 0 { set(buf, 0, '0' as u8); n = 1; }
+    else {
+        var digits: U8Array = U8Array(12);
+        var k: i32 = 0;
+        while x > 0 {
+            set(digits, k, ((x % 10) + 48) as u8);
+            x = x / 10;
+            k = k + 1;
+        }
+        if neg == 1 { set(buf, 0, '-' as u8); n = 1; }
+        var j: i32 = k - 1;
+        while j >= 0 {
+            set(buf, n, get(digits, j));
+            n = n + 1;
+            j = j - 1;
+        }
+        delete(digits);
+    }
+    sys_write(2, buf, n);
+    delete(buf);
+    return;
+}
+
+// Build a String layout (4-byte count + bytes, NUL-terminated) on
+// the heap. Caller delete()s.
+fn make_path(parent: u32, parent_len: i32, name: u32, name_len: i32) -> u32 {
+    // Total len = parent_len + 1 (slash) + name_len, plus 4 (count) + 1 (NUL).
+    var total: i32 = parent_len + 1 + name_len;
+    var buf: U8Array = U8Array((total + 1) as u32);
+    var addr: u32 = buf as u32;
+    // Header: count = total
+    poke32(addr, total as u32);
+    var data: u32 = addr + 4u32;
+    var i: i32 = 0;
+    while i < parent_len {
+        poke8(data + (i as u32), peek8(parent + (i as u32)));
+        i = i + 1;
+    }
+    poke8(data + (parent_len as u32), '/' as u8);
+    var j: i32 = 0;
+    while j < name_len {
+        poke8(data + ((parent_len + 1 + j) as u32), peek8(name + (j as u32)));
+        j = j + 1;
+    }
+    poke8(data + (total as u32), 0u8);
+    // We return a String object; the U8Array header was poked correctly.
+    return addr;
+}
+
+// Stat helper: statx-based path stat. Returns 0 on success. Writes
+// mode + size into out args. statx (291) is the only path stat
+// qemu-riscv32 user mode actually implements — fstat (80) and
+// newfstatat (79) both return -ENOSYS.
+fn stat_path(path_addr: u32, path_len: i32,
+             out_mode_addr: u32, out_size_addr: u32) -> i32 {
+    var pbuf: U8Array = U8Array((path_len + 1) as u32);
+    poke32(pbuf as u32, path_len as u32);
+    var i: i32 = 0;
+    while i < path_len {
+        poke8(pbuf as u32 + 4u32 + (i as u32), peek8(path_addr + (i as u32)));
+        i = i + 1;
+    }
+    poke8(pbuf as u32 + 4u32 + (path_len as u32), 0u8);
+    var path_str: String = pbuf as u32 as String;
+    var sxbuf: U8Array = U8Array(256);
+    var rc: i32 = do_statx((0 - 100), path_str, 0, STATX_BASIC,
+                           sxbuf as u32 + 4u32);
+    delete(pbuf);
+    if rc != 0 {
+        delete(sxbuf);
+        return rc;
+    }
+    var sb: u32 = sxbuf as u32 + 4u32;
+    // stx_mode is a u16 at offset 28.
+    var mode: u32 = (peek8(sb + 28u32) as u32)
+                  | ((peek8(sb + 29u32) as u32) << 8u32);
+    // stx_size: u64 @ 40, only low 32 bits matter for mtfs files.
+    var size: u32 = (peek8(sb + 40u32) as u32)
+                  | ((peek8(sb + 41u32) as u32) << 8u32)
+                  | ((peek8(sb + 42u32) as u32) << 16u32)
+                  | ((peek8(sb + 43u32) as u32) << 24u32);
+    poke32(out_mode_addr, mode);
+    poke32(out_size_addr, size);
+    delete(sxbuf);
+    return 0;
+}
+
+// Read an entire file into a freshly-allocated U8Array. Returns the
+// array; caller delete()s. data_len_out written via poke32.
+fn read_file(path_addr: u32, path_len: i32,
+             expected_size: i32, data_len_out: u32) -> U8Array {
+    var pbuf: U8Array = U8Array((path_len + 1) as u32);
+    poke32(pbuf as u32, path_len as u32);
+    var i: i32 = 0;
+    while i < path_len {
+        poke8(pbuf as u32 + 4u32 + (i as u32), peek8(path_addr + (i as u32)));
+        i = i + 1;
+    }
+    poke8(pbuf as u32 + 4u32 + (path_len as u32), 0u8);
+    var path_str: String = pbuf as u32 as String;
+    var fd: i32 = do_openat((0 - 100), path_str, O_RDONLY);
+    delete(pbuf);
+    if fd < 0 {
+        poke32(data_len_out, 0u32);
+        return U8Array(0);
+    }
+    var buf: U8Array = U8Array((expected_size + 1) as u32);
+    var got: i32 = 0;
+    var done: i32 = 0;
+    while got < expected_size && done == 0 {
+        var n: i32 = sys_read(fd, buf, expected_size - got);
+        // sys_read writes from offset 0; we need to compact later.
+        // But here we read the whole thing into buf; if short, retry.
+        if n <= 0 { done = 1; }
+        else {
+            // Move bytes from [0..n) to [got..got+n) — only when we
+            // need a continuation. On the first iteration got==0 so
+            // they're already in place.
+            if got > 0 {
+                var k: i32 = 0;
+                while k < n {
+                    set(buf, got + k, get(buf, k));
+                    k = k + 1;
+                }
+            }
+            got = got + n;
+        }
+    }
+    do_close(fd);
+    poke32(data_len_out, got as u32);
+    return buf;
+}
+
+// ===== EntryArray globals (so functions can append cleanly) =====
+
+var g_entries: EntryArray = 0 as EntryArray;
+var g_entry_count: i32 = 0;
+var g_entry_cap:   i32 = 0;
+var g_num_files: i32 = 0;
+var g_num_dirs:  i32 = 0;
+
+fn entries_grow() -> void {
+    var new_cap: i32 = 16;
+    if g_entry_cap > 0 { new_cap = g_entry_cap * 2; }
+    var na: EntryArray = EntryArray(new_cap as u32);
+    var i: i32 = 0;
+    while i < g_entry_count {
+        set(na, i, get(g_entries, i));
+        i = i + 1;
+    }
+    if g_entry_cap > 0 { delete(g_entries); }
+    g_entries = na;
+    g_entry_cap = new_cap;
+    return;
+}
+
+fn entries_push(e: Entry) -> void {
+    if g_entry_count >= g_entry_cap { entries_grow(); }
+    set(g_entries, g_entry_count, e);
+    g_entry_count = g_entry_count + 1;
+    return;
+}
+
+fn make_entry(name_addr: u32, name_len: i32, parent: i32, is_dir: i32,
+              data: U8Array, data_len: i32) -> Entry {
+    var name_buf: U8Array = U8Array((name_len) as u32);
+    var i: i32 = 0;
+    while i < name_len {
+        set(name_buf, i, peek8(name_addr + (i as u32)));
+        i = i + 1;
+    }
+    var e: Entry = Entry(name_buf, name_len, parent, is_dir, data, data_len, 0);
+    return e;
+}
+
+// ===== Sorted directory listing =====
+//
+// getdents64 returns entries in filesystem order — to match Python's
+// sorted(os.listdir) we collect names then bubble-sort them. n is
+// always small (a typical kernel disk has < 200 entries per dir).
+
+var DIRENT_BUF_SIZE: i32 = 8192;
+
+// Compare two byte slices (memcmp-like).
+fn name_cmp(a: U8Array, alen: i32, b: U8Array, blen: i32) -> i32 {
+    var k: i32 = 0;
+    var lim: i32 = alen;
+    if blen < lim { lim = blen; }
+    while k < lim {
+        var ca: u8 = get(a, k);
+        var cb: u8 = get(b, k);
+        if ca < cb { return 0 - 1; }
+        if ca > cb { return 1; }
+        k = k + 1;
+    }
+    if alen < blen { return 0 - 1; }
+    if alen > blen { return 1; }
+    return 0;
+}
+
+// Scan directory at path → fill `out` (DirNameArray). Skips "."
+// and "..". Returns count, or -1 on open error.
+fn list_dir_sorted(path_addr: u32, path_len: i32,
+                   out: DirNameArray, max_entries: i32) -> i32 {
+    var pbuf: U8Array = U8Array((path_len + 1) as u32);
+    poke32(pbuf as u32, path_len as u32);
+    var i: i32 = 0;
+    while i < path_len {
+        poke8(pbuf as u32 + 4u32 + (i as u32), peek8(path_addr + (i as u32)));
+        i = i + 1;
+    }
+    poke8(pbuf as u32 + 4u32 + (path_len as u32), 0u8);
+    var path_str: String = pbuf as u32 as String;
+    var fd: i32 = do_openat((0 - 100), path_str, O_RDONLY | O_DIRECTORY);
+    delete(pbuf);
+    if fd < 0 { return 0 - 1; }
+
+    var dbuf: U8Array = U8Array((DIRENT_BUF_SIZE) as u32);
+    var n_entries: i32 = 0;
+    var done: i32 = 0;
+    while done == 0 {
+        var n: i32 = do_getdents64(fd, dbuf as u32 + 4u32, DIRENT_BUF_SIZE);
+        if n <= 0 { done = 1; }
+        else {
+            var off: i32 = 0;
+            while off < n {
+                // d_reclen at offset 16 (u16 LE)
+                var reclen: i32 = (get(dbuf, off + 16) as i32)
+                                | ((get(dbuf, off + 17) as i32) << 8);
+                if reclen <= 0 { done = 1; off = n; }
+                else {
+                    // d_name starts at offset 19, NUL-terminated.
+                    var name_off: i32 = off + 19;
+                    var nl: i32 = 0;
+                    while name_off + nl < off + reclen
+                          && get(dbuf, name_off + nl) != 0u8 {
+                        nl = nl + 1;
+                    }
+                    // Skip "." and ".."
+                    var skip: i32 = 0;
+                    if nl == 1 && get(dbuf, name_off) == '.' as u8 {
+                        skip = 1;
+                    }
+                    if nl == 2 && get(dbuf, name_off) == '.' as u8
+                                 && get(dbuf, name_off + 1) == '.' as u8 {
+                        skip = 1;
+                    }
+                    if skip == 0 && n_entries < max_entries {
+                        var nm: U8Array = U8Array((nl) as u32);
+                        var k: i32 = 0;
+                        while k < nl {
+                            set(nm, k, get(dbuf, name_off + k));
+                            k = k + 1;
+                        }
+                        var dn: DirName = DirName(nm, nl);
+                        set(out, n_entries, dn);
+                        n_entries = n_entries + 1;
+                    }
+                    off = off + reclen;
+                }
+            }
+        }
+    }
+    do_close(fd);
+    delete(dbuf);
+
+    // Bubble sort (n is small in practice).
+    var i2: i32 = 0;
+    while i2 < n_entries {
+        var j: i32 = i2 + 1;
+        while j < n_entries {
+            var di: DirName = get(out, i2);
+            var dj: DirName = get(out, j);
+            if name_cmp(name(di), nlen(di), name(dj), nlen(dj)) > 0 {
+                set(out, i2, dj);
+                set(out, j, di);
+            }
+            j = j + 1;
+        }
+        i2 = i2 + 1;
+    }
+    return n_entries;
+}
+
+// Recursively walk dir at `path_addr` and append every entry found.
+// `parent_inode` is the inode number to record in each entry's
+// parent field (root = 0). Returns 0 on success.
+fn collect_tree(path_addr: u32, path_len: i32, parent_inode: i32) -> i32 {
+    var MAX_PER_DIR: i32 = 256;
+    var dlist: DirNameArray = DirNameArray((MAX_PER_DIR) as u32);
+    var n: i32 = list_dir_sorted(path_addr, path_len, dlist, MAX_PER_DIR);
+    if n < 0 { delete(dlist); return 0 - 1; }
+
+    var i: i32 = 0;
+    while i < n {
+        var dn: DirName = get(dlist, i);
+        var nm: U8Array = name(dn);
+        var nl: i32 = nlen(dn);
+        // Build full path for stat / read / recursion.
+        var child_path_addr: u32 = make_path(path_addr, path_len,
+                                             nm as u32 + 4u32, nl);
+        var child_len: i32 = path_len + 1 + nl;
+        var mode_buf: U8Array = U8Array(4);
+        var size_buf: U8Array = U8Array(4);
+        var rc: i32 = stat_path(child_path_addr + 4u32, child_len,
+                                mode_buf as u32 + 4u32,
+                                size_buf as u32 + 4u32);
+        if rc != 0 {
+            err("mkfs: stat failed: ");
+            sys_write(2, nm, nl);
+            err("\n");
+            delete(mode_buf); delete(size_buf);
+            poke32(child_path_addr, 0u32);  // explicit reset
+            delete(child_path_addr as U8Array);
+            i = i + 1;
+        } else {
+            var mode: u32 = peek32(mode_buf as u32 + 4u32);
+            var size: u32 = peek32(size_buf as u32 + 4u32);
+            var fmt: u32 = mode & S_IFMT;
+            if fmt == S_IFDIR {
+                // Append dir entry, recurse.
+                var empty: U8Array = U8Array(0);
+                var e: Entry = make_entry(nm as u32 + 4u32, nl,
+                                          parent_inode, 1,
+                                          empty, 0);
+                entries_push(e);
+                g_num_dirs = g_num_dirs + 1;
+                var my_inode: i32 = g_entry_count;  // 1-based, root=0
+                collect_tree(child_path_addr + 4u32, child_len, my_inode);
+            } else {
+                if fmt == S_IFREG {
+                    var data_len_buf: U8Array = U8Array(4);
+                    var data: U8Array = read_file(child_path_addr + 4u32,
+                                                  child_len, size as i32,
+                                                  data_len_buf as u32 + 4u32);
+                    var dlen: i32 = peek32(data_len_buf as u32 + 4u32) as i32;
+                    var e2: Entry = make_entry(nm as u32 + 4u32, nl,
+                                               parent_inode, 0,
+                                               data, dlen);
+                    entries_push(e2);
+                    g_num_files = g_num_files + 1;
+                    delete(data_len_buf);
+                }
+                // Silently skip symlinks / other types.
+            }
+            delete(mode_buf); delete(size_buf);
+            delete(child_path_addr as U8Array);
+            i = i + 1;
+        }
+    }
+
+    // Free per-dir name buffers; the DirNameArray itself owns them.
+    var k: i32 = 0;
+    while k < n {
+        delete(name(get(dlist, k)));
+        k = k + 1;
+    }
+    delete(dlist);
+    return 0;
+}
+
+// ===== Image assembly =====
+
+fn pack_inode(off: i32, name: U8Array, name_len: i32,
+              parent: u32, size: u32, start_block: u32, flags: u32) -> void {
+    // 32-byte name (NUL-padded), then u32 parent, u32 size,
+    // u32 start_block, u32 flags, then 12 bytes pad.
+    var i: i32 = 0;
+    while i < name_len {
+        out_set8(off + i, get(name, i));
+        i = i + 1;
+    }
+    while i < 32 {
+        out_set8(off + i, 0u8);
+        i = i + 1;
+    }
+    out_set32(off + 32, parent);
+    out_set32(off + 36, size);
+    out_set32(off + 40, start_block);
+    out_set32(off + 44, flags);
+    out_set8(off + 48, 0u8); out_set8(off + 49, 0u8);
+    out_set8(off + 50, 0u8); out_set8(off + 51, 0u8);
+    out_set8(off + 52, 0u8); out_set8(off + 53, 0u8);
+    out_set8(off + 54, 0u8); out_set8(off + 55, 0u8);
+    out_set8(off + 56, 0u8); out_set8(off + 57, 0u8);
+    out_set8(off + 58, 0u8); out_set8(off + 59, 0u8);
+    out_set8(off + 60, 0u8); out_set8(off + 61, 0u8);
+    out_set8(off + 62, 0u8); out_set8(off + 63, 0u8);
+    return;
+}
+
+fn build_image() -> void {
+    // Pass 1: assign data blocks.
+    var num_non_root: i32 = g_entry_count;
+    var blocks: i32 = (num_non_root + 1 + INODES_PER_BLOCK - 1) / INODES_PER_BLOCK;
+    if blocks < 1 { blocks = 1; }
+    var inode_count: i32 = blocks * INODES_PER_BLOCK;
+    var inode_start: i32 = 1;
+    var data_start:  i32 = inode_start + blocks;
+
+    var cur_data_block: i32 = 0;
+    var i: i32 = 0;
+    while i < g_entry_count {
+        var e: Entry = get(g_entries, i);
+        if is_dir(e) == 0 {
+            start_block(e, cur_data_block);
+            set(g_entries, i, e);
+            var nb: i32 = (data_len(e) + BLOCK_SIZE - 1) / BLOCK_SIZE;
+            cur_data_block = cur_data_block + nb;
+        }
+        i = i + 1;
+    }
+
+    var total_data_blocks: i32 = cur_data_block;
+    var total_blocks: i32 = data_start + total_data_blocks;
+    if total_blocks == data_start { total_blocks = data_start + 1; }
+
+    // tools/mkfs.py's `struct.pack("<32sIIII12x", ...)` packs 60
+    // bytes (32 + 4*4 + 12) per inode but the assignment site uses
+    // a 64-byte slice. Python bytearray slice-assignment with a
+    // shorter source SHRINKS the array by the difference, so the
+    // final image is `4 * num_real_inodes` bytes shorter than
+    // `total_blocks * BLOCK_SIZE`. We replicate the same trailing
+    // truncation so TC mkfs is byte-exact with the Python original.
+    var num_real_inodes: i32 = g_entry_count + 1;  // +1 for root
+    g_total_blocks = total_blocks;
+    g_out_size = total_blocks * BLOCK_SIZE - 4 * num_real_inodes;
+    g_out = U8Array((g_out_size) as u32);
+    var z: i32 = 0;
+    while z < g_out_size {
+        set(g_out, z, 0u8);
+        z = z + 1;
+    }
+
+    // Superblock (block 0, 7 × u32 fields, the rest zero).
+    out_set32(0,  MAGIC);
+    out_set32(4,  1u32);  // VERSION
+    out_set32(8,  BLOCK_SIZE as u32);
+    out_set32(12, total_blocks as u32);
+    out_set32(16, inode_count as u32);
+    out_set32(20, inode_start as u32);
+    out_set32(24, data_start as u32);
+
+    // Root inode (index 0): name "/", parent=0, size=0, start=0, flags=DIR.
+    var root_name: U8Array = U8Array(1);
+    set(root_name, 0, '/' as u8);
+    var root_off: i32 = inode_start * BLOCK_SIZE;
+    pack_inode(root_off, root_name, 1, 0u32, 0u32, 0u32, FLAG_DIR);
+    delete(root_name);
+
+    // Non-root inodes in DFS order (matches collect_tree).
+    var idx: i32 = 0;
+    while idx < g_entry_count {
+        var e: Entry = get(g_entries, idx);
+        var off: i32 = inode_start * BLOCK_SIZE + (idx + 1) * INODE_SIZE;
+        var flags_val: u32 = FLAG_FILE;
+        if is_dir(e) != 0 { flags_val = FLAG_DIR; }
+        pack_inode(off, name(e), name_len(e),
+                   parent_inode(e) as u32,
+                   data_len(e) as u32,
+                   start_block(e) as u32,
+                   flags_val);
+        idx = idx + 1;
+    }
+
+    // File data.
+    idx = 0;
+    while idx < g_entry_count {
+        var e3: Entry = get(g_entries, idx);
+        if is_dir(e3) == 0 {
+            var off2: i32 = (data_start + start_block(e3)) * BLOCK_SIZE;
+            var dlen: i32 = data_len(e3);
+            var d: U8Array = data(e3);
+            var k: i32 = 0;
+            while k < dlen {
+                out_set8(off2 + k, get(d, k));
+                k = k + 1;
+            }
+        }
+        idx = idx + 1;
+    }
+    return;
+}
+
+fn write_out(path_str: String) -> i32 {
+    var fd: i32 = do_openat((0 - 100), path_str, O_WRONLY | O_CREAT | O_TRUNC);
+    if fd < 0 {
+        err("mkfs: cannot open output\n");
+        return 1;
+    }
+    var written: i32 = 0;
+    while written < g_out_size {
+        var chunk: i32 = 4096;
+        if g_out_size - written < chunk { chunk = g_out_size - written; }
+        var tmp: U8Array = U8Array((chunk) as u32);
+        var k: i32 = 0;
+        while k < chunk {
+            set(tmp, k, get(g_out, written + k));
+            k = k + 1;
+        }
+        var w: i32 = sys_write(fd, tmp, chunk);
+        delete(tmp);
+        if w <= 0 {
+            err("mkfs: short write\n");
+            do_close(fd);
+            return 1;
+        }
+        written = written + w;
+    }
+    do_close(fd);
+    return 0;
+}
+
+fn print_meta(out_path: String, total_blocks: i32, inode_count: i32,
+              inode_start: i32, data_start: i32) -> void {
+    err("mkfs: ");
+    sys_write(2, out_path as u32 as U8Array, len(out_path));
+    err(" blocks="); err_int(total_blocks);
+    err(" inodes="); err_int(inode_count);
+    err(" inode_start="); err_int(inode_start);
+    err(" data_start="); err_int(data_start);
+    err(" files="); err_int(g_num_files);
+    err(" dirs="); err_int(g_num_dirs);
+    err("\n");
+    return;
+}
+
+fn main() -> i32 {
+    err("usage: mkfs <output> <rootdir>\n");
+    return 1;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var nargs: i32 = len(argv);
+    if nargs != 3 {
+        err("usage: mkfs <output> <rootdir>\n");
+        return 1;
+    }
+    var out_path: String = get(argv, 1);
+    var root_path: String = get(argv, 2);
+
+    // Verify rootdir is actually a directory.
+    var mode_buf: U8Array = U8Array(4);
+    var size_buf: U8Array = U8Array(4);
+    var rc: i32 = stat_path(root_path as u32 + 4u32, len(root_path),
+                            mode_buf as u32 + 4u32, size_buf as u32 + 4u32);
+    if rc != 0 {
+        err("mkfs: cannot stat rootdir, rc=");
+        err_int(rc);
+        err(" path=");
+        sys_write(2, root_path as u32 as U8Array, len(root_path));
+        err("\n");
+        return 1;
+    }
+    var rmode: u32 = peek32(mode_buf as u32 + 4u32);
+    delete(mode_buf); delete(size_buf);
+    if (rmode & S_IFMT) != S_IFDIR {
+        err("mkfs: rootdir is not a directory\n");
+        return 1;
+    }
+
+    g_entry_count = 0;
+    g_entry_cap   = 0;
+    g_num_files   = 0;
+    g_num_dirs    = 0;
+    if collect_tree(root_path as u32 + 4u32, len(root_path), 0) != 0 {
+        err("mkfs: collect_tree failed\n");
+        return 1;
+    }
+
+    build_image();
+
+    if write_out(out_path) != 0 { return 1; }
+
+    // Re-derive layout numbers for the meta line.
+    var blocks2: i32 = (g_entry_count + 1 + INODES_PER_BLOCK - 1) / INODES_PER_BLOCK;
+    if blocks2 < 1 { blocks2 = 1; }
+    var inode_count2: i32 = blocks2 * INODES_PER_BLOCK;
+    var inode_start2: i32 = 1;
+    var data_start2:  i32 = inode_start2 + blocks2;
+    print_meta(out_path, g_total_blocks, inode_count2, inode_start2, data_start2);
+    return 0;
+}

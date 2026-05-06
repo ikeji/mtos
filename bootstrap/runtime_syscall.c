@@ -77,7 +77,7 @@ static const int pool_size[NPOOLS] = {
 };
 static const int pool_count[NPOOLS] = {
     32768, 32768, 32768, 128, 64, 256, 64, 64, 32, 16,
-    32, 8, 8, 4, 8, 4, 4, 4, 2
+    32, 8, 32, 16, 8, 4, 4, 4, 2
 };
 /* bucket 2 (64-byte) was bumped from 256 to 32768 to hold the
    per-AstNode struct instances created by ast_node.tc. Each AstNode
@@ -85,7 +85,10 @@ static const int pool_count[NPOOLS] = {
    into bucket 2. typecheck.tc routinely allocates 6-7K nodes
    compiling the larger compiler files. Total bucket-2 footprint:
    64 * 32768 = 2 MB out of the 48 MB heap arena. */
-static char heap_mem[50331648]; /* 48MB arena */
+static char heap_mem[100663296]; /* 96MB arena (was 48; bumped 2026-05-06
+                                    so tools/mkfs.tc can hold all
+                                    ~3.3 MB of disk-extra task .bin
+                                    file contents in memory at once) */
 static char *pool_free[NPOOLS];
 static char *pool_base[NPOOLS];
 static char *pool_end[NPOOLS];

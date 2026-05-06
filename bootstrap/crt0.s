@@ -92,6 +92,47 @@ do_close__i32:
     ecall
     ret
 
+    /* getdents64 — Linux SYS_getdents64 (61). Used by tools/mkfs.tc
+     * to walk a host directory tree.
+     *   a0 = fd, a1 = buf addr, a2 = count
+     * Returns bytes filled (>0), 0 (end), or -errno. */
+    .globl do_getdents64__i32__u32__i32
+do_getdents64__i32__u32__i32:
+    li   a7, 61
+    ecall
+    ret
+
+    /* statx — Linux SYS_statx (291). Modern path-based stat. Works
+     * under qemu-riscv32 user where 79 (newfstatat) and 80 (fstat)
+     * both return -ENOSYS. struct statx is 256 bytes; mkfs reads
+     * stx_mode (u16 @ 28) and stx_size (u64 @ 40, low half).
+     *   a0 = dirfd
+     *   a1 = path StringArray addr (skip 4-byte count prefix)
+     *   a2 = flags (0 = follow symlinks)
+     *   a3 = mask  (STATX_BASIC_STATS = 0x7ff)
+     *   a4 = statxbuf addr */
+    .globl do_statx__i32__String__i32__i32__u32
+do_statx__i32__String__i32__i32__u32:
+    addi a1, a1, 4
+    li   a7, 291
+    ecall
+    ret
+
+    /* poke8/poke16 byte-typed variants — runtime_syscall.c provides
+     * the u32→u32 forms (poke8__u32__u32 etc.); these are shims for
+     * TC fn signatures that declare u8/u16 as the value type. The
+     * kernel's trap_common.s already has them, but tools/mkfs.tc
+     * only links with the host runtime, so we add them here. */
+    .globl poke8__u32__u8
+poke8__u32__u8:
+    sb   a1, 0(a0)
+    ret
+
+    .globl poke16__u32__u16
+poke16__u32__u16:
+    sh   a1, 0(a0)
+    ret
+
     .bss
     .align 4
     .space 8192

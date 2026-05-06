@@ -315,15 +315,24 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
 
 **次の候補** (どれも独立):
 
-- **フェーズ 8**: OS 全体を独自言語で書く。残りは手書き asm
-  (`platform_*.s`, `trap_common.s`, `crt0_*_data.s`, `task_crt0.s`) と
-  Python ツール (`tools/mkfs.py`)。
-  - 2026-05-06: `tools/bin2uf2.py` を `tools/bin2uf2.tc` に port、
+- **フェーズ 8**: OS 全体を独自言語で書く。残るのは手書き asm のみ
+  (`platform_*.s`, `trap_common.s`, `crt0_*_data.s`, `task_crt0.s`)。
+  - 2026-05-06 (a): `tools/bin2uf2.py` を `tools/bin2uf2.tc` に port、
     `build/gen2/bin2uf2` (RV32 ELF + qemu-riscv32) で kernel build /
     self-replicate / qemu_bin2uf2_test 全部置換。byte-exact (md5
     完全一致) 確認済み。`bootstrap/crt0.s` の `do_openat` stub に
     `mode=0644` を仕込んで O_CREAT 経路でも正しい権限のファイルが
     作れるようにした
+  - 2026-05-06 (b): `tools/mkfs.py` を `tools/mkfs.tc` に port、
+    `build/gen2/mkfs` で kernel disk image build を置換。byte-exact
+    (Python の inode-pack 60-byte バグも忠実に再現するため、
+    実画像末尾を `4 * num_real_inodes` バイト truncate)。qemu-riscv32
+    user mode は `newfstatat` (79) / `fstat` (80) 未実装なので path
+    stat は `statx` (291) を使用。`bootstrap/crt0.s` に `do_statx` /
+    `do_getdents64` / `poke8__u32__u8` / `poke16__u32__u16` の stub
+    追加、host runtime arena を 48 → 96 MB + bucket 12/13 容量を増強
+    (約 100 ファイル × 最大 300 KB の disk-extra が同時に in-memory
+    で保持できるよう)
 - **K11 (mr upload hang) の根本原因調査**: 現在は boot-time dumper で
   迂回済だが、UART 大容量転送が device をハングさせる原因は未特定。
   `tests/qemu_mr_scale.py` が qemu virt 上で再現を試みるが qemu 単独
@@ -600,9 +609,13 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       import (string_buffer.tc 等) が正しく compiler/
                       配下から引ける
 tools/      ホスト側ツール
-  mkfs.py             MyTinyFS (mtfs) ディスクイメージ生成 (Python、フェーズ 8 で
-                      TC 化予定)。mkfs.py <output> <rootdir> でディレクトリを
-                      再帰的に取り込み、1 階層のサブディレクトリを dir inode 化する
+  mkfs.tc             MyTinyFS (mtfs) ディスクイメージ生成。フェーズ 8
+                      (2026-05-06) で `tools/mkfs.py` を TC port。
+                      `build/gen2/mkfs` (RV32 ELF) を qemu-riscv32 経由で
+                      kernel build が呼ぶ。Python の inode-pack 60 byte
+                      バグ込みで byte-exact。statx (291) で path stat。
+                      `mkfs <output> <rootdir>` でディレクトリを再帰的に
+                      取り込み、1 階層のサブディレクトリを dir inode 化
   bin2uf2.tc          raw bin → UF2 (family_id=0xe48bff5a) コンバータ。
                       フェーズ 8 (2026-05-06) で `tools/bin2uf2.py` を TC port。
                       `build/gen2/bin2uf2` (RV32 ELF) を `qemu-riscv32` 経由で
@@ -917,7 +930,7 @@ GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target pico2 -o kernel.uf2
    tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` を渡すと phase 7
    のコンパイラタスク群を追加できる。起動時 seed task は現在 sh のみ
    (hello/hello2 を足したいときは kern.conf 経由)
-3. `tools/mkfs.py` で `/bin/<task>` + `/hello.txt` + phase 7 の test 入力
+3. `tools/mkfs.tc` (`build/gen2/mkfs` を qemu-riscv32) で `/bin/<task>` + `/hello.txt` + phase 7 の test 入力
    (`/phase7.tc` / `/hw.tc`) + OS 側 linker 用 `/prelude.s` (= `; raw` +
    `.word 32768; .word 8192` + task_crt0.s + cached runtime.s) +
    `/prelude_tail.s` (= task_data.s) を含む mtfs イメージを生成

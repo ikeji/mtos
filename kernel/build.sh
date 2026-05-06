@@ -348,7 +348,11 @@ if [ -n "$EXTRA_TASKS" ]; then
     echo "M7: staged /src/*.tc" >&2
 fi
 
-python3 "$ROOT_DIR/tools/mkfs.py" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
+if [ ! -x "$ROOT_DIR/build/gen2/mkfs" ]; then
+    echo "kernel/build.sh: build/gen2/mkfs missing — run 'make build/gen2/mkfs' first" >&2
+    exit 1
+fi
+qemu-riscv32 "$ROOT_DIR/build/gen2/mkfs" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 
 # Optional: copy the mtfs image out for callers that need it (e.g.
 # tests/test_os.sh passes it to qemu via -drive).
