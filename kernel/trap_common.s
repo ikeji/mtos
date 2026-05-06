@@ -407,27 +407,6 @@ _task_exit_trampoline:
     lw   gp, 56(t0)
     ret
 
-# ===== Default handlers (overridden by TC) =====
-    .globl trap_handler__u32__u32
-trap_handler__u32__u32:
-    ret
-    .globl sched_task_exit
-sched_task_exit:
-    li   a0, 0
-    ret
-    .globl sys_exec_handler__u32__u32__u32__u32
-sys_exec_handler__u32__u32__u32__u32:
-    li   a0, 0
-    ret
-    .globl sys_spawn_handler__u32__u32__u32__u32
-sys_spawn_handler__u32__u32__u32__u32:
-    li   a0, -1
-    ret
-    .globl sys_wait_handler__i32
-sys_wait_handler__i32:
-    li   a0, 0
-    ret
-
 # ===== set_switch_frame(addr: u32) =====
     .globl set_switch_frame__u32
 set_switch_frame__u32:
