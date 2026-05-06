@@ -106,6 +106,10 @@ device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
   /sd/p2_in.s の中間ファイル (13 MB / 305 s) を撤廃。
   実機 v8 検証: kernel.bin md5 `7805e7348...` / kernel.uf2 md5
   `d4be5e9e...` が host と完全一致 (~50 min total、v6 比 ~5 min 短縮)
+- **REFRESH skip** (v9 検証): /sd 上の .s 群が直近の build と
+  同じソースから生成済みなら `REFRESH_KERN_MODS=0` (default) で
+  step 0a-d を skip でき、~14 分短縮 (~50 min → ~36 min)。byte-exact
+  は維持。ソースを触ったときだけ `REFRESH_KERN_MODS=1` で再生成。
 - **dumper 1 KB content probe** (commit 60050f7): mtfs 先頭 64 B
   だけだと superblock layout が同じ別ビルドで誤判定するので 1 KB
   (= superblock + 16 inode entries) に拡大、disk-extra.img の
