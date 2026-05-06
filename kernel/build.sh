@@ -401,7 +401,14 @@ case "$TARGET" in
         cp "$TMP/kernel.bin" "$OUTFILE"
         ;;
     pico2)
-        python3 "$ROOT_DIR/tools/bin2uf2.py" "$TMP/kernel.bin" "$OUTFILE"
+        # Phase 8: bin2uf2 ported to TC at tools/bin2uf2.tc, built to
+        # build/gen2/bin2uf2 (RV32 ELF) and run via qemu-riscv32.
+        # tools/bin2uf2.py has been retired.
+        if [ ! -x "$ROOT_DIR/build/gen2/bin2uf2" ]; then
+            echo "kernel/build.sh: build/gen2/bin2uf2 missing — run 'make build/gen2/bin2uf2' first" >&2
+            exit 1
+        fi
+        qemu-riscv32 "$ROOT_DIR/build/gen2/bin2uf2" "$TMP/kernel.bin" "$OUTFILE"
         ;;
 esac
 

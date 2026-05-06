@@ -177,7 +177,7 @@ libtc は全タスクが import する user ライブラリ。
 | ファイル | 説明 |
 |---|---|
 | `mkfs.py` | MyTinyFS ディスクイメージ生成 (Python)。`mkfs.py <output> <rootdir>` でディレクトリを再帰的に取り込み、1 階層のサブディレクトリを dir inode 化 |
-| `bin2uf2.py` | raw bin → UF2 (family_id=0xe48bff5a) コンバータ。`kernel/build.sh --target pico2` が内部で呼ぶ |
+| `bin2uf2.tc` | raw bin → UF2 (family_id=0xe48bff5a) コンバータ。フェーズ 8 (2026-05-06) で `tools/bin2uf2.py` を TC port、`build/gen2/bin2uf2` (RV32 ELF + qemu-riscv32) で kernel build / self-replicate / qemu_bin2uf2_test が呼ぶ |
 | `collect_imports.sh` | TC ファイルの transitive import を解決して `.d` fragment に出す |
 | `tc_deps_to_d.sh` | Make 用 `.d` 依存ファイルを生成 |
 

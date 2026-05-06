@@ -50,6 +50,14 @@ build/gen2/%: compiler/%.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps
 	./compile-gen1.sh -o $@ $<
 	./tools/tc_deps_to_d.sh $@ $< > $@.d
 
+# Phase 8: bin2uf2 host tool ported to TC. Built from tools/bin2uf2.tc
+# the same way Gen2 tools are. Produces an RV32 ELF run via
+# qemu-riscv32 — replaces the python3 tools/bin2uf2.py invocation in
+# the kernel build path.
+build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh bootstrap/crt0.s bootstrap/runtime_syscall.c | build/gen2
+	./compile-gen1.sh -o $@ $<
+	./tools/tc_deps_to_d.sh $@ $< > $@.d
+
 gen2-tools: $(GEN2_TOOLS)
 
 # .d の内容を取り込む。Phase B で導入。初回ビルドでは存在しないので
@@ -384,17 +392,17 @@ define PICO2_KERNEL_RECIPE
 	_ksz=$$(wc -c < "$$_tmp/kernel.bin") && \
 	_dsz=$$(wc -c < $(PICO2_DISK)) && \
 	printf '  kernel.bin: %s bytes, disk: %s bytes\n' "$$_ksz" "$$_dsz" >&2 && \
-	python3 tools/bin2uf2.py "$$_tmp/kernel.bin" $@ && \
+	qemu-riscv32 build/gen2/bin2uf2 "$$_tmp/kernel.bin" $@ && \
 	rm -rf "$$_tmp"
 endef
 
 build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
-    kernel/bin2s.sh tools/bin2uf2.py | build/kernel
+    kernel/bin2s.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 build/kernel/pico2_kernel_extra.uf2: PICO2_DISK := build/kernel/disk-extra.img
 build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-extra.img \
-    kernel/bin2s.sh tools/bin2uf2.py | build/kernel
+    kernel/bin2s.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # demo UF2: disk-demo.img の /etc/kern.conf で hello + hello2 + sh を
@@ -402,7 +410,7 @@ build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-ex
 # 動くことを確認できる。
 build/kernel/pico2_kernel_demo.uf2: PICO2_DISK := build/kernel/disk-demo.img
 build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-demo.img \
-    kernel/bin2s.sh tools/bin2uf2.py | build/kernel
+    kernel/bin2s.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 virt-kernel:  build/kernel/virt_kernel.bin

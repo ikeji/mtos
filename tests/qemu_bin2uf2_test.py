@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """qemu_bin2uf2_test.py — verify the on-device bin2uf2 task
-produces UF2 bytes identical to tools/bin2uf2.py.
+produces UF2 bytes identical to the host TC port (tools/bin2uf2.tc
+built to build/gen2/bin2uf2 and run via qemu-riscv32).
 
 Boots qemu virt with disk-extra.img, uploads a small kernel.bin
 fixture into /tmp via mr (no Ctrl-A trap since we use plain
@@ -106,14 +107,16 @@ try:
     m = re.search(rb"^([0-9a-f]{32})  /tmp/out\.uf2", out, re.MULTILINE)
     dev_md5 = m.group(1).decode() if m else None
 
-    # Host reference: run tools/bin2uf2.py on the same fixture.
+    # Host reference: run the Phase 8 TC port of bin2uf2 (via
+    # qemu-riscv32) on the same fixture. tools/bin2uf2.py is no
+    # longer the reference now that it's been retired.
     import tempfile
     with tempfile.NamedTemporaryFile(delete=False) as tf:
         tf.write(fixture)
         tf_path = tf.name
     host_uf2 = tf_path + ".uf2"
-    subprocess.check_call([sys.executable,
-                           os.path.join(ROOT, "tools/bin2uf2.py"),
+    subprocess.check_call(["qemu-riscv32",
+                           os.path.join(ROOT, "build/gen2/bin2uf2"),
                            tf_path, host_uf2])
     with open(host_uf2, "rb") as f:
         host_md5_uf2 = hashlib.md5(f.read()).hexdigest()

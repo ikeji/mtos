@@ -1,0 +1,173 @@
+// tools/bin2uf2.tc — raw bin → UF2 converter (host build).
+//
+// TC port of tools/bin2uf2.py for Phase 8 (no Python on the build).
+// Produced as a Linux RV32 ELF via compile-gen1.sh and run under
+// qemu-riscv32 from the kernel build path. UF2 layout matches the
+// Python original exactly so md5 stays identical.
+//
+// Usage:
+//   bin2uf2 input.bin output.uf2 [base_hex]
+//
+// The pico2 task variant lives at kernel/tasks/bin2uf2/bin2uf2.tc
+// (uses fatfs paths instead of host syscalls). Both share the
+// constants below.
+
+fn do_openat(dirfd: i32, path: String,        flags: i32) -> i32;
+fn do_openat(dirfd: i32, path: StringLiteral, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+var UF2_MAGIC_START0: u32 = 0x0A324655u32;
+var UF2_MAGIC_START1: u32 = 0x9E5D5157u32;
+var UF2_MAGIC_END:    u32 = 0x0AB16F30u32;
+var UF2_FLAG_FAMILY:  u32 = 0x00002000u32;
+var RP2350_FAMILY_ID: u32 = 0xE48BFF5Au32;
+var PAYLOAD_SIZE:     i32 = 256;
+var BLOCK_SIZE:       i32 = 512;
+
+fn write_le32(buf: U8Array, off: i32, v: u32) -> void {
+    set(buf, off,     (v        & 0xFFu32) as u8);
+    set(buf, off + 1, ((v >>  8u32) & 0xFFu32) as u8);
+    set(buf, off + 2, ((v >> 16u32) & 0xFFu32) as u8);
+    set(buf, off + 3, ((v >> 24u32) & 0xFFu32) as u8);
+    return;
+}
+
+fn parse_hex(s: String) -> u32 {
+    var n: i32 = len(s);
+    var v: u32 = 0u32;
+    var i: i32 = 0;
+    if n >= 2 && get(s, 0) == '0' as u8
+        && (get(s, 1) == 'x' as u8 || get(s, 1) == 'X' as u8) {
+        i = 2;
+    }
+    while i < n {
+        var c: u8 = get(s, i);
+        var d: u32 = 0u32;
+        if c >= '0' as u8 && c <= '9' as u8 { d = (c as u32) - 48u32; }
+        else if c >= 'a' as u8 && c <= 'f' as u8 { d = (c as u32) - 87u32; }
+        else if c >= 'A' as u8 && c <= 'F' as u8 { d = (c as u32) - 55u32; }
+        else { return 0u32; }
+        v = v * 16u32 + d;
+        i = i + 1;
+    }
+    return v;
+}
+
+fn read_full(fd: i32, buf: U8Array, want: i32) -> i32 {
+    var got: i32 = 0;
+    var done: i32 = 0;
+    while got < want && done == 0 {
+        var tmp: U8Array = U8Array((want - got) as u32);
+        var n: i32 = sys_read(fd, tmp, want - got);
+        if n <= 0 { done = 1; }
+        else {
+            var i: i32 = 0;
+            while i < n {
+                set(buf, got + i, get(tmp, i));
+                i = i + 1;
+            }
+            got = got + n;
+        }
+        delete(tmp);
+    }
+    return got;
+}
+
+fn err(s: StringLiteral) -> void {
+    var n: i32 = len(s);
+    var buf: U8Array = U8Array((n) as u32);
+    var i: i32 = 0;
+    while i < n { set(buf, i, get(s, i)); i = i + 1; }
+    sys_write(2, buf, n);
+    delete(buf);
+    return;
+}
+
+fn run(in_path: String, out_path: String, base_addr: u32) -> i32 {
+    // First pass: count total bytes.
+    var fd_in: i32 = do_openat(0 - 100, in_path, 0);  // AT_FDCWD, O_RDONLY
+    if fd_in < 0 {
+        err("bin2uf2: cannot open input\n");
+        return 1;
+    }
+    var scratch: U8Array = U8Array((PAYLOAD_SIZE) as u32);
+    var total_bytes: i32 = 0;
+    var done_count: i32 = 0;
+    while done_count == 0 {
+        var n: i32 = sys_read(fd_in, scratch, PAYLOAD_SIZE);
+        if n <= 0 { done_count = 1; }
+        else { total_bytes = total_bytes + n; }
+    }
+    do_close(fd_in);
+
+    var n_blocks: i32 = (total_bytes + PAYLOAD_SIZE - 1) / PAYLOAD_SIZE;
+
+    // Second pass: emit blocks.
+    fd_in = do_openat(0 - 100, in_path, 0);
+    if fd_in < 0 {
+        err("bin2uf2: cannot reopen input\n");
+        delete(scratch);
+        return 1;
+    }
+    // Linux openat flags: O_WRONLY=1, O_CREAT=0x40, O_TRUNC=0x200 → 0x241 = 577
+    var fd_out: i32 = do_openat(0 - 100, out_path, 577);
+    if fd_out < 0 {
+        err("bin2uf2: cannot open output\n");
+        do_close(fd_in);
+        delete(scratch);
+        return 1;
+    }
+    var block: U8Array = U8Array((BLOCK_SIZE) as u32);
+    var i: i32 = 0;
+    while i < n_blocks {
+        write_le32(block, 0,  UF2_MAGIC_START0);
+        write_le32(block, 4,  UF2_MAGIC_START1);
+        write_le32(block, 8,  UF2_FLAG_FAMILY);
+        write_le32(block, 12, base_addr + (i as u32) * (PAYLOAD_SIZE as u32));
+        write_le32(block, 16, PAYLOAD_SIZE as u32);
+        write_le32(block, 20, i as u32);
+        write_le32(block, 24, n_blocks as u32);
+        write_le32(block, 28, RP2350_FAMILY_ID);
+        var got: i32 = read_full(fd_in, scratch, PAYLOAD_SIZE);
+        var k: i32 = 0;
+        while k < got {
+            set(block, 32 + k, get(scratch, k));
+            k = k + 1;
+        }
+        while k < PAYLOAD_SIZE {
+            set(block, 32 + k, 0u8);
+            k = k + 1;
+        }
+        var p: i32 = 32 + PAYLOAD_SIZE;
+        while p < BLOCK_SIZE - 4 {
+            set(block, p, 0u8);
+            p = p + 1;
+        }
+        write_le32(block, BLOCK_SIZE - 4, UF2_MAGIC_END);
+        sys_write(fd_out, block, BLOCK_SIZE);
+        i = i + 1;
+    }
+    do_close(fd_in);
+    do_close(fd_out);
+    delete(scratch);
+    delete(block);
+    return 0;
+}
+
+// argv-less fallback so crt0's weak alias (main__StringArray → main)
+// resolves at link time even on argv-aware tools.
+fn main() -> i32 {
+    err("usage: bin2uf2 input.bin output.uf2 [base_hex]\n");
+    return 1;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var nargs: i32 = len(argv);
+    if nargs < 3 {
+        err("usage: bin2uf2 input.bin output.uf2 [base_hex]\n");
+        return 1;
+    }
+    var base: u32 = 0x10000000u32;
+    if nargs >= 4 { base = parse_hex(get(argv, 3)); }
+    return run(get(argv, 1), get(argv, 2), base);
+}

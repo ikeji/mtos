@@ -77,7 +77,11 @@ do_exit__i32:
     .globl do_openat__i32__String__i32
 do_openat__i32__String__i32:
     addi a1, a1, 4
-    li   a3, 0
+    /* mode = 0644. Ignored unless O_CREAT is set, but matters for the
+     * file-creation path used by tools/bin2uf2.tc — without an
+     * explicit mode the kernel sees uninitialised garbage in a3 and
+     * created files end up with permissions 0. */
+    li   a3, 0644
     li   a7, 56
     ecall
     ret

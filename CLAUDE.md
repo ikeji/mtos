@@ -315,9 +315,15 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
 
 **次の候補** (どれも独立):
 
-- **フェーズ 8**: OS 全体を独自言語で書く。今は手書き asm
-  (`platform_*.s`, `trap_common.s`, `crt0_*_data.s`) と Python ツール
-  (`tools/mkfs.py`, `tools/bin2uf2.py` ← TC 版あり) が残るのみ
+- **フェーズ 8**: OS 全体を独自言語で書く。残りは手書き asm
+  (`platform_*.s`, `trap_common.s`, `crt0_*_data.s`, `task_crt0.s`) と
+  Python ツール (`tools/mkfs.py`)。
+  - 2026-05-06: `tools/bin2uf2.py` を `tools/bin2uf2.tc` に port、
+    `build/gen2/bin2uf2` (RV32 ELF + qemu-riscv32) で kernel build /
+    self-replicate / qemu_bin2uf2_test 全部置換。byte-exact (md5
+    完全一致) 確認済み。`bootstrap/crt0.s` の `do_openat` stub に
+    `mode=0644` を仕込んで O_CREAT 経路でも正しい権限のファイルが
+    作れるようにした
 - **K11 (mr upload hang) の根本原因調査**: 現在は boot-time dumper で
   迂回済だが、UART 大容量転送が device をハングさせる原因は未特定。
   `tests/qemu_mr_scale.py` が qemu virt 上で再現を試みるが qemu 単独
@@ -594,11 +600,14 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
                       import (string_buffer.tc 等) が正しく compiler/
                       配下から引ける
 tools/      ホスト側ツール
-  mkfs.py             MyTinyFS (mtfs) ディスクイメージ生成 (Python)
-                      mkfs.py <output> <rootdir> でディレクトリを再帰的に
-                      取り込み、1 階層のサブディレクトリを dir inode 化する
-  bin2uf2.py          raw bin → UF2 (family_id=0xe48bff5a) コンバータ
-                      kernel/build.sh --target pico2 が内部で呼ぶ
+  mkfs.py             MyTinyFS (mtfs) ディスクイメージ生成 (Python、フェーズ 8 で
+                      TC 化予定)。mkfs.py <output> <rootdir> でディレクトリを
+                      再帰的に取り込み、1 階層のサブディレクトリを dir inode 化する
+  bin2uf2.tc          raw bin → UF2 (family_id=0xe48bff5a) コンバータ。
+                      フェーズ 8 (2026-05-06) で `tools/bin2uf2.py` を TC port。
+                      `build/gen2/bin2uf2` (RV32 ELF) を `qemu-riscv32` 経由で
+                      呼び、kernel/build.sh / Makefile / self-replicate /
+                      qemu_bin2uf2_test の全経路で byte-exact 一致を確認済み
 ```
 
 ## ビルド＆実行
@@ -649,8 +658,9 @@ Ctrl-a x で終了 (qemu と同じ escape)。
 
 カーネルを Pico 2 向けにビルドするには `kernel/build.sh --target pico2`
 を使う。「カーネル / 統一ビルド」節 (後述) を参照。
-`tools/bin2uf2.py` が raw bin → UF2 (family_id=0xe48bff5a) 変換を担当する
-共通ユーティリティで、カーネルビルドが内部で呼ぶ。
+`tools/bin2uf2.tc` (フェーズ 8 で TC port、2026-05-06) が raw bin → UF2
+(family_id=0xe48bff5a) 変換を担当し、`build/gen2/bin2uf2` (RV32 ELF) を
+`qemu-riscv32` 経由でカーネルビルドが呼ぶ。
 
 bring-up 当初は `pico2/hello.tc` というカーネル抜きの standalone hello
 world と専用の `compile-pico2.sh` / `pico2/crt0_pico2.s` を持っていたが、
