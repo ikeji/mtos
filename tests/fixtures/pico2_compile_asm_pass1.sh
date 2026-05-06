@@ -1,4 +1,4 @@
-# Compile compiler/asm_pass1.tc + asm_common + 3 base imports on pico2.
+# Compile compiler/asm_pass2.tc + asm_common + 3 base imports on pico2.
 # asm_common is itself ~3000 lines and pulls in string_buffer +
 # source_reader + strlib, so we end up tcheck'ing a very large chain.
 parse < /src/string_buffer.tc > /sd/sb.ast
@@ -9,7 +9,7 @@ parse < /src/strlib.tc > /sd/sl.ast
 sigscan < /sd/sl.ast > /sd/sl.th
 parse < /src/asm_common.tc > /sd/ac.ast
 sigscan < /sd/ac.ast > /sd/ac.th
-parse < /src/asm_pass1.tc > /sd/t.ast
+parse < /src/asm_pass2.tc > /sd/t.ast
 sigscan < /sd/t.ast > /sd/t.th
 tcheck --tgth /sd/sb.th --tgt /sd/sb.ast --out /sd/sb.tast
 codegen < /sd/sb.tast > /sd/sb.bc
@@ -29,7 +29,7 @@ tcheck --exth /sd/t_imports.th --tgth /sd/t.th --tgt /sd/t.ast --out /sd/t.tast
 codegen < /sd/t.tast > /sd/t.bc
 bc2asm < /sd/t.bc > /sd/t.s
 cat /sd/t.s /sd/ac.s /sd/sb.s /sd/sr.s /sd/sl.s /prelude_tail.s > /sd/user.s
-asm_pass1 --load-idx /prelude.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --lab-out /sd/t.lab /sd/user.s
+asm_pass2 --load-idx /prelude.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --lab-out /sd/t.lab /sd/user.s
 asm_pass3 --lab /sd/t.lab --out /sd/ap1.bin
 md5sum /sd/ap1.bin
 echo COMPILE_ASM_PASS1_DONE

@@ -17,7 +17,7 @@
            (Gen2==Gen3 の自己ホスト検証は tests/test_gen3.sh で CI 化)
 
 ステップ3.5: 独自言語製プログラムを実機 RP2350 で直接動かす  [kernel 完了]
-           asm_pass1/pass2 をセクション並べ替えリンカとして動かし、
+           asm_pass2/pass2 をセクション並べ替えリンカとして動かし、
            gp 相対 la で Flash/SRAM 分離に対応。初期 bring-up の
            standalone pico2/hello.tc でコンパイルパスを通した後、
            カーネルが RP2350 で動くようになり同ディレクトリは削除
@@ -124,7 +124,7 @@ C言語でフルパイプラインを実装し、動作を検証する。
       typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB。
       Phase 1 (typecheck 分割 → sigscan + tcheck)、Phase 2 (asm 分割
       → asm-pass1 + asm-pass2)、Phase 3 (codegen / bc2asm in-place
-      shrinks)、Phase 4/5 (asm_pass2 shrink) をすべて完了:
+      shrinks)、Phase 4/5 (asm_pass3 shrink) をすべて完了:
       - sigscan ≈ 10 KB、tcheck ≈ 75〜252 KB (~9x)
       - codegen ≈ 80〜252 KB (~2x)
       - bc2asm ≈ 120〜126 KB (~11x)
@@ -137,7 +137,7 @@ C言語でフルパイプラインを実装し、動作を検証する。
 - [x] **Gen2 toolchain migration (2026-04-15)**: compile-gen2.sh /
       compile-gen3.sh / kernel/build.sh / tests/test_common.sh /
       test_gen3.sh / tc_run.sh を新パイプライン (sigscan + tcheck +
-      asm_pass1 + asm_pass2) に切り替え、`compiler/typecheck.tc` と
+      asm_pass2 + asm_pass3) に切り替え、`compiler/typecheck.tc` と
       `compiler/asm.tc` を削除 (+ kernel/tasks/typecheck/, kernel/
       tasks/asm/, tc_asm.sh, tests/test_split.sh も削除)。bcrun.c に
       `kmalloc` / `kfree` / `km_dump_peak` の builtin stub を追加
@@ -147,7 +147,7 @@ C言語でフルパイプラインを実装し、動作を検証する。
       dynamic sys_spawn / sys_wait + sh (UART interactive) が実機で
       動作確認済。tests/test_pico2.sh が UART 経由で `catfile\n` /
       `launcher\n` / `quit\n` を sh に送って実機検証 (2 件 PASS)。
-      Phase 4/5 で asm_pass2 peak が 280 KB まで落ちたので compiler
+      Phase 4/5 で asm_pass3 peak が 280 KB まで落ちたので compiler
       task 群はすべて 480 KB arena に収まる。残件: sh から compiler
       task を spawn してパイプラインを一周するところ (問題 #K7 part
       3 debug)
@@ -277,7 +277,7 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 
 K7 解決の決め手 3 点:
 1. `kernel/block_sd.tc` + MBR 対応 fatfs で SD カードを永続ストレージ化
-2. PLL_SYS bring-up で CPU 150 MHz 化 (asm_pass1 単独 310 → 27 秒、
+2. PLL_SYS bring-up で CPU 150 MHz 化 (asm_pass2 単独 310 → 27 秒、
    11.5×)
 3. `tests/pico2_pipeline_drive.py` でプロンプト同期 UART (PL011 RX
    FIFO 32 byte overflow を回避)
@@ -301,25 +301,25 @@ K7 解決の決め手 3 点:
       (`km_dump_peak`)、task_crt0.s がタスク終了時に
       `[kmem peak=... live=...]` を stderr にダンプ
 - [x] **C-1**: parse / sigscan / tcheck / codegen / bc2asm /
-      asm_pass1 / asm_pass2 を `kernel/tasks/<name>/<name>.tc`
+      asm_pass2 / asm_pass3 を `kernel/tasks/<name>/<name>.tc`
       シンボリックリンクで `EXTRA_TASKS` 経由でビルドし、
       sh から中間ファイル経由のパイプラインを回す
 - [x] **M4**: OS 上で parse が単段動く
 - [x] **M5**: parse → sigscan → tcheck → codegen → bc2asm を中間
       ファイルで繋いで `.s` を得る
 - [x] **M6**: `cat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s`
-      を asm_pass1/pass2 に通して raw binary を生成、`/tmp/hw` に
+      を asm_pass2/pass2 に通して raw binary を生成、`/tmp/hw` に
       書き出して sh の絶対パス対応で実行。Hello World が OS 上で
       自己コンパイル + 自己実行できることを確認
       (`tests/test_phase7.sh`)
 - [x] **パイプライン 100 KB 計画 (Phase 1 + 2 + 3)**: sigscan /
-      tcheck / asm_pass1 / asm_pass2 を新設、codegen / bc2asm を
+      tcheck / asm_pass2 / asm_pass3 を新設、codegen / bc2asm を
       in-place で shrink。test_phase7.sh が sigscan + tcheck +
-      asm_pass1 + asm_pass2 の full split pipeline で Hello World
+      asm_pass2 + asm_pass3 の full split pipeline で Hello World
       を完走。詳細は `docs/task/pipeline_100kb.md`
 - [x] **Gen2 toolchain migration**: compile-gen2.sh / compile-gen3.sh
       / kernel/build.sh / tests/test_common.sh / test_gen3.sh /
-      tc_run.sh を sigscan + tcheck + asm_pass1 + asm_pass2 に
+      tc_run.sh を sigscan + tcheck + asm_pass2 + asm_pass3 に
       切り替え、`compiler/typecheck.tc` / `compiler/asm.tc`
       (+ 関連 symlink / test_split.sh / tc_asm.sh) を削除
 - [x] **C-2**: `sys_pipe` (ecall 222) + `sys_spawn_fds` (ecall 219)
@@ -356,8 +356,8 @@ K7 解決の決め手 3 点:
       - boot dumper: `_mtfs_image_*` → /sd/dx.img + /sd/wrap.s (3 s、
         サイズ + 先頭 64 B コンテンツ照合で skip 判定)
       - step 1: cat → /sd/full.s = 4.3 MB (302 s)
-      - step 2: asm_pass1 + cat → /sd/p2_in.s = 13 MB (805 s)
-      - step 3: asm_pass2 → /sd/k.bin = 3.8 MB (800 s、kmem 203 KB)
+      - step 2: asm_pass2 + cat → /sd/p2_in.s = 13 MB (805 s)
+      - step 3: asm_pass3 → /sd/k.bin = 3.8 MB (800 s、kmem 203 KB)
       - step 4: `bin2uf2` → /sd/k.uf2 = 7.6 MB (758 s)
 
       実装の決め手:
@@ -380,16 +380,16 @@ K7 解決の決め手 3 点:
       sources 変更後に /sd の .s 群が古いと byte-exact 不一致)。
       上の 2026-05-06 milestone で REFRESH 込みフローに昇格。
 - [x] **Pico 2 self-built kernel.bin (no-disk variant)** (2026-05-05):
-      `asm_pass2` がフルカーネル input (16 ファイル concat — platform_pico2.s
+      `asm_pass3` がフルカーネル input (16 ファイル concat — platform_pico2.s
       + trap_common.s + runtime.s + 10 カーネルモジュール .s +
       crt0_pico2_data.s + 空 mtfs wrapper) を pico2 実機で処理し、
       host gen2 build と byte-exact 一致 (md5 `f21e5f2e018ee4102040de06f58fd216`、
       270 KB)。3-step orchestrator
       `tests/pico2_link_kernel_3step.sh` で end-to-end 自動化、
       step ごとに openocd reset を挟む (cat 多用後の kernel arena
-      fragmentation で asm_pass2 の 288 KB ram_size alloc が
+      fragmentation で asm_pass3 の 288 KB ram_size alloc が
       失敗するため)。所要時間 ~20 分、ピーク kmem 200 KB、
-      asm_pass2 単独 531 s。残件: `.incbin` で `/sd/disk.img` を埋めた
+      asm_pass3 単独 531 s。残件: `.incbin` で `/sd/disk.img` を埋めた
       full-disk variant (md5 `709a6f88189c0fa17e5dc548d4bdb785`) —
       1.4 MB upload を手動 SD swap で staging する必要あり。
       副次的に判明した制約 2 件:
@@ -409,12 +409,12 @@ K7 解決の決め手 3 点:
       trap_common.s / crt0_pico2_data.s (手書き asm、コンパイラ
       無関係) とディスクイメージのみ — 全コード部の self-host 完成。
 - [x] **Gen3 セルフホスト on pico2** (2026-05-05): 7 ツール全部
-      (parse / sigscan / tcheck / codegen / bc2asm / asm_pass1 /
-      asm_pass2) を pico2 実機で再ビルドし、host gen2 build と
+      (parse / sigscan / tcheck / codegen / bc2asm / asm_pass2 /
+      asm_pass3) を pico2 実機で再ビルドし、host gen2 build と
       byte-exact md5 一致を確認。各ツール bench は
       `tests/fixtures/pico2_compile_<tool>.sh`、合計 ~6300 秒
       (~105 分)。fatfs の 8.3 制限で `ac_imports.th` →
-      `ac_imp.th`、`asm_pass1.bin` → `ap1.bin` 等の rename が
+      `ac_imp.th`、`asm_pass2.bin` → `ap1.bin` 等の rename が
       必要だったほか、codegen task arena を 128 KB → 192 KB に
       拡大 (bc2asm.tc サイズが parse.tc 比 1.5 倍 で 126 KB peak)。
 - [x] **M7-full** (2026-05-04): pico2 実機で parse.tc + 3 transitive
@@ -423,16 +423,16 @@ K7 解決の決め手 3 点:
       `/hw.tc` を AST にパース、結果が host `/bin/parse` の出力と
       **byte-exact 一致** (md5 e294aa0ff55a2b3bdf9f3c2b38dd91b1)。
       各 .tc に対して parse → sigscan → tcheck → codegen → bc2asm
-      (4 ファイル) を回し、最後に asm_pass1/asm_pass2 で全 .s +
+      (4 ファイル) を回し、最後に asm_pass2/asm_pass3 で全 .s +
       prelude_tail.s を link。bench `tests/fixtures/pico2_compile_parse.sh`、
       合計 ~414 s (PLL_SYS 150 MHz)、生成 parse.bin の実行は 119 s。
       前提: kernel arena 504→508 KB、tcheck task arena 128→256 KB、
-      asm_pass1 が --strip-out 不要時に ref+def state を即 release
+      asm_pass2 が --strip-out 不要時に ref+def state を即 release
       (~88 KB peak 削減)、SD CRC を CMD59 で off にして書き込みエラー
       解消、reloc kind=2 (gp-relative la) 追加で pre-encoded prelude
       の `la __data_end` 等が full-link 時に正しく patch される。
       pre-encode は prelude にしか効かないので user.s 巨大化で
-      asm_pass2 が ~192 s 占める — ここの 3-pass user.s rescan を
+      asm_pass3 が ~192 s 占める — ここの 3-pass user.s rescan を
       畳み込めればもう一段速くなる
 - [x] **byte-exact self-hosting verify (2026-04-17)**:
       `tests/phase3_verify.py` が virt 上で全 9 段 (1.ast / 1.th /

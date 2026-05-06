@@ -22,7 +22,7 @@ import "../libtc/libtc.tc";
 
 
 // CMD_MAX bumped to 512 for prelude pre-encode (Step 6 of pre-encode):
-// the new asm_pass1 invocation passes 9 paths via --load-idx /
+// the new asm_pass2 invocation passes 9 paths via --load-idx /
 // --idx-source / --prelude-text-bin / --prelude-rodata-bin /
 // --prelude-data-bin / --prelude-reloc / --lab-out plus 2 positional
 // args, totalling ~290 chars. Earlier history: 128 covered the

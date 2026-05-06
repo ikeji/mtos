@@ -48,7 +48,7 @@ kernel 内部の `task_set_name` は依然 U8Array NUL 終端で動いている
 | `compiler/parse.tc:417` | `wrap_binop(left_buf, left_len, right_buf, right_len)` |
 | `compiler/parse.tc:1137-1255` | `emit_type / emit_param / emit_ret / emit_cast_var_tbuf` (型名スライス) |
 | `compiler/asm_common.tc:229-350` ほか | `lab_name_eq / lab_hash_name / find_label / define_label` (ラベル名スライス) |
-| `compiler/asm_pass2.tc:130` | `name: U8Array` + `name_len: i32` (`.lab` 読み出しラベル名) |
+| `compiler/asm_pass3.tc:130` | `name: U8Array` + `name_len: i32` (`.lab` 読み出しラベル名) |
 
 **回避可能か**: 個々は String 化できる。ただし (4) の strtab
 パターンと組み合わさっているケースが多く、strtab 側の設計を
@@ -114,7 +114,7 @@ type より dimension の問題 (`String` が欲しいわけではない)。
 
 ### 保留: asm_common.tc のラベル名引数
 strtab と同類。g_lab_names プールに紐づくスライスなので現状維持。
-ただし `asm_pass2.tc:130` の one-shot `name: U8Array + name_len`
+ただし `asm_pass3.tc:130` の one-shot `name: U8Array + name_len`
 は single-string なので String 化候補。
 
 ---

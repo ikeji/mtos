@@ -19,13 +19,13 @@ source.tc
     ↓ bcrun        (インタプリタ、デバッグ・検証用)
     ↓ bc2asm       (per-function emit)
 .s                  (RISC-V アセンブリ)
-    ↓ asm_pass1    (ラベル収集 + section 集計)
+    ↓ asm_pass2    (ラベル収集 + section 集計)
 .lab                (ラベルテーブル + section サイズ)
-    ↓ (lab + prelude.s + 各モジュール .s) → asm_pass2
+    ↓ (lab + prelude.s + 各モジュール .s) → asm_pass3
 ELF 実行ファイル / raw binary
 ```
 
-`as` / `ld` は使わない。`asm_pass1` + `asm_pass2` が「アセンブラ兼
+`as` / `ld` は使わない。`asm_pass2` + `asm_pass3` が「アセンブラ兼
 リンカ」として section 並べ替え (text → rodata → data → bss) と gp
 相対 la の解決を同時に行う。
 
@@ -40,8 +40,8 @@ ELF 実行ファイル / raw binary
 ./codegen < foo.tast > foo.bc
 ./bcrun   < foo.bc            # バイトコードで動作確認
 ./bc2asm  < foo.bc > foo.s
-./asm_pass1 < foo.s > foo.lab
-cat foo.lab foo.s | ./asm_pass2 > foo.elf
+./asm_pass2 < foo.s > foo.lab
+cat foo.lab foo.s | ./asm_pass3 > foo.elf
 
 # パイプで一括実行 (ラップは compile-gen2.sh / compile-gen3.sh)
 GEN2_DIR=/tmp/gen2 ./compile-gen2.sh -o foo foo.tc
@@ -128,7 +128,7 @@ per-function に stream emit。旧 monolithic 版の 1.4 MB 機構を廃止
   制限を回避)
 - 関数内ジャンプラベルは `.L_FNAME_pcN` (関数マングル名で global
   一意)
-- section 出力順は .text → .data → .rodata (asm_pass2 がフラット
+- section 出力順は .text → .data → .rodata (asm_pass3 がフラット
   配置で並べ替える前提)
 
 ### オーバーロード関数のマングリング
@@ -139,7 +139,7 @@ underscore から変更済)。`do_openat__i32__String__i32` など
 String / StringLiteral のどちらも同じ mangled suffix を持つものは
 `task_crt0.s` が同一本体に alias する。
 
-## asm_pass1 / asm_pass2
+## asm_pass2 / asm_pass3
 
 このツールチェーンの「アセンブラ兼リンカ」。分離理由はメモリ
 (pass1 でラベルを集め、pass2 は source を 3 回 re-scan して stream
@@ -150,10 +150,10 @@ emit するため、中間 code buffer を持たずに済む)。
 - 入力 `.s` を per-section cursor (text / rodata / data / bss) で
   集計し、出力では **text → rodata → data → bss** にフラット配置
 - 各 section のサイズは 16 byte align
-- asm_pass1 が `.lab` 中間ファイルにラベルテーブルと section
+- asm_pass2 が `.lab` 中間ファイルにラベルテーブルと section
   サイズを吐く。`__global_pointer$` は `data_base + 0x800` で自動
   定義
-- asm_pass2 は `.lab` + source × 3 を stdin に受け、3 回 re-scan で
+- asm_pass3 は `.lab` + source × 3 を stdin に受け、3 回 re-scan で
   target section を 4 KB out_buf 経由 stdout に stream emit
 - データ参照は **gp 相対 la** (`auipc 0` + `addi rd, gp, off`) に
   展開。12-bit 範囲外は PC 相対 (`auipc` + `addi`) に fallback
@@ -162,7 +162,7 @@ emit するため、中間 code buffer を持たずに済む)。
 - ELF 出力: p_offset=0、ヘッダ + コードを 1 つの LOAD segment。
   末尾の `.space` (`__arena` 等) は filesz に含めず memsz のみ拡張
 
-ピークメモリ: asm_pass1 ~250 KB、asm_pass2 **~260〜280 KB**
+ピークメモリ: asm_pass2 ~250 KB、asm_pass3 **~260〜280 KB**
 (Phase 5 の stream-emit 化で旧 4.6 MB から ~16 分の 1)。
 
 ### stdin 先頭ディレクティブ
@@ -184,7 +184,7 @@ emit するため、中間 code buffer を持たずに済む)。
 (各 digit 最大 1024 個)。`bnez / beqz / j 0f` が関数境界を越えて
 衝突しない。
 
-## asm_pass1 / asm_pass2 を使うラッパ
+## asm_pass2 / asm_pass3 を使うラッパ
 
 日常の build は以下のラッパを使う。
 
@@ -205,7 +205,7 @@ GEN3_DIR=/path/to/gen3 ./compile-gen3.sh -o output file.tc
 - `CRT0_DATA` — `.s` パス。既定 `compiler/crt0_tc_data.s`
 - `ASM_PROLOGUE` — asm 入力先頭に注入する 1 行 (例 `; raw`)
 - `GEN2_DIR` — Gen2 ツール (parse / sigscan / tcheck / codegen /
-  bc2asm / asm_pass1 / asm_pass2) の置き場所
+  bc2asm / asm_pass2 / asm_pass3) の置き場所
 
 kernel タスクのビルドでは `ASM_PROLOGUE='; raw'` + `CRT0=task_crt0.s`
 + `CRT0_DATA=task_data.s` で呼ぶ。詳細は `kernel/build.sh` と

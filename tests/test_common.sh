@@ -168,7 +168,7 @@ build_gen2_tool() {
 
 # ensure_gen2_tools — builds Gen2 RISC-V binaries (once), sets USE_NATIVE.
 # Builds the split pipeline (parse + sigscan + tcheck + codegen +
-# bc2asm + bcrun + asm_pass1 + asm_pass3).
+# bc2asm + bcrun + asm_pass2 + asm_pass3).
 #
 # If `SHARED_GEN2_DIR` is set and all expected binaries exist there,
 # we reuse it instead of rebuilding. test_all.sh sets this so each
@@ -185,7 +185,7 @@ ensure_gen2_tools() {
        && [ -x "$SHARED_GEN2_DIR/parse" ] && [ -x "$SHARED_GEN2_DIR/sigscan" ] \
        && [ -x "$SHARED_GEN2_DIR/tcheck" ] && [ -x "$SHARED_GEN2_DIR/codegen" ] \
        && [ -x "$SHARED_GEN2_DIR/bc2asm" ] && [ -x "$SHARED_GEN2_DIR/bcrun" ] \
-       && [ -x "$SHARED_GEN2_DIR/asm_pass1" ] && [ -x "$SHARED_GEN2_DIR/asm_pass3" ]; then
+       && [ -x "$SHARED_GEN2_DIR/asm_pass2" ] && [ -x "$SHARED_GEN2_DIR/asm_pass3" ]; then
         _GEN2_TMP="$SHARED_GEN2_DIR"
         _GEN2_SHARED=1
         USE_NATIVE=true
@@ -198,12 +198,12 @@ ensure_gen2_tools() {
     build_gen2_tool "codegen"
     build_gen2_tool "bc2asm"
     build_gen2_tool "bcrun"
-    build_gen2_tool "asm_pass1"
+    build_gen2_tool "asm_pass2"
     build_gen2_tool "asm_pass3"
     if [ -x "$_GEN2_TMP/parse" ] && [ -x "$_GEN2_TMP/sigscan" ] && \
        [ -x "$_GEN2_TMP/tcheck" ] && [ -x "$_GEN2_TMP/codegen" ] && \
        [ -x "$_GEN2_TMP/bc2asm" ] && [ -x "$_GEN2_TMP/bcrun" ] && \
-       [ -x "$_GEN2_TMP/asm_pass1" ] && [ -x "$_GEN2_TMP/asm_pass3" ]; then
+       [ -x "$_GEN2_TMP/asm_pass2" ] && [ -x "$_GEN2_TMP/asm_pass3" ]; then
         USE_NATIVE=true
     fi
 }
@@ -254,8 +254,8 @@ run_bc2asm_tc() {
 
 # run_asm_tc — takes a .s (already concatenated with crt0 / runtime if
 # needed) on stdin and emits the ELF or raw binary via the new
-# asm_pass1 + asm_pass3 split. Buffers stdin into a tmp file so
-# asm_pass1 and asm_pass3 can read it independently.
+# asm_pass2 + asm_pass3 split. Buffers stdin into a tmp file so
+# asm_pass2 and asm_pass3 can read it independently.
 #
 # Phase 5 stream-emit: asm_pass3 runs 3 section passes (text / rodata
 # / data), each consuming one full copy of the source from stdin, so
@@ -265,7 +265,7 @@ run_asm_tc() {
     src=$(mktemp)
     lab=$(mktemp)
     cat > "$src"
-    "$QEMU" "$_GEN2_TMP/asm_pass1" < "$src" > "$lab" 2>/dev/null
+    "$QEMU" "$_GEN2_TMP/asm_pass2" < "$src" > "$lab" 2>/dev/null
     cat "$lab" "$src" "$src" "$src" | "$QEMU" "$_GEN2_TMP/asm_pass3" 2>/dev/null
     rm -f "$src" "$lab"
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 # compile-gen2.sh — Compile .tc to RV32 ELF using Gen2 tools (via qemu).
 # Uses: Gen1 parse (for import .th generation),
-#       Gen2 sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass3 (qemu).
+#       Gen2 sigscan/tcheck/codegen/bc2asm/asm_pass2/asm_pass3 (qemu).
 #
 # Usage: GEN2_DIR=/path/to/gen2 ./compile-gen2.sh [-o output] file.tc
 #
@@ -14,7 +14,7 @@
 #
 # Linking (once):
 #   cat [prologue] crt0 runtime.s user1.s ... crt0_data > full.s
-#   asm_pass1 < full.s > full.lab
+#   asm_pass2 < full.s > full.lab
 #   cat full.lab full.s | asm_pass3 > OUTFILE
 #
 # The (imports) block is built from Gen1 parse + Gen2 sigscan for each
@@ -25,7 +25,7 @@
 #
 # Requires: Gen1 tools (parse),
 #           Gen2 tools in GEN2_DIR (sigscan, tcheck, codegen, bc2asm,
-#             asm_pass1, asm_pass3),
+#             asm_pass2, asm_pass3),
 #           qemu-riscv32
 
 set -e
@@ -68,7 +68,7 @@ if [ -z "$GEN2_DIR" ]; then
     exit 1
 fi
 
-for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass3; do
+for tool in sigscan tcheck codegen bc2asm asm_pass2 asm_pass3; do
     if [ ! -x "$GEN2_DIR/$tool" ]; then
         echo "Error: Gen2 tool not found: $GEN2_DIR/$tool" >&2
         exit 1
@@ -88,7 +88,7 @@ if find "$ROOT_DIR/compiler" -maxdepth 1 -name '*.tc' \
         echo "warning: GEN2_DIR=$GEN2_DIR is older than compiler/*.tc"
         echo "         rebuild with:  rm -rf $GEN2_DIR && mkdir -p $GEN2_DIR &&"
         echo "           for t in parse sigscan tcheck codegen bc2asm bcrun \\"
-        echo "                    asm_pass1 asm_pass3; do"
+        echo "                    asm_pass2 asm_pass3; do"
         echo "             ./compile-gen1.sh -o \$GEN2_DIR/\$t compiler/\$t.tc; done"
     } >&2
 fi
@@ -193,19 +193,19 @@ done
 # Phase 8 unification: when UNIFIED_PRELUDE=1 (the default), build
 # prelude (ASM_PROLOGUE + CRT0 + runtime.s) and prelude_tail
 # (CRT0_DATA) separately, pre-encode the prelude into .idx + section
-# .bin + .reloc, then run the final asm_pass1 with --load-idx +
+# .bin + .reloc, then run the final asm_pass2 with --load-idx +
 # --prelude-*. Matches the OS-side flow in tests/fixtures/pico2_*.sh,
-# so host and guest both go through identical asm_pass1 / asm_pass3
+# so host and guest both go through identical asm_pass2 / asm_pass3
 # code paths.
 #
 # Set UNIFIED_PRELUDE=0 to fall back to the legacy stdin pipeline
-# (one big full.s into asm_pass1, no pre-encode). Required when:
+# (one big full.s into asm_pass2, no pre-encode). Required when:
 #   - The prelude references TC symbols defined only in user code
 #     (kernel build: platform_*.s + trap_common.s call TC fns like
 #     trap_handler / sched_task_exit / sys_*_handler).
 #   - User code overrides a prelude-defined symbol whose call sites
 #     in the prelude don't get a reloc emitted at pre-encode time
-#     (asm_pass1 only emits relocs for unresolved labels — see
+#     (asm_pass2 only emits relocs for unresolved labels — see
 #     2026-05-06 print/println rename for the one symbol pair where
 #     this used to bite us).
 UNIFIED_PRELUDE="${UNIFIED_PRELUDE:-1}"
@@ -229,8 +229,8 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
     } > "$TMP/user.s"
 
     # Step 4a: emit prelude.idx from prelude.s alone (= the section
-    # state the OS-side asm_pass1 will inherit before scanning user.s).
-    "$QEMU" "$GEN2_DIR/asm_pass1" \
+    # state the OS-side asm_pass2 will inherit before scanning user.s).
+    "$QEMU" "$GEN2_DIR/asm_pass2" \
         --emit-idx "$TMP/prelude.idx" "$TMP/prelude.s" 2>/dev/null
 
     # Step 4b: pre-encode prelude.s + prelude_tail.s combined so the
@@ -239,7 +239,7 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
     # bytes; .data.bin / .reloc carry whatever the combined layout
     # produced.
     cat "$TMP/prelude.s" "$TMP/prelude_tail.s" > "$TMP/pre_full.s"
-    "$QEMU" "$GEN2_DIR/asm_pass1" < "$TMP/pre_full.s" > "$TMP/pre.lab"
+    "$QEMU" "$GEN2_DIR/asm_pass2" < "$TMP/pre_full.s" > "$TMP/pre.lab"
     cat "$TMP/pre.lab" "$TMP/pre_full.s" "$TMP/pre_full.s" "$TMP/pre_full.s" | \
         "$QEMU" "$GEN2_DIR/asm_pass3" \
             --text-bin   "$TMP/prelude.text.bin" \
@@ -247,8 +247,8 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
             --data-bin   "$TMP/prelude.data.bin" \
             --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
 
-    # Step 5: final asm_pass1 with --load-idx + --prelude-*.
-    "$QEMU" "$GEN2_DIR/asm_pass1" \
+    # Step 5: final asm_pass2 with --load-idx + --prelude-*.
+    "$QEMU" "$GEN2_DIR/asm_pass2" \
         --load-idx "$TMP/prelude.idx" \
         --idx-source "$TMP/prelude.s" \
         --prelude-text-bin "$TMP/prelude.text.bin" \
@@ -262,7 +262,7 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
     # + encodes user.s.
     "$QEMU" "$GEN2_DIR/asm_pass3" --lab "$TMP/full.lab" --out "$OUTFILE" 2>/dev/null
 else
-    # Legacy: assemble everything into one full.s and let asm_pass1 +
+    # Legacy: assemble everything into one full.s and let asm_pass2 +
     # asm_pass3 walk it from text. No pre-encode, no .bin reuse.
     {
         [ -n "$ASM_PROLOGUE" ] && printf '%s\n' "$ASM_PROLOGUE"
@@ -273,7 +273,7 @@ else
         cat "$CRT0_DATA"
     } > "$TMP/full.s"
 
-    "$QEMU" "$GEN2_DIR/asm_pass1" < "$TMP/full.s" > "$TMP/full.lab"
+    "$QEMU" "$GEN2_DIR/asm_pass2" < "$TMP/full.s" > "$TMP/full.lab"
     cat "$TMP/full.lab" "$TMP/full.s" "$TMP/full.s" "$TMP/full.s" | \
         "$QEMU" "$GEN2_DIR/asm_pass3" > "$OUTFILE"
 fi

@@ -229,7 +229,7 @@ write の可能性。冒頭で `if n < 0 || n > 16777216 { return -1 }`
 `g_line_buf` は 4092 byte、caller の `U8Array(4096)` + buf_cap 4096
 で不整合。caller を 4092 / 4092 に統一し、`llen >= buf_cap` で
 `asm_err_end("line too long (max N bytes)")` で abort。
-`asm_err_begin` / `asm_err_end` を export (asm_pass1 から使うため)。
+`asm_err_begin` / `asm_err_end` を export (asm_pass2 から使うため)。
 
 ### M14. codegen: read_node のエスケープで next が二重実行の可能性
 

@@ -28,7 +28,7 @@
 ```bash
 SHARED_GEN2_DIR=$(mktemp -d)
 trap 'rm -rf "$SHARED_GEN2_DIR"' EXIT
-for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2; do
+for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass2 asm_pass3; do
     compile-gen1.sh -o "$SHARED_GEN2_DIR/$t" compiler/$t.tc
 done
 ```
@@ -51,7 +51,7 @@ compiler/*.tc を触っていなくても同じ 3 s が毎回かかる。
 
 ### P3: `compile-gen2.sh` が `$(mktemp -d)` に中間成果物を置く
 
-parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2
+parse → sigscan → tcheck → codegen → bc2asm → asm_pass2 → asm_pass3
 を 1 本のシェルで流す。成果物 (.ast, .th, .tast, .bc, .s, .lab) は
 プロセス終了と同時に消える。再利用できない。
 
@@ -78,7 +78,7 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2
   bcrun/interp/extract-sigs)。現状 `bootstrap/` / トップ直下にバラけて
   いるのをここに集約して `make clean` で一掃できるようにする
 - `build/gen2/` — Gen1 で build した TC 製ツール (parse/sigscan/tcheck/
-  codegen/bc2asm/bcrun/asm_pass1/asm_pass2)
+  codegen/bc2asm/bcrun/asm_pass2/asm_pass3)
 - `build/gen3/` — Gen2 で build した同じ TC 製ツール (自己ホスト確認
   用 + kernel build の本番経路候補)
 
@@ -97,9 +97,9 @@ build/
   gen1/                 # Gen1 ツール (C 製、make で GCC コンパイル)
     parse codegen bc2asm typecheck bcrun interp extract-sigs ...
   gen2/                 # Gen2 ツール (compile-gen1.sh 出力)
-    parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2
+    parse sigscan tcheck codegen bc2asm bcrun asm_pass2 asm_pass3
   gen3/                 # Gen3 ツール (compile-gen2.sh 出力、kernel build 本番)
-    parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2
+    parse sigscan tcheck codegen bc2asm bcrun asm_pass2 asm_pass3
   compiler/             # compiler/*.tc ソースのミラー位置
     runtime.s           # compiler/runtime.tc → 1 回だけ
   kernel/
@@ -108,7 +108,7 @@ build/
     root/               # plat 非依存のユーザーランド (disk image 源泉)
       bin/
         hello hello2 catfile sh tmpdemo echo launcher cat
-        parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2
+        parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3
       hello.txt
       prelude.s prelude_tail.s
       empty_imports.txt self_open.txt wrap_close.txt
@@ -153,7 +153,7 @@ plat 非依存 → 両方に同じ一覧を入れて `build/kernel/root/` を 1 
 
 ```
 hello hello2 catfile sh tmpdemo echo launcher cat
-  + EXTRA_TASKS 時: parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2
+  + EXTRA_TASKS 時: parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3
 ```
 
 seed task の選定 (pico2 は slot 2 が launcher、virt は slot 2 が sh)

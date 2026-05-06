@@ -134,8 +134,8 @@ host (compile-gen1.sh) と既存 typecheck.tc には影響を与えない。
 
 | 入力 | km peak |
 |---|---:|
-| compiler/asm_pass1.tc      |  **8692 B** |
-| compiler/asm_pass2.tc      |   9100 B |
+| compiler/asm_pass2.tc      |  **8692 B** |
+| compiler/asm_pass3.tc      |   9100 B |
 | compiler/runtime.tc        |   9228 B |
 | compiler/strlib.tc         |   9236 B |
 | compiler/string_buffer.tc  |   9236 B |
@@ -253,11 +253,11 @@ Gen3 tcheck (compile-gen2.sh で build、実 runtime.tc link) を 14 個の
 |---|---:|
 | compiler/strlib.tc        |  **75316 B** |
 | compiler/ast_node.tc      |  79352 B |
-| compiler/asm_pass1.tc     |  80412 B |
+| compiler/asm_pass2.tc     |  80412 B |
 | compiler/string_buffer.tc |  82624 B |
 | compiler/source_reader.tc |  82808 B |
 | compiler/runtime.tc       |  89968 B |
-| compiler/asm_pass2.tc     |  94256 B |
+| compiler/asm_pass3.tc     |  94256 B |
 | compiler/sigscan.tc       | 106820 B |
 | compiler/tcheck.tc        | 119608 B |
 | compiler/codegen.tc       | 134804 B |
@@ -511,16 +511,16 @@ Phase 1〜5 すべて完了:
 
 - **Phase 1** (typecheck 分割): sigscan + tcheck 新設、per-top-level
   streaming + per-fn strtab rollback + per-fn kmalloc fntab
-- **Phase 2** (asm 分割): asm_common + asm_pass1 + asm_pass2 新設、
+- **Phase 2** (asm 分割): asm_common + asm_pass2 + asm_pass3 新設、
   `.lab` 中間ファイル経由で 2 プロセス分離
 - **Phase 3** (in-place shrinks): codegen strtab を perm/ephemeral
   2 cursor 化、bc2asm を per-function emission 化
-- **Phase 4** (asm_pass2 dynamic g_code, commit 9e5685f): MAX_CODE
+- **Phase 4** (asm_pass3 dynamic g_code, commit 9e5685f): MAX_CODE
   4 MB 固定 → filesz (text+rodata+data) で動的確保。4.6 MB → ~440 KB
-- **Phase 5** (asm_pass2 stream emit, commit 426f51e): g_code buffer
+- **Phase 5** (asm_pass3 stream emit, commit 426f51e): g_code buffer
   を廃止。3 回 source re-scan で target section を 4 KB out buf 経由
   stdout へ stream emit。**~440 KB → ~260 KB**
-- **asm_pass1 shrink** (commit 5098a1e): MAX_LABELS 16384→4096 +
+- **asm_pass2 shrink** (commit 5098a1e): MAX_LABELS 16384→4096 +
   MAX_NAME_POOL 256K→128K + bounds check 追加。**~430 KB → ~250 KB**
 - **Gen2 toolchain migration** (commit 852b595 系): 旧 typecheck.tc /
   asm.tc / extract_sigs.tc を削除、全ビルドが新 pipeline を経由
@@ -535,7 +535,7 @@ OS 上でも test_phase7.sh の full split pipeline が通る。Pico 2 の
   AST ノードが 2581 個取られているから。根治には source 分解が必要で
   (ユーザ指示で) out of scope。現状の 252 KB peak は phase 7 OS の 16 MB
   task RAM 枠には収まるので production code は困らない
-- **asm_pass1/2 の g_lab_names per-label kmalloc 化**: さらなる
+- **asm_pass2/2 の g_lab_names per-label kmalloc 化**: さらなる
   shrink 余地あり。現状 g_lab_names = 128 KB 固定、実測 ~90 KB 使用。
   per-label kmalloc にすれば upper bound が消えるが `name_off` を
   使う全ロジックの touch が必要で大改修。現状 peak に余裕があるので
@@ -655,11 +655,11 @@ link)、qemu-riscv32 で compiler/*.tc (14 ファイル) を各ステージに
 |---|---:|
 | compiler/strlib.tc        |  **80352 B** |
 | compiler/ast_node.tc      |  81664 B |
-| compiler/asm_pass1.tc     |  84656 B |
+| compiler/asm_pass2.tc     |  84656 B |
 | compiler/source_reader.tc |  86396 B |
 | compiler/string_buffer.tc |  87216 B |
 | compiler/runtime.tc       |  91716 B |
-| compiler/asm_pass2.tc     |  97688 B |
+| compiler/asm_pass3.tc     |  97688 B |
 | compiler/sigscan.tc       | 107888 B |
 | compiler/tcheck.tc        | 116380 B |
 | compiler/bc2asm.tc        | 189276 B |
@@ -675,8 +675,8 @@ peak が入力にほぼ無関係なのが特徴 (1 関数ずつ emit してリ�
 
 | 入力 | km peak |
 |---|---:|
-| compiler/asm_pass1.tc     | **120296 B** |
-| compiler/asm_pass2.tc     | 120636 B |
+| compiler/asm_pass2.tc     | **120296 B** |
+| compiler/asm_pass3.tc     | 120636 B |
 | compiler/sigscan.tc       | 121180 B |
 | compiler/codegen.tc       | 122056 B |
 | compiler/string_buffer.tc | 122200 B |
@@ -689,13 +689,13 @@ peak が入力にほぼ無関係なのが特徴 (1 関数ずつ emit してリ�
 | compiler/bc2asm.tc        | 126008 B |
 | compiler/runtime.tc       | **126476 B** |
 
-### asm_pass1
+### asm_pass2
 
 `.lab` label collector。入力は **compile-gen2.sh が組み立てた
 full.s** (crt0 + runtime + 各 user .s + crt0_data)。2026-04-16 時点
 (commit 5098a1e) の実測 peak:
 
-| コンパイル対象 | asm_pass1 peak |
+| コンパイル対象 | asm_pass2 peak |
 |---|---:|
 | compiler/runtime.tc       | **226924 B** |
 | compiler/strlib.tc        | 410196 B (以前の測定、現在は未再測)  |
@@ -704,12 +704,12 @@ full.s** (crt0 + runtime + 各 user .s + crt0_data)。2026-04-16 時点
 | compiler/parse.tc         | 253672 B |
 | compiler/tcheck.tc        | 255400 B |
 | compiler/bc2asm.tc        | 255912 B |
-| compiler/asm_pass1.tc     | 263992 B |
-| **compiler/asm_pass2.tc** | **267448 B** (~261 KB) |
+| compiler/asm_pass2.tc     | 263992 B |
+| **compiler/asm_pass3.tc** | **267448 B** (~261 KB) |
 
-#### なぜ asm_pass1 がこれだけメモリを食うのか
+#### なぜ asm_pass2 がこれだけメモリを食うのか
 
-asm_pass1 は **label 表** が常時支配項で、入力サイズ (crt0 + runtime
+asm_pass2 は **label 表** が常時支配項で、入力サイズ (crt0 + runtime
 + user 1 ファイル ≈ 50k 行 / 1 MB 台の .s) にほぼ関係なく ~250 KB
 台に張り付く。`asm_common.tc::asm_init_common` の固定 BSS 群
 (commit 5098a1e でサイズを半分に絞った後):
@@ -744,7 +744,7 @@ bounds check を追加したので、今後 upper bound を超えた入力が来
   あるが、将来 kernel / compiler が肥大したときに overflow する
   リスクあり。現状 4096 で十分小さい
 
-### asm_pass2 (Phase 5: 2026-04-16 / commit 426f51e)
+### asm_pass3 (Phase 5: 2026-04-16 / commit 426f51e)
 
 `.lab` + source で encoder。**Phase 5** で g_code filesz buffer を
 廃止し、source を 3 回再読込して target section (text/rodata/data)
@@ -754,17 +754,17 @@ pass は無い。
 
 実測 peak (2026-04-16 / commit 426f51e):
 
-| コンパイル対象 | asm_pass2 peak |
+| コンパイル対象 | asm_pass3 peak |
 |---|---:|
 | compiler/codegen.tc       | **262672 B** |
 | compiler/bcrun.tc         | 265392 B |
 | compiler/parse.tc         | 265876 B |
 | compiler/tcheck.tc        | 267604 B |
 | compiler/bc2asm.tc        | 268000 B |
-| compiler/asm_pass1.tc     | 276208 B |
-| **compiler/asm_pass2.tc** | **279664 B** (~273 KB) |
+| compiler/asm_pass2.tc     | 276208 B |
+| **compiler/asm_pass3.tc** | **279664 B** (~273 KB) |
 
-#### 3 世代の asm_pass2 peak
+#### 3 世代の asm_pass3 peak
 
 | compiler/*.tc 中 max | 備考 |
 |---|---|
@@ -781,18 +781,18 @@ pass は無い。
 呼び出し手順:
 
 ```
-cat full.lab full.s full.s full.s | asm_pass2 > out.bin
+cat full.lab full.s full.s full.s | asm_pass3 > out.bin
 ```
 
 (`cat` 3 回が気になるが、pipe 経由なのでディスクには残らない)
 
-asm_pass2 の main():
+asm_pass3 の main():
 
 1. **lab 読み** (stdin fd 0、buffered reader、section 境界ではなく
    `)` トークンで止まる)
 2. **ELF header を stdout に emit** (raw mode 以外)。filesz /
    memsz / entry は .lab から確定しているのでコード emit 前に
-   書ける。`asm_pass1` が書いた `raw` / `load_base` / `src_bytes`
+   書ける。`asm_pass2` が書いた `raw` / `load_base` / `src_bytes`
    メタ行で header 値が揃う
 3. **pass 0 = text**: section target = 0, source を再スキャン、
    current section == 0 のときだけ emit_stream → 4 KB out buf
@@ -848,7 +848,7 @@ g_pos だけを n 進めるので O(1) で終わる (旧 buffered path では
 | SourceReader / StringBuffer 周辺            | ~8 KB   |
 | 雑多 (struct Label fields, kmalloc bookkeeping) | ~5 KB |
 
-asm_pass1 と asm_pass2 でほぼ同じ peak になっているのは、label
+asm_pass2 と asm_pass3 でほぼ同じ peak になっているのは、label
 表 + numlab のサイズが dominant で、stream mode の差分は out_buf
 の 4 KB だけだから。
 
@@ -857,7 +857,7 @@ asm_pass1 と asm_pass2 でほぼ同じ peak になっているのは、label
 - **parse** (Gen3) は km_dump_peak を呼ばないので自動計測なし。
   Gen1 C ./parse の実測 ~14 KB は固定 SourceReader+tok_buf の
   サイズからほぼ入力に依らず一定
-- strlib/runtime の asm_pass2 は「main なしライブラリ単体だと
+- strlib/runtime の asm_pass3 は「main なしライブラリ単体だと
   compile-gen2.sh が途中でエラー」のため計測不能 (lib 自体が
   self-host で使われるときは上位タスクに含まれるので実害なし)
 - 全ステージで bcrun.tc が outlier なのは vm_run 単一関数に

@@ -56,7 +56,7 @@ intrinsic 化すれば解消。解決すれば #6 (get 境界チェック) も�
 ### K7. pico2 で phase 7 コンパイラを完走させる ✅ **解決 (2026-04-29)**
 
 完成: pico2 実機上で OS 自身のコンパイラパイプラインが
-parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2
+parse → sigscan → tcheck → codegen → bc2asm → asm_pass2 → asm_pass3
 を全段完走させ、生成された `/sd/HW` を実行して `Hello, World!`
 を出力 (合計 127 秒)。
 
@@ -67,7 +67,7 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2
    3.bc / 4.s / full.s / lab.s / p2.in / HW) を `/sd/` に書くこと
    で 480 KB SRAM tmpfs 制約を回避。
 2. **PLL_SYS で CPU を 150 MHz 化** (commit cf22718):
-   それまで PLL 未使用で clk_sys ≈ 12 MHz だったため asm_pass1 単独
+   それまで PLL 未使用で clk_sys ≈ 12 MHz だったため asm_pass2 単独
    で 310s。150 MHz 化で 27s に短縮 (11.5×)。
 3. **`tests/pico2_pipeline_drive.py` でプロンプト同期 UART** (commit 5dfa631):
    PL011 RX FIFO 32 byte は sh が sys_wait 中に drain されない。

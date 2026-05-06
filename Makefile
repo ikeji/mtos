@@ -10,7 +10,7 @@ GEN1_TOOLS = $(addprefix build/gen1/,$(GEN1_NAMES))
 
 # Gen2 ツール (compile-gen1.sh で compiler/*.tc を RV32 ELF に。
 # build/gen2/ 固定にして make test 2 回目以降は再ビルドを避ける)
-GEN2_NAMES = parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass3
+GEN2_NAMES = parse sigscan tcheck codegen bc2asm bcrun asm_pass2 asm_pass3
 GEN2_TOOLS = $(addprefix build/gen2/,$(GEN2_NAMES))
 
 all: $(GEN1_TOOLS)
@@ -229,7 +229,7 @@ build/kernel/disk.img:      DISK_KERN_CONF := $(wildcard kernel/kern.conf)
 build/kernel/disk-demo.img: DISK_KERN_CONF := tests/fixtures/kern_demo.conf
 
 # Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
-# at kernel-build time we run asm_pass1 + asm_pass3 --emit-bin on the
+# at kernel-build time we run asm_pass2 + asm_pass3 --emit-bin on the
 # concatenation of prelude.s + prelude_tail.s (the same bookends the
 # user code is sandwiched between at OS-runtime link) so OS-side
 # asm_pass3 can `src raw` memcpy + reloc-patch instead of
@@ -238,7 +238,7 @@ build/kernel/disk-demo.img: DISK_KERN_CONF := tests/fixtures/kern_demo.conf
 define PRELUDE_PRE_ENCODE
     cat "$$_r/prelude.s" "$$_r/prelude_tail.s" > "$$_r/prelude_full.s" && \
     _pre_lab=$$(mktemp) && \
-    qemu-riscv32 build/gen2/asm_pass1 < "$$_r/prelude_full.s" > "$$_pre_lab" 2>/dev/null && \
+    qemu-riscv32 build/gen2/asm_pass2 < "$$_r/prelude_full.s" > "$$_pre_lab" 2>/dev/null && \
     { cat "$$_pre_lab"; cat "$$_r/prelude_full.s"; cat "$$_r/prelude_full.s"; cat "$$_r/prelude_full.s"; } | \
     qemu-riscv32 build/gen2/asm_pass3 \
         --text-bin   "$$_r/prelude.text.bin" \
@@ -248,13 +248,13 @@ define PRELUDE_PRE_ENCODE
         2>/dev/null && \
     chmod 644 "$$_r/prelude.text.bin" "$$_r/prelude.rodata.bin" \
               "$$_r/prelude.data.bin" "$$_r/prelude.reloc" && \
-    qemu-riscv32 build/gen2/asm_pass1 \
+    qemu-riscv32 build/gen2/asm_pass2 \
         --emit-idx "$$_r/prelude.idx" "$$_r/prelude.s" 2>/dev/null && \
     chmod 644 "$$_r/prelude.idx" && \
     rm -f "$$_pre_lab" "$$_r/prelude_full.s"
 endef
 
-build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass3 | build/kernel
+build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) build/gen2/asm_pass2 build/gen2/asm_pass3 | build/kernel
 	@echo "Building disk image: $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -290,12 +290,12 @@ build/kernel/disk-demo.img: tests/fixtures/kern_demo.conf
 EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     compiler/strlib.tc compiler/ast_node.tc compiler/asm_common.tc \
     compiler/parse.tc compiler/sigscan.tc compiler/tcheck.tc \
-    compiler/codegen.tc compiler/bc2asm.tc compiler/asm_pass1.tc \
+    compiler/codegen.tc compiler/bc2asm.tc compiler/asm_pass2.tc \
     compiler/asm_pass3.tc compiler/runtime.tc \
     kernel/tasks/libtc/libtc.tc \
     kernel/platform_pico2.s kernel/trap_common.s kernel/crt0_pico2_data.s
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass1.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_link_kernel.sh tests/fixtures/pico2_link_kernel_nodisk.sh tests/fixtures/pico2_link_kernel_smoke.sh tests/fixtures/pico2_link_kernel_step1.sh tests/fixtures/pico2_link_kernel_step2.sh tests/fixtures/pico2_link_kernel_step3.sh tests/fixtures/pico2_link_kernel_disk_step1.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_link_kernel.sh tests/fixtures/pico2_link_kernel_nodisk.sh tests/fixtures/pico2_link_kernel_smoke.sh tests/fixtures/pico2_link_kernel_step1.sh tests/fixtures/pico2_link_kernel_step2.sh tests/fixtures/pico2_link_kernel_step3.sh tests/fixtures/pico2_link_kernel_disk_step1.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -316,7 +316,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/fixtures/pico2_compile_tcheck.sh "$$_r/pico2_compile_tcheck.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_codegen.sh "$$_r/pico2_compile_codegen.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_bc2asm.sh "$$_r/pico2_compile_bc2asm.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_asm_pass1.sh "$$_r/pico2_compile_asm_pass1.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_asm_pass2.sh "$$_r/pico2_compile_asm_pass2.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_asm_pass2.sh "$$_r/pico2_compile_asm_pass2.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_runtime.sh "$$_r/pico2_compile_runtime.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_libtc.sh "$$_r/pico2_compile_libtc.sh" 2>/dev/null || true; } && \
@@ -338,7 +338,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	    mkdir -p "$$_r/etc" && cp kernel/kern.conf "$$_r/etc/kern.conf"; \
 	fi && \
 	mkdir -p "$$_r/src" && \
-	for s in string_buffer.tc source_reader.tc strlib.tc ast_node.tc asm_common.tc parse.tc sigscan.tc tcheck.tc codegen.tc bc2asm.tc asm_pass1.tc asm_pass3.tc runtime.tc; do \
+	for s in string_buffer.tc source_reader.tc strlib.tc ast_node.tc asm_common.tc parse.tc sigscan.tc tcheck.tc codegen.tc bc2asm.tc asm_pass2.tc asm_pass3.tc runtime.tc; do \
 	    cp compiler/$$s "$$_r/src/$$s" || exit 1; \
 	done && \
 	cp kernel/tasks/libtc/libtc.tc "$$_r/src/libtc.tc" && \

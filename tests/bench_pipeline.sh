@@ -12,13 +12,13 @@
 #
 # Memory peak is read from each stage's `[kmem peak=N live=M]`
 # stderr line emitted by km_dump_peak in the compiler binaries
-# (sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass3 — parse doesn't
+# (sigscan/tcheck/codegen/bc2asm/asm_pass2/asm_pass3 — parse doesn't
 # call it). Time is qemu-riscv32 wall-clock on the host (rough only;
 # pico2 hardware timing should be measured separately via msh script).
 #
 # Uses Gen3 binaries for the measured stages because Gen2 binaries
 # link bootstrap/runtime_syscall.c where km_dump_peak is a no-op.
-# The link bundle for asm_pass1/asm_pass3 mirrors compile-gen2.sh's
+# The link bundle for asm_pass2/asm_pass3 mirrors compile-gen2.sh's
 # (compiler/crt0_tc.s + compiled runtime + user .s + crt0_tc_data.s)
 # so peak label-table size matches production.
 
@@ -32,7 +32,7 @@ GEN2_DIR="${GEN2_DIR:-$ROOT_DIR/build/gen2}"
 PARSE="$ROOT_DIR/build/gen1/parse"
 QEMU="${QEMU:-qemu-riscv32}"
 
-for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass3; do
+for tool in sigscan tcheck codegen bc2asm asm_pass2 asm_pass3; do
     if [ ! -x "$TOOLS_DIR/$tool" ]; then
         echo "bench: missing $TOOLS_DIR/$tool — run 'make gen3-tools' first" >&2
         exit 1
@@ -128,7 +128,7 @@ for input in "$@"; do
     # ------------------------------------------------------------
     # Setup (not benchmarked): collect imports, compile runtime +
     # each import to .s. This builds the link bundle prefix that
-    # asm_pass1/2 will see.
+    # asm_pass2/2 will see.
     # ------------------------------------------------------------
     _COLLECTED=""
     _collect_imports "$input"
@@ -206,9 +206,9 @@ for input in "$@"; do
         cat "$ROOT_DIR/compiler/crt0_tc_data.s"
     } > "$work/full.s"
 
-    # Stage 6: asm_pass1 (full.s → .lab)
-    run_stage "$input" asm_pass1 \
-        "\"$QEMU\" \"$TOOLS_DIR/asm_pass1\" < \"$work/full.s\" > \"$work/full.lab\"" \
+    # Stage 6: asm_pass2 (full.s → .lab)
+    run_stage "$input" asm_pass2 \
+        "\"$QEMU\" \"$TOOLS_DIR/asm_pass2\" < \"$work/full.s\" > \"$work/full.lab\"" \
         "$work/full.lab"
 
     # Stage 7: asm_pass3 ((lab + 3× full.s) → bin). Cat is host-side

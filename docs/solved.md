@@ -4,14 +4,14 @@
 
 ---
 
-## asm_pass1 / asm_pass2 (アセンブラ兼リンカ)
+## asm_pass2 / asm_pass3 (アセンブラ兼リンカ)
 
 ### 7. パイプライン 100 KB 計画: Phase 1+2+3+4+5 完了 (2026-04-16)
 
 **元の「asm.tc 9 MB」問題は Phase 1+2+3+4+5 で実質解決済**。
-`compiler/asm.tc` は `asm_common.tc + asm_pass1.tc + asm_pass2.tc`
+`compiler/asm.tc` は `asm_common.tc + asm_pass2.tc + asm_pass3.tc`
 に分割され、2026-04-15 の Gen2 toolchain migration で旧 asm.tc /
-typecheck.tc は削除。asm_pass2 の g_code を .lab のセクションサイズ
+typecheck.tc は削除。asm_pass3 の g_code を .lab のセクションサイズ
 合計で動的確保する仕組み (Phase 4) で、旧 4 MB 固定を廃止済。
 
 実測ピーク (compile-gen2.sh で build した Gen3 tools を
@@ -28,10 +28,10 @@ qemu-riscv32 で動かして `[kmem peak=N live=M]` を回収):
 | asm-pass2 (新)| —      | **260〜280 KB** | (Phase 5 stream-emit) |
 | (legacy asm)  | 9.5 MB | — (削除済)     | |
 
-Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass2 から g_code を
+Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass3 から g_code を
 廃止**し、source を 3 回再読み込みして target section を 4 KB out_buf
 経由で直接 stdout に stream emit する方式に変更。Phase 4 の動的確保
-段階では ~440 KB だったのが ~260 KB まで落ちた。asm_pass1 も別途
+段階では ~440 KB だったのが ~260 KB まで落ちた。asm_pass2 も別途
 `MAX_LABELS 16384 → 4096` + `MAX_NAME_POOL 256K → 128K` の shrink
 (commit 5098a1e) で ~430 KB → ~250 KB へ。
 
@@ -45,10 +45,10 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass2 から g_code を
   pass1 / pass2 を別プロセス化。g_lines 4 MB 廃止
 - Phase 3 (#59、#60): codegen と bc2asm を in-place shrink。bc2asm は
   per-function emission で 1.4 MB → 126 KB
-- Phase 4: asm_pass2 の g_code を .lab のセクションサイズ合計で動的確保。
+- Phase 4: asm_pass3 の g_code を .lab のセクションサイズ合計で動的確保。
   `MAX_CODE = 4194300` 固定を廃止、bss は filesz に含めない。
   4.6 MB → 441 KB (~10x)
-- Phase 5: asm_pass2 の g_code 自体を廃止、3-pass source re-scan で
+- Phase 5: asm_pass3 の g_code 自体を廃止、3-pass source re-scan で
   stream emit。441 KB → 260 KB
 
 計画詳細: `docs/task/pipeline_100kb.md`、.lab 仕様: `docs/lab_format.md`。
@@ -79,9 +79,9 @@ device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
 2. `pico2_compile_runtime/libtc/kern/kern2.sh` で /sd 上の .s 群を
    現ソースから regenerate (~14 min)。
 3. cat 16 files → /sd/full.s (302 s)
-4. asm_pass1 が `--lab-out /sd/full.lab /sd/full.s` で `src` 行を
+4. asm_pass2 が `--lab-out /sd/full.lab /sd/full.s` で `src` 行を
    `.lab` に bake (232 s)
-5. asm_pass2 が `--lab /sd/full.lab --out /sd/k.bin` で /sd/full.s を
+5. asm_pass3 が `--lab /sd/full.lab --out /sd/k.bin` で /sd/full.s を
    3 回直接読んでリンク (800 s)
 6. bin2uf2 task が /sd/k.bin → /sd/k.uf2 を変換 (758 s)
 
@@ -101,7 +101,7 @@ device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
 - **fatfs `dir_create` chain growth** (commit 773b746):
   FAT root cluster 128 entries 上限を撤廃、自己再生中に増える
   ファイルが入る
-- **asm_pass1 --lab-out + 位置引数で `src` 行を `.lab` に
+- **asm_pass2 --lab-out + 位置引数で `src` 行を `.lab` に
   emit** (commit 0c9a9a4): cat /sd/full.lab + 3×/sd/full.s →
   /sd/p2_in.s の中間ファイル (13 MB / 305 s) を撤廃。
   実機 v8 検証: kernel.bin md5 `7805e7348...` / kernel.uf2 md5
@@ -115,7 +115,7 @@ device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
   毎回 read-modify-write していた (FAT1 + FAT2 で 4 SD ops/cluster) 部分を
   per-sector write-back cache に置き換え。fatfs_close / fatfs_delete
   で flush。実機 v10 検証: ~50 min → ~26 min (REFRESH 込みで 1.9× 速)。
-  step 1 cat (302→78 s, 3.9×)、step 2 asm_pass1 (311→97 s, 3.2×)、
+  step 1 cat (302→78 s, 3.9×)、step 2 asm_pass2 (311→97 s, 3.2×)、
   step 0c kern_leaves (323→105 s, 3.0×) が特に速くなる。byte-exact
   維持 (md5 `5dc55910...` host == device)。
 - **dumper 1 KB content probe** (commit 60050f7): mtfs 先頭 64 B
@@ -138,7 +138,7 @@ host から大容量を UART で送らずに済むようになった (K11 自体
 
 ```
 parse → sigscan → cat → tcheck → codegen → bc2asm → cat
-       → asm_pass1 → cat → asm_pass2 → /sd/HW
+       → asm_pass2 → cat → asm_pass3 → /sd/HW
 => Hello, World!
 合計 127 秒
 ```
@@ -154,9 +154,9 @@ parse → sigscan → cat → tcheck → codegen → bc2asm → cat
 
 2. **PLL_SYS bring-up で CPU を 150 MHz 化** (commit cf22718)
    それまで `kernel/platform_pico2.s` は PLL 未使用で clk_sys ≈ 12 MHz。
-   asm_pass1 単独で 310 秒もかかっていた (CPU バウンド)。XOSC 12 MHz
+   asm_pass2 単独で 310 秒もかかっていた (CPU バウンド)。XOSC 12 MHz
    × FBDIV(125) → POSTDIV(5,2) で clk_sys 150 MHz に切替えた結果、
-   同じ asm_pass1 が 27 秒に短縮 (11.5×)。clk_peri は XOSC 直 12 MHz
+   同じ asm_pass2 が 27 秒に短縮 (11.5×)。clk_peri は XOSC 直 12 MHz
    のまま据え置いて UART/SPI baud は無変更。
 
 3. **プロンプト同期 UART ドライブ** (commit 5dfa631)
@@ -167,12 +167,12 @@ parse → sigscan → cat → tcheck → codegen → bc2asm → cat
 
 旁ら必要だった副次修正:
 - `bootstrap/runtime_syscall.c` の 16-byte pool を 256 → 32768
-  に拡大 (commit b8049d2)。`make pico2-kernel-extra` が asm_pass1
+  に拡大 (commit b8049d2)。`make pico2-kernel-extra` が asm_pass2
   自身を Gen2 で compile する際の bucket 0 OOM 解消。
 
 副次の運用 limitation (phase 8 で再検討):
 - UART RX FIFO に IRQ + ring buffer は未対応 (K8+K9 と統合)
-- task arena 絶対サイズの限界 (asm_pass2 で 320 KB) は維持
+- task arena 絶対サイズの限界 (asm_pass3 で 320 KB) は維持
 
 ### K3. タスクサイズ宣言 — 案C 完了 (2026-04-15)
 
@@ -181,7 +181,7 @@ parse → sigscan → cat → tcheck → codegen → bc2asm → cat
 
 - `kernel/build.sh` が per-task で header.s を emit し task_crt0.s の
   前にリンク。`task_arena_size()` / `task_stack_size()` の 2 つの
-  bash 関数に per-task 値が載っている (hello 8 KB ... asm_pass2 512
+  bash 関数に per-task 値が載っている (hello 8 KB ... asm_pass3 512
   KB)。
 - `kernel/loader.tc::load_fd` が img 先頭 8 バイトから peek32 で
   arena / stack を取り、`make_task(img + 8, arena, stack)` を呼ぶ。
@@ -212,8 +212,8 @@ header 値も調整する仕組みがない (固定 32 KB)。
     拡張 .th (`(imports)(self)(program)` wrapper) で typecheck を
     per-function streaming 化。tcheck は per-fn strtab rollback +
     per-fn kmalloc fntab で 717 KB → **75〜251 KB** (~9x)
-  - Phase 2: `compiler/asm_common.tc` + `compiler/asm_pass1.tc` +
-    `compiler/asm_pass2.tc` を新設。`.lab` 中間ファイル (`docs/
+  - Phase 2: `compiler/asm_common.tc` + `compiler/asm_pass2.tc` +
+    `compiler/asm_pass3.tc` を新設。`.lab` 中間ファイル (`docs/
     lab_format.md`) で 2 プロセス分離、g_lines 4 MB を廃止。
     asm-pass1 **~430 KB** (~22x)、asm-pass2 **~4.6 MB** (g_code 残
     件は問題 #7 に移動)
@@ -222,13 +222,13 @@ header 値も調整する仕組みがない (固定 32 KB)。
     1.4 MB → **120〜126 KB** (~11x)
   - Cleanup (#61 partial): `compiler/extract_sigs.tc` 削除 (unused)、
     `typecheck.tc` / `asm.tc` に deprecation header
-  - tests/test_phase7.sh: sigscan + tcheck + asm_pass1 + asm_pass2 の
+  - tests/test_phase7.sh: sigscan + tcheck + asm_pass2 + asm_pass3 の
     full split pipeline で OS 上 Hello World 完走
 
 - **Gen2 toolchain migration 完了 (2026-04-15)**: Phase 1+2+3 の後半
   cleanup。compile-gen2.sh / compile-gen3.sh / kernel/build.sh /
   tests/test_common.sh / tests/test_gen3.sh / tc_run.sh を新パイプ
-  ライン (sigscan + tcheck + asm_pass1 + asm_pass2) に切り替え、
+  ライン (sigscan + tcheck + asm_pass2 + asm_pass3) に切り替え、
   `compiler/typecheck.tc` / `compiler/asm.tc` (+ kernel/tasks/
   typecheck/, kernel/tasks/asm/, tc_asm.sh, tests/test_split.sh)
   を完全削除

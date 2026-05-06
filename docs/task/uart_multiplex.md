@@ -11,10 +11,10 @@ Pico 2 (単一 UART) 上でカーネルデバッグ出力・複数タスクの s
 現状の問題:
 - `[sw 2>0]` / `[kmem peak=...]` のようなカーネルトレースがタスク出力
   (cat /hello.txt の `hello, mtfs` など) に byte 単位で混ざる
-- **バイナリダンプ** (asm_pass2 の output 等) が走ると scheduler トレーサ
+- **バイナリダンプ** (asm_pass3 の output 等) が走ると scheduler トレーサ
   が途中に混入して破壊される
 - host からの入力は読む順に早いもの勝ちなので、sh が自分宛のコマンド
-  を読むつもりが asm_pass1 に奪われる等の race が起きる
+  を読むつもりが asm_pass2 に奪われる等の race が起きる
 - phase 7 の pico2 self-compile pipeline は intermediate data を UART
   で往復させる必要があるが、今の raw UART ではデバッグ困難
 
@@ -100,7 +100,7 @@ byte: 'T' '0' '0' '2' 0x08 'c' 'a' 't' 'f' 'i' 'l' 'e' '\n'
        [tag=T002][len=8 ][payload "catfile\n"               ]
 ```
 
-ホストが TTY 4 (asm_pass1) に full.s (224300 byte) を送る場合、255
+ホストが TTY 4 (asm_pass2) に full.s (224300 byte) を送る場合、255
 byte 毎に複数フレームに分割:
 ```
 [tag=T004][len=255][payload 255 bytes]

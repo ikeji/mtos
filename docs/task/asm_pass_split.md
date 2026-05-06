@@ -2,12 +2,12 @@
 
 ## 動機
 
-phase 7 の self-host pipeline で `asm_pass1` が 100 秒占めるが、
+phase 7 の self-host pipeline で `asm_pass2` が 100 秒占めるが、
 そのほとんど（~95 s）は **prelude.s** (task_crt0 + runtime.s、~70 KB
 / 11 K 行) の source walk + label 収集。prelude は kernel build
 時点で固定なので、毎回 OS 上で再走査する必要はない。
 
-更に `asm_pass1` 自体も label 収集 / BFS / アドレス確定 / strip / dump
+更に `asm_pass2` 自体も label 収集 / BFS / アドレス確定 / strip / dump
 が 1 関数に詰まっており、責務が混ざって見通しが悪い。整理する
 タイミングで per-file 抽出と link を分ける。
 
@@ -32,7 +32,7 @@ asm-pass1 を `--emit-idx <out.idx>` モードで起動：
 - `record_ref` の出力は (owner_idx, target_idx) ではなく (owner_name, target_name) として `ref` 行で吐く（idx は per-file なので merge 後に再採番が必要）
 
 `.idx` は **キャッシュ可能**: prelude.s は kernel build 時に host
-側 asm_pass1 で `.idx` 化し、mtfs に staging。OS 上では再生成不要。
+側 asm_pass2 で `.idx` 化し、mtfs に staging。OS 上では再生成不要。
 
 ### Pass 2-3 (cull + addr)
 
@@ -56,7 +56,7 @@ asm-pass2 は変更なし。`.lab` + `.s × N` を読んで encode するだけ�
 
 ## 期待効果
 
-prelude.idx を事前生成して OS 上で `asm_pass1 --load-idx /prelude.idx
+prelude.idx を事前生成して OS 上で `asm_pass2 --load-idx /prelude.idx
 /sd/sb.s /sd/strip.s > /sd/lab.s` のように起動すると：
 
 - prelude の source walk (~95 s) を skip
@@ -77,7 +77,7 @@ string_buffer.tc 自己コンパイル: 100 s → ~10 s 見込み。
    ファイル open → 行 parse → define_label / record_ref を呼ぶ)
 4. **asm-pass1 の `--load-idx` モード** (起動直後に listed `.idx` を
    全部 load してから user.s の処理に入る)
-5. **kernel/build.sh で prelude.idx 生成** (host asm_pass1 を
+5. **kernel/build.sh で prelude.idx 生成** (host asm_pass2 を
    `--emit-idx` で 1 回呼んで `mtfs/prelude.idx` に staging)
 6. **bench script で `--load-idx` 使用** (新しい
    `pico2_bench_idx.sh` を staging、test_pico2_bench.sh で測定)

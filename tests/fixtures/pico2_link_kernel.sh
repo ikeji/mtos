@@ -3,7 +3,7 @@
 # Concatenates the host-staged platform/trap/crt0_data .s files plus
 # the .s files we already produced under /sd from the per-tool
 # compile benches, plus an .incbin wrapper that pulls /sd/disk.img
-# straight into .rodata as the embedded mtfs blob. Then asm_pass1 +
+# straight into .rodata as the embedded mtfs blob. Then asm_pass2 +
 # asm_pass3 link it into /sd/kernel.bin and md5 the result.
 #
 # Prereqs:
@@ -48,7 +48,7 @@ cat /src/crt0_pico2_data.s >> /sd/full.s
 cat /src/mtfs_wrap.s >> /sd/full.s
 
 # Pass 1: build label table.
-asm_pass1 < /sd/full.s > /sd/full.lab
+asm_pass2 < /sd/full.s > /sd/full.lab
 
 # Pass 2: link to raw kernel binary.
 cat /sd/full.lab /sd/full.s /sd/full.s /sd/full.s | asm_pass3 > /sd/kernel.bin

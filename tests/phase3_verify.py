@@ -83,7 +83,7 @@ def gen_references_link():
         o.write(open(f"{REFS}/4.s", "rb").read())
         o.write(open(f"{REFS}/prelude_tail.s", "rb").read())
     with open(f"{REFS}/full.s", "rb") as i, open(f"{REFS}/lab.s", "wb") as o:
-        run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass1"],
+        run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass2"],
             stdin=i, stdout=o)
     # asm_pass3 input: lab.s + full.s × 3 (3-pass stream emitter —
     # text, rodata, data rescans).
@@ -97,7 +97,7 @@ def gen_references_link():
 def build_kernel_with_extras():
     env = dict(os.environ)
     env["EXTRA_TASKS"] = ("parse sigscan tcheck codegen bc2asm "
-                         "asm_pass1 asm_pass3 cat mx mr muxon muxoff")
+                         "asm_pass2 asm_pass3 cat mx mr muxon muxoff")
     env["GEN2_DIR"] = os.path.join(ROOT, "build/gen2")
     # Stage prelude.s / prelude_tail.s into REFS/ for the link-stage
     # reference generator. (Same bytes mkfs.py put under /prelude.s
@@ -191,10 +191,10 @@ def run_pipeline_on_virt():
         "mx      < /tmp/3.bc",
         "bc2asm  < /tmp/3.bc > /tmp/4.s",
         "mx      < /tmp/4.s",
-        # ---- link (asm_pass1 + asm_pass3) ----
+        # ---- link (asm_pass2 + asm_pass3) ----
         "cat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s",
         "mx      < /tmp/full.s",
-        "asm_pass1 < /tmp/full.s > /tmp/lab.s",
+        "asm_pass2 < /tmp/full.s > /tmp/lab.s",
         "mx      < /tmp/lab.s",
         # asm_pass3 wants the label table followed by the source three
         # times (3-pass stream emitter: text, rodata, data).

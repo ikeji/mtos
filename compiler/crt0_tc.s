@@ -35,7 +35,7 @@ do_exit__i32:
     ecall
     ret
 
-# do_openat / do_close for Gen2/Gen3 host so asm_pass1 can re-read
+# do_openat / do_close for Gen2/Gen3 host so asm_pass2 can re-read
 # the source file when given a path argument (dead-strip 2nd pass).
 # Linux openat ABI: (dirfd, path*, flags, mode). We pass mode=0 since
 # the kernel ignores it for read-only opens. AT_FDCWD = -100 lets the

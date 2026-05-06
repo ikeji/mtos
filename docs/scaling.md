@@ -19,9 +19,9 @@ K7 達成 (2026-04-29) で pico2 実機上での Hello World self-host が
 | codegen | 320 KB | 75 KB | ~3 s |
 | bc2asm | 192 KB | 111 KB | ~5 s |
 | cat-link | 16 KB | — | ~25 s (234 KB SD write) |
-| asm_pass1 | 320 KB | 218 KB | ~27 s |
+| asm_pass2 | 320 KB | 218 KB | ~27 s |
 | cat-p2 | 16 KB | — | ~50 s (3× full.s 連結) |
-| asm_pass2 | 320 KB | 298 KB | ~80 s |
+| asm_pass3 | 320 KB | 298 KB | ~80 s |
 | **合計** | | | **~127 s** |
 
 CPU: clk_sys 150 MHz (PLL_SYS), clk_peri 12 MHz (XOSC)
@@ -40,10 +40,10 @@ SD: SPI mode 0, 6 MHz, write ~5 KB/s, read ~17 KB/s
 
 phase 7 の 1 ファイルあたりの所要時間は **固定費 ~110 s + ソース
 サイズ依存 ~α s**。固定費が大きいのは、`/prelude.s` (234 KB) を
-asm_pass1 が 1 回、asm_pass2 が 3 回読むため:
+asm_pass2 が 1 回、asm_pass3 が 3 回読むため:
 
-- asm_pass1: 234 KB read + 計算 + 11 KB write ≒ 27 s
-- asm_pass2: 234 KB × 3 read + 計算 + 45 KB write ≒ 80 s
+- asm_pass2: 234 KB read + 計算 + 11 KB write ≒ 27 s
+- asm_pass3: 234 KB × 3 read + 計算 + 45 KB write ≒ 80 s
 - cat-link / cat-p2 で 234 KB SD write × 4 回 ≒ 45 s
 
 → 1 ファイルあたり **120 s 程度の prelude オーバーヘッド** がほぼ
@@ -65,22 +65,22 @@ constant。
 - **合計 約 3 時間**
 
 実際は heavy file (parse.tc / tcheck.tc / asm_common.tc / bc2asm.tc /
-asm_pass2.tc) が支配する。これら 5〜7 ファイルだけで 30 分以上を
+asm_pass3.tc) が支配する。これら 5〜7 ファイルだけで 30 分以上を
 食う見込み。
 
 ### メモリ: 1 ファイルごとの peak は ~300 KB のまま
 
-asm_pass2 の peak (298 KB) は label 数 + name pool に支配される。
+asm_pass3 の peak (298 KB) は label 数 + name pool に支配される。
 ソース毎に label 数が大きく変わるので peak も伸びるが、
 MAX_LABELS = 4096, MAX_NAME_POOL = 128 KB の cap がある (`compiler/asm_common.tc`)。
 通常の OS ソースなら 320 KB の task arena 内に収まる見込み。
 
-逆に **kernel arena (480 KB) のほうが先に問題化する**: sh + asm_pass2
-の同時 alive で sh (32 KB) + asm_pass2 (320 KB) + stack ≒ 360 KB +
+逆に **kernel arena (480 KB) のほうが先に問題化する**: sh + asm_pass3
+の同時 alive で sh (32 KB) + asm_pass3 (320 KB) + stack ≒ 360 KB +
 α。fragmentation を考えると ~440 KB 使うので、長時間バッチ実行で
 arena leak / fragmentation が積もると詰まる懸念がある。
 
-## Q2: bc2asm / asm_pass1 / asm_pass2 が特にメモリを使う理由
+## Q2: bc2asm / asm_pass2 / asm_pass3 が特にメモリを使う理由
 
 Hello World で 100〜300 KB peak。少しずつ違う原因。
 
@@ -100,7 +100,7 @@ Hello World で 100〜300 KB peak。少しずつ違う原因。
 の合計。Phase 3 で per-fn emission に切替えてから、これでも 1.4 MB
 → 110 KB に落ちている (`docs/task/pipeline_100kb.md`)。
 
-### asm_pass1 (peak 218 KB)
+### asm_pass2 (peak 218 KB)
 
 label 収集 only の役割で計算は少ないが、**label 表が大きい**:
 
@@ -116,12 +116,12 @@ label 収集 only の役割で計算は少ないが、**label 表が大きい**:
 
 合計 ~220 KB。
 
-### asm_pass2 (peak 298 KB)
+### asm_pass3 (peak 298 KB)
 
-asm_pass1 と同等の label state を全部受け取って、**追加で encoder
+asm_pass2 と同等の label state を全部受け取って、**追加で encoder
 state** を持つ:
 
-- asm_pass1 の構造一式 (label table, line table) ≒ 200 KB
+- asm_pass2 の構造一式 (label table, line table) ≒ 200 KB
 - 4 KB 出力バッファ (stream emit) + 各種 cursor
 - per-section 状態 (text/rodata/data/bss の base / cursor)
 - 数字ラベルの reference list (forward参照解決)
@@ -159,7 +159,7 @@ tcc: stage timings
   cat-wrap        100 ms
   tcheck         3000 ms
   ...
-  asm_pass2     80000 ms
+  asm_pass3     80000 ms
 tcc: total   127000 ms → /sd/a.out
 sh$ /sd/a.out
 Hello, World!
@@ -197,7 +197,7 @@ OOM: 327684                 ← tcheck spawn 失敗
 2. **kernel arena を増やす**。pico2 SRAM 520 KB のうち kernel arena
    480 KB → 500+ KB に拡張。ただし stack や bss を圧迫するので
    小幅増しか取れない。
-3. **task arena を縮める**。tcheck/asm_pass1/asm_pass2 の 320 KB を
+3. **task arena を縮める**。tcheck/asm_pass2/asm_pass3 の 320 KB を
    減らす。Phase 5 系の追加最適化が必要。
 4. **`do_exec` で tcc 自身を最終段に置き換える**。その場合 1〜N-1
    段目は別途処理を要する (chain).
@@ -214,7 +214,7 @@ OS 内 mtfs に `/prelude.s` として埋め込まれている定型 asm 文字�
 前に下記を 1 度だけ生成して mtfs にステージ:
 
 ```
-/prelude.s   = '; raw\n'                 ← asm_pass2 の出力モード指示
+/prelude.s   = '; raw\n'                 ← asm_pass3 の出力モード指示
              + '.word 32768\n.word 8192' ← /sd/HW のタスクヘッダ
                                           (arena=32 KB, stack=8 KB)
              + task_crt0.s               ← ecall stub + peek/poke + main 呼び出し
@@ -228,7 +228,7 @@ OS 内 mtfs に `/prelude.s` として埋め込まれている定型 asm 文字�
 crt0 + runtime + bss を貼って一つの完結アセンブリに仕立てる。
 
 サイズ: **`/prelude.s` ≈ 234 KB** (`runtime.s` が大半を占める)。
-これが asm_pass1 で 1 回、asm_pass2 で 3 回読まれるので、実は phase 7
+これが asm_pass2 で 1 回、asm_pass3 で 3 回読まれるので、実は phase 7
 のボトルネックの大半が「同じ 234 KB を何度も SD から読む」になって
 いる。`runtime.s` を Flash XIP の rodata にしてアドレス渡しできれば
 劇的に速くなるはず (将来課題)。
@@ -307,8 +307,8 @@ sh の組み込みコマンドにする」** が一番素直 (sh + child の 2 �
 | tcheck    |  80 KB |  74 KB | **320 KB** |
 | codegen   |  50 KB |  77 KB | **320 KB** |
 | bc2asm    |  35 KB | 113 KB | **192 KB** |
-| asm_pass1 |  45 KB | 224 KB | **320 KB** |
-| asm_pass2 |  45 KB | 298 KB | **320 KB** |
+| asm_pass2 |  45 KB | 224 KB | **320 KB** |
+| asm_pass3 |  45 KB | 298 KB | **320 KB** |
 
 Hello World の実 peak は概ね目標 100 KB 級だが、**task arena 予約は
 worst case を見越して 320 KB に取っている**。
@@ -328,11 +328,11 @@ worst case として参照する意味がない。
 | ファイル | nc (peak fn) | tcheck 結果 |
 |---|---:|---|
 | ast_node.tc      |   87 | OK |
-| asm_pass1.tc     |  148 | OK |
+| asm_pass2.tc     |  148 | OK |
 | string_buffer.tc |  164 | OK |
 | source_reader.tc |  164 | OK |
 | sigscan.tc       |  381 | OK |
-| asm_pass2.tc     |  389 | OK |
+| asm_pass3.tc     |  389 | OK |
 | tcheck.tc        |  607 | OK |
 | codegen.tc       |  854 | OK |
 | **bc2asm.tc**    | **1656** | **OK ← 現実の worst case** |
@@ -355,8 +355,8 @@ OS 全体を self-host する用途を想定して各段 arena を:
 | tcheck    | **224 KB** | bc2asm.tc tcheck 推定 170 KB + 30% margin |
 | codegen   | **128 KB** | Hello World 77 KB + bc2asm.tc 想定でも < 128 KB |
 | bc2asm    | **144 KB** | Hello World peak 113 KB に余裕付き |
-| asm_pass1 | **288 KB** | peak 224 KB (固定 label pool 128 KB が支配) |
-| asm_pass2 | **320 KB 維持** | peak 298 KB に余裕なし |
+| asm_pass2 | **288 KB** | peak 224 KB (固定 label pool 128 KB が支配) |
+| asm_pass3 | **320 KB 維持** | peak 298 KB に余裕なし |
 
 これで sh + tcc + tcheck = 40 + 25 + 240 = **305 KB / 480 KB**、
 余裕 175 KB。tcc-driven が動くようになる見込み。
@@ -378,20 +378,20 @@ arena 縮小を実装 (commit 後述) して tcc-driven をリトライ:
 | codegen   | 25 s (OK) |
 | bc2asm    | 26 s (OK) |
 | cat-link  | **738 s** (sh 駆動 ~25 s の 30 倍!) |
-| asm_pass1 | **3841 s = 64 分** (sh 駆動 27 s の 142 倍!) |
+| asm_pass2 | **3841 s = 64 分** (sh 駆動 27 s の 142 倍!) |
 | cat-p2    | **3044 s** (途中で OOM) |
-| asm_pass2 | OOM (320 KB arena 維持なので余裕 79 KB) |
+| asm_pass3 | OOM (320 KB arena 維持なので余裕 79 KB) |
 
 **進歩**: tcheck の OOM は arena 縮小で解消、本来意図した stage は
 全部 alloc できるように。
 
 **残課題**:
 
-1. **asm_pass2 が依然 OOM**: 320 KB 維持なので sh + tcc + asm_pass2 =
-   401 KB / 480 KB の構造的不可能。tcc 駆動のまま asm_pass2 を通す
-   なら、tcc を `do_exec` で asm_pass2 に置き換える必要 (ただし帰還
+1. **asm_pass3 が依然 OOM**: 320 KB 維持なので sh + tcc + asm_pass3 =
+   401 KB / 480 KB の構造的不可能。tcc 駆動のまま asm_pass3 を通す
+   なら、tcc を `do_exec` で asm_pass3 に置き換える必要 (ただし帰還
    後の `wc /sd/a.out` ができなくなる)。
-2. **cat / asm_pass1 の異常遅延** (14〜140 倍): tcc が kernel arena
+2. **cat / asm_pass2 の異常遅延** (14〜140 倍): tcc が kernel arena
    中央に 25 KB 居座ることで、alloc/free が free list を長く歩く
    症状と推測。`compiler/runtime.tc::large_alloc` は first-fit + 隣接
    merge だが、tcc が中央にあると merge できない。
@@ -409,7 +409,7 @@ K7 とほぼ同じ:
 
 ```
 parse → sigscan → cat-wrap → tcheck → codegen → bc2asm
-     → cat-link → asm_pass1 → cat-p2 → asm_pass2 → /sd/HW
+     → cat-link → asm_pass2 → cat-p2 → asm_pass3 → /sd/HW
 
 sh-driven, with PLL_SYS @ 150 MHz: 123 sec (K7 era 127 sec)
 ```
@@ -425,9 +425,9 @@ sh-driven, with PLL_SYS @ 150 MHz: 123 sec (K7 era 127 sec)
 | codegen | ~5 s |
 | bc2asm | ~5 s |
 | cat-link | ~10 s |
-| asm_pass1 | ~27 s |
+| asm_pass2 | ~27 s |
 | cat-p2 | ~10 s |
-| asm_pass2 | ~15 s |
+| asm_pass3 | ~15 s |
 | /sd/HW exec | ~1 s |
 
 ~~`echo hello world` (UART 出力のみ、12 byte) でも 11 s かかる。~~
@@ -452,12 +452,12 @@ sh-driven baseline と比較した tcc-driven 倍率:
 | 段 | sh-driven | tcc-driven | 倍率 |
 |---|---:|---:|---:|
 | parse | 31 s | 48 s | 1.5× (許容) |
-| asm_pass1 | 27 s | 3841 s | **142×** |
+| asm_pass2 | 27 s | 3841 s | **142×** |
 | cat-link | 10 s | 738 s | **74×** |
 
 parse の 1.5× は spawn overhead の僅かな差で説明できるが、
 **inline で大量データを扱う段** (cat-link) と **後続の重 task**
-(asm_pass1) で激遅。
+(asm_pass2) で激遅。
 
 仮説: tcc が `do_openat` / `sys_read` / `sys_write` を inline で
 大量に呼ぶと、毎回 tcc の task arena から 4 KB buffer 経由でデータ
@@ -487,7 +487,7 @@ arena で動くため、kernel ↔ user の境界を超える allocation pattern
 は **1000× 遅い**。
 
 仮説:
-1. **CPU が実際は 150 MHz で動いていない** (sh-driven asm_pass1 は
+1. **CPU が実際は 150 MHz で動いていない** (sh-driven asm_pass2 は
    27s なので少なくとも sh コンテキストでは PLL 効いてる)
 2. **TC compiler の呼び出し ABI が想定より遥かに重い** (関数呼び出し
    per-byte で何百サイクルも)
@@ -528,7 +528,7 @@ peak memory + 時間。**ターゲット: 各段 ≤ 10 sec (pico2 実機) / ≤
 ### 進捗 (2026-04-30 メモリ削減 Phase 1+2+3)
 
 hello.tc は **全段 100 KB 達成**。bc2asm.tc は bc2asm/codegen 達成、
-tcheck/asm_pass1/asm_pass2 が残 26〜74 KB。
+tcheck/asm_pass2/asm_pass3 が残 26〜74 KB。
 
 #### hello.tc (366 byte, 入力小)
 
@@ -539,8 +539,8 @@ tcheck/asm_pass1/asm_pass2 が残 26〜74 KB。
 | tcheck    |  73 |  69 | ✓ |
 | codegen   |  76 |  68 | ✓ |
 | bc2asm    | 111 |  79 | ✓ |
-| asm_pass1 | 218 |  **67** | ✓ |
-| asm_pass2 | 298 |  **80** | ✓ |
+| asm_pass2 | 218 |  **67** | ✓ |
+| asm_pass3 | 298 |  **80** | ✓ |
 
 #### bc2asm.tc (~50 KB, 実 worst case)
 
@@ -551,8 +551,8 @@ tcheck/asm_pass1/asm_pass2 が残 26〜74 KB。
 | tcheck    | 190 | 135 | ❌ 1.4× |
 | codegen   | 185 | 126 | ❌ 1.3× |
 | bc2asm    | 122 |  90 | ✓ |
-| asm_pass1 | 249 | 163 | ❌ 1.6× |
-| asm_pass2 | 328 | 174 | ❌ 1.7× |
+| asm_pass2 | 249 | 163 | ❌ 1.6× |
+| asm_pass3 | 328 | 174 | ❌ 1.7× |
 
 ### 適用した削減 (commit 順)
 
@@ -576,7 +576,7 @@ tcheck/asm_pass1/asm_pass2 が残 26〜74 KB。
 6. **numlab storage を digit 0 / others 分離** (-33 KB): 実測 digit 0
    が >500 で digit 1-9 は ~0-1。固定 10×1024 配列 (40 KB) を
    {1024 digit 0} + {9×64 others} = ~7 KB に。
-7. **LAB_HASH を finalize 時に動的サイズ** (-16〜28 KB on asm_pass2):
+7. **LAB_HASH を finalize 時に動的サイズ** (-16〜28 KB on asm_pass3):
    実 g_nlabels の next-pow-2 × 2 で alloc。hello.tc は 64 entries =
    256 B、bc2asm.tc は 2048 entries = 8 KB 使用 (旧 32 KB 固定)。
 
@@ -595,14 +595,14 @@ tcheck/asm_pass1/asm_pass2 が残 26〜74 KB。
   が支配。strtab を perm/ephemeral 分離するか kmalloc per-fn 化する
   refactor で削減可。
 - **codegen bc2asm.tc 26 KB 超過**: tcheck と同じ strtab 由来
-- **asm_pass1 bc2asm.tc 63 KB 超過**: 動的 grow しても 32→64 KB
+- **asm_pass2 bc2asm.tc 63 KB 超過**: 動的 grow しても 32→64 KB
   grow 中の transient peak (32+64=96 KB) が支配。realloc 相当が
   あれば transient peak を 64 KB に抑えられるが、現 kmalloc 未対応。
-- **asm_pass2 bc2asm.tc 74 KB 超過**: pass1 と同じ + LAB_HASH 8 KB
+- **asm_pass3 bc2asm.tc 74 KB 超過**: pass1 と同じ + LAB_HASH 8 KB
 
 ### 削減対象優先順 (残)
 
-1. **realloc-style in-place grow** (asm_pass1/2 ~30 KB 削減): kmalloc
+1. **realloc-style in-place grow** (asm_pass2/2 ~30 KB 削減): kmalloc
    に "extend large block in place" を追加すれば transient peak が
    消える。kernel arena 全体に影響する大きい変更。
 2. **strtab restructure** (tcheck/codegen 30 KB 削減): per-fn 完全
@@ -617,6 +617,6 @@ host virt の wall time は相対指標として shrink 前後の差を確認す
 
 - `docs/task/pipeline_100kb.md` — Phase 1/2/3 のメモリ削減経緯
 - `docs/compiler.md` — 各段の peak と algorithm
-- `docs/lab_format.md` — asm_pass1/pass2 が共有する .lab 中間形式
+- `docs/lab_format.md` — asm_pass2/pass2 が共有する .lab 中間形式
 - `docs/solved.md` K7 — pico2 phase 7 完走の経緯
 - `tests/bench_pipeline.sh` — per-stage memory/time 回帰計測

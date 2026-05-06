@@ -1,7 +1,7 @@
 #!/bin/bash
 # compile-gen3.sh — Compile .tc to RV32 ELF using Gen3 tools (via qemu).
 # Uses: Gen1 parse (for import .th generation),
-#       Gen3 sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass3 (qemu).
+#       Gen3 sigscan/tcheck/codegen/bc2asm/asm_pass2/asm_pass3 (qemu).
 #
 # Usage: GEN3_DIR=/path/to/gen3 ./compile-gen3.sh [-o output] file.tc
 #
@@ -11,7 +11,7 @@
 #
 # Requires: Gen1 tools (parse),
 #           Gen3 tools in GEN3_DIR (sigscan, tcheck, codegen, bc2asm,
-#             asm_pass1, asm_pass3),
+#             asm_pass2, asm_pass3),
 #           qemu-riscv32
 
 set -e
@@ -42,7 +42,7 @@ if [ -z "$GEN3_DIR" ]; then
     exit 1
 fi
 
-for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass3; do
+for tool in sigscan tcheck codegen bc2asm asm_pass2 asm_pass3; do
     if [ ! -x "$GEN3_DIR/$tool" ]; then
         echo "Error: Gen3 tool not found: $GEN3_DIR/$tool" >&2
         exit 1
@@ -148,7 +148,7 @@ done
     cat "$CRT0_DATA"
 } > "$TMP/full.s"
 
-"$QEMU" "$GEN3_DIR/asm_pass1" < "$TMP/full.s" > "$TMP/full.lab"
+"$QEMU" "$GEN3_DIR/asm_pass2" < "$TMP/full.s" > "$TMP/full.lab"
 cat "$TMP/full.lab" "$TMP/full.s" "$TMP/full.s" "$TMP/full.s" | \
     "$QEMU" "$GEN3_DIR/asm_pass3" > "$OUTFILE"
 

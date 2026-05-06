@@ -642,7 +642,7 @@ export fn km_curr_bytes() -> i32 { return g_km_curr_bytes; }
 // newline" diagnostic output, while libtc's print served kernel
 // tasks. asm.tc's last-wins rule meant tasks that imported libtc got
 // the no-newline version while everyone else got the newline version,
-// but the symbol collision broke prelude pre-encode (asm_pass1's
+// but the symbol collision broke prelude pre-encode (asm_pass2's
 // --emit-bin path bakes the locally-resolved address into the prelude
 // .bin, so when libtc later overrode the symbol the call still
 // pointed at the prelude copy). Renaming runtime's variants to

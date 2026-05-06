@@ -209,7 +209,7 @@ qemu-system-riscv32 -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
   → compile-gen2.sh (Gen2 パイプライン)
     → parse → sigscan → tcheck → codegen → bc2asm → .s
   → task_crt0.s + runtime.s + <name>.s + task_data.s
-    → asm_pass1 → asm_pass2
+    → asm_pass2 → asm_pass3
   → raw binary (先頭 8B = arena_size + stack_size ヘッダ)
 ```
 

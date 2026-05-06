@@ -12,7 +12,7 @@
 #   2. Pico2 `cat /tmp/4.s` — UART dump to host.
 #   3. Host assembles full.s locally = prelude + 4.s + tail.
 #   4. Host sends full.s via UART to pico2 stdin. Pico2 runs
-#      `asm_pass1 > /tmp/lab`. asm_pass1 consumes stdin until 0x04
+#      `asm_pass2 > /tmp/lab`. asm_pass2 consumes stdin until 0x04
 #      EOT (source_reader treats it as EOF).
 #   5. Pico2 `cat /tmp/lab` — UART dump to host.
 #   6. Host sends lab + full.s + full.s + full.s via UART. Pico2
@@ -50,8 +50,8 @@ echo "[info] logs/intermediates kept in $TMP"
 echo "=== Pico 2 OS-Hosted Hello World ==="
 
 # Step 1: Build pico2 kernel with EXTRA_TASKS, export prelude.s.
-echo "[build] pico2 kernel (EXTRA_TASKS=parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass3 cat)"
-EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass3 cat" \
+echo "[build] pico2 kernel (EXTRA_TASKS=parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat)"
+EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat" \
 PRELUDE_OUT_DIR="$TMP" \
 GEN2_DIR="$GEN2_DIR" \
     "$ROOT_DIR/kernel/build.sh" --target pico2 \

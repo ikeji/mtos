@@ -10,11 +10,11 @@
 # STATUS (2026-05-03): PASS. legacy phase 7 self-host pipeline runs
 # end-to-end on real hardware via /sd/ intermediates (~125 s) and
 # prints "Hello, World!". K7 was unblocked by PLL_SYS 150 MHz
-# (commit cf22718) — asm_pass1 dropped from >5 min to 27 s.
+# (commit cf22718) — asm_pass2 dropped from >5 min to 27 s.
 #
 # Manual test (not in `make test`): requires Debug Probe, Catalex SD
 # breakout, and a FAT-formatted SD card. Builds pico2_kernel_extra
-# (kernel + parse/sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass3),
+# (kernel + parse/sigscan/tcheck/codegen/bc2asm/asm_pass2/asm_pass3),
 # flashes it, then drives sh through the pipeline and verifies that
 # the final /sd/hw binary prints "Hello, World!".
 #
@@ -40,7 +40,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 # ----- Step 1: Build kernel with EXTRA tasks -----
 t0=$(time_ms)
-EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass3 cat" \
+EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat" \
     GEN2_DIR="$GEN2_DIR" "$ROOT_DIR/kernel/build.sh" --target pico2 \
     -o "$TMP/kernel.uf2" 2>&1 | sed 's/^/    /' >&2
 if [ ! -s "$TMP/kernel.uf2" ]; then
@@ -97,7 +97,7 @@ tcheck < /sd/1.wr > /sd/2.tast
 codegen < /sd/2.tast > /sd/3.bc
 bc2asm < /sd/3.bc > /sd/4.s
 cat /prelude.s /sd/4.s /prelude_tail.s > /sd/full.s
-asm_pass1 < /sd/full.s > /sd/lab.s
+asm_pass2 < /sd/full.s > /sd/lab.s
 cat /sd/lab.s /sd/full.s /sd/full.s /sd/full.s > /sd/p2.in
 asm_pass3 < /sd/p2.in > /sd/HW
 /sd/HW

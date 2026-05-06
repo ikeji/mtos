@@ -31,7 +31,7 @@ ARM Cortex-M33 デュアルコアモードと RISC-V Hazard3 デュアルコア�
 `kernel/platform_pico2.s` の `_start` で XOSC 安定後に PLL_SYS bring-up
 (REFDIV=1, FBDIV=125, POSTDIV1=5/POSTDIV2=2) → CLK_SYS の SRC を
 AUX = PLL_SYS に glitchless 切替。phase 7 の compiler pipeline で
-asm_pass1 単独実行が **310s → 27s (11.5×)** に短縮された。
+asm_pass2 単独実行が **310s → 27s (11.5×)** に短縮された。
 
 ## 必要な機材
 
@@ -290,7 +290,7 @@ UART を別経路 (Debug Probe 等) で開いていればログが見える。
 # 通常版
 make run-pico2
 
-# EXTRA_TASKS (parse/sigscan/.../asm_pass2) 込みの kernel
+# EXTRA_TASKS (parse/sigscan/.../asm_pass3) 込みの kernel
 make run-pico2-extra
 ```
 

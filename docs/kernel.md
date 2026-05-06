@@ -162,7 +162,7 @@ count + bytes)** を直接渡す。`task_crt0.s` の stub は
    `g_last_*` を対応 Task に移してスロットを ready 化
 
 ELF ではなく `compile-gen2.sh` が `; raw` で吐く生バイナリ + 8 byte
-header。再配置情報なしで済むように asm_pass2 が gp 相対 la を
+header。再配置情報なしで済むように asm_pass3 が gp 相対 la を
 常用する。
 
 ## 割り込み・例外処理

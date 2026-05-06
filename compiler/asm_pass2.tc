@@ -1,4 +1,4 @@
-// asm_pass1.tc — label collector half of the asm split (Phase 2 #56).
+// asm_pass2.tc — label collector half of the asm split (Phase 2 #56).
 //
 // Reads a `.s` source one line at a time and writes a `.lab`
 // (docs/lab_format.md) so asm-pass2 can encode the binary in one
@@ -6,7 +6,7 @@
 //
 // Source path:
 //   - With argv[1] set (OS-side, msh script invoking
-//     `asm_pass1 /sd/full.s`): re-readable file, the dead-strip
+//     `asm_pass2 /sd/full.s`): re-readable file, the dead-strip
 //     Phase 3 second source pass is enabled, refs include forward
 //     edges, and the .lab dump filters by the live bitmap.
 //   - Without argv (host stdin pipe via compile-gen2.sh / kernel
@@ -201,7 +201,7 @@ fn emit_stripped(reader: SourceReader, out_fd: i32,
 // `.idx` is loaded (labels / refs / secsize) before the source walk
 // so the user.s starts with the prelude state already in place. Used
 // to skip the prelude source walk on every OS-side compile (kernel
-// build pre-emits prelude.idx, OS asm_pass1 just loads it).
+// build pre-emits prelude.idx, OS asm_pass2 just loads it).
 fn run(src_path: String, strip_out_path: String,
        emit_idx_path: String, load_idx_path: String,
        lab_out_path: String) -> i32 {
@@ -261,7 +261,7 @@ fn run(src_path: String, strip_out_path: String,
     // (dead-strip BFS feeds the strip walker). When neither emit-idx
     // nor strip is requested we skip ref collection — saves ~88 KB
     // peak (g_refs 64 KB + g_def_* 24 KB) which lets parse.tc-sized
-    // M7-full compiles fit in a 320 KB asm_pass1 task arena.
+    // M7-full compiles fit in a 320 KB asm_pass2 task arena.
     var collect_refs: i32 = 0;
     if strip_out_path as u32 != 0u32 { collect_refs = 1; }
     if emit_idx_path as u32 != 0u32 { collect_refs = 1; }
@@ -269,7 +269,7 @@ fn run(src_path: String, strip_out_path: String,
     // can record the prelude refs into g_refs. When we won't be doing
     // dead-strip (collect_refs == 0) those prelude refs are dead weight
     // — drop the ~88 KB of ref+def state right now to free up arena
-    // space for the rest of asm_pass1's work (g_lab_names doubling
+    // space for the rest of asm_pass2's work (g_lab_names doubling
     // hits 32→64 KB hard during M7-full parse.tc walks). Also flip
     // g_collecting_refs back off so pass1_scan_operand_refs becomes a
     // no-op for the user.s walk.
@@ -336,7 +336,7 @@ fn run(src_path: String, strip_out_path: String,
             asm_compute_live();
             // Done with the ref graph + deferred queue. Free ~88 KB so
             // Phase 5's strip-pass StringBuffer + line buffer fit in the
-            // asm_pass1 arena (200 KB on pico2).
+            // asm_pass2 arena (200 KB on pico2).
             asm_release_ref_state();
         }
 
@@ -416,14 +416,14 @@ fn arg_eq(s: String, pat: StringLiteral) -> i32 {
 
 fn main(argv: StringArray) -> i32 {
     // CLI shapes:
-    //   asm_pass1                                       stdin → .lab on stdout
-    //   asm_pass1 src.s                                 read src, .lab on stdout
-    //   asm_pass1 src.s strip.s                         dead-strip → strip.s, .lab on stdout
-    //   asm_pass1 --emit-idx out.idx src.s              extract pass only → .idx
-    //   asm_pass1 --load-idx in.idx src.s [strip.s]     load prelude state then process src
-    //   asm_pass1 --load-idx in.idx --idx-source p.s ... emit `src p.s` into the .lab so
+    //   asm_pass2                                       stdin → .lab on stdout
+    //   asm_pass2 src.s                                 read src, .lab on stdout
+    //   asm_pass2 src.s strip.s                         dead-strip → strip.s, .lab on stdout
+    //   asm_pass2 --emit-idx out.idx src.s              extract pass only → .idx
+    //   asm_pass2 --load-idx in.idx src.s [strip.s]     load prelude state then process src
+    //   asm_pass2 --load-idx in.idx --idx-source p.s ... emit `src p.s` into the .lab so
     //                                                     pass2 can open the prelude directly
-    //   asm_pass1 --lab-out path.lab ...                .lab to a file instead of stdout
+    //   asm_pass2 --lab-out path.lab ...                .lab to a file instead of stdout
     var path: String = 0 as String;
     var strip_out: String = 0 as String;
     var emit_idx: String = 0 as String;
@@ -488,7 +488,7 @@ fn main(argv: StringArray) -> i32 {
         // as the second src so pass2 can read it.
         asm_set_src_path2(path);
     } else if path as u32 != 0u32 {
-        // Plain `asm_pass1 <src> --lab-out <lab>`: bake a src line
+        // Plain `asm_pass2 <src> --lab-out <lab>`: bake a src line
         // referencing <src> into the .lab so asm_pass3 can pick it
         // up directly per section pass — eliminates the "cat lab +
         // 3 × src | asm_pass3" choreography on the OS side.

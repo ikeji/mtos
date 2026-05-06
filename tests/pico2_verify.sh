@@ -71,7 +71,7 @@ qemu-riscv32 "$ROOT_DIR/build/gen2/bc2asm"  < "$REFS/3.bc"     > "$REFS/4.s"
 cat "$REFS/prelude.s" "$REFS/4.s" "$REFS/prelude_tail.s"       > "$REFS/full.s"
 # full.s is the host-side reference for the concatenation the driver
 # doesn't even ask pico2 to build (the OS doesn't have room for it in
-# tmpfs anyway). asm_pass1 / asm_pass3 references are not needed here
+# tmpfs anyway). asm_pass2 / asm_pass3 references are not needed here
 # because the driver skips those stages without --run-link.
 
 # ---------------------------------------------------------------------

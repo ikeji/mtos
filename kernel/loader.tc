@@ -50,7 +50,7 @@ export fn basename_copy(path: String) -> U8Array {
 //     offset 8..   _start code + sections
 //
 // kernel/build.sh prepends a 2-word .word directive file in front of
-// task_crt0.s so asm_pass1/pass2 emits the header as the first 8 bytes
+// task_crt0.s so asm_pass2/pass2 emits the header as the first 8 bytes
 // of .text. Everything in the code section shifts by 8, but since all
 // references are PC-relative / gp-relative and the whole section moves
 // together, the linker / loader don't need to rewrite anything — the

@@ -4,7 +4,7 @@
 # the host gen2 reference byte-exact.
 #
 # Each step needs a fresh-boot kernel arena to allocate the 288 KB
-# contiguous block asm_pass1/asm_pass3 need. We reset (not re-flash)
+# contiguous block asm_pass2/asm_pass3 need. We reset (not re-flash)
 # between steps via openocd; /sd persists.
 
 set -e
@@ -135,7 +135,7 @@ fi
 echo "=== Step 1: cat → /sd/full.s ===" >&2
 run_step /pico2_link_kernel_step1.sh STEP1_DONE
 
-echo "=== Reset + Step 2: asm_pass1 + cat → /sd/p2_in.s ===" >&2
+echo "=== Reset + Step 2: asm_pass2 + cat → /sd/p2_in.s ===" >&2
 reset_only
 sleep 4
 run_step /pico2_link_kernel_step2.sh STEP2_DONE

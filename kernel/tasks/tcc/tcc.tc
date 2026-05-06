@@ -7,7 +7,7 @@
 // Drives the full self-hosted compile pipeline:
 //
 //   parse → sigscan → cat-wrap → tcheck → codegen → bc2asm
-//        → cat (prelude + .s + tail) → asm_pass1
+//        → cat (prelude + .s + tail) → asm_pass2
 //        → cat (lab + full × 3) → asm_pass3 → /sd/a.out
 //
 // Intermediate files live under /sd/_*.* and are NOT cleaned up on
@@ -220,10 +220,10 @@ fn main(argv: StringArray) -> i32 {
     do_close(ofd);
     print_stage_ms("cat-link", now_us() - t0);
 
-    // Stage 8: asm_pass1
-    dt = run_stage("asm_pass1", "/bin/asm_pass1",
+    // Stage 8: asm_pass2
+    dt = run_stage("asm_pass2", "/bin/asm_pass2",
                    "/sd/_full.s", "/sd/_lab.s");
-    print_stage_ms("asm_pass1", dt);
+    print_stage_ms("asm_pass2", dt);
 
     // Stage 9: cat-p2 (lab + full×3, inline)
     t0 = now_us();

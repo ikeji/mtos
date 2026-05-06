@@ -20,7 +20,7 @@ OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
 UART_PORT="${UART_PORT:-/dev/ttyACM0}"
 
-EXTRA_TASKS_DEFAULT="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass3 cat muxon muxoff mx mr"
+EXTRA_TASKS_DEFAULT="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat muxon muxoff mx mr"
 USE_EXTRA=0
 BUILD=1
 for arg in "$@"; do

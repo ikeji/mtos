@@ -5,13 +5,13 @@ Drives pico2 (post-flash) through the OS-side compile pipeline:
     parse → sigscan → tcheck → codegen → bc2asm  (on pico2, tmpfs)
     cat /tmp/4.s                                   (dump .s to host)
     host: full.s = prelude + 4.s + prelude_tail
-    asm_pass1 > /tmp/lab     (host streams full.s + EOT)
+    asm_pass2 > /tmp/lab     (host streams full.s + EOT)
     cat /tmp/lab             (dump lab to host)
     asm_pass3 > /tmp/hw      (host streams lab + full.s × 3 + EOT)
     /tmp/hw                  (run compiled binary on pico2)
 
 Host input to pico2: raw bytes written to the tty — sh consumes them
-on fd 0. source_reader.tc on pico2 treats 0x04 as EOF so asm_pass1 /
+on fd 0. source_reader.tc on pico2 treats 0x04 as EOF so asm_pass2 /
 asm_pass3 know when their UART-fed input ends.
 
 Output parsing: the pico2 kernel sprays scheduler markers (`[sw X>Y]`,
@@ -173,7 +173,7 @@ def main():
                     help="If set, byte-compare each extracted stage against "
                          "<refs-dir>/<name> and exit non-zero on any DIFF.")
     ap.add_argument("--run-link", action="store_true",
-                    help="Also run asm_pass1 + asm_pass3 link stages and "
+                    help="Also run asm_pass2 + asm_pass3 link stages and "
                          "execute /tmp/hw. Requires reliable UART-stdin "
                          "streaming which may wedge the pico2 kernel.")
     args = ap.parse_args()
@@ -259,28 +259,28 @@ def main():
     log(f"full.s = {len(full_s)} bytes (prelude {len(prelude)} + user {len(user_s)} + tail {len(tail)})")
     all_ok &= cmp_ref("full.s", full_s, args.refs_dir, args.log_dir, results)
 
-    # --- Optional link stages (asm_pass1 + asm_pass3) ---
+    # --- Optional link stages (asm_pass2 + asm_pass3) ---
     # These need to stream 200+ KB of input over UART because the
     # assembly+label table is too big for pico2 tmpfs. The streaming
     # path wedges the kernel today (see the tcheck comment above), so
     # they run only when --run-link is passed. In --refs-dir mode the
     # compile-stage byte-exact check is the primary goal anyway: once
-    # the source-level stages match Gen2, asm_pass1/pass2 produce the
+    # the source-level stages match Gen2, asm_pass2/pass2 produce the
     # same bytes deterministically (same qemu-riscv32 binaries).
     ran_link = False
     if args.run_link:
-        send_cmd_no_wait(fd, "asm_pass1 > /tmp/lab")
+        send_cmd_no_wait(fd, "asm_pass2 > /tmp/lab")
         time.sleep(2.0)
-        log(f"streaming full.s to asm_pass1 ({len(full_s)} bytes)")
+        log(f"streaming full.s to asm_pass2 ({len(full_s)} bytes)")
         send_stream(fd, full_s)
         os.write(fd, EOT)
-        log("sent EOT, waiting for asm_pass1 sh$ prompt")
+        log("sent EOT, waiting for asm_pass2 sh$ prompt")
         buf = bytearray()
         if not read_until(fd, PROMPT, time.time() + 240, buf):
-            log("asm_pass1 timed out")
-            open(os.path.join(args.log_dir, "asm_pass1.out"), "wb").write(buf)
+            log("asm_pass2 timed out")
+            open(os.path.join(args.log_dir, "asm_pass2.out"), "wb").write(buf)
             return 2
-        log("asm_pass1 done")
+        log("asm_pass2 done")
 
         lab = send_cmd_wait_prompt(fd, "cat /tmp/lab", timeout=60)
         log(f"lab = {len(lab)} bytes")

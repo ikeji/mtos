@@ -1,4 +1,4 @@
-# asm_pass1/2 dead-strip 計画
+# asm_pass2/2 dead-strip 計画
 
 **ステータス: 設計検討中 (2026-04-30)**
 
@@ -6,7 +6,7 @@
 
 `prelude.s` (= task_crt0.s + 全 runtime.s) は 234 KB あるが、Hello
 World の user .s が実際に呼ぶシンボルは `print__StringLiteral` の
-1 個だけ。残り 200+ KB は **dead code** として linker (asm_pass1/2)
+1 個だけ。残り 200+ KB は **dead code** として linker (asm_pass2/2)
 にそのまま通し、コードサイズと SD I/O 時間を浪費している。
 
 実機 pipeline の per-stage timing (`tests/test_pico2_bench.sh` の
@@ -15,9 +15,9 @@ World の user .s が実際に呼ぶシンボルは `print__StringLiteral` の
 | 段 | 所要 | 主な作業 |
 |---|---:|---|
 | cat-link  |   6.0 s | prelude(234KB) + user(1KB) + tail を SD に書く |
-| asm_pass1 |  26.2 s | full.s (235 KB) を 1 回 stream read |
+| asm_pass2 |  26.2 s | full.s (235 KB) を 1 回 stream read |
 | cat-p2    |  22.5 s | lab + full.s × 3 を SD 経由で連結 |
-| asm_pass2 |  80.5 s | full.s × 3 を再 read、emit |
+| asm_pass3 |  80.5 s | full.s × 3 を再 read、emit |
 | **小計**  | **135 s** | |
 
 Dead code を削れれば **prelude.s 234 → 数 KB**、cat / pass1 / pass2
@@ -41,11 +41,11 @@ Hello World で実際 reachable なのは `print__StringLiteral` →
 
 ---
 
-## 現行の asm_pass1 / asm_pass2 構造
+## 現行の asm_pass2 / asm_pass3 構造
 
-参考: `docs/lab_format.md`、`docs/compiler.md` § asm_pass1/asm_pass2。
+参考: `docs/lab_format.md`、`docs/compiler.md` § asm_pass2/asm_pass3。
 
-### asm_pass1 (1 pass over source)
+### asm_pass2 (1 pass over source)
 
 入力: `full.s` (stdin)
 処理:
@@ -63,7 +63,7 @@ Hello World で実際 reachable なのは `print__StringLiteral` →
 
 出力: `.lab` (stdin から 1 回読みで生成)
 
-### asm_pass2 (3 passes over source)
+### asm_pass3 (3 passes over source)
 
 入力: `cat full.lab full.s full.s full.s` (stdin)
 処理:
@@ -80,12 +80,12 @@ bss は `.space N` のみで file bytes は無いため emit pass 不要。
 
 ## dead-strip を入れる場所: pass 1 と pass 2 の間に "pass 1.5"
 
-### 案: 3 段階構成 (asm_pass1 → asm_strip → asm_pass2)
+### 案: 3 段階構成 (asm_pass2 → asm_strip → asm_pass3)
 
 ```
-full.s ─→ asm_pass1 ─→ full.lab + full.refs ─→ asm_strip ─→ full.lab.live + skip ranges
+full.s ─→ asm_pass2 ─→ full.lab + full.refs ─→ asm_strip ─→ full.lab.live + skip ranges
                                                            ↘
-full.s ─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→ asm_pass2 ─→ out.bin
+full.s ─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→─→ asm_pass3 ─→ out.bin
 ```
 
 asm_strip は live symbol set を計算し、
@@ -94,18 +94,18 @@ asm_strip は live symbol set を計算し、
 - 死シンボルが定義されていた **ソース行範囲** (= "skip ranges") を
   出力
 
-asm_pass2 は skip ranges を読んで、その範囲の bytes を出力に含めない
+asm_pass3 は skip ranges を読んで、その範囲の bytes を出力に含めない
 (section cursor も進めない)。
 
 **メリット**: pass1/pass2 を大きくいじらない。新ツール 1 個追加。
 
-**デメリット**: asm_pass1 が新フォーマット (`.refs`) を吐く必要あり。
+**デメリット**: asm_pass2 が新フォーマット (`.refs`) を吐く必要あり。
 .lab が live フラグ付きで非互換になる。3-binary 構成で OS 上で
 `asm_strip` をもう一段 spawn することになり時間 / メモリオーバヘッド。
 
-### 案: asm_pass1 内部で済ます (新ツール無し)
+### 案: asm_pass2 内部で済ます (新ツール無し)
 
-asm_pass1 が:
+asm_pass2 が:
 1. 既存通り 1 pass で source を読む
 2. その間に **per-symbol reference graph** を構築 (どの symbol が
    どの symbol を参照しているか)
@@ -113,13 +113,13 @@ asm_pass1 が:
 4. `.lab` に **live = true な symbol だけ**書く + 死 symbol が
    定義されていたソース範囲を `skip` 行として書く
 
-asm_pass2 は `.lab` の skip 行を見て、対応するソース範囲を emit
+asm_pass3 は `.lab` の skip 行を見て、対応するソース範囲を emit
 時にスキップ。section cursor もスキップ範囲分は進めない。
 
 **メリット**: ツール 1 個で済む。OS 上の追加 spawn なし。`.lab`
 バージョンが上がるだけ。
 
-**デメリット**: asm_pass1 のメモリが少し増える (reference graph
+**デメリット**: asm_pass2 のメモリが少し増える (reference graph
 記録)。pass1 自体のロジックが複雑化。
 
 → **後者を採用**。OS 上で動かすときの spawn コストが大きいので
@@ -142,11 +142,11 @@ asm_pass2 は `.lab` の skip 行を見て、対応するソース範囲を emit
 | `__global_pointer$` | crt0 が `la gp, __global_pointer$` で参照 |
 | `__data_end` | task_crt0.s が `la t2, __data_end` で参照 |
 
-ハードコードしたリストを asm_pass1 に持たせる。
+ハードコードしたリストを asm_pass2 に持たせる。
 
 ### 2. reference graph
 
-asm_pass1 が source を読む間、**現在 section の "owning symbol"**
+asm_pass2 が source を読む間、**現在 section の "owning symbol"**
 を track する。所有関係は:
 
 - ある symbol `X:` が定義された後、次の symbol が定義されるまで、
@@ -184,9 +184,9 @@ var g_nrefs: i32 = 0;
 での lazy resolve のほうが安い。
 
 メモリ: 平均 5 ref / symbol × 3000 symbols = 15000 refs × 8 byte
-= 120 KB。**asm_pass1 peak (現在 149 KB) を倍近くに押し上げる**。
+= 120 KB。**asm_pass2 peak (現在 149 KB) を倍近くに押し上げる**。
 
-→ この構造のまま入れると asm_pass1 が 250+ KB に逆戻り。
+→ この構造のまま入れると asm_pass2 が 250+ KB に逆戻り。
 **サブセット化が要る**:
 
 - 参照先を name pool offset (16 bit) で持てば 4 byte/ref に減る
@@ -196,7 +196,7 @@ var g_nrefs: i32 = 0;
 
 ### 4. owning symbol の決定
 
-asm_pass1 が行を処理するとき、その行の所有者 (`current_owner_sym`)
+asm_pass2 が行を処理するとき、その行の所有者 (`current_owner_sym`)
 を以下で更新:
 
 ```
@@ -242,12 +242,12 @@ skip <section> <intra_start> <intra_end>  # ★新規
 バイトの section 内 intra-offset 範囲を吐く。例: section 0 (text)
 の offset 1024..2048 が dead なら `skip 0 1024 2048`。
 
-asm_pass2 は emit pass 中、`g_sec_pos[sec]` がスキップ範囲に入って
+asm_pass3 は emit pass 中、`g_sec_pos[sec]` がスキップ範囲に入って
 いる間は **emit を抑制**し、出力 cursor も進めない。section base
-/ size の再計算は asm_pass1 が live のみで行うので pass2 は単純に
+/ size の再計算は asm_pass2 が live のみで行うので pass2 は単純に
 従う。
 
-### 7. asm_pass2 への影響
+### 7. asm_pass3 への影響
 
 最小限で済む:
 - skip 行を読んで `g_skip_ranges[]` に保存
@@ -273,18 +273,18 @@ binding を再計算する必要あり。← per-function reset の境界が
 
 → **ラベル定義時に owner の live フラグを参照する** ですべて済む。
 pass1 の symbol live 計算後、もう 1 pass で source を読んで死
-owner の labels (普通 + 数値) を skip 出力。**asm_pass1 が 2 pass
+owner の labels (普通 + 数値) を skip 出力。**asm_pass2 が 2 pass
 になる**。
 
 → または pass1 はそのまま 1 pass で done。最後に live 計算 → live
-list を出力。asm_pass2 が source を読み始めたところで、現在の
+list を出力。asm_pass3 が source を読み始めたところで、現在の
 owner が live でなければ全行 skip。owner が live になったら通常
-emit。これは asm_pass2 の 3 pass それぞれで行う。
+emit。これは asm_pass3 の 3 pass それぞれで行う。
 
 → **後者で**。pass1 のメモリを増やさず、pass2 が live set 既知
 の状態で source を再 read するときに動的に skip する。
 
-### 8. asm_pass2 emit pass の擬似コード (新)
+### 8. asm_pass3 emit pass の擬似コード (新)
 
 ```
 for each emit pass (text / rodata / data):
@@ -308,22 +308,22 @@ for each emit pass (text / rodata / data):
 **注意**: section base 計算が pass1 / pass2 で一致しないといけない。
 pass1 の `asm_compute_sec_bases()` も live のみで集計する必要あり。
 これが要るので **pass1 は live 計算後にもう 1 source pass** を回す
-ことになる。実質 asm_pass1 が 2-pass 化:
+ことになる。実質 asm_pass2 が 2-pass 化:
 
 ```
-asm_pass1 phase 1: source 1回読み、label定義収集 + reference graph 構築
-asm_pass1 phase 2: live set BFS
-asm_pass1 phase 3: source 2回目、live owner の bytes だけ section
+asm_pass2 phase 1: source 1回読み、label定義収集 + reference graph 構築
+asm_pass2 phase 2: live set BFS
+asm_pass2 phase 3: source 2回目、live owner の bytes だけ section
                    cursor を進めて intra-offset を再計算
-asm_pass1 phase 4: .lab 出力 (live label のみ、live のみで計算した
+asm_pass2 phase 4: .lab 出力 (live label のみ、live のみで計算した
                    sec base/size、skip range 不要 — pass2 が source
                    を読みながら同じ判定で skip)
 ```
 
-asm_pass2 は per-pass で source を読みながら、現在の owner の
+asm_pass3 は per-pass で source を読みながら、現在の owner の
 live フラグを参照して emit するか決める。
 
-### 9. メモリ予算 (asm_pass1)
+### 9. メモリ予算 (asm_pass2)
 
 新規 buffer:
 
@@ -333,7 +333,7 @@ live フラグを参照して emit するか決める。
 | `g_label_live`    |  1 KB | live bitmap (MAX_LABELS=4096 / 8 = 512 byte) |
 | BFS queue         |  4 KB | live BFS の作業領域 |
 
-合計 ~70 KB 増。現 asm_pass1 peak 149 KB → 220 KB。**150 KB target
+合計 ~70 KB 増。現 asm_pass2 peak 149 KB → 220 KB。**150 KB target
 を超える**。
 
 → `g_refs` の参照先を symbol-index (16 bit) ではなく `name pool offset`
@@ -343,10 +343,10 @@ live フラグを参照して emit するか決める。
 中間ファイル `full.refs` に書き出して BFS は再 read で行う) すれば
 peak メモリは増えない。ただしファイル I/O が増えて時間が悪化。
 
-### 10. 時間予算 (asm_pass1)
+### 10. 時間予算 (asm_pass2)
 
 source を 2 回読む (現状 1 回)。SD 経由 235 KB を 2 回 = 1 回追加で
-~13 秒増。**asm_pass1 が 26 → 40 秒 になる**。
+~13 秒増。**asm_pass2 が 26 → 40 秒 になる**。
 
 → Step 2.1 (XIP 直読み) と組合せれば 2 回読みでも ~3 秒に収まる。
 
@@ -360,9 +360,9 @@ Hello World ベース:
 |---|---:|---:|
 | user.s + prelude.s 合計 | 235 KB | ~10 KB (live のみ) |
 | cat-link | 6 s | < 1 s |
-| asm_pass1 (1-pass + live) | 26 s | 40 s (2-pass) → 5 s (XIP) |
+| asm_pass2 (1-pass + live) | 26 s | 40 s (2-pass) → 5 s (XIP) |
 | cat-p2 | 22 s | < 1 s |
-| asm_pass2 | 80 s | < 5 s |
+| asm_pass3 | 80 s | < 5 s |
 | **total** | **135 s** | **~10 s** (with XIP), **~50 s** (without) |
 
 OS 全体コンパイル時 (バイナリ毎に異なる live set):
@@ -373,14 +373,14 @@ OS 全体コンパイル時 (バイナリ毎に異なる live set):
 
 ## 実装フェーズ
 
-### Phase 1: reference graph 構築 (asm_pass1)
+### Phase 1: reference graph 構築 (asm_pass2)
 
 - `asm_common.tc` に `g_refs` バッファ + `record_ref(from_name, to_name)`
 - 各 instruction tokenize 時に `call/jal/la/.word` の operand が
   名前ならば `record_ref(current_owner, operand)`
 - "current_owner" track: `name:` 行 / section 切替 で更新
 
-### Phase 2: live set BFS (asm_pass1)
+### Phase 2: live set BFS (asm_pass2)
 
 - BFS implementation
 - roots ハードコード
@@ -392,7 +392,7 @@ OS 全体コンパイル時 (バイナリ毎に異なる live set):
 - live label の addr を再計算
 - 新 .lab v2 出力
 
-### Phase 4: asm_pass2 skip emit
+### Phase 4: asm_pass3 skip emit
 
 - source pass で current_owner の live を判定
 - 死 owner の行は `g_pos` も `g_sec_pos[sec]` も進めない (pass1 の
@@ -410,7 +410,7 @@ OS 全体コンパイル時 (バイナリ毎に異なる live set):
 ### Phase 6: docs 更新
 
 - `docs/lab_format.md` を v2 に更新 (skip 行 / live フラグ)
-- `docs/compiler.md` § asm_pass1/2 を更新 (3-phase 化)
+- `docs/compiler.md` § asm_pass2/2 を更新 (3-phase 化)
 - `docs/scaling.md` に削減結果を記録
 
 ---
@@ -427,8 +427,8 @@ OS 全体コンパイル時 (バイナリ毎に異なる live set):
    BFS で訪れず、後の live が認識されない可能性。`define_label`
    が duplicate 時に live フラグを OR で merge する
 4. **Gen2 ホスト build の互換**。`compile-gen2.sh` も新 .lab v2 を
-   読む必要あり。同じ asm_pass2 binary を使うので自動的に追従
-5. **asm_pass1 メモリ予算**: g_refs + bitmap で 70 KB 増は痛い。
+   読む必要あり。同じ asm_pass3 binary を使うので自動的に追従
+5. **asm_pass2 メモリ予算**: g_refs + bitmap で 70 KB 増は痛い。
    XIP 直読み (Step 2.1) と同時にやれば I/O ペナルティを相殺
    できるが、メモリは増えたまま。150 KB target を 200 KB target
    に緩める判断が要る
@@ -439,8 +439,8 @@ OS 全体コンパイル時 (バイナリ毎に異なる live set):
 
 - `docs/lab_format.md` — `.lab` 中間形式 (v2 で skip 行 + live
   フラグを追加予定)
-- `docs/compiler.md` § asm_pass1/asm_pass2 — 現行 2-pass 構成
-- `docs/scaling.md` — pico2 timing baseline (asm_pass1+pass2 が
+- `docs/compiler.md` § asm_pass2/asm_pass3 — 現行 2-pass 構成
+- `docs/scaling.md` — pico2 timing baseline (asm_pass2+pass2 が
   pipeline の 80% を占める)
 - `docs/task/pipeline_100kb.md` — メモリ削減経緯 (これと併せて
   時間 + メモリ両面で attack)

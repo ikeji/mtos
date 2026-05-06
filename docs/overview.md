@@ -45,10 +45,10 @@ Gen2 が自分自身をコンパイルしたものが Gen3 (Gen2 == Gen3 で自�
 | `codegen` | `.tast` → `.bc` | per-top-level strtab rollback (~80〜252 KB peak) |
 | `bcrun` | `.bc` → stdout | バイトコードインタプリタ (リファレンス実装、常時テスト維持) |
 | `bc2asm` | `.bc` → `.s` | per-function emission (~120〜126 KB peak) |
-| `asm_pass1` | `.s` → `.lab` | ラベル収集。section 並べ替えリンカ兼 (~250 KB peak) |
-| `asm_pass2` | `.lab` + `.s` → ELF / raw bin | 3 pass source rescan + stream emit (~260〜280 KB peak) |
+| `asm_pass2` | `.s` → `.lab` | ラベル収集。section 並べ替えリンカ兼 (~250 KB peak) |
+| `asm_pass3` | `.lab` + `.s` → ELF / raw bin | 3 pass source rescan + stream emit (~260〜280 KB peak) |
 
-GCC / GNU as / GNU ld は使わない。`asm_pass1/pass2` が「アセンブラ兼
+GCC / GNU as / GNU ld は使わない。`asm_pass2/pass2` が「アセンブラ兼
 リンカ」としてすべてを担う。
 
 ## 自己ホストのロードマップ
@@ -65,7 +65,7 @@ GCC / GNU as / GNU ld は使わない。`asm_pass1/pass2` が「アセンブラ�
 
 現状は **フェーズ 7 完走 (K7 解決、2026-04-29)** 段階。qemu virt と
 **pico2 実機の両方**で `parse → sigscan → tcheck → codegen → bc2asm →
-asm_pass1 → asm_pass2` の 7 段を回し、生成バイナリを sh から実行して
+asm_pass2 → asm_pass3` の 7 段を回し、生成バイナリを sh から実行して
 "Hello, World!" を出せる。pico2 では SD カード (`/sd/`) を中間ファイル
 ストレージに使い、PLL_SYS で CPU を 150 MHz に上げることで合計 127 秒
 で完走する (K7 解決の詳細は `docs/solved.md`)。

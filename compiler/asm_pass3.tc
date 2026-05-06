@@ -2,7 +2,7 @@
 //
 // Reads stdin as a concatenation of:
 //
-//   1. (lab ... )                — wrapped .lab from asm_pass1
+//   1. (lab ... )                — wrapped .lab from asm_pass2
 //   2. full source (pass A)      — scanned while emitting .text bytes
 //   3. full source (pass B)      — scanned while emitting .rodata bytes
 //   4. full source (pass C)      — scanned while emitting .data bytes
@@ -16,7 +16,7 @@
 // Phase 5 (2026-04-16): we stream bytes to stdout via a 4 KB
 // g_out_buf and drop the ~300 KB g_code that used to hold the whole
 // program image. asm_pass3 peak drops from ~400 KB (after the
-// asm_pass1 label-pool shrink) to ~200 KB.
+// asm_pass2 label-pool shrink) to ~200 KB.
 //
 // bss is memsz-only and never writes file bytes, so there is no
 // pass for section 3.
@@ -575,7 +575,7 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
         // + encode, current behavior) or kind=1 (raw — memcpy bytes
         // straight to g_out_fd when its section_id matches sec_target).
         // Raw entries that don't match are skipped entirely; their
-        // bytes were already accounted for by asm_pass1 in the .lab's
+        // bytes were already accounted for by asm_pass2 in the .lab's
         // sec sizes.
         var pi: i32 = 0;
         while pi < g_n_src_paths {
@@ -832,7 +832,7 @@ fn run_pass2(lab_path: String, out_path: String,
 
     // Phase B: emit the ELF header upfront (raw mode skips this).
     // filesz/memsz/entry come entirely from the .lab, and `raw` /
-    // `load_base` meta directives were captured by asm_pass1 from
+    // `load_base` meta directives were captured by asm_pass2 from
     // the source body during pass 1 and written to the .lab as
     // their own lines — parse_lab_line has already installed them
     // via asm_install_raw_mode / asm_install_load_base.

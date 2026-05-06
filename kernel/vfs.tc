@@ -252,7 +252,7 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     }
     // When mux is on, fd 0 (no redirect) reads from the current
     // task's demuxed input buffer, not raw UART. The UART bytes are
-    // framed per slot; sh / asm_pass1 / etc. each get their own
+    // framed per slot; sh / asm_pass2 / etc. each get their own
     // stdin via task_input_read.
     if fd == 0 && uart_mux_is_enabled() != 0 {
         return task_input_read(sched_current_idx(), buf_addr, n);

@@ -41,7 +41,7 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // so small inputs (hello.tc uses 35 bytes total) only pay the initial
 // 4 KB and large inputs amortise the resize cost. Replaces the old
 // MAX_NAME_POOL fixed cap (was 96 KB pre-allocated regardless of
-// usage); for hello.tc that saved ~92 KB of asm_pass1/asm_pass3 peak.
+// usage); for hello.tc that saved ~92 KB of asm_pass2/asm_pass3 peak.
 var MAX_LABELS:           i32 = 4096;
 var NAME_POOL_INITIAL_KB: i32 = 4;
 // Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
@@ -49,7 +49,7 @@ var NAME_POOL_INITIAL_KB: i32 = 4;
 // Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
 // for every conditional branch).
 //
-// 2026-04-30: tried 512, asm_pass1.tc itself overflowed digit 0
+// 2026-04-30: tried 512, asm_pass2.tc itself overflowed digit 0
 // (>512 conditional branches in the assembler source). Reverted
 // to 1024 — the kernel's measured 404 max underestimated; compiling
 // the assembler itself is the real worst case. The bounds check in
@@ -174,7 +174,7 @@ var g_src_bytes:       i32 = 0;        // source byte count emitted by pass1 in 
 // i32 to halve the per-entry kmalloc cost (struct went from 4 i32 +
 // 4 B hdr = 20 B = 32 B bucket → 2 i32 + 4 B hdr = 12 B = 16 B
 // bucket). For 3000+ labels in a self-host build this saves ~48 KB
-// of asm_pass1/pass2 peak. Field widths:
+// of asm_pass2/pass2 peak. Field widths:
 //   name_off  18 bits (256 KB max — MAX_NAME_POOL is 96 KB so plenty)
 //   name_len   8 bits (255 max — even mangled symbols stay under 80)
 //   section    2 bits (0=text 1=rodata 2=data 3=bss)
@@ -240,7 +240,7 @@ var g_phase4_active: i32 = 0;
 // paths — where refs are never consumed — drops the O(N_labels)
 // find_label cost that would otherwise turn pass 1a from 26 s to
 // 56 s on pico2 just from register-name lookups failing. Set by
-// asm_pass1.tc immediately around the ref-pass process_source call.
+// asm_pass2.tc immediately around the ref-pass process_source call.
 var g_collecting_refs: i32 = 0;
 
 // Phase 5 walker hint: define_label sets this to 1, the walker clears
@@ -260,7 +260,7 @@ var g_label_just_defined: i32 = 0;
 // in runtime.s + tasks). MAX_DEFERRED 2048 = 1.5× margin; pool
 // initial 4 KB doubles on demand. Memory cost: 3 × 2048 × 4 =
 // 24 KB I32Arrays + name pool ~30-60 KB. Easily fits in the
-// 196 KB asm_pass1 task arena.
+// 196 KB asm_pass2 task arena.
 var MAX_DEFERRED: i32 = 2048;
 var g_def_owner:    I32Array = 0 as I32Array;
 var g_def_name_off: I32Array = 0 as I32Array;
@@ -343,7 +343,7 @@ export fn asm_compute_live() -> void {
     if g_label_live as u32 == 0u32 {
         g_label_live = I32Array((LIVE_BITMAP_WORDS) as u32);
     }
-    // Clear bitmap (in case asm_pass1/asm_pass3 rerun within a single
+    // Clear bitmap (in case asm_pass2/asm_pass3 rerun within a single
     // process — unlikely today but harmless).
     var i: i32 = 0;
     while i < LIVE_BITMAP_WORDS { set(g_label_live, i, 0); i = i + 1; }
@@ -399,7 +399,7 @@ export fn asm_compute_live() -> void {
 
 export fn asm_label_is_live(idx: i32) -> i32 { return live_get(idx); }
 
-// Reset state that varies per source pass so asm_pass1 can re-walk
+// Reset state that varies per source pass so asm_pass2 can re-walk
 // the source for the Phase 3 forward-ref second pass. Clears g_pos
 // + section cursors + ref counter + owner; leaves g_labels and
 // g_lab_names intact (define_label is idempotent on existing
@@ -441,7 +441,7 @@ export fn asm_end_strip_pass() -> void {
 }
 
 
-// Read-only accessors used by asm_pass1.tc's Phase 5 walker, which
+// Read-only accessors used by asm_pass2.tc's Phase 5 walker, which
 // observes asm_run_line's per-line state changes to decide whether
 // to emit the source line or rewind the cursor for a dead-owner skip.
 export fn asm_g_pos() -> i32 { return g_pos; }
@@ -621,7 +621,7 @@ export fn asm_resolve_deferred_refs() -> void {
 // Release the ref-graph + deferred-queue state. Call this after
 // asm_compute_live() — Phase 5 (source strip) doesn't read g_refs or
 // the deferred queue, and freeing ~88 KB here is the difference
-// between fitting in the asm_pass1 arena and OOM during strip.
+// between fitting in the asm_pass2 arena and OOM during strip.
 export fn asm_release_ref_state() -> void {
     if g_refs as u32 != 0u32 {
         delete(g_refs);
@@ -651,12 +651,12 @@ export fn asm_release_ref_state() -> void {
 
 // Numeric labels (0:..9:). Split storage by digit because measured
 // usage is wildly skewed: bc2asm.tc full.s has 373 `0:` defs and
-// 0-1 across the other 9 digits; asm_pass1.tc itself reaches >512
+// 0-1 across the other 9 digits; asm_pass2.tc itself reaches >512
 // for digit 0 (which is why NUM_LAB_PER_DIGIT can't drop). Putting
 // every digit on the same flat 1024 stride wasted 9 × 1020 entries.
 // Now: digit 0 → g_numlab_zero (1024 entries), digits 1-9 →
 // g_numlab_other (NUMLAB_OTHER_PER_DIGIT entries each, base
-// (digit-1) × stride). Saves ~32 KB peak on asm_pass1/asm_pass3.
+// (digit-1) × stride). Saves ~32 KB peak on asm_pass2/asm_pass3.
 var NUMLAB_OTHER_PER_DIGIT: i32 = 64;  // digits 1-9 — each almost
                                        // never gets more than a
                                        // handful in real source
@@ -2304,7 +2304,7 @@ export fn asm_set_pass(p: i32) -> void {
     return;
 }
 
-// Track the "active section" cursor for the caller. asm_pass1 / pass2
+// Track the "active section" cursor for the caller. asm_pass2 / pass2
 // drive process_line line by line, and each line needs g_pos set to
 // the per-section intra offset (pass 1) or sec_base+intra (pass 2)
 // before the line runs. This wraps that bookkeeping so the pass main
@@ -2419,7 +2419,7 @@ export fn asm_dump_lab_state() -> void {
     return;
 }
 
-// fd-parameterised variant — used by asm_pass1 when `--lab-out path`
+// fd-parameterised variant — used by asm_pass2 when `--lab-out path`
 // is given so the .lab goes to a file instead of stdout. The
 // existing zero-arg variant stays for the host stdin pipeline.
 export fn asm_dump_lab_state_to(out_fd: i32) -> void {
@@ -2805,7 +2805,7 @@ export fn asm_install_load_base(v: i32) -> void {
     return;
 }
 
-// asm_pass1 counts the source bytes it consumed and stashes the
+// asm_pass2 counts the source bytes it consumed and stashes the
 // total here so asm_dump_lab_state can emit a `src_bytes N` line.
 // asm_pass3 reads that and uses it as the per-pass source length.
 export fn asm_set_src_bytes(n: i32) -> void {
@@ -2942,7 +2942,7 @@ export fn asm_write_elf() -> void {
 // ===== .idx loader (per-file pre-link metadata) =====
 //
 // Reads a `.idx` (docs/idx_format.md) and merges its contents into
-// the current asm-pass1 state. Used by `asm_pass1 --load-idx
+// the current asm-pass1 state. Used by `asm_pass2 --load-idx
 // <prelude.idx>` to skip walking the prelude source on every OS-side
 // compile (kernel build pre-links the prelude once, OS resumes from
 // the .idx).
@@ -3155,7 +3155,7 @@ export fn asm_load_idx(path: String) -> i32 {
 }
 
 // Forward decls — bodies live in the per-platform crt0 (host
-// bootstrap/crt0.s, OS task_crt0.s). asm_pass1 already declares them
+// bootstrap/crt0.s, OS task_crt0.s). asm_pass2 already declares them
 // for its src open path, but asm_load_idx in this file (asm_common)
 // also needs them.
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
