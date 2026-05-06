@@ -114,18 +114,30 @@ vfs 側で `/` 始まりでないパスを `/` に前置する spec にする。
 sh が 1 byte ずつ sys_read するため、ecall ラウンドトリップ (~200µs) が
 baud rate (87µs/byte) に追いつかず FIFO 溢れ。
 
-**統合対処案: PL011 RX interrupt + カーネルリングバッファ**
-- PL011 RX interrupt を有効化。割り込みハンドラが FIFO → kernel in_buf
-  (kmalloc, 例 4 KB) に移す
-- sys_read は in_buf から読む。空なら yield して次のスケジュールで再試行
-- K8 解消: ecall 内の spin-wait がなくなり、割り込み無効のまま停止しない
-- K9 解消: FIFO が interrupt で即座に drain されるので overflow しない
-- バッファ溢れ対策: 4 KB あれば sh 対話用途で十分。大量 streaming は
-  mux + tmpfs 経由で回避済み
+**Phase 1 (2026-05-06、commit 6d0c390)**: software ring buffer +
+timer-tick drain。`g_uart_rx_buf` (1 KB) と `uart_rx_drain` /
+`uart_rx_pop` を追加。`vfs_read fd=0` (mux off) と
+`uart_rx_dispatch` (mux on) を ring 経由に統一。timer trap 毎に
+PL011 → ring を drain。K8 (spin-wait wedge) は基本解消、sustained
+input の K9 (短い ecall 経路) も大きく改善。
+**ただし長時間 ecall 中 (mr → fatfs_write → SD CMD24 wait など) は
+MIE=0 で timer が masked のため drain 不能 → K11 が依然再現**
+(実機検証 2026-05-06、`tests/pico2_k11_reproduce.py` で 256 byte
+upload 後 sh が応答せず、UARTRSR の OE flag が立つことを観測)。
+
+**Phase 2 候補 (未着手)**:
+- A: SD/fatfs の busy-wait (block_sd の SPI poll, sd_wait_busy 等) の
+  内側で `uart_rx_drain()` を呼ぶ。narrow + cheap、K11 の主因経路を
+  ピンポイントで救済
+- B: PL011 RX interrupt + ネスト trap。trap_common.s に nested-trap
+  対応 (mscratch 退避 + 専用 nested 用 trap stack) を入れて、ecall
+  実行中も RX IRQ 駆動で drain 可能にする。systemic + 高コスト
 
 **回避策 (実装済)**:
-- K8: tmpfs 経由の入力で spin-wait を回避
-- K9: pico2_hw_driver.py で 4 byte / 20ms ペーシング
+- K8/K9: Phase 1 で大きく改善
+- K11: boot-time `dump_mtfs_to_sd` で大容量 UART upload を完全迂回
+  (kernel_pico2.tc::dump_mtfs_to_sd、self-replicate 経路で実用化)
+- 旧来: tmpfs 経由 + pico2_hw_driver.py の 4 byte / 20ms ペーシング
 
 ### K11. pico2 mr 経由の大容量 UART upload が device をハング (bug, 回避済)
 
@@ -146,19 +158,30 @@ qemu virt + plain `-serial stdio` で 256〜65536 byte の mr upload は
 食べてしまう。最初これを K11 と勘違いしたが別問題で、回避は
 qemu 側で `-serial stdio` 単独 (`-monitor null`) を使うこと。
 
-**仮説 (pico2 側、未解決)**: K8+K9 の延長線。mr の sys_write が
-大量の SD CMD24 を伴い、SD コントローラがビジー応答を継続する間に
-sh の sys_wait と タイマー割り込みの競合で wedge する。または
-mr 終了後の sh 復帰ハンドラが UART RX overflow で stale 入力を
-読んで誤動作。
+**根本原因 (2026-05-06 実機調査で確定)**: ecall_write → fatfs_write
+→ block_sd CMD24 wait の経路が **長時間 (1 sector ~10 ms) M-mode
+で滞在し、ハードが mstatus.MIE=0 にしている間 PL011 RX FIFO (32 byte)
+が overflow** する。
+- pico2_k11_reproduce.py で 256 byte upload 後 wedge を再現
+- openocd halt で **UARTRSR=0x08 (OE bit set)** を確認 — overrun 発生済
+- mr の framing input が破損 → sz hdr が乱数 → mr が無限 read で永続待ち
+- 観測 PC は trap_handler / sched_yield_read / vfs_read を周回
+  (mr が ecall→-2→yield→ecall を高速反復)
+
+Phase 1 (kernel ring buffer + timer-tick drain) では **timer trap 自体が
+ecall 中は走らないため drain 不能** で K11 は救えない。
+
+**Phase 2 候補**:
+- A: block_sd の SPI poll loop / sd_wait_busy で `uart_rx_drain()` を
+  呼ぶ。narrow + 低コスト
+- B: PL011 RX interrupt + nested trap (`trap_common.s` に nested 対応)。
+  systemic だが trap entry の改修必要
 
 **回避策 (実装済)**:
 - 大容量 (>1.4 MB の disk.img 等) は host 側で SD カードを抜いて
   manual cp で staging。`tests/pico2_link_kernel_run.sh` の
-  `SKIP_UPLOAD=1` 経路。
-
-**対処案**: K8+K9 の根本解決 (PL011 RX interrupt + kernel ring
-buffer) を入れれば mr upload も自動的に安定する見込み。
+  `SKIP_UPLOAD=1` 経路
+- self-replicate 経路は kernel_pico2.tc::dump_mtfs_to_sd で完全迂回
 
 ### K12. fatfs ファイル名 8.3 制限 (limitation)
 
