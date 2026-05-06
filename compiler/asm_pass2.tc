@@ -1,407 +1,15 @@
-// asm_pass2.tc — label collector half of the asm split (Phase 2 #56).
+// asm_pass2.tc — driver for the label-collection pass.
 //
-// Reads a `.s` source one line at a time and writes a `.lab`
-// (docs/lab_format.md) so asm-pass2 can encode the binary in one
-// linear scan.
-//
-// Source path:
-//   - With argv[1] set (OS-side, msh script invoking
-//     `asm_pass2 /sd/full.s`): re-readable file, the dead-strip
-//     Phase 3 second source pass is enabled, refs include forward
-//     edges, and the .lab dump filters by the live bitmap.
-//   - Without argv (host stdin pipe via compile-gen2.sh / kernel
-//     build): single source pass, dead-strip skipped (we keep all
-//     labels). Host has plenty of memory and isn't size-bound.
+// All the orchestration logic lives in asm_pass2_lib.tc as
+// `export fn run(...)`. This file is just the main(argv) wrapper —
+// argv parsing + state setup + run() call. Kept separate so the new
+// asm_pass1 (Phase C of the 3-binary split) can `import
+// "asm_pass2_lib.tc"` and call run() without colliding on main /
+// arg_eq linker symbols.
 
+import "asm_pass2_lib.tc";
 import "asm_common.tc";
-import "string_buffer.tc";
-import "source_reader.tc";
 
-// km_dump_peak — printed at exit on the OS so test_phase7.sh can
-// see the per-stage memory peak. No-op stub on Gen1 (bootstrap), see
-// bootstrap/runtime_syscall.c.
-fn km_dump_peak() -> void;
-
-// File-open syscalls. Forward decls; bodies live in compiler/crt0_tc.s
-// (host) and kernel/tasks/task_crt0.s (OS).
-fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
-fn do_close(fd: i32) -> i32;
-
-// Process the source coming from `reader` line by line. Calls
-// asm_run_line which (in pass 1) collects labels, advances section
-// cursors, and records reference-graph edges via record_ref.
-fn process_source(reader: SourceReader) -> i32 {
-    var line: U8Array = U8Array(4092);
-    var lineno: i32 = 0;
-    var total_bytes: i32 = 0;
-
-    while at_eof(reader) == false {
-        var llen: i32 = 0;
-        var eol: i32 = 0;
-        while eol == 0 && at_eof(reader) == false {
-            var c: u8 = next(reader);
-            if llen >= 4092 {
-                var eb: StringBuffer = StringBuffer_new();
-                asm_err_begin(eb);
-                emit_string(eb, "line too long (max 4092 bytes)");
-                asm_err_end(eb);
-            }
-            set(line, llen, c);
-            llen = llen + 1;
-            if c == 10u8 { eol = 1; }
-        }
-        total_bytes = total_bytes + llen;
-        if llen == 0 { } else {
-            lineno = lineno + 1;
-            if asm_parse_meta_directive(line, llen) == 1 {
-                // Discard meta directive lines.
-            } else {
-                asm_run_line(line, llen, lineno);
-            }
-        }
-    }
-    delete(line);
-    return total_bytes;
-}
-
-// True if a line emitted by the current owner should appear in the
-// stripped source. Section-root owners (-1) are unconditionally live.
-fn owner_is_live() -> i32 {
-    if asm_owner_idx() < 0 { return 1; }
-    return asm_label_is_live(asm_owner_idx());
-}
-
-// Phase 5 / dead-strip 3rd source pass: emit only the source bytes
-// whose owning symbol survived BFS. Walks the source through the
-// existing asm_run_line tokenizer / state machine, then either keeps
-// the line (and the cursor advances it produced) or rewinds the
-// state for dead-owner skips. Returns the byte count written to
-// out_fd so the caller can update src_bytes for the .lab.
-fn emit_stripped(reader: SourceReader, out_fd: i32,
-                 idx_secsize: I32Array, idx_numlab_counts: I32Array) -> i32 {
-    asm_reset_for_strip_pass();
-    // If a prelude was loaded from a .idx, seed g_sec_pos with its
-    // per-section contributions so user.s labels' intra offsets stay
-    // correctly above the prelude. asm_pass3 walks (prelude + user)
-    // and the section_base computation needs the full picture.
-    if idx_secsize as u32 != 0u32 {
-        asm_set_sec_pos(0, get(idx_secsize, 0));
-        asm_set_sec_pos(1, get(idx_secsize, 1));
-        asm_set_sec_pos(2, get(idx_secsize, 2));
-        asm_set_sec_pos(3, get(idx_secsize, 3));
-    }
-    // numlab table is rebuilt live-only by the strip walk (define_numlab
-    // is gated by g_phase4_active to skip dead owners). Reset the
-    // count cursors so no pre-strip entries linger. With --load-idx,
-    // truncate to the prelude's count instead of zero so prelude
-    // numlabs survive (the user-only strip can't re-emit them).
-    if idx_numlab_counts as u32 != 0u32 {
-        asm_truncate_numlab_counts(idx_numlab_counts);
-    } else {
-        asm_clear_numlab_counts();
-    }
-
-    // Streaming output buffer: emits to out_fd once a 1 KB chunk is
-    // ready, vs raw sys_write per source line which costs a fatfs
-    // round-trip every emit. emit_n auto-flushes when the buffer fills.
-    var sb: StringBuffer = StringBuffer_new(out_fd);
-
-    var line: U8Array = U8Array(4092);
-    var lineno: i32 = 0;
-    var total_emitted: i32 = 0;
-
-    while at_eof(reader) == false {
-        var llen: i32 = 0;
-        var eol: i32 = 0;
-        while eol == 0 && at_eof(reader) == false {
-            var c: u8 = next(reader);
-            if llen >= 4092 {
-                var eb: StringBuffer = StringBuffer_new();
-                asm_err_begin(eb);
-                emit_string(eb, "line too long (max 4092 bytes)");
-                asm_err_end(eb);
-            }
-            set(line, llen, c);
-            llen = llen + 1;
-            if c == 10u8 { eol = 1; }
-        }
-        if llen == 0 { } else {
-            lineno = lineno + 1;
-            // Meta directives (`; raw`, `; load_base`) live at the
-            // very top of the source and never advance any cursor —
-            // emit verbatim and skip asm_run_line.
-            if asm_parse_meta_directive(line, llen) == 1 {
-                emit_n(sb, line, 0, llen);
-                total_emitted = total_emitted + llen;
-            } else {
-                // Snapshot the per-line state so we can rewind a dead
-                // line's cursor advances after asm_run_line ran.
-                var pre_pos: i32     = asm_g_pos();
-                var pre_sec: i32     = asm_current_section();
-                var pre_secpos: i32  = asm_sec_pos(pre_sec);
-                var pre_owner: i32   = asm_owner_idx();
-                asm_clear_label_just_defined();
-                asm_run_line(line, llen, lineno);
-                var post_secpos: i32 = asm_sec_pos(pre_sec);
-                var bytes_added: i32 = post_secpos - pre_secpos;
-                var section_changed: i32 = 0;
-                if asm_current_section() != pre_sec { section_changed = 1; }
-                var owner_changed:   i32 = 0;
-                if asm_owner_idx() != pre_owner { owner_changed = 1; }
-                var label_defined: i32 = asm_label_just_defined();
-
-                var keep: i32 = 1;
-                if section_changed != 0 {
-                    // Section directive: always keep, owner reset to -1.
-                } else if label_defined != 0 || bytes_added > 0 {
-                    // A label was just defined (named or `.L_*` local)
-                    // and/or instruction/data emitted bytes. In either
-                    // case the line belongs to whatever owner is current
-                    // post-line; keep iff that owner is live. Section-
-                    // root owners (idx == -1) are unconditionally live.
-                    if owner_is_live() == 0 { keep = 0; }
-                }
-                // else: non-emit directive (.globl / .type / .size /
-                // .align). Always keep — these don't move the cursor
-                // and don't define labels.
-
-                if keep != 0 {
-                    emit_n(sb, line, 0, llen);
-                    total_emitted = total_emitted + llen;
-                } else if bytes_added > 0 {
-                    // Rewind cursor advances so the live-only sec_pos
-                    // ends up correct.
-                    asm_set_g_pos(pre_pos);
-                    asm_set_sec_pos(pre_sec, pre_secpos);
-                }
-            }
-        }
-    }
-    // Flush the trailing buffer contents to out_fd. write() takes an fd
-    // argument; passing the same out_fd we constructed the SB with.
-    write(sb, out_fd);
-    destroy(sb);
-    delete(line);
-    asm_end_strip_pass();
-    return total_emitted;
-}
-
-// run — actual work, parameterised by the source path and (optional)
-// stripped-output path. Both 0 means "no path, use stdin"; in that
-// mode dead-strip is skipped entirely. With src_path set, Phase 3 + BFS
-// run; with strip_out_path also set, Phase 5 emits a stripped source.
-//
-// emit_idx_path is set only by `--emit-idx <out.idx>` invocations
-// (kernel build, host-side prelude pre-link). When non-zero the run
-// processes the source through pass 1a only and writes a `.idx`
-// (per-file metadata: secsize / labels intra / refs by name) instead
-// of going through BFS / fixup / strip / lab dump.
-//
-// load_idx_path: optional pre-link state file. When set, the listed
-// `.idx` is loaded (labels / refs / secsize) before the source walk
-// so the user.s starts with the prelude state already in place. Used
-// to skip the prelude source walk on every OS-side compile (kernel
-// build pre-emits prelude.idx, OS asm_pass2 just loads it).
-fn run(src_path: String, strip_out_path: String,
-       emit_idx_path: String, load_idx_path: String,
-       lab_out_path: String) -> i32 {
-    asm_init_pass1();
-    asm_set_pass(1);
-
-    // Load pre-link state if asked. Must happen after asm_init_pass1
-    // (so g_labels etc. exist) but before the source walk.
-    var idx_src_bytes: i32 = 0;
-    var idx_secsize: I32Array = 0 as I32Array;
-    var idx_numlab_counts: I32Array = 0 as I32Array;
-    if load_idx_path as u32 != 0u32 {
-        asm_load_idx(load_idx_path);
-        // asm_load_idx accumulates the idx's `src_bytes` line into
-        // g_src_bytes. Snapshot it so Phase 5's strip recomputation
-        // can re-add the prelude bytes (asm_pass3 still walks the
-        // full prelude, so its per-section stream loop needs
-        // prelude_bytes + user_strip_bytes per pass).
-        idx_src_bytes = asm_get_src_bytes();
-        // Snapshot the prelude's per-section contributions. Phase 5's
-        // strip walker resets g_sec_pos to 0 and only sees user.s,
-        // so we re-seed these post-reset to keep section_base
-        // calculations honest.
-        idx_secsize = I32Array(4);
-        set(idx_secsize, 0, asm_sec_pos(0));
-        set(idx_secsize, 1, asm_sec_pos(1));
-        set(idx_secsize, 2, asm_sec_pos(2));
-        set(idx_secsize, 3, asm_sec_pos(3));
-        // Snapshot per-digit numlab counts so Phase 5 can preserve
-        // prelude numlabs (the user-only strip walk would otherwise
-        // wipe them and asm-pass2 would fail on `Nb`/`Nf` refs into
-        // the prelude).
-        idx_numlab_counts = I32Array(10);
-        asm_snapshot_numlab_counts(idx_numlab_counts);
-    }
-
-    var src_fd: i32 = 0;
-    var have_path: i32 = 0;
-    if src_path as u32 != 0u32 {
-        var fd: i32 = do_openat(0 - 100, src_path, 0);  // AT_FDCWD, O_RDONLY
-        if fd >= 0 {
-            src_fd = fd;
-            have_path = 1;
-        }
-    }
-
-    var reader: SourceReader = SourceReader_new(src_fd);
-    // Pass 1a collects refs inline (backward ones resolved
-    // immediately, forward ones queued in g_def_*) so we don't need
-    // a second source walk. The g_collecting_refs gate is on for
-    // the duration of pass 1a in argv mode; for stdin mode it stays
-    // off and pass1_scan_operand_refs is a no-op (refs would be
-    // unused on the host path anyway).
-    //
-    // .idx emit also enables ref collection so the dump captures the
-    // per-file ref edges. Strip output requires ref collection too
-    // (dead-strip BFS feeds the strip walker). When neither emit-idx
-    // nor strip is requested we skip ref collection — saves ~88 KB
-    // peak (g_refs 64 KB + g_def_* 24 KB) which lets parse.tc-sized
-    // M7-full compiles fit in a 320 KB asm_pass2 task arena.
-    var collect_refs: i32 = 0;
-    if strip_out_path as u32 != 0u32 { collect_refs = 1; }
-    if emit_idx_path as u32 != 0u32 { collect_refs = 1; }
-    // asm_load_idx unconditionally calls asm_set_collecting_refs(1) so it
-    // can record the prelude refs into g_refs. When we won't be doing
-    // dead-strip (collect_refs == 0) those prelude refs are dead weight
-    // — drop the ~88 KB of ref+def state right now to free up arena
-    // space for the rest of asm_pass2's work (g_lab_names doubling
-    // hits 32→64 KB hard during M7-full parse.tc walks). Also flip
-    // g_collecting_refs back off so pass1_scan_operand_refs becomes a
-    // no-op for the user.s walk.
-    if collect_refs == 0 {
-        asm_set_collecting_refs(0);
-        asm_release_ref_state();
-    }
-    if collect_refs != 0 { asm_set_collecting_refs(1); }
-    var total_bytes: i32 = process_source(reader);
-    if collect_refs != 0 { asm_set_collecting_refs(0); }
-    close(reader);
-    if have_path != 0 { do_close(src_fd); }
-
-    // .idx emit: skip BFS / fixup / strip / .lab dump and write the
-    // raw per-file metadata (intra addrs, secsize, refs by name) to
-    // the requested file. The deferred-ref queue may have entries —
-    // forward refs from this file alone — that the link step
-    // resolves, so we don't drain here; emit them as `ref` lines.
-    // Actually: drain in-file forward refs that resolved within this
-    // file (so backward-ref edges get into g_refs even if first seen
-    // forward), then leave any *unresolved* deferred entries to the
-    // link-time merge.
-    if emit_idx_path as u32 != 0u32 {
-        asm_finalize_labels();           // hash for fast deferred drain
-        asm_resolve_deferred_refs();     // intra-file forward refs only
-        asm_set_src_bytes(total_bytes);  // captured into idx for link
-        var out_fd: i32 = do_openat(0 - 100, emit_idx_path, 577);
-        if out_fd >= 0 {
-            asm_dump_idx_state(out_fd);
-            do_close(out_fd);
-        }
-        km_dump_peak();
-        return 0;
-    }
-
-    // First sec_base computation: needed if BFS doesn't run (host
-    // stdin path); also harmless if strip runs (we recompute after).
-    // We do NOT call asm_fixup_labels here — labels stay at intra
-    // until the final fixup at the end of run() so the strip walker
-    // can re-derive sec_pos cleanly without double-adding bases.
-    asm_compute_sec_bases();
-    // Accumulate user.s bytes onto whatever load_idx set (prelude
-    // src_bytes). asm_pass3's per-section stream loop reads
-    // src_bytes per pass, so this needs the full prelude+user total.
-    asm_set_src_bytes(asm_get_src_bytes() + total_bytes);
-
-    if have_path != 0 {
-        // Build the label hash table now so the deferred-ref drain +
-        // Phase 5's per-line define_label-revisit are O(1). Pass 2
-        // calls asm_finalize_labels too (after reading .lab); doing
-        // it here is benign — the table is rebuilt from the same
-        // g_labels content.
-        asm_finalize_labels();
-
-        // Drain the forward-ref queue. Each entry is now resolvable
-        // via the hash, so this is O(N_deferred) amortised.
-        asm_resolve_deferred_refs();
-
-        // Dead-strip / live BFS only runs when refs were collected.
-        // Skipping it (M7-full path with no strip_out) keeps every
-        // label in the .lab — asm_dump_lab_state checks if
-        // g_label_live is null and emits all labels unfiltered.
-        if collect_refs != 0 {
-            asm_compute_live();
-            // Done with the ref graph + deferred queue. Free ~88 KB so
-            // Phase 5's strip-pass StringBuffer + line buffer fit in the
-            // asm_pass2 arena (200 KB on pico2).
-            asm_release_ref_state();
-        }
-
-            // Phase 5: emit stripped source if the caller asked for
-            // it. The strip walk produces live-only sec_pos values,
-            // so we rerun asm_compute_sec_bases / asm_fixup_labels
-            // afterwards to get the new section bases and
-            // re-absolute-ify live label addresses.
-            // O_WRONLY|O_CREAT|O_TRUNC = 1|64|512 = 577.
-            if strip_out_path as u32 != 0u32 {
-                var out_fd: i32 = do_openat(0 - 100, strip_out_path, 577);
-                if out_fd >= 0 {
-                    var fd3: i32 = do_openat(0 - 100, src_path, 0);
-                    if fd3 >= 0 {
-                        var reader3: SourceReader = SourceReader_new(fd3);
-                        var stripped_bytes: i32 = emit_stripped(reader3, out_fd, idx_secsize, idx_numlab_counts);
-                        close(reader3);
-                        do_close(fd3);
-                        do_close(out_fd);
-
-                        // Recompute base with live-only sizes; the
-                        // final fixup happens once below, after this
-                        // block, so labels survive a single intra →
-                        // absolute step.
-                        asm_compute_sec_bases();
-                        // Add prelude bytes back; pass2 walks
-                        // prelude.s in full plus user_strip per pass.
-                        asm_set_src_bytes(idx_src_bytes + stripped_bytes);
-                    } else {
-                        do_close(out_fd);
-                    }
-                }
-            }
-    }
-
-    // Single fixup pass at the end — turns intra addresses into
-    // absolutes using whatever sec_base is current (post-strip if
-    // strip ran, otherwise the initial compute). This is the only
-    // fixup; both the host stdin path and the load_idx path land
-    // here exactly once.
-    asm_fixup_labels();
-
-    if lab_out_path as u32 != 0u32 {
-        // O_WRONLY|O_CREAT|O_TRUNC = 1|64|512 = 577.
-        var lab_fd: i32 = do_openat(0 - 100, lab_out_path, 577);
-        if lab_fd >= 0 {
-            asm_dump_lab_state_to(lab_fd);
-            do_close(lab_fd);
-        }
-    } else {
-        asm_dump_lab_state();
-    }
-
-    km_dump_peak();
-    return 0;
-}
-
-fn main() -> i32 {
-    return run(0 as String, 0 as String, 0 as String, 0 as String, 0 as String);
-}
-
-// Compare a 0..n-bytes prefix of `s` against a literal pattern given
-// as raw bytes baked in via 4-byte chunks. Used by main(argv) below
-// to recognise `--emit-idx` / `--load-idx` flags without dragging in
-// a full string library.
 fn arg_eq(s: String, pat: StringLiteral) -> i32 {
     var ns: i32 = len(s);
     var np: i32 = len(pat);
@@ -414,6 +22,10 @@ fn arg_eq(s: String, pat: StringLiteral) -> i32 {
     return 1;
 }
 
+fn main() -> i32 {
+    return run(0 as String, 0 as String, 0 as String, 0 as String, 0 as String);
+}
+
 fn main(argv: StringArray) -> i32 {
     // CLI shapes:
     //   asm_pass2                                       stdin → .lab on stdout
@@ -422,7 +34,7 @@ fn main(argv: StringArray) -> i32 {
     //   asm_pass2 --emit-idx out.idx src.s              extract pass only → .idx
     //   asm_pass2 --load-idx in.idx src.s [strip.s]     load prelude state then process src
     //   asm_pass2 --load-idx in.idx --idx-source p.s ... emit `src p.s` into the .lab so
-    //                                                     pass2 can open the prelude directly
+    //                                                     pass3 can open the prelude directly
     //   asm_pass2 --lab-out path.lab ...                .lab to a file instead of stdout
     var path: String = 0 as String;
     var strip_out: String = 0 as String;
@@ -437,10 +49,6 @@ fn main(argv: StringArray) -> i32 {
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var consumed: i32 = 1;  // skip argv[0] (program name)
-        // First pass: peel off any --emit-idx <path> / --load-idx <path>
-        // / --idx-source <path> / --lab-out <path> /
-        // --prelude-text-bin <p> / --prelude-rodata-bin <p> /
-        // --prelude-data-bin <p> / --prelude-reloc <p> flags.
         var keep_scanning: i32 = 1;
         while keep_scanning != 0 && consumed < argc {
             var a: String = get(argv, consumed);
@@ -472,31 +80,17 @@ fn main(argv: StringArray) -> i32 {
                 keep_scanning = 0;
             }
         }
-        // Positional: src [strip]
         if consumed < argc { path = get(argv, consumed); consumed = consumed + 1; }
         if consumed < argc { strip_out = get(argv, consumed); consumed = consumed + 1; }
     }
-    // Tell asm_dump_lab_state which source files asm-pass2 should
-    // open. When the prelude is loaded from idx, the prelude path
-    // comes via --idx-source and is the first src. The strip output
-    // (or raw user source if no strip) is the second.
     if idx_source as u32 != 0u32 { asm_set_src_path1(idx_source); }
     if strip_out as u32 != 0u32 {
         asm_set_src_path2(strip_out);
     } else if path as u32 != 0u32 && idx_source as u32 != 0u32 {
-        // load-idx mode without strip: still record the user source
-        // as the second src so pass2 can read it.
         asm_set_src_path2(path);
     } else if path as u32 != 0u32 {
-        // Plain `asm_pass2 <src> --lab-out <lab>`: bake a src line
-        // referencing <src> into the .lab so asm_pass3 can pick it
-        // up directly per section pass — eliminates the "cat lab +
-        // 3 × src | asm_pass3" choreography on the OS side.
         asm_set_src_path1(path);
     }
-    // Pre-encode (Step 5): when prelude bins are wired, the lab dump
-    // emits `src raw` triplets in place of `src <prelude.s>` and
-    // splices the prelude reloc file in just before the closing `)`.
     if prelude_text_bin   as u32 != 0u32 { asm_set_prelude_text_bin(prelude_text_bin); }
     if prelude_rodata_bin as u32 != 0u32 { asm_set_prelude_rodata_bin(prelude_rodata_bin); }
     if prelude_data_bin   as u32 != 0u32 { asm_set_prelude_data_bin(prelude_data_bin); }

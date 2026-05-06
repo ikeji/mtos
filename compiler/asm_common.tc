@@ -2266,6 +2266,13 @@ export fn asm_pass2_allocate_code() -> void {
 // parsing the .lab and before running pass 2 on the source.
 // Stream mode replaces g_code with a small 4 KB buffer and a pass-
 // per-section algorithm (see asm_pass3.tc main()).
+export fn asm_disable_stream_mode() -> void {
+    g_stream_mode = 0;
+    g_target_section = 0;
+    g_section_emitted = 0;
+    return;
+}
+
 export fn asm_enable_stream_mode() -> void {
     g_stream_mode = 1;
     g_target_section = 0;

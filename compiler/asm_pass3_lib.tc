@@ -1,0 +1,876 @@
+// asm_pass3.tc — encoder half of the asm split (Phase 2 #56).
+//
+// Reads stdin as a concatenation of:
+//
+//   1. (lab ... )                — wrapped .lab from asm_pass2
+//   2. full source (pass A)      — scanned while emitting .text bytes
+//   3. full source (pass B)      — scanned while emitting .rodata bytes
+//   4. full source (pass C)      — scanned while emitting .data bytes
+//
+// Each of passes A/B/C sees the source in its entirety but emit8 only
+// writes to stdout when the current section directive matches that
+// pass's target section (g_target_section). Between passes each
+// target section is padded with zeros to its aligned size (from the
+// .lab) so the total byte count matches filesz.
+//
+// Phase 5 (2026-04-16): we stream bytes to stdout via a 4 KB
+// g_out_buf and drop the ~300 KB g_code that used to hold the whole
+// program image. asm_pass3 peak drops from ~400 KB (after the
+// asm_pass2 label-pool shrink) to ~200 KB.
+//
+// bss is memsz-only and never writes file bytes, so there is no
+// pass for section 3.
+//
+// Caller contract: the caller must duplicate the source 3 times in
+// the stdin stream. compile-gen2.sh and kernel/build.sh do this
+// automatically via `cat`; the OS-side sh pipeline does it via
+// intermediate tmpfs files.
+
+import "asm_common.tc";
+import "string_buffer.tc";
+import "source_reader.tc";
+import "strlib.tc";
+
+fn km_dump_peak() -> void;
+
+// File-open syscalls (forward decls — bodies in crt0_tc.s / task_crt0.s).
+fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+// Source-file paths captured from the .lab's `src` lines. Each entry
+// is a String the .lab parser allocates from the lab line bytes.
+// When non-empty, run_section_pass opens these in order instead of
+// reading from stdin (the cat-p2 concat step then becomes redundant).
+//
+// v2 .lab adds two flavors:
+//   `src <path>` / `src asm <path>`: open + tokenize + encode (kind=0)
+//   `src raw <path> <sec>`:          memcpy raw bytes directly (kind=1)
+// Parallel arrays keep kind / section_id alongside the path so the
+// section pass can dispatch by kind without re-parsing.
+//
+// Declared up front so raw_memcpy_section / record_src_path /
+// record_reloc see them as I32Array / U32Array (not `?`); tcheck
+// resolves global var types lazily and forward-references through
+// fn bodies sometimes lose the type tag.
+var g_src_paths: U32Array = 0 as U32Array;
+var g_src_kinds: U32Array = 0 as U32Array;
+var g_src_secs:  I32Array = 0 as I32Array;
+var g_n_src_paths: i32 = 0;
+var SRC_PATHS_CAP: i32 = 8;
+
+// Reloc records: parallel arrays. Capacity 256 covers a typical
+// prelude (libtc + crt0 + runtime) which has at most a few dozen
+// la-to-rodata + call-to-main relocations.
+var RELOCS_CAP: i32 = 256;
+var g_reloc_offs:  I32Array = 0 as I32Array;
+var g_reloc_kinds: I32Array = 0 as I32Array;
+// Each name is a U8Array (count-prefixed) cast to u32 — same trick
+// as src_paths. Lifetime: persists until run_pass2 returns.
+var g_reloc_names: U32Array = 0 as U32Array;
+var g_n_relocs: i32 = 0;
+
+// Lookup label `name` in the asm_common label table. Returns the
+// label's absolute address (PIC), or sentinel value 0 - 1 if not
+// found (callers should not encounter this — apply_relocs aborts).
+fn lookup_label_addr(name: U8Array, nlen: i32) -> i32 {
+    var idx: i32 = asm_find_label_idx(name, nlen);
+    if idx < 0 { return 0 - 1; }
+    return asm_label_addr_at(idx);
+}
+
+// Apply one reloc kind=1 (auipc + addi/jalr pair, 8 bytes) at offset
+// rel_off within `buf`. The original bytes were encoded with imm=0
+// (or arbitrary placeholder) — we replace bits 31:12 of the auipc
+// and bits 31:20 of the addi/jalr with hi20/lo12 of (target - pc),
+// where pc = sec_base + chunk_off + rel_off. chunk_off lets the
+// streaming caller pass a window-local offset for `rel_off` while
+// still computing the correct absolute PC for the patch.
+fn patch_reloc_at(buf: U8Array, rel_off: i32, sec_base: i32, chunk_off: i32, target: i32) -> void {
+    var pc: i32 = sec_base + chunk_off + rel_off;
+    var off: i32 = target - pc;
+    // hi20: imm[31:12] of auipc
+    var auipc_w: i32 =
+        (get(buf, rel_off + 0) as i32) |
+        ((get(buf, rel_off + 1) as i32) << 8) |
+        ((get(buf, rel_off + 2) as i32) << 16) |
+        ((get(buf, rel_off + 3) as i32) << 24);
+    auipc_w = (auipc_w & 4095) | (asm_hi20(off) << 12);
+    set(buf, rel_off + 0, (auipc_w & 255) as u8);
+    set(buf, rel_off + 1, ((auipc_w >> 8) & 255) as u8);
+    set(buf, rel_off + 2, ((auipc_w >> 16) & 255) as u8);
+    set(buf, rel_off + 3, ((auipc_w >> 24) & 255) as u8);
+    // lo12: imm[31:20] of addi/jalr
+    var lo_w: i32 =
+        (get(buf, rel_off + 4) as i32) |
+        ((get(buf, rel_off + 5) as i32) << 8) |
+        ((get(buf, rel_off + 6) as i32) << 16) |
+        ((get(buf, rel_off + 7) as i32) << 24);
+    lo_w = (lo_w & 1048575) | ((asm_lo12(off) & 4095) << 20);
+    set(buf, rel_off + 4, (lo_w & 255) as u8);
+    set(buf, rel_off + 5, ((lo_w >> 8) & 255) as u8);
+    set(buf, rel_off + 6, ((lo_w >> 16) & 255) as u8);
+    set(buf, rel_off + 7, ((lo_w >> 24) & 255) as u8);
+    return;
+}
+
+// Apply one reloc kind=2 (gp-relative la, auipc + addi gp pair). The
+// auipc bytes are preserved (its result is dead — the addi overwrites
+// rd); only the addi's 12-bit imm field gets repatched with the new
+// `target - g_gp_abs`. Used for `la rd, <data/bss label>` baked into
+// the pre-encoded prelude — gpoff goes stale when user.s shifts the
+// data_base at full link time.
+fn patch_reloc_gprel_at(buf: U8Array, rel_off: i32, target: i32, gp_abs: i32) -> void {
+    var gpoff: i32 = target - gp_abs;
+    var lo_w: i32 =
+        (get(buf, rel_off + 4) as i32) |
+        ((get(buf, rel_off + 5) as i32) << 8) |
+        ((get(buf, rel_off + 6) as i32) << 16) |
+        ((get(buf, rel_off + 7) as i32) << 24);
+    lo_w = (lo_w & 1048575) | ((gpoff & 4095) << 20);
+    set(buf, rel_off + 4, (lo_w & 255) as u8);
+    set(buf, rel_off + 5, ((lo_w >> 8) & 255) as u8);
+    set(buf, rel_off + 6, ((lo_w >> 16) & 255) as u8);
+    set(buf, rel_off + 7, ((lo_w >> 24) & 255) as u8);
+    return;
+}
+
+// Apply one reloc kind=0 (J-type single 32-bit instruction at offset
+// rel_off within `buf`). Replaces imm[20|10:1|11|19:12] with the new
+// pc-relative offset; opcode + rd are preserved. chunk_off mirrors
+// patch_reloc_at: the streaming caller passes a window-local rel_off
+// while still getting the correct absolute PC for patching.
+fn patch_reloc_j_at(buf: U8Array, rel_off: i32, sec_base: i32, chunk_off: i32, target: i32) -> void {
+    var pc: i32 = sec_base + chunk_off + rel_off;
+    var off: i32 = target - pc;
+    var w: i32 =
+        (get(buf, rel_off + 0) as i32) |
+        ((get(buf, rel_off + 1) as i32) << 8) |
+        ((get(buf, rel_off + 2) as i32) << 16) |
+        ((get(buf, rel_off + 3) as i32) << 24);
+    // Mask out imm bits — keep bits 11:0 (opcode + rd):
+    // imm encoding is bits 31|30:21|20|19:12, so the mask we KEEP is
+    // bits 11:0 which is 0xFFF.
+    w = w & 0xFFF;
+    // Reconstruct J-type imm from `off`:
+    //   imm[20]   → bit 31
+    //   imm[10:1] → bits 30:21
+    //   imm[11]   → bit 20
+    //   imm[19:12]→ bits 19:12
+    var b20:    i32 = (off >> 20) & 1;
+    var b10_1:  i32 = (off >> 1)  & 1023;
+    var b11:    i32 = (off >> 11) & 1;
+    var b19_12: i32 = (off >> 12) & 255;
+    w = w | (b20 << 31) | (b10_1 << 21) | (b11 << 20) | (b19_12 << 12);
+    set(buf, rel_off + 0, (w & 255) as u8);
+    set(buf, rel_off + 1, ((w >> 8) & 255) as u8);
+    set(buf, rel_off + 2, ((w >> 16) & 255) as u8);
+    set(buf, rel_off + 3, ((w >> 24) & 255) as u8);
+    return;
+}
+
+// Pre-encoded section bytes: open `path`, copy its contents straight
+// to g_out_fd in 4 KB chunks (no per-byte emit_stream overhead), then
+// nudge the section cursor / emitted counter so subsequent asm src
+// entries in the same section encode at the correct PC.
+//
+// When relocs are present and we're in the text section, buffer the
+// file into memory first, apply each reloc patch, then sys_write
+// the patched bytes.
+fn raw_memcpy_section(path: String) -> i32 {
+    asm_flush_out_buf_export();
+    var fd: i32 = do_openat(0 - 100, path, 0);
+    if fd < 0 { return 0; }
+    var out_fd: i32 = asm_get_out_fd();
+    var total: i32 = 0;
+
+    var apply_relocs: i32 = 0;
+    if g_n_relocs > 0 && asm_get_target_section() == 0 { apply_relocs = 1; }
+
+    if apply_relocs == 1 {
+        // Streaming + patch path. Read the bin in 4 KB chunks into an
+        // 8 KB sliding window so a 4-or-8-byte reloc near a chunk
+        // boundary stays contiguous. Pre-resolve all label addresses
+        // up front (so a missing label aborts before any half-written
+        // bytes hit the output).
+        //
+        // Layout: win[0..keep) carries leftover from the previous
+        // chunk; sys_read appends the new chunk via a 4 KB scratch
+        // buffer at win[keep..]. After patching we emit win[0..emit)
+        // and shift win[emit..keep+nr) → win[0..) for the next round.
+        // The hold-back size is 7 (longest reloc kind=1 minus 1) so
+        // any reloc starting inside the held region is patched on
+        // the next iteration when its tail is in the window.
+        var sec_base: i32 = asm_get_sec_base(0);
+        var pre_addrs: I32Array = I32Array(g_n_relocs as u32);
+        var ri: i32 = 0;
+        while ri < g_n_relocs {
+            var name_addr: u32 = get(g_reloc_names, ri);
+            var name: U8Array = name_addr as U8Array;
+            var nlen: i32 = len(name);
+            var taddr: i32 = lookup_label_addr(name, nlen);
+            if taddr < 0 { sys_exit(30); }
+            set(pre_addrs, ri, taddr);
+            ri = ri + 1;
+        }
+        var WIN:    i32 = 8192;
+        var io:     U8Array = U8Array(4096);
+        var win:    U8Array = U8Array(WIN as u32);
+        var keep:   i32 = 0;       // bytes already in win[0..keep)
+        var chunk_off: i32 = 0;    // bin offset of win[0]
+        var done_r: i32 = 0;
+        while done_r == 0 {
+            var nr: i32 = sys_read(fd, io, 4096);
+            if nr <= 0 {
+                if keep > 0 {
+                    // Final flush: any remaining relocs within
+                    // win[0..keep) get patched here.
+                    var rk: i32 = 0;
+                    while rk < g_n_relocs {
+                        var r_off: i32 = get(g_reloc_offs, rk);
+                        var r_kind: i32 = get(g_reloc_kinds, rk);
+                        var w_off: i32 = r_off - chunk_off;
+                        var ln: i32 = 4;
+                        if r_kind == 1 || r_kind == 2 { ln = 8; }
+                        if w_off >= 0 && w_off + ln <= keep {
+                            var ta: i32 = get(pre_addrs, rk);
+                            if r_kind == 1 {
+                                patch_reloc_at(win, w_off, sec_base, chunk_off, ta);
+                            } else if r_kind == 2 {
+                                patch_reloc_gprel_at(win, w_off, ta, asm_get_gp_abs());
+                            } else {
+                                patch_reloc_j_at(win, w_off, sec_base, chunk_off, ta);
+                            }
+                        }
+                        rk = rk + 1;
+                    }
+                    sys_write(out_fd, win, keep);
+                    total = total + keep;
+                }
+                done_r = 1;
+            } else {
+                // Append io[0..nr) to win[keep..]
+                var ai: i32 = 0;
+                while ai < nr { set(win, keep + ai, get(io, ai)); ai = ai + 1; }
+                var win_len: i32 = keep + nr;
+                var emit_end: i32 = win_len - 7;
+                if emit_end < 0 { emit_end = 0; }
+                // Patch every reloc that fits fully in [0..emit_end).
+                var rj: i32 = 0;
+                while rj < g_n_relocs {
+                    var roff: i32 = get(g_reloc_offs, rj);
+                    var rkind: i32 = get(g_reloc_kinds, rj);
+                    var win_off: i32 = roff - chunk_off;
+                    if win_off >= 0 {
+                        var len_needed: i32 = 4;
+                        if rkind == 1 || rkind == 2 { len_needed = 8; }
+                        if win_off + len_needed <= emit_end {
+                            var ta2: i32 = get(pre_addrs, rj);
+                            if rkind == 1 {
+                                patch_reloc_at(win, win_off, sec_base, chunk_off, ta2);
+                            } else if rkind == 2 {
+                                patch_reloc_gprel_at(win, win_off, ta2, asm_get_gp_abs());
+                            } else {
+                                patch_reloc_j_at(win, win_off, sec_base, chunk_off, ta2);
+                            }
+                        }
+                    }
+                    rj = rj + 1;
+                }
+                if emit_end > 0 {
+                    sys_write(out_fd, win, emit_end);
+                    total = total + emit_end;
+                    var ti: i32 = 0;
+                    while ti < win_len - emit_end {
+                        set(win, ti, get(win, emit_end + ti));
+                        ti = ti + 1;
+                    }
+                    keep = win_len - emit_end;
+                    chunk_off = chunk_off + emit_end;
+                } else {
+                    keep = win_len;
+                }
+            }
+        }
+        delete(io);
+        delete(win);
+        delete(pre_addrs);
+    } else {
+        // Streaming pass-through (no relocs to apply).
+        var buf2: U8Array = U8Array(4096);
+        var done2: i32 = 0;
+        while done2 == 0 {
+            var n2: i32 = sys_read(fd, buf2, 4096);
+            if n2 <= 0 { done2 = 1; }
+            else {
+                sys_write(out_fd, buf2, n2);
+                total = total + n2;
+            }
+        }
+        delete(buf2);
+    }
+
+    do_close(fd);
+    asm_advance_section_pass2(total);
+    return total;
+}
+
+fn record_reloc(off: i32, kind: i32, name: U8Array) -> void {
+    if g_reloc_offs as u32 == 0u32 {
+        g_reloc_offs  = I32Array((RELOCS_CAP) as u32);
+        g_reloc_kinds = I32Array((RELOCS_CAP) as u32);
+        g_reloc_names = U32Array((RELOCS_CAP) as u32);
+        g_n_relocs = 0;
+    }
+    if g_n_relocs < RELOCS_CAP {
+        set(g_reloc_offs,  g_n_relocs, off);
+        set(g_reloc_kinds, g_n_relocs, kind);
+        set(g_reloc_names, g_n_relocs, name as u32);
+        g_n_relocs = g_n_relocs + 1;
+    }
+    return;
+}
+
+fn record_src_path(p: String, kind: i32, sec: i32) -> void {
+    if g_src_paths as u32 == 0u32 {
+        g_src_paths = U32Array((SRC_PATHS_CAP) as u32);
+        g_src_kinds = U32Array((SRC_PATHS_CAP) as u32);
+        g_src_secs  = I32Array((SRC_PATHS_CAP) as u32);
+        g_n_src_paths = 0;
+    }
+    if g_n_src_paths < SRC_PATHS_CAP {
+        set(g_src_paths, g_n_src_paths, p as u32);
+        set(g_src_kinds, g_n_src_paths, kind as u32);
+        set(g_src_secs,  g_n_src_paths, sec);
+        g_n_src_paths = g_n_src_paths + 1;
+    }
+    return;
+}
+
+// ===== .lab parsing helpers =====
+
+fn is_ws(c: u8) -> bool { return c == ' ' || c == 9u8; }
+fn lab_is_digit(c: u8) -> bool { return c >= '0' && c <= '9'; }
+
+// Skip whitespace at *cursor and return the new cursor.
+fn skip_ws(buf: U8Array, cursor: i32, end: i32) -> i32 {
+    var p: i32 = cursor;
+    while p < end && is_ws(get(buf, p)) { p = p + 1; }
+    return p;
+}
+
+// Parse a non-negative decimal i32 starting at *cursor. Returns the
+// value via g_lab_int and advances cursor (passed back via g_lab_cur).
+var g_lab_int: i32 = 0;
+var g_lab_cur: i32 = 0;
+fn parse_dec(buf: U8Array, cursor: i32, end: i32) -> void {
+    var p: i32 = cursor;
+    var neg: i32 = 0;
+    if p < end && get(buf, p) == '-' { neg = 1; p = p + 1; }
+    var v: i32 = 0;
+    while p < end && lab_is_digit(get(buf, p)) {
+        v = v * 10 + (get(buf, p) as i32 - 48);
+        p = p + 1;
+    }
+    if neg == 1 { v = 0 - v; }
+    g_lab_int = v;
+    g_lab_cur = p;
+    return;
+}
+
+// Process one .lab line. Returns 1 if it's the closing ")", else 0.
+// Mutates the asm_common state for sec / lab / num records, ignores
+// blanks and comments.
+fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
+    var p: i32 = skip_ws(buf, 0, blen);
+    if p >= blen { return 0; }
+    var c: u8 = get(buf, p);
+    if c == 10u8 || c == 13u8 { return 0; }
+    if c == ';' { return 0; }
+    if c == ')' { return 1; }
+    if c == '(' { return 0; }   // (lab opener — already consumed in caller, defensive
+    if blen - p >= 4 && cmp(buf, p, "sec ") {
+        parse_dec(buf, p + 4, blen);
+        var sec_id: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var sec_base: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var sec_size: i32 = g_lab_int;
+        asm_install_sec_base_size(sec_id, sec_base, sec_size);
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "raw ") {
+        parse_dec(buf, p + 4, blen);
+        asm_install_raw_mode(g_lab_int);
+        return 0;
+    }
+    if blen - p >= 10 && cmp(buf, p, "load_base ") {
+        parse_dec(buf, p + 10, blen);
+        asm_install_load_base(g_lab_int);
+        return 0;
+    }
+    if blen - p >= 10 && cmp(buf, p, "src_bytes ") {
+        parse_dec(buf, p + 10, blen);
+        asm_set_src_bytes(g_lab_int);
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "src ") {
+        // src <path>             — kind=asm (alias `src asm <path>`)
+        // src raw <path> <sec>   — kind=raw, memcpy as section <sec>
+        // Trim the trailing newline before allocating the path string.
+        var src_kind: i32 = 0;
+        var src_sec:  i32 = 0;
+        var rest: i32 = skip_ws(buf, p + 4, blen);
+        if blen - rest >= 4 && cmp(buf, rest, "raw ") {
+            src_kind = 1;
+            rest = skip_ws(buf, rest + 4, blen);
+        } else if blen - rest >= 4 && cmp(buf, rest, "asm ") {
+            // explicit alias — same as bare `src <path>`
+            rest = skip_ws(buf, rest + 4, blen);
+        }
+        var ps: i32 = rest;
+        // For raw entries the section_id follows the path: scan
+        // forward to the next whitespace as the path end.
+        var pe: i32 = blen;
+        if src_kind == 1 {
+            var pp: i32 = ps;
+            while pp < blen && is_ws(get(buf, pp)) == false {
+                pp = pp + 1;
+            }
+            pe = pp;
+            parse_dec(buf, skip_ws(buf, pe, blen), blen);
+            src_sec = g_lab_int;
+        } else {
+            var trimming_p: i32 = 1;
+            while trimming_p == 1 && pe > ps {
+                var tc_p: u8 = get(buf, pe - 1);
+                if tc_p == 10u8 || tc_p == 13u8 || tc_p == ' ' || tc_p == 9u8 {
+                    pe = pe - 1;
+                } else {
+                    trimming_p = 0;
+                }
+            }
+        }
+        var plen: i32 = pe - ps;
+        if plen > 0 {
+            // U8Array(N) has the same on-wire layout as TC's String
+            // (count-prefixed buffer), so we can cast the array as
+            // a String once the bytes are filled. The path needs to
+            // outlive parse_lab_line, so don't delete it. Allocate one
+            // extra byte so the data area ends with a NUL — the host
+            // do_openat stub strips the count prefix and hands the
+            // bytes to Linux openat() unchanged.
+            var path_buf: U8Array = U8Array((plen + 1) as u32);
+            var pi: i32 = 0;
+            while pi < plen { set(path_buf, pi, get(buf, ps + pi)); pi = pi + 1; }
+            set(path_buf, plen, 0u8);
+            // String layout has a 4-byte count up front; U8Array(N)
+            // already wrote N as the count. We want the logical length
+            // to be plen (without the trailing NUL we just appended).
+            // U8Array(plen+1) wrote plen+1 — patch it down to plen.
+            poke32(path_buf as u32, plen as u32);
+            record_src_path(path_buf as String, src_kind, src_sec);
+        }
+        return 0;
+    }
+    if blen - p >= 6 && cmp(buf, p, "reloc ") {
+        // reloc <off> <kind> <name>
+        parse_dec(buf, p + 6, blen);
+        var roff: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var rkind: i32 = g_lab_int;
+        var ns_r: i32 = skip_ws(buf, g_lab_cur, blen);
+        var ne_r: i32 = blen;
+        var trim_r: i32 = 1;
+        while trim_r == 1 && ne_r > ns_r {
+            var tc_r: u8 = get(buf, ne_r - 1);
+            if tc_r == 10u8 || tc_r == 13u8 || tc_r == ' ' || tc_r == 9u8 {
+                ne_r = ne_r - 1;
+            } else {
+                trim_r = 0;
+            }
+        }
+        var nlen_r: i32 = ne_r - ns_r;
+        if nlen_r > 0 {
+            var name: U8Array = U8Array((nlen_r) as u32);
+            var ri: i32 = 0;
+            while ri < nlen_r { set(name, ri, get(buf, ns_r + ri)); ri = ri + 1; }
+            record_reloc(roff, rkind, name);
+        }
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "num ") {
+        parse_dec(buf, p + 4, blen);
+        var dig: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var addrv: i32 = g_lab_int;
+        asm_install_numlab_from_lab(dig, addrv);
+        return 0;
+    }
+    if blen - p >= 4 && cmp(buf, p, "lab ") {
+        parse_dec(buf, p + 4, blen);
+        var laddr: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var lsec: i32 = g_lab_int;
+        var ns: i32 = skip_ws(buf, g_lab_cur, blen);
+        // Trim trailing whitespace / line endings so the name length
+        // doesn't include the LF the reader added.
+        var ne: i32 = blen;
+        var trimming: i32 = 1;
+        while trimming == 1 && ne > ns {
+            var tc: u8 = get(buf, ne - 1);
+            if tc == 10u8 || tc == 13u8 || tc == ' ' || tc == 9u8 {
+                ne = ne - 1;
+            } else {
+                trimming = 0;
+            }
+        }
+        var name_len: i32 = ne - ns;
+        var name: U8Array = U8Array((name_len) as u32);
+        var i: i32 = 0;
+        while i < name_len { set(name, i, get(buf, (ns + i))); i = i + 1; }
+        asm_install_label_from_lab(name, name_len, laddr, lsec);
+        delete(name);
+        return 0;
+    }
+    return 0;
+}
+
+// ===== Source section pass =====
+//
+// Run one full traversal of the source from stdin, emitting only the
+// bytes for sec_target. The caller has concatenated the source 3
+// times after the .lab; src_bytes tells this pass exactly how many
+// bytes to consume. Between passes, the shared rb_* reader keeps
+// its internal buffer so read-ahead crossing the source boundary
+// carries over into the next pass (instead of being lost like a
+// fresh SourceReader would lose it).
+fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
+    asm_set_target_section(sec_target);
+    asm_set_pass(2);
+    asm_pass2_reset_cursors();
+
+    // --emit-bin mode: redirect this section's bytes to its dedicated
+    // .bin file. Each section pass overwrites g_out_fd at start —
+    // we save the previous fd in saved_fd so other passes are not
+    // affected if only some sections have a per-section bin file.
+    var saved_fd: i32 = asm_get_out_fd();
+    var per_sec_fd: i32 = 0;
+    if sec_target == 0 { per_sec_fd = asm_get_text_bin_fd(); }
+    if sec_target == 1 { per_sec_fd = asm_get_rodata_bin_fd(); }
+    if sec_target == 2 { per_sec_fd = asm_get_data_bin_fd(); }
+    if per_sec_fd > 0 {
+        asm_set_out_fd(per_sec_fd);
+    }
+
+    var lineno: i32 = 0;
+
+    if g_n_src_paths > 0 {
+        // Multi-source mode: open each src path in order, walk via
+        // the same rb_* fast reader we use for stdin (just point its
+        // fd at the freshly-opened file). Eliminates the cat-p2
+        // concat step — pass2 reads /prelude.s (XIP flash) and
+        // /sd/u.strip directly per section pass.
+        //
+        // v2 .lab: each entry is either kind=0 (asm — open + tokenize
+        // + encode, current behavior) or kind=1 (raw — memcpy bytes
+        // straight to g_out_fd when its section_id matches sec_target).
+        // Raw entries that don't match are skipped entirely; their
+        // bytes were already accounted for by asm_pass2 in the .lab's
+        // sec sizes.
+        var pi: i32 = 0;
+        while pi < g_n_src_paths {
+            var p_addr: u32 = get(g_src_paths, pi);
+            var path: String = p_addr as String;
+            var kind:  u32 = get(g_src_kinds, pi);
+            var ksec:  i32 = get(g_src_secs,  pi);
+            if kind == 1u32 {
+                if ksec == sec_target {
+                    raw_memcpy_section(path);
+                }
+            } else {
+                var fd: i32 = do_openat(0 - 100, path, 0);
+                if fd >= 0 {
+                    rb_switch_fd(fd);
+                    var done: i32 = 0;
+                    while done == 0 {
+                        var llen2: i32 = rb_read_line(line, 4092, 0x7FFFFFFF);
+                        if llen2 < 0 { done = 1; }
+                        if llen2 > 0 {
+                            lineno = lineno + 1;
+                            if asm_parse_meta_directive(line, llen2) == 1 {
+                                // pragmas only
+                            } else {
+                                asm_run_line(line, llen2, lineno);
+                            }
+                        }
+                    }
+                    do_close(fd);
+                }
+            }
+            pi = pi + 1;
+        }
+    } else {
+        // Stdin / single-source mode: caller concatenated the source
+        // 3 times after the .lab; src_bytes bounds each pass.
+        var budget: i32 = source_bytes;
+        while budget > 0 {
+            var llen: i32 = rb_read_line(line, 4092, budget);
+            budget = g_budget_after;
+            if llen < 0 { break; }
+            if llen > 0 {
+                lineno = lineno + 1;
+                if asm_parse_meta_directive(line, llen) == 1 {
+                    // pragmas only affect g_raw_mode / g_load_vaddr
+                } else {
+                    asm_run_line(line, llen, lineno);
+                }
+            }
+        }
+    }
+
+    // Pad the target section with zeros up to its aligned size and
+    // flush the output buffer. asm_flush_section_padding does both.
+    //
+    // --emit-bin mode: skip the per-section padding so the bin file
+    // contains exactly the encoded source bytes. The link-time
+    // asm_pass3 invocation re-pads after concatenating user code.
+    if per_sec_fd > 0 {
+        asm_flush_output();
+    } else {
+        asm_flush_section_padding();
+    }
+    // Restore the previous output fd so subsequent section passes
+    // and final ELF emission continue to write where the caller
+    // expects.
+    asm_set_out_fd(saved_fd);
+    return;
+}
+
+// ===== Shared buffered stdin reader (Phase 5) =====
+//
+// SourceReader's 4 KB read-ahead eats past one source copy into the
+// next, which breaks the 3-pass scheme. We can't shrink its buffer
+// to 1 byte (far too slow for kernel-sized inputs, would add ~20 s
+// to make test). Instead this file keeps a single buffered reader
+// state across all 4 phases (.lab + text + rodata + data pass) so
+// the leftover bytes in the buffer carry over correctly into the
+// next phase's reads. The caller still concatenates the source 3
+// times, and src_bytes from the .lab tells each pass exactly when
+// to stop consuming from the stream.
+var G_BUF_CAP: i32 = 4096;
+var g_buf:     U8Array = 0 as U8Array;
+var g_buf_pos: i32 = 0;
+var g_buf_len: i32 = 0;
+var g_buf_eof: i32 = 0;
+// rb_fill reads from this fd. Defaults to 0 (stdin) so the legacy
+// single-source path keeps working; multi-src run_section_pass
+// switches it via rb_switch_fd before each file.
+var g_rb_fd: i32 = 0;
+
+fn rb_init() -> void {
+    g_buf     = U8Array((G_BUF_CAP) as u32);
+    g_buf_pos = 0;
+    g_buf_len = 0;
+    g_buf_eof = 0;
+    g_rb_fd   = 0;
+    return;
+}
+
+// Switch the underlying fd, discard any read-ahead, clear EOF. Used
+// to point the shared reader at a freshly-opened src file.
+fn rb_switch_fd(fd: i32) -> void {
+    g_rb_fd   = fd;
+    g_buf_pos = 0;
+    g_buf_len = 0;
+    g_buf_eof = 0;
+    return;
+}
+
+// Refill the buffer if empty. Returns 0 on success, 1 on EOF.
+fn rb_fill() -> i32 {
+    if g_buf_pos < g_buf_len { return 0; }
+    if g_buf_eof == 1 { return 1; }
+    var n: i32 = sys_read(g_rb_fd, g_buf, G_BUF_CAP);
+    if n <= 0 {
+        g_buf_eof = 1;
+        return 1;
+    }
+    g_buf_pos = 0;
+    g_buf_len = n;
+    return 0;
+}
+
+// Read one byte. Returns -1 at EOF.
+fn rb_next() -> i32 {
+    if rb_fill() == 1 { return -1; }
+    var c: u8 = get(g_buf, g_buf_pos);
+    g_buf_pos = g_buf_pos + 1;
+    return c as i32;
+}
+
+// Read one LF-terminated line into buf[0..]. Stops at LF (keeping it
+// in the output), at EOF, or at byte_limit bytes consumed — the
+// last stops mid-line exactly when a source pass finishes. Returns
+// line length or -1 if EOF hit without any bytes.
+//
+// byte_budget is a POINTER-SEMANTICS i32 passed in as the caller's
+// remaining budget for this pass. We decrement it in-place by
+// returning the new value via a global; TC has no multi-return so
+// we stash it in g_budget_after.
+var g_budget_after: i32 = 0;
+fn rb_read_line(buf: U8Array, buf_cap: i32, byte_budget: i32) -> i32 {
+    var llen: i32 = 0;
+    var saw_byte: i32 = 0;
+    var budget: i32 = byte_budget;
+    var done: i32 = 0;
+    while done == 0 && budget > 0 {
+        var c: i32 = rb_next();
+        if c < 0 {
+            done = 1;
+        } else {
+            saw_byte = 1;
+            budget = budget - 1;
+            if llen >= buf_cap {
+                var eb: StringBuffer = StringBuffer_new();
+                asm_err_begin(eb);
+                emit_string(eb, "line too long (max ");
+                emit_int(eb, buf_cap);
+                emit_string(eb, " bytes)");
+                asm_err_end(eb);
+            }
+            set(buf, llen, c as u8);
+            llen = llen + 1;
+            if c == 10 { done = 1; }
+        }
+    }
+    g_budget_after = budget;
+    if saw_byte == 0 { return -1; }
+    return llen;
+}
+
+// ===== Main =====
+export fn run_pass2(lab_path: String, out_path: String,
+             text_bin: String, rodata_bin: String,
+             data_bin: String, reloc_out: String) -> i32 {
+    asm_init_pass2();
+    asm_enable_stream_mode();
+    rb_init();
+
+    // --lab path: read .lab from a file instead of stdin. The src
+    // lines inside the .lab still drive multi-source open, so the
+    // pipeline goes from "single concatenated stdin" to "lab file →
+    // src files referenced therein".
+    if lab_path as u32 != 0u32 {
+        var lab_fd: i32 = do_openat(0 - 100, lab_path, 0);
+        if lab_fd < 0 { sys_exit(20); }
+        rb_switch_fd(lab_fd);
+        // Note: the fd stays open until run_section_pass switches it;
+        // we leak it to the kernel close-on-exit. Acceptable on host
+        // / OS task exit.
+    }
+    // --out path: redirect the binary write target.
+    if out_path as u32 != 0u32 {
+        var out_fd: i32 = do_openat(0 - 100, out_path, 577);
+        if out_fd < 0 { sys_exit(21); }
+        asm_set_out_fd(out_fd);
+    }
+    // Per-section --text-bin / --rodata-bin / --data-bin --reloc-out:
+    // emit-bin mode used at kernel-build time to pre-encode the prelude
+    // into raw section binaries plus a relocation table.
+    if text_bin as u32 != 0u32 {
+        var fd_t: i32 = do_openat(0 - 100, text_bin, 577);
+        if fd_t < 0 { sys_exit(22); }
+        asm_set_text_bin_fd(fd_t);
+    }
+    if rodata_bin as u32 != 0u32 {
+        var fd_r: i32 = do_openat(0 - 100, rodata_bin, 577);
+        if fd_r < 0 { sys_exit(23); }
+        asm_set_rodata_bin_fd(fd_r);
+    }
+    if data_bin as u32 != 0u32 {
+        var fd_d: i32 = do_openat(0 - 100, data_bin, 577);
+        if fd_d < 0 { sys_exit(24); }
+        asm_set_data_bin_fd(fd_d);
+    }
+    if reloc_out as u32 != 0u32 {
+        var fd_l: i32 = do_openat(0 - 100, reloc_out, 577);
+        if fd_l < 0 { sys_exit(25); }
+        asm_set_reloc_fd(fd_l);
+    }
+
+    var lab_line: U8Array = U8Array(4092);
+
+    // Phase A: scan stdin to the "(lab" opener, then parse lab lines
+    // until the closing ")". Uses the shared rb_* buffered reader
+    // with an effectively infinite budget so we read line by line
+    // until the `)` closer. The reader's internal buffer may have
+    // bytes of the source body read-ahead at that point — they
+    // carry over into run_section_pass automatically since we
+    // keep the same reader state.
+    var saw_open: i32 = 0;
+    while saw_open == 0 {
+        var llen: i32 = rb_read_line(lab_line, 4092, 0x7FFFFFFF);
+        if llen < 0 { break; }
+        if llen >= 4 && cmp(lab_line, 0, "(lab") {
+            saw_open = 1;
+        }
+    }
+
+    var done: i32 = 0;
+    while done == 0 {
+        var llen2: i32 = rb_read_line(lab_line, 4092, 0x7FFFFFFF);
+        if llen2 < 0 { break; }
+        if llen2 > 0 {
+            if parse_lab_line(lab_line, llen2) == 1 { done = 1; }
+        }
+    }
+
+    // All labels installed; build the hash table for O(1) find_label
+    // during encoding. pass 1's define_label still uses linear search
+    // but runs on a smaller working set.
+    asm_finalize_labels();
+
+    // Phase B: emit the ELF header upfront (raw mode skips this).
+    // filesz/memsz/entry come entirely from the .lab, and `raw` /
+    // `load_base` meta directives were captured by asm_pass2 from
+    // the source body during pass 1 and written to the .lab as
+    // their own lines — parse_lab_line has already installed them
+    // via asm_install_raw_mode / asm_install_load_base.
+    //
+    // --emit-bin mode: skip the ELF header — section bytes go to
+    // their dedicated per-section .bin files, not stdout.
+    if text_bin as u32 == 0u32 && rodata_bin as u32 == 0u32 &&
+       data_bin as u32 == 0u32 {
+        asm_write_elf_header_stream();
+    }
+
+    // Phase C: 3 × source passes, one per target section (text,
+    // rodata, data). The caller concatenated the source 3 times
+    // after the .lab so each pass consumes exactly src_bytes from
+    // stdin and stops at the next copy's boundary. Bss is memsz-
+    // only and never writes file bytes.
+    var src_bytes: i32 = asm_get_src_bytes();
+    run_section_pass(0, lab_line, src_bytes);
+    run_section_pass(1, lab_line, src_bytes);
+    run_section_pass(2, lab_line, src_bytes);
+
+    delete(lab_line);
+
+    // Close output fds so fatfs flushes the directory entry size update
+    // before sys_exit. Without these closes, /sd/HW shows 0 bytes in the
+    // directory even though sectors were written.
+    var out_fd_final: i32 = asm_get_out_fd();
+    if out_fd_final > 1 { do_close(out_fd_final); }
+    var fd_t: i32 = asm_get_text_bin_fd();
+    if fd_t > 0 { do_close(fd_t); }
+    var fd_r: i32 = asm_get_rodata_bin_fd();
+    if fd_r > 0 { do_close(fd_r); }
+    var fd_d: i32 = asm_get_data_bin_fd();
+    if fd_d > 0 { do_close(fd_d); }
+    var fd_l: i32 = asm_get_reloc_fd();
+    if fd_l > 0 { do_close(fd_l); }
+
+    km_dump_peak();
+    return 0;
+}
+

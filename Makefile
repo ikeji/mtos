@@ -10,7 +10,7 @@ GEN1_TOOLS = $(addprefix build/gen1/,$(GEN1_NAMES))
 
 # Gen2 ツール (compile-gen1.sh で compiler/*.tc を RV32 ELF に。
 # build/gen2/ 固定にして make test 2 回目以降は再ビルドを避ける)
-GEN2_NAMES = parse sigscan tcheck codegen bc2asm bcrun asm_pass2 asm_pass3
+GEN2_NAMES = parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2 asm_pass3
 GEN2_TOOLS = $(addprefix build/gen2/,$(GEN2_NAMES))
 
 all: $(GEN1_TOOLS)
