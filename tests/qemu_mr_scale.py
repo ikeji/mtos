@@ -65,7 +65,7 @@ try:
     sys.stderr.buffer.write(boot)
     sys.stderr.flush()
 
-    sizes = [256, 1024, 4096, 65536]
+    sizes = [256, 1024, 4096, 65535]
     for size in sizes:
         # Use ASCII letters only — rules out NUL / control byte sensitivity.
         payload = bytes(((i % 26) + ord('A')) for i in range(size))
