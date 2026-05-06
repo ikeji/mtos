@@ -190,23 +190,89 @@ for tc in "${ALL_FILES[@]}"; do
     ASM_FILES+=("$TMP/$base.s")
 done
 
-# Assemble: [prologue] + crt0 + runtime.s + user .s files + crt0_data → ELF/raw via Gen2 asm split
-{
-    [ -n "$ASM_PROLOGUE" ] && printf '%s\n' "$ASM_PROLOGUE"
-    cat "$CRT0"
-    cat "$TMP/runtime.s"
-    cat "${ASM_FILES[@]}"
-    # EXTRA_S: additional .s files to include (e.g. data tables)
-    for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done
-    cat "$CRT0_DATA"
-} > "$TMP/full.s"
+# Phase 8 unification (opt-in): when UNIFIED_PRELUDE=1, build prelude
+# (ASM_PROLOGUE + CRT0 + runtime.s) and prelude_tail (CRT0_DATA)
+# separately, pre-encode the prelude into .idx + section .bin +
+# .reloc, then run the final asm_pass1 with --load-idx + --prelude-*.
+# Matches the OS-side flow in tests/fixtures/pico2_compile_*.sh —
+# same pipeline whether the build runs on host or under qemu/pico2.
+#
+# Default 0 (legacy stdin-pipeline) because the unified flow can't
+# handle preludes whose symbols get overridden by user code at link
+# time (asm_pass1/2 emits relocs only for unresolved labels in the
+# prelude pre-encode; locally-resolvable refs to fallback stubs like
+# `trap_handler__u32__u32: ret` get baked into the .bin and miss the
+# user-side override). Task builds opt in via the Makefile because
+# task_crt0.s carries fallback main / main__StringArray stubs that
+# the prelude pre-encode resolves correctly.
+UNIFIED_PRELUDE="${UNIFIED_PRELUDE:-0}"
 
-"$QEMU" "$GEN2_DIR/asm_pass1" < "$TMP/full.s" > "$TMP/full.lab"
-# asm_pass2 stream-emit mode (Phase 5): reads .lab, then 3 copies of
-# the source (one per output section — text, rodata, data). bss is
-# memsz-only so there is no 4th copy. This dodges the old g_code
-# filesz buffer and drops asm_pass2 peak from ~400 KB to ~200 KB.
-cat "$TMP/full.lab" "$TMP/full.s" "$TMP/full.s" "$TMP/full.s" | \
-    "$QEMU" "$GEN2_DIR/asm_pass2" > "$OUTFILE"
+if [ "$UNIFIED_PRELUDE" = "1" ]; then
+    # Step 1: prelude.s = ASM_PROLOGUE + CRT0 + runtime.s
+    {
+        [ -n "$ASM_PROLOGUE" ] && printf '%s\n' "$ASM_PROLOGUE"
+        cat "$CRT0"
+        cat "$TMP/runtime.s"
+    } > "$TMP/prelude.s"
+
+    # Step 2: prelude_tail.s = CRT0_DATA (BSS / data-end markers)
+    cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
+
+    # Step 3: user.s = each compiled .tc + EXTRA_S + prelude_tail.s
+    {
+        cat "${ASM_FILES[@]}"
+        for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done
+        cat "$TMP/prelude_tail.s"
+    } > "$TMP/user.s"
+
+    # Step 4a: emit prelude.idx from prelude.s alone (= the section
+    # state the OS-side asm_pass1 will inherit before scanning user.s).
+    "$QEMU" "$GEN2_DIR/asm_pass1" \
+        --emit-idx "$TMP/prelude.idx" "$TMP/prelude.s" 2>/dev/null
+
+    # Step 4b: pre-encode prelude.s + prelude_tail.s combined so the
+    # encoder has full label visibility (__data_end, __bss_start,
+    # __arena live in the tail). The .text.bin only contains prelude.s
+    # bytes; .data.bin / .reloc carry whatever the combined layout
+    # produced.
+    cat "$TMP/prelude.s" "$TMP/prelude_tail.s" > "$TMP/pre_full.s"
+    "$QEMU" "$GEN2_DIR/asm_pass1" < "$TMP/pre_full.s" > "$TMP/pre.lab"
+    cat "$TMP/pre.lab" "$TMP/pre_full.s" "$TMP/pre_full.s" "$TMP/pre_full.s" | \
+        "$QEMU" "$GEN2_DIR/asm_pass2" \
+            --text-bin   "$TMP/prelude.text.bin" \
+            --rodata-bin "$TMP/prelude.rodata.bin" \
+            --data-bin   "$TMP/prelude.data.bin" \
+            --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
+
+    # Step 5: final asm_pass1 with --load-idx + --prelude-*.
+    "$QEMU" "$GEN2_DIR/asm_pass1" \
+        --load-idx "$TMP/prelude.idx" \
+        --idx-source "$TMP/prelude.s" \
+        --prelude-text-bin "$TMP/prelude.text.bin" \
+        --prelude-rodata-bin "$TMP/prelude.rodata.bin" \
+        --prelude-data-bin "$TMP/prelude.data.bin" \
+        --prelude-reloc "$TMP/prelude.reloc" \
+        --lab-out "$TMP/full.lab" \
+        "$TMP/user.s" 2>/dev/null
+
+    # Step 6: final asm_pass2 reads the .lab + memcpys the prelude .bin
+    # + encodes user.s.
+    "$QEMU" "$GEN2_DIR/asm_pass2" --lab "$TMP/full.lab" --out "$OUTFILE" 2>/dev/null
+else
+    # Legacy: assemble everything into one full.s and let asm_pass1 +
+    # asm_pass2 walk it from text. No pre-encode, no .bin reuse.
+    {
+        [ -n "$ASM_PROLOGUE" ] && printf '%s\n' "$ASM_PROLOGUE"
+        cat "$CRT0"
+        cat "$TMP/runtime.s"
+        cat "${ASM_FILES[@]}"
+        for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done
+        cat "$CRT0_DATA"
+    } > "$TMP/full.s"
+
+    "$QEMU" "$GEN2_DIR/asm_pass1" < "$TMP/full.s" > "$TMP/full.lab"
+    cat "$TMP/full.lab" "$TMP/full.s" "$TMP/full.s" "$TMP/full.s" | \
+        "$QEMU" "$GEN2_DIR/asm_pass2" > "$OUTFILE"
+fi
 
 chmod +x "$OUTFILE"
