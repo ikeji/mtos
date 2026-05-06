@@ -234,13 +234,11 @@ build/kernel/disk-demo.img: DISK_KERN_CONF := tests/fixtures/kern_demo.conf
 # at OS-runtime link) so OS-side asm_pass3 can `src raw` memcpy +
 # reloc-patch instead of re-tokenising the ~10000-line prelude.
 #
-# Phase C/D of the 3-binary split (2026-05-07): asm_pass1 now does the
+# Phase C/D of the 3-binary split (2026-05-07): asm_pass1 does the
 # concat + lab build + bin/reloc emit in a single invocation.
-# asm_pass2 --emit-idx is still called separately for the per-file idx
-# because asm_pass1's combined run() can't cleanly emit both .idx and
-# .bin in the same process today (asm_common state-reset gap between
-# the two run() calls — see compiler/asm_pass1.tc top comment).
-# `_r` is the staging dir set by the disk-image recipe.
+# asm_pass2 --emit-idx is invoked separately for the per-file idx;
+# fusing them is left for a future revision (see compiler/asm_pass1.tc
+# top comment). `_r` is the staging dir set by the disk-image recipe.
 define PRELUDE_PRE_ENCODE
     qemu-riscv32 build/gen2/asm_pass1 \
         "$$_r/prelude.s" "$$_r/prelude_tail.s" \

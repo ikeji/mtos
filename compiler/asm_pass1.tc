@@ -15,19 +15,16 @@
 // Outputs:
 //   prelude.text.bin / .rodata.bin / .data.bin / .reloc
 //
-// The companion .idx file (per-file label + section-size table)
-// is produced by `asm_pass2 --emit-idx <prelude.idx> <prelude.s>`
-// — asm_pass1 does not currently emit it because asm_common's
-// global state doesn't fully reset between the lab-build run() and
-// a subsequent emit-idx run() (the second call crashes in
-// process_line with "get: null"). Splitting along this boundary
-// matches the user's intent for Phase D / E anyway: pass2's job is
-// label-table generation (lab + idx); pass1's job is encoding
-// (.bin + .reloc).
+// Scope: encoding only. The companion .idx (per-file label table)
+// stays as asm_pass2 --emit-idx's job. A future revision will fuse
+// the two (single source walk → idx + bin + reloc) but the current
+// asm_common encoder is structured as two passes (lab build then
+// encode), so within one process we run them back-to-back over the
+// concatenated prelude + prelude_tail.
 //
-// Internally calls run() (from asm_pass2_lib.tc) over the combined
-// prelude + prelude_tail to get a .lab in memory, then run_pass2()
-// (from asm_pass3_lib.tc) to emit the .bin / .reloc files.
+// Internally: concat prelude + prelude_tail to /tmp/, call run() (from
+// asm_pass2_lib.tc) to build a temp .lab, call run_pass2() (from
+// asm_pass3_lib.tc) to encode + emit per-section .bin + .reloc.
 
 import "asm_pass2_lib.tc";
 import "asm_pass3_lib.tc";
@@ -93,14 +90,14 @@ fn run_pre_encode(prelude_s: String, prelude_tail_s: String,
         err("asm_pass1: concat failed\n");
         return -1;
     }
-    // Bake `src <combined>` into the .lab so run_pass2 can re-open
-    // the source per section pass.
     asm_set_src_path1(combined_path as String);
     var rc1: i32 = run(combined_path as String, 0 as String,
                        0 as String, 0 as String, lab_path as String);
     if rc1 != 0 { err("asm_pass1: lab build failed\n"); return rc1; }
-    return run_pass2(lab_path as String, 0 as String,
-                     text_bin, rodata_bin, data_bin, reloc_out);
+    var rc2: i32 = run_pass2(lab_path as String, 0 as String,
+                             text_bin, rodata_bin, data_bin, reloc_out);
+    if rc2 != 0 { err("asm_pass1: bin emit failed\n"); return rc2; }
+    return 0;
 }
 
 fn main() -> i32 {
