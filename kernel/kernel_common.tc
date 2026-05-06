@@ -403,6 +403,73 @@ var G_RX_PARSE_CAP:  i32 = 512;
 var g_rx_parse_buf: U8Array = 0 as U8Array;
 var g_rx_parse_pos: i32 = 0;
 
+// ===== Kernel UART RX ring buffer (K8/K9/K11 mitigation) =====
+//
+// Software FIFO between PL011's 32-byte hardware RX FIFO and userland
+// consumers. The trap_handler timer branch drains the hardware FIFO
+// into this ring on every tick, decoupling user-level read pacing
+// from baud rate. Without this, sh's 1-byte-per-ecall reads can take
+// longer than the per-byte arrival time at 115200 baud and overflow
+// the PL011 FIFO (= K9). 1 KB is comfortable: 87 us/byte × 1024 ~=
+// 89 ms of input headroom even if no task pulls.
+//
+// Both mux-on (uart_rx_dispatch) and mux-off (vfs_read fd=0) paths
+// pop from this ring instead of touching do_uart_try_read directly.
+var G_UART_RX_CAP:  i32 = 1024;
+var g_uart_rx_buf:  U8Array = 0 as U8Array;
+var g_uart_rx_head: i32 = 0;
+var g_uart_rx_tail: i32 = 0;
+var g_uart_rx_drops: u32 = 0u32;
+var g_uart_rx_chunk: U8Array = 0 as U8Array;
+
+// Drain the hardware UART FIFO into the ring buffer. Called from the
+// timer trap branch every tick (well below FIFO fill time) and from
+// any consumer just before it pops, so a fresh byte that just landed
+// in HW doesn't sit there waiting for the next tick.
+export fn uart_rx_drain() -> void {
+    if (g_uart_rx_buf as u32) == 0u32 {
+        g_uart_rx_buf = U8Array(G_UART_RX_CAP as u32);
+    }
+    if (g_uart_rx_chunk as u32) == 0u32 {
+        g_uart_rx_chunk = U8Array(64);
+    }
+    var got: i32 = do_uart_try_read(g_uart_rx_chunk as u32 + 4u32, 64);
+    var i: i32 = 0;
+    while i < got {
+        var next: i32 = (g_uart_rx_tail + 1) % G_UART_RX_CAP;
+        if next == g_uart_rx_head {
+            // Ring full — count remaining as drops and stop. Should
+            // not happen in practice with timer-tick draining.
+            g_uart_rx_drops = g_uart_rx_drops + ((got - i) as u32);
+            i = got;
+        } else {
+            set(g_uart_rx_buf, g_uart_rx_tail, get(g_uart_rx_chunk, i));
+            g_uart_rx_tail = next;
+            i = i + 1;
+        }
+    }
+    return;
+}
+
+// Pop up to `want` bytes from the ring into `buf_addr`. Always drains
+// the HW FIFO first so a single ecall can return the most recent
+// bytes. Returns 0 if no bytes available (caller distinguishes this
+// from EOF — UART has no EOF).
+export fn uart_rx_pop(buf_addr: u32, want: i32) -> i32 {
+    if want <= 0 { return 0; }
+    uart_rx_drain();
+    if g_uart_rx_head == g_uart_rx_tail { return 0; }
+    if (g_uart_rx_buf as u32) == 0u32 { return 0; }
+    var data_addr: u32 = g_uart_rx_buf as u32 + 4u32;
+    var got: i32 = 0;
+    while got < want && g_uart_rx_head != g_uart_rx_tail {
+        poke8(buf_addr + (got as u32), peek8(data_addr + (g_uart_rx_head as u32)) as u8);
+        g_uart_rx_head = (g_uart_rx_head + 1) % G_UART_RX_CAP;
+        got = got + 1;
+    }
+    return got;
+}
+
 fn tag_to_slot(a: u8, b: u8, c: u8, d: u8) -> i32 {
     if a != 'T' as u8 { return -1; }
     if b != '0' as u8 { return -1; }
@@ -494,8 +561,11 @@ export fn uart_rx_dispatch() -> void {
         g_rx_parse_buf = U8Array(G_RX_PARSE_CAP as u32);
         g_rx_parse_pos = 0;
     }
+    // Pop from the kernel RX ring (which the timer-tick drain keeps
+    // fresh) instead of polling HW directly — that way both mux-on
+    // and mux-off paths share the same FIFO-overflow protection.
     var chunk: U8Array = U8Array(64);
-    var n: i32 = do_uart_try_read(chunk as u32 + 4u32, 64);
+    var n: i32 = uart_rx_pop(chunk as u32 + 4u32, 64);
     var i: i32 = 0;
     while i < n {
         if g_rx_parse_pos < G_RX_PARSE_CAP {
@@ -1087,11 +1157,12 @@ fn trap_handler(cause: u32, epc: u32) -> void {
         if g_current != from_slot && g_mux_enabled != 0 {
             kdbg_switch(from_slot, g_current);
         }
-        // In mux mode, task_input_read no longer busy-loops on
-        // uart_rx_dispatch — it does one drain and returns -2 if the
-        // ring buffer is empty. Periodic timer ticks keep UART bytes
-        // flowing into the per-task buffers so readers make progress
-        // even if only one task is doing input right now.
+        // Always drain the PL011 FIFO into the kernel RX ring so the
+        // 32-byte hardware FIFO never overflows under sustained input
+        // (= K9). Mux-mode framing is layered on top: when mux is on
+        // we additionally run uart_rx_dispatch to demultiplex the
+        // freshly-drained bytes into per-slot input buffers.
+        uart_rx_drain();
         if g_mux_enabled != 0 { uart_rx_dispatch(); }
         rearm_timer();
         return;

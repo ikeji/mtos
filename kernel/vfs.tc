@@ -21,7 +21,7 @@ import "kernel_common.tc";
 
 // Platform UART helpers (defined in platform_*.s)
 fn do_uart_write(buf: u32, len: i32) -> i32;
-fn do_uart_try_read(buf: u32, len: i32) -> i32;
+fn uart_rx_pop(buf: u32, len: i32) -> i32;
 
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
@@ -257,12 +257,14 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd == 0 && uart_mux_is_enabled() != 0 {
         return task_input_read(sched_current_idx(), buf_addr, n);
     }
-    // Non-mux UART stdin: use non-blocking read so the ecall handler
-    // can yield the timeslice instead of spin-waiting in M-mode.
-    // Return -2 (sentinel) when UART has no data so the ecall handler
-    // can distinguish "UART empty, yield" from "file EOF, return 0".
+    // Non-mux UART stdin: pull from the kernel RX ring (which the
+    // timer trap keeps drained from the PL011 hardware FIFO). When
+    // the ring is empty, return -2 so the ecall handler can yield
+    // the timeslice instead of spin-waiting in M-mode. -2 is the
+    // sentinel that distinguishes "UART empty, yield" from "file
+    // EOF, return 0".
     if fd == 0 {
-        var nr: i32 = do_uart_try_read(buf_addr, n);
+        var nr: i32 = uart_rx_pop(buf_addr, n);
         if nr == 0 { return -2; }
         return nr;
     }
