@@ -234,24 +234,21 @@ build/kernel/disk-demo.img: DISK_KERN_CONF := tests/fixtures/kern_demo.conf
 # at OS-runtime link) so OS-side asm_pass3 can `src raw` memcpy +
 # reloc-patch instead of re-tokenising the ~10000-line prelude.
 #
-# Phase C/D of the 3-binary split (2026-05-07): asm_pass1 does the
-# concat + lab build + bin/reloc emit in a single invocation.
-# asm_pass2 --emit-idx is invoked separately for the per-file idx;
-# fusing them is left for a future revision (see compiler/asm_pass1.tc
-# top comment). `_r` is the staging dir set by the disk-image recipe.
+# Phase C/D/E of the 3-binary split (2026-05-07): asm_pass1 does the
+# idx emit + concat + lab build + bin/reloc emit in a single
+# invocation. `_r` is the staging dir set by the disk-image recipe.
 define PRELUDE_PRE_ENCODE
     qemu-riscv32 build/gen2/asm_pass1 \
         "$$_r/prelude.s" "$$_r/prelude_tail.s" \
+        --idx-out    "$$_r/prelude.idx" \
         --text-bin   "$$_r/prelude.text.bin" \
         --rodata-bin "$$_r/prelude.rodata.bin" \
         --data-bin   "$$_r/prelude.data.bin" \
         --reloc-out  "$$_r/prelude.reloc" \
         2>/dev/null && \
-    chmod 644 "$$_r/prelude.text.bin" "$$_r/prelude.rodata.bin" \
-              "$$_r/prelude.data.bin" "$$_r/prelude.reloc" && \
-    qemu-riscv32 build/gen2/asm_pass2 \
-        --emit-idx "$$_r/prelude.idx" "$$_r/prelude.s" 2>/dev/null && \
-    chmod 644 "$$_r/prelude.idx"
+    chmod 644 "$$_r/prelude.idx" "$$_r/prelude.text.bin" \
+              "$$_r/prelude.rodata.bin" "$$_r/prelude.data.bin" \
+              "$$_r/prelude.reloc"
 endef
 
 build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 | build/kernel

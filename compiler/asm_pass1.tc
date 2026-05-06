@@ -1,30 +1,35 @@
-// asm_pass1.tc — pre-encode driver (per-section .bin + reloc).
+// asm_pass1.tc — pre-encode driver (idx + per-section .bin + reloc).
 //
-// Phase C of the 3-binary asm split. Replaces what
-// kernel/build.sh + the OS-side flow used to do as two separate
+// Phase C/D/E of the 3-binary asm split. Replaces what
+// kernel/build.sh + the OS-side flow used to do as separate
 // invocations (asm_pass2 stdin → .lab pipe, asm_pass3 --text-bin
-// etc.) with a single pre-encode tool.
+// etc., asm_pass2 --emit-idx) with a single pre-encode tool.
 //
 // CLI:
 //   asm_pass1 prelude.s prelude_tail.s \
-//       --text-bin prelude.text.bin \
+//       --idx-out    prelude.idx \
+//       --text-bin   prelude.text.bin \
 //       --rodata-bin prelude.rodata.bin \
-//       --data-bin prelude.data.bin \
-//       --reloc-out prelude.reloc
+//       --data-bin   prelude.data.bin \
+//       --reloc-out  prelude.reloc
 //
 // Outputs:
-//   prelude.text.bin / .rodata.bin / .data.bin / .reloc
+//   prelude.idx / .text.bin / .rodata.bin / .data.bin / .reloc
 //
-// Scope: encoding only. The companion .idx (per-file label table)
-// stays as asm_pass2 --emit-idx's job. A future revision will fuse
-// the two (single source walk → idx + bin + reloc) but the current
-// asm_common encoder is structured as two passes (lab build then
-// encode), so within one process we run them back-to-back over the
-// concatenated prelude + prelude_tail.
+// Implementation:
+//   step 1: run() over prelude.s alone with --emit-idx — captures the
+//           per-file label table the OS-side asm_pass2 --load-idx
+//           expects (matches `asm_pass2 --emit-idx prelude.s`).
+//   step 2: run() over the prelude + prelude_tail concat with
+//           --lab-out — produces a temp .lab the encoder will read.
+//   step 3: run_pass2() consumes the .lab and re-walks the combined
+//           source per section, streaming bytes to .text.bin /
+//           .rodata.bin / .data.bin and reloc edges to .reloc.
 //
-// Internally: concat prelude + prelude_tail to /tmp/, call run() (from
-// asm_pass2_lib.tc) to build a temp .lab, call run_pass2() (from
-// asm_pass3_lib.tc) to encode + emit per-section .bin + .reloc.
+// The two run() calls each call asm_init_pass1 → asm_init_common,
+// which now also resets g_lab_hash_ok so a fresh process_source
+// doesn't reach into a stale hash table from the previous walk.
+// No subprocess and no asm_state_reset.
 
 import "asm_pass2_lib.tc";
 import "asm_pass3_lib.tc";
@@ -82,10 +87,21 @@ fn concat_to_file(a: String, b: String, out_path: String) -> i32 {
 }
 
 fn run_pre_encode(prelude_s: String, prelude_tail_s: String,
+                  idx_out: String,
                   text_bin: String, rodata_bin: String, data_bin: String,
                   reloc_out: String) -> i32 {
     var combined_path: StringLiteral = "/tmp/_p1_combined.s";
     var lab_path:      StringLiteral = "/tmp/_p1_combined.lab";
+
+    // Step 1: idx for prelude.s alone (matches `asm_pass2 --emit-idx`).
+    if idx_out as u32 != 0u32 {
+        asm_set_src_path1(prelude_s);
+        var rc_idx: i32 = run(prelude_s, 0 as String,
+                              idx_out, 0 as String, 0 as String);
+        if rc_idx != 0 { err("asm_pass1: idx emit failed\n"); return rc_idx; }
+    }
+
+    // Step 2: lab over prelude + prelude_tail combined.
     if concat_to_file(prelude_s, prelude_tail_s, combined_path as String) != 0 {
         err("asm_pass1: concat failed\n");
         return -1;
@@ -94,6 +110,8 @@ fn run_pre_encode(prelude_s: String, prelude_tail_s: String,
     var rc1: i32 = run(combined_path as String, 0 as String,
                        0 as String, 0 as String, lab_path as String);
     if rc1 != 0 { err("asm_pass1: lab build failed\n"); return rc1; }
+
+    // Step 3: encode + per-section .bin + .reloc.
     var rc2: i32 = run_pass2(lab_path as String, 0 as String,
                              text_bin, rodata_bin, data_bin, reloc_out);
     if rc2 != 0 { err("asm_pass1: bin emit failed\n"); return rc2; }
@@ -108,6 +126,7 @@ fn main() -> i32 {
 fn main(argv: StringArray) -> i32 {
     var prelude:      String = 0 as String;
     var prelude_tail: String = 0 as String;
+    var idx_out:      String = 0 as String;
     var text_bin:     String = 0 as String;
     var rodata_bin:   String = 0 as String;
     var data_bin:     String = 0 as String;
@@ -117,7 +136,9 @@ fn main(argv: StringArray) -> i32 {
         var i: i32 = 1;
         while i < argc {
             var a: String = get(argv, i);
-            if arg_eq(a, "--text-bin") != 0 && i + 1 < argc {
+            if arg_eq(a, "--idx-out") != 0 && i + 1 < argc {
+                idx_out = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--text-bin") != 0 && i + 1 < argc {
                 text_bin = get(argv, i + 1); i = i + 2;
             } else if arg_eq(a, "--rodata-bin") != 0 && i + 1 < argc {
                 rodata_bin = get(argv, i + 1); i = i + 2;
@@ -138,9 +159,9 @@ fn main(argv: StringArray) -> i32 {
     if prelude as u32 == 0u32 || prelude_tail as u32 == 0u32 ||
        text_bin as u32 == 0u32 || rodata_bin as u32 == 0u32 ||
        data_bin as u32 == 0u32 || reloc_out as u32 == 0u32 {
-        err("usage: asm_pass1 prelude.s prelude_tail.s --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
+        err("usage: asm_pass1 prelude.s prelude_tail.s [--idx-out P] --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
         return 1;
     }
-    return run_pre_encode(prelude, prelude_tail,
+    return run_pre_encode(prelude, prelude_tail, idx_out,
                           text_bin, rodata_bin, data_bin, reloc_out);
 }

@@ -2214,6 +2214,12 @@ fn asm_init_common() -> void {
     g_owner_idx        = 0 - 1;
     g_ndeferred        = 0;
     g_def_pool_pos     = 0;
+    // Reset the label hash table flag — g_lab_hash itself was built
+    // against the previous g_labels content (now reallocated above)
+    // and would point at stale indexes into the old array. Without
+    // this reset, a fresh find_label call after re-init returns junk
+    // ("get: null" crashes for an unrelated label search).
+    g_lab_hash_ok      = 0;
     set(g_sec_pos, 0, 0);
     set(g_sec_pos, 1, 0);
     set(g_sec_pos, 2, 0);

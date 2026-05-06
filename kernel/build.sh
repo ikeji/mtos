@@ -248,70 +248,38 @@ PRELUDE_STACK=8192
 } > "$ROOT_DIR_TREE/prelude.s"
 cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
 
-# Pre-link the prelude into a `.idx` (docs/idx_format.md) so the
-# OS-side asm-pass1 can skip the prelude source walk. The prelude is
-# fixed at kernel-build time — running asm-pass1 --emit-idx once
-# here saves ~95 s per OS-side compile (full prelude walk).
-GEN2_ASM_PASS1="${GEN2_DIR:-build/gen2}/asm_pass2"
-GEN2_ASM_PASS2="${GEN2_DIR:-build/gen2}/asm_pass3"
-if [ -x "$GEN2_ASM_PASS1" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
-    qemu-riscv32 "$GEN2_ASM_PASS1" \
-        --emit-idx "$ROOT_DIR_TREE/prelude.idx" \
-        "$ROOT_DIR_TREE/prelude.s" \
-        || { echo "WARNING: prelude.idx generation failed" >&2; rm -f "$ROOT_DIR_TREE/prelude.idx"; }
+# Pre-link + pre-encode the prelude in one shot (Phase C/D/E of the
+# 3-binary asm split): asm_pass1 walks prelude.s alone for the .idx,
+# then walks prelude.s + prelude_tail.s combined for the .lab and per-
+# section .bin / .reloc. The OS-side asm_pass2 --load-idx skips the
+# prelude source walk (~95 s on pico2 phase 7); the OS-side asm_pass3
+# memcpies the .bin straight into the output instead of re-tokenising
+# the ~10000-line prelude (original 56 s → ~15 s win).
+GEN2_ASM_PASS1_TOOL="${GEN2_DIR:-build/gen2}/asm_pass1"
+if [ -x "$GEN2_ASM_PASS1_TOOL" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
+    qemu-riscv32 "$GEN2_ASM_PASS1_TOOL" \
+        "$ROOT_DIR_TREE/prelude.s" "$ROOT_DIR_TREE/prelude_tail.s" \
+        --idx-out    "$ROOT_DIR_TREE/prelude.idx" \
+        --text-bin   "$ROOT_DIR_TREE/prelude.text.bin" \
+        --rodata-bin "$ROOT_DIR_TREE/prelude.rodata.bin" \
+        --data-bin   "$ROOT_DIR_TREE/prelude.data.bin" \
+        --reloc-out  "$ROOT_DIR_TREE/prelude.reloc" \
+        2>/dev/null \
+        || echo "WARNING: prelude pre-encode failed" >&2
     if [ -s "$ROOT_DIR_TREE/prelude.idx" ]; then
         chmod 644 "$ROOT_DIR_TREE/prelude.idx" 2>/dev/null || true
         echo "prelude.idx: $(wc -c < "$ROOT_DIR_TREE/prelude.idx") bytes" >&2
     fi
-fi
-
-# Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
-# at kernel-build time we run asm_pass2 + asm_pass3 --emit-bin on the
-# prelude alone to produce per-section raw .bin files plus a reloc table.
-# OS-side asm_pass3 then memcpies these straight into the output instead
-# of re-tokenizing the ~10000-line prelude — the original speedup target
-# was 56 s → ~15 s on pico2 phase 7.
-if [ -x "$GEN2_ASM_PASS1" ] && [ -x "$GEN2_ASM_PASS2" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
-    # Pre-encode runs on prelude.s + prelude_tail.s combined so __data_end
-    # / __bss_start / __arena are all defined at pass1 time. Same input
-    # the OS-side asm_pass3 will see at compile time (prelude memcpy +
-    # user code + prelude_tail).
-    _pre_full=$(mktemp)
-    cat "$ROOT_DIR_TREE/prelude.s" "$ROOT_DIR_TREE/prelude_tail.s" > "$_pre_full"
-    _pre_lab=$(mktemp)
-    # stdin mode (no path arg) skips dead-strip — every prelude label is
-    # needed at OS-link time, even those only referenced from user code
-    # (e.g. do_write / do_read syscall stubs). Same as Makefile's
-    # PRELUDE_PRE_ENCODE block.
-    qemu-riscv32 "$GEN2_ASM_PASS1" < "$_pre_full" > "$_pre_lab" 2>/dev/null \
-        || { echo "WARNING: prelude pre-encode pass1 failed" >&2; rm -f "$_pre_lab"; }
-    if [ -s "$_pre_lab" ]; then
-        # Concatenate .lab + 3 source copies (asm_pass3's stream loop
-        # reads src_bytes per section pass and we need three copies).
-        {
-            cat "$_pre_lab"
-            cat "$_pre_full"
-            cat "$_pre_full"
-            cat "$_pre_full"
-        } | qemu-riscv32 "$GEN2_ASM_PASS2" \
-            --text-bin   "$ROOT_DIR_TREE/prelude.text.bin" \
-            --rodata-bin "$ROOT_DIR_TREE/prelude.rodata.bin" \
-            --data-bin   "$ROOT_DIR_TREE/prelude.data.bin" \
-            --reloc-out  "$ROOT_DIR_TREE/prelude.reloc" \
-            2>/dev/null \
-            || echo "WARNING: prelude pre-encode pass2 failed" >&2
+    if [ -s "$ROOT_DIR_TREE/prelude.text.bin" ]; then
         chmod 644 "$ROOT_DIR_TREE/prelude.text.bin" \
                   "$ROOT_DIR_TREE/prelude.rodata.bin" \
                   "$ROOT_DIR_TREE/prelude.data.bin" \
                   "$ROOT_DIR_TREE/prelude.reloc" 2>/dev/null || true
-        if [ -s "$ROOT_DIR_TREE/prelude.text.bin" ]; then
-            echo "prelude.text.bin:   $(wc -c < "$ROOT_DIR_TREE/prelude.text.bin") bytes" >&2
-            echo "prelude.rodata.bin: $(wc -c < "$ROOT_DIR_TREE/prelude.rodata.bin") bytes" >&2
-            echo "prelude.data.bin:   $(wc -c < "$ROOT_DIR_TREE/prelude.data.bin") bytes" >&2
-            echo "prelude.reloc:      $(wc -l < "$ROOT_DIR_TREE/prelude.reloc") relocs" >&2
-        fi
+        echo "prelude.text.bin:   $(wc -c < "$ROOT_DIR_TREE/prelude.text.bin") bytes" >&2
+        echo "prelude.rodata.bin: $(wc -c < "$ROOT_DIR_TREE/prelude.rodata.bin") bytes" >&2
+        echo "prelude.data.bin:   $(wc -c < "$ROOT_DIR_TREE/prelude.data.bin") bytes" >&2
+        echo "prelude.reloc:      $(wc -l < "$ROOT_DIR_TREE/prelude.reloc") relocs" >&2
     fi
-    rm -f "$_pre_lab" "$_pre_full"
 fi
 
 # Phase 1 typecheck split (#54): tcheck consumes a wrapped stdin
