@@ -1,7 +1,7 @@
 #!/bin/bash
 # test_pico2_bench.sh — per-stage timing baseline on pico2 hardware.
 # Builds pico2_kernel_extra (kernel + parse/sigscan/tcheck/codegen/
-# bc2asm/asm_pass1/asm_pass2 + cat + msh), flashes it, then drives
+# bc2asm/asm_pass1/asm_pass3 + cat + msh), flashes it, then drives
 # `msh /pico2_bench.sh` over UART. The msh set -ex trace records
 # [T.TTT] >> CMD before each spawn and [T.TTT] << exit=N dt=D.DDD
 # after each wait, so we can extract per-stage wall time directly
@@ -47,7 +47,7 @@ echo "TMP=$TMP" >&2
 
 if [ "${SKIP_FLASH:-0}" != "1" ]; then
     echo "[1/3] Building pico2_kernel_extra (with msh + compiler tasks)..." >&2
-    EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat" \
+    EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass3 cat" \
         GEN2_DIR="$GEN2_DIR" "$ROOT_DIR/kernel/build.sh" --target pico2 \
         -o "$TMP/kernel.uf2" 2>&1 | tail -3 >&2
     if [ ! -s "$TMP/kernel.uf2" ]; then
@@ -154,7 +154,7 @@ for ln in clean:
     if m and last_cmd:
         rc = int(m.group(1)); dt = float(m.group(2))
         # Use the first whitespace-delimited token of the command as the
-        # stage name (parse / cat / asm_pass2 / /sd/HW etc.).
+        # stage name (parse / cat / asm_pass3 / /sd/HW etc.).
         name = last_cmd.split()[0] if last_cmd.split() else last_cmd
         rows.append((name, rc, dt, last_cmd))
         last_cmd = None

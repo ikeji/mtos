@@ -12,13 +12,13 @@
 #
 # Memory peak is read from each stage's `[kmem peak=N live=M]`
 # stderr line emitted by km_dump_peak in the compiler binaries
-# (sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass2 — parse doesn't
+# (sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass3 — parse doesn't
 # call it). Time is qemu-riscv32 wall-clock on the host (rough only;
 # pico2 hardware timing should be measured separately via msh script).
 #
 # Uses Gen3 binaries for the measured stages because Gen2 binaries
 # link bootstrap/runtime_syscall.c where km_dump_peak is a no-op.
-# The link bundle for asm_pass1/asm_pass2 mirrors compile-gen2.sh's
+# The link bundle for asm_pass1/asm_pass3 mirrors compile-gen2.sh's
 # (compiler/crt0_tc.s + compiled runtime + user .s + crt0_tc_data.s)
 # so peak label-table size matches production.
 
@@ -32,7 +32,7 @@ GEN2_DIR="${GEN2_DIR:-$ROOT_DIR/build/gen2}"
 PARSE="$ROOT_DIR/build/gen1/parse"
 QEMU="${QEMU:-qemu-riscv32}"
 
-for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass2; do
+for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass3; do
     if [ ! -x "$TOOLS_DIR/$tool" ]; then
         echo "bench: missing $TOOLS_DIR/$tool — run 'make gen3-tools' first" >&2
         exit 1
@@ -211,7 +211,7 @@ for input in "$@"; do
         "\"$QEMU\" \"$TOOLS_DIR/asm_pass1\" < \"$work/full.s\" > \"$work/full.lab\"" \
         "$work/full.lab"
 
-    # Stage 7: asm_pass2 ((lab + 3× full.s) → bin). Cat is host-side
+    # Stage 7: asm_pass3 ((lab + 3× full.s) → bin). Cat is host-side
     # setup (not part of pass2's peak); the script-mode benchmark on
     # pico2 captures this differently via cat-p2 timings.
     {
@@ -220,7 +220,7 @@ for input in "$@"; do
         cat "$work/full.s"
         cat "$work/full.s"
     } > "$work/full.in"
-    run_stage "$input" asm_pass2 \
-        "\"$QEMU\" \"$TOOLS_DIR/asm_pass2\" < \"$work/full.in\" > \"$work/in.bin\"" \
+    run_stage "$input" asm_pass3 \
+        "\"$QEMU\" \"$TOOLS_DIR/asm_pass3\" < \"$work/full.in\" > \"$work/in.bin\"" \
         "$work/in.bin"
 done

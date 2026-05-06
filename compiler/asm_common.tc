@@ -41,7 +41,7 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // so small inputs (hello.tc uses 35 bytes total) only pay the initial
 // 4 KB and large inputs amortise the resize cost. Replaces the old
 // MAX_NAME_POOL fixed cap (was 96 KB pre-allocated regardless of
-// usage); for hello.tc that saved ~92 KB of asm_pass1/asm_pass2 peak.
+// usage); for hello.tc that saved ~92 KB of asm_pass1/asm_pass3 peak.
 var MAX_LABELS:           i32 = 4096;
 var NAME_POOL_INITIAL_KB: i32 = 4;
 // Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
@@ -86,12 +86,12 @@ var g_gp_abs: i32 = 0;                     // absolute value of __global_pointer
 //     and asm_write_elf dumps header + g_code at end. Used by
 //     single-pass callers that can't afford multi-pass source reads.
 //   - streaming (g_stream_mode=1): new path (2026-04-16). g_code is
-//     NOT allocated. Instead, asm_pass2 runs pass 2 THREE times (once
+//     NOT allocated. Instead, asm_pass3 runs pass 2 THREE times (once
 //     per output section: text, rodata, data), each pass re-reading
 //     the source from a filename supplied as argv[1]. During a pass,
 //     emit8 writes to g_out_buf only if g_current_section equals
 //     g_target_section, flushing to stdout when the buffer fills.
-//     This cuts asm_pass2 peak from ~400 KB (asm_common + g_code
+//     This cuts asm_pass3 peak from ~400 KB (asm_common + g_code
 //     filesz) to ~200 KB (asm_common + 4 KB g_out_buf).
 var g_code: U8Array = 0 as U8Array;  // buffered-mode output buffer, unused in stream mode
 var g_code_size: i32 = 0;            // allocated size of g_code
@@ -108,7 +108,7 @@ var g_out_pos:         i32 = 0;        // bytes currently in g_out_buf
 var g_out_buf_size:    i32 = 4096;
 var g_section_emitted: i32 = 0;        // bytes emitted in the current target section this pass
 // Where pass2 writes the encoded binary. Defaults to stdout (fd 1)
-// for the legacy pipeline; asm_pass2 sets this to the --out file fd
+// for the legacy pipeline; asm_pass3 sets this to the --out file fd
 // when invoked with file-args.
 var g_out_fd:          i32 = 1;
 export fn asm_set_out_fd(fd: i32) -> void { g_out_fd = fd; return; }
@@ -273,7 +273,7 @@ var DEF_POOL_INITIAL_KB: i32 = 4;
 // Liveness bitmap: 1 bit per label (MAX_LABELS = 4096 → 4096/32 = 128
 // i32 words = 512 bytes). Populated by asm_compute_live() via BFS
 // from the hardcoded root list. Phase 3-4 will use this to filter
-// .lab output and have asm_pass2 skip dead bytes.
+// .lab output and have asm_pass3 skip dead bytes.
 var g_label_live: I32Array = 0 as I32Array;
 
 // Source-file paths emitted into the .lab as `src <path>` lines so
@@ -343,7 +343,7 @@ export fn asm_compute_live() -> void {
     if g_label_live as u32 == 0u32 {
         g_label_live = I32Array((LIVE_BITMAP_WORDS) as u32);
     }
-    // Clear bitmap (in case asm_pass1/asm_pass2 rerun within a single
+    // Clear bitmap (in case asm_pass1/asm_pass3 rerun within a single
     // process — unlikely today but harmless).
     var i: i32 = 0;
     while i < LIVE_BITMAP_WORDS { set(g_label_live, i, 0); i = i + 1; }
@@ -656,7 +656,7 @@ export fn asm_release_ref_state() -> void {
 // every digit on the same flat 1024 stride wasted 9 × 1020 entries.
 // Now: digit 0 → g_numlab_zero (1024 entries), digits 1-9 →
 // g_numlab_other (NUMLAB_OTHER_PER_DIGIT entries each, base
-// (digit-1) × stride). Saves ~32 KB peak on asm_pass1/asm_pass2.
+// (digit-1) × stride). Saves ~32 KB peak on asm_pass1/asm_pass3.
 var NUMLAB_OTHER_PER_DIGIT: i32 = 64;  // digits 1-9 — each almost
                                        // never gets more than a
                                        // handful in real source
@@ -1310,7 +1310,7 @@ fn pass1_scan_operand_refs() -> void {
 
 // Emit `reloc <offset> <kind> <name>\n` to g_reloc_fd. `op_idx` selects
 // which operand to read the name from (the label being referenced).
-// Used by asm_pass2 in --emit-bin mode to record PC-relative slots
+// Used by asm_pass3 in --emit-bin mode to record PC-relative slots
 // that need patching at link/load time when the prelude is reused
 // in front of differently-sized user code.
 export fn asm_emit_reloc(offset: i32, kind: i32, op_idx: i32) -> void {
@@ -1485,7 +1485,7 @@ fn lo12(v: i32) -> i32 {
     return lo;
 }
 
-// Reloc patcher entry points: asm_pass2 looks up label addresses
+// Reloc patcher entry points: asm_pass3 looks up label addresses
 // and computes RV32 imm fields for `src raw` post-memcpy patching.
 // Defined here (after struct Label / g_labels / hi20 / lo12 are all
 // in scope) so the type checker can resolve get(g_labels, _) without
@@ -1643,7 +1643,7 @@ fn asm_instr() -> i32 {
                     // the gpoff baked here is computed from prelude-only
                     // sections — when the OS-side link concatenates user.s
                     // the data_base shifts and gpoff goes stale. Emit a
-                    // kind=2 reloc so asm_pass2 patches the addi imm with
+                    // kind=2 reloc so asm_pass3 patches the addi imm with
                     // the link-time `target - g_gp_abs`.
                     if g_reloc_fd > 0 && g_target_section == 0 {
                         asm_emit_reloc(g_section_emitted, 2, 1);
@@ -2262,10 +2262,10 @@ export fn asm_pass2_allocate_code() -> void {
     return;
 }
 
-// Enable stream-emit mode (Phase 5). asm_pass2 calls this after
+// Enable stream-emit mode (Phase 5). asm_pass3 calls this after
 // parsing the .lab and before running pass 2 on the source.
 // Stream mode replaces g_code with a small 4 KB buffer and a pass-
-// per-section algorithm (see asm_pass2.tc main()).
+// per-section algorithm (see asm_pass3.tc main()).
 export fn asm_enable_stream_mode() -> void {
     g_stream_mode = 1;
     g_target_section = 0;
@@ -2378,7 +2378,7 @@ export fn asm_fixup_labels() -> void {
 }
 
 // Reset the per-section cursors so pass 2 (called via asm_run_line)
-// starts at sec_base[i] + 0 for each section. asm_pass2 calls this
+// starts at sec_base[i] + 0 for each section. asm_pass3 calls this
 // after installing labels from .lab and before re-reading source.
 export fn asm_pass2_reset_cursors() -> void {
     set(g_sec_pos, 0, 0);
@@ -2408,7 +2408,7 @@ export fn asm_pass2_reset_cursors() -> void {
 //     ...
 //     )
 //
-// asm_pass2 reads this from its stdin (followed immediately by the
+// asm_pass3 reads this from its stdin (followed immediately by the
 // original source) and re-installs the state via the
 // asm_install_*_from_lab fns below.
 
@@ -2428,7 +2428,7 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     emit_string(sb, "; lab v1"); emit_nl(sb);
 
     // Meta directives captured during pass 1 source scan. Stream-
-    // mode asm_pass2 reads these from the .lab so it doesn't need
+    // mode asm_pass3 reads these from the .lab so it doesn't need
     // to probe the source itself before emitting the ELF header.
     emit_string(sb, "raw ");
     dump_int(sb, g_raw_mode);
@@ -2437,7 +2437,7 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     dump_int(sb, g_load_vaddr);
     emit_nl(sb);
     // Source byte count for the pass-per-section stream loop in
-    // asm_pass2 (each pass reads exactly src_bytes bytes from stdin
+    // asm_pass3 (each pass reads exactly src_bytes bytes from stdin
     // so they stay aligned across the 3 source copies the caller
     // concatenated).
     emit_string(sb, "src_bytes ");
@@ -2463,7 +2463,7 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     // Pre-encode (Step 5): when prelude bins are wired, replace the
     // first src (prelude.s) with three `src raw` lines pointing to
     // the per-section pre-encoded bins. The prelude.reloc file is
-    // copied verbatim afterwards so asm_pass2 can patch the
+    // copied verbatim afterwards so asm_pass3 can patch the
     // post-memcpy bytes.
     if g_prelude_text_bin as u32 != 0u32 {
         emit_string(sb, "src raw ");
@@ -2504,7 +2504,7 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     //   each entry is a couple of bytes in the .lab and references
     //   to dead local labels are themselves stripped, including all
     //   of them costs almost nothing and avoids subtle "undefined
-    //   label" pop-ups in asm_pass2.
+    //   label" pop-ups in asm_pass3.
     var have_live: i32 = 0;
     if g_label_live as u32 != 0u32 { have_live = 1; }
     var li: i32 = 0;
@@ -2513,7 +2513,7 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
         if have_live == 1 {
             if live_get(li) == 0 {
                 // Local `.L_*` labels ride along with their containing
-                // function — keep unconditionally so asm_pass2 always
+                // function — keep unconditionally so asm_pass3 always
                 // resolves intra-function jump targets even if BFS
                 // didn't propagate live through the local edge.
                 var lb_chk: Label = get(g_labels, li);
@@ -2561,7 +2561,7 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     }
 
     // Pre-encode (Step 5): copy the prelude's reloc records into the
-    // .lab so asm_pass2 patches the post-memcpy bytes after every
+    // .lab so asm_pass3 patches the post-memcpy bytes after every
     // `src raw` entry. We flush the StringBuffer first so the file
     // bytes don't get sandwiched between buffered emit_string output.
     if g_prelude_reloc as u32 != 0u32 {
@@ -2792,7 +2792,7 @@ export fn asm_install_sec_base_size(idx: i32, base: i32, size: i32) -> void {
     return;
 }
 
-// Stream-mode helpers: asm_pass2 reads `raw` / `load_base` from the
+// Stream-mode helpers: asm_pass3 reads `raw` / `load_base` from the
 // .lab and calls these so pass 2 knows the meta state before touching
 // the source body. Matches asm_parse_meta_directive's effect.
 export fn asm_install_raw_mode(v: i32) -> void {
@@ -2807,7 +2807,7 @@ export fn asm_install_load_base(v: i32) -> void {
 
 // asm_pass1 counts the source bytes it consumed and stashes the
 // total here so asm_dump_lab_state can emit a `src_bytes N` line.
-// asm_pass2 reads that and uses it as the per-pass source length.
+// asm_pass3 reads that and uses it as the per-pass source length.
 export fn asm_set_src_bytes(n: i32) -> void {
     g_src_bytes = n;
     return;

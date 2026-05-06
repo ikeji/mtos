@@ -9,7 +9,7 @@
 #
 # __arena at 520192 B (504 KB). Leaves ~8 KB slack between the end of
 # bss and the kernel stack so the kernel's own scratch has room to grow.
-# Sized to hold one full compiler task (asm_pass1 430 KB / asm_pass2
+# Sized to hold one full compiler task (asm_pass1 430 KB / asm_pass3
 # 441 KB peak + stack + img) on pico2 plus headroom for kmalloc
 # fragmentation across many spawn/exit cycles in a compiler pipeline
 # run. Must stay in sync with platform_pico2.s's `li a1, N`

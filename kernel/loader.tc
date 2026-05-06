@@ -58,7 +58,7 @@ export fn basename_copy(path: String) -> U8Array {
 //
 // This replaces the old hardcoded 16 MB RAM + 64 KB stack defaults,
 // which were too big for Pico 2 and wasteful on virt. Per-task peaks
-// range from ~8 KB (hello) to 512 KB (asm_pass2), so a single constant
+// range from ~8 KB (hello) to 512 KB (asm_pass3), so a single constant
 // was never going to be right.
 var TASK_HEADER_SIZE: i32 = 8;
 

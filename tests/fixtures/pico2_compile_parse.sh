@@ -1,7 +1,7 @@
 # Compile compiler/parse.tc + 3 transitive imports on pico2 (M7-full).
 # Each .tc gets its own parse → sigscan → tcheck → codegen → bc2asm
 # pipeline producing a .s, then all .s files plus prelude_tail.s feed
-# into asm_pass1/asm_pass2 for final link. The default `main` stub
+# into asm_pass1/asm_pass3 for final link. The default `main` stub
 # in task_crt0.s keeps the linked binary just exit 0 — the goal here
 # is to prove the OS-side compile pipeline can handle a multi-file
 # source with imports and produce a runnable binary on real hardware.
@@ -34,6 +34,6 @@ bc2asm < /sd/p.bc > /sd/p.s
 # Step 4: link — concat all .s + prelude_tail
 cat /sd/p.s /sd/sb.s /sd/sr.s /sd/sl.s /prelude_tail.s > /sd/user.s
 asm_pass1 --load-idx /prelude.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --lab-out /sd/p.lab /sd/user.s
-asm_pass2 --lab /sd/p.lab --out /sd/parse.bin
+asm_pass3 --lab /sd/p.lab --out /sd/parse.bin
 wc /sd/parse.bin
 echo COMPILE_PARSE_DONE

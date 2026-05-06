@@ -34,6 +34,6 @@ bc2asm < /sd/t.bc > /sd/t.s
 # link
 cat /sd/t.s /sd/sb.s /sd/sr.s /sd/an.s /sd/sl.s /prelude_tail.s > /sd/user.s
 asm_pass1 --load-idx /prelude.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --lab-out /sd/t.lab /sd/user.s
-asm_pass2 --lab /sd/t.lab --out /sd/sigscan.bin
+asm_pass3 --lab /sd/t.lab --out /sd/sigscan.bin
 md5sum /sd/sigscan.bin
 echo COMPILE_SIGSCAN_DONE

@@ -1,4 +1,4 @@
-// asm_pass2.tc — encoder half of the asm split (Phase 2 #56).
+// asm_pass3.tc — encoder half of the asm split (Phase 2 #56).
 //
 // Reads stdin as a concatenation of:
 //
@@ -15,7 +15,7 @@
 //
 // Phase 5 (2026-04-16): we stream bytes to stdout via a 4 KB
 // g_out_buf and drop the ~300 KB g_code that used to hold the whole
-// program image. asm_pass2 peak drops from ~400 KB (after the
+// program image. asm_pass3 peak drops from ~400 KB (after the
 // asm_pass1 label-pool shrink) to ~200 KB.
 //
 // bss is memsz-only and never writes file bytes, so there is no
@@ -633,7 +633,7 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
     //
     // --emit-bin mode: skip the per-section padding so the bin file
     // contains exactly the encoded source bytes. The link-time
-    // asm_pass2 invocation re-pads after concatenating user code.
+    // asm_pass3 invocation re-pads after concatenating user code.
     if per_sec_fd > 0 {
         asm_flush_output();
     } else {
@@ -891,8 +891,8 @@ fn arg_eq(s: String, pat: StringLiteral) -> i32 {
 }
 
 // File-args entry:
-//   asm_pass2 --lab path.lab --out path.bin
-//   asm_pass2 --lab prelude.lab \
+//   asm_pass3 --lab path.lab --out path.bin
+//   asm_pass3 --lab prelude.lab \
 //              --text-bin prelude.text.bin \
 //              --rodata-bin prelude.rodata.bin \
 //              --data-bin prelude.data.bin \

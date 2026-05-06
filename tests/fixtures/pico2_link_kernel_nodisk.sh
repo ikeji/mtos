@@ -13,7 +13,7 @@ cat /src/raw.s /src/platform_pico2.s /src/trap_common.s /sd/runtime.s /sd/kc.s /
 asm_pass1 < /sd/full.s > /sd/full.lab
 
 cat /sd/full.lab /sd/full.s /sd/full.s /sd/full.s > /sd/p2_in.s
-asm_pass2 < /sd/p2_in.s > /sd/kernel_nodisk.bin
+asm_pass3 < /sd/p2_in.s > /sd/kernel_nodisk.bin
 
 md5sum /sd/kernel_nodisk.bin
 echo LINK_KERNEL_NODISK_DONE

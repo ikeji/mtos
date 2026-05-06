@@ -2,16 +2,16 @@
 # test_phase7.sh — phase 7 compiler-on-OS end-to-end test.
 #
 # Builds a kernel with EXTRA_TASKS set to ship /bin/parse, /bin/sigscan,
-# /bin/tcheck, /bin/codegen, /bin/bc2asm, /bin/asm_pass1, /bin/asm_pass2
+# /bin/tcheck, /bin/codegen, /bin/bc2asm, /bin/asm_pass1, /bin/asm_pass3
 # and /bin/cat, then runs the full self-hosted compile pipeline from
 # sh via intermediate files in /tmp. Two stages:
 #
 # Stage 1 (sigscan + tcheck): verifies that the typecheck split works
 # end-to-end by compiling Hello World with the old (single-file) asm
-# binary replaced by the asm_pass1 + asm_pass2 pair.
+# binary replaced by the asm_pass1 + asm_pass3 pair.
 #
 # Stage 2 (full split): same as stage 1 but also uses asm_pass1 +
-# asm_pass2 instead of any legacy asm. (typecheck.tc and asm.tc no
+# asm_pass3 instead of any legacy asm. (typecheck.tc and asm.tc no
 # longer exist in the tree; see #61 cleanup.)
 #
 # NOT run by `make test` because it builds the compiler task binaries
@@ -39,8 +39,8 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 echo "=== phase 7 compiler-on-OS ==="
-echo "Building kernel with EXTRA_TASKS=parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat"
-EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat" \
+echo "Building kernel with EXTRA_TASKS=parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass3 cat"
+EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass3 cat" \
 GEN2_DIR="$GEN2_DIR" \
     "$ROOT_DIR/kernel/build.sh" --target virt \
     -o "$TMP/kernel_virt" --disk-out "$TMP/disk.img" 2>&1 | tail -5
@@ -51,10 +51,10 @@ if [ ! -s "$TMP/kernel_virt" ] || [ ! -s "$TMP/disk.img" ]; then
 fi
 
 # -----------------------------------------------------------------------
-# Stage 1: sigscan + tcheck pipeline with asm_pass1 + asm_pass2 linker.
+# Stage 1: sigscan + tcheck pipeline with asm_pass1 + asm_pass3 linker.
 # -----------------------------------------------------------------------
 # parse → sigscan → cat-wrap → tcheck → codegen → bc2asm → cat prelude →
-# asm_pass1 → cat lab → asm_pass2 → run.
+# asm_pass1 → cat lab → asm_pass3 → run.
 #
 # The (imports) / (self) / (program) wrapper is built on the OS side
 # by cat'ing pre-staged tmpfs helper files (/empty_imports.txt,

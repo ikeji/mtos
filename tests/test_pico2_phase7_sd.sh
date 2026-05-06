@@ -14,7 +14,7 @@
 #
 # Manual test (not in `make test`): requires Debug Probe, Catalex SD
 # breakout, and a FAT-formatted SD card. Builds pico2_kernel_extra
-# (kernel + parse/sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass2),
+# (kernel + parse/sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass3),
 # flashes it, then drives sh through the pipeline and verifies that
 # the final /sd/hw binary prints "Hello, World!".
 #
@@ -40,7 +40,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 # ----- Step 1: Build kernel with EXTRA tasks -----
 t0=$(time_ms)
-EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat" \
+EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass3 cat" \
     GEN2_DIR="$GEN2_DIR" "$ROOT_DIR/kernel/build.sh" --target pico2 \
     -o "$TMP/kernel.uf2" 2>&1 | sed 's/^/    /' >&2
 if [ ! -s "$TMP/kernel.uf2" ]; then
@@ -99,7 +99,7 @@ bc2asm < /sd/3.bc > /sd/4.s
 cat /prelude.s /sd/4.s /prelude_tail.s > /sd/full.s
 asm_pass1 < /sd/full.s > /sd/lab.s
 cat /sd/lab.s /sd/full.s /sd/full.s /sd/full.s > /sd/p2.in
-asm_pass2 < /sd/p2.in > /sd/HW
+asm_pass3 < /sd/p2.in > /sd/HW
 /sd/HW
 PIPE_EOF
 python3 "$SCRIPT_DIR/pico2_pipeline_drive.py" \
@@ -125,7 +125,7 @@ missing=""
 echo "$out" | grep -q "Hello, World!"          || missing="$missing greeting"
 
 if [ -z "$missing" ]; then
-    report_pass "p7sd: parse→…→asm_pass2 via /sd → run /sd/HW prints Hello, World!" "$elapsed"
+    report_pass "p7sd: parse→…→asm_pass3 via /sd → run /sd/HW prints Hello, World!" "$elapsed"
 else
     report_fail_msg "p7sd: pipeline" \
         "missing [$missing ], log tail: $(printf '%s' "$out" | tail -c 320 | tr '\n' ' ')"

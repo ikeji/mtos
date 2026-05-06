@@ -27,6 +27,6 @@ codegen < /sd/t.tast > /sd/t.bc
 bc2asm < /sd/t.bc > /sd/t.s
 cat /sd/t.s /sd/sb.s /sd/sr.s /sd/an.s /sd/sl.s /prelude_tail.s > /sd/user.s
 asm_pass1 --load-idx /prelude.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --lab-out /sd/t.lab /sd/user.s
-asm_pass2 --lab /sd/t.lab --out /sd/tcheck.bin
+asm_pass3 --lab /sd/t.lab --out /sd/tcheck.bin
 md5sum /sd/tcheck.bin
 echo COMPILE_TCHECK_DONE

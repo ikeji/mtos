@@ -11,7 +11,7 @@
 # The hw binary itself is not dumped back to host — extracting 42 KB
 # of raw ELF over PL011 without the mux framing is fragile, and if all
 # upstream stages match Gen2 byte-for-byte + /tmp/hw actually prints
-# the greeting, we have strong evidence asm_pass2 is correct too.
+# the greeting, we have strong evidence asm_pass3 is correct too.
 #
 # Requires: GEN2_DIR, Pico 2 + Debug Probe, /dev/ttyACM0. Not part of
 # `make test`; run manually:
@@ -71,7 +71,7 @@ qemu-riscv32 "$ROOT_DIR/build/gen2/bc2asm"  < "$REFS/3.bc"     > "$REFS/4.s"
 cat "$REFS/prelude.s" "$REFS/4.s" "$REFS/prelude_tail.s"       > "$REFS/full.s"
 # full.s is the host-side reference for the concatenation the driver
 # doesn't even ask pico2 to build (the OS doesn't have room for it in
-# tmpfs anyway). asm_pass1 / asm_pass2 references are not needed here
+# tmpfs anyway). asm_pass1 / asm_pass3 references are not needed here
 # because the driver skips those stages without --run-link.
 
 # ---------------------------------------------------------------------

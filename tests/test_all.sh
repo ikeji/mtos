@@ -31,12 +31,12 @@ if command -v "$QEMU" >/dev/null 2>&1 && command -v "$RISCV_CC" >/dev/null 2>&1;
         (cd "$ROOT_DIR" && make all >/dev/null)
     fi
     _need_build=0
-    for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2; do
+    for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass3; do
         if [ ! -x "$SHARED_GEN2_DIR/$t" ]; then _need_build=1; break; fi
     done
     if [ "$_need_build" = 1 ]; then
         mkdir -p "$SHARED_GEN2_DIR"
-        for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2; do
+        for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass3; do
             if [ ! -x "$SHARED_GEN2_DIR/$t" ]; then
                 "$ROOT_DIR/compile-gen1.sh" -o "$SHARED_GEN2_DIR/$t" \
                     "$ROOT_DIR/compiler/$t.tc" 2>/dev/null

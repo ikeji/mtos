@@ -1,4 +1,4 @@
-# Step 2: asm_pass1 + concat for asm_pass2 input. Needs fresh reset
+# Step 2: asm_pass1 + concat for asm_pass3 input. Needs fresh reset
 # after step 1 to clear kernel-arena fragmentation from cat's many
 # fatfs reads.
 asm_pass1 < /sd/full.s > /sd/full.lab

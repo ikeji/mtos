@@ -10,6 +10,6 @@ codegen < /sd/sb.tast > /sd/sb.bc
 bc2asm < /sd/sb.bc > /sd/sb.s
 cat /sd/sb.s /prelude_tail.s > /sd/sb_user.s
 asm_pass1 --load-idx /prelude.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --lab-out /sd/sb.lab /sd/sb_user.s /sd/sb_user.strip
-asm_pass2 --lab /sd/sb.lab --out /sd/sb.bin
+asm_pass3 --lab /sd/sb.lab --out /sd/sb.bin
 wc /sd/sb.bin
 echo COMPILE_SB_DONE

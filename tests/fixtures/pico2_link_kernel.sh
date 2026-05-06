@@ -4,7 +4,7 @@
 # the .s files we already produced under /sd from the per-tool
 # compile benches, plus an .incbin wrapper that pulls /sd/disk.img
 # straight into .rodata as the embedded mtfs blob. Then asm_pass1 +
-# asm_pass2 link it into /sd/kernel.bin and md5 the result.
+# asm_pass3 link it into /sd/kernel.bin and md5 the result.
 #
 # Prereqs:
 #   /sd/runtime.s, /sd/libtc.s,
@@ -51,7 +51,7 @@ cat /src/mtfs_wrap.s >> /sd/full.s
 asm_pass1 < /sd/full.s > /sd/full.lab
 
 # Pass 2: link to raw kernel binary.
-cat /sd/full.lab /sd/full.s /sd/full.s /sd/full.s | asm_pass2 > /sd/kernel.bin
+cat /sd/full.lab /sd/full.s /sd/full.s /sd/full.s | asm_pass3 > /sd/kernel.bin
 
 md5sum /sd/kernel.bin
 echo LINK_KERNEL_DONE

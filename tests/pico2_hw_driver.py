@@ -7,12 +7,12 @@ Drives pico2 (post-flash) through the OS-side compile pipeline:
     host: full.s = prelude + 4.s + prelude_tail
     asm_pass1 > /tmp/lab     (host streams full.s + EOT)
     cat /tmp/lab             (dump lab to host)
-    asm_pass2 > /tmp/hw      (host streams lab + full.s × 3 + EOT)
+    asm_pass3 > /tmp/hw      (host streams lab + full.s × 3 + EOT)
     /tmp/hw                  (run compiled binary on pico2)
 
 Host input to pico2: raw bytes written to the tty — sh consumes them
 on fd 0. source_reader.tc on pico2 treats 0x04 as EOF so asm_pass1 /
-asm_pass2 know when their UART-fed input ends.
+asm_pass3 know when their UART-fed input ends.
 
 Output parsing: the pico2 kernel sprays scheduler markers (`[sw X>Y]`,
 `[x N=R]`, `[kmem …]`) mid-stream. They are always whole-byte tokens
@@ -173,7 +173,7 @@ def main():
                     help="If set, byte-compare each extracted stage against "
                          "<refs-dir>/<name> and exit non-zero on any DIFF.")
     ap.add_argument("--run-link", action="store_true",
-                    help="Also run asm_pass1 + asm_pass2 link stages and "
+                    help="Also run asm_pass1 + asm_pass3 link stages and "
                          "execute /tmp/hw. Requires reliable UART-stdin "
                          "streaming which may wedge the pico2 kernel.")
     args = ap.parse_args()
@@ -259,7 +259,7 @@ def main():
     log(f"full.s = {len(full_s)} bytes (prelude {len(prelude)} + user {len(user_s)} + tail {len(tail)})")
     all_ok &= cmp_ref("full.s", full_s, args.refs_dir, args.log_dir, results)
 
-    # --- Optional link stages (asm_pass1 + asm_pass2) ---
+    # --- Optional link stages (asm_pass1 + asm_pass3) ---
     # These need to stream 200+ KB of input over UART because the
     # assembly+label table is too big for pico2 tmpfs. The streaming
     # path wedges the kernel today (see the tcheck comment above), so
@@ -286,19 +286,19 @@ def main():
         log(f"lab = {len(lab)} bytes")
         all_ok &= cmp_ref("lab.s", lab, args.refs_dir, args.log_dir, results)
 
-        send_cmd_no_wait(fd, "asm_pass2 > /tmp/hw")
+        send_cmd_no_wait(fd, "asm_pass3 > /tmp/hw")
         time.sleep(2.0)
         payload = lab + full_s + full_s + full_s
-        log(f"streaming asm_pass2 input ({len(payload)} bytes)")
+        log(f"streaming asm_pass3 input ({len(payload)} bytes)")
         send_stream(fd, payload)
         os.write(fd, EOT)
-        log("sent EOT, waiting for asm_pass2 sh$ prompt")
+        log("sent EOT, waiting for asm_pass3 sh$ prompt")
         buf = bytearray()
         if not read_until(fd, PROMPT, time.time() + 600, buf):
-            log("asm_pass2 timed out")
-            open(os.path.join(args.log_dir, "asm_pass2.out"), "wb").write(buf)
+            log("asm_pass3 timed out")
+            open(os.path.join(args.log_dir, "asm_pass3.out"), "wb").write(buf)
             return 3
-        log("asm_pass2 done")
+        log("asm_pass3 done")
 
         # Run /tmp/hw.
         out = send_cmd_wait_prompt(fd, "/tmp/hw", timeout=60)

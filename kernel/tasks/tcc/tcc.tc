@@ -8,7 +8,7 @@
 //
 //   parse → sigscan → cat-wrap → tcheck → codegen → bc2asm
 //        → cat (prelude + .s + tail) → asm_pass1
-//        → cat (lab + full × 3) → asm_pass2 → /sd/a.out
+//        → cat (lab + full × 3) → asm_pass3 → /sd/a.out
 //
 // Intermediate files live under /sd/_*.* and are NOT cleaned up on
 // exit so they're inspectable for debugging. Each spawned child
@@ -236,10 +236,10 @@ fn main(argv: StringArray) -> i32 {
     do_close(ofd);
     print_stage_ms("cat-p2", now_us() - t0);
 
-    // Stage 10: asm_pass2 → /sd/a.out
-    dt = run_stage("asm_pass2", "/bin/asm_pass2",
+    // Stage 10: asm_pass3 → /sd/a.out
+    dt = run_stage("asm_pass3", "/bin/asm_pass3",
                    "/sd/_p2.in", "/sd/a.out");
-    print_stage_ms("asm_pass2", dt);
+    print_stage_ms("asm_pass3", dt);
 
     delete(buf);
 

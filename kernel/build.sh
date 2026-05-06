@@ -95,7 +95,7 @@ if ! type task_arena_size >/dev/null 2>&1; then
 fi
 
 # Emit a 2-word `.text` header file for the given task. When this is
-# linked first (before task_crt0.s), asm_pass1/asm_pass2 places the
+# linked first (before task_crt0.s), asm_pass1/asm_pass3 places the
 # two .word entries at offsets 0 and 4 of .text, and _start ends up at
 # offset 8. loader.tc adds 8 to the entry address so the CPU skips the
 # header words.
@@ -253,7 +253,7 @@ cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
 # fixed at kernel-build time — running asm-pass1 --emit-idx once
 # here saves ~95 s per OS-side compile (full prelude walk).
 GEN2_ASM_PASS1="${GEN2_DIR:-build/gen2}/asm_pass1"
-GEN2_ASM_PASS2="${GEN2_DIR:-build/gen2}/asm_pass2"
+GEN2_ASM_PASS2="${GEN2_DIR:-build/gen2}/asm_pass3"
 if [ -x "$GEN2_ASM_PASS1" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
     qemu-riscv32 "$GEN2_ASM_PASS1" \
         --emit-idx "$ROOT_DIR_TREE/prelude.idx" \
@@ -266,15 +266,15 @@ if [ -x "$GEN2_ASM_PASS1" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
 fi
 
 # Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
-# at kernel-build time we run asm_pass1 + asm_pass2 --emit-bin on the
+# at kernel-build time we run asm_pass1 + asm_pass3 --emit-bin on the
 # prelude alone to produce per-section raw .bin files plus a reloc table.
-# OS-side asm_pass2 then memcpies these straight into the output instead
+# OS-side asm_pass3 then memcpies these straight into the output instead
 # of re-tokenizing the ~10000-line prelude — the original speedup target
 # was 56 s → ~15 s on pico2 phase 7.
 if [ -x "$GEN2_ASM_PASS1" ] && [ -x "$GEN2_ASM_PASS2" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
     # Pre-encode runs on prelude.s + prelude_tail.s combined so __data_end
     # / __bss_start / __arena are all defined at pass1 time. Same input
-    # the OS-side asm_pass2 will see at compile time (prelude memcpy +
+    # the OS-side asm_pass3 will see at compile time (prelude memcpy +
     # user code + prelude_tail).
     _pre_full=$(mktemp)
     cat "$ROOT_DIR_TREE/prelude.s" "$ROOT_DIR_TREE/prelude_tail.s" > "$_pre_full"
@@ -286,7 +286,7 @@ if [ -x "$GEN2_ASM_PASS1" ] && [ -x "$GEN2_ASM_PASS2" ] && command -v qemu-riscv
     qemu-riscv32 "$GEN2_ASM_PASS1" < "$_pre_full" > "$_pre_lab" 2>/dev/null \
         || { echo "WARNING: prelude pre-encode pass1 failed" >&2; rm -f "$_pre_lab"; }
     if [ -s "$_pre_lab" ]; then
-        # Concatenate .lab + 3 source copies (asm_pass2's stream loop
+        # Concatenate .lab + 3 source copies (asm_pass3's stream loop
         # reads src_bytes per section pass and we need three copies).
         {
             cat "$_pre_lab"

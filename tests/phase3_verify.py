@@ -85,19 +85,19 @@ def gen_references_link():
     with open(f"{REFS}/full.s", "rb") as i, open(f"{REFS}/lab.s", "wb") as o:
         run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass1"],
             stdin=i, stdout=o)
-    # asm_pass2 input: lab.s + full.s × 3 (3-pass stream emitter —
+    # asm_pass3 input: lab.s + full.s × 3 (3-pass stream emitter —
     # text, rodata, data rescans).
     p2_in = (open(f"{REFS}/lab.s", "rb").read()
              + open(f"{REFS}/full.s", "rb").read() * 3)
     with open(f"{REFS}/hw", "wb") as o:
-        run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass2"],
+        run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass3"],
             input=p2_in, stdout=o)
 
 
 def build_kernel_with_extras():
     env = dict(os.environ)
     env["EXTRA_TASKS"] = ("parse sigscan tcheck codegen bc2asm "
-                         "asm_pass1 asm_pass2 cat mx mr muxon muxoff")
+                         "asm_pass1 asm_pass3 cat mx mr muxon muxoff")
     env["GEN2_DIR"] = os.path.join(ROOT, "build/gen2")
     # Stage prelude.s / prelude_tail.s into REFS/ for the link-stage
     # reference generator. (Same bytes mkfs.py put under /prelude.s
@@ -191,15 +191,15 @@ def run_pipeline_on_virt():
         "mx      < /tmp/3.bc",
         "bc2asm  < /tmp/3.bc > /tmp/4.s",
         "mx      < /tmp/4.s",
-        # ---- link (asm_pass1 + asm_pass2) ----
+        # ---- link (asm_pass1 + asm_pass3) ----
         "cat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s",
         "mx      < /tmp/full.s",
         "asm_pass1 < /tmp/full.s > /tmp/lab.s",
         "mx      < /tmp/lab.s",
-        # asm_pass2 wants the label table followed by the source three
+        # asm_pass3 wants the label table followed by the source three
         # times (3-pass stream emitter: text, rodata, data).
         "cat /tmp/lab.s /tmp/full.s /tmp/full.s /tmp/full.s > /tmp/p2.in",
-        "asm_pass2 < /tmp/p2.in > /tmp/hw",
+        "asm_pass3 < /tmp/p2.in > /tmp/hw",
         "mx      < /tmp/hw",
         # ---- run ----
         "/tmp/hw",

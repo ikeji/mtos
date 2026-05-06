@@ -90,7 +90,7 @@ export fn ast_set_count(v: i32) -> void { g_nc = v; return; }
 // turning into negative ss values, which write_node / codegen then
 // treated as "no annotation" → bogus `?` types in the .bc, producing
 // e.g. `call parse_mem_off__?` linker errors at the OS-task build of
-// asm_pass1 / asm_pass2. Sentinel detection now uses `tasl == 0` /
+// asm_pass1 / asm_pass3. Sentinel detection now uses `tasl == 0` /
 // `sl == 0` (which the constructors guarantee for "no annotation");
 // pair this with `tass < 0` / `ss < 0` checks already present.
 fn pack_pair(hi: i32, lo: i32) -> i32 {

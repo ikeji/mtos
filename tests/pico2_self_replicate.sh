@@ -133,7 +133,7 @@ reset_only
 sleep 4
 run_step /pico2_self_step2.sh SELF_STEP2_DONE
 
-echo "=== Reset + Step 3: asm_pass2 → /sd/k.bin ===" >&2
+echo "=== Reset + Step 3: asm_pass3 → /sd/k.bin ===" >&2
 reset_only
 sleep 4
 run_step /pico2_self_step3.sh SELF_STEP3_DONE
