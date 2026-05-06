@@ -55,46 +55,73 @@ fn cluster_to_sector(clus: u32) -> u32 {
     return g_fat_data_start + (clus - 2u32) * (g_fat_spc as u32);
 }
 
+// FAT sector write-back cache. Eliminates the per-cluster read-
+// modify-write of FAT1 + FAT2 (= 4 SD ops) when a single fatfs
+// write spans many clusters in the same FAT sector. Sequential
+// writes hit ~128 clusters per FAT sector, so caching collapses
+// 4×128 = 512 SD ops down to 1 read + 2 writes per sector.
+//
+// Cache holds at most one FAT sector. fat_get_entry / fat_set_entry
+// load on demand and mark dirty on write; fat_cache_flush writes
+// back to FAT1 (and FAT2 if present). The flush is called from
+// fatfs_close so that on-disk FATs are consistent when the file
+// fd is released.
+var g_fat_cache_valid: i32 = 0;
+var g_fat_cache_sec:   u32 = 0u32;
+var g_fat_cache_dirty: i32 = 0;
+var g_fat_cache_buf: U8Array = 0 as U8Array;
+
+fn fat_cache_init() -> void {
+    if g_fat_cache_buf as u32 == 0u32 {
+        g_fat_cache_buf = U8Array(512u32);
+    }
+    return;
+}
+
+fn fat_cache_flush() -> void {
+    if g_fat_cache_dirty == 0 { return; }
+    fat_block_write(g_fat_cache_sec, g_fat_cache_buf);
+    if g_fat_nfats >= 2 {
+        fat_block_write(g_fat_cache_sec + g_fat_fatsz, g_fat_cache_buf);
+    }
+    g_fat_cache_dirty = 0;
+    return;
+}
+
+fn fat_cache_load(sec: u32) -> i32 {
+    fat_cache_init();
+    if g_fat_cache_valid != 0 && g_fat_cache_sec == sec { return 0; }
+    fat_cache_flush();
+    if fat_block_read(sec, g_fat_cache_buf) != 512 {
+        g_fat_cache_valid = 0;
+        return -1;
+    }
+    g_fat_cache_sec = sec;
+    g_fat_cache_valid = 1;
+    return 0;
+}
+
 // Read a FAT32 entry for the given cluster. Returns next cluster
 // number or >= 0x0FFFFFF8 for end-of-chain.
 fn fat_get_entry(clus: u32) -> u32 {
     var fat_offset: u32 = clus * 4u32;
     var fat_sector: u32 = g_fat_fat_start + fat_offset / 512u32;
     var off_in_sec: i32 = (fat_offset % 512u32) as i32;
-    var secbuf: U8Array = U8Array(512u32);
-    if fat_block_read(fat_sector, secbuf) != 512 {
-        delete(secbuf);
-        return 0x0FFFFFFFu32;
-    }
-    var v: u32 = read_le32(secbuf, off_in_sec) & 0x0FFFFFFFu32;
-    delete(secbuf);
-    return v;
+    if fat_cache_load(fat_sector) != 0 { return 0x0FFFFFFFu32; }
+    return read_le32(g_fat_cache_buf, off_in_sec) & 0x0FFFFFFFu32;
 }
 
-// Write a FAT32 entry. Updates both FATs if num_fats == 2.
+// Write a FAT32 entry. Updates both FATs (when present) on the next
+// fat_cache_flush — no SD writes happen here.
 fn fat_set_entry(clus: u32, val: u32) -> i32 {
     var fat_offset: u32 = clus * 4u32;
     var fat_sector: u32 = g_fat_fat_start + fat_offset / 512u32;
     var off_in_sec: i32 = (fat_offset % 512u32) as i32;
-
-    var secbuf: U8Array = U8Array(512u32);
-    if fat_block_read(fat_sector, secbuf) != 512 { delete(secbuf); return -1; }
-    // Preserve top 4 bits of existing entry
-    var old: u32 = read_le32(secbuf, off_in_sec) & 0xF0000000u32;
-    write_le32(secbuf, off_in_sec, old | (val & 0x0FFFFFFFu32));
-    if fat_block_write(fat_sector, secbuf) != 512 { delete(secbuf); return -1; }
-
-    // Update FAT 2 if present. Re-read FAT2's own top 4 bits so that if
-    // FAT1 and FAT2 ever diverge (corruption) we don't propagate FAT1's
-    // reserved bits onto FAT2's entry.
-    if g_fat_nfats >= 2 {
-        var fat2_sector: u32 = fat_sector + g_fat_fatsz;
-        if fat_block_read(fat2_sector, secbuf) != 512 { delete(secbuf); return -1; }
-        var old2: u32 = read_le32(secbuf, off_in_sec) & 0xF0000000u32;
-        write_le32(secbuf, off_in_sec, old2 | (val & 0x0FFFFFFFu32));
-        if fat_block_write(fat2_sector, secbuf) != 512 { delete(secbuf); return -1; }
-    }
-    delete(secbuf);
+    if fat_cache_load(fat_sector) != 0 { return -1; }
+    // Preserve top 4 bits of existing entry.
+    var old: u32 = read_le32(g_fat_cache_buf, off_in_sec) & 0xF0000000u32;
+    write_le32(g_fat_cache_buf, off_in_sec, old | (val & 0x0FFFFFFFu32));
+    g_fat_cache_dirty = 1;
     return 0;
 }
 
@@ -523,6 +550,9 @@ export fn fatfs_delete(name_addr: u32, nlen: i32) -> i32 {
     }
     // Mark directory entry as deleted
     dir_delete(dir_sec, dir_off);
+    // Push the freed-cluster FAT updates out so a fresh open doesn't
+    // hit cache-only state and a subsequent reset doesn't lose them.
+    fat_cache_flush();
     return 0;
 }
 
@@ -625,6 +655,11 @@ export fn fatfs_close(fd: i32) -> i32 {
         dir_update(ff_dir_sec(f), ff_dir_off(f),
                    ff_start(f), ff_size(f) as u32);
     }
+    // Push any dirty FAT-sector cache out to disk before the fd
+    // goes inactive. fat_alloc_cluster / fat_set_entry only mark
+    // the cache dirty; without this flush the on-disk FAT is
+    // inconsistent with the directory entry size we just wrote.
+    fat_cache_flush();
     ff_active(f, 0);
     return 0;
 }
