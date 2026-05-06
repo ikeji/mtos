@@ -334,9 +334,10 @@ K7 解決の決め手 3 点:
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
 - [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06):
-      `REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` で
-      end-to-end 自動化、~55 分で host gen2 build と byte-exact
-      一致した kernel.bin + kernel.uf2 を pico2 が自前で生成。
+      `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` で
+      end-to-end 自動化、host gen2 build と byte-exact 一致した
+      kernel.bin + kernel.uf2 を pico2 が自前で生成。最新版で
+      ~36 min (REFRESH skip + asm_pass1 cat-3x 撤廃)。
 
       ```
       host   kernel.bin md5: 026d825ca32e4d40a67b182505c36d48
