@@ -190,22 +190,25 @@ for tc in "${ALL_FILES[@]}"; do
     ASM_FILES+=("$TMP/$base.s")
 done
 
-# Phase 8 unification (opt-in): when UNIFIED_PRELUDE=1, build prelude
-# (ASM_PROLOGUE + CRT0 + runtime.s) and prelude_tail (CRT0_DATA)
-# separately, pre-encode the prelude into .idx + section .bin +
-# .reloc, then run the final asm_pass1 with --load-idx + --prelude-*.
-# Matches the OS-side flow in tests/fixtures/pico2_compile_*.sh —
-# same pipeline whether the build runs on host or under qemu/pico2.
+# Phase 8 unification: when UNIFIED_PRELUDE=1 (the default), build
+# prelude (ASM_PROLOGUE + CRT0 + runtime.s) and prelude_tail
+# (CRT0_DATA) separately, pre-encode the prelude into .idx + section
+# .bin + .reloc, then run the final asm_pass1 with --load-idx +
+# --prelude-*. Matches the OS-side flow in tests/fixtures/pico2_*.sh,
+# so host and guest both go through identical asm_pass1 / asm_pass2
+# code paths.
 #
-# Default 0 (legacy stdin-pipeline) because the unified flow can't
-# handle preludes whose symbols get overridden by user code at link
-# time (asm_pass1/2 emits relocs only for unresolved labels in the
-# prelude pre-encode; locally-resolvable refs to fallback stubs like
-# `trap_handler__u32__u32: ret` get baked into the .bin and miss the
-# user-side override). Task builds opt in via the Makefile because
-# task_crt0.s carries fallback main / main__StringArray stubs that
-# the prelude pre-encode resolves correctly.
-UNIFIED_PRELUDE="${UNIFIED_PRELUDE:-0}"
+# Set UNIFIED_PRELUDE=0 to fall back to the legacy stdin pipeline
+# (one big full.s into asm_pass1, no pre-encode). Required when:
+#   - The prelude references TC symbols defined only in user code
+#     (kernel build: platform_*.s + trap_common.s call TC fns like
+#     trap_handler / sched_task_exit / sys_*_handler).
+#   - User code overrides a prelude-defined symbol whose call sites
+#     in the prelude don't get a reloc emitted at pre-encode time
+#     (asm_pass1 only emits relocs for unresolved labels — see
+#     2026-05-06 print/println rename for the one symbol pair where
+#     this used to bite us).
+UNIFIED_PRELUDE="${UNIFIED_PRELUDE:-1}"
 
 if [ "$UNIFIED_PRELUDE" = "1" ]; then
     # Step 1: prelude.s = ASM_PROLOGUE + CRT0 + runtime.s

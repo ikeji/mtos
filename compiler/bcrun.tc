@@ -788,7 +788,8 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
 
                     // Check if builtin
                     var c0: u8 = 0u8; var c1: u8 = 0u8; var c2: u8 = 0u8;
-                    var c3: u8 = 0u8; var c4: u8 = 0u8; var c5: u8 = 0u8; var c6: u8 = 0u8; var c7: u8 = 0u8;
+                    var c3: u8 = 0u8; var c4: u8 = 0u8; var c5: u8 = 0u8;
+                    var c6: u8 = 0u8; var c7: u8 = 0u8; var c8: u8 = 0u8;
                     if ssl > 0 { c0 = get(strtab, sss); }
                     if ssl > 1 { c1 = get(strtab, (sss+1)); }
                     if ssl > 2 { c2 = get(strtab, (sss+2)); }
@@ -797,6 +798,7 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                     if ssl > 5 { c5 = get(strtab, (sss+5)); }
                     if ssl > 6 { c6 = get(strtab, (sss+6)); }
                     if ssl > 7 { c7 = get(strtab, (sss+7)); }
+                    if ssl > 8 { c8 = get(strtab, (sss+8)); }
 
                     var r_ival: i32 = 0; var r_tag: i32 = TAG_INT;
                     var bhandled: i32 = 0;
@@ -859,14 +861,20 @@ fn vm_run(strtab: U8Array, string_lits: I32Array, global_vars: I32Array, global_
                         if c4=='e' { sys_exit(get(arg_i,0)); }
                         bhandled = 1;
                     }
-                    // print__TYPE: mangled name starts "print__", c7 is
-                    // the first char of TYPE. i=i32, u=u32, b=bool,
-                    // S=String (ssl=13) or StringLiteral (ssl>13).
-                    if bhandled==0 && c0=='p'&&c1=='r'&&c2=='i'&&c3=='n'&&c4=='t'&&c5=='_'&&c6=='_' {
-                        if c7=='i' { print(get(arg_i,0)); }
-                        if c7=='u' { print(get(arg_i,0) as u32); }
-                        if c7=='b' { print(get(arg_i,0) != 0); }
-                        if c7=='S' {
+                    // println__TYPE: mangled name starts "println__"
+                    // (renamed from "print__" 2026-05-06 to free the
+                    // unqualified `print` slot for libtc.tc's no-
+                    // newline variant). c9 is the first char of TYPE:
+                    // i=i32, u=u32, b=bool, S=String or StringLiteral.
+                    var c9: u8 = 0u8;
+                    if ssl > 9 { c9 = get(strtab, (sss+9)); }
+                    if bhandled==0
+                        && c0=='p'&&c1=='r'&&c2=='i'&&c3=='n'&&c4=='t'
+                        && c5=='l'&&c6=='n'&&c7=='_'&&c8=='_' {
+                        if c9=='i' { println(get(arg_i,0)); }
+                        if c9=='u' { println(get(arg_i,0) as u32); }
+                        if c9=='b' { println(get(arg_i,0) != 0); }
+                        if c9=='S' {
                             var obj: i32 = get(arg_i,0);
                             var base: i32 = hm_base(hm,obj);
                             var osize: i32 = hm_size(hm,obj);

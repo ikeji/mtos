@@ -600,9 +600,10 @@ static Value call_builtin(const char *mangled, Value *args, int nargs) {
     if (!strcmp(name,"km_dump_peak")) return val_void();
 
 
-    /* print helpers — see interp.c for why we collapse all overloads
-     * into one handler keyed on arg kind rather than name. */
-    if (!strcmp(name,"print")) {
+    /* println helpers — see interp.c for why we collapse all overloads
+     * into one handler keyed on arg kind rather than name. Renamed
+     * from `print` 2026-05-06 (libtc.tc owns the unqualified name). */
+    if (!strcmp(name,"println")) {
         if (args[0].kind == VAL_REF) {
             HeapObj *s=args[0].ref;
             if(s && s->kind==OBJ_STRING && s->bytes) fwrite(s->bytes,1,s->len,stdout);

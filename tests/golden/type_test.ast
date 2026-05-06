@@ -50,8 +50,8 @@
           (int 21)
         )
       )
-      (comment "print(a);")
-      (call_stmt print
+      (comment "println(a);")
+      (call_stmt println
         (var a)
       )
       (comment "var b: u8 = double_val(33u8);")
@@ -61,8 +61,8 @@
           (int:u8 33)
         )
       )
-      (comment "print(b as i32);")
-      (call_stmt print
+      (comment "println(b as i32);")
+      (call_stmt println
         (cast
           (var b)
           (type i32)
@@ -92,8 +92,8 @@
           (type i32)
         )
       )
-      (comment "print(c);")
-      (call_stmt print
+      (comment "println(c);")
+      (call_stmt println
         (var c)
       )
       (comment "delete(buf);")

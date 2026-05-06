@@ -575,11 +575,11 @@ fn register_builtins(strtab: U8Array, fntab: U32Array) -> void {
     reg_fn3(strtab, fntab, "do_read", "i32", "u32", "i32", "i32");
     reg_fn1(strtab, fntab, "do_exit", "i32", "void");
 
-    reg_fn1(strtab, fntab, "print", "i32", "void");
-    reg_fn1(strtab, fntab, "print", "u32", "void");
-    reg_fn1(strtab, fntab, "print", "bool", "void");
-    reg_fn1(strtab, fntab, "print", "String", "void");
-    reg_fn1(strtab, fntab, "print", "StringLiteral", "void");
+    reg_fn1(strtab, fntab, "println", "i32", "void");
+    reg_fn1(strtab, fntab, "println", "u32", "void");
+    reg_fn1(strtab, fntab, "println", "bool", "void");
+    reg_fn1(strtab, fntab, "println", "String", "void");
+    reg_fn1(strtab, fntab, "println", "StringLiteral", "void");
     return;
 }
 

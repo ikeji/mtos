@@ -91,20 +91,20 @@
           (int 42)
         )
       )
-      (comment "print(a);")
-      (call_stmt print
+      (comment "println(a);")
+      (call_stmt println
         (var a)
       )
-      (comment "print(b);")
-      (call_stmt print
+      (comment "println(b);")
+      (call_stmt println
         (var b)
       )
-      (comment "print(c);")
-      (call_stmt print
+      (comment "println(c);")
+      (call_stmt println
         (var c)
       )
-      (comment "print(d);")
-      (call_stmt print
+      (comment "println(d);")
+      (call_stmt println
         (var d)
       )
       (comment "return 0;")

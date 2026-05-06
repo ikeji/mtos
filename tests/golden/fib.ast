@@ -54,8 +54,8 @@
           (int 10)
         )
       )
-      (comment "print(result);")
-      (call_stmt print
+      (comment "println(result);")
+      (call_stmt println
         (var result)
       )
       (comment "return result;")

@@ -327,9 +327,9 @@ __L22:
   load buf
   call parse_add U8Array
   store result
-; print(result);
+; println(result);
   load result
-  call print i32
+  call println i32
   pop
 ; delete(buf);
   load buf

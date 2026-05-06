@@ -164,10 +164,15 @@ t0=$(time_ms)
 if [ -s "$PREBUILT_DIR/test_timer.bin" ]; then
     cp "$PREBUILT_DIR/test_timer.bin" "$TIMER_BIN"
 else
+    # UNIFIED_PRELUDE=0: test_timer.tc overrides virt_crt0.s's
+    # `trap_handler__u32__u32: ret` fallback. The unified flow's
+    # prelude pre-encode would bake the fallback's address into the
+    # call site, so the override never takes effect.
     CRT0="$VIRT_CRT0" \
     CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$_GEN2_TMP" \
+    UNIFIED_PRELUDE=0 \
         "$ROOT_DIR/compile-gen2.sh" -o "$TIMER_BIN" "$TIMER_TC" 2>/dev/null
 fi
 compile_elapsed=$(( $(time_ms) - t0 ))

@@ -383,6 +383,7 @@ build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	CRT0="$$_tmp/crt0.s" CRT0_DATA=kernel/crt0_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
+	    UNIFIED_PRELUDE=0 \
 	    ./compile-gen2.sh -o $@ kernel/kernel.tc 2>/dev/null && \
 	rm -rf "$$_tmp"
 
@@ -397,6 +398,7 @@ define PICO2_KERNEL_RECIPE
 	CRT0="$$_tmp/crt0.s" CRT0_DATA="$$_tmp/kern_data.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
+	    UNIFIED_PRELUDE=0 \
 	    ./compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/kernel_pico2.tc 2>/dev/null && \
 	_ksz=$$(wc -c < "$$_tmp/kernel.bin") && \
 	_dsz=$$(wc -c < $(PICO2_DISK)) && \
@@ -486,7 +488,7 @@ build/test/asm/hello2_virt.bin: tests/hello2.tc $(TEST_ASM_DEPS) | build/test/as
 
 build/test/asm/test_timer.bin: tests/test_timer.tc $(TEST_ASM_DEPS) compiler/crt0_tc_data.s | build/test/asm
 	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/crt0_tc_data.s ASM_PROLOGUE='; raw' \
-	    GEN2_DIR=build/gen2 \
+	    GEN2_DIR=build/gen2 UNIFIED_PRELUDE=0 \
 	    ./compile-gen2.sh -o $@ $< 2>/dev/null
 
 build/test/asm/test_echo.bin: tests/test_echo.tc $(TEST_ASM_DEPS) compiler/crt0_tc_data.s | build/test/asm

@@ -214,7 +214,7 @@ static int call_builtin_known(const char *name) {
     static const char *B[] = {
         "peek8","peek16","peek32","poke8","poke16","poke32",
         "sys_write","sys_read","sys_exit",
-        "print",
+        "println",
         "len","get","set","delete","append","equals",
         NULL
     };
@@ -300,12 +300,13 @@ static Value call_builtin(const char *name, Value *args, int nargs) {
         exit(args[0].ival);
     }
 
-    /* print helpers — one dispatch point, branches on arg tag.
+    /* println helpers — one dispatch point, branches on arg tag.
      * interp has no type annotations at runtime, so we can't tell
      * i32 from u32 or bool; they're all %d / %u close enough for
      * tests that don't rely on unsigned wraparound behavior in
-     * interp mode. Strings take the OBJ_STRING path. */
-    if (strcmp(name, "print") == 0 && nargs == 1) {
+     * interp mode. Strings take the OBJ_STRING path. Renamed from
+     * "print" 2026-05-06 (libtc.tc owns the unqualified name). */
+    if (strcmp(name, "println") == 0 && nargs == 1) {
         if (args[0].kind == VAL_REF) {
             HeapObj *s = args[0].ref;
             if (s && s->kind == OBJ_STRING && s->bytes)

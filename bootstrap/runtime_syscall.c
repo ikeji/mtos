@@ -174,30 +174,35 @@ static HeapObj new_array(int count, int data_bytes) {
     return o;
 }
 
-/* ===== Print helpers ===== */
+/* ===== Print helpers =====
+ * Renamed from print__* to println__* so the trailing-newline
+ * semantics are explicit in the name. The collision with
+ * kernel/tasks/libtc/libtc.tc's `print` (no newline, used by
+ * tasks like wc / du that compose multi-field output) was the
+ * trigger — see compiler/runtime.tc's println comment block. */
 
-void print__i32(int32_t v) {
+void println__i32(int32_t v) {
     char buf[16]; int len = i32_to_str(v, buf);
     do_write(1, buf, len);
 }
 
-void print__u32(uint32_t v) {
+void println__u32(uint32_t v) {
     char buf[16]; int len = u32_to_str(v, buf);
     do_write(1, buf, len);
 }
 
-void print__bool(int32_t v) {
+void println__bool(int32_t v) {
     if (v) do_write(1, "true\n",  5);
     else   do_write(1, "false\n", 6);
 }
 
-void print__String(HeapObj s) {
+void println__String(HeapObj s) {
     if (s) do_write(1, (char*)OBJ_DATA(s), OBJ_COUNT(s));
     do_write(1, "\n", 1);
 }
 
-void print__StringLiteral(HeapObj s) {
-    print__String(s);
+void println__StringLiteral(HeapObj s) {
+    println__String(s);
 }
 
 /* km_dump_peak — no-op stub on host. The TC runtime (compiler/runtime.tc)

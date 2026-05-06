@@ -3,7 +3,7 @@
 
 fn assert(cond: bool, code: i32) -> void {
     if !cond {
-        print(code);
+        println(code);
         sys_exit(1);
     }
     return;
@@ -93,6 +93,6 @@ fn main() -> i32 {
     assert(get(g, 999) == 67890, 0 - 72);
     delete(g);
 
-    print(0);
+    println(0);
     return 0;
 }

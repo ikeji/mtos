@@ -30,36 +30,36 @@
         (type u8)
         (int:u8 39)
       )
-      (comment "print(a as i32);")
-      (call_stmt print
+      (comment "println(a as i32);")
+      (call_stmt println
         (cast
           (var a)
           (type i32)
         )
       )
-      (comment "print(z as i32);")
-      (call_stmt print
+      (comment "println(z as i32);")
+      (call_stmt println
         (cast
           (var z)
           (type i32)
         )
       )
-      (comment "print(n as i32);")
-      (call_stmt print
+      (comment "println(n as i32);")
+      (call_stmt println
         (cast
           (var n)
           (type i32)
         )
       )
-      (comment "print(t as i32);")
-      (call_stmt print
+      (comment "println(t as i32);")
+      (call_stmt println
         (cast
           (var t)
           (type i32)
         )
       )
-      (comment "print(q as i32);")
-      (call_stmt print
+      (comment "println(q as i32);")
+      (call_stmt println
         (cast
           (var q)
           (type i32)

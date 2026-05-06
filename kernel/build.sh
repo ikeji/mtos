@@ -387,16 +387,15 @@ cat "$PLATFORM_S" "$KERN_DIR/trap_common.s" > "$TMP/crt0.s"
 cat "$DATA_S" ${MTFS_S:+"$MTFS_S"} > "$TMP/kern_data.s"
 
 echo "Building kernel: $TARGET" >&2
-# Kernel uses legacy (UNIFIED_PRELUDE default 0) — platform_*.s +
+# Kernel uses legacy (UNIFIED_PRELUDE=0) — platform_*.s +
 # trap_common.s reference TC-defined symbols (trap_handler,
-# sched_task_exit, sys_*_handler, ...) that don't exist at prelude
-# pre-encode time. Task builds opt into the unified flow via the
-# Makefile because task_crt0.s carries fallback main /
-# main__StringArray stubs that the pre-encode resolves correctly.
+# sched_task_exit, sys_*_handler, ...) that don't exist at the
+# prelude pre-encode step, so the unified flow can't be used here.
 CRT0="$TMP/crt0.s" \
 CRT0_DATA="$TMP/kern_data.s" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \
+UNIFIED_PRELUDE=0 \
     "$ROOT_DIR/compile-gen2.sh" -o "$TMP/kernel.bin" \
     "$KERNEL_TC" 2>/dev/null
 

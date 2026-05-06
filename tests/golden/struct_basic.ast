@@ -301,14 +301,14 @@
           (int 4)
         )
       )
-      (comment "print(x(p));")
-      (call_stmt print
+      (comment "println(x(p));")
+      (call_stmt println
         (call x
           (var p)
         )
       )
-      (comment "print(y(p));")
-      (call_stmt print
+      (comment "println(y(p));")
+      (call_stmt println
         (call y
           (var p)
         )
@@ -323,8 +323,8 @@
         (var p)
         (int 20)
       )
-      (comment "print(x(p) + y(p));")
-      (call_stmt print
+      (comment "println(x(p) + y(p));")
+      (call_stmt println
         (binop +
           (call x
             (var p)

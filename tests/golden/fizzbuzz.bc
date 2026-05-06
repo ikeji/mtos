@@ -18,9 +18,9 @@ __L0:
   push_int 0
   eq
   jump_ifnot __L2
-; print("FizzBuzz");
+; println("FizzBuzz");
   push_str 0
-  call print StringLiteral
+  call println StringLiteral
   pop
   jump __L3
 __L2:
@@ -31,9 +31,9 @@ __L2:
   push_int 0
   eq
   jump_ifnot __L4
-; print("Fizz");
+; println("Fizz");
   push_str 1
-  call print StringLiteral
+  call println StringLiteral
   pop
   jump __L5
 __L4:
@@ -44,15 +44,15 @@ __L4:
   push_int 0
   eq
   jump_ifnot __L6
-; print("Buzz");
+; println("Buzz");
   push_str 2
-  call print StringLiteral
+  call println StringLiteral
   pop
   jump __L7
 __L6:
-; print(i);
+; println(i);
   load i
-  call print i32
+  call println i32
   pop
 __L7:
 __L5:

@@ -633,7 +633,22 @@ export fn km_peak_bytes() -> i32 { return g_km_peak_bytes; }
 export fn km_curr_bytes() -> i32 { return g_km_curr_bytes; }
 
 // ===== Print helpers =====
-export fn print(v: i32) -> void {
+//
+// `println` was originally named `print` and shadowed kernel/tasks/
+// libtc/libtc.tc's `export fn print(v: i32)` (which deliberately omits
+// the trailing newline so tasks like wc / du can compose multi-field
+// output). The two had different consumers — runtime.tc's print served
+// compiler tools (bcrun.tc) and kernel TC code that wanted "value +
+// newline" diagnostic output, while libtc's print served kernel
+// tasks. asm.tc's last-wins rule meant tasks that imported libtc got
+// the no-newline version while everyone else got the newline version,
+// but the symbol collision broke prelude pre-encode (asm_pass1's
+// --emit-bin path bakes the locally-resolved address into the prelude
+// .bin, so when libtc later overrode the symbol the call still
+// pointed at the prelude copy). Renaming runtime's variants to
+// `println` makes the intent explicit (= "print value, then newline")
+// and removes the collision.
+export fn println(v: i32) -> void {
     var buf: U8Array = U8Array(16);
     var neg: i32 = 0;
     if v < 0 { neg = 1; v = 0 - v; }
@@ -659,7 +674,7 @@ export fn print(v: i32) -> void {
 // u32 version uses unsigned arithmetic so values >= 0x80000000 print
 // as their true decimal instead of a negative number (which the naive
 // cast-to-i32 path would produce).
-export fn print(v: u32) -> void {
+export fn println(v: u32) -> void {
     var buf: U8Array = U8Array(16);
     if v == 0u32 {
         poke8(buf as u32 + 4u32 + (0) as u32, ('0') as u8); poke8(buf as u32 + 4u32 + (1) as u32, (10u8) as u8);
@@ -683,11 +698,11 @@ export fn print(v: u32) -> void {
     delete_impl(buf as u32);
     return;
 }
-export fn print(v: bool) -> void {
-    if v { print(1); } else { print(0); }
+export fn println(v: bool) -> void {
+    if v { println(1); } else { println(0); }
     return;
 }
-export fn print(s: String) -> void {
+export fn println(s: String) -> void {
     if s as u32 != 0u32 {
         var slen: i32 = peek32(s as u32) as i32;
         do_write(1, s as u32 + 4u32, slen);
@@ -699,7 +714,7 @@ export fn print(s: String) -> void {
     delete_impl(nl as u32);
     return;
 }
-export fn print(s: StringLiteral) -> void { print(s as String); return; }
+export fn println(s: StringLiteral) -> void { println(s as String); return; }
 
 // ===== String operations =====
 export fn append(s: String, c: u8) -> String {

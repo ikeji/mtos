@@ -20,30 +20,30 @@
 ; var q: u8 = '\'';
   push_int 39
   store q
-; print(a as i32);
+; println(a as i32);
   load a
   cast i32
-  call print i32
+  call println i32
   pop
-; print(z as i32);
+; println(z as i32);
   load z
   cast i32
-  call print i32
+  call println i32
   pop
-; print(n as i32);
+; println(n as i32);
   load n
   cast i32
-  call print i32
+  call println i32
   pop
-; print(t as i32);
+; println(t as i32);
   load t
   cast i32
-  call print i32
+  call println i32
   pop
-; print(q as i32);
+; println(q as i32);
   load q
   cast i32
-  call print i32
+  call println i32
   pop
 ; return 0;
   push_int 0

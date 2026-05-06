@@ -333,17 +333,19 @@ static void register_builtins(TypeEnv *e) {
     register_fn(e, "sys_read",  sys_r,  3, "i32");
     register_fn(e, "sys_exit",  sys_e,  1, "void");
 
-    /* print helpers */
+    /* println helpers (= print + trailing newline). Renamed from
+     * `print` in 2026-05-06: the unqualified name now belongs to
+     * libtc.tc's no-newline variant used by kernel tasks. */
     const char *pi[] = {"i32"};
     const char *pu[] = {"u32"};
     const char *pb[] = {"bool"};
     const char *pstr[] = {"String"};
     const char *pstrl[] = {"StringLiteral"};
-    register_fn(e, "print", pi, 1, "void");
-    register_fn(e, "print", pu, 1, "void");
-    register_fn(e, "print", pb, 1, "void");
-    register_fn(e, "print", pstr, 1, "void");
-    register_fn(e, "print", pstrl, 1, "void");
+    register_fn(e, "println", pi, 1, "void");
+    register_fn(e, "println", pu, 1, "void");
+    register_fn(e, "println", pb, 1, "void");
+    register_fn(e, "println", pstr, 1, "void");
+    register_fn(e, "println", pstrl, 1, "void");
 }
 
 /* ---- forward pass: collect all function/struct/global signatures ---- */
