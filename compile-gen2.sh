@@ -68,7 +68,7 @@ if [ -z "$GEN2_DIR" ]; then
     exit 1
 fi
 
-for tool in sigscan tcheck codegen bc2asm asm_pass2 asm_pass3; do
+for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3; do
     if [ ! -x "$GEN2_DIR/$tool" ]; then
         echo "Error: Gen2 tool not found: $GEN2_DIR/$tool" >&2
         exit 1
@@ -228,24 +228,19 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
         cat "$TMP/prelude_tail.s"
     } > "$TMP/user.s"
 
-    # Step 4a: emit prelude.idx from prelude.s alone (= the section
-    # state the OS-side asm_pass2 will inherit before scanning user.s).
-    "$QEMU" "$GEN2_DIR/asm_pass2" \
-        --emit-idx "$TMP/prelude.idx" "$TMP/prelude.s" 2>/dev/null
-
-    # Step 4b: pre-encode prelude.s + prelude_tail.s combined so the
-    # encoder has full label visibility (__data_end, __bss_start,
-    # __arena live in the tail). The .text.bin only contains prelude.s
-    # bytes; .data.bin / .reloc carry whatever the combined layout
-    # produced.
-    cat "$TMP/prelude.s" "$TMP/prelude_tail.s" > "$TMP/pre_full.s"
-    "$QEMU" "$GEN2_DIR/asm_pass2" < "$TMP/pre_full.s" > "$TMP/pre.lab"
-    cat "$TMP/pre.lab" "$TMP/pre_full.s" "$TMP/pre_full.s" "$TMP/pre_full.s" | \
-        "$QEMU" "$GEN2_DIR/asm_pass3" \
-            --text-bin   "$TMP/prelude.text.bin" \
-            --rodata-bin "$TMP/prelude.rodata.bin" \
-            --data-bin   "$TMP/prelude.data.bin" \
-            --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
+    # Step 4: emit prelude.idx + per-section .bin + .reloc in one
+    # asm_pass1 invocation (Phase E of the 3-binary asm split). The
+    # idx covers prelude.s alone (= the section state the final
+    # asm_pass2 will inherit before scanning user.s); the .bin /
+    # .reloc cover prelude.s + prelude_tail.s combined so __data_end /
+    # __bss_start / __arena are in scope at encode time.
+    "$QEMU" "$GEN2_DIR/asm_pass1" \
+        "$TMP/prelude.s" "$TMP/prelude_tail.s" \
+        --idx-out    "$TMP/prelude.idx" \
+        --text-bin   "$TMP/prelude.text.bin" \
+        --rodata-bin "$TMP/prelude.rodata.bin" \
+        --data-bin   "$TMP/prelude.data.bin" \
+        --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
 
     # Step 5: final asm_pass2 with --load-idx + --prelude-*.
     "$QEMU" "$GEN2_DIR/asm_pass2" \
