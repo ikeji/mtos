@@ -343,13 +343,31 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
                 while ai < nr { set(win, keep + ai, get(io, ai)); ai = ai + 1; }
                 var win_len: i32 = keep + nr;
                 // Hold back the longest reloc length (8 bytes for
-                // kind=1 / kind=2 auipc+addi pairs). With only 7
-                // bytes held back, an 8-byte reloc whose auipc
-                // landed at win_off = emit_end-1 was emitted before
-                // the patch could fire AND its win_off went negative
-                // on the next iter — silently dropped.
+                // kind=1 / kind=2 / kind=3 auipc+addi pairs).
                 var emit_end: i32 = win_len - 8;
                 if emit_end < 0 { emit_end = 0; }
+                // Walk the relocs once and shrink emit_end to the
+                // start of any reloc that would straddle the boundary
+                // (win_off < emit_end but win_off + len > emit_end).
+                // Without this, the auipc half lands on disk un-
+                // patched and on the next iter win_off goes negative
+                // → reloc silently dropped.
+                var rclip: i32 = 0;
+                while rclip < g_n_relocs {
+                    var roff_clip: i32 = get(g_reloc_offs, rclip);
+                    var rkind_clip: i32 = get(g_reloc_kinds, rclip);
+                    var win_off_clip: i32 = roff_clip - chunk_off;
+                    var len_clip: i32 = 4;
+                    if rkind_clip == 1 || rkind_clip == 2 || rkind_clip == 3 {
+                        len_clip = 8;
+                    }
+                    if win_off_clip >= 0
+                       && win_off_clip < emit_end
+                       && win_off_clip + len_clip > emit_end {
+                        emit_end = win_off_clip;
+                    }
+                    rclip = rclip + 1;
+                }
                 // Patch every reloc that fits fully in [0..emit_end).
                 var rj: i32 = 0;
                 while rj < g_n_relocs {

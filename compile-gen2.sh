@@ -225,59 +225,62 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
     cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
 
     if [ "${LINK_MODE:-1}" = "1" ]; then
-        # Phase F (linker mode): asm_pass2 consumes only pass1 outputs.
-        # asm_pass1 walks prelude.s + prelude_tail.s for the prelude
-        # bin/idx — so cross-file refs like `la t2, __data_end` in
-        # task_crt0.s emit kind=2 (gp-relative) just as the legacy
-        # walked-source path did. user.s carries prelude_tail.s too;
-        # the tail's data labels are no-byte placeholders for tasks
-        # (`.globl __data_end; __data_end:`), so the duplicate walk
-        # adds 0 bytes to data/rodata. This shape doesn't generalise
-        # to inputs whose tail has actual rodata bytes (kernel's
-        # embedded mtfs image) — those callers set UNIFIED_PRELUDE=0
-        # to avoid the duplication.
+        # Phase F (linker mode, split): asm_pass2 consumes only pass1
+        # outputs. Each compiled .tc + each EXTRA_S goes through its
+        # own asm_pass1 invocation. asm_pass2 --link merges N input
+        # groups: prelude + user + N-2 extras (--add).
         #
-        # asm_pass2 supports an --add flag to chain N input groups
-        # beyond prelude + user (asm_common g_extra_*); not used by
-        # default because the split-per-.s flow loses byte-exactness
-        # vs the legacy walked-source path on multi-import inputs
-        # (parse.tc → 4 .s files showed ~120K byte diff, not just
-        # kind=1↔kind=2 reloc-selection diffs). The split is exposed
-        # for callers that need it (e.g. an OS-side compile pipeline
-        # that wants to avoid the user.s concat step).
-        {
-            cat "${ASM_FILES[@]}"
-            for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done
-            cat "$TMP/prelude_tail.s"
-        } > "$TMP/user.s"
-
-        "$QEMU" "$GEN2_DIR/asm_pass1" \
-            "$TMP/prelude.s" "$TMP/prelude_tail.s" \
+        # Cross-input la references emit kind=3 (auto-la) relocs that
+        # asm_pass3 patches into kind=1 (PC-rel) or kind=2 (gp-rel)
+        # at link time based on the target's resolved section.
+        #
+        # prelude_tail.s (task_data.s / crt0_tc_data.s) defines
+        # __data_end, which must land at the END of the merged data
+        # section. Pre-encoding it as the LAST extra input gives that
+        # ordering: prelude data → user data → libtc data → tail.
+        "$QEMU" "$GEN2_DIR/asm_pass1" "$TMP/prelude.s" \
             --idx-out    "$TMP/prelude.idx" \
             --text-bin   "$TMP/prelude.text.bin" \
             --rodata-bin "$TMP/prelude.rodata.bin" \
             --data-bin   "$TMP/prelude.data.bin" \
             --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
 
-        "$QEMU" "$GEN2_DIR/asm_pass1" "$TMP/user.s" \
-            --idx-out    "$TMP/user.idx" \
-            --text-bin   "$TMP/user.text.bin" \
-            --rodata-bin "$TMP/user.rodata.bin" \
-            --data-bin   "$TMP/user.data.bin" \
-            --reloc-out  "$TMP/user.reloc" 2>/dev/null
+        link_args=()
+        n=0
+        for s in "${ASM_FILES[@]}" ${EXTRA_S:-} "$TMP/prelude_tail.s"; do
+            tag="in_$n"
+            "$QEMU" "$GEN2_DIR/asm_pass1" "$s" \
+                --idx-out    "$TMP/$tag.idx" \
+                --text-bin   "$TMP/$tag.text.bin" \
+                --rodata-bin "$TMP/$tag.rodata.bin" \
+                --data-bin   "$TMP/$tag.data.bin" \
+                --reloc-out  "$TMP/$tag.reloc" 2>/dev/null
+            if [ "$n" = "0" ]; then
+                link_args+=( \
+                    --user-idx        "$TMP/$tag.idx" \
+                    --user-text-bin   "$TMP/$tag.text.bin" \
+                    --user-rodata-bin "$TMP/$tag.rodata.bin" \
+                    --user-data-bin   "$TMP/$tag.data.bin" \
+                    --user-reloc      "$TMP/$tag.reloc" )
+            else
+                link_args+=( --add \
+                    "$TMP/$tag.idx" \
+                    "$TMP/$tag.text.bin" \
+                    "$TMP/$tag.rodata.bin" \
+                    "$TMP/$tag.data.bin" \
+                    "$TMP/$tag.reloc" )
+            fi
+            n=$((n + 1))
+        done
 
         "$QEMU" "$GEN2_DIR/asm_pass2" --link \
             --prelude-idx "$TMP/prelude.idx" \
-            --user-idx    "$TMP/user.idx" \
             --idx-source  "$TMP/prelude.s" \
             --prelude-text-bin   "$TMP/prelude.text.bin" \
             --prelude-rodata-bin "$TMP/prelude.rodata.bin" \
             --prelude-data-bin   "$TMP/prelude.data.bin" \
             --prelude-reloc      "$TMP/prelude.reloc" \
-            --user-text-bin      "$TMP/user.text.bin" \
-            --user-rodata-bin    "$TMP/user.rodata.bin" \
-            --user-data-bin      "$TMP/user.data.bin" \
-            --user-reloc         "$TMP/user.reloc" \
+            "${link_args[@]}" \
             --lab-out            "$TMP/full.lab" 2>/dev/null
     else
         # Legacy UNIFIED_PRELUDE: asm_pass2 walks user.s with

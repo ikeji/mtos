@@ -471,6 +471,13 @@ export fn run_link(
 // run_link variant, regardless of how the prelude/user pair was
 // wired in.
 fn run_link_finish(lab_out_path: String) -> i32 {
+    // Snapshot raw / load_base from whichever input set them last
+    // (typically the prelude). Each extra idx might carry its own
+    // `raw 0` / `load_base 65536` defaults that would otherwise
+    // overwrite the prelude's `; raw` setting on the second / Nth
+    // load. Restore after every extra has been ingested.
+    var saved_raw_2:       i32 = asm_get_raw_mode();
+    var saved_load_base_2: i32 = asm_get_load_base();
     var ei: i32 = 0;
     while ei < asm_get_n_extras() {
         // Capture the running text size BEFORE this idx loads — this
@@ -487,6 +494,8 @@ fn run_link_finish(lab_out_path: String) -> i32 {
         asm_set_extra_data_start(  ei, asm_load_idx_content_start(2));
         ei = ei + 1;
     }
+    asm_install_raw_mode(saved_raw_2);
+    asm_install_load_base(saved_load_base_2);
 
     // After every input has loaded, compute section bases / sizes
     // from the merged sec_pos and turn intra label addresses into

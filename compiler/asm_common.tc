@@ -1508,7 +1508,10 @@ export fn asm_emit_reloc(offset: i32, kind: i32, op_idx: i32) -> void {
     while nlen > 0 && (get(g_line_buf, noff) == ' ' || get(g_line_buf, noff) == 9u8) {
         noff = noff + 1; nlen = nlen - 1;
     }
-    var buf: U8Array = U8Array(96);
+    // Buffer sized for "reloc <off> <kind> <name>\n". 256 covers
+    // mangled names up to ~240 chars (run_link__String × 11 = 104,
+    // headroom for further-overloaded fns).
+    var buf: U8Array = U8Array(256);
     var p: i32 = 0;
     set(buf, p, 'r' as u8); p = p + 1;
     set(buf, p, 'e' as u8); p = p + 1;
