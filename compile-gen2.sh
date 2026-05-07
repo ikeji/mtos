@@ -236,6 +236,15 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
         # to inputs whose tail has actual rodata bytes (kernel's
         # embedded mtfs image) — those callers set UNIFIED_PRELUDE=0
         # to avoid the duplication.
+        #
+        # asm_pass2 supports an --add flag to chain N input groups
+        # beyond prelude + user (asm_common g_extra_*); not used by
+        # default because the split-per-.s flow loses byte-exactness
+        # vs the legacy walked-source path on multi-import inputs
+        # (parse.tc → 4 .s files showed ~120K byte diff, not just
+        # kind=1↔kind=2 reloc-selection diffs). The split is exposed
+        # for callers that need it (e.g. an OS-side compile pipeline
+        # that wants to avoid the user.s concat step).
         {
             cat "${ASM_FILES[@]}"
             for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done

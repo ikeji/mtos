@@ -117,6 +117,19 @@ fn main(argv: StringArray) -> i32 {
             } else if arg_eq(a, "--user-reloc") != 0 && consumed + 1 < argc {
                 user_reloc = get(argv, consumed + 1);
                 consumed = consumed + 2;
+            } else if arg_eq(a, "--add") != 0 && consumed + 5 < argc {
+                // --add <idx> <text.bin> <rodata.bin> <data.bin> <reloc>
+                // Each --add registers one extra link input beyond
+                // prelude (input 0) + user (input 1). asm_pass2_lib's
+                // run_link_finish loads each idx in order, captures
+                // its content_start values, and shifts its reloc
+                // text offsets by the running text-size accumulator.
+                asm_add_extra_input(get(argv, consumed + 1),
+                                    get(argv, consumed + 2),
+                                    get(argv, consumed + 3),
+                                    get(argv, consumed + 4),
+                                    get(argv, consumed + 5));
+                consumed = consumed + 6;
             } else {
                 keep_scanning = 0;
             }

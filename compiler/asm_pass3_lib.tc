@@ -57,7 +57,7 @@ var g_src_paths: U32Array = 0 as U32Array;
 var g_src_kinds: U32Array = 0 as U32Array;
 var g_src_secs:  I32Array = 0 as I32Array;
 var g_n_src_paths: i32 = 0;
-var SRC_PATHS_CAP: i32 = 8;
+var SRC_PATHS_CAP: i32 = 64;
 
 // Reloc records: parallel arrays. Initial capacity covers a small
 // prelude; record_reloc grows the arrays in place when full so the

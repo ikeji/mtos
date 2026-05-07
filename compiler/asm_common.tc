@@ -379,6 +379,86 @@ export fn asm_set_user_text_start(v: i32)    -> void { g_user_text_start   = v; 
 export fn asm_set_user_rodata_start(v: i32)  -> void { g_user_rodata_start = v; return; }
 export fn asm_set_user_data_start(v: i32)    -> void { g_user_data_start   = v; return; }
 
+// Additional link inputs beyond prelude (input 0) + user (input 1).
+// Each entry corresponds to one extra `--add` flag in asm_pass2 --link
+// invocations: an asm_pass1 output set (.idx + per-section .bin +
+// .reloc) appended after `user` in the linker's input order. Section
+// bytes concatenate in input order; relocs accumulate with per-input
+// text-section shifts. Cap of 16 covers compile-gen2.sh's worst case
+// (sh.tc-class user code + libtc + several import .s files).
+var EXTRAS_CAP: i32 = 16;
+var g_n_extras: i32 = 0;
+var g_extra_idx:        StringArray = 0 as StringArray;
+var g_extra_text_bin:   StringArray = 0 as StringArray;
+var g_extra_rodata_bin: StringArray = 0 as StringArray;
+var g_extra_data_bin:   StringArray = 0 as StringArray;
+var g_extra_reloc:      StringArray = 0 as StringArray;
+var g_extra_text_shift:   I32Array = 0 as I32Array;
+var g_extra_text_start:   I32Array = 0 as I32Array;
+var g_extra_rodata_start: I32Array = 0 as I32Array;
+var g_extra_data_start:   I32Array = 0 as I32Array;
+fn ensure_extras_storage() -> void {
+    if g_extra_idx as u32 == 0u32 {
+        g_extra_idx        = StringArray((EXTRAS_CAP) as u32);
+        g_extra_text_bin   = StringArray((EXTRAS_CAP) as u32);
+        g_extra_rodata_bin = StringArray((EXTRAS_CAP) as u32);
+        g_extra_data_bin   = StringArray((EXTRAS_CAP) as u32);
+        g_extra_reloc      = StringArray((EXTRAS_CAP) as u32);
+        g_extra_text_shift   = I32Array((EXTRAS_CAP) as u32);
+        g_extra_text_start   = I32Array((EXTRAS_CAP) as u32);
+        g_extra_rodata_start = I32Array((EXTRAS_CAP) as u32);
+        g_extra_data_start   = I32Array((EXTRAS_CAP) as u32);
+    }
+    return;
+}
+export fn asm_get_n_extras() -> i32 { return g_n_extras; }
+export fn asm_extras_cap() -> i32 { return EXTRAS_CAP; }
+// Append a new extra input. The shift / start values are filled in
+// later by run_link as it walks the inputs through asm_load_idx.
+export fn asm_add_extra_input(idx_path: String,
+                              text_bin: String, rodata_bin: String,
+                              data_bin: String, reloc: String) -> i32 {
+    ensure_extras_storage();
+    if g_n_extras >= EXTRAS_CAP { return 0 - 1; }
+    set(g_extra_idx,        g_n_extras, idx_path);
+    set(g_extra_text_bin,   g_n_extras, text_bin);
+    set(g_extra_rodata_bin, g_n_extras, rodata_bin);
+    set(g_extra_data_bin,   g_n_extras, data_bin);
+    set(g_extra_reloc,      g_n_extras, reloc);
+    set(g_extra_text_shift,   g_n_extras, 0);
+    set(g_extra_text_start,   g_n_extras, 0);
+    set(g_extra_rodata_start, g_n_extras, 0);
+    set(g_extra_data_start,   g_n_extras, 0);
+    var idx: i32 = g_n_extras;
+    g_n_extras = g_n_extras + 1;
+    return idx;
+}
+export fn asm_get_extra_idx(i: i32) -> String { return get(g_extra_idx, i); }
+export fn asm_set_extra_text_shift(i: i32, v: i32) -> void {
+    if i >= 0 && i < g_n_extras { set(g_extra_text_shift, i, v); }
+    return;
+}
+export fn asm_set_extra_text_start(i: i32, v: i32) -> void {
+    if i >= 0 && i < g_n_extras { set(g_extra_text_start, i, v); }
+    return;
+}
+export fn asm_set_extra_rodata_start(i: i32, v: i32) -> void {
+    if i >= 0 && i < g_n_extras { set(g_extra_rodata_start, i, v); }
+    return;
+}
+export fn asm_set_extra_data_start(i: i32, v: i32) -> void {
+    if i >= 0 && i < g_n_extras { set(g_extra_data_start, i, v); }
+    return;
+}
+export fn asm_get_extra_text_bin(i: i32)   -> String { return get(g_extra_text_bin,   i); }
+export fn asm_get_extra_rodata_bin(i: i32) -> String { return get(g_extra_rodata_bin, i); }
+export fn asm_get_extra_data_bin(i: i32)   -> String { return get(g_extra_data_bin,   i); }
+export fn asm_get_extra_reloc(i: i32)      -> String { return get(g_extra_reloc,      i); }
+export fn asm_get_extra_text_shift(i: i32)   -> i32 { return get(g_extra_text_shift,   i); }
+export fn asm_get_extra_text_start(i: i32)   -> i32 { return get(g_extra_text_start,   i); }
+export fn asm_get_extra_rodata_start(i: i32) -> i32 { return get(g_extra_rodata_start, i); }
+export fn asm_get_extra_data_start(i: i32)   -> i32 { return get(g_extra_data_start,   i); }
+
 // Number of labels that came from one or more --load-idx files. The
 // link step marks every one of them live regardless of BFS reach,
 // because asm-pass2 still walks the prelude source byte-for-byte
@@ -2691,6 +2771,36 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
             emit_nl(sb);
         }
     }
+    // Additional inputs beyond user (--add). Same `src raw` shape as
+    // the user entry; one set per extra input, in registration order.
+    var ei: i32 = 0;
+    while ei < g_n_extras {
+        var et: String = asm_get_extra_text_bin(ei);
+        if et as u32 != 0u32 {
+            emit_string(sb, "src raw ");
+            emit_string(sb, et);
+            emit_string(sb, " 0 ");
+            dump_int(sb, asm_get_extra_text_start(ei));
+            emit_nl(sb);
+        }
+        var er: String = asm_get_extra_rodata_bin(ei);
+        if er as u32 != 0u32 {
+            emit_string(sb, "src raw ");
+            emit_string(sb, er);
+            emit_string(sb, " 1 ");
+            dump_int(sb, asm_get_extra_rodata_start(ei));
+            emit_nl(sb);
+        }
+        var ed: String = asm_get_extra_data_bin(ei);
+        if ed as u32 != 0u32 {
+            emit_string(sb, "src raw ");
+            emit_string(sb, ed);
+            emit_string(sb, " 2 ");
+            dump_int(sb, asm_get_extra_data_start(ei));
+            emit_nl(sb);
+        }
+        ei = ei + 1;
+    }
     if g_src_path2 as u32 != 0u32 {
         emit_string(sb, "src ");
         emit_string(sb, g_src_path2);
@@ -2784,6 +2894,18 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
         destroy(sb);
         copy_reloc_shifted(g_user_reloc, out_fd, g_user_text_shift);
         sb = StringBuffer_new(out_fd);
+    }
+    // Each extra input's reloc with its own text-section shift.
+    var ri: i32 = 0;
+    while ri < g_n_extras {
+        var er: String = asm_get_extra_reloc(ri);
+        if er as u32 != 0u32 {
+            write(sb, out_fd);
+            destroy(sb);
+            copy_reloc_shifted(er, out_fd, asm_get_extra_text_shift(ri));
+            sb = StringBuffer_new(out_fd);
+        }
+        ri = ri + 1;
     }
 
     emit_char(sb, ')'); emit_nl(sb);

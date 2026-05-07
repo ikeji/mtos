@@ -446,15 +446,6 @@ export fn run_link(
     // so the lab needs each entry shifted by user_text_start.
     var prelude_text_size: i32 = user_text_start;
 
-    // Compute final section bases / sizes from the merged sec_pos
-    // and turn intra label addresses into absolutes. No strip walk
-    // and no asm_compute_live — every prelude / user label is live
-    // by definition (each .idx already represents reachable code).
-    asm_compute_sec_bases();
-    asm_finalize_labels();
-    asm_resolve_deferred_refs();
-    asm_fixup_labels();
-
     // Wire path globals so asm_dump_lab_state_to emits the right
     // `src raw` lines and the right reloc-splice operations.
     asm_set_prelude_text_bin(prelude_text_bin);
@@ -470,6 +461,41 @@ export fn run_link(
     asm_set_user_rodata_start(user_rodata_start);
     asm_set_user_data_start(user_data_start);
     if idx_source as u32 != 0u32 { asm_set_src_path1(idx_source); }
+
+    return run_link_finish(lab_out_path);
+}
+
+// Process any extra inputs (registered before the run_link call via
+// asm_add_extra_input from the CLI parser), then dump the lab.
+// Factored out of run_link so the extras-loop runs after every
+// run_link variant, regardless of how the prelude/user pair was
+// wired in.
+fn run_link_finish(lab_out_path: String) -> i32 {
+    var ei: i32 = 0;
+    while ei < asm_get_n_extras() {
+        // Capture the running text size BEFORE this idx loads — this
+        // is the shift to apply to its reloc text offsets so they
+        // land at section-absolute coordinates in the merged lab.
+        asm_set_extra_text_shift(ei, asm_sec_pos(0));
+        var ex_idx: String = asm_get_extra_idx(ei);
+        if ex_idx as u32 != 0u32 { asm_load_idx(ex_idx); }
+        // After the idx's align directives have applied,
+        // asm_load_idx_content_start tells us where this input's
+        // bytes actually begin in each section.
+        asm_set_extra_text_start(  ei, asm_load_idx_content_start(0));
+        asm_set_extra_rodata_start(ei, asm_load_idx_content_start(1));
+        asm_set_extra_data_start(  ei, asm_load_idx_content_start(2));
+        ei = ei + 1;
+    }
+
+    // After every input has loaded, compute section bases / sizes
+    // from the merged sec_pos and turn intra label addresses into
+    // absolutes. No strip walk and no asm_compute_live — every
+    // input's idx already represents reachable code.
+    asm_compute_sec_bases();
+    asm_finalize_labels();
+    asm_resolve_deferred_refs();
+    asm_fixup_labels();
 
     if lab_out_path as u32 != 0u32 {
         var lab_fd: i32 = do_openat(0 - 100, lab_out_path, 577);
