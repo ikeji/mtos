@@ -355,15 +355,18 @@ cat "$PLATFORM_S" "$KERN_DIR/trap_common.s" > "$TMP/crt0.s"
 cat "$DATA_S" ${MTFS_S:+"$MTFS_S"} > "$TMP/kern_data.s"
 
 echo "Building kernel: $TARGET" >&2
-# Kernel uses legacy (UNIFIED_PRELUDE=0) — platform_*.s +
-# trap_common.s reference TC-defined symbols (trap_handler,
-# sched_task_exit, sys_*_handler, ...) that don't exist at the
-# prelude pre-encode step, so the unified flow can't be used here.
+# Kernel uses UNIFIED_PRELUDE=0 (legacy stdin pipeline). The unified
+# flow's pre-encoded prelude can't see user-defined section labels,
+# so a `la rd, _trap_frame` from kernel.tc gets emitted as kind=1
+# (pc-rel) instead of kind=2 (gp-rel). Functionally equivalent but
+# byte-different — and we want the kernel build to stay byte-exact
+# against the canonical full.s walk while LINK_MODE flushes through.
+# Override KERN_UNIFIED_PRELUDE=1 if you need to experiment.
 CRT0="$TMP/crt0.s" \
 CRT0_DATA="$TMP/kern_data.s" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \
-UNIFIED_PRELUDE=0 \
+UNIFIED_PRELUDE="${KERN_UNIFIED_PRELUDE:-0}" \
     "$ROOT_DIR/compile-gen2.sh" -o "$TMP/kernel.bin" \
     "$KERNEL_TC" 2>/dev/null
 

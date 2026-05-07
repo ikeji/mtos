@@ -218,34 +218,38 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
         cat "$TMP/runtime.s"
     } > "$TMP/prelude.s"
 
-    # Step 2: prelude_tail.s = CRT0_DATA (BSS / data-end markers)
+    # Step 2: prelude_tail.s = CRT0_DATA (BSS / data-end markers).
+    # Whether it's spliced into the prelude (LINK_MODE=1) or kept
+    # apart and walked into user.s (legacy UNIFIED_PRELUDE=1) depends
+    # on the link path; both shapes are constructed below.
     cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
 
-    # Step 3: user.s = each compiled .tc + EXTRA_S + prelude_tail.s
-    {
-        cat "${ASM_FILES[@]}"
-        for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done
-        cat "$TMP/prelude_tail.s"
-    } > "$TMP/user.s"
-
-    # Step 4: emit prelude.idx + per-section .bin + .reloc in one
-    # asm_pass1 invocation (Phase E of the 3-binary asm split). The
-    # idx covers prelude.s alone (= the section state the final
-    # asm_pass2 will inherit before scanning user.s); the .bin /
-    # .reloc cover prelude.s + prelude_tail.s combined so __data_end /
-    # __bss_start / __arena are in scope at encode time.
-    "$QEMU" "$GEN2_DIR/asm_pass1" \
-        "$TMP/prelude.s" "$TMP/prelude_tail.s" \
-        --idx-out    "$TMP/prelude.idx" \
-        --text-bin   "$TMP/prelude.text.bin" \
-        --rodata-bin "$TMP/prelude.rodata.bin" \
-        --data-bin   "$TMP/prelude.data.bin" \
-        --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
-
     if [ "${LINK_MODE:-1}" = "1" ]; then
-        # Phase F (linker mode): pre-encode user.s into user.* via
-        # asm_pass1, then asm_pass2 --link merges prelude.* + user.*
-        # into the final .lab. asm_pass2 never opens a .s file.
+        # Phase F (linker mode): asm_pass2 consumes only pass1 outputs.
+        # asm_pass1 walks prelude.s + prelude_tail.s for the prelude
+        # bin/idx — so cross-file refs like `la t2, __data_end` in
+        # task_crt0.s emit kind=2 (gp-relative) just as the legacy
+        # walked-source path did. user.s carries prelude_tail.s too;
+        # the tail's data labels are no-byte placeholders for tasks
+        # (`.globl __data_end; __data_end:`), so the duplicate walk
+        # adds 0 bytes to data/rodata. This shape doesn't generalise
+        # to inputs whose tail has actual rodata bytes (kernel's
+        # embedded mtfs image) — those callers set UNIFIED_PRELUDE=0
+        # to avoid the duplication.
+        {
+            cat "${ASM_FILES[@]}"
+            for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done
+            cat "$TMP/prelude_tail.s"
+        } > "$TMP/user.s"
+
+        "$QEMU" "$GEN2_DIR/asm_pass1" \
+            "$TMP/prelude.s" "$TMP/prelude_tail.s" \
+            --idx-out    "$TMP/prelude.idx" \
+            --text-bin   "$TMP/prelude.text.bin" \
+            --rodata-bin "$TMP/prelude.rodata.bin" \
+            --data-bin   "$TMP/prelude.data.bin" \
+            --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
+
         "$QEMU" "$GEN2_DIR/asm_pass1" "$TMP/user.s" \
             --idx-out    "$TMP/user.idx" \
             --text-bin   "$TMP/user.text.bin" \
@@ -268,9 +272,25 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
             --lab-out            "$TMP/full.lab" 2>/dev/null
     else
         # Legacy UNIFIED_PRELUDE: asm_pass2 walks user.s with
-        # --load-idx + --prelude-*. Set LINK_MODE=0 to opt out of
-        # the linker-mode default — only useful for bisecting
-        # asm_pass1 changes against the legacy walked-source flow.
+        # --load-idx + --prelude-*. Set LINK_MODE=0 to opt out of the
+        # linker-mode default — only useful for bisecting asm_pass1
+        # changes against the legacy walked-source flow. user.s
+        # carries prelude_tail.s here because asm_pass2's pass1 walk
+        # needs to see the data-section labels in source.
+        {
+            cat "${ASM_FILES[@]}"
+            for extra_s in ${EXTRA_S:-}; do cat "$extra_s"; done
+            cat "$TMP/prelude_tail.s"
+        } > "$TMP/user.s"
+
+        "$QEMU" "$GEN2_DIR/asm_pass1" \
+            "$TMP/prelude.s" "$TMP/prelude_tail.s" \
+            --idx-out    "$TMP/prelude.idx" \
+            --text-bin   "$TMP/prelude.text.bin" \
+            --rodata-bin "$TMP/prelude.rodata.bin" \
+            --data-bin   "$TMP/prelude.data.bin" \
+            --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
+
         "$QEMU" "$GEN2_DIR/asm_pass2" \
             --load-idx "$TMP/prelude.idx" \
             --idx-source "$TMP/prelude.s" \
