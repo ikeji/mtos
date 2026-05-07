@@ -2327,7 +2327,25 @@ export fn asm_parse_meta_directive(buf: U8Array, blen: i32) -> i32 {
 // Allocate the per-pass state. Pass 1 doesn't need g_code (emit8 /
 // emit32 only write to g_code when g_pass == 2), so asm_init_pass1
 // skips that 4 MB allocation. Pass 2 needs everything.
+//
+// Free the big per-walk allocations before reallocating — without
+// this, asm_pass1's three internal calls (run() for idx, run() for
+// lab, run_pass2() for bin/reloc) leak ~80 KB per call, pushing peak
+// past the 288 KB OS task arena. Only the largest arrays are freed
+// here; smaller ones (sec_pos / numlab / line_buf, ~10 KB total)
+// leak per re-init but are dwarfed by the freed g_lab* / g_def_*
+// state.
 fn asm_init_common() -> void {
+    if g_lab_names  as u32 != 0u32 { delete(g_lab_names); }
+    if g_labels     as u32 != 0u32 { delete(g_labels); }
+    if g_lab_hash   as u32 != 0u32 { delete(g_lab_hash); g_lab_hash = 0 as I32Array; }
+    if g_refs       as u32 != 0u32 { delete(g_refs); }
+    if g_def_owner    as u32 != 0u32 { delete(g_def_owner); }
+    if g_def_name_off as u32 != 0u32 { delete(g_def_name_off); }
+    if g_def_name_len as u32 != 0u32 { delete(g_def_name_len); }
+    if g_def_pool   as u32 != 0u32 { delete(g_def_pool); }
+    if g_label_live as u32 != 0u32 { delete(g_label_live); g_label_live = 0 as I32Array; }
+
     g_lab_names    = U8Array((NAME_POOL_INITIAL_KB * 1024) as u32);
     g_labels       = LabelArray((MAX_LABELS) as u32);
     g_sec_pos      = I32Array(4);
@@ -2346,6 +2364,7 @@ fn asm_init_common() -> void {
     g_def_name_off = 0 as I32Array;
     g_def_name_len = 0 as I32Array;
     g_def_pool     = 0 as U8Array;
+    g_def_capacity = 0;
 
     g_pos              = 0;
     g_pass             = 0;
