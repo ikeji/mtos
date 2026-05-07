@@ -1713,6 +1713,9 @@ export fn asm_find_label_idx(name: U8Array, nlen: i32) -> i32 {
 export fn asm_label_addr_at(idx: i32) -> i32 {
     return addr(get(g_labels, idx));
 }
+export fn asm_label_section_at(idx: i32) -> i32 {
+    return section(get(g_labels, idx));
+}
 export fn asm_get_sec_base(sec: i32) -> i32 {
     return get(g_sec_base, sec);
 }
@@ -1881,16 +1884,34 @@ fn asm_instr() -> i32 {
                     emit32(enc_u(23, rd, 0));
                     emit32(enc_i(19, 0, rd, 3, gpoff));
                 } else {
+                    var emit_auto: i32 = 0;
                     if g_reloc_fd > 0 && g_target_section == 0 {
-                        if tsec == 1 ||
-                           asm_label_is_extern(1, 2) != 0 ||
-                           (g_emit_undef_relocs != 0 && label_op_undefined(1) != 0) {
+                        if g_emit_undef_relocs != 0 && label_op_undefined(1) != 0 {
+                            // Cross-input ref: we don't know the
+                            // target's section here. Emit a kind=3
+                            // (auto-la) reloc and let asm_pass3 pick
+                            // kind=1 (PC-rel) vs kind=2 (gp-rel) at
+                            // link time based on the target's
+                            // resolved section + g_gp_abs.
+                            asm_emit_reloc(g_section_emitted, 3, 1);
+                            emit_auto = 1;
+                        } else if tsec == 1 ||
+                                  asm_label_is_extern(1, 2) != 0 {
                             asm_emit_reloc(g_section_emitted, 1, 1);
                         }
                     }
-                    var off: i32 = target - pc;
-                    emit32(enc_u(23,rd,hi20(off)<<12));
-                    emit32(enc_i(19,0,rd,rd,lo12(off)));
+                    if emit_auto != 0 {
+                        // Placeholder — patcher rewrites both halves.
+                        // addi rs1=rd matches kind=1's default; if
+                        // patcher decides kind=2 it overwrites rs1
+                        // with gp.
+                        emit32(enc_u(23, rd, 0));
+                        emit32(enc_i(19, 0, rd, rd, 0));
+                    } else {
+                        var off: i32 = target - pc;
+                        emit32(enc_u(23,rd,hi20(off)<<12));
+                        emit32(enc_i(19,0,rd,rd,lo12(off)));
+                    }
                 }
             }
             return 8;

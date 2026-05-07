@@ -138,6 +138,64 @@ fn patch_reloc_gprel_at(buf: U8Array, rel_off: i32, target: i32, gp_abs: i32) ->
     return;
 }
 
+// Apply one reloc kind=3 (auto-la). asm_pass1 emits this when la's
+// target was undefined locally (cross-input ref) and we couldn't tell
+// at encode time whether to use kind=1 (PC-rel) or kind=2 (gp-rel).
+// At link time we know the target's final section and g_gp_abs, so
+// we can pick the optimal encoding now.
+//
+// data/bss target with gpoff fitting 12-bit signed → kind=2 form:
+//   auipc rd, 0  (imm dead, kept as encoded placeholder 0)
+//   addi rd, gp, gpoff   (rs1 forced to gp = 3, imm = gpoff)
+// otherwise → kind=1 form (PC-rel):
+//   auipc rd, hi20(off)
+//   addi rd, rd, lo12(off)
+fn patch_reloc_auto_at(buf: U8Array, rel_off: i32, sec_base: i32, chunk_off: i32,
+                       target: i32, target_sec: i32, gp_abs: i32) -> void {
+    var pc: i32 = sec_base + chunk_off + rel_off;
+    var off: i32 = target - pc;
+    var pick_gprel: i32 = 0;
+    if target_sec == 2 || target_sec == 3 {
+        var gpoff: i32 = target - gp_abs;
+        if gpoff >= (0 - 2048) && gpoff <= 2047 { pick_gprel = 1; }
+    }
+    if pick_gprel == 1 {
+        // auipc imm stays whatever's encoded (placeholder 0). Rewrite
+        // addi: rs1 = gp(3), imm = gpoff.
+        var gpoff2: i32 = target - gp_abs;
+        var lo_w: i32 =
+            (get(buf, rel_off + 4) as i32) |
+            ((get(buf, rel_off + 5) as i32) << 8) |
+            ((get(buf, rel_off + 6) as i32) << 16) |
+            ((get(buf, rel_off + 7) as i32) << 24);
+        // Clear bits 19:15 (rs1) and bits 31:20 (imm[11:0]). Keep
+        // opcode (6:0), rd (11:7), funct3 (14:12).
+        lo_w = lo_w & 0x7FFF;  // 0x7FFF = bits 14:0
+        lo_w = lo_w | (3 << 15);          // rs1 = gp
+        lo_w = lo_w | ((gpoff2 & 4095) << 20);
+        set(buf, rel_off + 4, (lo_w & 255) as u8);
+        set(buf, rel_off + 5, ((lo_w >> 8) & 255) as u8);
+        set(buf, rel_off + 6, ((lo_w >> 16) & 255) as u8);
+        set(buf, rel_off + 7, ((lo_w >> 24) & 255) as u8);
+        // Zero out auipc imm (bits 31:12). Preserve opcode (6:0) +
+        // rd (11:7).
+        var ah_w: i32 =
+            (get(buf, rel_off + 0) as i32) |
+            ((get(buf, rel_off + 1) as i32) << 8) |
+            ((get(buf, rel_off + 2) as i32) << 16) |
+            ((get(buf, rel_off + 3) as i32) << 24);
+        ah_w = ah_w & 4095;
+        set(buf, rel_off + 0, (ah_w & 255) as u8);
+        set(buf, rel_off + 1, ((ah_w >> 8) & 255) as u8);
+        set(buf, rel_off + 2, ((ah_w >> 16) & 255) as u8);
+        set(buf, rel_off + 3, ((ah_w >> 24) & 255) as u8);
+    } else {
+        // PC-rel: same patch as kind=1.
+        patch_reloc_at(buf, rel_off, sec_base, chunk_off, target);
+    }
+    return;
+}
+
 // Apply one reloc kind=0 (J-type single 32-bit instruction at offset
 // rel_off within `buf`). Replaces imm[20|10:1|11|19:12] with the new
 // pc-relative offset; opcode + rd are preserved. chunk_off mirrors
@@ -222,14 +280,16 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
         // the next iteration when its tail is in the window.
         var sec_base: i32 = asm_get_sec_base(0);
         var pre_addrs: I32Array = I32Array(g_n_relocs as u32);
+        var pre_secs:  I32Array = I32Array(g_n_relocs as u32);
         var ri: i32 = 0;
         while ri < g_n_relocs {
             var name_addr: u32 = get(g_reloc_names, ri);
             var name: U8Array = name_addr as U8Array;
             var nlen: i32 = len(name);
-            var taddr: i32 = lookup_label_addr(name, nlen);
-            if taddr < 0 { sys_exit(30); }
-            set(pre_addrs, ri, taddr);
+            var lab_idx: i32 = asm_find_label_idx(name, nlen);
+            if lab_idx < 0 { sys_exit(30); }
+            set(pre_addrs, ri, asm_label_addr_at(lab_idx));
+            set(pre_secs,  ri, asm_label_section_at(lab_idx));
             ri = ri + 1;
         }
         var WIN:    i32 = 8192;
@@ -257,13 +317,16 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
                         var r_kind: i32 = get(g_reloc_kinds, rk);
                         var w_off: i32 = r_off - chunk_off;
                         var ln: i32 = 4;
-                        if r_kind == 1 || r_kind == 2 { ln = 8; }
+                        if r_kind == 1 || r_kind == 2 || r_kind == 3 { ln = 8; }
                         if w_off >= 0 && w_off + ln <= keep {
                             var ta: i32 = get(pre_addrs, rk);
                             if r_kind == 1 {
                                 patch_reloc_at(win, w_off, sec_base, chunk_off, ta);
                             } else if r_kind == 2 {
                                 patch_reloc_gprel_at(win, w_off, ta, asm_get_gp_abs());
+                            } else if r_kind == 3 {
+                                patch_reloc_auto_at(win, w_off, sec_base, chunk_off, ta,
+                                                    get(pre_secs, rk), asm_get_gp_abs());
                             } else {
                                 patch_reloc_j_at(win, w_off, sec_base, chunk_off, ta);
                             }
@@ -295,13 +358,16 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
                     var win_off: i32 = roff - chunk_off;
                     if win_off >= 0 {
                         var len_needed: i32 = 4;
-                        if rkind == 1 || rkind == 2 { len_needed = 8; }
+                        if rkind == 1 || rkind == 2 || rkind == 3 { len_needed = 8; }
                         if win_off + len_needed <= emit_end {
                             var ta2: i32 = get(pre_addrs, rj);
                             if rkind == 1 {
                                 patch_reloc_at(win, win_off, sec_base, chunk_off, ta2);
                             } else if rkind == 2 {
                                 patch_reloc_gprel_at(win, win_off, ta2, asm_get_gp_abs());
+                            } else if rkind == 3 {
+                                patch_reloc_auto_at(win, win_off, sec_base, chunk_off, ta2,
+                                                    get(pre_secs, rj), asm_get_gp_abs());
                             } else {
                                 patch_reloc_j_at(win, win_off, sec_base, chunk_off, ta2);
                             }
