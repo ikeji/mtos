@@ -52,6 +52,7 @@ fn do_close(fd: i32) -> i32;
 // record_reloc see them as I32Array / U32Array (not `?`); tcheck
 // resolves global var types lazily and forward-references through
 // fn bodies sometimes lose the type tag.
+var g_src_starts: I32Array = 0 as I32Array;
 var g_src_paths: U32Array = 0 as U32Array;
 var g_src_kinds: U32Array = 0 as U32Array;
 var g_src_secs:  I32Array = 0 as I32Array;
@@ -176,8 +177,24 @@ fn patch_reloc_j_at(buf: U8Array, rel_off: i32, sec_base: i32, chunk_off: i32, t
 // When relocs are present and we're in the text section, buffer the
 // file into memory first, apply each reloc patch, then sys_write
 // the patched bytes.
-fn raw_memcpy_section(path: String) -> i32 {
+fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
     asm_flush_out_buf_export();
+    // If the lab declared a per-section start offset for this bin
+    // (linker mode, where the bin's bytes don't begin right after the
+    // previous bin's bytes), emit zero padding from the current emit
+    // cursor up to start_off before the memcpy. start_off=0 means no
+    // padding (legacy single-bin path).
+    var emitted_now: i32 = asm_get_section_emitted();
+    var pad_n: i32 = start_off - emitted_now;
+    if pad_n > 0 {
+        var out_fd_pad: i32 = asm_get_out_fd();
+        var zbuf: U8Array = U8Array((pad_n) as u32);
+        var zi: i32 = 0;
+        while zi < pad_n { set(zbuf, zi, 0u8); zi = zi + 1; }
+        sys_write(out_fd_pad, zbuf, pad_n);
+        delete(zbuf);
+        asm_advance_section_pass2(pad_n);
+    }
     var fd: i32 = do_openat(0 - 100, path, 0);
     if fd < 0 { return 0; }
     var out_fd: i32 = asm_get_out_fd();
@@ -337,17 +354,19 @@ fn record_reloc(off: i32, kind: i32, name: U8Array) -> void {
     return;
 }
 
-fn record_src_path(p: String, kind: i32, sec: i32) -> void {
+fn record_src_path(p: String, kind: i32, sec: i32, start_off: i32) -> void {
     if g_src_paths as u32 == 0u32 {
-        g_src_paths = U32Array((SRC_PATHS_CAP) as u32);
-        g_src_kinds = U32Array((SRC_PATHS_CAP) as u32);
-        g_src_secs  = I32Array((SRC_PATHS_CAP) as u32);
+        g_src_paths  = U32Array((SRC_PATHS_CAP) as u32);
+        g_src_kinds  = U32Array((SRC_PATHS_CAP) as u32);
+        g_src_secs   = I32Array((SRC_PATHS_CAP) as u32);
+        g_src_starts = I32Array((SRC_PATHS_CAP) as u32);
         g_n_src_paths = 0;
     }
     if g_n_src_paths < SRC_PATHS_CAP {
-        set(g_src_paths, g_n_src_paths, p as u32);
-        set(g_src_kinds, g_n_src_paths, kind as u32);
-        set(g_src_secs,  g_n_src_paths, sec);
+        set(g_src_paths,  g_n_src_paths, p as u32);
+        set(g_src_kinds,  g_n_src_paths, kind as u32);
+        set(g_src_secs,   g_n_src_paths, sec);
+        set(g_src_starts, g_n_src_paths, start_off);
         g_n_src_paths = g_n_src_paths + 1;
     }
     return;
@@ -421,11 +440,17 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         return 0;
     }
     if blen - p >= 4 && cmp(buf, p, "src ") {
-        // src <path>             — kind=asm (alias `src asm <path>`)
-        // src raw <path> <sec>   — kind=raw, memcpy as section <sec>
+        // src <path>                       — kind=asm (alias `src asm <path>`)
+        // src raw <path> <sec> [<start>]   — kind=raw, memcpy as section
+        //                                     <sec>; optional <start> is
+        //                                     the per-section offset where
+        //                                     this bin's bytes begin (used
+        //                                     by raw_memcpy_section to pad
+        //                                     zeros up to <start> first).
         // Trim the trailing newline before allocating the path string.
         var src_kind: i32 = 0;
         var src_sec:  i32 = 0;
+        var src_start: i32 = 0;
         var rest: i32 = skip_ws(buf, p + 4, blen);
         if blen - rest >= 4 && cmp(buf, rest, "raw ") {
             src_kind = 1;
@@ -446,6 +471,14 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
             pe = pp;
             parse_dec(buf, skip_ws(buf, pe, blen), blen);
             src_sec = g_lab_int;
+            // Optional 4th token: per-section start offset.
+            var maybe_start: i32 = skip_ws(buf, g_lab_cur, blen);
+            if maybe_start < blen
+               && get(buf, maybe_start) >= '0' as u8
+               && get(buf, maybe_start) <= '9' as u8 {
+                parse_dec(buf, maybe_start, blen);
+                src_start = g_lab_int;
+            }
         } else {
             var trimming_p: i32 = 1;
             while trimming_p == 1 && pe > ps {
@@ -475,7 +508,7 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
             // to be plen (without the trailing NUL we just appended).
             // U8Array(plen+1) wrote plen+1 — patch it down to plen.
             poke32(path_buf as u32, plen as u32);
-            record_src_path(path_buf as String, src_kind, src_sec);
+            record_src_path(path_buf as String, src_kind, src_sec, src_start);
         }
         return 0;
     }
@@ -592,7 +625,7 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
             var ksec:  i32 = get(g_src_secs,  pi);
             if kind == 1u32 {
                 if ksec == sec_target {
-                    raw_memcpy_section(path);
+                    raw_memcpy_section(path, get(g_src_starts, pi));
                 }
             } else {
                 var fd: i32 = do_openat(0 - 100, path, 0);

@@ -170,6 +170,53 @@ export fn asm_get_reloc_count() -> i32 { return g_reloc_count; }
 var g_emit_undef_relocs: i32 = 0;
 export fn asm_set_emit_undef_relocs(v: i32) -> void { g_emit_undef_relocs = v; return; }
 export fn asm_get_emit_undef_relocs() -> i32 { return g_emit_undef_relocs; }
+// Per-section start alignment (in bytes) recorded by pass 1 from the
+// first `.align N` directive seen in each section. Captured into the
+// .idx so the link step can pre-align sec_pos before installing this
+// idx's labels — that's where the legacy walked-source flow inserts
+// padding as its single cursor crosses the directive.
+// Section ids: 0=text, 1=rodata, 2=data, 3=bss. 0 means "no .align
+// observed in this section yet" — link step leaves sec_pos alone.
+var g_sec_start_align: I32Array = 0 as I32Array;
+// Per-section content start offset captured during the most recent
+// asm_load_idx call: initialized to sec_pos at load entry, then
+// updated by each `align <s> <n>` line in the idx so callers can
+// later read where the idx's bytes actually begin in the merged
+// layout. Used by asm_pass2's --link mode to emit per-bin start
+// offsets in the lab so asm_pass3 pads zeros to the right place.
+var g_load_idx_content_start: I32Array = 0 as I32Array;
+fn ensure_load_idx_content_start() -> void {
+    if g_load_idx_content_start as u32 == 0u32 {
+        g_load_idx_content_start = I32Array(4);
+    }
+    return;
+}
+export fn asm_load_idx_content_start(s: i32) -> i32 {
+    if s < 0 || s >= 4 { return 0; }
+    if g_load_idx_content_start as u32 == 0u32 { return 0; }
+    return get(g_load_idx_content_start, s);
+}
+fn ensure_sec_start_align() -> void {
+    if g_sec_start_align as u32 == 0u32 {
+        g_sec_start_align = I32Array(4);
+        var i_init: i32 = 0;
+        while i_init < 4 { set(g_sec_start_align, i_init, 0); i_init = i_init + 1; }
+    }
+    return;
+}
+export fn asm_record_sec_align(sec: i32, n_bytes: i32) -> void {
+    if sec < 0 || sec >= 4 { return; }
+    ensure_sec_start_align();
+    if get(g_sec_start_align, sec) == 0 {
+        set(g_sec_start_align, sec, n_bytes);
+    }
+    return;
+}
+export fn asm_get_sec_align(sec: i32) -> i32 {
+    if sec < 0 || sec >= 4 { return 0; }
+    if g_sec_start_align as u32 == 0u32 { return 0; }
+    return get(g_sec_start_align, sec);
+}
 var g_src_bytes:       i32 = 0;        // source byte count emitted by pass1 in the .lab so pass2 knows where each copy ends
 
 // Label table. g_lab_names is a shared packed-byte pool that every
@@ -320,11 +367,17 @@ var g_user_rodata_bin: String = 0 as String;
 var g_user_data_bin:   String = 0 as String;
 var g_user_reloc:      String = 0 as String;
 var g_user_text_shift: i32 = 0;
+var g_user_text_start:   i32 = 0;
+var g_user_rodata_start: i32 = 0;
+var g_user_data_start:   i32 = 0;
 export fn asm_set_user_text_bin(p: String)   -> void { g_user_text_bin   = p; return; }
 export fn asm_set_user_rodata_bin(p: String) -> void { g_user_rodata_bin = p; return; }
 export fn asm_set_user_data_bin(p: String)   -> void { g_user_data_bin   = p; return; }
 export fn asm_set_user_reloc(p: String)      -> void { g_user_reloc      = p; return; }
 export fn asm_set_user_text_shift(v: i32)    -> void { g_user_text_shift = v; return; }
+export fn asm_set_user_text_start(v: i32)    -> void { g_user_text_start   = v; return; }
+export fn asm_set_user_rodata_start(v: i32)  -> void { g_user_rodata_start = v; return; }
+export fn asm_set_user_data_start(v: i32)    -> void { g_user_data_start   = v; return; }
 
 // Number of labels that came from one or more --load-idx files. The
 // link step marks every one of them live regardless of BFS reach,
@@ -2012,6 +2065,11 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
             var shift: i32 = parse_imm_op(0);
             i = 0;
             while i < shift { n = n * 2; i = i + 1; }
+            // Record the first .align in each section for the .idx —
+            // see asm_record_sec_align comment. Only pass 1 has the
+            // honest sec_pos / current_section state we want to
+            // capture.
+            if g_pass == 1 { asm_record_sec_align(g_current_section, n); }
             align_to(n);
             return;
         }
@@ -2564,24 +2622,30 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
         emit_nl(sb);
     }
     // User pre-encoded bins (linker mode): emit per-section `src raw`
-    // entries after the prelude raws. Order matches the section
-    // concatenation asm_pass3 will produce — prelude bytes first,
-    // then user bytes per section.
+    // entries after the prelude raws. The 4th token on each line is
+    // the start offset within the section where this bin's bytes
+    // begin — captured by run_link from asm_load_idx_content_start
+    // after the user idx loaded its align directives. asm_pass3 pads
+    // zeros from the section's running emit cursor up to start_off
+    // before the memcpy.
     if g_user_text_bin as u32 != 0u32 {
         emit_string(sb, "src raw ");
         emit_string(sb, g_user_text_bin);
-        emit_string(sb, " 0");
+        emit_string(sb, " 0 ");
+        dump_int(sb, g_user_text_start);
         emit_nl(sb);
         if g_user_rodata_bin as u32 != 0u32 {
             emit_string(sb, "src raw ");
             emit_string(sb, g_user_rodata_bin);
-            emit_string(sb, " 1");
+            emit_string(sb, " 1 ");
+            dump_int(sb, g_user_rodata_start);
             emit_nl(sb);
         }
         if g_user_data_bin as u32 != 0u32 {
             emit_string(sb, "src raw ");
             emit_string(sb, g_user_data_bin);
-            emit_string(sb, " 2");
+            emit_string(sb, " 2 ");
+            dump_int(sb, g_user_data_start);
             emit_nl(sb);
         }
     }
@@ -2802,6 +2866,25 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
     emit_string(sb, "src_bytes ");
     dump_int(sb, g_src_bytes);
     emit_nl(sb);
+
+    // Per-section start alignment, captured by asm_record_sec_align
+    // from the first `.align N` directive seen in each section.
+    // Emitted BEFORE secsize so the link step can pre-align sec_pos
+    // (and the snap snapshot used by lab lines) before the size
+    // contributions land. Only emit lines for non-zero entries to
+    // keep idx noise low.
+    var ai: i32 = 0;
+    while ai < 4 {
+        var av: i32 = asm_get_sec_align(ai);
+        if av > 0 {
+            emit_string(sb, "align ");
+            dump_int(sb, ai);
+            emit_char(sb, ' ');
+            dump_int(sb, av);
+            emit_nl(sb);
+        }
+        ai = ai + 1;
+    }
 
     // Per-file section size contributions. Same as g_sec_pos at the
     // end of pass 1a (each section's intra cursor).
@@ -3216,6 +3299,27 @@ fn idx_process_line(buf: U8Array, blen: i32, snap: I32Array) -> i32 {
         asm_set_src_bytes(g_src_bytes + g_idx_int);
         return 0;
     }
+    if blen - p >= 6 && cmp(buf, p, "align ") {
+        // Pre-align the snap (and g_sec_pos) for this section to
+        // n_bytes. Emitted by asm_dump_idx_state from
+        // asm_record_sec_align — captures the first `.align N`
+        // directive a section saw during pass1. At link time this
+        // reproduces the inter-idx padding the legacy walked-source
+        // flow inserted as its single cursor crossed the directive.
+        idx_parse_dec(buf, p + 6, blen);
+        var asec: i32 = g_idx_int;
+        idx_parse_dec(buf, idx_skip_ws(buf, g_idx_cur, blen), blen);
+        var an: i32 = g_idx_int;
+        if asec >= 0 && asec < 4 && an > 0 {
+            var cur: i32 = get(snap, asec);
+            var aligned: i32 = (cur + an - 1) & (0 - an);
+            set(snap, asec, aligned);
+            set(g_sec_pos, asec, aligned);
+            ensure_load_idx_content_start();
+            set(g_load_idx_content_start, asec, aligned);
+        }
+        return 0;
+    }
     if blen - p >= 8 && cmp(buf, p, "secsize ") {
         idx_parse_dec(buf, p + 8, blen);
         var sec_id: i32 = g_idx_int;
@@ -3293,12 +3397,37 @@ export fn asm_load_idx(path: String) -> i32 {
     var fd: i32 = do_openat(0 - 100, path, 0);
     if fd < 0 { return 0 - 1; }
     // Snapshot per-section cursors so this idx's intra addrs map to
-    // (snap + intra) absolute-within-current-layout values.
+    // (snap + intra) absolute-within-current-layout values. Round each
+    // up to 16-byte alignment first: when this is the second (or
+    // later) idx loaded — asm_pass2's --link mode chains
+    // prelude.idx + user.idx — the .s for idx N+1 starts each
+    // section with `.align 4` (= 16-byte). Without the round-up,
+    // user labels land at unaligned offsets that don't match what
+    // the legacy walked-source flow produced. For a single-idx load
+    // (legacy --load-idx + walk source), all sec_pos values are 0
+    // here so the round-up is a no-op.
+    // Section-start alignment is communicated per-idx via `align <s>
+    // <bytes>` lines emitted by asm_pass1 (recorded while walking
+    // user.s the first time it hits a `.align N` directive after a
+    // section change). idx_process_line applies them to g_sec_pos
+    // before the labels are installed, so the legacy walked-source
+    // flow's "padding inserted as the cursor crosses .align" is
+    // reproduced at link time without re-walking user.s.
     var snap: I32Array = I32Array(4);
     set(snap, 0, get(g_sec_pos, 0));
     set(snap, 1, get(g_sec_pos, 1));
     set(snap, 2, get(g_sec_pos, 2));
     set(snap, 3, get(g_sec_pos, 3));
+    // Reset the per-section content-start tracker to the pre-load
+    // sec_pos values. align lines in the idx will overwrite each
+    // section's slot as they fire; sections without an align line
+    // retain the pre-load value (the previous idx's sec end).
+    ensure_load_idx_content_start();
+    var i_cs: i32 = 0;
+    while i_cs < 4 {
+        set(g_load_idx_content_start, i_cs, get(g_sec_pos, i_cs));
+        i_cs = i_cs + 1;
+    }
 
     // Make sure g_refs / deferred queue exist before record_ref
     // runs from inside idx_process_line.

@@ -242,19 +242,47 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
         --data-bin   "$TMP/prelude.data.bin" \
         --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
 
-    # Step 5: final asm_pass2 with --load-idx + --prelude-*.
-    "$QEMU" "$GEN2_DIR/asm_pass2" \
-        --load-idx "$TMP/prelude.idx" \
-        --idx-source "$TMP/prelude.s" \
-        --prelude-text-bin "$TMP/prelude.text.bin" \
-        --prelude-rodata-bin "$TMP/prelude.rodata.bin" \
-        --prelude-data-bin "$TMP/prelude.data.bin" \
-        --prelude-reloc "$TMP/prelude.reloc" \
-        --lab-out "$TMP/full.lab" \
-        "$TMP/user.s" 2>/dev/null
+    if [ "${LINK_MODE:-0}" = "1" ]; then
+        # Phase F (linker mode): pre-encode user.s into user.* via
+        # asm_pass1, then asm_pass2 --link merges prelude.* + user.*
+        # into the final .lab. asm_pass2 never opens a .s file.
+        "$QEMU" "$GEN2_DIR/asm_pass1" "$TMP/user.s" \
+            --idx-out    "$TMP/user.idx" \
+            --text-bin   "$TMP/user.text.bin" \
+            --rodata-bin "$TMP/user.rodata.bin" \
+            --data-bin   "$TMP/user.data.bin" \
+            --reloc-out  "$TMP/user.reloc" 2>/dev/null
 
-    # Step 6: final asm_pass3 reads the .lab + memcpys the prelude .bin
-    # + encodes user.s.
+        "$QEMU" "$GEN2_DIR/asm_pass2" --link \
+            --prelude-idx "$TMP/prelude.idx" \
+            --user-idx    "$TMP/user.idx" \
+            --idx-source  "$TMP/prelude.s" \
+            --prelude-text-bin   "$TMP/prelude.text.bin" \
+            --prelude-rodata-bin "$TMP/prelude.rodata.bin" \
+            --prelude-data-bin   "$TMP/prelude.data.bin" \
+            --prelude-reloc      "$TMP/prelude.reloc" \
+            --user-text-bin      "$TMP/user.text.bin" \
+            --user-rodata-bin    "$TMP/user.rodata.bin" \
+            --user-data-bin      "$TMP/user.data.bin" \
+            --user-reloc         "$TMP/user.reloc" \
+            --lab-out            "$TMP/full.lab" 2>/dev/null
+    else
+        # Step 5 (legacy UNIFIED_PRELUDE): asm_pass2 walks user.s with
+        # --load-idx + --prelude-*. Kept as the default path while
+        # LINK_MODE=1 is being shaken out.
+        "$QEMU" "$GEN2_DIR/asm_pass2" \
+            --load-idx "$TMP/prelude.idx" \
+            --idx-source "$TMP/prelude.s" \
+            --prelude-text-bin "$TMP/prelude.text.bin" \
+            --prelude-rodata-bin "$TMP/prelude.rodata.bin" \
+            --prelude-data-bin "$TMP/prelude.data.bin" \
+            --prelude-reloc "$TMP/prelude.reloc" \
+            --lab-out "$TMP/full.lab" \
+            "$TMP/user.s" 2>/dev/null
+    fi
+
+    # Step 6: final asm_pass3 reads the .lab + memcpys the prelude (and
+    # user, in LINK_MODE) .bin + encodes any remaining `src` source.
     "$QEMU" "$GEN2_DIR/asm_pass3" --lab "$TMP/full.lab" --out "$OUTFILE" 2>/dev/null
 else
     # Legacy: assemble everything into one full.s and let asm_pass2 +
