@@ -47,7 +47,7 @@ echo "TMP=$TMP" >&2
 
 if [ "${SKIP_FLASH:-0}" != "1" ]; then
     echo "[1/3] Building pico2_kernel_extra (with msh + compiler tasks)..." >&2
-    EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat" \
+    EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat" \
         GEN2_DIR="$GEN2_DIR" "$ROOT_DIR/kernel/build.sh" --target pico2 \
         -o "$TMP/kernel.uf2" 2>&1 | tail -3 >&2
     if [ ! -s "$TMP/kernel.uf2" ]; then

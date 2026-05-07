@@ -40,7 +40,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 # ----- Step 1: Build kernel with EXTRA tasks -----
 t0=$(time_ms)
-EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat" \
+EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat" \
     GEN2_DIR="$GEN2_DIR" "$ROOT_DIR/kernel/build.sh" --target pico2 \
     -o "$TMP/kernel.uf2" 2>&1 | sed 's/^/    /' >&2
 if [ ! -s "$TMP/kernel.uf2" ]; then

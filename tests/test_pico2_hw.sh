@@ -51,7 +51,7 @@ echo "=== Pico 2 OS-Hosted Hello World ==="
 
 # Step 1: Build pico2 kernel with EXTRA_TASKS, export prelude.s.
 echo "[build] pico2 kernel (EXTRA_TASKS=parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat)"
-EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat" \
+EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat" \
 PRELUDE_OUT_DIR="$TMP" \
 GEN2_DIR="$GEN2_DIR" \
     "$ROOT_DIR/kernel/build.sh" --target pico2 \
