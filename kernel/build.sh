@@ -355,18 +355,20 @@ cat "$PLATFORM_S" "$KERN_DIR/trap_common.s" > "$TMP/crt0.s"
 cat "$DATA_S" ${MTFS_S:+"$MTFS_S"} > "$TMP/kern_data.s"
 
 echo "Building kernel: $TARGET" >&2
-# Kernel uses UNIFIED_PRELUDE=0 (legacy stdin pipeline). The unified
-# flow's pre-encoded prelude can't see user-defined section labels,
-# so a `la rd, _trap_frame` from kernel.tc gets emitted as kind=1
-# (pc-rel) instead of kind=2 (gp-rel). Functionally equivalent but
-# byte-different — and we want the kernel build to stay byte-exact
-# against the canonical full.s walk while LINK_MODE flushes through.
-# Override KERN_UNIFIED_PRELUDE=1 if you need to experiment.
+# Kernel uses UNIFIED_PRELUDE=1 (split flow): each .s goes through
+# its own asm_pass1, then asm_pass2 --link merges N inputs. Cross-
+# input la references — including kernel.tc's `la rd, _trap_frame`
+# whose target lives in user-defined sections — are emitted as
+# kind=3 (auto-la) and resolved at link time into kind=1 (pc-rel)
+# or kind=2 (gp-rel) based on the target's final section. Verified
+# byte-exact against KERN_UNIFIED_PRELUDE=0 for both virt and pico2
+# kernels at the time of switchover. Override =0 only when bisecting
+# asm_pass1 changes.
 CRT0="$TMP/crt0.s" \
 CRT0_DATA="$TMP/kern_data.s" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \
-UNIFIED_PRELUDE="${KERN_UNIFIED_PRELUDE:-0}" \
+UNIFIED_PRELUDE="${KERN_UNIFIED_PRELUDE:-1}" \
     "$ROOT_DIR/compile-gen2.sh" -o "$TMP/kernel.bin" \
     "$KERNEL_TC" 2>/dev/null
 
