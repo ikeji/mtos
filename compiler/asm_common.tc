@@ -312,12 +312,12 @@ var g_label_just_defined: i32 = 0;
 // Replaces the 2nd full source walk that the original Phase 3
 // design used — same data, no SD round trip.
 //
-// Sized for the current self-host worst case. Linker mode (asm_pass2
-// --link consuming user.idx whose pass1 walk emitted refs for every
-// cross-file la / call) easily clears 8K refs on compiler/asm_pass2.tc
-// — bump to 16384. Pool initial 4 KB doubles on demand. Memory cost:
-// 3 × 16384 × 4 = 192 KB I32Arrays + name pool ~120-200 KB.
-var MAX_DEFERRED: i32 = 16384;
+// Initial deferred-queue capacity; the arrays grow dynamically on
+// overflow (record_def_ref doubles them via ensure_def_capacity).
+// Starting small lets OS-side tasks (asm_pass1 / asm_pass2 with
+// 288 KB arenas) avoid pre-allocating 4 × 64 KB arrays up-front.
+var MAX_DEFERRED: i32 = 2048;
+var g_def_capacity: i32 = 0;
 var g_def_owner:    I32Array = 0 as I32Array;
 var g_def_name_off: I32Array = 0 as I32Array;
 var g_def_name_len: I32Array = 0 as I32Array;
@@ -546,10 +546,37 @@ export fn asm_set_collecting_refs(v: i32) -> void {
 fn ensure_ref_state() -> void {
     if g_refs as u32 != 0u32 { return; }
     g_refs         = I32Array((MAX_REFS) as u32);
-    g_def_owner    = I32Array((MAX_DEFERRED) as u32);
-    g_def_name_off = I32Array((MAX_DEFERRED) as u32);
-    g_def_name_len = I32Array((MAX_DEFERRED) as u32);
+    g_def_capacity = MAX_DEFERRED;
+    g_def_owner    = I32Array((g_def_capacity) as u32);
+    g_def_name_off = I32Array((g_def_capacity) as u32);
+    g_def_name_len = I32Array((g_def_capacity) as u32);
     g_def_pool     = U8Array((DEF_POOL_INITIAL_KB * 1024) as u32);
+    return;
+}
+
+// Grow the parallel deferred-queue arrays in place when full. record_def_ref
+// calls this with the count it's about to write past — the arrays double
+// (with a floor of MAX_DEFERRED) so the amortised overflow cost stays O(1).
+fn grow_def_arrays() -> void {
+    var new_cap: i32 = g_def_capacity * 2;
+    if new_cap < MAX_DEFERRED { new_cap = MAX_DEFERRED; }
+    var new_owner:    I32Array = I32Array((new_cap) as u32);
+    var new_name_off: I32Array = I32Array((new_cap) as u32);
+    var new_name_len: I32Array = I32Array((new_cap) as u32);
+    var ci: i32 = 0;
+    while ci < g_ndeferred {
+        set(new_owner,    ci, get(g_def_owner,    ci));
+        set(new_name_off, ci, get(g_def_name_off, ci));
+        set(new_name_len, ci, get(g_def_name_len, ci));
+        ci = ci + 1;
+    }
+    delete(g_def_owner);
+    delete(g_def_name_off);
+    delete(g_def_name_len);
+    g_def_owner    = new_owner;
+    g_def_name_off = new_name_off;
+    g_def_name_len = new_name_len;
+    g_def_capacity = new_cap;
     return;
 }
 
@@ -647,15 +674,11 @@ fn record_ref(name: U8Array, nlen: i32) -> void {
     // Drop them here — they will never be in g_labels by the time
     // resolve_deferred runs either, so queueing was pure waste.
     if is_riscv_register(name, nlen) != 0 { return; }
-    if g_ndeferred >= MAX_DEFERRED {
-        var eb2: StringBuffer = StringBuffer_new();
-        asm_err_begin(eb2);
-        emit_string(eb2, "deferred queue full: MAX_DEFERRED=");
-        emit_int(eb2, MAX_DEFERRED);
-        emit_string(eb2, " reached (at '");
-        emit_n(eb2, name, 0, nlen);
-        emit_string(eb2, "')");
-        asm_err_end(eb2);
+    if g_ndeferred >= g_def_capacity {
+        // Grow rather than abort — host self-host builds (compiler/
+        // asm_pass2.tc, ~14 K cross-file refs) far exceed the
+        // 2048-entry initial capacity.
+        grow_def_arrays();
     }
     ensure_def_pool_capacity(g_def_pool_pos + nlen);
     var off: i32 = g_def_pool_pos;

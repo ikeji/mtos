@@ -1,9 +1,9 @@
 EXTRA_GUEST_TASKS += asm_pass1
-# asm_pass1 (Phase C/D/E of the 3-binary asm split) drives the
-# pre-encode flow: lab build over prelude+tail, then run_pass2 over
-# the same combined source for per-section .bin + .reloc, plus the
-# single-source user.s mode under LINK_MODE. Memory-wise it's the
-# union of asm_pass2 (lab build) + asm_pass3 (encoder + reloc emit),
-# so size between asm_pass2's 288 KB and asm_pass3's 320 KB.
-TASK_ARENA_asm_pass1 := 327680
+# asm_pass1 unions the lab-build (asm_pass2 mode) and encoder
+# (asm_pass3 mode) duties, so it needs roughly asm_pass3's working
+# set. Keep at 288 KB — same sweet spot as asm_pass2 / asm_pass3:
+# bigger doesn't fit in the fragmented 504 KB kernel arena after
+# spawn/exit cycles in the compiler pipeline, smaller OOMs on
+# parse.tc-class user.s walks.
+TASK_ARENA_asm_pass1 := 294912
 TASK_STACK_asm_pass1 := 16384
