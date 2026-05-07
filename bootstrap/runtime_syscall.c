@@ -77,7 +77,7 @@ static const int pool_size[NPOOLS] = {
 };
 static const int pool_count[NPOOLS] = {
     32768, 32768, 32768, 128, 64, 256, 64, 64, 32, 16,
-    32, 8, 32, 16, 8, 4, 4, 4, 2
+    32, 64, 32, 16, 8, 4, 4, 4, 2
 };
 /* bucket 2 (64-byte) was bumped from 256 to 32768 to hold the
    per-AstNode struct instances created by ast_node.tc. Each AstNode

@@ -59,10 +59,13 @@ var g_src_secs:  I32Array = 0 as I32Array;
 var g_n_src_paths: i32 = 0;
 var SRC_PATHS_CAP: i32 = 8;
 
-// Reloc records: parallel arrays. Capacity 256 covers a typical
-// prelude (libtc + crt0 + runtime) which has at most a few dozen
-// la-to-rodata + call-to-main relocations.
-var RELOCS_CAP: i32 = 256;
+// Reloc records: parallel arrays. Initial capacity covers a small
+// prelude; record_reloc grows the arrays in place when full so the
+// linker mode (which carries every cross-file ref from user.reloc on
+// top of prelude.reloc — easily thousands for compiler/parse.tc)
+// doesn't silently drop relocs past the cap.
+var RELOCS_CAP_INIT: i32 = 256;
+var g_relocs_cap:  i32 = 0;
 var g_reloc_offs:  I32Array = 0 as I32Array;
 var g_reloc_kinds: I32Array = 0 as I32Array;
 // Each name is a U8Array (count-prefixed) cast to u32 — same trick
@@ -276,7 +279,13 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
                 var ai: i32 = 0;
                 while ai < nr { set(win, keep + ai, get(io, ai)); ai = ai + 1; }
                 var win_len: i32 = keep + nr;
-                var emit_end: i32 = win_len - 7;
+                // Hold back the longest reloc length (8 bytes for
+                // kind=1 / kind=2 auipc+addi pairs). With only 7
+                // bytes held back, an 8-byte reloc whose auipc
+                // landed at win_off = emit_end-1 was emitted before
+                // the patch could fire AND its win_off went negative
+                // on the next iter — silently dropped.
+                var emit_end: i32 = win_len - 8;
                 if emit_end < 0 { emit_end = 0; }
                 // Patch every reloc that fits fully in [0..emit_end).
                 var rj: i32 = 0;
@@ -340,17 +349,40 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
 
 fn record_reloc(off: i32, kind: i32, name: U8Array) -> void {
     if g_reloc_offs as u32 == 0u32 {
-        g_reloc_offs  = I32Array((RELOCS_CAP) as u32);
-        g_reloc_kinds = I32Array((RELOCS_CAP) as u32);
-        g_reloc_names = U32Array((RELOCS_CAP) as u32);
+        g_relocs_cap  = RELOCS_CAP_INIT;
+        g_reloc_offs  = I32Array((g_relocs_cap) as u32);
+        g_reloc_kinds = I32Array((g_relocs_cap) as u32);
+        g_reloc_names = U32Array((g_relocs_cap) as u32);
         g_n_relocs = 0;
     }
-    if g_n_relocs < RELOCS_CAP {
-        set(g_reloc_offs,  g_n_relocs, off);
-        set(g_reloc_kinds, g_n_relocs, kind);
-        set(g_reloc_names, g_n_relocs, name as u32);
-        g_n_relocs = g_n_relocs + 1;
+    if g_n_relocs >= g_relocs_cap {
+        // Grow the parallel arrays. asm_pass1's pre-encode emits ~1
+        // reloc per cross-file la / call; full link-time merges of
+        // the compiler tools (parse.tc, codegen.tc, ...) routinely
+        // exceed 1000 relocs.
+        var new_cap: i32 = g_relocs_cap * 2;
+        var new_offs:  I32Array = I32Array((new_cap) as u32);
+        var new_kinds: I32Array = I32Array((new_cap) as u32);
+        var new_names: U32Array = U32Array((new_cap) as u32);
+        var ci: i32 = 0;
+        while ci < g_n_relocs {
+            set(new_offs,  ci, get(g_reloc_offs,  ci));
+            set(new_kinds, ci, get(g_reloc_kinds, ci));
+            set(new_names, ci, get(g_reloc_names, ci));
+            ci = ci + 1;
+        }
+        delete(g_reloc_offs);
+        delete(g_reloc_kinds);
+        delete(g_reloc_names);
+        g_reloc_offs  = new_offs;
+        g_reloc_kinds = new_kinds;
+        g_reloc_names = new_names;
+        g_relocs_cap  = new_cap;
     }
+    set(g_reloc_offs,  g_n_relocs, off);
+    set(g_reloc_kinds, g_n_relocs, kind);
+    set(g_reloc_names, g_n_relocs, name as u32);
+    g_n_relocs = g_n_relocs + 1;
     return;
 }
 
