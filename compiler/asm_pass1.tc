@@ -6,30 +6,37 @@
 // etc., asm_pass2 --emit-idx) with a single pre-encode tool.
 //
 // CLI:
-//   asm_pass1 prelude.s prelude_tail.s \
-//       --idx-out    prelude.idx \
-//       --text-bin   prelude.text.bin \
-//       --rodata-bin prelude.rodata.bin \
-//       --data-bin   prelude.data.bin \
-//       --reloc-out  prelude.reloc
+//   asm_pass1 prelude.s [prelude_tail.s] \
+//       --idx-out    out.idx \
+//       --text-bin   out.text.bin \
+//       --rodata-bin out.rodata.bin \
+//       --data-bin   out.data.bin \
+//       --reloc-out  out.reloc
 //
-// Outputs:
-//   prelude.idx / .text.bin / .rodata.bin / .data.bin / .reloc
+// One or two positional source files. Two-source form concatenates
+// prelude.s + prelude_tail.s before walking (the prelude case where
+// __data_end / __arena live in the tail). Single-source form is the
+// per-user-file pre-encode (user.s → user.idx + user.{...}.bin +
+// user.reloc) — consumed by the link step.
 //
 // Implementation:
-//   step 1: run() over prelude.s alone with --emit-idx — captures the
-//           per-file label table the OS-side asm_pass2 --load-idx
-//           expects (matches `asm_pass2 --emit-idx prelude.s`).
-//   step 2: run() over the prelude + prelude_tail concat with
-//           --lab-out — produces a temp .lab the encoder will read.
-//   step 3: run_pass2() consumes the .lab and re-walks the combined
-//           source per section, streaming bytes to .text.bin /
-//           .rodata.bin / .data.bin and reloc edges to .reloc.
+//   step 1: run() over the prelude.s alone (or, in single-source
+//           mode, the lone source) with --emit-idx — captures the
+//           per-file label table the link step expects.
+//   step 2: run() over the source(s) with --lab-out — produces a
+//           temp .lab the encoder will read.
+//   step 3: run_pass2() consumes the .lab and re-walks the source
+//           per section, streaming bytes to .text.bin / .rodata.bin
+//           / .data.bin and reloc edges to .reloc. With
+//           asm_set_emit_undef_relocs(1) every label reference whose
+//           name isn't in the per-file label table emits a reloc
+//           (kind 0/1/2) instead of erroring. The link step resolves
+//           these against the merged symbol table.
 //
-// The two run() calls each call asm_init_pass1 → asm_init_common,
-// which now also resets g_lab_hash_ok so a fresh process_source
-// doesn't reach into a stale hash table from the previous walk.
-// No subprocess and no asm_state_reset.
+// Two run() calls in the same process are safe because asm_init_common
+// resets g_lab_hash_ok to 0 — without it the second walk's find_label
+// would reach into the previous walk's hash table indices that point
+// into a freshly-reallocated g_labels.
 
 import "asm_pass2_lib.tc";
 import "asm_pass3_lib.tc";
@@ -86,34 +93,52 @@ fn concat_to_file(a: String, b: String, out_path: String) -> i32 {
     return 0;
 }
 
-fn run_pre_encode(prelude_s: String, prelude_tail_s: String,
+fn run_pre_encode(src_a: String, src_b: String,
                   idx_out: String,
                   text_bin: String, rodata_bin: String, data_bin: String,
                   reloc_out: String) -> i32 {
+    // Resolve the source path used for both the .idx pass and the
+    // .lab/encode passes. With src_b set we splice src_a + src_b into
+    // a tmpfile so __data_end / __arena (etc.) are in scope at encode
+    // time; the .idx still covers src_a alone (= the section state
+    // the linker inherits before it walks src_b's contributions).
     var combined_path: StringLiteral = "/tmp/_p1_combined.s";
     var lab_path:      StringLiteral = "/tmp/_p1_combined.lab";
+    var idx_src:  String = src_a;
+    var enc_src:  String = src_a;
+    if src_b as u32 != 0u32 {
+        if concat_to_file(src_a, src_b, combined_path as String) != 0 {
+            err("asm_pass1: concat failed\n");
+            return -1;
+        }
+        enc_src = combined_path as String;
+    }
 
-    // Step 1: idx for prelude.s alone (matches `asm_pass2 --emit-idx`).
+    // Step 1: idx for the leading source alone.
     if idx_out as u32 != 0u32 {
-        asm_set_src_path1(prelude_s);
-        var rc_idx: i32 = run(prelude_s, 0 as String,
+        asm_set_src_path1(idx_src);
+        var rc_idx: i32 = run(idx_src, 0 as String,
                               idx_out, 0 as String, 0 as String);
         if rc_idx != 0 { err("asm_pass1: idx emit failed\n"); return rc_idx; }
     }
 
-    // Step 2: lab over prelude + prelude_tail combined.
-    if concat_to_file(prelude_s, prelude_tail_s, combined_path as String) != 0 {
-        err("asm_pass1: concat failed\n");
-        return -1;
-    }
-    asm_set_src_path1(combined_path as String);
-    var rc1: i32 = run(combined_path as String, 0 as String,
+    // Step 2: lab over the encode source (combined or single).
+    asm_set_src_path1(enc_src);
+    var rc1: i32 = run(enc_src, 0 as String,
                        0 as String, 0 as String, lab_path as String);
     if rc1 != 0 { err("asm_pass1: lab build failed\n"); return rc1; }
 
-    // Step 3: encode + per-section .bin + .reloc.
+    // Step 3: encode + per-section .bin + .reloc. Enable
+    // emit-undef-relocs so cross-file references in user.s become
+    // reloc edges instead of "undefined label" errors. The flag is
+    // benign for prelude pre-encode — prelude refs that crossed the
+    // boundary (main / main__StringArray) were already in the
+    // hardcoded extern list, so they emit the same kind/op_idx
+    // either way.
+    asm_set_emit_undef_relocs(1);
     var rc2: i32 = run_pass2(lab_path as String, 0 as String,
                              text_bin, rodata_bin, data_bin, reloc_out);
+    asm_set_emit_undef_relocs(0);
     if rc2 != 0 { err("asm_pass1: bin emit failed\n"); return rc2; }
     return 0;
 }
@@ -124,8 +149,8 @@ fn main() -> i32 {
 }
 
 fn main(argv: StringArray) -> i32 {
-    var prelude:      String = 0 as String;
-    var prelude_tail: String = 0 as String;
+    var src_a:        String = 0 as String;
+    var src_b:        String = 0 as String;
     var idx_out:      String = 0 as String;
     var text_bin:     String = 0 as String;
     var rodata_bin:   String = 0 as String;
@@ -147,21 +172,21 @@ fn main(argv: StringArray) -> i32 {
             } else if arg_eq(a, "--reloc-out") != 0 && i + 1 < argc {
                 reloc_out = get(argv, i + 1); i = i + 2;
             } else {
-                if prelude as u32 == 0u32 {
-                    prelude = a;
-                } else if prelude_tail as u32 == 0u32 {
-                    prelude_tail = a;
+                if src_a as u32 == 0u32 {
+                    src_a = a;
+                } else if src_b as u32 == 0u32 {
+                    src_b = a;
                 }
                 i = i + 1;
             }
         }
     }
-    if prelude as u32 == 0u32 || prelude_tail as u32 == 0u32 ||
+    if src_a as u32 == 0u32 ||
        text_bin as u32 == 0u32 || rodata_bin as u32 == 0u32 ||
        data_bin as u32 == 0u32 || reloc_out as u32 == 0u32 {
-        err("usage: asm_pass1 prelude.s prelude_tail.s [--idx-out P] --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
+        err("usage: asm_pass1 src.s [tail.s] [--idx-out P] --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
         return 1;
     }
-    return run_pre_encode(prelude, prelude_tail, idx_out,
+    return run_pre_encode(src_a, src_b, idx_out,
                           text_bin, rodata_bin, data_bin, reloc_out);
 }

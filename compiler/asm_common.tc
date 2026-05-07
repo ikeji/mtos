@@ -161,6 +161,15 @@ export fn asm_get_text_bin_fd()   -> i32 { return g_text_bin_fd; }
 export fn asm_get_rodata_bin_fd() -> i32 { return g_rodata_bin_fd; }
 export fn asm_get_data_bin_fd()   -> i32 { return g_data_bin_fd; }
 export fn asm_get_reloc_count() -> i32 { return g_reloc_count; }
+// When non-zero, every label reference whose name isn't in the local
+// g_labels table emits a reloc (kind 0/1/2 depending on the
+// instruction) and the encoder writes a placeholder zero offset. The
+// link step (asm_pass2 / asm_pass3 patcher) consumes the .reloc and
+// fixes up the bytes. Off by default — preserves the legacy
+// hardcoded-extern-list behavior for prelude pre-encode.
+var g_emit_undef_relocs: i32 = 0;
+export fn asm_set_emit_undef_relocs(v: i32) -> void { g_emit_undef_relocs = v; return; }
+export fn asm_get_emit_undef_relocs() -> i32 { return g_emit_undef_relocs; }
 var g_src_bytes:       i32 = 0;        // source byte count emitted by pass1 in the .lab so pass2 knows where each copy ends
 
 // Label table. g_lab_names is a shared packed-byte pool that every
@@ -991,6 +1000,10 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
 fn label_addr(name: U8Array, nlen: i32) -> i32 {
     var idx: i32 = find_label(name, nlen);
     if idx < 0 {
+        // In undef-reloc mode the encoder emitted a reloc + placeholder
+        // at this site, so silently return 0 here. Without the flag,
+        // an undefined ref is still a hard error.
+        if g_emit_undef_relocs != 0 { return 0; }
         var eb: StringBuffer = StringBuffer_new();
         asm_err_begin(eb);
         emit_string(eb, "undefined label '");
@@ -1400,6 +1413,35 @@ fn asm_label_is_extern(op_idx: i32, sym: i32) -> i32 {
     return 0;
 }
 
+// Return 1 if operand op_idx names a label that is NOT in the local
+// g_labels table — i.e. a cross-file reference that the link step
+// will resolve. Numeric labels and obvious non-symbols (digits, '-')
+// short-circuit to 0 so their normal resolution path runs. Used by
+// the encoder when g_emit_undef_relocs is on.
+fn label_op_undefined(op_idx: i32) -> i32 {
+    var off: i32 = get(g_ops, (op_idx * 2));
+    var len: i32 = get(g_ops, (op_idx * 2 + 1));
+    while len > 0 && (get(g_line_buf, off) == ' ' || get(g_line_buf, off) == 9u8) {
+        off = off + 1; len = len - 1;
+    }
+    if len <= 0 { return 0; }
+    var c0: u8 = get(g_line_buf, off);
+    // Numeric label refs (Nb / Nf) — always intra-function, never reloc.
+    if len == 2 && is_digit(c0) {
+        var dir: u8 = get(g_line_buf, off + 1);
+        if dir == 'b' || dir == 'f' { return 0; }
+    }
+    // Digits / sign — immediate operand, not a symbol.
+    if (c0 >= '0' && c0 <= '9') || c0 == '-' { return 0; }
+    var tmp: U8Array = U8Array((len) as u32);
+    var i: i32 = 0;
+    while i < len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
+    var idx: i32 = find_label(tmp, len);
+    delete(tmp);
+    if idx < 0 { return 1; }
+    return 0;
+}
+
 // Return the section id of the label referenced by operand op_idx,
 // or 0 (SEC_TEXT) for numeric labels and unknown labels.
 fn parse_label_op_section(op_idx: i32) -> i32 {
@@ -1558,7 +1600,8 @@ fn asm_instr() -> i32 {
                 var is_extern_call: i32 = 0;
                 if g_reloc_fd > 0 {
                     if asm_label_is_extern(0, 0) != 0 ||
-                       asm_label_is_extern(0, 1) != 0 {
+                       asm_label_is_extern(0, 1) != 0 ||
+                       (g_emit_undef_relocs != 0 && label_op_undefined(0) != 0) {
                         is_extern_call = 1;
                         if g_target_section == 0 {
                             asm_emit_reloc(g_section_emitted, 1, 0);
@@ -1597,7 +1640,8 @@ fn asm_instr() -> i32 {
                 var is_extern_j: i32 = 0;
                 if g_reloc_fd > 0 {
                     if asm_label_is_extern(0, 0) != 0 ||
-                       asm_label_is_extern(0, 1) != 0 {
+                       asm_label_is_extern(0, 1) != 0 ||
+                       (g_emit_undef_relocs != 0 && label_op_undefined(0) != 0) {
                         is_extern_j = 1;
                         if g_target_section == 0 {
                             asm_emit_reloc(g_section_emitted, 0, 0);
@@ -1664,7 +1708,8 @@ fn asm_instr() -> i32 {
                 } else {
                     if g_reloc_fd > 0 && g_target_section == 0 {
                         if tsec == 1 ||
-                           asm_label_is_extern(1, 2) != 0 {
+                           asm_label_is_extern(1, 2) != 0 ||
+                           (g_emit_undef_relocs != 0 && label_op_undefined(1) != 0) {
                             asm_emit_reloc(g_section_emitted, 1, 1);
                         }
                     }
