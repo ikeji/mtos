@@ -216,7 +216,14 @@ fn raw_memcpy_section(path: String) -> i32 {
         var io:     U8Array = U8Array(4096);
         var win:    U8Array = U8Array(WIN as u32);
         var keep:   i32 = 0;       // bytes already in win[0..keep)
-        var chunk_off: i32 = 0;    // bin offset of win[0]
+        // Anchor chunk_off at the section's running emit cursor. For
+        // the first `src raw` entry in a section this is 0 (matches
+        // the legacy single-bin case); for the second one (e.g.
+        // user.text.bin chained after prelude.text.bin) it picks up
+        // where the previous memcpy left off, so reloc offsets
+        // expressed in concatenated-section coordinates patch the
+        // right bytes.
+        var chunk_off: i32 = asm_get_section_emitted();
         var done_r: i32 = 0;
         while done_r == 0 {
             var nr: i32 = sys_read(fd, io, 4096);

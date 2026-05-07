@@ -307,6 +307,25 @@ export fn asm_set_prelude_rodata_bin(p: String) -> void { g_prelude_rodata_bin =
 export fn asm_set_prelude_data_bin(p: String)   -> void { g_prelude_data_bin   = p; return; }
 export fn asm_set_prelude_reloc(p: String)      -> void { g_prelude_reloc      = p; return; }
 
+// Pre-encoded user paths (Phase F of the asm split). When the linker
+// has consumed user.idx + user.bin + user.reloc, asm_dump_lab_state
+// emits three additional `src raw` lines (one per section, after the
+// prelude raws) and copies user.reloc with each entry's offset shifted
+// by g_user_text_shift so the offsets express section-absolute (post-
+// concatenation) coordinates. Only the text section needs shifting in
+// practice — every reloc kind asm_emit_reloc records is a text-section
+// entry.
+var g_user_text_bin:   String = 0 as String;
+var g_user_rodata_bin: String = 0 as String;
+var g_user_data_bin:   String = 0 as String;
+var g_user_reloc:      String = 0 as String;
+var g_user_text_shift: i32 = 0;
+export fn asm_set_user_text_bin(p: String)   -> void { g_user_text_bin   = p; return; }
+export fn asm_set_user_rodata_bin(p: String) -> void { g_user_rodata_bin = p; return; }
+export fn asm_set_user_data_bin(p: String)   -> void { g_user_data_bin   = p; return; }
+export fn asm_set_user_reloc(p: String)      -> void { g_user_reloc      = p; return; }
+export fn asm_set_user_text_shift(v: i32)    -> void { g_user_text_shift = v; return; }
+
 // Number of labels that came from one or more --load-idx files. The
 // link step marks every one of them live regardless of BFS reach,
 // because asm-pass2 still walks the prelude source byte-for-byte
@@ -2331,6 +2350,11 @@ export fn asm_set_target_section(sec: i32) -> void {
     return;
 }
 
+// Read the running per-section emit cursor. Used by raw_memcpy_section
+// to anchor its chunk_off so a second `src raw` entry for the same
+// section continues from where the first one stopped.
+export fn asm_get_section_emitted() -> i32 { return g_section_emitted; }
+
 // Flush the output buffer and, if we're in the middle of a target
 // section, emit padding zero bytes up to the section's declared size
 // (which is already 16-byte aligned in asm_compute_sec_bases). Called
@@ -2539,6 +2563,28 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
         emit_string(sb, g_src_path1);
         emit_nl(sb);
     }
+    // User pre-encoded bins (linker mode): emit per-section `src raw`
+    // entries after the prelude raws. Order matches the section
+    // concatenation asm_pass3 will produce — prelude bytes first,
+    // then user bytes per section.
+    if g_user_text_bin as u32 != 0u32 {
+        emit_string(sb, "src raw ");
+        emit_string(sb, g_user_text_bin);
+        emit_string(sb, " 0");
+        emit_nl(sb);
+        if g_user_rodata_bin as u32 != 0u32 {
+            emit_string(sb, "src raw ");
+            emit_string(sb, g_user_rodata_bin);
+            emit_string(sb, " 1");
+            emit_nl(sb);
+        }
+        if g_user_data_bin as u32 != 0u32 {
+            emit_string(sb, "src raw ");
+            emit_string(sb, g_user_data_bin);
+            emit_string(sb, " 2");
+            emit_nl(sb);
+        }
+    }
     if g_src_path2 as u32 != 0u32 {
         emit_string(sb, "src ");
         emit_string(sb, g_src_path2);
@@ -2622,6 +2668,17 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
         copy_file_to_fd(g_prelude_reloc, out_fd);
         sb = StringBuffer_new(out_fd);
     }
+    // Phase F (linker mode): copy user.reloc with each entry's offset
+    // shifted by g_user_text_shift so the .lab carries section-
+    // absolute (post-concatenation) offsets. Every reloc kind we
+    // emit lives in the text section, so only g_user_text_shift is
+    // applied — rodata/data relocs would need their own shift.
+    if g_user_reloc as u32 != 0u32 {
+        write(sb, out_fd);
+        destroy(sb);
+        copy_reloc_shifted(g_user_reloc, out_fd, g_user_text_shift);
+        sb = StringBuffer_new(out_fd);
+    }
 
     emit_char(sb, ')'); emit_nl(sb);
     write(sb, out_fd);
@@ -2643,6 +2700,61 @@ fn copy_file_to_fd(src_path: String, dst_fd: i32) -> void {
         else { sys_write(dst_fd, buf, n); }
     }
     delete(buf);
+    do_close(fd);
+    return;
+}
+
+// Stream a reloc file line by line, rewriting each `reloc <off> <kind>
+// <name>` entry's offset with `off + shift` before forwarding to
+// dst_fd. Lines that don't match the reloc form pass through unchanged.
+// Used by asm_dump_lab_state_to to splice user.reloc into the lab with
+// offsets re-expressed in section-absolute coordinates (the prelude
+// bytes occupy [0, shift) so user offsets need shift added).
+fn copy_reloc_shifted(src_path: String, dst_fd: i32, shift: i32) -> void {
+    var fd: i32 = do_openat(0 - 100, src_path, 0);
+    if fd < 0 { return; }
+    var rd: SourceReader = SourceReader_new(fd);
+    var line: U8Array = U8Array(512);
+    var sb: StringBuffer = StringBuffer_new(dst_fd);
+    var done: i32 = 0;
+    while done == 0 && at_eof(rd) == false {
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(rd) == false {
+            var c: u8 = next(rd);
+            if llen < 512 { set(line, llen, c); }
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        if llen <= 0 { done = 1; }
+        else if llen > 512 {
+            // Truncated — emit as-is (shouldn't happen for reloc
+            // lines, max ~96 bytes per asm_emit_reloc).
+            emit_n(sb, line, 0, 512);
+        } else if llen >= 7 && get(line, 0) == 'r' as u8
+                && get(line, 1) == 'e' as u8
+                && get(line, 2) == 'l' as u8
+                && get(line, 3) == 'o' as u8
+                && get(line, 4) == 'c' as u8
+                && get(line, 5) == ' ' as u8 {
+            // reloc <off> <kind> <name>\n  →  reloc <off+shift> <kind> <name>\n
+            var p: i32 = 6;
+            var v: i32 = 0;
+            while p < llen && get(line, p) >= '0' as u8 && get(line, p) <= '9' as u8 {
+                v = v * 10 + (get(line, p) as i32 - 48);
+                p = p + 1;
+            }
+            emit_string(sb, "reloc ");
+            dump_int(sb, v + shift);
+            emit_n(sb, line, p, llen - p);
+        } else {
+            emit_n(sb, line, 0, llen);
+        }
+    }
+    write(sb, dst_fd);
+    destroy(sb);
+    delete(line);
+    close(rd);
     do_close(fd);
     return;
 }
@@ -2799,6 +2911,20 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
 
 // ===== .lab install (pass 2 reader → in-memory state) =====
 export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: i32) -> void {
+    // Merge duplicates last-wins: when the linker loads multiple .idx
+    // files (asm_pass2 --link mode) the same label can appear in
+    // both prelude and user inputs (task_crt0.s defines fallback
+    // `main` / `main__StringArray` stubs that get overridden by the
+    // task's own definitions). Without this merge, a stale prelude
+    // entry shadows the real one and the reloc patches end up
+    // pointing at the fallback. Matches define_label semantics.
+    var existing: i32 = find_label(name, nlen);
+    if existing >= 0 {
+        var lb: Label = get(g_labels, existing);
+        addr(lb, addrv);
+        section(lb, sec);
+        return;
+    }
     if g_nlabels >= MAX_LABELS {
         var eb: StringBuffer = StringBuffer_new();
         asm_err_begin(eb);
@@ -2851,11 +2977,13 @@ export fn asm_install_raw_mode(v: i32) -> void {
     g_raw_mode = v;
     return;
 }
+export fn asm_get_raw_mode() -> i32 { return g_raw_mode; }
 
 export fn asm_install_load_base(v: i32) -> void {
     g_load_vaddr = v;
     return;
 }
+export fn asm_get_load_base() -> i32 { return g_load_vaddr; }
 
 // asm_pass2 counts the source bytes it consumed and stashes the
 // total here so asm_dump_lab_state can emit a `src_bytes N` line.

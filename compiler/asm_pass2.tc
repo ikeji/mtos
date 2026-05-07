@@ -36,6 +36,19 @@ fn main(argv: StringArray) -> i32 {
     //   asm_pass2 --load-idx in.idx --idx-source p.s ... emit `src p.s` into the .lab so
     //                                                     pass3 can open the prelude directly
     //   asm_pass2 --lab-out path.lab ...                .lab to a file instead of stdout
+    //
+    // Linker mode (Phase F): no source walk, both inputs are
+    // pass1 outputs. asm_pass1 produced prelude.* and user.*; this
+    // mode merges them into a single .lab. asm_pass3 then reads
+    // the .lab + memcpies the bins.
+    //   asm_pass2 --link \
+    //       --prelude-idx prelude.idx --user-idx user.idx \
+    //       --prelude-text-bin pT.bin --prelude-rodata-bin pR.bin \
+    //       --prelude-data-bin pD.bin --prelude-reloc pL.reloc \
+    //       --user-text-bin uT.bin --user-rodata-bin uR.bin \
+    //       --user-data-bin uD.bin --user-reloc uL.reloc \
+    //       --idx-source prelude.s \
+    //       --lab-out full.lab
     var path: String = 0 as String;
     var strip_out: String = 0 as String;
     var emit_idx: String = 0 as String;
@@ -46,17 +59,33 @@ fn main(argv: StringArray) -> i32 {
     var prelude_rodata_bin: String = 0 as String;
     var prelude_data_bin:   String = 0 as String;
     var prelude_reloc:      String = 0 as String;
+    var prelude_idx:        String = 0 as String;
+    var user_idx:           String = 0 as String;
+    var user_text_bin:      String = 0 as String;
+    var user_rodata_bin:    String = 0 as String;
+    var user_data_bin:      String = 0 as String;
+    var user_reloc:         String = 0 as String;
+    var link_mode: i32 = 0;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var consumed: i32 = 1;  // skip argv[0] (program name)
         var keep_scanning: i32 = 1;
         while keep_scanning != 0 && consumed < argc {
             var a: String = get(argv, consumed);
-            if arg_eq(a, "--emit-idx") != 0 && consumed + 1 < argc {
+            if arg_eq(a, "--link") != 0 {
+                link_mode = 1;
+                consumed = consumed + 1;
+            } else if arg_eq(a, "--emit-idx") != 0 && consumed + 1 < argc {
                 emit_idx = get(argv, consumed + 1);
                 consumed = consumed + 2;
             } else if arg_eq(a, "--load-idx") != 0 && consumed + 1 < argc {
                 load_idx = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--prelude-idx") != 0 && consumed + 1 < argc {
+                prelude_idx = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--user-idx") != 0 && consumed + 1 < argc {
+                user_idx = get(argv, consumed + 1);
                 consumed = consumed + 2;
             } else if arg_eq(a, "--idx-source") != 0 && consumed + 1 < argc {
                 idx_source = get(argv, consumed + 1);
@@ -76,12 +105,32 @@ fn main(argv: StringArray) -> i32 {
             } else if arg_eq(a, "--prelude-reloc") != 0 && consumed + 1 < argc {
                 prelude_reloc = get(argv, consumed + 1);
                 consumed = consumed + 2;
+            } else if arg_eq(a, "--user-text-bin") != 0 && consumed + 1 < argc {
+                user_text_bin = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--user-rodata-bin") != 0 && consumed + 1 < argc {
+                user_rodata_bin = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--user-data-bin") != 0 && consumed + 1 < argc {
+                user_data_bin = get(argv, consumed + 1);
+                consumed = consumed + 2;
+            } else if arg_eq(a, "--user-reloc") != 0 && consumed + 1 < argc {
+                user_reloc = get(argv, consumed + 1);
+                consumed = consumed + 2;
             } else {
                 keep_scanning = 0;
             }
         }
         if consumed < argc { path = get(argv, consumed); consumed = consumed + 1; }
         if consumed < argc { strip_out = get(argv, consumed); consumed = consumed + 1; }
+    }
+    if link_mode != 0 {
+        return run_link(prelude_idx, user_idx,
+                        prelude_text_bin, prelude_rodata_bin,
+                        prelude_data_bin, prelude_reloc,
+                        user_text_bin, user_rodata_bin,
+                        user_data_bin, user_reloc,
+                        idx_source, lab_out);
     }
     if idx_source as u32 != 0u32 { asm_set_src_path1(idx_source); }
     if strip_out as u32 != 0u32 {

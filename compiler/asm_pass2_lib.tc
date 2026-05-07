@@ -394,3 +394,82 @@ export fn run(src_path: String, strip_out_path: String,
     return 0;
 }
 
+// Linker mode (Phase F of the asm split). No source walk — both
+// inputs are pass1 outputs. Loads prelude.idx + user.idx, snapshots
+// the prelude section sizes between the two loads (so user.reloc's
+// text offsets can be shifted to section-absolute form), then dumps
+// a .lab whose `src raw` entries point to all 6 bin files (text /
+// rodata / data × prelude + user) and whose reloc lines splice
+// prelude.reloc verbatim + user.reloc with offsets shifted by the
+// snapshotted prelude text size.
+//
+// asm_pass3 then memcpies the bins in section order and patches the
+// relocs — never reopening either source.
+export fn run_link(
+    prelude_idx: String, user_idx: String,
+    prelude_text_bin: String, prelude_rodata_bin: String,
+    prelude_data_bin: String, prelude_reloc: String,
+    user_text_bin: String, user_rodata_bin: String,
+    user_data_bin: String, user_reloc: String,
+    idx_source: String,
+    lab_out_path: String) -> i32 {
+    asm_init_pass1();
+    asm_set_pass(1);
+
+    // Load the prelude idx; snapshot the post-load section sizes so
+    // user reloc offsets land in section-absolute coordinates.
+    if prelude_idx as u32 == 0u32 || user_idx as u32 == 0u32 {
+        return 0 - 1;
+    }
+    asm_load_idx(prelude_idx);
+    var prelude_text_size: i32 = asm_sec_pos(0);
+    // Snapshot raw / load_base from the prelude (its `; raw` /
+    // `; load_base` directives drive how the final binary is wrapped).
+    // user.idx's defaults (`raw 0`, `load_base 65536`) would otherwise
+    // overwrite them on the second load.
+    var saved_raw:       i32 = asm_get_raw_mode();
+    var saved_load_base: i32 = asm_get_load_base();
+
+    // Load the user idx; sec_pos accumulates onto whatever the prelude
+    // load left, matching the merged-layout intra addresses
+    // asm_install_label_from_lab installs.
+    asm_load_idx(user_idx);
+    asm_install_raw_mode(saved_raw);
+    asm_install_load_base(saved_load_base);
+
+    // Compute final section bases / sizes from the merged sec_pos
+    // and turn intra label addresses into absolutes. No strip walk
+    // and no asm_compute_live — every prelude / user label is live
+    // by definition (each .idx already represents reachable code).
+    asm_compute_sec_bases();
+    asm_finalize_labels();
+    asm_resolve_deferred_refs();
+    asm_fixup_labels();
+
+    // Wire path globals so asm_dump_lab_state_to emits the right
+    // `src raw` lines and the right reloc-splice operations.
+    asm_set_prelude_text_bin(prelude_text_bin);
+    asm_set_prelude_rodata_bin(prelude_rodata_bin);
+    asm_set_prelude_data_bin(prelude_data_bin);
+    asm_set_prelude_reloc(prelude_reloc);
+    asm_set_user_text_bin(user_text_bin);
+    asm_set_user_rodata_bin(user_rodata_bin);
+    asm_set_user_data_bin(user_data_bin);
+    asm_set_user_reloc(user_reloc);
+    asm_set_user_text_shift(prelude_text_size);
+    if idx_source as u32 != 0u32 { asm_set_src_path1(idx_source); }
+
+    if lab_out_path as u32 != 0u32 {
+        var lab_fd: i32 = do_openat(0 - 100, lab_out_path, 577);
+        if lab_fd >= 0 {
+            asm_dump_lab_state_to(lab_fd);
+            do_close(lab_fd);
+        }
+    } else {
+        asm_dump_lab_state();
+    }
+
+    km_dump_peak();
+    return 0;
+}
+
