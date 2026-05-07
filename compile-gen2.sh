@@ -242,7 +242,7 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
         --data-bin   "$TMP/prelude.data.bin" \
         --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
 
-    if [ "${LINK_MODE:-0}" = "1" ]; then
+    if [ "${LINK_MODE:-1}" = "1" ]; then
         # Phase F (linker mode): pre-encode user.s into user.* via
         # asm_pass1, then asm_pass2 --link merges prelude.* + user.*
         # into the final .lab. asm_pass2 never opens a .s file.
@@ -267,9 +267,10 @@ if [ "$UNIFIED_PRELUDE" = "1" ]; then
             --user-reloc         "$TMP/user.reloc" \
             --lab-out            "$TMP/full.lab" 2>/dev/null
     else
-        # Step 5 (legacy UNIFIED_PRELUDE): asm_pass2 walks user.s with
-        # --load-idx + --prelude-*. Kept as the default path while
-        # LINK_MODE=1 is being shaken out.
+        # Legacy UNIFIED_PRELUDE: asm_pass2 walks user.s with
+        # --load-idx + --prelude-*. Set LINK_MODE=0 to opt out of
+        # the linker-mode default — only useful for bisecting
+        # asm_pass1 changes against the legacy walked-source flow.
         "$QEMU" "$GEN2_DIR/asm_pass2" \
             --load-idx "$TMP/prelude.idx" \
             --idx-source "$TMP/prelude.s" \
