@@ -1,26 +1,40 @@
-// asm_pass2.tc — driver for the LINK_MODE merge pass.
+// asm_pass2.tc — driver for the lab build / linker merge.
 //
 // All the orchestration logic lives in asm_pass2_lib.tc. This file
-// is just the main(argv) wrapper — argv parsing + state setup +
-// run_link() call. Kept separate so asm_pass1 (Phase C of the
-// 3-binary split) can `import "asm_pass2_lib.tc"` and call run() /
-// run_link() without colliding on main / arg_eq linker symbols.
+// is just the main(argv) wrapper. Kept separate so asm_pass1 (Phase
+// C of the 3-binary split) can `import "asm_pass2_lib.tc"` and call
+// run() / run_link() without colliding on main / arg_eq linker
+// symbols.
 //
-// CLI shape (the only one supported now — walked-source went away
-// when every host + OS-side caller migrated to LINK_MODE):
+// Two CLI shapes:
 //
-//   asm_pass2 --link \
-//       [--prelude-idx prelude.idx                      (optional)
-//        --prelude-text-bin pT.bin --prelude-rodata-bin pR.bin
-//        --prelude-data-bin pD.bin --prelude-reloc pL.reloc] \
-//       --user-idx user.idx \
-//       --user-text-bin uT.bin --user-rodata-bin uR.bin \
-//       --user-data-bin uD.bin --user-reloc uL.reloc \
-//       [--add idx text.bin rodata.bin data.bin reloc] ... \
-//       --lab-out full.lab
+//   1. Linker mode (LINK_MODE — the standard host + OS pipeline):
 //
-// run_asm_tc-style single-input links omit --prelude-* and pass the
-// whole self-contained .s through asm_pass1 as the user side.
+//      asm_pass2 --link \
+//          [--prelude-idx prelude.idx
+//           --prelude-text-bin pT.bin --prelude-rodata-bin pR.bin
+//           --prelude-data-bin pD.bin --prelude-reloc pL.reloc] \
+//          --user-idx user.idx \
+//          --user-text-bin uT.bin --user-rodata-bin uR.bin \
+//          --user-data-bin uD.bin --user-reloc uL.reloc \
+//          [--add idx text.bin rodata.bin data.bin reloc] ... \
+//          --lab-out full.lab
+//
+//      Single-input links (run_asm_tc, on-device kernel link) omit
+//      --prelude-* and pass the whole self-contained .s through
+//      asm_pass1 as the user side.
+//
+//   2. Walked-source (legacy fallback for OS-side big-input links
+//      that exceed the 288 KB asm_pass1 task arena):
+//
+//      asm_pass2 --lab-out full.lab src.s
+//
+//      Walks `src.s` once, builds the label table + writes the .lab
+//      with a `src <src.s>` line so asm_pass3 can reopen the source
+//      per emit section. No idx / bin / reloc artefacts — pass 1
+//      semantics in a single binary. Used by pico2_self_step2 and
+//      pico2_link_kernel{,_step2,_nodisk}.sh where the kernel-image
+//      .s (~3.8 MB) is too big for asm_pass1's pre-encode arena.
 
 import "asm_pass2_lib.tc";
 import "asm_common.tc";
@@ -43,12 +57,13 @@ fn err(s: StringLiteral) -> void {
 }
 
 fn main() -> i32 {
-    err("asm_pass2: requires --link <args> — see source for CLI shape\n");
+    err("asm_pass2: requires args — see source for CLI shape\n");
     return 1;
 }
 
 fn main(argv: StringArray) -> i32 {
     var lab_out: String = 0 as String;
+    var src_path: String = 0 as String;
     var prelude_text_bin:   String = 0 as String;
     var prelude_rodata_bin: String = 0 as String;
     var prelude_data_bin:   String = 0 as String;
@@ -115,19 +130,35 @@ fn main(argv: StringArray) -> i32 {
                                     get(argv, consumed + 5));
                 consumed = consumed + 6;
             } else {
-                err("asm_pass2: unknown argument — see source for CLI shape\n");
-                return 1;
+                // Treat the first non-flag argument as the walked-
+                // source positional path (legacy `asm_pass2 src.s`
+                // form, OS-side kernel-image link).
+                if src_path as u32 == 0u32 {
+                    src_path = a;
+                    consumed = consumed + 1;
+                } else {
+                    err("asm_pass2: unknown argument — see source for CLI shape\n");
+                    return 1;
+                }
             }
         }
     }
-    if link_mode == 0 {
-        err("asm_pass2: --link is required\n");
-        return 1;
+    if link_mode != 0 {
+        return run_link(prelude_idx, user_idx,
+                        prelude_text_bin, prelude_rodata_bin,
+                        prelude_data_bin, prelude_reloc,
+                        user_text_bin, user_rodata_bin,
+                        user_data_bin, user_reloc,
+                        lab_out);
     }
-    return run_link(prelude_idx, user_idx,
-                    prelude_text_bin, prelude_rodata_bin,
-                    prelude_data_bin, prelude_reloc,
-                    user_text_bin, user_rodata_bin,
-                    user_data_bin, user_reloc,
-                    lab_out);
+    if src_path as u32 != 0u32 {
+        // Walked-source: run() opens src_path, walks it, builds the
+        // label table + writes the .lab. The .lab carries a
+        // `src <src_path>` line so asm_pass3 can reopen the source
+        // per emit section.
+        asm_set_src_path1(src_path);
+        return run(src_path, 0 as String, lab_out);
+    }
+    err("asm_pass2: --link or src.s argument required\n");
+    return 1;
 }

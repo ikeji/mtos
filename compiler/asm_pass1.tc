@@ -211,11 +211,20 @@ fn pass2_walk(src: String) -> i32 {
 fn run_pre_encode(src: String,
                   idx_out: String,
                   text_bin: String, rodata_bin: String, data_bin: String,
-                  reloc_out: String) -> i32 {
+                  reloc_out: String,
+                  collect_refs: i32) -> i32 {
     // ---------- Walk 1: label collection + .idx emit ----------
     asm_init_pass1();
     asm_set_pass(1);
-    asm_set_collecting_refs(1);  // ref edges go into the idx
+    // Ref collection is the link step's side input — asm_pass2 --link
+    // reads `ref <owner> <target>` lines from the idx to resolve
+    // forward refs that crossed input boundaries. For self-contained
+    // inputs (kernel-image link, single-user run_asm_tc) all refs
+    // resolve locally during pass 1, so we can skip ref bookkeeping
+    // entirely. Disabling it on pico2's 288 KB asm_pass1 arena saves
+    // the ~250+ KB g_def_pool growth that walking a kernel-image .s
+    // would otherwise blow past.
+    if collect_refs != 0 { asm_set_collecting_refs(1); }
     var total_bytes: i32 = pass1_walk(src);
     if total_bytes < 0 {
         err("asm_pass1: cannot open source\n");
@@ -236,6 +245,13 @@ fn run_pre_encode(src: String,
         asm_dump_idx_state(idx_fd);
         do_close(idx_fd);
     }
+
+    // The .idx is written; pass 2 doesn't read g_refs / the
+    // deferred queue (they were used to build it). Free ~88 KB so
+    // pass 2 fits in the 288 KB asm_pass1 task arena on pico2 —
+    // without this, walking a full kernel-image .s OOMs on bucket-
+    // 9 fragmentation around peak 250 KB.
+    asm_release_ref_state();
 
     // ---------- Walk 2: per-section bin emit + relocs ----------
     // Compute final section bases + turn intra label addresses
@@ -289,6 +305,12 @@ fn main(argv: StringArray) -> i32 {
     var rodata_bin:   String = 0 as String;
     var data_bin:     String = 0 as String;
     var reloc_out:    String = 0 as String;
+    // collect_refs default = 1 (refs go into the idx so the link step
+    // can resolve cross-input forward refs). --no-refs opts out for
+    // self-contained inputs (kernel-image link on pico2, single-user
+    // run_asm_tc) where ref collection's g_def_pool growth would
+    // OOM the 288 KB task arena.
+    var collect_refs: i32 = 1;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var i: i32 = 1;
@@ -304,6 +326,8 @@ fn main(argv: StringArray) -> i32 {
                 data_bin = get(argv, i + 1); i = i + 2;
             } else if arg_eq(a, "--reloc-out") != 0 && i + 1 < argc {
                 reloc_out = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--no-refs") != 0 {
+                collect_refs = 0; i = i + 1;
             } else {
                 if src as u32 == 0u32 { src = a; }
                 i = i + 1;
@@ -313,9 +337,10 @@ fn main(argv: StringArray) -> i32 {
     if src as u32 == 0u32 ||
        text_bin as u32 == 0u32 || rodata_bin as u32 == 0u32 ||
        data_bin as u32 == 0u32 || reloc_out as u32 == 0u32 {
-        err("usage: asm_pass1 src.s [--idx-out P] --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
+        err("usage: asm_pass1 src.s [--idx-out P] [--no-refs] --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
         return 1;
     }
     return run_pre_encode(src, idx_out,
-                          text_bin, rodata_bin, data_bin, reloc_out);
+                          text_bin, rodata_bin, data_bin, reloc_out,
+                          collect_refs);
 }
