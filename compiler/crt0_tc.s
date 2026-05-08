@@ -6,15 +6,36 @@
     .text
     .globl _start
 _start:
+    # Linux RISC-V process startup: sp[0] = argc, sp[4..] = argv
+    # pointer array (each entry → NUL-terminated string in argv data).
+    # Save the pair into callee-saved s0/s1 before any TC call so we
+    # still have them post-runtime-init.
+    lw   s0, 0(sp)                 # s0 = argc
+    addi s1, sp, 4                 # s1 = argv_ptr (pointer to argv[0])
     la   gp, __global_pointer$
     la   a0, __arena
     li   a1, 4648960
     call __runtime_init__u32__i32
-    call main
-    #
+    # Build the TC StringArray view of argv on the heap (runtime.tc),
+    # then dispatch through main__StringArray. Programs that only
+    # define `fn main()` get the fallback below, which tail-calls
+    # main and ignores the StringArray in a0 (RISC-V callees don't
+    # touch unused arg regs).
+    mv   a0, s0
+    mv   a1, s1
+    call _build_argv__i32__u32
+    call main__StringArray
     li   a7, 93
     ecall
 1:  j    1b
+
+# Fallback main__StringArray: tail-calls plain `main`. asm_pass1's
+# last-wins symbol merge replaces this stub with the program's own
+# definition when it exists; otherwise plain-main programs link
+# cleanly via the j main hop.
+    .globl main__StringArray
+main__StringArray:
+    j    main
 
 #
     .globl do_write__i32__u32__i32

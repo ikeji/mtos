@@ -410,6 +410,40 @@ fn new_array(count: i32, data_bytes: i32) -> u32 {
     return addr;
 }
 
+// Linux user-mode entry helper: walk a flat (argc, argv-pointer)
+// pair the kernel left on the stack and materialise a TC StringArray
+// whose i-th element is a count-prefixed String copy of argv[i].
+// Mirrors bootstrap/runtime_syscall.c::_build_argv_stringarray so a
+// `fn main(argv: StringArray)` definition gets the same view in
+// Gen3 self-host binaries (compiler/crt0_tc.s) as it does in Gen2
+// host binaries (bootstrap/crt0.s).
+export fn _build_argv(argc: i32, argv_ptr: u32) -> StringArray {
+    var slot_bytes: i32 = argc * 4;
+    if slot_bytes < 4 { slot_bytes = 4; }
+    var sa_addr: u32 = new_array(argc, slot_bytes);
+    var i: i32 = 0;
+    while i < argc {
+        var p: u32 = peek32(argv_ptr + (i * 4) as u32);
+        var n: i32 = 0;
+        while peek8(p + n as u32) != 0u8 { n = n + 1; }
+        // +1 for the trailing NUL: do_openat's stub strips the count
+        // prefix and hands the bytes to Linux openat(), which expects
+        // a NUL-terminated path.
+        var data_bytes: i32 = n + 1;
+        if data_bytes < 4 { data_bytes = 4; }
+        var str_addr: u32 = new_array(n, data_bytes);
+        var j: i32 = 0;
+        while j < n {
+            poke8(str_addr + 4u32 + j as u32, peek8(p + j as u32) as u8);
+            j = j + 1;
+        }
+        // (trailing NUL already zero from new_array's zero-fill.)
+        poke32(sa_addr + 4u32 + (i * 4) as u32, str_addr);
+        i = i + 1;
+    }
+    return sa_addr as StringArray;
+}
+
 // ===== Array constructors =====
 export fn U8Array(sz: u32) -> U8Array { var n: i32 = sz as i32; return new_array(n, n) as U8Array; }
 export fn U16Array(sz: u32) -> U16Array { var n: i32 = sz as i32; return new_array(n, n * 2) as U16Array; }
