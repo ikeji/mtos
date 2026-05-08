@@ -32,7 +32,7 @@ GEN2_DIR="${GEN2_DIR:-$ROOT_DIR/build/gen2}"
 PARSE="$ROOT_DIR/build/gen1/parse"
 QEMU="${QEMU:-qemu-riscv32}"
 
-for tool in sigscan tcheck codegen bc2asm asm_pass2 asm_pass3; do
+for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3; do
     if [ ! -x "$TOOLS_DIR/$tool" ]; then
         echo "bench: missing $TOOLS_DIR/$tool — run 'make gen3-tools' first" >&2
         exit 1
@@ -206,15 +206,32 @@ for input in "$@"; do
         cat "$ROOT_DIR/compiler/crt0_tc_data.s"
     } > "$work/full.s"
 
-    # Stage 6: asm_pass2 (full.s → .lab). --lab-out + positional src
-    # bakes a `src <full.s>` line into the .lab so asm_pass3 reopens
-    # the source per section emit — no cat-3x intermediate.
+    # Stage 6: asm_pass1 (full.s → .idx + per-section .bin + .reloc).
+    # LINK_MODE pre-encode: walks the source once, emits the link-
+    # ready artifacts asm_pass2 --link consumes.
+    run_stage "$input" asm_pass1 \
+        "\"$QEMU\" \"$TOOLS_DIR/asm_pass1\" \"$work/full.s\" \
+            --idx-out    \"$work/full.idx\" \
+            --text-bin   \"$work/full.text.bin\" \
+            --rodata-bin \"$work/full.rodata.bin\" \
+            --data-bin   \"$work/full.data.bin\" \
+            --reloc-out  \"$work/full.reloc\"" \
+        "$work/full.idx"
+
+    # Stage 7: asm_pass2 --link (idx + bins + reloc → .lab). Single-
+    # input link (no prelude side); the whole full.s is the user.
     run_stage "$input" asm_pass2 \
-        "\"$QEMU\" \"$TOOLS_DIR/asm_pass2\" --lab-out \"$work/full.lab\" \"$work/full.s\"" \
+        "\"$QEMU\" \"$TOOLS_DIR/asm_pass2\" --link \
+            --user-idx        \"$work/full.idx\" \
+            --user-text-bin   \"$work/full.text.bin\" \
+            --user-rodata-bin \"$work/full.rodata.bin\" \
+            --user-data-bin   \"$work/full.data.bin\" \
+            --user-reloc      \"$work/full.reloc\" \
+            --lab-out         \"$work/full.lab\"" \
         "$work/full.lab"
 
-    # Stage 7: asm_pass3 (lab → bin via --lab/--out). Reads the .lab
-    # file + reopens the `src <full.s>` path inside it three times.
+    # Stage 8: asm_pass3 (.lab + .bins → final binary). memcpy each
+    # pre-encoded section bin into place + apply relocs.
     run_stage "$input" asm_pass3 \
         "\"$QEMU\" \"$TOOLS_DIR/asm_pass3\" --lab \"$work/full.lab\" --out \"$work/in.bin\"" \
         "$work/in.bin"
