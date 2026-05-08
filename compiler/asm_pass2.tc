@@ -1,11 +1,26 @@
-// asm_pass2.tc — driver for the label-collection pass.
+// asm_pass2.tc — driver for the LINK_MODE merge pass.
 //
-// All the orchestration logic lives in asm_pass2_lib.tc as
-// `export fn run(...)`. This file is just the main(argv) wrapper —
-// argv parsing + state setup + run() call. Kept separate so the new
-// asm_pass1 (Phase C of the 3-binary split) can `import
-// "asm_pass2_lib.tc"` and call run() without colliding on main /
-// arg_eq linker symbols.
+// All the orchestration logic lives in asm_pass2_lib.tc. This file
+// is just the main(argv) wrapper — argv parsing + state setup +
+// run_link() call. Kept separate so asm_pass1 (Phase C of the
+// 3-binary split) can `import "asm_pass2_lib.tc"` and call run() /
+// run_link() without colliding on main / arg_eq linker symbols.
+//
+// CLI shape (the only one supported now — walked-source went away
+// when every host + OS-side caller migrated to LINK_MODE):
+//
+//   asm_pass2 --link \
+//       [--prelude-idx prelude.idx                      (optional)
+//        --prelude-text-bin pT.bin --prelude-rodata-bin pR.bin
+//        --prelude-data-bin pD.bin --prelude-reloc pL.reloc] \
+//       --user-idx user.idx \
+//       --user-text-bin uT.bin --user-rodata-bin uR.bin \
+//       --user-data-bin uD.bin --user-reloc uL.reloc \
+//       [--add idx text.bin rodata.bin data.bin reloc] ... \
+//       --lab-out full.lab
+//
+// run_asm_tc-style single-input links omit --prelude-* and pass the
+// whole self-contained .s through asm_pass1 as the user side.
 
 import "asm_pass2_lib.tc";
 import "asm_common.tc";
@@ -22,30 +37,17 @@ fn arg_eq(s: String, pat: StringLiteral) -> i32 {
     return 1;
 }
 
+fn err(s: StringLiteral) -> void {
+    sys_write(2, s as u32 as U8Array, len(s));
+    return;
+}
+
 fn main() -> i32 {
-    return run(0 as String, 0 as String, 0 as String);
+    err("asm_pass2: requires --link <args> — see source for CLI shape\n");
+    return 1;
 }
 
 fn main(argv: StringArray) -> i32 {
-    // CLI shapes:
-    //   asm_pass2                            stdin → .lab on stdout
-    //   asm_pass2 src.s                      read src, .lab on stdout
-    //   asm_pass2 --lab-out path.lab ...     .lab to a file instead of stdout
-    //
-    // Linker mode (Phase F, the standard host + OS path): no source
-    // walk, all inputs are pass1 outputs. asm_pass2 --link merges
-    // prelude + user + N extras into a single .lab; asm_pass3 then
-    // reads the .lab + memcpies the bins + applies relocs.
-    //   asm_pass2 --link \
-    //       --prelude-idx prelude.idx \
-    //       --prelude-text-bin pT.bin --prelude-rodata-bin pR.bin \
-    //       --prelude-data-bin pD.bin --prelude-reloc pL.reloc \
-    //       --user-idx user.idx \
-    //       --user-text-bin uT.bin --user-rodata-bin uR.bin \
-    //       --user-data-bin uD.bin --user-reloc uL.reloc \
-    //       [--add idx text.bin rodata.bin data.bin reloc] ... \
-    //       --lab-out full.lab
-    var path: String = 0 as String;
     var lab_out: String = 0 as String;
     var prelude_text_bin:   String = 0 as String;
     var prelude_rodata_bin: String = 0 as String;
@@ -61,8 +63,7 @@ fn main(argv: StringArray) -> i32 {
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var consumed: i32 = 1;  // skip argv[0] (program name)
-        var keep_scanning: i32 = 1;
-        while keep_scanning != 0 && consumed < argc {
+        while consumed < argc {
             var a: String = get(argv, consumed);
             if arg_eq(a, "--link") != 0 {
                 link_mode = 1;
@@ -114,23 +115,19 @@ fn main(argv: StringArray) -> i32 {
                                     get(argv, consumed + 5));
                 consumed = consumed + 6;
             } else {
-                keep_scanning = 0;
+                err("asm_pass2: unknown argument — see source for CLI shape\n");
+                return 1;
             }
         }
-        if consumed < argc { path = get(argv, consumed); consumed = consumed + 1; }
     }
-    if link_mode != 0 {
-        return run_link(prelude_idx, user_idx,
-                        prelude_text_bin, prelude_rodata_bin,
-                        prelude_data_bin, prelude_reloc,
-                        user_text_bin, user_rodata_bin,
-                        user_data_bin, user_reloc,
-                        lab_out);
+    if link_mode == 0 {
+        err("asm_pass2: --link is required\n");
+        return 1;
     }
-    if path as u32 != 0u32 { asm_set_src_path1(path); }
-    if prelude_text_bin   as u32 != 0u32 { asm_set_prelude_text_bin(prelude_text_bin); }
-    if prelude_rodata_bin as u32 != 0u32 { asm_set_prelude_rodata_bin(prelude_rodata_bin); }
-    if prelude_data_bin   as u32 != 0u32 { asm_set_prelude_data_bin(prelude_data_bin); }
-    if prelude_reloc      as u32 != 0u32 { asm_set_prelude_reloc(prelude_reloc); }
-    return run(path, 0 as String, lab_out);
+    return run_link(prelude_idx, user_idx,
+                    prelude_text_bin, prelude_rodata_bin,
+                    prelude_data_bin, prelude_reloc,
+                    user_text_bin, user_rodata_bin,
+                    user_data_bin, user_reloc,
+                    lab_out);
 }

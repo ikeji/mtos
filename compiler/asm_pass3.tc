@@ -3,9 +3,18 @@
 // Orchestration logic lives in asm_pass3_lib.tc as
 // `export fn run_pass2(...)`. This file is just the main(argv)
 // wrapper — argv parsing + run_pass2() call. Kept separate so the
-// new asm_pass1 (Phase C of the 3-binary split) can `import
+// asm_pass1 driver (Phase C of the 3-binary split) can `import
 // "asm_pass3_lib.tc"` and call run_pass2() without colliding on
 // main / arg_eq linker symbols.
+//
+// CLI shape (the only one supported now — stdin walked-source went
+// away when every host + OS-side caller migrated to LINK_MODE):
+//
+//   asm_pass3 --lab path.lab --out path.bin
+//
+// run_pass2's per-section .bin / .reloc parameters stay non-zero
+// only when asm_pass1 invokes run_pass2 directly via the shared
+// asm_pass3_lib import; the CLI never exposed those.
 
 import "asm_pass3_lib.tc";
 import "asm_common.tc";
@@ -22,19 +31,16 @@ fn arg_eq(s: String, pat: StringLiteral) -> i32 {
     return 1;
 }
 
-fn main() -> i32 {
-    return run_pass2(0 as String, 0 as String, 0 as String, 0 as String, 0 as String, 0 as String);
+fn err(s: StringLiteral) -> void {
+    sys_write(2, s as u32 as U8Array, len(s));
+    return;
 }
 
-// File-args entry:
-//   asm_pass3 --lab path.lab --out path.bin
-// Either flag is optional — without --lab we fall back to stdin
-// (legacy compile-gen2.sh path); without --out we write to stdout.
-//
-// run_pass2's per-section .bin / .reloc parameters stay non-zero
-// only when asm_pass1 invokes run_pass2 directly via the shared
-// asm_pass3_lib import; the CLI no longer exposes those flags
-// because no shell-driven caller used them.
+fn main() -> i32 {
+    err("asm_pass3: requires --lab <path> --out <path>\n");
+    return 1;
+}
+
 fn main(argv: StringArray) -> i32 {
     var lab: String = 0 as String;
     var out: String = 0 as String;
@@ -48,9 +54,14 @@ fn main(argv: StringArray) -> i32 {
             } else if arg_eq(a, "--out") != 0 && i + 1 < argc {
                 out = get(argv, i + 1); i = i + 2;
             } else {
-                i = i + 1;
+                err("asm_pass3: unknown argument — see source for CLI shape\n");
+                return 1;
             }
         }
+    }
+    if lab as u32 == 0u32 || out as u32 == 0u32 {
+        err("asm_pass3: --lab and --out are required\n");
+        return 1;
     }
     return run_pass2(lab, out, 0 as String, 0 as String, 0 as String, 0 as String);
 }
