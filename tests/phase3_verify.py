@@ -78,20 +78,38 @@ def gen_references_link():
     Prelude files are staged by kernel/build.sh into REFS/ via the
     PRELUDE_OUT_DIR env var, so we replay the exact bytes the OS
     cats into its linker pipeline."""
-    with open(f"{REFS}/full.s", "wb") as o:
-        o.write(open(f"{REFS}/prelude.s", "rb").read())
+    # user.s = bc2asm output + prelude_tail.s (matches the OS-side
+    # `cat /tmp/4.s /prelude_tail.s > /tmp/u.s` step).
+    with open(f"{REFS}/u.s", "wb") as o:
         o.write(open(f"{REFS}/4.s", "rb").read())
         o.write(open(f"{REFS}/prelude_tail.s", "rb").read())
-    with open(f"{REFS}/full.s", "rb") as i, open(f"{REFS}/lab.s", "wb") as o:
-        run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass2"],
-            stdin=i, stdout=o)
-    # asm_pass3 input: lab.s + full.s × 3 (3-pass stream emitter —
-    # text, rodata, data rescans).
-    p2_in = (open(f"{REFS}/lab.s", "rb").read()
-             + open(f"{REFS}/full.s", "rb").read() * 3)
-    with open(f"{REFS}/hw", "wb") as o:
-        run(["qemu-riscv32", f"{ROOT}/build/gen2/asm_pass3"],
-            input=p2_in, stdout=o)
+    qemu = ["qemu-riscv32"]
+    gen2 = f"{ROOT}/build/gen2"
+    # Pre-encode user.s via asm_pass1 → idx + per-section .bin + reloc.
+    run(qemu + [f"{gen2}/asm_pass1", f"{REFS}/u.s",
+                "--idx-out",    f"{REFS}/u.idx",
+                "--text-bin",   f"{REFS}/utx.bin",
+                "--rodata-bin", f"{REFS}/uro.bin",
+                "--data-bin",   f"{REFS}/udt.bin",
+                "--reloc-out",  f"{REFS}/url"])
+    # asm_pass2 --link: merge prelude (pre-encoded, copied via
+    # PRELUDE_OUT_DIR) + user inputs into a single .lab.
+    run(qemu + [f"{gen2}/asm_pass2", "--link",
+                "--prelude-idx",        f"{REFS}/prelude.idx",
+                "--prelude-text-bin",   f"{REFS}/prelude.text.bin",
+                "--prelude-rodata-bin", f"{REFS}/prelude.rodata.bin",
+                "--prelude-data-bin",   f"{REFS}/prelude.data.bin",
+                "--prelude-reloc",      f"{REFS}/prelude.reloc",
+                "--user-idx",           f"{REFS}/u.idx",
+                "--user-text-bin",      f"{REFS}/utx.bin",
+                "--user-rodata-bin",    f"{REFS}/uro.bin",
+                "--user-data-bin",      f"{REFS}/udt.bin",
+                "--user-reloc",         f"{REFS}/url",
+                "--lab-out",            f"{REFS}/lab.s"])
+    # asm_pass3 --lab/--out: read .lab + memcpy .bins + apply relocs.
+    run(qemu + [f"{gen2}/asm_pass3",
+                "--lab", f"{REFS}/lab.s",
+                "--out", f"{REFS}/hw"])
 
 
 def build_kernel_with_extras():
@@ -191,15 +209,13 @@ def run_pipeline_on_virt():
         "mx      < /tmp/3.bc",
         "bc2asm  < /tmp/3.bc > /tmp/4.s",
         "mx      < /tmp/4.s",
-        # ---- link (asm_pass2 + asm_pass3) ----
-        "cat /prelude.s /tmp/4.s /prelude_tail.s > /tmp/full.s",
-        "mx      < /tmp/full.s",
-        "asm_pass2 < /tmp/full.s > /tmp/lab.s",
+        # ---- link (asm_pass1 + asm_pass2 --link + asm_pass3 --lab) ----
+        "cat /tmp/4.s /prelude_tail.s > /tmp/u.s",
+        "mx      < /tmp/u.s",
+        "asm_pass1 /tmp/u.s --idx-out /tmp/u.idx --text-bin /tmp/utx.bin --rodata-bin /tmp/uro.bin --data-bin /tmp/udt.bin --reloc-out /tmp/url",
+        "asm_pass2 --link --prelude-idx /prelude.idx --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --user-idx /tmp/u.idx --user-text-bin /tmp/utx.bin --user-rodata-bin /tmp/uro.bin --user-data-bin /tmp/udt.bin --user-reloc /tmp/url --lab-out /tmp/lab.s",
         "mx      < /tmp/lab.s",
-        # asm_pass3 wants the label table followed by the source three
-        # times (3-pass stream emitter: text, rodata, data).
-        "cat /tmp/lab.s /tmp/full.s /tmp/full.s /tmp/full.s > /tmp/p2.in",
-        "asm_pass3 < /tmp/p2.in > /tmp/hw",
+        "asm_pass3 --lab /tmp/lab.s --out /tmp/hw",
         "mx      < /tmp/hw",
         # ---- run ----
         "/tmp/hw",
@@ -269,7 +285,7 @@ def main():
     # Split into mx-delimited streams.
     streams = decode_mx_streams(bytes(child))
     stage_names = ["1.ast", "1.th", "1.wrap", "2.tast", "3.bc", "4.s",
-                   "full.s", "lab.s", "hw"]
+                   "u.s", "lab.s", "hw"]
     print(f"found {len(streams)} mx streams (expected {len(stage_names)})")
 
     # Save each recovered stream beside the reference and diff.

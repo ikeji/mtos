@@ -329,14 +329,18 @@ if [ -n "$DISK_OUT" ]; then
 fi
 
 # Optional PRELUDE_OUT_DIR: export the staged prelude.s / prelude_tail.s
-# to the given directory so host-side drivers (e.g. the pico2 hello-world
-# pipeline) can replay the same linker prelude bytes back to the OS via
-# UART. tests/test_pico2_hw.sh uses this to avoid regenerating the
-# prelude from scratch in Python.
+# + the pre-encoded prelude.idx / prelude.{text,rodata,data}.bin /
+# prelude.reloc to the given directory so host-side drivers (the
+# pico2 hello-world pipeline, the phase3-verify reference generator)
+# can replay the exact linker prelude bytes the OS will see.
 if [ -n "$PRELUDE_OUT_DIR" ]; then
     mkdir -p "$PRELUDE_OUT_DIR"
-    cp "$ROOT_DIR_TREE/prelude.s" "$PRELUDE_OUT_DIR/"
-    cp "$ROOT_DIR_TREE/prelude_tail.s" "$PRELUDE_OUT_DIR/"
+    cp "$ROOT_DIR_TREE/prelude.s"         "$PRELUDE_OUT_DIR/"
+    cp "$ROOT_DIR_TREE/prelude_tail.s"    "$PRELUDE_OUT_DIR/"
+    for f in prelude.idx prelude.text.bin prelude.rodata.bin \
+             prelude.data.bin prelude.reloc; do
+        [ -s "$ROOT_DIR_TREE/$f" ] && cp "$ROOT_DIR_TREE/$f" "$PRELUDE_OUT_DIR/"
+    done
 fi
 
 # Pico 2 additionally embeds the image as _mtfs_image_* so block_flash.tc
