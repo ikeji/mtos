@@ -10,10 +10,11 @@
 
 cat /src/raw.s /src/platform_pico2.s /src/trap_common.s /sd/runtime.s /sd/kc.s /sd/bf.s /sd/bs.s /sd/ff.s /sd/mf.s /sd/tf.s /sd/pf.s /sd/vf.s /sd/ld.s /sd/kp.s /src/crt0_pico2_data.s /src/mtfs_wrap_nodisk.s > /sd/full.s
 
-asm_pass2 < /sd/full.s > /sd/full.lab
-
-cat /sd/full.lab /sd/full.s /sd/full.s /sd/full.s > /sd/p2_in.s
-asm_pass3 < /sd/p2_in.s > /sd/kernel_nodisk.bin
+# asm_pass2 walks /sd/full.s; --lab-out + positional src bakes
+# `src /sd/full.s` into the .lab so asm_pass3 reopens the source
+# per section pass (no cat-3x intermediate).
+asm_pass2 --lab-out /sd/full.lab /sd/full.s
+asm_pass3 --lab /sd/full.lab --out /sd/kernel_nodisk.bin
 
 md5sum /sd/kernel_nodisk.bin
 echo LINK_KERNEL_NODISK_DONE

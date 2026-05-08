@@ -47,11 +47,15 @@ cat /sd/kp.s >> /sd/full.s
 cat /src/crt0_pico2_data.s >> /sd/full.s
 cat /src/mtfs_wrap.s >> /sd/full.s
 
-# Pass 1: build label table.
-asm_pass2 < /sd/full.s > /sd/full.lab
+# Pass 1: build label table. asm_pass2 walks /sd/full.s and bakes
+# a `src /sd/full.s` line into /sd/full.lab so pass 2 can re-open
+# the source itself per section emit (no cat-3x intermediate).
+asm_pass2 --lab-out /sd/full.lab /sd/full.s
 
-# Pass 2: link to raw kernel binary.
-cat /sd/full.lab /sd/full.s /sd/full.s /sd/full.s | asm_pass3 > /sd/kernel.bin
+# Pass 2: link to raw kernel binary. asm_pass3 reads /sd/full.lab
+# + reopens the `src /sd/full.s` path inside it three times
+# (once per emit section).
+asm_pass3 --lab /sd/full.lab --out /sd/kernel.bin
 
 md5sum /sd/kernel.bin
 echo LINK_KERNEL_DONE
