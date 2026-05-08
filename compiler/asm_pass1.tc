@@ -45,6 +45,11 @@ fn do_openat(dirfd: i32, path: String,        flags: i32) -> i32;
 fn do_openat(dirfd: i32, path: StringLiteral, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
+// km_dump_peak — printed at exit so bench_pipeline.sh / OS-side
+// memory tests can read the per-stage peak from `[kmem peak=N]`.
+// No-op stub on host bootstrap (bootstrap/runtime_syscall.c).
+fn km_dump_peak() -> void;
+
 fn arg_eq(s: String, pat: StringLiteral) -> i32 {
     var ns: i32 = len(s);
     var np: i32 = len(pat);
@@ -268,6 +273,7 @@ fn run_pre_encode(src: String,
     asm_set_reloc_fd(0);
 
     if rc != 0 { err("asm_pass1: pass 2 walk failed\n"); return rc; }
+    km_dump_peak();
     return 0;
 }
 
