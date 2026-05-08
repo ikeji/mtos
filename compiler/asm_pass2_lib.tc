@@ -191,52 +191,28 @@ fn emit_stripped(reader: SourceReader, out_fd: i32,
 // mode dead-strip is skipped entirely. With src_path set, Phase 3 + BFS
 // run; with strip_out_path also set, Phase 5 emits a stripped source.
 //
-// emit_idx_path is set only by `--emit-idx <out.idx>` invocations
-// (kernel build, host-side prelude pre-link). When non-zero the run
-// processes the source through pass 1a only and writes a `.idx`
-// (per-file metadata: secsize / labels intra / refs by name) instead
-// of going through BFS / fixup / strip / lab dump.
+// emit_idx_path: when non-zero the run processes the source through
+// pass 1a only and writes a `.idx` (per-file metadata: secsize /
+// labels intra / refs by name) instead of going through BFS / fixup
+// / strip / lab dump. Used by asm_pass1 (which calls run() internally
+// in three steps to produce the .idx + .lab + per-section .bin
+// outputs the linker consumes).
 //
-// load_idx_path: optional pre-link state file. When set, the listed
-// `.idx` is loaded (labels / refs / secsize) before the source walk
-// so the user.s starts with the prelude state already in place. Used
-// to skip the prelude source walk on every OS-side compile (kernel
-// build pre-emits prelude.idx, OS asm_pass2 just loads it).
+// strip_out_path / load_idx_path stay declared but the legacy load
+// path is dead — the link mode (run_link) handles all multi-input
+// cases now. The dead idx_src_bytes / idx_secsize / idx_numlab_counts
+// args to emit_stripped() are kept zero because no caller exercises
+// the strip path either; both will be cleaned up when strip_out is
+// removed entirely.
 export fn run(src_path: String, strip_out_path: String,
               emit_idx_path: String, load_idx_path: String,
               lab_out_path: String) -> i32 {
     asm_init_pass1();
     asm_set_pass(1);
 
-    // Load pre-link state if asked. Must happen after asm_init_pass1
-    // (so g_labels etc. exist) but before the source walk.
     var idx_src_bytes: i32 = 0;
     var idx_secsize: I32Array = 0 as I32Array;
     var idx_numlab_counts: I32Array = 0 as I32Array;
-    if load_idx_path as u32 != 0u32 {
-        asm_load_idx(load_idx_path);
-        // asm_load_idx accumulates the idx's `src_bytes` line into
-        // g_src_bytes. Snapshot it so Phase 5's strip recomputation
-        // can re-add the prelude bytes (asm_pass3 still walks the
-        // full prelude, so its per-section stream loop needs
-        // prelude_bytes + user_strip_bytes per pass).
-        idx_src_bytes = asm_get_src_bytes();
-        // Snapshot the prelude's per-section contributions. Phase 5's
-        // strip walker resets g_sec_pos to 0 and only sees user.s,
-        // so we re-seed these post-reset to keep section_base
-        // calculations honest.
-        idx_secsize = I32Array(4);
-        set(idx_secsize, 0, asm_sec_pos(0));
-        set(idx_secsize, 1, asm_sec_pos(1));
-        set(idx_secsize, 2, asm_sec_pos(2));
-        set(idx_secsize, 3, asm_sec_pos(3));
-        // Snapshot per-digit numlab counts so Phase 5 can preserve
-        // prelude numlabs (the user-only strip walk would otherwise
-        // wipe them and asm-pass2 would fail on `Nb`/`Nf` refs into
-        // the prelude).
-        idx_numlab_counts = I32Array(10);
-        asm_snapshot_numlab_counts(idx_numlab_counts);
-    }
 
     var src_fd: i32 = 0;
     var have_path: i32 = 0;
