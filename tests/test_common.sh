@@ -185,6 +185,7 @@ ensure_gen2_tools() {
        && [ -x "$SHARED_GEN2_DIR/parse" ] && [ -x "$SHARED_GEN2_DIR/sigscan" ] \
        && [ -x "$SHARED_GEN2_DIR/tcheck" ] && [ -x "$SHARED_GEN2_DIR/codegen" ] \
        && [ -x "$SHARED_GEN2_DIR/bc2asm" ] && [ -x "$SHARED_GEN2_DIR/bcrun" ] \
+       && [ -x "$SHARED_GEN2_DIR/asm_pass1" ] \
        && [ -x "$SHARED_GEN2_DIR/asm_pass2" ] && [ -x "$SHARED_GEN2_DIR/asm_pass3" ]; then
         _GEN2_TMP="$SHARED_GEN2_DIR"
         _GEN2_SHARED=1
@@ -198,11 +199,13 @@ ensure_gen2_tools() {
     build_gen2_tool "codegen"
     build_gen2_tool "bc2asm"
     build_gen2_tool "bcrun"
+    build_gen2_tool "asm_pass1"
     build_gen2_tool "asm_pass2"
     build_gen2_tool "asm_pass3"
     if [ -x "$_GEN2_TMP/parse" ] && [ -x "$_GEN2_TMP/sigscan" ] && \
        [ -x "$_GEN2_TMP/tcheck" ] && [ -x "$_GEN2_TMP/codegen" ] && \
        [ -x "$_GEN2_TMP/bc2asm" ] && [ -x "$_GEN2_TMP/bcrun" ] && \
+       [ -x "$_GEN2_TMP/asm_pass1" ] && \
        [ -x "$_GEN2_TMP/asm_pass2" ] && [ -x "$_GEN2_TMP/asm_pass3" ]; then
         USE_NATIVE=true
     fi
