@@ -10,10 +10,19 @@
 
 cat /src/raw.s /src/platform_pico2.s /src/trap_common.s /sd/runtime.s /sd/kc.s /sd/bf.s /sd/bs.s /sd/ff.s /sd/mf.s /sd/tf.s /sd/pf.s /sd/vf.s /sd/ld.s /sd/kp.s /src/crt0_pico2_data.s /src/mtfs_wrap_nodisk.s > /sd/full.s
 
-# asm_pass2 walks /sd/full.s; --lab-out + positional src bakes
-# `src /sd/full.s` into the .lab so asm_pass3 reopens the source
-# per section pass (no cat-3x intermediate).
-asm_pass2 --lab-out /sd/full.lab /sd/full.s
+# LINK_MODE on-device: pre-encode the kernel via asm_pass1, then
+# asm_pass2 --link merges into /sd/full.lab (no separate prelude;
+# --prelude-* is optional in --link). asm_pass3 memcpies the .bins.
+asm_pass1 /sd/full.s --idx-out /sd/full.idx \
+    --text-bin /sd/full.tx --rodata-bin /sd/full.ro \
+    --data-bin /sd/full.dt --reloc-out /sd/full.rl
+asm_pass2 --link \
+    --user-idx        /sd/full.idx \
+    --user-text-bin   /sd/full.tx \
+    --user-rodata-bin /sd/full.ro \
+    --user-data-bin   /sd/full.dt \
+    --user-reloc      /sd/full.rl \
+    --lab-out         /sd/full.lab
 asm_pass3 --lab /sd/full.lab --out /sd/kernel_nodisk.bin
 
 md5sum /sd/kernel_nodisk.bin

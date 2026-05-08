@@ -47,14 +47,21 @@ cat /sd/kp.s >> /sd/full.s
 cat /src/crt0_pico2_data.s >> /sd/full.s
 cat /src/mtfs_wrap.s >> /sd/full.s
 
-# Pass 1: build label table. asm_pass2 walks /sd/full.s and bakes
-# a `src /sd/full.s` line into /sd/full.lab so pass 2 can re-open
-# the source itself per section emit (no cat-3x intermediate).
-asm_pass2 --lab-out /sd/full.lab /sd/full.s
-
-# Pass 2: link to raw kernel binary. asm_pass3 reads /sd/full.lab
-# + reopens the `src /sd/full.s` path inside it three times
-# (once per emit section).
+# LINK_MODE on-device: pre-encode the entire kernel /sd/full.s as a
+# single user-side input (asm_pass1), then asm_pass2 --link merges
+# it into /sd/full.lab without a separate prelude (--prelude-* is
+# optional). asm_pass3 memcpies the per-section .bins + applies
+# relocs — no walked-source `src` re-reads.
+asm_pass1 /sd/full.s --idx-out /sd/full.idx \
+    --text-bin /sd/full.tx --rodata-bin /sd/full.ro \
+    --data-bin /sd/full.dt --reloc-out /sd/full.rl
+asm_pass2 --link \
+    --user-idx        /sd/full.idx \
+    --user-text-bin   /sd/full.tx \
+    --user-rodata-bin /sd/full.ro \
+    --user-data-bin   /sd/full.dt \
+    --user-reloc      /sd/full.rl \
+    --lab-out         /sd/full.lab
 asm_pass3 --lab /sd/full.lab --out /sd/kernel.bin
 
 md5sum /sd/kernel.bin
