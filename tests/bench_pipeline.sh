@@ -206,21 +206,16 @@ for input in "$@"; do
         cat "$ROOT_DIR/compiler/crt0_tc_data.s"
     } > "$work/full.s"
 
-    # Stage 6: asm_pass2 (full.s → .lab)
+    # Stage 6: asm_pass2 (full.s → .lab). --lab-out + positional src
+    # bakes a `src <full.s>` line into the .lab so asm_pass3 reopens
+    # the source per section emit — no cat-3x intermediate.
     run_stage "$input" asm_pass2 \
-        "\"$QEMU\" \"$TOOLS_DIR/asm_pass2\" < \"$work/full.s\" > \"$work/full.lab\"" \
+        "\"$QEMU\" \"$TOOLS_DIR/asm_pass2\" --lab-out \"$work/full.lab\" \"$work/full.s\"" \
         "$work/full.lab"
 
-    # Stage 7: asm_pass3 ((lab + 3× full.s) → bin). Cat is host-side
-    # setup (not part of pass2's peak); the script-mode benchmark on
-    # pico2 captures this differently via cat-p2 timings.
-    {
-        cat "$work/full.lab"
-        cat "$work/full.s"
-        cat "$work/full.s"
-        cat "$work/full.s"
-    } > "$work/full.in"
+    # Stage 7: asm_pass3 (lab → bin via --lab/--out). Reads the .lab
+    # file + reopens the `src <full.s>` path inside it three times.
     run_stage "$input" asm_pass3 \
-        "\"$QEMU\" \"$TOOLS_DIR/asm_pass3\" < \"$work/full.in\" > \"$work/in.bin\"" \
+        "\"$QEMU\" \"$TOOLS_DIR/asm_pass3\" --lab \"$work/full.lab\" --out \"$work/in.bin\"" \
         "$work/in.bin"
 done
