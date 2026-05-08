@@ -253,21 +253,24 @@ run_bc2asm_tc() {
 }
 
 # run_asm_tc — takes a .s (already concatenated with crt0 / runtime if
-# needed) on stdin and emits the ELF or raw binary via the new
-# asm_pass2 + asm_pass3 split. Buffers stdin into a tmp file so
-# asm_pass2 and asm_pass3 can read it independently.
+# needed) on stdin and emits the ELF or raw binary via the asm_pass2
+# + asm_pass3 split. Buffers stdin into a tmp file so the asm tools
+# can read it as a path argument.
 #
-# Phase 5 stream-emit: asm_pass3 runs 3 section passes (text / rodata
-# / data), each consuming one full copy of the source from stdin, so
-# the caller must concatenate the source 3 times after the .lab.
+# `asm_pass2 --lab-out <lab> <src>` walks the source and bakes a
+# `src <src>` line into the .lab; `asm_pass3 --lab <lab> --out <bin>`
+# then reopens that path per emit section (no cat-three-copies
+# intermediate to build).
 run_asm_tc() {
-    local src lab
+    local src lab bin
     src=$(mktemp)
     lab=$(mktemp)
+    bin=$(mktemp)
     cat > "$src"
-    "$QEMU" "$_GEN2_TMP/asm_pass2" < "$src" > "$lab" 2>/dev/null
-    cat "$lab" "$src" "$src" "$src" | "$QEMU" "$_GEN2_TMP/asm_pass3" 2>/dev/null
-    rm -f "$src" "$lab"
+    "$QEMU" "$_GEN2_TMP/asm_pass2" --lab-out "$lab" "$src" 2>/dev/null
+    "$QEMU" "$_GEN2_TMP/asm_pass3" --lab "$lab" --out "$bin" 2>/dev/null
+    cat "$bin"
+    rm -f "$src" "$lab" "$bin"
 }
 
 # ===== Common test file lists =====
