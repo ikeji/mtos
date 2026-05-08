@@ -96,10 +96,10 @@ cat /empty_imports.txt /self_open.txt /sd/1.th /wrap_close.txt /sd/1.ast > /sd/1
 tcheck < /sd/1.wr > /sd/2.tast
 codegen < /sd/2.tast > /sd/3.bc
 bc2asm < /sd/3.bc > /sd/4.s
-cat /prelude.s /sd/4.s /prelude_tail.s > /sd/full.s
-asm_pass2 < /sd/full.s > /sd/lab.s
-cat /sd/lab.s /sd/full.s /sd/full.s /sd/full.s > /sd/p2.in
-asm_pass3 < /sd/p2.in > /sd/HW
+cat /sd/4.s /prelude_tail.s > /sd/u.s
+asm_pass1 /sd/u.s --idx-out /sd/u.idx --text-bin /sd/utx.bin --rodata-bin /sd/uro.bin --data-bin /sd/udt.bin --reloc-out /sd/url
+asm_pass2 --link --prelude-idx /prelude.idx --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --user-idx /sd/u.idx --user-text-bin /sd/utx.bin --user-rodata-bin /sd/uro.bin --user-data-bin /sd/udt.bin --user-reloc /sd/url --lab-out /sd/lab.s
+asm_pass3 --lab /sd/lab.s --out /sd/HW
 /sd/HW
 PIPE_EOF
 python3 "$SCRIPT_DIR/pico2_pipeline_drive.py" \
