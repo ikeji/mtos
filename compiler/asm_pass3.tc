@@ -28,20 +28,16 @@ fn main() -> i32 {
 
 // File-args entry:
 //   asm_pass3 --lab path.lab --out path.bin
-//   asm_pass3 --lab prelude.lab \
-//              --text-bin prelude.text.bin \
-//              --rodata-bin prelude.rodata.bin \
-//              --data-bin prelude.data.bin \
-//              --reloc-out prelude.reloc
 // Either flag is optional — without --lab we fall back to stdin
 // (legacy compile-gen2.sh path); without --out we write to stdout.
+//
+// run_pass2's per-section .bin / .reloc parameters stay non-zero
+// only when asm_pass1 invokes run_pass2 directly via the shared
+// asm_pass3_lib import; the CLI no longer exposes those flags
+// because no shell-driven caller used them.
 fn main(argv: StringArray) -> i32 {
     var lab: String = 0 as String;
     var out: String = 0 as String;
-    var text_bin:   String = 0 as String;
-    var rodata_bin: String = 0 as String;
-    var data_bin:   String = 0 as String;
-    var reloc_out:  String = 0 as String;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var i: i32 = 1;
@@ -51,18 +47,10 @@ fn main(argv: StringArray) -> i32 {
                 lab = get(argv, i + 1); i = i + 2;
             } else if arg_eq(a, "--out") != 0 && i + 1 < argc {
                 out = get(argv, i + 1); i = i + 2;
-            } else if arg_eq(a, "--text-bin") != 0 && i + 1 < argc {
-                text_bin = get(argv, i + 1); i = i + 2;
-            } else if arg_eq(a, "--rodata-bin") != 0 && i + 1 < argc {
-                rodata_bin = get(argv, i + 1); i = i + 2;
-            } else if arg_eq(a, "--data-bin") != 0 && i + 1 < argc {
-                data_bin = get(argv, i + 1); i = i + 2;
-            } else if arg_eq(a, "--reloc-out") != 0 && i + 1 < argc {
-                reloc_out = get(argv, i + 1); i = i + 2;
             } else {
                 i = i + 1;
             }
         }
     }
-    return run_pass2(lab, out, text_bin, rodata_bin, data_bin, reloc_out);
+    return run_pass2(lab, out, 0 as String, 0 as String, 0 as String, 0 as String);
 }
