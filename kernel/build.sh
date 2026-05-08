@@ -258,7 +258,7 @@ cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
 GEN2_ASM_PASS1_TOOL="${GEN2_DIR:-build/gen2}/asm_pass1"
 if [ -x "$GEN2_ASM_PASS1_TOOL" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
     qemu-riscv32 "$GEN2_ASM_PASS1_TOOL" \
-        "$ROOT_DIR_TREE/prelude.s" "$ROOT_DIR_TREE/prelude_tail.s" \
+        "$ROOT_DIR_TREE/prelude.s" \
         --idx-out    "$ROOT_DIR_TREE/prelude.idx" \
         --text-bin   "$ROOT_DIR_TREE/prelude.text.bin" \
         --rodata-bin "$ROOT_DIR_TREE/prelude.rodata.bin" \
