@@ -38,7 +38,6 @@ fn main(argv: StringArray) -> i32 {
     // reads the .lab + memcpies the bins + applies relocs.
     //   asm_pass2 --link \
     //       --prelude-idx prelude.idx \
-    //       --idx-source prelude.s \
     //       --prelude-text-bin pT.bin --prelude-rodata-bin pR.bin \
     //       --prelude-data-bin pD.bin --prelude-reloc pL.reloc \
     //       --user-idx user.idx \
@@ -47,7 +46,6 @@ fn main(argv: StringArray) -> i32 {
     //       [--add idx text.bin rodata.bin data.bin reloc] ... \
     //       --lab-out full.lab
     var path: String = 0 as String;
-    var idx_source: String = 0 as String;
     var lab_out: String = 0 as String;
     var prelude_text_bin:   String = 0 as String;
     var prelude_rodata_bin: String = 0 as String;
@@ -74,9 +72,6 @@ fn main(argv: StringArray) -> i32 {
                 consumed = consumed + 2;
             } else if arg_eq(a, "--user-idx") != 0 && consumed + 1 < argc {
                 user_idx = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--idx-source") != 0 && consumed + 1 < argc {
-                idx_source = get(argv, consumed + 1);
                 consumed = consumed + 2;
             } else if arg_eq(a, "--lab-out") != 0 && consumed + 1 < argc {
                 lab_out = get(argv, consumed + 1);
@@ -130,14 +125,9 @@ fn main(argv: StringArray) -> i32 {
                         prelude_data_bin, prelude_reloc,
                         user_text_bin, user_rodata_bin,
                         user_data_bin, user_reloc,
-                        idx_source, lab_out);
+                        lab_out);
     }
-    if idx_source as u32 != 0u32 { asm_set_src_path1(idx_source); }
-    if path as u32 != 0u32 && idx_source as u32 != 0u32 {
-        asm_set_src_path2(path);
-    } else if path as u32 != 0u32 {
-        asm_set_src_path1(path);
-    }
+    if path as u32 != 0u32 { asm_set_src_path1(path); }
     if prelude_text_bin   as u32 != 0u32 { asm_set_prelude_text_bin(prelude_text_bin); }
     if prelude_rodata_bin as u32 != 0u32 { asm_set_prelude_rodata_bin(prelude_rodata_bin); }
     if prelude_data_bin   as u32 != 0u32 { asm_set_prelude_data_bin(prelude_data_bin); }

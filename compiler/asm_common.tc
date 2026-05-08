@@ -317,9 +317,7 @@ var DEF_POOL_INITIAL_KB: i32 = 4;
 // asm-pass2 can open them directly instead of reading from stdin.
 // Up to 2 entries (prelude + user_strip in the load-idx flow).
 var g_src_path1: String = 0 as String;
-var g_src_path2: String = 0 as String;
 export fn asm_set_src_path1(p: String) -> void { g_src_path1 = p; return; }
-export fn asm_set_src_path2(p: String) -> void { g_src_path2 = p; return; }
 
 // Pre-encoded prelude paths (Step 5 of pre-encode). When set,
 // asm_dump_lab_state replaces `src <g_src_path1>` (the prelude
@@ -2614,11 +2612,6 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
             emit_nl(sb);
         }
         ei = ei + 1;
-    }
-    if g_src_path2 as u32 != 0u32 {
-        emit_string(sb, "src ");
-        emit_string(sb, g_src_path2);
-        emit_nl(sb);
     }
 
     var li: i32 = 0;

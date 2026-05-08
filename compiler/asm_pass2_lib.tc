@@ -172,7 +172,6 @@ export fn run_link(
     prelude_data_bin: String, prelude_reloc: String,
     user_text_bin: String, user_rodata_bin: String,
     user_data_bin: String, user_reloc: String,
-    idx_source: String,
     lab_out_path: String) -> i32 {
     asm_init_pass1();
     asm_set_pass(1);
@@ -221,7 +220,6 @@ export fn run_link(
     asm_set_user_text_start(user_text_start);
     asm_set_user_rodata_start(user_rodata_start);
     asm_set_user_data_start(user_data_start);
-    if idx_source as u32 != 0u32 { asm_set_src_path1(idx_source); }
 
     return run_link_finish(lab_out_path);
 }

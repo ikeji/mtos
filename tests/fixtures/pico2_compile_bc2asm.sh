@@ -24,7 +24,7 @@ codegen < /sd/t.tast > /sd/t.bc
 bc2asm < /sd/t.bc > /sd/t.s
 cat /sd/t.s /sd/sb.s /sd/sr.s /sd/sl.s /prelude_tail.s > /sd/user.s
 asm_pass1 /sd/user.s --idx-out /sd/u.idx --text-bin /sd/utx.bin --rodata-bin /sd/uro.bin --data-bin /sd/udt.bin --reloc-out /sd/url
-asm_pass2 --link --prelude-idx /prelude.idx --user-idx /sd/u.idx --idx-source /prelude.s --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --user-text-bin /sd/utx.bin --user-rodata-bin /sd/uro.bin --user-data-bin /sd/udt.bin --user-reloc /sd/url --lab-out /sd/t.lab
+asm_pass2 --link --prelude-idx /prelude.idx --user-idx /sd/u.idx --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --user-text-bin /sd/utx.bin --user-rodata-bin /sd/uro.bin --user-data-bin /sd/udt.bin --user-reloc /sd/url --lab-out /sd/t.lab
 asm_pass3 --lab /sd/t.lab --out /sd/bc2asm.bin
 md5sum /sd/bc2asm.bin
 echo COMPILE_BC2ASM_DONE

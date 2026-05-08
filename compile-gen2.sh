@@ -256,7 +256,6 @@ done
 # Step 5: link → .lab.
 "$QEMU" "$GEN2_DIR/asm_pass2" --link \
     --prelude-idx "$TMP/prelude.idx" \
-    --idx-source  "$TMP/prelude.s" \
     --prelude-text-bin   "$TMP/prelude.text.bin" \
     --prelude-rodata-bin "$TMP/prelude.rodata.bin" \
     --prelude-data-bin   "$TMP/prelude.data.bin" \
