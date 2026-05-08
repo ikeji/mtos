@@ -176,31 +176,39 @@ export fn run_link(
     asm_init_pass1();
     asm_set_pass(1);
 
-    // Load the prelude idx; snapshot the post-load section sizes so
-    // user reloc offsets land in section-absolute coordinates.
-    if prelude_idx as u32 == 0u32 || user_idx as u32 == 0u32 {
+    // user side is required; prelude is optional. Single-input links
+    // (run_asm_tc, on-device kernel link, host bench) pass only the
+    // user-side flags and asm_pass2 treats the user input as the
+    // entire program with sec_pos[*] starting at 0.
+    if user_idx as u32 == 0u32 {
         return 0 - 1;
     }
-    asm_load_idx(prelude_idx);
-    // Snapshot raw / load_base from the prelude (its `; raw` /
-    // `; load_base` directives drive how the final binary is wrapped).
-    // user.idx's defaults (`raw 0`, `load_base 65536`) would otherwise
-    // overwrite them on the second load.
-    var saved_raw:       i32 = asm_get_raw_mode();
-    var saved_load_base: i32 = asm_get_load_base();
+    var saved_raw:       i32 = 0;
+    var saved_load_base: i32 = 0;
+    if prelude_idx as u32 != 0u32 {
+        asm_load_idx(prelude_idx);
+        // Snapshot raw / load_base from the prelude (its `; raw` /
+        // `; load_base` directives drive how the final binary is
+        // wrapped). user.idx's defaults (`raw 0`, `load_base 65536`)
+        // would otherwise overwrite them on the second load.
+        saved_raw       = asm_get_raw_mode();
+        saved_load_base = asm_get_load_base();
+    }
 
     // Load the user idx. `align <s> <n>` lines inside it pre-align
     // sec_pos[s] before the labels are installed; sections without an
-    // align line just inherit the prelude's end position. Either way
-    // asm_load_idx_content_start(s) afterwards reports the offset
-    // within section s where user content actually begins — that's
-    // what asm_pass3 needs as the per-bin pad target.
+    // align line just inherit the prelude's end position (or 0 with
+    // no prelude). Either way asm_load_idx_content_start(s) afterwards
+    // reports the offset within section s where user content actually
+    // begins — that's what asm_pass3 needs as the per-bin pad target.
     asm_load_idx(user_idx);
     var user_text_start:   i32 = asm_load_idx_content_start(0);
     var user_rodata_start: i32 = asm_load_idx_content_start(1);
     var user_data_start:   i32 = asm_load_idx_content_start(2);
-    asm_install_raw_mode(saved_raw);
-    asm_install_load_base(saved_load_base);
+    if prelude_idx as u32 != 0u32 {
+        asm_install_raw_mode(saved_raw);
+        asm_install_load_base(saved_load_base);
+    }
     // user.reloc text offsets are relative to the user.text.bin start
     // — the link-time absolute position is user_text_start + offset,
     // so the lab needs each entry shifted by user_text_start.

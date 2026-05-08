@@ -253,24 +253,34 @@ run_bc2asm_tc() {
 }
 
 # run_asm_tc — takes a .s (already concatenated with crt0 / runtime if
-# needed) on stdin and emits the ELF or raw binary via the asm_pass2
-# + asm_pass3 split. Buffers stdin into a tmp file so the asm tools
-# can read it as a path argument.
+# needed) on stdin and emits the ELF or raw binary via the LINK_MODE
+# pipeline. Buffers stdin into a tmp file, then runs:
 #
-# `asm_pass2 --lab-out <lab> <src>` walks the source and bakes a
-# `src <src>` line into the .lab; `asm_pass3 --lab <lab> --out <bin>`
-# then reopens that path per emit section (no cat-three-copies
-# intermediate to build).
+#   asm_pass1 src --idx-out … --text-bin … --reloc-out …
+#   asm_pass2 --link --user-* --lab-out lab.s    (no prelude side)
+#   asm_pass3 --lab lab.s --out bin
+#
+# asm_pass2 --link supports a missing --prelude-* set: the user-side
+# input is treated as the whole program with sec_pos starting at 0.
+# Output bytes go to stdout.
 run_asm_tc() {
-    local src lab bin
+    local src u_idx u_t u_r u_d u_l lab bin
     src=$(mktemp)
-    lab=$(mktemp)
-    bin=$(mktemp)
+    u_idx=$(mktemp); u_t=$(mktemp); u_r=$(mktemp); u_d=$(mktemp); u_l=$(mktemp)
+    lab=$(mktemp); bin=$(mktemp)
     cat > "$src"
-    "$QEMU" "$_GEN2_TMP/asm_pass2" --lab-out "$lab" "$src" 2>/dev/null
+    "$QEMU" "$_GEN2_TMP/asm_pass1" "$src" \
+        --idx-out    "$u_idx" \
+        --text-bin   "$u_t" --rodata-bin "$u_r" \
+        --data-bin   "$u_d" --reloc-out  "$u_l" 2>/dev/null
+    "$QEMU" "$_GEN2_TMP/asm_pass2" --link \
+        --user-idx        "$u_idx" \
+        --user-text-bin   "$u_t" --user-rodata-bin "$u_r" \
+        --user-data-bin   "$u_d" --user-reloc      "$u_l" \
+        --lab-out         "$lab" 2>/dev/null
     "$QEMU" "$_GEN2_TMP/asm_pass3" --lab "$lab" --out "$bin" 2>/dev/null
     cat "$bin"
-    rm -f "$src" "$lab" "$bin"
+    rm -f "$src" "$u_idx" "$u_t" "$u_r" "$u_d" "$u_l" "$lab" "$bin"
 }
 
 # ===== Common test file lists =====
