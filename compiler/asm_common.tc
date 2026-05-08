@@ -1591,11 +1591,17 @@ fn asm_label_is_extern(op_idx: i32, sym: i32) -> i32 {
     return 0;
 }
 
-// Return 1 if operand op_idx names a label that is NOT in the local
-// g_labels table — i.e. a cross-file reference that the link step
-// will resolve. Numeric labels and obvious non-symbols (digits, '-')
-// short-circuit to 0 so their normal resolution path runs. Used by
-// the encoder when g_emit_undef_relocs is on.
+// Return 1 if operand op_idx names a label that the link step needs
+// to (re)resolve — either undefined locally, or a globally-visible
+// symbol (function name / extern data label) that another input
+// might override last-wins. Local-style names — bc2asm-emitted
+// `.L_*` jump targets and numeric `Nb`/`Nf` refs — short-circuit to
+// 0 because they are always intra-function and never participate in
+// cross-file overrides. Digits / sign also short-circuit (operand is
+// an immediate, not a symbol). Used by the encoder when
+// g_emit_undef_relocs is on; the matching reloc handler in
+// asm_pass3 patches with the merged-symbol address (same as encoded
+// when there's no override → byte-identical, else repatched).
 fn label_op_undefined(op_idx: i32) -> i32 {
     var off: i32 = get(g_ops, (op_idx * 2));
     var len: i32 = get(g_ops, (op_idx * 2 + 1));
@@ -1611,13 +1617,12 @@ fn label_op_undefined(op_idx: i32) -> i32 {
     }
     // Digits / sign — immediate operand, not a symbol.
     if (c0 >= '0' && c0 <= '9') || c0 == '-' { return 0; }
-    var tmp: U8Array = U8Array((len) as u32);
-    var i: i32 = 0;
-    while i < len { set(tmp, i, get(g_line_buf, (off + i))); i = i + 1; }
-    var idx: i32 = find_label(tmp, len);
-    delete(tmp);
-    if idx < 0 { return 1; }
-    return 0;
+    // bc2asm-emitted local jump targets (`.L_*`) — intra-function
+    // only, never overridden across inputs.
+    if c0 == '.' { return 0; }
+    // Anything else is a globally-visible name — promote to a reloc
+    // so the link step can apply last-wins overrides.
+    return 1;
 }
 
 // Return the section id of the label referenced by operand op_idx,
