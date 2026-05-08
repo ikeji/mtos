@@ -1,10 +1,20 @@
-# Self-replicate step 2: asm_pass2 produces /sd/full.lab.
+# Self-replicate step 2: LINK_MODE pre-encode + link.
 #
-# Pass `--lab-out` and the source path positionally so asm_pass2
-# bakes a `src /sd/full.s` line into the .lab. asm_pass3 in step 3
-# then opens /sd/full.s directly per section pass — no need to
-# concatenate three copies into /sd/p2_in.s (saved ~5 min and a
-# 13 MB intermediate file).
-asm_pass2 --lab-out /sd/full.lab /sd/full.s
+# asm_pass1 walks /sd/full.s once and emits per-section .bin + .reloc
+# artefacts. asm_pass2 --link merges them into /sd/full.lab with
+# `src raw` lines pointing at the .bins; --prelude-* is optional so
+# the entire kernel image is the user-side input. step 3's asm_pass3
+# then memcpies the .bins + applies relocs — no on-device source
+# re-walk per emit section.
+asm_pass1 /sd/full.s --idx-out /sd/full.idx \
+    --text-bin /sd/full.tx --rodata-bin /sd/full.ro \
+    --data-bin /sd/full.dt --reloc-out /sd/full.rl
+asm_pass2 --link \
+    --user-idx        /sd/full.idx \
+    --user-text-bin   /sd/full.tx \
+    --user-rodata-bin /sd/full.ro \
+    --user-data-bin   /sd/full.dt \
+    --user-reloc      /sd/full.rl \
+    --lab-out         /sd/full.lab
 md5sum /sd/full.lab
 echo SELF_STEP2_DONE

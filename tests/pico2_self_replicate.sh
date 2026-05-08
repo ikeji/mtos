@@ -128,7 +128,7 @@ fi
 echo "=== Step 1: cat → /sd/full.s (with /sd/dx.img blob) ===" >&2
 run_step /pico2_self_step1.sh SELF_STEP1_DONE
 
-echo "=== Reset + Step 2: asm_pass2 + cat ===" >&2
+echo "=== Reset + Step 2: asm_pass1 + asm_pass2 --link → /sd/full.lab ===" >&2
 reset_only
 sleep 4
 run_step /pico2_self_step2.sh SELF_STEP2_DONE
