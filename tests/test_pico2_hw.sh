@@ -10,14 +10,14 @@
 #   1. Pico2 runs parse/sigscan/tcheck/codegen/bc2asm on /hw.tc
 #      (inputs small, fit in tmpfs). Result: /tmp/4.s (few KB).
 #   2. Pico2 `cat /tmp/4.s` — UART dump to host.
-#   3. Host assembles full.s locally = prelude + 4.s + tail.
-#   4. Host sends full.s via UART to pico2 stdin. Pico2 runs
-#      `asm_pass2 > /tmp/lab`. asm_pass2 consumes stdin until 0x04
-#      EOT (source_reader treats it as EOF).
-#   5. Pico2 `cat /tmp/lab` — UART dump to host.
-#   6. Host sends lab + full.s + full.s + full.s via UART. Pico2
-#      runs `asm_pass3 > /tmp/hw`. /tmp/hw is ~44 KB, fits in tmpfs.
-#   7. Pico2 `/tmp/hw` — runs the compiled binary. "Hello, World!"
+#   3. Pico2 link stages on-device (LINK_MODE):
+#        cat /tmp/4.s /prelude_tail.s > /tmp/u.s
+#        asm_pass1 /tmp/u.s --idx-out … --reloc-out …
+#        asm_pass2 --link --prelude-* --user-* --lab-out /tmp/lab.s
+#        asm_pass3 --lab /tmp/lab.s --out /tmp/hw
+#      No UART-streamed assembly bundles — pre-staged /prelude.*
+#      artefacts (built by kernel/build.sh) supply the prelude side.
+#   4. Pico2 `/tmp/hw` — runs the compiled binary. "Hello, World!"
 #      comes back via UART.
 #
 # Requires a Pico 2 + Debug Probe + /dev/ttyACM0, same as test_pico2.sh.
