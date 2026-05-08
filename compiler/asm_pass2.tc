@@ -23,14 +23,13 @@ fn arg_eq(s: String, pat: StringLiteral) -> i32 {
 }
 
 fn main() -> i32 {
-    return run(0 as String, 0 as String, 0 as String, 0 as String, 0 as String);
+    return run(0 as String, 0 as String, 0 as String);
 }
 
 fn main(argv: StringArray) -> i32 {
     // CLI shapes:
     //   asm_pass2                            stdin → .lab on stdout
     //   asm_pass2 src.s                      read src, .lab on stdout
-    //   asm_pass2 src.s strip.s              dead-strip → strip.s, .lab on stdout
     //   asm_pass2 --lab-out path.lab ...     .lab to a file instead of stdout
     //
     // Linker mode (Phase F, the standard host + OS path): no source
@@ -48,7 +47,6 @@ fn main(argv: StringArray) -> i32 {
     //       [--add idx text.bin rodata.bin data.bin reloc] ... \
     //       --lab-out full.lab
     var path: String = 0 as String;
-    var strip_out: String = 0 as String;
     var idx_source: String = 0 as String;
     var lab_out: String = 0 as String;
     var prelude_text_bin:   String = 0 as String;
@@ -125,7 +123,6 @@ fn main(argv: StringArray) -> i32 {
             }
         }
         if consumed < argc { path = get(argv, consumed); consumed = consumed + 1; }
-        if consumed < argc { strip_out = get(argv, consumed); consumed = consumed + 1; }
     }
     if link_mode != 0 {
         return run_link(prelude_idx, user_idx,
@@ -136,9 +133,7 @@ fn main(argv: StringArray) -> i32 {
                         idx_source, lab_out);
     }
     if idx_source as u32 != 0u32 { asm_set_src_path1(idx_source); }
-    if strip_out as u32 != 0u32 {
-        asm_set_src_path2(strip_out);
-    } else if path as u32 != 0u32 && idx_source as u32 != 0u32 {
+    if path as u32 != 0u32 && idx_source as u32 != 0u32 {
         asm_set_src_path2(path);
     } else if path as u32 != 0u32 {
         asm_set_src_path1(path);
@@ -147,5 +142,5 @@ fn main(argv: StringArray) -> i32 {
     if prelude_rodata_bin as u32 != 0u32 { asm_set_prelude_rodata_bin(prelude_rodata_bin); }
     if prelude_data_bin   as u32 != 0u32 { asm_set_prelude_data_bin(prelude_data_bin); }
     if prelude_reloc      as u32 != 0u32 { asm_set_prelude_reloc(prelude_reloc); }
-    return run(path, strip_out, 0 as String, 0 as String, lab_out);
+    return run(path, 0 as String, lab_out);
 }

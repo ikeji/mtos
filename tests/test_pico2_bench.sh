@@ -1,8 +1,8 @@
 #!/bin/bash
 # test_pico2_bench.sh — per-stage timing baseline on pico2 hardware.
 # Builds pico2_kernel_extra (kernel + parse/sigscan/tcheck/codegen/
-# bc2asm/asm_pass2/asm_pass3 + cat + msh), flashes it, then drives
-# `msh /pico2_bench.sh` over UART. The msh set -ex trace records
+# bc2asm/asm_pass1/asm_pass2/asm_pass3 + cat + msh), flashes it, then
+# drives `msh /pico2_bench_idx.sh` over UART. The msh set -ex trace records
 # [T.TTT] >> CMD before each spawn and [T.TTT] << exit=N dt=D.DDD
 # after each wait, so we can extract per-stage wall time directly
 # from the UART log.
@@ -90,7 +90,7 @@ PY
     sleep 4
 fi
 
-echo "[3/3] Running msh /pico2_bench.sh and capturing trace..." >&2
+echo "[3/3] Running msh /pico2_bench_idx.sh and capturing trace..." >&2
 
 # Capture UART output in background, send the msh command via stdout.
 LOG="$TMP/uart.log"
@@ -102,7 +102,7 @@ sleep 0.5
 
 # Allow the caller to override which msh script to run (e.g., the
 # pass1_phases breakdown).
-SCRIPT="${BENCH_SCRIPT:-/pico2_bench.sh}"
+SCRIPT="${BENCH_SCRIPT:-/pico2_bench_idx.sh}"
 # Send msh command. msh will read the script from disk and run
 # the pipeline; per-command [T.TTT] traces flow back through stderr
 # (UART) and end up in $LOG.

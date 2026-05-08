@@ -264,7 +264,6 @@ build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S)
 	{ cp tests/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_bench.sh "$$_r/pico2_bench.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
 	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
@@ -281,7 +280,7 @@ build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S)
 	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
-build/kernel/disk.img build/kernel/disk-demo.img: tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh
+build/kernel/disk.img build/kernel/disk-demo.img: tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh
 build/kernel/disk-demo.img: tests/fixtures/kern_demo.conf
 
 EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
@@ -292,7 +291,7 @@ EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     kernel/tasks/libtc/libtc.tc \
     kernel/platform_pico2.s kernel/trap_common.s kernel/crt0_pico2_data.s
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_link_kernel.sh tests/fixtures/pico2_link_kernel_nodisk.sh tests/fixtures/pico2_link_kernel_smoke.sh tests/fixtures/pico2_link_kernel_step1.sh tests/fixtures/pico2_link_kernel_step2.sh tests/fixtures/pico2_link_kernel_step3.sh tests/fixtures/pico2_link_kernel_disk_step1.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_link_kernel.sh tests/fixtures/pico2_link_kernel_nodisk.sh tests/fixtures/pico2_link_kernel_smoke.sh tests/fixtures/pico2_link_kernel_step1.sh tests/fixtures/pico2_link_kernel_step2.sh tests/fixtures/pico2_link_kernel_step3.sh tests/fixtures/pico2_link_kernel_disk_step1.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -305,7 +304,6 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_bench.sh "$$_r/pico2_bench.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_sb.sh "$$_r/pico2_compile_sb.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_parse.sh "$$_r/pico2_compile_parse.sh" 2>/dev/null || true; } && \

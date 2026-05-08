@@ -117,15 +117,13 @@ fn run_pre_encode(src_a: String, src_b: String,
     // Step 1: idx for the leading source alone.
     if idx_out as u32 != 0u32 {
         asm_set_src_path1(idx_src);
-        var rc_idx: i32 = run(idx_src, 0 as String,
-                              idx_out, 0 as String, 0 as String);
+        var rc_idx: i32 = run(idx_src, idx_out, 0 as String);
         if rc_idx != 0 { err("asm_pass1: idx emit failed\n"); return rc_idx; }
     }
 
     // Step 2: lab over the encode source (combined or single).
     asm_set_src_path1(enc_src);
-    var rc1: i32 = run(enc_src, 0 as String,
-                       0 as String, 0 as String, lab_path as String);
+    var rc1: i32 = run(enc_src, 0 as String, lab_path as String);
     if rc1 != 0 { err("asm_pass1: lab build failed\n"); return rc1; }
 
     // Step 3: encode + per-section .bin + .reloc. Enable
