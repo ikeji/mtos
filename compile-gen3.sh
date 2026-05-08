@@ -42,7 +42,7 @@ if [ -z "$GEN3_DIR" ]; then
     exit 1
 fi
 
-for tool in sigscan tcheck codegen bc2asm asm_pass2 asm_pass3; do
+for tool in sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3; do
     if [ ! -x "$GEN3_DIR/$tool" ]; then
         echo "Error: Gen3 tool not found: $GEN3_DIR/$tool" >&2
         exit 1
@@ -140,16 +140,60 @@ for tc in "${ALL_FILES[@]}"; do
     ASM_FILES+=("$TMP/$base.s")
 done
 
-# Assemble: crt0_tc.s + runtime.s + user .s files + crt0_tc_data.s → ELF via Gen3 asm split
+# Linker mode (split flow), mirrors compile-gen2.sh: each .s through
+# its own asm_pass1, then asm_pass2 --link merges them. crt0_tc_data.s
+# (= prelude_tail) goes in as the LAST extra input so __data_end lands
+# at the merged data section's end.
 {
     cat "$CRT0"
     cat "$TMP/runtime.s"
-    cat "${ASM_FILES[@]}"
-    cat "$CRT0_DATA"
-} > "$TMP/full.s"
+} > "$TMP/prelude.s"
+cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
 
-"$QEMU" "$GEN3_DIR/asm_pass2" < "$TMP/full.s" > "$TMP/full.lab"
-cat "$TMP/full.lab" "$TMP/full.s" "$TMP/full.s" "$TMP/full.s" | \
-    "$QEMU" "$GEN3_DIR/asm_pass3" > "$OUTFILE"
+"$QEMU" "$GEN3_DIR/asm_pass1" "$TMP/prelude.s" \
+    --idx-out    "$TMP/prelude.idx" \
+    --text-bin   "$TMP/prelude.text.bin" \
+    --rodata-bin "$TMP/prelude.rodata.bin" \
+    --data-bin   "$TMP/prelude.data.bin" \
+    --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
+
+link_args=()
+n=0
+for s in "${ASM_FILES[@]}" "$TMP/prelude_tail.s"; do
+    tag="in_$n"
+    "$QEMU" "$GEN3_DIR/asm_pass1" "$s" \
+        --idx-out    "$TMP/$tag.idx" \
+        --text-bin   "$TMP/$tag.text.bin" \
+        --rodata-bin "$TMP/$tag.rodata.bin" \
+        --data-bin   "$TMP/$tag.data.bin" \
+        --reloc-out  "$TMP/$tag.reloc" 2>/dev/null
+    if [ "$n" = "0" ]; then
+        link_args+=( \
+            --user-idx        "$TMP/$tag.idx" \
+            --user-text-bin   "$TMP/$tag.text.bin" \
+            --user-rodata-bin "$TMP/$tag.rodata.bin" \
+            --user-data-bin   "$TMP/$tag.data.bin" \
+            --user-reloc      "$TMP/$tag.reloc" )
+    else
+        link_args+=( --add \
+            "$TMP/$tag.idx" \
+            "$TMP/$tag.text.bin" \
+            "$TMP/$tag.rodata.bin" \
+            "$TMP/$tag.data.bin" \
+            "$TMP/$tag.reloc" )
+    fi
+    n=$((n + 1))
+done
+
+"$QEMU" "$GEN3_DIR/asm_pass2" --link \
+    --prelude-idx "$TMP/prelude.idx" \
+    --prelude-text-bin   "$TMP/prelude.text.bin" \
+    --prelude-rodata-bin "$TMP/prelude.rodata.bin" \
+    --prelude-data-bin   "$TMP/prelude.data.bin" \
+    --prelude-reloc      "$TMP/prelude.reloc" \
+    "${link_args[@]}" \
+    --lab-out            "$TMP/full.lab" 2>/dev/null
+
+"$QEMU" "$GEN3_DIR/asm_pass3" --lab "$TMP/full.lab" --out "$OUTFILE" 2>/dev/null
 
 chmod +x "$OUTFILE"

@@ -56,11 +56,16 @@ do_exit__i32:
     ecall
     ret
 
-# do_openat / do_close for Gen2/Gen3 host so asm_pass2 can re-read
-# the source file when given a path argument (dead-strip 2nd pass).
-# Linux openat ABI: (dirfd, path*, flags, mode). We pass mode=0 since
-# the kernel ignores it for read-only opens. AT_FDCWD = -100 lets the
-# caller use plain "foo.s" without path resolution.
+# do_openat / do_close for Gen2/Gen3 host so asm_pass1 + asm_pass2 +
+# asm_pass3 can read sources and emit per-section .bin / .lab / .idx
+# files. Linux openat ABI: (dirfd, path*, flags, mode). We pass
+# mode=0644 because flags coming from TC code include O_CREAT for
+# every new output file (idx/text.bin/rodata.bin/data.bin/reloc/lab/
+# out) — without an explicit non-zero mode the kernel sets the new
+# inode's permissions from `mode & ~umask`, where mode=0 produces a
+# 000 (no-permission) file. The next pass then fails with EACCES on
+# read. AT_FDCWD = -100 lets the caller use plain "foo.s" without
+# path resolution.
     .globl do_openat__i32__String__i32
 do_openat__i32__String__i32:
     # a0=dirfd, a1=path_addr (4-byte length prefix), a2=flags
@@ -68,7 +73,7 @@ do_openat__i32__String__i32:
     # has [u32 count][bytes...] but the bytes after count are ASCII
     # and we'll add a NUL when staging path strings (see callers).
     addi a1, a1, 4              # skip count prefix → bytes pointer
-    li   a3, 0                  # mode = 0
+    li   a3, 0x1a4              # mode = 0644 (rw-r--r--)
     li   a7, 56
     ecall
     ret
