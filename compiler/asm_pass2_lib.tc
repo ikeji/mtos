@@ -260,8 +260,8 @@ fn run_link_finish(lab_out_path: String) -> i32 {
 
     // After every input has loaded, compute section bases / sizes
     // from the merged sec_pos and turn intra label addresses into
-    // absolutes. No strip walk and no asm_compute_live — every
-    // input's idx already represents reachable code.
+    // absolutes. No dead-strip pass — every input's idx already
+    // represents reachable code.
     asm_compute_sec_bases();
     asm_finalize_labels();
     asm_resolve_deferred_refs();
