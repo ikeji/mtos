@@ -2188,7 +2188,27 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
             // g_pass1_incbin_present = 1 idempotently.
             if g_incbin_skip == 1 && g_nops >= 2 {
                 var sec_now: i32 = g_current_section;
-                var intra_now: i32 = g_pos - get(g_sec_base, sec_now);
+                // Use g_sec_pos directly — equivalent in both passes
+                // since asm_run_line sets g_pos from sec_pos (pass 1)
+                // or sec_base + sec_pos (pass 2). sec_pos is the
+                // intra-section offset and doesn't depend on
+                // g_sec_base being zero-initialized. The earlier
+                // formulation `g_pos - g_sec_base[sec_now]` was
+                // pass-2 only correct: in pass 1 g_sec_base is
+                // I32Array(4) freshly allocated, and on pico2 the
+                // task arena's first allocation can return non-zero
+                // residual bytes from previous task usage, so the
+                // computed intra was garbage. Symptom: pass 1 fall-
+                // through with no `incbin` line in the idx; pass 2
+                // (with computed sec_base) skipped the bin emit
+                // anyway, so device pt.ro was 4 bytes but pt.idx
+                // missed the incbin record → asm_pass2 --link's lab
+                // didn't get a `src raw <orig_path>` line → asm_pass3
+                // never memcpy'd /sd/dx.img → kernel.bin diverged
+                // from host's. Caught 2026-05-10 via mx pt.idx
+                // extraction (host LINKMODE was unaffected because
+                // qemu's fresh mmap pages are zero).
+                var intra_now: i32 = get(g_sec_pos, sec_now);
                 if intra_now == 0 {
                     // Extract the path token (same quote-stripping as
                     // the materialized path below).
