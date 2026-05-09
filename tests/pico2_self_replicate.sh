@@ -118,7 +118,10 @@ if [ "${REFRESH_KERN_MODS:-0}" = "1" ]; then
     echo "=== Reset + Step 0c: refresh kernel-leaf .s on /sd ===" >&2
     reset_only; sleep 4
     run_step /pico2_compile_kern.sh COMPILE_KERN_LEAVES_DONE
-    echo "=== Reset + Step 0d: refresh kernel-import .s on /sd ===" >&2
+    echo "=== Reset + Step 0d: refresh platform_pico2.s on /sd ===" >&2
+    reset_only; sleep 4
+    run_step /pico2_compile_platform.sh COMPILE_PLATFORM_DONE
+    echo "=== Reset + Step 0e: refresh kernel-import .s on /sd ===" >&2
     reset_only; sleep 4
     run_step /pico2_compile_kern2.sh COMPILE_KERN2_DONE
     echo "=== Reset before Step 1 ===" >&2

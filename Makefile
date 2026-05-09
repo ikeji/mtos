@@ -291,7 +291,7 @@ EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     kernel/tasks/libtc/libtc.tc \
     kernel/platform_pico2.s kernel/trap_common.s kernel/crt0_pico2_data.s
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_link_kernel.sh tests/fixtures/pico2_link_kernel_nodisk.sh tests/fixtures/pico2_link_kernel_smoke.sh tests/fixtures/pico2_link_kernel_step1.sh tests/fixtures/pico2_link_kernel_step2.sh tests/fixtures/pico2_link_kernel_step3.sh tests/fixtures/pico2_link_kernel_disk_step1.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_platform.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_link_kernel.sh tests/fixtures/pico2_link_kernel_nodisk.sh tests/fixtures/pico2_link_kernel_smoke.sh tests/fixtures/pico2_link_kernel_step1.sh tests/fixtures/pico2_link_kernel_step2.sh tests/fixtures/pico2_link_kernel_step3.sh tests/fixtures/pico2_link_kernel_disk_step1.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -316,6 +316,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/fixtures/pico2_compile_runtime.sh "$$_r/pico2_compile_runtime.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_libtc.sh "$$_r/pico2_compile_libtc.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_kern.sh "$$_r/pico2_compile_kern.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_platform.sh "$$_r/pico2_compile_platform.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_compile_kern2.sh "$$_r/pico2_compile_kern2.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_run_parse.sh "$$_r/pico2_run_parse.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_run_sb.sh "$$_r/pico2_run_sb.sh" 2>/dev/null || true; } && \
@@ -337,7 +338,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	    cp compiler/$$s "$$_r/src/$$s" || exit 1; \
 	done && \
 	cp kernel/tasks/libtc/libtc.tc "$$_r/src/libtc.tc" && \
-	for s in kernel_common.tc block_flash.tc block_sd.tc tmpfs.tc fatfs.tc mtfs.tc procfs.tc vfs.tc loader.tc kernel_pico2.tc; do \
+	for s in kernel_common.tc platform_pico2.tc block_flash.tc block_sd.tc tmpfs.tc fatfs.tc mtfs.tc procfs.tc vfs.tc loader.tc kernel_pico2.tc; do \
 	    cp kernel/$$s "$$_r/src/$$s" || exit 1; \
 	done && \
 	cp kernel/platform_pico2.s "$$_r/src/platform_pico2.s" && \

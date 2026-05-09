@@ -8,7 +8,7 @@
 # script does no on-device file authoring (which leaks kernel arena
 # across many spawn cycles and trips spawn failed by entry ~10).
 
-cat /src/raw.s /src/platform_pico2.s /src/trap_common.s /sd/runtime.s /sd/kc.s /sd/bf.s /sd/bs.s /sd/ff.s /sd/mf.s /sd/tf.s /sd/pf.s /sd/vf.s /sd/ld.s /sd/kp.s /src/crt0_pico2_data.s /src/mtfs_wrap_nodisk.s > /sd/full.s
+cat /src/raw.s /src/platform_pico2.s /src/trap_common.s /sd/runtime.s /sd/kc.s /sd/pp.s /sd/bf.s /sd/bs.s /sd/ff.s /sd/mf.s /sd/tf.s /sd/pf.s /sd/vf.s /sd/ld.s /sd/kp.s /src/crt0_pico2_data.s /src/mtfs_wrap_nodisk.s > /sd/full.s
 
 # Walked-source link: asm_pass2 walks /sd/full.s and bakes a
 # `src /sd/full.s` line into /sd/full.lab so pass 3 reopens the

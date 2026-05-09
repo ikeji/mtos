@@ -35,6 +35,7 @@ cat /src/platform_pico2.s >> /sd/full.s
 cat /src/trap_common.s >> /sd/full.s
 cat /sd/runtime.s >> /sd/full.s
 cat /sd/kc.s >> /sd/full.s
+cat /sd/pp.s >> /sd/full.s
 cat /sd/bf.s >> /sd/full.s
 cat /sd/bs.s >> /sd/full.s
 cat /sd/ff.s >> /sd/full.s
