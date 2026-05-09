@@ -388,7 +388,7 @@ PICO2_DISK = build/kernel/disk.img
 define PICO2_KERNEL_RECIPE
 	@echo "Building kernel: pico2 (disk=$(PICO2_DISK))" >&2
 	@_tmp=$$(mktemp -d) && \
-	kernel/bin2s.sh $(PICO2_DISK) _mtfs_image > "$$_tmp/mtfs_image.s" && \
+	kernel/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image $(PICO2_DISK) > "$$_tmp/mtfs_image.s" && \
 	cat kernel/platform_pico2.s kernel/trap_common.s > "$$_tmp/crt0.s" && \
 	cat kernel/crt0_pico2_data.s "$$_tmp/mtfs_image.s" > "$$_tmp/kern_data.s" && \
 	CRT0="$$_tmp/crt0.s" CRT0_DATA="$$_tmp/kern_data.s" \
@@ -403,12 +403,12 @@ define PICO2_KERNEL_RECIPE
 endef
 
 build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
-    kernel/bin2s.sh build/gen2/bin2uf2 | build/kernel
+    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 build/kernel/pico2_kernel_extra.uf2: PICO2_DISK := build/kernel/disk-extra.img
 build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-extra.img \
-    kernel/bin2s.sh build/gen2/bin2uf2 | build/kernel
+    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # demo UF2: disk-demo.img の /etc/kern.conf で hello + hello2 + sh を
@@ -416,7 +416,7 @@ build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-ex
 # 動くことを確認できる。
 build/kernel/pico2_kernel_demo.uf2: PICO2_DISK := build/kernel/disk-demo.img
 build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-demo.img \
-    kernel/bin2s.sh build/gen2/bin2uf2 | build/kernel
+    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 virt-kernel:  build/kernel/virt_kernel.bin

@@ -225,11 +225,24 @@ cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
     --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
 
 # Step 4: pre-encode each user .s + EXTRA_S + prelude_tail.s.
+# prelude_tail.s gets --incbin-skip so a leading `.incbin SIZE
+# "<path>"` (kernel build's bin2s_incbin.sh wrap.s) gets recorded
+# in the idx as a defer marker rather than materialized into the
+# rodata bin. asm_pass2 --link translates the marker into a direct
+# `src raw <path>` line so asm_pass3 memcpys the original blob —
+# slashing prelude_tail.s asm_pass1 cost from ~225 sec (qemu
+# host's per-byte emit loop on 26 MB ASCII bin2s expansion) /
+# ~300+ sec (pico2 SD read+emit) to ~1 sec.
 link_args=()
 n=0
-for s in "${ASM_FILES[@]}" ${EXTRA_S:-} "$TMP/prelude_tail.s"; do
+LAST_S="$TMP/prelude_tail.s"
+for s in "${ASM_FILES[@]}" ${EXTRA_S:-} "$LAST_S"; do
     tag="in_$n"
-    "$QEMU" "$GEN2_DIR/asm_pass1" "$s" \
+    extra_flags=""
+    if [ "$s" = "$LAST_S" ]; then
+        extra_flags="--incbin-skip"
+    fi
+    "$QEMU" "$GEN2_DIR/asm_pass1" "$s" $extra_flags \
         --idx-out    "$TMP/$tag.idx" \
         --text-bin   "$TMP/$tag.text.bin" \
         --rodata-bin "$TMP/$tag.rodata.bin" \
