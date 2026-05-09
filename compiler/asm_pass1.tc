@@ -311,6 +311,14 @@ fn main(argv: StringArray) -> i32 {
     // run_asm_tc) where ref collection's g_def_pool growth would
     // OOM the 288 KB task arena.
     var collect_refs: i32 = 1;
+    // --incbin-skip: defer leading-of-section .incbin directives to
+    // the final-encode step. asm_pass1 records (path, size, sec) into
+    // the idx and skips reading the blob; asm_pass2 --link emits a
+    // direct `src raw <orig_path> <sec> <abs>` line so asm_pass3
+    // memcpys the original file. Slashes the asm_pass1 cost on
+    // prelude_tail.s with `.incbin "/sd/dx.img"` from ~225 sec
+    // (qemu host, 3.5 MB read+emit per byte) to ~1 sec.
+    var incbin_skip:  i32 = 0;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var i: i32 = 1;
@@ -328,6 +336,8 @@ fn main(argv: StringArray) -> i32 {
                 reloc_out = get(argv, i + 1); i = i + 2;
             } else if arg_eq(a, "--no-refs") != 0 {
                 collect_refs = 0; i = i + 1;
+            } else if arg_eq(a, "--incbin-skip") != 0 {
+                incbin_skip = 1; i = i + 1;
             } else {
                 if src as u32 == 0u32 { src = a; }
                 i = i + 1;
@@ -337,9 +347,10 @@ fn main(argv: StringArray) -> i32 {
     if src as u32 == 0u32 ||
        text_bin as u32 == 0u32 || rodata_bin as u32 == 0u32 ||
        data_bin as u32 == 0u32 || reloc_out as u32 == 0u32 {
-        err("usage: asm_pass1 src.s [--idx-out P] [--no-refs] --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
+        err("usage: asm_pass1 src.s [--idx-out P] [--no-refs] [--incbin-skip] --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
         return 1;
     }
+    asm_set_incbin_skip(incbin_skip);
     return run_pre_encode(src, idx_out,
                           text_bin, rodata_bin, data_bin, reloc_out,
                           collect_refs);

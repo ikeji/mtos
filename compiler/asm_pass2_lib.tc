@@ -259,6 +259,18 @@ fn run_link_finish(lab_out_path: String) -> i32 {
         asm_set_extra_text_start(  ei, asm_load_idx_content_start(0));
         asm_set_extra_rodata_start(ei, asm_load_idx_content_start(1));
         asm_set_extra_data_start(  ei, asm_load_idx_content_start(2));
+        // Capture any incbin record this extra carried (set by
+        // idx_process_line when an `incbin` line was parsed). The
+        // transient g_load_incbin_* gets overwritten on the next
+        // asm_load_idx so we must copy it into the per-extra slot
+        // immediately.
+        if asm_get_load_incbin_present() == 1 {
+            asm_set_extra_incbin(ei, 1,
+                asm_get_load_incbin_sec(),
+                asm_get_load_incbin_intra_off(),
+                asm_get_load_incbin_size(),
+                asm_get_load_incbin_path());
+        }
         ei = ei + 1;
     }
     asm_install_raw_mode(saved_raw_2);

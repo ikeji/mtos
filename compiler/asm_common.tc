@@ -107,6 +107,34 @@ var g_out_buf:         U8Array = 0 as U8Array;  // 4 KB stdout buffer
 var g_out_pos:         i32 = 0;        // bytes currently in g_out_buf
 var g_out_buf_size:    i32 = 4096;
 var g_section_emitted: i32 = 0;        // bytes emitted in the current target section this pass
+
+// Incbin-defer (2026-05-09): when --incbin-skip is set on asm_pass1,
+// a `.incbin SIZE "path"` directive at section offset 0 is recorded
+// in the idx as `incbin <sec> <intra_off> <size> <path>` instead of
+// being materialized into the per-section bin. The link step
+// translates the idx record back into a `src raw <orig_path> <sec>
+// <abs_start>` line in the .lab so asm_pass3 memcpys the original
+// blob (e.g. /sd/dx.img) directly without a 3.5 MB intermediate.
+//
+// Restriction: only the first .incbin in a section is deferred, and
+// only when intra_off is 0 at the directive (i.e., the .incbin is
+// the leading content of the section). All other .incbin uses fall
+// back to the materialized path. Covers the wrap.s pattern bin2s_
+// incbin.sh emits.
+var g_incbin_skip:           i32 = 0;
+var g_pass1_incbin_present:  i32 = 0;
+var g_pass1_incbin_sec:      i32 = 0;
+var g_pass1_incbin_intra_off: i32 = 0;
+var g_pass1_incbin_size:     i32 = 0;
+var g_pass1_incbin_path:     String = 0 as String;
+// Transient: idx_process_line writes here when an `incbin` line is
+// parsed. Caller (run_link / run_link_finish) reads after each
+// asm_load_idx and copies into per-input slots before the next load.
+var g_load_incbin_present:    i32 = 0;
+var g_load_incbin_sec:        i32 = 0;
+var g_load_incbin_intra_off:  i32 = 0;
+var g_load_incbin_size:       i32 = 0;
+var g_load_incbin_path:       String = 0 as String;
 // Where pass2 writes the encoded binary. Defaults to stdout (fd 1)
 // for the legacy pipeline; asm_pass3 sets this to the --out file fd
 // when invoked with file-args.
@@ -376,6 +404,15 @@ var g_extra_text_shift:   I32Array = 0 as I32Array;
 var g_extra_text_start:   I32Array = 0 as I32Array;
 var g_extra_rodata_start: I32Array = 0 as I32Array;
 var g_extra_data_start:   I32Array = 0 as I32Array;
+// Per-extra incbin record (2026-05-09). Captured from
+// g_load_incbin_* after each asm_load_idx call by run_link_finish.
+// emit_link_lab interleaves a `src raw <path> <sec>` line for each
+// extra that has g_extra_incbin_present[i] == 1.
+var g_extra_incbin_present:   I32Array    = 0 as I32Array;
+var g_extra_incbin_sec:       I32Array    = 0 as I32Array;
+var g_extra_incbin_intra_off: I32Array    = 0 as I32Array;
+var g_extra_incbin_size:      I32Array    = 0 as I32Array;
+var g_extra_incbin_path:      StringArray = 0 as StringArray;
 fn ensure_extras_storage() -> void {
     if g_extra_idx as u32 == 0u32 {
         g_extra_idx        = StringArray((EXTRAS_CAP) as u32);
@@ -387,6 +424,11 @@ fn ensure_extras_storage() -> void {
         g_extra_text_start   = I32Array((EXTRAS_CAP) as u32);
         g_extra_rodata_start = I32Array((EXTRAS_CAP) as u32);
         g_extra_data_start   = I32Array((EXTRAS_CAP) as u32);
+        g_extra_incbin_present   = I32Array((EXTRAS_CAP) as u32);
+        g_extra_incbin_sec       = I32Array((EXTRAS_CAP) as u32);
+        g_extra_incbin_intra_off = I32Array((EXTRAS_CAP) as u32);
+        g_extra_incbin_size      = I32Array((EXTRAS_CAP) as u32);
+        g_extra_incbin_path      = StringArray((EXTRAS_CAP) as u32);
     }
     return;
 }
@@ -408,6 +450,11 @@ export fn asm_add_extra_input(idx_path: String,
     set(g_extra_text_start,   g_n_extras, 0);
     set(g_extra_rodata_start, g_n_extras, 0);
     set(g_extra_data_start,   g_n_extras, 0);
+    set(g_extra_incbin_present,   g_n_extras, 0);
+    set(g_extra_incbin_sec,       g_n_extras, 0);
+    set(g_extra_incbin_intra_off, g_n_extras, 0);
+    set(g_extra_incbin_size,      g_n_extras, 0);
+    set(g_extra_incbin_path,      g_n_extras, 0 as String);
     var idx: i32 = g_n_extras;
     g_n_extras = g_n_extras + 1;
     return idx;
@@ -437,6 +484,26 @@ export fn asm_get_extra_text_shift(i: i32)   -> i32 { return get(g_extra_text_sh
 export fn asm_get_extra_text_start(i: i32)   -> i32 { return get(g_extra_text_start,   i); }
 export fn asm_get_extra_rodata_start(i: i32) -> i32 { return get(g_extra_rodata_start, i); }
 export fn asm_get_extra_data_start(i: i32)   -> i32 { return get(g_extra_data_start,   i); }
+
+// Per-extra incbin accessors (2026-05-09 incbin-defer).
+// run_link_finish copies g_load_incbin_* into these slots after
+// each asm_load_idx; emit_link_lab inspects them when emitting the
+// per-extra `src raw` lines.
+export fn asm_set_extra_incbin(i: i32, present: i32, sec: i32, intra_off: i32, size: i32, path: String) -> void {
+    if i >= 0 && i < g_n_extras {
+        set(g_extra_incbin_present,   i, present);
+        set(g_extra_incbin_sec,       i, sec);
+        set(g_extra_incbin_intra_off, i, intra_off);
+        set(g_extra_incbin_size,      i, size);
+        set(g_extra_incbin_path,      i, path);
+    }
+    return;
+}
+export fn asm_get_extra_incbin_present(i: i32)   -> i32    { return get(g_extra_incbin_present,   i); }
+export fn asm_get_extra_incbin_sec(i: i32)       -> i32    { return get(g_extra_incbin_sec,       i); }
+export fn asm_get_extra_incbin_intra_off(i: i32) -> i32    { return get(g_extra_incbin_intra_off, i); }
+export fn asm_get_extra_incbin_size(i: i32)      -> i32    { return get(g_extra_incbin_size,      i); }
+export fn asm_get_extra_incbin_path(i: i32)      -> String { return get(g_extra_incbin_path,      i); }
 
 // Reset state that varies per source pass so asm_pass2 can re-walk
 // the source for a forward-ref second pass. Clears g_pos +
@@ -2103,6 +2170,78 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
                 if g_stream_mode == 0 { should_emit = 1; }
                 else { if g_current_section == g_target_section { should_emit = 1; } }
             }
+            // Incbin-defer fast path: when --incbin-skip is set on
+            // asm_pass1 and this is a section-leading .incbin (intra
+            // offset 0), record (sec, intra_off=0, size, path) into
+            // g_pass1_incbin_* and skip the file read + emit
+            // entirely. Just advance g_pos so the section's intra
+            // accounting (and any labels after .incbin) stays correct.
+            // The link step will translate the idx record into a
+            // `src raw <orig_path> <sec> <abs_start>` line so
+            // asm_pass3 memcpys the original blob directly.
+            //
+            // Fires in BOTH pass 1 and pass 2 because asm_pass1.tc
+            // dumps the idx after pass 1 (before pass 2 runs), so the
+            // record must be set up during pass 1; pass 2 then must
+            // skip the emit too. Use intra_now == 0 as the defer
+            // gate (consistent across passes), and re-set
+            // g_pass1_incbin_present = 1 idempotently.
+            if g_incbin_skip == 1 && g_nops >= 2 {
+                var sec_now: i32 = g_current_section;
+                var intra_now: i32 = g_pos - get(g_sec_base, sec_now);
+                if intra_now == 0 {
+                    // Extract the path token (same quote-stripping as
+                    // the materialized path below).
+                    var dpath_off: i32 = get(g_ops, 2);
+                    var dpath_len: i32 = get(g_ops, 3);
+                    if dpath_len > 0 && get(g_line_buf, dpath_off) == 34u8 {
+                        dpath_off = dpath_off + 1;
+                        dpath_len = dpath_len - 1;
+                    }
+                    var dqe: i32 = 0;
+                    var dqfound: i32 = 0;
+                    while dqe < dpath_len && dqfound == 0 {
+                        if get(g_line_buf, (dpath_off + dqe)) == 34u8 {
+                            dqfound = 1;
+                            dpath_len = dqe;
+                        } else {
+                            dqe = dqe + 1;
+                        }
+                    }
+                    // Allocate the path String — survives past the
+                    // line buffer's lifetime since asm_dump_idx_state
+                    // reads it later.
+                    var dpbuf: U8Array = U8Array((dpath_len + 1) as u32);
+                    var dpi: i32 = 0;
+                    while dpi < dpath_len {
+                        set(dpbuf, dpi, get(g_line_buf, (dpath_off + dpi)));
+                        dpi = dpi + 1;
+                    }
+                    set(dpbuf, dpath_len, 0u8);
+                    poke32(dpbuf as u32, dpath_len as u32);
+                    // Only set the present-flag + record the path on
+                    // the FIRST encounter (pass 1). Pass 2 re-enters
+                    // the same handler but the record from pass 1 is
+                    // already in g_pass1_incbin_*. Avoid leaking
+                    // pass-2 dpbuf — only adopt it if not yet set.
+                    if g_pass1_incbin_present == 0 {
+                        g_pass1_incbin_present  = 1;
+                        g_pass1_incbin_sec      = sec_now;
+                        g_pass1_incbin_intra_off = 0;
+                        g_pass1_incbin_size     = inc_size;
+                        g_pass1_incbin_path     = dpbuf as u32 as String;
+                    }
+                    // Advance section position WITHOUT emitting any
+                    // bytes to the bin fd in either pass. Subsequent
+                    // emit8 calls in this section land at bin file
+                    // offset 0 (since we didn't write anything yet).
+                    // The .lab src-raw entry for this bin will start
+                    // at section offset (intra_off + size) so those
+                    // post-incbin bytes land at the right place.
+                    g_pos = g_pos + inc_size;
+                    return;
+                }
+            }
             if should_emit == 1 && g_nops >= 2 {
                 var path_off: i32 = get(g_ops, 2);
                 var path_len: i32 = get(g_ops, 3);
@@ -2272,6 +2411,16 @@ fn asm_init_common() -> void {
     g_def_pool     = 0 as U8Array;
     g_def_capacity = 0;
 
+    // Reset incbin-defer state per pass init. The path String stays
+    // around across passes (pass1 records in pass2 walk; idx dump
+    // reads it after walk2). asm_init_pass1 invocations clear it for
+    // a fresh run.
+    g_pass1_incbin_present  = 0;
+    g_pass1_incbin_sec      = 0;
+    g_pass1_incbin_intra_off = 0;
+    g_pass1_incbin_size     = 0;
+    g_pass1_incbin_path     = 0 as String;
+
     g_pos              = 0;
     g_pass             = 0;
     g_nlabels          = 0;
@@ -2380,6 +2529,27 @@ export fn asm_set_section_emitted(v: i32) -> void {
     g_section_emitted = v;
     return;
 }
+
+// === Incbin-defer accessors (2026-05-09) ===
+//
+// asm_pass1 sets g_incbin_skip via --incbin-skip. The .incbin pass-2
+// handler checks g_incbin_skip and (intra_off == 0) to decide
+// whether to materialize bytes or just record path/size.
+export fn asm_set_incbin_skip(v: i32) -> void {
+    g_incbin_skip = v;
+    return;
+}
+export fn asm_get_pass1_incbin_present()   -> i32    { return g_pass1_incbin_present; }
+export fn asm_get_pass1_incbin_sec()       -> i32    { return g_pass1_incbin_sec; }
+export fn asm_get_pass1_incbin_intra_off() -> i32    { return g_pass1_incbin_intra_off; }
+export fn asm_get_pass1_incbin_size()      -> i32    { return g_pass1_incbin_size; }
+export fn asm_get_pass1_incbin_path()      -> String { return g_pass1_incbin_path; }
+
+export fn asm_get_load_incbin_present()    -> i32    { return g_load_incbin_present; }
+export fn asm_get_load_incbin_sec()        -> i32    { return g_load_incbin_sec; }
+export fn asm_get_load_incbin_intra_off()  -> i32    { return g_load_incbin_intra_off; }
+export fn asm_get_load_incbin_size()       -> i32    { return g_load_incbin_size; }
+export fn asm_get_load_incbin_path()       -> String { return g_load_incbin_path; }
 
 // Flush the output buffer and, if we're in the middle of a target
 // section, emit padding zero bytes up to the section's declared size
@@ -2605,30 +2775,72 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     }
     // Additional inputs beyond user (--add). Same `src raw` shape as
     // the user entry; one set per extra input, in registration order.
+    //
+    // Incbin-defer (2026-05-09): if this extra had its leading
+    // .incbin deferred (g_extra_incbin_present[ei] == 1, sec ==
+    // matching), emit a direct `src raw <orig_path> <sec> <abs>`
+    // line BEFORE the section's own bin and shift the bin's
+    // start by the deferred size. asm_pass3 will memcpy the
+    // original blob at <abs> for `<size>` bytes, then memcpy the
+    // bin at <abs + size> for whatever post-incbin bytes the
+    // section had. Currently incbin-defer only fires for sec == 1
+    // (rodata) — pt.s's wrap.s pattern — but the code handles any
+    // section uniformly.
     var ei: i32 = 0;
     while ei < g_n_extras {
+        var ic_present: i32 = asm_get_extra_incbin_present(ei);
+        var ic_sec:     i32 = asm_get_extra_incbin_sec(ei);
+        var ic_size:    i32 = asm_get_extra_incbin_size(ei);
+        var ic_path:    String = asm_get_extra_incbin_path(ei);
         var et: String = asm_get_extra_text_bin(ei);
         if et as u32 != 0u32 {
+            var t_start: i32 = asm_get_extra_text_start(ei);
+            if ic_present == 1 && ic_sec == 0 {
+                emit_string(sb, "src raw ");
+                emit_string(sb, ic_path);
+                emit_string(sb, " 0 ");
+                dump_int(sb, t_start);
+                emit_nl(sb);
+                t_start = t_start + ic_size;
+            }
             emit_string(sb, "src raw ");
             emit_string(sb, et);
             emit_string(sb, " 0 ");
-            dump_int(sb, asm_get_extra_text_start(ei));
+            dump_int(sb, t_start);
             emit_nl(sb);
         }
         var er: String = asm_get_extra_rodata_bin(ei);
         if er as u32 != 0u32 {
+            var r_start: i32 = asm_get_extra_rodata_start(ei);
+            if ic_present == 1 && ic_sec == 1 {
+                emit_string(sb, "src raw ");
+                emit_string(sb, ic_path);
+                emit_string(sb, " 1 ");
+                dump_int(sb, r_start);
+                emit_nl(sb);
+                r_start = r_start + ic_size;
+            }
             emit_string(sb, "src raw ");
             emit_string(sb, er);
             emit_string(sb, " 1 ");
-            dump_int(sb, asm_get_extra_rodata_start(ei));
+            dump_int(sb, r_start);
             emit_nl(sb);
         }
         var ed: String = asm_get_extra_data_bin(ei);
         if ed as u32 != 0u32 {
+            var d_start: i32 = asm_get_extra_data_start(ei);
+            if ic_present == 1 && ic_sec == 2 {
+                emit_string(sb, "src raw ");
+                emit_string(sb, ic_path);
+                emit_string(sb, " 2 ");
+                dump_int(sb, d_start);
+                emit_nl(sb);
+                d_start = d_start + ic_size;
+            }
             emit_string(sb, "src raw ");
             emit_string(sb, ed);
             emit_string(sb, " 2 ");
-            dump_int(sb, asm_get_extra_data_start(ei));
+            dump_int(sb, d_start);
             emit_nl(sb);
         }
         ei = ei + 1;
@@ -2936,6 +3148,22 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
             emit_nl(sb);
         }
         r = r + 1;
+    }
+
+    // Incbin-defer record (2026-05-09). When the .incbin pass-2
+    // handler skipped materializing bytes, dump the original
+    // (sec, intra_off, size, path) so the link step can emit a
+    // direct `src raw <orig_path> <sec> <abs_start>` in the .lab.
+    if g_pass1_incbin_present == 1 {
+        emit_string(sb, "incbin ");
+        dump_int(sb, g_pass1_incbin_sec);
+        emit_char(sb, ' ');
+        dump_int(sb, g_pass1_incbin_intra_off);
+        emit_char(sb, ' ');
+        dump_int(sb, g_pass1_incbin_size);
+        emit_char(sb, ' ');
+        emit_string(sb, g_pass1_incbin_path);
+        emit_nl(sb);
     }
 
     emit_char(sb, ')'); emit_nl(sb);
@@ -3311,6 +3539,39 @@ fn idx_process_line(buf: U8Array, blen: i32, snap: I32Array) -> i32 {
         }
         return 0;
     }
+    if blen - p >= 7 && cmp(buf, p, "incbin ") {
+        // incbin <sec> <intra_off> <size> <path>
+        // Recorded by asm_pass1 when --incbin-skip deferred a
+        // section-leading .incbin. Caller (run_link / run_link_finish)
+        // queries g_load_incbin_* after asm_load_idx and stores per
+        // input slot for emit_link_lab to interleave src raw lines.
+        idx_parse_dec(buf, p + 7, blen);
+        var ic_sec: i32 = g_idx_int;
+        idx_parse_dec(buf, idx_skip_ws(buf, g_idx_cur, blen), blen);
+        var ic_intra: i32 = g_idx_int;
+        idx_parse_dec(buf, idx_skip_ws(buf, g_idx_cur, blen), blen);
+        var ic_size: i32 = g_idx_int;
+        var ic_ps: i32 = idx_skip_ws(buf, g_idx_cur, blen);
+        var ic_pe: i32 = idx_trim_end(buf, ic_ps, blen);
+        var ic_plen: i32 = ic_pe - ic_ps;
+        if ic_plen > 0 && ic_sec >= 0 && ic_sec < 4 {
+            // Allocate a String to outlive this line buffer.
+            var ic_pbuf: U8Array = U8Array((ic_plen + 1) as u32);
+            var ic_pi: i32 = 0;
+            while ic_pi < ic_plen {
+                set(ic_pbuf, ic_pi, get(buf, (ic_ps + ic_pi)));
+                ic_pi = ic_pi + 1;
+            }
+            set(ic_pbuf, ic_plen, 0u8);
+            poke32(ic_pbuf as u32, ic_plen as u32);
+            g_load_incbin_present   = 1;
+            g_load_incbin_sec       = ic_sec;
+            g_load_incbin_intra_off = ic_intra;
+            g_load_incbin_size      = ic_size;
+            g_load_incbin_path      = ic_pbuf as u32 as String;
+        }
+        return 0;
+    }
     if blen - p >= 4 && cmp(buf, p, "ref ") {
         var os: i32 = idx_skip_ws(buf, p + 4, blen);
         var oe: i32 = idx_token_end(buf, os, blen);
@@ -3346,6 +3607,14 @@ fn idx_process_line(buf: U8Array, blen: i32, snap: I32Array) -> i32 {
 }
 
 export fn asm_load_idx(path: String) -> i32 {
+    // Reset incbin transient: caller queries g_load_incbin_* after
+    // each asm_load_idx call to capture per-input incbin records.
+    g_load_incbin_present   = 0;
+    g_load_incbin_sec       = 0;
+    g_load_incbin_intra_off = 0;
+    g_load_incbin_size      = 0;
+    g_load_incbin_path      = 0 as String;
+
     var fd: i32 = do_openat(0 - 100, path, 0);
     if fd < 0 { return 0 - 1; }
     // Snapshot per-section cursors so this idx's intra addrs map to
