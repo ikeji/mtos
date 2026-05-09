@@ -656,6 +656,34 @@ no-LINKMODE 経路で確認済み (`1ec465d2...`)。`--incbin-skip` 自体は
 host kernel build (compile-gen2.sh) で正しく動き 6.9x speedup を
 出すので、host 側の最適化としては引き続き有効。
 
+### 追加調査結果 (2026-05-10)
+
+device LINKMODE bug を切り分けるため、self_replicate LINKMODE=1 後に
+/sd 上に残った中間ファイル (13 idx + 13 tx + 13 ro + 13 dt + 13 rl =
+65 ファイル) の md5sum を host LINKMODE 結果と比較した:
+
+- **64 / 65 ファイルが host と完全一致** (idx 12 個、bin 39 個、reloc 13 個)
+- **`/sd/pt.idx` だけが不一致** (host `e025973b...` vs device `f3fe3bf3...`)
+
+ただし pt.tx / pt.ro / pt.dt / pt.rl は host と byte-exact 一致。
+pt.s ソース自体も md5 一致。つまり asm_pass1 が pt.s から生成する
+encoder 出力 (.bin / .reloc) は正しく、idx 側だけがズレてる。
+
+pt.idx は asm_dump_idx_state が emit するメタデータ:
+`raw` / `load_base` / `src_bytes` / `align` / `secsize` / `lab` /
+`num` / `ref` / `incbin` 行。bin に影響しない違いの候補は
+`src_bytes` (source byte count、SourceReader 経由) や `align` 状態
+あたり。
+
+device 上の UART 出力は scheduler の `[sw ..]` / `[x ..]` /
+idle marker と interleave して severe garbling を起こすので、
+cat /sd/pt.idx で内容を取り出すのが現状不可能。詳細な diff には
+md5 別ライン化 fixture か、length-prefix UART framing (mx) で
+バイナリ転送する必要がある — 別タスク化。
+
+ただし pt.idx の不一致が最終 kernel.bin の不一致 (`f1111db7...`
+vs `93d12908...`) を引き起こしているので、ここが root cause。
+
 ## ベースライン: 10s / 100 KB 最適化計画 (2026-04-30)
 
 `tests/bench_pipeline.sh` で計測した Gen3 + qemu-riscv32 の per-stage
