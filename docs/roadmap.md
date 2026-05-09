@@ -354,6 +354,23 @@ K7 解決の決め手 3 点:
       asm_pass3 → my_k.bin md5 `1ec465d2...` = host_k.bin)。
       実機での LINKMODE=1 検証は別途 (default は walked-source、
       ~7 min vs ~2 min の trade-off)。
+
+      **追加 (2026-05-09 後半、commit 6f57f45 / 2b48cd0)**: asm_pass1
+      に `--incbin-skip` フラグ追加。section 先頭の `.incbin SIZE
+      "path"` を idx に `incbin <sec> <intra> <size> <path>` で defer
+      し、asm_pass2 --link が `.lab` に `src raw <orig_path>` を直接
+      emit、asm_pass3 が original blob (e.g. `/sd/dx.img`) を直接
+      memcpy する。asm_pass1 で 3.5 MB の read+emit ループが消える。
+
+      測定: host kernel build (compile-gen2.sh) が 288 sec → 42 sec
+      (6.9x)、kernel.bin byte-exact 維持 (`433c3fcf...`)。
+      asm_pass1 単独 on pt.s は 1020 ms → 39 ms (26x、qemu host)。
+
+      Makefile の pico2 kernel ターゲットを `bin2s.sh` (.byte ASCII
+      26 MB) → `bin2s_incbin.sh` (.incbin 1.5 KB wrap) に切替、
+      compile-gen2.sh が prelude_tail.s に `--incbin-skip` を自動
+      注入する。device LINKMODE fixture も /sd/pt.s に
+      `--incbin-skip` を渡すよう更新。
 - [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06):
       `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` で
       end-to-end 自動化、host gen2 build と byte-exact 一致した

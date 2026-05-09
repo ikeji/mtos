@@ -356,6 +356,16 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
     opt-in で wire-in、host compile-gen2.sh と同じ `asm_pass1 per .s +
     asm_pass2 --link` シェイプで .lab を生成する経路を提供 (host
     再現で byte-exact 確認済、実機での LINKMODE=1 検証は別途)
+  - 2026-05-09 追加: asm_pass1 `--incbin-skip` (commits 6f57f45 / 2b48cd0)。
+    section 先頭の `.incbin SIZE "path"` を idx に `incbin <sec>
+    <intra> <size> <path>` レコードで defer、asm_pass2 --link が
+    `.lab` に `src raw <orig_path>` 行を emit、asm_pass3 が
+    original blob を memcpy する。asm_pass1 で 3.5 MB の read+emit
+    ループが消えるので host kernel build (`compile-gen2.sh
+    kernel_pico2.tc`) が 288→42 sec (6.9x)、asm_pass1 on pt.s 単独で
+    1020→39 ms (26x、qemu)。kernel.bin は byte-exact (`433c3fcf...`)。
+    Makefile を `bin2s.sh` → `bin2s_incbin.sh` に切替済、compile-gen2.sh
+    が prelude_tail.s に `--incbin-skip` を自動注入する
 - **K11 (mr upload hang) の根本原因調査**: 現在は boot-time dumper で
   迂回済だが、UART 大容量転送が device をハングさせる原因は未特定。
   `tests/qemu_mr_scale.py` が qemu virt 上で再現を試みるが qemu 単独

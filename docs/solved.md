@@ -77,6 +77,23 @@ host での同パイプライン再現で kernel.bin byte-exact 確認済み
 (13 idx ファイル + 13 bin/reloc ファイルが host と md5 完全一致、
 asm_pass3 → my_k.bin md5 `1ec465d2...` = host_k.bin)。
 
+更に asm_pass1 に `--incbin-skip` フラグを追加 (commit 6f57f45 / 2b48cd0):
+section 先頭の `.incbin SIZE "path"` を idx の `incbin <sec> <intra>
+<size> <path>` レコードに defer し、asm_pass2 --link が `.lab` に
+`src raw <path> <sec> <abs>` 行を直接 emit する。asm_pass3 が
+original blob (e.g. `/sd/dx.img`) を memcpy するので、3.5 MB の
+asm_pass1 read+emit ループが消える。
+
+  - host kernel build (compile-gen2.sh): 288 sec → 42 sec (6.9x)
+  - asm_pass1 on pt.s (qemu host): 1020 ms → 39 ms (26x)
+  - kernel.bin byte-exact: `433c3fcf...` (両 path 一致)
+
+Makefile の `pico2_kernel*.uf2` 系ターゲットを `bin2s.sh` (.byte 形式
+26 MB ASCII) → `bin2s_incbin.sh` (.incbin 形式 1.5 KB wrap) に切替、
+compile-gen2.sh が prelude_tail.s に `--incbin-skip` を自動注入する。
+device LINKMODE fixture (`pico2_self_step2_linkmode.sh`) も /sd/pt.s
+に `--incbin-skip` を渡すよう更新済み。
+
 
 
 Pico 2 実機がフラッシュ済の UF2 を起点に、自分が動かすファームウェアを

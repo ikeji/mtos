@@ -569,6 +569,72 @@ self_replicate 全体の orchestrator overhead としては誤差レベル。
 K13 + 新 step 0d を含んだ self_replicate path が継続して byte-exact で
 動作することを確認済み。
 
+## Q7: `--incbin-skip` による pt.s pre-encode の defer (2026-05-09)
+
+`/sd/pt.s` (= `crt0_pico2_data.s` + `wrap.s`) は wrap.s の `.incbin
+SIZE "/sd/dx.img"` で 3.5 MB の disk-extra.img blob を埋め込む。
+従来の asm_pass1 は pass 2 walk で `.incbin` を読んで per-byte
+emit8 で rodata.bin に materialize していた。
+
+### 問題: pt.s の per-byte emit が支配項
+
+LINKMODE step 2 を host (qemu-riscv32) で計測すると:
+
+| .s | asm_pass1 時間 | size |
+|---|---|---|
+| pt.s (`.incbin` 形式) | **225 sec** | rodata.bin 3.5 MB |
+| 残り 12 .s 合計 | 19 sec | 〜 |
+| asm_pass2 --link | 5 sec | full.lab |
+
+→ pt.s 単独で **pass1 全体の 92%** を占める。実機 pico2 では SD SPI
+6 MHz で `.incbin` の 3.5 MB read が更に重なる。
+
+### 解決: defer to asm_pass3 memcpy
+
+`compiler/asm_common.tc` の `.incbin` ハンドラに `--incbin-skip`
+モードを追加。section の先頭 (`intra_off == 0`) にある `.incbin` は:
+
+1. asm_pass1 が `(sec, intra_off, size, path)` を idx に
+   `incbin <sec> <intra_off> <size> <path>` 形式で記録、bytes は
+   read/emit せずスキップ
+2. asm_pass2 --link が idx の incbin record を読んで .lab に
+   `src raw <orig_path> <sec> <abs_start>` 行を emit
+3. asm_pass3 がその src raw を見て original blob を直接 memcpy
+
+asm_pass3 は既存の `src raw` パスを使うので変更なし。
+
+### 計測結果
+
+#### asm_pass1 単独 (host qemu-riscv32, 1.5 KB pt.s referencing 3.5 MB)
+
+| | 時間 | rodata.bin |
+|---|---|---|
+| 旧 (no skip) | 1020 ms | 3,544,680 byte |
+| **新 (--incbin-skip)** | **39 ms (26x)** | 4 byte |
+
+#### Host kernel build (`compile-gen2.sh kernel_pico2.tc`)
+
+| | 時間 | kernel.bin md5 |
+|---|---|---|
+| 旧 (`bin2s.sh` + no skip) | 288 sec | `433c3fcf…` |
+| **新 (`bin2s_incbin.sh` + --incbin-skip)** | **42 sec (6.9x)** | `433c3fcf…` (byte-exact) |
+
+`bin2s.sh` (`.byte` ASCII expansion 26 MB) も `bin2s_incbin.sh`
+(`.incbin SIZE "path"` 1.5 KB wrap) も最終 kernel.bin は同一。
+qemu の per-byte TCG emit loop が支配的だった分が完全に消える。
+実機 (native execution) では差分は小さくなるが、依然として SD I/O
+や spawn overhead が削れるので実用的に効く。
+
+### 制限
+
+- 1 input につき 1 個まで (g_pass1_incbin_present で gate)
+- `intra_off == 0` 限定 (section の先頭のみ)
+- prelude / user では未対応 (extras のみ per-input storage を持つ)
+- walked-source asm_pass2 経路は影響なし (opt-in flag)
+
+K13 self_replicate の pt.s は wrap.s が必ず section 先頭に
+`.incbin` を置くパターンで、上の制限内に収まる。
+
 ## ベースライン: 10s / 100 KB 最適化計画 (2026-04-30)
 
 `tests/bench_pipeline.sh` で計測した Gen3 + qemu-riscv32 の per-stage
