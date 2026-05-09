@@ -518,6 +518,57 @@ tcc-driven は 79 KB しか残らない上、tcc が arena の中ほどに居座
 **「ベースラインがギリギリで構造的に 3 タスク alive にできない」**
 が本質。
 
+## Q6: self_replicate end-to-end 所要時間 (2026-05-09)
+
+K13 / pico2 self_replicate を `REFRESH_KERN_MODS=1` で実機実行した
+最新の per-step wall-clock。`tests/pico2_self_replicate.sh` は openocd
+reset で各 step を fresh kernel で再起動する設計なので、各 step 末尾の
+`spawn failed` / spawn arena fragment が次 step に持ち越されない。
+
+入力: `pico2_kernel_extra.uf2` 7.6 MB (kernel.bin 3.8 MB + disk-extra.img
+3.5 MB; `DROP_TASKS="vi neofetch grep cp du head wc tcc sdprobe count
+tmpdemo launcher hello hello2 catfile"` で disk-extra を 3.5 MB に slim 化、
+4 MiB flash 制約)。
+
+| step | 内容 | 所要 | 累計 |
+|---|---|---|---|
+| 0 | host gen2 build (host_k.bin / host_k.uf2) | ~4 min | 4 min |
+| flash | initial flash + boot dumper (/sd/dx.img + wrap.s) | ~1 min | 5 min |
+| 0a | refresh runtime.s on /sd | ~2 min | 7 min |
+| 0b | refresh libtc.s on /sd | <1 min | 7 min |
+| 0c | refresh kernel-leaf .s (kc/bf/bs/ff/mf/tf/pf) on /sd | ~2 min | 9 min |
+| **0d** | **refresh platform_pico2.s** (新、2026-05-09) | <1 min | 10 min |
+| 0e | refresh kernel-import .s (vf/ld/kp) on /sd | ~3 min | 13 min |
+| 1 | cat → /sd/full.s (~3.8 MB) | ~2 min | 15 min |
+| 2 | asm_pass2 → /sd/full.lab | ~2 min | 17 min |
+| 3 | asm_pass3 → /sd/k.bin (3.8 MB) | ~9 min | 26 min |
+| 4 | bin2uf2 → /sd/k.uf2 (7.6 MB) | ~8 min | 34 min |
+
+(host build は orchestrator が起動時に 1 回だけ走らせる freeze step、
+device 側の壁時計に含めれば total ~29 min。host build を除いた
+device-only 時間は ~25 min。)
+
+支配的なのは asm_pass3 (step 3) と bin2uf2 (step 4)。両方 SD I/O が
+ボトルネックで、k.bin / k.uf2 を 3.8〜7.6 MB SD に書き出す書き込み
+時間が大きい。SPI 6 MHz / fatfs FAT cache あり (commit 27ec588)。
+
+### 0d step の追加コスト
+
+`platform_pico2.tc` (`do_uart_*` / `do_write` / `do_read`、no imports、
+~1 KB ソース) のコンパイルは 1 ファイル ~50 sec (parse + sigscan +
+tcheck + codegen + bc2asm)。0a-0e のいずれかと同程度の時間で、
+self_replicate 全体の orchestrator overhead としては誤差レベル。
+
+### byte-exact 結果
+
+- host kernel.bin md5: `1ec465d27a1137c66d9554b07e840295`
+- device k.bin md5: `1ec465d27a1137c66d9554b07e840295` (MATCH)
+- host kernel.uf2 md5: `fb7645d1d735a5c0cfce9f740f3c8cb3`
+- device k.uf2 md5: `fb7645d1d735a5c0cfce9f740f3c8cb3` (MATCH)
+
+K13 + 新 step 0d を含んだ self_replicate path が継続して byte-exact で
+動作することを確認済み。
+
 ## ベースライン: 10s / 100 KB 最適化計画 (2026-04-30)
 
 `tests/bench_pipeline.sh` で計測した Gen3 + qemu-riscv32 の per-stage

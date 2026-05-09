@@ -57,7 +57,27 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass3 から g_code を
 
 ## カーネル / OS
 
-### K13. Pico 2 が自分の UF2 を byte-exact に self-replicate — 完了 (2026-05-06)
+### K13. Pico 2 が自分の UF2 を byte-exact に self-replicate — 完了 (2026-05-06; 2026-05-09 platform fixture 追加)
+
+**2026-05-09 追補**: K13 完成後に compile pipeline が `kernel/platform_pico2.tc` を
+新設して `do_uart_*` / `do_write` / `do_read` を asm から TC に移行
+したため、self_replicate の REFRESH 経路で `/sd/pp.s` (TC-compiled
+platform) が生成されないと on-device link で
+`undefined label do_write__i32__u32__i32` が出る状態になっていた。
+`tests/fixtures/pico2_compile_platform.sh` を新設し orchestrator に
+step 0d として組み込んだ (commit 37b791b)。実機検証: kernel.bin md5
+`1ec465d27a1137c66d9554b07e840295` / kernel.uf2 md5
+`fb7645d1d735a5c0cfce9f740f3c8cb3` が host build と完全一致、
+total ~29 min (REFRESH 込み)。
+
+また per-file LINK_MODE 経路 (`tests/fixtures/pico2_self_step2_linkmode.sh`)
+を `LINKMODE=1` opt-in で有効化。host compile-gen2.sh と同じ
+`asm_pass1 per .s + asm_pass2 --link` のシェイプで .lab を生成する。
+host での同パイプライン再現で kernel.bin byte-exact 確認済み
+(13 idx ファイル + 13 bin/reloc ファイルが host と md5 完全一致、
+asm_pass3 → my_k.bin md5 `1ec465d2...` = host_k.bin)。
+
+
 
 Pico 2 実機がフラッシュ済の UF2 を起点に、自分が動かすファームウェアを
 最初から最後まで自前で生成し、host gen2 build と byte-for-byte 完全一致

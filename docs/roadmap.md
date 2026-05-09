@@ -333,6 +333,27 @@ K7 解決の決め手 3 点:
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
+- [x] **self_replicate に platform_pico2.tc 対応 + per-file LINK_MODE
+      opt-in** (2026-05-09): K13 完成後に compile pipeline が
+      `kernel/platform_pico2.tc` を新設して do_uart_* / do_write /
+      do_read を asm から TC へ移行したため、self_replicate REFRESH 経路で
+      `/sd/pp.s` が生成されないと on-device link で
+      `undefined label do_write__i32__u32__i32` が出ていた。
+      `tests/fixtures/pico2_compile_platform.sh` を新設、
+      orchestrator step 0d として組み込み (commit 37b791b)。
+      実機検証: kernel.bin md5
+      `1ec465d27a1137c66d9554b07e840295`、kernel.uf2 md5
+      `fb7645d1d735a5c0cfce9f740f3c8cb3` (~29 min, REFRESH 込み)。
+
+      合わせて per-file LINK_MODE 経路
+      (`tests/fixtures/pico2_self_step2_linkmode.sh`) を `LINKMODE=1`
+      opt-in で有効化。host compile-gen2.sh と同じ `asm_pass1 per .s
+      + asm_pass2 --link` のシェイプで .lab を生成する。host での
+      同パイプライン再現で kernel.bin byte-exact 確認済み (13 idx
+      ファイル + 13 bin/reloc ファイルが host と md5 完全一致、
+      asm_pass3 → my_k.bin md5 `1ec465d2...` = host_k.bin)。
+      実機での LINKMODE=1 検証は別途 (default は walked-source、
+      ~7 min vs ~2 min の trade-off)。
 - [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06):
       `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` で
       end-to-end 自動化、host gen2 build と byte-exact 一致した

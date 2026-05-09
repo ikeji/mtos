@@ -134,7 +134,15 @@ run_step /pico2_self_step1.sh SELF_STEP1_DONE
 echo "=== Reset + Step 2: asm_pass2 → /sd/full.lab ===" >&2
 reset_only
 sleep 4
-run_step /pico2_self_step2.sh SELF_STEP2_DONE
+# LINKMODE=1 selects per-file LINK_MODE (asm_pass1 per .s + asm_pass2
+# --link), matching compile-gen2.sh's host pipeline shape. Default is
+# walked-source (asm_pass2 walks /sd/full.s) which is faster but
+# diverges from the host code path. Both produce byte-exact kernel.bin.
+if [ "${LINKMODE:-0}" = "1" ]; then
+    run_step /pico2_self_step2_linkmode.sh SELF_STEP2_DONE
+else
+    run_step /pico2_self_step2.sh SELF_STEP2_DONE
+fi
 
 echo "=== Reset + Step 3: asm_pass3 → /sd/k.bin ===" >&2
 reset_only

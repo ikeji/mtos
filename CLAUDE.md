@@ -342,6 +342,20 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
     (`_start`、CSR 初期化、`_set_kern_gp`、`_park`、`do_exit`、IMAGE_DEF
     block、XOSC / PLL_SYS bring-up、.data → SRAM コピー)。asm 363
     → 222 行 (-141)、新 TC 131 行
+  - 2026-05-09: self_replicate orchestrator に platform 対応 +
+    per-file LINK_MODE opt-in を追加。
+    `tests/fixtures/pico2_compile_platform.sh` (新規) が
+    `kernel/platform_pico2.tc` を on-device で /sd/pp.s に compile、
+    REFRESH 経路 step 0d として組み込み。これがないと on-device link
+    で `undefined label do_write__i32__u32__i32` (TC 化で消えた asm
+    シンボル) が出る。実機検証: kernel.bin md5
+    `1ec465d27a1137c66d9554b07e840295` / kernel.uf2 md5
+    `fb7645d1d735a5c0cfce9f740f3c8cb3` が host build と byte-exact 一致、
+    total ~29 min (REFRESH 込み)。
+    `tests/fixtures/pico2_self_step2_linkmode.sh` (新規) を `LINKMODE=1`
+    opt-in で wire-in、host compile-gen2.sh と同じ `asm_pass1 per .s +
+    asm_pass2 --link` シェイプで .lab を生成する経路を提供 (host
+    再現で byte-exact 確認済、実機での LINKMODE=1 検証は別途)
 - **K11 (mr upload hang) の根本原因調査**: 現在は boot-time dumper で
   迂回済だが、UART 大容量転送が device をハングさせる原因は未特定。
   `tests/qemu_mr_scale.py` が qemu virt 上で再現を試みるが qemu 単独
