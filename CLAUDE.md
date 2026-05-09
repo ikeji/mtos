@@ -365,7 +365,16 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
     kernel_pico2.tc`) が 288→42 sec (6.9x)、asm_pass1 on pt.s 単独で
     1020→39 ms (26x、qemu)。kernel.bin は byte-exact (`433c3fcf...`)。
     Makefile を `bin2s.sh` → `bin2s_incbin.sh` に切替済、compile-gen2.sh
-    が prelude_tail.s に `--incbin-skip` を自動注入する
+    が prelude_tail.s に `--incbin-skip` を自動注入する。
+    **device LINKMODE 既知 bug (2026-05-09 実機検証)**: `LINKMODE=1
+    REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` で kernel.bin
+    が byte-exact 不一致 (`f1111db7...` vs host `93d12908...`)。
+    `--incbin-skip` の有無で同じ wrong md5 が出るので、bug は
+    LINKMODE 経路 (asm_pass1 per-file + asm_pass2 --link) 自体に
+    device 固有の問題。host LINKMODE は byte-exact なので qemu と
+    native RV32 の挙動差っぽい。回避: `LINKMODE=0` (walked-source、
+    default) を使う。host 側の kernel build は LINKMODE が
+    正しく動くので 6.9x speedup は引き続き有効
 - **K11 (mr upload hang) の根本原因調査**: 現在は boot-time dumper で
   迂回済だが、UART 大容量転送が device をハングさせる原因は未特定。
   `tests/qemu_mr_scale.py` が qemu virt 上で再現を試みるが qemu 単独

@@ -635,6 +635,27 @@ qemu の per-byte TCG emit loop が支配的だった分が完全に消える。
 K13 self_replicate の pt.s は wrap.s が必ず section 先頭に
 `.incbin` を置くパターンで、上の制限内に収まる。
 
+### device LINKMODE 既知 bug (2026-05-09 実機検証)
+
+`LINKMODE=1 REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` で実機を
+回すと、生成される kernel.bin が host build と byte-exact 一致しない
+(`f1111db7...` vs host `93d12908...`)。
+
+切り分け: 同じ test を `--incbin-skip` を fixture から外して再実行
+しても **同じ wrong md5** (`f1111db7...`) が出る。つまり:
+
+- bug は `--incbin-skip` 由来ではない
+- bug は LINKMODE 経路 (asm_pass1 per-file + asm_pass2 --link) 自体
+- host (qemu-riscv32) の LINKMODE は byte-exact (host kernel build
+  `433c3fcf...` 一致) → qemu と native RV32 の挙動差、SD I/O
+  タイミング、kernel arena fragmentation あたりが疑わしい
+
+回避策: device 側は `LINKMODE=0` (walked-source、default) を使う。
+walked-source は実機で byte-exact 動作することを 2026-05-09 の
+no-LINKMODE 経路で確認済み (`1ec465d2...`)。`--incbin-skip` 自体は
+host kernel build (compile-gen2.sh) で正しく動き 6.9x speedup を
+出すので、host 側の最適化としては引き続き有効。
+
 ## ベースライン: 10s / 100 KB 最適化計画 (2026-04-30)
 
 `tests/bench_pipeline.sh` で計測した Gen3 + qemu-riscv32 の per-stage

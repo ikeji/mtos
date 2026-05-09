@@ -94,6 +94,21 @@ compile-gen2.sh が prelude_tail.s に `--incbin-skip` を自動注入する。
 device LINKMODE fixture (`pico2_self_step2_linkmode.sh`) も /sd/pt.s
 に `--incbin-skip` を渡すよう更新済み。
 
+**device LINKMODE の既知バグ (2026-05-09 検証で判明)**: 実機で
+`LINKMODE=1` self_replicate を走らせると、生成 kernel.bin が host build
+と byte-exact 一致しない (`f1111db7...` vs host `93d12908...`)。
+`--incbin-skip` の有無に関わらず同じ wrong md5 が出るので、bug は
+`--incbin-skip` 由来ではなく LINKMODE 経路 (asm_pass1 per-file +
+asm_pass2 --link) 自体の device-specific な何か。host (qemu-riscv32)
+の LINKMODE は byte-exact 動作することは確認済 (host kernel build,
+`a95605f5...` 一致) なので、qemu と native RV32 の挙動差か、SD I/O
+タイミング、kernel arena fragmentation の影響と思われる。
+
+回避策: device 側は `LINKMODE=0` (default、walked-source) を使う。
+LINKMODE=1 は今のところ debug build 用 / 性能比較用。host 側の
+kernel build (`compile-gen2.sh`) は LINKMODE が正しく動くので、
+`--incbin-skip` の 6.9x speedup は引き続き有効。
+
 
 
 Pico 2 実機がフラッシュ済の UF2 を起点に、自分が動かすファームウェアを

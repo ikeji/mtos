@@ -371,6 +371,15 @@ K7 解決の決め手 3 点:
       compile-gen2.sh が prelude_tail.s に `--incbin-skip` を自動
       注入する。device LINKMODE fixture も /sd/pt.s に
       `--incbin-skip` を渡すよう更新。
+
+      **device LINKMODE の既知 bug**: 実機で `LINKMODE=1
+      REFRESH_KERN_MODS=1` を走らせると kernel.bin が byte-exact
+      不一致 (`f1111db7...` vs host `93d12908...`)。
+      `--incbin-skip` の有無に関わらず同じ wrong md5 が出るので、
+      bug は LINKMODE 経路自体に何か device-specific な
+      問題がある (qemu host LINKMODE は byte-exact)。回避策:
+      `LINKMODE=0` (default、walked-source) を使う。LINKMODE=1
+      は debug build 用に保留。
 - [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06):
       `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` で
       end-to-end 自動化、host gen2 build と byte-exact 一致した
