@@ -248,11 +248,23 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
     var emitted_now: i32 = asm_get_section_emitted();
     var pad_n: i32 = start_off - emitted_now;
     if pad_n > 0 {
+        // Pad in fixed-size chunks. Self_replicate's rodata gets a
+        // ~384 KB pad before the deferred --incbin-skip blob (the
+        // 3.5 MB disk-extra). Allocating U8Array(pad_n) directly
+        // OOMed because pad_n exceeds the task arena. A 4 KB scratch
+        // buffer in a write loop has the same effect with bounded
+        // memory.
         var out_fd_pad: i32 = asm_get_out_fd();
-        var zbuf: U8Array = U8Array((pad_n) as u32);
+        var zbuf: U8Array = U8Array(4096u32);
         var zi: i32 = 0;
-        while zi < pad_n { set(zbuf, zi, 0u8); zi = zi + 1; }
-        sys_write(out_fd_pad, zbuf, pad_n);
+        while zi < 4096 { set(zbuf, zi, 0u8); zi = zi + 1; }
+        var pad_remain: i32 = pad_n;
+        while pad_remain > 0 {
+            var pad_chunk: i32 = pad_remain;
+            if pad_chunk > 4096 { pad_chunk = 4096; }
+            sys_write(out_fd_pad, zbuf, pad_chunk);
+            pad_remain = pad_remain - pad_chunk;
+        }
         delete(zbuf);
         asm_advance_section_pass2(pad_n);
     }
