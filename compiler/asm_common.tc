@@ -42,6 +42,12 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // 4 KB and large inputs amortise the resize cost. Replaces the old
 // MAX_NAME_POOL fixed cap (was 96 KB pre-allocated regardless of
 // usage); for hello.tc that saved ~92 KB of asm_pass2/asm_pass3 peak.
+//
+// asm_pass2 --link with many inputs (self_replicate's 13-way merge)
+// needs ~60 KB total — calling asm_preallocate_name_pool(64*1024)
+// from run_link skips the gradual-grow churn that would otherwise
+// fragment the arena and OOM the final 64 KB grow. Other callers
+// keep the small initial cap.
 var MAX_LABELS:           i32 = 4096;
 var NAME_POOL_INITIAL_KB: i32 = 4;
 // Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
@@ -977,6 +983,16 @@ fn find_label(name: U8Array, nlen: i32) -> i32 {
         i = i + 1;
     }
     return 0 - 1;
+}
+
+// Pre-allocate the name pool to a target size. Callers that know
+// they need a large pool (asm_pass2 --link merging many inputs)
+// invoke this right after asm_init_pass1 to skip the gradual grow
+// churn — those grows otherwise fragment the arena and the final
+// big grow OOMs even when total free space would fit it.
+export fn asm_preallocate_name_pool(target_bytes: i32) -> void {
+    ensure_name_pool_capacity(target_bytes);
+    return;
 }
 
 // Grow g_lab_names to hold at least `needed` bytes. Doubles the
@@ -2463,6 +2479,25 @@ fn asm_init_common() -> void {
     set(g_sec_pos, 1, 0);
     set(g_sec_pos, 2, 0);
     set(g_sec_pos, 3, 0);
+    // Zero-initialize sec_base and sec_size too — the TC runtime's
+    // kmalloc does not zero memory, and on pico2 the task arena is
+    // reused across spawns so the freshly-allocated I32Array(4) holds
+    // residual bytes from prior task usage. Pass 1 reads g_sec_base
+    // (e.g. asm_run_line's pass-2 branch, label fixup, .lab dump)
+    // before asm_compute_sec_bases has set them to their merged-link
+    // values — without this zero-init, pass 1 sees garbage and any
+    // calculation of the form `g_pos - g_sec_base[sec]` produces
+    // junk. Caught 2026-05-10 when self_replicate LINKMODE+--incbin-
+    // skip wrote a kernel.bin diverging from host (host's qemu fresh
+    // mmap pages happen to be zero so the bug was masked).
+    set(g_sec_base, 0, 0);
+    set(g_sec_base, 1, 0);
+    set(g_sec_base, 2, 0);
+    set(g_sec_base, 3, 0);
+    set(g_sec_size, 0, 0);
+    set(g_sec_size, 1, 0);
+    set(g_sec_size, 2, 0);
+    set(g_sec_size, 3, 0);
 
     return;
 }

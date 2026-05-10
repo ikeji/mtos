@@ -912,6 +912,14 @@ export fn run_pass2(lab_path: String, out_path: String,
     asm_enable_stream_mode();
     rb_init();
 
+    // Pre-allocate the label name pool to 64 KB up front. The .lab
+    // for self_replicate's 13-input merge has ~5000 labels averaging
+    // 12-15 chars (function names + numeric labels). Gradual doubling
+    // (4 → 8 → 16 → 32 → 64) fragments the arena and the 64 KB grow
+    // can OOM. Pre-allocating skips the grow churn while keeping
+    // peak under 320 KB asm_pass3 task arena.
+    asm_preallocate_name_pool(65536);
+
     // --lab path: read .lab from a file instead of stdin. The src
     // lines inside the .lab still drive multi-source open, so the
     // pipeline goes from "single concatenated stdin" to "lab file →
