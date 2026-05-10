@@ -935,6 +935,17 @@ fn lab_hash_name(buf: U8Array, nlen: i32) -> i32 {
 // labels incrementally. This turns pass 2's per-reference find_label
 // from O(n_labels) into O(1) amortised — measured 18 M comparisons
 // on the self-host build.
+// Idempotent variant of asm_finalize_labels: returns immediately if
+// the hash is already built. Callers that may run before or after
+// finalize use this — e.g., asm_pass3's `reloc` line handler wants
+// O(1) find_label for the resolve, but asm_pass3's lab parser also
+// calls asm_finalize_labels at end-of-parse for the encoder.
+export fn asm_ensure_labels_finalized() -> void {
+    if g_lab_hash_ok != 0 { return; }
+    asm_finalize_labels();
+    return;
+}
+
 export fn asm_finalize_labels() -> void {
     // Size to next power of 2 ≥ 2 × g_nlabels (50% load factor),
     // with a minimum of 64 to handle pathologically small inputs

@@ -64,13 +64,24 @@ var SRC_PATHS_CAP: i32 = 64;
 // linker mode (which carries every cross-file ref from user.reloc on
 // top of prelude.reloc — easily thousands for compiler/parse.tc)
 // doesn't silently drop relocs past the cap.
-var RELOCS_CAP_INIT: i32 = 256;
+// Initial capacity tuned for self_replicate's 13-input merge which
+// produces ~3000 relocs total. Pre-allocating skips the doubling
+// churn (256 → 512 → ... → 4096) whose intermediate copies double
+// peak memory and OOM the asm_pass3 task arena. For smaller inputs
+// (single .tc compile) the unused capacity is wasted but bounded
+// by asm_pass3's task arena anyway.
+var RELOCS_CAP_INIT: i32 = 4096;
 var g_relocs_cap:  i32 = 0;
 var g_reloc_offs:  I32Array = 0 as I32Array;
 var g_reloc_kinds: I32Array = 0 as I32Array;
-// Each name is a U8Array (count-prefixed) cast to u32 — same trick
-// as src_paths. Lifetime: persists until run_pass2 returns.
-var g_reloc_names: U32Array = 0 as U32Array;
+// Each entry is a label index resolved at parse time (not the raw
+// name). The .lab format guarantees `lab` lines come before `ref`
+// lines, so by the time a ref is parsed every target label is in
+// g_labels and we can do the find_label lookup immediately. This
+// avoids hanging onto 1 U8Array(name_len) per ref — for the
+// self_replicate 13-input merge that's ~3000 U8Arrays totalling
+// ~120 KB of avoidable live memory in the asm_pass3 task arena.
+var g_reloc_lab_idx: I32Array = 0 as I32Array;
 var g_n_relocs: i32 = 0;
 
 // Lookup label `name` in the asm_common label table. Returns the
@@ -295,11 +306,7 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
         var pre_secs:  I32Array = I32Array(g_n_relocs as u32);
         var ri: i32 = 0;
         while ri < g_n_relocs {
-            var name_addr: u32 = get(g_reloc_names, ri);
-            var name: U8Array = name_addr as U8Array;
-            var nlen: i32 = len(name);
-            var lab_idx: i32 = asm_find_label_idx(name, nlen);
-            if lab_idx < 0 { sys_exit(30); }
+            var lab_idx: i32 = get(g_reloc_lab_idx, ri);
             set(pre_addrs, ri, asm_label_addr_at(lab_idx));
             set(pre_secs,  ri, asm_label_section_at(lab_idx));
             ri = ri + 1;
@@ -423,6 +430,7 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
         delete(io);
         delete(win);
         delete(pre_addrs);
+        delete(pre_secs);
     } else {
         // Streaming pass-through (no relocs to apply).
         var buf2: U8Array = U8Array(4096);
@@ -443,12 +451,12 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
     return total;
 }
 
-fn record_reloc(off: i32, kind: i32, name: U8Array) -> void {
+fn record_reloc(off: i32, kind: i32, lab_idx: i32) -> void {
     if g_reloc_offs as u32 == 0u32 {
-        g_relocs_cap  = RELOCS_CAP_INIT;
-        g_reloc_offs  = I32Array((g_relocs_cap) as u32);
-        g_reloc_kinds = I32Array((g_relocs_cap) as u32);
-        g_reloc_names = U32Array((g_relocs_cap) as u32);
+        g_relocs_cap    = RELOCS_CAP_INIT;
+        g_reloc_offs    = I32Array((g_relocs_cap) as u32);
+        g_reloc_kinds   = I32Array((g_relocs_cap) as u32);
+        g_reloc_lab_idx = I32Array((g_relocs_cap) as u32);
         g_n_relocs = 0;
     }
     if g_n_relocs >= g_relocs_cap {
@@ -459,25 +467,25 @@ fn record_reloc(off: i32, kind: i32, name: U8Array) -> void {
         var new_cap: i32 = g_relocs_cap * 2;
         var new_offs:  I32Array = I32Array((new_cap) as u32);
         var new_kinds: I32Array = I32Array((new_cap) as u32);
-        var new_names: U32Array = U32Array((new_cap) as u32);
+        var new_lab_idx: I32Array = I32Array((new_cap) as u32);
         var ci: i32 = 0;
         while ci < g_n_relocs {
             set(new_offs,  ci, get(g_reloc_offs,  ci));
             set(new_kinds, ci, get(g_reloc_kinds, ci));
-            set(new_names, ci, get(g_reloc_names, ci));
+            set(new_lab_idx, ci, get(g_reloc_lab_idx, ci));
             ci = ci + 1;
         }
         delete(g_reloc_offs);
         delete(g_reloc_kinds);
-        delete(g_reloc_names);
-        g_reloc_offs  = new_offs;
-        g_reloc_kinds = new_kinds;
-        g_reloc_names = new_names;
-        g_relocs_cap  = new_cap;
+        delete(g_reloc_lab_idx);
+        g_reloc_offs    = new_offs;
+        g_reloc_kinds   = new_kinds;
+        g_reloc_lab_idx = new_lab_idx;
+        g_relocs_cap    = new_cap;
     }
-    set(g_reloc_offs,  g_n_relocs, off);
-    set(g_reloc_kinds, g_n_relocs, kind);
-    set(g_reloc_names, g_n_relocs, name as u32);
+    set(g_reloc_offs,    g_n_relocs, off);
+    set(g_reloc_kinds,   g_n_relocs, kind);
+    set(g_reloc_lab_idx, g_n_relocs, lab_idx);
     g_n_relocs = g_n_relocs + 1;
     return;
 }
@@ -642,6 +650,10 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
     }
     if blen - p >= 6 && cmp(buf, p, "reloc ") {
         // reloc <off> <kind> <name>
+        // First ref line triggers asm_finalize_labels — every label
+        // is in g_labels by now (.lab format puts all labs before refs)
+        // and we want O(1) find_label for the imminent name resolution.
+        asm_ensure_labels_finalized();
         parse_dec(buf, p + 6, blen);
         var roff: i32 = g_lab_int;
         parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
@@ -659,10 +671,16 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         }
         var nlen_r: i32 = ne_r - ns_r;
         if nlen_r > 0 {
+            // Resolve name to label index immediately and discard the
+            // temporary U8Array. Saves ~120 KB on the 13-input merge
+            // (~3000 refs × ~40-byte bucket cost per name).
             var name: U8Array = U8Array((nlen_r) as u32);
             var ri: i32 = 0;
             while ri < nlen_r { set(name, ri, get(buf, ns_r + ri)); ri = ri + 1; }
-            record_reloc(roff, rkind, name);
+            var lab_idx: i32 = asm_find_label_idx(name, nlen_r);
+            delete(name);
+            if lab_idx < 0 { sys_exit(31); }
+            record_reloc(roff, rkind, lab_idx);
         }
         return 0;
     }
