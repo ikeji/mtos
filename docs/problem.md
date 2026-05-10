@@ -199,27 +199,41 @@ sh の入力に流れる別モード。詳細は K8+K9 エントリの Phase 2A 
   `SKIP_UPLOAD=1` 経路
 - self-replicate 経路は kernel_pico2.tc::dump_mtfs_to_sd で完全迂回
 
-### K14. device LINKMODE 検証保留 — Debug Probe 復旧待ち (後回し)
+### K14. device LINKMODE step 2 で 384 KB allocation が OOM (後回し)
 
 `LINKMODE=1 REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` の
 device 検証で、root cause (commit a48855b: g_sec_base 未初期化に
 依存した intra_now) を特定して修正、防御的修正 (commit c7c6d9f:
-g_sec_base/g_sec_size の zero-init + asm_preallocate_name_pool) と
-asm_pass2/3 の task arena bump (commit 3465126: 320 KB、追加で
-未コミット 384 KB) を入れた。**host 側は LINKMODE+--incbin-skip で
-byte-exact 動作**を確認済 (`make test` 143/0 PASS)。
+g_sec_base/g_sec_size の zero-init + asm_preallocate_name_pool) を
+入れた。**host 側は LINKMODE+--incbin-skip で byte-exact 動作**を
+確認済 (`make test` 143/0 PASS、kernel build 288 → 42 sec / 6.9x
+speedup)。
 
-device 側で再検証しようとした際、Debug Probe (CMSIS-DAP) が応答不能
-になった (CMSIS-DAP CMD_INFO failed、SWD DTM version -1)。USB reset
-/ マシン再起動でも復旧せず、Debug Probe 本体の reflash が必要。
+device 側 (2026-05-10 に Debug Probe / Pico 2 復旧後の検証で確認)
+は step 2 (asm_pass2 --link、13-input merge) の最初の big alloc が
+**393220 byte (= U8Array(384 KB))** を要求して OOM。task arena は
+380 KB、しかも l=122128 (122 KB すでに alive) のタイミングなので
+arena に絶対入らない。runtime に `BIG: SIZE l=LIVE` 計装を入れて
+バイナリで確認 (commit 後に revert 済)。
 
-**現在の状態**:
-- host LINKMODE: 動作確認済、kernel build 6.9x speedup (288 → 42 s)
-- device LINKMODE: a48855b で root cause 修正済、メモリ tuning も完了、
-  end-to-end byte-exact 検証のみ未実施
-- 回避策: device 側は `LINKMODE=0` (walked-source、default) を使う。
-  walked-source は実機で byte-exact 動作することを 2026-05-09 の
-  no-LINKMODE 経路で確認済 (`1ec465d2...`)
+**未特定**: 393220 byte alloc の発生元。ensure_name_pool_capacity
+の doubling (4→8→16→32→64→128→256→512 KB) には合致しない
+(393216 = 0x60000 = 6×65536 で 2 の冪ではない)。 idx files の
+secsize / src_bytes 等 i32 値がそのまま U8Array サイズに渡されて
+いる経路が疑わしい。host (qemu-riscv32, 96 MB arena) では 384 KB
+alloc は成功して見えないので host 計測でも見つからない。Step 3
+(asm_pass3) の `raw_memcpy_section` の `U8Array(pad_n)` (3.5 MB
+disk-extra blob 前の zero pad) は別件で commit d2543e5 で
+chunk-write 化済。
+
+**回避策**: device 側は `LINKMODE=0` (walked-source、default) を
+使う。walked-source は実機で byte-exact 動作することを 2026-05-09
+の no-LINKMODE 経路で確認済 (`1ec465d2...`)。
+
+**次の調査方針**: runtime new_array に call site hint (caller の
+PC か symbol) を追加して、393220 alloc の発生箇所を特定する。
+あるいは host で大量入力テスト (build/intermediate/gen2/kernel_pico2/
+in_*.idx を 13 個 link) を再現して詳細プロファイル。
 
 詳細は `docs/scaling.md` の "device LINKMODE 既知 bug" 節を参照。
 
