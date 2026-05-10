@@ -675,14 +675,88 @@ pt.idx は asm_dump_idx_state が emit するメタデータ:
 `src_bytes` (source byte count、SourceReader 経由) や `align` 状態
 あたり。
 
-device 上の UART 出力は scheduler の `[sw ..]` / `[x ..]` /
-idle marker と interleave して severe garbling を起こすので、
-cat /sd/pt.idx で内容を取り出すのが現状不可能。詳細な diff には
-md5 別ライン化 fixture か、length-prefix UART framing (mx) で
-バイナリ転送する必要がある — 別タスク化。
+UART を mx (length-prefix framing) 経由で device → host に転送して
+pt.idx のバイナリを取り出すと、device 側の pt.idx には
+`incbin 1 0 3590244 /sd/dx.img` 行が**欠けて**いた。host 側には
+あった。つまり asm_pass1 の `--incbin-skip` defer が device で
+発火していなかった (commit a48855b で root cause 確定 + 修正)。
 
-ただし pt.idx の不一致が最終 kernel.bin の不一致 (`f1111db7...`
-vs `93d12908...`) を引き起こしているので、ここが root cause。
+### 根本原因: pass 1 の `intra_now` が g_sec_base[]の未初期化値に依存
+
+`compiler/asm_common.tc` の `.incbin SIZE "path"` ハンドラが
+section 先頭判定に使っていた:
+
+```
+var intra_now: i32 = g_pos - g_sec_base[sec_now];
+```
+
+これは pass 2 で `asm_compute_sec_bases` が g_sec_base を
+merged-link 値で埋めた後なら正しいが、pass 1 では
+`g_sec_base = I32Array(4)` が freshly allocated なまま。
+TC kmalloc は zero-init しないので、
+
+- **host (qemu-riscv32)**: 初回 kmalloc は fresh mmap pages を
+  返すので偶然 zero → `intra_now = 0 - 0 = 0` で defer 発火 (見え
+  ない bug)
+- **pico2 device**: task arena が spawn 越しに recycle される
+  ので I32Array(4) は前 task の残骸 → `intra_now ≠ 0` → defer
+  fall-through → pass 1 が `g_pass1_incbin_present = 0` のまま
+
+pass 2 では g_sec_base が valid なので defer 自体は発火 (bin emit
+は skip される、pt.ro = 4 byte で host と一致)。だが
+`asm_dump_idx_state` は pass 1 と pass 2 の**間**で走るので
+present == 0 を見て idx に `incbin` 行を出さない。結果として
+asm_pass2 --link がそれを検知できず、asm_pass3 は `src raw` 行を
+受け取らず、最終 kernel.bin が 3.5 MB の disk-extra blob 抜きで
+完成 → byte-exact 不一致。
+
+### 修正 (commit a48855b, 2026-05-10)
+
+`g_pos - g_sec_base[sec_now]` を `g_sec_pos[sec_now]` に置換。
+asm_run_line がライン処理前にセットする intra-section オフセット
+で、pass 1 / pass 2 双方で正しい値 (sec_base に依存しない)。
+
+host 検証: bin2s.sh + no-skip / bin2s_incbin.sh + skip 両経路で
+kernel.bin md5 `93d12908...`、`make test` 143/0 PASS。
+
+防御的追加修正 (commit c7c6d9f): asm_init_common で
+g_sec_base / g_sec_size も zero-init。今は live read 路がない
+(a48855b で唯一の path を撤去) が、未来の regression を防ぐ。
+
+### LINKMODE step 2 / step 3 のメモリスケール (2026-05-10)
+
+a48855b 修正後、device LINKMODE で self_replicate を回すと
+asm_pass2 --link / asm_pass3 が OOM することが判明:
+
+- **asm_pass2 --link** peak `300784 live=292588`: 13-input merge
+  (prelude + user + 11 --add) で label name pool が 4→8→16→32→64 KB
+  と grow し、各 grow が arena を fragment して最後 64 KB grow で
+  OOM。先頭で `asm_preallocate_name_pool(65536)` を呼んで
+  事前確保すれば fragment 化を回避できる (commit c7c6d9f で helper
+  追加 + 呼び出し)。task arena は 320 KB → **384 KB** に bump
+- **asm_pass3 --lab** peak `306444 live=306444`: 上と同じ name pool
+  pre-alloc + reloc table の doubling (offs/kinds/names が 12 B/reloc
+  + apply 時 pre_addrs/pre_secs が 8 B/reloc) で peak が 300 KB+ に
+  到達。task arena 320 KB だと 16 KB allocation で OOM。
+  **384 KB** に bump
+
+self_replicate は step 間で openocd reset するので fresh kernel
+arena (508 KB) 上に 384 KB task が landfit する。in-pipeline で
+parse..asm_pass2 を spawn cycle した後だと fragmentation で
+make_task が失敗する可能性は残る (`docs/task/asm_pre_encode.md`
+参照)。
+
+### 検証保留 (2026-05-10)
+
+a48855b + c7c6d9f + 3465126 + 続く 384 KB bump を入れた状態で
+device LINKMODE 検証を再実行した際、Debug Probe (CMSIS-DAP) が
+応答不能になった (CMSIS-DAP CMD_INFO failed、SWD DTM version -1)。
+USB reset / 機械再起動でも復旧せず、Debug Probe 本体の reflash
+が必要な状態。
+
+host 側は LINKMODE+--incbin-skip + 384 KB arena で byte-exact
+動作 (kernel.bin md5 `0503b899...`、`make test` 143/0 PASS) を
+確認済み。device LINKMODE 完走確認は Debug Probe 復旧後に持ち越し。
 
 ## ベースライン: 10s / 100 KB 最適化計画 (2026-04-30)
 

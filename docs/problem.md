@@ -199,6 +199,30 @@ sh の入力に流れる別モード。詳細は K8+K9 エントリの Phase 2A 
   `SKIP_UPLOAD=1` 経路
 - self-replicate 経路は kernel_pico2.tc::dump_mtfs_to_sd で完全迂回
 
+### K14. device LINKMODE 検証保留 — Debug Probe 復旧待ち (後回し)
+
+`LINKMODE=1 REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` の
+device 検証で、root cause (commit a48855b: g_sec_base 未初期化に
+依存した intra_now) を特定して修正、防御的修正 (commit c7c6d9f:
+g_sec_base/g_sec_size の zero-init + asm_preallocate_name_pool) と
+asm_pass2/3 の task arena bump (commit 3465126: 320 KB、追加で
+未コミット 384 KB) を入れた。**host 側は LINKMODE+--incbin-skip で
+byte-exact 動作**を確認済 (`make test` 143/0 PASS)。
+
+device 側で再検証しようとした際、Debug Probe (CMSIS-DAP) が応答不能
+になった (CMSIS-DAP CMD_INFO failed、SWD DTM version -1)。USB reset
+/ マシン再起動でも復旧せず、Debug Probe 本体の reflash が必要。
+
+**現在の状態**:
+- host LINKMODE: 動作確認済、kernel build 6.9x speedup (288 → 42 s)
+- device LINKMODE: a48855b で root cause 修正済、メモリ tuning も完了、
+  end-to-end byte-exact 検証のみ未実施
+- 回避策: device 側は `LINKMODE=0` (walked-source、default) を使う。
+  walked-source は実機で byte-exact 動作することを 2026-05-09 の
+  no-LINKMODE 経路で確認済 (`1ec465d2...`)
+
+詳細は `docs/scaling.md` の "device LINKMODE 既知 bug" 節を参照。
+
 ### K12. fatfs ファイル名 8.3 制限 (limitation)
 
 `kernel/fatfs.tc::fatfs_open` は `nlen > 12` で -1 を返す。
