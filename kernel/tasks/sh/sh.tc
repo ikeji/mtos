@@ -21,14 +21,14 @@
 import "../libtc/libtc.tc";
 
 
-// CMD_MAX bumped to 512 for prelude pre-encode (Step 6 of pre-encode):
-// the new asm_pass2 invocation passes 9 paths via --load-idx /
-// --idx-source / --prelude-text-bin / --prelude-rodata-bin /
-// --prelude-data-bin / --prelude-reloc / --lab-out plus 2 positional
-// args, totalling ~290 chars. Earlier history: 128 covered the
-// typecheck-split cat (#54), 64 covered single-arg commands.
+// CMD_MAX bumped to 2048 for self_replicate LINKMODE step 2: the
+// asm_pass2 --link invocation now chains 13 inputs (prelude +
+// user + 11 --add extras) × {idx, tx, ro, dt, rl} flags, plus
+// --link --lab-out — total 926 chars on /sd/pico2_self_step2_
+// linkmode.sh. Earlier history: 512 for prelude pre-encode (~290
+// chars), 128 for typecheck-split cat (#54), 64 for single-arg.
 // PATH_MAX stays at 70 because individual paths still fit.
-var CMD_MAX:  i32 = 512;
+var CMD_MAX:  i32 = 2048;
 // "/bin/" (5) + path bytes + NUL ≤ 70. argv[0] alone, no command line.
 var PATH_MAX: i32 = 70;
 var HIST_MAX: i32 = 8;
