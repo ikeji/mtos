@@ -333,27 +333,20 @@ K7 解決の決め手 3 点:
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
-- [x] **self_replicate に platform_pico2.tc 対応 + per-file LINK_MODE
-      opt-in** (2026-05-09): K13 完成後に compile pipeline が
+- [x] **self_replicate に platform_pico2.tc 対応 + per-file pre-encode
+      pipeline** (2026-05-09): K13 完成後に compile pipeline が
       `kernel/platform_pico2.tc` を新設して do_uart_* / do_write /
       do_read を asm から TC へ移行したため、self_replicate REFRESH 経路で
       `/sd/pp.s` が生成されないと on-device link で
       `undefined label do_write__i32__u32__i32` が出ていた。
       `tests/fixtures/pico2_compile_platform.sh` を新設、
       orchestrator step 0d として組み込み (commit 37b791b)。
-      実機検証: kernel.bin md5
-      `1ec465d27a1137c66d9554b07e840295`、kernel.uf2 md5
-      `fb7645d1d735a5c0cfce9f740f3c8cb3` (~29 min, REFRESH 込み)。
 
-      合わせて per-file LINK_MODE 経路
-      (`tests/fixtures/pico2_self_step2_linkmode.sh`) を `LINKMODE=1`
-      opt-in で有効化。host compile-gen2.sh と同じ `asm_pass1 per .s
-      + asm_pass2 --link` のシェイプで .lab を生成する。host での
-      同パイプライン再現で kernel.bin byte-exact 確認済み (13 idx
-      ファイル + 13 bin/reloc ファイルが host と md5 完全一致、
-      asm_pass3 → my_k.bin md5 `1ec465d2...` = host_k.bin)。
-      実機での LINKMODE=1 検証は別途 (default は walked-source、
-      ~7 min vs ~2 min の trade-off)。
+      合わせて step 2 を per-file pre-encode + `asm_pass2 --link` に
+      移行。`asm_pass1 per .s + asm_pass2 --link` の shape で .lab を
+      生成し、host compile-gen2.sh と完全に同じ pipeline 形になった。
+      device 側の byte-exact 動作は K14 完了時 (2026-05-11) に確認、
+      walked-source モードは退役した (commit dddbf8b)。
 
       **追加 (2026-05-09 後半、commit 6f57f45 / 2b48cd0)**: asm_pass1
       に `--incbin-skip` フラグ追加。section 先頭の `.incbin SIZE
@@ -363,23 +356,13 @@ K7 解決の決め手 3 点:
       memcpy する。asm_pass1 で 3.5 MB の read+emit ループが消える。
 
       測定: host kernel build (compile-gen2.sh) が 288 sec → 42 sec
-      (6.9x)、kernel.bin byte-exact 維持 (`433c3fcf...`)。
-      asm_pass1 単独 on pt.s は 1020 ms → 39 ms (26x、qemu host)。
+      (6.9x)、kernel.bin byte-exact 維持。asm_pass1 単独 on pt.s は
+      1020 ms → 39 ms (26x、qemu host)。
 
       Makefile の pico2 kernel ターゲットを `bin2s.sh` (.byte ASCII
       26 MB) → `bin2s_incbin.sh` (.incbin 1.5 KB wrap) に切替、
       compile-gen2.sh が prelude_tail.s に `--incbin-skip` を自動
-      注入する。device LINKMODE fixture も /sd/pt.s に
-      `--incbin-skip` を渡すよう更新。
-
-      **device LINKMODE の既知 bug**: 実機で `LINKMODE=1
-      REFRESH_KERN_MODS=1` を走らせると kernel.bin が byte-exact
-      不一致 (`f1111db7...` vs host `93d12908...`)。
-      `--incbin-skip` の有無に関わらず同じ wrong md5 が出るので、
-      bug は LINKMODE 経路自体に何か device-specific な
-      問題がある (qemu host LINKMODE は byte-exact)。回避策:
-      `LINKMODE=0` (default、walked-source) を使う。LINKMODE=1
-      は debug build 用に保留。
+      注入する。
 - [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06):
       `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` で
       end-to-end 自動化、host gen2 build と byte-exact 一致した

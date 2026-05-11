@@ -24,12 +24,10 @@
 import "../libtc/libtc.tc";
 
 
-// CMD_MAX bumped to 2048 for self_replicate LINKMODE step 2: the
-// asm_pass2 --link invocation now chains 13 inputs (prelude + user
-// + 11 --add extras) × {idx, tx, ro, dt, rl} — 926 chars on
-// /sd/pico2_self_step2_linkmode.sh. Earlier history: 512 for
-// prelude pre-encode, 128 for typecheck-split cat (#54), 64 for
-// single-arg. PATH_MAX stays at 70 because individual paths still fit.
+// CMD_MAX is sized for self_replicate step 2: the asm_pass2 --link
+// invocation chains 13 inputs (prelude + user + 11 --add extras) ×
+// {idx, tx, ro, dt, rl} — ~926 chars on /sd/pico2_self_step2.sh.
+// PATH_MAX stays at 70 because individual paths still fit.
 var CMD_MAX:  i32 = 2048;
 // "/bin/" (5) + path bytes + NUL ≤ 70. argv[0] alone, no command line.
 var PATH_MAX: i32 = 70;

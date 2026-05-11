@@ -207,8 +207,7 @@ export fn asm_get_emit_undef_relocs() -> i32 { return g_emit_undef_relocs; }
 // Per-section start alignment (in bytes) recorded by pass 1 from the
 // first `.align N` directive seen in each section. Captured into the
 // .idx so the link step can pre-align sec_pos before installing this
-// idx's labels — that's where the legacy walked-source flow inserts
-// padding as its single cursor crosses the directive.
+// idx's labels.
 // Section ids: 0=text, 1=rodata, 2=data, 3=bss. 0 means "no .align
 // observed in this section yet" — link step leaves sec_pos alone.
 var g_sec_start_align: I32Array = 0 as I32Array;
@@ -2217,24 +2216,13 @@ export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
                 var sec_now: i32 = g_current_section;
                 // Use g_sec_pos directly — equivalent in both passes
                 // since asm_run_line sets g_pos from sec_pos (pass 1)
-                // or sec_base + sec_pos (pass 2). sec_pos is the
-                // intra-section offset and doesn't depend on
-                // g_sec_base being zero-initialized. The earlier
-                // formulation `g_pos - g_sec_base[sec_now]` was
-                // pass-2 only correct: in pass 1 g_sec_base is
-                // I32Array(4) freshly allocated, and on pico2 the
-                // task arena's first allocation can return non-zero
-                // residual bytes from previous task usage, so the
-                // computed intra was garbage. Symptom: pass 1 fall-
-                // through with no `incbin` line in the idx; pass 2
-                // (with computed sec_base) skipped the bin emit
-                // anyway, so device pt.ro was 4 bytes but pt.idx
-                // missed the incbin record → asm_pass2 --link's lab
-                // didn't get a `src raw <orig_path>` line → asm_pass3
-                // never memcpy'd /sd/dx.img → kernel.bin diverged
-                // from host's. Caught 2026-05-10 via mx pt.idx
-                // extraction (host LINKMODE was unaffected because
-                // qemu's fresh mmap pages are zero).
+                // or sec_base + sec_pos (pass 2). Computing intra as
+                // `g_pos - g_sec_base[sec_now]` is pass-2 only correct:
+                // in pass 1 g_sec_base is a freshly allocated I32Array
+                // whose first allocation can land on a non-zeroed
+                // arena page, producing a garbage intra and a missing
+                // pass-1 incbin record (caught via mx pt.idx on pico2,
+                // 2026-05-10).
                 var intra_now: i32 = get(g_sec_pos, sec_now);
                 if intra_now == 0 {
                     // Extract the path token (same quote-stripping as
@@ -2498,9 +2486,9 @@ fn asm_init_common() -> void {
     // before asm_compute_sec_bases has set them to their merged-link
     // values — without this zero-init, pass 1 sees garbage and any
     // calculation of the form `g_pos - g_sec_base[sec]` produces
-    // junk. Caught 2026-05-10 when self_replicate LINKMODE+--incbin-
-    // skip wrote a kernel.bin diverging from host (host's qemu fresh
-    // mmap pages happen to be zero so the bug was masked).
+    // junk. Caught 2026-05-10 when self_replicate + --incbin-skip
+    // wrote a kernel.bin diverging from host (host qemu's fresh
+    // mmap pages happen to be zero so the bug was masked there).
     set(g_sec_base, 0, 0);
     set(g_sec_base, 1, 0);
     set(g_sec_base, 2, 0);
@@ -3549,9 +3537,8 @@ fn idx_process_line(buf: U8Array, blen: i32, snap: I32Array) -> i32 {
         // Pre-align the snap (and g_sec_pos) for this section to
         // n_bytes. Emitted by asm_dump_idx_state from
         // asm_record_sec_align — captures the first `.align N`
-        // directive a section saw during pass1. At link time this
-        // reproduces the inter-idx padding the legacy walked-source
-        // flow inserted as its single cursor crossed the directive.
+        // directive a section saw during pass1, so the link step
+        // installs this idx's labels at the aligned offset.
         idx_parse_dec(buf, p + 6, blen);
         var asec: i32 = g_idx_int;
         idx_parse_dec(buf, idx_skip_ws(buf, g_idx_cur, blen), blen);
@@ -3688,18 +3675,14 @@ export fn asm_load_idx(path: String) -> i32 {
     // up to 16-byte alignment first: when this is the second (or
     // later) idx loaded — asm_pass2's --link mode chains
     // prelude.idx + user.idx — the .s for idx N+1 starts each
-    // section with `.align 4` (= 16-byte). Without the round-up,
-    // user labels land at unaligned offsets that don't match what
-    // the legacy walked-source flow produced. For a single-idx load
-    // (legacy --load-idx + walk source), all sec_pos values are 0
-    // here so the round-up is a no-op.
+    // section with `.align 4` (= 16-byte), so the inter-idx boundary
+    // sits on a 16-byte multiple to match what assembling all sources
+    // through a single cursor would have produced.
     // Section-start alignment is communicated per-idx via `align <s>
     // <bytes>` lines emitted by asm_pass1 (recorded while walking
     // user.s the first time it hits a `.align N` directive after a
     // section change). idx_process_line applies them to g_sec_pos
-    // before the labels are installed, so the legacy walked-source
-    // flow's "padding inserted as the cursor crosses .align" is
-    // reproduced at link time without re-walking user.s.
+    // before the labels are installed.
     var snap: I32Array = I32Array(4);
     set(snap, 0, get(g_sec_pos, 0));
     set(snap, 1, get(g_sec_pos, 1));

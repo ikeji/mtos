@@ -189,10 +189,7 @@ export fn run_link(
     // arena and the final 64 KB grow OOMs on pico2 around peak
     // ~244 KB live, even though the arena is 320 KB. Pre-allocating
     // skips the grow churn — single allocation when the arena is
-    // still empty enough to find contiguous space. (Note: this
-    // doesn't fully fix LINKMODE on device — there's a separate
-    // 384 KB allocation in step 2 that OOMs regardless. See
-    // docs/problem.md K14.)
+    // still empty enough to find contiguous space.
     asm_preallocate_name_pool(65536);
     var saved_raw:       i32 = 0;
     var saved_load_base: i32 = 0;

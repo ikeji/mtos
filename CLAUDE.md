@@ -521,14 +521,12 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
   `make test` には含まれない。`[REFRESH_KERN_MODS=1] GEN2_DIR=/tmp/gen2
   tests/pico2_self_replicate.sh` で 9 ステップ (step 0a〜0e で
   runtime / libtc / kern 9 モジュール / platform .s を /sd に staging、
-  step 1 で /sd/full.s 連結、step 2 で per-file LINK_MODE
+  step 1 で /sd/full.s 連結、step 2 で per-file pre-encode + link
   (asm_pass1 × 13 + asm_pass2 --link → /sd/full.lab)、step 3 で
   asm_pass3 → /sd/k.bin、step 4 で bin2uf2 → /sd/k.uf2) を openocd
   reset で挟みながら自動実行し、生成 kernel.bin / kernel.uf2 が
   host gen2 build と md5 完全一致することを検証する。所要時間
-  ~3 h (REFRESH + 全 step、UART overhead 込み) / ~12 min (no REFRESH)。
-  walked-source モード (step 2 で `asm_pass2 --lab-out /sd/full.lab
-  /sd/full.s`) は 2026-05-11 に退役した (K14 解決時)
+  ~3 h (REFRESH + 全 step、UART overhead 込み) / ~12 min (no REFRESH)
 - `tests/qemu_mr_scale.py` — K11 (mr 経由 UART upload hang) 再現を
   qemu virt で試す regression test。`-serial stdio` (Ctrl-A escape
   なし、`-monitor null` 併用) を使う点に注意 — `-serial mon:stdio` だと

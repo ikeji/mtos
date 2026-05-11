@@ -57,11 +57,13 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass3 から g_code を
 
 ## カーネル / OS
 
-### K14. device LINKMODE が byte-exact に動く — 完了 (2026-05-11)
+### K14. device self_replicate byte-exact — 完了 (2026-05-11)
 
-実機 pico2 で `LINKMODE=1 REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh`
-が完走し、生成された `/sd/k.bin` と `/sd/k.uf2` の md5 が host build
+実機 pico2 で `REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` が
+per-file pre-encode + `asm_pass2 --link` 経路で完走し、生成された
+`/sd/k.bin` と `/sd/k.uf2` の md5 が host build
 (`compile-gen2.sh kernel/kernel_pico2.tc`) と byte-exact 一致。
+walked-source モードはこの時点で退役 (commit dddbf8b)。
 
 - host k.bin md5: `8929f2b12694514f9f5490533fd51595`
 - device k.bin md5: `8929f2b12694514f9f5490533fd51595` ✅
@@ -111,15 +113,16 @@ OS image を走らせて 13 input idx を host 側と md5 比較したところ 
 host=1024 byte で truncate していることが判明。原因は parse.tc の
 16-slot FieldInfoArray と struct Task の 19 fields。
 
-**残された followup (priority 低)**: `bc2asm.tc::emit_inline_set` の
-inline 化が runtime bound check を skip するという罠は将来同じバグを
-再現させる可能性がある。修正候補:
-(a) inline set にも check を入れる (per-set perf 影響あり)
-(b) 静的サイズ配列を growing array に
-(c) コンパイル時 lint
+**Follow-up 解消 (commit 8501f6d)**: `bc2asm.tc::emit_inline_set/get`
+が runtime bound check を skip するという罠は同じバグを再現させる
+可能性があったので、両 inline path に 2-insn (lw + bltu) の bound
+check + OOB 時に `__array_oob_{set,get}__i32__i32` への jump を
+追加した。Gen1 (`bootstrap/runtime_syscall.c`) と Gen2/3
+(`compiler/runtime.tc`) の両 runtime に対応する OOB handler を追加。
 
-詳細は `docs/scaling.md` の "device LINKMODE 既知 bug" 節と、commits
-119fac1 / 0a57e15 / d2543e5 / f2d6ce0 / 4fe14d7 を参照。
+詳細は `docs/scaling.md` の self_replicate byte-exact 検証節と、
+commits 119fac1 / 0a57e15 / d2543e5 / f2d6ce0 / 4fe14d7 / 8501f6d
+を参照。
 
 ### K13. Pico 2 が自分の UF2 を byte-exact に self-replicate — 完了 (2026-05-06; 2026-05-09 platform fixture 追加)
 
@@ -134,12 +137,12 @@ step 0d として組み込んだ (commit 37b791b)。実機検証: kernel.bin md5
 `fb7645d1d735a5c0cfce9f740f3c8cb3` が host build と完全一致、
 total ~29 min (REFRESH 込み)。
 
-また per-file LINK_MODE 経路 (`tests/fixtures/pico2_self_step2_linkmode.sh`)
-を `LINKMODE=1` opt-in で有効化。host compile-gen2.sh と同じ
-`asm_pass1 per .s + asm_pass2 --link` のシェイプで .lab を生成する。
-host での同パイプライン再現で kernel.bin byte-exact 確認済み
-(13 idx ファイル + 13 bin/reloc ファイルが host と md5 完全一致、
-asm_pass3 → my_k.bin md5 `1ec465d2...` = host_k.bin)。
+また step 2 を per-file pre-encode + `asm_pass2 --link` に移行
+(`tests/fixtures/pico2_self_step2.sh`)。host compile-gen2.sh と同じ
+`asm_pass1 per .s + asm_pass2 --link` の shape で .lab を生成する。
+host での同パイプライン再現で byte-exact 確認、device 側の byte-exact
+動作は K14 完了時 (2026-05-11) に確認、walked-source モードは退役した
+(commit dddbf8b)。
 
 更に asm_pass1 に `--incbin-skip` フラグを追加 (commit 6f57f45 / 2b48cd0):
 section 先頭の `.incbin SIZE "path"` を idx の `incbin <sec> <intra>
@@ -150,28 +153,10 @@ asm_pass1 read+emit ループが消える。
 
   - host kernel build (compile-gen2.sh): 288 sec → 42 sec (6.9x)
   - asm_pass1 on pt.s (qemu host): 1020 ms → 39 ms (26x)
-  - kernel.bin byte-exact: `433c3fcf...` (両 path 一致)
 
 Makefile の `pico2_kernel*.uf2` 系ターゲットを `bin2s.sh` (.byte 形式
 26 MB ASCII) → `bin2s_incbin.sh` (.incbin 形式 1.5 KB wrap) に切替、
 compile-gen2.sh が prelude_tail.s に `--incbin-skip` を自動注入する。
-device LINKMODE fixture (`pico2_self_step2_linkmode.sh`) も /sd/pt.s
-に `--incbin-skip` を渡すよう更新済み。
-
-**device LINKMODE の既知バグ (2026-05-09 検証で判明)**: 実機で
-`LINKMODE=1` self_replicate を走らせると、生成 kernel.bin が host build
-と byte-exact 一致しない (`f1111db7...` vs host `93d12908...`)。
-`--incbin-skip` の有無に関わらず同じ wrong md5 が出るので、bug は
-`--incbin-skip` 由来ではなく LINKMODE 経路 (asm_pass1 per-file +
-asm_pass2 --link) 自体の device-specific な何か。host (qemu-riscv32)
-の LINKMODE は byte-exact 動作することは確認済 (host kernel build,
-`a95605f5...` 一致) なので、qemu と native RV32 の挙動差か、SD I/O
-タイミング、kernel arena fragmentation の影響と思われる。
-
-回避策: device 側は `LINKMODE=0` (default、walked-source) を使う。
-LINKMODE=1 は今のところ debug build 用 / 性能比較用。host 側の
-kernel build (`compile-gen2.sh`) は LINKMODE が正しく動くので、
-`--incbin-skip` の 6.9x speedup は引き続き有効。
 
 
 

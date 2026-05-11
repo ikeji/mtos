@@ -1,11 +1,10 @@
-# Self-replicate step 2 — per-file LINK_MODE.
+# Self-replicate step 2 — per-file pre-encode + link.
 #
-# Replaces walked-source `asm_pass2 --lab-out /sd/full.lab /sd/full.s`
-# with the same pipeline shape compile-gen2.sh uses on the host:
-# pre-encode each input with asm_pass1 (small task arena footprint)
-# then merge with asm_pass2 --link.
+# Same pipeline shape compile-gen2.sh uses on the host: pre-encode
+# each input with asm_pass1 (small task arena footprint) then merge
+# with asm_pass2 --link.
 #
-# Order MUST match host LINK_MODE input order from compile-gen2.sh
+# Order MUST match host input order from compile-gen2.sh
 # (build/intermediate/gen2/kernel_pico2/in_*.idx by src_bytes):
 #   prelude = ; raw + platform_pico2.s + trap_common.s + runtime.s
 #   in_0  = kc.s (kernel_common, the .tc named on the cmd line)
@@ -21,11 +20,10 @@
 #   in_10 = kp.s (kernel_pico2)
 #   in_11 = pt.s (prelude_tail = crt0_pico2_data.s + wrap.s)
 #
-# Per-file approach avoids the 288 KB asm_pass1 task arena overflow
-# that hit when walking the concatenated /sd/full.s — each asm_pass1
-# invocation peaks at ~50-150 KB on its own small input and exits
-# before the next, so the kernel arena's 504 KB only ever hosts one
-# asm_pass1 task at a time.
+# Per-file approach keeps each asm_pass1 invocation at ~50-150 KB
+# peak on its own small input. The task exits before the next runs,
+# so the kernel arena's 504 KB only ever hosts one asm_pass1 task
+# at a time.
 
 cat /src/raw.s /src/platform_pico2.s /src/trap_common.s /sd/runtime.s > /sd/prelude.s
 cat /src/crt0_pico2_data.s /sd/wrap.s > /sd/pt.s

@@ -197,9 +197,9 @@ done
 #
 # Cross-input la references emit kind=3 (auto-la) relocs that
 # asm_pass3 patches into kind=1 (PC-rel) or kind=2 (gp-rel) at link
-# time based on the target's resolved section. This is what lets
+# time based on the target's resolved section. That's what lets
 # kernel.tc's `la rd, _trap_frame` (target lives in a user-defined
-# section) come out byte-identical to the legacy walked-source flow.
+# section) link correctly across pre-encoded inputs.
 #
 # prelude_tail.s (task_data.s / crt0_tc_data.s) defines __data_end,
 # which must land at the END of the merged data section. Pre-encoding

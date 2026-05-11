@@ -7,8 +7,7 @@
 // "asm_pass3_lib.tc"` and call run_pass2() without colliding on
 // main / arg_eq linker symbols.
 //
-// CLI shape (the only one supported now — stdin walked-source went
-// away when every host + OS-side caller migrated to LINK_MODE):
+// CLI shape:
 //
 //   asm_pass3 --lab path.lab --out path.bin
 //

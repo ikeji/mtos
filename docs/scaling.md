@@ -578,7 +578,7 @@ emit8 で rodata.bin に materialize していた。
 
 ### 問題: pt.s の per-byte emit が支配項
 
-LINKMODE step 2 を host (qemu-riscv32) で計測すると:
+step 2 (pre-encode + link) を host (qemu-riscv32) で計測すると:
 
 | .s | asm_pass1 時間 | size |
 |---|---|---|
@@ -630,37 +630,29 @@ qemu の per-byte TCG emit loop が支配的だった分が完全に消える。
 - 1 input につき 1 個まで (g_pass1_incbin_present で gate)
 - `intra_off == 0` 限定 (section の先頭のみ)
 - prelude / user では未対応 (extras のみ per-input storage を持つ)
-- walked-source asm_pass2 経路は影響なし (opt-in flag)
 
 K13 self_replicate の pt.s は wrap.s が必ず section 先頭に
 `.incbin` を置くパターンで、上の制限内に収まる。
 
-### device LINKMODE 既知 bug (2026-05-09 実機検証)
+### device self_replicate byte-exact divergence (2026-05-09〜11)
 
-`LINKMODE=1 REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` で実機を
-回すと、生成される kernel.bin が host build と byte-exact 一致しない
-(`f1111db7...` vs host `93d12908...`)。
+実機 self_replicate の初回検証で kernel.bin が host build と
+byte-exact 一致しなかった (`f1111db7...` vs host `93d12908...`)。
 
 切り分け: 同じ test を `--incbin-skip` を fixture から外して再実行
 しても **同じ wrong md5** (`f1111db7...`) が出る。つまり:
 
 - bug は `--incbin-skip` 由来ではない
-- bug は LINKMODE 経路 (asm_pass1 per-file + asm_pass2 --link) 自体
-- host (qemu-riscv32) の LINKMODE は byte-exact (host kernel build
-  `433c3fcf...` 一致) → qemu と native RV32 の挙動差、SD I/O
-  タイミング、kernel arena fragmentation あたりが疑わしい
+- bug は pre-encode + link 経路 (asm_pass1 per-file + asm_pass2 --link)
+  自体の device-side / pico2-specific な何か
+- host (qemu-riscv32) の同経路は byte-exact (host kernel build
+  `433c3fcf...` 一致)
 
-回避策: device 側は `LINKMODE=0` (walked-source、default) を使う。
-walked-source は実機で byte-exact 動作することを 2026-05-09 の
-no-LINKMODE 経路で確認済み (`1ec465d2...`)。`--incbin-skip` 自体は
-host kernel build (compile-gen2.sh) で正しく動き 6.9x speedup を
-出すので、host 側の最適化としては引き続き有効。
+### 中間ファイル md5 比較で /sd/pt.idx に絞り込み (2026-05-10)
 
-### 追加調査結果 (2026-05-10)
-
-device LINKMODE bug を切り分けるため、self_replicate LINKMODE=1 後に
-/sd 上に残った中間ファイル (13 idx + 13 tx + 13 ro + 13 dt + 13 rl =
-65 ファイル) の md5sum を host LINKMODE 結果と比較した:
+切り分けのため、self_replicate 後に /sd 上に残った中間ファイル
+(13 idx + 13 tx + 13 ro + 13 dt + 13 rl = 65 ファイル) の md5sum を
+host 側と比較した:
 
 - **64 / 65 ファイルが host と完全一致** (idx 12 個、bin 39 個、reloc 13 個)
 - **`/sd/pt.idx` だけが不一致** (host `e025973b...` vs device `f3fe3bf3...`)
@@ -723,10 +715,10 @@ kernel.bin md5 `93d12908...`、`make test` 143/0 PASS。
 g_sec_base / g_sec_size も zero-init。今は live read 路がない
 (a48855b で唯一の path を撤去) が、未来の regression を防ぐ。
 
-### LINKMODE step 2 / step 3 のメモリスケール (2026-05-10)
+### step 2 / step 3 のメモリスケール (2026-05-10)
 
-a48855b 修正後、device LINKMODE で self_replicate を回すと
-asm_pass2 --link / asm_pass3 が OOM することが判明:
+a48855b 修正後、device で self_replicate を回すと asm_pass2 --link /
+asm_pass3 が OOM することが判明:
 
 - **asm_pass2 --link** peak `300784 live=292588`: 13-input merge
   (prelude + user + 11 --add) で label name pool が 4→8→16→32→64 KB
@@ -746,17 +738,13 @@ parse..asm_pass2 を spawn cycle した後だと fragmentation で
 make_task が失敗する可能性は残る (`docs/task/asm_pre_encode.md`
 参照)。
 
-### 検証保留 (2026-05-10)
+### K14 完了 (2026-05-11)
 
-a48855b + c7c6d9f + 3465126 + 続く 384 KB bump を入れた状態で
-device LINKMODE 検証を再実行した際、Debug Probe (CMSIS-DAP) が
-応答不能になった (CMSIS-DAP CMD_INFO failed、SWD DTM version -1)。
-USB reset / 機械再起動でも復旧せず、Debug Probe 本体の reflash
-が必要な状態。
-
-host 側は LINKMODE+--incbin-skip + 384 KB arena で byte-exact
-動作 (kernel.bin md5 `0503b899...`、`make test` 143/0 PASS) を
-確認済み。device LINKMODE 完走確認は Debug Probe 復旧後に持ち越し。
+Debug Probe 復旧後の再検証 + parse.tc の `FieldInfoArray` 16→32 bump
+(`bc2asm.tc::emit_inline_set` の inline silent overflow を覆っていた
+真の root cause、`docs/solved.md` K14 参照) で device 側が byte-exact
+完走。これにより walked-source モードは退役 (commit dddbf8b)、
+self_replicate は pre-encode + link 単一経路に統一された。
 
 ## ベースライン: 10s / 100 KB 最適化計画 (2026-04-30)
 
