@@ -79,15 +79,6 @@ export fn run_link(idx_paths: StringArray, n_inputs: i32,
 
     if n_inputs < 1 { return 0 - 1; }
 
-    // Pre-allocate the name pool to 64 KB up front. The merge of
-    // 13 inputs (self_replicate) accumulates ~60 KB of label names;
-    // gradual doubling (4 → 8 → 16 → 32 → 64) fragments the task
-    // arena and the final 64 KB grow OOMs on pico2 around peak
-    // ~244 KB live, even though the arena is 320 KB. Pre-allocating
-    // skips the grow churn — single allocation when the arena is
-    // still empty enough to find contiguous space.
-    asm_preallocate_name_pool(65536);
-
     var has_prelude: i32 = 0;
     if n_inputs >= 2 { has_prelude = 1; }
 

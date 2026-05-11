@@ -898,14 +898,6 @@ export fn run_pass3(lab_path: String, out_path: String) -> i32 {
     // .lab parse pass's rb_* reader.
     g_reloc_in_path = lab_path;
 
-    // Pre-allocate the label name pool to 64 KB up front. The .lab
-    // for self_replicate's 13-input merge has ~5000 labels averaging
-    // 12-15 chars (function names + numeric labels). Gradual doubling
-    // (4 → 8 → 16 → 32 → 64) fragments the arena and the 64 KB grow
-    // can OOM. Pre-allocating skips the grow churn while keeping
-    // peak under 320 KB asm_pass3 task arena.
-    asm_preallocate_name_pool(65536);
-
     // Read .lab from a file. The `src raw` lines inside drive
     // multi-source memcpy in the pass-C section loop.
     var lab_fd: i32 = do_openat(0 - 100, lab_path, 0);

@@ -34,22 +34,9 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 //
 // MAX_LABELS: 4096 is enough for the current self-host build (measured
 // ~2800-3200 labels when compiling a full compiler source). Raising
-// this triggers a 16 B × N alloc in g_labels so stay conservative.
-//
-// NAME_POOL_INITIAL_KB: starting capacity of the byte pool that holds
-// label names, in KB. Grows exponentially via ensure_name_pool_capacity
-// so small inputs (hello.tc uses 35 bytes total) only pay the initial
-// 4 KB and large inputs amortise the resize cost. Replaces the old
-// MAX_NAME_POOL fixed cap (was 96 KB pre-allocated regardless of
-// usage); for hello.tc that saved ~92 KB of asm_pass2/asm_pass3 peak.
-//
-// asm_pass2 with many inputs (self_replicate's 13-way merge)
-// needs ~60 KB total — calling asm_preallocate_name_pool(64*1024)
-// from run_link skips the gradual-grow churn that would otherwise
-// fragment the arena and OOM the final 64 KB grow. Other callers
-// keep the small initial cap.
-var MAX_LABELS:           i32 = 4096;
-var NAME_POOL_INITIAL_KB: i32 = 4;
+// this triggers a 16 B × N alloc in g_labels and another 16 B × N for
+// g_lab_name_ptrs, so stay conservative.
+var MAX_LABELS: i32 = 4096;
 // Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
 // definitions; the g_numlab table is `digit * NUM_LAB_PER_DIGIT + idx`.
 // Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
@@ -247,52 +234,48 @@ fn asm_get_sec_align(sec: i32) -> i32 {
 }
 var g_src_bytes:       i32 = 0;        // source byte count emitted by pass1 in the .lab so pass2 knows where each copy ends
 
-// Label table. g_lab_names is a shared packed-byte pool that every
-// Label's [name_off..name_off+name_len] slice points into; the Label
-// struct itself holds per-entry metadata (R6). The old parallel
-// arrays g_lab_offs / g_lab_lens / g_lab_addrs / g_lab_section /
-// g_lab_is_bss were collapsed here; is_bss was dead anyway so we
-// dropped it.
+// Label table. Each label's name lives in its own kmalloc'd U8Array
+// slot in g_lab_name_ptrs[idx]. Pre-2026-05-12 we kept a shared packed
+// g_lab_names byte pool that grew by doubling and pre-allocated 64 KB
+// up-front via asm_preallocate_name_pool — fast O(1) name appends but
+// the pool landed in the 128 KB bucket (b131072) regardless of how
+// much of it was actually used, and the doubling grow held both old
+// and new copies live momentarily. Per-label malloc replaces that.
 //
-// 2026-04-30: bit-packed name_off + name_len + section into a single
-// i32 to halve the per-entry kmalloc cost (struct went from 4 i32 +
-// 4 B hdr = 20 B = 32 B bucket → 2 i32 + 4 B hdr = 12 B = 16 B
-// bucket). For 3000+ labels in a self-host build this saves ~48 KB
-// of asm_pass2/pass2 peak. Field widths:
-//   name_off  18 bits (256 KB max — MAX_NAME_POOL is 96 KB so plenty)
-//   name_len   8 bits (255 max — even mangled symbols stay under 80)
-//   section    2 bits (0=text 1=rodata 2=data 3=bss)
+// Label.packed layout (10 bits used, 22 free):
+//   name_len  8 bits (255 max — mangled symbols stay under 80)
+//   section   2 bits (0=text 1=rodata 2=data 3=bss)
 struct Label {
-    packed: i32,   // (name_off & 0x3FFFF) | ((name_len & 0xFF) << 18)
-                   // | ((section & 0x3) << 26)
+    packed: i32,   // (name_len & 0xFF) | ((section & 0x3) << 8)
     addr:   i32,
 }
-var g_lab_names: U8Array = 0 as U8Array;      // packed name storage
+// Parallel array — one entry per label index, each holding a U8Array
+// (cast to u32 for storage). Allocated in asm_init_common; deletions
+// are handled at process exit (kernel arena reset across spawns; the
+// host runs each Gen2 binary as a fresh process).
+var g_lab_name_ptrs: U32Array = 0 as U32Array;
 var g_labels: LabelArray = 0 as LabelArray;
 var g_nlabels: i32 = 0;
-var g_lab_name_pos: i32 = 0;
 
-// Label bit-pack helpers. The synthetic API only generates packed()
-// and addr() getters/setters; these wrappers preserve the old
-// name_off / name_len / section call shape so existing call sites
-// don't need to know about the packing.
-fn name_off(lb: Label) -> i32 { return packed(lb) & 0x3FFFF; }
-fn name_len(lb: Label) -> i32 { return (packed(lb) >> 18) & 0xFF; }
-fn section(lb: Label) -> i32 { return (packed(lb) >> 26) & 0x3; }
-// Setter for section only (name_off/name_len never change after the
-// label is first defined; section can flip when define_label hits a
-// duplicate and rebinds it). Clears bits 26-27 by masking with the
-// 26-bit max (~26-bit-set = 0x3FFFFFF) and ORs the new value in.
+fn name_len(lb: Label) -> i32 { return packed(lb) & 0xFF; }
+fn section(lb: Label) -> i32 { return (packed(lb) >> 8) & 0x3; }
+// Section can flip when define_label rebinds a duplicate; name_len
+// never changes after first install.
 fn section(lb: Label, sec: i32) -> void {
     var p: i32 = packed(lb);
-    packed(lb, (p & 0x3FFFFFF) | ((sec & 0x3) << 26));
+    packed(lb, (p & 0xFF) | ((sec & 0x3) << 8));
     return;
 }
-fn make_label(noff: i32, nlen: i32, addrv: i32, sec: i32) -> Label {
-    var p: i32 = (noff & 0x3FFFF)
-               | ((nlen & 0xFF) << 18)
-               | ((sec & 0x3) << 26);
+fn make_label(nlen: i32, addrv: i32, sec: i32) -> Label {
+    var p: i32 = (nlen & 0xFF) | ((sec & 0x3) << 8);
     return Label(p, addrv);
+}
+
+// Look up label idx's name bytes. The returned U8Array has count =
+// name_len, so emit_n / get / lab_hash_name can iterate it directly
+// from offset 0.
+fn lab_name_at(idx: i32) -> U8Array {
+    return get(g_lab_name_ptrs, idx) as u32 as U8Array;
 }
 
 // ===== Reference graph (for dead-strip) =====
@@ -871,10 +854,10 @@ fn align_to(n: i32) -> void {
 fn lab_name_eq(idx: i32, name: U8Array, nlen: i32) -> bool {
     var lb: Label = get(g_labels, idx);
     if name_len(lb) != nlen { return false; }
-    var off: i32 = name_off(lb);
+    var stored: U8Array = lab_name_at(idx);
     var i: i32 = 0;
     while i < nlen {
-        if get(g_lab_names, (off + i)) != get(name, i) { return false; }
+        if get(stored, i) != get(name, i) { return false; }
         i = i + 1;
     }
     return true;
@@ -949,9 +932,8 @@ export fn asm_finalize_labels() -> void {
     i = 0;
     while i < g_nlabels {
         var lb: Label = get(g_labels, i);
-        var noff: i32 = name_off(lb);
         var nlen: i32 = name_len(lb);
-        var h: i32 = lab_hash_name(g_lab_names, noff, nlen);
+        var h: i32 = lab_hash_name(lab_name_at(i), 0, nlen);
         while get(g_lab_hash, h) != 0 {
             h = (h + 1) & g_lab_hash_mask;
         }
@@ -980,34 +962,15 @@ fn find_label(name: U8Array, nlen: i32) -> i32 {
     return 0 - 1;
 }
 
-// Pre-allocate the name pool to a target size. Callers that know
-// they need a large pool (asm_pass2 merging many inputs)
-// invoke this right after asm_init_pass1 to skip the gradual grow
-// churn — those grows otherwise fragment the arena and the final
-// big grow OOMs even when total free space would fit it.
-export fn asm_preallocate_name_pool(target_bytes: i32) -> void {
-    ensure_name_pool_capacity(target_bytes);
-    return;
-}
-
-// Grow g_lab_names to hold at least `needed` bytes. Doubles the
-// existing capacity each time, so amortised cost is O(1) per byte.
-// Replaces the old fixed-cap design — there's no upper bound now;
-// memory is bounded only by the task arena.
-fn ensure_name_pool_capacity(needed: i32) -> void {
-    var cap: i32 = len(g_lab_names);
-    if needed <= cap { return; }
-    var new_cap: i32 = cap * 2;
-    if new_cap < needed { new_cap = needed; }
-    var new_buf: U8Array = U8Array(new_cap as u32);
+// Allocate a fresh U8Array(nlen) and copy name bytes into it. The
+// returned U8Array's count header is set to nlen so callers can use
+// len()/get() directly. Used by define_label and asm_install_label_*
+// to give each label its own name allocation in g_lab_name_ptrs.
+fn alloc_lab_name(name: U8Array, nlen: i32) -> U8Array {
+    var dst: U8Array = U8Array(nlen as u32);
     var i: i32 = 0;
-    while i < g_lab_name_pos {
-        set(new_buf, i, get(g_lab_names, i));
-        i = i + 1;
-    }
-    delete(g_lab_names);
-    g_lab_names = new_buf;
-    return;
+    while i < nlen { set(dst, i, get(name, i)); i = i + 1; }
+    return dst;
 }
 
 fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
@@ -1023,17 +986,10 @@ fn define_label(name: U8Array, nlen: i32, addr: i32) -> void {
             emit_string(eb, "')");
             asm_err_end(eb);
         }
-        ensure_name_pool_capacity(g_lab_name_pos + nlen);
         idx = g_nlabels;
         g_nlabels = g_nlabels + 1;
-        var noff: i32 = g_lab_name_pos;
-        var i: i32 = 0;
-        while i < nlen {
-            set(g_lab_names, (g_lab_name_pos + i), get(name, i));
-            i = i + 1;
-        }
-        g_lab_name_pos = g_lab_name_pos + nlen;
-        set(g_labels, idx, make_label(noff, nlen, addr, g_current_section));
+        set(g_lab_name_ptrs, idx, alloc_lab_name(name, nlen) as u32);
+        set(g_labels, idx, make_label(nlen, addr, g_current_section));
     } else {
         var lb: Label = get(g_labels, idx);
         addr(lb, addr);
@@ -2399,17 +2355,17 @@ export fn asm_parse_meta_directive(buf: U8Array, blen: i32) -> i32 {
 // (sec_pos / numlab / line_buf, ~10 KB total) leak per re-init but
 // are dwarfed by the freed g_lab* / g_def_* state.
 fn asm_init_common() -> void {
-    if g_lab_names  as u32 != 0u32 { delete(g_lab_names); }
-    if g_labels     as u32 != 0u32 { delete(g_labels); }
-    if g_lab_hash   as u32 != 0u32 { delete(g_lab_hash); g_lab_hash = 0 as I32Array; }
-    if g_refs       as u32 != 0u32 { delete(g_refs); }
-    if g_def_owner    as u32 != 0u32 { delete(g_def_owner); }
-    if g_def_name_off as u32 != 0u32 { delete(g_def_name_off); }
-    if g_def_name_len as u32 != 0u32 { delete(g_def_name_len); }
-    if g_def_pool   as u32 != 0u32 { delete(g_def_pool); }
+    if g_labels        as u32 != 0u32 { delete(g_labels); }
+    if g_lab_name_ptrs as u32 != 0u32 { delete(g_lab_name_ptrs); }
+    if g_lab_hash      as u32 != 0u32 { delete(g_lab_hash); g_lab_hash = 0 as I32Array; }
+    if g_refs          as u32 != 0u32 { delete(g_refs); }
+    if g_def_owner     as u32 != 0u32 { delete(g_def_owner); }
+    if g_def_name_off  as u32 != 0u32 { delete(g_def_name_off); }
+    if g_def_name_len  as u32 != 0u32 { delete(g_def_name_len); }
+    if g_def_pool      as u32 != 0u32 { delete(g_def_pool); }
 
-    g_lab_names    = U8Array((NAME_POOL_INITIAL_KB * 1024) as u32);
-    g_labels       = LabelArray((MAX_LABELS) as u32);
+    g_labels         = LabelArray((MAX_LABELS) as u32);
+    g_lab_name_ptrs  = U32Array((MAX_LABELS) as u32);
     g_sec_pos      = I32Array(4);
     g_sec_base     = I32Array(4);
     g_sec_size     = I32Array(4);
@@ -2441,7 +2397,6 @@ fn asm_init_common() -> void {
     g_pos              = 0;
     g_pass             = 0;
     g_nlabels          = 0;
-    g_lab_name_pos     = 0;
     g_current_section  = 0;
     g_code_end         = 0;
     g_bss_pos          = 0;
@@ -2875,7 +2830,7 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
         emit_char(sb, ' ');
         dump_int(sb, section(lb));
         emit_char(sb, ' ');
-        emit_n(sb, g_lab_names, name_off(lb), name_len(lb));
+        emit_n(sb, lab_name_at(li), 0, name_len(lb));
         emit_nl(sb);
         li = li + 1;
     }
@@ -3093,26 +3048,26 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
         // into the idx would cause a duplicate definition when load
         // installs it again on top of the synthetic.
         var nlen_lb: i32 = name_len(lb);
-        var noff_lb: i32 = name_off(lb);
+        var nm_lb: U8Array = lab_name_at(li);
         var is_gp: i32 = 0;
         if nlen_lb == 17 &&
-           get(g_lab_names, noff_lb) == '_' as u8 &&
-           get(g_lab_names, noff_lb + 1) == '_' as u8 &&
-           get(g_lab_names, noff_lb + 2) == 'g' as u8 &&
-           get(g_lab_names, noff_lb + 3) == 'l' as u8 &&
-           get(g_lab_names, noff_lb + 4) == 'o' as u8 &&
-           get(g_lab_names, noff_lb + 5) == 'b' as u8 &&
-           get(g_lab_names, noff_lb + 6) == 'a' as u8 &&
-           get(g_lab_names, noff_lb + 7) == 'l' as u8 &&
-           get(g_lab_names, noff_lb + 8) == '_' as u8 &&
-           get(g_lab_names, noff_lb + 9) == 'p' as u8 &&
-           get(g_lab_names, noff_lb + 10) == 'o' as u8 &&
-           get(g_lab_names, noff_lb + 11) == 'i' as u8 &&
-           get(g_lab_names, noff_lb + 12) == 'n' as u8 &&
-           get(g_lab_names, noff_lb + 13) == 't' as u8 &&
-           get(g_lab_names, noff_lb + 14) == 'e' as u8 &&
-           get(g_lab_names, noff_lb + 15) == 'r' as u8 &&
-           get(g_lab_names, noff_lb + 16) == '$' as u8 {
+           get(nm_lb, 0) == '_' as u8 &&
+           get(nm_lb, 1) == '_' as u8 &&
+           get(nm_lb, 2) == 'g' as u8 &&
+           get(nm_lb, 3) == 'l' as u8 &&
+           get(nm_lb, 4) == 'o' as u8 &&
+           get(nm_lb, 5) == 'b' as u8 &&
+           get(nm_lb, 6) == 'a' as u8 &&
+           get(nm_lb, 7) == 'l' as u8 &&
+           get(nm_lb, 8) == '_' as u8 &&
+           get(nm_lb, 9) == 'p' as u8 &&
+           get(nm_lb, 10) == 'o' as u8 &&
+           get(nm_lb, 11) == 'i' as u8 &&
+           get(nm_lb, 12) == 'n' as u8 &&
+           get(nm_lb, 13) == 't' as u8 &&
+           get(nm_lb, 14) == 'e' as u8 &&
+           get(nm_lb, 15) == 'r' as u8 &&
+           get(nm_lb, 16) == '$' as u8 {
             is_gp = 1;
         }
         if is_gp == 0 {
@@ -3121,7 +3076,7 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
             emit_char(sb, ' ');
             dump_int(sb, section(lb));
             emit_char(sb, ' ');
-            emit_n(sb, g_lab_names, noff_lb, nlen_lb);
+            emit_n(sb, nm_lb, 0, nlen_lb);
             emit_nl(sb);
         }
         li = li + 1;
@@ -3163,9 +3118,9 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
             var from_lb: Label = get(g_labels, from_idx);
             var to_lb: Label   = get(g_labels, to_idx);
             emit_string(sb, "ref ");
-            emit_n(sb, g_lab_names, name_off(from_lb), name_len(from_lb));
+            emit_n(sb, lab_name_at(from_idx), 0, name_len(from_lb));
             emit_char(sb, ' ');
-            emit_n(sb, g_lab_names, name_off(to_lb), name_len(to_lb));
+            emit_n(sb, lab_name_at(to_idx),   0, name_len(to_lb));
             emit_nl(sb);
         }
         r = r + 1;
@@ -3216,17 +3171,10 @@ export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: 
         emit_int(eb, MAX_LABELS);
         asm_err_end(eb);
     }
-    ensure_name_pool_capacity(g_lab_name_pos + nlen);
     var idx: i32 = g_nlabels;
     g_nlabels = g_nlabels + 1;
-    var noff: i32 = g_lab_name_pos;
-    var i: i32 = 0;
-    while i < nlen {
-        set(g_lab_names, (g_lab_name_pos + i), get(name, i));
-        i = i + 1;
-    }
-    g_lab_name_pos = g_lab_name_pos + nlen;
-    set(g_labels, idx, make_label(noff, nlen, addrv, sec));
+    set(g_lab_name_ptrs, idx, alloc_lab_name(name, nlen) as u32);
+    set(g_labels, idx, make_label(nlen, addrv, sec));
     return;
 }
 
