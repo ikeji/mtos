@@ -163,7 +163,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_has_tmpfs_ok" -gt 0 ] && [ "$fs_has_tmpfs_payload" -gt 0 ] \
                 && [ "$fs_has_redir" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
-                && [ -n "$fs_live" ] && [ "$fs_live" -le 110 ]; then
+                && [ -n "$fs_live" ] && [ "$fs_live" -le 145 ]; then
                 report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \

@@ -26,7 +26,7 @@ fn uart_rx_pop(buf: u32, len: i32) -> i32;
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
 
-var VFS_MAX_FDS: i32 = 16;
+var VFS_MAX_FDS: i32 = 32;
 var VFS_PATH_MAX: i32 = 128;
 
 // fs_type values

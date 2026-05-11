@@ -28,7 +28,7 @@ var g_fat_ready: i32 = 0;
 // Shared sector buffer for FAT table reads (avoids extra alloc)
 
 // ===== FD table =====
-var FATFS_MAX_FDS: i32 = 8;
+var FATFS_MAX_FDS: i32 = 16;
 
 struct FatFD {
     ff_start: u32,    // start cluster (0 = empty file)

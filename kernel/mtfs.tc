@@ -30,7 +30,7 @@ var INO_SIZE:   i32 = 36;
 var INO_START:  i32 = 40;
 var INO_FLAGS:  i32 = 44;
 
-var MTFS_MAX_FDS: i32 = 8;
+var MTFS_MAX_FDS: i32 = 16;
 
 // ===== Mount state =====
 var g_mtfs_mounted:     i32 = 0;

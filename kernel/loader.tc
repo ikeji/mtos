@@ -354,9 +354,15 @@ export fn sys_exec_handler(path: String, argv_addr: u32,
 export fn sys_spawn_handler(path: String, argv_addr: u32,
                             in_path: String, out_path: String) -> i32 {
     var in_fd: i32 = open_redir(in_path, 0);
-    if in_fd < 0 { return -1; }
+    if in_fd < 0 {
+        debug_dump_path(in_path, "spawn open_redir(in) failed");
+        return -1;
+    }
     var out_fd: i32 = open_redir(out_path, 1);
-    if out_fd < 0 { close_redir(in_fd); return -1; }
+    if out_fd < 0 {
+        debug_dump_path(out_path, "spawn open_redir(out) failed");
+        close_redir(in_fd); return -1;
+    }
 
     var fd: i32 = vfs_open(path, 0);
     if fd < 0 {
@@ -381,6 +387,7 @@ export fn sys_spawn_handler(path: String, argv_addr: u32,
         // sched_spawn failed (no free slots). Clean up all resources
         // that were prepared for the child: redirect fds, argv, and
         // the frame/ram/stack/img allocated by load_fd + make_task.
+        debug_dump_path(path, "spawn sched_spawn failed");
         close_redir(in_fd);
         close_redir(out_fd);
         free_last_alloc();
