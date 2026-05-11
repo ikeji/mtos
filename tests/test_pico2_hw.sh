@@ -13,8 +13,8 @@
 #   3. Pico2 link stages on-device:
 #        cat /tmp/4.s /prelude_tail.s > /tmp/u.s
 #        asm_pass1 /tmp/u.s --idx-out … --reloc-out …
-#        asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/lab.s
-#        asm_pass3 --lab /tmp/lab.s --out /tmp/hw
+#        asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/full.lab
+#        asm_pass3 --lab /tmp/full.lab --out /tmp/hw
 #      No UART-streamed assembly bundles — pre-staged /prelude.*
 #      artefacts (built by kernel/build.sh) supply the prelude side.
 #   4. Pico2 `/tmp/hw` — runs the compiled binary. "Hello, World!"

@@ -260,8 +260,8 @@ run_bc2asm_tc() {
 # pipeline. Buffers stdin into a tmp file, then runs:
 #
 #   asm_pass1 src --idx-out u.idx --text-bin u.tx ... --reloc-out u.rl
-#   asm_pass2 --add u.idx --lab-out lab.s     (single-input link)
-#   asm_pass3 --lab lab.s --out bin
+#   asm_pass2 --add u.idx --lab-out full.lab     (single-input link)
+#   asm_pass3 --lab full.lab --out bin
 #
 # asm_pass2 with a single --add treats the input as the whole program
 # with sec_pos starting at 0. Output bytes go to stdout.

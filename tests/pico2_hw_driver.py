@@ -6,8 +6,8 @@ Drives pico2 (post-flash) through the OS-side compile pipeline:
     cat /tmp/4.s                                   (dump .s to host for byte-check)
     cat /tmp/4.s /prelude_tail.s > /tmp/u.s        (build user side)
     asm_pass1 /tmp/u.s --idx-out … --reloc-out …   (pre-encode)
-    asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/lab.s
-    asm_pass3 --lab /tmp/lab.s --out /tmp/hw
+    asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/full.lab
+    asm_pass3 --lab /tmp/full.lab --out /tmp/hw
     /tmp/hw                                        (run compiled binary on pico2)
 
 LINK_MODE on-device — no UART-streamed assembly bundle, no EOT
@@ -275,14 +275,14 @@ def main():
             "--data-bin /tmp/u.dt --reloc-out /tmp/u.rl", timeout=240)
         send_cmd_wait_prompt(fd,
             "asm_pass2 --add /prelude.idx --add /tmp/u.idx "
-            "--lab-out /tmp/lab.s", timeout=240)
+            "--lab-out /tmp/full.lab", timeout=240)
 
-        lab = send_cmd_wait_prompt(fd, "cat /tmp/lab.s", timeout=60)
-        log(f"lab.s = {len(lab)} bytes")
-        all_ok &= cmp_ref("lab.s", lab, args.refs_dir, args.log_dir, results)
+        lab = send_cmd_wait_prompt(fd, "cat /tmp/full.lab", timeout=60)
+        log(f"full.lab = {len(lab)} bytes")
+        all_ok &= cmp_ref("full.lab", lab, args.refs_dir, args.log_dir, results)
 
         send_cmd_wait_prompt(fd,
-            "asm_pass3 --lab /tmp/lab.s --out /tmp/hw", timeout=240)
+            "asm_pass3 --lab /tmp/full.lab --out /tmp/hw", timeout=240)
 
         # Run /tmp/hw.
         out = send_cmd_wait_prompt(fd, "/tmp/hw", timeout=60)
@@ -303,7 +303,7 @@ def main():
         for line in results:
             print(line)
         if not args.run_link:
-            print("  [lab.s / hw / runtime] SKIPPED "
+            print("  [full.lab / hw / runtime] SKIPPED "
                   "(pass --run-link to include link stages)")
 
     if all_ok:

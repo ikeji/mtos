@@ -5,7 +5,7 @@
 # EXTRA_TASKS, then drives the UART-mediated compile pipeline and
 # compares each intermediate against the reference:
 #
-#   1.ast 1.th 1.wrap 2.tast 3.bc 4.s full.s lab.s  (byte-exact)
+#   1.ast 1.th 1.wrap 2.tast 3.bc 4.s full.s full.lab  (byte-exact)
 #   /tmp/hw runtime: printed "Hello, World!"        (behavior check)
 #
 # The hw binary itself is not dumped back to host — extracting 42 KB

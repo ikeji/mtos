@@ -22,7 +22,7 @@ Flow:
   5. Diff each decoded mx stream against its golden reference.
 
 Stages verified:
-  1.ast 1.th 1.wrap 2.tast 3.bc 4.s full.s lab.s hw
+  1.ast 1.th 1.wrap 2.tast 3.bc 4.s full.s full.lab hw
 and finally the runtime output of /tmp/hw (Hello World greeting).
 
 Usage:  python3 tests/phase3_verify.py
@@ -73,7 +73,7 @@ def gen_references_compile():
 
 
 def gen_references_link():
-    """Link stages: full.s (prelude + code + tail) → lab.s → hw binary.
+    """Link stages: full.s (prelude + code + tail) → full.lab → hw binary.
 
     Prelude files are staged by kernel/build.sh into REFS/ via the
     PRELUDE_OUT_DIR env var, so we replay the exact bytes the OS
@@ -98,10 +98,10 @@ def gen_references_link():
     run(qemu + [f"{gen2}/asm_pass2",
                 "--add",     f"{REFS}/prelude.idx",
                 "--add",     f"{REFS}/u.idx",
-                "--lab-out", f"{REFS}/lab.s"])
+                "--lab-out", f"{REFS}/full.lab"])
     # asm_pass3 --lab/--out: read .lab + memcpy .bins + apply relocs.
     run(qemu + [f"{gen2}/asm_pass3",
-                "--lab", f"{REFS}/lab.s",
+                "--lab", f"{REFS}/full.lab",
                 "--out", f"{REFS}/hw"])
 
 
@@ -206,9 +206,9 @@ def run_pipeline_on_virt():
         "cat /tmp/4.s /prelude_tail.s > /tmp/u.s",
         "mx      < /tmp/u.s",
         "asm_pass1 /tmp/u.s --idx-out /tmp/u.idx --text-bin /tmp/u.tx --rodata-bin /tmp/u.ro --data-bin /tmp/u.dt --reloc-out /tmp/u.rl",
-        "asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/lab.s",
-        "mx      < /tmp/lab.s",
-        "asm_pass3 --lab /tmp/lab.s --out /tmp/hw",
+        "asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/full.lab",
+        "mx      < /tmp/full.lab",
+        "asm_pass3 --lab /tmp/full.lab --out /tmp/hw",
         "mx      < /tmp/hw",
         # ---- run ----
         "/tmp/hw",
@@ -278,7 +278,7 @@ def main():
     # Split into mx-delimited streams.
     streams = decode_mx_streams(bytes(child))
     stage_names = ["1.ast", "1.th", "1.wrap", "2.tast", "3.bc", "4.s",
-                   "u.s", "lab.s", "hw"]
+                   "u.s", "full.lab", "hw"]
     print(f"found {len(streams)} mx streams (expected {len(stage_names)})")
 
     # Save each recovered stream beside the reference and diff.
