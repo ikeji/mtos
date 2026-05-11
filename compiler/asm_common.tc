@@ -232,7 +232,7 @@ fn ensure_sec_start_align() -> void {
     }
     return;
 }
-export fn asm_record_sec_align(sec: i32, n_bytes: i32) -> void {
+fn asm_record_sec_align(sec: i32, n_bytes: i32) -> void {
     if sec < 0 || sec >= 4 { return; }
     ensure_sec_start_align();
     if get(g_sec_start_align, sec) == 0 {
@@ -240,7 +240,7 @@ export fn asm_record_sec_align(sec: i32, n_bytes: i32) -> void {
     }
     return;
 }
-export fn asm_get_sec_align(sec: i32) -> i32 {
+fn asm_get_sec_align(sec: i32) -> i32 {
     if sec < 0 || sec >= 4 { return 0; }
     if g_sec_start_align as u32 == 0u32 { return 0; }
     return get(g_sec_start_align, sec);
@@ -485,14 +485,14 @@ export fn asm_set_extra_data_start(i: i32, v: i32) -> void {
     if i >= 0 && i < g_n_extras { set(g_extra_data_start, i, v); }
     return;
 }
-export fn asm_get_extra_text_bin(i: i32)   -> String { return get(g_extra_text_bin,   i); }
-export fn asm_get_extra_rodata_bin(i: i32) -> String { return get(g_extra_rodata_bin, i); }
-export fn asm_get_extra_data_bin(i: i32)   -> String { return get(g_extra_data_bin,   i); }
-export fn asm_get_extra_reloc(i: i32)      -> String { return get(g_extra_reloc,      i); }
-export fn asm_get_extra_text_shift(i: i32)   -> i32 { return get(g_extra_text_shift,   i); }
-export fn asm_get_extra_text_start(i: i32)   -> i32 { return get(g_extra_text_start,   i); }
-export fn asm_get_extra_rodata_start(i: i32) -> i32 { return get(g_extra_rodata_start, i); }
-export fn asm_get_extra_data_start(i: i32)   -> i32 { return get(g_extra_data_start,   i); }
+fn asm_get_extra_text_bin(i: i32)   -> String { return get(g_extra_text_bin,   i); }
+fn asm_get_extra_rodata_bin(i: i32) -> String { return get(g_extra_rodata_bin, i); }
+fn asm_get_extra_data_bin(i: i32)   -> String { return get(g_extra_data_bin,   i); }
+fn asm_get_extra_reloc(i: i32)      -> String { return get(g_extra_reloc,      i); }
+fn asm_get_extra_text_shift(i: i32)   -> i32 { return get(g_extra_text_shift,   i); }
+fn asm_get_extra_text_start(i: i32)   -> i32 { return get(g_extra_text_start,   i); }
+fn asm_get_extra_rodata_start(i: i32) -> i32 { return get(g_extra_rodata_start, i); }
+fn asm_get_extra_data_start(i: i32)   -> i32 { return get(g_extra_data_start,   i); }
 
 // Per-extra incbin accessors (2026-05-09 incbin-defer).
 // run_link_finish copies g_load_incbin_* into these slots after
@@ -508,11 +508,10 @@ export fn asm_set_extra_incbin(i: i32, present: i32, sec: i32, intra_off: i32, s
     }
     return;
 }
-export fn asm_get_extra_incbin_present(i: i32)   -> i32    { return get(g_extra_incbin_present,   i); }
-export fn asm_get_extra_incbin_sec(i: i32)       -> i32    { return get(g_extra_incbin_sec,       i); }
-export fn asm_get_extra_incbin_intra_off(i: i32) -> i32    { return get(g_extra_incbin_intra_off, i); }
-export fn asm_get_extra_incbin_size(i: i32)      -> i32    { return get(g_extra_incbin_size,      i); }
-export fn asm_get_extra_incbin_path(i: i32)      -> String { return get(g_extra_incbin_path,      i); }
+fn asm_get_extra_incbin_present(i: i32)   -> i32    { return get(g_extra_incbin_present,   i); }
+fn asm_get_extra_incbin_sec(i: i32)       -> i32    { return get(g_extra_incbin_sec,       i); }
+fn asm_get_extra_incbin_size(i: i32)      -> i32    { return get(g_extra_incbin_size,      i); }
+fn asm_get_extra_incbin_path(i: i32)      -> String { return get(g_extra_incbin_path,      i); }
 
 export fn asm_current_section() -> i32 { return g_current_section; }
 export fn asm_sec_pos(sec: i32) -> i32 { return get(g_sec_pos, sec); }
@@ -1929,7 +1928,7 @@ fn parse_asm_line() -> void {
 // existing strip / label / tokenize / dispatch pipeline. No g_lines
 // indirection — pass1 / pass2 both stream-read source one line at a
 // time and hand it here.
-export fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
+fn asm_process_line(buf: U8Array, blen: i32, lineno: i32) -> void {
     g_cur_line = lineno;
     var len: i32 = blen;
     var i: i32 = 0;
@@ -2514,7 +2513,7 @@ export fn asm_init_pass2() -> void {
 // Must be called after all asm_install_sec_base_size() calls and
 // before switching to pass 2. filesz = text + rodata + data; bss is
 // memsz-only and never writes to g_code. Only used in buffered mode.
-export fn asm_pass2_allocate_code() -> void {
+fn asm_pass2_allocate_code() -> void {
     var fsz: i32 = get(g_sec_size, 0) + get(g_sec_size, 1) + get(g_sec_size, 2);
     // Guard against a degenerate .lab where all sections are empty —
     // U8Array(0) would fail, and at minimum we want a valid (empty)
@@ -3348,7 +3347,7 @@ export fn asm_write_elf_header_stream() -> void {
 // Write the encoded program out. Uses g_code_end as the file size and
 // the sum of g_sec_size[] as the memory size (they differ when there
 // is bss content). Honors `; raw` (= no ELF header, just code bytes).
-export fn asm_write_elf() -> void {
+fn asm_write_elf() -> void {
     g_cur_line = 0;
     var code_size: i32 = g_code_end;
     var mem_size:  i32 = get(g_sec_size, 0) + get(g_sec_size, 1) +
