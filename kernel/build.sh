@@ -260,25 +260,25 @@ if [ -x "$GEN2_ASM_PASS1_TOOL" ] && command -v qemu-riscv32 >/dev/null 2>&1; the
     qemu-riscv32 "$GEN2_ASM_PASS1_TOOL" \
         "$ROOT_DIR_TREE/prelude.s" \
         --idx-out    "$ROOT_DIR_TREE/prelude.idx" \
-        --text-bin   "$ROOT_DIR_TREE/prelude.text.bin" \
-        --rodata-bin "$ROOT_DIR_TREE/prelude.rodata.bin" \
-        --data-bin   "$ROOT_DIR_TREE/prelude.data.bin" \
-        --reloc-out  "$ROOT_DIR_TREE/prelude.reloc" \
+        --text-bin   "$ROOT_DIR_TREE/prelude.tx" \
+        --rodata-bin "$ROOT_DIR_TREE/prelude.ro" \
+        --data-bin   "$ROOT_DIR_TREE/prelude.dt" \
+        --reloc-out  "$ROOT_DIR_TREE/prelude.rl" \
         2>/dev/null \
         || echo "WARNING: prelude pre-encode failed" >&2
     if [ -s "$ROOT_DIR_TREE/prelude.idx" ]; then
         chmod 644 "$ROOT_DIR_TREE/prelude.idx" 2>/dev/null || true
         echo "prelude.idx: $(wc -c < "$ROOT_DIR_TREE/prelude.idx") bytes" >&2
     fi
-    if [ -s "$ROOT_DIR_TREE/prelude.text.bin" ]; then
-        chmod 644 "$ROOT_DIR_TREE/prelude.text.bin" \
-                  "$ROOT_DIR_TREE/prelude.rodata.bin" \
-                  "$ROOT_DIR_TREE/prelude.data.bin" \
-                  "$ROOT_DIR_TREE/prelude.reloc" 2>/dev/null || true
-        echo "prelude.text.bin:   $(wc -c < "$ROOT_DIR_TREE/prelude.text.bin") bytes" >&2
-        echo "prelude.rodata.bin: $(wc -c < "$ROOT_DIR_TREE/prelude.rodata.bin") bytes" >&2
-        echo "prelude.data.bin:   $(wc -c < "$ROOT_DIR_TREE/prelude.data.bin") bytes" >&2
-        echo "prelude.reloc:      $(wc -l < "$ROOT_DIR_TREE/prelude.reloc") relocs" >&2
+    if [ -s "$ROOT_DIR_TREE/prelude.tx" ]; then
+        chmod 644 "$ROOT_DIR_TREE/prelude.tx" \
+                  "$ROOT_DIR_TREE/prelude.ro" \
+                  "$ROOT_DIR_TREE/prelude.dt" \
+                  "$ROOT_DIR_TREE/prelude.rl" 2>/dev/null || true
+        echo "prelude.tx:   $(wc -c < "$ROOT_DIR_TREE/prelude.tx") bytes" >&2
+        echo "prelude.ro: $(wc -c < "$ROOT_DIR_TREE/prelude.ro") bytes" >&2
+        echo "prelude.dt:   $(wc -c < "$ROOT_DIR_TREE/prelude.dt") bytes" >&2
+        echo "prelude.rl:      $(wc -l < "$ROOT_DIR_TREE/prelude.rl") relocs" >&2
     fi
 fi
 
@@ -330,15 +330,15 @@ fi
 
 # Optional PRELUDE_OUT_DIR: export the staged prelude.s / prelude_tail.s
 # + the pre-encoded prelude.idx / prelude.{text,rodata,data}.bin /
-# prelude.reloc to the given directory so host-side drivers (the
+# prelude.rl to the given directory so host-side drivers (the
 # pico2 hello-world pipeline, the phase3-verify reference generator)
 # can replay the exact linker prelude bytes the OS will see.
 if [ -n "$PRELUDE_OUT_DIR" ]; then
     mkdir -p "$PRELUDE_OUT_DIR"
     cp "$ROOT_DIR_TREE/prelude.s"         "$PRELUDE_OUT_DIR/"
     cp "$ROOT_DIR_TREE/prelude_tail.s"    "$PRELUDE_OUT_DIR/"
-    for f in prelude.idx prelude.text.bin prelude.rodata.bin \
-             prelude.data.bin prelude.reloc; do
+    for f in prelude.idx prelude.tx prelude.ro \
+             prelude.dt prelude.rl; do
         [ -s "$ROOT_DIR_TREE/$f" ] && cp "$ROOT_DIR_TREE/$f" "$PRELUDE_OUT_DIR/"
     done
 fi
@@ -360,7 +360,7 @@ cat "$DATA_S" ${MTFS_S:+"$MTFS_S"} > "$TMP/kern_data.s"
 
 echo "Building kernel: $TARGET" >&2
 # Kernel uses UNIFIED_PRELUDE=1 (split flow): each .s goes through
-# its own asm_pass1, then asm_pass2 --link merges N inputs. Cross-
+# its own asm_pass1, then asm_pass2 merges N inputs. Cross-
 # input la references — including kernel.tc's `la rd, _trap_frame`
 # whose target lives in user-defined sections — are emitted as
 # kind=3 (auto-la) and resolved at link time into kind=1 (pc-rel)

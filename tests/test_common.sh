@@ -259,31 +259,30 @@ run_bc2asm_tc() {
 # needed) on stdin and emits the ELF or raw binary via the LINK_MODE
 # pipeline. Buffers stdin into a tmp file, then runs:
 #
-#   asm_pass1 src --idx-out … --text-bin … --reloc-out …
-#   asm_pass2 --link --user-* --lab-out lab.s    (no prelude side)
+#   asm_pass1 src --idx-out u.idx --text-bin u.tx ... --reloc-out u.rl
+#   asm_pass2 --add u.idx --lab-out lab.s     (single-input link)
 #   asm_pass3 --lab lab.s --out bin
 #
-# asm_pass2 --link supports a missing --prelude-* set: the user-side
-# input is treated as the whole program with sec_pos starting at 0.
-# Output bytes go to stdout.
+# asm_pass2 with a single --add treats the input as the whole program
+# with sec_pos starting at 0. Output bytes go to stdout.
 run_asm_tc() {
-    local src u_idx u_t u_r u_d u_l lab bin
-    src=$(mktemp)
-    u_idx=$(mktemp); u_t=$(mktemp); u_r=$(mktemp); u_d=$(mktemp); u_l=$(mktemp)
-    lab=$(mktemp); bin=$(mktemp)
+    local d src stem lab bin
+    d=$(mktemp -d)
+    src="$d/u.s"
+    stem="$d/u"
+    lab="$d/u.lab"
+    bin="$d/u.bin"
     cat > "$src"
     "$QEMU" "$_GEN2_TMP/asm_pass1" "$src" \
-        --idx-out    "$u_idx" \
-        --text-bin   "$u_t" --rodata-bin "$u_r" \
-        --data-bin   "$u_d" --reloc-out  "$u_l" 2>/dev/null
-    "$QEMU" "$_GEN2_TMP/asm_pass2" --link \
-        --user-idx        "$u_idx" \
-        --user-text-bin   "$u_t" --user-rodata-bin "$u_r" \
-        --user-data-bin   "$u_d" --user-reloc      "$u_l" \
-        --lab-out         "$lab" 2>/dev/null
+        --idx-out    "$stem.idx" \
+        --text-bin   "$stem.tx" --rodata-bin "$stem.ro" \
+        --data-bin   "$stem.dt" --reloc-out  "$stem.rl" 2>/dev/null
+    "$QEMU" "$_GEN2_TMP/asm_pass2" \
+        --add     "$stem.idx" \
+        --lab-out "$lab" 2>/dev/null
     "$QEMU" "$_GEN2_TMP/asm_pass3" --lab "$lab" --out "$bin" 2>/dev/null
     cat "$bin"
-    rm -f "$src" "$u_idx" "$u_t" "$u_r" "$u_d" "$u_l" "$lab" "$bin"
+    rm -rf "$d"
 }
 
 # ===== Common test file lists =====

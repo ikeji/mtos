@@ -18,34 +18,67 @@ fn km_dump_peak() -> void;
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
-// Linker mode (Phase F of the asm split). No source walk — both
-// inputs are pass1 outputs. Loads prelude.idx + user.idx, snapshots
-// the prelude section sizes between the two loads (so user.reloc's
-// text offsets can be shifted to section-absolute form), then dumps
-// a .lab whose `src raw` entries point to all 6 bin files (text /
-// rodata / data × prelude + user) and whose reloc lines splice
-// prelude.reloc verbatim + user.reloc with offsets shifted by the
-// snapshotted prelude text size.
+// Derive a sibling path by stripping `.idx` and appending `suffix`.
+// The convention is: every `--add <foo.idx>` input has matching
+// `foo.tx` / `foo.ro` / `foo.dt` / `foo.rl` siblings in the same
+// directory. asm_pass1 callers are responsible for naming the outputs
+// this way; bin2s_incbin.sh + compile-gen2.sh + every on-device
+// fixture already do.
+fn derive_sibling(idx_path: String, suffix: StringLiteral) -> String {
+    var n: i32 = len(idx_path);
+    var slen: i32 = len(suffix);
+    // Require the idx_path to end in `.idx`. Strip those 4 chars.
+    var stem: i32 = n - 4;
+    if stem < 0 { return 0 as String; }
+    if get(idx_path, stem)     != '.' as u8 ||
+       get(idx_path, stem + 1) != 'i' as u8 ||
+       get(idx_path, stem + 2) != 'd' as u8 ||
+       get(idx_path, stem + 3) != 'x' as u8 {
+        return 0 as String;
+    }
+    var out_len: i32 = stem + slen;
+    // Layout: count (4 bytes) + payload (out_len bytes) + NUL.
+    var buf: U8Array = U8Array((out_len + 1) as u32);
+    var i: i32 = 0;
+    while i < stem {
+        set(buf, i, get(idx_path, i) as u8);
+        i = i + 1;
+    }
+    var j: i32 = 0;
+    while j < slen {
+        set(buf, stem + j, get(suffix, j) as u8);
+        j = j + 1;
+    }
+    set(buf, out_len, 0u8);
+    poke32(buf as u32, out_len as u32);
+    return buf as u32 as String;
+}
+
+// Linker mode (Phase F of the asm split). No source walk — every
+// input is a pass1 output. Each idx file (v2) carries its own
+// per-section .bin + .reloc paths in the header, so the CLI only
+// needs to pass idx paths.
+//
+// Inputs are consumed in order: with N inputs (N >= 1)
+//   - input[0] sets raw/load_base authority and lands at sec_pos 0
+//   - input[1..N-1] load on top, each at the running sec_pos of the
+//     prior input, with their reloc text offsets shifted by the
+//     accumulated text size
 //
 // asm_pass3 then memcpies the bins in section order and patches the
 // relocs — never reopening either source.
-export fn run_link(
-    prelude_idx: String, user_idx: String,
-    prelude_text_bin: String, prelude_rodata_bin: String,
-    prelude_data_bin: String, prelude_reloc: String,
-    user_text_bin: String, user_rodata_bin: String,
-    user_data_bin: String, user_reloc: String,
-    lab_out_path: String) -> i32 {
+//
+// Internally we keep the (prelude, user, extras) split that the lab
+// dumper expects: input[0] fills prelude_*; input[1] fills user_*;
+// input[2..] go through asm_add_extra_input. The single-input case
+// (no prelude side) lands the lone input in user_* with text_shift 0.
+export fn run_link(idx_paths: StringArray, n_inputs: i32,
+                   lab_out_path: String) -> i32 {
     asm_init_pass1();
     asm_set_pass(1);
 
-    // user side is required; prelude is optional. Single-input links
-    // (run_asm_tc, on-device kernel link, host bench) pass only the
-    // user-side flags and asm_pass2 treats the user input as the
-    // entire program with sec_pos[*] starting at 0.
-    if user_idx as u32 == 0u32 {
-        return 0 - 1;
-    }
+    if n_inputs < 1 { return 0 - 1; }
+
     // Pre-allocate the name pool to 64 KB up front. The merge of
     // 13 inputs (self_replicate) accumulates ~60 KB of label names;
     // gradual doubling (4 → 8 → 16 → 32 → 64) fragments the task
@@ -54,51 +87,56 @@ export fn run_link(
     // skips the grow churn — single allocation when the arena is
     // still empty enough to find contiguous space.
     asm_preallocate_name_pool(65536);
+
+    var has_prelude: i32 = 0;
+    if n_inputs >= 2 { has_prelude = 1; }
+
     var saved_raw:       i32 = 0;
     var saved_load_base: i32 = 0;
-    if prelude_idx as u32 != 0u32 {
+    if has_prelude == 1 {
+        var prelude_idx: String = get(idx_paths, 0);
         asm_load_idx(prelude_idx);
         // Snapshot raw / load_base from the prelude (its `; raw` /
         // `; load_base` directives drive how the final binary is
-        // wrapped). user.idx's defaults (`raw 0`, `load_base 65536`)
-        // would otherwise overwrite them on the second load.
+        // wrapped). Later inputs' defaults (`raw 0`, `load_base
+        // 65536`) would otherwise overwrite them.
         saved_raw       = asm_get_raw_mode();
         saved_load_base = asm_get_load_base();
+        asm_set_prelude_text_bin(  derive_sibling(prelude_idx, ".tx"));
+        asm_set_prelude_rodata_bin(derive_sibling(prelude_idx, ".ro"));
+        asm_set_prelude_data_bin(  derive_sibling(prelude_idx, ".dt"));
+        asm_set_prelude_reloc(     derive_sibling(prelude_idx, ".rl"));
     }
 
-    // Load the user idx. `align <s> <n>` lines inside it pre-align
-    // sec_pos[s] before the labels are installed; sections without an
-    // align line just inherit the prelude's end position (or 0 with
-    // no prelude). Either way asm_load_idx_content_start(s) afterwards
-    // reports the offset within section s where user content actually
-    // begins — that's what asm_pass3 needs as the per-bin pad target.
+    // user slot. Either input[0] (single-input case) or input[1].
+    var user_slot: i32 = 0;
+    if has_prelude == 1 { user_slot = 1; }
+    var user_idx: String = get(idx_paths, user_slot);
     asm_load_idx(user_idx);
     var user_text_start:   i32 = asm_load_idx_content_start(0);
     var user_rodata_start: i32 = asm_load_idx_content_start(1);
     var user_data_start:   i32 = asm_load_idx_content_start(2);
-    if prelude_idx as u32 != 0u32 {
+    if has_prelude == 1 {
         asm_install_raw_mode(saved_raw);
         asm_install_load_base(saved_load_base);
     }
-    // user.reloc text offsets are relative to the user.text.bin start
-    // — the link-time absolute position is user_text_start + offset,
-    // so the lab needs each entry shifted by user_text_start.
-    var prelude_text_size: i32 = user_text_start;
-
-    // Wire path globals so asm_dump_lab_state_to emits the right
-    // `src raw` lines and the right reloc-splice operations.
-    asm_set_prelude_text_bin(prelude_text_bin);
-    asm_set_prelude_rodata_bin(prelude_rodata_bin);
-    asm_set_prelude_data_bin(prelude_data_bin);
-    asm_set_prelude_reloc(prelude_reloc);
-    asm_set_user_text_bin(user_text_bin);
-    asm_set_user_rodata_bin(user_rodata_bin);
-    asm_set_user_data_bin(user_data_bin);
-    asm_set_user_reloc(user_reloc);
-    asm_set_user_text_shift(prelude_text_size);
+    asm_set_user_text_bin(  derive_sibling(user_idx, ".tx"));
+    asm_set_user_rodata_bin(derive_sibling(user_idx, ".ro"));
+    asm_set_user_data_bin(  derive_sibling(user_idx, ".dt"));
+    asm_set_user_reloc(     derive_sibling(user_idx, ".rl"));
+    asm_set_user_text_shift(user_text_start);
     asm_set_user_text_start(user_text_start);
     asm_set_user_rodata_start(user_rodata_start);
     asm_set_user_data_start(user_data_start);
+
+    // Register inputs 2..N-1 as extras. run_link_finish loads each
+    // one and captures its bin/reloc paths from g_load_* after the
+    // load.
+    var ei_reg: i32 = user_slot + 1;
+    while ei_reg < n_inputs {
+        asm_add_extra_input(get(idx_paths, ei_reg));
+        ei_reg = ei_reg + 1;
+    }
 
     return run_link_finish(lab_out_path);
 }
@@ -130,11 +168,15 @@ fn run_link_finish(lab_out_path: String) -> i32 {
         asm_set_extra_text_start(  ei, asm_load_idx_content_start(0));
         asm_set_extra_rodata_start(ei, asm_load_idx_content_start(1));
         asm_set_extra_data_start(  ei, asm_load_idx_content_start(2));
+        // Derive this extra's bin/reloc paths from its idx path by
+        // suffix convention (`.idx` → `.tx`/`.ro`/`.dt`/`.rl` siblings
+        // in the same directory).
+        asm_set_extra_text_bin(  ei, derive_sibling(ex_idx, ".tx"));
+        asm_set_extra_rodata_bin(ei, derive_sibling(ex_idx, ".ro"));
+        asm_set_extra_data_bin(  ei, derive_sibling(ex_idx, ".dt"));
+        asm_set_extra_reloc(     ei, derive_sibling(ex_idx, ".rl"));
         // Capture any incbin record this extra carried (set by
-        // idx_process_line when an `incbin` line was parsed). The
-        // transient g_load_incbin_* gets overwritten on the next
-        // asm_load_idx so we must copy it into the per-extra slot
-        // immediately.
+        // idx_process_line when an `incbin` line was parsed).
         if asm_get_load_incbin_present() == 1 {
             asm_set_extra_incbin(ei, 1,
                 asm_get_load_incbin_sec(),

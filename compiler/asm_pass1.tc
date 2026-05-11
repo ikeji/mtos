@@ -28,7 +28,7 @@
 //           right .bin. asm_set_emit_undef_relocs(1) routes any
 //           cross-input label ref through asm_emit_reloc into the
 //           .reloc fd; the link step fills in the patch addresses
-//           at asm_pass2 --link / asm_pass3 --lab time.
+//           at asm_pass2 / asm_pass3 --lab time.
 //
 // Replaces the previous 5-walk dance (run() × 2 to build a temp
 // .lab + run_pass2() × 3 to emit each section). The .idx + lab +
@@ -215,7 +215,7 @@ fn run_pre_encode(src: String,
     // ---------- Walk 1: label collection + .idx emit ----------
     asm_init_pass1();
     asm_set_pass(1);
-    // Ref collection is the link step's side input — asm_pass2 --link
+    // Ref collection is the link step's side input — asm_pass2
     // reads `ref <owner> <target>` lines from the idx to resolve
     // forward refs that crossed input boundaries.
     asm_set_collecting_refs(1);

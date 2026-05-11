@@ -60,7 +60,7 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass3 から g_code を
 ### K14. device self_replicate byte-exact — 完了 (2026-05-11)
 
 実機 pico2 で `REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` が
-per-file pre-encode + `asm_pass2 --link` 経路で完走し、生成された
+per-file pre-encode + `asm_pass2` 経路で完走し、生成された
 `/sd/k.bin` と `/sd/k.uf2` の md5 が host build
 (`compile-gen2.sh kernel/kernel_pico2.tc`) と byte-exact 一致。
 walked-source モードはこの時点で退役 (commit dddbf8b)。
@@ -137,16 +137,16 @@ step 0d として組み込んだ (commit 37b791b)。実機検証: kernel.bin md5
 `fb7645d1d735a5c0cfce9f740f3c8cb3` が host build と完全一致、
 total ~29 min (REFRESH 込み)。
 
-また step 2 を per-file pre-encode + `asm_pass2 --link` に移行
+また step 2 を per-file pre-encode + `asm_pass2` に移行
 (`tests/fixtures/pico2_self_step2.sh`)。host compile-gen2.sh と同じ
-`asm_pass1 per .s + asm_pass2 --link` の shape で .lab を生成する。
+`asm_pass1 per .s + asm_pass2` の shape で .lab を生成する。
 host での同パイプライン再現で byte-exact 確認、device 側の byte-exact
 動作は K14 完了時 (2026-05-11) に確認、walked-source モードは退役した
 (commit dddbf8b)。
 
 更に asm_pass1 に `--incbin-skip` フラグを追加 (commit 6f57f45 / 2b48cd0):
 section 先頭の `.incbin SIZE "path"` を idx の `incbin <sec> <intra>
-<size> <path>` レコードに defer し、asm_pass2 --link が `.lab` に
+<size> <path>` レコードに defer し、asm_pass2 が `.lab` に
 `src raw <path> <sec> <abs>` 行を直接 emit する。asm_pass3 が
 original blob (e.g. `/sd/dx.img`) を memcpy するので、3.5 MB の
 asm_pass1 read+emit ループが消える。

@@ -241,14 +241,14 @@ define PRELUDE_PRE_ENCODE
     qemu-riscv32 build/gen2/asm_pass1 \
         "$$_r/prelude.s" "$$_r/prelude_tail.s" \
         --idx-out    "$$_r/prelude.idx" \
-        --text-bin   "$$_r/prelude.text.bin" \
-        --rodata-bin "$$_r/prelude.rodata.bin" \
-        --data-bin   "$$_r/prelude.data.bin" \
-        --reloc-out  "$$_r/prelude.reloc" \
+        --text-bin   "$$_r/prelude.tx" \
+        --rodata-bin "$$_r/prelude.ro" \
+        --data-bin   "$$_r/prelude.dt" \
+        --reloc-out  "$$_r/prelude.rl" \
         2>/dev/null && \
-    chmod 644 "$$_r/prelude.idx" "$$_r/prelude.text.bin" \
-              "$$_r/prelude.rodata.bin" "$$_r/prelude.data.bin" \
-              "$$_r/prelude.reloc"
+    chmod 644 "$$_r/prelude.idx" "$$_r/prelude.tx" \
+              "$$_r/prelude.ro" "$$_r/prelude.dt" \
+              "$$_r/prelude.rl"
 endef
 
 build/kernel/disk.img build/kernel/disk-demo.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 | build/kernel

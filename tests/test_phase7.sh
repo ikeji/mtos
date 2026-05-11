@@ -51,10 +51,10 @@ if [ ! -s "$TMP/kernel_virt" ] || [ ! -s "$TMP/disk.img" ]; then
 fi
 
 # -----------------------------------------------------------------------
-# Stage 1: sigscan + tcheck + asm_pass1 + asm_pass2 --link + asm_pass3.
+# Stage 1: sigscan + tcheck + asm_pass1 + asm_pass2 + asm_pass3.
 # -----------------------------------------------------------------------
 # parse → sigscan → cat-wrap → tcheck → codegen → bc2asm → user.s
-# (= bc2asm output + prelude_tail.s) → asm_pass1 → asm_pass2 --link
+# (= bc2asm output + prelude_tail.s) → asm_pass1 → asm_pass2
 # (against pre-staged /prelude.{idx,text.bin,rodata.bin,data.bin,reloc})
 # → asm_pass3 --lab --out → run.
 #
@@ -64,7 +64,7 @@ fi
 # parsed AST.
 echo ""
 echo "=== stage 1: compile + link + run Hello World ==="
-out1=$(printf 'parse < /hw.tc > /tmp/1.ast\nsigscan < /tmp/1.ast > /tmp/1.th\ncat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt /tmp/1.ast > /tmp/1.wrap\ntcheck < /tmp/1.wrap > /tmp/2.tast\ncodegen < /tmp/2.tast > /tmp/3.bc\nbc2asm < /tmp/3.bc > /tmp/4.s\ncat /tmp/4.s /prelude_tail.s > /tmp/u.s\nasm_pass1 /tmp/u.s --idx-out /tmp/u.idx --text-bin /tmp/utx.bin --rodata-bin /tmp/uro.bin --data-bin /tmp/udt.bin --reloc-out /tmp/url\nasm_pass2 --link --prelude-idx /prelude.idx --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --user-idx /tmp/u.idx --user-text-bin /tmp/utx.bin --user-rodata-bin /tmp/uro.bin --user-data-bin /tmp/udt.bin --user-reloc /tmp/url --lab-out /tmp/lab.s\nasm_pass3 --lab /tmp/lab.s --out /tmp/hw\n/tmp/hw\nquit\n' \
+out1=$(printf 'parse < /hw.tc > /tmp/1.ast\nsigscan < /tmp/1.ast > /tmp/1.th\ncat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt /tmp/1.ast > /tmp/1.wrap\ntcheck < /tmp/1.wrap > /tmp/2.tast\ncodegen < /tmp/2.tast > /tmp/3.bc\nbc2asm < /tmp/3.bc > /tmp/4.s\ncat /tmp/4.s /prelude_tail.s > /tmp/u.s\nasm_pass1 /tmp/u.s --idx-out /tmp/u.idx --text-bin /tmp/u.tx --rodata-bin /tmp/u.ro --data-bin /tmp/u.dt --reloc-out /tmp/u.rl\nasm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/lab.s\nasm_pass3 --lab /tmp/lab.s --out /tmp/hw\n/tmp/hw\nquit\n' \
     | timeout 240 qemu-system-riscv32 -smp 1 -nographic \
     -serial mon:stdio --no-reboot -m 128 \
     -machine virt,aclint=on -bios none \

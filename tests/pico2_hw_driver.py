@@ -6,7 +6,7 @@ Drives pico2 (post-flash) through the OS-side compile pipeline:
     cat /tmp/4.s                                   (dump .s to host for byte-check)
     cat /tmp/4.s /prelude_tail.s > /tmp/u.s        (build user side)
     asm_pass1 /tmp/u.s --idx-out … --reloc-out …   (pre-encode)
-    asm_pass2 --link --prelude-* --user-* --lab-out /tmp/lab.s
+    asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/lab.s
     asm_pass3 --lab /tmp/lab.s --out /tmp/hw
     /tmp/hw                                        (run compiled binary on pico2)
 
@@ -175,7 +175,7 @@ def main():
                          "<refs-dir>/<name> and exit non-zero on any DIFF.")
     ap.add_argument("--run-link", action="store_true",
                     help="Also run the on-device LINK_MODE link stages "
-                         "(asm_pass1 + asm_pass2 --link + asm_pass3 --lab) "
+                         "(asm_pass1 + asm_pass2 + asm_pass3 --lab) "
                          "and execute /tmp/hw.")
     args = ap.parse_args()
     results = []
@@ -260,31 +260,21 @@ def main():
     log(f"full.s = {len(full_s)} bytes (prelude {len(prelude)} + user {len(user_s)} + tail {len(tail)})")
     all_ok &= cmp_ref("full.s", full_s, args.refs_dir, args.log_dir, results)
 
-    # --- Optional link stages (asm_pass1 + asm_pass2 --link + asm_pass3) ---
-    # LINK_MODE: pre-staged /prelude.{idx,text.bin,rodata.bin,data.bin,reloc}
-    # supply the prelude side, and the user side (4.s + prelude_tail) goes
-    # through asm_pass1 on-device. No UART-streamed assembly bundle —
-    # eliminates the 250 KB / kernel-wedge problem the legacy flow had.
+    # --- Optional link stages (asm_pass1 + asm_pass2 + asm_pass3) ---
+    # pre-staged /prelude.{idx,tx,ro,dt,rl} supply the prelude side, and
+    # the user side (4.s + prelude_tail) goes through asm_pass1 on-device.
+    # No UART-streamed assembly bundle — eliminates the 250 KB /
+    # kernel-wedge problem the legacy flow had.
     ran_link = False
     if args.run_link:
         send_cmd_wait_prompt(fd,
             "cat /tmp/4.s /prelude_tail.s > /tmp/u.s", timeout=60)
         send_cmd_wait_prompt(fd,
             "asm_pass1 /tmp/u.s --idx-out /tmp/u.idx "
-            "--text-bin /tmp/utx.bin --rodata-bin /tmp/uro.bin "
-            "--data-bin /tmp/udt.bin --reloc-out /tmp/url", timeout=240)
+            "--text-bin /tmp/u.tx --rodata-bin /tmp/u.ro "
+            "--data-bin /tmp/u.dt --reloc-out /tmp/u.rl", timeout=240)
         send_cmd_wait_prompt(fd,
-            "asm_pass2 --link "
-            "--prelude-idx /prelude.idx "
-            "--prelude-text-bin /prelude.text.bin "
-            "--prelude-rodata-bin /prelude.rodata.bin "
-            "--prelude-data-bin /prelude.data.bin "
-            "--prelude-reloc /prelude.reloc "
-            "--user-idx /tmp/u.idx "
-            "--user-text-bin /tmp/utx.bin "
-            "--user-rodata-bin /tmp/uro.bin "
-            "--user-data-bin /tmp/udt.bin "
-            "--user-reloc /tmp/url "
+            "asm_pass2 --add /prelude.idx --add /tmp/u.idx "
             "--lab-out /tmp/lab.s", timeout=240)
 
         lab = send_cmd_wait_prompt(fd, "cat /tmp/lab.s", timeout=60)

@@ -207,27 +207,23 @@ for input in "$@"; do
     } > "$work/full.s"
 
     # Stage 6: asm_pass1 (full.s → .idx + per-section .bin + .reloc).
-    # LINK_MODE pre-encode: walks the source once, emits the link-
-    # ready artifacts asm_pass2 --link consumes.
+    # Walks the source once, emits the link-ready artifacts asm_pass2
+    # consumes.
     run_stage "$input" asm_pass1 \
         "\"$QEMU\" \"$TOOLS_DIR/asm_pass1\" \"$work/full.s\" \
             --idx-out    \"$work/full.idx\" \
-            --text-bin   \"$work/full.text.bin\" \
-            --rodata-bin \"$work/full.rodata.bin\" \
-            --data-bin   \"$work/full.data.bin\" \
-            --reloc-out  \"$work/full.reloc\"" \
+            --text-bin   \"$work/full.tx\" \
+            --rodata-bin \"$work/full.ro\" \
+            --data-bin   \"$work/full.dt\" \
+            --reloc-out  \"$work/full.rl\"" \
         "$work/full.idx"
 
-    # Stage 7: asm_pass2 --link (idx + bins + reloc → .lab). Single-
-    # input link (no prelude side); the whole full.s is the user.
+    # Stage 7: asm_pass2 (idx + bins + reloc → .lab). Single-input link;
+    # bin/reloc siblings derived from idx path by suffix convention.
     run_stage "$input" asm_pass2 \
-        "\"$QEMU\" \"$TOOLS_DIR/asm_pass2\" --link \
-            --user-idx        \"$work/full.idx\" \
-            --user-text-bin   \"$work/full.text.bin\" \
-            --user-rodata-bin \"$work/full.rodata.bin\" \
-            --user-data-bin   \"$work/full.data.bin\" \
-            --user-reloc      \"$work/full.reloc\" \
-            --lab-out         \"$work/full.lab\"" \
+        "\"$QEMU\" \"$TOOLS_DIR/asm_pass2\" \
+            --add     \"$work/full.idx\" \
+            --lab-out \"$work/full.lab\"" \
         "$work/full.lab"
 
     # Stage 8: asm_pass3 (.lab + .bins → final binary). memcpy each

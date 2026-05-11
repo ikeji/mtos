@@ -5,21 +5,22 @@
 // C of the 3-binary split) can `import "asm_pass2_lib.tc"` and call
 // run_link() without colliding on main / arg_eq linker symbols.
 //
-// CLI shape:
+// CLI shape (idx v2):
 //
-//   asm_pass2 --link \
-//       [--prelude-idx prelude.idx
-//        --prelude-text-bin pT.bin --prelude-rodata-bin pR.bin
-//        --prelude-data-bin pD.bin --prelude-reloc pL.reloc] \
-//       --user-idx user.idx \
-//       --user-text-bin uT.bin --user-rodata-bin uR.bin \
-//       --user-data-bin uD.bin --user-reloc uL.reloc \
-//       [--add idx text.bin rodata.bin data.bin reloc] ... \
-//       --lab-out full.lab
+//   asm_pass2 --add <idx> [--add <idx>] ... --lab-out <lab>
 //
-// Single-input links (run_asm_tc, on-device kernel link) omit
-// --prelude-* and pass the whole self-contained .s through
-// asm_pass1 as the user side.
+// Each `--add <idx>` registers one input. Inputs load in order:
+//   - input[0] sets the raw/load_base authority for the final binary
+//   - input[1] (if present) gets text_shift = sec_pos at start of load
+//   - input[N>=2] same as input[1] but with the accumulated shift
+//
+// The .idx file (v2) carries its bin/reloc paths in its header, so
+// no separate flags are needed for those — asm_pass1 baked them in
+// when it generated the idx.
+//
+// Single-input links (run_asm_tc, on-device kernel link) just pass
+// one `--add` and asm_pass2 treats that input as the whole program
+// with sec_pos starting at 0.
 
 import "asm_pass2_lib.tc";
 import "asm_common.tc";
@@ -46,87 +47,37 @@ fn main() -> i32 {
     return 1;
 }
 
+var MAX_INPUTS: i32 = 32;
+
 fn main(argv: StringArray) -> i32 {
     var lab_out: String = 0 as String;
-    var prelude_text_bin:   String = 0 as String;
-    var prelude_rodata_bin: String = 0 as String;
-    var prelude_data_bin:   String = 0 as String;
-    var prelude_reloc:      String = 0 as String;
-    var prelude_idx:        String = 0 as String;
-    var user_idx:           String = 0 as String;
-    var user_text_bin:      String = 0 as String;
-    var user_rodata_bin:    String = 0 as String;
-    var user_data_bin:      String = 0 as String;
-    var user_reloc:         String = 0 as String;
-    var link_mode: i32 = 0;
+    var inputs: StringArray = StringArray((MAX_INPUTS) as u32);
+    var n_inputs: i32 = 0;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var consumed: i32 = 1;  // skip argv[0] (program name)
         while consumed < argc {
             var a: String = get(argv, consumed);
-            if arg_eq(a, "--link") != 0 {
-                link_mode = 1;
-                consumed = consumed + 1;
-            } else if arg_eq(a, "--prelude-idx") != 0 && consumed + 1 < argc {
-                prelude_idx = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--user-idx") != 0 && consumed + 1 < argc {
-                user_idx = get(argv, consumed + 1);
+            if arg_eq(a, "--add") != 0 && consumed + 1 < argc {
+                if n_inputs >= MAX_INPUTS {
+                    err("asm_pass2: too many --add inputs\n");
+                    return 1;
+                }
+                set(inputs, n_inputs, get(argv, consumed + 1));
+                n_inputs = n_inputs + 1;
                 consumed = consumed + 2;
             } else if arg_eq(a, "--lab-out") != 0 && consumed + 1 < argc {
                 lab_out = get(argv, consumed + 1);
                 consumed = consumed + 2;
-            } else if arg_eq(a, "--prelude-text-bin") != 0 && consumed + 1 < argc {
-                prelude_text_bin = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--prelude-rodata-bin") != 0 && consumed + 1 < argc {
-                prelude_rodata_bin = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--prelude-data-bin") != 0 && consumed + 1 < argc {
-                prelude_data_bin = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--prelude-reloc") != 0 && consumed + 1 < argc {
-                prelude_reloc = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--user-text-bin") != 0 && consumed + 1 < argc {
-                user_text_bin = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--user-rodata-bin") != 0 && consumed + 1 < argc {
-                user_rodata_bin = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--user-data-bin") != 0 && consumed + 1 < argc {
-                user_data_bin = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--user-reloc") != 0 && consumed + 1 < argc {
-                user_reloc = get(argv, consumed + 1);
-                consumed = consumed + 2;
-            } else if arg_eq(a, "--add") != 0 && consumed + 5 < argc {
-                // --add <idx> <text.bin> <rodata.bin> <data.bin> <reloc>
-                // Each --add registers one extra link input beyond
-                // prelude (input 0) + user (input 1). asm_pass2_lib's
-                // run_link_finish loads each idx in order, captures
-                // its content_start values, and shifts its reloc
-                // text offsets by the running text-size accumulator.
-                asm_add_extra_input(get(argv, consumed + 1),
-                                    get(argv, consumed + 2),
-                                    get(argv, consumed + 3),
-                                    get(argv, consumed + 4),
-                                    get(argv, consumed + 5));
-                consumed = consumed + 6;
             } else {
                 err("asm_pass2: unknown argument — see source for CLI shape\n");
                 return 1;
             }
         }
     }
-    if link_mode == 0 {
-        err("asm_pass2: --link required\n");
+    if n_inputs == 0 {
+        err("asm_pass2: at least one --add <idx> required\n");
         return 1;
     }
-    return run_link(prelude_idx, user_idx,
-                    prelude_text_bin, prelude_rodata_bin,
-                    prelude_data_bin, prelude_reloc,
-                    user_text_bin, user_rodata_bin,
-                    user_data_bin, user_reloc,
-                    lab_out);
+    return run_link(inputs, n_inputs, lab_out);
 }

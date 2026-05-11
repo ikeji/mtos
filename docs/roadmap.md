@@ -342,8 +342,8 @@ K7 解決の決め手 3 点:
       `tests/fixtures/pico2_compile_platform.sh` を新設、
       orchestrator step 0d として組み込み (commit 37b791b)。
 
-      合わせて step 2 を per-file pre-encode + `asm_pass2 --link` に
-      移行。`asm_pass1 per .s + asm_pass2 --link` の shape で .lab を
+      合わせて step 2 を per-file pre-encode + `asm_pass2` に
+      移行。`asm_pass1 per .s + asm_pass2` の shape で .lab を
       生成し、host compile-gen2.sh と完全に同じ pipeline 形になった。
       device 側の byte-exact 動作は K14 完了時 (2026-05-11) に確認、
       walked-source モードは退役した (commit dddbf8b)。
@@ -351,7 +351,7 @@ K7 解決の決め手 3 点:
       **追加 (2026-05-09 後半、commit 6f57f45 / 2b48cd0)**: asm_pass1
       に `--incbin-skip` フラグ追加。section 先頭の `.incbin SIZE
       "path"` を idx に `incbin <sec> <intra> <size> <path>` で defer
-      し、asm_pass2 --link が `.lab` に `src raw <orig_path>` を直接
+      し、asm_pass2 が `.lab` に `src raw <orig_path>` を直接
       emit、asm_pass3 が original blob (e.g. `/sd/dx.img`) を直接
       memcpy する。asm_pass1 で 3.5 MB の read+emit ループが消える。
 

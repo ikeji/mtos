@@ -10,10 +10,10 @@
 #   1. Pico2 runs parse/sigscan/tcheck/codegen/bc2asm on /hw.tc
 #      (inputs small, fit in tmpfs). Result: /tmp/4.s (few KB).
 #   2. Pico2 `cat /tmp/4.s` — UART dump to host.
-#   3. Pico2 link stages on-device (LINK_MODE):
+#   3. Pico2 link stages on-device:
 #        cat /tmp/4.s /prelude_tail.s > /tmp/u.s
 #        asm_pass1 /tmp/u.s --idx-out … --reloc-out …
-#        asm_pass2 --link --prelude-* --user-* --lab-out /tmp/lab.s
+#        asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/lab.s
 #        asm_pass3 --lab /tmp/lab.s --out /tmp/hw
 #      No UART-streamed assembly bundles — pre-staged /prelude.*
 #      artefacts (built by kernel/build.sh) supply the prelude side.

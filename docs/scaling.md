@@ -586,7 +586,7 @@ step 2 (pre-encode + link) を host (qemu-riscv32) で計測すると:
 |---|---|---|
 | pt.s (`.incbin` 形式) | **225 sec** | rodata.bin 3.5 MB |
 | 残り 12 .s 合計 | 19 sec | 〜 |
-| asm_pass2 --link | 5 sec | full.lab |
+| asm_pass2 | 5 sec | full.lab |
 
 → pt.s 単独で **pass1 全体の 92%** を占める。実機 pico2 では SD SPI
 6 MHz で `.incbin` の 3.5 MB read が更に重なる。
@@ -599,7 +599,7 @@ step 2 (pre-encode + link) を host (qemu-riscv32) で計測すると:
 1. asm_pass1 が `(sec, intra_off, size, path)` を idx に
    `incbin <sec> <intra_off> <size> <path>` 形式で記録、bytes は
    read/emit せずスキップ
-2. asm_pass2 --link が idx の incbin record を読んで .lab に
+2. asm_pass2 が idx の incbin record を読んで .lab に
    `src raw <orig_path> <sec> <abs_start>` 行を emit
 3. asm_pass3 がその src raw を見て original blob を直接 memcpy
 
@@ -648,7 +648,7 @@ byte-exact 一致しなかった (`f1111db7...` vs host `93d12908...`)。
 しても **同じ wrong md5** (`f1111db7...`) が出る。つまり:
 
 - bug は `--incbin-skip` 由来ではない
-- bug は pre-encode + link 経路 (asm_pass1 per-file + asm_pass2 --link)
+- bug は pre-encode + link 経路 (asm_pass1 per-file + asm_pass2)
   自体の device-side / pico2-specific な何か
 - host (qemu-riscv32) の同経路は byte-exact (host kernel build
   `433c3fcf...` 一致)
@@ -703,7 +703,7 @@ pass 2 では g_sec_base が valid なので defer 自体は発火 (bin emit
 は skip される、pt.ro = 4 byte で host と一致)。だが
 `asm_dump_idx_state` は pass 1 と pass 2 の**間**で走るので
 present == 0 を見て idx に `incbin` 行を出さない。結果として
-asm_pass2 --link がそれを検知できず、asm_pass3 は `src raw` 行を
+asm_pass2 がそれを検知できず、asm_pass3 は `src raw` 行を
 受け取らず、最終 kernel.bin が 3.5 MB の disk-extra blob 抜きで
 完成 → byte-exact 不一致。
 
@@ -722,10 +722,10 @@ g_sec_base / g_sec_size も zero-init。今は live read 路がない
 
 ### step 2 / step 3 のメモリスケール (2026-05-10)
 
-a48855b 修正後、device で self_replicate を回すと asm_pass2 --link /
+a48855b 修正後、device で self_replicate を回すと asm_pass2 /
 asm_pass3 が OOM することが判明:
 
-- **asm_pass2 --link** peak `300784 live=292588`: 13-input merge
+- **asm_pass2** peak `300784 live=292588`: 13-input merge
   (prelude + user + 11 --add) で label name pool が 4→8→16→32→64 KB
   と grow し、各 grow が arena を fragment して最後 64 KB grow で
   OOM。先頭で `asm_preallocate_name_pool(65536)` を呼んで

@@ -14,7 +14,8 @@
 #
 # Linking (once):
 #   asm_pass1 ... → per-file .idx + per-section .bin + .reloc
-#   asm_pass2 --link --prelude-* --user-* [--add ...] --lab-out full.lab
+#                   (each .idx carries its sibling bin/reloc paths in v2)
+#   asm_pass2 --add idx1 --add idx2 ... --lab-out full.lab
 #   asm_pass3 --lab full.lab --out OUTFILE
 #
 # The (imports) block is built from Gen1 parse + Gen2 sigscan for each
@@ -191,7 +192,7 @@ for tc in "${ALL_FILES[@]}"; do
 done
 
 # Linker mode (split flow): each .s goes through its own asm_pass1
-# invocation. asm_pass2 --link consumes only the pass1 outputs (.idx
+# invocation. asm_pass2 consumes only the pass1 outputs (.idx
 # + per-section .bin + .reloc) and merges N input groups into one
 # .lab. asm_pass3 reads the .lab + memcpys the bins + applies relocs.
 #
@@ -219,10 +220,10 @@ cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
 # Step 3: pre-encode prelude.s alone.
 "$QEMU" "$GEN2_DIR/asm_pass1" "$TMP/prelude.s" \
     --idx-out    "$TMP/prelude.idx" \
-    --text-bin   "$TMP/prelude.text.bin" \
-    --rodata-bin "$TMP/prelude.rodata.bin" \
-    --data-bin   "$TMP/prelude.data.bin" \
-    --reloc-out  "$TMP/prelude.reloc" 2>/dev/null
+    --text-bin   "$TMP/prelude.tx" \
+    --rodata-bin "$TMP/prelude.ro" \
+    --data-bin   "$TMP/prelude.dt" \
+    --reloc-out  "$TMP/prelude.rl" 2>/dev/null
 
 # Step 4: pre-encode each user .s + EXTRA_S + prelude_tail.s.
 # A leading `.incbin SIZE "<path>"` in any input (e.g. prelude_tail.s
@@ -230,43 +231,25 @@ cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
 # by asm_pass1 — the idx gets an `incbin` marker instead of the
 # materialized bytes, and asm_pass3 memcpys the original blob at
 # link time.
-link_args=()
+link_args=( --add "$TMP/prelude.idx" )
 n=0
 for s in "${ASM_FILES[@]}" ${EXTRA_S:-} "$TMP/prelude_tail.s"; do
     tag="in_$n"
     "$QEMU" "$GEN2_DIR/asm_pass1" "$s" \
         --idx-out    "$TMP/$tag.idx" \
-        --text-bin   "$TMP/$tag.text.bin" \
-        --rodata-bin "$TMP/$tag.rodata.bin" \
-        --data-bin   "$TMP/$tag.data.bin" \
-        --reloc-out  "$TMP/$tag.reloc" 2>/dev/null
-    if [ "$n" = "0" ]; then
-        link_args+=( \
-            --user-idx        "$TMP/$tag.idx" \
-            --user-text-bin   "$TMP/$tag.text.bin" \
-            --user-rodata-bin "$TMP/$tag.rodata.bin" \
-            --user-data-bin   "$TMP/$tag.data.bin" \
-            --user-reloc      "$TMP/$tag.reloc" )
-    else
-        link_args+=( --add \
-            "$TMP/$tag.idx" \
-            "$TMP/$tag.text.bin" \
-            "$TMP/$tag.rodata.bin" \
-            "$TMP/$tag.data.bin" \
-            "$TMP/$tag.reloc" )
-    fi
+        --text-bin   "$TMP/$tag.tx" \
+        --rodata-bin "$TMP/$tag.ro" \
+        --data-bin   "$TMP/$tag.dt" \
+        --reloc-out  "$TMP/$tag.rl" 2>/dev/null
+    link_args+=( --add "$TMP/$tag.idx" )
     n=$((n + 1))
 done
 
-# Step 5: link → .lab.
-"$QEMU" "$GEN2_DIR/asm_pass2" --link \
-    --prelude-idx "$TMP/prelude.idx" \
-    --prelude-text-bin   "$TMP/prelude.text.bin" \
-    --prelude-rodata-bin "$TMP/prelude.rodata.bin" \
-    --prelude-data-bin   "$TMP/prelude.data.bin" \
-    --prelude-reloc      "$TMP/prelude.reloc" \
+# Step 5: link → .lab. asm_pass2 reads each idx's v2 header to find
+# the matching .tx/.ro/.dt/.rl files.
+"$QEMU" "$GEN2_DIR/asm_pass2" \
     "${link_args[@]}" \
-    --lab-out            "$TMP/full.lab" 2>/dev/null
+    --lab-out "$TMP/full.lab" 2>/dev/null
 
 # Step 6: final asm_pass3 reads the .lab, memcpys the .bins, and
 # applies relocs.

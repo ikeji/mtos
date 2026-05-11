@@ -43,7 +43,7 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // MAX_NAME_POOL fixed cap (was 96 KB pre-allocated regardless of
 // usage); for hello.tc that saved ~92 KB of asm_pass2/asm_pass3 peak.
 //
-// asm_pass2 --link with many inputs (self_replicate's 13-way merge)
+// asm_pass2 with many inputs (self_replicate's 13-way merge)
 // needs ~60 KB total — calling asm_preallocate_name_pool(64*1024)
 // from run_link skips the gradual-grow churn that would otherwise
 // fragment the arena and OOM the final 64 KB grow. Other callers
@@ -384,7 +384,7 @@ export fn asm_set_user_rodata_start(v: i32)  -> void { g_user_rodata_start = v; 
 export fn asm_set_user_data_start(v: i32)    -> void { g_user_data_start   = v; return; }
 
 // Additional link inputs beyond prelude (input 0) + user (input 1).
-// Each entry corresponds to one extra `--add` flag in asm_pass2 --link
+// Each entry corresponds to one extra `--add` flag in asm_pass2
 // invocations: an asm_pass1 output set (.idx + per-section .bin +
 // .reloc) appended after `user` in the linker's input order. Section
 // bytes concatenate in input order; relocs accumulate with per-input
@@ -433,16 +433,17 @@ export fn asm_get_n_extras() -> i32 { return g_n_extras; }
 export fn asm_extras_cap() -> i32 { return EXTRAS_CAP; }
 // Append a new extra input. The shift / start values are filled in
 // later by run_link as it walks the inputs through asm_load_idx.
-export fn asm_add_extra_input(idx_path: String,
-                              text_bin: String, rodata_bin: String,
-                              data_bin: String, reloc: String) -> i32 {
+// idx v2: bin/reloc paths are read from the idx header (g_load_*)
+// by run_link after each asm_load_idx; this function just registers
+// the idx path.
+export fn asm_add_extra_input(idx_path: String) -> i32 {
     ensure_extras_storage();
     if g_n_extras >= EXTRAS_CAP { return 0 - 1; }
     set(g_extra_idx,        g_n_extras, idx_path);
-    set(g_extra_text_bin,   g_n_extras, text_bin);
-    set(g_extra_rodata_bin, g_n_extras, rodata_bin);
-    set(g_extra_data_bin,   g_n_extras, data_bin);
-    set(g_extra_reloc,      g_n_extras, reloc);
+    set(g_extra_text_bin,   g_n_extras, 0 as String);
+    set(g_extra_rodata_bin, g_n_extras, 0 as String);
+    set(g_extra_data_bin,   g_n_extras, 0 as String);
+    set(g_extra_reloc,      g_n_extras, 0 as String);
     set(g_extra_text_shift,   g_n_extras, 0);
     set(g_extra_text_start,   g_n_extras, 0);
     set(g_extra_rodata_start, g_n_extras, 0);
@@ -455,6 +456,22 @@ export fn asm_add_extra_input(idx_path: String,
     var idx: i32 = g_n_extras;
     g_n_extras = g_n_extras + 1;
     return idx;
+}
+export fn asm_set_extra_text_bin(i: i32, p: String) -> void {
+    if i >= 0 && i < g_n_extras { set(g_extra_text_bin, i, p); }
+    return;
+}
+export fn asm_set_extra_rodata_bin(i: i32, p: String) -> void {
+    if i >= 0 && i < g_n_extras { set(g_extra_rodata_bin, i, p); }
+    return;
+}
+export fn asm_set_extra_data_bin(i: i32, p: String) -> void {
+    if i >= 0 && i < g_n_extras { set(g_extra_data_bin, i, p); }
+    return;
+}
+export fn asm_set_extra_reloc(i: i32, p: String) -> void {
+    if i >= 0 && i < g_n_extras { set(g_extra_reloc, i, p); }
+    return;
 }
 export fn asm_get_extra_idx(i: i32) -> String { return get(g_extra_idx, i); }
 export fn asm_set_extra_text_shift(i: i32, v: i32) -> void {
@@ -988,7 +1005,7 @@ fn find_label(name: U8Array, nlen: i32) -> i32 {
 }
 
 // Pre-allocate the name pool to a target size. Callers that know
-// they need a large pool (asm_pass2 --link merging many inputs)
+// they need a large pool (asm_pass2 merging many inputs)
 // invoke this right after asm_init_pass1 to skip the gradual grow
 // churn — those grows otherwise fragment the arena and the final
 // big grow OOMs even when total free space would fit it.
@@ -3208,7 +3225,7 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
 // ===== .lab install (pass 2 reader → in-memory state) =====
 export fn asm_install_label_from_lab(name: U8Array, nlen: i32, addrv: i32, sec: i32) -> void {
     // Merge duplicates last-wins: when the linker loads multiple .idx
-    // files (asm_pass2 --link mode) the same label can appear in
+    // files (asm_pass2 mode) the same label can appear in
     // both prelude and user inputs (task_crt0.s defines fallback
     // `main` / `main__StringArray` stubs that get overridden by the
     // task's own definitions). Without this merge, a stale prelude

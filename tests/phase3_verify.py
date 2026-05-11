@@ -88,24 +88,17 @@ def gen_references_link():
     # Pre-encode user.s via asm_pass1 → idx + per-section .bin + reloc.
     run(qemu + [f"{gen2}/asm_pass1", f"{REFS}/u.s",
                 "--idx-out",    f"{REFS}/u.idx",
-                "--text-bin",   f"{REFS}/utx.bin",
-                "--rodata-bin", f"{REFS}/uro.bin",
-                "--data-bin",   f"{REFS}/udt.bin",
-                "--reloc-out",  f"{REFS}/url"])
-    # asm_pass2 --link: merge prelude (pre-encoded, copied via
-    # PRELUDE_OUT_DIR) + user inputs into a single .lab.
-    run(qemu + [f"{gen2}/asm_pass2", "--link",
-                "--prelude-idx",        f"{REFS}/prelude.idx",
-                "--prelude-text-bin",   f"{REFS}/prelude.text.bin",
-                "--prelude-rodata-bin", f"{REFS}/prelude.rodata.bin",
-                "--prelude-data-bin",   f"{REFS}/prelude.data.bin",
-                "--prelude-reloc",      f"{REFS}/prelude.reloc",
-                "--user-idx",           f"{REFS}/u.idx",
-                "--user-text-bin",      f"{REFS}/utx.bin",
-                "--user-rodata-bin",    f"{REFS}/uro.bin",
-                "--user-data-bin",      f"{REFS}/udt.bin",
-                "--user-reloc",         f"{REFS}/url",
-                "--lab-out",            f"{REFS}/lab.s"])
+                "--text-bin",   f"{REFS}/u.tx",
+                "--rodata-bin", f"{REFS}/u.ro",
+                "--data-bin",   f"{REFS}/u.dt",
+                "--reloc-out",  f"{REFS}/u.rl"])
+    # asm_pass2: merge prelude (pre-encoded, copied via PRELUDE_OUT_DIR)
+    # + user inputs into a single .lab. Bin/reloc siblings of each idx
+    # are resolved by suffix convention (.idx → .tx/.ro/.dt/.rl).
+    run(qemu + [f"{gen2}/asm_pass2",
+                "--add",     f"{REFS}/prelude.idx",
+                "--add",     f"{REFS}/u.idx",
+                "--lab-out", f"{REFS}/lab.s"])
     # asm_pass3 --lab/--out: read .lab + memcpy .bins + apply relocs.
     run(qemu + [f"{gen2}/asm_pass3",
                 "--lab", f"{REFS}/lab.s",
@@ -209,11 +202,11 @@ def run_pipeline_on_virt():
         "mx      < /tmp/3.bc",
         "bc2asm  < /tmp/3.bc > /tmp/4.s",
         "mx      < /tmp/4.s",
-        # ---- link (asm_pass1 + asm_pass2 --link + asm_pass3 --lab) ----
+        # ---- link (asm_pass1 + asm_pass2 + asm_pass3 --lab) ----
         "cat /tmp/4.s /prelude_tail.s > /tmp/u.s",
         "mx      < /tmp/u.s",
-        "asm_pass1 /tmp/u.s --idx-out /tmp/u.idx --text-bin /tmp/utx.bin --rodata-bin /tmp/uro.bin --data-bin /tmp/udt.bin --reloc-out /tmp/url",
-        "asm_pass2 --link --prelude-idx /prelude.idx --prelude-text-bin /prelude.text.bin --prelude-rodata-bin /prelude.rodata.bin --prelude-data-bin /prelude.data.bin --prelude-reloc /prelude.reloc --user-idx /tmp/u.idx --user-text-bin /tmp/utx.bin --user-rodata-bin /tmp/uro.bin --user-data-bin /tmp/udt.bin --user-reloc /tmp/url --lab-out /tmp/lab.s",
+        "asm_pass1 /tmp/u.s --idx-out /tmp/u.idx --text-bin /tmp/u.tx --rodata-bin /tmp/u.ro --data-bin /tmp/u.dt --reloc-out /tmp/u.rl",
+        "asm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/lab.s",
         "mx      < /tmp/lab.s",
         "asm_pass3 --lab /tmp/lab.s --out /tmp/hw",
         "mx      < /tmp/hw",

@@ -227,7 +227,7 @@ asm_pass3 が `prelude.{text,rodata,data}.bin` + `/sd/u.strip` の
 - `tests/test_phase7.sh` (legacy stdin pipeline): **stage 1 +
   stage 2 PASS** (Hello, World! + M7-minimal 経由の OS 上
   string_buffer.tc コンパイル)
-- 新パイプライン (`asm_pass2 --prelude-text-bin ... + asm_pass3
+- 新パイプライン (`asm_pass2 --add <idx>... --lab-out + asm_pass3
   --lab/--out`): **virt 上で end-to-end PASS**。
   asm_pass2 が v2 .lab を出力 → asm_pass3 が prelude.text.bin
   を memcpy + reloc-patch → `/tmp/HW` が `Hello, World!` を出力。

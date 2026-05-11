@@ -518,7 +518,7 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
   tests/pico2_self_replicate.sh` で 9 ステップ (step 0a〜0e で
   runtime / libtc / kern 9 モジュール / platform .s を /sd に staging、
   step 1 で /sd/full.s 連結、step 2 で per-file pre-encode + link
-  (asm_pass1 × 13 + asm_pass2 --link → /sd/full.lab)、step 3 で
+  (asm_pass1 × 13 + asm_pass2 → /sd/full.lab)、step 3 で
   asm_pass3 → /sd/k.bin、step 4 で bin2uf2 → /sd/k.uf2) を openocd
   reset で挟みながら自動実行し、生成 kernel.bin / kernel.uf2 が
   host gen2 build と md5 完全一致することを検証する。所要時間
