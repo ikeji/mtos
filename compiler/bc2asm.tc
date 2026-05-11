@@ -231,7 +231,15 @@ fn name_eq(strtab: U8Array, ss: i32, sl: i32, pat: StringLiteral) -> bool {
 //   load_op: "lbu" / "lb" / "lhu" / "lh" / "lw"
 // Computes a0 = mem[a0 + (a1 << stride_log2) + 4]. The +4 skips
 // the count prefix that count-prefixed arrays / Strings carry.
+// Prepends a bound check identical in shape to emit_inline_set —
+// see that function's comment for the rationale (K14 footgun).
 fn emit_inline_get(stride_log2: i32, load_op: StringLiteral, ob: StringBuffer) -> void {
+    e4(ob); emit_string(ob, "lw   t0, 0(a0)"); emit_nl(ob);
+    e4(ob); emit_string(ob, "bltu a1, t0, 0f"); emit_nl(ob);
+    e4(ob); emit_string(ob, "mv   a0, a1"); emit_nl(ob);
+    e4(ob); emit_string(ob, "mv   a1, t0"); emit_nl(ob);
+    e4(ob); emit_string(ob, "j    __array_oob_get__i32__i32"); emit_nl(ob);
+    emit_string(ob, "0:"); emit_nl(ob);
     if stride_log2 != 0 {
         e4(ob); emit_string(ob, "slli a1, a1, ");
         emit_int(ob, stride_log2); emit_nl(ob);
@@ -243,7 +251,30 @@ fn emit_inline_get(stride_log2: i32, load_op: StringLiteral, ob: StringBuffer) -
 }
 // Helper: emit a typed set inline. Similar to get but uses a2 as
 // the value and a store opcode (sb/sh/sw).
+//
+// Prepends a 2-insn bound check before the actual store:
+//
+//   lw    t0, 0(a0)             # load count (array header)
+//   bltu  a1, t0, 0f            # if i < n, skip OOB
+//   mv    a0, a1                # OOB path: a0 = i
+//   mv    a1, t0                #           a1 = n
+//   j     __array_oob_set...    # noreturn (eprint + do_exit)
+//   0:
+//   ...original 3-insn store...
+//
+// The hot path costs +2 insns (lw + bltu). The OOB path sets up
+// args and jumps to the runtime stub — terminal so register
+// preservation doesn't matter. Until 2026-05-11 this check was
+// completely missing; the silent overflow that resulted is the
+// root cause documented in K14 (docs/solved.md).
 fn emit_inline_set(stride_log2: i32, store_op: StringLiteral, ob: StringBuffer) -> void {
+    // Bound check before the shift clobbers a1.
+    e4(ob); emit_string(ob, "lw   t0, 0(a0)"); emit_nl(ob);
+    e4(ob); emit_string(ob, "bltu a1, t0, 0f"); emit_nl(ob);
+    e4(ob); emit_string(ob, "mv   a0, a1"); emit_nl(ob);
+    e4(ob); emit_string(ob, "mv   a1, t0"); emit_nl(ob);
+    e4(ob); emit_string(ob, "j    __array_oob_set__i32__i32"); emit_nl(ob);
+    emit_string(ob, "0:"); emit_nl(ob);
     if stride_log2 != 0 {
         e4(ob); emit_string(ob, "slli a1, a1, ");
         emit_int(ob, stride_log2); emit_nl(ob);

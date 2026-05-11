@@ -328,6 +328,31 @@ void set__I32Array__i32__i32  (HeapObj o, int32_t i, int32_t v) { set_bounds_che
 void set__StringArray__i32__String(HeapObj o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int32_t *)OBJ_DATA(o))[i] = v; }
 void set__StringArray__i32__StringLiteral(HeapObj o, int32_t i, int32_t v) { set_bounds_check(o,i); ((int32_t *)OBJ_DATA(o))[i] = v; }
 
+/* Out-of-bounds handler called from bc2asm-inlined `set` ops. The inline
+   sequence is: lw t0,0(a0); bltu a1,t0,0f; mv a0,a1; mv a1,t0;
+   j __array_oob_set__i32__i32; 0: ...  — i.e. the idx and len are
+   in a0/a1 on entry and we never return. */
+void __array_oob_set__i32__i32(int32_t i, int32_t n) {
+    char tmp[16]; int k;
+    do_write(2, "set: ", 5);
+    k = i32_to_str(i, tmp); tmp[k-1] = ' '; do_write(2, tmp, k);
+    do_write(2, "out of bounds (len=", 19);
+    k = i32_to_str(n, tmp); tmp[k-1] = ')'; do_write(2, tmp, k);
+    do_write(2, "\n", 1);
+    __syscall1(SYS_exit, 1);
+}
+
+/* Symmetric counterpart for inline `get` OOB. */
+void __array_oob_get__i32__i32(int32_t i, int32_t n) {
+    char tmp[16]; int k;
+    do_write(2, "get: ", 5);
+    k = i32_to_str(i, tmp); tmp[k-1] = ' '; do_write(2, tmp, k);
+    do_write(2, "out of bounds (len=", 19);
+    k = i32_to_str(n, tmp); tmp[k-1] = ')'; do_write(2, tmp, k);
+    do_write(2, "\n", 1);
+    __syscall1(SYS_exit, 1);
+}
+
 /* delete — single free (count + data in one allocation) */
 static void delete_impl(HeapObj o) {
     if (!o) return;

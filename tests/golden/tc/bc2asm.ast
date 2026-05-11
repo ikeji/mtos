@@ -1198,6 +1198,69 @@
       (type void)
     )
     (block
+      (comment "e4(ob); emit_string(ob, \"lw   t0, 0(a0)\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "lw   t0, 0(a0)")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, \"bltu a1, t0, 0f\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "bltu a1, t0, 0f")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, \"mv   a0, a1\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "mv   a0, a1")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, \"mv   a1, t0\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "mv   a1, t0")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, \"j    __array_oob_get__i32__i32\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "j    __array_oob_get__i32__i32")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "emit_string(ob, \"0:\"); emit_nl(ob);")
+      (call_stmt emit_string
+        (var ob)
+        (str "0:")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
       (comment "if stride_log2 != 0 {")
       (if
         (binop !=
@@ -1270,6 +1333,69 @@
       (type void)
     )
     (block
+      (comment "e4(ob); emit_string(ob, \"lw   t0, 0(a0)\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "lw   t0, 0(a0)")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, \"bltu a1, t0, 0f\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "bltu a1, t0, 0f")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, \"mv   a0, a1\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "mv   a0, a1")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, \"mv   a1, t0\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "mv   a1, t0")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "e4(ob); emit_string(ob, \"j    __array_oob_set__i32__i32\"); emit_nl(ob);")
+      (call_stmt e4
+        (var ob)
+      )
+      (call_stmt emit_string
+        (var ob)
+        (str "j    __array_oob_set__i32__i32")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
+      (comment "emit_string(ob, \"0:\"); emit_nl(ob);")
+      (call_stmt emit_string
+        (var ob)
+        (str "0:")
+      )
+      (call_stmt emit_nl
+        (var ob)
+      )
       (comment "if stride_log2 != 0 {")
       (if
         (binop !=

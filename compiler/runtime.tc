@@ -485,13 +485,43 @@ export fn len(o: StringLiteral) -> i32 { if o as u32 == 0u32 { return 0; } retur
 fn set_check(addr: u32, i: i32) -> void {
     var n: i32 = peek32(addr) as i32;
     if (i as u32) >= (n as u32) {
-        eprint("set: ");
-        eprint(i);
-        eprint(" out of bounds (len=");
-        eprint(n);
-        eprint(")\n");
-        do_exit(1);
+        __array_oob_set(i, n);
     }
+    return;
+}
+
+// Out-of-bounds handler called from bc2asm-inlined `set` ops. The
+// inline does a `bltu a1, t0, 0f` and falls through here when the
+// index >= len, with the failing index already in a0 and the array
+// length in a1. Doesn't return — prints "set: N out of bounds
+// (len=M)" and exits 1, matching set_check above.
+//
+// Used to be that bc2asm's emit_inline_set skipped this check
+// entirely (3-insn fast path) — the silent overflow that produced
+// turned out to be the root cause of K14 (parse.tc::FieldInfoArray
+// 16-slot too small for struct Task's 19 fields). Restored as a
+// 2-extra-insn-on-hot-path safety net (lw + bltu); the OOB path
+// (mv + mv + j) only fires on actual overflow.
+export fn __array_oob_set(i: i32, n: i32) -> void {
+    eprint("set: ");
+    eprint(i);
+    eprint(" out of bounds (len=");
+    eprint(n);
+    eprint(")\n");
+    do_exit(1);
+    return;
+}
+
+// Same as __array_oob_set but for bc2asm-inlined `get` ops; prints
+// "get: " prefix instead. Symmetric safety net added alongside
+// emit_inline_set's bound check.
+export fn __array_oob_get(i: i32, n: i32) -> void {
+    eprint("get: ");
+    eprint(i);
+    eprint(" out of bounds (len=");
+    eprint(n);
+    eprint(")\n");
+    do_exit(1);
     return;
 }
 
