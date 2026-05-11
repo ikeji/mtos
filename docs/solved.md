@@ -57,6 +57,70 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass3 から g_code を
 
 ## カーネル / OS
 
+### K14. device LINKMODE が byte-exact に動く — 完了 (2026-05-11)
+
+実機 pico2 で `LINKMODE=1 REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh`
+が完走し、生成された `/sd/k.bin` と `/sd/k.uf2` の md5 が host build
+(`compile-gen2.sh kernel/kernel_pico2.tc`) と byte-exact 一致。
+
+- host k.bin md5: `8929f2b12694514f9f5490533fd51595`
+- device k.bin md5: `8929f2b12694514f9f5490533fd51595` ✅
+- virt k.bin md5: `8929f2b12694514f9f5490533fd51595` (qemu-system + 同 OS image での再現も一致)
+- host k.uf2 md5: `b4eee17af1f3ba6d0e9c13b36e6b4797`
+- device k.uf2 md5: `b4eee17af1f3ba6d0e9c13b36e6b4797` ✅
+
+**解決した bug の総まとめ**:
+
+1. **OOM (asm_pass2 / asm_pass3 task arena が大きすぎ)**:
+   - asm_pass3_lib.tc memory 最適化 (commit 119fac1) で peak 382→328 KB
+     - `g_reloc_names` (3000 個の U8Array(name) 保持) → `g_reloc_lab_idx`
+       (parse 時に label index 解決) 化で 120 KB 削減
+     - `asm_ensure_labels_finalized()` を ref parse 前に呼ぶ (O(1) find_label)
+     - `pre_secs` の delete 漏れ修正 (156 KB leak)
+     - `RELOCS_CAP_INIT` 256 → 4096 で doubling growth 回避
+   - asm_pass3 `raw_memcpy_section` の `U8Array(pad_n)` を 4 KB chunk-write
+     loop に置換 (commit d2543e5) — 3.5 MB blob 前の zero pad alloc を回避
+   - task arena 384→336 KB (commit 0a57e15) で kernel make_task が
+     pico2 508 KB kernel arena に fit
+
+2. **byte-exact 不一致 (parse.tc の silent overflow)** (commit 4fe14d7):
+   - `parse.tc::pars_struct` の `fields: FieldInfoArray(16u32)` が
+     `struct Task` (19 fields) で 17th 以降 overflow
+   - Gen1 (bootstrap C runtime) は set/get の bound check で abort →
+     host parse output が 1024 byte で truncate
+   - Gen2 (compiler/runtime.tc) は `bc2asm.tc::emit_inline_set` が
+     bound check を skip して inline → silent corrupt
+   - 結果: virt+device は corrupt AST から「自己整合的だが host と違う」
+     k.bin を生成
+   - 修正: FieldInfoArray を 32 slots に bump (現状の max Task の 19 が
+     収まる)
+
+3. **その他 (virt 再現で見つけた付随 bug)**:
+   - fatfs / mtfs / vfs の FD table 上限が device での REFRESH には十分だが
+     virt が全 step を 1 boot で走らせると不足 (commit f2d6ce0):
+     FATFS_MAX_FDS 8→16, MTFS_MAX_FDS 8→16, VFS_MAX_FDS 16→32
+   - loader.tc の sys_spawn_handler 失敗パスに debug_dump_path 追加で
+     spawn 失敗時の path がデバッグ可能に
+
+**検出経緯**: 当初 device 側で OOM 393220 で step 2 が必ず落ちる症状。
+原因は OOM ではなく kernel make_task の U8Array(arena_size) 失敗 (task
+arena 自体が大きすぎた)。task arena を 336 KB に絞ったところ end-to-end
+完走したが host kernel build と byte-exact 不一致。virt で device と同じ
+OS image を走らせて 13 input idx を host 側と md5 比較したところ 4 個
+(ff/mf/ld/pt) が違い、bisect で `parse < kernel_common.tc` の出力が
+host=1024 byte で truncate していることが判明。原因は parse.tc の
+16-slot FieldInfoArray と struct Task の 19 fields。
+
+**残された followup (priority 低)**: `bc2asm.tc::emit_inline_set` の
+inline 化が runtime bound check を skip するという罠は将来同じバグを
+再現させる可能性がある。修正候補:
+(a) inline set にも check を入れる (per-set perf 影響あり)
+(b) 静的サイズ配列を growing array に
+(c) コンパイル時 lint
+
+詳細は `docs/scaling.md` の "device LINKMODE 既知 bug" 節と、commits
+119fac1 / 0a57e15 / d2543e5 / f2d6ce0 / 4fe14d7 を参照。
+
 ### K13. Pico 2 が自分の UF2 を byte-exact に self-replicate — 完了 (2026-05-06; 2026-05-09 platform fixture 追加)
 
 **2026-05-09 追補**: K13 完成後に compile pipeline が `kernel/platform_pico2.tc` を
