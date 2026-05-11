@@ -3662,9 +3662,16 @@ export fn asm_load_idx(path: String) -> i32 {
         i_cs = i_cs + 1;
     }
 
-    // Make sure g_refs / deferred queue exist before record_ref
-    // runs from inside idx_process_line.
-    asm_set_collecting_refs(1);
+    // Note: asm_load_idx no longer auto-enables ref collection. The
+    // only callers are pass2 link-merge invocations, and the merged
+    // .lab dump (asm_dump_lab_state_to) does not emit `ref` lines —
+    // cross-input edges are carried by the per-input reloc files
+    // instead. With g_collecting_refs left at 0, record_ref short-
+    // circuits and ensure_ref_state() is never tripped, so pass2 skips
+    // the ~92 KB of g_refs (64 KB) + g_def_owner/name_off/name_len
+    // (24 KB) + g_def_pool (4 KB) the queue would otherwise eat.
+    // Pass1 callers that DO need refs (asm_pass1.tc::run_pre_encode)
+    // call asm_set_collecting_refs(1) themselves around their walk.
 
     var reader: SourceReader = SourceReader_new(fd);
     var line: U8Array = U8Array(4092);
