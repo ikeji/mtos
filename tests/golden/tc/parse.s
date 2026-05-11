@@ -36339,7 +36339,7 @@ pars_struct_decl__SourceReader__U8Array__StringBuffer__i32:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-    li   t0, 16
+    li   t0, 32
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)

@@ -12069,8 +12069,8 @@ __L407:
   push_int 1024
   call U8Array u32
   store ftypes
-; var fields: FieldInfoArray = FieldInfoArray(16u32);
-  push_int 16
+; var fields: FieldInfoArray = FieldInfoArray(32u32);
+  push_int 32
   call FieldInfoArray u32
   store fields
 ; var nfields: i32 = 0;

@@ -11932,11 +11932,11 @@
           (int 1024)
         )
       )
-      (comment "var fields: FieldInfoArray = FieldInfoArray(16u32);")
+      (comment "var fields: FieldInfoArray = FieldInfoArray(32u32);")
       (var_decl fields
         (type FieldInfoArray)
         (call FieldInfoArray
-          (int:u32 16)
+          (int:u32 32)
         )
       )
       (comment "var nfields: i32 = 0;")
