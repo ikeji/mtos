@@ -44,49 +44,52 @@ fn do_close(fd: i32) -> i32;
 // Parallel arrays keep kind / section_id alongside the path so the
 // section pass can dispatch without re-parsing.
 //
-// Declared up front so raw_memcpy_section / record_src_path /
-// record_reloc see them as I32Array / U32Array (not `?`); tcheck
-// resolves global var types lazily and forward-references through
-// fn bodies sometimes lose the type tag.
+// Declared up front so raw_memcpy_section / record_src_path see them
+// as I32Array / U32Array (not `?`); tcheck resolves global var types
+// lazily and forward-references through fn bodies sometimes lose the
+// type tag.
 var g_src_starts: I32Array = 0 as I32Array;
 var g_src_paths: U32Array = 0 as U32Array;
 var g_src_secs:  I32Array = 0 as I32Array;
 var g_n_src_paths: i32 = 0;
 var SRC_PATHS_CAP: i32 = 64;
 
-// Reloc records: parallel arrays. Initial capacity covers a small
-// prelude; record_reloc grows the arrays in place when full so the
-// linker mode (which carries every cross-file ref from user.reloc on
-// top of prelude.reloc — easily thousands for compiler/parse.tc)
-// doesn't silently drop relocs past the cap.
-// Initial capacity tuned for self_replicate's 13-input merge which
-// produces ~3000 relocs total. Pre-allocating skips the doubling
-// churn (256 → 512 → ... → 4096) whose intermediate copies double
-// peak memory and OOM the asm_pass3 task arena. For smaller inputs
-// (single .tc compile) the unused capacity is wasted but bounded
-// by asm_pass3's task arena anyway.
-var RELOCS_CAP_INIT: i32 = 4096;
-var g_relocs_cap:  i32 = 0;
-var g_reloc_offs:  I32Array = 0 as I32Array;
-var g_reloc_kinds: I32Array = 0 as I32Array;
-// Each entry is a label index resolved at parse time (not the raw
-// name). The .lab format guarantees `lab` lines come before `ref`
-// lines, so by the time a ref is parsed every target label is in
-// g_labels and we can do the find_label lookup immediately. This
-// avoids hanging onto 1 U8Array(name_len) per ref — for the
-// self_replicate 13-input merge that's ~3000 U8Arrays totalling
-// ~120 KB of avoidable live memory in the asm_pass3 task arena.
-var g_reloc_lab_idx: I32Array = 0 as I32Array;
+// Reloc state — streamed, not stored. The .lab parse pass only counts
+// `reloc` lines (into g_n_relocs); the text section emit pass re-opens
+// the .lab and reads one reloc line at a time. Relocs are emitted in
+// section-offset order by asm_pass2, so the section emit can advance a
+// single "pending" cursor monotonically with no array storage at all.
+//
+// Pre-2026-05-12 this kept three I32Array(g_relocs_cap=4096) buffers
+// (g_reloc_offs/kinds/lab_idx) plus per-call pre_addrs/pre_secs
+// (I32Array(g_n_relocs)) — ~128 KB of pool slots in asm_pass3 peak.
+// Streaming drops all of that to a 4 KB read-ahead buffer + a 512 B
+// line buffer + 5 scalar pending fields. See git blame on this file.
 var g_n_relocs: i32 = 0;
 
-// Lookup label `name` in the asm_common label table. Returns the
-// label's absolute address (PIC), or sentinel value 0 - 1 if not
-// found (callers should not encounter this — apply_relocs aborts).
-fn lookup_label_addr(name: U8Array, nlen: i32) -> i32 {
-    var idx: i32 = asm_find_label_idx(name, nlen);
-    if idx < 0 { return 0 - 1; }
-    return asm_label_addr_at(idx);
-}
+// Streaming reloc reader. g_reloc_in_path caches the .lab path so the
+// text section pass can re-open it on demand. g_reloc_pending_* holds
+// the parsed "next reloc"; g_reloc_in_done=1 means the stream is at EOF
+// (no more relocs, or never opened).
+var g_reloc_in_path: String = 0 as String;
+var g_reloc_in_fd:   i32 = 0 - 1;
+var g_reloc_in_line: U8Array = 0 as U8Array;
+var g_reloc_pending_off:     i32 = 0;
+var g_reloc_pending_kind:    i32 = 0;
+var g_reloc_pending_lab_idx: i32 = 0;
+var g_reloc_pending_addr:    i32 = 0;
+var g_reloc_pending_sec:     i32 = 0;
+var g_reloc_in_done: i32 = 1;
+
+// Dedicated 4 KB read-ahead buffer for the reloc fd. We can't reuse
+// the shared rb_* reader because that one is bound to the main lab/
+// source stdin fd; the reloc reader runs concurrently during the
+// text section emit.
+var RELOC_BUF_CAP: i32 = 4096;
+var g_reloc_in_buf:     U8Array = 0 as U8Array;
+var g_reloc_in_buf_pos: i32 = 0;
+var g_reloc_in_buf_len: i32 = 0;
+var g_reloc_in_buf_eof: i32 = 0;
 
 // Apply one reloc kind=1 (auipc + addi/jalr pair, 8 bytes) at offset
 // rel_off within `buf`. The original bytes were encoded with imm=0
@@ -284,68 +287,43 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
 
     if apply_relocs == 1 {
         // Streaming + patch path. Read the bin in 4 KB chunks into an
-        // 8 KB sliding window so a 4-or-8-byte reloc near a chunk
-        // boundary stays contiguous. Pre-resolve all label addresses
-        // up front (so a missing label aborts before any half-written
-        // bytes hit the output).
+        // 8 KB sliding window. A 4-or-8-byte reloc near a chunk
+        // boundary stays contiguous because we hold back 8 bytes of
+        // emit at every iteration.
         //
-        // Layout: win[0..keep) carries leftover from the previous
-        // chunk; sys_read appends the new chunk via a 4 KB scratch
-        // buffer at win[keep..]. After patching we emit win[0..emit)
-        // and shift win[emit..keep+nr) → win[0..) for the next round.
-        // The hold-back size is 7 (longest reloc kind=1 minus 1) so
-        // any reloc starting inside the held region is patched on
-        // the next iteration when its tail is in the window.
+        // Relocs come from g_reloc_pending_* (one record at a time,
+        // sourced from the .lab fresh-open in reloc_stream_*). They
+        // arrive in section-offset order, so a single "next" cursor
+        // advances monotonically through the section emit. A reloc
+        // that straddles the current emit_end shrinks it to its start
+        // so the next iteration sees the full 8 bytes contiguous;
+        // the reloc itself remains pending.
         var sec_base: i32 = asm_get_sec_base(0);
-        var pre_addrs: I32Array = I32Array(g_n_relocs as u32);
-        var pre_secs:  I32Array = I32Array(g_n_relocs as u32);
-        var ri: i32 = 0;
-        while ri < g_n_relocs {
-            var lab_idx: i32 = get(g_reloc_lab_idx, ri);
-            set(pre_addrs, ri, asm_label_addr_at(lab_idx));
-            set(pre_secs,  ri, asm_label_section_at(lab_idx));
-            ri = ri + 1;
-        }
         var WIN:    i32 = 8192;
-        var io:     U8Array = U8Array(4096);
+        var io:     U8Array = U8Array(4096u32);
         var win:    U8Array = U8Array(WIN as u32);
         var keep:   i32 = 0;       // bytes already in win[0..keep)
         // Anchor chunk_off at the section's running emit cursor. For
         // the first `src raw` entry in a section this is 0 (matches
         // the legacy single-bin case); for the second one (e.g.
-        // user.text.bin chained after prelude.text.bin) it picks up
-        // where the previous memcpy left off, so reloc offsets
-        // expressed in concatenated-section coordinates patch the
-        // right bytes.
+        // user.tx chained after prelude.tx) it picks up where the
+        // previous memcpy left off, so reloc offsets expressed in
+        // concatenated-section coordinates patch the right bytes.
         var chunk_off: i32 = asm_get_section_emitted();
         var done_r: i32 = 0;
         while done_r == 0 {
             var nr: i32 = sys_read(fd, io, 4096);
             if nr <= 0 {
                 if keep > 0 {
-                    // Final flush: any remaining relocs within
-                    // win[0..keep) get patched here.
-                    var rk: i32 = 0;
-                    while rk < g_n_relocs {
-                        var r_off: i32 = get(g_reloc_offs, rk);
-                        var r_kind: i32 = get(g_reloc_kinds, rk);
-                        var w_off: i32 = r_off - chunk_off;
-                        var ln: i32 = 4;
-                        if r_kind == 1 || r_kind == 2 || r_kind == 3 { ln = 8; }
-                        if w_off >= 0 && w_off + ln <= keep {
-                            var ta: i32 = get(pre_addrs, rk);
-                            if r_kind == 1 {
-                                patch_reloc_at(win, w_off, sec_base, chunk_off, ta);
-                            } else if r_kind == 2 {
-                                patch_reloc_gprel_at(win, w_off, ta, asm_get_gp_abs());
-                            } else if r_kind == 3 {
-                                patch_reloc_auto_at(win, w_off, sec_base, chunk_off, ta,
-                                                    get(pre_secs, rk), asm_get_gp_abs());
-                            } else {
-                                patch_reloc_j_at(win, w_off, sec_base, chunk_off, ta);
-                            }
+                    // Final flush: drain any remaining pending relocs
+                    // within win[0..keep).
+                    while g_reloc_in_done == 0 &&
+                          g_reloc_pending_off < chunk_off + keep {
+                        var w_off_final: i32 = g_reloc_pending_off - chunk_off;
+                        if w_off_final >= 0 {
+                            apply_pending_at(win, w_off_final, sec_base, chunk_off);
                         }
-                        rk = rk + 1;
+                        reloc_stream_next();
                     }
                     sys_write(out_fd, win, keep);
                     total = total + keep;
@@ -360,52 +338,30 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
                 // kind=1 / kind=2 / kind=3 auipc+addi pairs).
                 var emit_end: i32 = win_len - 8;
                 if emit_end < 0 { emit_end = 0; }
-                // Walk the relocs once and shrink emit_end to the
-                // start of any reloc that would straddle the boundary
-                // (win_off < emit_end but win_off + len > emit_end).
-                // Without this, the auipc half lands on disk un-
-                // patched and on the next iter win_off goes negative
-                // → reloc silently dropped.
-                var rclip: i32 = 0;
-                while rclip < g_n_relocs {
-                    var roff_clip: i32 = get(g_reloc_offs, rclip);
-                    var rkind_clip: i32 = get(g_reloc_kinds, rclip);
-                    var win_off_clip: i32 = roff_clip - chunk_off;
-                    var len_clip: i32 = 4;
-                    if rkind_clip == 1 || rkind_clip == 2 || rkind_clip == 3 {
-                        len_clip = 8;
+                // Advance through pending relocs whose offset falls
+                // before chunk_off + emit_end. If one straddles emit_end,
+                // shrink emit_end to its start and stop — the reloc
+                // stays pending for the next iteration.
+                var stopped: i32 = 0;
+                while stopped == 0 && g_reloc_in_done == 0 &&
+                      g_reloc_pending_off < chunk_off + emit_end {
+                    var w_off: i32 = g_reloc_pending_off - chunk_off;
+                    var ln: i32 = 4;
+                    if g_reloc_pending_kind == 1 ||
+                       g_reloc_pending_kind == 2 ||
+                       g_reloc_pending_kind == 3 { ln = 8; }
+                    if w_off + ln > emit_end {
+                        emit_end = w_off;
+                        stopped = 1;
+                    } else if w_off >= 0 {
+                        apply_pending_at(win, w_off, sec_base, chunk_off);
+                        reloc_stream_next();
+                    } else {
+                        // Reloc offset is before chunk_off — shouldn't
+                        // happen since relocs are sorted, but advance
+                        // defensively so the loop terminates.
+                        reloc_stream_next();
                     }
-                    if win_off_clip >= 0
-                       && win_off_clip < emit_end
-                       && win_off_clip + len_clip > emit_end {
-                        emit_end = win_off_clip;
-                    }
-                    rclip = rclip + 1;
-                }
-                // Patch every reloc that fits fully in [0..emit_end).
-                var rj: i32 = 0;
-                while rj < g_n_relocs {
-                    var roff: i32 = get(g_reloc_offs, rj);
-                    var rkind: i32 = get(g_reloc_kinds, rj);
-                    var win_off: i32 = roff - chunk_off;
-                    if win_off >= 0 {
-                        var len_needed: i32 = 4;
-                        if rkind == 1 || rkind == 2 || rkind == 3 { len_needed = 8; }
-                        if win_off + len_needed <= emit_end {
-                            var ta2: i32 = get(pre_addrs, rj);
-                            if rkind == 1 {
-                                patch_reloc_at(win, win_off, sec_base, chunk_off, ta2);
-                            } else if rkind == 2 {
-                                patch_reloc_gprel_at(win, win_off, ta2, asm_get_gp_abs());
-                            } else if rkind == 3 {
-                                patch_reloc_auto_at(win, win_off, sec_base, chunk_off, ta2,
-                                                    get(pre_secs, rj), asm_get_gp_abs());
-                            } else {
-                                patch_reloc_j_at(win, win_off, sec_base, chunk_off, ta2);
-                            }
-                        }
-                    }
-                    rj = rj + 1;
                 }
                 if emit_end > 0 {
                     sys_write(out_fd, win, emit_end);
@@ -424,8 +380,6 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
         }
         delete(io);
         delete(win);
-        delete(pre_addrs);
-        delete(pre_secs);
     } else {
         // Streaming pass-through (no relocs to apply).
         var buf2: U8Array = U8Array(4096);
@@ -446,42 +400,145 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
     return total;
 }
 
-fn record_reloc(off: i32, kind: i32, lab_idx: i32) -> void {
-    if g_reloc_offs as u32 == 0u32 {
-        g_relocs_cap    = RELOCS_CAP_INIT;
-        g_reloc_offs    = I32Array((g_relocs_cap) as u32);
-        g_reloc_kinds   = I32Array((g_relocs_cap) as u32);
-        g_reloc_lab_idx = I32Array((g_relocs_cap) as u32);
-        g_n_relocs = 0;
+// Read one byte from the streaming reloc fd via the 4 KB read-ahead
+// buffer. Returns -1 at EOF.
+fn reloc_buf_next() -> i32 {
+    if g_reloc_in_buf_pos < g_reloc_in_buf_len {
+        var c: u8 = get(g_reloc_in_buf, g_reloc_in_buf_pos);
+        g_reloc_in_buf_pos = g_reloc_in_buf_pos + 1;
+        return c as i32;
     }
-    if g_n_relocs >= g_relocs_cap {
-        // Grow the parallel arrays. asm_pass1's pre-encode emits ~1
-        // reloc per cross-file la / call; full link-time merges of
-        // the compiler tools (parse.tc, codegen.tc, ...) routinely
-        // exceed 1000 relocs.
-        var new_cap: i32 = g_relocs_cap * 2;
-        var new_offs:  I32Array = I32Array((new_cap) as u32);
-        var new_kinds: I32Array = I32Array((new_cap) as u32);
-        var new_lab_idx: I32Array = I32Array((new_cap) as u32);
-        var ci: i32 = 0;
-        while ci < g_n_relocs {
-            set(new_offs,  ci, get(g_reloc_offs,  ci));
-            set(new_kinds, ci, get(g_reloc_kinds, ci));
-            set(new_lab_idx, ci, get(g_reloc_lab_idx, ci));
-            ci = ci + 1;
+    if g_reloc_in_buf_eof == 1 { return 0 - 1; }
+    var n: i32 = sys_read(g_reloc_in_fd, g_reloc_in_buf, RELOC_BUF_CAP);
+    if n <= 0 { g_reloc_in_buf_eof = 1; return 0 - 1; }
+    g_reloc_in_buf_len = n;
+    var c0: u8 = get(g_reloc_in_buf, 0);
+    g_reloc_in_buf_pos = 1;
+    return c0 as i32;
+}
+
+// Read one LF-terminated line from the reloc fd into buf. Truncates
+// at `cap` bytes (caller guarantees that's enough). Returns line
+// length, or -1 at EOF with no bytes read.
+fn reloc_read_line(buf: U8Array, cap: i32) -> i32 {
+    var llen: i32 = 0;
+    var saw: i32 = 0;
+    var done: i32 = 0;
+    while done == 0 {
+        var c: i32 = reloc_buf_next();
+        if c < 0 {
+            done = 1;
+        } else {
+            saw = 1;
+            if llen < cap { set(buf, llen, c as u8); }
+            llen = llen + 1;
+            if c == 10 { done = 1; }
         }
-        delete(g_reloc_offs);
-        delete(g_reloc_kinds);
-        delete(g_reloc_lab_idx);
-        g_reloc_offs    = new_offs;
-        g_reloc_kinds   = new_kinds;
-        g_reloc_lab_idx = new_lab_idx;
-        g_relocs_cap    = new_cap;
     }
-    set(g_reloc_offs,    g_n_relocs, off);
-    set(g_reloc_kinds,   g_n_relocs, kind);
-    set(g_reloc_lab_idx, g_n_relocs, lab_idx);
-    g_n_relocs = g_n_relocs + 1;
+    if saw == 0 { return 0 - 1; }
+    if llen > cap { llen = cap; }
+    return llen;
+}
+
+// Parse one `reloc <off> <kind> <name>` line into g_reloc_pending_*.
+// Returns 0 on success, -1 if the name is empty (malformed line).
+// Caller guarantees labels are finalized so asm_find_label_idx is O(1).
+fn parse_reloc_into_pending(buf: U8Array, blen: i32) -> i32 {
+    parse_dec(buf, 6, blen);
+    g_reloc_pending_off = g_lab_int;
+    parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+    g_reloc_pending_kind = g_lab_int;
+    var ns: i32 = skip_ws(buf, g_lab_cur, blen);
+    var ne: i32 = blen;
+    var trimming: i32 = 1;
+    while trimming == 1 && ne > ns {
+        var tc: u8 = get(buf, ne - 1);
+        if tc == 10u8 || tc == 13u8 || tc == ' ' || tc == 9u8 {
+            ne = ne - 1;
+        } else {
+            trimming = 0;
+        }
+    }
+    var nlen: i32 = ne - ns;
+    if nlen <= 0 { return 0 - 1; }
+    var name: U8Array = U8Array(nlen as u32);
+    var i: i32 = 0;
+    while i < nlen { set(name, i, get(buf, ns + i)); i = i + 1; }
+    var lab_idx: i32 = asm_find_label_idx(name, nlen);
+    delete(name);
+    if lab_idx < 0 { sys_exit(31); }
+    g_reloc_pending_lab_idx = lab_idx;
+    g_reloc_pending_addr    = asm_label_addr_at(lab_idx);
+    g_reloc_pending_sec     = asm_label_section_at(lab_idx);
+    return 0;
+}
+
+// Advance the streaming reloc reader to the next `reloc ` line. Sets
+// g_reloc_in_done=1 at EOF or on the closing `)`. Lines that aren't
+// `reloc ` (leftover `lab`/`num` lines from the parse pass that ran
+// against the same fd in a previous use of the .lab) are skipped.
+fn reloc_stream_next() -> void {
+    if g_reloc_in_done == 1 { return; }
+    var found: i32 = 0;
+    while found == 0 {
+        var llen: i32 = reloc_read_line(g_reloc_in_line, 512);
+        if llen < 0 { g_reloc_in_done = 1; return; }
+        if llen >= 6 && cmp(g_reloc_in_line, 0, "reloc ") {
+            if parse_reloc_into_pending(g_reloc_in_line, llen) == 0 {
+                found = 1;
+            }
+        } else if llen >= 1 && get(g_reloc_in_line, 0) == ')' as u8 {
+            g_reloc_in_done = 1;
+            return;
+        }
+    }
+    return;
+}
+
+// Open the .lab fresh, skip to the first `reloc ` line, and stash it
+// in g_reloc_pending_*. Called once per text section pass before the
+// raw_memcpy_section loop.
+fn reloc_stream_open() -> void {
+    if g_reloc_in_path as u32 == 0u32 { g_reloc_in_done = 1; return; }
+    g_reloc_in_fd = do_openat(0 - 100, g_reloc_in_path, 0);
+    if g_reloc_in_fd < 0 { g_reloc_in_done = 1; return; }
+    if g_reloc_in_buf as u32 == 0u32 {
+        g_reloc_in_buf = U8Array(RELOC_BUF_CAP as u32);
+    }
+    g_reloc_in_buf_pos = 0;
+    g_reloc_in_buf_len = 0;
+    g_reloc_in_buf_eof = 0;
+    if g_reloc_in_line as u32 == 0u32 {
+        g_reloc_in_line = U8Array(512u32);
+    }
+    g_reloc_in_done = 0;
+    reloc_stream_next();
+    return;
+}
+
+fn reloc_stream_close() -> void {
+    if g_reloc_in_fd >= 0 {
+        do_close(g_reloc_in_fd);
+        g_reloc_in_fd = 0 - 1;
+    }
+    g_reloc_in_done = 1;
+    return;
+}
+
+// Patch g_reloc_pending_* at win[w_off] (w_off is window-local).
+fn apply_pending_at(win: U8Array, w_off: i32, sec_base: i32, chunk_off: i32) -> void {
+    var k: i32 = g_reloc_pending_kind;
+    var ta: i32 = g_reloc_pending_addr;
+    if k == 1 {
+        patch_reloc_at(win, w_off, sec_base, chunk_off, ta);
+    } else if k == 2 {
+        patch_reloc_gprel_at(win, w_off, ta, asm_get_gp_abs());
+    } else if k == 3 {
+        patch_reloc_auto_at(win, w_off, sec_base, chunk_off, ta,
+                            g_reloc_pending_sec, asm_get_gp_abs());
+    } else {
+        patch_reloc_j_at(win, w_off, sec_base, chunk_off, ta);
+    }
     return;
 }
 
@@ -614,39 +671,12 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         return 0;
     }
     if blen - p >= 6 && cmp(buf, p, "reloc ") {
-        // reloc <off> <kind> <name>
-        // First ref line triggers asm_finalize_labels — every label
-        // is in g_labels by now (.lab format puts all labs before refs)
-        // and we want O(1) find_label for the imminent name resolution.
-        asm_ensure_labels_finalized();
-        parse_dec(buf, p + 6, blen);
-        var roff: i32 = g_lab_int;
-        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
-        var rkind: i32 = g_lab_int;
-        var ns_r: i32 = skip_ws(buf, g_lab_cur, blen);
-        var ne_r: i32 = blen;
-        var trim_r: i32 = 1;
-        while trim_r == 1 && ne_r > ns_r {
-            var tc_r: u8 = get(buf, ne_r - 1);
-            if tc_r == 10u8 || tc_r == 13u8 || tc_r == ' ' || tc_r == 9u8 {
-                ne_r = ne_r - 1;
-            } else {
-                trim_r = 0;
-            }
-        }
-        var nlen_r: i32 = ne_r - ns_r;
-        if nlen_r > 0 {
-            // Resolve name to label index immediately and discard the
-            // temporary U8Array. Saves ~120 KB on the 13-input merge
-            // (~3000 refs × ~40-byte bucket cost per name).
-            var name: U8Array = U8Array((nlen_r) as u32);
-            var ri: i32 = 0;
-            while ri < nlen_r { set(name, ri, get(buf, ns_r + ri)); ri = ri + 1; }
-            var lab_idx: i32 = asm_find_label_idx(name, nlen_r);
-            delete(name);
-            if lab_idx < 0 { sys_exit(31); }
-            record_reloc(roff, rkind, lab_idx);
-        }
+        // Count only — relocs are streamed from the .lab during the
+        // text section emit by reloc_stream_open / reloc_stream_next.
+        // Storing them here would cost ~128 KB of pool slots (3 ×
+        // I32Array(4096) + 2 × I32Array(g_n_relocs) precomputed addr/
+        // sec arrays per raw_memcpy_section call).
+        g_n_relocs = g_n_relocs + 1;
         return 0;
     }
     if blen - p >= 4 && cmp(buf, p, "num ") {
@@ -710,6 +740,14 @@ fn run_section_pass(sec_target: i32) -> void {
         asm_set_out_fd(per_sec_fd);
     }
 
+    // Open the streaming reloc reader for the text section. Inspection
+    // of the asm_pass2 .lab output confirms all relocs land in section
+    // 0 — kind=1/2/3 patches are emitted only for .text instructions —
+    // so only the text pass needs reloc patching.
+    if sec_target == 0 && g_n_relocs > 0 {
+        reloc_stream_open();
+    }
+
     // Walk each `src raw` entry from the .lab: memcpy bytes straight
     // to g_out_fd when its section_id matches sec_target. Raw entries
     // that don't match are skipped entirely; their bytes were already
@@ -723,6 +761,10 @@ fn run_section_pass(sec_target: i32) -> void {
             raw_memcpy_section(path, get(g_src_starts, pi));
         }
         pi = pi + 1;
+    }
+
+    if sec_target == 0 && g_n_relocs > 0 {
+        reloc_stream_close();
     }
 
     // Pad the target section with zeros up to its aligned size and
@@ -850,6 +892,11 @@ export fn run_pass3(lab_path: String, out_path: String) -> i32 {
     asm_init_pass2();
     asm_enable_stream_mode();
     rb_init();
+
+    // Stash for the streaming reloc reader. reloc_stream_open re-opens
+    // this file fresh — its read cursor doesn't share with the main
+    // .lab parse pass's rb_* reader.
+    g_reloc_in_path = lab_path;
 
     // Pre-allocate the label name pool to 64 KB up front. The .lab
     // for self_replicate's 13-input merge has ~5000 labels averaging
