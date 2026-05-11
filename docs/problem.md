@@ -221,26 +221,41 @@ arena OOM だった (task arena allocation 自体が大きすぎた)。
 これで device で **step 2-4 全部 exit=0 で完走** することを確認
 (2026-05-11、`make pico2-kernel-extra` + `tests/pico2_self_replicate.sh`)。
 
-**残る問題: byte-exact 不一致**:
-- host kernel.bin md5: `f02ff9c30ef4d4dc80248602676f3433`
-- device k.bin md5 (末尾 partial): `99` で終わる
-- device の /sd/full.lab も host の /tmp/full.lab と md5 違う
+**byte-exact 不一致の root cause 解決** (2026-05-11、commit 4fe14d7):
 
-OOM がなくなった後で初めて見えた byte-exact 差異。原因候補:
-- device の REFRESH 生成の .s ファイルが host と微妙に違う
-- LINKMODE pipeline (asm_pass1 → asm_pass2 → asm_pass3) の
-  どこかに device-only の non-determinism
-- 注: walked-source (LINKMODE=0) は 2026-05-09 に
-  byte-exact 確認済 (`1ec465d2...`) — その時の .s ファイルは
-  REFRESH 生成と byte-exact 一致してたはず
+`parse.tc::pars_struct` の `FieldInfoArray = FieldInfoArray(16u32)`
+が `kernel/kernel_common.tc::struct Task` (19 fields) で silent
+overflow していた:
 
-**次の調査**: device 側の `/sd/X.idx` を mx 経由で抽出して
-host の `build/intermediate/.../in_N.idx` と md5 比較。
-どの段階で divergence が出るかを localize する。
+- Gen1 (bootstrap C runtime) は set/get に bound check があるので
+  17th field の set() で abort (`set: 16 out of bounds (len=16)`)
+  → compile-gen2.sh の host kernel build は parse が早期に出力を
+  truncate して以降のステージで違う bytes が出る
+- Gen2 (compiler/runtime.tc + bc2asm.tc) は `emit_inline_set` が
+  set を裸の RISC-V store に inline、bound check を **skip**。
+  U32Array(16) を 16+ で set すると adjacent memory が silently
+  corrupt → AST は corrupt だが偶然 tcheck/codegen/bc2asm を通過
+  → device と virt は同じ corrupt な AST から同じ k.bin を作る
+  (互いに一致するが、host kernel build (Gen1 bound check) とは違う)
 
-**回避策**: device 側は引き続き `LINKMODE=0` (walked-source) で
-byte-exact 動作。LINKMODE=1 は memory-wise には完走するが
-byte-exact 未達 — 現状 LINKMODE=0 廃止できない。
+検出経緯: virt 上で device と同じ pipeline を回して 13 input idx
+を host (compile-gen2.sh) と md5 比較。9/13 一致、4/13 (ff/mf/ld/pt)
+不一致。bisect で `parse < kernel_common.tc` の出力が host=1024 byte
+(truncated), virt=125 KB と判明。parse.tc の 16-slot fields 配列を
+32 に bump (commit 4fe14d7) で host parse output も 125 KB に、
+ff/mf/ld 全部 host == virt 一致。pt.idx は `.incbin` の path
+文字列のみ違い (内容は同じ disk-extra.img)。
+
+LINKMODE byte-exact 上は **解決**。次の verify run で
+host k.bin md5 == virt k.bin md5 == device k.bin md5 になるはず。
+
+**関連 followup**: `bc2asm.tc::emit_inline_set` は set の bound
+check を skip するので、将来同じ罠を踏まないように
+(a) inline set でも check を入れる (perf 影響あり)
+(b) こういう静的サイズ配列をやめて growing array にする
+(c) コンパイル時 lint で「U8Array/I32Array/U32Array literal が
+   set の index 上限を超えないか」検査するか — のいずれかが望ましい。
+今は `parse.tc` のコメントで warn 注意のみ。
 
 詳細は `docs/scaling.md` の "device LINKMODE 既知 bug" 節を参照。
 
