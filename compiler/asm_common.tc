@@ -32,11 +32,15 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // PIC: labels are stored as offsets from code start (0..code_size).
 // ELF output adds g_load_vaddr + ELF_HDR_SIZE for runtime addresses.
 //
-// MAX_LABELS: 4096 is enough for the current self-host build (measured
-// ~2800-3200 labels when compiling a full compiler source). Raising
-// this triggers a 16 B × N alloc in g_labels and another 16 B × N for
-// g_lab_name_ptrs, so stay conservative.
-var MAX_LABELS: i32 = 4096;
+// MAX_LABELS: 4095 (one below 4096) is deliberate. The pool allocator
+// uses power-of-2 buckets and an i32 array of N entries needs N*4 + 4
+// bytes (4 B count header). I32Array(4096) lands in the 32 KB bucket
+// (16388 > 16384); I32Array(4095) drops to the 16 KB bucket (16384
+// exact fit). At MAX_LABELS=4095 each of g_labels / g_lab_name_ptrs
+// claims 16 KB instead of 32 KB — saves 32 KB total per pass.
+// Self-host builds measured ~2800-3200 labels so 4095 has plenty of
+// headroom; if a future build trips it bump to 8191 (next 1-below-2^n).
+var MAX_LABELS: i32 = 4095;
 // Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
 // definitions; the g_numlab table is `digit * NUM_LAB_PER_DIGIT + idx`.
 // Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
@@ -289,10 +293,12 @@ fn lab_name_at(idx: i32) -> U8Array {
 // the graph is collected but not yet consumed.
 //
 // Encoding: each edge is one i32 = (from_idx << 16) | to_idx. With
-// MAX_LABELS = 4096 (12 bits), 16 bits per id has plenty of margin.
-// MAX_REFS = 8192 covers the runtime.s + crt0 self-host build with
-// some headroom; if a future build trips it we'll bump or grow.
-var MAX_REFS: i32 = 16384;
+// MAX_LABELS = 4095 (12 bits), 16 bits per id has plenty of margin.
+// MAX_REFS = 16383 (one below 16384): I32Array(16384) = 65540 bytes
+// lands in the 128 KB pool bucket; I32Array(16383) = 65536 exactly
+// drops to the 64 KB bucket. Saves 64 KB of pool-slot waste per
+// asm_pass1 invocation.
+var MAX_REFS: i32 = 16383;
 var g_refs: I32Array = 0 as I32Array;
 var g_nrefs: i32 = 0;
 var g_owner_idx: i32 = 0 - 1;  // -1 = no current owner (section root)
@@ -312,9 +318,12 @@ var g_collecting_refs: i32 = 0;
 //
 // Initial deferred-queue capacity; the arrays grow dynamically on
 // overflow (record_def_ref doubles them via ensure_def_capacity).
-// Starting small lets OS-side tasks (asm_pass1 / asm_pass2 with
-// 288 KB arenas) avoid pre-allocating 4 × 64 KB arrays up-front.
-var MAX_DEFERRED: i32 = 2048;
+// 2047 (one below 2048): I32Array(2047) = 8192 fits the 8 KB bucket
+// exactly; I32Array(2048) = 8196 spills into 16 KB. Doubling from
+// 2047 also keeps every subsequent grow on the lower bucket boundary
+// (4094, 8188, 16376 — each lands in b16384 / b32768 / b65536 exactly
+// rather than the next-larger bucket).
+var MAX_DEFERRED: i32 = 2047;
 var g_def_capacity: i32 = 0;
 var g_def_owner:    I32Array = 0 as I32Array;
 var g_def_name_off: I32Array = 0 as I32Array;
@@ -322,7 +331,12 @@ var g_def_name_len: I32Array = 0 as I32Array;
 var g_ndeferred: i32 = 0;
 var g_def_pool: U8Array = 0 as U8Array;
 var g_def_pool_pos: i32 = 0;
-var DEF_POOL_INITIAL_KB: i32 = 4;
+// 4092 (just under 4 KB): U8Array(4092) = 4096 bytes fits the 4 KB
+// bucket exactly. Subsequent doublings (8184, 16368, 32736, 65472)
+// each land in the next bucket without spilling: 4092*2+4 = 8188 →
+// b8192 exactly, etc. The old "4 * 1024 = 4096" choice landed every
+// step one bucket higher.
+var DEF_POOL_INITIAL_BYTES: i32 = 4092;
 
 // Pre-encoded prelude paths (Step 5 of pre-encode). When set,
 // asm_dump_lab_state emits three `src raw` lines pointing to the
@@ -515,7 +529,7 @@ fn ensure_ref_state() -> void {
     g_def_owner    = I32Array((g_def_capacity) as u32);
     g_def_name_off = I32Array((g_def_capacity) as u32);
     g_def_name_len = I32Array((g_def_capacity) as u32);
-    g_def_pool     = U8Array((DEF_POOL_INITIAL_KB * 1024) as u32);
+    g_def_pool     = U8Array((DEF_POOL_INITIAL_BYTES) as u32);
     return;
 }
 
