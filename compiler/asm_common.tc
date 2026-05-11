@@ -346,17 +346,10 @@ var g_def_pool: U8Array = 0 as U8Array;
 var g_def_pool_pos: i32 = 0;
 var DEF_POOL_INITIAL_KB: i32 = 4;
 
-// Source-file paths emitted into the .lab as `src <path>` lines so
-// asm-pass2 can open them directly instead of reading from stdin.
-// Up to 2 entries (prelude + user_strip in the load-idx flow).
-var g_src_path1: String = 0 as String;
-export fn asm_set_src_path1(p: String) -> void { g_src_path1 = p; return; }
-
 // Pre-encoded prelude paths (Step 5 of pre-encode). When set,
-// asm_dump_lab_state replaces `src <g_src_path1>` (the prelude
-// source line) with three `src raw` lines pointing to the
-// pre-encoded section bins, and copies the contents of the
-// prelude reloc file verbatim into the .lab.
+// asm_dump_lab_state emits three `src raw` lines pointing to the
+// pre-encoded section bins, and copies the contents of the prelude
+// reloc file verbatim into the .lab.
 var g_prelude_text_bin:   String = 0 as String;
 var g_prelude_rodata_bin: String = 0 as String;
 var g_prelude_data_bin:   String = 0 as String;
@@ -2794,10 +2787,6 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
             emit_string(sb, " 2");
             emit_nl(sb);
         }
-    } else if g_src_path1 as u32 != 0u32 {
-        emit_string(sb, "src ");
-        emit_string(sb, g_src_path1);
-        emit_nl(sb);
     }
     // User pre-encoded bins (linker mode): emit per-section `src raw`
     // entries after the prelude raws. The 4th token on each line is

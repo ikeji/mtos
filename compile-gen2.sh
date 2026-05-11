@@ -13,9 +13,9 @@
 #   bc2asm  < file.bc                                 > file.s
 #
 # Linking (once):
-#   cat [prologue] crt0 runtime.s user1.s ... crt0_data > full.s
-#   asm_pass2 < full.s > full.lab
-#   cat full.lab full.s | asm_pass3 > OUTFILE
+#   asm_pass1 ... → per-file .idx + per-section .bin + .reloc
+#   asm_pass2 --link --prelude-* --user-* [--add ...] --lab-out full.lab
+#   asm_pass3 --lab full.lab --out OUTFILE
 #
 # The (imports) block is built from Gen1 parse + Gen2 sigscan for each
 # transitively imported module. sigscan emits all top-level decls, but

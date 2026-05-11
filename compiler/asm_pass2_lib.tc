@@ -1,17 +1,8 @@
-// asm_pass2.tc — label collector half of the asm split (Phase 2 #56).
+// asm_pass2_lib.tc — linker merge for the asm split (Phase F).
 //
-// Reads a `.s` source one line at a time and writes a `.lab`
-// (docs/lab_format.md) so asm-pass2 can encode the binary in one
-// linear scan.
-//
-// Source path:
-//   - With argv[1] set (OS-side, msh script invoking
-//     `asm_pass2 /sd/full.s`): re-readable file, the dead-strip
-//     Phase 3 second source pass is enabled, refs include forward
-//     edges, and the .lab dump filters by the live bitmap.
-//   - Without argv (host stdin pipe via compile-gen2.sh / kernel
-//     build): single source pass, dead-strip skipped (we keep all
-//     labels). Host has plenty of memory and isn't size-bound.
+// `run_link` consumes pass1 outputs (.idx + per-section .bin + .reloc)
+// for prelude + user + N extras, then writes a single `.lab` whose
+// `src raw` entries point at the bin files for asm_pass3 to memcpy.
 
 import "asm_common.tc";
 import "string_buffer.tc";
@@ -26,134 +17,6 @@ fn km_dump_peak() -> void;
 // (host) and kernel/tasks/task_crt0.s (OS).
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
-
-// Process the source coming from `reader` line by line. Calls
-// asm_run_line which (in pass 1) collects labels, advances section
-// cursors, and records reference-graph edges via record_ref.
-fn process_source(reader: SourceReader) -> i32 {
-    var line: U8Array = U8Array(4092);
-    var lineno: i32 = 0;
-    var total_bytes: i32 = 0;
-
-    while at_eof(reader) == false {
-        var llen: i32 = 0;
-        var eol: i32 = 0;
-        while eol == 0 && at_eof(reader) == false {
-            var c: u8 = next(reader);
-            if llen >= 4092 {
-                var eb: StringBuffer = StringBuffer_new();
-                asm_err_begin(eb);
-                emit_string(eb, "line too long (max 4092 bytes)");
-                asm_err_end(eb);
-            }
-            set(line, llen, c);
-            llen = llen + 1;
-            if c == 10u8 { eol = 1; }
-        }
-        total_bytes = total_bytes + llen;
-        if llen == 0 { } else {
-            lineno = lineno + 1;
-            if asm_parse_meta_directive(line, llen) == 1 {
-                // Discard meta directive lines.
-            } else {
-                asm_run_line(line, llen, lineno);
-            }
-        }
-    }
-    delete(line);
-    return total_bytes;
-}
-
-// run — actual work, parameterised by the source path. src_path = 0
-// means "no path, use stdin"; in that mode the full source is walked
-// from fd 0 (host stdin pipe). With src_path set the file is opened
-// and walked once.
-//
-// emit_idx_path: when non-zero the run processes the source through
-// pass 1a only and writes a `.idx` (per-file metadata: secsize /
-// labels intra / refs by name) instead of going through fixup / lab
-// dump. Used by asm_pass1 (which calls run() internally in three
-// steps to produce the .idx + .lab + per-section .bin outputs the
-// linker consumes).
-export fn run(src_path: String, emit_idx_path: String,
-              lab_out_path: String) -> i32 {
-    asm_init_pass1();
-    asm_set_pass(1);
-
-    var src_fd: i32 = 0;
-    var have_path: i32 = 0;
-    if src_path as u32 != 0u32 {
-        var fd: i32 = do_openat(0 - 100, src_path, 0);  // AT_FDCWD, O_RDONLY
-        if fd >= 0 {
-            src_fd = fd;
-            have_path = 1;
-        }
-    }
-
-    var reader: SourceReader = SourceReader_new(src_fd);
-    // Pass 1a collects refs inline (backward ones resolved
-    // immediately, forward ones queued in g_def_*) so we don't need
-    // a second source walk. We need the per-file ref edges only when
-    // emitting .idx — drop the ~88 KB of ref+def state otherwise so
-    // M7-full parse.tc compiles fit in a 320 KB asm_pass2 task arena.
-    var collect_refs: i32 = 0;
-    if emit_idx_path as u32 != 0u32 { collect_refs = 1; }
-    if collect_refs == 0 {
-        asm_set_collecting_refs(0);
-        asm_release_ref_state();
-    } else {
-        asm_set_collecting_refs(1);
-    }
-    var total_bytes: i32 = process_source(reader);
-    if collect_refs != 0 { asm_set_collecting_refs(0); }
-    close(reader);
-    if have_path != 0 { do_close(src_fd); }
-
-    // .idx emit: skip fixup / .lab dump and write the raw per-file
-    // metadata (intra addrs, secsize, refs by name) to the requested
-    // file. Drain intra-file forward refs first so backward-ref edges
-    // are in g_refs; truly-cross-file refs stay in the deferred queue
-    // and the link step resolves them.
-    if emit_idx_path as u32 != 0u32 {
-        asm_finalize_labels();           // hash for fast deferred drain
-        asm_resolve_deferred_refs();     // intra-file forward refs only
-        asm_set_src_bytes(total_bytes);  // captured into idx for link
-        var out_fd: i32 = do_openat(0 - 100, emit_idx_path, 577);
-        if out_fd >= 0 {
-            asm_dump_idx_state(out_fd);
-            do_close(out_fd);
-        }
-        km_dump_peak();
-        return 0;
-    }
-
-    // .lab emit (no idx): finalize labels, then drain forward refs
-    // and run a single fixup pass to turn intra addresses into
-    // absolutes.
-    asm_compute_sec_bases();
-    asm_set_src_bytes(total_bytes);
-
-    if have_path != 0 {
-        asm_finalize_labels();
-        asm_resolve_deferred_refs();
-    }
-
-    asm_fixup_labels();
-
-    if lab_out_path as u32 != 0u32 {
-        // O_WRONLY|O_CREAT|O_TRUNC = 1|64|512 = 577.
-        var lab_fd: i32 = do_openat(0 - 100, lab_out_path, 577);
-        if lab_fd >= 0 {
-            asm_dump_lab_state_to(lab_fd);
-            do_close(lab_fd);
-        }
-    } else {
-        asm_dump_lab_state();
-    }
-
-    km_dump_peak();
-    return 0;
-}
 
 // Linker mode (Phase F of the asm split). No source walk — both
 // inputs are pass1 outputs. Loads prelude.idx + user.idx, snapshots

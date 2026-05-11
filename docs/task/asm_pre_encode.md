@@ -201,8 +201,8 @@ asm_pass3 の変更：
 | step | 内容 | 状態 |
 |---|---|---|
 | 0a | tcheck `--exth/--tgth/--tgt/--out` | ✅ 完了 (commit 775a004) |
-| 0b | asm_pass2 `--lab-out / --strip-out / --user-src` 等の整理 | TODO |
-| 0c | asm_pass3 `--lab / --src-raw <path> <sec> / --src-asm <path> / --out` | TODO |
+| 0b | asm_pass2 `--link --prelude-* --user-* --add --lab-out` | ✅ 完了 (LINK_MODE pipeline) |
+| 0c | asm_pass3 `--lab <path> --out <path>` (.lab の `src raw` で per-section .bin を memcpy) | ✅ 完了 |
 
 asm_pass2 / asm_pass3 を stdin/stdout 前提から脱却させて**複数入力
 ファイルを引数で受け取れる**ようにする。pre-encode 設計では

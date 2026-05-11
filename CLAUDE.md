@@ -48,10 +48,6 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
 - **bcrun.tc::vm_run の vartab=128 制限**: 現在の tcheck では bcrun.tc
   自身が vartab overflow で compile 不可。pipeline の現実的 worst case
   は bc2asm.tc (nc=1656) に格下げ済 (`docs/scaling.md` Q5)
-- **tcc-driven 固有の slowdown 調査**: sh-driven asm_pass1 ~27 s に
-  対して tcc-driven は 3841 s (142×)、cat-link は 10 s → 738 s (74×)。
-  inline I/O + 後続 task の組み合わせで激遅化。tcc を sh の組み込み
-  コマンド化すれば回避可能 (`docs/scaling.md` Q3)
 
 問題詳細は `docs/problem.md`、self-replicate 全体像は `docs/roadmap.md`
 2026-05-06 milestone + `docs/solved.md` K13 / K14、phase 7 実装記録は

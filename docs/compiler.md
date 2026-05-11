@@ -40,8 +40,12 @@ ELF 実行ファイル / raw binary
 ./codegen < foo.tast > foo.bc
 ./bcrun   < foo.bc            # バイトコードで動作確認
 ./bc2asm  < foo.bc > foo.s
-./asm_pass2 < foo.s > foo.lab
-cat foo.lab foo.s | ./asm_pass3 > foo.elf
+./asm_pass1 foo.s --idx-out foo.idx --text-bin foo.tx \
+    --rodata-bin foo.ro --data-bin foo.dt --reloc-out foo.rl
+./asm_pass2 --link --user-idx foo.idx --user-text-bin foo.tx \
+    --user-rodata-bin foo.ro --user-data-bin foo.dt \
+    --user-reloc foo.rl --lab-out foo.lab
+./asm_pass3 --lab foo.lab --out foo.elf
 
 # パイプで一括実行 (ラップは compile-gen2.sh / compile-gen3.sh)
 GEN2_DIR=/tmp/gen2 ./compile-gen2.sh -o foo foo.tc

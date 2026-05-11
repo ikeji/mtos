@@ -37,16 +37,12 @@ fn km_dump_peak() -> void;
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
-// Source-file paths captured from the .lab's `src` lines. Each entry
-// is a String the .lab parser allocates from the lab line bytes.
-// When non-empty, run_section_pass opens these in order instead of
-// reading from stdin (the cat-p2 concat step then becomes redundant).
-//
-// v2 .lab adds two flavors:
-//   `src <path>` / `src asm <path>`: open + tokenize + encode (kind=0)
-//   `src raw <path> <sec>`:          memcpy raw bytes directly (kind=1)
+// Source-file paths captured from the .lab's `src raw` lines. Each
+// entry is a String the .lab parser allocates from the lab line
+// bytes. `src raw <path> <sec> [<start>]` lines record kind=1; the
+// run_section_pass loop memcpys the bytes directly to the output.
 // Parallel arrays keep kind / section_id alongside the path so the
-// section pass can dispatch by kind without re-parsing.
+// section pass can dispatch without re-parsing.
 //
 // Declared up front so raw_memcpy_section / record_src_path /
 // record_reloc see them as I32Array / U32Array (not `?`); tcheck
@@ -54,7 +50,6 @@ fn do_close(fd: i32) -> i32;
 // fn bodies sometimes lose the type tag.
 var g_src_starts: I32Array = 0 as I32Array;
 var g_src_paths: U32Array = 0 as U32Array;
-var g_src_kinds: U32Array = 0 as U32Array;
 var g_src_secs:  I32Array = 0 as I32Array;
 var g_n_src_paths: i32 = 0;
 var SRC_PATHS_CAP: i32 = 64;
@@ -490,17 +485,15 @@ fn record_reloc(off: i32, kind: i32, lab_idx: i32) -> void {
     return;
 }
 
-fn record_src_path(p: String, kind: i32, sec: i32, start_off: i32) -> void {
+fn record_src_path(p: String, sec: i32, start_off: i32) -> void {
     if g_src_paths as u32 == 0u32 {
         g_src_paths  = U32Array((SRC_PATHS_CAP) as u32);
-        g_src_kinds  = U32Array((SRC_PATHS_CAP) as u32);
         g_src_secs   = I32Array((SRC_PATHS_CAP) as u32);
         g_src_starts = I32Array((SRC_PATHS_CAP) as u32);
         g_n_src_paths = 0;
     }
     if g_n_src_paths < SRC_PATHS_CAP {
         set(g_src_paths,  g_n_src_paths, p as u32);
-        set(g_src_kinds,  g_n_src_paths, kind as u32);
         set(g_src_secs,   g_n_src_paths, sec);
         set(g_src_starts, g_n_src_paths, start_off);
         g_n_src_paths = g_n_src_paths + 1;
@@ -575,56 +568,29 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         asm_set_src_bytes(g_lab_int);
         return 0;
     }
-    if blen - p >= 4 && cmp(buf, p, "src ") {
-        // src <path>                       — kind=asm (alias `src asm <path>`)
-        // src raw <path> <sec> [<start>]   — kind=raw, memcpy as section
-        //                                     <sec>; optional <start> is
-        //                                     the per-section offset where
-        //                                     this bin's bytes begin (used
-        //                                     by raw_memcpy_section to pad
-        //                                     zeros up to <start> first).
-        // Trim the trailing newline before allocating the path string.
-        var src_kind: i32 = 0;
+    if blen - p >= 8 && cmp(buf, p, "src raw ") {
+        // src raw <path> <sec> [<start>]
+        //   memcpy bytes from <path> straight into section <sec>;
+        //   optional <start> is the per-section offset where this
+        //   bin's bytes begin (raw_memcpy_section pads zeros up to
+        //   <start> first).
         var src_sec:  i32 = 0;
         var src_start: i32 = 0;
-        var rest: i32 = skip_ws(buf, p + 4, blen);
-        if blen - rest >= 4 && cmp(buf, rest, "raw ") {
-            src_kind = 1;
-            rest = skip_ws(buf, rest + 4, blen);
-        } else if blen - rest >= 4 && cmp(buf, rest, "asm ") {
-            // explicit alias — same as bare `src <path>`
-            rest = skip_ws(buf, rest + 4, blen);
+        var ps: i32 = skip_ws(buf, p + 8, blen);
+        // Scan forward to the next whitespace as the path end.
+        var pe: i32 = ps;
+        while pe < blen && is_ws(get(buf, pe)) == false {
+            pe = pe + 1;
         }
-        var ps: i32 = rest;
-        // For raw entries the section_id follows the path: scan
-        // forward to the next whitespace as the path end.
-        var pe: i32 = blen;
-        if src_kind == 1 {
-            var pp: i32 = ps;
-            while pp < blen && is_ws(get(buf, pp)) == false {
-                pp = pp + 1;
-            }
-            pe = pp;
-            parse_dec(buf, skip_ws(buf, pe, blen), blen);
-            src_sec = g_lab_int;
-            // Optional 4th token: per-section start offset.
-            var maybe_start: i32 = skip_ws(buf, g_lab_cur, blen);
-            if maybe_start < blen
-               && get(buf, maybe_start) >= '0' as u8
-               && get(buf, maybe_start) <= '9' as u8 {
-                parse_dec(buf, maybe_start, blen);
-                src_start = g_lab_int;
-            }
-        } else {
-            var trimming_p: i32 = 1;
-            while trimming_p == 1 && pe > ps {
-                var tc_p: u8 = get(buf, pe - 1);
-                if tc_p == 10u8 || tc_p == 13u8 || tc_p == ' ' || tc_p == 9u8 {
-                    pe = pe - 1;
-                } else {
-                    trimming_p = 0;
-                }
-            }
+        parse_dec(buf, skip_ws(buf, pe, blen), blen);
+        src_sec = g_lab_int;
+        // Optional 4th token: per-section start offset.
+        var maybe_start: i32 = skip_ws(buf, g_lab_cur, blen);
+        if maybe_start < blen
+           && get(buf, maybe_start) >= '0' as u8
+           && get(buf, maybe_start) <= '9' as u8 {
+            parse_dec(buf, maybe_start, blen);
+            src_start = g_lab_int;
         }
         var plen: i32 = pe - ps;
         if plen > 0 {
@@ -642,9 +608,8 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
             // String layout has a 4-byte count up front; U8Array(N)
             // already wrote N as the count. We want the logical length
             // to be plen (without the trailing NUL we just appended).
-            // U8Array(plen+1) wrote plen+1 — patch it down to plen.
             poke32(path_buf as u32, plen as u32);
-            record_src_path(path_buf as String, src_kind, src_sec, src_start);
+            record_src_path(path_buf as String, src_sec, src_start);
         }
         return 0;
     }
@@ -724,13 +689,10 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
 // ===== Source section pass =====
 //
 // Run one full traversal of the source from stdin, emitting only the
-// bytes for sec_target. The caller has concatenated the source 3
-// times after the .lab; src_bytes tells this pass exactly how many
-// bytes to consume. Between passes, the shared rb_* reader keeps
-// its internal buffer so read-ahead crossing the source boundary
-// carries over into the next pass (instead of being lost like a
-// fresh SourceReader would lose it).
-fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
+// bytes for sec_target. The .lab's `src raw` entries point at the
+// per-section .bin files asm_pass1 pre-encoded; this pass memcpys
+// the bins whose section_id matches sec_target.
+fn run_section_pass(sec_target: i32) -> void {
     asm_set_target_section(sec_target);
     asm_set_pass(2);
     asm_pass2_reset_cursors();
@@ -748,70 +710,19 @@ fn run_section_pass(sec_target: i32, line: U8Array, source_bytes: i32) -> void {
         asm_set_out_fd(per_sec_fd);
     }
 
-    var lineno: i32 = 0;
-
-    if g_n_src_paths > 0 {
-        // Multi-source mode: open each src path in order, walk via
-        // the same rb_* fast reader we use for stdin (just point its
-        // fd at the freshly-opened file). Eliminates the cat-p2
-        // concat step — pass2 reads /prelude.s (XIP flash) and
-        // /sd/u.strip directly per section pass.
-        //
-        // v2 .lab: each entry is either kind=0 (asm — open + tokenize
-        // + encode, current behavior) or kind=1 (raw — memcpy bytes
-        // straight to g_out_fd when its section_id matches sec_target).
-        // Raw entries that don't match are skipped entirely; their
-        // bytes were already accounted for by asm_pass2 in the .lab's
-        // sec sizes.
-        var pi: i32 = 0;
-        while pi < g_n_src_paths {
-            var p_addr: u32 = get(g_src_paths, pi);
-            var path: String = p_addr as String;
-            var kind:  u32 = get(g_src_kinds, pi);
-            var ksec:  i32 = get(g_src_secs,  pi);
-            if kind == 1u32 {
-                if ksec == sec_target {
-                    raw_memcpy_section(path, get(g_src_starts, pi));
-                }
-            } else {
-                var fd: i32 = do_openat(0 - 100, path, 0);
-                if fd >= 0 {
-                    rb_switch_fd(fd);
-                    var done: i32 = 0;
-                    while done == 0 {
-                        var llen2: i32 = rb_read_line(line, 4092, 0x7FFFFFFF);
-                        if llen2 < 0 { done = 1; }
-                        if llen2 > 0 {
-                            lineno = lineno + 1;
-                            if asm_parse_meta_directive(line, llen2) == 1 {
-                                // pragmas only
-                            } else {
-                                asm_run_line(line, llen2, lineno);
-                            }
-                        }
-                    }
-                    do_close(fd);
-                }
-            }
-            pi = pi + 1;
+    // Walk each `src raw` entry from the .lab: memcpy bytes straight
+    // to g_out_fd when its section_id matches sec_target. Raw entries
+    // that don't match are skipped entirely; their bytes were already
+    // accounted for by asm_pass2 in the .lab's sec sizes.
+    var pi: i32 = 0;
+    while pi < g_n_src_paths {
+        var p_addr: u32 = get(g_src_paths, pi);
+        var path: String = p_addr as String;
+        var ksec:  i32 = get(g_src_secs,  pi);
+        if ksec == sec_target {
+            raw_memcpy_section(path, get(g_src_starts, pi));
         }
-    } else {
-        // Stdin / single-source mode: caller concatenated the source
-        // 3 times after the .lab; src_bytes bounds each pass.
-        var budget: i32 = source_bytes;
-        while budget > 0 {
-            var llen: i32 = rb_read_line(line, 4092, budget);
-            budget = g_budget_after;
-            if llen < 0 { break; }
-            if llen > 0 {
-                lineno = lineno + 1;
-                if asm_parse_meta_directive(line, llen) == 1 {
-                    // pragmas only affect g_raw_mode / g_load_vaddr
-                } else {
-                    asm_run_line(line, llen, lineno);
-                }
-            }
-        }
+        pi = pi + 1;
     }
 
     // Pad the target section with zeros up to its aligned size and
@@ -1038,15 +949,12 @@ export fn run_pass2(lab_path: String, out_path: String,
         asm_write_elf_header_stream();
     }
 
-    // Phase C: 3 × source passes, one per target section (text,
-    // rodata, data). The caller concatenated the source 3 times
-    // after the .lab so each pass consumes exactly src_bytes from
-    // stdin and stops at the next copy's boundary. Bss is memsz-
-    // only and never writes file bytes.
-    var src_bytes: i32 = asm_get_src_bytes();
-    run_section_pass(0, lab_line, src_bytes);
-    run_section_pass(1, lab_line, src_bytes);
-    run_section_pass(2, lab_line, src_bytes);
+    // Phase C: 3 emit passes, one per section (text, rodata, data).
+    // Each pass memcpys the .bin files whose section_id matches.
+    // Bss is memsz-only and never writes file bytes.
+    run_section_pass(0);
+    run_section_pass(1);
+    run_section_pass(2);
 
     delete(lab_line);
 

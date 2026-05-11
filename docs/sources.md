@@ -165,7 +165,7 @@ libtc は全タスクが import する user ライブラリ。
 | `mr/mr.tc` | mx の逆: framed stdin → raw stdout |
 | `muxon/muxon.tc` | UART mux 有効化 (ecall 250) |
 | `muxoff/muxoff.tc` | UART mux 無効化 |
-| `parse/`, `sigscan/`, `tcheck/`, `codegen/`, `bc2asm/`, `asm_pass2/`, `asm_pass3/` | `compiler/*.tc` への symlink。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat"` を渡したときだけビルドされ `/bin/<name>` として mtfs に入る (test_phase7.sh が参照) |
+| `parse/`, `sigscan/`, `tcheck/`, `codegen/`, `bc2asm/`, `asm_pass1/`, `asm_pass2/`, `asm_pass3/` | `compiler/*.tc` への symlink。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat"` を渡したときだけビルドされ `/bin/<name>` として mtfs に入る (test_phase7.sh が参照) |
 | `sdprobe/sdprobe.tc` | SD SPI smoke test (CMD0/CMD8 応答 + 線間 crosstalk + bit-bang fallback)。MMIO 直叩き |
 | `tcc/tcc.tc` | OS 内 phase 7 driver。引数に `.tc` を取り `parse → ... → asm_pass3` を sequential spawn、各段の所要時間を `now_us()` で計測。出力は `/sd/a.out`。実機では sh-driven より遅い (詳細 `docs/scaling.md`) |
 | `bin2uf2/bin2uf2.tc` | `tools/bin2uf2.py` の TC port (RP2350 RISC-V family_id 0xE48BFF5A、256 B payload / 512 B block)。fatfs に rewind がないので 2 pass (count + emit)。self-replicate step 4 で /sd/k.bin → /sd/k.uf2 |

@@ -143,11 +143,13 @@ Hello World でも 100〜300 KB peak になる理由。OS 全体コンパイル�
 **1 ファイルの peak は 300 KB 程度に留まる** と予測 (label pool が
 頭打ちのため)。
 
-## Q3: ドライバ `tcc` (実機実装メモ)
+## Q3: ドライバ `tcc` (退役、2026-05-11)
 
-`kernel/tasks/tcc/tcc.tc` として実装。argv[1] にソースを取り、
-中間ファイルを `/sd/_*.*`、出力を `/sd/a.out` に書く。各段の
-所要時間 (SIO MTIME を peek32 で読んで算出) を stdout に出力。
+K13 期の `kernel/tasks/tcc/tcc.tc` は asm_pass2 walked-source +
+asm_pass3 stdin-pipe を前提に組まれていた。walked-source 退役と
+同時にこの driver も削除された。以下は当時の計測値で、sh-driven
+vs tcc-driven の slowdown 比較が必要になったときに再実装するための
+参考データ。
 
 ### 想定動作
 
