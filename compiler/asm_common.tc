@@ -184,16 +184,13 @@ var g_data_bin_fd:   i32 = 0;
 // user-side text size (la to rodata / __global_pointer$, call to
 // main / main__StringArray).
 var g_reloc_fd:      i32 = 0;
-var g_reloc_count:   i32 = 0;
 export fn asm_set_text_bin_fd(fd: i32)   -> void { g_text_bin_fd   = fd; return; }
 export fn asm_set_rodata_bin_fd(fd: i32) -> void { g_rodata_bin_fd = fd; return; }
 export fn asm_set_data_bin_fd(fd: i32)   -> void { g_data_bin_fd   = fd; return; }
 export fn asm_set_reloc_fd(fd: i32)      -> void { g_reloc_fd      = fd; return; }
-export fn asm_get_reloc_fd() -> i32 { return g_reloc_fd; }
 export fn asm_get_text_bin_fd()   -> i32 { return g_text_bin_fd; }
 export fn asm_get_rodata_bin_fd() -> i32 { return g_rodata_bin_fd; }
 export fn asm_get_data_bin_fd()   -> i32 { return g_data_bin_fd; }
-export fn asm_get_reloc_count() -> i32 { return g_reloc_count; }
 // When non-zero, every label reference whose name isn't in the local
 // g_labels table emits a reloc (kind 0/1/2 depending on the
 // instruction) and the encoder writes a placeholder zero offset. The
@@ -202,7 +199,6 @@ export fn asm_get_reloc_count() -> i32 { return g_reloc_count; }
 // hardcoded-extern-list behavior for prelude pre-encode.
 var g_emit_undef_relocs: i32 = 0;
 export fn asm_set_emit_undef_relocs(v: i32) -> void { g_emit_undef_relocs = v; return; }
-export fn asm_get_emit_undef_relocs() -> i32 { return g_emit_undef_relocs; }
 // Per-section start alignment (in bytes) recorded by pass 1 from the
 // first `.align N` directive seen in each section. Captured into the
 // .idx so the link step can pre-align sec_pos before installing this
@@ -430,7 +426,6 @@ fn ensure_extras_storage() -> void {
     return;
 }
 export fn asm_get_n_extras() -> i32 { return g_n_extras; }
-export fn asm_extras_cap() -> i32 { return EXTRAS_CAP; }
 // Append a new extra input. The shift / start values are filled in
 // later by run_link as it walks the inputs through asm_load_idx.
 // idx v2: bin/reloc paths are read from the idx header (g_load_*)
@@ -519,24 +514,6 @@ export fn asm_get_extra_incbin_intra_off(i: i32) -> i32    { return get(g_extra_
 export fn asm_get_extra_incbin_size(i: i32)      -> i32    { return get(g_extra_incbin_size,      i); }
 export fn asm_get_extra_incbin_path(i: i32)      -> String { return get(g_extra_incbin_path,      i); }
 
-// Reset state that varies per source pass so asm_pass2 can re-walk
-// the source for a forward-ref second pass. Clears g_pos +
-// section cursors + ref counter + owner; leaves g_labels and
-// g_lab_names intact (define_label is idempotent on existing
-// labels so re-walking doesn't grow them).
-export fn asm_reset_for_ref_pass() -> void {
-    g_pos              = 0;
-    g_current_section  = 0;
-    g_owner_idx        = 0 - 1;
-    g_nrefs            = 0;
-    set(g_sec_pos, 0, 0);
-    set(g_sec_pos, 1, 0);
-    set(g_sec_pos, 2, 0);
-    set(g_sec_pos, 3, 0);
-    return;
-}
-
-export fn asm_owner_idx() -> i32 { return g_owner_idx; }
 export fn asm_current_section() -> i32 { return g_current_section; }
 export fn asm_sec_pos(sec: i32) -> i32 { return get(g_sec_pos, sec); }
 export fn asm_set_collecting_refs(v: i32) -> void {
@@ -1440,7 +1417,6 @@ export fn asm_emit_reloc(offset: i32, kind: i32, op_idx: i32) -> void {
     set(buf, p, 10u8); p = p + 1;
     sys_write(g_reloc_fd, buf, p);
     delete(buf);
-    g_reloc_count = g_reloc_count + 1;
     return;
 }
 
@@ -2592,11 +2568,8 @@ export fn asm_set_section_emitted(v: i32) -> void {
 }
 
 // === Incbin-defer accessors ===
-export fn asm_get_pass1_incbin_present()   -> i32    { return g_pass1_incbin_present; }
-export fn asm_get_pass1_incbin_sec()       -> i32    { return g_pass1_incbin_sec; }
-export fn asm_get_pass1_incbin_intra_off() -> i32    { return g_pass1_incbin_intra_off; }
-export fn asm_get_pass1_incbin_size()      -> i32    { return g_pass1_incbin_size; }
-export fn asm_get_pass1_incbin_path()      -> String { return g_pass1_incbin_path; }
+// (pass1_incbin_* state is read directly inside asm_common.tc — the
+//  idx dumper at asm_dump_idx_state — so no external getters needed.)
 
 export fn asm_get_load_incbin_present()    -> i32    { return g_load_incbin_present; }
 export fn asm_get_load_incbin_sec()        -> i32    { return g_load_incbin_sec; }
@@ -3303,10 +3276,6 @@ export fn asm_get_load_base() -> i32 { return g_load_vaddr; }
 export fn asm_set_src_bytes(n: i32) -> void {
     g_src_bytes = n;
     return;
-}
-
-export fn asm_get_src_bytes() -> i32 {
-    return g_src_bytes;
 }
 
 // ===== Write ELF (pass 2) =====
