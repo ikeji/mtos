@@ -201,6 +201,30 @@ fn pass2_walk(src: String) -> i32 {
     return 0;
 }
 
+// Build a String for "<idx_out>.rfs" — the per-invocation temp file
+// where pass-1's streaming refs writer accumulates `ref` lines.
+// asm_dump_idx_state re-opens this path to splice the bytes into the
+// idx at the right spot. Caller owns the buffer (kmalloc'd, returned
+// as String); we never free it — asm_pass1 exits soon after the dump.
+fn derive_refs_path(idx_out: String) -> String {
+    var n: i32 = len(idx_out);
+    var suffix_len: i32 = 4;  // ".rfs"
+    var out_len: i32 = n + suffix_len;
+    var buf: U8Array = U8Array((out_len + 1) as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(buf, i, get(idx_out, i) as u8);
+        i = i + 1;
+    }
+    set(buf, n + 0, '.' as u8);
+    set(buf, n + 1, 'r' as u8);
+    set(buf, n + 2, 'f' as u8);
+    set(buf, n + 3, 's' as u8);
+    set(buf, n + 4, 0u8);
+    poke32(buf as u32, out_len as u32);
+    return buf as u32 as String;
+}
+
 fn run_pre_encode(src: String,
                   idx_out: String,
                   text_bin: String, rodata_bin: String, data_bin: String,
@@ -208,6 +232,21 @@ fn run_pre_encode(src: String,
     // ---------- Walk 1: label collection + .idx emit ----------
     asm_init_pass1();
     asm_set_pass(1);
+
+    // Stream `ref <owner> <target>` lines straight to a temp file so
+    // we never buffer the full edge list in memory. asm_dump_idx_state
+    // splices the file in at the correct slot in the idx layout.
+    // Skipping the temp file (no idx_out) is fine — record_ref then
+    // just discards the edges since g_refs_out_fd == 0.
+    var refs_tmp_path: String = 0 as String;
+    if idx_out as u32 != 0u32 {
+        refs_tmp_path = derive_refs_path(idx_out);
+        var refs_fd: i32 = do_openat(0 - 100, refs_tmp_path, 577);
+        if refs_fd >= 0 {
+            asm_set_refs_out(refs_fd, refs_tmp_path);
+        }
+    }
+
     // Ref collection is the link step's side input — asm_pass2
     // reads `ref <owner> <target>` lines from the idx to resolve
     // forward refs that crossed input boundaries.
@@ -224,6 +263,15 @@ fn run_pre_encode(src: String,
     // in the deferred queue and surface as `ref` lines in the idx.
     asm_finalize_labels();
     asm_resolve_deferred_refs();
+
+    // Drain the streaming refs buffer to disk and close the write
+    // fd so the splice in asm_dump_idx_state sees a fully-flushed
+    // file. asm_flush_refs_out also clears g_refs_out_fd to disable
+    // further writes during pass2.
+    var refs_fd_close: i32 = asm_get_refs_out_fd();
+    asm_flush_refs_out();
+    if refs_fd_close > 0 { do_close(refs_fd_close); }
+
     asm_set_src_bytes(total_bytes);
 
     if idx_out as u32 != 0u32 {
@@ -233,11 +281,9 @@ fn run_pre_encode(src: String,
         do_close(idx_fd);
     }
 
-    // The .idx is written; pass 2 doesn't read g_refs / the
-    // deferred queue (they were used to build it). Free ~88 KB so
-    // pass 2 fits in the 288 KB asm_pass1 task arena on pico2 —
-    // without this, walking a full kernel-image .s OOMs on bucket-
-    // 9 fragmentation around peak 250 KB.
+    // The .idx is written; pass 2 doesn't read the deferred queue
+    // (it was used to build the idx). Free ~28 KB so pass 2 fits in
+    // the asm_pass1 task arena on pico2.
     asm_release_ref_state();
 
     // ---------- Walk 2: per-section bin emit + relocs ----------
