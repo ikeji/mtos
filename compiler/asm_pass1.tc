@@ -29,14 +29,7 @@
 //           cross-input label ref through asm_emit_reloc into the
 //           .reloc fd; the link step fills in the patch addresses
 //           at asm_pass2 / asm_pass3 --lab time.
-//
-// Replaces the previous 5-walk dance (run() × 2 to build a temp
-// .lab + run_pass2() × 3 to emit each section). The .idx + lab +
-// per-section .bin + .reloc outputs are byte-identical to the old
-// flow.
 
-import "asm_pass2_lib.tc";
-import "asm_pass3_lib.tc";
 import "asm_common.tc";
 import "source_reader.tc";
 import "string_buffer.tc";

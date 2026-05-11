@@ -846,9 +846,7 @@ fn rb_read_line(buf: U8Array, buf_cap: i32, byte_budget: i32) -> i32 {
 }
 
 // ===== Main =====
-export fn run_pass2(lab_path: String, out_path: String,
-             text_bin: String, rodata_bin: String,
-             data_bin: String, reloc_out: String) -> i32 {
+export fn run_pass3(lab_path: String, out_path: String) -> i32 {
     asm_init_pass2();
     asm_enable_stream_mode();
     rb_init();
@@ -861,47 +859,19 @@ export fn run_pass2(lab_path: String, out_path: String,
     // peak under 320 KB asm_pass3 task arena.
     asm_preallocate_name_pool(65536);
 
-    // --lab path: read .lab from a file instead of stdin. The src
-    // lines inside the .lab still drive multi-source open, so the
-    // pipeline goes from "single concatenated stdin" to "lab file →
-    // src files referenced therein".
-    if lab_path as u32 != 0u32 {
-        var lab_fd: i32 = do_openat(0 - 100, lab_path, 0);
-        if lab_fd < 0 { sys_exit(20); }
-        rb_switch_fd(lab_fd);
-        // Note: the fd stays open until run_section_pass switches it;
-        // we leak it to the kernel close-on-exit. Acceptable on host
-        // / OS task exit.
-    }
-    // --out path: redirect the binary write target.
-    if out_path as u32 != 0u32 {
-        var out_fd: i32 = do_openat(0 - 100, out_path, 577);
-        if out_fd < 0 { sys_exit(21); }
-        asm_set_out_fd(out_fd);
-    }
-    // Per-section --text-bin / --rodata-bin / --data-bin --reloc-out:
-    // emit-bin mode used at kernel-build time to pre-encode the prelude
-    // into raw section binaries plus a relocation table.
-    if text_bin as u32 != 0u32 {
-        var fd_t: i32 = do_openat(0 - 100, text_bin, 577);
-        if fd_t < 0 { sys_exit(22); }
-        asm_set_text_bin_fd(fd_t);
-    }
-    if rodata_bin as u32 != 0u32 {
-        var fd_r: i32 = do_openat(0 - 100, rodata_bin, 577);
-        if fd_r < 0 { sys_exit(23); }
-        asm_set_rodata_bin_fd(fd_r);
-    }
-    if data_bin as u32 != 0u32 {
-        var fd_d: i32 = do_openat(0 - 100, data_bin, 577);
-        if fd_d < 0 { sys_exit(24); }
-        asm_set_data_bin_fd(fd_d);
-    }
-    if reloc_out as u32 != 0u32 {
-        var fd_l: i32 = do_openat(0 - 100, reloc_out, 577);
-        if fd_l < 0 { sys_exit(25); }
-        asm_set_reloc_fd(fd_l);
-    }
+    // Read .lab from a file. The `src raw` lines inside drive
+    // multi-source memcpy in the pass-C section loop.
+    var lab_fd: i32 = do_openat(0 - 100, lab_path, 0);
+    if lab_fd < 0 { sys_exit(20); }
+    rb_switch_fd(lab_fd);
+    // Note: the fd stays open until run_section_pass switches it;
+    // we leak it to the kernel close-on-exit. Acceptable on host
+    // / OS task exit.
+
+    // Redirect the binary write target.
+    var out_fd: i32 = do_openat(0 - 100, out_path, 577);
+    if out_fd < 0 { sys_exit(21); }
+    asm_set_out_fd(out_fd);
 
     var lab_line: U8Array = U8Array(4092);
 
@@ -941,13 +911,7 @@ export fn run_pass2(lab_path: String, out_path: String,
     // the source body during pass 1 and written to the .lab as
     // their own lines — parse_lab_line has already installed them
     // via asm_install_raw_mode / asm_install_load_base.
-    //
-    // --emit-bin mode: skip the ELF header — section bytes go to
-    // their dedicated per-section .bin files, not stdout.
-    if text_bin as u32 == 0u32 && rodata_bin as u32 == 0u32 &&
-       data_bin as u32 == 0u32 {
-        asm_write_elf_header_stream();
-    }
+    asm_write_elf_header_stream();
 
     // Phase C: 3 emit passes, one per section (text, rodata, data).
     // Each pass memcpys the .bin files whose section_id matches.
@@ -958,19 +922,11 @@ export fn run_pass2(lab_path: String, out_path: String,
 
     delete(lab_line);
 
-    // Close output fds so fatfs flushes the directory entry size update
-    // before sys_exit. Without these closes, /sd/HW shows 0 bytes in the
-    // directory even though sectors were written.
+    // Close the output fd so fatfs flushes the directory entry size
+    // update before sys_exit. Without this close, /sd/HW shows 0 bytes
+    // in the directory even though sectors were written.
     var out_fd_final: i32 = asm_get_out_fd();
     if out_fd_final > 1 { do_close(out_fd_final); }
-    var fd_t: i32 = asm_get_text_bin_fd();
-    if fd_t > 0 { do_close(fd_t); }
-    var fd_r: i32 = asm_get_rodata_bin_fd();
-    if fd_r > 0 { do_close(fd_r); }
-    var fd_d: i32 = asm_get_data_bin_fd();
-    if fd_d > 0 { do_close(fd_d); }
-    var fd_l: i32 = asm_get_reloc_fd();
-    if fd_l > 0 { do_close(fd_l); }
 
     km_dump_peak();
     return 0;

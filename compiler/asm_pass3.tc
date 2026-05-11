@@ -1,19 +1,12 @@
 // asm_pass3.tc — driver for the final-encode pass.
 //
 // Orchestration logic lives in asm_pass3_lib.tc as
-// `export fn run_pass2(...)`. This file is just the main(argv)
-// wrapper — argv parsing + run_pass2() call. Kept separate so the
-// asm_pass1 driver (Phase C of the 3-binary split) can `import
-// "asm_pass3_lib.tc"` and call run_pass2() without colliding on
-// main / arg_eq linker symbols.
+// `export fn run_pass3(...)`. This file is just the main(argv)
+// wrapper — argv parsing + run_pass3() call.
 //
 // CLI shape:
 //
 //   asm_pass3 --lab path.lab --out path.bin
-//
-// run_pass2's per-section .bin / .reloc parameters stay non-zero
-// only when asm_pass1 invokes run_pass2 directly via the shared
-// asm_pass3_lib import; the CLI never exposed those.
 
 import "asm_pass3_lib.tc";
 import "asm_common.tc";
@@ -62,5 +55,5 @@ fn main(argv: StringArray) -> i32 {
         err("asm_pass3: --lab and --out are required\n");
         return 1;
     }
-    return run_pass2(lab, out, 0 as String, 0 as String, 0 as String, 0 as String);
+    return run_pass3(lab, out);
 }

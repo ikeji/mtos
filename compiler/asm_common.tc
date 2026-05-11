@@ -171,11 +171,11 @@ export fn asm_advance_section_pass2(n: i32) -> void {
     return;
 }
 
-// Per-section emit fds for --emit-bin mode. When non-zero, the
-// asm-pass2 section pass for that section writes to the file
-// instead of g_out_fd. Set up by run_pass2 from the
-// --text-bin / --rodata-bin / --data-bin flags. Reset to 0
-// when not in emit-bin mode.
+// Per-section emit fds for asm_pass1's per-section .bin output.
+// When non-zero, the pass-2 section pass for that section writes
+// to the file instead of g_out_fd. asm_pass1 sets these from its
+// --text-bin / --rodata-bin / --data-bin flags before walking
+// the source; reset to 0 outside that walk.
 var g_text_bin_fd:   i32 = 0;
 var g_rodata_bin_fd: i32 = 0;
 var g_data_bin_fd:   i32 = 0;
@@ -2418,12 +2418,11 @@ export fn asm_parse_meta_directive(buf: U8Array, blen: i32) -> i32 {
 // skips that 4 MB allocation. Pass 2 needs everything.
 //
 // Free the big per-walk allocations before reallocating — without
-// this, asm_pass1's three internal calls (run() for idx, run() for
-// lab, run_pass2() for bin/reloc) leak ~80 KB per call, pushing peak
-// past the 288 KB OS task arena. Only the largest arrays are freed
-// here; smaller ones (sec_pos / numlab / line_buf, ~10 KB total)
-// leak per re-init but are dwarfed by the freed g_lab* / g_def_*
-// state.
+// this, asm_pass1's two walks (asm_init_pass1 then asm_init_pass2)
+// would leak ~80 KB per re-init, pushing peak past the 288 KB OS
+// task arena. Only the largest arrays are freed here; smaller ones
+// (sec_pos / numlab / line_buf, ~10 KB total) leak per re-init but
+// are dwarfed by the freed g_lab* / g_def_* state.
 fn asm_init_common() -> void {
     if g_lab_names  as u32 != 0u32 { delete(g_lab_names); }
     if g_labels     as u32 != 0u32 { delete(g_labels); }
