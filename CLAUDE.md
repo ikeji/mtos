@@ -29,7 +29,7 @@ build、UART 多重化 + msh、coreutils (ls/wc/head/cp/du/grep/rm/cat
 syscall (`sys_pipe` + `sys_spawn_fds` で concurrent pipeline)、U8Array-
 as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
 (`tools/bin2uf2.tc` + `tools/mkfs.tc` + `kernel/platform_*.tc` TC port、
-`.incbin SIZE "path"` + asm_pass1 `--incbin-skip` for kernel build
+`.incbin SIZE "path"` + asm_pass1 incbin-defer で kernel build
 6.9× speedup) — 詳細は `docs/roadmap.md` の各 milestone と
 `docs/solved.md` の K* / 数字 entry を参照。
 
@@ -584,17 +584,16 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 - `jalr rd, rs1, imm` (I-type 間接ジャンプ)
 - `.byte val[,val...]` (1行4バイトまで)、`.rodata` (短縮形)
 - `.incbin SIZE "path"` — リンク時にファイルから `SIZE` バイトを読み
-  current section に埋め込む。kernel build で `_mtfs_image_*` を
-  full.s に直接連結せず `.incbin` で参照する経路と、self-replicate の
-  /sd/wrap.s から /sd/dx.img を埋める経路が同フォーマット
-- stdin 先頭ディレクティブ:
+  current section に埋め込む。section 先頭 (intra_off == 0) の場合は
+  asm_pass1 が自動 defer して idx に `incbin <sec> <intra> <size>
+  <path>` を記録、asm_pass3 が link 時に memcpy する (kernel build で
+  `_mtfs_image_*` を full.s に直接連結せず `.incbin` で参照する経路と、
+  self-replicate の /sd/wrap.s から /sd/dx.img を埋める経路が同
+  フォーマット)
+- 先頭ディレクティブ:
   - `; raw` — ELF ヘッダを出さず、code 部分だけを raw bin として出力
   - `; load_base 0xHHHHHHHH` — ELF 出力時の `e_entry`/`p_vaddr`/`p_paddr` を
     この値ベースに設定（デフォルト 0x10000）
-- asm_pass1 引数: `--lab-out <path>` で .lab 出力先を指定 (デフォルト
-  stdout)。位置引数として `.s` パスを渡すと .lab 中に `src <path>`
-  行を bake、後段の cat-3x なしで asm_pass2 が source を再 open できる
-  (self-replicate step 2 の最適化)
 
 ## compile-gen2.sh の環境変数
 デフォルトは Linux ELF 用の crt0 だが、以下を設定すると別ターゲット

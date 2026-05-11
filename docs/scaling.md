@@ -571,7 +571,7 @@ self_replicate 全体の orchestrator overhead としては誤差レベル。
 K13 + 新 step 0d を含んだ self_replicate path が継続して byte-exact で
 動作することを確認済み。
 
-## Q7: `--incbin-skip` による pt.s pre-encode の defer (2026-05-09)
+## Q7: section-leading `.incbin` の defer (2026-05-09 追加、2026-05-11 デフォルト化)
 
 `/sd/pt.s` (= `crt0_pico2_data.s` + `wrap.s`) は wrap.s の `.incbin
 SIZE "/sd/dx.img"` で 3.5 MB の disk-extra.img blob を埋め込む。
@@ -593,8 +593,8 @@ step 2 (pre-encode + link) を host (qemu-riscv32) で計測すると:
 
 ### 解決: defer to asm_pass3 memcpy
 
-`compiler/asm_common.tc` の `.incbin` ハンドラに `--incbin-skip`
-モードを追加。section の先頭 (`intra_off == 0`) にある `.incbin` は:
+`compiler/asm_common.tc` の `.incbin` ハンドラを変更し、section の
+先頭 (`intra_off == 0`) にある `.incbin` は materialize せず:
 
 1. asm_pass1 が `(sec, intra_off, size, path)` を idx に
    `incbin <sec> <intra_off> <size> <path>` 形式で記録、bytes は
@@ -603,7 +603,10 @@ step 2 (pre-encode + link) を host (qemu-riscv32) で計測すると:
    `src raw <orig_path> <sec> <abs_start>` 行を emit
 3. asm_pass3 がその src raw を見て original blob を直接 memcpy
 
-asm_pass3 は既存の `src raw` パスを使うので変更なし。
+asm_pass3 は既存の `src raw` パスを使うので変更なし。当初は opt-in
+`--incbin-skip` フラグだったが (2026-05-09)、すべての `.incbin`
+caller が section-leading パターンなので 2026-05-11 にデフォルト化、
+フラグは削除した。
 
 ### 計測結果
 
@@ -611,15 +614,15 @@ asm_pass3 は既存の `src raw` パスを使うので変更なし。
 
 | | 時間 | rodata.bin |
 |---|---|---|
-| 旧 (no skip) | 1020 ms | 3,544,680 byte |
-| **新 (--incbin-skip)** | **39 ms (26x)** | 4 byte |
+| 旧 (materialize) | 1020 ms | 3,544,680 byte |
+| **新 (defer)** | **39 ms (26x)** | 4 byte |
 
 #### Host kernel build (`compile-gen2.sh kernel_pico2.tc`)
 
 | | 時間 | kernel.bin md5 |
 |---|---|---|
-| 旧 (`bin2s.sh` + no skip) | 288 sec | `433c3fcf…` |
-| **新 (`bin2s_incbin.sh` + --incbin-skip)** | **42 sec (6.9x)** | `433c3fcf…` (byte-exact) |
+| 旧 (`bin2s.sh` + materialize) | 288 sec | `433c3fcf…` |
+| **新 (`bin2s_incbin.sh` + defer)** | **42 sec (6.9x)** | `433c3fcf…` (byte-exact) |
 
 `bin2s.sh` (`.byte` ASCII expansion 26 MB) も `bin2s_incbin.sh`
 (`.incbin SIZE "path"` 1.5 KB wrap) も最終 kernel.bin は同一。

@@ -39,7 +39,7 @@ asm_pass1 /sd/pf.s --idx-out /sd/pf.idx --text-bin /sd/pf.tx --rodata-bin /sd/pf
 asm_pass1 /sd/vf.s --idx-out /sd/vf.idx --text-bin /sd/vf.tx --rodata-bin /sd/vf.ro --data-bin /sd/vf.dt --reloc-out /sd/vf.rl
 asm_pass1 /sd/ld.s --idx-out /sd/ld.idx --text-bin /sd/ld.tx --rodata-bin /sd/ld.ro --data-bin /sd/ld.dt --reloc-out /sd/ld.rl
 asm_pass1 /sd/kp.s --idx-out /sd/kp.idx --text-bin /sd/kp.tx --rodata-bin /sd/kp.ro --data-bin /sd/kp.dt --reloc-out /sd/kp.rl
-asm_pass1 /sd/pt.s --incbin-skip --idx-out /sd/pt.idx --text-bin /sd/pt.tx --rodata-bin /sd/pt.ro --data-bin /sd/pt.dt --reloc-out /sd/pt.rl
+asm_pass1 /sd/pt.s --idx-out /sd/pt.idx --text-bin /sd/pt.tx --rodata-bin /sd/pt.ro --data-bin /sd/pt.dt --reloc-out /sd/pt.rl
 asm_pass2 --link --prelude-idx /sd/p.idx --prelude-text-bin /sd/p.tx --prelude-rodata-bin /sd/p.ro --prelude-data-bin /sd/p.dt --prelude-reloc /sd/p.rl --user-idx /sd/kc.idx --user-text-bin /sd/kc.tx --user-rodata-bin /sd/kc.ro --user-data-bin /sd/kc.dt --user-reloc /sd/kc.rl --add /sd/pp.idx /sd/pp.tx /sd/pp.ro /sd/pp.dt /sd/pp.rl --add /sd/bf.idx /sd/bf.tx /sd/bf.ro /sd/bf.dt /sd/bf.rl --add /sd/bs.idx /sd/bs.tx /sd/bs.ro /sd/bs.dt /sd/bs.rl --add /sd/ff.idx /sd/ff.tx /sd/ff.ro /sd/ff.dt /sd/ff.rl --add /sd/mf.idx /sd/mf.tx /sd/mf.ro /sd/mf.dt /sd/mf.rl --add /sd/tf.idx /sd/tf.tx /sd/tf.ro /sd/tf.dt /sd/tf.rl --add /sd/pf.idx /sd/pf.tx /sd/pf.ro /sd/pf.dt /sd/pf.rl --add /sd/vf.idx /sd/vf.tx /sd/vf.ro /sd/vf.dt /sd/vf.rl --add /sd/ld.idx /sd/ld.tx /sd/ld.ro /sd/ld.dt /sd/ld.rl --add /sd/kp.idx /sd/kp.tx /sd/kp.ro /sd/kp.dt /sd/kp.rl --add /sd/pt.idx /sd/pt.tx /sd/pt.ro /sd/pt.dt /sd/pt.rl --lab-out /sd/full.lab
 md5sum /sd/full.lab
 echo SELF_STEP2_DONE
