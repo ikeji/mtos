@@ -199,41 +199,48 @@ sh の入力に流れる別モード。詳細は K8+K9 エントリの Phase 2A 
   `SKIP_UPLOAD=1` 経路
 - self-replicate 経路は kernel_pico2.tc::dump_mtfs_to_sd で完全迂回
 
-### K14. device LINKMODE step 2 で 384 KB allocation が OOM (後回し)
+### K14. device LINKMODE byte-exact 検証保留 (後回し)
 
-`LINKMODE=1 REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` の
-device 検証で、root cause (commit a48855b: g_sec_base 未初期化に
-依存した intra_now) を特定して修正、防御的修正 (commit c7c6d9f:
-g_sec_base/g_sec_size の zero-init + asm_preallocate_name_pool) を
-入れた。**host 側は LINKMODE+--incbin-skip で byte-exact 動作**を
-確認済 (`make test` 143/0 PASS、kernel build 288 → 42 sec / 6.9x
-speedup)。
+**OOM 問題は解決** (2026-05-11): 元の OOM 393220 は
+asm_pass2/3 task arena 384 KB を make_task で要求した時の kernel
+arena OOM だった (task arena allocation 自体が大きすぎた)。
+解決手順:
+1. `asm_pass3_lib.tc` の memory 最適化 (commit 119fac1)
+   で peak を 382 KB → 328 KB に削減:
+   - `g_reloc_names` (U8Array pointer 保持) を
+     `g_reloc_lab_idx` (parse 時に label index に解決) に
+     置換 — ~3000 個の U8Array(name_len) を保持しない (120 KB)
+   - `asm_ensure_labels_finalized()` を ref parse 前に呼ぶ
+     ことで find_label を O(1) hash に
+   - `pre_secs` の delete 漏れ修正 (156 KB leak)
+   - `RELOCS_CAP_INIT` 256 → 4096 (doubling growth 回避)
+2. task arena を 384 → **336 KB (= 327680)** に縮小
+   (commit 0a57e15) — kernel make_task の U8Array(arena_size)
+   が pico2 508 KB kernel arena に fit
 
-device 側 (2026-05-10 に Debug Probe / Pico 2 復旧後の検証で確認)
-は step 2 (asm_pass2 --link、13-input merge) の最初の big alloc が
-**393220 byte (= U8Array(384 KB))** を要求して OOM。task arena は
-380 KB、しかも l=122128 (122 KB すでに alive) のタイミングなので
-arena に絶対入らない。runtime に `BIG: SIZE l=LIVE` 計装を入れて
-バイナリで確認 (commit 後に revert 済)。
+これで device で **step 2-4 全部 exit=0 で完走** することを確認
+(2026-05-11、`make pico2-kernel-extra` + `tests/pico2_self_replicate.sh`)。
 
-**未特定**: 393220 byte alloc の発生元。ensure_name_pool_capacity
-の doubling (4→8→16→32→64→128→256→512 KB) には合致しない
-(393216 = 0x60000 = 6×65536 で 2 の冪ではない)。 idx files の
-secsize / src_bytes 等 i32 値がそのまま U8Array サイズに渡されて
-いる経路が疑わしい。host (qemu-riscv32, 96 MB arena) では 384 KB
-alloc は成功して見えないので host 計測でも見つからない。Step 3
-(asm_pass3) の `raw_memcpy_section` の `U8Array(pad_n)` (3.5 MB
-disk-extra blob 前の zero pad) は別件で commit d2543e5 で
-chunk-write 化済。
+**残る問題: byte-exact 不一致**:
+- host kernel.bin md5: `f02ff9c30ef4d4dc80248602676f3433`
+- device k.bin md5 (末尾 partial): `99` で終わる
+- device の /sd/full.lab も host の /tmp/full.lab と md5 違う
 
-**回避策**: device 側は `LINKMODE=0` (walked-source、default) を
-使う。walked-source は実機で byte-exact 動作することを 2026-05-09
-の no-LINKMODE 経路で確認済 (`1ec465d2...`)。
+OOM がなくなった後で初めて見えた byte-exact 差異。原因候補:
+- device の REFRESH 生成の .s ファイルが host と微妙に違う
+- LINKMODE pipeline (asm_pass1 → asm_pass2 → asm_pass3) の
+  どこかに device-only の non-determinism
+- 注: walked-source (LINKMODE=0) は 2026-05-09 に
+  byte-exact 確認済 (`1ec465d2...`) — その時の .s ファイルは
+  REFRESH 生成と byte-exact 一致してたはず
 
-**次の調査方針**: runtime new_array に call site hint (caller の
-PC か symbol) を追加して、393220 alloc の発生箇所を特定する。
-あるいは host で大量入力テスト (build/intermediate/gen2/kernel_pico2/
-in_*.idx を 13 個 link) を再現して詳細プロファイル。
+**次の調査**: device 側の `/sd/X.idx` を mx 経由で抽出して
+host の `build/intermediate/.../in_N.idx` と md5 比較。
+どの段階で divergence が出るかを localize する。
+
+**回避策**: device 側は引き続き `LINKMODE=0` (walked-source) で
+byte-exact 動作。LINKMODE=1 は memory-wise には完走するが
+byte-exact 未達 — 現状 LINKMODE=0 廃止できない。
 
 詳細は `docs/scaling.md` の "device LINKMODE 既知 bug" 節を参照。
 
