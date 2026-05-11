@@ -205,11 +205,28 @@ void println__StringLiteral(HeapObj s) {
     println__String(s);
 }
 
-/* km_dump_peak — no-op stub on host. The TC runtime (compiler/runtime.tc)
- * tracks per-task kmalloc peak bytes and dumps them; bootstrap has no
- * such tracker, so we just keep symbol resolution happy. sigscan.tc
- * calls this on the OS to print "[kmem peak=N live=M]" before exit. */
-void km_dump_peak(void) {}
+/* km_dump_peak — emit per-bucket peak/live + summary so host runs of
+ * Gen2 binaries (compile-gen1.sh links against this file) surface the
+ * same memory profile the OS-side TC runtime prints. */
+void km_dump_peak(void) {
+    char tmp[16]; int n;
+    int total_peak = 0, total_live = 0;
+    do_write(2, "[kmem", 5);
+    for (int i = 0; i < NPOOLS; i++) {
+        if (pool_total[i] == 0 && pool_peak[i] == 0) continue;
+        total_peak += pool_peak[i] * pool_size[i];
+        total_live += pool_live[i] * pool_size[i];
+        do_write(2, " b", 2);
+        n = i32_to_str(pool_size[i], tmp); tmp[n-1] = '='; do_write(2, tmp, n);
+        n = i32_to_str(pool_peak[i], tmp); tmp[n-1] = '/'; do_write(2, tmp, n);
+        n = i32_to_str(pool_live[i], tmp); tmp[n-1] = 0;   do_write(2, tmp, n - 1);
+    }
+    do_write(2, " peak=", 6);
+    n = i32_to_str(total_peak, tmp); tmp[n-1] = 0; do_write(2, tmp, n - 1);
+    do_write(2, " live=", 6);
+    n = i32_to_str(total_live, tmp); tmp[n-1] = 0; do_write(2, tmp, n - 1);
+    do_write(2, "]\n", 2);
+}
 
 /* Convert Linux-ABI argv (C-string array) into a TC StringArray (each
  * element a count-prefixed String). Called from bootstrap/crt0.s
