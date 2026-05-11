@@ -348,14 +348,7 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
     `kernel/platform_pico2.tc` を on-device で /sd/pp.s に compile、
     REFRESH 経路 step 0d として組み込み。これがないと on-device link
     で `undefined label do_write__i32__u32__i32` (TC 化で消えた asm
-    シンボル) が出る。実機検証: kernel.bin md5
-    `1ec465d27a1137c66d9554b07e840295` / kernel.uf2 md5
-    `fb7645d1d735a5c0cfce9f740f3c8cb3` が host build と byte-exact 一致、
-    total ~29 min (REFRESH 込み)。
-    `tests/fixtures/pico2_self_step2_linkmode.sh` (新規) を `LINKMODE=1`
-    opt-in で wire-in、host compile-gen2.sh と同じ `asm_pass1 per .s +
-    asm_pass2 --link` シェイプで .lab を生成する経路を提供 (host
-    再現で byte-exact 確認済、実機での LINKMODE=1 検証は別途)
+    シンボル) が出る。
   - 2026-05-09 追加: asm_pass1 `--incbin-skip` (commits 6f57f45 / 2b48cd0)。
     section 先頭の `.incbin SIZE "path"` を idx に `incbin <sec>
     <intra> <size> <path>` レコードで defer、asm_pass2 --link が
@@ -363,18 +356,28 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 
     original blob を memcpy する。asm_pass1 で 3.5 MB の read+emit
     ループが消えるので host kernel build (`compile-gen2.sh
     kernel_pico2.tc`) が 288→42 sec (6.9x)、asm_pass1 on pt.s 単独で
-    1020→39 ms (26x、qemu)。kernel.bin は byte-exact (`433c3fcf...`)。
+    1020→39 ms (26x、qemu)。
     Makefile を `bin2s.sh` → `bin2s_incbin.sh` に切替済、compile-gen2.sh
     が prelude_tail.s に `--incbin-skip` を自動注入する。
-    **device LINKMODE 既知 bug (2026-05-09 実機検証)**: `LINKMODE=1
-    REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` で kernel.bin
-    が byte-exact 不一致 (`f1111db7...` vs host `93d12908...`)。
-    `--incbin-skip` の有無で同じ wrong md5 が出るので、bug は
-    LINKMODE 経路 (asm_pass1 per-file + asm_pass2 --link) 自体に
-    device 固有の問題。host LINKMODE は byte-exact なので qemu と
-    native RV32 の挙動差っぽい。回避: `LINKMODE=0` (walked-source、
-    default) を使う。host 側の kernel build は LINKMODE が
-    正しく動くので 6.9x speedup は引き続き有効
+  - **K14 解決 (2026-05-11)**: device LINKMODE が byte-exact 動作。
+    `tests/pico2_self_replicate.sh` は walked-source モードを退役し
+    per-file LINK_MODE のみに (`docs/solved.md` K14 参照)。実機検証:
+    kernel.bin md5 `8929f2b12694514f9f5490533fd51595`、
+    kernel.uf2 md5 `b4eee17af1f3ba6d0e9c13b36e6b4797` が host build
+    (compile-gen2.sh) + virt 再現と byte-exact 一致。
+    過程で見つけた fix の連鎖:
+    - asm_pass3 メモリ最適化 (commits d2543e5 + 119fac1): pad_n を
+      chunk-write 化 + reloc name を label index 化 + leak fix +
+      asm_finalize_labels 早期発火 で peak 382→328 KB
+    - task arena 384→336 KB (commit 0a57e15) で kernel arena に fit
+    - kernel FD table bump (FATFS/MTFS/VFS、commit f2d6ce0) — virt
+      が REFRESH を 1 boot で走らせる際の必需品
+    - **parse.tc `FieldInfoArray` 16→32** (commit 4fe14d7) が core:
+      `struct Task` が 19 fields だが parse の field 配列は 16 slot
+      固定。Gen1 (C runtime) は bound check で abort、Gen2
+      (`bc2asm.tc::emit_inline_set` が check を skip して inline 化)
+      は silent corrupt → host と virt/device で違う k.bin
+    - walked-source 退役 (commit dddbf8b)
 - **K11 (mr upload hang) の根本原因調査**: 現在は boot-time dumper で
   迂回済だが、UART 大容量転送が device をハングさせる原因は未特定。
   `tests/qemu_mr_scale.py` が qemu virt 上で再現を試みるが qemu 単独
@@ -861,13 +864,16 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
   `/phase7_min.tc` / `/hw.tc` として mtfs に staging する
 - `tests/pico2_self_replicate.sh` — Pico 2 self-replicate orchestrator。
   `make test` には含まれない。`[REFRESH_KERN_MODS=1] GEN2_DIR=/tmp/gen2
-  tests/pico2_self_replicate.sh` で 8 ステップ (step 0a〜0d で
-  runtime / libtc / kern モジュール .s を /sd に staging、step 1〜4
-  で full.s 連結 → asm_pass1 → asm_pass2 → bin2uf2) を openocd reset
-  で挟みながら自動実行し、生成 kernel.bin / kernel.uf2 が host gen2
-  build と md5 完全一致することを検証する。各 step の fixture は
-  `tests/fixtures/pico2_self_step{1,2,3,4}.sh`。所要時間 ~26 min
-  (REFRESH 込み) / ~12 min (no REFRESH)
+  tests/pico2_self_replicate.sh` で 9 ステップ (step 0a〜0e で
+  runtime / libtc / kern 9 モジュール / platform .s を /sd に staging、
+  step 1 で /sd/full.s 連結、step 2 で per-file LINK_MODE
+  (asm_pass1 × 13 + asm_pass2 --link → /sd/full.lab)、step 3 で
+  asm_pass3 → /sd/k.bin、step 4 で bin2uf2 → /sd/k.uf2) を openocd
+  reset で挟みながら自動実行し、生成 kernel.bin / kernel.uf2 が
+  host gen2 build と md5 完全一致することを検証する。所要時間
+  ~3 h (REFRESH + 全 step、UART overhead 込み) / ~12 min (no REFRESH)。
+  walked-source モード (step 2 で `asm_pass2 --lab-out /sd/full.lab
+  /sd/full.s`) は 2026-05-11 に退役した (K14 解決時)
 - `tests/qemu_mr_scale.py` — K11 (mr 経由 UART upload hang) 再現を
   qemu virt で試す regression test。`-serial stdio` (Ctrl-A escape
   なし、`-monitor null` 併用) を使う点に注意 — `-serial mon:stdio` だと
