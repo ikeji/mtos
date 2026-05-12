@@ -68,6 +68,13 @@ var SRC_PATHS_CAP: i32 = 64;
 // resolve as before.
 var g_lab_dir: String = 0 as String;
 
+// Scratch i32 outputs from parse_dec / skip_ws. Declared up-front because
+// parse_reloc_into_pending (which lives earlier in the file) reads
+// g_lab_cur after each skip_ws call — and tcheck's forward-reference
+// resolver doesn't infer types for vars declared lexically later.
+var g_lab_int: i32 = 0;
+var g_lab_cur: i32 = 0;
+
 // Reloc state — streamed, not stored. The .lab parse pass only counts
 // `reloc` lines (into g_n_relocs); the text section emit pass re-opens
 // the .lab and reads one reloc line at a time. Relocs are emitted in
@@ -706,10 +713,6 @@ fn skip_ws(buf: U8Array, cursor: i32, end: i32) -> i32 {
     return p;
 }
 
-// Parse a non-negative decimal i32 starting at *cursor. Returns the
-// value via g_lab_int and advances cursor (passed back via g_lab_cur).
-var g_lab_int: i32 = 0;
-var g_lab_cur: i32 = 0;
 fn parse_dec(buf: U8Array, cursor: i32, end: i32) -> void {
     var p: i32 = cursor;
     var neg: i32 = 0;
