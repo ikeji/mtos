@@ -54,6 +54,20 @@ var g_src_secs:  I32Array = 0 as I32Array;
 var g_n_src_paths: i32 = 0;
 var SRC_PATHS_CAP: i32 = 64;
 
+// Directory portion of the .lab path (everything up to and including
+// the last '/'). When `src raw <basename>` is parsed (no '/' in the
+// path string), we prepend g_lab_dir so the resolved path stays
+// next to the .lab — that's the convention asm_pass2 emits with
+// (`emit_basename` in asm_common.tc). Host kernel builds keep all
+// intermediates in the same dir as full.lab; the on-device self-
+// replicate fixtures keep /sd/full.lab next to /sd/p.tx etc. So a
+// .lab is portable across both environments.
+//
+// Absolute paths (leading '/') are left untouched for backward
+// compatibility — older .lab files or hand-crafted inputs still
+// resolve as before.
+var g_lab_dir: String = 0 as String;
+
 // Reloc state — streamed, not stored. The .lab parse pass only counts
 // `reloc` lines (into g_n_relocs); the text section emit pass re-opens
 // the .lab and reads one reloc line at a time. Relocs are emitted in
@@ -623,12 +637,61 @@ fn record_src_path(p: String, sec: i32, start_off: i32) -> void {
         g_n_src_paths = 0;
     }
     if g_n_src_paths < SRC_PATHS_CAP {
-        set(g_src_paths,  g_n_src_paths, p as u32);
+        // Resolve basename → <lab_dir>/<basename>. Absolute paths
+        // (starting with '/') and bare names with no lab_dir set
+        // pass through unchanged so older .lab files still work.
+        var resolved: String = resolve_lab_relative(p);
+        set(g_src_paths,  g_n_src_paths, resolved as u32);
         set(g_src_secs,   g_n_src_paths, sec);
         set(g_src_starts, g_n_src_paths, start_off);
         g_n_src_paths = g_n_src_paths + 1;
     }
     return;
+}
+
+// Return everything up to and including the last '/' in `p`. If `p`
+// has no '/', returns an empty String. Caller owns the returned
+// String (kmalloc-backed); we keep it alive for the lifetime of
+// asm_pass3 in g_lab_dir.
+fn lab_dir_of(p: String) -> String {
+    if p as u32 == 0u32 { return 0 as String; }
+    var n: i32 = len(p);
+    var last_slash: i32 = -1;
+    var i: i32 = 0;
+    while i < n {
+        if get(p, i) == '/' as u8 { last_slash = i; }
+        i = i + 1;
+    }
+    if last_slash < 0 { return 0 as String; }
+    var dl: i32 = last_slash + 1;
+    var buf: U8Array = U8Array((dl + 1) as u32);
+    var j: i32 = 0;
+    while j < dl { set(buf, j, get(p, j)); j = j + 1; }
+    set(buf, dl, 0u8);
+    poke32(buf as u32, dl as u32);
+    return buf as String;
+}
+
+// If `p` is absolute (starts with '/') or g_lab_dir is empty, return
+// `p` unchanged. Otherwise allocate a fresh String holding
+// <g_lab_dir><p>. The returned buffer is NUL-terminated so it can be
+// handed to do_openat / Linux openat() directly.
+fn resolve_lab_relative(p: String) -> String {
+    if p as u32 == 0u32 { return p; }
+    var pn: i32 = len(p);
+    if pn > 0 && get(p, 0) == '/' as u8 { return p; }
+    if g_lab_dir as u32 == 0u32 { return p; }
+    var dn: i32 = len(g_lab_dir);
+    if dn == 0 { return p; }
+    var out_len: i32 = dn + pn;
+    var buf: U8Array = U8Array((out_len + 1) as u32);
+    var i: i32 = 0;
+    while i < dn { set(buf, i, get(g_lab_dir, i)); i = i + 1; }
+    var j: i32 = 0;
+    while j < pn { set(buf, dn + j, get(p, j)); j = j + 1; }
+    set(buf, out_len, 0u8);
+    poke32(buf as u32, out_len as u32);
+    return buf as String;
 }
 
 // ===== .lab parsing helpers =====
@@ -1066,6 +1129,11 @@ export fn run_pass3(lab_path: String, out_path: String) -> i32 {
     // this file fresh — its read cursor doesn't share with the main
     // .lab parse pass's rb_* reader.
     g_reloc_in_path = lab_path;
+
+    // Cache the .lab's directory (everything up to & including the
+    // last '/'). Used by record_src_path to resolve basename-only
+    // `src raw` entries.
+    g_lab_dir = lab_dir_of(lab_path);
 
     // Read .lab from a file. The `src raw` lines inside drive
     // multi-source memcpy in the pass-C section loop.

@@ -2737,6 +2737,28 @@ export fn asm_dump_lab_state() -> void {
 // fd-parameterised variant — used by asm_pass2 when `--lab-out path`
 // is given so the .lab goes to a file instead of stdout. The
 // existing zero-arg variant stays for the host stdin pipeline.
+// Emit the basename portion of `p` (everything after the last '/').
+// Used by `src raw <basename>` lines so the .lab/.idx is portable —
+// asm_pass3 resolves the basename relative to the .lab's own directory
+// (see g_lab_dir in asm_pass3_lib.tc). Eliminates host vs device path
+// divergence (`/home/.../prelude.tx` on host vs `/sd/p.tx` on device)
+// so .lab md5 can match across build environments, provided callers
+// also align basenames (`prelude.tx` on both sides, etc.).
+fn emit_basename(sb: StringBuffer, p: String) -> void {
+    var n: i32 = len(p);
+    var start: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        if get(p, i) == '/' as u8 { start = i + 1; }
+        i = i + 1;
+    }
+    while start < n {
+        emit_char(sb, get(p, start));
+        start = start + 1;
+    }
+    return;
+}
+
 export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     var sb: StringBuffer = StringBuffer_new(out_fd);
     emit_string(sb, "(lab"); emit_nl(sb);
@@ -2782,18 +2804,18 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     // post-memcpy bytes.
     if g_prelude_text_bin as u32 != 0u32 {
         emit_string(sb, "src raw ");
-        emit_string(sb, g_prelude_text_bin);
+        emit_basename(sb, g_prelude_text_bin);
         emit_string(sb, " 0");
         emit_nl(sb);
         if g_prelude_rodata_bin as u32 != 0u32 {
             emit_string(sb, "src raw ");
-            emit_string(sb, g_prelude_rodata_bin);
+            emit_basename(sb, g_prelude_rodata_bin);
             emit_string(sb, " 1");
             emit_nl(sb);
         }
         if g_prelude_data_bin as u32 != 0u32 {
             emit_string(sb, "src raw ");
-            emit_string(sb, g_prelude_data_bin);
+            emit_basename(sb, g_prelude_data_bin);
             emit_string(sb, " 2");
             emit_nl(sb);
         }
@@ -2807,20 +2829,20 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     // before the memcpy.
     if g_user_text_bin as u32 != 0u32 {
         emit_string(sb, "src raw ");
-        emit_string(sb, g_user_text_bin);
+        emit_basename(sb, g_user_text_bin);
         emit_string(sb, " 0 ");
         dump_int(sb, g_user_text_start);
         emit_nl(sb);
         if g_user_rodata_bin as u32 != 0u32 {
             emit_string(sb, "src raw ");
-            emit_string(sb, g_user_rodata_bin);
+            emit_basename(sb, g_user_rodata_bin);
             emit_string(sb, " 1 ");
             dump_int(sb, g_user_rodata_start);
             emit_nl(sb);
         }
         if g_user_data_bin as u32 != 0u32 {
             emit_string(sb, "src raw ");
-            emit_string(sb, g_user_data_bin);
+            emit_basename(sb, g_user_data_bin);
             emit_string(sb, " 2 ");
             dump_int(sb, g_user_data_start);
             emit_nl(sb);
@@ -2850,14 +2872,14 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
             var t_start: i32 = asm_get_extra_text_start(ei);
             if ic_present == 1 && ic_sec == 0 {
                 emit_string(sb, "src raw ");
-                emit_string(sb, ic_path);
+                emit_basename(sb, ic_path);
                 emit_string(sb, " 0 ");
                 dump_int(sb, t_start);
                 emit_nl(sb);
                 t_start = t_start + ic_size;
             }
             emit_string(sb, "src raw ");
-            emit_string(sb, et);
+            emit_basename(sb, et);
             emit_string(sb, " 0 ");
             dump_int(sb, t_start);
             emit_nl(sb);
@@ -2867,14 +2889,14 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
             var r_start: i32 = asm_get_extra_rodata_start(ei);
             if ic_present == 1 && ic_sec == 1 {
                 emit_string(sb, "src raw ");
-                emit_string(sb, ic_path);
+                emit_basename(sb, ic_path);
                 emit_string(sb, " 1 ");
                 dump_int(sb, r_start);
                 emit_nl(sb);
                 r_start = r_start + ic_size;
             }
             emit_string(sb, "src raw ");
-            emit_string(sb, er);
+            emit_basename(sb, er);
             emit_string(sb, " 1 ");
             dump_int(sb, r_start);
             emit_nl(sb);
@@ -2884,14 +2906,14 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
             var d_start: i32 = asm_get_extra_data_start(ei);
             if ic_present == 1 && ic_sec == 2 {
                 emit_string(sb, "src raw ");
-                emit_string(sb, ic_path);
+                emit_basename(sb, ic_path);
                 emit_string(sb, " 2 ");
                 dump_int(sb, d_start);
                 emit_nl(sb);
                 d_start = d_start + ic_size;
             }
             emit_string(sb, "src raw ");
-            emit_string(sb, ed);
+            emit_basename(sb, ed);
             emit_string(sb, " 2 ");
             dump_int(sb, d_start);
             emit_nl(sb);
@@ -3250,7 +3272,7 @@ export fn asm_dump_idx_state(out_fd: i32) -> void {
         emit_char(sb, ' ');
         dump_int(sb, g_pass1_incbin_size);
         emit_char(sb, ' ');
-        emit_string(sb, g_pass1_incbin_path);
+        emit_basename(sb, g_pass1_incbin_path);
         emit_nl(sb);
     }
 
