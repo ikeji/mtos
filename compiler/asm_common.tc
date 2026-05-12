@@ -381,6 +381,7 @@ export fn asm_set_user_rodata_bin(p: String) -> void { g_user_rodata_bin = p; re
 export fn asm_set_user_data_bin(p: String)   -> void { g_user_data_bin   = p; return; }
 export fn asm_set_user_reloc(p: String)      -> void { g_user_reloc      = p; return; }
 export fn asm_set_user_text_shift(v: i32)    -> void { g_user_text_shift = v; return; }
+export fn asm_get_user_text_shift() -> i32 { return g_user_text_shift; }
 export fn asm_set_user_text_start(v: i32)    -> void { g_user_text_start   = v; return; }
 export fn asm_set_user_rodata_start(v: i32)  -> void { g_user_rodata_start = v; return; }
 export fn asm_set_user_data_start(v: i32)    -> void { g_user_data_start   = v; return; }
@@ -495,7 +496,7 @@ fn asm_get_extra_text_bin(i: i32)   -> String { return get(g_extra_text_bin,   i
 fn asm_get_extra_rodata_bin(i: i32) -> String { return get(g_extra_rodata_bin, i); }
 fn asm_get_extra_data_bin(i: i32)   -> String { return get(g_extra_data_bin,   i); }
 fn asm_get_extra_reloc(i: i32)      -> String { return get(g_extra_reloc,      i); }
-fn asm_get_extra_text_shift(i: i32)   -> i32 { return get(g_extra_text_shift,   i); }
+export fn asm_get_extra_text_shift(i: i32)   -> i32 { return get(g_extra_text_shift,   i); }
 fn asm_get_extra_text_start(i: i32)   -> i32 { return get(g_extra_text_start,   i); }
 fn asm_get_extra_rodata_start(i: i32) -> i32 { return get(g_extra_rodata_start, i); }
 fn asm_get_extra_data_start(i: i32)   -> i32 { return get(g_extra_data_start,   i); }
@@ -1628,6 +1629,13 @@ export fn asm_label_addr_at(idx: i32) -> i32 {
 export fn asm_label_section_at(idx: i32) -> i32 {
     return section(get(g_labels, idx));
 }
+export fn asm_label_name_at(idx: i32) -> U8Array {
+    return lab_name_at(idx);
+}
+export fn asm_label_name_len_at(idx: i32) -> i32 {
+    return name_len(get(g_labels, idx));
+}
+export fn asm_get_nlabels() -> i32 { return g_nlabels; }
 export fn asm_get_sec_base(sec: i32) -> i32 {
     return get(g_sec_base, sec);
 }

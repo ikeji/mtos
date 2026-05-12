@@ -1,0 +1,404 @@
+// asm_dead_strip.tc — link-time dead-code analysis (Phase A).
+//
+// Design: docs/task/asm_dead_strip.md.
+//
+// Phase A (this file currently): collects the cross-program reference
+// graph from each input's .idx (`ref` lines) and .rl (`reloc` lines),
+// runs BFS from a hardcoded root set, and prints
+//   `[dead-strip live=N total=M edges=E]`
+// to stderr. No behavior change — purely diagnostic. Phase B/C will
+// hook into asm_dump_lab_state_to to actually filter out dead labels
+// and dead byte ranges. Keeping the analysis side-effect-free first
+// makes it easy to validate the graph against the live set we'd
+// expect (BFS reaches `_start` → `main` → … and everything else from
+// crt0 entries).
+//
+// Roots are derived from what crt0_tc.s / task_crt0.s / platform_*.s
+// reference unconditionally — see docs/task/asm_dead_strip.md §1.
+
+import "asm_common.tc";
+import "source_reader.tc";
+
+fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+// ===== Small helpers =====
+
+fn ds_streq_lit(buf: U8Array, n: i32, lit: StringLiteral) -> i32 {
+    if n != len(lit) { return 0; }
+    var i: i32 = 0;
+    while i < n {
+        if get(buf, i) != get(lit, i) as u8 { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn ds_is_ws(c: u8) -> i32 {
+    if c == ' ' as u8 { return 1; }
+    if c == 9u8 { return 1; }
+    return 0;
+}
+
+fn ds_is_digit(c: u8) -> i32 {
+    if c >= '0' as u8 && c <= '9' as u8 { return 1; }
+    return 0;
+}
+
+fn ds_skip_ws(buf: U8Array, p: i32, end: i32) -> i32 {
+    var q: i32 = p;
+    while q < end && ds_is_ws(get(buf, q)) != 0 { q = q + 1; }
+    return q;
+}
+
+fn ds_token_end(buf: U8Array, p: i32, end: i32) -> i32 {
+    var q: i32 = p;
+    while q < end {
+        var c: u8 = get(buf, q);
+        if ds_is_ws(c) != 0 || c == 10u8 || c == 13u8 { return q; }
+        q = q + 1;
+    }
+    return q;
+}
+
+fn ds_parse_int(buf: U8Array, p: i32, end: i32) -> i32 {
+    var q: i32 = p;
+    var neg: i32 = 0;
+    if q < end && get(buf, q) == '-' as u8 { neg = 1; q = q + 1; }
+    var v: i32 = 0;
+    while q < end && ds_is_digit(get(buf, q)) != 0 {
+        v = v * 10 + (get(buf, q) as i32 - 48);
+        q = q + 1;
+    }
+    if neg == 1 { v = 0 - v; }
+    return v;
+}
+
+// ===== Root identification =====
+//
+// These names MUST stay live regardless of whether anything ref-edges
+// them. Sourced from crt0_tc.s, kernel/tasks/task_crt0.s, and the
+// kernel/platform_*.s entry points (see docs/task/asm_dead_strip.md §1).
+fn ds_is_root_name(buf: U8Array, n: i32) -> i32 {
+    if ds_streq_lit(buf, n, "_start") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "main") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "main__StringArray") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "__runtime_init__u32__i32") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "__global_pointer$") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "__data_end") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "__arena") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "_trap_frame") != 0 { return 1; }
+    // Kernel-side entries that platform_*.s pulls in unconditionally.
+    if ds_streq_lit(buf, n, "kern_main") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "trap_entry") != 0 { return 1; }
+    return 0;
+}
+
+// ===== Edge buffer (packed `(from << 16) | to`) =====
+
+var g_ds_edges:    I32Array = 0 as I32Array;
+var g_ds_n_edges:  i32 = 0;
+var g_ds_edges_cap: i32 = 0;
+
+fn ds_edges_init() -> void {
+    g_ds_edges_cap = 4095;  // I32Array(4095) = 16384 → b16384 exact
+    g_ds_edges     = I32Array((g_ds_edges_cap) as u32);
+    g_ds_n_edges   = 0;
+    return;
+}
+
+fn ds_edges_grow() -> void {
+    var new_cap: i32 = g_ds_edges_cap * 2 + 1;  // 4095 → 8191 → 16383
+    var new_buf: I32Array = I32Array((new_cap) as u32);
+    var i: i32 = 0;
+    while i < g_ds_n_edges {
+        set(new_buf, i, get(g_ds_edges, i));
+        i = i + 1;
+    }
+    delete(g_ds_edges);
+    g_ds_edges = new_buf;
+    g_ds_edges_cap = new_cap;
+    return;
+}
+
+fn ds_add_edge(from_idx: i32, to_idx: i32) -> void {
+    if from_idx < 0 { return; }
+    if to_idx < 0 { return; }
+    if g_ds_n_edges >= g_ds_edges_cap { ds_edges_grow(); }
+    set(g_ds_edges, g_ds_n_edges, (from_idx << 16) | (to_idx & 0xFFFF));
+    g_ds_n_edges = g_ds_n_edges + 1;
+    return;
+}
+
+// ===== Owner lookup for relocs =====
+//
+// Linear scan over g_labels: find the label with the largest
+// section-relative addr ≤ `sec_off` whose section matches `sec`.
+// Acceptable cost for Phase A — typically called ~3000 times with
+// ~2000-label tables, so ~6M comparisons total.
+fn ds_find_owner(sec: i32, sec_off: i32) -> i32 {
+    var n: i32 = asm_get_nlabels();
+    var sec_base: i32 = asm_get_sec_base(sec);
+    var best_idx: i32 = 0 - 1;
+    var best_off: i32 = 0 - 1;
+    var i: i32 = 0;
+    while i < n {
+        if asm_label_section_at(i) == sec {
+            var lab_sec_off: i32 = asm_label_addr_at(i) - sec_base;
+            if lab_sec_off <= sec_off && lab_sec_off > best_off {
+                best_off = lab_sec_off;
+                best_idx = i;
+            }
+        }
+        i = i + 1;
+    }
+    return best_idx;
+}
+
+// ===== Scan one .idx for `ref <owner> <target>` lines =====
+
+fn ds_scan_idx_refs(idx_path: String) -> void {
+    if idx_path as u32 == 0u32 { return; }
+    var fd: i32 = do_openat(0 - 100, idx_path, 0);
+    if fd < 0 { return; }
+    var reader: SourceReader = SourceReader_new(fd);
+    var line: U8Array = U8Array(4092);
+    while at_eof(reader) == false {
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(reader) == false {
+            var c: u8 = next(reader);
+            if llen < 4092 { set(line, llen, c); }
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        if llen > 4092 { llen = 4092; }
+        // Match `ref <from_name> <to_name>` at start of line.
+        if llen >= 5 &&
+           get(line, 0) == 'r' as u8 &&
+           get(line, 1) == 'e' as u8 &&
+           get(line, 2) == 'f' as u8 &&
+           get(line, 3) == ' ' as u8 {
+            var os: i32 = ds_skip_ws(line, 4, llen);
+            var oe: i32 = ds_token_end(line, os, llen);
+            var ts: i32 = ds_skip_ws(line, oe, llen);
+            var te: i32 = ds_token_end(line, ts, llen);
+            var olen: i32 = oe - os;
+            var tlen: i32 = te - ts;
+            if olen > 0 && tlen > 0 {
+                var oname: U8Array = U8Array(olen as u32);
+                var i: i32 = 0;
+                while i < olen { set(oname, i, get(line, os + i)); i = i + 1; }
+                var owner_idx: i32 = asm_find_label_idx(oname, olen);
+                delete(oname);
+
+                var tname: U8Array = U8Array(tlen as u32);
+                i = 0;
+                while i < tlen { set(tname, i, get(line, ts + i)); i = i + 1; }
+                var target_idx: i32 = asm_find_label_idx(tname, tlen);
+                delete(tname);
+
+                ds_add_edge(owner_idx, target_idx);
+            }
+        }
+    }
+    delete(line);
+    close(reader);
+    do_close(fd);
+    return;
+}
+
+// ===== Scan one .rl for `reloc <off> <kind> <name>` lines =====
+//
+// `text_shift` lets us convert the per-input intra-section offset back
+// into the merged section-absolute coord that lines up with the unified
+// label table.
+fn ds_scan_rl_relocs(rl_path: String, text_shift: i32) -> void {
+    if rl_path as u32 == 0u32 { return; }
+    var fd: i32 = do_openat(0 - 100, rl_path, 0);
+    if fd < 0 { return; }
+    var reader: SourceReader = SourceReader_new(fd);
+    var line: U8Array = U8Array(512);
+    while at_eof(reader) == false {
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(reader) == false {
+            var c: u8 = next(reader);
+            if llen < 512 { set(line, llen, c); }
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        if llen > 512 { llen = 512; }
+        if llen >= 7 &&
+           get(line, 0) == 'r' as u8 &&
+           get(line, 1) == 'e' as u8 &&
+           get(line, 2) == 'l' as u8 &&
+           get(line, 3) == 'o' as u8 &&
+           get(line, 4) == 'c' as u8 &&
+           get(line, 5) == ' ' as u8 {
+            // reloc <off> <kind> <name>
+            // off is intra-section in the .rl (asm_pass1 emit time).
+            var p: i32 = 6;
+            var off_intra: i32 = ds_parse_int(line, p, llen);
+            // Advance past the off token and whitespace.
+            while p < llen && (ds_is_digit(get(line, p)) != 0 || get(line, p) == '-' as u8) { p = p + 1; }
+            p = ds_skip_ws(line, p, llen);
+            // Skip kind token (single digit).
+            while p < llen && ds_is_digit(get(line, p)) != 0 { p = p + 1; }
+            p = ds_skip_ws(line, p, llen);
+            // Name token (trim trailing LF/CR/WS).
+            var ns: i32 = p;
+            var ne: i32 = llen;
+            var trimming: i32 = 1;
+            while trimming == 1 && ne > ns {
+                var tc: u8 = get(line, ne - 1);
+                if tc == 10u8 || tc == 13u8 || tc == ' ' as u8 || tc == 9u8 {
+                    ne = ne - 1;
+                } else {
+                    trimming = 0;
+                }
+            }
+            var nlen: i32 = ne - ns;
+            if nlen > 0 {
+                var tname: U8Array = U8Array(nlen as u32);
+                var i: i32 = 0;
+                while i < nlen { set(tname, i, get(line, ns + i)); i = i + 1; }
+                var target_idx: i32 = asm_find_label_idx(tname, nlen);
+                delete(tname);
+
+                // All asm_emit_reloc call sites are in the text section,
+                // so look up the owner there. text_shift converts the
+                // intra-input offset to the merged-section coord that
+                // matches the unified label addrs.
+                var owner_idx: i32 = ds_find_owner(0, off_intra + text_shift);
+                ds_add_edge(owner_idx, target_idx);
+            }
+        }
+    }
+    delete(line);
+    close(reader);
+    do_close(fd);
+    return;
+}
+
+// ===== Print int helper (decimal, to stderr) =====
+
+fn ds_eprint_int(v: i32) -> void {
+    if v == 0 {
+        sys_write(2, "0" as u32 as U8Array, 1);
+        return;
+    }
+    var neg: i32 = 0;
+    if v < 0 { neg = 1; v = 0 - v; }
+    var buf: U8Array = U8Array(16);
+    var n: i32 = 0;
+    while v > 0 {
+        set(buf, n, (48 + v % 10) as u8);
+        n = n + 1;
+        v = v / 10;
+    }
+    if neg == 1 { sys_write(2, "-" as u32 as U8Array, 1); }
+    var out: U8Array = U8Array(n as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(out, i, get(buf, n - 1 - i));
+        i = i + 1;
+    }
+    sys_write(2, out, n);
+    delete(buf);
+    delete(out);
+    return;
+}
+
+// ===== Entry point =====
+//
+// Caller supplies the list of idx paths (in the same order asm_pass2
+// loaded them) plus the per-input text shifts (parallel array, captured
+// by run_link from asm_get_*_text_shift before run_link_finish ran the
+// dump). For Phase A all we do is build the graph, BFS, and report.
+export fn asm_analyze_dead_strip(idx_paths: StringArray,
+                                 rl_paths:  StringArray,
+                                 text_shifts: I32Array,
+                                 n_inputs: i32) -> void {
+    var n_labels: i32 = asm_get_nlabels();
+    if n_labels <= 0 { return; }
+    if n_inputs <= 0 { return; }
+
+    ds_edges_init();
+
+    // Collect edges from idx ref lines.
+    var i: i32 = 0;
+    while i < n_inputs {
+        ds_scan_idx_refs(get(idx_paths, i));
+        i = i + 1;
+    }
+
+    // Collect edges from .rl reloc lines.
+    i = 0;
+    while i < n_inputs {
+        ds_scan_rl_relocs(get(rl_paths, i), get(text_shifts, i));
+        i = i + 1;
+    }
+
+    // BFS from roots.
+    var live:  U8Array = U8Array(n_labels as u32);
+    var queue: I32Array = I32Array(n_labels as u32);
+    var qhead: i32 = 0;
+    var qtail: i32 = 0;
+
+    i = 0;
+    while i < n_labels {
+        var nm: U8Array = asm_label_name_at(i);
+        var nlen: i32 = asm_label_name_len_at(i);
+        if ds_is_root_name(nm, nlen) != 0 {
+            set(live, i, 1u8);
+            set(queue, qtail, i);
+            qtail = qtail + 1;
+        }
+        i = i + 1;
+    }
+
+    // Scan-all BFS — O(V × E) but the constants are small (V ~ 2000,
+    // E ~ 5000, BFS depth ~ 10 → ~100 M iterations worst case, runs
+    // in <1 s). Adjacency lists would speed this up but cost ~32 KB
+    // more peak; not worth it for analysis-only Phase A.
+    while qhead < qtail {
+        var from: i32 = get(queue, qhead);
+        qhead = qhead + 1;
+        var e: i32 = 0;
+        while e < g_ds_n_edges {
+            var pair: i32 = get(g_ds_edges, e);
+            var ef: i32 = (pair >> 16) & 0xFFFF;
+            var et: i32 = pair & 0xFFFF;
+            if ef == from && get(live, et) == 0u8 {
+                set(live, et, 1u8);
+                set(queue, qtail, et);
+                qtail = qtail + 1;
+            }
+            e = e + 1;
+        }
+    }
+
+    var live_count: i32 = 0;
+    i = 0;
+    while i < n_labels {
+        if get(live, i) != 0u8 { live_count = live_count + 1; }
+        i = i + 1;
+    }
+
+    sys_write(2, "[dead-strip live=" as u32 as U8Array, 17);
+    ds_eprint_int(live_count);
+    sys_write(2, " total=" as u32 as U8Array, 7);
+    ds_eprint_int(n_labels);
+    sys_write(2, " edges=" as u32 as U8Array, 7);
+    ds_eprint_int(g_ds_n_edges);
+    sys_write(2, "]\n" as u32 as U8Array, 2);
+
+    delete(g_ds_edges);
+    g_ds_edges = 0 as I32Array;
+    g_ds_n_edges = 0;
+    g_ds_edges_cap = 0;
+    delete(live);
+    delete(queue);
+    return;
+}

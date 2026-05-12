@@ -5,6 +5,7 @@
 // `src raw` entries point at the bin files for asm_pass3 to memcpy.
 
 import "asm_common.tc";
+import "asm_dead_strip.tc";
 import "string_buffer.tc";
 import "source_reader.tc";
 
@@ -129,7 +130,48 @@ export fn run_link(idx_paths: StringArray, n_inputs: i32,
         ei_reg = ei_reg + 1;
     }
 
-    return run_link_finish(lab_out_path);
+    var rc: i32 = run_link_finish(lab_out_path);
+
+    // Phase A dead-strip analysis: builds the cross-program ref graph,
+    // BFSes from a hardcoded root set, prints
+    //     [dead-strip live=N total=M edges=E]
+    // to stderr. Pure diagnostic for now — see docs/task/asm_dead_strip.md
+    // for the design. Phase B will filter dead labels out of the .lab;
+    // Phase C will compact byte ranges in the bins.
+    if rc == 0 {
+        var rl_paths: StringArray = StringArray((n_inputs) as u32);
+        var text_shifts: I32Array = I32Array((n_inputs) as u32);
+        var i: i32 = 0;
+        while i < n_inputs {
+            set(rl_paths, i, derive_sibling(get(idx_paths, i), ".rl"));
+            i = i + 1;
+        }
+        // text_shifts mirror the per-input section-absolute start of
+        // each input's text segment. Input 0 (prelude OR sole input)
+        // starts at 0; the rest are captured per-load.
+        set(text_shifts, 0, 0);
+        if has_prelude == 1 {
+            set(text_shifts, 1, asm_get_user_text_shift());
+            var ei: i32 = 0;
+            while ei < asm_get_n_extras() {
+                set(text_shifts, 2 + ei, asm_get_extra_text_shift(ei));
+                ei = ei + 1;
+            }
+        } else {
+            // Single-input mode: input 0 fills user slot at shift 0.
+            // (n_inputs == 1 here; if there were extras run_link would
+            // have set has_prelude. The accessor still works.)
+            var ei2: i32 = 0;
+            while ei2 < asm_get_n_extras() {
+                set(text_shifts, 1 + ei2, asm_get_extra_text_shift(ei2));
+                ei2 = ei2 + 1;
+            }
+        }
+        asm_analyze_dead_strip(idx_paths, rl_paths, text_shifts, n_inputs);
+        delete(rl_paths);
+        delete(text_shifts);
+    }
+    return rc;
 }
 
 // Process any extra inputs (registered before the run_link call via
