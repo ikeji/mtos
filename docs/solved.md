@@ -57,6 +57,106 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass3 から g_code を
 
 ## カーネル / OS
 
+### K15. self_replicate byte-exact 再帰仕上げ + asm_pass3 46ms silent-exit 解消 — 完了 (2026-05-13)
+
+K14 (2026-05-11) で device self_replicate の md5 match を一度確認した
+あと、dead-strip / B-type reloc / pool 最適化セッション
+(2026-05-12) で同経路が壊れた。再走させると asm_pass3 task が
+**46 ms で exit=0** を返し `/sd/k.bin` を更新せず、前回の stale
+md5 が「偶然一致」して見える、というやっかいな状態:
+
+```
+[0.340] >> asm_pass3 --lab /sd/full.lab --out /sd/k.bin
+[0.389] << exit=0 dt=0.046    ← km_dump_peak の [kmem peak=...] が
+[0.413] >> md5sum /sd/k.bin    出ない
+8929f2b12694514f9f5490533fd51595  /sd/k.bin   ← 前回の stale
+```
+
+**根本原因** (2 つ重なっていた):
+
+1. **tcheck forward-reference bug** (`compiler/asm_pass3_lib.tc`):
+   `parse_reloc_into_pending` (line ~534) が `g_lab_cur` を読むが、
+   宣言は line ~712 にあった。tcheck の型推論は `g_lab_cur` を `?`
+   (型不明) と判定し
+   `Type error: no overload for 'skip_ws' matching (U8Array, ?, i32)`
+   で **exit=1 + 部分的 .tast 出力** で終わる。
+
+2. **`compile-gen2.sh` の silent pipeline failure**:
+   `tcheck < wrap | codegen | bc2asm > out.s` の左側 (tcheck) が
+   非ゼロ終了しても `set -e` は trip しない。truncated .tast が
+   codegen → bc2asm を素通りし、`run_pass3` 以降の関数が一切
+   compile されていない asm_pass3 task `.s` (6 functions しか
+   無い、~110 KB vs 正常時 ~145 KB) が生成される。
+
+device で task が起動すると `main(argv)` から `run_pass3(...)` を
+呼ぶが、未定義シンボルは crt0 fallback (= `li a0, 0; ret`) で
+解決される。a0=0 のまま `sys_exit(0)` → 46 ms silent-exit。
+`[kmem peak=...]` が出ないのは `km_dump_peak` 自体が unreachable
+だから。
+
+**修正** (commit 2325004):
+
+1. `compiler/asm_pass3_lib.tc`: `var g_lab_int: i32 = 0;` /
+   `var g_lab_cur: i32 = 0;` を `parse_reloc_into_pending` より
+   前のグローバル領域に移動。tcheck が forward 参照を含む型推論
+   を諦めないですむ位置に置く。
+2. `compile-gen2.sh`: `set -o pipefail` を追加。tcheck / codegen /
+   bc2asm の中間失敗を全部前面に晒す。これがあれば最初から
+   "exit=1 が無視される" 経路を踏まずに済んだ。
+
+**併せて入った周辺改善** (本セッション全 commit):
+
+- `f2f8785` `NUM_LAB_PER_DIGIT` 2047 → 4095。704b811 の縮小が
+  その後の dead-strip + B-type reloc 追加で 2200 個必要に
+  なり破綻していた (asm_pass2 self-build OOB)。
+- `8374d91` `bootstrap/runtime_syscall.c` の C-runtime プール
+  bucket 4 (256 B) を 64 → 512 スロットに拡張。asm_pass1 が
+  bc2asm.s で 256-byte slot を 122 個要求する。
+- `15e8124` dead-strip Phase A を `--strip` 必須化 + プール
+  buckets 3-7 を generous bump。Phase A は本来 dead-code 圧縮
+  時にしか要らない解析を常時走らせていて 200〜400 KB peak
+  を浪費していた。
+- `ce96320` `src raw` / `.idx incbin` 行を **basename only**
+  で emit、asm_pass3 が `.lab` の存在 directory 相対で resolve。
+  host (`/home/.../prelude.tx`) と device (`/sd/p.tx`) の絶対
+  パス差異を `.lab` バイト列から排除。
+- `086ea91` Makefile + orchestrator + `compile-gen2.sh` で
+  host/device の中間ファイル名を揃える。`PRELUDE_NAME=p` /
+  `INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt"` を
+  orchestrator が `compile-gen2.sh` に渡す。`bin2s_incbin.sh`
+  には `dx.img` を BLOB_PATH として渡し、`<lab dir>/dx.img`
+  に disk-extra.img を symlink-equivalent (cp) で staging。
+
+**最終 byte-exact 検証** (2026-05-13 00:52 終了):
+
+```
+host kernel.bin md5: 51c9fd9d7873ececf0bed2787055bf24
+device k.bin md5:    51c9fd9d7873ececf0bed2787055bf24
+host kernel.uf2 md5: ca8ac3c75a63b589fcf479df643a94a1
+device k.uf2 md5:    ca8ac3c75a63b589fcf479df643a94a1
+kernel.bin MATCH
+kernel.uf2 MATCH — pico2 self-replicated its own UF2.
+END WALL=1807s (30m07s)
+```
+
+asm_pass3 step 3 は今度は **104 sec** + `[kmem peak=259400
+live=234680]` を吐いて正常完走 (前回 46 ms から 2300× 長い)。
+
+**検出経緯** ("3 時間" 神話の調査からスタート):
+
+CLAUDE.md に残っていた古い記述 (echo hello world ~11 sec、
+self_replicate ~3 h) を確認するため device で
+`tests/pico2_self_replicate.sh` を回したところ ~35 min で完走
+したが md5 mismatch。「stale k.bin が偶然一致」して見える挙動
+を発見し、asm_pass3 task binary を逆アセしたところ
+`run_pass3` が定義されていないことが判明。compile-gen2.sh
+の pipeline が tcheck error を握り潰していた、というのが
+最終的な根本原因。
+
+調査の副産物として、本セッションの 7 commits (f2f8785 →
+2325004) で per-stage memory peak も大幅縮小 (`docs/scaling.md`
+Q1 の表参照)。
+
 ### K14. device self_replicate byte-exact — 完了 (2026-05-11)
 
 実機 pico2 で `REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` が

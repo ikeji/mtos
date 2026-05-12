@@ -9,14 +9,15 @@
 
 # 現在のフェーズ
 
-`docs/roadmap.md` 参照。**Pico 2 self-replicate (K13 解決、2026-05-06)**:
-pico2 実機が自前のコンパイラ・カーネルだけで kernel.bin と kernel.uf2 を
-**byte-exact** で再生成する。host gen2 build と md5 完全一致を確認した
-状態で `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` が end-to-end
-~26 min (REFRESH 込み) / ~12 min (no REFRESH) で完走 (詳細:
-`docs/solved.md` の K13 エントリ、`docs/roadmap.md` 2026-05-06 milestone)。
-これでコンパイラ + カーネル全ソースが pico2 でセルフホストし、
-ホスト PC は触媒として一度ソースを置いた後は更新時にしか登場しない。
+`docs/roadmap.md` 参照。**Pico 2 self-replicate (K13 解決、2026-05-06、
+K15 再帰仕上げ 2026-05-12)**: pico2 実機が自前のコンパイラ・カーネル
+だけで kernel.bin と kernel.uf2 を **byte-exact** で再生成する。host
+gen2 build と md5 完全一致を確認した状態で
+`[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` が end-to-end
+**~30 min** (REFRESH 込み) / ~12 min (no REFRESH) で完走 (詳細:
+`docs/solved.md` の K13 / K15 エントリ、`docs/roadmap.md` 2026-05-06
+milestone)。これでコンパイラ + カーネル全ソースが pico2 でセルフホスト
+し、ホスト PC は触媒として一度ソースを置いた後は更新時にしか登場しない。
 
 完了した過去マイルストーン — フェーズ 7 完走 (K7 解決、2026-04-29、qemu
 virt + pico2 実機で `parse → sigscan → tcheck → codegen → bc2asm →
@@ -42,9 +43,11 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
   では再現せず — PL011 / DMA 経路に固有の何か、`docs/problem.md` K11)
 - **K12 (fatfs 8.3 制限)**: long-name dirent 実装、または mtfs 互換の
   可変長 name スキームへの移行
-- **echo / spawn baseline の高さ**: PLL 150 MHz 下でも `echo hello
-  world` (12 byte UART 出力) で ~11 秒。TC ABI / 関数呼び出しコストが
-  支配的。プロファイル取りから着手必要
+- **echo / spawn baseline ではなく pipeline 内の処理時間**: msh-driven
+  `echo BENCH_DONE` は ~10 ms と無視可。残るのは個別 task の本体実行
+  + SD I/O (`docs/scaling.md` Q1, Q6)。self_replicate ~30 min の支配項
+  は asm_pass3 link (~10 min) + bin2uf2 (~9 min) で、どちらも 3.8〜
+  7.6 MB を SD 書き込みする時間 (SPI 6 MHz + fatfs FAT cache)
 - **bcrun.tc::vm_run の vartab=128 制限**: 現在の tcheck では bcrun.tc
   自身が vartab overflow で compile 不可。pipeline の現実的 worst case
   は bc2asm.tc (nc=1656) に格下げ済 (`docs/scaling.md` Q5)
@@ -522,7 +525,12 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
   asm_pass3 → /sd/k.bin、step 4 で bin2uf2 → /sd/k.uf2) を openocd
   reset で挟みながら自動実行し、生成 kernel.bin / kernel.uf2 が
   host gen2 build と md5 完全一致することを検証する。所要時間
-  ~3 h (REFRESH + 全 step、UART overhead 込み) / ~12 min (no REFRESH)
+  **~30 min** (REFRESH + 全 step、UART overhead 込み) / ~12 min
+  (no REFRESH)。orchestrator は `PRELUDE_NAME=p` /
+  `INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt"` を
+  `compile-gen2.sh` に渡して host 側中間ファイル名を device 側の
+  fixture と揃え、`.lab` の `src raw <basename>` 行が host/device で
+  byte-exact 一致する
 - `tests/qemu_mr_scale.py` — K11 (mr 経由 UART upload hang) 再現を
   qemu virt で試す regression test。`-serial stdio` (Ctrl-A escape
   なし、`-monitor null` 併用) を使う点に注意 — `-serial mon:stdio` だと

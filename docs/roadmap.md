@@ -363,19 +363,29 @@ K7 解決の決め手 3 点:
       26 MB) → `bin2s_incbin.sh` (.incbin 1.5 KB wrap) に切替、
       compile-gen2.sh が prelude_tail.s に `--incbin-skip` を自動
       注入する。
-- [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06):
+- [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06、
+      2026-05-13 K15 再仕上げ):
       `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` で
       end-to-end 自動化、host gen2 build と byte-exact 一致した
       kernel.bin + kernel.uf2 を pico2 が自前で生成。最新版で
-      ~26 min (REFRESH 込み) / ~12 min (no REFRESH)。
+      **~30 min** (REFRESH 込み) / ~12 min (no REFRESH)。
       Pipeline 短縮の経緯: v6 ~55 min → v8 ~50 min (cat-3x 撤廃) →
-      v9 ~36 min (REFRESH skip) → v10 ~26 min (fatfs FAT 書き込みキャッシュ)。
+      v9 ~36 min (REFRESH skip) → v10 ~26 min (fatfs FAT 書き込みキャッシュ)
+      → 2026-05-13 K15 仕上げ後 ~30 min (asm_pass3 46 ms silent-exit
+      解消 + basename emit + host/device fixture 名揃え)。
 
       ```
+      # v10 (2026-05-09)
       host   kernel.bin md5: 026d825ca32e4d40a67b182505c36d48
       device /sd/k.bin md5:  026d825ca32e4d40a67b182505c36d48  ✓
       host   kernel.uf2 md5: 4a639e26b7fbd057654ec5ac63fbf09a
       device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a  ✓
+
+      # K15 仕上げ後 (2026-05-13)
+      host   kernel.bin md5: 51c9fd9d7873ececf0bed2787055bf24
+      device /sd/k.bin md5:  51c9fd9d7873ececf0bed2787055bf24  ✓
+      host   kernel.uf2 md5: ca8ac3c75a63b589fcf479df643a94a1
+      device /sd/k.uf2 md5:  ca8ac3c75a63b589fcf479df643a94a1  ✓
       ```
 
       パイプライン (8 ステップ、各ステップ間で openocd reset):

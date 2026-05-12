@@ -571,6 +571,32 @@ self_replicate 全体の orchestrator overhead としては誤差レベル。
 K13 + 新 step 0d を含んだ self_replicate path が継続して byte-exact で
 動作することを確認済み。
 
+### 再測定 (2026-05-13、K15 仕上げ後)
+
+dead-strip Phase A + B-type reloc + basename emit + Makefile/
+orchestrator alignment セッション後の実測:
+
+```
+WALL = 1807s = 30m07s
+host kernel.bin md5: 51c9fd9d7873ececf0bed2787055bf24
+device k.bin md5:    51c9fd9d7873ececf0bed2787055bf24
+host kernel.uf2 md5: ca8ac3c75a63b589fcf479df643a94a1
+device k.uf2 md5:    ca8ac3c75a63b589fcf479df643a94a1
+kernel.bin MATCH / kernel.uf2 MATCH
+```
+
+step 3 (asm_pass3 link → /sd/k.bin) は ~104 sec の本処理 +
+md5sum ~152 sec で計 ~4 min が観測値。step 4 (bin2uf2 + md5sum)
+も同様。全体は 2026-05-09 計測の ~34 min から 4 min ほど縮んだ
+(主に 0a-0e refresh のコンパイラ自体が高速化)。
+
+入力 disk-extra 経路の変更: orchestrator が host 側 `kernel/bin2s.sh`
+(disk を `.byte ASCII` で 26 MB に展開) ではなく `kernel/bin2s_incbin.sh`
+を使い、blob path として `dx.img` (basename only) を渡す。compile-gen2 の
+intermediate dir に sibling `dx.img` を copy で staging すると、
+device 側の `/sd/dx.img` と path 解決が対称になる。Makefile の
+PICO2_KERNEL_RECIPE も同方式に揃えた (commit 086ea91)。
+
 ## Q7: section-leading `.incbin` の defer (2026-05-09 追加、2026-05-11 デフォルト化)
 
 `/sd/pt.s` (= `crt0_pico2_data.s` + `wrap.s`) は wrap.s の `.incbin
