@@ -273,12 +273,9 @@ for s in "${ASM_FILES[@]}" ${EXTRA_S:-} "$TMP/prelude_tail.s"; do
 done
 
 # Step 5: link → .lab. asm_pass2 reads each idx's v2 header to find
-# the matching .tx/.ro/.dt/.rl files. ASM_STRIP=1 enables Phase C
-# dead-code elimination (see docs/task/asm_dead_strip.md).
-ASM_STRIP_FLAG=""
-[ "${ASM_STRIP:-0}" = "1" ] && ASM_STRIP_FLAG="--strip"
+# the matching .tx/.ro/.dt/.rl files. Dead-strip (Phase B + C) runs
+# unconditionally — see docs/task/asm_dead_strip.md.
 "$QEMU" "$GEN2_DIR/asm_pass2" \
-    $ASM_STRIP_FLAG \
     "${link_args[@]}" \
     --lab-out "$TMP/full.lab" 2>/dev/null
 

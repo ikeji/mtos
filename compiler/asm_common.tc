@@ -2982,9 +2982,8 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
         write(sb, out_fd);
         destroy(sb);
         // Prelude text_shift is always 0 — pass through copy_reloc_shifted
-        // (rather than copy_file_to_fd) so the Phase C dead-strip path
-        // gets a chance to subtract dead-bytes-before from each reloc
-        // offset. With strip off the shift=0 case is a no-op identity.
+        // (rather than copy_file_to_fd) so the dead-strip path can
+        // subtract dead-bytes-before from each reloc offset.
         copy_reloc_shifted(g_prelude_reloc, out_fd, 0);
         sb = StringBuffer_new(out_fd);
     }
@@ -3070,10 +3069,9 @@ fn copy_reloc_shifted(src_path: String, dst_fd: i32, shift: i32) -> void {
                 && get(line, 4) == 'c' as u8
                 && get(line, 5) == ' ' as u8 {
             // reloc <off> <kind> <name>\n  →  reloc <off+shift> <kind> <name>\n
-            // Phase C dead-strip: when --strip is on, additionally
-            // subtract dead-bytes-before from the section-absolute
-            // offset. If the offset itself lies in a dead range, skip
-            // the line — the reloc is in dead code.
+            // Dead-strip Phase C: subtract dead-bytes-before from the
+            // section-absolute offset; if the reloc itself lies in a
+            // dead range, drop the line (it's in dead code).
             var p: i32 = 6;
             var v: i32 = 0;
             while p < llen && get(line, p) >= '0' as u8 && get(line, p) <= '9' as u8 {
@@ -3083,12 +3081,10 @@ fn copy_reloc_shifted(src_path: String, dst_fd: i32, shift: i32) -> void {
             var section_abs: i32 = v + shift;
             var new_off: i32 = section_abs;
             var skip_line: i32 = 0;
-            if asm_dead_strip_get_strip() == 1 {
-                // All asm_emit_reloc sites are in text (section 0).
-                var dead_before: i32 = ds_compacted_offset(0, section_abs);
-                if dead_before < 0 { skip_line = 1; }
-                else { new_off = section_abs - dead_before; }
-            }
+            // All asm_emit_reloc sites are in text (section 0).
+            var dead_before: i32 = ds_compacted_offset(0, section_abs);
+            if dead_before < 0 { skip_line = 1; }
+            else { new_off = section_abs - dead_before; }
             if skip_line == 0 {
                 emit_string(sb, "reloc ");
                 dump_int(sb, new_off);
@@ -3873,18 +3869,6 @@ export fn ds_compacted_offset(sec: i32, off: i32) -> i32 {
 // asm_pass1 links asm_common.tc alone.
 var g_ds_live: U8Array = 0 as U8Array;
 var g_ds_live_n: i32 = 0;
-
-// Phase C strip flag. 0 = analysis only (Phase A/B). 1 = compact byte
-// ranges, adjust addrs / reloc offsets, emit `skip` lines in .lab.
-// Set via --strip CLI flag in asm_pass2.
-var g_ds_strip: i32 = 0;
-
-export fn asm_dead_strip_set_strip(v: i32) -> void {
-    g_ds_strip = v;
-    return;
-}
-
-export fn asm_dead_strip_get_strip() -> i32 { return g_ds_strip; }
 
 export fn asm_dead_strip_set_live(bitmap: U8Array, n: i32) -> void {
     if g_ds_live as u32 != 0u32 { delete(g_ds_live); }

@@ -227,24 +227,13 @@ fn run_link_finish(idx_paths: StringArray, n_inputs: i32,
     asm_resolve_deferred_refs();
     asm_fixup_labels();
 
-    // Phase B dead-strip: builds the cross-program ref graph, runs BFS
-    // from roots, and stashes the live[] bitmap in g_ds_live.
-    // asm_dump_lab_state_to consults it via asm_dead_strip_is_live to
-    // omit `lab` lines for unreachable labels. Reloc lines flow
-    // through unchanged — asm_pass3 silently skips relocs whose target
-    // disappears (the dead-target case can't happen by BFS invariant
-    // unless the owner is also dead, in which case the bytes are
-    // unexecuted regardless).
-    //
-    // Gated on --strip: the analysis allocates O(labels + edges) state
-    // (~200-400 KB peak on bc2asm/asm_common builds) which is wasted
-    // work when --strip is off — asm_dead_strip_is_live returns 1 for
-    // every label when g_ds_live is null, so the dump path is byte-
-    // identical with or without the analysis. Default-on caused
-    // bucket-3 / bucket-4 pool OOMs in the gen2 host runtime.
-    if asm_dead_strip_get_strip() == 1 {
-        run_dead_strip_analysis(idx_paths, n_inputs, has_prelude);
-    }
+    // Dead-strip (Phase B+C): always run on a link. Builds the cross-
+    // program ref graph, runs BFS from roots, stashes the live[]
+    // bitmap in g_ds_live, then compacts dead byte ranges out via
+    // ds_compact. asm_dump_lab_state_to consults asm_dead_strip_is_live
+    // to omit `lab` lines for unreachable labels and emits `skip <sec>
+    // <start> <len>` records for asm_pass3 to memcpy-around.
+    run_dead_strip_analysis(idx_paths, n_inputs, has_prelude);
 
     if lab_out_path as u32 != 0u32 {
         var lab_fd: i32 = do_openat(0 - 100, lab_out_path, 577);

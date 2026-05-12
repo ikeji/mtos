@@ -24,7 +24,6 @@
 
 import "asm_pass2_lib.tc";
 import "asm_common.tc";
-import "asm_dead_strip.tc";
 
 fn arg_eq(s: String, pat: StringLiteral) -> i32 {
     var ns: i32 = len(s);
@@ -54,7 +53,6 @@ fn main(argv: StringArray) -> i32 {
     var lab_out: String = 0 as String;
     var inputs: StringArray = StringArray((MAX_INPUTS) as u32);
     var n_inputs: i32 = 0;
-    var strip: i32 = 0;
     if argv as u32 != 0u32 {
         var argc: i32 = len(argv);
         var consumed: i32 = 1;  // skip argv[0] (program name)
@@ -71,13 +69,6 @@ fn main(argv: StringArray) -> i32 {
             } else if arg_eq(a, "--lab-out") != 0 && consumed + 1 < argc {
                 lab_out = get(argv, consumed + 1);
                 consumed = consumed + 2;
-            } else if arg_eq(a, "--strip") != 0 {
-                // Phase C dead-strip: compact dead byte ranges out of
-                // the linked output. asm_pass3 must honor the `skip`
-                // lines emitted in the .lab for this to produce a
-                // correct binary. Default off until C.3 lands.
-                strip = 1;
-                consumed = consumed + 1;
             } else {
                 err("asm_pass2: unknown argument — see source for CLI shape\n");
                 return 1;
@@ -88,6 +79,5 @@ fn main(argv: StringArray) -> i32 {
         err("asm_pass2: at least one --add <idx> required\n");
         return 1;
     }
-    asm_dead_strip_set_strip(strip);
     return run_link(inputs, n_inputs, lab_out);
 }

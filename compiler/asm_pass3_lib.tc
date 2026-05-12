@@ -828,7 +828,7 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
     }
     if blen - p >= 5 && cmp(buf, p, "skip ") {
         // Phase C: `skip <sec> <orig_start> <length>` line emitted by
-        // asm_pass2 when --strip is on. Install in the shared dead-
+        // asm_pass2's dead-strip pass. Install in the shared dead-
         // range table; raw_memcpy_section consults it to omit dead
         // bytes during memcpy.
         parse_dec(buf, p + 5, blen);

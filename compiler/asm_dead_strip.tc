@@ -416,17 +416,10 @@ export fn asm_analyze_dead_strip(idx_paths: StringArray,
     // is the only consumer; bitmap survives until process exit.
     asm_dead_strip_set_live(live, n_labels);
 
-    // Phase C: if --strip is enabled, actually compact the byte
-    // layout: build per-section dead ranges, adjust label addrs /
-    // sec_base / sec_size / gp_abs / reloc offsets. asm_pass3 must
-    // then honor the `skip` lines in the .lab — C.3 wires that side.
-    // Without --strip, just print per-section dead totals as a
-    // diagnostic (Phase C.1 behavior).
-    if asm_dead_strip_get_strip() == 1 {
-        ds_compact();
-    } else {
-        ds_print_compact_analysis();
-    }
+    // Phase C: compact the byte layout — build per-section dead
+    // ranges, adjust label addrs / sec_base / sec_size / gp_abs /
+    // reloc offsets. asm_pass3 honors the `skip` lines in the .lab.
+    ds_compact();
     return;
 }
 
@@ -504,6 +497,13 @@ export fn ds_compact() -> void {
 
     // Phase 1: per-section sort + dead-range collection. Gap[label]
     // is the cum dead bytes WITHIN this section before this label.
+    //
+    // Labels at the SAME addr are aliases (e.g. task_crt0.s defines
+    // do_openat__String and do_openat__StringLiteral at the same byte
+    // offset). Their bytes are owned collectively — dead iff ALL
+    // aliases are dead. Process by addr-group: scan consecutive labels
+    // at the same addr, OR their liveness, and only record a dead range
+    // when the entire group is dead.
     var s: i32 = 0;
     while s < 4 {
         if s == 3 {
@@ -517,28 +517,40 @@ export fn ds_compact() -> void {
         var cum_dead: i32 = 0;
         var i: i32 = 0;
         while i < n_in_sec {
-            var lab_idx: i32 = get(workspace, i);
-            var lab_addr: i32 = asm_label_addr_at(lab_idx);
-            var next_addr: i32 = section_end;
-            if i + 1 < n_in_sec {
-                next_addr = asm_label_addr_at(get(workspace, i + 1));
-            }
-            set(per_label_gap, lab_idx, cum_dead);
-            if asm_dead_strip_is_live(lab_idx) == 0 {
-                if next_addr > lab_addr {
-                    // Store dead range in INTRA-section coords (label
-                    // addrs are absolute after asm_fixup_labels, so
-                    // subtract sec_base to recover intra). asm_pass3's
-                    // src raw `start` offsets are also intra-section,
-                    // so this lines up at filter time.
-                    var sec_base_s: i32 = asm_get_sec_base(s);
-                    var dr_start: i32 = lab_addr - sec_base_s;
-                    var dr_end:   i32 = next_addr - sec_base_s;
-                    asm_ds_dr_add(s, dr_start, dr_end);
-                    cum_dead = cum_dead + (dr_end - dr_start);
+            var lab_addr: i32 = asm_label_addr_at(get(workspace, i));
+            // Find end of this addr group + OR liveness across it.
+            var j: i32 = i;
+            var group_live: i32 = 0;
+            while j < n_in_sec
+                && asm_label_addr_at(get(workspace, j)) == lab_addr {
+                if asm_dead_strip_is_live(get(workspace, j)) != 0 {
+                    group_live = 1;
                 }
+                j = j + 1;
             }
-            i = i + 1;
+            var next_addr: i32 = section_end;
+            if j < n_in_sec {
+                next_addr = asm_label_addr_at(get(workspace, j));
+            }
+            // Assign the same gap to every member of the group.
+            var k: i32 = i;
+            while k < j {
+                set(per_label_gap, get(workspace, k), cum_dead);
+                k = k + 1;
+            }
+            if group_live == 0 && next_addr > lab_addr {
+                // Store dead range in INTRA-section coords (label addrs
+                // are absolute after asm_fixup_labels, so subtract
+                // sec_base to recover intra). asm_pass3's src raw `start`
+                // offsets are also intra-section, so this lines up at
+                // filter time.
+                var sec_base_s: i32 = asm_get_sec_base(s);
+                var dr_start: i32 = lab_addr - sec_base_s;
+                var dr_end:   i32 = next_addr - sec_base_s;
+                asm_ds_dr_add(s, dr_start, dr_end);
+                cum_dead = cum_dead + (dr_end - dr_start);
+            }
+            i = j;
         }
         set(total_dead_s, s, cum_dead);
         s = s + 1;
@@ -639,46 +651,3 @@ export fn ds_compact() -> void {
     return;
 }
 
-// Diagnostic walk: print per-section dead byte tallies.
-fn ds_print_compact_analysis() -> void {
-    var nl: i32 = asm_get_nlabels();
-    if nl <= 0 { return; }
-    var workspace: I32Array = I32Array(nl as u32);
-    var s: i32 = 0;
-    while s < 4 {
-        var n_in_sec: i32 = ds_sort_section(s, workspace);
-        // Section end = sec_base[s+1] for s < 3; bss (s == 3) has no
-        // emitted bytes so dead-byte analysis there is moot. Skip s=3.
-        var section_end: i32 = 0;
-        if s + 1 < 4 { section_end = asm_get_sec_base(s + 1); }
-        if s == 3 { section_end = 0; }
-
-        var total_dead: i32 = 0;
-        var i: i32 = 0;
-        while i < n_in_sec && s != 3 {
-            var lab_idx: i32 = get(workspace, i);
-            var lab_addr: i32 = asm_label_addr_at(lab_idx);
-            var next_addr: i32 = section_end;
-            if i + 1 < n_in_sec {
-                next_addr = asm_label_addr_at(get(workspace, i + 1));
-            }
-            if asm_dead_strip_is_live(lab_idx) == 0 {
-                if next_addr > lab_addr {
-                    total_dead = total_dead + (next_addr - lab_addr);
-                }
-            }
-            i = i + 1;
-        }
-
-        if total_dead > 0 {
-            sys_write(2, "[dead-strip sec" as u32 as U8Array, 15);
-            ds_eprint_int(s);
-            sys_write(2, " dead=" as u32 as U8Array, 6);
-            ds_eprint_int(total_dead);
-            sys_write(2, "]\n" as u32 as U8Array, 2);
-        }
-        s = s + 1;
-    }
-    delete(workspace);
-    return;
-}
