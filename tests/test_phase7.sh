@@ -64,7 +64,7 @@ fi
 # parsed AST.
 echo ""
 echo "=== stage 1: compile + link + run Hello World ==="
-out1=$(printf 'parse < /hw.tc > /tmp/1.ast\nsigscan < /tmp/1.ast > /tmp/1.th\ncat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt /tmp/1.ast > /tmp/1.wrap\ntcheck < /tmp/1.wrap > /tmp/2.tast\ncodegen < /tmp/2.tast > /tmp/3.bc\nbc2asm < /tmp/3.bc > /tmp/4.s\ncat /tmp/4.s /prelude_tail.s > /tmp/u.s\nasm_pass1 /tmp/u.s --idx-out /tmp/u.idx --text-bin /tmp/u.tx --rodata-bin /tmp/u.ro --data-bin /tmp/u.dt --reloc-out /tmp/u.rl\nasm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/full.lab\nasm_pass3 --lab /tmp/full.lab --out /tmp/hw\n/tmp/hw\nquit\n' \
+out1=$(printf 'parse < /hw.tc > /tmp/1.ast\nsigscan < /tmp/1.ast > /tmp/1.th\ncat /empty_imports.txt /self_open.txt /tmp/1.th /wrap_close.txt /tmp/1.ast > /tmp/1.wrap\ntcheck < /tmp/1.wrap > /tmp/2.tast\ncodegen < /tmp/2.tast > /tmp/3.bc\nbc2asm < /tmp/3.bc > /tmp/4.s\ncat /tmp/4.s /prelude_tail.s > /tmp/u.s\nasm_pass1 /tmp/u.s --idx-out /tmp/u.idx --text-bin /tmp/u.tx --rodata-bin /tmp/u.ro --data-bin /tmp/u.dt --reloc-out /tmp/u.rl\ncat /prelude.tx > /tmp/prelude.tx\ncat /prelude.ro > /tmp/prelude.ro\ncat /prelude.dt > /tmp/prelude.dt\ncat /prelude.rl > /tmp/prelude.rl\nasm_pass2 --add /prelude.idx --add /tmp/u.idx --lab-out /tmp/full.lab\nasm_pass3 --lab /tmp/full.lab --out /tmp/hw\n/tmp/hw\nquit\n' \
     | timeout 240 qemu-system-riscv32 -smp 1 -nographic \
     -serial mon:stdio --no-reboot -m 128 \
     -machine virt,aclint=on -bios none \
