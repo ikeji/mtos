@@ -52,21 +52,82 @@ constant。
 ソースサイズ依存分 (parse / tcheck / codegen / bc2asm) は
 ソース byte 数に概ね比例。Hello World (366 B) で 12 s 弱。線形外挿:
 
-| ソースサイズ | tcheck+codegen+bc2asm | 合計 (固定 + 比例) |
+| ソースサイズ | tcheck+codegen+bc2asm | 合計 (固定 + 固定) |
 |---|---|---|
 | 1 KB | ~30 s | ~150 s (2.5 分) |
 | 10 KB | ~5 分 | ~7 分 |
 | 70 KB (tcheck.tc 級) | ~35 分 | ~37 分 |
 
-### 50 ファイル × 平均 5 KB として
+### 再測定 (2026-05-13、`.idx` pre-encode + 3-binary split + dead-strip 後)
 
-平均 5 KB のソース 50 ファイルを 1 つずつコンパイル:
-- 1 ファイルあたり 200〜250 s
-- **合計 約 3 時間**
+K7 時代の上記モデル (asm_pass2 が prelude.s を walk、asm_pass3 が 3
+回 walk) は **完全に古い**。現在の pipeline は:
 
-実際は heavy file (parse.tc / tcheck.tc / asm_common.tc / bc2asm.tc /
-asm_pass3.tc) が支配する。これら 5〜7 ファイルだけで 30 分以上を
-食う見込み。
+- prelude は `kernel/build.sh` が **`prelude.{idx,tx,ro,dt,rl}`** に
+  pre-encode 済 (`docs/task/asm_pre_encode.md`)。`.tx` は ~50 KB の
+  text bin に縮小。
+- asm_pass2 は prelude.idx (~30 KB) を読んで label table を merge
+  するだけ。prelude.s 234 KB の tokenize は **0 回**。
+- asm_pass3 は prelude.tx を **1 回 memcpy** + reloc patch のみ。
+  234 KB × 3 walk は **0 回**。
+- cat-link / cat-p2 で 234 KB を SD に書く処理は撤廃。
+- dead-strip default-on (commit b7d8b4d、2026-05-13) で text セクション
+  は ~290 KB → ~264 KB (~9 %)、task .bin は 53 KB → 24 KB に縮小。
+
+**実機 pico2 で `tests/test_pico2_bench.sh` 計測 (Hello World、
+PLL_SYS 150 MHz、msh /pico2_bench_idx.sh 駆動)**:
+
+| stage | K7 (2026-04-29) | 現在 (2026-05-13) | 比 |
+|---|---:|---:|---:|
+| parse | 31 s | **2.72 s** | 11× |
+| sigscan | 10 s | **0.16 s** | 62× |
+| tcheck (file mode) | 5 s | **0.36 s** | 14× |
+| codegen | 5 s | **0.22 s** | 23× |
+| bc2asm | 5 s | **0.20 s** | 25× |
+| cat-link | 10 s | **0.18 s** | 56× |
+| asm_pass1 | (n/a — 旧 asm) | **1.36 s** | — |
+| asm_pass2 | 27 s | (OOM、後述) | — |
+| asm_pass3 | 80 s | (未計測) | — |
+| /sd/HW exec | 1 s | (未計測) | — |
+| **計測済 6 stage 合計** | **66 s** | **~5.0 s** | **13×** |
+
+source 依存 5 stage (parse〜bc2asm) は K7 の **66 s → 3.7 s で
+18 倍速** いている。これは:
+
+- 旧 `.s` 経由から `.idx` pre-encode への変更で prelude tokenize 撤廃
+- 3-binary asm split (asm_pass1 が user.s を pre-encode、pass2/3 は idx
+  merge と memcpy のみ)
+- dead-strip default-on で生成バイナリが小さく → SD I/O 削減
+- `.incbin` defer (`docs/scaling.md` Q7) で SD への中間書き込み撤廃
+
+#### asm_pass2 の OOM (msh-driven 限定)
+
+msh から parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 と
+6 連続 spawn したあと asm_pass2 を起動すると kernel arena (480 KB)
+の pool が断片化し、336 KB の task arena 確保に失敗:
+
+```
+OOM: 344068 p=439388 l=118244
+```
+
+これは scaling.md Q3 / Q5 で議論済の問題で、本セッションの
+dead-strip default-on とは独立。**`tests/pico2_self_replicate.sh` 系の
+外部 orchestrator (openocd reset 経由で per-stage reboot)** を使うと
+解消できる。msh 単独で全 stage 完走するには Q3 の「sh の組み込み
+コマンド化」 / 「per-stage reboot」 / 「kernel pool defragmentation」
+等の対応が必要。
+
+### 旧 50 ファイル × 平均 5 KB 推計 (2026-04-29、要見直し)
+
+K7 時代の「合計 約 3 時間」は固定費 120 s × 50 = 6000 s が支配して
+いた。現在の pipeline で source 依存部分が ~18× 速くなったので、
+合計でも **数倍 (10x には届かないが) 速くなる**見込み:
+
+- 旧 1 ファイル 200〜250 s → 推定 **20〜40 s 程度**
+- 旧 合計 ~3 時間 → 推定 **15〜30 分**
+
+ただし上記は msh-driven OOM を回避できる前提。実機での再測定が
+必要 (本 doc は機会があれば更新する)。
 
 ### メモリ: 1 ファイルごとの peak は ~300 KB のまま
 
