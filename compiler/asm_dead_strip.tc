@@ -1,17 +1,18 @@
-// asm_dead_strip.tc — link-time dead-code analysis (Phase A).
+// asm_dead_strip.tc — link-time dead-code analysis (Phase A + B).
 //
 // Design: docs/task/asm_dead_strip.md.
 //
-// Phase A (this file currently): collects the cross-program reference
-// graph from each input's .idx (`ref` lines) and .rl (`reloc` lines),
-// runs BFS from a hardcoded root set, and prints
-//   `[dead-strip live=N total=M edges=E]`
-// to stderr. No behavior change — purely diagnostic. Phase B/C will
-// hook into asm_dump_lab_state_to to actually filter out dead labels
-// and dead byte ranges. Keeping the analysis side-effect-free first
-// makes it easy to validate the graph against the live set we'd
-// expect (BFS reaches `_start` → `main` → … and everything else from
-// crt0 entries).
+// Phase A: collect the cross-program reference graph from each input's
+// .idx (`ref` lines) and .rl (`reloc` lines), run BFS from a hardcoded
+// root set, and stash a live[] bitmap. Print `[dead-strip live=N
+// total=M edges=E]` to stderr.
+//
+// Phase B (this commit): asm_dump_lab_state_to reads g_ds_live and
+// skips `lab` lines for dead labels. asm_pass3's reloc stream silently
+// skips relocs whose target lookup fails — those targets disappeared
+// because they were dead. Final ELF bytes are unchanged (Phase C will
+// compact the byte ranges), but asm_pass3's label state shrinks by
+// however many labels BFS marked dead.
 //
 // Roots are derived from what crt0_tc.s / task_crt0.s / platform_*.s
 // reference unconditionally — see docs/task/asm_dead_strip.md §1.
@@ -21,6 +22,11 @@ import "source_reader.tc";
 
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
+
+// Hand the computed live bitmap to asm_common.tc so its
+// asm_dump_lab_state_to label loop can consult it. Body is in
+// asm_common.tc.
+fn asm_dead_strip_set_live(bitmap: U8Array, n: i32) -> void;
 
 // ===== Small helpers =====
 
@@ -313,9 +319,10 @@ fn ds_eprint_int(v: i32) -> void {
 // ===== Entry point =====
 //
 // Caller supplies the list of idx paths (in the same order asm_pass2
-// loaded them) plus the per-input text shifts (parallel array, captured
-// by run_link from asm_get_*_text_shift before run_link_finish ran the
-// dump). For Phase A all we do is build the graph, BFS, and report.
+// loaded them), the parallel list of .rl paths, and the per-input
+// text shifts. Builds the graph, BFSes from roots, stashes live[] in
+// g_ds_live, and prints the stats line to stderr. The dump path
+// (asm_dump_lab_state_to) consults g_ds_live via asm_dead_strip_is_live.
 export fn asm_analyze_dead_strip(idx_paths: StringArray,
                                  rl_paths:  StringArray,
                                  text_shifts: I32Array,
@@ -340,8 +347,10 @@ export fn asm_analyze_dead_strip(idx_paths: StringArray,
         i = i + 1;
     }
 
-    // BFS from roots.
-    var live:  U8Array = U8Array(n_labels as u32);
+    // BFS from roots. Allocate a fresh live bitmap and install it
+    // via asm_dead_strip_set_live so asm_dump_lab_state_to (in
+    // asm_common.tc) can consult it without importing this module.
+    var live: U8Array = U8Array(n_labels as u32);
     var queue: I32Array = I32Array(n_labels as u32);
     var qhead: i32 = 0;
     var qtail: i32 = 0;
@@ -361,7 +370,7 @@ export fn asm_analyze_dead_strip(idx_paths: StringArray,
     // Scan-all BFS — O(V × E) but the constants are small (V ~ 2000,
     // E ~ 5000, BFS depth ~ 10 → ~100 M iterations worst case, runs
     // in <1 s). Adjacency lists would speed this up but cost ~32 KB
-    // more peak; not worth it for analysis-only Phase A.
+    // more peak; not worth it.
     while qhead < qtail {
         var from: i32 = get(queue, qhead);
         qhead = qhead + 1;
@@ -398,7 +407,9 @@ export fn asm_analyze_dead_strip(idx_paths: StringArray,
     g_ds_edges = 0 as I32Array;
     g_ds_n_edges = 0;
     g_ds_edges_cap = 0;
-    delete(live);
     delete(queue);
+    // Hand ownership of `live` to asm_common.tc. The caller (asm_pass2)
+    // is the only consumer; bitmap survives until process exit.
+    asm_dead_strip_set_live(live, n_labels);
     return;
 }

@@ -2903,14 +2903,20 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
 
     var li: i32 = 0;
     while li < g_nlabels {
-        var lb: Label = get(g_labels, li);
-        emit_string(sb, "lab ");
-        dump_int(sb, addr(lb));
-        emit_char(sb, ' ');
-        dump_int(sb, section(lb));
-        emit_char(sb, ' ');
-        emit_n(sb, lab_name_at(li), 0, name_len(lb));
-        emit_nl(sb);
+        // Phase B dead-strip: skip labels unreachable from roots. The
+        // is_live query returns 1 (safe default) when the analyzer
+        // didn't run, so non-link callers (e.g. asm_pass1 internal
+        // re-init paths) keep their existing dump behavior.
+        if asm_dead_strip_is_live(li) != 0 {
+            var lb: Label = get(g_labels, li);
+            emit_string(sb, "lab ");
+            dump_int(sb, addr(lb));
+            emit_char(sb, ' ');
+            dump_int(sb, section(lb));
+            emit_char(sb, ' ');
+            emit_n(sb, lab_name_at(li), 0, name_len(lb));
+            emit_nl(sb);
+        }
         li = li + 1;
     }
 
@@ -3721,3 +3727,34 @@ export fn asm_load_idx(path: String) -> i32 {
 // also needs them.
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
+
+// Dead-strip live bitmap (Phase B). Populated by asm_dead_strip.tc's
+// asm_analyze_dead_strip via asm_dead_strip_set_live. asm_dump_lab_state_to
+// consults asm_dead_strip_is_live to filter `lab` lines for unreachable
+// labels. The bitmap stays allocated until process exit — no callers
+// re-init dead-strip mid-process.
+//
+// Storage lives here (rather than in asm_dead_strip.tc) because
+// asm_pass1 doesn't import the dead-strip module — keeping the query
+// fn locally defined avoids a cross-module unresolved symbol when
+// asm_pass1 links asm_common.tc alone.
+var g_ds_live: U8Array = 0 as U8Array;
+var g_ds_live_n: i32 = 0;
+
+export fn asm_dead_strip_set_live(bitmap: U8Array, n: i32) -> void {
+    if g_ds_live as u32 != 0u32 { delete(g_ds_live); }
+    g_ds_live = bitmap;
+    g_ds_live_n = n;
+    return;
+}
+
+// Returns 1 when label `idx` is reachable from a root (live), 0 when
+// dead. When dead-strip didn't run (g_ds_live unallocated) returns 1
+// — keeps non-link callers' dump behavior unchanged.
+export fn asm_dead_strip_is_live(idx: i32) -> i32 {
+    if g_ds_live as u32 == 0u32 { return 1; }
+    if idx < 0 { return 1; }
+    if idx >= g_ds_live_n { return 1; }
+    if get(g_ds_live, idx) != 0u8 { return 1; }
+    return 0;
+}

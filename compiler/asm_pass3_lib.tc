@@ -441,8 +441,11 @@ fn reloc_read_line(buf: U8Array, cap: i32) -> i32 {
 }
 
 // Parse one `reloc <off> <kind> <name>` line into g_reloc_pending_*.
-// Returns 0 on success, -1 if the name is empty (malformed line).
-// Caller guarantees labels are finalized so asm_find_label_idx is O(1).
+// Returns 0 on success, -1 if malformed or if the target name doesn't
+// resolve (dead-strip removed it from the .lab). The reloc_stream_next
+// loop treats -1 as "skip this line and read the next" — for dead
+// targets that's safe because BFS guarantees no live code references
+// them, so leaving the bytes unpatched can't be observed at run time.
 fn parse_reloc_into_pending(buf: U8Array, blen: i32) -> i32 {
     parse_dec(buf, 6, blen);
     g_reloc_pending_off = g_lab_int;
@@ -466,7 +469,7 @@ fn parse_reloc_into_pending(buf: U8Array, blen: i32) -> i32 {
     while i < nlen { set(name, i, get(buf, ns + i)); i = i + 1; }
     var lab_idx: i32 = asm_find_label_idx(name, nlen);
     delete(name);
-    if lab_idx < 0 { sys_exit(31); }
+    if lab_idx < 0 { return 0 - 1; }
     g_reloc_pending_lab_idx = lab_idx;
     g_reloc_pending_addr    = asm_label_addr_at(lab_idx);
     g_reloc_pending_sec     = asm_label_section_at(lab_idx);
