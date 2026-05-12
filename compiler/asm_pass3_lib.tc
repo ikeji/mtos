@@ -239,6 +239,36 @@ fn patch_reloc_j_at(buf: U8Array, rel_off: i32, sec_base: i32, chunk_off: i32, t
     return;
 }
 
+// Apply one reloc kind=4 (B-type conditional branch, 4 bytes). The
+// 13-bit signed PC-relative offset is scattered across bit 31, bits
+// 30:25, bits 11:8, and bit 7; we mask the existing imm bits out
+// and OR the new ones in from `target - pc`. Used by Phase C
+// dead-strip — asm_pass1 emits kind=4 for any branch whose target is
+// a globally-visible name (not numeric / .L_*) so a dead-range
+// compaction between source and target gets repatched correctly.
+fn patch_reloc_b_at(buf: U8Array, rel_off: i32, sec_base: i32, chunk_off: i32, target: i32) -> void {
+    var pc: i32 = sec_base + chunk_off + rel_off;
+    var off: i32 = target - pc;
+    var w: i32 =
+        (get(buf, rel_off + 0) as i32) |
+        ((get(buf, rel_off + 1) as i32) << 8) |
+        ((get(buf, rel_off + 2) as i32) << 16) |
+        ((get(buf, rel_off + 3) as i32) << 24);
+    // B-type imm bits = 31 | 30:25 | 11:8 | 7  (mask 0xFE000F80).
+    // Preserve everything else (opcode, rs1, rs2, funct3) = 0x01FFF07F.
+    w = w & 0x01FFF07F;
+    var b12:    i32 = (off >> 12) & 1;
+    var b10_5:  i32 = (off >> 5)  & 63;
+    var b4_1:   i32 = (off >> 1)  & 15;
+    var b11:    i32 = (off >> 11) & 1;
+    w = w | (b12 << 31) | (b10_5 << 25) | (b4_1 << 8) | (b11 << 7);
+    set(buf, rel_off + 0, (w & 255) as u8);
+    set(buf, rel_off + 1, ((w >> 8) & 255) as u8);
+    set(buf, rel_off + 2, ((w >> 16) & 255) as u8);
+    set(buf, rel_off + 3, ((w >> 24) & 255) as u8);
+    return;
+}
+
 // Pre-encoded section bytes: open `path`, copy its contents straight
 // to g_out_fd in 4 KB chunks (no per-byte emit_stream overhead), then
 // nudge the section cursor / emitted counter so subsequent asm src
@@ -577,6 +607,8 @@ fn apply_pending_at(win: U8Array, w_off: i32, sec_base: i32, chunk_off: i32) -> 
     } else if k == 3 {
         patch_reloc_auto_at(win, w_off, sec_base, chunk_off, ta,
                             g_reloc_pending_sec, asm_get_gp_abs());
+    } else if k == 4 {
+        patch_reloc_b_at(win, w_off, sec_base, chunk_off, ta);
     } else {
         patch_reloc_j_at(win, w_off, sec_base, chunk_off, ta);
     }

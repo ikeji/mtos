@@ -1596,6 +1596,18 @@ fn enc_b(f3: i32, rs1: i32, rs2: i32, off: i32) -> i32 {
            (rs2 << 20) | (rs1 << 15) | (f3 << 12) |
            (((off >> 1) & 15) << 8) | (((off >> 11) & 1) << 7) | 99;
 }
+
+// Phase C: emit a kind=4 B-type reloc when this branch's target
+// operand is a globally-visible label. label_op_undefined filters
+// out numeric labels (Nb/Nf) and `.L_*` intra-function targets, both
+// of which never cross dead ranges by construction. Called from each
+// b{eq,ne,lt,ge,ltu,geu,le,gt,leu,gtu,eqz,nez} encoder above.
+fn b_reloc_named(op_idx: i32) -> void {
+    if g_reloc_fd > 0 && g_target_section == 0 && label_op_undefined(op_idx) != 0 {
+        asm_emit_reloc(g_section_emitted, 4, op_idx);
+    }
+    return;
+}
 fn enc_u(op: i32, rd: i32, imm: i32) -> i32 {
     return (imm & (0 - 4096)) | (rd << 7) | op;
 }
@@ -1673,18 +1685,26 @@ fn asm_instr() -> i32 {
         if mnem_eq("and")   { if g_pass==2 { emit32(enc_r(51,7,0,parse_reg_op(0),parse_reg_op(1),parse_reg_op(2))); } return 4; }
         if mnem_eq("andi")  { if g_pass==2 { emit32(enc_i(19,7,parse_reg_op(0),parse_reg_op(1),parse_imm_op(2))); } return 4; }
     } else if c0 == 'b' as u8 {
-        if mnem_eq("beq")  { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("bne")  { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("blt")  { if g_pass==2 { emit32(enc_b(4,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("bge")  { if g_pass==2 { emit32(enc_b(5,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("bltu") { if g_pass==2 { emit32(enc_b(6,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("bgeu") { if g_pass==2 { emit32(enc_b(7,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("ble")  { if g_pass==2 { emit32(enc_b(5,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("bgt")  { if g_pass==2 { emit32(enc_b(4,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("bleu") { if g_pass==2 { emit32(enc_b(7,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("bgtu") { if g_pass==2 { emit32(enc_b(6,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
-        if mnem_eq("beqz") { if g_pass==2 { emit32(enc_b(0,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
-        if mnem_eq("bnez") { if g_pass==2 { emit32(enc_b(1,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
+        // Phase C: B-type branches that target a globally-visible name
+        // need a kind=4 reloc so asm_pass3 can repatch the 13-bit
+        // signed PC-relative offset after compaction shifts the gap
+        // between the branch and its target. Intra-function targets
+        // (numeric 0f/0b, .L_*) are filtered out by label_op_undefined.
+        // The operand index of the label is 2 for two-reg variants
+        // (beq/bne/blt/...) and 1 for the zero-compare pseudos
+        // (beqz/bnez).
+        if mnem_eq("beq")  { if g_pass==2 { b_reloc_named(2); emit32(enc_b(0,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bne")  { if g_pass==2 { b_reloc_named(2); emit32(enc_b(1,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("blt")  { if g_pass==2 { b_reloc_named(2); emit32(enc_b(4,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bge")  { if g_pass==2 { b_reloc_named(2); emit32(enc_b(5,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bltu") { if g_pass==2 { b_reloc_named(2); emit32(enc_b(6,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bgeu") { if g_pass==2 { b_reloc_named(2); emit32(enc_b(7,parse_reg_op(0),parse_reg_op(1),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("ble")  { if g_pass==2 { b_reloc_named(2); emit32(enc_b(5,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bgt")  { if g_pass==2 { b_reloc_named(2); emit32(enc_b(4,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bleu") { if g_pass==2 { b_reloc_named(2); emit32(enc_b(7,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("bgtu") { if g_pass==2 { b_reloc_named(2); emit32(enc_b(6,parse_reg_op(1),parse_reg_op(0),parse_label_op(2)-pc)); } return 4; }
+        if mnem_eq("beqz") { if g_pass==2 { b_reloc_named(1); emit32(enc_b(0,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
+        if mnem_eq("bnez") { if g_pass==2 { b_reloc_named(1); emit32(enc_b(1,parse_reg_op(0),0,parse_label_op(1)-pc)); } return 4; }
     } else if c0 == 'c' as u8 {
         if mnem_eq("call") || mnem_eq("tail") {
             var rd: i32 = 1;
