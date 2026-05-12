@@ -76,9 +76,14 @@ static const int pool_size[NPOOLS] = {
     1048576, 2097152, 4194304
 };
 static const int pool_count[NPOOLS] = {
-    32768, 32768, 32768, 128, 64, 256, 64, 64, 32, 64,
+    32768, 32768, 32768, 128, 512, 256, 64, 64, 32, 64,
     32, 64, 32, 16, 8, 4, 4, 4, 2
 };
+/* bucket 4 (256-byte) was 64. asm_pass1 on the larger compiler self-
+   builds (bc2asm.s, asm_common.s) needs more 256-byte slots after
+   commits 1862e9d (dead-strip Phase A: per-owner state) + e416f40 /
+   7f09826 (intra-file + B-type reloc tables). Bumped to 512 →
+   128 KB out of the 96 MB heap. */
 /* bucket 2 (64-byte) was bumped from 256 to 32768 to hold the
    per-AstNode struct instances created by ast_node.tc. Each AstNode
    is 8 i32 fields + 4 byte HeapObj header → 36 bytes, rounded up
