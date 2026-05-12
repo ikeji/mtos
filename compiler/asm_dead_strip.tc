@@ -411,5 +411,103 @@ export fn asm_analyze_dead_strip(idx_paths: StringArray,
     // Hand ownership of `live` to asm_common.tc. The caller (asm_pass2)
     // is the only consumer; bitmap survives until process exit.
     asm_dead_strip_set_live(live, n_labels);
+
+    // Phase C.1: diagnostic compaction analysis (no behavior change).
+    // Computes per-section dead-byte totals so we can confirm the
+    // sort + walk algorithm picks up the right ranges before C.2 wires
+    // the actual addr / size / skip emission.
+    ds_print_compact_analysis();
+    return;
+}
+
+// ===== Phase C.1: compaction analysis (diagnostic only) =====
+//
+// After BFS, walk per-section labels in addr order and compute the
+// total dead bytes per section. C.1 only prints diagnostics — no
+// adjustment to g_sec_size / label.addr / reloc offsets yet. C.2 will
+// wire those in along with the asm_pass3 skip-aware memcpy.
+//
+// Workspace: a packed I32Array sized to nlabels used as the
+// per-section sorted label index list. Allocated once, reused per
+// section. Insertion sort over typically ≤ 1500 labels in text →
+// O(N²) = ~2M comparisons, well under a second.
+
+// Sort label indices in `section` by addr into `out` (insertion sort).
+// Returns the number of labels in the section.
+fn ds_sort_section(section: i32, out: I32Array) -> i32 {
+    var n: i32 = 0;
+    var total: i32 = asm_get_nlabels();
+    var i: i32 = 0;
+    while i < total {
+        if asm_label_section_at(i) == section {
+            set(out, n, i);
+            n = n + 1;
+        }
+        i = i + 1;
+    }
+    // Insertion sort by asm_label_addr_at.
+    var k: i32 = 1;
+    while k < n {
+        var cur_idx: i32 = get(out, k);
+        var cur_addr: i32 = asm_label_addr_at(cur_idx);
+        var j: i32 = k - 1;
+        var done: i32 = 0;
+        while j >= 0 && done == 0 {
+            var prev_idx: i32 = get(out, j);
+            var prev_addr: i32 = asm_label_addr_at(prev_idx);
+            if prev_addr <= cur_addr {
+                done = 1;
+            } else {
+                set(out, j + 1, prev_idx);
+                j = j - 1;
+            }
+        }
+        set(out, j + 1, cur_idx);
+        k = k + 1;
+    }
+    return n;
+}
+
+// Diagnostic walk: print per-section dead byte tallies.
+fn ds_print_compact_analysis() -> void {
+    var nl: i32 = asm_get_nlabels();
+    if nl <= 0 { return; }
+    var workspace: I32Array = I32Array(nl as u32);
+    var s: i32 = 0;
+    while s < 4 {
+        var n_in_sec: i32 = ds_sort_section(s, workspace);
+        // Section end = sec_base[s+1] for s < 3; bss (s == 3) has no
+        // emitted bytes so dead-byte analysis there is moot. Skip s=3.
+        var section_end: i32 = 0;
+        if s + 1 < 4 { section_end = asm_get_sec_base(s + 1); }
+        if s == 3 { section_end = 0; }
+
+        var total_dead: i32 = 0;
+        var i: i32 = 0;
+        while i < n_in_sec && s != 3 {
+            var lab_idx: i32 = get(workspace, i);
+            var lab_addr: i32 = asm_label_addr_at(lab_idx);
+            var next_addr: i32 = section_end;
+            if i + 1 < n_in_sec {
+                next_addr = asm_label_addr_at(get(workspace, i + 1));
+            }
+            if asm_dead_strip_is_live(lab_idx) == 0 {
+                if next_addr > lab_addr {
+                    total_dead = total_dead + (next_addr - lab_addr);
+                }
+            }
+            i = i + 1;
+        }
+
+        if total_dead > 0 {
+            sys_write(2, "[dead-strip sec" as u32 as U8Array, 15);
+            ds_eprint_int(s);
+            sys_write(2, " dead=" as u32 as U8Array, 6);
+            ds_eprint_int(total_dead);
+            sys_write(2, "]\n" as u32 as U8Array, 2);
+        }
+        s = s + 1;
+    }
+    delete(workspace);
     return;
 }
