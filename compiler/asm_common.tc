@@ -41,8 +41,13 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // Self-host builds measured ~2800-3200 labels so 4095 has plenty of
 // headroom; if a future build trips it bump to 8191 (next 1-below-2^n).
 var MAX_LABELS: i32 = 4095;
-// Numeric labels (0:..9:). Each digit holds at most NUM_LAB_PER_DIGIT
-// definitions; the g_numlab table is `digit * NUM_LAB_PER_DIGIT + idx`.
+// Numeric labels (0:..9:). Digit 0 is by far the most common (every
+// bc2asm-emitted branch target after a forward jump uses `0:`) — the
+// kernel.bin self-host build measures ~1300 digit-0 entries vs ≤ 2
+// per other digit. So we use a wider table for digit 0 and a tiny
+// one for the rest. Both sizes are picked to land in tight pool
+// buckets (I32Array(N) takes 4N+4 bytes, so N=2047 = 8192 = b8192 and
+// N×9=63 = 256 = b256, exact fits each).
 // Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
 // for every conditional branch).
 //
@@ -51,7 +56,7 @@ var MAX_LABELS: i32 = 4095;
 // to 1024 — the kernel's measured 404 max underestimated; compiling
 // the assembler itself is the real worst case. The bounds check in
 // define_numlab below catches future regressions cleanly.
-var NUM_LAB_PER_DIGIT: i32 = 4096;
+var NUM_LAB_PER_DIGIT: i32 = 2047;
 
 // ===== Output mode (set by ; raw / ; load_base directives) =====
 var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
@@ -790,17 +795,11 @@ export fn asm_release_ref_state() -> void {
     return;
 }
 
-// Numeric labels (0:..9:). Split storage by digit because measured
-// usage is wildly skewed: bc2asm.tc full.s has 373 `0:` defs and
-// 0-1 across the other 9 digits; asm_pass2.tc itself reaches >512
-// for digit 0 (which is why NUM_LAB_PER_DIGIT can't drop). Putting
-// every digit on the same flat 1024 stride wasted 9 × 1020 entries.
-// Now: digit 0 → g_numlab_zero (1024 entries), digits 1-9 →
-// g_numlab_other (NUMLAB_OTHER_PER_DIGIT entries each, base
-// (digit-1) × stride). Saves ~32 KB peak on asm_pass2/asm_pass3.
-var NUMLAB_OTHER_PER_DIGIT: i32 = 64;  // digits 1-9 — each almost
-                                       // never gets more than a
-                                       // handful in real source
+// Digits 1-9 measured: 0-2 entries each in real source. 7 per digit
+// × 9 digits = 63 total entries; I32Array(63) = 256 bytes lands in
+// b256 exactly (was NUMLAB_OTHER_PER_DIGIT=64 → 9×64 = 576 entries →
+// 2308 bytes → b4096, a 4 KB slot for under 9 used entries).
+var NUMLAB_OTHER_PER_DIGIT: i32 = 7;
 var g_numlab_zero:  I32Array = 0 as I32Array;
 var g_numlab_other: I32Array = 0 as I32Array;
 var g_numlab_count: I32Array = 0 as I32Array;  // count per digit (10 entries)
