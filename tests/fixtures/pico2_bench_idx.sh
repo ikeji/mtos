@@ -10,6 +10,10 @@ codegen < /sd/2.tast > /sd/3.bc
 bc2asm < /sd/3.bc > /sd/4.s
 cat /sd/4.s /prelude_tail.s > /sd/u.s
 asm_pass1 /sd/u.s --idx-out /sd/u.idx --text-bin /sd/u.tx --rodata-bin /sd/u.ro --data-bin /sd/u.dt --reloc-out /sd/u.rl
+cat /prelude.tx > /sd/prelude.tx
+cat /prelude.ro > /sd/prelude.ro
+cat /prelude.dt > /sd/prelude.dt
+cat /prelude.rl > /sd/prelude.rl
 asm_pass2 --add /prelude.idx --add /sd/u.idx --lab-out /sd/full.lab
 asm_pass3 --lab /sd/full.lab --out /sd/HW
 /sd/HW
