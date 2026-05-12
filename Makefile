@@ -375,10 +375,18 @@ build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 
 PICO2_DISK = build/kernel/disk.img
 # Recipe shared by pico2_kernel.uf2 and pico2_kernel_extra.uf2.
+# `dx.img` as the incbin BLOB_PATH matches the on-device dumper's
+# wrap.s shape — asm_pass2 then emits a basename-only `src raw dx.img`
+# line, and asm_pass3 resolves it relative to the .lab's directory
+# (build/intermediate/gen2/kernel_pico2/). We stage a copy of
+# $(PICO2_DISK) there as `dx.img` so the resolver finds it.
 define PICO2_KERNEL_RECIPE
 	@echo "Building kernel: pico2 (disk=$(PICO2_DISK))" >&2
 	@_tmp=$$(mktemp -d) && \
-	kernel/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image $(PICO2_DISK) > "$$_tmp/mtfs_image.s" && \
+	_labdir=build/intermediate/gen2/kernel_pico2 && \
+	mkdir -p "$$_labdir" && \
+	cp $(PICO2_DISK) "$$_labdir/dx.img" && \
+	kernel/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
 	cat kernel/platform_pico2.s kernel/trap_common.s > "$$_tmp/crt0.s" && \
 	cat kernel/crt0_pico2_data.s "$$_tmp/mtfs_image.s" > "$$_tmp/kern_data.s" && \
 	CRT0="$$_tmp/crt0.s" CRT0_DATA="$$_tmp/kern_data.s" \

@@ -37,12 +37,27 @@ PY
 # the UF2 and running this orchestrator — make sure your tree is
 # clean before kicking it off.
 cp "$ROOT/build/kernel/disk-extra.img" "$TMP/disk-extra.img"
-kernel/bin2s.sh "$TMP/disk-extra.img" _mtfs_image > "$TMP/mtfs.s" 2>/dev/null
+# Use bin2s_incbin.sh (matches the on-device dumper's wrap.s shape)
+# with `dx.img` as the literal incbin path. asm_pass2 emits the
+# basename to the .lab, asm_pass3 resolves relative to the .lab's
+# dir — so we also have to drop a sibling `dx.img` next to the lab
+# in compile-gen2's intermediate dir (see HOST_LAB_DIR below).
+"$ROOT/kernel/bin2s_incbin.sh" "$TMP/disk-extra.img" _mtfs_image dx.img > "$TMP/wrap.s" 2>/dev/null
 cat "$ROOT/kernel/platform_pico2.s" "$ROOT/kernel/trap_common.s" > "$TMP/host_crt0.s"
-cat "$ROOT/kernel/crt0_pico2_data.s" "$TMP/mtfs.s" > "$TMP/host_data.s"
+cat "$ROOT/kernel/crt0_pico2_data.s" "$TMP/wrap.s" > "$TMP/host_data.s"
+# Where compile-gen2.sh keeps its intermediates for this .tc.
+HOST_LAB_DIR="$ROOT/build/intermediate/gen2/kernel_pico2"
+mkdir -p "$HOST_LAB_DIR"
+cp "$TMP/disk-extra.img" "$HOST_LAB_DIR/dx.img"
+# INPUT_NAMES + PRELUDE_NAME align the host intermediate basenames
+# (prelude.tx, in_0.tx, ...) with the on-device fixture names
+# (p.tx, kc.tx, pp.tx, bf.tx, ...) so the resulting .lab is byte-
+# identical between host and device.
 CRT0="$TMP/host_crt0.s" CRT0_DATA="$TMP/host_data.s" ASM_PROLOGUE="; raw" \
     GEN2_DIR="$ROOT/build/gen2" \
     CACHED_S_DIR="$ROOT/build/kernel/shared" \
+    PRELUDE_NAME="p" \
+    INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt" \
     "$ROOT/compile-gen2.sh" -o "$TMP/host_k.bin" \
     "$ROOT/kernel/kernel_pico2.tc" 2>/dev/null
 # Phase 8: TC port runs via qemu-riscv32 instead of python3.

@@ -39,6 +39,16 @@ RUNTIME_TC="${RUNTIME_TC:-$ROOT_DIR/compiler/runtime.tc}"
 # Optional directive lines prepended to asm input (e.g. "; raw" for Pico 2 / virt).
 ASM_PROLOGUE="${ASM_PROLOGUE:-}"
 
+# Optional override of intermediate idx/bin basenames. When unset the
+# defaults are `prelude` for the crt0+runtime input and `in_$N` for
+# user inputs. self_replicate orchestrator sets these to match the
+# on-device fixture names (`p` / `kc pp bf bs ff mf tf pf vf ld kp pt`)
+# so the resulting .lab is byte-identical between host and device —
+# asm_pass2 emits basename-only paths and asm_pass3 resolves them
+# relative to the .lab's directory (see emit_basename in asm_common.tc
+# and resolve_lab_relative in asm_pass3_lib.tc).
+PRELUDE_NAME="${PRELUDE_NAME:-prelude}"
+
 OUTFILE="a.out"
 TC_FILE=""
 
@@ -219,11 +229,11 @@ cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
 
 # Step 3: pre-encode prelude.s alone.
 "$QEMU" "$GEN2_DIR/asm_pass1" "$TMP/prelude.s" \
-    --idx-out    "$TMP/prelude.idx" \
-    --text-bin   "$TMP/prelude.tx" \
-    --rodata-bin "$TMP/prelude.ro" \
-    --data-bin   "$TMP/prelude.dt" \
-    --reloc-out  "$TMP/prelude.rl" 2>/dev/null
+    --idx-out    "$TMP/${PRELUDE_NAME}.idx" \
+    --text-bin   "$TMP/${PRELUDE_NAME}.tx" \
+    --rodata-bin "$TMP/${PRELUDE_NAME}.ro" \
+    --data-bin   "$TMP/${PRELUDE_NAME}.dt" \
+    --reloc-out  "$TMP/${PRELUDE_NAME}.rl" 2>/dev/null
 
 # Step 4: pre-encode each user .s + EXTRA_S + prelude_tail.s.
 # A leading `.incbin SIZE "<path>"` in any input (e.g. prelude_tail.s
@@ -231,10 +241,19 @@ cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
 # by asm_pass1 — the idx gets an `incbin` marker instead of the
 # materialized bytes, and asm_pass3 memcpys the original blob at
 # link time.
-link_args=( --add "$TMP/prelude.idx" )
+link_args=( --add "$TMP/${PRELUDE_NAME}.idx" )
+# INPUT_NAMES (when set) overrides the per-input `in_$N` default with
+# space-separated tags matching the iteration order of ASM_FILES +
+# EXTRA_S + prelude_tail.s. Used by self_replicate orchestrator to
+# align host intermediate filenames with the on-device fixture names.
+INPUT_NAMES_ARR=( ${INPUT_NAMES:-} )
 n=0
 for s in "${ASM_FILES[@]}" ${EXTRA_S:-} "$TMP/prelude_tail.s"; do
-    tag="in_$n"
+    if [ -n "${INPUT_NAMES_ARR[$n]:-}" ]; then
+        tag="${INPUT_NAMES_ARR[$n]}"
+    else
+        tag="in_$n"
+    fi
     "$QEMU" "$GEN2_DIR/asm_pass1" "$s" \
         --idx-out    "$TMP/$tag.idx" \
         --text-bin   "$TMP/$tag.tx" \
