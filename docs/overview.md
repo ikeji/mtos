@@ -67,8 +67,10 @@ GCC / GNU as / GNU ld は使わない。`asm_pass2/pass2` が「アセンブラ�
 **pico2 実機の両方**で `parse → sigscan → tcheck → codegen → bc2asm →
 asm_pass2 → asm_pass3` の 7 段を回し、生成バイナリを sh から実行して
 "Hello, World!" を出せる。pico2 では SD カード (`/sd/`) を中間ファイル
-ストレージに使い、PLL_SYS で CPU を 150 MHz に上げることで合計 127 秒
-で完走する (K7 解決の詳細は `docs/solved.md`)。
+ストレージに使い、PLL_SYS で CPU を 150 MHz に上げる。K7 達成
+(2026-04-29) 時点で合計 **127 秒**、その後 `.idx` pre-encode + 3-binary
+asm split + dead-strip default-on 等の最適化で **~15.5 秒** (2026-05-13
+再計測、`docs/scaling.md` Q1) まで短縮。詳細は `docs/solved.md`。
 
 詳細は `docs/roadmap.md` / `docs/problem.md` / `docs/task/` 参照。
 Pico 2 実機の配線・openocd 環境・実機テスト手順は

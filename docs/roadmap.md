@@ -273,7 +273,9 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 - virt: `test_phase7.sh` で 4 stage 全 pipeline 動作
 - **pico2 実機: `tests/test_pico2_phase7_sd.sh` で `/sd/` 経由 phase 7
   通し、~125 秒で `/sd/HW` を実行して "Hello, World!" 出力 (K7 解決、
-  commit cf22718 + 37c99c7 + b8049d2 + 5dfa631)**
+  commit cf22718 + 37c99c7 + b8049d2 + 5dfa631)** — 2026-05-13 再計測で
+  `tests/test_pico2_bench.sh` 経由 **2 boot ~15.5 秒** まで短縮、
+  `docs/scaling.md` Q1
 
 K7 解決の決め手 3 点:
 1. `kernel/block_sd.tc` + MBR 対応 fatfs で SD カードを永続ストレージ化

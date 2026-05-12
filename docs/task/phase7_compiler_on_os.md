@@ -8,9 +8,11 @@ Gen3 を再ビルド) まで持っていきたい。
 **ステータス**: qemu virt は M6 で 2026-04-14 達成。**pico2 実機は
 2026-04-29 に K7 を解決して達成**: SD カード SPI ドライバ + PLL_SYS
 150 MHz + プロンプト同期 UART で `parse → ... → asm_pass3 → /sd/HW`
-を約 125 秒で完走、生成バイナリで "Hello, World!" 出力。詳細は
-`docs/solved.md` の K7 エントリと `docs/scaling.md` (per-stage timing
-分析と tcc-driven slowdown 調査)。
+を約 125 秒で完走、生成バイナリで "Hello, World!" 出力。その後
+`.idx` pre-encode + 3-binary asm split + dead-strip default-on
+等の最適化で **~15.5 秒** (2026-05-13 再計測、2 boot 必要) まで短縮。
+詳細は `docs/solved.md` の K7 エントリと `docs/scaling.md` Q1
+(per-stage timing 分析と tcc-driven slowdown 調査)。
 
 以下は K7 解決前の実装記録 (アーカイブ)。
 
