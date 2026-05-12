@@ -254,8 +254,13 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
     // previous bin's bytes), emit zero padding from the current emit
     // cursor up to start_off before the memcpy. start_off=0 means no
     // padding (legacy single-bin path).
+    //
+    // Phase C: start_off is in ORIG-section-intra coords; emit cursor
+    // is in COMPACTED coords. Translate by subtracting the dead bytes
+    // that fall before start_off in this section.
+    var compacted_start: i32 = start_off - ds_dead_before_in_section(start_off);
     var emitted_now: i32 = asm_get_section_emitted();
-    var pad_n: i32 = start_off - emitted_now;
+    var pad_n: i32 = compacted_start - emitted_now;
     if pad_n > 0 {
         // Pad in fixed-size chunks. Self_replicate's rodata gets a
         // ~384 KB pad before the deferred --incbin-skip blob (the
@@ -298,11 +303,17 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
         // that straddles the current emit_end shrinks it to its start
         // so the next iteration sees the full 8 bytes contiguous;
         // the reloc itself remains pending.
+        //
+        // Phase C: each chunk byte is checked against the per-section
+        // skip cursor (ds_skip_check). Bytes in dead ranges are
+        // dropped before they reach `win`, so reloc offsets (which are
+        // already in compacted coords) line up with the emit cursor.
         var sec_base: i32 = asm_get_sec_base(0);
         var WIN:    i32 = 8192;
         var io:     U8Array = U8Array(4096u32);
         var win:    U8Array = U8Array(WIN as u32);
         var keep:   i32 = 0;       // bytes already in win[0..keep)
+        var bin_consumed: i32 = 0; // raw bytes read so far from `fd`
         // Anchor chunk_off at the section's running emit cursor. For
         // the first `src raw` entry in a section this is 0 (matches
         // the legacy single-bin case); for the second one (e.g.
@@ -312,8 +323,8 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
         var chunk_off: i32 = asm_get_section_emitted();
         var done_r: i32 = 0;
         while done_r == 0 {
-            var nr: i32 = sys_read(fd, io, 4096);
-            if nr <= 0 {
+            var nr_raw: i32 = sys_read(fd, io, 4096);
+            if nr_raw <= 0 {
                 if keep > 0 {
                     // Final flush: drain any remaining pending relocs
                     // within win[0..keep).
@@ -330,9 +341,19 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
                 }
                 done_r = 1;
             } else {
-                // Append io[0..nr) to win[keep..]
+                // Phase C: filter dead bytes before appending to win.
+                // start_off is the orig section offset of bin[0].
+                var nr: i32 = 0;
                 var ai: i32 = 0;
-                while ai < nr { set(win, keep + ai, get(io, ai)); ai = ai + 1; }
+                while ai < nr_raw {
+                    var orig_off_b: i32 = start_off + bin_consumed + ai;
+                    if ds_skip_check(orig_off_b) == 0 {
+                        set(win, keep + nr, get(io, ai));
+                        nr = nr + 1;
+                    }
+                    ai = ai + 1;
+                }
+                bin_consumed = bin_consumed + nr_raw;
                 var win_len: i32 = keep + nr;
                 // Hold back the longest reloc length (8 bytes for
                 // kind=1 / kind=2 / kind=3 auipc+addi pairs).
@@ -381,15 +402,32 @@ fn raw_memcpy_section(path: String, start_off: i32) -> i32 {
         delete(io);
         delete(win);
     } else {
-        // Streaming pass-through (no relocs to apply).
+        // Streaming pass-through (no relocs to apply). Phase C: filter
+        // out dead bytes against the per-section skip cursor before
+        // writing each chunk. Re-uses the same io buffer in-place to
+        // pack survivors at the front.
         var buf2: U8Array = U8Array(4096);
+        var bin_consumed2: i32 = 0;
         var done2: i32 = 0;
         while done2 == 0 {
-            var n2: i32 = sys_read(fd, buf2, 4096);
-            if n2 <= 0 { done2 = 1; }
+            var n2_raw: i32 = sys_read(fd, buf2, 4096);
+            if n2_raw <= 0 { done2 = 1; }
             else {
-                sys_write(out_fd, buf2, n2);
-                total = total + n2;
+                var n2: i32 = 0;
+                var b2_i: i32 = 0;
+                while b2_i < n2_raw {
+                    var orig_off2: i32 = start_off + bin_consumed2 + b2_i;
+                    if ds_skip_check(orig_off2) == 0 {
+                        set(buf2, n2, get(buf2, b2_i));
+                        n2 = n2 + 1;
+                    }
+                    b2_i = b2_i + 1;
+                }
+                bin_consumed2 = bin_consumed2 + n2_raw;
+                if n2 > 0 {
+                    sys_write(out_fd, buf2, n2);
+                    total = total + n2;
+                }
             }
         }
         delete(buf2);
@@ -690,6 +728,22 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         asm_install_numlab_from_lab(dig, addrv);
         return 0;
     }
+    if blen - p >= 5 && cmp(buf, p, "skip ") {
+        // Phase C: `skip <sec> <orig_start> <length>` line emitted by
+        // asm_pass2 when --strip is on. Install in the shared dead-
+        // range table; raw_memcpy_section consults it to omit dead
+        // bytes during memcpy.
+        parse_dec(buf, p + 5, blen);
+        var sk_sec: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var sk_start: i32 = g_lab_int;
+        parse_dec(buf, skip_ws(buf, g_lab_cur, blen), blen);
+        var sk_len: i32 = g_lab_int;
+        if sk_len > 0 {
+            asm_ds_dr_add(sk_sec, sk_start, sk_start + sk_len);
+        }
+        return 0;
+    }
     if blen - p >= 4 && cmp(buf, p, "lab ") {
         parse_dec(buf, p + 4, blen);
         var laddr: i32 = g_lab_int;
@@ -715,6 +769,81 @@ fn parse_lab_line(buf: U8Array, blen: i32) -> i32 {
         asm_install_label_from_lab(name, name_len, laddr, lsec);
         delete(name);
         return 0;
+    }
+    return 0;
+}
+
+// ===== Phase C skip-aware byte filtering =====
+//
+// Per-section workspace: indices into asm_common.tc's g_ds_dr_* table
+// of dead ranges that belong to the current section. Sorted by start.
+// g_ds_skip_cursor advances monotonically through the list as the
+// section emit progresses — same trick the reloc stream uses.
+var g_ds_skip_idx:    I32Array = 0 as I32Array;
+var g_ds_skip_n:      i32 = 0;
+var g_ds_skip_cursor: i32 = 0;
+
+fn ds_skip_init(section: i32) -> void {
+    var n_total: i32 = asm_ds_n_dead_ranges();
+    if n_total <= 0 {
+        g_ds_skip_n = 0;
+        g_ds_skip_cursor = 0;
+        return;
+    }
+    if g_ds_skip_idx as u32 == 0u32 {
+        g_ds_skip_idx = I32Array(n_total as u32);
+    }
+    g_ds_skip_n = 0;
+    var i: i32 = 0;
+    while i < n_total {
+        if asm_ds_dead_range_sec(i) == section {
+            set(g_ds_skip_idx, g_ds_skip_n, i);
+            g_ds_skip_n = g_ds_skip_n + 1;
+        }
+        i = i + 1;
+    }
+    g_ds_skip_cursor = 0;
+    return;
+}
+
+// Count dead bytes in the current section that lie strictly before
+// orig_off. Used by raw_memcpy_section to translate a bin's
+// orig-intra start_off into compacted-intra coords for pre-padding.
+// Independent walk — does NOT touch g_ds_skip_cursor.
+fn ds_dead_before_in_section(orig_off: i32) -> i32 {
+    var sum: i32 = 0;
+    var i: i32 = 0;
+    while i < g_ds_skip_n {
+        var ri: i32 = get(g_ds_skip_idx, i);
+        var start: i32 = asm_ds_dead_range_start(ri);
+        var end:   i32 = asm_ds_dead_range_end(ri);
+        if end <= orig_off {
+            sum = sum + (end - start);
+        } else if start < orig_off {
+            sum = sum + (orig_off - start);
+            return sum;
+        } else {
+            return sum;
+        }
+        i = i + 1;
+    }
+    return sum;
+}
+
+// Returns 1 if orig_off lies inside a dead range for the current
+// section, 0 otherwise. Advances g_ds_skip_cursor past ranges that
+// end <= orig_off — caller guarantees orig_off advances monotonically.
+fn ds_skip_check(orig_off: i32) -> i32 {
+    while g_ds_skip_cursor < g_ds_skip_n {
+        var ri: i32 = get(g_ds_skip_idx, g_ds_skip_cursor);
+        if asm_ds_dead_range_end(ri) <= orig_off {
+            g_ds_skip_cursor = g_ds_skip_cursor + 1;
+        } else {
+            // First range whose end > orig_off. Check if it contains.
+            var start: i32 = asm_ds_dead_range_start(ri);
+            if orig_off >= start { return 1; }
+            return 0;
+        }
     }
     return 0;
 }
@@ -750,6 +879,11 @@ fn run_section_pass(sec_target: i32) -> void {
     if sec_target == 0 && g_n_relocs > 0 {
         reloc_stream_open();
     }
+
+    // Phase C: initialise the per-section skip cursor. ds_skip_check
+    // uses it to drop dead bytes during raw_memcpy_section reads.
+    // No-op when no skip ranges were installed (asm_pass2 didn't strip).
+    ds_skip_init(sec_target);
 
     // Walk each `src raw` entry from the .lab: memcpy bytes straight
     // to g_out_fd when its section_id matches sec_target. Raw entries

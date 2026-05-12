@@ -2935,6 +2935,25 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
         d = d + 1;
     }
 
+    // Phase C dead-strip: emit `skip <sec> <orig_start> <length>` for
+    // each dead range so asm_pass3 omits those bytes during memcpy.
+    // The stub asm_ds_n_dead_ranges() returns 0 in non-link callers
+    // (asm_pass1), so this loop is empty there.
+    var sr_n: i32 = asm_ds_n_dead_ranges();
+    var sr_i: i32 = 0;
+    while sr_i < sr_n {
+        var sr_start: i32 = asm_ds_dead_range_start(sr_i);
+        var sr_end:   i32 = asm_ds_dead_range_end(sr_i);
+        emit_string(sb, "skip ");
+        dump_int(sb, asm_ds_dead_range_sec(sr_i));
+        emit_char(sb, ' ');
+        dump_int(sb, sr_start);
+        emit_char(sb, ' ');
+        dump_int(sb, sr_end - sr_start);
+        emit_nl(sb);
+        sr_i = sr_i + 1;
+    }
+
     // Pre-encode (Step 5): copy the prelude's reloc records into the
     // .lab so asm_pass3 patches the post-memcpy bytes after every
     // `src raw` entry. We flush the StringBuffer first so the file
@@ -2942,7 +2961,11 @@ export fn asm_dump_lab_state_to(out_fd: i32) -> void {
     if g_prelude_reloc as u32 != 0u32 {
         write(sb, out_fd);
         destroy(sb);
-        copy_file_to_fd(g_prelude_reloc, out_fd);
+        // Prelude text_shift is always 0 — pass through copy_reloc_shifted
+        // (rather than copy_file_to_fd) so the Phase C dead-strip path
+        // gets a chance to subtract dead-bytes-before from each reloc
+        // offset. With strip off the shift=0 case is a no-op identity.
+        copy_reloc_shifted(g_prelude_reloc, out_fd, 0);
         sb = StringBuffer_new(out_fd);
     }
     // Phase F (linker mode): copy user.reloc with each entry's offset
@@ -3027,15 +3050,30 @@ fn copy_reloc_shifted(src_path: String, dst_fd: i32, shift: i32) -> void {
                 && get(line, 4) == 'c' as u8
                 && get(line, 5) == ' ' as u8 {
             // reloc <off> <kind> <name>\n  →  reloc <off+shift> <kind> <name>\n
+            // Phase C dead-strip: when --strip is on, additionally
+            // subtract dead-bytes-before from the section-absolute
+            // offset. If the offset itself lies in a dead range, skip
+            // the line — the reloc is in dead code.
             var p: i32 = 6;
             var v: i32 = 0;
             while p < llen && get(line, p) >= '0' as u8 && get(line, p) <= '9' as u8 {
                 v = v * 10 + (get(line, p) as i32 - 48);
                 p = p + 1;
             }
-            emit_string(sb, "reloc ");
-            dump_int(sb, v + shift);
-            emit_n(sb, line, p, llen - p);
+            var section_abs: i32 = v + shift;
+            var new_off: i32 = section_abs;
+            var skip_line: i32 = 0;
+            if asm_dead_strip_get_strip() == 1 {
+                // All asm_emit_reloc sites are in text (section 0).
+                var dead_before: i32 = ds_compacted_offset(0, section_abs);
+                if dead_before < 0 { skip_line = 1; }
+                else { new_off = section_abs - dead_before; }
+            }
+            if skip_line == 0 {
+                emit_string(sb, "reloc ");
+                dump_int(sb, new_off);
+                emit_n(sb, line, p, llen - p);
+            }
         } else {
             emit_n(sb, line, 0, llen);
         }
@@ -3728,6 +3766,81 @@ export fn asm_load_idx(path: String) -> i32 {
 fn do_openat(dirfd: i32, path: String, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
+// ===== Phase C dead-range storage =====
+//
+// Flat per-section dead range table. asm_dead_strip.tc's ds_compact
+// populates these via asm_ds_dr_add (called once per dead label range);
+// asm_dump_lab_state_to walks them to emit `skip` lines, and
+// copy_reloc_shifted consults ds_compacted_offset to subtract dead-
+// bytes-before from each reloc offset.
+//
+// Storage lives in asm_common.tc (not asm_dead_strip.tc) so that
+// asm_pass1, which links asm_common.tc but NOT asm_dead_strip.tc,
+// still finds these symbols. g_ds_dr_n stays 0 in asm_pass1, so the
+// skip-emit loops and compacted-offset path are no-ops there.
+var g_ds_dr_start: I32Array = 0 as I32Array;
+var g_ds_dr_end:   I32Array = 0 as I32Array;
+var g_ds_dr_sec:   I32Array = 0 as I32Array;
+var g_ds_dr_n:     i32 = 0;
+var g_ds_dr_cap:   i32 = 0;
+
+fn ds_dr_grow() -> void {
+    var new_cap: i32 = g_ds_dr_cap * 2 + 32;
+    var new_start: I32Array = I32Array(new_cap as u32);
+    var new_end:   I32Array = I32Array(new_cap as u32);
+    var new_sec:   I32Array = I32Array(new_cap as u32);
+    var i: i32 = 0;
+    while i < g_ds_dr_n {
+        set(new_start, i, get(g_ds_dr_start, i));
+        set(new_end,   i, get(g_ds_dr_end,   i));
+        set(new_sec,   i, get(g_ds_dr_sec,   i));
+        i = i + 1;
+    }
+    if g_ds_dr_start as u32 != 0u32 { delete(g_ds_dr_start); }
+    if g_ds_dr_end   as u32 != 0u32 { delete(g_ds_dr_end); }
+    if g_ds_dr_sec   as u32 != 0u32 { delete(g_ds_dr_sec); }
+    g_ds_dr_start = new_start;
+    g_ds_dr_end   = new_end;
+    g_ds_dr_sec   = new_sec;
+    g_ds_dr_cap   = new_cap;
+    return;
+}
+
+export fn asm_ds_dr_add(sec: i32, start: i32, end: i32) -> void {
+    if g_ds_dr_n >= g_ds_dr_cap { ds_dr_grow(); }
+    set(g_ds_dr_start, g_ds_dr_n, start);
+    set(g_ds_dr_end,   g_ds_dr_n, end);
+    set(g_ds_dr_sec,   g_ds_dr_n, sec);
+    g_ds_dr_n = g_ds_dr_n + 1;
+    return;
+}
+
+export fn asm_ds_n_dead_ranges() -> i32 { return g_ds_dr_n; }
+export fn asm_ds_dead_range_sec(i: i32) -> i32 { return get(g_ds_dr_sec, i); }
+export fn asm_ds_dead_range_start(i: i32) -> i32 { return get(g_ds_dr_start, i); }
+export fn asm_ds_dead_range_end(i: i32) -> i32 { return get(g_ds_dr_end, i); }
+
+// Returns dead-bytes-before for a reloc at section-absolute offset
+// `off` in section `sec`, or -1 if `off` lies inside a dead range.
+// Linear scan over g_ds_dr_n — fine for ~200 ranges × ~5000 relocs.
+export fn ds_compacted_offset(sec: i32, off: i32) -> i32 {
+    var sum: i32 = 0;
+    var i: i32 = 0;
+    while i < g_ds_dr_n {
+        if get(g_ds_dr_sec, i) == sec {
+            var start: i32 = get(g_ds_dr_start, i);
+            var end:   i32 = get(g_ds_dr_end,   i);
+            if end <= off {
+                sum = sum + (end - start);
+            } else if start <= off {
+                return 0 - 1;
+            }
+        }
+        i = i + 1;
+    }
+    return sum;
+}
+
 // Dead-strip live bitmap (Phase B). Populated by asm_dead_strip.tc's
 // asm_analyze_dead_strip via asm_dead_strip_set_live. asm_dump_lab_state_to
 // consults asm_dead_strip_is_live to filter `lab` lines for unreachable
@@ -3740,6 +3853,18 @@ fn do_close(fd: i32) -> i32;
 // asm_pass1 links asm_common.tc alone.
 var g_ds_live: U8Array = 0 as U8Array;
 var g_ds_live_n: i32 = 0;
+
+// Phase C strip flag. 0 = analysis only (Phase A/B). 1 = compact byte
+// ranges, adjust addrs / reloc offsets, emit `skip` lines in .lab.
+// Set via --strip CLI flag in asm_pass2.
+var g_ds_strip: i32 = 0;
+
+export fn asm_dead_strip_set_strip(v: i32) -> void {
+    g_ds_strip = v;
+    return;
+}
+
+export fn asm_dead_strip_get_strip() -> i32 { return g_ds_strip; }
 
 export fn asm_dead_strip_set_live(bitmap: U8Array, n: i32) -> void {
     if g_ds_live as u32 != 0u32 { delete(g_ds_live); }
@@ -3757,4 +3882,20 @@ export fn asm_dead_strip_is_live(idx: i32) -> i32 {
     if idx >= g_ds_live_n { return 1; }
     if get(g_ds_live, idx) != 0u8 { return 1; }
     return 0;
+}
+
+// Per-section accessors / setters for Phase C compaction. ds_compact()
+// reads original sec_size, computes compacted sizes, then writes them
+// back via asm_set_sec_size/base. asm_dump_lab_state_to picks up the
+// already-updated values from g_sec_base/g_sec_size when it dumps.
+export fn asm_get_sec_size(s: i32) -> i32 { return get(g_sec_size, s); }
+export fn asm_set_sec_size(s: i32, v: i32) -> void { set(g_sec_size, s, v); return; }
+export fn asm_set_sec_base(s: i32, v: i32) -> void { set(g_sec_base, s, v); return; }
+export fn asm_set_gp_abs(v: i32) -> void { g_gp_abs = v; return; }
+
+// Mutate a single label's resolved address. Phase C compaction shifts
+// every live label's addr down by (gap + section_shift).
+export fn asm_set_label_addr(idx: i32, v: i32) -> void {
+    addr(get(g_labels, idx), v);
+    return;
 }

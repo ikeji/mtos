@@ -96,7 +96,11 @@ fn ds_is_root_name(buf: U8Array, n: i32) -> i32 {
     if ds_streq_lit(buf, n, "_trap_frame") != 0 { return 1; }
     // Kernel-side entries that platform_*.s pulls in unconditionally.
     if ds_streq_lit(buf, n, "kern_main") != 0 { return 1; }
-    if ds_streq_lit(buf, n, "trap_entry") != 0 { return 1; }
+    if ds_streq_lit(buf, n, "_trap_entry") != 0 { return 1; }
+    // Pico 2: IMAGE_DEF block at flash start. RP2350 boot ROM scans
+    // for this 32-byte block; no code references it but it must stay
+    // in the linked binary.
+    if ds_streq_lit(buf, n, "__embedded_block") != 0 { return 1; }
     return 0;
 }
 
@@ -412,11 +416,17 @@ export fn asm_analyze_dead_strip(idx_paths: StringArray,
     // is the only consumer; bitmap survives until process exit.
     asm_dead_strip_set_live(live, n_labels);
 
-    // Phase C.1: diagnostic compaction analysis (no behavior change).
-    // Computes per-section dead-byte totals so we can confirm the
-    // sort + walk algorithm picks up the right ranges before C.2 wires
-    // the actual addr / size / skip emission.
-    ds_print_compact_analysis();
+    // Phase C: if --strip is enabled, actually compact the byte
+    // layout: build per-section dead ranges, adjust label addrs /
+    // sec_base / sec_size / gp_abs / reloc offsets. asm_pass3 must
+    // then honor the `skip` lines in the .lab — C.3 wires that side.
+    // Without --strip, just print per-section dead totals as a
+    // diagnostic (Phase C.1 behavior).
+    if asm_dead_strip_get_strip() == 1 {
+        ds_compact();
+    } else {
+        ds_print_compact_analysis();
+    }
     return;
 }
 
@@ -466,6 +476,135 @@ fn ds_sort_section(section: i32, out: I32Array) -> i32 {
         k = k + 1;
     }
     return n;
+}
+
+// ===== Phase C.2: compaction =====
+//
+// Dead-range storage lives in asm_common.tc — see asm_ds_dr_add /
+// asm_ds_n_dead_ranges / ds_compacted_offset there. ds_compact below
+// is the producer; asm_dump_lab_state_to and copy_reloc_shifted are
+// the consumers.
+
+fn ds_align16(v: i32) -> i32 {
+    return (v + 15) & (0 - 16);
+}
+
+// ds_compact — Phase C.2.
+//
+// Walks per-section labels in addr order, builds dead-range table,
+// rewrites label addrs / sec_size / sec_base / gp_abs to compacted
+// coordinates. asm_dump_lab_state_to and copy_reloc_shifted then
+// emit the compacted .lab.
+export fn ds_compact() -> void {
+    var nl: i32 = asm_get_nlabels();
+    if nl <= 0 { return; }
+    var workspace: I32Array = I32Array(nl as u32);
+    var per_label_gap: I32Array = I32Array(nl as u32);
+    var total_dead_s: I32Array = I32Array(4);
+
+    // Phase 1: per-section sort + dead-range collection. Gap[label]
+    // is the cum dead bytes WITHIN this section before this label.
+    var s: i32 = 0;
+    while s < 4 {
+        if s == 3 {
+            // bss: no file bytes to compact.
+            set(total_dead_s, s, 0);
+            s = s + 1;
+            continue;
+        }
+        var n_in_sec: i32 = ds_sort_section(s, workspace);
+        var section_end: i32 = asm_get_sec_base(s + 1);
+        var cum_dead: i32 = 0;
+        var i: i32 = 0;
+        while i < n_in_sec {
+            var lab_idx: i32 = get(workspace, i);
+            var lab_addr: i32 = asm_label_addr_at(lab_idx);
+            var next_addr: i32 = section_end;
+            if i + 1 < n_in_sec {
+                next_addr = asm_label_addr_at(get(workspace, i + 1));
+            }
+            set(per_label_gap, lab_idx, cum_dead);
+            if asm_dead_strip_is_live(lab_idx) == 0 {
+                if next_addr > lab_addr {
+                    // Store dead range in INTRA-section coords (label
+                    // addrs are absolute after asm_fixup_labels, so
+                    // subtract sec_base to recover intra). asm_pass3's
+                    // src raw `start` offsets are also intra-section,
+                    // so this lines up at filter time.
+                    var sec_base_s: i32 = asm_get_sec_base(s);
+                    var dr_start: i32 = lab_addr - sec_base_s;
+                    var dr_end:   i32 = next_addr - sec_base_s;
+                    asm_ds_dr_add(s, dr_start, dr_end);
+                    cum_dead = cum_dead + (dr_end - dr_start);
+                }
+            }
+            i = i + 1;
+        }
+        set(total_dead_s, s, cum_dead);
+        s = s + 1;
+    }
+
+    // Phase 2: compute new sec_size / sec_base. Original sec_size is
+    // already 16-aligned; subtracting the dead bytes may de-align, so
+    // re-round-up. (Within-section labels don't reference the trailing
+    // alignment padding, so live label addrs stay valid relative to
+    // sec_base.)
+    var orig_text:   i32 = asm_get_sec_size(0);
+    var orig_rodata: i32 = asm_get_sec_size(1);
+    var orig_data:   i32 = asm_get_sec_size(2);
+    var orig_bss:    i32 = asm_get_sec_size(3);
+    var new_text:    i32 = ds_align16(orig_text   - get(total_dead_s, 0));
+    var new_rodata:  i32 = ds_align16(orig_rodata - get(total_dead_s, 1));
+    var new_data:    i32 = ds_align16(orig_data   - get(total_dead_s, 2));
+    var new_bss:     i32 = orig_bss;
+    asm_set_sec_size(0, new_text);
+    asm_set_sec_size(1, new_rodata);
+    asm_set_sec_size(2, new_data);
+    asm_set_sec_size(3, new_bss);
+    asm_set_sec_base(0, 0);
+    asm_set_sec_base(1, new_text);
+    asm_set_sec_base(2, new_text + new_rodata);
+    asm_set_sec_base(3, new_text + new_rodata + new_data);
+    asm_set_gp_abs(new_text + new_rodata + 2048);
+
+    // Phase 3: rewrite live label addrs. section_shift[s] is the
+    // cumulative reduction in section sizes for sections 0..s-1
+    // (NOT the raw dead-byte total — alignment rounds the new sizes
+    // up to a 16-byte multiple, so the actual base shift may differ
+    // from the unaligned dead count by a few bytes per section).
+    var shift0: i32 = 0;
+    var shift1: i32 = orig_text - new_text;
+    var shift2: i32 = shift1 + (orig_rodata - new_rodata);
+    var shift3: i32 = shift2 + (orig_data - new_data);
+    var li: i32 = 0;
+    while li < nl {
+        if asm_dead_strip_is_live(li) != 0 {
+            var lsec: i32 = asm_label_section_at(li);
+            var shift: i32 = shift0;
+            if lsec == 1 { shift = shift1; }
+            if lsec == 2 { shift = shift2; }
+            if lsec == 3 { shift = shift3; }
+            var gap: i32 = get(per_label_gap, li);
+            var new_addr: i32 = asm_label_addr_at(li) - shift - gap;
+            asm_set_label_addr(li, new_addr);
+        }
+        li = li + 1;
+    }
+
+    sys_write(2, "[dead-strip compact text=" as u32 as U8Array, 25);
+    ds_eprint_int(get(total_dead_s, 0));
+    sys_write(2, " rodata=" as u32 as U8Array, 8);
+    ds_eprint_int(get(total_dead_s, 1));
+    sys_write(2, " data=" as u32 as U8Array, 6);
+    ds_eprint_int(get(total_dead_s, 2));
+    sys_write(2, " ranges=" as u32 as U8Array, 8);
+    ds_eprint_int(asm_ds_n_dead_ranges());
+    sys_write(2, "]\n" as u32 as U8Array, 2);
+
+    delete(workspace);
+    delete(per_label_gap);
+    delete(total_dead_s);
+    return;
 }
 
 // Diagnostic walk: print per-section dead byte tallies.
