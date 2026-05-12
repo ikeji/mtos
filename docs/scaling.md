@@ -86,10 +86,11 @@ PLL_SYS 150 MHz、msh /pico2_bench_idx.sh 駆動)**:
 | bc2asm | 5 s | **0.20 s** | 25× |
 | cat-link | 10 s | **0.18 s** | 56× |
 | asm_pass1 | (n/a — 旧 asm) | **1.36 s** | — |
-| asm_pass2 | 27 s | (OOM、後述) | — |
-| asm_pass3 | 80 s | (未計測) | — |
-| /sd/HW exec | 1 s | (未計測) | — |
-| **計測済 6 stage 合計** | **66 s** | **~5.0 s** | **13×** |
+| prelude staging × 4 (`cat /prelude.* > /sd/`) | — | **1.32 s** | — |
+| asm_pass2 | 27 s | **6.75 s** (要 2 boot) | 4× |
+| asm_pass3 | 80 s | **2.04 s** (要 2 boot) | 39× |
+| /sd/HW exec | 1 s | **0.19 s** | 5× |
+| **end-to-end 合計** | **127 s** | **~15.5 s** | **8×** |
 
 source 依存 5 stage (parse〜bc2asm) は K7 の **66 s → 3.7 s で
 18 倍速** いている。これは:
@@ -100,22 +101,37 @@ source 依存 5 stage (parse〜bc2asm) は K7 の **66 s → 3.7 s で
 - dead-strip default-on で生成バイナリが小さく → SD I/O 削減
 - `.incbin` defer (`docs/scaling.md` Q7) で SD への中間書き込み撤廃
 
-#### asm_pass2 の OOM (msh-driven 限定)
+#### asm_pass2 の OOM (msh-driven 単一 boot で発火)
 
-msh から parse → sigscan → tcheck → codegen → bc2asm → asm_pass1 と
-6 連続 spawn したあと asm_pass2 を起動すると kernel arena (480 KB)
-の pool が断片化し、336 KB の task arena 確保に失敗:
+msh から parse → sigscan → tcheck → codegen → bc2asm → cat-link →
+asm_pass1 → cat × 4 (staging) と 10+ 個のタスクを連続 spawn したあと
+asm_pass2 を起動すると、kernel arena (508 KB) の pool が断片化し
+asm_pass2 の 336 KB task arena 確保に失敗:
 
 ```
 OOM: 344068 p=439388 l=118244
 ```
 
 これは scaling.md Q3 / Q5 で議論済の問題で、本セッションの
-dead-strip default-on とは独立。**`tests/pico2_self_replicate.sh` 系の
-外部 orchestrator (openocd reset 経由で per-stage reboot)** を使うと
-解消できる。msh 単独で全 stage 完走するには Q3 の「sh の組み込み
-コマンド化」 / 「per-stage reboot」 / 「kernel pool defragmentation」
-等の対応が必要。
+dead-strip default-on とは独立。
+
+**回避**: 2 boot 構成にする。
+
+1. **Boot 1**: 全 stage を msh で走らせる。asm_pass2 で OOM するが
+   /sd/u.idx / /sd/u.tx / /sd/prelude.{tx,ro,dt,rl} 等の中間ファイルが
+   SD カードに persist する。
+2. **Boot 2**: msh fixture を `asm_pass2 + asm_pass3 + /sd/HW` だけに
+   差し替えて再走。SD は Boot 1 の中間ファイルを保持。kernel arena
+   は fresh なので 336 KB の連続確保が通る。
+
+この 2 boot 経路で asm_pass2 = 6.75 s、asm_pass3 = 2.04 s、
+/sd/HW 実行 = 0.19 s が取れた (上の表)。
+
+恒久対策候補:
+- カーネル pool に "huge bucket" を独立確保 (task arena 専用)
+- `make_task` 後の pool defrag pass
+- `sh` の組み込みコマンド化 (msh 内で順次実行、子タスク spawn しない)
+- Boot 1 で必要な中間ファイルを kernel 内で生成 + persist (init phase)
 
 ### 旧 50 ファイル × 平均 5 KB 推計 (2026-04-29、要見直し)
 
