@@ -53,6 +53,85 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass3 から g_code を
 
 計画詳細: `docs/task/pipeline_100kb.md`、.lab 仕様: `docs/lab_format.md`。
 
+### 8. dead-strip 既定 ON + alias label バグ修正 (2026-05-13)
+
+`asm_pass2` の dead-strip (Phase B + C) を `--strip` / `ASM_STRIP=1`
+のオプトインから常時 ON へ。`compile-gen2.sh` 経路 (ホスト + デバイス
+self_replicate) では dead code を自動で除去し、kernel.bin で
+**290 KB → 264 KB** (~9%)、guest task では **53 KB → 24 KB** (~半減)
+程度の縮小。`compiler/asm_pass2.tc` から `--strip` フラグ、
+`asm_common.tc` から `g_ds_strip` / `asm_dead_strip_set_strip` /
+`asm_dead_strip_get_strip` を撤去、`asm_dead_strip.tc` から
+opt-in 分岐 (`ds_print_compact_analysis`) を削除、`compile-gen2.sh`
+から `ASM_STRIP_FLAG` を撤去。
+
+**併せて発覚した alias label バグ** (commit b7d8b4d 同梱):
+
+既定 ON にしてはじめて踏んだ。`kernel/tasks/task_crt0.s` は
+`do_openat__String / do_openat__StringLiteral` のように **同一バイト
+オフセットに 2 個の `.globl`** を置く (String / StringLiteral
+オーバーロード) パターンを多用している。dead-strip Phase B の BFS は
+オーバーロードのうち sh が実際に呼ぶ片方しか live にしない (例:
+sh.tc は `do_openat__String` のみ参照)。
+
+ds_compact の Phase 1 ループ:
+
+```tc
+while i < n_in_sec {
+    ...
+    next_addr = asm_label_addr_at(get(workspace, i + 1));
+    if asm_dead_strip_is_live(lab_idx) == 0 {
+        asm_ds_dr_add(s, dr_start, dr_end);   // ← dead range
+    }
+    i = i + 1;
+}
+```
+
+は label を 1 個ずつ処理する。dead な `do_openat__StringLiteral` が
+処理されると `next_addr` は **同 addr の次の label** ではなく **次の
+distinct addr** (= `do_close`) を指し、結果 `[144, 156)` が dead 範囲
+として記録される。`do_openat__String` (live) のバイトがその範囲に
+入っていて消えてしまう。
+
+`sh.lab` の症状:
+
+```
+lab 144 0 do_openat__i32__String__i32   ← 正
+lab 144 0 do_close__i32                 ← 156 → 144 へ衝突
+lab 156 0 do_exit__i32                  ← 168 → 156 へずれ
+lab 168 0 do_spawn__...                 ← 192 → 168 へずれ
+```
+
+sh が `do_spawn` を呼ぶと実体は `do_openat` の `li a7, 56; ecall` に
+なるため `spawn` が `openat` を実行、a0 (path 引数の代わりに argv
+ポインタ) が不正な fd と解釈されて syscall fail → `sh: spawn failed`。
+
+**修正**: ds_compact の Phase 1 を **addr グループ単位**で処理する。
+
+```tc
+while i < n_in_sec {
+    var lab_addr = asm_label_addr_at(get(workspace, i));
+    var j = i;
+    var group_live = 0;
+    while j < n_in_sec && asm_label_addr_at(get(workspace, j)) == lab_addr {
+        if asm_dead_strip_is_live(get(workspace, j)) != 0 { group_live = 1; }
+        j = j + 1;
+    }
+    // gap を group 全員に同じ値で設定
+    if group_live == 0 && next_addr > lab_addr {
+        asm_ds_dr_add(s, dr_start, dr_end);
+    }
+    i = j;
+}
+```
+
+同一 addr に並ぶ alias 群を 1 グループとみなし、liveness を OR で
+合成。「alias の片方でも live なら group 全体を keep」。これで
+`do_openat` のバイトは保護され、`do_exec__String + do_exec__StringLiteral`
+のように両方 dead な group は従来通り compact される。
+
+回帰確認: `make test` 143 passed / 0 failed。
+
 ---
 
 ## カーネル / OS

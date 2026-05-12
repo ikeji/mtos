@@ -1,6 +1,13 @@
 # asm_pass2/2 dead-strip 計画
 
-**ステータス: 設計検討中 (2026-04-30)**
+**ステータス: 完了 — 2026-05-13 デフォルト ON 化** (commit b7d8b4d).
+`--strip` CLI フラグと `ASM_STRIP=1` env var は撤去済み。asm_pass2
+が走るたびに Phase B (BFS + live bitmap) + Phase C (byte compaction +
+`skip <sec> <start> <len>` emit) が無条件で動く。asm_pass3 は `.lab`
+の `skip` 行を読んで raw_memcpy_section が dead 範囲を memcpy
+スキップする。alias label (task_crt0.s が `do_openat__String /
+do_openat__StringLiteral` を同一 addr に置く) の取り扱いは addr-group
+単位で liveness を OR 計算する (b7d8b4d 同梱の修正)。
 
 ## 背景
 
