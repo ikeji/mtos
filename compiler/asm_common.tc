@@ -42,21 +42,15 @@ var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // headroom; if a future build trips it bump to 8191 (next 1-below-2^n).
 var MAX_LABELS: i32 = 4095;
 // Numeric labels (0:..9:). Digit 0 is by far the most common (every
-// bc2asm-emitted branch target after a forward jump uses `0:`) — the
-// kernel.bin self-host build measures ~1300 digit-0 entries vs ≤ 2
-// per other digit. So we use a wider table for digit 0 and a tiny
-// one for the rest. Both sizes are picked to land in tight pool
-// buckets (I32Array(N) takes 4N+4 bytes, so N=2047 = 8192 = b8192 and
-// N×9=63 = 256 = b256, exact fits each).
-// Measured: kernel build has ~404 "0:" labels (bc2asm emits `0f/0b`
-// for every conditional branch).
+// bc2asm-emitted branch target after a forward jump uses `0:`); we
+// give it a wide table and the other 9 digits a tiny shared one.
 //
-// 2026-04-30: tried 512, asm_pass2.tc itself overflowed digit 0
-// (>512 conditional branches in the assembler source). Reverted
-// to 1024 — the kernel's measured 404 max underestimated; compiling
-// the assembler itself is the real worst case. The bounds check in
-// define_numlab below catches future regressions cleanly.
-var NUM_LAB_PER_DIGIT: i32 = 2047;
+// 4095 entries fit I32Array(4095) = 16384 bytes = b16384 bucket exactly.
+// asm_pass2 link accumulates digit-0 labels across all .idx inputs;
+// asm_pass2.tc build now totals ~2200 (asm_common.s alone 1622 +
+// asm_dead_strip.s 241 + runtime/prelude 115 + ...), so 2047 was too
+// tight. 4095 leaves ~2x headroom for future growth.
+var NUM_LAB_PER_DIGIT: i32 = 4095;
 
 // ===== Output mode (set by ; raw / ; load_base directives) =====
 var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
