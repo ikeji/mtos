@@ -1690,26 +1690,21 @@ fn asm_instr() -> i32 {
             var rd: i32 = 1;
             if mnem_eq("tail") { rd = 0; }
             if g_pass==2 {
-                // Detect extern target by name regardless of which
-                // section pass we're in — every section pass walks
-                // the full source, so a `call main` inside a non-
-                // text section pass would still hit parse_label_op
-                // and explode on the undefined label.
-                var is_extern_call: i32 = 0;
-                if g_reloc_fd > 0 {
-                    if asm_label_is_extern(0, 0) != 0 ||
-                       asm_label_is_extern(0, 1) != 0 ||
-                       (g_emit_undef_relocs != 0 && label_op_undefined(0) != 0) {
-                        is_extern_call = 1;
-                        if g_target_section == 0 {
-                            asm_emit_reloc(g_section_emitted, 1, 0);
-                        }
-                    }
+                // Phase C: emit a kind=1 reloc for every named-label
+                // call/tail (not just extern ones). Intra-file targets
+                // also need re-patching when dead-strip compacts away
+                // bytes between source and target. label_op_undefined
+                // already filters numeric (Nb/Nf), .L_* intra-function
+                // and immediate operands.
+                if g_reloc_fd > 0 && g_target_section == 0 && label_op_undefined(0) != 0 {
+                    asm_emit_reloc(g_section_emitted, 1, 0);
                 }
-                var off: i32 = 0;
-                if is_extern_call == 0 {
-                    off = parse_label_op(0) - pc;
-                }
+                // Bake the pre-compaction offset directly — asm_pass3
+                // will overwrite the hi20/lo12 bits if compaction
+                // shifts the target. parse_label_op returns 0 for
+                // extern targets, giving an obviously-wrong placeholder
+                // that the reloc patch fixes up.
+                var off: i32 = parse_label_op(0) - pc;
                 emit32(enc_u(23,rd,hi20(off)<<12));
                 emit32(enc_i(103,0,rd,rd,lo12(off)));
             }
@@ -1729,26 +1724,15 @@ fn asm_instr() -> i32 {
         if mnem_eq("j") {
             var off: i32 = 0;
             if g_pass==2 {
-                // Pre-encode mode: `j main` from task_crt0's
-                // main__StringArray stub needs a kind=0 (J-type) reloc
-                // because main is user-defined and its address is
-                // unknown at pre-encode time. Without this the prelude
-                // bin holds a tiny placeholder offset (4 bytes) and
-                // the post-link binary jumps to nowhere useful.
-                var is_extern_j: i32 = 0;
-                if g_reloc_fd > 0 {
-                    if asm_label_is_extern(0, 0) != 0 ||
-                       asm_label_is_extern(0, 1) != 0 ||
-                       (g_emit_undef_relocs != 0 && label_op_undefined(0) != 0) {
-                        is_extern_j = 1;
-                        if g_target_section == 0 {
-                            asm_emit_reloc(g_section_emitted, 0, 0);
-                        }
-                    }
+                // Phase C: emit a kind=0 (J-type) reloc for every
+                // named-label `j` target. Cross-file targets need the
+                // link step to fill in their address, and intra-file
+                // targets that lie BEYOND a dead range that compaction
+                // removes also need their PC-relative offset rebuilt.
+                if g_reloc_fd > 0 && g_target_section == 0 && label_op_undefined(0) != 0 {
+                    asm_emit_reloc(g_section_emitted, 0, 0);
                 }
-                if is_extern_j == 0 {
-                    off = parse_label_op(0) - pc;
-                }
+                off = parse_label_op(0) - pc;
                 emit32(enc_j(0,off));
             }
             return 4;

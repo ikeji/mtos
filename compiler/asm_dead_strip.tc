@@ -591,6 +591,38 @@ export fn ds_compact() -> void {
         li = li + 1;
     }
 
+    // __global_pointer$ is synthetic: defined in section 0 (text) for
+    // bookkeeping but its addr lives in the data range (gp_abs =
+    // data_base + 2048). The generic shift-by-section-and-gap logic
+    // above would treat its out-of-text addr as the "last text label"
+    // and compute a bogus gap. Override with the freshly recomputed
+    // g_gp_abs so kind=1 PC-rel relocs targeting __global_pointer$
+    // resolve to the right post-compaction address.
+    var gp_sym: U8Array = U8Array(20);
+    var gp_p: i32 = 0;
+    set(gp_sym, gp_p, '_' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, '_' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'g' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'l' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'o' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'b' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'a' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'l' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, '_' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'p' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'o' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'i' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'n' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 't' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'e' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, 'r' as u8); gp_p = gp_p + 1;
+    set(gp_sym, gp_p, '$' as u8); gp_p = gp_p + 1;
+    var gp_idx: i32 = asm_find_label_idx(gp_sym, gp_p);
+    if gp_idx >= 0 {
+        asm_set_label_addr(gp_idx, new_text + new_rodata + 2048);
+    }
+    delete(gp_sym);
+
     sys_write(2, "[dead-strip compact text=" as u32 as U8Array, 25);
     ds_eprint_int(get(total_dead_s, 0));
     sys_write(2, " rodata=" as u32 as U8Array, 8);
