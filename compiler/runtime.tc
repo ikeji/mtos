@@ -736,6 +736,50 @@ export fn km_dump_peak() -> void {
     return;
 }
 
+// Brief free-list dump: `[km l=N f=SUM n=COUNT m=MAX  blocks=...]`.
+// Used by kernel-side instrumentation (sched_task_exit) to track how
+// live / fragmentation evolves across spawn/exit cycles. Lists each
+// free block's address + size so we can see *where* fragments live
+// in the arena.
+export fn km_dump_brief() -> void {
+    var fl_cur: u32 = g_free_list;
+    var fl_sum: i32 = 0;
+    var fl_n:   i32 = 0;
+    var fl_max: i32 = 0;
+    // First pass: collect totals + start the inline block listing.
+    eprint("[km l=");
+    eprint(g_km_curr_bytes);
+    eprint(" f=");
+    var head: u32 = g_free_list;
+    while head != 0u32 {
+        var bsz_h: i32 = peek32(head) as i32;
+        if bsz_h > fl_max { fl_max = bsz_h; }
+        fl_sum = fl_sum + bsz_h;
+        fl_n = fl_n + 1;
+        head = peek32(head + 4u32);
+    }
+    eprint(fl_sum);
+    eprint(" n=");
+    eprint(fl_n);
+    eprint(" m=");
+    eprint(fl_max);
+    eprint(" b=[");
+    var addr_lo: u32 = g_free_list;
+    // The list is address-ordered; print (addr,size) tuples in order.
+    var first: i32 = 1;
+    while addr_lo != 0u32 {
+        var bsz_a: i32 = peek32(addr_lo) as i32;
+        if first == 0 { eprint(","); }
+        first = 0;
+        eprint(addr_lo as i32);
+        eprint(":");
+        eprint(bsz_a);
+        addr_lo = peek32(addr_lo + 4u32);
+    }
+    eprint("]]\n");
+    return;
+}
+
 export fn km_peak_bytes() -> i32 { return g_km_peak_bytes; }
 export fn km_curr_bytes() -> i32 { return g_km_curr_bytes; }
 

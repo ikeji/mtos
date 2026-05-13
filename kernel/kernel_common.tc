@@ -13,6 +13,7 @@ fn init_task_frame(frame: u32, entry: u32, sp: u32, gp: u32, arena: u32, arena_s
 
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
+fn km_dump_brief() -> void;
 
 // VFS (kernel/vfs.tc). Forward declaration so slot_free_allocs can
 // release stdio redirections on task exit without importing vfs.tc —
@@ -1201,6 +1202,11 @@ fn sched_task_exit() -> u32 {
     slot_free_allocs(g_current);
     state(cur, STATE_DONE);
     frame(cur, 0);
+
+    // DEBUG: kernel kmem state after slot teardown. Reveals how live
+    // accumulates + how fragmentation evolves across spawn/exit cycles.
+    // Remove once the fragmentation root cause is understood.
+    km_dump_brief();
 
     // Wake any tasks that were waiting on the one we just finished.
     // Overwrite their saved a0 with the child's exit code so they
