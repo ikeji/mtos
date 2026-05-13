@@ -124,44 +124,54 @@ sleep 6  # extra time for boot-time dumper to write /sd/dx.img
 # — otherwise the link mixes new dumper code with stale fatfs.s
 # etc and the resulting kernel.bin won't match the host build.
 # REFRESH_KERN_MODS=1 to enable; default off (assumes /sd is fresh).
+# NORESET=1: skip the `reset_only` calls between steps. Verifies that
+# the kernel can run the entire self_replicate pipeline in a single
+# boot. Possible after commits 688e4ef/49ae455/0c1b800/afbf12a
+# eliminated kernel arena fragmentation + freed ~48 KB of sh/msh
+# headroom (see docs/scaling.md Q1). Falls back to per-step resets
+# when unset (the historical default).
+maybe_reset() {
+    if [ "${NORESET:-0}" != "1" ]; then
+        reset_only
+        sleep 4
+    fi
+}
+
 if [ "${REFRESH_KERN_MODS:-0}" = "1" ]; then
     echo "=== Step 0a: refresh runtime.s on /sd ===" >&2
     run_step /pico2_compile_runtime.sh COMPILE_RUNTIME_DONE
-    echo "=== Reset + Step 0b: refresh libtc.s on /sd ===" >&2
-    reset_only; sleep 4
+    echo "=== Step 0b: refresh libtc.s on /sd ===" >&2
+    maybe_reset
     run_step /pico2_compile_libtc.sh COMPILE_LIBTC_DONE
-    echo "=== Reset + Step 0c: refresh kernel-leaf .s on /sd ===" >&2
-    reset_only; sleep 4
+    echo "=== Step 0c: refresh kernel-leaf .s on /sd ===" >&2
+    maybe_reset
     run_step /pico2_compile_kern.sh COMPILE_KERN_LEAVES_DONE
-    echo "=== Reset + Step 0d: refresh platform_pico2.s on /sd ===" >&2
-    reset_only; sleep 4
+    echo "=== Step 0d: refresh platform_pico2.s on /sd ===" >&2
+    maybe_reset
     run_step /pico2_compile_platform.sh COMPILE_PLATFORM_DONE
-    echo "=== Reset + Step 0e: refresh kernel-import .s on /sd ===" >&2
-    reset_only; sleep 4
+    echo "=== Step 0e: refresh kernel-import .s on /sd ===" >&2
+    maybe_reset
     run_step /pico2_compile_kern2.sh COMPILE_KERN2_DONE
-    echo "=== Reset before Step 1 ===" >&2
-    reset_only; sleep 4
+    echo "=== Before Step 1 ===" >&2
+    maybe_reset
 fi
 
 echo "=== Step 1: cat → /sd/full.s (with /sd/dx.img blob) ===" >&2
 run_step /pico2_self_step1.sh SELF_STEP1_DONE
 
-echo "=== Reset + Step 2: asm_pass2 → /sd/full.lab ===" >&2
-reset_only
-sleep 4
+echo "=== Step 2: asm_pass2 → /sd/full.lab ===" >&2
+maybe_reset
 # Per-file pre-encode (asm_pass1 per .s + asm_pass2 merge), matching
 # compile-gen2.sh's host pipeline shape. Walked-source mode was
 # retired 2026-05-11 when K14 finished — see docs/solved.md.
 run_step /pico2_self_step2.sh SELF_STEP2_DONE
 
-echo "=== Reset + Step 3: asm_pass3 → /sd/k.bin ===" >&2
-reset_only
-sleep 4
+echo "=== Step 3: asm_pass3 → /sd/k.bin ===" >&2
+maybe_reset
 run_step /pico2_self_step3.sh SELF_STEP3_DONE
 
-echo "=== Reset + Step 4: bin2uf2 → /sd/k.uf2 ===" >&2
-reset_only
-sleep 4
+echo "=== Step 4: bin2uf2 → /sd/k.uf2 ===" >&2
+maybe_reset
 run_step /pico2_self_step4.sh SELF_STEP4_DONE
 
 DEV_BIN_MD5=$(grep -oE '^[0-9a-f]{32}  /sd/k\.bin' "$TMP"/uart_*step3*.log | awk '{print $1}' | tail -1)
