@@ -116,6 +116,15 @@ deadline=$(( $(date +%s) + 900 ))
 while [ "$(date +%s)" -lt "$deadline" ]; do
     if grep -q "$TERM_PATTERN" "$LOG" 2>/dev/null; then break; fi
     if grep -q "msh: aborting" "$LOG" 2>/dev/null; then break; fi
+    # Kernel-side OOM (runtime.tc::new_array) hangs the kernel since
+    # do_exit(1) from kernel context has no parent. Detect the OOM
+    # signature and bail early — no point waiting 15 min.
+    if grep -q "^OOM:" "$LOG" 2>/dev/null; then
+        # Give the post-OOM free-list dump a moment to flush over UART
+        # before we tear cat down.
+        sleep 1
+        break
+    fi
     sleep 2
 done
 
