@@ -68,11 +68,13 @@ struct Task {
     frame:     u32,
     state:     i32,
     wait_on:   i32,
-    frame_buf: u32,
+    // Per-task kernel allocations. After make_task was unified (commit
+    // 49ae455 + 0c1b800), `ram` is the single base for the task's
+    // arena + stack + argv + frame_buf — slot_free_allocs releases the
+    // whole task with one kfree of this. `img` is only set on the
+    // slow (non-XIP) load path and freed separately.
     ram:       u32,
-    stack:     u32,
     img:       u32,
-    argv:      u32,
     stdin_fd:  i32,
     stdout_fd: i32,
     // UART mux input buffer (Phase 2).
@@ -104,11 +106,8 @@ var g_tasks: TaskArray = 0 as TaskArray;
 // into the per-slot ownership arrays right after make_task returns.
 // Pre-make_task, these are cleared to 0 so load_fd can tell the XIP
 // fast path apart from the slow path (XIP sets none of them).
-var g_last_frame_buf: u32 = 0u32;
 var g_last_ram:       u32 = 0u32;
-var g_last_stack:     u32 = 0u32;
 var g_last_img:       u32 = 0u32;
-var g_last_argv:      u32 = 0u32;
 var g_last_stdin_fd:  i32 = 0;
 var g_last_stdout_fd: i32 = 0;
 var g_last_ram_size:  i32 = 0;
@@ -778,15 +777,12 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32,
     init_task_frame(frame, entry, stack_top, task_gp, arena_addr, arena_size);
 
     // Record the raw kmalloc base so slot_free_allocs can release it
-    // at task exit. frame_buf / stack / argv are slices of task_ram
-    // now, so g_last_frame_buf / g_last_stack / g_last_argv stay zero
-    // (no separate kmallocs to free). g_last_img is NOT touched here
-    // — load_fd's slow path sets it, load_fd's XIP path leaves it
-    // cleared. g_last_argv_addr exposes the in-ram argv area so the
-    // spawn handler can pack_argv_at into it.
-    g_last_frame_buf = 0u32;
+    // at task exit. arena/stack/argv/frame_buf are all slices of the
+    // single task_ram block. g_last_img is NOT touched here — load_fd's
+    // slow path sets it, load_fd's XIP path leaves it cleared.
+    // g_last_argv_addr exposes the in-ram argv area so the spawn
+    // handler can pack_argv_at into it.
     g_last_ram       = task_ram as u32;
-    g_last_stack     = 0u32;
     g_last_ram_size  = total_size;
     g_last_stack_size = stack_size;
     g_last_argv_addr = argv_addr;
@@ -799,11 +795,8 @@ export fn make_task_argv_addr() -> u32 { return g_last_argv_addr; }
 // load_fd / make_task so that the XIP path (which never touches img)
 // cannot pick up a stale img pointer from a previous slow-path call.
 export fn reset_last_alloc() -> void {
-    g_last_frame_buf = 0u32;
     g_last_ram       = 0u32;
-    g_last_stack     = 0u32;
     g_last_img       = 0u32;
-    g_last_argv      = 0u32;
     g_last_argv_addr = 0u32;
     g_last_stdin_fd  = 0;
     g_last_stdout_fd = 0;
@@ -812,15 +805,12 @@ export fn reset_last_alloc() -> void {
     return;
 }
 
-// Free all resources recorded in g_last_* (frame_buf, ram, stack, img,
-// argv, stdio fds). Called when sched_spawn fails after load_fd /
-// make_task have already allocated everything for the child.
+// Free all resources recorded in g_last_* (ram, img). Called when
+// sched_spawn fails after load_fd / make_task have already allocated
+// everything for the child.
 export fn free_last_alloc() -> void {
-    if g_last_frame_buf != 0u32 { kfree(g_last_frame_buf); }
-    if g_last_ram       != 0u32 { kfree(g_last_ram); }
-    if g_last_stack     != 0u32 { kfree(g_last_stack); }
-    if g_last_img       != 0u32 { kfree(g_last_img); }
-    free_argv_impl(g_last_argv);
+    if g_last_ram != 0u32 { kfree(g_last_ram); }
+    if g_last_img != 0u32 { kfree(g_last_img); }
     reset_last_alloc();
     return;
 }
@@ -832,15 +822,6 @@ export fn free_last_alloc() -> void {
 // for writing to a var, so we expose this setter.
 export fn set_last_img(img_base: u32) -> void {
     g_last_img = img_base;
-    return;
-}
-
-// Attach ownership of a kernel-side argv StringArray to the task frame
-// being built. Called from sys_spawn_handler / sys_exec_handler after
-// clone_argv and before sched_spawn / sched_replace_current so the
-// slot becomes the sole owner.
-export fn set_last_argv(argv_base: u32) -> void {
-    g_last_argv = argv_base;
     return;
 }
 
@@ -936,24 +917,13 @@ export fn set_frame_argv(frame: u32, argv: u32) -> void {
 
 // Free a kernel-side argv buffer. clone_argv (loader.tc) packs the
 // StringArray header + all Strings into a single kmalloc, so this is
-// just one kfree — the per-String delete loop the old layout needed
-// would corrupt the heap.
-fn free_argv_impl(sa_addr: u32) -> void {
-    if sa_addr == 0u32 { return; }
-    kfree(sa_addr);
-    return;
-}
-
 // Copy the allocation bases recorded by the most recent make_task /
 // load_fd into slot `idx`. Used by sched_register, sched_spawn, and
 // sched_replace_current after they install a new frame.
 fn slot_capture_last(idx: i32) -> void {
     var t: Task = get(g_tasks, idx);
-    frame_buf(t, g_last_frame_buf);
     ram(t, g_last_ram);
-    stack(t, g_last_stack);
     img(t, g_last_img);
-    argv(t, g_last_argv);
     stdin_fd(t, g_last_stdin_fd);
     stdout_fd(t, g_last_stdout_fd);
     t_ram_sz(t, g_last_ram_size);
@@ -962,27 +932,24 @@ fn slot_capture_last(idx: i32) -> void {
 }
 
 // Release every kmalloc base owned by slot `idx` and clear the entries.
-// Safe to call on an empty slot (all zeros).
+// Safe to call on an empty slot (all zeros). After commit 0c1b800 the
+// task's arena/stack/frame_buf/argv are all slices of a single ram
+// block, so just two kfrees (ram, img) tear the whole task down.
+// `name` is a separate small alloc that we also release here to keep
+// the kernel arena tidy (it would otherwise linger until the slot is
+// reused).
 fn slot_free_allocs(idx: i32) -> void {
     var t: Task = get(g_tasks, idx);
-    var fb: u32 = frame_buf(t);
     var ra: u32 = ram(t);
-    var st: u32 = stack(t);
     var im: u32 = img(t);
-    var av: u32 = argv(t);
     var si: i32 = stdin_fd(t);
     var so: i32 = stdout_fd(t);
     var ib: u32 = in_buf(t);
-    if fb != 0u32 { kfree(fb); }
     if ra != 0u32 { kfree(ra); }
-    if st != 0u32 { kfree(st); }
     if im != 0u32 { kfree(im); }
-    free_argv_impl(av);
     if si != 0 { vfs_close(si); }
     if so != 0 { vfs_close(so); }
     if ib != 0u32 { kfree(ib); }
-    // EXPERIMENT (2026-05-13): free name on exit to test fragmentation
-    // hypothesis. Previously kept alive for /proc/tasks display.
     var nm: u32 = name(t);
     if nm != 0u32 { kfree(nm); }
     name(t, 0);
@@ -990,11 +957,8 @@ fn slot_free_allocs(idx: i32) -> void {
     in_head(t, 0);
     in_tail(t, 0);
     in_eof(t, 0);
-    frame_buf(t, 0);
     ram(t, 0);
-    stack(t, 0);
     img(t, 0);
-    argv(t, 0);
     stdin_fd(t, 0);
     stdout_fd(t, 0);
     return;
@@ -1009,7 +973,7 @@ export fn sched_init(max: i32) -> void {
         set(g_tasks, i,
             Task(0, STATE_UNUSED, -1,
                  0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0, 0, 0, 0));
+                 0, 0, 0, 0, 0, 0));
         i = i + 1;
     }
     return;
