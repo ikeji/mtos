@@ -1,7 +1,8 @@
 // rm.tc — remove files
 //
-// Usage: rm <file> [file2 ...]
+// Usage: rm [-f] <file> [file2 ...]
 // Calls sys_unlink (ecall 87) for each argument.
+// With -f, missing files don't error or print (msh set -e safe).
 
 import "../libtc/libtc.tc";
 
@@ -12,12 +13,25 @@ fn main(argv: StringArray) -> i32 {
         puts("rm: missing operand\n");
         return 1;
     }
+    var force: i32 = 0;
+    var start: i32 = 1;
+    var first: String = get(argv, 1);
+    if len(first) == 2 && get(first, 0) == 0x2D as u8 && get(first, 1) == 0x66 as u8 {
+        // "-f"
+        force = 1;
+        start = 2;
+    }
+    if start >= argc {
+        if force != 0 { return 0; }
+        puts("rm: missing operand\n");
+        return 1;
+    }
     var ret: i32 = 0;
-    var i: i32 = 1;
+    var i: i32 = start;
     while i < argc {
         var s: String = get(argv, i);
         var r: i32 = do_unlink(s);
-        if r != 0 {
+        if r != 0 && force == 0 {
             puts("rm: cannot remove: ");
             sys_write(1, s);
             puts("\n");

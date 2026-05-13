@@ -1,103 +1,203 @@
-# Aggressive /sd cleanup: drop everything except the .s files
-# the link bench needs (kernel modules + runtime + libtc).
-rm /sd/ac.ast
-rm /sd/ac.bc
-rm /sd/ac.s
-rm /sd/ac.tas
-rm /sd/ac.th
-rm /sd/an.ast
-rm /sd/an.bc
-rm /sd/an.s
-rm /sd/an.tas
-rm /sd/an.th
-rm /sd/ap1.bin
-rm /sd/ap2.bin
-rm /sd/bf.ast
-rm /sd/bf.bc
-rm /sd/bf.tas
-rm /sd/bf.th
-rm /sd/bs.ast
-rm /sd/bs.bc
-rm /sd/bs.tas
-rm /sd/bs.th
-rm /sd/ff.ast
-rm /sd/ff.bc
-rm /sd/ff.tas
-rm /sd/ff.th
-rm /sd/kc.ast
-rm /sd/kc.bc
-rm /sd/kc.tas
-rm /sd/kc.th
-rm /sd/kn.bin
-rm /sd/kp.ast
-rm /sd/kp.bc
-rm /sd/kp.tas
-rm /sd/kp.th
-rm /sd/l.ast
-rm /sd/l.bc
-rm /sd/l.tas
-rm /sd/l.th
-rm /sd/ld.ast
-rm /sd/ld.bc
-rm /sd/ld.tas
-rm /sd/ld.th
-rm /sd/mf.ast
-rm /sd/mf.bc
-rm /sd/mf.tas
-rm /sd/mf.th
-rm /sd/mtfs_wra.s
-rm /sd/p.ast
-rm /sd/p.bc
-rm /sd/p.s
-rm /sd/p.tas
-rm /sd/p.tc
-rm /sd/p.th
-rm /sd/pf.ast
-rm /sd/pf.bc
-rm /sd/pf.tas
-rm /sd/pf.th
-rm /sd/r.ast
-rm /sd/r.bc
-rm /sd/r.tas
-rm /sd/r.th
-rm /sd/sb.ast
-rm /sd/sb.bc
-rm /sd/sb.s
-rm /sd/sb.tas
-rm /sd/sb.tc
-rm /sd/sb.th
-rm /sd/sl.ast
-rm /sd/sl.bc
-rm /sd/sl.s
-rm /sd/sl.tas
-rm /sd/sl.th
-rm /sd/sr.ast
-rm /sd/sr.bc
-rm /sd/sr.s
-rm /sd/sr.tas
-rm /sd/sr.th
-rm /sd/t.ast
-rm /sd/t.bc
-rm /sd/t.s
-rm /sd/t.tas
-rm /sd/t.th
-rm /sd/t_imp.th
-rm /sd/tf.ast
-rm /sd/tf.bc
-rm /sd/tf.tas
-rm /sd/tf.th
-rm /sd/tiny.bin
-rm /sd/vf.ast
-rm /sd/vf.bc
-rm /sd/vf.tas
-rm /sd/vf.th
-rm /sd/wr1.s
-rm /sd/wr2.s
-rm /sd/wr3.s
-rm /sd/wr4.s
-rm /sd/wr5.s
-rm /sd/wr6.s
-rm /sd/wr7.s
-rm /sd/wr8.s
-ls /sd | wc -l
+# /sd cleanup: remove all transient bench / self_replicate / Hello
+# World intermediate files. Keeps dx.img + wrap.s (boot regenerates
+# them) and the kernel module .s files (REFRESH stages overwrite).
+# Uses `rm -f` so missing files don't trigger msh's `set -e` abort.
+#
+# Run this before REFRESH_KERN_MODS=1 NORESET=1 self_replicate to
+# avoid hitting fatfs's root-dir / cluster capacity (K17 / K12).
+
+# Hello World bench
+rm -f /sd/1.ast
+rm -f /sd/1.th
+rm -f /sd/2.tast
+rm -f /sd/3.bc
+rm -f /sd/4.s
+rm -f /sd/u.s
+rm -f /sd/u.idx
+rm -f /sd/u.tx
+rm -f /sd/u.ro
+rm -f /sd/u.dt
+rm -f /sd/u.rl
+rm -f /sd/prelude.tx
+rm -f /sd/prelude.ro
+rm -f /sd/prelude.dt
+rm -f /sd/prelude.rl
+rm -f /sd/HW
+
+# self_replicate transient
+rm -f /sd/full.s
+rm -f /sd/full.lab
+rm -f /sd/k.bin
+rm -f /sd/k.uf2
+rm -f /sd/prelude.s
+rm -f /sd/pt.s
+rm -f /sd/p.idx
+rm -f /sd/p.tx
+rm -f /sd/p.ro
+rm -f /sd/p.dt
+rm -f /sd/p.rl
+
+# self_replicate per-kernel-module pre-encoded outputs
+rm -f /sd/kc.idx
+rm -f /sd/kc.tx
+rm -f /sd/kc.ro
+rm -f /sd/kc.dt
+rm -f /sd/kc.rl
+rm -f /sd/pp.idx
+rm -f /sd/pp.tx
+rm -f /sd/pp.ro
+rm -f /sd/pp.dt
+rm -f /sd/pp.rl
+rm -f /sd/bf.idx
+rm -f /sd/bf.tx
+rm -f /sd/bf.ro
+rm -f /sd/bf.dt
+rm -f /sd/bf.rl
+rm -f /sd/bs.idx
+rm -f /sd/bs.tx
+rm -f /sd/bs.ro
+rm -f /sd/bs.dt
+rm -f /sd/bs.rl
+rm -f /sd/ff.idx
+rm -f /sd/ff.tx
+rm -f /sd/ff.ro
+rm -f /sd/ff.dt
+rm -f /sd/ff.rl
+rm -f /sd/mf.idx
+rm -f /sd/mf.tx
+rm -f /sd/mf.ro
+rm -f /sd/mf.dt
+rm -f /sd/mf.rl
+rm -f /sd/tf.idx
+rm -f /sd/tf.tx
+rm -f /sd/tf.ro
+rm -f /sd/tf.dt
+rm -f /sd/tf.rl
+rm -f /sd/pf.idx
+rm -f /sd/pf.tx
+rm -f /sd/pf.ro
+rm -f /sd/pf.dt
+rm -f /sd/pf.rl
+rm -f /sd/vf.idx
+rm -f /sd/vf.tx
+rm -f /sd/vf.ro
+rm -f /sd/vf.dt
+rm -f /sd/vf.rl
+rm -f /sd/ld.idx
+rm -f /sd/ld.tx
+rm -f /sd/ld.ro
+rm -f /sd/ld.dt
+rm -f /sd/ld.rl
+rm -f /sd/kp.idx
+rm -f /sd/kp.tx
+rm -f /sd/kp.ro
+rm -f /sd/kp.dt
+rm -f /sd/kp.rl
+rm -f /sd/platform_pico2.idx
+rm -f /sd/platform_pico2.tx
+rm -f /sd/platform_pico2.ro
+rm -f /sd/platform_pico2.dt
+rm -f /sd/platform_pico2.rl
+
+# K13 / K15 era artifacts (legacy compile pipeline outputs)
+rm -f /sd/ac.ast
+rm -f /sd/ac.bc
+rm -f /sd/ac.s
+rm -f /sd/ac.tas
+rm -f /sd/ac.th
+rm -f /sd/an.ast
+rm -f /sd/an.bc
+rm -f /sd/an.s
+rm -f /sd/an.tas
+rm -f /sd/an.th
+rm -f /sd/ap1.bin
+rm -f /sd/ap2.bin
+rm -f /sd/bf.ast
+rm -f /sd/bf.bc
+rm -f /sd/bf.tas
+rm -f /sd/bf.th
+rm -f /sd/bs.ast
+rm -f /sd/bs.bc
+rm -f /sd/bs.tas
+rm -f /sd/bs.th
+rm -f /sd/ff.ast
+rm -f /sd/ff.bc
+rm -f /sd/ff.tas
+rm -f /sd/ff.th
+rm -f /sd/kc.ast
+rm -f /sd/kc.bc
+rm -f /sd/kc.tas
+rm -f /sd/kc.th
+rm -f /sd/kn.bin
+rm -f /sd/kp.ast
+rm -f /sd/kp.bc
+rm -f /sd/kp.tas
+rm -f /sd/kp.th
+rm -f /sd/l.ast
+rm -f /sd/l.bc
+rm -f /sd/l.tas
+rm -f /sd/l.th
+rm -f /sd/ld.ast
+rm -f /sd/ld.bc
+rm -f /sd/ld.tas
+rm -f /sd/ld.th
+rm -f /sd/mf.ast
+rm -f /sd/mf.bc
+rm -f /sd/mf.tas
+rm -f /sd/mf.th
+rm -f /sd/mtfs_wra.s
+rm -f /sd/p.ast
+rm -f /sd/p.bc
+rm -f /sd/p.s
+rm -f /sd/p.tas
+rm -f /sd/p.tc
+rm -f /sd/p.th
+rm -f /sd/pf.ast
+rm -f /sd/pf.bc
+rm -f /sd/pf.tas
+rm -f /sd/pf.th
+rm -f /sd/r.ast
+rm -f /sd/r.bc
+rm -f /sd/r.tas
+rm -f /sd/r.th
+rm -f /sd/sb.ast
+rm -f /sd/sb.bc
+rm -f /sd/sb.s
+rm -f /sd/sb.tas
+rm -f /sd/sb.tc
+rm -f /sd/sb.th
+rm -f /sd/sl.ast
+rm -f /sd/sl.bc
+rm -f /sd/sl.s
+rm -f /sd/sl.tas
+rm -f /sd/sl.th
+rm -f /sd/sr.ast
+rm -f /sd/sr.bc
+rm -f /sd/sr.s
+rm -f /sd/sr.tas
+rm -f /sd/sr.th
+rm -f /sd/t.ast
+rm -f /sd/t.bc
+rm -f /sd/t.s
+rm -f /sd/t.tas
+rm -f /sd/t.th
+rm -f /sd/t_imp.th
+rm -f /sd/tf.ast
+rm -f /sd/tf.bc
+rm -f /sd/tf.tas
+rm -f /sd/tf.th
+rm -f /sd/tiny.bin
+rm -f /sd/vf.ast
+rm -f /sd/vf.bc
+rm -f /sd/vf.tas
+rm -f /sd/vf.th
+rm -f /sd/wr1.s
+rm -f /sd/wr2.s
+rm -f /sd/wr3.s
+rm -f /sd/wr4.s
+rm -f /sd/wr5.s
+rm -f /sd/wr6.s
+rm -f /sd/wr7.s
+rm -f /sd/wr8.s
+
 echo CLEANUP_DONE

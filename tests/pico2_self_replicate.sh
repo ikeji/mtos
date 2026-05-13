@@ -119,6 +119,22 @@ echo "=== Initial flash ===" >&2
 flash_kernel
 sleep 6  # extra time for boot-time dumper to write /sd/dx.img
 
+# Optional /sd cleanup. After multiple bench / self_replicate runs
+# the SD card accumulates ~30+ transient intermediate files in the
+# root directory; with REFRESH_KERN_MODS=1 NORESET=1 this can saturate
+# fatfs's root-dir capacity and break Step 2 with "cannot open bin/
+# reloc output". CLEAN_SD=1 runs pico2_cleanup_sd.sh first which
+# `rm -f`s all known transient names but keeps /sd/dx.img + /sd/wrap.s
+# (boot regenerates them) and kernel module .s files (REFRESH replaces
+# them).
+if [ "${CLEAN_SD:-0}" = "1" ]; then
+    echo "=== Cleanup: rm transient files from /sd ===" >&2
+    run_step /pico2_cleanup_sd.sh CLEANUP_DONE
+    if [ "${NORESET:-0}" != "1" ]; then
+        reset_only; sleep 4
+    fi
+fi
+
 # Optional Step 0: refresh the on-/sd kernel-module .s files.
 # Needed when kernel/*.tc has changed since /sd was last seeded
 # — otherwise the link mixes new dumper code with stale fatfs.s
