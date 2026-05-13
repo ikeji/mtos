@@ -201,28 +201,50 @@ fn pass2_walk(src: String) -> i32 {
     return 0;
 }
 
-// Build a String for "<idx_out>.rfs" — the per-invocation temp file
-// where pass-1's streaming refs writer accumulates `ref` lines.
-// asm_dump_idx_state re-opens this path to splice the bytes into the
-// idx at the right spot. Caller owns the buffer (kmalloc'd, returned
-// as String); we never free it — asm_pass1 exits soon after the dump.
-fn derive_refs_path(idx_out: String) -> String {
+// Build a String for the per-invocation streaming temp file path
+// (".rfs" for refs, ".dfs" for def). asm_dump_idx_state /
+// asm_resolve_deferred_refs re-open these to splice / drain the bytes.
+// Caller owns the buffer (kmalloc'd, returned as String); we never
+// free it — asm_pass1 exits soon after.
+//
+// If `idx_out` ends with ".idx" we replace that extension with the
+// new one (e.g. "prelude.idx" → "prelude.rfs", 11 chars total). On
+// kernel fatfs (8.3-only, 12-char path-component limit) appending a
+// second dot would push paths like "prelude.idx.rfs" past 12 chars
+// and cause fatfs_open to reject — observed as a missing rfs/dfs
+// splice on parse self-build, breaking byte-exact output.
+fn derive_side_path(idx_out: String, c1: u8, c2: u8, c3: u8) -> String {
     var n: i32 = len(idx_out);
-    var suffix_len: i32 = 4;  // ".rfs"
-    var out_len: i32 = n + suffix_len;
+    var replace: i32 = 0;
+    if n >= 4 &&
+       get(idx_out, n - 4) == '.' as u8 &&
+       get(idx_out, n - 3) == 'i' as u8 &&
+       get(idx_out, n - 2) == 'd' as u8 &&
+       get(idx_out, n - 1) == 'x' as u8 {
+        replace = 1;
+    }
+    var keep: i32 = n;
+    if replace == 1 { keep = n - 4; }
+    var out_len: i32 = keep + 4;
     var buf: U8Array = U8Array((out_len + 1) as u32);
     var i: i32 = 0;
-    while i < n {
+    while i < keep {
         set(buf, i, get(idx_out, i) as u8);
         i = i + 1;
     }
-    set(buf, n + 0, '.' as u8);
-    set(buf, n + 1, 'r' as u8);
-    set(buf, n + 2, 'f' as u8);
-    set(buf, n + 3, 's' as u8);
-    set(buf, n + 4, 0u8);
+    set(buf, keep + 0, '.' as u8);
+    set(buf, keep + 1, c1);
+    set(buf, keep + 2, c2);
+    set(buf, keep + 3, c3);
+    set(buf, keep + 4, 0u8);
     poke32(buf as u32, out_len as u32);
     return buf as u32 as String;
+}
+fn derive_refs_path(idx_out: String) -> String {
+    return derive_side_path(idx_out, 'r' as u8, 'f' as u8, 's' as u8);
+}
+fn derive_def_path(idx_out: String) -> String {
+    return derive_side_path(idx_out, 'd' as u8, 'f' as u8, 's' as u8);
 }
 
 fn run_pre_encode(src: String,
@@ -239,11 +261,22 @@ fn run_pre_encode(src: String,
     // Skipping the temp file (no idx_out) is fine — record_ref then
     // just discards the edges since g_refs_out_fd == 0.
     var refs_tmp_path: String = 0 as String;
+    var def_tmp_path:  String = 0 as String;
     if idx_out as u32 != 0u32 {
         refs_tmp_path = derive_refs_path(idx_out);
         var refs_fd: i32 = do_openat(0 - 100, refs_tmp_path, 577);
         if refs_fd >= 0 {
             asm_set_refs_out(refs_fd, refs_tmp_path);
+        }
+        // Stream forward-ref `def <owner> <name>` lines to disk
+        // alongside refs. Without this, parse self-build's ~6 K
+        // forward refs would grow the in-memory def queue to
+        // ~130 KB name pool + ~96 KB parallel arrays, exceeding
+        // the asm_pass1 task arena on pico2.
+        def_tmp_path = derive_def_path(idx_out);
+        var def_fd: i32 = do_openat(0 - 100, def_tmp_path, 577);
+        if def_fd >= 0 {
+            asm_set_def_out(def_fd, def_tmp_path);
         }
     }
 
@@ -262,6 +295,13 @@ fn run_pre_encode(src: String,
     // intra-file forward refs in O(N). Truly cross-input refs stay
     // in the deferred queue and surface as `ref` lines in the idx.
     asm_finalize_labels();
+
+    // Flush + close the def write fd so asm_resolve_deferred_refs
+    // can re-open the file for read and drain forward refs.
+    var def_fd_close: i32 = asm_get_def_out_fd();
+    asm_flush_def_out();
+    if def_fd_close > 0 { do_close(def_fd_close); }
+
     asm_resolve_deferred_refs();
 
     // Drain the streaming refs buffer to disk and close the write

@@ -341,6 +341,19 @@ var g_def_pool_pos: i32 = 0;
 // step one bucket higher.
 var DEF_POOL_INITIAL_BYTES: i32 = 4092;
 
+// Streaming def-queue writer (mirrors g_refs_out_*). When
+// g_def_out_fd > 0, record_ref's forward-ref branch writes
+// `def <owner_idx> <name>\n` lines straight to disk and skips the
+// in-memory queue. asm_resolve_deferred_refs re-opens the file to
+// resolve each line at end of pass 1a. Parse self-build on pico2
+// would otherwise queue ~130 KB of name bytes + ~96 KB of parallel
+// arrays = ~226 KB, exceeding the 360 KB asm_pass1 task arena.
+var g_def_out_fd:    i32     = 0;
+var g_def_out_path:  String  = 0 as String;
+var g_def_out_buf:   U8Array = 0 as U8Array;
+var g_def_out_pos:   i32     = 0;
+var DEF_OUT_BUF_CAP: i32     = 4092;
+
 // Pre-encoded prelude paths (Step 5 of pre-encode). When set,
 // asm_dump_lab_state emits three `src raw` lines pointing to the
 // pre-encoded section bins, and copies the contents of the prelude
@@ -527,6 +540,9 @@ export fn asm_set_collecting_refs(v: i32) -> void {
 // g_collecting_refs == 0, so the queue stays unallocated there.
 fn ensure_ref_state() -> void {
     if g_def_owner as u32 != 0u32 { return; }
+    // When streaming is set up, the in-memory queue is unused — skip
+    // the ~12 KB allocation here. record_ref writes straight to disk.
+    if g_def_out_fd > 0 { return; }
     g_def_capacity = MAX_DEFERRED;
     g_def_owner    = I32Array((g_def_capacity) as u32);
     g_def_name_off = I32Array((g_def_capacity) as u32);
@@ -700,12 +716,91 @@ export fn asm_flush_refs_out() -> void {
     return;
 }
 
+// Flush the 4 KB def write buffer to g_def_out_fd. Same pattern as
+// refs_buf_flush — record_ref appends bytes to the buffer, and we
+// drain whenever it's full or at end of pass 1a.
+fn def_buf_flush() -> void {
+    if g_def_out_fd <= 0 { return; }
+    if g_def_out_pos <= 0 { return; }
+    sys_write(g_def_out_fd, g_def_out_buf, g_def_out_pos);
+    g_def_out_pos = 0;
+    return;
+}
+
+fn def_buf_byte(b: u8) -> void {
+    if g_def_out_pos >= DEF_OUT_BUF_CAP { def_buf_flush(); }
+    set(g_def_out_buf, g_def_out_pos, b);
+    g_def_out_pos = g_def_out_pos + 1;
+    return;
+}
+
+fn def_buf_bytes(src: U8Array, n: i32) -> void {
+    var i: i32 = 0;
+    while i < n {
+        def_buf_byte(get(src, i));
+        i = i + 1;
+    }
+    return;
+}
+
+// Emit an i32 owner index as decimal digits into the def buffer.
+fn def_buf_dec(v: i32) -> void {
+    if v < 0 {
+        def_buf_byte('-' as u8);
+        v = 0 - v;
+    }
+    if v == 0 {
+        def_buf_byte('0' as u8);
+        return;
+    }
+    var tmp: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    while v > 0 {
+        set(tmp, n, (('0' as u8) as i32 + (v % 10)) as u8);
+        v = v / 10;
+        n = n + 1;
+    }
+    var i: i32 = n - 1;
+    while i >= 0 {
+        def_buf_byte(get(tmp, i));
+        i = i - 1;
+    }
+    delete(tmp);
+    return;
+}
+
+// Set up the streaming def-queue writer. asm_pass1 calls this after
+// asm_set_refs_out so record_ref's forward-ref branch streams to disk
+// instead of buffering in g_def_pool. Caller owns the open write fd
+// and must close it via asm_flush_def_out.
+export fn asm_set_def_out(fd: i32, path: String) -> void {
+    g_def_out_fd = fd;
+    g_def_out_path = path;
+    if g_def_out_buf as u32 == 0u32 {
+        g_def_out_buf = U8Array((DEF_OUT_BUF_CAP) as u32);
+    }
+    g_def_out_pos = 0;
+    return;
+}
+
+export fn asm_get_def_out_fd() -> i32 { return g_def_out_fd; }
+
+// Drain the 4 KB def buffer to fd and clear g_def_out_fd. Caller
+// closes the fd; asm_resolve_deferred_refs then re-opens the path
+// for read to resolve each `def` line.
+export fn asm_flush_def_out() -> void {
+    def_buf_flush();
+    g_def_out_fd = 0;
+    return;
+}
+
 // Record a (from = g_owner_idx) → (to = name) edge. If the target
 // is already in g_labels (backward ref) we emit the resolved line
 // to the streaming refs fd immediately. If it's not yet defined
-// (forward ref) we copy the name into g_def_pool and queue the
-// (owner, off, len) tuple for resolve_deferred to drain at end of
-// pass 1a.
+// (forward ref) we either stream `def <owner_idx> <name>\n` to disk
+// (g_def_out_fd > 0) or, on the host bootstrap fallback path, copy
+// the name into g_def_pool and queue the tuple for resolve_deferred
+// to drain at end of pass 1a.
 fn record_ref(name: U8Array, nlen: i32) -> void {
     if g_pass != 1 { return; }
     if g_collecting_refs == 0 { return; }
@@ -722,6 +817,18 @@ fn record_ref(name: U8Array, nlen: i32) -> void {
     // Drop them here — they will never be in g_labels by the time
     // resolve_deferred runs either, so queueing was pure waste.
     if is_riscv_register(name, nlen) != 0 { return; }
+    // Streaming path: write `def <owner> <name>\n` straight to disk.
+    if g_def_out_fd > 0 {
+        def_buf_byte('d' as u8);
+        def_buf_byte('e' as u8);
+        def_buf_byte('f' as u8);
+        def_buf_byte(' ' as u8);
+        def_buf_dec(g_owner_idx);
+        def_buf_byte(' ' as u8);
+        def_buf_bytes(name, nlen);
+        def_buf_byte(10u8);
+        return;
+    }
     if g_ndeferred >= g_def_capacity {
         // Grow rather than abort — host self-host builds (compiler/
         // asm_pass2.tc, ~14 K cross-file refs) far exceed the
@@ -744,6 +851,11 @@ fn record_ref(name: U8Array, nlen: i32) -> void {
 // refs fd. Called once after pass 1a's source walk so every label
 // is now in g_labels. By that time asm_finalize_labels() has built
 // g_lab_hash, so each find_label is O(1).
+//
+// Two drain paths share this fn: the in-memory queue (host bootstrap
+// + any caller that didn't enable streaming) is drained first, then
+// — if asm_set_def_out was wired up earlier — the def file is re-
+// opened and each `def <owner> <name>\n` line is resolved.
 export fn asm_resolve_deferred_refs() -> void {
     var d: i32 = 0;
     while d < g_ndeferred {
@@ -762,6 +874,53 @@ export fn asm_resolve_deferred_refs() -> void {
     }
     g_ndeferred = 0;
     g_def_pool_pos = 0;
+
+    // Streaming path: re-read the def file line by line. Caller is
+    // expected to have already flushed + closed the write fd via
+    // asm_flush_def_out before invoking this fn.
+    if g_def_out_path as u32 != 0u32 && g_def_out_fd <= 0 {
+        var rfd: i32 = do_openat(0 - 100, g_def_out_path, 0);
+        if rfd >= 0 {
+            var reader: SourceReader = SourceReader_new(rfd);
+            var name_buf: U8Array = U8Array(256u32);
+            while at_eof(reader) == false {
+                // Skip leading 'd','e','f',' '. Robust to a trailing
+                // empty line / stray newline (skip until 'd').
+                var c: u8 = next(reader);
+                while c != ('d' as u8) && at_eof(reader) == false {
+                    c = next(reader);
+                }
+                if c != ('d' as u8) { break; }
+                // consume 'ef '
+                next(reader); next(reader); next(reader);
+                // Parse owner (non-negative — g_owner_idx >= 0 gate
+                // in record_ref filters out the -1 case).
+                var owner_v: i32 = 0;
+                var c2: u8 = next(reader);
+                while c2 != (' ' as u8) {
+                    owner_v = owner_v * 10 + ((c2 as i32) - (('0' as u8) as i32));
+                    c2 = next(reader);
+                }
+                // Read name until \n.
+                var nlen: i32 = 0;
+                var c3: u8 = next(reader);
+                while c3 != 10u8 {
+                    if nlen < 256 {
+                        set(name_buf, nlen, c3);
+                        nlen = nlen + 1;
+                    }
+                    c3 = next(reader);
+                }
+                var idx2: i32 = find_label(name_buf, nlen);
+                if idx2 >= 0 {
+                    refs_emit_edge(owner_v, idx2);
+                }
+            }
+            delete(name_buf);
+            close(reader);
+            do_close(rfd);
+        }
+    }
     return;
 }
 
@@ -785,6 +944,12 @@ export fn asm_release_ref_state() -> void {
         delete(g_def_pool);
         g_def_pool = 0 as U8Array;
     }
+    if g_def_out_buf as u32 != 0u32 {
+        delete(g_def_out_buf);
+        g_def_out_buf = 0 as U8Array;
+    }
+    g_def_out_path = 0 as String;
+    g_def_out_pos = 0;
     g_ndeferred = 0;
     g_def_pool_pos = 0;
     return;
