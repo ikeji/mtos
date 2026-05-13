@@ -17,6 +17,9 @@ import "kernel_common.tc";
 // raw UART emission even when vfs state is suspect.
 fn do_uart_write(buf: u32, len: i32) -> i32;
 
+// Runtime allocator (compiler/runtime.tc).
+fn kmalloc(size: i32) -> u32;
+
 // Copy the basename from a path into a kmalloc'd U8Array.
 // "/bin/sh" → "sh". Caller stores the result via task_set_name, which
 // owns the free.
@@ -250,19 +253,94 @@ fn copy_string(src: String) -> String {
 //
 // The caller's StringArray is treated as raw u32 memory because the
 // kernel and user share the same (identity-mapped) address space:
-// len() / get() just peek32 into the task's arena and return pointers
-// to the original bytes, which we then copy via copy_string.
+// Packed-buffer clone of src argv: one kmalloc instead of (1 + N).
+//
+// Why: each kmalloc lands in a bucket free list and carves a NEW chunk
+// out of the large heap when the bucket runs empty. Each carve becomes
+// permanently bucket-cached and can never re-coalesce into a big
+// contiguous block. Spawn tasks with many argv elements (tcheck 7,
+// asm_pass1 11) end up adding 7+ bucket-16 chunks per spawn that
+// fragment the kernel arena. After 6-7 spawns the largest contiguous
+// free block drops below the 336 KB needed for asm_pass2's task arena
+// and we OOM. See docs/scaling.md Q1 (2026-05-13 fragment analysis).
+//
+// Packed layout in one kmalloc:
+//
+//   [count: u32][ptr0: u32]...[ptrN-1: u32]  ← StringArray header
+//   [len0: u32][bytes0...pad...]              ← each String inline
+//   [len1: u32][bytes1...pad...]
+//   ...
+//
+// Each ptr_i points to its String's start (the len_i field) inside
+// this same buffer. The child task's `get(argv, i)` returns a String
+// (= ptr_i), and len() / get() peek32 the len_i / bytes as usual.
+//
+// free path: free_argv_impl_packed kfree's the single buffer; no
+// per-string loop. Returns to the large heap directly when the size
+// crosses the 2048 byte threshold, otherwise to ONE bucket free slot.
 fn clone_argv(src_addr: u32) -> u32 {
     if src_addr == 0u32 { return 0u32; }
     var src: StringArray = src_addr as StringArray;
     var n: i32 = len(src);
-    var copy: StringArray = StringArray(n as u32);
+    if n <= 0 {
+        // Empty argv: allocate just the StringArray header (count=0).
+        var empty: u32 = kmalloc(4);
+        if empty == 0u32 { return 0u32; }
+        poke32(empty, 0u32);
+        return empty;
+    }
+
+    // Pass 1: compute total bytes needed.
+    var total: i32 = 4 + 4 * n;  // count + N pointer slots
     var i: i32 = 0;
     while i < n {
-        set(copy, i, copy_string(get(src, i)));
+        var s: String = get(src, i);
+        if s as u32 != 0u32 {
+            // String: 4-byte len prefix + bytes, then align to 4.
+            var slen: i32 = len(s);
+            total = total + ((4 + slen + 3) & (0 - 4));
+        }
         i = i + 1;
     }
-    return copy as u32;
+    // Force this allocation into the large-heap path (bypass the
+    // bucket allocator) so freeing it returns the bytes to the large
+    // free list where they coalesce with neighbors. Bucket entries
+    // ≤ 2048 stay bucket-cached after free and progressively
+    // fragment the heap (docs/scaling.md Q1, 2026-05-13). The padding
+    // cost is bounded — one extra ~2 KB per task spawn — and pays off
+    // because asm_pass2 (336 KB task arena) needs a single contiguous
+    // free block bigger than any single fragment.
+    if total <= 2048 { total = 2049; }
+
+    var buf: u32 = kmalloc(total);
+    if buf == 0u32 { return 0u32; }
+
+    // Write StringArray header (count).
+    poke32(buf, n as u32);
+    var write_off: i32 = 4 + 4 * n;
+
+    // Pass 2: copy each String into the buffer + populate pointer slots.
+    i = 0;
+    while i < n {
+        var s2: String = get(src, i);
+        if s2 as u32 == 0u32 {
+            poke32(buf + (4 + 4 * i) as u32, 0u32);
+        } else {
+            var s_dst: u32 = buf + write_off as u32;
+            var s2_len: i32 = len(s2);
+            poke32(s_dst, s2_len as u32);
+            var j: i32 = 0;
+            while j < s2_len {
+                poke8(s_dst + 4u32 + j as u32, get(s2, j));
+                j = j + 1;
+            }
+            poke32(buf + (4 + 4 * i) as u32, s_dst);
+            write_off = write_off + ((4 + s2_len + 3) & (0 - 4));
+        }
+        i = i + 1;
+    }
+
+    return buf;
 }
 
 // Linux open() flags — duplicate the subset tmpfs understands so

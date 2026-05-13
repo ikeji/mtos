@@ -14,6 +14,7 @@ fn init_task_frame(frame: u32, entry: u32, sp: u32, gp: u32, arena: u32, arena_s
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
 fn km_dump_brief() -> void;
+fn km_dump_buckets() -> void;
 
 // VFS (kernel/vfs.tc). Forward declaration so slot_free_allocs can
 // release stdio redirections on task exit without importing vfs.tc —
@@ -888,19 +889,13 @@ export fn set_frame_argv(frame: u32, argv: u32) -> void {
     return;
 }
 
-// Free a kernel-side argv StringArray and all of its Strings. Used by
-// slot_free_allocs when a task exits / is replaced, and by the failure
-// paths in sys_spawn_handler / sys_exec_handler.
+// Free a kernel-side argv buffer. clone_argv (loader.tc) packs the
+// StringArray header + all Strings into a single kmalloc, so this is
+// just one kfree — the per-String delete loop the old layout needed
+// would corrupt the heap.
 fn free_argv_impl(sa_addr: u32) -> void {
     if sa_addr == 0u32 { return; }
-    var sa: StringArray = sa_addr as StringArray;
-    var n: i32 = len(sa);
-    var i: i32 = 0;
-    while i < n {
-        delete(get(sa, i));
-        i = i + 1;
-    }
-    delete(sa);
+    kfree(sa_addr);
     return;
 }
 
@@ -941,8 +936,11 @@ fn slot_free_allocs(idx: i32) -> void {
     if si != 0 { vfs_close(si); }
     if so != 0 { vfs_close(so); }
     if ib != 0u32 { kfree(ib); }
-    // Keep name alive for /proc/tasks display after task exit.
-    // Name is freed when the slot is reused (sched_spawn / replace).
+    // EXPERIMENT (2026-05-13): free name on exit to test fragmentation
+    // hypothesis. Previously kept alive for /proc/tasks display.
+    var nm: u32 = name(t);
+    if nm != 0u32 { kfree(nm); }
+    name(t, 0);
     in_buf(t, 0);
     in_head(t, 0);
     in_tail(t, 0);
@@ -1207,6 +1205,7 @@ fn sched_task_exit() -> u32 {
     // accumulates + how fragmentation evolves across spawn/exit cycles.
     // Remove once the fragmentation root cause is understood.
     km_dump_brief();
+    km_dump_buckets();
 
     // Wake any tasks that were waiting on the one we just finished.
     // Overwrite their saved a0 with the child's exit code so they

@@ -736,6 +736,32 @@ export fn km_dump_peak() -> void {
     return;
 }
 
+// Per-bucket peak counts (cumulative carved chunks). Each bucket's
+// peak is the high-water mark of allocations of that bucket size.
+// Used to diagnose which size class drives fragmentation.
+export fn km_dump_buckets() -> void {
+    eprint("[buckets ");
+    var i: i32 = 0;
+    while i < KM_NBUCKETS {
+        var peak: i32 = peek32(stat_addr(i, 1)) as i32;
+        if peak > 0 {
+            eprint(bucket_user_size(i));
+            eprint(":");
+            eprint(peak);
+            eprint(" ");
+        }
+        i = i + 1;
+    }
+    var base: u32 = g_bucket_base + KM_LARGE_STAT_OFFSET as u32;
+    var lp: i32 = peek32(base + 4u32) as i32;
+    if lp > 0 {
+        eprint("L:");
+        eprint(lp);
+    }
+    eprint("]\n");
+    return;
+}
+
 // Brief free-list dump: `[km l=N f=SUM n=COUNT m=MAX  blocks=...]`.
 // Used by kernel-side instrumentation (sched_task_exit) to track how
 // live / fragmentation evolves across spawn/exit cycles. Lists each
