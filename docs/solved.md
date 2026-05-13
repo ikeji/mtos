@@ -181,6 +181,15 @@ OOM ゼロ、reset ゼロ、`n=1` 固定。「Pico 2 がカーネル + コンパ
 副次効果として **Hello World end-to-end が 13.78 sec** (1 boot、
 K7 era 127 sec から **9.2× speedup**、`docs/scaling.md` Q1)。
 
+**残課題**: `REFRESH_KERN_MODS=1 NORESET=1` 併用で byte-exact 検証を
+試したところ Step 2 (asm_pass1 /sd/prelude.s) で /sd の K12 系 fatfs
+root dir 制限 (~32 entry?) を踏み `cannot open bin/reloc output` で
+失敗、Step 3 が連鎖して OOM。fragmentation の再発ではなく fatfs error
+path で蓄積した kernel state が原因。回避には `pico2_cleanup_sd.sh`
+を冒頭で走らせる必要があり、orchestrator への自動組み込みは別 commit
+で扱う。fragmentation 構造自体は 1-boot で安定 (REFRESH 無しの NORESET
+単独は ~23 min で完走)。
+
 ### K15. self_replicate byte-exact 再帰仕上げ + asm_pass3 46ms silent-exit 解消 — 完了 (2026-05-13)
 
 K14 (2026-05-11) で device self_replicate の md5 match を一度確認した
