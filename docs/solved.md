@@ -181,31 +181,67 @@ OOM ゼロ、reset ゼロ、`n=1` 固定。「Pico 2 がカーネル + コンパ
 副次効果として **Hello World end-to-end が 13.78 sec** (1 boot、
 K7 era 127 sec から **9.2× speedup**、`docs/scaling.md` Q1)。
 
-**残課題 (K17)**: `REFRESH_KERN_MODS=1 NORESET=1` 併用で byte-exact
-検証を試したところ Step 2 (asm_pass1 /sd/prelude.s) が `cannot open
-bin/reloc output` で失敗。kernel arena fragmentation の再発ではなく
-(km dump で n=2 max=424 KB 確認済)、fatfs 側で /sd/p.idx などの
-新規ファイル作成が失敗する deeper bug。
+### K17. tcheck の fd_t leak 解消、1-boot byte-exact self_replicate 完走 — 完了 (2026-05-13)
 
-K17 として:
-- commit a5752c2 で道具立ては整備:
-  - `rm -f` flag を `kernel/tasks/rm/rm.tc` に追加 (missing file で
-    abort しない、msh `set -e` safe)
-  - `tests/fixtures/pico2_cleanup_sd.sh` を ~150 entry 分の `rm -f`
-    に書き換え
-  - `tests/pico2_self_replicate.sh` に `CLEAN_SD=1` オプション追加
-- cleanup 自体は新 kernel で正常完走 (`CLEANUP_DONE` 確認)
-- それでも asm_pass1 の do_openat 失敗が残る → fatfs の dir_create /
-  fat_alloc_cluster が SD 状態何かで stuck
+K16 完了後 `REFRESH_KERN_MODS=1 NORESET=1` を試したら Step 2 (asm_pass1
+/sd/prelude.s) が `cannot open bin/reloc output` で失敗。kernel arena
+fragmentation の再発ではなく (km dump で `n=2 max=424 KB` 確認、十分
+余裕あり)、**kernel 側 fatfs slot 16 個が枯渇** していた。
 
-考えられる根本原因 (未調査):
-1. fatfs FAT cache state の cleanup 後の不整合
-2. クラスタ枯渇判定の誤動作 (g_fat_total_clusters / g_fat_next_free)
-3. dir_create scan が壊れた dir entry で stop
+トレース (`fatfs_alloc_fd` / `fatfs_close` に kputs を仕込んで実機計測):
 
-fragmentation 構造自体は 1-boot で安定 (REFRESH 無しの NORESET 単独は
-~23 min で完走、commit 001fc41 で確認済)。byte-exact 検証は fatfs
-deep dive が必要、別セッションで継続。
+```
+FATFS alloc slot 00  ← parse / sigscan / tcheck の途中
+FATFS alloc slot 01
+FATFS close slot 1
+FATFS alloc slot 01     ← slot 1 再 alloc
+FATFS close slot 0      ← slot 0 close、slot 1 は close されない
+(以降 alloc は slot 1 を skip して slot 2, 3, ...)
+```
+
+root cause: **`compiler/tcheck.tc` Phase 3 の fd_t leak**。tcheck は
+3 つの SourceReader を順次 open する設計だが、最後の fd_t (tgt_path
+読み込み) のみ明示的 do_close が抜けていた:
+
+- Phase 1 (exth_path): fd_e open → close(g_reader) → do_close(fd_e) ✓
+- Phase 2 (tgth_path): fd_s open → close(g_reader) → do_close(fd_s) ✓
+- Phase 3 (tgt_path):  fd_t open → close(g_reader) のみ ✗
+
+`source_reader.tc::close()` は struct + buf + StringBuffer を delete
+するが underlying fd は閉じない (caller-owns 規約)。よって tcheck 1
+回ごとに fatfs slot 1 個 leak。REFRESH で 13+ 回 tcheck 呼ぶうちに
+16 個全枯渇。
+
+**修正** (commit 66386cb):
+- fd_t を outer scope に declare (初期 -1)
+- cleanup ブロックで `if fd_t >= 0 { do_close(fd_t); }`
+
+加えて K17 調査中に整備した道具立て (commit a5752c2):
+- `rm -f` flag (`kernel/tasks/rm/rm.tc`)、missing file で abort しない
+- `tests/fixtures/pico2_cleanup_sd.sh` を ~150 entry 分の `rm -f` に
+- `tests/pico2_self_replicate.sh` に `CLEAN_SD=1` option
+
+**実機検証** (`CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1`):
+
+```
+Step 1 (cat):                       38 sec
+Step 2 (asm_pass1 × 13 + asm_pass2): 500 sec  ← reset 無しで完走
+Step 3 (asm_pass3 + md5):           256 sec
+Step 4 (bin2uf2 + md5):             517 sec
+                                  ──────
+                                  ~22 min, 1 boot
+
+host kernel.bin md5: fdaa1ec1b9e074acf0c72f7514fe2eac
+device k.bin md5:    fdaa1ec1b9e074acf0c72f7514fe2eac  MATCH
+host kernel.uf2 md5: 73866365d5fd6f900eb04fad2d9966a5
+device k.uf2 md5:    73866365d5fd6f900eb04fad2d9966a5  MATCH
+```
+
+「Pico 2 がカーネル + コンパイラを **1 boot で byte-exact 一致** に
+自己ビルドする」を実機で達成。K16 (kernel arena fragmentation) +
+K17 (fd leak) で 1-boot 経路の構造的バグは出尽くした。
+
+
 
 ### K15. self_replicate byte-exact 再帰仕上げ + asm_pass3 46ms silent-exit 解消 — 完了 (2026-05-13)
 

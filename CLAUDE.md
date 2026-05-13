@@ -9,19 +9,19 @@
 
 # 現在のフェーズ
 
-`docs/roadmap.md` 参照。**Pico 2 self-replicate 1-boot 完走 (K13 解決
-2026-05-06、K15 再帰仕上げ 2026-05-12、K16 kernel arena fragmentation
-解消 + 1-boot 化 2026-05-13)**: pico2 実機が自前のコンパイラ・カーネル
+`docs/roadmap.md` 参照。**Pico 2 self-replicate 1-boot byte-exact 完走
+(K13 解決 2026-05-06、K15 再帰仕上げ 2026-05-12、K16 kernel arena
+fragmentation 解消 2026-05-13、K17 tcheck fd_t leak 解消 + byte-exact
+1 boot 完走 2026-05-13)**: pico2 実機が自前のコンパイラ・カーネル
 だけで kernel.bin と kernel.uf2 を **byte-exact** で再生成する。host
 gen2 build と md5 完全一致を確認した状態で
-`[REFRESH_KERN_MODS=1] [NORESET=1] tests/pico2_self_replicate.sh` が
-end-to-end **~23 min** (NORESET=1、1 boot 内で完走、2026-05-13 計測)
-で完走 (詳細: `docs/solved.md` の K13 / K15 / K16 エントリ、
-`docs/roadmap.md` 2026-05-06 milestone)。Hello World end-to-end も
-1 boot で **13.78 sec** に短縮 (K7 era 127 sec → 9.2× speedup、
-`docs/scaling.md` Q1)。これでコンパイラ + カーネル全ソースが pico2 で
-セルフホストし、ホスト PC は触媒として一度ソースを置いた後は更新時に
-しか登場しない。
+`CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1 tests/pico2_self_replicate.sh`
+が end-to-end **~22 min** で完走 (2026-05-13 計測、commit 66386cb)。
+Hello World end-to-end も 1 boot で **13.78 sec** に短縮 (K7 era 127
+sec → 9.2× speedup、`docs/scaling.md` Q1)。これでコンパイラ + カーネル
+全ソースが pico2 でセルフホストし、ホスト PC は触媒として一度ソースを
+置いた後は更新時にしか登場しない。詳細は `docs/solved.md` の K13 /
+K15 / K16 / K17 エントリ、`docs/roadmap.md` 2026-05-06 milestone。
 
 完了した過去マイルストーン — フェーズ 7 完走 (K7 解決、2026-04-29、qemu
 virt + pico2 実機で `parse → sigscan → tcheck → codegen → bc2asm →
