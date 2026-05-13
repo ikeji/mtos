@@ -20,6 +20,7 @@ fn km_dump_buckets() -> void;
 // release stdio redirections on task exit without importing vfs.tc —
 // kernel_common is imported by vfs, a real import would create a cycle.
 fn vfs_close(fd: i32) -> i32;
+fn vfs_close_owned_by(slot: i32) -> i32;
 
 // Platform-provided (linked at build time)
 fn rearm_timer() -> void;
@@ -952,6 +953,11 @@ fn slot_free_allocs(idx: i32) -> void {
     if ib != 0u32 { kfree(ib); }
     var nm: u32 = name(t);
     if nm != 0u32 { kfree(nm); }
+    // Auto-close any vfs fd the task left open (e.g. tcheck's fd_t
+    // before commit 66386cb). Defends against task-side close bugs
+    // — without this, a forgotten fd permanently consumes a kernel
+    // mtfs / fatfs / tmpfs / pipe slot.
+    vfs_close_owned_by(idx);
     name(t, 0);
     in_buf(t, 0);
     in_head(t, 0);

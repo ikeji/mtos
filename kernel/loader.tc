@@ -338,7 +338,11 @@ fn open_redir(path: String, wr: i32) -> i32 {
     if path as u32 == 0u32 { return 0; }
     var flags: i32 = 0;
     if wr != 0 { flags = LOADER_O_WRONLY | LOADER_O_CREAT | LOADER_O_TRUNC; }
-    var fd: i32 = vfs_open(path, flags);
+    // owner = -1: this fd will be transferred to the child via
+    // stdin_fd / stdout_fd; the caller (sys_spawn_handler) doesn't
+    // want it auto-closed at its own exit, and the child's exit path
+    // (slot_free_allocs) closes stdin_fd / stdout_fd explicitly.
+    var fd: i32 = vfs_open_owned(path, flags, -1);
     if fd < 0 { return -1; }
     return fd;
 }
@@ -484,6 +488,14 @@ export fn sys_spawn_fds_handler(path: String, argv_addr: u32,
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
         task_set_name(slot, basename_copy(path));
+        // Transfer ownership of the pipe fds to the child so
+        // vfs_close_owned_by(parent) doesn't yank them out from under
+        // the still-running child. slot_free_allocs at child exit
+        // will close them via stdin_fd / stdout_fd as usual; this
+        // setter just retags them so the auto-close path doesn't fire
+        // when the parent exits first.
+        if in_fd > 0 { vfs_set_owner(in_fd, slot); }
+        if out_fd > 0 { vfs_set_owner(out_fd, slot); }
     } else {
         free_last_alloc();
     }

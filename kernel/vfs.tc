@@ -50,10 +50,17 @@ export fn vfs_set_fatfs_ready() -> void {
 // fs_type : which FS owns this fd
 // inner   : fs-specific handle (e.g. mtfs fd)
 // offset  : reserved for future use (VFS-level position)
+// owner   : sched slot index of the task that opened this fd. Used by
+//           slot_free_allocs to auto-close fds the task forgot to close
+//           before exit. -1 means "kernel-owned" (open_redir uses this
+//           because the resulting fds get transferred to the child via
+//           stdin_fd / stdout_fd, which slot_free_allocs closes
+//           separately).
 struct FD {
     fs_type: i32,
     inner:   i32,
     offset:  i32,
+    owner:   i32,
 }
 var g_vfs_fds: FDArray = 0 as FDArray;
 var g_vfs_ready: i32 = 0;
@@ -68,7 +75,7 @@ export fn vfs_init() -> i32 {
     g_vfs_fds = FDArray(VFS_MAX_FDS as u32);
     var i: i32 = 0;
     while i < VFS_MAX_FDS {
-        set(g_vfs_fds, i, FD(FS_NONE, 0, 0));
+        set(g_vfs_fds, i, FD(FS_NONE, 0, 0, -1));
         i = i + 1;
     }
     g_vfs_ready = 1;
@@ -109,8 +116,11 @@ fn path_head(addr: u32) -> i32 {
     return plen;
 }
 
-// Allocate a VFS fd slot (index 3+). Returns -1 on exhaustion.
-fn alloc_vfs_fd(fs: i32, inner_fd: i32) -> i32 {
+// Allocate a VFS fd slot (index 3+). owner_slot is the sched slot of
+// the task that should auto-close this fd at exit, or -1 for kernel-
+// owned (e.g. open_redir's in/out fds, transferred to the child via
+// stdin_fd / stdout_fd). Returns -1 on exhaustion.
+fn alloc_vfs_fd(fs: i32, inner_fd: i32, owner_slot: i32) -> i32 {
     var i: i32 = 0;
     while i < VFS_MAX_FDS {
         var e: FD = get(g_vfs_fds, i);
@@ -118,6 +128,7 @@ fn alloc_vfs_fd(fs: i32, inner_fd: i32) -> i32 {
             fs_type(e, fs);
             inner(e, inner_fd);
             offset(e, 0);
+            owner(e, owner_slot);
             return i + 3;
         }
         i = i + 1;
@@ -136,7 +147,9 @@ fn alloc_vfs_fd(fs: i32, inner_fd: i32) -> i32 {
 // accepted and skipped. Each component is looked up under the
 // running parent inode, so /bin/hello descends into the "bin"
 // directory first.
-export fn vfs_open(path: String, flags: i32) -> i32 {
+// Open with explicit owner. owner_slot = sched slot to auto-close at
+// exit, or -1 for kernel-owned (open_redir / boot dump).
+export fn vfs_open_owned(path: String, flags: i32, owner_slot: i32) -> i32 {
     if g_vfs_ready == 0 { return -1; }
     if path as u32 == 0u32 { return -1; }
     var plen: i32 = path_head(path as u32);
@@ -148,7 +161,7 @@ export fn vfs_open(path: String, flags: i32) -> i32 {
         if nlen == 0 { return -1; }
         var inner_fd: i32 = tmpfs_open(path_addr + 5u32, nlen, flags);
         if inner_fd < 0 { return -1; }
-        var fd: i32 = alloc_vfs_fd(FS_TMPFS, inner_fd);
+        var fd: i32 = alloc_vfs_fd(FS_TMPFS, inner_fd, owner_slot);
         if fd < 0 { tmpfs_close(inner_fd); return -1; }
         return fd;
     }
@@ -158,7 +171,7 @@ export fn vfs_open(path: String, flags: i32) -> i32 {
         if nlen == 0 { return -1; }
         var inner_fd: i32 = fatfs_open(path_addr + 4u32, nlen, flags);
         if inner_fd < 0 { return -1; }
-        var fd: i32 = alloc_vfs_fd(FS_FATFS, inner_fd);
+        var fd: i32 = alloc_vfs_fd(FS_FATFS, inner_fd, owner_slot);
         if fd < 0 { fatfs_close(inner_fd); return -1; }
         return fd;
     }
@@ -166,7 +179,7 @@ export fn vfs_open(path: String, flags: i32) -> i32 {
     if is_proc_path(path_addr, plen) {
         var inner_fd: i32 = procfs_open(path_addr, plen);
         if inner_fd < 0 { return -1; }
-        var fd: i32 = alloc_vfs_fd(FS_PROCFS, inner_fd);
+        var fd: i32 = alloc_vfs_fd(FS_PROCFS, inner_fd, owner_slot);
         if fd < 0 { procfs_close(inner_fd); return -1; }
         return fd;
     }
@@ -209,9 +222,17 @@ export fn vfs_open(path: String, flags: i32) -> i32 {
     var mtfs_fd: i32 = mtfs_open(inode as u32);
     if mtfs_fd < 0 { return -1; }
 
-    var fd: i32 = alloc_vfs_fd(FS_MTFS, mtfs_fd);
+    var fd: i32 = alloc_vfs_fd(FS_MTFS, mtfs_fd, owner_slot);
     if fd < 0 { mtfs_close(mtfs_fd); return -1; }
     return fd;
+}
+
+// Convenience wrapper: opens with owner = current sched slot. Used by
+// the ecall openat path so the kernel auto-closes the fd at task exit
+// if the task forgets do_close. open_redir / boot dump use
+// vfs_open_owned(path, flags, -1) directly.
+export fn vfs_open(path: String, flags: i32) -> i32 {
+    return vfs_open_owned(path, flags, sched_current_idx());
 }
 
 export fn vfs_size(fd: i32) -> i32 {
@@ -434,6 +455,7 @@ export fn vfs_close(fd: i32) -> i32 {
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
+    if t == FS_NONE { return 0; }
     if t == FS_MTFS   { mtfs_close(inner(e)); }
     if t == FS_TMPFS  { tmpfs_close(inner(e)); }
     if t == FS_PROCFS { procfs_close(inner(e)); }
@@ -442,7 +464,39 @@ export fn vfs_close(fd: i32) -> i32 {
     fs_type(e, FS_NONE);
     inner(e, 0);
     offset(e, 0);
+    owner(e, -1);
     return 0;
+}
+
+// Transfer ownership of `fd` to a different sched slot. Used by
+// sys_spawn_fds_handler so the parent's pipe fds get auto-closed when
+// the CHILD exits, not when the parent does — otherwise the parent
+// closing first would yank the pipe out from under the child.
+export fn vfs_set_owner(fd: i32, owner_slot: i32) -> void {
+    if fd < 3 || fd >= VFS_MAX_FDS + 3 { return; }
+    var e: FD = get(g_vfs_fds, fd - 3);
+    if fs_type(e) == FS_NONE { return; }
+    owner(e, owner_slot);
+    return;
+}
+
+// Close every fd owned by sched slot `slot`. Called from
+// slot_free_allocs at task exit so fds the task forgot to close don't
+// leak (and the underlying mtfs / fatfs / tmpfs / pipe slot stays
+// reusable). Idempotent — closing an already-closed slot is a no-op.
+export fn vfs_close_owned_by(slot: i32) -> i32 {
+    if g_vfs_ready == 0 { return 0; }
+    var closed: i32 = 0;
+    var i: i32 = 0;
+    while i < VFS_MAX_FDS {
+        var e: FD = get(g_vfs_fds, i);
+        if fs_type(e) != FS_NONE && owner(e) == slot {
+            vfs_close(i + 3);
+            closed = closed + 1;
+        }
+        i = i + 1;
+    }
+    return closed;
 }
 
 // ===== Kernel pipe (ring buffer) =====
@@ -566,8 +620,13 @@ export fn sys_pipe_handler(fds_addr: u32) -> i32 {
     wrclosed(p,  0);
     rdclosed(p,  0);
 
-    var rfd: i32 = alloc_vfs_fd(FS_PIPE, idx * 2);
-    var wfd: i32 = alloc_vfs_fd(FS_PIPE, idx * 2 + 1);
+    // Pipe fds are owned by the caller; the shell typically passes
+    // them to spawned children via sys_spawn_fds, but the orig caller
+    // still has them until those calls succeed. Auto-close at the
+    // caller's exit gives the right behavior.
+    var owner_slot: i32 = sched_current_idx();
+    var rfd: i32 = alloc_vfs_fd(FS_PIPE, idx * 2, owner_slot);
+    var wfd: i32 = alloc_vfs_fd(FS_PIPE, idx * 2 + 1, owner_slot);
     if rfd < 0 || wfd < 0 {
         if rfd >= 0 { vfs_close(rfd); }
         if wfd >= 0 { vfs_close(wfd); }

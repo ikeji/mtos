@@ -289,6 +289,10 @@ EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     compiler/codegen.tc compiler/bc2asm.tc compiler/asm_pass2.tc \
     compiler/asm_pass3.tc compiler/runtime.tc \
     kernel/tasks/libtc/libtc.tc \
+    kernel/kernel_common.tc kernel/block_flash.tc kernel/block_sd.tc \
+    kernel/tmpfs.tc kernel/fatfs.tc kernel/mtfs.tc kernel/procfs.tc \
+    kernel/vfs.tc kernel/loader.tc kernel/kernel_pico2.tc \
+    kernel/platform_pico2.tc \
     kernel/platform_pico2.s kernel/trap_common.s kernel/crt0_pico2_data.s
 
 build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_platform.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
