@@ -109,11 +109,24 @@ asm_pass2 を起動すると、kernel arena (508 KB) の pool が断片化し
 asm_pass2 の 336 KB task arena 確保に失敗:
 
 ```
-OOM: 344068 p=439388 l=118244
+OOM: 344068 p=439388 l=118236
+       free=[20484,12132,24408,32748,310320,s=400092,n=5,m=310320]
 ```
 
-これは scaling.md Q3 / Q5 で議論済の問題で、本セッションの
-dead-strip default-on とは独立。
+free list 計測 (`compiler/runtime.tc::new_array` に追加した dump、
+commit TBD):
+
+- 5 ブロックに分裂、合計 free **391 KB** あるが最大連続は **303 KB**
+- 小フラグメント 4 個 (12 / 20 / 24 / 32 KB、合計 89 KB) が
+  生き残りカーネル状態 (mtfs inode cache / fatfs FAT sector cache /
+  vfs fd / msh の自分の arena) と task arena freed 領域の間に挟まり、
+  coalesce を妨げている
+- 要求 336 KB に対し **33 KB 不足**
+
+これは scaling.md Q3 / Q5 で議論済の「断片化」を数値で実証したもの。
+本セッションの dead-strip default-on とは独立 (実は dead-strip で
+guest task .bin が ~半減した結果、task arena 自体は若干楽になったが
+カーネル側の断片化が支配項に残った)。
 
 **回避**: 2 boot 構成にする。
 

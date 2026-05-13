@@ -387,9 +387,9 @@ fn new_array(count: i32, data_bytes: i32) -> u32 {
             oom_push_char(scratch, ':' as u8);
             oom_push_char(scratch, ' ' as u8);
             oom_push_dec(scratch, total);
-            // Diagnostic: also dump peak/live so we can tell if we're
-            // OOM'ing because of a single big alloc vs cumulative
-            // smaller allocs vs fragmentation.
+            // Diagnostic: dump peak/live so we can tell if we're OOM'ing
+            // because of a single big alloc vs cumulative smaller allocs
+            // vs fragmentation.
             oom_push_char(scratch, ' ' as u8);
             oom_push_char(scratch, 'p' as u8);
             oom_push_char(scratch, '=' as u8);
@@ -398,6 +398,49 @@ fn new_array(count: i32, data_bytes: i32) -> u32 {
             oom_push_char(scratch, 'l' as u8);
             oom_push_char(scratch, '=' as u8);
             oom_push_dec(scratch, g_km_curr_bytes);
+            // Free list walk: prints `free=[size,size,...,sum=N,n=M]`.
+            // Fragmentation evidence: many small blocks vs one big block.
+            oom_push_char(scratch, ' ' as u8);
+            oom_push_char(scratch, 'f' as u8);
+            oom_push_char(scratch, 'r' as u8);
+            oom_push_char(scratch, 'e' as u8);
+            oom_push_char(scratch, 'e' as u8);
+            oom_push_char(scratch, '=' as u8);
+            oom_push_char(scratch, '[' as u8);
+            var fl_cur: u32 = g_free_list;
+            var fl_sum: i32 = 0;
+            var fl_n: i32 = 0;
+            var fl_max: i32 = 0;
+            while fl_cur != 0u32 {
+                var bsz_d: i32 = peek32(fl_cur) as i32;
+                if fl_n < 16 {
+                    if fl_n > 0 { oom_push_char(scratch, ',' as u8); }
+                    oom_push_dec(scratch, bsz_d);
+                }
+                if bsz_d > fl_max { fl_max = bsz_d; }
+                fl_sum = fl_sum + bsz_d;
+                fl_n = fl_n + 1;
+                fl_cur = peek32(fl_cur + 4u32);
+            }
+            if fl_n >= 16 {
+                oom_push_char(scratch, ',' as u8);
+                oom_push_char(scratch, '.' as u8);
+                oom_push_char(scratch, '.' as u8);
+                oom_push_char(scratch, '.' as u8);
+            }
+            oom_push_char(scratch, ',' as u8);
+            oom_push_char(scratch, 's' as u8);
+            oom_push_char(scratch, '=' as u8);
+            oom_push_dec(scratch, fl_sum);
+            oom_push_char(scratch, ',' as u8);
+            oom_push_char(scratch, 'n' as u8);
+            oom_push_char(scratch, '=' as u8);
+            oom_push_dec(scratch, fl_n);
+            oom_push_char(scratch, ',' as u8);
+            oom_push_char(scratch, 'm' as u8);
+            oom_push_char(scratch, '=' as u8);
+            oom_push_dec(scratch, fl_max);
+            oom_push_char(scratch, ']' as u8);
             oom_push_char(scratch, 10u8);
             kfree(scratch);
         }
