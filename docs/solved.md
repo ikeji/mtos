@@ -181,14 +181,31 @@ OOM ゼロ、reset ゼロ、`n=1` 固定。「Pico 2 がカーネル + コンパ
 副次効果として **Hello World end-to-end が 13.78 sec** (1 boot、
 K7 era 127 sec から **9.2× speedup**、`docs/scaling.md` Q1)。
 
-**残課題**: `REFRESH_KERN_MODS=1 NORESET=1` 併用で byte-exact 検証を
-試したところ Step 2 (asm_pass1 /sd/prelude.s) で /sd の K12 系 fatfs
-root dir 制限 (~32 entry?) を踏み `cannot open bin/reloc output` で
-失敗、Step 3 が連鎖して OOM。fragmentation の再発ではなく fatfs error
-path で蓄積した kernel state が原因。回避には `pico2_cleanup_sd.sh`
-を冒頭で走らせる必要があり、orchestrator への自動組み込みは別 commit
-で扱う。fragmentation 構造自体は 1-boot で安定 (REFRESH 無しの NORESET
-単独は ~23 min で完走)。
+**残課題 (K17)**: `REFRESH_KERN_MODS=1 NORESET=1` 併用で byte-exact
+検証を試したところ Step 2 (asm_pass1 /sd/prelude.s) が `cannot open
+bin/reloc output` で失敗。kernel arena fragmentation の再発ではなく
+(km dump で n=2 max=424 KB 確認済)、fatfs 側で /sd/p.idx などの
+新規ファイル作成が失敗する deeper bug。
+
+K17 として:
+- commit a5752c2 で道具立ては整備:
+  - `rm -f` flag を `kernel/tasks/rm/rm.tc` に追加 (missing file で
+    abort しない、msh `set -e` safe)
+  - `tests/fixtures/pico2_cleanup_sd.sh` を ~150 entry 分の `rm -f`
+    に書き換え
+  - `tests/pico2_self_replicate.sh` に `CLEAN_SD=1` オプション追加
+- cleanup 自体は新 kernel で正常完走 (`CLEANUP_DONE` 確認)
+- それでも asm_pass1 の do_openat 失敗が残る → fatfs の dir_create /
+  fat_alloc_cluster が SD 状態何かで stuck
+
+考えられる根本原因 (未調査):
+1. fatfs FAT cache state の cleanup 後の不整合
+2. クラスタ枯渇判定の誤動作 (g_fat_total_clusters / g_fat_next_free)
+3. dir_create scan が壊れた dir entry で stop
+
+fragmentation 構造自体は 1-boot で安定 (REFRESH 無しの NORESET 単独は
+~23 min で完走、commit 001fc41 で確認済)。byte-exact 検証は fatfs
+deep dive が必要、別セッションで継続。
 
 ### K15. self_replicate byte-exact 再帰仕上げ + asm_pass3 46ms silent-exit 解消 — 完了 (2026-05-13)
 
