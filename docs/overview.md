@@ -69,8 +69,10 @@ asm_pass2 → asm_pass3` の 7 段を回し、生成バイナリを sh から実
 "Hello, World!" を出せる。pico2 では SD カード (`/sd/`) を中間ファイル
 ストレージに使い、PLL_SYS で CPU を 150 MHz に上げる。K7 達成
 (2026-04-29) 時点で合計 **127 秒**、その後 `.idx` pre-encode + 3-binary
-asm split + dead-strip default-on 等の最適化で **~15.5 秒** (2026-05-13
-再計測、`docs/scaling.md` Q1) まで短縮。詳細は `docs/solved.md`。
+asm split + dead-strip default-on + kernel arena fragmentation 解消
+(argv/frame_buf/stack を task ram に統合) 等の最適化で **~13.8 秒**
+(2026-05-13 再計測、1 boot 完走、`docs/scaling.md` Q1) まで短縮。
+詳細は `docs/solved.md`。
 
 詳細は `docs/roadmap.md` / `docs/problem.md` / `docs/task/` 参照。
 Pico 2 実機の配線・openocd 環境・実機テスト手順は

@@ -58,8 +58,8 @@ intrinsic 化すれば解消。解決すれば #6 (get 境界チェック) も�
 完成: pico2 実機上で OS 自身のコンパイラパイプラインが
 parse → sigscan → tcheck → codegen → bc2asm → asm_pass2 → asm_pass3
 を全段完走させ、生成された `/sd/HW` を実行して `Hello, World!`
-を出力 (K7 達成時 127 秒 / 2026-05-13 再計測で **~15.5 秒**、
-`docs/scaling.md` Q1)。
+を出力 (K7 達成時 127 秒 / 2026-05-13 再計測で **~13.8 秒** で 1 boot
+完走、`docs/scaling.md` Q1)。
 
 決め手は 3 つの組み合わせ:
 

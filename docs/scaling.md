@@ -75,22 +75,22 @@ K7 時代の上記モデル (asm_pass2 が prelude.s を walk、asm_pass3 が 3
   は ~290 KB → ~264 KB (~9 %)、task .bin は 53 KB → 24 KB に縮小。
 
 **実機 pico2 で `tests/test_pico2_bench.sh` 計測 (Hello World、
-PLL_SYS 150 MHz、msh /pico2_bench_idx.sh 駆動)**:
+PLL_SYS 150 MHz、msh /pico2_bench_idx.sh 駆動、1 boot 完走)**:
 
 | stage | K7 (2026-04-29) | 現在 (2026-05-13) | 比 |
 |---|---:|---:|---:|
-| parse | 31 s | **2.72 s** | 11× |
+| parse | 31 s | **2.73 s** | 11× |
 | sigscan | 10 s | **0.16 s** | 62× |
-| tcheck (file mode) | 5 s | **0.36 s** | 14× |
-| codegen | 5 s | **0.22 s** | 23× |
+| tcheck (file mode) | 5 s | **0.34 s** | 15× |
+| codegen | 5 s | **0.20 s** | 25× |
 | bc2asm | 5 s | **0.20 s** | 25× |
 | cat-link | 10 s | **0.18 s** | 56× |
-| asm_pass1 | (n/a — 旧 asm) | **1.36 s** | — |
-| prelude staging × 4 (`cat /prelude.* > /sd/`) | — | **1.32 s** | — |
-| asm_pass2 | 27 s | **6.75 s** (要 2 boot) | 4× |
-| asm_pass3 | 80 s | **2.04 s** (要 2 boot) | 39× |
-| /sd/HW exec | 1 s | **0.19 s** | 5× |
-| **end-to-end 合計** | **127 s** | **~15.5 s** | **8×** |
+| asm_pass1 | (n/a — 旧 asm) | **1.06 s** | — |
+| prelude staging × 4 (`cat /prelude.* > /sd/`) | — | **1.24 s** | — |
+| asm_pass2 | 27 s | **5.17 s** | 5× |
+| asm_pass3 | 80 s | **2.27 s** | 35× |
+| /sd/HW exec | 1 s | **0.21 s** | 5× |
+| **end-to-end 合計 (1 boot)** | **127 s** | **~13.8 s** | **9.2×** |
 
 source 依存 5 stage (parse〜bc2asm) は K7 の **66 s → 3.7 s で
 18 倍速** いている。これは:
@@ -101,50 +101,50 @@ source 依存 5 stage (parse〜bc2asm) は K7 の **66 s → 3.7 s で
 - dead-strip default-on で生成バイナリが小さく → SD I/O 削減
 - `.incbin` defer (`docs/scaling.md` Q7) で SD への中間書き込み撤廃
 
-#### asm_pass2 の OOM (msh-driven 単一 boot で発火)
+#### 過去の OOM 問題と解決 (2026-05-13、3 commit で完全消滅)
 
-msh から parse → sigscan → tcheck → codegen → bc2asm → cat-link →
-asm_pass1 → cat × 4 (staging) と 10+ 個のタスクを連続 spawn したあと
-asm_pass2 を起動すると、kernel arena (508 KB) の pool が断片化し
-asm_pass2 の 336 KB task arena 確保に失敗:
+K7 era 〜 2026-05-12 までは msh から parse → ... → asm_pass1 → cat ×
+4 と多数の task を連続 spawn したあと asm_pass2 を起動すると、kernel
+arena (508 KB) の pool が断片化し 336 KB の task arena 確保に失敗
+していた:
 
 ```
 OOM: 344068 p=439388 l=118236
-       free=[20484,12132,24408,32748,310320,s=400092,n=5,m=310320]
+     free=[20484,12132,24408,32748,310320,s=400092,n=5,m=310320]
 ```
 
-free list 計測 (`compiler/runtime.tc::new_array` に追加した dump、
-commit TBD):
+5 ブロック分裂、合計 free 391 KB あるが最大連続が 303 KB しかない。
+要求 336 KB に対し 33 KB 不足。
 
-- 5 ブロックに分裂、合計 free **391 KB** あるが最大連続は **303 KB**
-- 小フラグメント 4 個 (12 / 20 / 24 / 32 KB、合計 89 KB) が
-  生き残りカーネル状態 (mtfs inode cache / fatfs FAT sector cache /
-  vfs fd / msh の自分の arena) と task arena freed 領域の間に挟まり、
-  coalesce を妨げている
-- 要求 336 KB に対し **33 KB 不足**
+**実機データから 3 種類の根本原因を特定**:
 
-これは scaling.md Q3 / Q5 で議論済の「断片化」を数値で実証したもの。
-本セッションの dead-strip default-on とは独立 (実は dead-strip で
-guest task .bin が ~半減した結果、task arena 自体は若干楽になったが
-カーネル側の断片化が支配項に残った)。
+1. **clone_argv が各 String を個別 kmalloc** (commit 688e4ef)
+   - tcheck (7 argv) で bucket 16 を +7 carve、asm_pass1 (11 argv) で
+     bucket 16 を +4 carve、cat (4 argv) で bucket 8 を +1 carve
+   - bucket-pool の entry は一度 carve すると large heap に戻らない
+   - **修正**: argv 全体を 1 packed buffer に詰めて large_alloc 経由化
 
-**回避**: 2 boot 構成にする。
+2. **frame_buf (132 byte) が別 alloc** (commit 49ae455)
+   - bucket 6 (260 byte) に carve され、msh の frame_buf が「90 KB
+     free 領域と 306 KB free 領域の間に persistent live」として常駐
+   - **修正**: frame_buf を task ram block 内 (stack 末尾の後) に
+     embed → 1 つの大 alloc にまとめる
 
-1. **Boot 1**: 全 stage を msh で走らせる。asm_pass2 で OOM するが
-   /sd/u.idx / /sd/u.tx / /sd/prelude.{tx,ro,dt,rl} 等の中間ファイルが
-   SD カードに persist する。
-2. **Boot 2**: msh fixture を `asm_pass2 + asm_pass3 + /sd/HW` だけに
-   差し替えて再走。SD は Boot 1 の中間ファイルを保持。kernel arena
-   は fresh なので 336 KB の連続確保が通る。
+3. **argv buffer 自体が独立 alloc** (commit 0c1b800)
+   - 1 と 2 の修正後も argv は kernel 側で別 alloc (>2048 byte padded)
+   - **修正**: argv を task ram block 内 (stack と frame_buf の間) に
+     pack_argv_at で書き込む。kernel 側の独立 alloc 撤廃
 
-この 2 boot 経路で asm_pass2 = 6.75 s、asm_pass3 = 2.04 s、
-/sd/HW 実行 = 0.19 s が取れた (上の表)。
+**結果** (commit 0c1b800 + 後続の dead code 整理):
 
-恒久対策候補:
-- カーネル pool に "huge bucket" を独立確保 (task arena 専用)
-- `make_task` 後の pool defrag pass
-- `sh` の組み込みコマンド化 (msh 内で順次実行、子タスク spawn しない)
-- Boot 1 で必要な中間ファイルを kernel 内で生成 + persist (init phase)
+```
+free list: n=1, max=407,436 byte (~398 KB)
+全 stage 通して固定、Hello World end-to-end 13.78 sec で 1 boot 完走
+```
+
+task ごとの kernel arena alloc:
+- 旧: ram + stack + frame_buf + argv + name + (img)  = 5〜6 alloc
+- 新: ram(+arena+stack+argv+frame_buf) + name + (img) = 2〜3 alloc
 
 ### 旧 50 ファイル × 平均 5 KB 推計 (2026-04-29、要見直し)
 

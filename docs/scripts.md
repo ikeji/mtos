@@ -113,7 +113,7 @@ tests/pico2_verify.sh    ← pico2 実機で compile 7 段の byte-exact 検証
 | `test_phase7.sh`         | phase 7 自己ホスト実行テスト (手動)。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat"` で kernel をビルドし、qemu virt で 2 ステージ検証 (compile → link → run "Hello, World!") |
 | `test_pico2.sh`          | pico2 実機テスト (手動、`make test` に含まれない)。Debug Probe + openocd-rpi で flash し、UART の MTFS / CAT / launcher ログを grep |
 | `test_pico2_sd.sh`       | pico2 実機 SD カードテスト (手動)。Phase A: kernel flash → `echo TAG > /sd/T.TXT` → `cat` で読み返し。Phase B: re-flash せず reset のみで `cat /sd/T.TXT` が同 TAG を返す = 永続化検証 |
-| `test_pico2_phase7_sd.sh`| pico2 実機 phase 7 self-host テスト (手動)。`EXTRA_TASKS` 入りのカーネルを flash し、`pico2_pipeline_drive.py` で `parse → ... → asm_pass3 → /sd/HW → "Hello, World!"` を駆動。`/sd/` に中間ファイル staging。総時間 ~125 秒 (K7 達成版、commit 666d306) — 2026-05-13 再計測で `tests/test_pico2_bench.sh` 経由 2 boot ~15.5 秒、`docs/scaling.md` Q1 |
+| `test_pico2_phase7_sd.sh`| pico2 実機 phase 7 self-host テスト (手動)。`EXTRA_TASKS` 入りのカーネルを flash し、`pico2_pipeline_drive.py` で `parse → ... → asm_pass3 → /sd/HW → "Hello, World!"` を駆動。`/sd/` に中間ファイル staging。総時間 ~125 秒 (K7 達成版、commit 666d306) — 2026-05-13 再計測で `tests/test_pico2_bench.sh` 経由 1 boot ~13.8 秒、`docs/scaling.md` Q1 |
 | `test_pico2_hw.sh`       | pico2 実機 UART pipeline テスト (手動) |
 | `pico2_verify.sh`        | pico2 実機で compile 7 段の byte-exact 検証 (手動、link 段は K7 の UART 問題で skip) |
 | `update_golden.sh`       | golden 再生成 (rv32 ネイティブ高速化) |
