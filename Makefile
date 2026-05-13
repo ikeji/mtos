@@ -348,7 +348,19 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	cp kernel/platform_pico2.s "$$_r/src/platform_pico2.s" && \
 	cp kernel/trap_common.s "$$_r/src/trap_common.s" && \
 	cp kernel/crt0_pico2_data.s "$$_r/src/crt0_pico2_data.s" && \
+	cp kernel/tasks/task_crt0.s "$$_r/src/task_crt0.s" && \
+	cp kernel/tasks/task_data.s "$$_r/src/task_data.s" && \
 	printf '; raw\n' > "$$_r/src/raw.s" && \
+	for spec in parse:65536:16384 sigscan:32768:16384 \
+	            tcheck:262144:16384 codegen:196608:16384 \
+	            bc2asm:131072:16384 asm_pass1:294912:16384 \
+	            asm_pass2:344064:16384 asm_pass3:344064:16384; do \
+	    nm=$$(echo $$spec | cut -d: -f1); \
+	    ar=$$(echo $$spec | cut -d: -f2); \
+	    sk=$$(echo $$spec | cut -d: -f3); \
+	    printf '; raw\n    .text\n    .word %d\n    .word %d\n' $$ar $$sk \
+	        > "$$_r/src/hdr_$$nm.s"; \
+	done && \
 	{ cp tests/fixtures/pico2_cleanup_sd.sh "$$_r/pico2_cleanup_sd.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_dir_grow_test.sh "$$_r/pico2_dir_grow_test.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_dir_grow_test2.sh "$$_r/pico2_dir_grow_test2.sh" 2>/dev/null || true; } && \
@@ -357,6 +369,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/fixtures/pico2_self_step2.sh "$$_r/pico2_self_step2.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_self_step3.sh "$$_r/pico2_self_step3.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_self_step4.sh "$$_r/pico2_self_step4.sh" 2>/dev/null || true; } && \
+	{ cp tests/fixtures/pico2_compile_compilers.sh "$$_r/pico2_compile_compilers.sh" 2>/dev/null || true; } && \
 	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
