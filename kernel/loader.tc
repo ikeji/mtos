@@ -129,7 +129,11 @@ fn debug_dump_path(path: String, tag: StringLiteral) -> void {
     return;
 }
 
-fn load_fd(fd: i32) -> u32 {
+// argv_size: how many bytes of argv data to reserve inside the task's
+// ram block. The spawn handler computes this via argv_packed_size(src)
+// before calling load_fd. Use 0 for init tasks that take no argv
+// (load_task / load_task_addr).
+fn load_fd(fd: i32, argv_size: i32) -> u32 {
     reset_last_alloc();
 
     var xip: u32 = vfs_xip_addr(fd);
@@ -143,7 +147,8 @@ fn load_fd(fd: i32) -> u32 {
             kputs("load_fd: invalid K3 header (xip)\n");
             return 0u32;
         }
-        return make_task(xip + (TASK_HEADER_SIZE as u32), arena_x, stack_x);
+        return make_task(xip + (TASK_HEADER_SIZE as u32),
+                         arena_x, stack_x, argv_size);
     }
 
     var size: i32 = vfs_size(fd);
@@ -168,19 +173,20 @@ fn load_fd(fd: i32) -> u32 {
         return 0u32;
     }
     var frame: u32 = make_task(img_base + (TASK_HEADER_SIZE as u32),
-                               arena_s, stack_s);
+                               arena_s, stack_s, argv_size);
     set_last_img(img as u32);
     return frame;
 }
 
 // Load the given path from the VFS and build a task frame.
 // Returns 0 on any failure, otherwise a frame pointer ready for
-// sched_register. Task sizes come from the binary header.
+// sched_register. Task sizes come from the binary header. Init tasks
+// (kern.conf seed) take no argv, so argv_size is 0.
 export fn load_task(path: StringLiteral) -> u32 {
     var fd: i32 = vfs_open(path as String, 0);
     if fd < 0 { return 0u32; }
 
-    var frame: u32 = load_fd(fd);
+    var frame: u32 = load_fd(fd, 0);
     vfs_close(fd);
     return frame;
 }
@@ -190,7 +196,7 @@ export fn load_task(path: StringLiteral) -> u32 {
 export fn load_task_addr(path: String) -> u32 {
     var fd: i32 = vfs_open(path, 0);
     if fd < 0 { return 0u32; }
-    var frame: u32 = load_fd(fd);
+    var frame: u32 = load_fd(fd, 0);
     vfs_close(fd);
     return frame;
 }
@@ -251,96 +257,71 @@ fn copy_string(src: String) -> String {
 // long after the caller exits or reuses its arena. Returns 0u32 if
 // src_addr is 0, meaning "no argv".
 //
-// The caller's StringArray is treated as raw u32 memory because the
-// kernel and user share the same (identity-mapped) address space:
-// Packed-buffer clone of src argv: one kmalloc instead of (1 + N).
-//
-// Why: each kmalloc lands in a bucket free list and carves a NEW chunk
-// out of the large heap when the bucket runs empty. Each carve becomes
-// permanently bucket-cached and can never re-coalesce into a big
-// contiguous block. Spawn tasks with many argv elements (tcheck 7,
-// asm_pass1 11) end up adding 7+ bucket-16 chunks per spawn that
-// fragment the kernel arena. After 6-7 spawns the largest contiguous
-// free block drops below the 336 KB needed for asm_pass2's task arena
-// and we OOM. See docs/scaling.md Q1 (2026-05-13 fragment analysis).
-//
-// Packed layout in one kmalloc:
-//
-//   [count: u32][ptr0: u32]...[ptrN-1: u32]  ← StringArray header
-//   [len0: u32][bytes0...pad...]              ← each String inline
-//   [len1: u32][bytes1...pad...]
-//   ...
-//
-// Each ptr_i points to its String's start (the len_i field) inside
-// this same buffer. The child task's `get(argv, i)` returns a String
-// (= ptr_i), and len() / get() peek32 the len_i / bytes as usual.
-//
-// free path: free_argv_impl_packed kfree's the single buffer; no
-// per-string loop. Returns to the large heap directly when the size
-// crosses the 2048 byte threshold, otherwise to ONE bucket free slot.
-fn clone_argv(src_addr: u32) -> u32 {
-    if src_addr == 0u32 { return 0u32; }
+// Compute the byte size needed to store a packed copy of src argv.
+// argv is laid out as `[count: u32][ptr_i: u32]... [len_i: u32][bytes_i...]`
+// (see pack_argv_at). Returns 0 for null src (no argv passed).
+export fn argv_packed_size(src_addr: u32) -> i32 {
+    if src_addr == 0u32 { return 0; }
     var src: StringArray = src_addr as StringArray;
     var n: i32 = len(src);
-    if n <= 0 {
-        // Empty argv: allocate just the StringArray header (count=0).
-        var empty: u32 = kmalloc(4);
-        if empty == 0u32 { return 0u32; }
-        poke32(empty, 0u32);
-        return empty;
-    }
-
-    // Pass 1: compute total bytes needed.
     var total: i32 = 4 + 4 * n;  // count + N pointer slots
     var i: i32 = 0;
     while i < n {
         var s: String = get(src, i);
         if s as u32 != 0u32 {
-            // String: 4-byte len prefix + bytes, then align to 4.
             var slen: i32 = len(s);
             total = total + ((4 + slen + 3) & (0 - 4));
         }
         i = i + 1;
     }
-    // Force this allocation into the large-heap path (bypass the
-    // bucket allocator) so freeing it returns the bytes to the large
-    // free list where they coalesce with neighbors. Bucket entries
-    // ≤ 2048 stay bucket-cached after free and progressively
-    // fragment the heap (docs/scaling.md Q1, 2026-05-13). The padding
-    // cost is bounded — one extra ~2 KB per task spawn — and pays off
-    // because asm_pass2 (336 KB task arena) needs a single contiguous
-    // free block bigger than any single fragment.
-    if total <= 2048 { total = 2049; }
+    // 4-byte align so the caller can place a 4-byte-aligned struct
+    // immediately after this region.
+    return (total + 3) & (0 - 4);
+}
 
-    var buf: u32 = kmalloc(total);
-    if buf == 0u32 { return 0u32; }
-
-    // Write StringArray header (count).
-    poke32(buf, n as u32);
+// Pack src argv into the buffer at `dst`. Caller must have ensured
+// `dst` has at least argv_packed_size(src_addr) bytes available.
+// Layout:
+//
+//   [dst + 0..4]:                count
+//   [dst + 4..4+4*n]:            N pointer slots (each = address of
+//                                its String's len_i field inside dst)
+//   [...]:                       N inline Strings, each
+//                                [len: u32][bytes: u8 × len] padded
+//                                to 4-byte alignment
+//
+// Each pointer slot stores an address INSIDE `dst`, so the child task's
+// `get(argv, i)` returns a String pointer that the runtime can len() /
+// get() over. Lifetime is the task's — the buffer lives inside the
+// task's ram block (allocated by make_task) and is freed atomically
+// with the rest of the task at exit. No separate kfree needed.
+export fn pack_argv_at(dst: u32, src_addr: u32) -> void {
+    if src_addr == 0u32 { return; }
+    var src: StringArray = src_addr as StringArray;
+    var n: i32 = len(src);
+    poke32(dst, n as u32);
+    if n <= 0 { return; }
     var write_off: i32 = 4 + 4 * n;
-
-    // Pass 2: copy each String into the buffer + populate pointer slots.
-    i = 0;
+    var i: i32 = 0;
     while i < n {
-        var s2: String = get(src, i);
-        if s2 as u32 == 0u32 {
-            poke32(buf + (4 + 4 * i) as u32, 0u32);
+        var s: String = get(src, i);
+        if s as u32 == 0u32 {
+            poke32(dst + (4 + 4 * i) as u32, 0u32);
         } else {
-            var s_dst: u32 = buf + write_off as u32;
-            var s2_len: i32 = len(s2);
-            poke32(s_dst, s2_len as u32);
+            var s_dst: u32 = dst + write_off as u32;
+            var slen: i32 = len(s);
+            poke32(s_dst, slen as u32);
             var j: i32 = 0;
-            while j < s2_len {
-                poke8(s_dst + 4u32 + j as u32, get(s2, j));
+            while j < slen {
+                poke8(s_dst + 4u32 + j as u32, get(s, j));
                 j = j + 1;
             }
-            poke32(buf + (4 + 4 * i) as u32, s_dst);
-            write_off = write_off + ((4 + s2_len + 3) & (0 - 4));
+            poke32(dst + (4 + 4 * i) as u32, s_dst);
+            write_off = write_off + ((4 + slen + 3) & (0 - 4));
         }
         i = i + 1;
     }
-
-    return buf;
+    return;
 }
 
 // Linux open() flags — duplicate the subset tmpfs understands so
@@ -410,16 +391,17 @@ export fn sys_exec_handler(path: String, argv_addr: u32,
         debug_dump_path(path, "exec vfs_open failed");
         close_redir(in_fd); close_redir(out_fd); return 0u32;
     }
-    var frame: u32 = load_fd(fd);
+    var argv_size: i32 = argv_packed_size(argv_addr);
+    var frame: u32 = load_fd(fd, argv_size);
     vfs_close(fd);
     if frame == 0u32 {
         debug_dump_path(path, "exec load_fd failed");
         close_redir(in_fd); close_redir(out_fd); return 0u32;
     }
 
-    var kargv: u32 = clone_argv(argv_addr);
+    var kargv: u32 = make_task_argv_addr();
+    pack_argv_at(kargv, argv_addr);
     set_frame_argv(frame, kargv);
-    set_last_argv(kargv);
     set_last_stdio(in_fd, out_fd);
     sched_replace_current(frame);
     task_set_name(sched_current_idx(), basename_copy(path));
@@ -447,24 +429,26 @@ export fn sys_spawn_handler(path: String, argv_addr: u32,
         debug_dump_path(path, "spawn vfs_open failed");
         close_redir(in_fd); close_redir(out_fd); return -1;
     }
-    var frame: u32 = load_fd(fd);
+    var argv_size: i32 = argv_packed_size(argv_addr);
+    var frame: u32 = load_fd(fd, argv_size);
     vfs_close(fd);
     if frame == 0u32 {
         debug_dump_path(path, "spawn load_fd failed");
         close_redir(in_fd); close_redir(out_fd); return -1;
     }
 
-    var kargv: u32 = clone_argv(argv_addr);
+    var kargv: u32 = make_task_argv_addr();
+    pack_argv_at(kargv, argv_addr);
     set_frame_argv(frame, kargv);
-    set_last_argv(kargv);
     set_last_stdio(in_fd, out_fd);
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
         task_set_name(slot, basename_copy(path));
     } else {
         // sched_spawn failed (no free slots). Clean up all resources
-        // that were prepared for the child: redirect fds, argv, and
-        // the frame/ram/stack/img allocated by load_fd + make_task.
+        // that were prepared for the child: redirect fds and the
+        // ram/img allocated by load_fd + make_task. argv lives inside
+        // ram so frees with it (no separate cleanup).
         debug_dump_path(path, "spawn sched_spawn failed");
         close_redir(in_fd);
         close_redir(out_fd);
@@ -485,16 +469,17 @@ export fn sys_spawn_fds_handler(path: String, argv_addr: u32,
         debug_dump_path(path, "spawn_fds vfs_open failed");
         return -1;
     }
-    var frame: u32 = load_fd(fd);
+    var argv_size: i32 = argv_packed_size(argv_addr);
+    var frame: u32 = load_fd(fd, argv_size);
     vfs_close(fd);
     if frame == 0u32 {
         debug_dump_path(path, "spawn_fds load_fd failed");
         return -1;
     }
 
-    var kargv: u32 = clone_argv(argv_addr);
+    var kargv: u32 = make_task_argv_addr();
+    pack_argv_at(kargv, argv_addr);
     set_frame_argv(frame, kargv);
-    set_last_argv(kargv);
     set_last_stdio(in_fd, out_fd);
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {

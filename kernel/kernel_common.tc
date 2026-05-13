@@ -113,6 +113,10 @@ var g_last_stdin_fd:  i32 = 0;
 var g_last_stdout_fd: i32 = 0;
 var g_last_ram_size:  i32 = 0;
 var g_last_stack_size: i32 = 0;
+// In-ram argv area allocated by make_task (lives inside the task's ram
+// block). The spawn handler pack_argv_at's into here and passes it to
+// set_frame_argv. 0 means no argv reserve (load_task / kern.conf init).
+var g_last_argv_addr: u32 = 0u32;
 
 // ===== UART frame multiplexer (docs/task/uart_multiplex.md) =====
 //
@@ -719,23 +723,33 @@ export fn kern_config_init_path(idx: i32) -> String {
     return get(g_cfg_inits, idx);
 }
 
-export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
+export fn make_task(entry: u32, ram_size: i32, stack_size: i32,
+                    argv_size: i32) -> u32 {
     // ONE allocation contains all per-task memory: task arena + stack
-    // + trap frame. Layout inside the single U8Array:
+    // + argv data + trap frame. Layout inside the single U8Array:
     //
     //   [0..0x1000]:                gp-relative data area (data + bss
     //                               copied here by task_crt0.s _start)
     //   [0x1000..ram_size]:         task arena (runtime kmalloc pool)
-    //   [ram_size..ram_size+stack_size]:  task stack, sp grows down
-    //                                     from stack_top
-    //   [stack_top..stack_top+132]: frame_buf — trap save area
-    //   [..+16]:                    alignment slack
+    //   [ram_size..ram_size+stack_size]: task stack, sp grows down
+    //                                    from stack_top
+    //   [stack_top..stack_top+argv]: argv packed buffer
+    //                                (pack_argv_at writes here; the
+    //                                 child reads it via a2 register
+    //                                 set by set_frame_argv)
+    //   [...+132]:                   frame_buf — trap save area
+    //   [...+16]:                    alignment slack
     //
-    // The frame is placed AFTER the stack (not before the arena) so
-    // task_crt0.s's `addi t1, gp, -0x800` data copy can't overwrite it
-    // and the task's gp-relative references stay within [-0x800,+0x800].
-    // The user stack grows downward from stack_top, never crossing into
-    // the frame. The kernel's _trap_entry writes regs to frame+0..128.
+    // Why frame goes AFTER stack: task_crt0.s does
+    // `addi t1, gp, -0x800` to find ram_base, then copies the binary's
+    // .data section there. If frame were at offset 0 the data copy
+    // would overwrite it. Placing frame past the stack keeps it out
+    // of the gp ± 0x800 range.
+    //
+    // Why argv goes between stack and frame: stack grows down from
+    // stack_top, never reaching into the argv region. The kernel
+    // writes argv data via pack_argv_at before scheduling the task.
+    // The task's a2 register gets the argv base via set_frame_argv.
     //
     // Why single alloc: previously frame_buf was a separate 132-byte
     // bucket-6 kmalloc that landed in the bucket allocator's address
@@ -743,11 +757,12 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
     // a few spawn cycles this wedged a 260-byte live entry between
     // larger free regions and blocked coalesce, preventing asm_pass2's
     // 336-KB arena from finding a contiguous block. See docs/scaling.md
-    // Q1 + commit 688e4ef. Folding frame_buf + stack into the ram
-    // block makes every task allocation a single contiguous chunk
+    // Q1 + commit 688e4ef. Folding argv + stack + frame_buf into the
+    // ram block makes every task allocation a single contiguous chunk
     // that frees as a single kfree.
+    var argv_aligned: i32 = (argv_size + 15) & (0 - 16);
     var FRAME_RESERVE: i32 = 132 + 16;
-    var total_size: i32 = ram_size + stack_size + FRAME_RESERVE;
+    var total_size: i32 = ram_size + stack_size + argv_aligned + FRAME_RESERVE;
     var task_ram: U8Array = U8Array((total_size) as u32);
     var ram_base: u32 = task_ram as u32 + 4u32;
     var task_gp: u32 = ram_base + 0x800u32;
@@ -755,22 +770,30 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32) -> u32 {
     var arena_size: i32 = ram_size - 4096;
     var stack_top: u32 =
         (ram_base + (ram_size + stack_size) as u32) & 0xFFFFFFF0u32;
-    var frame: u32 = stack_top;
+    var argv_addr: u32 = 0u32;
+    if argv_size > 0 { argv_addr = stack_top; }
+    var frame: u32 = (stack_top + argv_aligned as u32 + 15u32)
+                     & 0xFFFFFFF0u32;
 
     init_task_frame(frame, entry, stack_top, task_gp, arena_addr, arena_size);
 
     // Record the raw kmalloc base so slot_free_allocs can release it
-    // at task exit. frame_buf / stack are slices of task_ram now,
-    // so g_last_frame_buf / g_last_stack stay zero (no separate
-    // kmallocs to free). g_last_img is NOT touched here — load_fd's
-    // slow path sets it, load_fd's XIP path leaves it cleared.
+    // at task exit. frame_buf / stack / argv are slices of task_ram
+    // now, so g_last_frame_buf / g_last_stack / g_last_argv stay zero
+    // (no separate kmallocs to free). g_last_img is NOT touched here
+    // — load_fd's slow path sets it, load_fd's XIP path leaves it
+    // cleared. g_last_argv_addr exposes the in-ram argv area so the
+    // spawn handler can pack_argv_at into it.
     g_last_frame_buf = 0u32;
     g_last_ram       = task_ram as u32;
     g_last_stack     = 0u32;
     g_last_ram_size  = total_size;
     g_last_stack_size = stack_size;
+    g_last_argv_addr = argv_addr;
     return frame;
 }
+
+export fn make_task_argv_addr() -> u32 { return g_last_argv_addr; }
 
 // Reset the g_last_* allocation bases. Callers do this before
 // load_fd / make_task so that the XIP path (which never touches img)
@@ -781,6 +804,7 @@ export fn reset_last_alloc() -> void {
     g_last_stack     = 0u32;
     g_last_img       = 0u32;
     g_last_argv      = 0u32;
+    g_last_argv_addr = 0u32;
     g_last_stdin_fd  = 0;
     g_last_stdout_fd = 0;
     g_last_ram_size  = 0;
