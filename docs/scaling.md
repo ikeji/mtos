@@ -710,6 +710,42 @@ intermediate dir に sibling `dx.img` を copy で staging すると、
 device 側の `/sd/dx.img` と path 解決が対称になる。Makefile の
 PICO2_KERNEL_RECIPE も同方式に揃えた (commit 086ea91)。
 
+### 2026-05-13 — kernel arena fragmentation 解消 + 1-boot self_replicate 確認
+
+bench で観測された OOM の根本原因が **clone_argv が argv 1 個ごとに
+個別 kmalloc して bucket-pool entry を carve、coalesce 不可** だと
+わかった (`docs/scaling.md` Q1 後半参照)。修正は 3 段階:
+
+1. **clone_argv を packed + padded 化** (commit 688e4ef): argv 全体を
+   1 alloc にまとめて large_alloc 経由に。各 String の bucket carve
+   が止まる
+2. **make_task で frame+stack を ram に統合** (commit 49ae455):
+   独立 alloc だった 132 byte frame_buf が bucket 6 を占めて msh
+   と物理的に分断していたのを解消
+3. **argv も task ram に統合** (commit 0c1b800): task ごとの kernel
+   alloc を 2〜3 個 (ram + (img) + name) に集約
+
+加えて sh / msh の task arena を縮小 (commit afbf12a):
+- sh: 32K+8K → 16K+4K
+- msh: 32K+8K → 8K+4K
+- kernel arena free に **+48 KB の余裕**
+
+`tests/pico2_self_replicate.sh NORESET=1` で実機検証 (commit 001fc41):
+**全 4 step が 1 boot で完走**、step 間 `reset_only` 不要に。
+
+```
+Step 1 (cat):                     38 sec
+Step 2 (asm_pass1×N + asm_pass2): 484 sec  ← reset 無し
+Step 3 (asm_pass3 + md5):         257 sec  ← reset 無し
+Step 4 (bin2uf2 + md5):           564 sec  ← reset 無し
+                                ──────
+                                ~23 min
+```
+
+OOM ゼロ、reset ゼロ。「カーネル全体を再起動なしでビルドできる」
+状態に到達。`NORESET=1` がデフォルトでよいかは将来の安全策の
+判断次第 (今は opt-in 扱い)。
+
 ## Q7: section-leading `.incbin` の defer (2026-05-09 追加、2026-05-11 デフォルト化)
 
 `/sd/pt.s` (= `crt0_pico2_data.s` + `wrap.s`) は wrap.s の `.incbin

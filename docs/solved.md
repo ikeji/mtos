@@ -136,6 +136,51 @@ while i < n_in_sec {
 
 ## カーネル / OS
 
+### K16. kernel arena fragmentation 完全消滅 + 1-boot self_replicate — 完了 (2026-05-13)
+
+K15 仕上げ後、pico2 実機で `tests/test_pico2_bench.sh` を走らせると
+Hello World end-to-end で kernel arena が断片化し、asm_pass2 起動時
+OOM ([20484,12132,24408,32748,310320] = 5 ブロック、最大 303 KB に
+対し 336 KB 要求)。2-boot に分けないと完走しないという問題があった。
+
+bucket peak の per-spawn 推移から **clone_argv が個別 String を
+kmalloc**、各 bucket entry を large heap から carve したまま戻らない
+ことが正体と判明。修正 3 段階で fragmentation 完全消滅:
+
+1. `clone_argv` を packed + padded (> 2048 byte) に (commit 688e4ef)
+   - tcheck (7 argv) で bucket 16 を +7 carve、asm_pass1 (11 argv) で
+     bucket 16 +4 / bucket 64 +1 carve していたのが steady state に
+2. `make_task` で frame_buf + stack を ram block 内に統合 (commit 49ae455)
+   - 132 byte frame_buf が bucket 6 (260 byte) を carve、msh の
+     frame_buf が長時間 live で free 領域を 2 つに分断していた
+3. argv も task ram 内に embed (commit 0c1b800)
+   - kernel-side の独立 argv alloc を撤廃、task per-alloc を 1 個に集約
+
+加えて sh/msh の task arena を実 peak ベースに縮小 (commit afbf12a):
+
+| task | 旧 | 新 | 節約 |
+| sh   | 32K + 8K | 16K + 4K | ~20 KB |
+| msh  | 32K + 8K | 8K + 4K  | ~28 KB |
+
+合計 ~48 KB の追加余裕。
+
+**実機計測** (commit 001fc41、`NORESET=1` で reset を 6 回省略):
+
+```
+Step 1 (cat → /sd/full.s):                 38 sec
+Step 2 (asm_pass1 × 13 + asm_pass2):      484 sec  (8 min)
+Step 3 (asm_pass3 → /sd/k.bin + md5):     257 sec  (4 min)
+Step 4 (bin2uf2 → /sd/k.uf2 + md5):       564 sec  (9 min)
+                                         ──────
+                                         ~23 min, 1 boot
+```
+
+OOM ゼロ、reset ゼロ、`n=1` 固定。「Pico 2 がカーネル + コンパイラ
+全部 SRAM 内で 1 boot self-build する」が現実になった。
+
+副次効果として **Hello World end-to-end が 13.78 sec** (1 boot、
+K7 era 127 sec から **9.2× speedup**、`docs/scaling.md` Q1)。
+
 ### K15. self_replicate byte-exact 再帰仕上げ + asm_pass3 46ms silent-exit 解消 — 完了 (2026-05-13)
 
 K14 (2026-05-11) で device self_replicate の md5 match を一度確認した
