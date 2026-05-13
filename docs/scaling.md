@@ -146,6 +146,29 @@ task ごとの kernel arena alloc:
 - 旧: ram + stack + frame_buf + argv + name + (img)  = 5〜6 alloc
 - 新: ram(+arena+stack+argv+frame_buf) + name + (img) = 2〜3 alloc
 
+#### `live=109 KB` の内訳
+
+「カーネルが 109 KB も使っている」と見えるが、実はその大部分は
+ユーザータスクの ram。
+
+bucket peak から逆算 (`buckets 8:3 16:66 32:38 64:18 128:12 256:2
+1024:3 2048:1 L:5`):
+
+| 種別 | サイズ | 内訳 |
+|---|---:|---|
+| sh task ram (unified) | ~45 KB | 32 KB arena + 8 KB stack + frame + page-align |
+| msh task ram (unified) | ~45 KB | 同上 |
+| mtfs inode cache | ~3 KB | 48 inodes × 64 byte |
+| uart_rx_buf | 4 KB | UART mux 受信 |
+| block_flash 系 | ~1 KB | sector cache 等 |
+| bucket-cached small | ~11 KB | name / fd / vfs 等の小 alloc |
+| **計** | **~109 KB** | |
+
+**「カーネル」自身は ~19 KB**。残り ~90 KB は sh + msh の 2 タスクが
+占めている (各 32 KB arena をフル予約)。タスク arena を sh 16 KB /
+msh 8 KB に絞れば kernel arena から ~50 KB が空く見込みだが、それは
+別タスク。
+
 ### 旧 50 ファイル × 平均 5 KB 推計 (2026-04-29、要見直し)
 
 K7 時代の「合計 約 3 時間」は固定費 120 s × 50 = 6000 s が支配して
