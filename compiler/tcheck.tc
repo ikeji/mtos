@@ -1641,8 +1641,13 @@ fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
     reset_node_pool(nodes);
 
     // Phase 3: open (program ... from --tgt (or stdin).
+    // fd_t lives at outer scope so the cleanup block at the end can
+    // do_close it. Forgetting this was the kernel-side fatfs slot
+    // leak that turned multi-file runs (REFRESH_KERN_MODS=1) into
+    // OOM at asm_pass1 (K17 / commit TBD).
+    var fd_t: i32 = -1;
     if use_files != 0 {
-        var fd_t: i32 = do_openat(0 - 100, tgt_path, 0);
+        fd_t = do_openat(0 - 100, tgt_path, 0);
         if fd_t < 0 { sys_exit(14); }
         g_reader = SourceReader_new(fd_t);
     }
@@ -1733,7 +1738,10 @@ fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
 
     delete(nodes); delete(strtab); delete(atom_buf); destroy(ob);
     delete(fntab); delete(vartab); close(g_reader);
-    if use_files != 0 { do_close(out_fd); }
+    if use_files != 0 {
+        if fd_t >= 0 { do_close(fd_t); }
+        do_close(out_fd);
+    }
 
     // Per-top-level peaks. Used to size the fixed buffers above.
     var dbuf: U8Array = U8Array(96);
