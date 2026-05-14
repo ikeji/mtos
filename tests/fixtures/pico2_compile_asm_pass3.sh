@@ -34,24 +34,21 @@ bc2asm < /sd/sl.bc > /sd/sl.s
 # asm_common.tc imports sb, sr, sl
 parse < /src/asm_common.tc > /sd/ac.ast
 sigscan < /sd/ac.ast > /sd/ac.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th > /sd/ac_imp.th
-tcheck --exth /sd/ac_imp.th --tgth /sd/ac.th --tgt /sd/ac.ast --out /sd/ac.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --tgth /sd/ac.th --tgt /sd/ac.ast --out /sd/ac.tast
 codegen < /sd/ac.tast > /sd/ac.bc
 bc2asm < /sd/ac.bc > /sd/ac.s
 
 # asm_pass3_lib.tc imports ac, sb, sr, sl
 parse < /src/asm_pass3_lib.tc > /sd/p3l.ast
 sigscan < /sd/p3l.ast > /sd/p3l.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th /sd/ac.th > /sd/p3l_imp.th
-tcheck --exth /sd/p3l_imp.th --tgth /sd/p3l.th --tgt /sd/p3l.ast --out /sd/p3l.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --exth /sd/ac.th --tgth /sd/p3l.th --tgt /sd/p3l.ast --out /sd/p3l.tast
 codegen < /sd/p3l.tast > /sd/p3l.bc
 bc2asm < /sd/p3l.bc > /sd/p3l.s
 
 # ===== Phase 2: asm_pass3.tc itself =====
 parse < /src/asm_pass3.tc > /sd/asm_pass3.ast
 sigscan < /sd/asm_pass3.ast > /sd/asm_pass3.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th /sd/ac.th /sd/p3l.th > /sd/asm_pass3_imp.th
-tcheck --exth /sd/asm_pass3_imp.th --tgth /sd/asm_pass3.th --tgt /sd/asm_pass3.ast --out /sd/asm_pass3.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --exth /sd/ac.th --exth /sd/p3l.th --tgth /sd/asm_pass3.th --tgt /sd/asm_pass3.ast --out /sd/asm_pass3.tast
 codegen < /sd/asm_pass3.tast > /sd/asm_pass3.bc
 bc2asm < /sd/asm_pass3.bc > /sd/asm_pass3.s
 

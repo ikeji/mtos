@@ -27,8 +27,7 @@ bc2asm < /sd/sr.bc > /sd/sr.s
 tcheck --exth /sd/sb.th --tgth /sd/sl.th --tgt /sd/sl.ast --out /sd/sl.tast
 codegen < /sd/sl.tast > /sd/sl.bc
 bc2asm < /sd/sl.bc > /sd/sl.s
-cat /sd/sb.th /sd/sr.th /sd/sl.th > /sd/p_imports.th
-tcheck --exth /sd/p_imports.th --tgth /sd/p.th --tgt /sd/p.ast --out /sd/p.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --tgth /sd/p.th --tgt /sd/p.ast --out /sd/p.tast
 codegen < /sd/p.tast > /sd/p.bc
 bc2asm < /sd/p.bc > /sd/p.s
 # Step 4: link — concat all .s + prelude_tail

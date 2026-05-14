@@ -1554,8 +1554,11 @@ fn read_programs_until_eof(nodes: AstNodeArray, strtab: U8Array,
 // exth/tgth/tgt files directly (raw .th + .ast, no legacy
 // (imports …) / (self …) wrappers) and writes to out_fd, skipping
 // the cat-wrap pre-step that the OS-side msh pipeline used to need.
-fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
-             tgt_path: String, out_path: String) -> i32 {
+// `exth_paths[0..exth_n]` is the list of import .th files (one per
+// import); main_impl streams them in order so callers no longer need
+// to pre-cat them into a single combined file.
+fn main_impl(use_files: i32, exth_paths: StringArray, exth_n: i32,
+             tgth_path: String, tgt_path: String, out_path: String) -> i32 {
     // Buffer sizes derived from measured peaks across all compiler/*.tc
     // files (with the per-fn strtab rollback further down), ~25%
     // headroom:
@@ -1609,18 +1612,23 @@ fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
 
     register_builtins(strtab, fntab);
 
-    // Phase 1: imports.
+    // Phase 1: imports. In file mode each `--exth <path>` is a raw .th
+    // bundle; we iterate exth_paths[0..exth_n] and stream-register each
+    // into the shared strtab/fntab. exth_n == 0 means no imports.
     if use_files != 0 {
-        // Open --exth (raw .th, no outer wrap). May be empty/null
-        // for inputs that import nothing.
-        if exth_path as u32 != 0u32 {
-            var fd_e: i32 = do_openat(0 - 100, exth_path, 0);
-            if fd_e >= 0 {
-                g_reader = SourceReader_new(fd_e);
-                read_programs_until_eof(nodes, strtab, fntab, atom_buf, true);
-                close(g_reader);
-                do_close(fd_e);
+        var ei: i32 = 0;
+        while ei < exth_n {
+            var p: String = get(exth_paths, ei);
+            if p as u32 != 0u32 {
+                var fd_e: i32 = do_openat(0 - 100, p, 0);
+                if fd_e >= 0 {
+                    g_reader = SourceReader_new(fd_e);
+                    read_programs_until_eof(nodes, strtab, fntab, atom_buf, true);
+                    close(g_reader);
+                    do_close(fd_e);
+                }
             }
+            ei = ei + 1;
         }
     } else {
         read_imports_wrapper(nodes, strtab, fntab, atom_buf);
@@ -1781,7 +1789,8 @@ fn main_impl(use_files: i32, exth_path: String, tgth_path: String,
 // Stdin entry: legacy wrap-on-stdin pipeline (compile-gen2.sh /
 // kernel/build.sh / golden tests use this).
 fn main() -> i32 {
-    return main_impl(0, 0 as String, 0 as String, 0 as String, 0 as String);
+    return main_impl(0, 0 as StringArray, 0,
+                     0 as String, 0 as String, 0 as String);
 }
 
 fn arg_eq(s: String, pat: StringLiteral) -> i32 {
@@ -1797,10 +1806,18 @@ fn arg_eq(s: String, pat: StringLiteral) -> i32 {
 }
 
 // File-args entry:
-//   tcheck --exth ext.th --tgth tgt.th --tgt tgt.ast --out tgt.tast
-// --exth is optional (omitted = no imports). Other three are required.
+//   tcheck [--exth ext1.th [--exth ext2.th ...]]
+//          --tgth tgt.th --tgt tgt.ast --out tgt.tast
+// `--exth` is optional (omitted = no imports) and may repeat — each
+// occurrence adds one raw .th file (saves the bench scripts from
+// `cat a.th b.th > combined.th` pre-step). Other three are required.
+// MAX_EXTH caps the number of imports per invocation.
 fn main(argv: StringArray) -> i32 {
-    var exth: String = 0 as String;
+    var MAX_EXTH: i32 = 32;
+    var exth_paths: StringArray = StringArray(MAX_EXTH as u32);
+    var ei: i32 = 0;
+    while ei < MAX_EXTH { set(exth_paths, ei, 0 as String); ei = ei + 1; }
+    var exth_n: i32 = 0;
     var tgth: String = 0 as String;
     var tgt:  String = 0 as String;
     var out:  String = 0 as String;
@@ -1810,7 +1827,11 @@ fn main(argv: StringArray) -> i32 {
         while i < argc {
             var a: String = get(argv, i);
             if arg_eq(a, "--exth") != 0 && i + 1 < argc {
-                exth = get(argv, i + 1); i = i + 2;
+                if exth_n < MAX_EXTH {
+                    set(exth_paths, exth_n, get(argv, i + 1));
+                    exth_n = exth_n + 1;
+                }
+                i = i + 2;
             } else if arg_eq(a, "--tgth") != 0 && i + 1 < argc {
                 tgth = get(argv, i + 1); i = i + 2;
             } else if arg_eq(a, "--tgt") != 0 && i + 1 < argc {
@@ -1824,7 +1845,8 @@ fn main(argv: StringArray) -> i32 {
     }
     // If no file flags given, fall back to stdin mode (matches main()).
     if tgth as u32 == 0u32 && tgt as u32 == 0u32 && out as u32 == 0u32 {
-        return main_impl(0, 0 as String, 0 as String, 0 as String, 0 as String);
+        return main_impl(0, exth_paths, 0,
+                         0 as String, 0 as String, 0 as String);
     }
-    return main_impl(1, exth, tgth, tgt, out);
+    return main_impl(1, exth_paths, exth_n, tgth, tgt, out);
 }

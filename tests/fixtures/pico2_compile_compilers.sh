@@ -45,10 +45,9 @@ codegen < /sd/an.tast > /sd/an.bc
 bc2asm < /sd/an.bc > /sd/an.s
 
 # asm_common imports sb + sr + sl + an
-cat /sd/sb.th /sd/sr.th /sd/sl.th /sd/an.th > /sd/ac_imp.th
 parse < /src/asm_common.tc > /sd/ac.ast
 sigscan < /sd/ac.ast > /sd/ac.th
-tcheck --exth /sd/ac_imp.th --tgth /sd/ac.th --tgt /sd/ac.ast --out /sd/ac.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --exth /sd/an.th --tgth /sd/ac.th --tgt /sd/ac.ast --out /sd/ac.tast
 codegen < /sd/ac.tast > /sd/ac.bc
 bc2asm < /sd/ac.bc > /sd/ac.s
 
@@ -63,8 +62,7 @@ bc2asm < /sd/ac.bc > /sd/ac.s
 # ===== parse.bin (imports: sb, sr, sl) =====
 parse < /src/parse.tc > /sd/p.ast
 sigscan < /sd/p.ast > /sd/p.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th > /sd/p_imp.th
-tcheck --exth /sd/p_imp.th --tgth /sd/p.th --tgt /sd/p.ast --out /sd/p.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --tgth /sd/p.th --tgt /sd/p.ast --out /sd/p.tast
 codegen < /sd/p.tast > /sd/p.bc
 bc2asm < /sd/p.bc > /sd/p.s
 

@@ -34,32 +34,28 @@ bc2asm < /sd/sl.bc > /sd/sl.s
 # asm_common.tc imports sb, sr, sl
 parse < /src/asm_common.tc > /sd/ac.ast
 sigscan < /sd/ac.ast > /sd/ac.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th > /sd/ac_imp.th
-tcheck --exth /sd/ac_imp.th --tgth /sd/ac.th --tgt /sd/ac.ast --out /sd/ac.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --tgth /sd/ac.th --tgt /sd/ac.ast --out /sd/ac.tast
 codegen < /sd/ac.tast > /sd/ac.bc
 bc2asm < /sd/ac.bc > /sd/ac.s
 
 # asm_dead_strip.tc imports ac, sr
 parse < /src/asm_dead_strip.tc > /sd/ds.ast
 sigscan < /sd/ds.ast > /sd/ds.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th /sd/ac.th > /sd/ds_imp.th
-tcheck --exth /sd/ds_imp.th --tgth /sd/ds.th --tgt /sd/ds.ast --out /sd/ds.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --exth /sd/ac.th --tgth /sd/ds.th --tgt /sd/ds.ast --out /sd/ds.tast
 codegen < /sd/ds.tast > /sd/ds.bc
 bc2asm < /sd/ds.bc > /sd/ds.s
 
 # asm_pass2_lib.tc imports ac, asm_dead_strip, sb, sr
 parse < /src/asm_pass2_lib.tc > /sd/p2l.ast
 sigscan < /sd/p2l.ast > /sd/p2l.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th /sd/ac.th /sd/ds.th > /sd/p2l_imp.th
-tcheck --exth /sd/p2l_imp.th --tgth /sd/p2l.th --tgt /sd/p2l.ast --out /sd/p2l.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --exth /sd/ac.th --exth /sd/ds.th --tgth /sd/p2l.th --tgt /sd/p2l.ast --out /sd/p2l.tast
 codegen < /sd/p2l.tast > /sd/p2l.bc
 bc2asm < /sd/p2l.bc > /sd/p2l.s
 
 # ===== Phase 2: asm_pass2.tc itself =====
 parse < /src/asm_pass2.tc > /sd/asm_pass2.ast
 sigscan < /sd/asm_pass2.ast > /sd/asm_pass2.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th /sd/ac.th /sd/ds.th /sd/p2l.th > /sd/asm_pass2_imp.th
-tcheck --exth /sd/asm_pass2_imp.th --tgth /sd/asm_pass2.th --tgt /sd/asm_pass2.ast --out /sd/asm_pass2.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --exth /sd/ac.th --exth /sd/ds.th --exth /sd/p2l.th --tgth /sd/asm_pass2.th --tgt /sd/asm_pass2.ast --out /sd/asm_pass2.tast
 codegen < /sd/asm_pass2.tast > /sd/asm_pass2.bc
 bc2asm < /sd/asm_pass2.bc > /sd/asm_pass2.s
 

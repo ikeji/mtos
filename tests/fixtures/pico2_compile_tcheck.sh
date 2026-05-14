@@ -36,8 +36,7 @@ bc2asm < /sd/sl.bc > /sd/sl.s
 # ===== Phase 2: tcheck.tc itself =====
 parse < /src/tcheck.tc > /sd/tc.ast
 sigscan < /sd/tc.ast > /sd/tc.th
-cat /sd/sb.th /sd/sr.th /sd/an.th /sd/sl.th > /sd/tc_imp.th
-tcheck --exth /sd/tc_imp.th --tgth /sd/tc.th --tgt /sd/tc.ast --out /sd/tc.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/an.th --exth /sd/sl.th --tgth /sd/tc.th --tgt /sd/tc.ast --out /sd/tc.tast
 codegen < /sd/tc.tast > /sd/tc.bc
 bc2asm < /sd/tc.bc > /sd/tc.s
 

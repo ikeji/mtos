@@ -40,8 +40,7 @@ bc2asm < /sd/sl.bc > /sd/sl.s
 # ===== Phase 2: sigscan.tc itself =====
 parse < /src/sigscan.tc > /sd/sg.ast
 sigscan < /sd/sg.ast > /sd/sg.th
-cat /sd/sb.th /sd/sr.th /sd/an.th /sd/sl.th > /sd/sg_imp.th
-tcheck --exth /sd/sg_imp.th --tgth /sd/sg.th --tgt /sd/sg.ast --out /sd/sg.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/an.th --exth /sd/sl.th --tgth /sd/sg.th --tgt /sd/sg.ast --out /sd/sg.tast
 codegen < /sd/sg.tast > /sd/sg.bc
 bc2asm < /sd/sg.bc > /sd/sg.s
 

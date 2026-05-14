@@ -36,8 +36,7 @@ bc2asm < /sd/sl.bc > /sd/sl.s
 # ===== Phase 2: codegen.tc itself =====
 parse < /src/codegen.tc > /sd/cg.ast
 sigscan < /sd/cg.ast > /sd/cg.th
-cat /sd/sb.th /sd/sr.th /sd/an.th /sd/sl.th > /sd/cg_imp.th
-tcheck --exth /sd/cg_imp.th --tgth /sd/cg.th --tgt /sd/cg.ast --out /sd/cg.tast
+tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/an.th --exth /sd/sl.th --tgth /sd/cg.th --tgt /sd/cg.ast --out /sd/cg.tast
 codegen < /sd/cg.tast > /sd/cg.bc
 bc2asm < /sd/cg.bc > /sd/cg.s
 
