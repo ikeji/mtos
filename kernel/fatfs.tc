@@ -1153,6 +1153,109 @@ export fn fatfs_delete(path_addr: u32, plen: i32) -> i32 {
     return 0;
 }
 
+// ===== mkdir =====
+
+// Create a new empty directory at path[0..plen]. Walks any
+// intermediate subdirs to find the parent cluster, refuses if the
+// leaf already exists, allocates a fresh cluster for the dir data,
+// zeros it, writes `.` (self) and `..` (parent) entries at offset
+// 0/32, then registers the SFN+LFN entry in the parent. Returns 0
+// on success.
+export fn fatfs_mkdir(path_addr: u32, plen: i32) -> i32 {
+    if g_fat_ready == 0 { return -1; }
+    if plen <= 0 || plen > 1024 { return -1; }
+
+    var pd: U32Array = U32Array(3);
+    set(pd, 0, 0); set(pd, 1, 0); set(pd, 2, 0);
+    var pclus_addr: u32 = pd as u32 + 4u32;
+    var loff_addr: u32 = pd as u32 + 4u32 + 4u32;
+    var llen_addr: u32 = pd as u32 + 4u32 + 8u32;
+    if resolve_parent_dir(path_addr, plen,
+                          pclus_addr, loff_addr, llen_addr) != 0 {
+        delete(pd);
+        return -1;
+    }
+    var parent_clus: u32 = peek32(pclus_addr);
+    var leaf_off: i32 = peek32(loff_addr) as i32;
+    var leaf_len: i32 = peek32(llen_addr) as i32;
+    delete(pd);
+    var leaf_addr: u32 = path_addr + (leaf_off as u32);
+
+    // Refuse if a file or dir of that name already exists.
+    var probe: U32Array = U32Array(4);
+    set(probe, 0, 0); set(probe, 1, 0); set(probe, 2, 0); set(probe, 3, 0);
+    var c1: u32 = probe as u32 + 4u32;
+    var c2: u32 = probe as u32 + 4u32 + 4u32;
+    var c3: u32 = probe as u32 + 4u32 + 8u32;
+    var c4: u32 = probe as u32 + 4u32 + 12u32;
+    if dir_find_by_name(parent_clus, leaf_addr, leaf_len,
+                        c1, c2, c3, c4) == 0 {
+        delete(probe);
+        return -1;
+    }
+    delete(probe);
+
+    // Allocate the data cluster for the new directory.
+    var new_clus: u32 = fat_alloc_cluster();
+    if new_clus < 2u32 { return -1; }
+
+    // Zero every sector of the cluster so dir_find sees fb==0 past
+    // our two synthetic entries.
+    var secbuf: U8Array = U8Array(512);
+    var z: i32 = 0;
+    while z < 512 { set(secbuf, z, 0u8); z = z + 1; }
+    var new_sec: u32 = cluster_to_sector(new_clus);
+    var ns: i32 = 0;
+    while ns < g_fat_spc {
+        if fat_block_write(new_sec + (ns as u32), secbuf) != 512 {
+            delete(secbuf);
+            return -1;
+        }
+        ns = ns + 1;
+    }
+
+    // `.` (self-reference, attr=0x10, cluster=new_clus).
+    set(secbuf, 0, '.' as u8);
+    var i: i32 = 0;
+    while i < 10 { set(secbuf, 1 + i, ' ' as u8); i = i + 1; }
+    set(secbuf, 11, 0x10u8);
+    write_le16(secbuf, 20, ((new_clus >> 16u32) & 0xFFFFu32) as i32);
+    write_le16(secbuf, 26, (new_clus & 0xFFFFu32) as i32);
+    write_le32(secbuf, 28, 0u32);
+    // `..` (parent, attr=0x10, cluster=parent — but 0 when parent is root).
+    set(secbuf, 32, '.' as u8);
+    set(secbuf, 33, '.' as u8);
+    i = 0;
+    while i < 9 { set(secbuf, 34 + i, ' ' as u8); i = i + 1; }
+    set(secbuf, 43, 0x10u8);
+    var dotdot_clus: u32 = parent_clus;
+    if parent_clus == g_fat_root_clus { dotdot_clus = 0u32; }
+    write_le16(secbuf, 52, ((dotdot_clus >> 16u32) & 0xFFFFu32) as i32);
+    write_le16(secbuf, 58, (dotdot_clus & 0xFFFFu32) as i32);
+    write_le32(secbuf, 60, 0u32);
+
+    if fat_block_write(new_sec, secbuf) != 512 {
+        delete(secbuf);
+        return -1;
+    }
+    delete(secbuf);
+
+    // Register the directory entry in the parent.
+    var tmp: U32Array = U32Array(2);
+    set(tmp, 0, 0); set(tmp, 1, 0);
+    var ds_addr: u32 = tmp as u32 + 4u32;
+    var do_addr: u32 = tmp as u32 + 4u32 + 4u32;
+    if dir_create_entry(parent_clus, leaf_addr, leaf_len, 0x10u8,
+                        new_clus, 0u32, ds_addr, do_addr) != 0 {
+        delete(tmp);
+        return -1;
+    }
+    delete(tmp);
+
+    fat_cache_flush();
+    return 0;
+}
+
 // ===== Open / Read / Close =====
 
 fn fatfs_alloc_fd() -> i32 {

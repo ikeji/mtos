@@ -454,6 +454,20 @@ export fn vfs_unlink(path: String) -> i32 {
     return -1;
 }
 
+// Create a directory at `path`. Only /sd/ paths are supported for
+// now (mtfs is read-only, tmpfs is flat). Returns 0 on success.
+export fn vfs_mkdir(path: String) -> i32 {
+    if g_vfs_ready == 0 { return -1; }
+    if path as u32 == 0u32 { return -1; }
+    var plen: i32 = path_head(path as u32);
+    if plen <= 0 { return -1; }
+    var path_addr: u32 = path as u32 + 4u32;
+    if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
+        return fatfs_mkdir(path_addr + 4u32, plen - 4);
+    }
+    return -1;
+}
+
 export fn vfs_close(fd: i32) -> i32 {
     if fd >= 0 && fd < 3 { return 0; }   // stdio is always open
     if g_vfs_ready == 0 { return -1; }

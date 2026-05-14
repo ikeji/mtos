@@ -1,0 +1,3 @@
+GUEST_TASKS += mkdir
+TASK_ARENA_mkdir := 16384
+TASK_STACK_mkdir := 4096

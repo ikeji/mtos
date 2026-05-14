@@ -99,6 +99,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_nanosleep
     li   t1, 87
     beq  t0, t1, _ecall_unlink
+    li   t1, 34
+    beq  t0, t1, _ecall_mkdir
     li   t1, 270
     beq  t0, t1, _ecall_uptime_us
     # Unknown: advance mepc and return
@@ -186,6 +188,13 @@ _ecall_unlink:
     call _ecall_enter
     lw   a0, 40(s0)         # path addr (task's a0)
     call vfs_unlink__String
+    sw   a0, 40(s0)
+    j    _ecall_leave_advance
+
+_ecall_mkdir:
+    call _ecall_enter
+    lw   a0, 40(s0)         # path addr (task's a0)
+    call vfs_mkdir__String
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 

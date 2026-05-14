@@ -165,6 +165,15 @@ do_unlink__StringLiteral:
     ecall
     ret
 
+# do_mkdir(path) → i32 — create a directory.
+    .globl do_mkdir__String
+    .globl do_mkdir__StringLiteral
+do_mkdir__String:
+do_mkdir__StringLiteral:
+    li   a7, 34
+    ecall
+    ret
+
 # do_mux_enable(on: i32) → void — toggle UART frame multiplexing.
 # See docs/task/uart_multiplex.md.
     .globl do_mux_enable__i32
