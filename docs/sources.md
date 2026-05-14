@@ -157,6 +157,7 @@ libtc は全タスクが import する user ライブラリ。
 | `du/du.tc` | ディレクトリ使用量 |
 | `grep/grep.tc` | 部分文字列検索 |
 | `rm/rm.tc` | ファイル削除 (#30 により /tmp は未対応) |
+| `mkdir/mkdir.tc` | ディレクトリ作成 (ecall 34、`/sd/` のみ。K12 解決で導入) |
 | `rot13/rot13.tc` | ROT13 変換 |
 | `neofetch/neofetch.tc` | ASCII banner + /proc/tasks stats |
 | `vi/vi.tc` | 最小 vi エディタ (normal/insert/cmdline、hjkl/dd/gg/:w/:q、ANSI 描画、縦スクロール) |
