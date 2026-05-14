@@ -421,6 +421,11 @@ export fn vfs_readdir(path: String, buf_addr: u32, buf_size: i32) -> i32 {
     if path_eq_or_trailing(path_addr, plen, "/sd") && g_fatfs_ready != 0 {
         return fatfs_readdir(buf_addr, buf_size);
     }
+    if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
+        // "/sd/sub[/...]" — drop "/sd/" prefix and walk into subdirs.
+        return fatfs_readdir_path(path_addr + 4u32, plen - 4,
+                                  buf_addr, buf_size);
+    }
     // mtfs path — walk and readdir the final inode.
     var inode: i32 = resolve_mtfs_inode(path_addr, plen);
     if inode < 0 { return -1; }

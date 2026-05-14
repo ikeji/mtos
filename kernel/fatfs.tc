@@ -997,7 +997,95 @@ fn fat_free_chain(start_clus: u32) -> void {
     return;
 }
 
-// Mark a directory entry as deleted (first byte = 0xE5).
+// ===== Path resolution =====
+
+// Walk SD-relative path[0..plen] segments (separated by '/') starting
+// from start_clus, calling dir_find_by_name on each segment and
+// verifying the entry's attr has the DIR bit set. Returns the final
+// cluster on success (terminal segment included) and -1 on any
+// missing segment or non-directory traversal failure.
+fn walk_to_dir(start_clus: u32, path_addr: u32, plen: i32) -> i32 {
+    var cur_clus: u32 = start_clus;
+    var pos: i32 = 0;
+    while pos < plen {
+        // Skip a leading '/' or runs of '/' between segments.
+        while pos < plen && peek8(path_addr + (pos as u32)) == '/' as u8 {
+            pos = pos + 1;
+        }
+        if pos >= plen { break; }
+        var seg_start: i32 = pos;
+        while pos < plen && peek8(path_addr + (pos as u32)) != '/' as u8 {
+            pos = pos + 1;
+        }
+        var seg_len: i32 = pos - seg_start;
+        if seg_len == 0 { break; }
+
+        var tmp: U32Array = U32Array(4);
+        set(tmp, 0, 0); set(tmp, 1, 0); set(tmp, 2, 0); set(tmp, 3, 0);
+        var c_addr: u32 = tmp as u32 + 4u32;
+        var s_addr: u32 = tmp as u32 + 4u32 + 4u32;
+        var ds_addr: u32 = tmp as u32 + 4u32 + 8u32;
+        var do_addr: u32 = tmp as u32 + 4u32 + 12u32;
+        var rc: i32 = dir_find_by_name(cur_clus,
+                                       path_addr + (seg_start as u32),
+                                       seg_len,
+                                       c_addr, s_addr, ds_addr, do_addr);
+        if rc != 0 { delete(tmp); return -1; }
+        var found_clus: u32 = peek32(c_addr);
+        var dir_sec: u32 = peek32(ds_addr);
+        var dir_off: i32 = peek32(do_addr) as i32;
+        delete(tmp);
+
+        var secbuf: U8Array = U8Array(512);
+        if fat_block_read(dir_sec, secbuf) != 512 {
+            delete(secbuf);
+            return -1;
+        }
+        var attr: u8 = get(secbuf, dir_off + 11);
+        delete(secbuf);
+        if (attr & 0x10u8) == 0u8 { return -1; }
+        cur_clus = found_clus;
+    }
+    return cur_clus as i32;
+}
+
+// Split path[0..plen] into (parent_dir, leaf_name). Walks any
+// intermediate subdirs under g_fat_root_clus to find the parent
+// cluster of the leaf, and writes the leaf offset/length into the
+// output addrs. Returns 0 on success, -1 if any intermediate
+// segment doesn't exist or isn't a directory, or if the path has
+// no leaf (trailing '/').
+fn resolve_parent_dir(path_addr: u32, plen: i32,
+                      out_parent_clus_addr: u32,
+                      out_leaf_off_addr: u32,
+                      out_leaf_len_addr: u32) -> i32 {
+    if plen <= 0 { return -1; }
+    // Locate the last '/' position (or -1 if no slash).
+    var last_slash: i32 = -1;
+    var i: i32 = 0;
+    while i < plen {
+        if peek8(path_addr + (i as u32)) == '/' as u8 { last_slash = i; }
+        i = i + 1;
+    }
+    var leaf_off: i32 = last_slash + 1;
+    var leaf_len: i32 = plen - leaf_off;
+    if leaf_len <= 0 { return -1; }
+
+    if last_slash < 0 {
+        poke32(out_parent_clus_addr, g_fat_root_clus);
+        poke32(out_leaf_off_addr, leaf_off as u32);
+        poke32(out_leaf_len_addr, leaf_len as u32);
+        return 0;
+    }
+
+    var parent: i32 = walk_to_dir(g_fat_root_clus, path_addr, last_slash);
+    if parent < 0 { return -1; }
+    poke32(out_parent_clus_addr, parent as u32);
+    poke32(out_leaf_off_addr, leaf_off as u32);
+    poke32(out_leaf_len_addr, leaf_len as u32);
+    return 0;
+}
+
 // Mark the SFN at (dir_sec, dir_off) as deleted (first byte = 0xE5).
 // Also marks any preceding LFN entries in the same sector so they
 // don't dangle. (LFN chains that span sector boundaries leak the
@@ -1018,22 +1106,37 @@ fn dir_delete(dir_sec: u32, dir_off: i32) -> i32 {
     return 0;
 }
 
-// Delete a file by name. Frees FAT chain and marks dir entry as deleted.
-export fn fatfs_delete(name_addr: u32, nlen: i32) -> i32 {
+// Delete a file by path. path[0..plen] may include subdir segments
+// (e.g. "foo/bar.txt"). Frees the FAT chain and marks the dir entry
+// (plus preceding LFN entries) as deleted.
+export fn fatfs_delete(path_addr: u32, plen: i32) -> i32 {
     if g_fat_ready == 0 { return -1; }
-    if nlen <= 0 || nlen > 255 { return -1; }
+    if plen <= 0 || plen > 1024 { return -1; }
+
+    var pd: U32Array = U32Array(3);
+    set(pd, 0, 0); set(pd, 1, 0); set(pd, 2, 0);
+    var pclus_addr: u32 = pd as u32 + 4u32;
+    var loff_addr: u32 = pd as u32 + 4u32 + 4u32;
+    var llen_addr: u32 = pd as u32 + 4u32 + 8u32;
+    if resolve_parent_dir(path_addr, plen,
+                          pclus_addr, loff_addr, llen_addr) != 0 {
+        delete(pd);
+        return -1;
+    }
+    var parent_clus: u32 = peek32(pclus_addr);
+    var leaf_off: i32 = peek32(loff_addr) as i32;
+    var leaf_len: i32 = peek32(llen_addr) as i32;
+    delete(pd);
 
     var tmp: U32Array = U32Array(4);
-    set(tmp, 0, 0);
-    set(tmp, 1, 0);
-    set(tmp, 2, 0);
-    set(tmp, 3, 0);
+    set(tmp, 0, 0); set(tmp, 1, 0); set(tmp, 2, 0); set(tmp, 3, 0);
     var clus_addr: u32 = tmp as u32 + 4u32;
     var size_addr: u32 = tmp as u32 + 4u32 + 4u32;
     var dsec_addr: u32 = tmp as u32 + 4u32 + 8u32;
     var doff_addr: u32 = tmp as u32 + 4u32 + 12u32;
 
-    var r: i32 = dir_find_by_name(g_fat_root_clus, name_addr, nlen,
+    var r: i32 = dir_find_by_name(parent_clus,
+                                  path_addr + (leaf_off as u32), leaf_len,
                                   clus_addr, size_addr, dsec_addr, doff_addr);
     if r != 0 { delete(tmp); return -1; }
 
@@ -1062,9 +1165,26 @@ fn fatfs_alloc_fd() -> i32 {
     return -1;
 }
 
-export fn fatfs_open(name_addr: u32, nlen: i32, flags: i32) -> i32 {
+export fn fatfs_open(path_addr: u32, plen: i32, flags: i32) -> i32 {
     if g_fat_ready == 0 { return -1; }
-    if nlen <= 0 || nlen > 255 { return -1; }
+    if plen <= 0 || plen > 1024 { return -1; }
+
+    var pd: U32Array = U32Array(3);
+    set(pd, 0, 0); set(pd, 1, 0); set(pd, 2, 0);
+    var pclus_addr: u32 = pd as u32 + 4u32;
+    var loff_addr: u32 = pd as u32 + 4u32 + 4u32;
+    var llen_addr: u32 = pd as u32 + 4u32 + 8u32;
+    if resolve_parent_dir(path_addr, plen,
+                          pclus_addr, loff_addr, llen_addr) != 0 {
+        delete(pd);
+        return -1;
+    }
+    var parent_clus: u32 = peek32(pclus_addr);
+    var leaf_off: i32 = peek32(loff_addr) as i32;
+    var leaf_len: i32 = peek32(llen_addr) as i32;
+    delete(pd);
+    var name_addr: u32 = path_addr + (leaf_off as u32);
+    var nlen: i32 = leaf_len;
 
     // tmp[0]=clus, tmp[1]=size, tmp[2]=dir_sec, tmp[3]=dir_off
     var tmp: U32Array = U32Array(4);
@@ -1077,7 +1197,7 @@ export fn fatfs_open(name_addr: u32, nlen: i32, flags: i32) -> i32 {
     var dsec_addr: u32 = tmp as u32 + 4u32 + 8u32;
     var doff_addr: u32 = tmp as u32 + 4u32 + 12u32;
 
-    var r: i32 = dir_find_by_name(g_fat_root_clus, name_addr, nlen,
+    var r: i32 = dir_find_by_name(parent_clus, name_addr, nlen,
                                   clus_addr, size_addr, dsec_addr, doff_addr);
 
     if r != 0 {
@@ -1085,7 +1205,7 @@ export fn fatfs_open(name_addr: u32, nlen: i32, flags: i32) -> i32 {
             delete(tmp);
             return -1;
         }
-        if dir_create_entry(g_fat_root_clus, name_addr, nlen, 0x20u8,
+        if dir_create_entry(parent_clus, name_addr, nlen, 0x20u8,
                             0u32, 0u32, dsec_addr, doff_addr) != 0 {
             delete(tmp);
             return -1;
@@ -1459,4 +1579,19 @@ fn fatfs_readdir_dir(dir_clus: u32, buf_addr: u32, buf_size: i32) -> i32 {
 export fn fatfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
     if g_fat_ready == 0 { return -1; }
     return fatfs_readdir_dir(g_fat_root_clus, buf_addr, buf_size);
+}
+
+// Subdir-aware readdir. path[0..plen] is the SD-relative path (e.g.
+// "" / "/" for root, "foo" or "foo/bar" for a subdir). Walks the
+// path to locate the target dir cluster and lists its entries.
+export fn fatfs_readdir_path(path_addr: u32, plen: i32,
+                             buf_addr: u32, buf_size: i32) -> i32 {
+    if g_fat_ready == 0 { return -1; }
+    if plen < 0 { return -1; }
+    if plen == 0 {
+        return fatfs_readdir_dir(g_fat_root_clus, buf_addr, buf_size);
+    }
+    var dir: i32 = walk_to_dir(g_fat_root_clus, path_addr, plen);
+    if dir < 0 { return -1; }
+    return fatfs_readdir_dir(dir as u32, buf_addr, buf_size);
 }
