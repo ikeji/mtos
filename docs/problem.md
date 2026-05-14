@@ -210,3 +210,15 @@ basename ≤ 8 char + `.` + ext ≤ 3 char しか作れず、`kernel_nodisk.bin`
 LFN (Long File Name) サポートは fatfs 改造範囲が大きいので保留。
 
 **確認済の制約**: pico2 self-build benches は全て 8.3 互換名で書く。
+
+**2026-05-14 追加事例 (K18 self-host で踏んだ)**:
+- `asm_pass1` の forward-ref streaming で導入した `<idx>.idx.rfs` /
+  `<idx>.idx.dfs` temp file が `prelude.idx.rfs` (15 chars) で
+  fatfs_open reject。compiler/asm_pass1.tc::derive_side_path を
+  ".idx" **置換** 方式に変更 (`prelude.rfs`、11 chars) で回避。
+- `pico2_compile_asm_pass{1,2,3}.sh` の出力 `/sd/asm_pass1.lab`
+  (13 chars) も同様に reject。`/sd/a1.lab` / `/sd/a1.bin` (6 chars)
+  に短縮して回避。
+これら 2 件は workaround で回避しているが、根本解決には LFN または
+mtfs 互換の可変長 name スキームへの移行が必要 (CLAUDE.md 次候補で
+今後検討対象)。

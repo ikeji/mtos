@@ -16,17 +16,24 @@
            独自言語製コンパイラ → ネイティブなコンパイラ実行ファイル
            (Gen2==Gen3 の自己ホスト検証は tests/test_gen3.sh で CI 化)
 
-ステップ3.5: 独自言語製プログラムを実機 RP2350 で直接動かす  [kernel 完了]
+ステップ3.5: 独自言語製プログラムを実機 RP2350 で直接動かす  [完了]
            asm_pass2/pass2 をセクション並べ替えリンカとして動かし、
            gp 相対 la で Flash/SRAM 分離に対応。初期 bring-up の
            standalone pico2/hello.tc でコンパイルパスを通した後、
            カーネルが RP2350 で動くようになり同ディレクトリは削除
-           した。K3 案C でタスクサイズ宣言も入り、pico2 セルフホスト
-           は hello レベルでは動く見込み。compiler タスク群は
-           pico2 kernel arena 拡大が残件。
+           した。K3 案C でタスクサイズ宣言、フェーズ 7 で
+           parse→sigscan→tcheck→codegen→bc2asm→asm_pass1→
+           asm_pass2 を OS 上で完走 ("Hello, World!" output、
+           K7 解決 2026-04-29)。
 
-ステップ4: ネイティブコンパイラでOSをビルド
-           OS全体を独自言語で記述し、ネイティブコンパイラでビルド
+ステップ4: ネイティブコンパイラでOSをビルド  [完了 2026-05-14]
+           OS全体を独自言語で記述し、ネイティブコンパイラでビルド。
+           - kernel.bin / kernel.uf2 を pico2 が byte-exact 再生成
+             (K13〜K17、2026-05-06〜2026-05-13、self_replicate 経由)
+           - 全 8 コンパイラ binary を pico2 が byte-exact 再生成
+             (K18、2026-05-14、各 `pico2_compile_<name>.sh` 経由)
+           → catalyst (host PC) 抜きで pico2 が自身の compiler stack
+             と kernel を再生産する完全な self-host loop が成立。
 ```
 
 ### インタプリタの位置づけ
