@@ -197,8 +197,8 @@ build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
 	_arena=$$(task_arena_size $*) && \
 	_stack=$$(task_stack_size $*) && \
 	printf '    .text\n    .word %s\n    .word %s\n' "$$_arena" "$$_stack" > "$$_tmp/hdr.s" && \
-	cat "$$_tmp/hdr.s" kernel/tasks/task_crt0.s > "$$_tmp/crt0.s" && \
-	CRT0="$$_tmp/crt0.s" CRT0_DATA=kernel/tasks/task_data.s \
+	CRT0="$$_tmp/hdr.s kernel/tasks/task_crt0.s" \
+	    CRT0_DATA=kernel/tasks/task_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    EXTRA_S="$(TASK_EXTRA_S_$*)" \
@@ -387,13 +387,11 @@ KERNEL_COMPILE_DEPS := $(KERNEL_TC_SOURCES) $(KERNEL_S_SOURCES) \
 
 build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	@echo "Building kernel: virt" >&2
-	@_tmp=$$(mktemp -d) && \
-	cat kernel/platform_virt.s kernel/trap_common.s > "$$_tmp/crt0.s" && \
-	CRT0="$$_tmp/crt0.s" CRT0_DATA=kernel/crt0_data.s \
+	@CRT0="kernel/platform_virt.s kernel/trap_common.s" \
+	    CRT0_DATA=kernel/crt0_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
-	    ./compile-gen2.sh -o $@ kernel/kernel.tc 2>/dev/null && \
-	rm -rf "$$_tmp"
+	    ./compile-gen2.sh -o $@ kernel/kernel.tc 2>/dev/null
 
 PICO2_DISK = build/kernel/disk.img
 # Recipe shared by pico2_kernel.uf2 and pico2_kernel_extra.uf2.
@@ -409,9 +407,8 @@ define PICO2_KERNEL_RECIPE
 	mkdir -p "$$_labdir" && \
 	cp $(PICO2_DISK) "$$_labdir/dx.img" && \
 	kernel/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
-	cat kernel/platform_pico2.s kernel/trap_common.s > "$$_tmp/crt0.s" && \
-	cat kernel/crt0_pico2_data.s "$$_tmp/mtfs_image.s" > "$$_tmp/kern_data.s" && \
-	CRT0="$$_tmp/crt0.s" CRT0_DATA="$$_tmp/kern_data.s" \
+	CRT0="kernel/platform_pico2.s kernel/trap_common.s" \
+	    CRT0_DATA="kernel/crt0_pico2_data.s $$_tmp/mtfs_image.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    ./compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/kernel_pico2.tc 2>/dev/null && \

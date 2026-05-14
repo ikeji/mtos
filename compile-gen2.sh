@@ -225,51 +225,75 @@ done
 # it as the LAST extra input gives that ordering:
 #   prelude data → user data → libtc data → tail.
 
-# Step 1: prelude.s = ASM_PROLOGUE + CRT0 + runtime.s
-{
-    [ -n "$ASM_PROLOGUE" ] && printf '%s\n' "$ASM_PROLOGUE"
-    cat "$CRT0"
-    cat "$TMP/runtime.s"
-} > "$TMP/prelude.s"
+# Step 1-4: per-input asm_pass1.
+#
+# Prelude is now split into individual files instead of being cat'd
+# into a single prelude.s — each CRT0 / CRT0_DATA file (space-
+# separated lists) and runtime.s get their own asm_pass1 invocation,
+# matching the per-file pattern already used for user .s. The first
+# input drives raw_mode / load_base (asm_pass2's `prelude` slot), so
+# ASM_PROLOGUE (when set) is written to a standalone PRELUDE_NAME.s
+# and processed first.
+#
+# Final input order (matches old cat'd prelude.s + user + tail):
+#   1. ${PRELUDE_NAME}.s    if ASM_PROLOGUE non-empty (e.g. "; raw")
+#   2. each $CRT0 file      in order
+#   3. runtime.s
+#   4. each ${ASM_FILES[@]}
+#   5. ${EXTRA_S[@]}
+#   6. each $CRT0_DATA file
+#
+# A leading `.incbin SIZE "<path>"` in any input (e.g. wrap.s from the
+# kernel build's bin2s_incbin.sh) is auto-deferred by asm_pass1 — the
+# idx gets an `incbin` marker and asm_pass3 memcpys the blob at link
+# time.
 
-# Step 2: prelude_tail.s = CRT0_DATA (BSS / data-end markers).
-cat "$CRT0_DATA" > "$TMP/prelude_tail.s"
+link_args=()
 
-# Step 3: pre-encode prelude.s alone.
-"$QEMU" "$GEN2_DIR/asm_pass1" "$TMP/prelude.s" \
-    --idx-out    "$TMP/${PRELUDE_NAME}.idx" \
-    --text-bin   "$TMP/${PRELUDE_NAME}.tx" \
-    --rodata-bin "$TMP/${PRELUDE_NAME}.ro" \
-    --data-bin   "$TMP/${PRELUDE_NAME}.dt" \
-    --reloc-out  "$TMP/${PRELUDE_NAME}.rl" 2>/dev/null
-
-# Step 4: pre-encode each user .s + EXTRA_S + prelude_tail.s.
-# A leading `.incbin SIZE "<path>"` in any input (e.g. prelude_tail.s
-# from the kernel build's bin2s_incbin.sh wrap.s) is auto-deferred
-# by asm_pass1 — the idx gets an `incbin` marker instead of the
-# materialized bytes, and asm_pass3 memcpys the original blob at
-# link time.
-link_args=( --add "$TMP/${PRELUDE_NAME}.idx" )
-# INPUT_NAMES (when set) overrides the per-input `in_$N` default with
-# space-separated tags matching the iteration order of ASM_FILES +
-# EXTRA_S + prelude_tail.s. Used by self_replicate orchestrator to
-# align host intermediate filenames with the on-device fixture names.
-INPUT_NAMES_ARR=( ${INPUT_NAMES:-} )
-n=0
-for s in "${ASM_FILES[@]}" ${EXTRA_S:-} "$TMP/prelude_tail.s"; do
-    if [ -n "${INPUT_NAMES_ARR[$n]:-}" ]; then
-        tag="${INPUT_NAMES_ARR[$n]}"
-    else
-        tag="in_$n"
-    fi
-    "$QEMU" "$GEN2_DIR/asm_pass1" "$s" \
+pass1_one() {
+    local src="$1" tag="$2"
+    "$QEMU" "$GEN2_DIR/asm_pass1" "$src" \
         --idx-out    "$TMP/$tag.idx" \
         --text-bin   "$TMP/$tag.tx" \
         --rodata-bin "$TMP/$tag.ro" \
         --data-bin   "$TMP/$tag.dt" \
         --reloc-out  "$TMP/$tag.rl" 2>/dev/null
     link_args+=( --add "$TMP/$tag.idx" )
+}
+
+# ASM_PROLOGUE (e.g. "; raw" / "; load_base 0xN") drives raw_mode and
+# must be input[0] so asm_pass2's saved_raw snapshot picks it up.
+if [ -n "$ASM_PROLOGUE" ]; then
+    printf '%s\n' "$ASM_PROLOGUE" > "$TMP/${PRELUDE_NAME}.s"
+    pass1_one "$TMP/${PRELUDE_NAME}.s" "${PRELUDE_NAME}"
+fi
+
+# Each CRT0 file (typically platform.s + trap_common.s).
+for c in $CRT0; do
+    [ -f "$c" ] || { echo "Error: CRT0 file not found: $c" >&2; exit 1; }
+    pass1_one "$c" "$(basename "$c" .s)"
+done
+
+# runtime.s.
+pass1_one "$TMP/runtime.s" "runtime"
+
+# User inputs + EXTRA_S, with INPUT_NAMES override for self_replicate.
+INPUT_NAMES_ARR=( ${INPUT_NAMES:-} )
+n=0
+for s in "${ASM_FILES[@]}" ${EXTRA_S:-}; do
+    if [ -n "${INPUT_NAMES_ARR[$n]:-}" ]; then
+        tag="${INPUT_NAMES_ARR[$n]}"
+    else
+        tag="in_$n"
+    fi
+    pass1_one "$s" "$tag"
     n=$((n + 1))
+done
+
+# CRT0_DATA tail (each file, in order — typically data.s + mtfs_image.s).
+for d in $CRT0_DATA; do
+    [ -f "$d" ] || { echo "Error: CRT0_DATA file not found: $d" >&2; exit 1; }
+    pass1_one "$d" "$(basename "$d" .s)"
 done
 
 # Step 5: link → .lab. asm_pass2 reads each idx's v2 header to find

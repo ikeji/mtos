@@ -66,14 +66,15 @@ tcheck --exth /sd/sb.th --exth /sd/sr.th --exth /sd/sl.th --tgth /sd/p.th --tgt 
 codegen < /sd/p.tast > /sd/p.bc
 bc2asm < /sd/p.bc > /sd/p.s
 
-cat /src/hdr_parse.s /src/task_crt0.s /sd/runtime.s > /sd/prelude.s
-asm_pass1 /sd/prelude.s --idx-out /sd/prelude.idx --text-bin /sd/prelude.tx --rodata-bin /sd/prelude.ro --data-bin /sd/prelude.dt --reloc-out /sd/prelude.rl
+asm_pass1 /src/hdr_parse.s --idx-out /sd/hdr.idx --text-bin /sd/hdr.tx --rodata-bin /sd/hdr.ro --data-bin /sd/hdr.dt --reloc-out /sd/hdr.rl
+asm_pass1 /src/task_crt0.s --idx-out /sd/crt0.idx --text-bin /sd/crt0.tx --rodata-bin /sd/crt0.ro --data-bin /sd/crt0.dt --reloc-out /sd/crt0.rl
+asm_pass1 /sd/runtime.s --idx-out /sd/runtime.idx --text-bin /sd/runtime.tx --rodata-bin /sd/runtime.ro --data-bin /sd/runtime.dt --reloc-out /sd/runtime.rl
 asm_pass1 /sd/sb.s --idx-out /sd/in_0.idx --text-bin /sd/in_0.tx --rodata-bin /sd/in_0.ro --data-bin /sd/in_0.dt --reloc-out /sd/in_0.rl
 asm_pass1 /sd/sr.s --idx-out /sd/in_1.idx --text-bin /sd/in_1.tx --rodata-bin /sd/in_1.ro --data-bin /sd/in_1.dt --reloc-out /sd/in_1.rl
 asm_pass1 /sd/sl.s --idx-out /sd/in_2.idx --text-bin /sd/in_2.tx --rodata-bin /sd/in_2.ro --data-bin /sd/in_2.dt --reloc-out /sd/in_2.rl
 asm_pass1 /sd/p.s --idx-out /sd/in_3.idx --text-bin /sd/in_3.tx --rodata-bin /sd/in_3.ro --data-bin /sd/in_3.dt --reloc-out /sd/in_3.rl
 asm_pass1 /src/task_data.s --idx-out /sd/in_4.idx --text-bin /sd/in_4.tx --rodata-bin /sd/in_4.ro --data-bin /sd/in_4.dt --reloc-out /sd/in_4.rl
-asm_pass2 --add /sd/prelude.idx --add /sd/in_0.idx --add /sd/in_1.idx --add /sd/in_2.idx --add /sd/in_3.idx --add /sd/in_4.idx --lab-out /sd/parse.lab
+asm_pass2 --add /sd/hdr.idx --add /sd/crt0.idx --add /sd/runtime.idx --add /sd/in_0.idx --add /sd/in_1.idx --add /sd/in_2.idx --add /sd/in_3.idx --add /sd/in_4.idx --lab-out /sd/parse.lab
 asm_pass3 --lab /sd/parse.lab --out /sd/parse.bin
 md5sum /sd/parse.bin
 

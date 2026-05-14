@@ -352,12 +352,9 @@ if [ "$TARGET" = "pico2" ]; then
 fi
 
 # --- Step 3: Build kernel ---
-# Concat platform.s + trap_common.s as the "crt0".
-# Task binaries no longer live in .rodata — they are read from the mtfs
-# image at runtime. On Pico 2 we still append the embedded image .s.
-cat "$PLATFORM_S" "$KERN_DIR/trap_common.s" > "$TMP/crt0.s"
-cat "$DATA_S" ${MTFS_S:+"$MTFS_S"} > "$TMP/kern_data.s"
-
+# CRT0 and CRT0_DATA are space-separated lists; compile-gen2.sh runs
+# asm_pass1 per file (no cat). On Pico 2 the mtfs image .s is appended
+# to CRT0_DATA so block_flash.tc serves the embedded image from XIP.
 echo "Building kernel: $TARGET" >&2
 # Kernel uses UNIFIED_PRELUDE=1 (split flow): each .s goes through
 # its own asm_pass1, then asm_pass2 merges N inputs. Cross-
@@ -368,8 +365,8 @@ echo "Building kernel: $TARGET" >&2
 # byte-exact against KERN_UNIFIED_PRELUDE=0 for both virt and pico2
 # kernels at the time of switchover. Override =0 only when bisecting
 # asm_pass1 changes.
-CRT0="$TMP/crt0.s" \
-CRT0_DATA="$TMP/kern_data.s" \
+CRT0="$PLATFORM_S $KERN_DIR/trap_common.s" \
+CRT0_DATA="$DATA_S ${MTFS_S:-}" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \
 UNIFIED_PRELUDE="${KERN_UNIFIED_PRELUDE:-1}" \
