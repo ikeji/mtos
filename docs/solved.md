@@ -241,7 +241,87 @@ device k.uf2 md5:    73866365d5fd6f900eb04fad2d9966a5  MATCH
 自己ビルドする」を実機で達成。K16 (kernel arena fragmentation) +
 K17 (fd leak) で 1-boot 経路の構造的バグは出尽くした。
 
+### K18. フルセルフホスト: 全 8 コンパイラを pico2 上で byte-exact 再生成 — 完了 (2026-05-14)
 
+K13〜K17 で kernel.bin/uf2 の self-replicate が成立した後、残された
+ピースは「コンパイラ自身 (parse, sigscan, tcheck, codegen, bc2asm,
+asm_pass1, asm_pass2, asm_pass3 の 8 タスク binary) を pico2 上で
+host build と byte-exact 一致で再生成できるか」。今回 8/8 達成、
+Pico 2 が catalyst 抜きで自分の compiler stack 全体を再生産可能に。
+
+| compiler | md5 (host = device) |
+|---|---|
+| parse     | `e828a362f8f19bddbd06150776815ea9` |
+| sigscan   | `6217eaca9745ce17ebb50b14fae1078d` |
+| tcheck    | `c62454d8a16fd24807316205a28a503a` |
+| codegen   | `e105c2e9cb1c3cdd97bc1326ae3043e2` |
+| bc2asm    | `1383af3db4245a1abdccd991d8a05390` |
+| asm_pass1 | `0709bdbac80d44e6f678a6e67aea48b2` |
+| asm_pass2 | `964e27ccb0bfaf8bcb2b8a51d16321a5` |
+| asm_pass3 | `b14f58729f9e9482eb96c3d8ee0ad267` |
+
+3 つの構造的修正が必要だった:
+
+1. **asm_pass1 forward-ref queue を disk stream 化** (commit a987ab3)
+   parse.tc self-build で in_3 (parse.s) の asm_pass1 が OOM:
+   `OOM: 130948 p=246932 l=222796`。原因は forward-ref を貯める
+   `g_def_pool` (U8Array doubling 4 KB→8→16→32→64→128 KB) +
+   parallel `g_def_*` arrays。peak ~226 KB が 360 KB task arena に
+   入らなくなる。
+   record_ref で forward ref に当たったら `def <owner> <name>\n` を
+   4 KB buffered streaming で disk に書き、asm_resolve_deferred_refs
+   で再度開いて 1 行ずつ lookup → refs 出力。peak 144 KB に削減。
+
+2. **fatfs 8.3 (12-char 上限) 回避**:
+   - asm_pass1 が refs/def temp file を `<idx>.idx.rfs` /
+     `<idx>.idx.dfs` で開いていたが、`prelude.idx.rfs` (15 chars) は
+     fatfs_open の `nlen > 12` 制限で reject されていた。
+     derive_side_path を ".idx" 拡張子 **置換** 方式に変更
+     (`prelude.idx` → `prelude.rfs`、11 chars)。
+   - asm_pass2/3 self-build の `/sd/asm_pass2.lab` (13 chars) も同様。
+     fixture を `/sd/a2.lab` / `/sd/a2.bin` (6 chars) に変更。
+
+3. **asm_dead_strip g_ds_edges 初期 cap を 4095 → 16383 に増量**
+   asm_pass2 task arena 内で g_ds_edges が 32→64 KB に doubling する
+   transient (合計 96 KB live) が live ~315 KB 状態の task arena
+   (max contig free 49 KB) で OOM。16383 entries (= 64 KB exact
+   bucket) を task 起動時に確保すると live ~10 KB 時点で確保完了、
+   後続の doubling 不要。
+
+加えて 2 つの細かい修正:
+
+4. **asm_pass2/3 task arena を 344 KB → 372 KB (380928)**
+   K14 (2026-05-11) で「384 KB は kernel arena OOM」と記録されて
+   いたが、post-K16/K17 で kernel live が ~70 KB に下がっていて
+   380 KB は通る (U8Array(~398 KB) ≤ kernel max contig 408 KB)。
+   400 KB 試行は U8Array(~426 KB) が 408 KB に入らず spawn OOM。
+
+5. **Makefile hdr_<name>.s spec を $(TASK_ARENA_<name>) 参照に統一**
+   旧版は disk-extra.img staging で arena/stack をハードコード
+   (`asm_pass1:294912`) しており task.mk の 368640 とズレていた。
+   device 側 hdr_asm_pass1.s に古い 294912 が staging され、host
+   build (368640) と divergent な .bin を生成していた。task.mk と
+   spec の 2 ヶ所同期を撤廃。
+
+self-build 実行時間 (pico2 実機、device 上で imports compile から
+.bin md5 まで):
+
+| compiler | 所要 | 主要 input |
+|---|---:|---|
+| parse     |  ~5 min | sb, sr, sl, parse, task_data        |
+| sigscan   |  ~5 min | sb, sr, sl, an, sigscan, task_data  |
+| tcheck    |  9.5 min | sb, sr, sl, an, tcheck, task_data  |
+| codegen   |  7.2 min | sb, sr, sl, an, codegen, task_data |
+| bc2asm    |  9.4 min | sb, sr, sl, bc2asm, task_data      |
+| asm_pass1 |   19 min | sb, sr, sl, ac, asm_pass1, task_data (ac compile 8 min が支配項) |
+| asm_pass2 |   21 min | sb, sr, sl, ac, ds, p2l, asm_pass2, task_data |
+| asm_pass3 |   21 min | sb, sr, sl, ac, p3l, asm_pass3, task_data |
+
+これで Pico 2 が host PC の触媒抜きで kernel + 全コンパイラを再生産
+できる完全な self-hosting loop が成立。`docs/roadmap.md` 「ブート
+ストラップ戦略」ステップ 4 (OS 全体を独自言語で記述してネイティブ
+コンパイラでビルド) の中核要件 (compiler stack を pico2 内で
+maintain) が達成された。
 
 ### K15. self_replicate byte-exact 再帰仕上げ + asm_pass3 46ms silent-exit 解消 — 完了 (2026-05-13)
 

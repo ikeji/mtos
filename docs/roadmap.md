@@ -335,6 +335,29 @@ K7 解決の決め手 3 点:
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
+- [x] **フルセルフホスト: 全 8 コンパイラを pico2 上で byte-exact
+      再生成** (2026-05-14、K18、commit `d59e9c0`):
+      `tests/fixtures/pico2_compile_<name>.sh` (parse, sigscan,
+      tcheck, codegen, bc2asm, asm_pass1, asm_pass2, asm_pass3) を
+      msh から実行すると、device の /sd/ に出力される `.bin` が
+      `build/kernel/tasks/<name>.bin` と md5 完全一致する。これで
+      Pico 2 が catalyst 抜きで compiler stack 全体を再生産できる
+      完全な self-host loop が成立。
+
+      3 つの構造的修正で実現:
+      - asm_pass1 forward-ref queue を disk stream 化
+        (`def <owner> <name>\n` 形式、4 KB buffered write)。
+        parse.s self-encode で peak 250 KB → 144 KB (commit `a987ab3`)
+      - fatfs 8.3 (12-char) 回避: `.idx.rfs` (15 chars) → `.rfs`
+        (拡張子置換)、出力 `.lab/.bin` も短縮名 `a2.lab/a2.bin`
+      - asm_dead_strip g_ds_edges 初期 cap 4095 → 16383 (64 KB pre-
+        alloc)、asm_pass{2,3} arena 344 KB → 372 KB
+
+      所要時間 (実機、imports compile から /sd/<name>.bin md5 まで):
+      parse / sigscan ~5 min、tcheck / codegen / bc2asm 7〜10 min、
+      asm_pass1/2/3 は 19〜21 min (ac compile 8 min が支配項)。
+      詳細は `docs/solved.md` K18 entry。
+
 - [x] **self_replicate に platform_pico2.tc 対応 + per-file pre-encode
       pipeline** (2026-05-09): K13 完成後に compile pipeline が
       `kernel/platform_pico2.tc` を新設して do_uart_* / do_write /

@@ -9,19 +9,33 @@
 
 # 現在のフェーズ
 
-`docs/roadmap.md` 参照。**Pico 2 self-replicate 1-boot byte-exact 完走
-(K13 解決 2026-05-06、K15 再帰仕上げ 2026-05-12、K16 kernel arena
-fragmentation 解消 2026-05-13、K17 tcheck fd_t leak 解消 + byte-exact
-1 boot 完走 2026-05-13)**: pico2 実機が自前のコンパイラ・カーネル
-だけで kernel.bin と kernel.uf2 を **byte-exact** で再生成する。host
-gen2 build と md5 完全一致を確認した状態で
-`CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1 tests/pico2_self_replicate.sh`
-が end-to-end **~22 min** で完走 (2026-05-13 計測、commit 66386cb)。
-Hello World end-to-end も 1 boot で **13.78 sec** に短縮 (K7 era 127
-sec → 9.2× speedup、`docs/scaling.md` Q1)。これでコンパイラ + カーネル
-全ソースが pico2 でセルフホストし、ホスト PC は触媒として一度ソースを
-置いた後は更新時にしか登場しない。詳細は `docs/solved.md` の K13 /
-K15 / K16 / K17 エントリ、`docs/roadmap.md` 2026-05-06 milestone。
+`docs/roadmap.md` 参照。**フルセルフホスト達成 (K18、2026-05-14)**:
+pico2 実機が parse / sigscan / tcheck / codegen / bc2asm / asm_pass1
+/ asm_pass2 / asm_pass3 の **全 8 コンパイラ binary** を host build
+と byte-exact 一致で再生成する。kernel.bin/uf2 の self-replicate
+(K13〜K17、2026-05-06〜2026-05-13) と合わせて Pico 2 が catalyst
+抜きで kernel + 全コンパイラを再生産できる完全な self-hosting loop
+が成立。
+
+実機での self-build 経路 (commit `d59e9c0`、各コンパイラ 5〜21 min):
+`/sd/<name>.bin` md5 を `build/kernel/tasks/<name>.bin` と比較して
+完全一致を確認済。詳細は `docs/solved.md` の K18 entry。
+
+完了済の前段マイルストーン:
+- **Pico 2 self-replicate 1-boot byte-exact 完走** (K13 解決
+  2026-05-06、K15 再帰仕上げ 2026-05-12、K16 kernel arena
+  fragmentation 解消 2026-05-13、K17 tcheck fd_t leak 解消 + byte-
+  exact 1 boot 完走 2026-05-13): host gen2 build と md5 完全一致
+  を確認した状態で `CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1
+  tests/pico2_self_replicate.sh` が end-to-end **~22 min** で完走
+  (2026-05-13 計測、commit 66386cb)。
+- **Hello World end-to-end** も 1 boot で **13.78 sec** に短縮
+  (K7 era 127 sec → 9.2× speedup、`docs/scaling.md` Q1)。
+
+これでコンパイラ + カーネル全ソースが pico2 でセルフホストし、ホスト
+PC は触媒として一度ソースを置いた後は更新時にしか登場しない。詳細は
+`docs/solved.md` の K13 / K15 / K16 / K17 / K18 エントリ、
+`docs/roadmap.md` 2026-05-06 milestone。
 
 完了した過去マイルストーン — フェーズ 7 完走 (K7 解決、2026-04-29、qemu
 virt + pico2 実機で `parse → sigscan → tcheck → codegen → bc2asm →
