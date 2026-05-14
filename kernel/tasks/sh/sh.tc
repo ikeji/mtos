@@ -228,9 +228,12 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
     poke32(dir as u32, dir_len as u32);
     var base_len: i32 = pos - base_start;
 
-    var dirbuf: U8Array = U8Array(4096);
+    // 4092 keeps total alloc at one page (count header 4B + 4092 data =
+    // 4096); U8Array(4096) would round up to two pages and OOM on the
+    // second tab after history pushes fragment the free list.
+    var dirbuf: U8Array = U8Array(4092);
     var n: i32 = do_readdir(dir as String,
-                            dirbuf as u32 + 4u32, 4096);
+                            dirbuf as u32 + 4u32, 4092);
     if n <= 0 { delete(dir); delete(dirbuf); return pos; }
 
     // First pass: count matches + remember the first one.
