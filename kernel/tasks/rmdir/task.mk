@@ -1,0 +1,3 @@
+GUEST_TASKS += rmdir
+TASK_ARENA_rmdir := 16384
+TASK_STACK_rmdir := 4096

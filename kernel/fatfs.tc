@@ -1145,6 +1145,19 @@ export fn fatfs_delete(path_addr: u32, plen: i32) -> i32 {
     var dir_off: i32 = peek32(doff_addr) as i32;
     delete(tmp);
 
+    // Refuse directories — caller must use fatfs_rmdir for those.
+    // Without this guard, free_chain would only release the dir's data
+    // cluster and orphan every file inside (FAT marked allocated but
+    // no entry references them).
+    var attrbuf: U8Array = U8Array(512);
+    if fat_block_read(dir_sec, attrbuf) != 512 {
+        delete(attrbuf);
+        return -1;
+    }
+    var attr: u8 = get(attrbuf, dir_off + 11);
+    delete(attrbuf);
+    if (attr & 0x10u8) != 0u8 { return -1; }
+
     if start_clus >= 2u32 {
         fat_free_chain(start_clus);
     }
@@ -1252,6 +1265,110 @@ export fn fatfs_mkdir(path_addr: u32, plen: i32) -> i32 {
     }
     delete(tmp);
 
+    fat_cache_flush();
+    return 0;
+}
+
+// Check whether dir_clus (the first cluster of a directory's data
+// area) contains any entries other than `.` / `..`. Returns true if
+// empty (i.e. safe to rmdir). LFN entries and 0xE5 tombstones are
+// skipped; any other live entry whose name doesn't start with '.'
+// counts as non-empty.
+fn dir_is_empty(dir_clus: u32) -> bool {
+    var secbuf: U8Array = U8Array(512);
+    var clus: u32 = dir_clus;
+    while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
+        var sec: u32 = cluster_to_sector(clus);
+        var s: i32 = 0;
+        while s < g_fat_spc {
+            if fat_block_read(sec + (s as u32), secbuf) != 512 {
+                delete(secbuf);
+                return false;
+            }
+            var e: i32 = 0;
+            while e < 16 {
+                var off: i32 = e * 32;
+                var fb: u8 = get(secbuf, off);
+                if fb == 0u8 {
+                    delete(secbuf);
+                    return true;
+                }
+                if fb != 0xE5u8 {
+                    var attr: u8 = get(secbuf, off + 11);
+                    if attr != 0x0Fu8 && (attr & 0x08u8) == 0u8 {
+                        if fb != '.' as u8 {
+                            delete(secbuf);
+                            return false;
+                        }
+                    }
+                }
+                e = e + 1;
+            }
+            s = s + 1;
+        }
+        clus = fat_get_entry(clus);
+    }
+    delete(secbuf);
+    return true;
+}
+
+// Remove an empty directory at path. Refuses non-existent paths,
+// non-directories, the FAT root, and non-empty directories. Frees
+// the dir's cluster chain and clears its parent entry (with the
+// preceding LFN chunks).
+export fn fatfs_rmdir(path_addr: u32, plen: i32) -> i32 {
+    if g_fat_ready == 0 { return -1; }
+    if plen <= 0 || plen > 1024 { return -1; }
+
+    var pd: U32Array = U32Array(3);
+    set(pd, 0, 0); set(pd, 1, 0); set(pd, 2, 0);
+    var pclus_addr: u32 = pd as u32 + 4u32;
+    var loff_addr: u32 = pd as u32 + 4u32 + 4u32;
+    var llen_addr: u32 = pd as u32 + 4u32 + 8u32;
+    if resolve_parent_dir(path_addr, plen,
+                          pclus_addr, loff_addr, llen_addr) != 0 {
+        delete(pd);
+        return -1;
+    }
+    var parent_clus: u32 = peek32(pclus_addr);
+    var leaf_off: i32 = peek32(loff_addr) as i32;
+    var leaf_len: i32 = peek32(llen_addr) as i32;
+    delete(pd);
+
+    var tmp: U32Array = U32Array(4);
+    set(tmp, 0, 0); set(tmp, 1, 0); set(tmp, 2, 0); set(tmp, 3, 0);
+    var clus_addr: u32 = tmp as u32 + 4u32;
+    var size_addr: u32 = tmp as u32 + 4u32 + 4u32;
+    var dsec_addr: u32 = tmp as u32 + 4u32 + 8u32;
+    var doff_addr: u32 = tmp as u32 + 4u32 + 12u32;
+    if dir_find_by_name(parent_clus,
+                        path_addr + (leaf_off as u32), leaf_len,
+                        clus_addr, size_addr, dsec_addr, doff_addr) != 0 {
+        delete(tmp);
+        return -1;
+    }
+
+    var start_clus: u32 = peek32(clus_addr);
+    var dir_sec: u32 = peek32(dsec_addr);
+    var dir_off: i32 = peek32(doff_addr) as i32;
+    delete(tmp);
+
+    if start_clus == g_fat_root_clus { return -1; }
+
+    var attrbuf: U8Array = U8Array(512);
+    if fat_block_read(dir_sec, attrbuf) != 512 {
+        delete(attrbuf);
+        return -1;
+    }
+    var attr: u8 = get(attrbuf, dir_off + 11);
+    delete(attrbuf);
+    if (attr & 0x10u8) == 0u8 { return -1; }
+
+    if start_clus >= 2u32 {
+        if dir_is_empty(start_clus) == false { return -1; }
+        fat_free_chain(start_clus);
+    }
+    dir_delete(dir_sec, dir_off);
     fat_cache_flush();
     return 0;
 }

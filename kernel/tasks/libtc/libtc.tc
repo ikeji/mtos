@@ -17,6 +17,8 @@ export fn do_unlink(path: String)        -> i32;
 export fn do_unlink(path: StringLiteral) -> i32;
 export fn do_mkdir(path: String)         -> i32;
 export fn do_mkdir(path: StringLiteral)  -> i32;
+export fn do_rmdir(path: String)         -> i32;
+export fn do_rmdir(path: StringLiteral)  -> i32;
 export fn do_spawn(path: String,        argv_addr: u32,
                    in_path: String, out_path: String) -> i32;
 export fn do_spawn(path: StringLiteral, argv_addr: u32,

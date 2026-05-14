@@ -174,6 +174,15 @@ do_mkdir__StringLiteral:
     ecall
     ret
 
+# do_rmdir(path) → i32 — remove an empty directory.
+    .globl do_rmdir__String
+    .globl do_rmdir__StringLiteral
+do_rmdir__String:
+do_rmdir__StringLiteral:
+    li   a7, 40
+    ecall
+    ret
+
 # do_mux_enable(on: i32) → void — toggle UART frame multiplexing.
 # See docs/task/uart_multiplex.md.
     .globl do_mux_enable__i32
