@@ -529,9 +529,15 @@ fn build_image() -> void {
     var num_real_inodes: i32 = g_entry_count + 1;  // +1 for root
     g_total_blocks = total_blocks;
     g_out_size = total_blocks * BLOCK_SIZE - 4 * num_real_inodes;
-    g_out = U8Array((g_out_size) as u32);
+    // Allocate the full untruncated size so file data legitimately
+    // landing in the trailing 4*num_real_inodes bytes doesn't OOB.
+    // write_out's `while written < g_out_size` loop discards those
+    // trailing bytes, preserving byte-exact parity with mkfs.py's
+    // bytearray-shrink quirk.
+    var alloc_size: i32 = total_blocks * BLOCK_SIZE;
+    g_out = U8Array((alloc_size) as u32);
     var z: i32 = 0;
-    while z < g_out_size {
+    while z < alloc_size {
         set(g_out, z, 0u8);
         z = z + 1;
     }
