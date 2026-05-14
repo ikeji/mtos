@@ -111,7 +111,16 @@ var g_ds_n_edges:  i32 = 0;
 var g_ds_edges_cap: i32 = 0;
 
 fn ds_edges_init() -> void {
-    g_ds_edges_cap = 4095;  // I32Array(4095) = 16384 → b16384 exact
+    // 16383 (just under 16384): I32Array(16383) = 65536 bytes = exact
+    // 64 KB large_alloc slot. Bumped from 4095 to skip three doublings
+    // (4095 → 8191 → 16383 → 32767). On asm_pass2 self-build with 8
+    // inputs the doubling from 32 KB → 64 KB hit OOM mid-execution
+    // because live state was already ~315 KB and max contig free was
+    // ~49 KB. Pre-allocating 64 KB at task startup (when live is
+    // ~10 KB and 390 KB is contig free) avoids the mid-execution
+    // 64 KB-contig requirement. ~16 K edges covers compiler self-build
+    // worst case (8 inputs × ~1500 edges average).
+    g_ds_edges_cap = 16383;
     g_ds_edges     = I32Array((g_ds_edges_cap) as u32);
     g_ds_n_edges   = 0;
     return;
