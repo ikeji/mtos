@@ -204,8 +204,6 @@ sh の入力に流れる別モード。詳細は K8+K9 エントリの Phase 2A 
 
 **解決**: VFAT LFN (Long File Name) + サブディレクトリ + mkdir を
 fatfs に実装し、`/sd/<long_name>/<nested>/file.bin` のような構造を
-ランタイムから読み書きできるようになった。詳細は `docs/solved.md`
-K12 entry。pico2 self-host bench 用の workaround
-(`/sd/a1.lab` 短縮、`prelude.rfs` 置換) は機能的には残せるが、
-今後は LFN 経由で本来の名前 (`/sd/asm_pass1.lab`,
-`prelude.idx.rfs`) も使用可能。
+ランタイムから読み書きできるようになった。pico2 self-host bench も
+本来名 (`/sd/asm_pass1.lab` / `prelude.idx.rfs`) に戻した。
+詳細は `docs/solved.md` K12 entry。

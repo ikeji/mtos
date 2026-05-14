@@ -179,9 +179,9 @@ while i < n_in_sec {
   (LONGDI~1↔longdirname_with_lfn、NEWDIR~1↔newdir 等)
 - `make test` 143 passed (58s)
 
-pico2 self-host bench で短縮していた `/sd/a1.lab` / `prelude.rfs` も
-今後は本来名 `/sd/asm_pass1.lab` / `prelude.idx.rfs` で動くはず
-(まだ bench は短縮形のままだが、機能的制約はない)。
+pico2 self-host bench も本来名に revert (commit 後続) —
+`/sd/asm_pass1.lab` / `/sd/asm_pass1.bin` 等、`derive_side_path` も
+".idx" 置換から ".idx.rfs" / ".idx.dfs" 追記方式に戻している。
 
 ### K16. kernel arena fragmentation 完全消滅 + 1-boot self_replicate — 完了 (2026-05-13)
 

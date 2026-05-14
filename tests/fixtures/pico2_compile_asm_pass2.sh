@@ -1,4 +1,4 @@
-# Self-build /sd/a2.bin on pico2 (Gen2 → Gen3, byte-exact vs
+# Self-build /sd/asm_pass2.bin on pico2 (Gen2 → Gen3, byte-exact vs
 # build/kernel/tasks/asm_pass2.bin). Per-file asm_pass1 pipeline
 # matching host kernel/build.sh + compile-gen2.sh.
 #
@@ -7,8 +7,8 @@
 #   asm_pass2_lib  → in_0..in_5
 # Then asm_pass2 itself → in_6, task_data.s → in_7.
 #
-# Output uses short names (a2.lab / a2.bin) because fatfs is 8.3-only
-# and "asm_pass2.lab" (13 chars) exceeds fatfs_open's 12-char limit.
+# K12 (2026-05-14) で fatfs に LFN を入れたので、`/sd/asm_pass2.lab` /
+# `/sd/asm_pass2.bin` を直接使える。short alias 経由の workaround は撤去済。
 #
 # Prerequisites: /sd/runtime.s present (REFRESH 0a).
 
@@ -56,12 +56,12 @@ codegen < /sd/p2l.tast > /sd/p2l.bc
 bc2asm < /sd/p2l.bc > /sd/p2l.s
 
 # ===== Phase 2: asm_pass2.tc itself =====
-parse < /src/asm_pass2.tc > /sd/a2.ast
-sigscan < /sd/a2.ast > /sd/a2.th
-cat /sd/sb.th /sd/sr.th /sd/sl.th /sd/ac.th /sd/ds.th /sd/p2l.th > /sd/a2_imp.th
-tcheck --exth /sd/a2_imp.th --tgth /sd/a2.th --tgt /sd/a2.ast --out /sd/a2.tast
-codegen < /sd/a2.tast > /sd/a2.bc
-bc2asm < /sd/a2.bc > /sd/a2.s
+parse < /src/asm_pass2.tc > /sd/asm_pass2.ast
+sigscan < /sd/asm_pass2.ast > /sd/asm_pass2.th
+cat /sd/sb.th /sd/sr.th /sd/sl.th /sd/ac.th /sd/ds.th /sd/p2l.th > /sd/asm_pass2_imp.th
+tcheck --exth /sd/asm_pass2_imp.th --tgth /sd/asm_pass2.th --tgt /sd/asm_pass2.ast --out /sd/asm_pass2.tast
+codegen < /sd/asm_pass2.tast > /sd/asm_pass2.bc
+bc2asm < /sd/asm_pass2.bc > /sd/asm_pass2.s
 
 # ===== Phase 3: link =====
 cat /src/hdr_asm_pass2.s /src/task_crt0.s /sd/runtime.s > /sd/prelude.s
@@ -72,10 +72,10 @@ asm_pass1 /sd/sl.s --idx-out /sd/in_2.idx --text-bin /sd/in_2.tx --rodata-bin /s
 asm_pass1 /sd/ac.s --idx-out /sd/in_3.idx --text-bin /sd/in_3.tx --rodata-bin /sd/in_3.ro --data-bin /sd/in_3.dt --reloc-out /sd/in_3.rl
 asm_pass1 /sd/ds.s --idx-out /sd/in_4.idx --text-bin /sd/in_4.tx --rodata-bin /sd/in_4.ro --data-bin /sd/in_4.dt --reloc-out /sd/in_4.rl
 asm_pass1 /sd/p2l.s --idx-out /sd/in_5.idx --text-bin /sd/in_5.tx --rodata-bin /sd/in_5.ro --data-bin /sd/in_5.dt --reloc-out /sd/in_5.rl
-asm_pass1 /sd/a2.s --idx-out /sd/in_6.idx --text-bin /sd/in_6.tx --rodata-bin /sd/in_6.ro --data-bin /sd/in_6.dt --reloc-out /sd/in_6.rl
+asm_pass1 /sd/asm_pass2.s --idx-out /sd/in_6.idx --text-bin /sd/in_6.tx --rodata-bin /sd/in_6.ro --data-bin /sd/in_6.dt --reloc-out /sd/in_6.rl
 asm_pass1 /src/task_data.s --idx-out /sd/in_7.idx --text-bin /sd/in_7.tx --rodata-bin /sd/in_7.ro --data-bin /sd/in_7.dt --reloc-out /sd/in_7.rl
-asm_pass2 --add /sd/prelude.idx --add /sd/in_0.idx --add /sd/in_1.idx --add /sd/in_2.idx --add /sd/in_3.idx --add /sd/in_4.idx --add /sd/in_5.idx --add /sd/in_6.idx --add /sd/in_7.idx --lab-out /sd/a2.lab
-asm_pass3 --lab /sd/a2.lab --out /sd/a2.bin
-md5sum /sd/a2.bin
+asm_pass2 --add /sd/prelude.idx --add /sd/in_0.idx --add /sd/in_1.idx --add /sd/in_2.idx --add /sd/in_3.idx --add /sd/in_4.idx --add /sd/in_5.idx --add /sd/in_6.idx --add /sd/in_7.idx --lab-out /sd/asm_pass2.lab
+asm_pass3 --lab /sd/asm_pass2.lab --out /sd/asm_pass2.bin
+md5sum /sd/asm_pass2.bin
 
 echo COMPILE_ASM_PASS2_DONE

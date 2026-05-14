@@ -202,41 +202,25 @@ fn pass2_walk(src: String) -> i32 {
 }
 
 // Build a String for the per-invocation streaming temp file path
-// (".rfs" for refs, ".dfs" for def). asm_dump_idx_state /
+// (".rfs" for refs, ".dfs" for def) by appending the new extension
+// to idx_out (e.g. "prelude.idx" → "prelude.idx.rfs"). asm_dump_idx_state /
 // asm_resolve_deferred_refs re-open these to splice / drain the bytes.
 // Caller owns the buffer (kmalloc'd, returned as String); we never
 // free it — asm_pass1 exits soon after.
-//
-// If `idx_out` ends with ".idx" we replace that extension with the
-// new one (e.g. "prelude.idx" → "prelude.rfs", 11 chars total). On
-// kernel fatfs (8.3-only, 12-char path-component limit) appending a
-// second dot would push paths like "prelude.idx.rfs" past 12 chars
-// and cause fatfs_open to reject — observed as a missing rfs/dfs
-// splice on parse self-build, breaking byte-exact output.
 fn derive_side_path(idx_out: String, c1: u8, c2: u8, c3: u8) -> String {
     var n: i32 = len(idx_out);
-    var replace: i32 = 0;
-    if n >= 4 &&
-       get(idx_out, n - 4) == '.' as u8 &&
-       get(idx_out, n - 3) == 'i' as u8 &&
-       get(idx_out, n - 2) == 'd' as u8 &&
-       get(idx_out, n - 1) == 'x' as u8 {
-        replace = 1;
-    }
-    var keep: i32 = n;
-    if replace == 1 { keep = n - 4; }
-    var out_len: i32 = keep + 4;
+    var out_len: i32 = n + 4;
     var buf: U8Array = U8Array((out_len + 1) as u32);
     var i: i32 = 0;
-    while i < keep {
+    while i < n {
         set(buf, i, get(idx_out, i) as u8);
         i = i + 1;
     }
-    set(buf, keep + 0, '.' as u8);
-    set(buf, keep + 1, c1);
-    set(buf, keep + 2, c2);
-    set(buf, keep + 3, c3);
-    set(buf, keep + 4, 0u8);
+    set(buf, n + 0, '.' as u8);
+    set(buf, n + 1, c1);
+    set(buf, n + 2, c2);
+    set(buf, n + 3, c3);
+    set(buf, n + 4, 0u8);
     poke32(buf as u32, out_len as u32);
     return buf as u32 as String;
 }
