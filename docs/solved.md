@@ -136,6 +136,53 @@ while i < n_in_sec {
 
 ## カーネル / OS
 
+### K12. fatfs LFN + サブディレクトリ + mkdir — 完了 (2026-05-14)
+
+`kernel/fatfs.tc` を VFAT LFN (Long File Name) + 任意階層 +
+ランタイム mkdir 対応に拡張。`/sd/` 配下を 8.3 制約から開放。
+
+**LFN 読み書き** (commit e0693a4):
+- attr=0x0F の LFN entry を逆順 reassemble (UCS-2 ASCII 専用、
+  最大 255 chars)。SFN の 8.3 checksum を verify
+- 書き込みは strict 8.3 でない名前を全て LFN+SFN ペアで emit。
+  SFN は `BASE~N` 形式で衝突回避 (N=1..9)
+- `dir_delete` も同セクタ内の先行 LFN entry を 0xE5 で掃除
+- 既存 SFN-only entry (`HELLO.TXT` など) は to_83 fallback で従来通り
+  マッチ
+
+**サブディレクトリ traversal** (commit cbda029):
+- `walk_to_dir` で `/`区切り segment を順に dir_find_by_name しながら
+  attr&0x10 で directory bit 検証
+- `resolve_parent_dir` で path 末尾 `/` を分離 → parent_clus +
+  leaf_off/leaf_len
+- fatfs_open / fatfs_delete を path-taking 化、内部で
+  resolve_parent_dir → dir_find_by_name(parent_clus, leaf)
+- fatfs_readdir_path 新設、vfs_readdir で `/sd/sub[/...]` をルーティング
+
+**mkdir** (commit 43f2fbe):
+- fatfs_mkdir: fat_alloc_cluster で 1 cluster 確保 → 0 fill →
+  `.` (self) + `..` (parent or 0 for root) entry を書き →
+  dir_create_entry(attr=0x10, init_clus=new_clus) で親に登録
+- vfs_mkdir (/sd/* 専用) + ecall a7=34 (mkdirat 番号、引数は path のみ)
+- tasks/mkdir/ user task (`mkdir <dir>...`)
+- task_crt0.s の do_mkdir__String / __StringLiteral stub + libtc.tc
+  forward decl
+
+**検証** (qemu virt):
+- LFN: `/sd/kernel_nodisk.bin` (17 chars), `/sd/MixedCase.TxT` を
+  echo > / cat / ls で round trip
+- subdir: 既存の `/sd/subdir/FILE.TXT` + LFN dir 名 `/sd/longdir_name`
+  を read + 新規 `/sd/subdir/created.txt` を write
+- mkdir: 多階層 `mkdir /sd/newdir/nested` → 中で
+  `echo > /sd/newdir/nested/deep.txt` まで動く。重複 mkdir はエラー
+- mtools `mdir` で host 側から見ても spec 準拠
+  (LONGDI~1↔longdirname_with_lfn、NEWDIR~1↔newdir 等)
+- `make test` 143 passed (58s)
+
+pico2 self-host bench で短縮していた `/sd/a1.lab` / `prelude.rfs` も
+今後は本来名 `/sd/asm_pass1.lab` / `prelude.idx.rfs` で動くはず
+(まだ bench は短縮形のままだが、機能的制約はない)。
+
 ### K16. kernel arena fragmentation 完全消滅 + 1-boot self_replicate — 完了 (2026-05-13)
 
 K15 仕上げ後、pico2 実機で `tests/test_pico2_bench.sh` を走らせると

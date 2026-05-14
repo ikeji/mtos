@@ -58,8 +58,6 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
 - **K11 (mr UART upload hang)**: boot-time dumper で迂回済だが、UART
   大容量転送が pico2 device をハングさせる原因は未特定 (qemu virt
   では再現せず — PL011 / DMA 経路に固有の何か、`docs/problem.md` K11)
-- **K12 (fatfs 8.3 制限)**: long-name dirent 実装、または mtfs 互換の
-  可変長 name スキームへの移行
 - **echo / spawn baseline ではなく pipeline 内の処理時間**: msh-driven
   `echo BENCH_DONE` は ~10 ms と無視可。残るのは個別 task の本体実行
   + SD I/O (`docs/scaling.md` Q1, Q6)。self_replicate ~30 min の支配項

@@ -200,25 +200,12 @@ sh の入力に流れる別モード。詳細は K8+K9 エントリの Phase 2A 
   `SKIP_UPLOAD=1` 経路
 - self-replicate 経路は kernel_pico2.tc::dump_mtfs_to_sd で完全迂回
 
-### K12. fatfs ファイル名 8.3 制限 (limitation)
+### K12. fatfs ファイル名 8.3 制限 (解決済、2026-05-14)
 
-`kernel/fatfs.tc::fatfs_open` は `nlen > 12` で -1 を返す。
-basename ≤ 8 char + `.` + ext ≤ 3 char しか作れず、`kernel_nodisk.bin`
-(17 char) のような名前で sh の `>` redirect は "spawn failed" になる。
-
-**対処**: ベンチ側で `knod.bin` 等に rename (短縮) して回避。
-LFN (Long File Name) サポートは fatfs 改造範囲が大きいので保留。
-
-**確認済の制約**: pico2 self-build benches は全て 8.3 互換名で書く。
-
-**2026-05-14 追加事例 (K18 self-host で踏んだ)**:
-- `asm_pass1` の forward-ref streaming で導入した `<idx>.idx.rfs` /
-  `<idx>.idx.dfs` temp file が `prelude.idx.rfs` (15 chars) で
-  fatfs_open reject。compiler/asm_pass1.tc::derive_side_path を
-  ".idx" **置換** 方式に変更 (`prelude.rfs`、11 chars) で回避。
-- `pico2_compile_asm_pass{1,2,3}.sh` の出力 `/sd/asm_pass1.lab`
-  (13 chars) も同様に reject。`/sd/a1.lab` / `/sd/a1.bin` (6 chars)
-  に短縮して回避。
-これら 2 件は workaround で回避しているが、根本解決には LFN または
-mtfs 互換の可変長 name スキームへの移行が必要 (CLAUDE.md 次候補で
-今後検討対象)。
+**解決**: VFAT LFN (Long File Name) + サブディレクトリ + mkdir を
+fatfs に実装し、`/sd/<long_name>/<nested>/file.bin` のような構造を
+ランタイムから読み書きできるようになった。詳細は `docs/solved.md`
+K12 entry。pico2 self-host bench 用の workaround
+(`/sd/a1.lab` 短縮、`prelude.rfs` 置換) は機能的には残せるが、
+今後は LFN 経由で本来の名前 (`/sd/asm_pass1.lab`,
+`prelude.idx.rfs`) も使用可能。
