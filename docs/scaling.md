@@ -27,6 +27,42 @@ K7 達成 (2026-04-29) で pico2 実機上での Hello World self-host が
 CPU: clk_sys 150 MHz (PLL_SYS), clk_peri 12 MHz (XOSC)
 SD: SPI mode 0, 6 MHz, write ~5 KB/s, read ~17 KB/s
 
+(上表の arena 列は K7 時代の宣言値。現行の task.mk 値は下の
+worst-case 表を参照。)
+
+## 実測: 全ステージの worst-case peak (2026-05-15 再計測)
+
+Hello World baseline は小さすぎて arena サイズ設計の参考にならない
+ので、**実ソースの worst case** を qemu virt 上で再計測した。各
+コンパイラタスクが exit 時に stderr へ出す `[kmem peak=...]` を採取。
+front-end 5 段は最大級の compiler source `bc2asm.tc` (nc=1656、Q5 が
+pipeline worst case と認定) + 3 imports をセルフコンパイルした値。
+asm 3 段は実際のリンク入力での値。
+
+| 段 | task arena (task.mk) | worst-case peak | 余裕 | 計測入力 |
+|---|---|---|---|---|
+| parse | 64 KB | (計測不可) | — | main が明示 exit するため task_crt0 の km_dump_peak を経由せず。65 KB で完走は確認 |
+| sigscan | 32 KB | 9.4 KB | 3.5× | bc2asm.tc の .ast |
+| tcheck | 256 KB | 176 KB | 1.5× | bc2asm.tc + 3 imports |
+| codegen | 192 KB | 128 KB | 1.5× | bc2asm.tc の .tast |
+| bc2asm | 128 KB | 96 KB | 1.4× | bc2asm.tc の .bc |
+| asm_pass1 | 360 KB | 185 KB | 2.0× | compiler 4-file 連結 .s (~750 KB) |
+| asm_pass2 | 372 KB | **339 KB** | 1.1× | **pico2 kernel 17-input link** |
+| asm_pass3 | 372 KB | 298 KB | 1.3× | pico2 kernel 17-input link (self-replicate 実測) |
+
+**asm_pass2 が最大消費の「400 KB タスク」**: peak 339 KB、RAM ブロック
+(arena 372 KB + stack 16 KB + frame) ≒ 398 KB。arena 余裕は 42 KB しか
+なく、8 段中唯一ぎりぎりに正しくサイズされている。dead-strip の
+edge table (`edges=6406`) と label / name pool が 17 input 分積み
+上がるのが要因。asm_pass3 は同じ 17-input でも encoder 主体で
+peak 298 KB と一段低い。
+
+タスクは 1 つずつ実行されるので、kernel arena が同時に抱える最大
+ブロックは asm_pass2 の ~398 KB。front-end 5 段の arena には 1.4〜
+3.5× の余裕があるが、それを削っても kernel arena のピーク要求は
+asm_pass2 が決めるので下がらない (sh と同時生存時の僅かな空きに
+なるだけ)。よって front-end arena の縮小は見送り、現状維持。
+
 ## Q1: OS 全体をコンパイルする所要量
 
 ### 前提と単純化
@@ -225,7 +261,7 @@ MAX_LABELS = 4096, MAX_NAME_POOL = 128 KB の cap がある (`compiler/asm_commo
 
 Hello World で 100〜300 KB peak。少しずつ違う原因。
 
-### bc2asm (peak 111 KB)
+### bc2asm (Hello World 111 KB / worst-case 96 KB)
 
 - **Per-function instruction list**: `instrs: I32Array` に各 fn の
   bytecode を一旦展開してから asm に変換。fn 単位で alloc/free
@@ -241,7 +277,7 @@ Hello World で 100〜300 KB peak。少しずつ違う原因。
 の合計。Phase 3 で per-fn emission に切替えてから、これでも 1.4 MB
 → 110 KB に落ちている (`docs/task/pipeline_100kb.md`)。
 
-### asm_pass2 (peak 218 KB)
+### asm_pass2 (Hello World 218 KB / 17-input link 339 KB)
 
 label 収集 only の役割で計算は少ないが、**label 表が大きい**:
 
@@ -257,7 +293,7 @@ label 収集 only の役割で計算は少ないが、**label 表が大きい**:
 
 合計 ~220 KB。
 
-### asm_pass3 (peak 298 KB)
+### asm_pass3 (Hello World / 17-input link とも ~298 KB)
 
 asm_pass2 と同等の label state を全部受け取って、**追加で encoder
 state** を持つ:
