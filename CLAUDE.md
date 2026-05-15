@@ -42,7 +42,7 @@ asm_pass1 → asm_pass2` 完走、"Hello, World!" 出力)、パイプライン 1
 KB 計画 Phase 1+2+3 (sigscan/tcheck 分割 + asm 分割 + in-place shrinks)、
 Gen2 toolchain migration、K3 タスクサイズ宣言、Make ベース incremental
 build、UART 多重化 + msh、coreutils (ls/wc/head/cp/du/grep/rm/cat
-エラー処理)、procfs + neofetch + sh タブ補完 + ヒストリ、vi (undo +
+/mkdir/rmdir エラー処理)、procfs + neofetch + sh タブ補完 + ヒストリ、vi (undo +
 縦スクロール)、kern.conf 駆動 init、非ブロッキング UART stdin、パイプ
 syscall (`sys_pipe` + `sys_spawn_fds` で concurrent pipeline)、U8Array-
 as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
@@ -297,6 +297,8 @@ kernel/     カーネル（プリエンプティブマルチタスク、virt + P
     head/head.tc      先頭 N 行表示
     cp/cp.tc          ファイルコピー
     du/du.tc          ディレクトリ使用量
+    mkdir/mkdir.tc    ディレクトリ作成 (ecall 34、/sd/ 専用)
+    rmdir/rmdir.tc    空ディレクトリ削除 (ecall 40、/sd/ 専用)
     neofetch/neofetch.tc  ASCII banner + /proc/tasks stats
     vi/vi.tc          最小 vi エディタ (normal/insert/cmdline、ANSI 描画)
     mx/mx.tc          stdin → length-prefix framed stdout (UART 転送用)
@@ -424,8 +426,10 @@ compile-gen2/gen3.sh パイプライン:
 3. 各 .tc について parse → sigscan で extended .th を作り、
    `(imports)(self)(program)` でラップして tcheck へ渡す
 4. tcheck → codegen → bc2asm で .s を emit
-5. crt0_tc.s + runtime.s + 全 .s + crt0_tc_data.s を結合後、
-   asm_pass1 で .lab を作り、`cat .lab all.s | asm_pass2` で ELF 出力（GCC 不要）
+5. ASM_PROLOGUE (`; raw` 等) / 各 CRT0 ファイル / runtime.s / 各 .s /
+   各 CRT0_DATA ファイルを **個別に** asm_pass1 にかけ (prelude を
+   cat で 1 本に結合する処理は廃止)、asm_pass2 が全 .idx を `--add`
+   して .lab、asm_pass3 が ELF 出力（GCC 不要）
 
 ## 中間ファイル拡張子
 
@@ -621,9 +625,12 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 ## compile-gen2.sh の環境変数
 デフォルトは Linux ELF 用の crt0 だが、以下を設定すると別ターゲット
 （qemu virt, Pico 2 等）向けにビルドできる:
-- `CRT0` — `.s` ファイルパス。デフォルト `compiler/crt0_tc.s`
-- `CRT0_DATA` — `.s` ファイルパス。デフォルト `compiler/crt0_tc_data.s`
-- `ASM_PROLOGUE` — asm 入力先頭に注入する 1 行（例 `; raw`）
+- `CRT0` — `.s` ファイルパスの **空白区切りリスト**。各ファイルが
+  個別に asm_pass1 にかかる。デフォルト `compiler/crt0_tc.s`
+- `CRT0_DATA` — `.s` ファイルパスの空白区切りリスト (末尾 data
+  セクション)。デフォルト `compiler/crt0_tc_data.s`
+- `ASM_PROLOGUE` — asm 入力先頭の 1 行（例 `; raw`）。`PRELUDE_NAME.s`
+  に書き出され単独 input になる (raw_mode を input[0] から拾うため)
 - `GEN2_DIR` — Gen2 ツール (parse/sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass2)
   の置き場所
 
@@ -642,8 +649,8 @@ GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target pico2 -o kernel.uf2
    経由で各タスクビルドで共有 (phase 7 で導入、-8.8 s)
 2. ゲストタスク (kernel/tasks/*/task.mk が GUEST_TASKS に積む:
    hello, hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head,
-   cp, du, grep, rm, neofetch, vi, launcher, count, mx, mr, muxon,
-   muxoff) を raw バイナリにコンパイル。各タスクには
+   cp, du, grep, rm, mkdir, rmdir, neofetch, vi, launcher, count, mx,
+   mr, muxon, muxoff) を raw バイナリにコンパイル。各タスクには
    `task_arena_size()` / `task_stack_size()` の値を `.word` 2 本の
    header として prepend する (K3 案C)。`EXTRA_TASKS="parse sigscan
    tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` を渡すと phase 7
@@ -656,7 +663,9 @@ GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target pico2 -o kernel.uf2
 4. virt は `--disk-out` でイメージを出力し、qemu の `-drive` から読む。
    pico2 は `bin2s.sh _mtfs_image` で .rodata に埋め込み、XIP 経由で読む
 5. platform_*.s + trap_common.s + crt0_*_data.s + kernel*.tc (+pico2 は mtfs image)
-   を asm_pass1/pass2 で結合してリンク
+   を各々個別に asm_pass1 にかけ asm_pass2/pass3 でリンク
+   (CRT0 = "platform.s trap_common.s"、CRT0_DATA = "crt0_data.s
+   [mtfs_image.s]" を空白区切りで compile-gen2.sh に渡す)
 6. 起動時にカーネルの `loader.tc` (`load_task`) が `/bin/*` を VFS で開き、
    先頭 8 バイトの K3 header (`arena_size / stack_size`) を読んで
    `make_task(entry+8, arena, stack)` を呼ぶ。XIP 可能なら flash 上の
@@ -678,10 +687,12 @@ Pico 2 実機で実行 (Debug Probe + openocd-rpi):
 # → openocd で SWD 経由フラッシュ → /dev/ttyACM0 で UART キャプチャ
 ```
 
-タスクは ecall で syscall を発行 (Linux 互換 ABI: a7=56 openat,
-a7=57 close, a7=63 read, a7=64 write, a7=87 unlink, a7=89 readdir,
-a7=93 exit, a7=101 nanosleep, a7=219 spawn_fds, a7=220 clone/spawn,
-a7=221 execve, a7=222 pipe, a7=250 mux_enable, a7=260 wait4)。
+タスクは ecall で syscall を発行 (Linux 互換 ABI: a7=34 mkdir,
+a7=40 rmdir, a7=56 openat, a7=57 close, a7=63 read, a7=64 write,
+a7=87 unlink, a7=89 readdir, a7=93 exit, a7=101 nanosleep,
+a7=219 spawn_fds, a7=220 clone/spawn, a7=221 execve, a7=222 pipe,
+a7=250 mux_enable, a7=260 wait4)。mkdir / rmdir は path 1 引数のみ
+(`/sd/` 専用、kernel/fatfs.tc)。
 **path 引数は NUL 終端 C-string ではなく String layout (4 バイト count
 + bytes) を直接渡す**: `do_openat(dirfd, path: String, flags)` のように
 `task_crt0.s` の stub は String / StringLiteral 2 種の mangled name を

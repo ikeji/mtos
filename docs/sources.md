@@ -76,7 +76,7 @@ docs/       ドキュメント
 | `string_buffer.tc` | 伸長バッファ (`emit_string` / `emit_nl` / `emit_int` 等) |
 | `source_reader.tc` | ストリーミング入力リーダー (4 KB バッファ) |
 | `strlib.tc` | 共通ユーティリティ (`is_digit`, `is_alpha`, `streq`, `cmp` 等) |
-| `runtime.tc` | TC 製ランタイム (kmalloc / kfree / km_dump_peak)。compile-gen2/3.sh で使用 |
+| `runtime.tc` | TC 製ランタイム (kmalloc / kfree / km_dump_peak)。compile-gen2/3.sh で使用。bucket 確保はヒープ上端から (`large_alloc_top`)、大確保は前方 first-fit の two-ended allocator — bucket carve が large heap を分断しない (K19) |
 
 ### ランタイム (Linux ELF 向け)
 
@@ -98,7 +98,7 @@ docs/       ドキュメント
 | `tmpfs.tc` | RAM backed FS (kmalloc backed、grow-on-write、O_CREAT / O_TRUNC 対応) |
 | `mtfs.tc` | MyTinyFS read-only ドライバ (mount/lookup/open/read/close) |
 | `procfs.tc` | read-only virtual FS (`/proc/tasks`, `meminfo`, `cpuinfo`, `uptime`) |
-| `fatfs.tc` | FAT12/16/32 ドライバ。MBR / superfloppy 両対応。`/sd/` mount 用 |
+| `fatfs.tc` | FAT12/16/32 ドライバ。MBR / superfloppy 両対応。`/sd/` mount 用。VFAT LFN (長いファイル名、最大 255 ASCII chars) + 任意階層サブディレクトリ + ランタイム mkdir / rmdir 対応 (K12) |
 | `loader.tc` | K3 案C 8 byte header 読みと make_task 呼び出し。`sys_exec_handler` / `sys_spawn_handler` / `sys_spawn_fds_handler` 実装 |
 | `trap_common.s` | trap entry/exit + ecall dispatch (write64 / read63 / openat56 / close57 / readdir89 / exit93 / pipe222 / spawn_fds219 / spawn220 / exec221 / mux250 / wait260) |
 

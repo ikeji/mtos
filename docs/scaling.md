@@ -144,7 +144,34 @@ free list: n=1, max=407,436 byte (~398 KB)
 
 task ごとの kernel arena alloc:
 - 旧: ram + stack + frame_buf + argv + name + (img)  = 5〜6 alloc
-- 新: ram(+arena+stack+argv+frame_buf) + name + (img) = 2〜3 alloc
+- 中: ram(+arena+stack+argv+frame_buf) + name + (img) = 2〜3 alloc
+- 新 (K19、2026-05-15): name も ram block 内に embed → ram + (img)
+  = 1〜2 alloc
+
+#### K19: bucket carve による再発 → two-ended allocator (2026-05-15)
+
+上記 3 commit は per-spawn の churn を綺麗にしたが、「最初に spawn
+したタスクのサイズで splitter 位置が決まる」経路が残っていた。
+approach A で device の self_step2 が `asm_pass1` (RAM ~389 KB) を
+最初に spawn するようになったら asm_pass2 link で再び OOM:
+
+```
+OOM: 398152 free=[389124,57168,n=2,m=389124]
+```
+
+bucket entry は `kfree` しても large heap に戻らない (bucket free
+list 行き)。タスク走行中の FS syscall (`vfs_open` path segment /
+`fatfs_open` scratch / `g_fat_cache_buf`) が bucket carve すると、
+走行中タスクの大 RAM ブロックの直上に永久断片が残る。
+
+- **D** (commit 8b21b8d): タスク名を ram block 内に embed (上表「新」)
+- **E** (commit d13b7c3): `large_alloc_top` — bucket 確保をヒープ
+  上端から切り出す。large 確保 (前方) と物理分離する two-ended
+  allocator。spawn 順・syscall タイミングに不依存
+
+結果: `free=[446372] n=1` — 大 free が連続 1 ブロックに。pico2 実機
+self-replicate で 17-input asm_pass2 が OOM せず byte-exact 完走
+(`docs/solved.md` K19)。
 
 #### `live=109 KB` の内訳
 
@@ -189,9 +216,10 @@ MAX_LABELS = 4096, MAX_NAME_POOL = 128 KB の cap がある (`compiler/asm_commo
 通常の OS ソースなら 320 KB の task arena 内に収まる見込み。
 
 逆に **kernel arena (480 KB) のほうが先に問題化する**: sh + asm_pass3
-の同時 alive で sh (32 KB) + asm_pass3 (320 KB) + stack ≒ 360 KB +
-α。fragmentation を考えると ~440 KB 使うので、長時間バッチ実行で
-arena leak / fragmentation が積もると詰まる懸念がある。
+の同時 alive で sh (16 KB) + asm_pass3 (320 KB) + stack ≒ 340 KB +
+α。K19 (two-ended allocator) で bucket carve による断片化は構造的に
+解消し、large heap は連続を保つようになった (`free n=1`)。残る懸念は
+純粋な live サイズの合計のみ。
 
 ## Q2: bc2asm / asm_pass2 / asm_pass3 が特にメモリを使う理由
 
