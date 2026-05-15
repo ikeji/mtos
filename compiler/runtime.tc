@@ -170,6 +170,44 @@ fn large_alloc(need: i32) -> u32 {
     return 0u32;
 }
 
+// large_alloc_top — ヒープ「上端」からブロックを切り出す。
+//
+// 通常の large_alloc は前方 first-fit で、bucket 確保 (一度 carve
+// すると二度と large heap に戻らない) に使うと大ブロックの直上に
+// 永久の断片を残す。タスクの RAM ブロックのような大確保がその後ろに
+// 来ると連続領域が分断され OOM の原因になる。
+//
+// large_alloc_top は最高位アドレスの (分割可能な) フリーブロックを
+// 探し、その「上端」から need バイトを切り出す。残り (低位側) は同じ
+// アドレス・同じ next のままフリーリストに残る。これで bucket 確保は
+// ヒープ上端に集まり、large_alloc (前方) の大確保と物理的に分離される。
+//
+// 分割可能なブロックが無ければ前方 large_alloc にフォールバックする
+// (実用上ほぼ起きない — bucket need は小さく、ヒープには大ブロックが
+// ある)。
+fn large_alloc_top(need: i32) -> u32 {
+    var cur: u32 = g_free_list;
+    var best: u32 = 0u32;
+    while cur != 0u32 {
+        var bsz: i32 = peek32(cur) as i32;
+        if bsz >= need + KM_MIN_BLK {
+            best = cur;   // リストはアドレス昇順 → 最後に見たものが最高位
+        }
+        cur = peek32(cur + 4u32);
+    }
+    if best == 0u32 {
+        return large_alloc(need);
+    }
+    var bsz: i32 = peek32(best) as i32;
+    var remain: i32 = bsz - need;
+    // best ブロックは低位 remain バイトを保持 (アドレス・next 不変)。
+    // 上端 need バイトが切り出されるブロック。
+    poke32(best, remain as u32);
+    var carved: u32 = best + remain as u32;
+    poke32(carved, need as u32);
+    return carved + KM_HDR as u32;
+}
+
 // large_free — アドレス順フリーリストにブロックを返却し、隣接結合する。
 //
 // 1. リストを走査して blk のアドレス順の挿入位置を探す。
@@ -265,9 +303,12 @@ fn kmalloc(size: i32) -> u32 {
             km_track_alloc(total);
             return head + KM_HDR as u32;
         }
-        // バケット空 → ヒープから切り出し
+        // バケット空 → ヒープ上端から切り出し (large_alloc_top)。
+        // bucket entry は kfree でも large heap に戻らないので、
+        // 前方 large_alloc で切ると大確保領域を分断する。上端から
+        // 切ることで bucket は高位に隔離される (E)。
         var total: i32 = bucket_user_size(bkt) + KM_HDR;
-        var ret: u32 = large_alloc(total);
+        var ret: u32 = large_alloc_top(total);
         if ret != 0u32 { stat_inc_bucket(bkt); km_track_alloc(total); }
         return ret;
     }
