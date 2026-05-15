@@ -272,7 +272,9 @@ fn main() -> i32 {
 
     if start_init_tasks() == 0 {
         sched_register(0, load_task("/bin/sh"));
-        task_set_name(0, to_cstr("sh"));
+        var seed_nm: U8Array = to_cstr("sh");
+        task_set_name(0, seed_nm);
+        delete(seed_nm);
     }
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)

@@ -117,6 +117,13 @@ var g_last_stack_size: i32 = 0;
 // block). The spawn handler pack_argv_at's into here and passes it to
 // set_frame_argv. 0 means no argv reserve (load_task / kern.conf init).
 var g_last_argv_addr: u32 = 0u32;
+// In-ram task-name slot (U8Array layout: 4-byte count + bytes). Lives
+// inside the task's ram block — task_set_name copies the name in, no
+// separate kmalloc. Previously the name was a standalone bucket alloc
+// carved from the large heap; once a task spawned with a big ram block
+// the carve stranded a permanent fragment above it (see docs).
+var g_last_name_addr: u32 = 0u32;
+var TASK_NAME_RESERVE: i32 = 64;
 
 // ===== UART frame multiplexer (docs/task/uart_multiplex.md) =====
 //
@@ -762,7 +769,11 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32,
     // that frees as a single kfree.
     var argv_aligned: i32 = (argv_size + 15) & (0 - 16);
     var FRAME_RESERVE: i32 = 132 + 16;
-    var total_size: i32 = ram_size + stack_size + argv_aligned + FRAME_RESERVE;
+    // The task name slot (TASK_NAME_RESERVE bytes) trails the frame so
+    // it frees atomically with the rest of the block — no standalone
+    // bucket alloc that would strand the large heap.
+    var total_size: i32 = ram_size + stack_size + argv_aligned
+                        + FRAME_RESERVE + TASK_NAME_RESERVE;
     var task_ram: U8Array = U8Array((total_size) as u32);
     var ram_base: u32 = task_ram as u32 + 4u32;
     var task_gp: u32 = ram_base + 0x800u32;
@@ -774,6 +785,9 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32,
     if argv_size > 0 { argv_addr = stack_top; }
     var frame: u32 = (stack_top + argv_aligned as u32 + 15u32)
                      & 0xFFFFFFF0u32;
+    // Name slot starts right after the 132-byte frame save area.
+    var name_addr: u32 = frame + 132u32;
+    poke32(name_addr, 0u32);   // empty name until task_set_name runs
 
     init_task_frame(frame, entry, stack_top, task_gp, arena_addr, arena_size);
 
@@ -787,10 +801,12 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32,
     g_last_ram_size  = total_size;
     g_last_stack_size = stack_size;
     g_last_argv_addr = argv_addr;
+    g_last_name_addr = name_addr;
     return frame;
 }
 
 export fn make_task_argv_addr() -> u32 { return g_last_argv_addr; }
+export fn make_task_name_addr() -> u32 { return g_last_name_addr; }
 
 // Reset the g_last_* allocation bases. Callers do this before
 // load_fd / make_task so that the XIP path (which never touches img)
@@ -799,6 +815,7 @@ export fn reset_last_alloc() -> void {
     g_last_ram       = 0u32;
     g_last_img       = 0u32;
     g_last_argv_addr = 0u32;
+    g_last_name_addr = 0u32;
     g_last_stdin_fd  = 0;
     g_last_stdout_fd = 0;
     g_last_ram_size  = 0;
@@ -892,13 +909,59 @@ export fn task_get_name(idx: i32) -> U8Array {
     return name(get(g_tasks, idx)) as U8Array;
 }
 
+// Copy `n` into the task's in-ram name slot (set by slot_capture_last).
+// The slot is part of the task ram block, so there is no kmalloc /
+// kfree here — the caller still owns `n` and frees it if it was heap-
+// allocated. Truncates to TASK_NAME_RESERVE - 5 bytes (4-byte count
+// header + trailing NUL).
 export fn task_set_name(idx: i32, n: U8Array) -> void {
     if g_tasks as u32 == 0u32 { return; }
     if idx < 0 || idx >= g_num_tasks { return; }
     var t: Task = get(g_tasks, idx);
-    var old: u32 = name(t);
-    if old != 0u32 { kfree(old); }
-    name(t, n as u32);
+    var slot: u32 = name(t);
+    if slot == 0u32 { return; }
+    var src_len: i32 = len(n);
+    var cap: i32 = TASK_NAME_RESERVE - 5;
+    if src_len > cap { src_len = cap; }
+    poke32(slot, src_len as u32);
+    var i: i32 = 0;
+    while i < src_len {
+        poke8(slot + 4u32 + (i as u32), get(n, i));
+        i = i + 1;
+    }
+    poke8(slot + 4u32 + (src_len as u32), 0u8);
+    return;
+}
+
+// Extract the basename of `path` ("/bin/sh" → "sh") directly into the
+// task's in-ram name slot. No temp allocation — important because the
+// loader calls this during spawn, while a big task ram block is live,
+// and any bucket carve here would strand a permanent heap fragment.
+export fn task_set_name_basename(idx: i32, path: String) -> void {
+    if g_tasks as u32 == 0u32 { return; }
+    if idx < 0 || idx >= g_num_tasks { return; }
+    var t: Task = get(g_tasks, idx);
+    var slot: u32 = name(t);
+    if slot == 0u32 { return; }
+    var end: i32 = len(path);
+    var last_slash: i32 = -1;
+    var i: i32 = 0;
+    while i < end {
+        if get(path, i) == '/' as u8 { last_slash = i; }
+        i = i + 1;
+    }
+    var start: i32 = last_slash + 1;
+    var nlen: i32 = end - start;
+    if nlen <= 0 { nlen = 0; start = 0; }
+    var cap: i32 = TASK_NAME_RESERVE - 5;
+    if nlen > cap { nlen = cap; }
+    poke32(slot, nlen as u32);
+    i = 0;
+    while i < nlen {
+        poke8(slot + 4u32 + (i as u32), get(path, start + i));
+        i = i + 1;
+    }
+    poke8(slot + 4u32 + (nlen as u32), 0u8);
     return;
 }
 
@@ -929,16 +992,15 @@ fn slot_capture_last(idx: i32) -> void {
     stdout_fd(t, g_last_stdout_fd);
     t_ram_sz(t, g_last_ram_size);
     t_stk_sz(t, g_last_stack_size);
+    // The name slot lives inside the ram block; task_set_name fills it.
+    name(t, g_last_name_addr);
     return;
 }
 
 // Release every kmalloc base owned by slot `idx` and clear the entries.
 // Safe to call on an empty slot (all zeros). After commit 0c1b800 the
-// task's arena/stack/frame_buf/argv are all slices of a single ram
-// block, so just two kfrees (ram, img) tear the whole task down.
-// `name` is a separate small alloc that we also release here to keep
-// the kernel arena tidy (it would otherwise linger until the slot is
-// reused).
+// task's arena/stack/frame_buf/argv/name are all slices of a single
+// ram block, so just two kfrees (ram, img) tear the whole task down.
 fn slot_free_allocs(idx: i32) -> void {
     var t: Task = get(g_tasks, idx);
     var ra: u32 = ram(t);
@@ -951,8 +1013,8 @@ fn slot_free_allocs(idx: i32) -> void {
     if si != 0 { vfs_close(si); }
     if so != 0 { vfs_close(so); }
     if ib != 0u32 { kfree(ib); }
-    var nm: u32 = name(t);
-    if nm != 0u32 { kfree(nm); }
+    // The task name lives inside the ram block (kfree(ra) above
+    // released it) — no separate kfree needed.
     // Auto-close any vfs fd the task left open (e.g. tcheck's fd_t
     // before commit 66386cb). Defends against task-side close bugs
     // — without this, a forgotten fd permanently consumes a kernel

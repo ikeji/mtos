@@ -20,30 +20,6 @@ fn do_uart_write(buf: u32, len: i32) -> i32;
 // Runtime allocator (compiler/runtime.tc).
 fn kmalloc(size: i32) -> u32;
 
-// Copy the basename from a path into a kmalloc'd U8Array.
-// "/bin/sh" → "sh". Caller stores the result via task_set_name, which
-// owns the free.
-export fn basename_copy(path: String) -> U8Array {
-    var end: i32 = len(path);
-    var last_slash: i32 = -1;
-    var i: i32 = 0;
-    while i < end {
-        if get(path, i) == '/' as u8 { last_slash = i; }
-        i = i + 1;
-    }
-    var start: i32 = last_slash + 1;
-    var nlen: i32 = end - start;
-    if nlen <= 0 { nlen = 1; start = 0; }
-    var buf: U8Array = U8Array((nlen + 1) as u32);
-    i = 0;
-    while i < nlen {
-        set(buf, i, get(path, start + i));
-        i = i + 1;
-    }
-    set(buf, nlen, 0u8);
-    return buf;
-}
-
 // ===== Task binary header (K3) =====
 //
 // The first 8 bytes of every task binary are a two-u32 header:
@@ -219,7 +195,7 @@ export fn start_init_tasks() -> i32 {
     var i: i32 = 0;
     while i < n_cfg {
         sched_register(i, load_task_addr(kern_config_init_path(i)));
-        task_set_name(i, basename_copy(kern_config_init_path(i)));
+        task_set_name_basename(i, kern_config_init_path(i));
         i = i + 1;
     }
     return n_cfg;
@@ -408,7 +384,7 @@ export fn sys_exec_handler(path: String, argv_addr: u32,
     set_frame_argv(frame, kargv);
     set_last_stdio(in_fd, out_fd);
     sched_replace_current(frame);
-    task_set_name(sched_current_idx(), basename_copy(path));
+    task_set_name_basename(sched_current_idx(), path);
     return frame;
 }
 
@@ -447,7 +423,7 @@ export fn sys_spawn_handler(path: String, argv_addr: u32,
     set_last_stdio(in_fd, out_fd);
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
-        task_set_name(slot, basename_copy(path));
+        task_set_name_basename(slot, path);
     } else {
         // sched_spawn failed (no free slots). Clean up all resources
         // that were prepared for the child: redirect fds and the
@@ -487,7 +463,7 @@ export fn sys_spawn_fds_handler(path: String, argv_addr: u32,
     set_last_stdio(in_fd, out_fd);
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
-        task_set_name(slot, basename_copy(path));
+        task_set_name_basename(slot, path);
         // Transfer ownership of the pipe fds to the child so
         // vfs_close_owned_by(parent) doesn't yank them out from under
         // the still-running child. slot_free_allocs at child exit
