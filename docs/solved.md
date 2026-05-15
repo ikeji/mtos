@@ -136,6 +136,77 @@ while i < n_in_sec {
 
 ## カーネル / OS
 
+### K19. bucket carve によるヒープ断片化 → two-ended allocator — 完了 (2026-05-15)
+
+approach A (compile-gen2.sh / kernel build の prelude cat 結合を撤廃し
+各 .s を個別 asm_pass1 にする、commit 326b754) を device の
+self_replicate fixture (`pico2_self_step2.sh`) にも適用したら、
+asm_pass2 の link 段階で kernel arena OOM:
+
+```
+OOM: 398152 p=460732 l=70008 free=[389124,57168,s=446292,n=2,m=389124]
+```
+
+free 合計 446 KB あるのに連続最大が 389124 で、asm_pass2 タスクの
+RAM ブロック (arena 380928 + stack 16384 + frame ≈ 398152) が入らない。
+
+**bisect**: 17 個の asm_pass1 spawn を通して km dump が一定で
+`[389124, 57168]` — つまり連続 spawn の churn では断片化していない
+(K16 の性質は保たれている)。13-input (cat 版) の成功 run と比較すると
+free レイアウトが反転: 成功 run は `[28676, 417660]` (大ブロック上位)、
+OOM run は `[389124, 57168]` (大ブロック下位)。splitter (2 つの free
+ブロックの間に居座る live 確保) の位置が step2 最初のコマンドで決まって
+いた — 13-input は最初が `cat` (小タスク) で splitter 低位、17-input は
+最初が `asm_pass1` (RAM ~389 KB) で splitter 高位。
+
+**根本原因**: `compiler/runtime.tc` の allocator 設計。bucket 確保
+(≤ 2048 byte) は bucket free list が空のとき `large_alloc` で large
+heap から個別 carve するが、`kfree` は bucket free list に push する
+だけで **large heap には二度と戻らない**。large_free の隣接結合の
+対象外。よって一度 carve された bucket entry は large heap 上の永久の
+穴になる。
+
+タスク実行中、kernel の FS syscall 処理 (`vfs_open` の path segment
+ごとの `U8Array`、`fatfs_open` の scratch、`g_fat_cache_buf`) が
+bucket carve する。これが「走行中タスクの大 RAM ブロックが live な
+とき」に起きると、large_alloc の first-fit がブロック直上に bucket を
+置き、タスク exit でブロックが還っても bucket が高位に取り残されて
+free 領域を分断する。K16 の「fragmentation ゼロ」は per-spawn の
+往復を綺麗にしたが、「最初に spawn したタスクのサイズで splitter 位置が
+決まる」経路は塞いでいなかった。
+
+**修正 D** (commit 8b21b8d): タスク名を task RAM ブロック内に格納。
+K16 が argv を ram ブロックに embed したのと同じ方針。`make_task` が
+`TASK_NAME_RESERVE` (64 B) を frame 直後に確保、`task_set_name` /
+`task_set_name_basename` は slot へ直接コピー (kmalloc 不要)。
+`basename_copy` 廃止。spawn 経路の bucket carve を一掃。
+
+**修正 E** (commit d13b7c3): `large_alloc_top` を追加。最高位アドレスの
+分割可能なフリーブロックを探し、その**上端**から carve する。`kmalloc`
+の bucket 経路を `large_alloc` → `large_alloc_top` に変更。bucket 確保
+はヒープ上端に集まり、large_alloc (前方 first-fit) の大確保と物理的に
+分離される two-ended allocator。タスクの spawn 順や FS syscall の
+タイミングに関係なく large heap 低位は連続を保つ。bucket zone は
+steady-state ~12 KB と小さく bounded。
+
+**実機実証** (pico2 `pico2_self_replicate.sh REFRESH_KERN_MODS=1`):
+- 修正前: `free=[389124,57168] n=2` → asm_pass2 OOM
+- 修正後: `free=[446372] n=1` — 大 free が連続 1 ブロックに復帰
+- 17-input self_step2 が step2〜step4 完走、host = device の
+  kernel.bin / kernel.uf2 md5 完全一致 (`12e1d4cb...` / `a5967a13...`)、
+  `kernel.bin MATCH` / `kernel.uf2 MATCH`
+- `pico2_self_step2.sh` を multi-input asm_pass1 版に復帰 (commit
+  2018523) — host / device 双方が approach A の split prelude を使う
+
+`make test` 143 passed (runtime.tc は kernel + 全タスク + Gen3
+共有だが、メモリ配置が変わるだけで出力バイト不変、gen3 self-host
+byte-exact 込みで回帰なし)。
+
+副産物: `tools/mkfs.tc` の OOB バグ修正 (commit 8402f87) — file data
+が末尾 truncation 領域に正当に straddle すると `set` OOB していた。
+buffer を full `total_blocks * BLOCK_SIZE` で alloc、出力は g_out_size
+で truncate して mkfs.py との byte-exact を維持。
+
 ### K12. fatfs LFN + サブディレクトリ + mkdir — 完了 (2026-05-14)
 
 `kernel/fatfs.tc` を VFAT LFN (Long File Name) + 任意階層 +
