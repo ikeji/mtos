@@ -46,7 +46,7 @@ asm 3 段は実際のリンク入力での値。
 | tcheck | 256 KB | 176 KB | 1.5× | bc2asm.tc + 3 imports |
 | codegen | 192 KB | 128 KB | 1.5× | bc2asm.tc の .tast |
 | bc2asm | 128 KB | 96 KB | 1.4× | bc2asm.tc の .bc |
-| asm_pass1 | 360 KB | 185 KB | 2.0× | compiler 4-file 連結 .s (~750 KB) |
+| asm_pass1 | 360 KB | 222 KB | 1.7× | asm_common.s 単体 (1.27 MB、全 .s 中最大)。pass1 は per-file 実行 |
 | asm_pass2 | 372 KB | **339 KB** | 1.1× | **pico2 kernel 17-input link** |
 | asm_pass3 | 372 KB | 298 KB | 1.3× | pico2 kernel 17-input link (self-replicate 実測) |
 
