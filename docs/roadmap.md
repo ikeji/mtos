@@ -580,13 +580,26 @@ K7 解決の決め手 3 点:
       `fat_follow_chain` / `do_uart_read` 前方宣言を撤去。
       -1600 行 (goldens 再生成込み)
 
-## フェーズ8: 自己ホスト
+## フェーズ8: 自己ホスト ✅ **達成 (2026-05-14、K18)**
 
-- [ ] OS全体のソースコードを独自言語で記述
-- [ ] OS上のコンパイラ＋アセンブラ＋リンカでOSをビルド
-- [ ] 生成したOSイメージをQEMUで動作確認
-- [ ] RP2350実機にフラッシュして動作確認
-- [ ] 自己ホスト完成
+作業実体はフェーズ7 の K13〜K18 エントリに詳述。catalyst (host PC)
+抜きで pico2 が自身の compiler stack と kernel を再生産する完全な
+self-host loop が成立した。
+
+- [x] OS全体のソースコードを独自言語で記述 — カーネルは TC で記述。
+      手書き asm は `platform_*.s` の boot/CSR、`trap_common.s`、
+      `crt0_*_data.s`、`task_crt0.s` のみ (CSR アクセス・trap entry は
+      raw asm 必須なので意図的に残置)
+- [x] OS上のコンパイラ＋アセンブラ＋リンカでOSをビルド — pico2 が
+      kernel.bin/uf2 + 全 8 コンパイラ binary を byte-exact 再生成
+      (K13〜K18、2026-05-06〜2026-05-14)
+- [x] 生成したOSイメージをQEMUで動作確認 — `tests/phase3_verify.py`
+      が virt 上で全段を Gen2 ホスト参照とバイト完全一致確認
+- [x] RP2350実機にフラッシュして動作確認 —
+      `tests/pico2_self_replicate.sh` が end-to-end ~22〜30 min で
+      完走、生成 kernel.bin/uf2 が host gen2 build と md5 完全一致
+- [x] 自己ホスト完成 — K18 (2026-05-14)。詳細は `docs/solved.md` の
+      K13 / K15 / K16 / K17 / K18 エントリ
 
 ## フェーズ9: I/O デバイスとローカルコンソール
 
