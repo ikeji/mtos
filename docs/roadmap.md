@@ -617,8 +617,10 @@ self-host loop が成立した。
   (ターミナルエミュレータ + getty) に置く。将来 GUI compositor も
   同じ `/dev/fb` 上に乗る。
 
-- [ ] `/dev` ルーティング (`devfs.tc` + `vfs.tc` の `is_dev_path()`、
-      procfs 式の特別扱い) と `/dev/uart` — 既存 UART をデバイスファイル化
+- [x] **S1**: `/dev` ルーティング (`devfs.tc` + `vfs.tc` の
+      `is_dev_path()`、procfs 式の特別扱い) と `/dev/uart` — 既存
+      UART をデバイスファイル化 (2026-05-16、commit 8053144)。
+      virt で動作確認、`test_os.sh` の fs_virtio に devfs ケース追加
 - [ ] ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb`
       (framed write、mode 0 ピクセル / mode 1 単色)
 - [ ] `/dev/fb` mode 2 — ILI9488 ハードウェア垂直スクロール (VSCRSADD)
