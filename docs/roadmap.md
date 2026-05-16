@@ -588,6 +588,35 @@ K7 解決の決め手 3 点:
 - [ ] RP2350実機にフラッシュして動作確認
 - [ ] 自己ホスト完成
 
+## フェーズ9: I/O デバイスとローカルコンソール
+
+目的: Pico 2 に RTC・SPI ディスプレイ・キーボードを追加し、UART に
+依存しないローカルコンソールを実現する。設計方針と決定事項の根拠は
+`docs/task/io_devices.md` (2026-05-16 策定)。
+
+**設計の柱**:
+- ドライバはカーネル内に dumb なプリミティブとして置き `/dev/` で公開。
+  `/proc` は read-only introspection、`/dev` は I/O エンドポイント。
+- SD=SPI0 / ディスプレイ=SPI1 にバス分離。
+- ピクセルフレームバッファはカーネルに持たず ILI9488 GRAM を使う
+  (SRAM 520 KB 制約)。
+- `/dev/console` は作らず、ターミナル層は userspace `/bin/console`
+  (ターミナルエミュレータ + getty) に置く。将来 GUI compositor も
+  同じ `/dev/fb` 上に乗る。
+
+- [ ] `/dev` ルーティング (`devfs.tc` + `vfs.tc` の `is_dev_path()`、
+      procfs 式の特別扱い) と `/dev/uart` — 既存 UART をデバイスファイル化
+- [ ] ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb`
+      (framed write、mode 0 ピクセル / mode 1 単色)
+- [ ] `/dev/fb` mode 2 — ILI9488 ハードウェア垂直スクロール (VSCRSADD)
+- [ ] キーボードドライバ (GPIO マトリクス) + `/dev/kbd`
+      (生キーコード、read は `-2` yield)
+- [ ] `/bin/console` — userspace ターミナルエミュレータ + getty
+      (char グリッド + フォント、`/dev/fb` + `/dev/kbd` を開き sh を
+      pipe 配線で spawn)
+- [ ] `/dev/rtc` — read で現在 datetime、write でセット
+- [ ] kern.conf で `init=/bin/console` を seed して LCD コンソール完成
+
 ## 技術的リスクと対策
 
 | リスク | 対策 |
