@@ -1,0 +1,144 @@
+// kernel/rtc.tc — real-time clock datetime rendering for /dev/rtc.
+//
+// Platform-independent. The platform supplies the raw clock as
+// seconds-since-the-Unix-epoch via rtc_read_secs / rtc_set_secs
+// (kernel.tc = qemu virt goldfish-rtc, kernel_pico2.tc = RP2350 AON
+// timer). This module converts to/from a human "YYYY-MM-DD HH:MM:SS"
+// rendering.
+//
+// The calendar conversion is Howard Hinnant's civil_from_days /
+// days_from_civil algorithm for the proleptic Gregorian calendar.
+// All arithmetic is u32; the Unix second count fits in u32 until
+// 2106, well past any practical use here.
+
+// Platform clock (defined in kernel.tc / kernel_pico2.tc, resolved at
+// link time — same pattern as read_mtime).
+fn rtc_read_secs() -> u32;
+fn rtc_set_secs(secs: u32) -> i32;
+
+// Write `v` as a zero-padded decimal of at least `width` digits into
+// buf_addr at byte offset `pos`. Returns the offset past the digits.
+fn put_u32_pad(buf_addr: u32, pos: i32, v: u32, width: i32) -> i32 {
+    var d: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    var x: u32 = v;
+    if x == 0u32 {
+        set(d, 0, '0' as u8);
+        n = 1;
+    }
+    while x > 0u32 {
+        set(d, n, (('0' as u32) + (x % 10u32)) as u8);
+        n = n + 1;
+        x = x / 10u32;
+    }
+    while n < width {
+        set(d, n, '0' as u8);
+        n = n + 1;
+    }
+    // digits sit LSB-first in d; emit most-significant first
+    var i: i32 = n;
+    while i > 0 {
+        i = i - 1;
+        poke8(buf_addr + (pos as u32), get(d, i));
+        pos = pos + 1;
+    }
+    delete(d);
+    return pos;
+}
+
+// Render the current clock as "YYYY-MM-DD HH:MM:SS\n" into buf_addr
+// (caller must provide >= 20 bytes). Returns the byte count written.
+export fn rtc_format(buf_addr: u32) -> i32 {
+    var secs: u32 = rtc_read_secs();
+    var days: u32 = secs / 86400u32;
+    var sod:  u32 = secs - days * 86400u32;
+    var hh:   u32 = sod / 3600u32;
+    var mm:   u32 = (sod - hh * 3600u32) / 60u32;
+    var ss:   u32 = sod - hh * 3600u32 - mm * 60u32;
+
+    // civil_from_days: days-since-epoch -> (year, month, day)
+    var z:   u32 = days + 719468u32;
+    var era: u32 = z / 146097u32;
+    var doe: u32 = z - era * 146097u32;
+    var yoe: u32 = (doe - doe / 1460u32 + doe / 36524u32 - doe / 146096u32) / 365u32;
+    var y:   u32 = yoe + era * 400u32;
+    var doy: u32 = doe - (365u32 * yoe + yoe / 4u32 - yoe / 100u32);
+    var mp:  u32 = (5u32 * doy + 2u32) / 153u32;
+    var d:   u32 = doy - (153u32 * mp + 2u32) / 5u32 + 1u32;
+    var mon: u32 = mp + 3u32;
+    if mp >= 10u32 { mon = mp - 9u32; }
+    if mon <= 2u32 { y = y + 1u32; }
+
+    var p: i32 = 0;
+    p = put_u32_pad(buf_addr, p, y, 4);
+    poke8(buf_addr + (p as u32), '-' as u8); p = p + 1;
+    p = put_u32_pad(buf_addr, p, mon, 2);
+    poke8(buf_addr + (p as u32), '-' as u8); p = p + 1;
+    p = put_u32_pad(buf_addr, p, d, 2);
+    poke8(buf_addr + (p as u32), ' ' as u8); p = p + 1;
+    p = put_u32_pad(buf_addr, p, hh, 2);
+    poke8(buf_addr + (p as u32), ':' as u8); p = p + 1;
+    p = put_u32_pad(buf_addr, p, mm, 2);
+    poke8(buf_addr + (p as u32), ':' as u8); p = p + 1;
+    p = put_u32_pad(buf_addr, p, ss, 2);
+    poke8(buf_addr + (p as u32), 10u8); p = p + 1;
+    return p;
+}
+
+// Parse "YYYY-MM-DD HH:MM:SS" (any non-digit run separates fields)
+// from buf_addr[0..n] and set the clock. Returns 0 on success, -1 on
+// a malformed input or if the platform refuses the write.
+export fn rtc_parse_set(buf_addr: u32, n: i32) -> i32 {
+    var nums: U32Array = U32Array(6u32);
+    var ni:   i32 = 0;
+    var cur:  u32 = 0u32;
+    var indig: i32 = 0;
+    var i: i32 = 0;
+    while i < n && ni < 6 {
+        var c: u8 = peek8(buf_addr + (i as u32));
+        if c >= '0' as u8 && c <= '9' as u8 {
+            cur = cur * 10u32 + ((c as u32) - ('0' as u32));
+            indig = 1;
+        } else {
+            if indig == 1 {
+                set(nums, ni, cur);
+                ni = ni + 1;
+                cur = 0u32;
+                indig = 0;
+            }
+        }
+        i = i + 1;
+    }
+    if indig == 1 && ni < 6 {
+        set(nums, ni, cur);
+        ni = ni + 1;
+    }
+    if ni < 6 {
+        delete(nums);
+        return -1;
+    }
+    var y:   u32 = get(nums, 0);
+    var mon: u32 = get(nums, 1);
+    var d:   u32 = get(nums, 2);
+    var hh:  u32 = get(nums, 3);
+    var mm:  u32 = get(nums, 4);
+    var ss:  u32 = get(nums, 5);
+    delete(nums);
+
+    if mon < 1u32 || mon > 12u32 { return -1; }
+    if d < 1u32 || d > 31u32 { return -1; }
+    if hh > 23u32 || mm > 59u32 || ss > 59u32 { return -1; }
+
+    // days_from_civil: (year, month, day) -> days-since-epoch
+    var yy: u32 = y;
+    if mon <= 2u32 { yy = y - 1u32; }
+    var era: u32 = yy / 400u32;
+    var yoe: u32 = yy - era * 400u32;
+    var mpv: u32 = mon + 9u32;
+    if mon > 2u32 { mpv = mon - 3u32; }
+    var doy: u32 = (153u32 * mpv + 2u32) / 5u32 + d - 1u32;
+    var doe: u32 = yoe * 365u32 + yoe / 4u32 - yoe / 100u32 + doy;
+    var days: u32 = era * 146097u32 + doe - 719468u32;
+    var secs: u32 = days * 86400u32 + hh * 3600u32 + mm * 60u32 + ss;
+    return rtc_set_secs(secs);
+}

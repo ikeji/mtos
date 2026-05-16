@@ -46,6 +46,16 @@ fn read_mtime_hi() -> u32 {
     return peek32(SIO_MTIME_H);
 }
 
+// Backs /dev/rtc via rtc.tc. TODO (フェーズ9): wire the RP2350 powman
+// AON timer. Until then /dev/rtc reports the epoch and rejects sets.
+fn rtc_read_secs() -> u32 {
+    return 0u32;
+}
+
+fn rtc_set_secs(secs: u32) -> i32 {
+    return -1;
+}
+
 // SIO MTIME tick rate: empirically ~131.5 MHz (calibrated 2026-04-30
 // by timing 99 × nanosleep(1000ms) — 99 wall seconds were expected
 // at 1 MHz but actually elapsed in 0.753 seconds, giving 131.5 MHz).

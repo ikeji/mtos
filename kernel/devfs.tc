@@ -4,23 +4,67 @@
 // status snapshots), devfs nodes are live device channels and may be
 // both read and written.
 //
-// Currently exposes:
-//   /dev/uart  — raw serial port (PL011 / 16550). read pulls from the
-//                kernel RX ring (-2 when empty, so the ecall handler
-//                yields the timeslice); write goes straight to the
-//                UART TX with no mux framing.
+// Nodes:
+//   /dev/uart  — raw serial port (PL011 / 16550). Live, unbuffered:
+//                read pulls from the kernel RX ring (-2 when empty so
+//                the ecall handler yields), write goes straight to
+//                the UART TX with no mux framing.
+//   /dev/rtc   — real-time clock. read returns a one-shot snapshot
+//                "YYYY-MM-DD HH:MM:SS\n" (EOF after). Writes are
+//                accumulated and parsed+committed at close, because a
+//                writer (e.g. /bin/echo) may split the datetime
+//                string across several write() calls.
 //
-// devfs is stateless: a device id identifies the node, so the id
-// itself is used as the VFS `inner` handle and open allocates nothing.
+// A small fd table backs buffered nodes: /dev/rtc snapshots its
+// rendering at open so a `cat` terminates with EOF. /dev/uart needs
+// no buffer (buf == 0).
 
 import "kernel_common.tc";
+import "rtc.tc";
 
 // Platform UART helpers (platform_*.s / platform_*.tc).
 fn do_uart_write(buf: u32, len: i32) -> i32;
 fn uart_rx_pop(buf: u32, len: i32) -> i32;
 
-// Device ids — returned by devfs_open as the VFS inner handle.
+// Runtime allocator (compiler/runtime.tc).
+fn kfree(ptr: u32) -> void;
+
+// Device ids.
 var DEV_UART: i32 = 0;
+var DEV_RTC:  i32 = 1;
+
+var DEVFS_MAX_FDS: i32 = 8;
+// Data capacity of a buffered node's U8Array (after the 4-byte length
+// prefix). Holds the RTC snapshot or an accumulated datetime write.
+var DEVFS_BUF_CAP: i32 = 60;
+
+struct DevFD {
+    // dev:  device id, or -1 for a free slot.
+    // buf:  U8Array header addr for buffered nodes (0 = live device).
+    // size: snapshot length (read path).
+    // pos:  read cursor.
+    // wlen: bytes accumulated from write() calls (commit at close).
+    dev:  i32,
+    buf:  u32,
+    size: i32,
+    pos:  i32,
+    wlen: i32,
+}
+
+var g_devfs_fds:   DevFDArray = 0 as DevFDArray;
+var g_devfs_ready: i32 = 0;
+
+fn devfs_init() -> void {
+    if g_devfs_ready != 0 { return; }
+    g_devfs_fds = DevFDArray(DEVFS_MAX_FDS as u32);
+    var i: i32 = 0;
+    while i < DEVFS_MAX_FDS {
+        set(g_devfs_fds, i, DevFD(-1, 0u32, 0, 0, 0));
+        i = i + 1;
+    }
+    g_devfs_ready = 1;
+    return;
+}
 
 // Match a path against a literal (exact length).
 fn dev_path_is(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
@@ -34,36 +78,117 @@ fn dev_path_is(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
     return true;
 }
 
-// Open a /dev node. Returns a device id (>= 0) used as the devfs
-// inner handle, or -1 if the path names no known device.
-export fn devfs_open(path_addr: u32, plen: i32) -> i32 {
-    if dev_path_is(path_addr, plen, "/dev/uart") { return DEV_UART; }
+// Snapshot the RTC rendering into a fresh U8Array (4-byte length
+// prefix + data, like procfs). Returns the header address.
+fn devfs_snap_rtc() -> u32 {
+    var buf: U8Array = U8Array((DEVFS_BUF_CAP + 4) as u32);
+    var n: i32 = rtc_format((buf as u32) + 4u32);
+    poke32(buf as u32, n as u32);
+    return buf as u32;
+}
+
+// Allocate a devfs fd slot. Returns the slot index, or -1 if full.
+fn devfs_alloc(dev: i32, buf_hdr: u32, size: i32) -> i32 {
+    var i: i32 = 0;
+    while i < DEVFS_MAX_FDS {
+        var e: DevFD = get(g_devfs_fds, i);
+        if dev(e) < 0 {
+            dev(e, dev);
+            buf(e, buf_hdr);
+            size(e, size);
+            pos(e, 0);
+            wlen(e, 0);
+            return i;
+        }
+        i = i + 1;
+    }
     return -1;
 }
 
-export fn devfs_read(dev: i32, buf_addr: u32, n: i32) -> i32 {
-    if dev == DEV_UART {
+// Open a /dev node. Returns a devfs slot index (>= 0) used as the
+// VFS inner handle, or -1 if the path names no known device.
+export fn devfs_open(path_addr: u32, plen: i32) -> i32 {
+    devfs_init();
+    if dev_path_is(path_addr, plen, "/dev/uart") {
+        return devfs_alloc(DEV_UART, 0u32, 0);
+    }
+    if dev_path_is(path_addr, plen, "/dev/rtc") {
+        var hdr: u32 = devfs_snap_rtc();
+        var size: i32 = peek32(hdr) as i32;
+        var fd: i32 = devfs_alloc(DEV_RTC, hdr, size);
+        if fd < 0 { kfree(hdr); }
+        return fd;
+    }
+    return -1;
+}
+
+export fn devfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    if fd < 0 || fd >= DEVFS_MAX_FDS { return -1; }
+    var e: DevFD = get(g_devfs_fds, fd);
+    if dev(e) == DEV_UART {
         var nr: i32 = uart_rx_pop(buf_addr, n);
         if nr == 0 { return -2; }
         return nr;
     }
-    return -1;
+    // Buffered node: consume from the snapshot, EOF when drained.
+    if buf(e) == 0u32 { return -1; }
+    var remain: i32 = size(e) - pos(e);
+    var want: i32 = n;
+    if want > remain { want = remain; }
+    if want <= 0 { return 0; }
+    var src: u32 = buf(e) + 4u32 + (pos(e) as u32);
+    var i: i32 = 0;
+    while i < want {
+        poke8(buf_addr + (i as u32), peek8(src + (i as u32)));
+        i = i + 1;
+    }
+    pos(e, pos(e) + want);
+    return want;
 }
 
-export fn devfs_write(dev: i32, buf_addr: u32, n: i32) -> i32 {
-    if dev == DEV_UART {
+export fn devfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    if fd < 0 || fd >= DEVFS_MAX_FDS { return -1; }
+    var e: DevFD = get(g_devfs_fds, fd);
+    if dev(e) == DEV_UART {
         return do_uart_write(buf_addr, n);
+    }
+    if dev(e) == DEV_RTC {
+        // Accumulate into the node buffer; the datetime string may
+        // arrive split across calls. Committed at close.
+        if buf(e) == 0u32 { return -1; }
+        var wl: i32 = wlen(e);
+        var w: i32 = 0;
+        while w < n && wl < DEVFS_BUF_CAP {
+            poke8(buf(e) + 4u32 + (wl as u32), peek8(buf_addr + (w as u32)));
+            wl = wl + 1;
+            w = w + 1;
+        }
+        wlen(e, wl);
+        return n;
     }
     return -1;
 }
 
-// Devices are byte streams with no fixed size.
-export fn devfs_size(dev: i32) -> i32 {
-    return -1;
+export fn devfs_size(fd: i32) -> i32 {
+    if fd < 0 || fd >= DEVFS_MAX_FDS { return -1; }
+    var e: DevFD = get(g_devfs_fds, fd);
+    if buf(e) == 0u32 { return -1; }
+    return size(e);
 }
 
-// Stateless — nothing to release.
-export fn devfs_close(dev: i32) -> i32 {
+export fn devfs_close(fd: i32) -> i32 {
+    if fd < 0 || fd >= DEVFS_MAX_FDS { return -1; }
+    var e: DevFD = get(g_devfs_fds, fd);
+    // Commit an accumulated /dev/rtc write at close.
+    if dev(e) == DEV_RTC && wlen(e) > 0 {
+        rtc_parse_set(buf(e) + 4u32, wlen(e));
+    }
+    if buf(e) != 0u32 { kfree(buf(e)); }
+    dev(e, -1);
+    buf(e, 0u32);
+    size(e, 0);
+    pos(e, 0);
+    wlen(e, 0);
     return 0;
 }
 
@@ -84,5 +209,6 @@ fn devfs_append(buf_addr: u32, buf_size: i32, pos: i32, name: StringLiteral) -> 
 export fn devfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
     var pos: i32 = 0;
     pos = devfs_append(buf_addr, buf_size, pos, "uart");
+    pos = devfs_append(buf_addr, buf_size, pos, "rtc");
     return pos;
 }
