@@ -1,0 +1,88 @@
+// kernel/devfs.tc — device filesystem rooted at /dev.
+//
+// Exposes hardware I/O endpoints as files. Unlike procfs (read-only
+// status snapshots), devfs nodes are live device channels and may be
+// both read and written.
+//
+// Currently exposes:
+//   /dev/uart  — raw serial port (PL011 / 16550). read pulls from the
+//                kernel RX ring (-2 when empty, so the ecall handler
+//                yields the timeslice); write goes straight to the
+//                UART TX with no mux framing.
+//
+// devfs is stateless: a device id identifies the node, so the id
+// itself is used as the VFS `inner` handle and open allocates nothing.
+
+import "kernel_common.tc";
+
+// Platform UART helpers (platform_*.s / platform_*.tc).
+fn do_uart_write(buf: u32, len: i32) -> i32;
+fn uart_rx_pop(buf: u32, len: i32) -> i32;
+
+// Device ids — returned by devfs_open as the VFS inner handle.
+var DEV_UART: i32 = 0;
+
+// Match a path against a literal (exact length).
+fn dev_path_is(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
+    var sl: i32 = len(s);
+    if plen != sl { return false; }
+    var i: i32 = 0;
+    while i < sl {
+        if peek8(path_addr + (i as u32)) != get(s, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Open a /dev node. Returns a device id (>= 0) used as the devfs
+// inner handle, or -1 if the path names no known device.
+export fn devfs_open(path_addr: u32, plen: i32) -> i32 {
+    if dev_path_is(path_addr, plen, "/dev/uart") { return DEV_UART; }
+    return -1;
+}
+
+export fn devfs_read(dev: i32, buf_addr: u32, n: i32) -> i32 {
+    if dev == DEV_UART {
+        var nr: i32 = uart_rx_pop(buf_addr, n);
+        if nr == 0 { return -2; }
+        return nr;
+    }
+    return -1;
+}
+
+export fn devfs_write(dev: i32, buf_addr: u32, n: i32) -> i32 {
+    if dev == DEV_UART {
+        return do_uart_write(buf_addr, n);
+    }
+    return -1;
+}
+
+// Devices are byte streams with no fixed size.
+export fn devfs_size(dev: i32) -> i32 {
+    return -1;
+}
+
+// Stateless — nothing to release.
+export fn devfs_close(dev: i32) -> i32 {
+    return 0;
+}
+
+// Enumerate /dev entries as NUL-separated names.
+fn devfs_append(buf_addr: u32, buf_size: i32, pos: i32, name: StringLiteral) -> i32 {
+    var nlen: i32 = len(name);
+    if pos + nlen + 1 > buf_size { return pos; }
+    var i: i32 = 0;
+    while i < nlen {
+        poke8(buf_addr + (pos as u32), get(name, i));
+        pos = pos + 1;
+        i = i + 1;
+    }
+    poke8(buf_addr + (pos as u32), 0u8);
+    return pos + 1;
+}
+
+export fn devfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
+    var pos: i32 = 0;
+    pos = devfs_append(buf_addr, buf_size, pos, "uart");
+    return pos;
+}
