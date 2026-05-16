@@ -638,6 +638,11 @@ self-host loop が成立した。
       (VSCRSADD)
 - [ ] **S5**: キーボードドライバ (GPIO マトリクス) + `/dev/kbd`
       (生キーコード、read は `-2` yield)
+  - [x] `/dev/kbd` UART-RX バックエンドのスタブ + `kbdump` タスク
+        (2026-05-17、commit cc09e6e)。読み取り専用キーストリームの
+        インターフェースを virt 検証済。実機 S5 では `devfs.tc` の
+        DEV_KBD read を GPIO マトリクススキャナに差し替えるだけ
+  - [ ] GPIO マトリクススキャナ実ドライバ (実機)
 - [ ] **S6**: `/bin/console` — userspace ターミナルエミュレータ +
       getty (char グリッド + フォント、`/dev/fb` + `/dev/kbd` を開き
       sh を pipe 配線で spawn)
