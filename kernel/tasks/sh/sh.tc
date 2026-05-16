@@ -844,19 +844,15 @@ fn main() -> i32 {
                         seg_idx = seg_idx + 1;
                     }
 
-                    // Close the parent's copies of every pipe fd (the
-                    // kernel dup'd them into each child at spawn time).
-                    // Without this the writer's write end stays open in
-                    // the shell so the reader never sees EOF.
-                    // Also covers the failure path: pi holds the number
-                    // of pipe pairs already created even when the
-                    // creation loop was cut short by ok=0.
-                    var pci: i32 = 0;
-                    while pci < pi {
-                        do_close(get(pipe_rfds, pci));
-                        do_close(get(pipe_wfds, pci));
-                        pci = pci + 1;
-                    }
+                    // Do NOT close the pipe fds here. do_spawn_fds
+                    // passes fd *numbers* (no dup) and transfers each
+                    // fd's ownership to the child it was handed to
+                    // (vfs_set_owner). Closing them in the shell would
+                    // tear the pipe entry out from under the child
+                    // before it even runs. slot_free_allocs closes
+                    // them at each child's exit instead — and the
+                    // writer child's close of its write end is exactly
+                    // what gives the reader child its EOF.
 
                     // Wait for all spawned segments
                     var wi: i32 = 0;
