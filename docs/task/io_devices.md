@@ -210,15 +210,145 @@ GUI を作る場合も**カーネル側のプランは変わらない**。
 - compositor / display server を今作るのは時期尚早 (リッチな IPC が
   まだ無い)。ただし現プランは GUI への道を一切塞いでいない。
 
-## 10. 実装順序 (案)
+## 10. 作業計画
 
-1. `/dev` ルーティング (`devfs.tc` + `vfs.tc` の `is_dev_path()`) と
-   `/dev/uart` — 既存 UART を正規のデバイスファイル化。
-2. ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb` (mode 0/1)。
-3. `/dev/fb` mode 2 (ハードウェア垂直スクロール)。
-4. キーボードドライバ (GPIO マトリクス) + `/dev/kbd`。
-5. `/bin/console` (userspace ターミナル + getty)。
-6. `/dev/rtc`。
-7. kern.conf で `init=/bin/console` を seed して LCD コンソール完成。
+§9 までの設計を実作業に落とし込んだもの。ステップ ID は S0〜S8。
+依存関係が許す範囲で S2 (RTC) を前倒しした — RTC は display/keyboard
+と独立で virt 上でテストでき、`/dev` の write 経路を早期に固められる。
 
-ハード結線・モジュール選定は実装時に `docs/pico2_hardware.md` へ追記。
+### 計画全体の注意点
+
+- **テストの大半は実機限定**。`/dev` / `/dev/uart` / `/dev/rtc` は
+  qemu virt でテストできる (UART、goldfish-rtc が存在) が、ILI9488 /
+  GPIO マトリクスは virt に対応物が無く `make test` に載らない。
+  S3 以降は実機 (`test_pico2.sh` 方式) で目視 + grep 検証する。
+- **virt / pico2 のモジュール分割**: `display_ili9488.tc` /
+  `keyboard_matrix.tc` は pico2 専用モジュール (`block_flash` vs
+  `block_virtio` と同じ扱い)。virt ビルドには含めず、devfs 側は
+  virt で `/dev/fb` `/dev/kbd` を ENODEV 相当で返す。
+- カーネルモジュールが 4 本増える (`devfs` / `rtc` / `display_ili9488`
+  / `keyboard_matrix`)。各々 asm_pass1 の input が 1 つ増えるだけで
+  arena 影響はコード分のみ。pico2 の 4 MiB flash は `DROP_TASKS` で
+  調整可能。
+
+---
+
+### S0. ハード設計・結線 (全ハードステップの前提)
+
+- ピン割り当てを決める: SPI1 (SCK/MOSI/CS) + ILI9488 の D/C・RESET、
+  GPIO マトリクスの行/列、RTC (AON timer or 外付け I2C)。
+- 物理結線。`docs/pico2_hardware.md` に追記。
+- openocd で GPIO トグル等の結線確認。
+- リスク: 低 / 依存: なし
+
+### S1. `/dev` ルーティング + `/dev/uart`
+
+- 新規 `kernel/devfs.tc` — `procfs.tc` (~240 行) を雛形に。
+- `vfs.tc` — `is_devfs_path()` 追加、`/dev/` を devfs に振る。
+  `devfs_readdir` で `ls /dev` 対応。
+- `devfs.tc` — `/dev/uart` の open/read/write/close を既存
+  `do_uart_*` に転送。
+- `kernel/build.sh` のカーネルモジュールリストに `devfs.tc` を追加。
+- テスト: virt。`cat /dev/uart` / echo to `/dev/uart` / `ls /dev`。
+  `test_os.sh` に 1 ケース追加。
+- リスク: 低 / 依存: なし
+
+### S2. `/dev/rtc`
+
+- 新規 `kernel/rtc.tc` (または `devfs.tc` に内包)。
+- platform 別 read: virt = goldfish-rtc (MMIO 既知アドレス)、
+  pico2 = AON timer。
+- `devfs.tc` — `/dev/rtc` read = datetime 整形、write = 解析して
+  セット。
+- テスト: virt の goldfish-rtc で read/write 検証。`/dev` の write
+  経路の最初の実証も兼ねる。
+- リスク: 低〜中 (datetime 整形/解析) / 依存: S1
+
+### S3. ディスプレイドライバ + `/dev/fb` (mode 0/1)
+
+- 新規 `kernel/display_ili9488.tc` (pico2 専用)。
+- `platform_pico2.s` — SPI1 の reset 解除、SPI1 ピン funcsel、
+  D/C・RESET・CS GPIO 設定。
+- `display_ili9488.tc` — SPI1 init、ILI9488 power-on シーケンス
+  (sleep out → pixel format 18-bit → display on)、CASET/PASET/RAMWR、
+  RGB565→18bit 展開。
+- `devfs.tc` — `/dev/fb` の open/write、framed header (§5) を parse
+  して blit。
+- bring-up 補助: `kernel/tasks/fbtest` — `/dev/fb` に矩形/グラデを
+  描く目視確認タスク。
+- **中間マイルストーン**: まず mode 1 (全画面塗りつぶし) で
+  SPI1 + init を実証 → 次に mode 0 (ピクセル)。
+- 初期は **SPI1 = 6 MHz のまま**でよい (clk_peri 据え置き、低リスク)。
+  1 行 blit ~20 ms でテキストコンソールは実用範囲。高速化は S8。
+- テスト: 実機のみ。fbtest 目視 + `test_pico2` 拡張。
+- リスク: **最高** (HW bring-up、ILI9488 init シーケンスが繊細)
+  / 依存: S0
+
+### S4. `/dev/fb` mode 2 — ハードウェア垂直スクロール
+
+- `display_ili9488.tc` — init で `VSCRDEF` (0x33)、mode 2 で
+  `VSCRSADD` (0x37)。
+- パネルはポートレート向き (480 軸 = スクロール軸) で実装する。
+- テスト: 実機。fbtest にスクロールケース追加。
+- リスク: 低〜中 / 依存: S3
+
+### S5. キーボードドライバ + `/dev/kbd`
+
+- 新規 `kernel/keyboard_matrix.tc` (pico2 専用)。
+- `platform_pico2.s` — マトリクス行/列 GPIO funcsel + プルアップ。
+- scan 方式: **timer trap 駆動でマトリクスをスキャン → 小リング
+  バッファ**に積む。`/dev/kbd` read はバッファを drain し、空なら
+  `-2` (yield) を返す。
+- デバウンス、ゴースト対策 (ダイオード前提か 2-key 制限)、
+  keycode → ASCII マップ。
+- bring-up 補助: `kernel/tasks/kbdump` — `/dev/kbd` を読んで
+  scancode を UART に出す。
+- テスト: 実機。kbdump で目視。
+- リスク: 中 (デバウンス・ゴースト) / 依存: S0
+
+### S6. `/bin/console` — userspace ターミナルエミュレータ + getty
+
+- 新規 `kernel/tasks/console/console.tc` + `task.mk`。
+- フォントテーブル (6×16 ASCII、~1.5 KB)。
+- char グリッド (53×30) + グリフ blit + カーソル。
+- ターミナル状態機械: 印字可能文字 / `\n` / `\b` / `\r`、改行時の
+  スクロールは `/dev/fb` mode 2。
+- getty: `sys_pipe` ×2 + `sys_spawn_fds` で `sh` を spawn し、
+  pump ループ (`/dev/kbd` → sh stdin pipe、sh stdout pipe → 端末
+  描画 → `/dev/fb`)。全 fd 非ブロッキング。
+- `build.sh` の GUEST_TASKS に `console` を追加。
+- テスト: 実機。キーボードから操作し LCD に表示されることを確認。
+- リスク: 中 (pump ループの多重 fd 制御) / 依存: S3, S4, S5
+
+### S7. kern.conf 統合 + 仕上げ
+
+- kern.conf で `init=/bin/console` を seed。
+- 「2 つのシェル (UART + LCD)」構成 (`init=/bin/sh` +
+  `init=/bin/console`) を実機検証。
+- docs 更新 (roadmap フェーズ9 チェック、`pico2_hardware.md`)。
+- テスト: 実機 end-to-end。
+- 依存: S6, S2
+
+### S8 (任意). clk_peri を PLL_SYS に切り替えて SPI 高速化
+
+- `platform_pico2.s` — `clk_peri` を PLL_SYS (150 MHz) に切り替え、
+  UART の IBRD/FBRD を再計算、SD の SPI divider も調整。
+- SPI1 を 25 MHz 化 → 全画面 blit が 6 MHz の ~600 ms から
+  ~150 ms 以下へ。
+- テスト: 実機回帰 (UART・SD・display を全部)。
+- リスク: 中 (UART/SD がクロックに連動) / 依存: S3
+- 備考: 最適化ステップ。テキストコンソールは S3 の 6 MHz でも
+  実用なので後回し可。
+
+---
+
+### 依存グラフ
+
+```
+S0 ─┬─→ S3 ──→ S4 ─┐
+    └─→ S5 ────────┼─→ S6 ──→ S7
+S1 ──→ S2 ─────────┴──────────┘
+S3 ──→ S8 (任意)
+```
+
+S1+S2 (virt 完結) と S0→S3/S5 (実機) は並行して進められる。
