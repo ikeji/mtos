@@ -21,6 +21,12 @@
 //                UART. The real SPI1 backend replaces fb_dump later
 //                (フェーズ9 S3). 1 blit = 1 write() (no framing
 //                state); read is not supported.
+//   /dev/kbd   — keyboard. Bring-up stub: read pulls keystrokes from
+//                the UART RX ring (so on qemu virt the serial console
+//                is the keyboard); -2 when empty so the ecall handler
+//                yields. The real GPIO-matrix scanner replaces this
+//                backend later (フェーズ9 S5); the interface — a
+//                read-only key-stream — stays the same. Not writable.
 //
 // A small fd table backs buffered nodes: /dev/rtc snapshots its
 // rendering at open so a `cat` terminates with EOF. /dev/uart and
@@ -40,6 +46,7 @@ fn kfree(ptr: u32) -> void;
 var DEV_UART: i32 = 0;
 var DEV_RTC:  i32 = 1;
 var DEV_FB:   i32 = 2;
+var DEV_KBD:  i32 = 3;
 
 var DEVFS_MAX_FDS: i32 = 8;
 // Data capacity of a buffered node's U8Array (after the 4-byte length
@@ -206,6 +213,9 @@ export fn devfs_open(path_addr: u32, plen: i32) -> i32 {
     if dev_path_is(path_addr, plen, "/dev/fb") {
         return devfs_alloc(DEV_FB, 0u32, 0);
     }
+    if dev_path_is(path_addr, plen, "/dev/kbd") {
+        return devfs_alloc(DEV_KBD, 0u32, 0);
+    }
     if dev_path_is(path_addr, plen, "/dev/rtc") {
         var hdr: u32 = devfs_snap_rtc();
         var size: i32 = peek32(hdr) as i32;
@@ -219,7 +229,8 @@ export fn devfs_open(path_addr: u32, plen: i32) -> i32 {
 export fn devfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd < 0 || fd >= DEVFS_MAX_FDS { return -1; }
     var e: DevFD = get(g_devfs_fds, fd);
-    if dev(e) == DEV_UART {
+    if dev(e) == DEV_UART || dev(e) == DEV_KBD {
+        // /dev/kbd is a UART-RX-backed stub; same path as /dev/uart.
         var nr: i32 = uart_rx_pop(buf_addr, n);
         if nr == 0 { return -2; }
         return nr;
@@ -309,5 +320,6 @@ export fn devfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
     pos = devfs_append(buf_addr, buf_size, pos, "uart");
     pos = devfs_append(buf_addr, buf_size, pos, "rtc");
     pos = devfs_append(buf_addr, buf_size, pos, "fb");
+    pos = devfs_append(buf_addr, buf_size, pos, "kbd");
     return pos;
 }

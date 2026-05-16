@@ -112,7 +112,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
     # the kernel prints "KERN: live=N" at shutdown so the test asserts
     # the count stays bounded regardless of spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nquit\n' \
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nkbdump\nKBDTEST_HELLO\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -155,6 +155,9 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # /dev/fb check: fbtest issues fill/blit/vscroll framed writes;
     # the UART-dump driver echoes each as "FB: mode=N ...".
     fs_has_fb=$(echo "$fs_out" | grep -c "FB: mode=1 x=0 y=0 w=320 h=480")
+    # /dev/kbd check: kbdump reads a line from /dev/kbd (UART-RX
+    # backed stub) and echoes "KBD:<line>".
+    fs_has_kbd=$(echo "$fs_out" | grep -c "KBD:KBDTEST_HELLO")
     # Leak canary: the kernel prints its kmalloc live count at the
     # end. With the K1 process-table fix in place, this stays bounded
     # by a small constant regardless of how many children sh spawns.
@@ -176,12 +179,13 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_has_redir" -gt 0 ] \
                 && [ "$fs_has_dev" -gt 0 ] && [ "$fs_has_devwrite" -gt 0 ] \
                 && [ "$fs_has_rtc" -gt 0 ] && [ "$fs_has_fb" -gt 0 ] \
+                && [ "$fs_has_kbd" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
                 && [ -n "$fs_live" ] && [ "$fs_live" -le 145 ]; then
-                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + fb, live=$fs_live" "$elapsed"
+                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + fb + kbd, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat1=$fs_cat1_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)
