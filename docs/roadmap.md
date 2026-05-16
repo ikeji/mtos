@@ -626,16 +626,23 @@ self-host loop が成立した。
       <-> カレンダー変換、virt は goldfish-rtc (0x101000) で実装、
       pico2 は AON timer スタブ。virt で read/write ラウンドトリップ
       を確認、fs_virtio に rtc ケース追加
-- [ ] ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb`
+- [ ] **S3**: ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb`
       (framed write、mode 0 ピクセル / mode 1 単色)
-- [ ] `/dev/fb` mode 2 — ILI9488 ハードウェア垂直スクロール (VSCRSADD)
-- [ ] キーボードドライバ (GPIO マトリクス) + `/dev/kbd`
+  - [x] `/dev/fb` UART ダンプ用ブリングアップドライバ + `fbtest`
+        タスク (2026-05-16、commit c33210e)。framed-write プロトコル
+        (`[x][y][w][h][mode]` + payload) と devfs 連携を実機無しで
+        virt 検証済。実機 S3 では `devfs.tc` の `fb_dump` を
+        SPI1/ILI9488 バックエンドに差し替えるだけ
+  - [ ] SPI1 + ILI9488 実ドライバ (実機、`fb_dump` の差し替え先)
+- [ ] **S4**: `/dev/fb` mode 2 — ILI9488 ハードウェア垂直スクロール
+      (VSCRSADD)
+- [ ] **S5**: キーボードドライバ (GPIO マトリクス) + `/dev/kbd`
       (生キーコード、read は `-2` yield)
-- [ ] `/bin/console` — userspace ターミナルエミュレータ + getty
-      (char グリッド + フォント、`/dev/fb` + `/dev/kbd` を開き sh を
-      pipe 配線で spawn)
-- [ ] `/dev/rtc` — read で現在 datetime、write でセット
-- [ ] kern.conf で `init=/bin/console` を seed して LCD コンソール完成
+- [ ] **S6**: `/bin/console` — userspace ターミナルエミュレータ +
+      getty (char グリッド + フォント、`/dev/fb` + `/dev/kbd` を開き
+      sh を pipe 配線で spawn)
+- [ ] **S7**: kern.conf で `init=/bin/console` を seed して LCD
+      コンソール完成
 
 ## 技術的リスクと対策
 
