@@ -658,10 +658,17 @@ self-host loop が成立した。
         commit 0f79985)。`tests/genfont.py` が `font.tc` を生成、
         console が各 ON ピクセルを 1x1 mode-1 fill で描く。
         `console.bmp` が読めるテキストになることを確認
+  - [x] 5x7 フォントに小文字 a-z グリフを追加 (2026-05-17、
+        commit 0e8bde4)。大文字フォールバックを撤廃
+  - [x] 日本語表示 (2026-05-17、commit 1e110c1)。np21w の PC-98
+        font.bmp から `tests/genjpfont.py` が jpfont.dat (半角
+        8x16 + 全角 16x16 + Unicode→区点表) を生成、console が
+        UTF-8 デコードしてひらがな/カタカナ/漢字を描画。
+        font.bmp が無ければ 5x7 ASCII にフォールバック。
+        font.bmp は非コミット (https://simk98.github.io/np21w/
+        download.html)
   - [ ] グリフを 1 個の mode-0 blit にまとめる最適化 (実機 S3、
-        per-pixel mode-1 は SPI 転送が多い)
-  - [ ] フォントを小文字グリフ込みのフルセットに (現状 a-z は
-        大文字グリフを流用)
+        per-pixel/run mode-1 は SPI 転送が多い)
 - [x] **S7**: kern.conf で `init=/bin/console` を seed して LCD
       コンソールを boot 時に自動起動 (2026-05-17、commit cda9ca9)。
       `tests/fixtures/kern_console.conf` + Makefile `disk-console.img`
