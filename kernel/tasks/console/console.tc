@@ -1,0 +1,145 @@
+// console.tc — /bin/console: userspace terminal emulator + getty.
+//
+// Hosts an interactive shell on the local display + keyboard instead
+// of the UART. Structure (フェーズ9 S6):
+//
+//   /dev/kbd ──> sh stdin       sh stdout ──> pipe ──> console
+//                                                        │
+//                                            terminal render
+//                                                        │
+//                                                     /dev/fb
+//
+// console opens /dev/kbd and /dev/fb, creates one pipe, and spawns
+// /bin/sh with stdin = /dev/kbd and stdout = the pipe write end. It
+// then reads the pipe and renders sh's output to /dev/fb. Because sh
+// reads its own stdin (/dev/kbd) directly, console only ever waits on
+// one fd (the pipe), so no select/poll is needed — both tasks do a
+// single blocking read.
+//
+// Stub rendering: each glyph is drawn as a /dev/fb mode-1 cell fill
+// colored by the character code. The real S6 driver swaps this for a
+// mode-0 font-glyph blit; the terminal state machine (grid, cursor,
+// scroll) is unchanged.
+
+import "../libtc/libtc.tc";
+
+// Portrait ILI9488 (320x480) with a 6x16 cell: 53 cols x 30 rows.
+var COLS:   i32 = 53;
+var ROWS:   i32 = 30;
+var CELL_W: i32 = 6;
+var CELL_H: i32 = 16;
+
+var g_col: i32 = 0;
+var g_row: i32 = 0;
+
+// Store a little-endian u16 at byte offset `pos`.
+fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
+    set(b, pos,     (v & 0xFF) as u8);
+    set(b, pos + 1, ((v >> 8) & 0xFF) as u8);
+    return;
+}
+
+// Emit a mode-1 fill blit for one character cell.
+fn fb_cell(fb: i32, frame: U8Array, col: i32, row: i32, c: i32) -> void {
+    put_u16(frame, 0,  col * CELL_W);
+    put_u16(frame, 2,  row * CELL_H);
+    put_u16(frame, 4,  CELL_W);
+    put_u16(frame, 6,  CELL_H);
+    put_u16(frame, 8,  1);
+    put_u16(frame, 10, c);
+    sys_write(fb, frame, 12);
+    return;
+}
+
+// Emit a mode-2 vertical-scroll blit.
+fn fb_scroll(fb: i32, frame: U8Array, line: i32) -> void {
+    put_u16(frame, 0,  0);
+    put_u16(frame, 2,  0);
+    put_u16(frame, 4,  0);
+    put_u16(frame, 6,  0);
+    put_u16(frame, 8,  2);
+    put_u16(frame, 10, line);
+    sys_write(fb, frame, 12);
+    return;
+}
+
+// Terminal state machine: advance the cursor and draw one byte.
+fn render(fb: i32, frame: U8Array, c: i32) -> void {
+    if c == 10 {              // '\n'
+        g_col = 0;
+        g_row = g_row + 1;
+    } else if c == 13 {       // '\r'
+        g_col = 0;
+    } else if c == 8 {        // '\b'
+        if g_col > 0 { g_col = g_col - 1; }
+    } else if c >= 32 {
+        fb_cell(fb, frame, g_col, g_row, c);
+        g_col = g_col + 1;
+        if g_col >= COLS {
+            g_col = 0;
+            g_row = g_row + 1;
+        }
+    }
+    if g_row >= ROWS {
+        g_row = ROWS - 1;
+        fb_scroll(fb, frame, g_row * CELL_H);
+    }
+    return;
+}
+
+fn main() -> i32 {
+    eputs("CONSOLE: ready\n");
+
+    var kbd: i32 = do_openat(0, "/dev/kbd", 0);
+    var fb:  i32 = do_openat(0, "/dev/fb", 1);
+    if kbd < 0 || fb < 0 {
+        eputs("CONSOLE: device open failed\n");
+        return 1;
+    }
+
+    var pb: U8Array = U8Array(8u32);
+    if do_pipe(pb as u32 + 4u32) != 0 {
+        eputs("CONSOLE: pipe failed\n");
+        delete(pb);
+        return 1;
+    }
+    var pr: i32 = peek32(pb as u32 + 4u32) as i32;
+    var pw: i32 = peek32(pb as u32 + 8u32) as i32;
+
+    // sh: stdin = /dev/kbd, stdout = pipe write end.
+    var slot: i32 = do_spawn_fds("/bin/sh", 0u32, kbd, pw);
+    delete(pb);
+    if slot < 0 {
+        eputs("CONSOLE: sh spawn failed\n");
+        return 1;
+    }
+    // Do NOT close kbd / pw here: spawn_fds passes fd *numbers* (no
+    // dup), so closing them would tear out sh's own stdin / stdout.
+    // sh owns them now (vfs_set_owner); slot_free_allocs closes them
+    // when sh exits — and that close of the pipe write end is what
+    // gives our pipe reader its EOF.
+
+    var frame: U8Array = U8Array(12u32);
+    var buf:   U8Array = U8Array(64u32);
+    var running: i32 = 1;
+    while running == 1 {
+        var r: i32 = sys_read(pr, buf, 64);
+        if r <= 0 {
+            running = 0;       // EOF: sh exited
+        } else {
+            var i: i32 = 0;
+            while i < r {
+                render(fb, frame, get(buf, i) as i32);
+                i = i + 1;
+            }
+        }
+    }
+
+    do_wait(slot);
+    do_close(pr);
+    do_close(fb);
+    delete(frame);
+    delete(buf);
+    eputs("CONSOLE: exit\n");
+    return 0;
+}
