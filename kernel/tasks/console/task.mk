@@ -1,7 +1,7 @@
 GUEST_TASKS += console
-# console loads jpfont.dat (~307 KB PC-98 font) into its arena when
-# the Japanese font is present, so the arena must hold it + headroom.
-# On qemu virt the kernel arena is 96 MB; ample. (A pico2 build would
-# instead peek the font from XIP flash — not yet wired.)
-TASK_ARENA_console := 393216
+# The Japanese font is .incbin'd into console's binary (jpfont_inc.s),
+# read in place via peek8 — it does not live in the arena, so the
+# arena stays small. TASK_EXTRA_S_console (set in the Makefile) links
+# the font wrapper .s.
+TASK_ARENA_console := 16384
 TASK_STACK_console := 8192

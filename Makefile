@@ -230,23 +230,25 @@ build/kernel/disk-demo.img:    DISK_KERN_CONF := tests/fixtures/kern_demo.conf
 build/kernel/disk-console.img: DISK_KERN_CONF := tests/fixtures/kern_console.conf
 
 # Japanese font: tmp/font.bmp (np21w PC-98 font, user-supplied, never
-# committed) is converted by genjpfont.py into jpfont.dat, which
-# disk-console.img stages so /bin/console can render Japanese. When
-# font.bmp is absent the build proceeds without it; console falls
-# back to its built-in 5x7 ASCII font.
+# committed) is converted by genjpfont.py into jpfont.dat, then
+# bin2s_incbin.sh wraps it as jpfont_inc.s — a .incbin that links the
+# font into /bin/console's binary (TASK_EXTRA_S_console). console
+# reads the blob in place via peek8. With no font.bmp a size-0 stub
+# is linked and console falls back to its built-in 5x7 ASCII font.
 FONT_BMP := $(wildcard tmp/font.bmp)
 ifeq ($(FONT_BMP),)
-JPFONT_DAT :=
 $(info note: tmp/font.bmp absent — /bin/console uses the ASCII font only; Japanese font.bmp: https://simk98.github.io/np21w/download.html)
+build/kernel/jpfont_inc.s: | build/kernel
+	@printf '    .text\n    .globl jpfont_addr\njpfont_addr:\n    li a0, 0\n    ret\n    .globl jpfont_size_value\njpfont_size_value:\n    li a0, 0\n    ret\n' > $@
 else
-JPFONT_DAT := build/kernel/jpfont.dat
-endif
-
 build/kernel/jpfont.dat: $(FONT_BMP) tests/genjpfont.py | build/kernel
 	@python3 tests/genjpfont.py $(FONT_BMP) $@
+build/kernel/jpfont_inc.s: build/kernel/jpfont.dat kernel/bin2s_incbin.sh | build/kernel
+	@kernel/bin2s_incbin.sh build/kernel/jpfont.dat jpfont build/kernel/jpfont.dat > $@
+endif
 
-build/kernel/disk-console.img: DISK_JPFONT := $(JPFONT_DAT)
-build/kernel/disk-console.img: $(JPFONT_DAT)
+TASK_EXTRA_S_console := build/kernel/jpfont_inc.s
+build/kernel/tasks/console.bin: build/kernel/jpfont_inc.s
 
 # Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
 # at kernel-build time we pre-encode the concatenation of prelude.s +
@@ -296,9 +298,6 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img: 
 	printf ')\n' > "$$_r/wrap_close.txt" && \
 	if [ -n "$(DISK_KERN_CONF)" ] && [ -f "$(DISK_KERN_CONF)" ]; then \
 	    mkdir -p "$$_r/etc" && cp "$(DISK_KERN_CONF)" "$$_r/etc/kern.conf"; \
-	fi && \
-	if [ -n "$(DISK_JPFONT)" ] && [ -f "$(DISK_JPFONT)" ]; then \
-	    cp "$(DISK_JPFONT)" "$$_r/jpfont.dat"; \
 	fi && \
 	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"

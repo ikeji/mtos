@@ -296,6 +296,24 @@ for d in $CRT0_DATA; do
     pass1_one "$d" "$(basename "$d" .s)"
 done
 
+# Stage .incbin blobs. A deferred `.incbin SIZE "<path>"` is resolved
+# by asm_pass3 as <basename> relative to the .lab's directory ($TMP),
+# so copy every referenced blob there before the link runs.
+for f in "$TMP/${PRELUDE_NAME}.s" $CRT0 "$TMP/runtime.s" \
+         "${ASM_FILES[@]}" ${EXTRA_S:-} $CRT0_DATA; do
+    [ -f "$f" ] || continue
+    while IFS= read -r line; do
+        case "$line" in
+            *.incbin*\"*\"*)
+                blob="${line#*\"}"; blob="${blob%\"*}"
+                if [ -n "$blob" ] && [ -f "$blob" ]; then
+                    cp "$blob" "$TMP/$(basename "$blob")"
+                fi
+                ;;
+        esac
+    done < "$f"
+done
+
 # Step 5: link → .lab. asm_pass2 reads each idx's v2 header to find
 # the matching .tx/.ro/.dt/.rl files. Dead-strip (Phase B + C) runs
 # unconditionally — see docs/task/asm_dead_strip.md.
