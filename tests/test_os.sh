@@ -234,6 +234,25 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
         report_fail_msg "console_init" \
             "ready=$ci_ready fb=$ci_fb exit=$ci_exit done=$ci_done; got: $(printf '%s' "$ci_out" | head -c 320)"
     fi
+
+    # --- console_bmp: replay the /dev/fb commands console issued in
+    #     the run above onto a 320x480 framebuffer and write a BMP, so
+    #     the rendered display result can be inspected. fb_render.py
+    #     exits 0 only if it rendered >= 1 blit. ---
+    if command -v python3 >/dev/null 2>&1; then
+        t0=$(time_ms)
+        printf '%s' "$ci_out" > "$TMP/fb_dump.txt"
+        bmp="$ROOT_DIR/build/kernel/console.bmp"
+        rm -f "$bmp"
+        if python3 "$SCRIPT_DIR/fb_render.py" "$TMP/fb_dump.txt" "$bmp" 2>/dev/null \
+            && [ -s "$bmp" ] && [ "$(head -c2 "$bmp")" = "BM" ]; then
+            report_pass "console_bmp: /dev/fb dump rendered to console.bmp" \
+                "$(( $(time_ms) - t0 ))"
+        else
+            report_fail_msg "console_bmp" \
+                "fb_render.py failed or produced an invalid BMP"
+        fi
+    fi
 fi
 
 # --- msh script mode: verifies set -ex tracing, # comment skip,
