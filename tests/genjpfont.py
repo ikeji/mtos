@@ -11,7 +11,7 @@
 # font.bmp is NOT committed. If it is missing, download it from
 #   https://simk98.github.io/np21w/download.html
 #
-# Usage: genjpfont.py <font.bmp> <out.dat>
+# Usage: genjpfont.py <font.bmp> <out.dat> [--preview]
 #
 # jpfont.dat layout (all multi-byte little-endian unless noted):
 #   "JPF1"                       magic (4 bytes)
@@ -73,10 +73,13 @@ def kuten_to_sjis(ku, ten):
 
 
 def main():
-    if len(sys.argv) != 3:
-        sys.stderr.write('usage: genjpfont.py <font.bmp> <out.dat>\n')
+    preview = '--preview' in sys.argv
+    args = [a for a in sys.argv[1:] if a != '--preview']
+    if len(args) != 2:
+        sys.stderr.write('usage: genjpfont.py <font.bmp> <out.dat> [--preview]\n')
         return 1
-    data, w, h, rb = load_bmp(sys.argv[1])
+    src, dst = args[0], args[1]
+    data, w, h, rb = load_bmp(src)
     gp = make_get_pixel(data, w, h, rb)
 
     # hankaku: 256 glyphs, 8x16, one byte per row.
@@ -133,12 +136,15 @@ def main():
     for cp, kt in uniq:
         out += cp.to_bytes(2, 'little')
         out += kt.to_bytes(2, 'little')
-    with open(sys.argv[2], 'wb') as f:
+    with open(dst, 'wb') as f:
         f.write(out)
 
     sys.stderr.write(
         'genjpfont: hankaku=256 zenkaku=%d u2k=%d total=%d bytes -> %s\n'
-        % (94 * 94, len(uniq), len(out), sys.argv[2]))
+        % (94 * 94, len(uniq), len(out), dst))
+
+    if not preview:
+        return 0
 
     # --- ASCII-art preview to verify the layout ---
     def show_h(c):

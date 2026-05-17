@@ -4,3 +4,6 @@
 kernel/kernel_pico2.uf2
 /build/
 tests/__pycache__/
+# Scratch dir — holds the user-supplied Japanese font.bmp and its
+# reference conversion scripts. font.bmp is never committed.
+/tmp/
