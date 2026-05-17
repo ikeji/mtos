@@ -224,7 +224,8 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
         -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
     elapsed=$(( $(time_ms) - t0 ))
     ci_ready=$(echo "$ci_out" | grep -c "CONSOLE: ready")
-    ci_fb=$(echo "$ci_out" | grep -c "FB: mode=1 x=0 y=0 w=6 h=16")
+    # console draws each glyph pixel as a 1x1 mode-1 fill in white.
+    ci_fb=$(echo "$ci_out" | grep -c "w=1 h=1 n=12 color=65535")
     ci_exit=$(echo "$ci_out" | grep -c "CONSOLE: exit")
     ci_done=$(echo "$ci_out" | grep -c "all tasks done")
     if [ "$ci_ready" -gt 0 ] && [ "$ci_fb" -gt 0 ] \
