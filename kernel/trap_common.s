@@ -144,11 +144,14 @@ _ecall_write:
     lw   a1, 44(s0)         # buf addr
     lw   a2, 48(s0)         # len
     call vfs_write__i32__u32__i32
-    sw   a0, 40(s0)
     li   t0, -2
-    bne  a0, t0, _ecall_leave_advance
-    # Pipe full: yield and retry the write
-    sw   zero, 40(s0)
+    beq  a0, t0, _ecall_write_yield
+    sw   a0, 40(s0)         # non-(-2): store the return value
+    j    _ecall_leave_advance
+_ecall_write_yield:
+    # Pipe full: yield and re-execute the ecall when rescheduled.
+    # frame[40] still holds the original fd argument — do NOT clobber
+    # it; the re-executed ecall reads the fd from frame[40].
     call sched_yield_read
     mv   sp, s0
     j    _trap_restore
@@ -159,13 +162,19 @@ _ecall_read:
     lw   a1, 44(s0)         # buf addr
     lw   a2, 48(s0)         # len
     call vfs_read__i32__u32__i32
-    sw   a0, 40(s0)
-    # vfs_read returns -2 when UART stdin has no data (non-blocking).
-    # Yield the timeslice and re-execute the ecall when rescheduled.
+    # vfs_read returns -2 when the fd has no data yet (UART empty /
+    # pipe empty). Yield and re-execute the ecall when rescheduled.
     # All other returns (including 0 = file EOF) proceed normally.
     li   t0, -2
-    bne  a0, t0, _ecall_leave_advance
-    sw   zero, 40(s0)       # don't expose -2 to caller
+    beq  a0, t0, _ecall_read_yield
+    sw   a0, 40(s0)         # non-(-2): store the return value
+    j    _ecall_leave_advance
+_ecall_read_yield:
+    # frame[40] still holds the original fd argument. It must NOT be
+    # overwritten: the re-executed ecall reads the fd from frame[40],
+    # so zeroing it would make the retry read fd 0 instead of the
+    # caller's fd (this silently broke any -2 retry on a fd != 0,
+    # e.g. a task reading a pipe directly).
     call sched_yield_read
     mv   sp, s0
     j    _trap_restore
