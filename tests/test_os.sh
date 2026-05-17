@@ -228,12 +228,18 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     ci_fb=$(echo "$ci_out" | grep -c "w=1 h=1 n=12 color=65535")
     ci_exit=$(echo "$ci_out" | grep -c "CONSOLE: exit")
     ci_done=$(echo "$ci_out" | grep -c "all tasks done")
+    # fd inheritance: the nested sh runs `echo S7TEST`; echo inherits
+    # sh's stdout (the pipe to console), so "S7TEST" is rendered to
+    # /dev/fb — it must NOT appear as literal text on the UART. If it
+    # leaks here, child processes aren't inheriting console's stdout.
+    ci_leak=$(echo "$ci_out" | grep -c "S7TEST")
     if [ "$ci_ready" -gt 0 ] && [ "$ci_fb" -gt 0 ] \
-        && [ "$ci_exit" -gt 0 ] && [ "$ci_done" -gt 0 ]; then
+        && [ "$ci_exit" -gt 0 ] && [ "$ci_done" -gt 0 ] \
+        && [ "$ci_leak" -eq 0 ]; then
         report_pass "console_init: kern.conf seeds /bin/console at boot" "$elapsed"
     else
         report_fail_msg "console_init" \
-            "ready=$ci_ready fb=$ci_fb exit=$ci_exit done=$ci_done; got: $(printf '%s' "$ci_out" | head -c 320)"
+            "ready=$ci_ready fb=$ci_fb exit=$ci_exit done=$ci_done leak=$ci_leak; got: $(printf '%s' "$ci_out" | head -c 320)"
     fi
 
     # --- console_bmp: replay the /dev/fb commands console issued in

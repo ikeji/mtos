@@ -361,30 +361,35 @@ fn close_redir(fd: i32) -> void {
 // stack until we re-install them via set_last_stdio.
 export fn sys_exec_handler(path: String, argv_addr: u32,
                            in_path: String, out_path: String) -> u32 {
-    var in_fd: i32 = open_redir(in_path, 0);
-    if in_fd < 0 { return 0u32; }
-    var out_fd: i32 = open_redir(out_path, 1);
-    if out_fd < 0 { close_redir(in_fd); return 0u32; }
+    var in_rd: i32 = open_redir(in_path, 0);
+    if in_rd < 0 { return 0u32; }
+    var out_rd: i32 = open_redir(out_path, 1);
+    if out_rd < 0 { close_redir(in_rd); return 0u32; }
 
     var fd: i32 = vfs_open(path, 0);
     if fd < 0 {
         debug_dump_path(path, "exec vfs_open failed");
-        close_redir(in_fd); close_redir(out_fd); return 0u32;
+        close_redir(in_rd); close_redir(out_rd); return 0u32;
     }
     var argv_size: i32 = argv_packed_size(argv_addr);
     var frame: u32 = load_fd(fd, argv_size);
     vfs_close(fd);
     if frame == 0u32 {
         debug_dump_path(path, "exec load_fd failed");
-        close_redir(in_fd); close_redir(out_fd); return 0u32;
+        close_redir(in_rd); close_redir(out_rd); return 0u32;
     }
 
     var kargv: u32 = make_task_argv_addr();
     pack_argv_at(kargv, argv_addr);
     set_frame_argv(frame, kargv);
-    set_last_stdio(in_fd, out_fd);
+    // exec keeps the simple model: with no redirect the new image
+    // gets the default (UART) stdio. A redirect fd is tagged owned by
+    // the post-exec slot so slot_free_allocs closes it at exit.
+    set_last_stdio(in_rd, out_rd);
     sched_replace_current(frame);
     task_set_name_basename(sched_current_idx(), path);
+    if in_rd  > 0 { vfs_set_owner(in_rd, sched_current_idx()); }
+    if out_rd > 0 { vfs_set_owner(out_rd, sched_current_idx()); }
     return frame;
 }
 
@@ -393,29 +398,39 @@ export fn sys_exec_handler(path: String, argv_addr: u32,
 // keeps running. argv_addr / in_addr / out_addr mirror the exec path.
 export fn sys_spawn_handler(path: String, argv_addr: u32,
                             in_path: String, out_path: String) -> i32 {
-    var in_fd: i32 = open_redir(in_path, 0);
-    if in_fd < 0 {
+    var in_rd: i32 = open_redir(in_path, 0);
+    if in_rd < 0 {
         debug_dump_path(in_path, "spawn open_redir(in) failed");
         return -1;
     }
-    var out_fd: i32 = open_redir(out_path, 1);
-    if out_fd < 0 {
+    var out_rd: i32 = open_redir(out_path, 1);
+    if out_rd < 0 {
         debug_dump_path(out_path, "spawn open_redir(out) failed");
-        close_redir(in_fd); return -1;
+        close_redir(in_rd); return -1;
     }
 
     var fd: i32 = vfs_open(path, 0);
     if fd < 0 {
         debug_dump_path(path, "spawn vfs_open failed");
-        close_redir(in_fd); close_redir(out_fd); return -1;
+        close_redir(in_rd); close_redir(out_rd); return -1;
     }
     var argv_size: i32 = argv_packed_size(argv_addr);
     var frame: u32 = load_fd(fd, argv_size);
     vfs_close(fd);
     if frame == 0u32 {
         debug_dump_path(path, "spawn load_fd failed");
-        close_redir(in_fd); close_redir(out_fd); return -1;
+        close_redir(in_rd); close_redir(out_rd); return -1;
     }
+
+    // No redirect (open_redir returned 0) → the child inherits the
+    // caller's stdin / stdout fd, so a command's output flows wherever
+    // the caller's output goes (e.g. console's pipe to /dev/fb). A
+    // redirect fd (> 0) is the child's own; it is made child-owned
+    // below so slot_free_allocs closes it at the child's exit.
+    var in_fd:  i32 = in_rd;
+    var out_fd: i32 = out_rd;
+    if in_fd  == 0 { in_fd  = task_get_stdin_fd(sched_current_idx()); }
+    if out_fd == 0 { out_fd = task_get_stdout_fd(sched_current_idx()); }
 
     var kargv: u32 = make_task_argv_addr();
     pack_argv_at(kargv, argv_addr);
@@ -424,14 +439,17 @@ export fn sys_spawn_handler(path: String, argv_addr: u32,
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
         task_set_name_basename(slot, path);
+        if in_rd  > 0 { vfs_set_owner(in_rd, slot); }
+        if out_rd > 0 { vfs_set_owner(out_rd, slot); }
     } else {
         // sched_spawn failed (no free slots). Clean up all resources
         // that were prepared for the child: redirect fds and the
         // ram/img allocated by load_fd + make_task. argv lives inside
-        // ram so frees with it (no separate cleanup).
+        // ram so frees with it (no separate cleanup). Inherited fds
+        // are not ours to close.
         debug_dump_path(path, "spawn sched_spawn failed");
-        close_redir(in_fd);
-        close_redir(out_fd);
+        close_redir(in_rd);
+        close_redir(out_rd);
         free_last_alloc();
     }
     return slot;
@@ -457,6 +475,17 @@ export fn sys_spawn_fds_handler(path: String, argv_addr: u32,
         return -1;
     }
 
+    // in_fd / out_fd are explicit VFS fds from the caller (pipe ends).
+    // 0 means "not given" → inherit the caller's stdin / stdout so a
+    // pipeline segment with no pipe on that side still reaches the
+    // right place.
+    var in_given:  i32 = 0;
+    var out_given: i32 = 0;
+    if in_fd  != 0 { in_given  = 1; }
+    if out_fd != 0 { out_given = 1; }
+    if in_fd  == 0 { in_fd  = task_get_stdin_fd(sched_current_idx()); }
+    if out_fd == 0 { out_fd = task_get_stdout_fd(sched_current_idx()); }
+
     var kargv: u32 = make_task_argv_addr();
     pack_argv_at(kargv, argv_addr);
     set_frame_argv(frame, kargv);
@@ -464,14 +493,12 @@ export fn sys_spawn_fds_handler(path: String, argv_addr: u32,
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
         task_set_name_basename(slot, path);
-        // Transfer ownership of the pipe fds to the child so
-        // vfs_close_owned_by(parent) doesn't yank them out from under
-        // the still-running child. slot_free_allocs at child exit
-        // will close them via stdin_fd / stdout_fd as usual; this
-        // setter just retags them so the auto-close path doesn't fire
-        // when the parent exits first.
-        if in_fd > 0 { vfs_set_owner(in_fd, slot); }
-        if out_fd > 0 { vfs_set_owner(out_fd, slot); }
+        // Explicitly-passed fds (pipe ends) become child-owned, so
+        // slot_free_allocs closes them at the child's exit and the
+        // parent closing first doesn't yank them away. Inherited fds
+        // keep their ancestor owner and are left open.
+        if in_given  != 0 { vfs_set_owner(in_fd, slot); }
+        if out_given != 0 { vfs_set_owner(out_fd, slot); }
     } else {
         free_last_alloc();
     }

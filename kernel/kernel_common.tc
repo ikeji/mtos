@@ -1005,20 +1005,18 @@ fn slot_free_allocs(idx: i32) -> void {
     var t: Task = get(g_tasks, idx);
     var ra: u32 = ram(t);
     var im: u32 = img(t);
-    var si: i32 = stdin_fd(t);
-    var so: i32 = stdout_fd(t);
     var ib: u32 = in_buf(t);
     if ra != 0u32 { kfree(ra); }
     if im != 0u32 { kfree(im); }
-    if si != 0 { vfs_close(si); }
-    if so != 0 { vfs_close(so); }
     if ib != 0u32 { kfree(ib); }
     // The task name lives inside the ram block (kfree(ra) above
     // released it) — no separate kfree needed.
-    // Auto-close any vfs fd the task left open (e.g. tcheck's fd_t
-    // before commit 66386cb). Defends against task-side close bugs
-    // — without this, a forgotten fd permanently consumes a kernel
-    // mtfs / fatfs / tmpfs / pipe slot.
+    // Close every vfs fd this task OWNS. This covers fds it left open
+    // (task-side close bugs) AND its stdin_fd / stdout_fd: redirect /
+    // pipe fds have their owner set to the child at spawn time, so
+    // they close here. fds the child only *inherited* from its parent
+    // keep an ancestor as owner and are deliberately left open — the
+    // parent still uses them.
     vfs_close_owned_by(idx);
     name(t, 0);
     in_buf(t, 0);
