@@ -446,12 +446,25 @@ export fn asm_analyze_dead_strip(idx_paths: StringArray,
 
 // Sort label indices in `section` by addr into `out` (insertion sort).
 // Returns the number of labels in the section.
+// __global_pointer$ is recorded in section 0 (text) but its addr lives
+// out in the data range (gp_abs = data_base + 2048). The per-section
+// compaction walk must exclude it: sorted by addr it lands after every
+// real text label, so the last real text label would take gp's addr as
+// its next_addr and — if that label is dead — record a phantom dead
+// range spanning all of rodata, driving the text section size negative.
+// ds_compact Phase 3 rewrites gp's addr on its own dedicated path.
+fn ds_is_global_pointer(idx: i32) -> i32 {
+    return ds_streq_lit(asm_label_name_at(idx), asm_label_name_len_at(idx),
+                        "__global_pointer$");
+}
+
 fn ds_sort_section(section: i32, out: I32Array) -> i32 {
     var n: i32 = 0;
     var total: i32 = asm_get_nlabels();
     var i: i32 = 0;
     while i < total {
-        if asm_label_section_at(i) == section {
+        if asm_label_section_at(i) == section
+            && ds_is_global_pointer(i) == 0 {
             set(out, n, i);
             n = n + 1;
         }

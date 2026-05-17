@@ -53,29 +53,28 @@ intrinsic 化すれば解消。解決すれば #6 (get 境界チェック) も�
 
 いつやるか: 「遅くてどうしようもない」状態になったら。現状は実害なし。
 
-### 32. dead-strip が deferred `.incbin` 入力内の dead ラベルを誤計算 (bug, 回避済)
+### 32. dead-strip が最後の dead text ラベルの dead range を誤計算 (bug, 解決済 2026-05-18)
 
-`asm_dead_strip.tc::ds_compact` が、deferred `.incbin` を持つ idx
-ファイル (例: `bin2s_incbin.sh` 生成の `jpfont_inc.s`) の中に
-**dead なラベルがあると** text セクションサイズを壊す。具体的には
-`total_dead_s[0]` に incbin サイズ (~314 KB) ぶんの phantom dead range
-が混入し、`new_text = orig_text - total_dead` が**負値**になる
-(観測例: `sec 0 0 -278288`)。結果 .lab のセクションレイアウトが破綻し、
-asm_pass3 が壊れたバイナリを吐いてタスクが起動直後にクラッシュする。
+**症状**: text セクションの最後の実ラベルが dead だと、その dead
+range が rodata 全体を巻き込んで巨大化し、`new_text = orig_text -
+total_dead` が**負値**になる (観測例: 314 KB の `.incbin` フォントを
+持つ `/bin/console` で `sec 0 0 -278288`)。.lab のセクションレイアウト
+が破綻し、asm_pass3 が壊れたバイナリを吐いてタスクが起動直後にクラッシュ。
 
-発症条件: incbin を持つ idx ファイル内に dead ラベルが 1 つでもある
-こと。`jpfont_inc.s` は `jpfont_addr` / `jpfont_size_value` の 2 関数を
-持ち、利用側が両方を呼べば dead ラベルが無く発症しない。`jpfont_addr`
-だけ呼ぶと `jpfont_size_value` が dead になり発症する。
+**原因**: `__global_pointer$` は section 0 (text) に登録されているが
+addr は data 範囲 (`gp_abs = data_base + 2048`) にある。
+`ds_compact` Phase 1 が section 0 のラベルを addr 順にソートすると
+`__global_pointer$` が全実 text ラベルより後ろに来るため、最後の実
+text ラベルの `next_addr` が `gp_abs` になる。そのラベルが dead だと
+dead range = `[last_text_addr, gp_abs]` = rodata 全域ぶんになる。
+incbin で rodata が巨大なほど被害が大きい。発症は「最後の text
+ラベルが dead」のときだけなので、それが live な通常ビルドでは顕在化
+しなかった。
 
-**回避策 (実装済)**: `/bin/console` の `jp_load()` が
-`jpfont_size_value()` を blob サイズの整合性チェックに使い、
-`jpfont_inc.s` の全関数を live に保つ。
-
-根本修正は `ds_compact` の dead-range 計算 (deferred incbin が属する
-セクションの section_end / 隣接ラベルの扱い) を見直す必要がある。
-最後の text ラベルが dead で、その idx が deferred incbin を別セクション
-に持つケースの next_addr 計算が疑わしい。
+**修正**: `ds_sort_section` が `__global_pointer$` を section 0 の
+コンパクション walk から除外 (`ds_is_global_pointer`)。gp は root で
+常に live、かつ addr は `ds_compact` Phase 3 が専用パスで書き換える
+ので workspace から外して安全。
 
 ### K7. pico2 で phase 7 コンパイラを完走させる ✅ **解決 (2026-04-29)**
 
