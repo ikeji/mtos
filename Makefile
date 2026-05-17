@@ -233,13 +233,16 @@ build/kernel/disk-console.img: DISK_KERN_CONF := tests/fixtures/kern_console.con
 # committed) is converted by genjpfont.py into jpfont.dat, then
 # bin2s_incbin.sh wraps it as jpfont_inc.s — a .incbin that links the
 # font into /bin/console's binary (TASK_EXTRA_S_console). console
-# reads the blob in place via peek8. With no font.bmp a size-0 stub
-# is linked and console falls back to its built-in 5x7 ASCII font.
+# reads the blob in place via peek8. font.bmp is mandatory: without it
+# /bin/console cannot be built.
 FONT_BMP := $(wildcard tmp/font.bmp)
 ifeq ($(FONT_BMP),)
-$(info note: tmp/font.bmp absent — /bin/console uses the ASCII font only; Japanese font.bmp: https://simk98.github.io/np21w/download.html)
-build/kernel/jpfont_inc.s: | build/kernel
-	@printf '    .text\n    .globl jpfont_addr\njpfont_addr:\n    li a0, 0\n    ret\n    .globl jpfont_size_value\njpfont_size_value:\n    li a0, 0\n    ret\n' > $@
+build/kernel/jpfont_inc.s:
+	@echo 'Error: tmp/font.bmp is required to build /bin/console.' >&2
+	@echo '  Download the np21w PC-98 font from:' >&2
+	@echo '  https://simk98.github.io/np21w/download.html' >&2
+	@echo '  and place font.bmp at tmp/font.bmp' >&2
+	@false
 else
 build/kernel/jpfont.dat: $(FONT_BMP) tests/genjpfont.py | build/kernel
 	@python3 tests/genjpfont.py $(FONT_BMP) $@

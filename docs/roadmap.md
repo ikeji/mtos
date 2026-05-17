@@ -654,19 +654,16 @@ self-host loop が成立した。
   - [x] **前提バグ修正**: ecall `-2` リトライが fd 引数 (frame[40])
         を破壊していた (commit 185ebe1)。fd 0 以外を直読みする初の
         ケース (console の pipe 直読み) で発覚
-  - [x] 5x7 ビットマップフォントで実グリフ描画 (2026-05-17、
-        commit 0f79985)。`tests/genfont.py` が `font.tc` を生成、
-        console が各 ON ピクセルを 1x1 mode-1 fill で描く。
-        `console.bmp` が読めるテキストになることを確認
-  - [x] 5x7 フォントに小文字 a-z グリフを追加 (2026-05-17、
-        commit 0e8bde4)。大文字フォールバックを撤廃
+  - [x] 実グリフ描画 (2026-05-17)。console が各 ON ピクセルを
+        水平 run ごとの mode-1 fill で描き、`console.bmp` が
+        読めるテキストになることを確認
   - [x] 日本語表示 (2026-05-17、commit 1e110c1)。np21w の PC-98
         font.bmp から `tests/genjpfont.py` が jpfont.dat (半角
         8x16 + 全角 16x16 + Unicode→区点表) を生成、console が
         UTF-8 デコードしてひらがな/カタカナ/漢字を描画。
-        font.bmp が無ければ 5x7 ASCII にフォールバック。
-        font.bmp は非コミット (https://simk98.github.io/np21w/
-        download.html)
+        jpfont.dat は `.incbin` で console バイナリに埋め込む
+        (`jpfont_inc.s`)。font.bmp は必須かつ非コミット、無い場合は
+        ビルドエラー (https://simk98.github.io/np21w/download.html)
   - [ ] グリフを 1 個の mode-0 blit にまとめる最適化 (実機 S3、
         per-pixel/run mode-1 は SPI 転送が多い)
 - [x] **S7**: kern.conf で `init=/bin/console` を seed して LCD

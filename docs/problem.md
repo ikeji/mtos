@@ -53,6 +53,30 @@ intrinsic 化すれば解消。解決すれば #6 (get 境界チェック) も�
 
 いつやるか: 「遅くてどうしようもない」状態になったら。現状は実害なし。
 
+### 32. dead-strip が deferred `.incbin` 入力内の dead ラベルを誤計算 (bug, 回避済)
+
+`asm_dead_strip.tc::ds_compact` が、deferred `.incbin` を持つ idx
+ファイル (例: `bin2s_incbin.sh` 生成の `jpfont_inc.s`) の中に
+**dead なラベルがあると** text セクションサイズを壊す。具体的には
+`total_dead_s[0]` に incbin サイズ (~314 KB) ぶんの phantom dead range
+が混入し、`new_text = orig_text - total_dead` が**負値**になる
+(観測例: `sec 0 0 -278288`)。結果 .lab のセクションレイアウトが破綻し、
+asm_pass3 が壊れたバイナリを吐いてタスクが起動直後にクラッシュする。
+
+発症条件: incbin を持つ idx ファイル内に dead ラベルが 1 つでもある
+こと。`jpfont_inc.s` は `jpfont_addr` / `jpfont_size_value` の 2 関数を
+持ち、利用側が両方を呼べば dead ラベルが無く発症しない。`jpfont_addr`
+だけ呼ぶと `jpfont_size_value` が dead になり発症する。
+
+**回避策 (実装済)**: `/bin/console` の `jp_load()` が
+`jpfont_size_value()` を blob サイズの整合性チェックに使い、
+`jpfont_inc.s` の全関数を live に保つ。
+
+根本修正は `ds_compact` の dead-range 計算 (deferred incbin が属する
+セクションの section_end / 隣接ラベルの扱い) を見直す必要がある。
+最後の text ラベルが dead で、その idx が deferred incbin を別セクション
+に持つケースの next_addr 計算が疑わしい。
+
 ### K7. pico2 で phase 7 コンパイラを完走させる ✅ **解決 (2026-04-29)**
 
 完成: pico2 実機上で OS 自身のコンパイラパイプラインが

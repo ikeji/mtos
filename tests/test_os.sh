@@ -228,11 +228,9 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     ci_fb=$(echo "$ci_out" | grep -c "color=65535")
     ci_exit=$(echo "$ci_out" | grep -c "CONSOLE: exit")
     ci_done=$(echo "$ci_out" | grep -c "all tasks done")
-    # If the Japanese font asset was built, console must load it.
-    ci_jp=1
-    if [ -f "$ROOT_DIR/build/kernel/jpfont.dat" ]; then
-        ci_jp=$(echo "$ci_out" | grep -c "CONSOLE: jpfont loaded")
-    fi
+    # The PC-98 font is .incbin'd into the console binary; console
+    # must load it (font.bmp is mandatory — the build fails without it).
+    ci_jp=$(echo "$ci_out" | grep -c "CONSOLE: jpfont loaded")
     # fd inheritance: the nested sh runs `echo S7TEST`; echo inherits
     # sh's stdout (the pipe to console), so "S7TEST" is rendered to
     # /dev/fb — it must NOT appear as literal text on the UART. If it
