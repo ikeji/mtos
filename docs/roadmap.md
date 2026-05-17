@@ -656,8 +656,21 @@ self-host loop が成立した。
         ケース (console の pipe 直読み) で発覚
   - [ ] スタブ描画 (mode-1 セル塗り) を mode-0 フォントグリフ blit に
         差し替え (実機 S3 と合わせて)
-- [ ] **S7**: kern.conf で `init=/bin/console` を seed して LCD
-      コンソール完成
+- [x] **S7**: kern.conf で `init=/bin/console` を seed して LCD
+      コンソールを boot 時に自動起動 (2026-05-17、commit cda9ca9)。
+      `tests/fixtures/kern_console.conf` + Makefile `disk-console.img`
+      ターゲット。virt で boot→console 自動起動→/dev/fb 描画→
+      クリーン終了を確認、`test_os.sh` に console_init ケース追加
+
+スタブ環境 (virt) でのフェーズ9 はこれで一巡 — S1/S2/S5/S6/S7 が
+完動、S3/S4 はスタブ完了。残りは実機ハードウェア作業のみ:
+- S3 実: SPI1 + ILI9488 実ドライバ (`devfs.tc` の `fb_dump` 差し替え)
+- S4 実: ILI9488 ハードウェア垂直スクロール
+- S5 実: GPIO マトリクススキャナ (`devfs.tc` の DEV_KBD read 差し替え)
+- S6 実: console のスタブ描画 (mode-1 セル塗り) を mode-0 フォント
+  グリフ blit に差し替え
+- `/dev/rtc` の pico2 AON timer 実装 (現状スタブ)
+ハード結線は `docs/pico2_hardware.md` に追記してから着手する。
 
 ## 技術的リスクと対策
 
