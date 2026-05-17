@@ -463,9 +463,10 @@ fn read_line(buf: U8Array) -> i32 {
                 }
             } else if c < 32u8 {
                 // Skip other C0 controls
-            } else if c >= 128u8 {
-                // Skip high-bit bytes
             } else if pos < CMD_MAX - 1 {
+                // Printable ASCII and high-bit bytes (UTF-8
+                // continuation / lead bytes of multibyte text) are
+                // stored verbatim so e.g. Japanese passes through.
                 set(buf, pos, c);
                 pos = pos + 1;
                 echo_byte(c);

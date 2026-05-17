@@ -224,10 +224,15 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
         -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
     elapsed=$(( $(time_ms) - t0 ))
     ci_ready=$(echo "$ci_out" | grep -c "CONSOLE: ready")
-    # console draws each glyph pixel as a 1x1 mode-1 fill in white.
-    ci_fb=$(echo "$ci_out" | grep -c "w=1 h=1 n=12 color=65535")
+    # console paints glyph runs as white (RGB565 65535) mode-1 fills.
+    ci_fb=$(echo "$ci_out" | grep -c "color=65535")
     ci_exit=$(echo "$ci_out" | grep -c "CONSOLE: exit")
     ci_done=$(echo "$ci_out" | grep -c "all tasks done")
+    # If the Japanese font asset was built, console must load it.
+    ci_jp=1
+    if [ -f "$ROOT_DIR/build/kernel/jpfont.dat" ]; then
+        ci_jp=$(echo "$ci_out" | grep -c "CONSOLE: jpfont loaded")
+    fi
     # fd inheritance: the nested sh runs `echo S7TEST`; echo inherits
     # sh's stdout (the pipe to console), so "S7TEST" is rendered to
     # /dev/fb — it must NOT appear as literal text on the UART. If it
@@ -235,11 +240,11 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     ci_leak=$(echo "$ci_out" | grep -c "S7TEST")
     if [ "$ci_ready" -gt 0 ] && [ "$ci_fb" -gt 0 ] \
         && [ "$ci_exit" -gt 0 ] && [ "$ci_done" -gt 0 ] \
-        && [ "$ci_leak" -eq 0 ]; then
+        && [ "$ci_leak" -eq 0 ] && [ "$ci_jp" -gt 0 ]; then
         report_pass "console_init: kern.conf seeds /bin/console at boot" "$elapsed"
     else
         report_fail_msg "console_init" \
-            "ready=$ci_ready fb=$ci_fb exit=$ci_exit done=$ci_done leak=$ci_leak; got: $(printf '%s' "$ci_out" | head -c 320)"
+            "ready=$ci_ready fb=$ci_fb exit=$ci_exit done=$ci_done leak=$ci_leak jp=$ci_jp; got: $(printf '%s' "$ci_out" | head -c 320)"
     fi
 
     # --- console_bmp: replay the /dev/fb commands console issued in

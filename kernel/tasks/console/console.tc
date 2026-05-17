@@ -1,7 +1,7 @@
 // console.tc — /bin/console: userspace terminal emulator + getty.
 //
 // Hosts an interactive shell on the local display + keyboard instead
-// of the UART. Structure (フェーズ9 S6):
+// of the UART:
 //
 //   /dev/kbd ──> sh stdin       sh stdout ──> pipe ──> console
 //                                                        │
@@ -11,30 +11,44 @@
 //
 // console opens /dev/kbd and /dev/fb, creates one pipe, and spawns
 // /bin/sh with stdin = /dev/kbd and stdout = the pipe write end. It
-// then reads the pipe and renders sh's output to /dev/fb. Because sh
-// reads its own stdin (/dev/kbd) directly, console only ever waits on
-// one fd (the pipe), so no select/poll is needed — both tasks do a
-// single blocking read.
+// reads the pipe and renders sh's output to /dev/fb. sh reads its own
+// stdin directly, so console only ever waits on the pipe — no
+// select/poll needed.
 //
-// Rendering: each printable char is drawn from the 5x7 bitmap font
-// (font.tc) — every ON pixel of the glyph becomes a 1x1 /dev/fb
-// mode-1 fill in white. The real S3 hardware driver can later batch
-// a glyph into one mode-0 blit; the terminal state machine (grid,
-// cursor, scroll) is unchanged either way.
+// Font: if /jpfont.dat is present (built from font.bmp by
+// tests/genjpfont.py) console renders with the PC-98 font — 8x16
+// hankaku + 16x16 zenkaku, UTF-8 decoded, so Japanese displays.
+// Absent → console falls back to the built-in 5x7 ASCII font
+// (font.tc). Output reaches /dev/fb as mode-1 fills (one per
+// horizontal run of a glyph row).
 
 import "../libtc/libtc.tc";
 import "font.tc";
 
-// Portrait ILI9488 (320x480) with a 6x8 cell (5x7 glyph + 1px gap):
-// 53 cols x 60 rows.
-var COLS:   i32 = 53;
-var ROWS:   i32 = 60;
-var CELL_W: i32 = 6;
-var CELL_H: i32 = 8;
-var FG:     i32 = 65535;   // RGB565 white
+var FG: i32 = 65535;        // RGB565 white
+
+// Cell geometry — set in main() once the font choice is known.
+var CW:   i32 = 6;
+var CH:   i32 = 8;
+var COLS: i32 = 53;
+var ROWS: i32 = 60;
 
 var g_col: i32 = 0;
 var g_row: i32 = 0;
+
+// jpfont.dat, loaded into RAM. g_jp != 0 once it is available.
+// Layout: "JPF1" + u32 u2k_count + hankaku[256][16] +
+// zenkaku[94*94][32] + u2k[u2k_count]{u16 unicode, u16 kuten}.
+var g_font: U8Array = 0 as U8Array;
+var g_jp:   i32 = 0;
+var g_u2k:  i32 = 0;
+var OFF_HAN: i32 = 8;
+var OFF_ZEN: i32 = 4104;       // 8 + 256*16
+var OFF_U2K: i32 = 286856;     // 4104 + 94*94*32
+
+// UTF-8 decode state.
+var g_un:  i32 = 0;            // continuation bytes still expected
+var g_ucp: i32 = 0;            // codepoint being assembled
 
 // Store a little-endian u16 at byte offset `pos`.
 fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
@@ -43,33 +57,15 @@ fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
     return;
 }
 
-// Draw one printable char's 5x7 glyph at cell (col,row): each ON
-// pixel is a 1x1 /dev/fb mode-1 fill in white. font.tc stores 7
-// chars per glyph, each encoding a 5-bit row as (40 + bits).
-fn fb_glyph(fb: i32, frame: U8Array, col: i32, row: i32, c: i32) -> void {
-    if c < 32 || c > 126 { return; }
-    var font: StringLiteral = console_font();
-    var goff: i32 = (c - 32) * 7;
-    var x0: i32 = col * CELL_W;
-    var y0: i32 = row * CELL_H;
-    var ry: i32 = 0;
-    while ry < 7 {
-        var bits: i32 = (get(font, goff + ry) as i32) - 40;
-        var rx: i32 = 0;
-        while rx < 5 {
-            if (bits & (16 >> rx)) != 0 {
-                put_u16(frame, 0,  x0 + rx);
-                put_u16(frame, 2,  y0 + ry);
-                put_u16(frame, 4,  1);
-                put_u16(frame, 6,  1);
-                put_u16(frame, 8,  1);
-                put_u16(frame, 10, FG);
-                sys_write(fb, frame, 12);
-            }
-            rx = rx + 1;
-        }
-        ry = ry + 1;
-    }
+// Emit one /dev/fb mode-1 fill.
+fn fb_fill(fb: i32, frame: U8Array, x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
+    put_u16(frame, 0,  x);
+    put_u16(frame, 2,  y);
+    put_u16(frame, 4,  w);
+    put_u16(frame, 6,  h);
+    put_u16(frame, 8,  1);
+    put_u16(frame, 10, col);
+    sys_write(fb, frame, 12);
     return;
 }
 
@@ -85,32 +81,224 @@ fn fb_scroll(fb: i32, frame: U8Array, line: i32) -> void {
     return;
 }
 
-// Terminal state machine: advance the cursor and draw one byte.
-fn render(fb: i32, frame: U8Array, c: i32) -> void {
-    if c == 10 {              // '\n'
-        g_col = 0;
-        g_row = g_row + 1;
-    } else if c == 13 {       // '\r'
-        g_col = 0;
-    } else if c == 8 {        // '\b'
-        if g_col > 0 { g_col = g_col - 1; }
-    } else if c >= 32 {
-        fb_glyph(fb, frame, g_col, g_row, c);
-        g_col = g_col + 1;
-        if g_col >= COLS {
-            g_col = 0;
-            g_row = g_row + 1;
+// Draw one glyph pixel row: paint each maximal run of set bits as a
+// single mode-1 fill. `bits` holds `gw` pixels, MSB = leftmost.
+fn emit_row(fb: i32, frame: U8Array, x0: i32, y: i32, bits: i32, gw: i32) -> void {
+    var x: i32 = 0;
+    while x < gw {
+        if (bits & (1 << (gw - 1 - x))) != 0 {
+            var run: i32 = 1;
+            while x + run < gw && (bits & (1 << (gw - 1 - (x + run)))) != 0 {
+                run = run + 1;
+            }
+            fb_fill(fb, frame, x0 + x, y, run, 1, FG);
+            x = x + run;
+        } else {
+            x = x + 1;
         }
+    }
+    return;
+}
+
+// ===== JP font (jpfont.dat) =====
+
+// Load /jpfont.dat into g_font. On any failure g_jp stays 0 and
+// console keeps the built-in 5x7 ASCII font.
+fn jp_load() -> void {
+    var fd: i32 = do_openat(0, "/jpfont.dat", 0);
+    if fd < 0 { return; }
+    var hdr: U8Array = U8Array(8u32);
+    if sys_read(fd, hdr, 8) != 8 {
+        do_close(fd); delete(hdr); return;
+    }
+    if get(hdr, 0) != 'J' as u8 || get(hdr, 1) != 'P' as u8
+        || get(hdr, 2) != 'F' as u8 || get(hdr, 3) != '1' as u8 {
+        do_close(fd); delete(hdr); return;
+    }
+    var u2k: i32 = (get(hdr, 4) as i32)
+                 | ((get(hdr, 5) as i32) << 8)
+                 | ((get(hdr, 6) as i32) << 16)
+                 | ((get(hdr, 7) as i32) << 24);
+    var total: i32 = 8 + 256 * 16 + 94 * 94 * 32 + u2k * 4;
+    var buf: U8Array = U8Array(total as u32);
+    var i: i32 = 0;
+    while i < 8 { set(buf, i, get(hdr, i)); i = i + 1; }
+    delete(hdr);
+    var tmp: U8Array = U8Array(4096u32);
+    var pos: i32 = 8;
+    var run: i32 = 1;
+    while run == 1 {
+        var n: i32 = sys_read(fd, tmp, 4096);
+        if n <= 0 {
+            run = 0;
+        } else {
+            var j: i32 = 0;
+            while j < n {
+                set(buf, pos, get(tmp, j));
+                pos = pos + 1;
+                j = j + 1;
+            }
+        }
+    }
+    delete(tmp);
+    do_close(fd);
+    if pos != total {
+        delete(buf);
+        return;
+    }
+    g_font = buf;
+    g_u2k = u2k;
+    g_jp = 1;
+    eputs("CONSOLE: jpfont loaded\n");
+    return;
+}
+
+// Binary-search the Unicode->kuten table. Returns (ku<<8)|ten, or 0.
+fn u2k_lookup(cp: i32) -> i32 {
+    var lo: i32 = 0;
+    var hi: i32 = g_u2k - 1;
+    while lo <= hi {
+        var mid: i32 = (lo + hi) / 2;
+        var off: i32 = OFF_U2K + mid * 4;
+        var ucp: i32 = (get(g_font, off) as i32)
+                     | ((get(g_font, off + 1) as i32) << 8);
+        if ucp == cp {
+            return (get(g_font, off + 2) as i32)
+                 | ((get(g_font, off + 3) as i32) << 8);
+        }
+        if ucp < cp { lo = mid + 1; } else { hi = mid - 1; }
+    }
+    return 0;
+}
+
+// 8x16 hankaku glyph (1 byte per row) at cell (col,row).
+fn draw_hankaku(fb: i32, frame: U8Array, col: i32, row: i32, code: i32) -> void {
+    var goff: i32 = OFF_HAN + code * 16;
+    var x0: i32 = col * CW;
+    var y0: i32 = row * CH;
+    var y: i32 = 0;
+    while y < 16 {
+        emit_row(fb, frame, x0, y0 + y, get(g_font, goff + y) as i32, 8);
+        y = y + 1;
+    }
+    return;
+}
+
+// 16x16 zenkaku glyph (2 bytes per row, big-endian) at cell (col,row).
+fn draw_zenkaku(fb: i32, frame: U8Array, col: i32, row: i32, kuten: i32) -> void {
+    var ku:  i32 = kuten >> 8;
+    var ten: i32 = kuten & 0xFF;
+    var goff: i32 = OFF_ZEN + ((ku - 1) * 94 + (ten - 1)) * 32;
+    var x0: i32 = col * CW;
+    var y0: i32 = row * CH;
+    var y: i32 = 0;
+    while y < 16 {
+        var hi: i32 = get(g_font, goff + y * 2) as i32;
+        var lo: i32 = get(g_font, goff + y * 2 + 1) as i32;
+        emit_row(fb, frame, x0, y0 + y, (hi << 8) | lo, 16);
+        y = y + 1;
+    }
+    return;
+}
+
+// 5x7 built-in glyph (font.tc), used when jpfont.dat is absent.
+fn draw_glyph57(fb: i32, frame: U8Array, col: i32, row: i32, c: i32) -> void {
+    if c < 32 || c > 126 { return; }
+    var font: StringLiteral = console_font();
+    var goff: i32 = (c - 32) * 7;
+    var x0: i32 = col * CW;
+    var y0: i32 = row * CH;
+    var ry: i32 = 0;
+    while ry < 7 {
+        var bits: i32 = (get(font, goff + ry) as i32) - 40;
+        emit_row(fb, frame, x0, y0 + ry, bits, 5);
+        ry = ry + 1;
+    }
+    return;
+}
+
+// ===== Terminal state machine =====
+
+fn newline() -> void {
+    g_col = 0;
+    g_row = g_row + 1;
+    return;
+}
+
+// Render one decoded Unicode codepoint.
+fn draw_cp(fb: i32, frame: U8Array, cp: i32) -> void {
+    if cp == 10 {
+        newline();
+    } else if cp == 13 {
+        g_col = 0;
+    } else if cp == 8 {
+        if g_col > 0 { g_col = g_col - 1; }
+    } else if cp >= 32 {
+        if g_jp != 0 {
+            if cp < 256 {
+                draw_hankaku(fb, frame, g_col, g_row, cp);
+                g_col = g_col + 1;
+            } else {
+                var kt: i32 = u2k_lookup(cp);
+                if kt != 0 {
+                    if g_col + 1 >= COLS { newline(); }
+                    draw_zenkaku(fb, frame, g_col, g_row, kt);
+                    g_col = g_col + 2;
+                }
+            }
+        } else {
+            draw_glyph57(fb, frame, g_col, g_row, cp);
+            g_col = g_col + 1;
+        }
+        if g_col >= COLS { newline(); }
     }
     if g_row >= ROWS {
         g_row = ROWS - 1;
-        fb_scroll(fb, frame, g_row * CELL_H);
+        fb_scroll(fb, frame, g_row * CH);
+    }
+    return;
+}
+
+// Feed one byte through the UTF-8 decoder; render completed
+// codepoints. ASCII passes straight through.
+fn render(fb: i32, frame: U8Array, b: i32) -> void {
+    var cp: i32 = 0 - 1;
+    if g_un > 0 {
+        if (b & 192) == 128 {
+            g_ucp = (g_ucp << 6) | (b & 63);
+            g_un = g_un - 1;
+            if g_un == 0 { cp = g_ucp; }
+        } else {
+            g_un = 0;            // malformed — restart on this byte
+        }
+    }
+    if g_un == 0 && cp < 0 {
+        if b < 128 {
+            cp = b;
+        } else if (b & 224) == 192 {
+            g_ucp = b & 31;  g_un = 1;
+        } else if (b & 240) == 224 {
+            g_ucp = b & 15;  g_un = 2;
+        } else if (b & 248) == 240 {
+            g_ucp = b & 7;   g_un = 3;
+        }
+    }
+    if cp >= 0 {
+        draw_cp(fb, frame, cp);
     }
     return;
 }
 
 fn main() -> i32 {
     eputs("CONSOLE: ready\n");
+    jp_load();
+    if g_jp != 0 {
+        CW = 8;  CH = 16;
+    } else {
+        CW = 6;  CH = 8;
+    }
+    COLS = 320 / CW;
+    ROWS = 480 / CH;
 
     var kbd: i32 = do_openat(0, "/dev/kbd", 0);
     var fb:  i32 = do_openat(0, "/dev/fb", 1);
@@ -135,11 +323,9 @@ fn main() -> i32 {
         eputs("CONSOLE: sh spawn failed\n");
         return 1;
     }
-    // Do NOT close kbd / pw here: spawn_fds passes fd *numbers* (no
-    // dup), so closing them would tear out sh's own stdin / stdout.
-    // sh owns them now (vfs_set_owner); slot_free_allocs closes them
-    // when sh exits — and that close of the pipe write end is what
-    // gives our pipe reader its EOF.
+    // Do NOT close kbd / pw here: spawn_fds passes fd numbers (no
+    // dup); sh owns them now and slot_free_allocs closes them when
+    // sh exits — that close of the pipe write end is our EOF.
 
     var frame: U8Array = U8Array(12u32);
     var buf:   U8Array = U8Array(64u32);
@@ -147,7 +333,7 @@ fn main() -> i32 {
     while running == 1 {
         var r: i32 = sys_read(pr, buf, 64);
         if r <= 0 {
-            running = 0;       // EOF: sh exited
+            running = 0;
         } else {
             var i: i32 = 0;
             while i < r {
