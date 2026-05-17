@@ -654,8 +654,14 @@ self-host loop が成立した。
   - [x] **前提バグ修正**: ecall `-2` リトライが fd 引数 (frame[40])
         を破壊していた (commit 185ebe1)。fd 0 以外を直読みする初の
         ケース (console の pipe 直読み) で発覚
-  - [ ] スタブ描画 (mode-1 セル塗り) を mode-0 フォントグリフ blit に
-        差し替え (実機 S3 と合わせて)
+  - [x] 5x7 ビットマップフォントで実グリフ描画 (2026-05-17、
+        commit 0f79985)。`tests/genfont.py` が `font.tc` を生成、
+        console が各 ON ピクセルを 1x1 mode-1 fill で描く。
+        `console.bmp` が読めるテキストになることを確認
+  - [ ] グリフを 1 個の mode-0 blit にまとめる最適化 (実機 S3、
+        per-pixel mode-1 は SPI 転送が多い)
+  - [ ] フォントを小文字グリフ込みのフルセットに (現状 a-z は
+        大文字グリフを流用)
 - [x] **S7**: kern.conf で `init=/bin/console` を seed して LCD
       コンソールを boot 時に自動起動 (2026-05-17、commit cda9ca9)。
       `tests/fixtures/kern_console.conf` + Makefile `disk-console.img`
