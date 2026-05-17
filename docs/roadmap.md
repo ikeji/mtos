@@ -646,6 +646,16 @@ self-host loop が成立した。
 - [ ] **S6**: `/bin/console` — userspace ターミナルエミュレータ +
       getty (char グリッド + フォント、`/dev/fb` + `/dev/kbd` を開き
       sh を pipe 配線で spawn)
+  - [x] getty + ターミナル状態機械 + pump ループ (2026-05-17、
+        commit e5457a6)。`/dev/kbd` + `/dev/fb` を開き pipe 1 本で
+        sh を spawn_fds、char グリッド/カーソル/スクロールで sh 出力
+        を `/dev/fb` に描画。virt で console→sh→レンダリング→クリーン
+        終了を確認、fs_virtio に console ケース追加
+  - [x] **前提バグ修正**: ecall `-2` リトライが fd 引数 (frame[40])
+        を破壊していた (commit 185ebe1)。fd 0 以外を直読みする初の
+        ケース (console の pipe 直読み) で発覚
+  - [ ] スタブ描画 (mode-1 セル塗り) を mode-0 フォントグリフ blit に
+        差し替え (実機 S3 と合わせて)
 - [ ] **S7**: kern.conf で `init=/bin/console` を seed して LCD
       コンソール完成
 
