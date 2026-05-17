@@ -205,6 +205,37 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     esac
 fi
 
+# --- console_init: boot disk-console.img, whose /etc/kern.conf seeds
+#     /bin/console as the sole init task (フェーズ9 S7). console comes
+#     up at boot (not spawned by a shell), opens a nested /bin/sh over
+#     a pipe with stdin=/dev/kbd, renders that shell's output to
+#     /dev/fb, and exits cleanly when the shell quits. ---
+KERNEL_CONSOLE_DISK="$ROOT_DIR/build/kernel/disk-console.img"
+if command -v qemu-system-riscv32 >/dev/null 2>&1 \
+    && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_CONSOLE_DISK" ]; then
+    t0=$(time_ms)
+    ci_out=$(printf 'echo S7TEST\nquit\n' \
+        | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -drive "file=$KERNEL_CONSOLE_DISK,format=raw,if=none,id=blk0" \
+        -device "virtio-blk-device,drive=blk0" \
+        -device "loader,file=$KERNEL_BIN,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+    elapsed=$(( $(time_ms) - t0 ))
+    ci_ready=$(echo "$ci_out" | grep -c "CONSOLE: ready")
+    ci_fb=$(echo "$ci_out" | grep -c "FB: mode=1 x=0 y=0 w=6 h=16")
+    ci_exit=$(echo "$ci_out" | grep -c "CONSOLE: exit")
+    ci_done=$(echo "$ci_out" | grep -c "all tasks done")
+    if [ "$ci_ready" -gt 0 ] && [ "$ci_fb" -gt 0 ] \
+        && [ "$ci_exit" -gt 0 ] && [ "$ci_done" -gt 0 ]; then
+        report_pass "console_init: kern.conf seeds /bin/console at boot" "$elapsed"
+    else
+        report_fail_msg "console_init" \
+            "ready=$ci_ready fb=$ci_fb exit=$ci_exit done=$ci_done; got: $(printf '%s' "$ci_out" | head -c 320)"
+    fi
+fi
+
 # --- msh script mode: verifies set -ex tracing, # comment skip,
 #     blank-line skip, and exit-code propagation via two fixtures
 #     (msh_smoke.sh and msh_abort.sh) staged in disk-demo.img.
