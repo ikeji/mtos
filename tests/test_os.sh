@@ -263,6 +263,34 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 "fb_render.py failed or produced an invalid BMP"
         fi
     fi
+
+    # --- console_scroll: run `seq 40` through the console so its
+    #     output overflows the 30-row window. Exercises the hardware-
+    #     vscroll path — console must emit mode-2 scroll blits and
+    #     still drive the nested shell to a clean exit. ---
+    t0=$(time_ms)
+    cs_out=$(printf 'seq 40\nquit\n' \
+        | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -drive "file=$KERNEL_CONSOLE_DISK,format=raw,if=none,id=blk0" \
+        -device "virtio-blk-device,drive=blk0" \
+        -device "loader,file=$KERNEL_BIN,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+    elapsed=$(( $(time_ms) - t0 ))
+    cs_ready=$(echo "$cs_out" | grep -c "CONSOLE: ready")
+    cs_exit=$(echo "$cs_out" | grep -c "CONSOLE: exit")
+    cs_done=$(echo "$cs_out" | grep -c "all tasks done")
+    # 40 numbers + shell echo/prompt lines is well over the 30-row
+    # window, so console must scroll several times (mode-2 blits).
+    cs_scroll=$(echo "$cs_out" | grep -c "FB: mode=2")
+    if [ "$cs_ready" -gt 0 ] && [ "$cs_exit" -gt 0 ] \
+        && [ "$cs_done" -gt 0 ] && [ "$cs_scroll" -ge 8 ]; then
+        report_pass "console_scroll: seq 40 overflows the window, console scrolls" "$elapsed"
+    else
+        report_fail_msg "console_scroll" \
+            "ready=$cs_ready exit=$cs_exit done=$cs_done scroll=$cs_scroll; got: $(printf '%s' "$cs_out" | head -c 320)"
+    fi
 fi
 
 # --- msh script mode: verifies set -ex tracing, # comment skip,

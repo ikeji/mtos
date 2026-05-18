@@ -649,8 +649,8 @@ GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target pico2 -o kernel.uf2
    経由で各タスクビルドで共有 (phase 7 で導入、-8.8 s)
 2. ゲストタスク (kernel/tasks/*/task.mk が GUEST_TASKS に積む:
    hello, hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head,
-   cp, du, grep, rm, mkdir, rmdir, neofetch, vi, launcher, count, mx,
-   mr, muxon, muxoff) を raw バイナリにコンパイル。各タスクには
+   cp, du, grep, rm, mkdir, rmdir, neofetch, vi, launcher, count, seq,
+   mx, mr, muxon, muxoff) を raw バイナリにコンパイル。各タスクには
    `task_arena_size()` / `task_stack_size()` の値を `.word` 2 本の
    header として prepend する (K3 案C)。`EXTRA_TASKS="parse sigscan
    tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` を渡すと phase 7

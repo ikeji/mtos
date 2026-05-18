@@ -1,0 +1,3 @@
+GUEST_TASKS += seq
+TASK_ARENA_seq := 16384
+TASK_STACK_seq := 8192

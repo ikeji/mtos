@@ -1,0 +1,80 @@
+// seq.tc — print a sequence of numbers, one per line.
+//
+// Usage (coreutils-compatible, integers only — TinyC has no floats):
+//   seq LAST                  → 1, 2, ..., LAST
+//   seq FIRST LAST            → FIRST, ..., LAST
+//   seq FIRST INCREMENT LAST  → FIRST, FIRST+INC, ...; the last term is
+//                               <= LAST (>= LAST for a negative INC).
+// A FIRST/LAST pair that runs against the increment's sign prints
+// nothing (exit 0), matching coreutils. Unlike /bin/count there is no
+// inter-line delay, so it is usable in time-bounded tests.
+
+import "../libtc/libtc.tc";
+
+// Parse a decimal integer, allowing a single leading '-'. Stops at the
+// first non-digit.
+fn parse_int(s: String) -> i32 {
+    var i: i32 = 0;
+    var neg: i32 = 0;
+    if len(s) > 0 && get(s, 0) == ('-' as u8) {
+        neg = 1;
+        i = 1;
+    }
+    var n: i32 = 0;
+    var done: i32 = 0;
+    while i < len(s) && done == 0 {
+        var c: u8 = get(s, i);
+        if c < ('0' as u8) || c > ('9' as u8) {
+            done = 1;
+        } else {
+            n = n * 10 + (c as i32 - 48);
+            i = i + 1;
+        }
+    }
+    if neg == 1 { return 0 - n; }
+    return n;
+}
+
+fn emit_seq(first: i32, incr: i32, last: i32) -> void {
+    var v: i32 = first;
+    if incr > 0 {
+        while v <= last {
+            print(v);
+            putchar(10u8);
+            v = v + incr;
+        }
+    } else {
+        while v >= last {
+            print(v);
+            putchar(10u8);
+            v = v + incr;
+        }
+    }
+    return;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var nargs: i32 = len(argv);
+    var first: i32 = 1;
+    var incr:  i32 = 1;
+    var last:  i32 = 0;
+    if nargs == 2 {
+        last = parse_int(get(argv, 1));
+    } else if nargs == 3 {
+        first = parse_int(get(argv, 1));
+        last  = parse_int(get(argv, 2));
+    } else if nargs == 4 {
+        first = parse_int(get(argv, 1));
+        incr  = parse_int(get(argv, 2));
+        last  = parse_int(get(argv, 3));
+    } else {
+        eputs("seq: usage: seq [FIRST [INCREMENT]] LAST\n");
+        return 1;
+    }
+    if incr == 0 {
+        eputs("seq: increment must not be zero\n");
+        return 1;
+    }
+    emit_seq(first, incr, last);
+    return 0;
+}
