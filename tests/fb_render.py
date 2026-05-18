@@ -14,13 +14,13 @@
 # pixel from the `data=` RGB565 payload (/bin/console emits one such
 # blit per glyph), so the BMP shows the actual rendered text.
 #
-# Usage: fb_render.py <fb-dump.txt> <out.bmp>
+# Usage: fb_render.py <fb-dump.txt> <out.bmp> [WIDTHxHEIGHT]
+#        WIDTHxHEIGHT defaults to 320x480 (portrait); pass 480x320 for
+#        a landscape console capture.
 # Exit:  0 if at least one blit was rendered, 1 otherwise.
 
 import sys
 import re
-
-W, H = 320, 480
 
 
 def rgb565_to_rgb(c):
@@ -56,9 +56,14 @@ def write_bmp(path, width, height, pixels):
 
 
 def main():
-    if len(sys.argv) != 3:
-        sys.stderr.write("usage: fb_render.py <fb-dump.txt> <out.bmp>\n")
+    if len(sys.argv) not in (3, 4):
+        sys.stderr.write(
+            "usage: fb_render.py <fb-dump.txt> <out.bmp> [WIDTHxHEIGHT]\n")
         return 1
+    W, H = 320, 480
+    if len(sys.argv) == 4:
+        ws, hs = sys.argv[3].lower().split('x')
+        W, H = int(ws), int(hs)
 
     fb = [(0, 0, 0)] * (W * H)
     fills = blits = scrolls = 0

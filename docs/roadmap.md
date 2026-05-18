@@ -674,6 +674,12 @@ self-host loop が成立した。
         FB を FB_H ライン環状とみなし mode-2 (VSCRSADD) でスクロール、
         最古行を mode-1 で消して再利用。`count` (1-100) で 30 行
         ウィンドウが正しく追従するのを確認
+  - [x] landscape (横向き) + ソフトウェアスクロール (2026-05-18)。
+        `console -l` で 480x320 横向き。回転すると VSCRSADD 軸が
+        水平になりハードウェアスクロールが使えないため、codepoint
+        グリッドを持ち overflow 時に画面全体を再 blit する software
+        scroll に切替。`seq` 即値出力タスク + test_os.sh の
+        console_scroll / console_landscape で回帰確認
 - [x] **S7**: kern.conf で `init=/bin/console` を seed して LCD
       コンソールを boot 時に自動起動 (2026-05-17、commit cda9ca9)。
       `tests/fixtures/kern_console.conf` + Makefile `disk-console.img`

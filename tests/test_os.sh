@@ -293,6 +293,42 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fi
 fi
 
+# --- console_landscape: spawn `console -l` from the UART shell so it
+#     runs landscape (480x320). Rotated 90°, the ILI9488 hardware
+#     vscroll axis is horizontal and useless for text, so console
+#     scrolls in software — re-blitting the screen. `seq 30` overflows
+#     the 20-row landscape window; assert console emits NO mode-2
+#     (hardware-scroll) blits, does full-screen mode-1 redraws, and
+#     still exits cleanly. ---
+if command -v qemu-system-riscv32 >/dev/null 2>&1 \
+    && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_DISK" ]; then
+    t0=$(time_ms)
+    cl_out=$(printf 'console -l\nseq 30\nquit\nquit\n' \
+        | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -drive "file=$KERNEL_DISK,format=raw,if=none,id=blk0" \
+        -device "virtio-blk-device,drive=blk0" \
+        -device "loader,file=$KERNEL_BIN,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+    elapsed=$(( $(time_ms) - t0 ))
+    cl_mode=$(echo "$cl_out" | grep -c "CONSOLE: landscape, software scroll")
+    cl_exit=$(echo "$cl_out" | grep -c "CONSOLE: exit")
+    # Landscape must NOT touch the hardware vertical scroll (mode 2)...
+    cl_hw=$(echo "$cl_out" | grep -c "FB: mode=2")
+    # ...it redraws the whole 480x320 screen on each scroll, which
+    # starts with a full-screen mode-1 clear. seq 30 overflows the
+    # 20-row landscape window many times.
+    cl_redraw=$(echo "$cl_out" | grep -c "FB: mode=1 x=0 y=0 w=480 h=320")
+    if [ "$cl_mode" -gt 0 ] && [ "$cl_exit" -gt 0 ] \
+        && [ "$cl_hw" -eq 0 ] && [ "$cl_redraw" -ge 8 ]; then
+        report_pass "console_landscape: console -l software-scrolls" "$elapsed"
+    else
+        report_fail_msg "console_landscape" \
+            "mode=$cl_mode exit=$cl_exit hw=$cl_hw redraw=$cl_redraw; got: $(printf '%s' "$cl_out" | head -c 320)"
+    fi
+fi
+
 # --- msh script mode: verifies set -ex tracing, # comment skip,
 #     blank-line skip, and exit-code propagation via two fixtures
 #     (msh_smoke.sh and msh_abort.sh) staged in disk-demo.img.
