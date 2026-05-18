@@ -62,6 +62,7 @@ def main():
 
     fb = [(0, 0, 0)] * (W * H)
     fills = blits = scrolls = 0
+    scroll = 0   # current ILI9488 VSCRSADD value (mode-2)
     hdr = re.compile(
         r'FB: mode=(\d+) x=(\d+) y=(\d+) w=(\d+) h=(\d+) n=(\d+)(.*)')
 
@@ -103,11 +104,20 @@ def main():
                         for xx in range(x, min(x + w, W)):
                             fb[rowbase + xx] = (128, 128, 128)
             elif mode == 2:
-                # Hardware vertical scroll — no pixel effect to replay
-                # for a short capture; just counted.
+                # Hardware vertical scroll: VSCRSADD picks the physical
+                # line shown at the top of the panel.
+                sm = re.search(r'scroll=(\d+)', tail)
+                if sm:
+                    scroll = int(sm.group(1)) % H
                 scrolls += 1
 
-    write_bmp(sys.argv[2], W, H, fb)
+    # Apply the final scroll offset: display row dy shows physical
+    # framebuffer row (scroll + dy) mod H.
+    disp = [(0, 0, 0)] * (W * H)
+    for dy in range(H):
+        py = (scroll + dy) % H
+        disp[dy * W:(dy + 1) * W] = fb[py * W:(py + 1) * W]
+    write_bmp(sys.argv[2], W, H, disp)
     nonblack = sum(1 for p in fb if p != (0, 0, 0))
     sys.stderr.write(
         "fb_render: fills=%d blits=%d scrolls=%d nonblack_px=%d -> %s\n"

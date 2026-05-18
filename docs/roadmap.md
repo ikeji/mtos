@@ -669,6 +669,11 @@ self-host loop が成立した。
         (旧: 水平 run ごとの mode-1 fill。実例で 827 fill → 51 blit)。
         stub `fb_dump` は mode-0 の RGB565 ペイロードを hex ダンプし、
         `fb_render.py` が実ピクセルを復元。実機 SPI 転送回数を削減
+  - [x] ハードウェア vscroll スクロール (2026-05-18)。旧実装は
+        g_row を clamp するだけのスタブで実際にはスクロールせず。
+        FB を FB_H ライン環状とみなし mode-2 (VSCRSADD) でスクロール、
+        最古行を mode-1 で消して再利用。`count` (1-100) で 30 行
+        ウィンドウが正しく追従するのを確認
 - [x] **S7**: kern.conf で `init=/bin/console` を seed して LCD
       コンソールを boot 時に自動起動 (2026-05-17、commit cda9ca9)。
       `tests/fixtures/kern_console.conf` + Makefile `disk-console.img`
