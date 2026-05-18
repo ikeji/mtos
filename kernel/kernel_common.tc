@@ -633,8 +633,11 @@ export fn uart_mux_is_enabled() -> i32 {
 // Optional file on the boot FS. Format: one key=value per line.
 // Unknown keys ignored for forward compat.
 //
-//   mux=1         — enable UART multiplexing at boot
-//   init=/bin/sh  — register a seed task (repeat for more slots)
+//   mux=1               — enable UART multiplexing at boot
+//   init=/bin/sh        — register a seed task (repeat for more slots)
+//   init=/bin/console -l — a seed task may carry arguments; the value
+//                          is split on whitespace, the first token is
+//                          the path and the rest become argv[1..]
 //
 // If the config file is missing or can't be opened, platform main()
 // falls back to its hardcoded defaults (hello / hello2 / sh).
@@ -645,6 +648,11 @@ fn vfs_read(fd: i32, buf: u32, n: i32) -> i32;
 fn vfs_close(fd: i32) -> i32;
 
 var g_cfg_inits:     StringArray = 0 as StringArray;
+// Per-init argv: g_cfg_init_argv[i] is 0 for a bare `init=<path>`, or
+// the address of a kernel-owned StringArray ([path, arg1, ...]) when
+// the init line carried arguments. start_init_tasks packs it into the
+// task's argv region just like the spawn handler does.
+var g_cfg_init_argv: U32Array = 0 as U32Array;
 var g_cfg_init_count: i32 = 0;
 var g_cfg_mux:        i32 = 0;
 
@@ -660,6 +668,25 @@ fn cfg_line_starts_with(buf: U8Array, line_start: i32, line_len: i32,
     return true;
 }
 
+fn cfg_is_ws(c: u8) -> bool {
+    return c == (' ' as u8) || c == 9u8;
+}
+
+// Allocate a kernel-owned String holding buf[start .. start+slen].
+// Mirrors the U8Array-as-String trick used elsewhere: poke the length
+// header to slen so len() reports the byte count without the NUL.
+fn cfg_make_str(buf: U8Array, start: i32, slen: i32) -> String {
+    var pbuf: U8Array = U8Array((slen + 1) as u32);
+    var j: i32 = 0;
+    while j < slen {
+        set(pbuf, j, get(buf, start + j));
+        j = j + 1;
+    }
+    set(pbuf, slen, 0u8);
+    poke32(pbuf as u32, slen as u32);
+    return pbuf as u32 as String;
+}
+
 fn cfg_parse_line(buf: U8Array, line_start: i32, line_len: i32) -> void {
     if line_len == 0 { return; }
     if get(buf, line_start) == ('#' as u8) { return; }   // comment
@@ -670,24 +697,46 @@ fn cfg_parse_line(buf: U8Array, line_start: i32, line_len: i32) -> void {
         return;
     }
     if cfg_line_starts_with(buf, line_start, line_len, "init=") {
-        var path_start: i32 = line_start + 5;
-        var path_len:   i32 = line_len - 5;
-        if path_len <= 0 { return; }
         if g_cfg_init_count >= 8 { return; }
-        // Build a String — allocate U8Array(path_len+1) for NUL-term
-        // space, copy bytes, then overwrite the header count field
-        // with path_len so String semantics match (len(s) returns
-        // string length, not buffer size).
-        var pbuf: U8Array = U8Array((path_len + 1) as u32);
-        var j: i32 = 0;
-        while j < path_len {
-            set(pbuf, j, get(buf, path_start + j));
-            j = j + 1;
+        var vs: i32 = line_start + 5;
+        var ve: i32 = line_start + line_len;
+        // Tokenize the value on whitespace: token 0 is the path, the
+        // rest become argv[1..]. Up to 8 tokens (path + 7 args).
+        var tstart: I32Array = I32Array(8u32);
+        var tlen:   I32Array = I32Array(8u32);
+        var ntok:   i32 = 0;
+        var p: i32 = vs;
+        while p < ve && ntok < 8 {
+            if cfg_is_ws(get(buf, p)) {
+                p = p + 1;
+            } else {
+                var ts: i32 = p;
+                while p < ve && !cfg_is_ws(get(buf, p)) { p = p + 1; }
+                set(tstart, ntok, ts);
+                set(tlen,   ntok, p - ts);
+                ntok = ntok + 1;
+            }
         }
-        set(pbuf, path_len, 0u8);
-        poke32(pbuf as u32, path_len as u32);
-        set(g_cfg_inits, g_cfg_init_count, pbuf as u32 as String);
+        if ntok == 0 { delete(tstart); delete(tlen); return; }
+        // Token 0 is the path; record it for kern_config_init_path.
+        set(g_cfg_inits, g_cfg_init_count,
+            cfg_make_str(buf, get(tstart, 0), get(tlen, 0)));
+        if ntok == 1 {
+            // Bare path, no argv — same as before.
+            set(g_cfg_init_argv, g_cfg_init_count, 0u32);
+        } else {
+            // Build the full argv StringArray [path, arg1, ...].
+            var av: StringArray = StringArray(ntok as u32);
+            var k: i32 = 0;
+            while k < ntok {
+                set(av, k, cfg_make_str(buf, get(tstart, k), get(tlen, k)));
+                k = k + 1;
+            }
+            set(g_cfg_init_argv, g_cfg_init_count, av as u32);
+        }
         g_cfg_init_count = g_cfg_init_count + 1;
+        delete(tstart);
+        delete(tlen);
         return;
     }
     // Unknown key: silently ignore.
@@ -698,6 +747,7 @@ fn cfg_parse_line(buf: U8Array, line_start: i32, line_len: i32) -> void {
 // Returns 1 on success, 0 if config file is missing (defaults).
 export fn read_kern_config() -> i32 {
     g_cfg_inits = StringArray(8);
+    g_cfg_init_argv = U32Array(8);
     g_cfg_init_count = 0;
     g_cfg_mux = 0;
 
@@ -728,6 +778,13 @@ export fn kern_config_init_count() -> i32 { return g_cfg_init_count; }
 export fn kern_config_init_path(idx: i32) -> String {
     if idx < 0 || idx >= g_cfg_init_count { return 0 as String; }
     return get(g_cfg_inits, idx);
+}
+// Address of init `idx`'s argv StringArray, or 0 if the init line had
+// no arguments (a bare path). start_init_tasks feeds this straight to
+// argv_packed_size / pack_argv_at.
+export fn kern_config_init_argv(idx: i32) -> u32 {
+    if idx < 0 || idx >= g_cfg_init_count { return 0u32; }
+    return get(g_cfg_init_argv, idx);
 }
 
 export fn make_task(entry: u32, ram_size: i32, stack_size: i32,

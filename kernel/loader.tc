@@ -167,13 +167,23 @@ export fn load_task(path: StringLiteral) -> u32 {
     return frame;
 }
 
-// Same as load_task but takes a runtime String (e.g. one parsed out
-// of /etc/kern.conf).
-export fn load_task_addr(path: String) -> u32 {
+// Like load_task but takes a runtime String path (e.g. parsed out of
+// /etc/kern.conf) plus an optional argv source. argv_src is 0 for a
+// bare init line, or the address of a StringArray [path, args...].
+// When present it is packed into the task's argv region and wired to
+// the a2 register — the same machinery the spawn/exec handlers use.
+export fn load_task_argv(path: String, argv_src: u32) -> u32 {
     var fd: i32 = vfs_open(path, 0);
     if fd < 0 { return 0u32; }
-    var frame: u32 = load_fd(fd, 0);
+    var argv_size: i32 = argv_packed_size(argv_src);
+    var frame: u32 = load_fd(fd, argv_size);
     vfs_close(fd);
+    if frame == 0u32 { return 0u32; }
+    if argv_src != 0u32 {
+        var kargv: u32 = make_task_argv_addr();
+        pack_argv_at(kargv, argv_src);
+        set_frame_argv(frame, kargv);
+    }
     return frame;
 }
 
@@ -194,7 +204,8 @@ export fn start_init_tasks() -> i32 {
     }
     var i: i32 = 0;
     while i < n_cfg {
-        sched_register(i, load_task_addr(kern_config_init_path(i)));
+        sched_register(i, load_task_argv(kern_config_init_path(i),
+                                         kern_config_init_argv(i)));
         task_set_name_basename(i, kern_config_init_path(i));
         i = i + 1;
     }

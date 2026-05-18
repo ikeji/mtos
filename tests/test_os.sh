@@ -329,6 +329,37 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fi
 fi
 
+# --- console_kernconf_argv: boot disk-console-land.img, whose
+#     /etc/kern.conf seeds `init=/bin/console -l`. Verifies kern.conf
+#     init lines can carry arguments — console must come up landscape
+#     (software scroll) purely from the boot config, with no shell to
+#     pass argv. Confirms the cfg tokenizer + init-task argv packing. ---
+KERNEL_CONSOLE_LAND_DISK="$ROOT_DIR/build/kernel/disk-console-land.img"
+if command -v qemu-system-riscv32 >/dev/null 2>&1 \
+    && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_CONSOLE_LAND_DISK" ]; then
+    t0=$(time_ms)
+    ck_out=$(printf 'seq 30\nquit\n' \
+        | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+        -serial mon:stdio --no-reboot -m 128 \
+        -machine virt,aclint=on -bios none \
+        -drive "file=$KERNEL_CONSOLE_LAND_DISK,format=raw,if=none,id=blk0" \
+        -device "virtio-blk-device,drive=blk0" \
+        -device "loader,file=$KERNEL_BIN,addr=0x80000000" \
+        -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
+    elapsed=$(( $(time_ms) - t0 ))
+    ck_land=$(echo "$ck_out" | grep -c "CONSOLE: landscape, software scroll")
+    ck_exit=$(echo "$ck_out" | grep -c "CONSOLE: exit")
+    ck_done=$(echo "$ck_out" | grep -c "all tasks done")
+    ck_hw=$(echo "$ck_out" | grep -c "FB: mode=2")
+    if [ "$ck_land" -gt 0 ] && [ "$ck_exit" -gt 0 ] \
+        && [ "$ck_done" -gt 0 ] && [ "$ck_hw" -eq 0 ]; then
+        report_pass "console_kernconf_argv: init=/bin/console -l passes argv at boot" "$elapsed"
+    else
+        report_fail_msg "console_kernconf_argv" \
+            "land=$ck_land exit=$ck_exit done=$ck_done hw=$ck_hw; got: $(printf '%s' "$ck_out" | head -c 320)"
+    fi
+fi
+
 # --- msh script mode: verifies set -ex tracing, # comment skip,
 #     blank-line skip, and exit-code propagation via two fixtures
 #     (msh_smoke.sh and msh_abort.sh) staged in disk-demo.img.

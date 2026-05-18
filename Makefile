@@ -225,9 +225,10 @@ DISK_STATIC_DEPS := tests/phase7_hello.tc tests/phase7_min.tc \
 # (なければカーネル側のハードコード init にフォールバック)。
 # disk-demo.img は tests/fixtures/kern_demo.conf を強制ステージして、
 # test_os.sh が kern.conf 駆動の init を検証できるようにする。
-build/kernel/disk.img:         DISK_KERN_CONF := $(wildcard kernel/kern.conf)
-build/kernel/disk-demo.img:    DISK_KERN_CONF := tests/fixtures/kern_demo.conf
-build/kernel/disk-console.img: DISK_KERN_CONF := tests/fixtures/kern_console.conf
+build/kernel/disk.img:              DISK_KERN_CONF := $(wildcard kernel/kern.conf)
+build/kernel/disk-demo.img:         DISK_KERN_CONF := tests/fixtures/kern_demo.conf
+build/kernel/disk-console.img:      DISK_KERN_CONF := tests/fixtures/kern_console.conf
+build/kernel/disk-console-land.img: DISK_KERN_CONF := tests/fixtures/kern_console_land.conf
 
 # Japanese font: tmp/font.bmp (np21w PC-98 font, user-supplied, never
 # committed) is converted by genjpfont.py into jpfont.dat, then
@@ -276,7 +277,7 @@ define PRELUDE_PRE_ENCODE
               "$$_r/prelude.rl"
 endef
 
-build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 | build/kernel
+build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 | build/kernel
 	@echo "Building disk image: $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -305,9 +306,10 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img: 
 	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
-build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img: tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh
-build/kernel/disk-demo.img:    tests/fixtures/kern_demo.conf
-build/kernel/disk-console.img: tests/fixtures/kern_console.conf
+build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh
+build/kernel/disk-demo.img:         tests/fixtures/kern_demo.conf
+build/kernel/disk-console.img:      tests/fixtures/kern_console.conf
+build/kernel/disk-console-land.img: tests/fixtures/kern_console_land.conf
 
 EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
     compiler/strlib.tc compiler/ast_node.tc compiler/asm_common.tc \
@@ -548,7 +550,7 @@ clean:
 
 BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin \
               build/kernel/disk.img build/kernel/disk-demo.img \
-              build/kernel/disk-console.img \
+              build/kernel/disk-console.img build/kernel/disk-console-land.img \
               $(TEST_ASM_BINS)
 
 TEST_SCRIPTS := $(wildcard tests/*.sh)
