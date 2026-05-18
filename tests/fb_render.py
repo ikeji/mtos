@@ -4,16 +4,15 @@
 # The stub /dev/fb driver (kernel/devfs.tc) prints every blit request
 # it receives as a line:
 #
-#   FB: mode=N x=.. y=.. w=.. h=.. n=.. [color=..|scroll=..]
+#   FB: mode=N x=.. y=.. w=.. h=.. n=.. [color=..|scroll=..|data=..]
 #
 # This script parses those lines out of a UART capture and replays
 # them onto a 320x480 framebuffer (portrait ILI9488), then writes a
 # 24-bit BMP so the rendered result can be eyeballed or regression-
 # checked. It is a faithful replay: a mode-1 fill paints the rect with
-# the RGB565 colour the command carried (with the current /bin/console
-# stub renderer that colour is the character code, so the BMP shows a
-# grid of char-code-coloured cells — real font glyphs land when S6's
-# renderer is finished).
+# the RGB565 colour the command carried; a mode-0 blit paints each
+# pixel from the `data=` RGB565 payload (/bin/console emits one such
+# blit per glyph), so the BMP shows the actual rendered text.
 #
 # Usage: fb_render.py <fb-dump.txt> <out.bmp>
 # Exit:  0 if at least one blit was rendered, 1 otherwise.
@@ -82,13 +81,27 @@ def main():
                     for xx in range(x, min(x + w, W)):
                         fb[rowbase + xx] = col
             elif mode == 0:
-                # The dump carries no pixel payload; mark the region
-                # so a mode-0 blit is still visible in the BMP.
                 blits += 1
-                for yy in range(y, min(y + h, H)):
-                    rowbase = yy * W
-                    for xx in range(x, min(x + w, W)):
-                        fb[rowbase + xx] = (128, 128, 128)
+                dm = re.search(r'data=([0-9a-fA-F]+)', tail)
+                if dm:
+                    # RGB565 LE, 2 bytes/pixel, w*h pixels row-major.
+                    hexs = dm.group(1)
+                    for idx in range(w * h):
+                        o = idx * 4
+                        if o + 4 > len(hexs):
+                            break
+                        lo = int(hexs[o:o + 2], 16)
+                        hi = int(hexs[o + 2:o + 4], 16)
+                        px, py = x + idx % w, y + idx // w
+                        if 0 <= px < W and 0 <= py < H:
+                            fb[py * W + px] = rgb565_to_rgb(lo | (hi << 8))
+                else:
+                    # No payload — mark the region so the blit still
+                    # shows up in the BMP.
+                    for yy in range(y, min(y + h, H)):
+                        rowbase = yy * W
+                        for xx in range(x, min(x + w, W)):
+                            fb[rowbase + xx] = (128, 128, 128)
             elif mode == 2:
                 # Hardware vertical scroll — no pixel effect to replay
                 # for a short capture; just counted.

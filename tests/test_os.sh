@@ -224,8 +224,8 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
         -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
     elapsed=$(( $(time_ms) - t0 ))
     ci_ready=$(echo "$ci_out" | grep -c "CONSOLE: ready")
-    # console paints glyph runs as white (RGB565 65535) mode-1 fills.
-    ci_fb=$(echo "$ci_out" | grep -c "color=65535")
+    # console paints each glyph as one mode-0 RGB565 pixel blit.
+    ci_fb=$(echo "$ci_out" | grep -c "FB: mode=0")
     ci_exit=$(echo "$ci_out" | grep -c "CONSOLE: exit")
     ci_done=$(echo "$ci_out" | grep -c "all tasks done")
     # The PC-98 font is .incbin'd into the console binary; console

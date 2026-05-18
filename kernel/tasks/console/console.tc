@@ -20,8 +20,8 @@
 // console renders 8x16 hankaku + 16x16 zenkaku glyphs, UTF-8 decoded,
 // so Japanese displays. The blob is read in place via peek8 (no RAM
 // copy; works from XIP flash too). font.bmp is mandatory — the build
-// fails without it. Output reaches /dev/fb as mode-1 fills, one per
-// horizontal run of a glyph row.
+// fails without it. Each glyph reaches /dev/fb as a single mode-0
+// pixel blit.
 
 import "../libtc/libtc.tc";
 
@@ -66,18 +66,6 @@ fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
     return;
 }
 
-// Emit one /dev/fb mode-1 fill.
-fn fb_fill(fb: i32, frame: U8Array, x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
-    put_u16(frame, 0,  x);
-    put_u16(frame, 2,  y);
-    put_u16(frame, 4,  w);
-    put_u16(frame, 6,  h);
-    put_u16(frame, 8,  1);
-    put_u16(frame, 10, col);
-    sys_write(fb, frame, 12);
-    return;
-}
-
 // Emit a mode-2 vertical-scroll blit.
 fn fb_scroll(fb: i32, frame: U8Array, line: i32) -> void {
     put_u16(frame, 0,  0);
@@ -90,22 +78,32 @@ fn fb_scroll(fb: i32, frame: U8Array, line: i32) -> void {
     return;
 }
 
-// Draw one glyph pixel row: paint each maximal run of set bits as a
-// single mode-1 fill. `bits` holds `gw` pixels, MSB = leftmost.
-fn emit_row(fb: i32, frame: U8Array, x0: i32, y: i32, bits: i32, gw: i32) -> void {
-    var x: i32 = 0;
-    while x < gw {
-        if (bits & (1 << (gw - 1 - x))) != 0 {
-            var run: i32 = 1;
-            while x + run < gw && (bits & (1 << (gw - 1 - (x + run)))) != 0 {
-                run = run + 1;
-            }
-            fb_fill(fb, frame, x0 + x, y, run, 1, FG);
-            x = x + run;
-        } else {
+// Build and send one mode-0 glyph blit. The glyph is gw x 16; each
+// row's pixel bitmap is read from `bpr` font bytes at goff (1 byte =
+// 8 px hankaku, 2 bytes big-endian = 16 px zenkaku). Set bits paint
+// FG, clear bits paint black — so the blit also clears the cell
+// background. One write per glyph (vs. the old per-run mode-1 fills).
+fn blit_glyph(fb: i32, frame: U8Array, col: i32, row: i32,
+              gw: i32, goff: i32, bpr: i32) -> void {
+    put_u16(frame, 0, col * CW);
+    put_u16(frame, 2, row * CH);
+    put_u16(frame, 4, gw);
+    put_u16(frame, 6, 16);
+    put_u16(frame, 8, 0);
+    var y: i32 = 0;
+    while y < 16 {
+        var bits: i32 = fbyte(goff + y * bpr);
+        if bpr == 2 { bits = (bits << 8) | fbyte(goff + y * 2 + 1); }
+        var x: i32 = 0;
+        while x < gw {
+            var px: i32 = 0;
+            if (bits & (1 << (gw - 1 - x))) != 0 { px = FG; }
+            put_u16(frame, 10 + (y * gw + x) * 2, px);
             x = x + 1;
         }
+        y = y + 1;
     }
+    sys_write(fb, frame, 10 + gw * 16 * 2);
     return;
 }
 
@@ -149,14 +147,7 @@ fn u2k_lookup(cp: i32) -> i32 {
 
 // 8x16 hankaku glyph (1 byte per row) at cell (col,row).
 fn draw_hankaku(fb: i32, frame: U8Array, col: i32, row: i32, code: i32) -> void {
-    var goff: i32 = OFF_HAN + code * 16;
-    var x0: i32 = col * CW;
-    var y0: i32 = row * CH;
-    var y: i32 = 0;
-    while y < 16 {
-        emit_row(fb, frame, x0, y0 + y, fbyte(goff + y), 8);
-        y = y + 1;
-    }
+    blit_glyph(fb, frame, col, row, 8, OFF_HAN + code * 16, 1);
     return;
 }
 
@@ -164,15 +155,8 @@ fn draw_hankaku(fb: i32, frame: U8Array, col: i32, row: i32, code: i32) -> void 
 fn draw_zenkaku(fb: i32, frame: U8Array, col: i32, row: i32, kuten: i32) -> void {
     var ku:  i32 = kuten >> 8;
     var ten: i32 = kuten & 0xFF;
-    var goff: i32 = OFF_ZEN + ((ku - 1) * 94 + (ten - 1)) * 32;
-    var x0: i32 = col * CW;
-    var y0: i32 = row * CH;
-    var y: i32 = 0;
-    while y < 16 {
-        emit_row(fb, frame, x0, y0 + y,
-                 (fbyte(goff + y * 2) << 8) | fbyte(goff + y * 2 + 1), 16);
-        y = y + 1;
-    }
+    blit_glyph(fb, frame, col, row, 16,
+               OFF_ZEN + ((ku - 1) * 94 + (ten - 1)) * 32, 2);
     return;
 }
 
@@ -276,7 +260,9 @@ fn main() -> i32 {
     // dup); sh owns them now and slot_free_allocs closes them when
     // sh exits — that close of the pipe write end is our EOF.
 
-    var frame: U8Array = U8Array(12u32);
+    // /dev/fb framed-write buffer: 10-byte header + up to a 16x16
+    // RGB565 glyph payload (16*16*2 = 512) = 522 bytes.
+    var frame: U8Array = U8Array(522u32);
     var buf:   U8Array = U8Array(64u32);
     var running: i32 = 1;
     while running == 1 {

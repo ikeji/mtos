@@ -643,7 +643,7 @@ self-host loop が成立した。
         インターフェースを virt 検証済。実機 S5 では `devfs.tc` の
         DEV_KBD read を GPIO マトリクススキャナに差し替えるだけ
   - [ ] GPIO マトリクススキャナ実ドライバ (実機)
-- [ ] **S6**: `/bin/console` — userspace ターミナルエミュレータ +
+- [x] **S6**: `/bin/console` — userspace ターミナルエミュレータ +
       getty (char グリッド + フォント、`/dev/fb` + `/dev/kbd` を開き
       sh を pipe 配線で spawn)
   - [x] getty + ターミナル状態機械 + pump ループ (2026-05-17、
@@ -664,8 +664,11 @@ self-host loop が成立した。
         jpfont.dat は `.incbin` で console バイナリに埋め込む
         (`jpfont_inc.s`)。font.bmp は必須かつ非コミット、無い場合は
         ビルドエラー (https://simk98.github.io/np21w/download.html)
-  - [ ] グリフを 1 個の mode-0 blit にまとめる最適化 (実機 S3、
-        per-pixel/run mode-1 は SPI 転送が多い)
+  - [x] グリフを 1 個の mode-0 blit にまとめる最適化 (2026-05-18)。
+        console が 1 グリフ = 1 回の mode-0 ピクセル blit を発行
+        (旧: 水平 run ごとの mode-1 fill。実例で 827 fill → 51 blit)。
+        stub `fb_dump` は mode-0 の RGB565 ペイロードを hex ダンプし、
+        `fb_render.py` が実ピクセルを復元。実機 SPI 転送回数を削減
 - [x] **S7**: kern.conf で `init=/bin/console` を seed して LCD
       コンソールを boot 時に自動起動 (2026-05-17、commit cda9ca9)。
       `tests/fixtures/kern_console.conf` + Makefile `disk-console.img`
@@ -677,8 +680,6 @@ self-host loop が成立した。
 - S3 実: SPI1 + ILI9488 実ドライバ (`devfs.tc` の `fb_dump` 差し替え)
 - S4 実: ILI9488 ハードウェア垂直スクロール
 - S5 実: GPIO マトリクススキャナ (`devfs.tc` の DEV_KBD read 差し替え)
-- S6 実: console のスタブ描画 (mode-1 セル塗り) を mode-0 フォント
-  グリフ blit に差し替え
 - `/dev/rtc` の pico2 AON timer 実装 (現状スタブ)
 ハード結線は `docs/pico2_hardware.md` に追記してから着手する。
 
