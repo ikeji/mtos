@@ -1,15 +1,22 @@
 // kernel/dev_backend_virt.tc — qemu virt backends for the devfs
 // hardware nodes.
 //
-// On virt there is no SPI display, so /dev/fb is a bring-up stub: each
-// framed blit is dumped to the UART as an "FB: mode=N ..." line that
-// tests/fb_render.py can replay into an image. The pico2 build links
-// kernel/display_ili9488.tc instead, which drives a real ILI9488.
-//
-// devfs.tc forward-declares fb_backend_write and calls it from
-// devfs_write for /dev/fb.
+// On virt there is no SPI display or key matrix:
+//   /dev/fb  — each framed blit is dumped to the UART as an
+//              "FB: mode=N ..." line tests/fb_render.py can replay.
+//   /dev/kbd — reads pull from the UART RX ring, so the serial
+//              console doubles as the keyboard.
+// The pico2 build links display_ili9488.tc + keyboard_matrix.tc
+// (real hardware) instead. devfs.tc forward-declares fb_backend_write
+// and kbd_backend_read and routes /dev/fb and /dev/kbd to them.
 
 fn do_uart_write(buf: u32, len: i32) -> i32;
+fn uart_rx_pop(buf: u32, len: i32) -> i32;
+
+// /dev/kbd backend: pull keystrokes from the kernel UART RX ring.
+export fn kbd_backend_read(buf_addr: u32, n: i32) -> i32 {
+    return uart_rx_pop(buf_addr, n);
+}
 
 // Read a little-endian u16 from a raw address.
 fn fb_u16(addr: u32) -> i32 {

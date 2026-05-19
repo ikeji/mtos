@@ -89,16 +89,16 @@ UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 
 | GP5 | SD CS | GPIO 出力 (手動 CS) | 実装済み |
 | GP6 | SD SCK | SPI0 SCK | 実装済み |
 | GP7 | SD MOSI | SPI0 TX | 実装済み |
-| GP8 | LCD DC (データ/コマンド選択) | GPIO 出力 | 結線済み (ドライバ未) |
-| GP9 | LCD CS | GPIO 出力 (手動 CS) | 結線済み (ドライバ未) |
-| GP10 | LCD SCK | SPI1 SCK | 結線済み (ドライバ未) |
-| GP11 | LCD MOSI | SPI1 TX | 結線済み (ドライバ未) |
-| GP12 | LCD MISO | SPI1 RX | 結線済み (ドライバ未) |
-| GP13 | LCD RST | GPIO 出力 | 結線済み (ドライバ未) |
-| GP14 | LCD BL (バックライト) | GPIO 出力 | 結線済み (ドライバ未) |
+| GP8 | LCD DC (データ/コマンド選択) | GPIO 出力 | ドライバ実装済 (実機未検証) |
+| GP9 | LCD CS | GPIO 出力 (手動 CS) | ドライバ実装済 (実機未検証) |
+| GP10 | LCD SCK | SPI1 SCK | ドライバ実装済 (実機未検証) |
+| GP11 | LCD MOSI | SPI1 TX | ドライバ実装済 (実機未検証) |
+| GP12 | LCD MISO | SPI1 RX | ドライバ実装済 (実機未検証) |
+| GP13 | LCD RST | GPIO 出力 | ドライバ実装済 (実機未検証) |
+| GP14 | LCD BL (バックライト) | GPIO 出力 | ドライバ実装済 (実機未検証) |
 | GP15 | — | 未使用 | — |
-| GP16–20 | キーボード ROW0–4 | GPIO (マトリクス行 × 5) | 結線済み (ドライバ未) |
-| GP21–26 | キーボード COL0–5 | GPIO (マトリクス列 × 6、左右兼用) | 結線済み (ドライバ未) |
+| GP16–20 | キーボード ROW0–4 | GPIO (マトリクス行 × 5) | ドライバ実装済 (実機未検証) |
+| GP21–26 | キーボード COL0–5 | GPIO (マトリクス列 × 6、左右兼用) | ドライバ実装済 (実機未検証) |
 | GP27 | スピーカー SPK− | PWM (差動駆動) | 結線済み (ドライバ未) |
 | GP28 | スピーカー SPK+ | PWM (差動駆動) | 結線済み (ドライバ未) |
 | GP29 | タッチ CLK | SPI クロック (bit-bang / PIO) | 結線済み (ドライバ未) |
@@ -132,8 +132,9 @@ UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 
   ペンダウン検出。
 - **AUX0–9** (GP35–44) は拡張用に引き出した未割り当てピン。
 - **PSRAM** は RP2350 の QMI 経由、CS = GP47。
-- LCD / RTC / キーボード / スピーカー / タッチのドライバは未実装 —
-  フェーズ 9 の S2 (RTC) / S3 (LCD) / S5 (キーボード) ほか。実装計画は
+- RTC / LCD / キーボードのドライバは実装済 (`rtc_ds3231.tc` /
+  `display_ili9488.tc` / `keyboard_matrix.tc`) だが**実機未検証**。
+  スピーカー・タッチのドライバは未実装。実装計画と検証手順は
   `docs/task/io_devices.md`。
 
 GP0/GP1/GP4–7 の詳細は以下のサブセクション (UART は「Pico 2 側」、

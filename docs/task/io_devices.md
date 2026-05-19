@@ -272,51 +272,38 @@ GUI を作る場合も**カーネル側のプランは変わらない**。
   DS3231 が無いため `make test` には載らない。
 - リスク: 低〜中 (datetime 整形/解析) / 依存: S1
 
-### S3. ディスプレイドライバ + `/dev/fb` (mode 0/1)
+### S3. ディスプレイドライバ + `/dev/fb` (mode 0/1) — [x] 2026-05-20
 
-- 新規 `kernel/display_ili9488.tc` (pico2 専用)。
-- `platform_pico2.s` — SPI1 の reset 解除、SPI1 ピン funcsel、
-  D/C・RESET・CS GPIO 設定。
-- `display_ili9488.tc` — SPI1 init、ILI9488 power-on シーケンス
-  (sleep out → pixel format 18-bit → display on)、CASET/PASET/RAMWR、
-  RGB565→18bit 展開。
-- `devfs.tc` — `/dev/fb` の open/write、framed header (§5) を parse
-  して blit。
-- bring-up 補助: `kernel/tasks/fbtest` — `/dev/fb` に矩形/グラデを
-  描く目視確認タスク。
-- **中間マイルストーン**: まず mode 1 (全画面塗りつぶし) で
-  SPI1 + init を実証 → 次に mode 0 (ピクセル)。
-- 初期は **SPI1 = 6 MHz のまま**でよい (clk_peri 据え置き、低リスク)。
-  1 行 blit ~20 ms でテキストコンソールは実用範囲。高速化は S8。
-- テスト: 実機のみ。fbtest 目視 + `test_pico2` 拡張。
-- リスク: **最高** (HW bring-up、ILI9488 init シーケンスが繊細)
-  / 依存: S0
+- [x] `kernel/display_ili9488.tc` (pico2 専用)。SPI1 を reset 解除
+  → GP8-14 funcsel → ILI9488 power-on (SWRESET / power / VCOM /
+  MADCTL / COLMOD 18-bit / sleep out / display on) → CASET/PASET/
+  RAMWR、RGB565→18bit (3 B/px) 展開。
+- [x] `/dev/fb` のバックエンドを `fb_backend_write` フックに分離
+  (`devfs.tc`)。pico2 = `display_ili9488.tc`、virt = `dev_backend_
+  virt.tc` の UART ダンプ。framed header の mode 0/1 を blit。
+- **実機未検証** — qemu virt に ILI9488 が無い。`make test` は virt の
+  UART ダンプ経路のみ検証。リファクタの健全性は 148 tests で確認。
 
-### S4. `/dev/fb` mode 2 — ハードウェア垂直スクロール
+### S4. `/dev/fb` mode 2 — ハードウェア垂直スクロール — [x] 2026-05-20
 
-- `display_ili9488.tc` — init で `VSCRDEF` (0x33)、mode 2 で
-  `VSCRSADD` (0x37)。
-- パネルはポートレート向き (480 軸 = スクロール軸) で実装する。
-- テスト: 実機。fbtest にスクロールケース追加。
-- リスク: 低〜中 / 依存: S3
+- [x] `display_ili9488.tc` — init で `VSCRDEF` (0x33、全 480 ライン)、
+  mode 2 で `VSCRSADD` (0x37)。パネルはポートレート向き実装。
+- **実機未検証**。
 
-### S5. キーボードドライバ + `/dev/kbd`
+### S5. キーボードドライバ + `/dev/kbd` — [x] 2026-05-20
 
-- 新規 `kernel/keyboard_matrix.tc` (pico2 専用)。
-- `platform_pico2.s` — マトリクス行/列 GPIO funcsel + プルアップ。
-- scan 方式: **timer trap 駆動でマトリクスをスキャン → 小リング
-  バッファ**に積む。`/dev/kbd` read はバッファを drain し、空なら
-  `-2` (yield) を返す。
-- **2 フェーズスキャン**: 物理線は行 5 + 列 6 = 11 本だが、左右半分で
-  ダイオードの向きが逆なので、フェーズ A (行駆動/列読み) と
+- [x] `kernel/keyboard_matrix.tc` (pico2 専用)。GP16-26 を SIO に
+  funcsel + プルアップ。
+- [x] **2 フェーズスキャン**: 物理線は行 5 + 列 6 = 11 本。左右半分で
+  ダイオードの向きが逆なので、フェーズ A (行駆動/列読み) +
   フェーズ B (列駆動/行読み) で論理 12 列 × 5 行 = 60 キーを読む。
-  詳細は `docs/pico2_hardware.md` の GPIO 割り当て一覧。
-- デバウンス、keycode → ASCII マップ。ダイオード付きなのでゴースト
-  (3-key rollover) は出ない。
-- bring-up 補助: `kernel/tasks/kbdump` — `/dev/kbd` を読んで
-  scancode を UART に出す。
-- テスト: 実機。kbdump で目視。
-- リスク: 中 (デバウンス・ゴースト) / 依存: S0
+- [x] `/dev/kbd` のバックエンドを `kbd_backend_read` フックに分離。
+  scan-on-read 方式 (read のたびにスキャン、立ち上がりエッジを ASCII
+  化して返す。空なら `-2` yield)。
+- 残件: keymap (`KBD_KEYMAP`) は仮レイアウト — 実機の物理配列に
+  合わせて編集が必要。デバウンスはエッジ検出のみ (タイマ駆動の
+  時間デバウンスは未実装)。modifier (shift 等) 未対応。
+- **実機未検証** — qemu virt にマトリクスが無い。
 
 ### S6. `/bin/console` — userspace ターミナルエミュレータ + getty
 

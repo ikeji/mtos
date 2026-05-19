@@ -21,12 +21,12 @@
 //                platform-specific: a real ILI9488 over SPI1 on pico2
 //                (display_ili9488.tc), or a UART-dump stub on qemu
 //                virt (dev_backend_virt.tc).
-//   /dev/kbd   — keyboard. Bring-up stub: read pulls keystrokes from
-//                the UART RX ring (so on qemu virt the serial console
-//                is the keyboard); -2 when empty so the ecall handler
-//                yields. The real GPIO-matrix scanner replaces this
-//                backend later (フェーズ9 S5); the interface — a
-//                read-only key-stream — stays the same. Not writable.
+//   /dev/kbd   — keyboard. read returns a key-stream; -2 when no key
+//                is available so the ecall handler yields. The backend
+//                (kbd_backend_read) is platform-specific: a GPIO scan
+//                matrix on pico2 (keyboard_matrix.tc), or a UART-RX
+//                stub on qemu virt (dev_backend_virt.tc) so the serial
+//                console doubles as the keyboard. Not writable.
 //
 // A small fd table backs buffered nodes: /dev/rtc snapshots its
 // rendering at open so a `cat` terminates with EOF. /dev/uart and
@@ -120,12 +120,16 @@ fn devfs_alloc(dev: i32, buf_hdr: u32, size: i32) -> i32 {
     return -1;
 }
 
-// ===== /dev/fb backend hook =====
-// The framebuffer backend is platform-specific and resolved at link
-// time: kernel/display_ili9488.tc (pico2 — a real ILI9488 over SPI1)
-// or kernel/dev_backend_virt.tc (qemu virt — a UART-dump stub that
-// tests/fb_render.py can replay). devfs_write routes /dev/fb here.
+// ===== platform-specific device backend hooks =====
+// Resolved at link time. pico2: kernel/display_ili9488.tc (a real
+// ILI9488 over SPI1) + kernel/keyboard_matrix.tc (a GPIO scan matrix).
+// qemu virt: kernel/dev_backend_virt.tc (a UART-dump fb stub that
+// tests/fb_render.py can replay + a UART-RX keyboard stub).
+//   fb_backend_write — devfs_write routes /dev/fb writes here.
+//   kbd_backend_read — devfs_read routes /dev/kbd reads here; returns
+//                      the byte count, 0 when no key is available.
 fn fb_backend_write(buf_addr: u32, n: i32) -> void;
+fn kbd_backend_read(buf_addr: u32, n: i32) -> i32;
 
 // Open a /dev node. Returns a devfs slot index (>= 0) used as the
 // VFS inner handle, or -1 if the path names no known device.
@@ -153,11 +157,18 @@ export fn devfs_open(path_addr: u32, plen: i32) -> i32 {
 export fn devfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd < 0 || fd >= DEVFS_MAX_FDS { return -1; }
     var e: DevFD = get(g_devfs_fds, fd);
-    if dev(e) == DEV_UART || dev(e) == DEV_KBD {
-        // /dev/kbd is a UART-RX-backed stub; same path as /dev/uart.
+    if dev(e) == DEV_UART {
         var nr: i32 = uart_rx_pop(buf_addr, n);
         if nr == 0 { return -2; }
         return nr;
+    }
+    if dev(e) == DEV_KBD {
+        // Keyboard backend (platform-specific, like /dev/fb): the
+        // GPIO matrix on pico2 (keyboard_matrix.tc) or a UART-RX stub
+        // on qemu virt (dev_backend_virt.tc). 0 keys -> yield.
+        var nk: i32 = kbd_backend_read(buf_addr, n);
+        if nk == 0 { return -2; }
+        return nk;
     }
     // Buffered node: consume from the snapshot, EOF when drained.
     if buf(e) == 0u32 { return -1; }

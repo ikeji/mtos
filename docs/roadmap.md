@@ -630,23 +630,23 @@ self-host loop が成立した。
         `kernel/rtc_ds3231.tc`)。RP2350 I2C1 ハードウェアブロック
         (GP2/3) で DS3231 の BCD カレンダーレジスタを読み書き。
         実機未検証 (qemu virt に DS3231 が無い)
-- [ ] **S3**: ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb`
+- [x] **S3**: ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb`
       (framed write、mode 0 ピクセル / mode 1 単色)
   - [x] `/dev/fb` UART ダンプ用ブリングアップドライバ + `fbtest`
-        タスク (2026-05-16、commit c33210e)。framed-write プロトコル
-        (`[x][y][w][h][mode]` + payload) と devfs 連携を実機無しで
-        virt 検証済。実機 S3 では `devfs.tc` の `fb_dump` を
-        SPI1/ILI9488 バックエンドに差し替えるだけ
-  - [ ] SPI1 + ILI9488 実ドライバ (実機、`fb_dump` の差し替え先)
-- [ ] **S4**: `/dev/fb` mode 2 — ILI9488 ハードウェア垂直スクロール
-      (VSCRSADD)
-- [ ] **S5**: キーボードドライバ (GPIO マトリクス) + `/dev/kbd`
-      (生キーコード、read は `-2` yield)
+        タスク (2026-05-16、commit c33210e)。
+  - [x] SPI1 + ILI9488 実ドライバ (2026-05-20、commit 8b84348、
+        `kernel/display_ili9488.tc`)。`/dev/fb` バックエンドを
+        `fb_backend_write` フックに分離 — pico2 = ILI9488、
+        virt = UART ダンプ。実機未検証。
+- [x] **S4**: `/dev/fb` mode 2 — ILI9488 ハードウェア垂直スクロール
+      (VSCRDEF/VSCRSADD、2026-05-20、`display_ili9488.tc` に内包)
+- [x] **S5**: キーボードドライバ (GPIO マトリクス) + `/dev/kbd`
   - [x] `/dev/kbd` UART-RX バックエンドのスタブ + `kbdump` タスク
-        (2026-05-17、commit cc09e6e)。読み取り専用キーストリームの
-        インターフェースを virt 検証済。実機 S5 では `devfs.tc` の
-        DEV_KBD read を GPIO マトリクススキャナに差し替えるだけ
-  - [ ] GPIO マトリクススキャナ実ドライバ (実機)
+        (2026-05-17、commit cc09e6e)。
+  - [x] GPIO マトリクススキャナ実ドライバ (2026-05-20、
+        `kernel/keyboard_matrix.tc`)。2 フェーズスキャンで論理
+        12×5=60 キー。`kbd_backend_read` フック。実機未検証、keymap
+        は要編集。
 - [x] **S6**: `/bin/console` — userspace ターミナルエミュレータ +
       getty (char グリッド + フォント、`/dev/fb` + `/dev/kbd` を開き
       sh を pipe 配線で spawn)
@@ -690,15 +690,16 @@ self-host loop が成立した。
       ターゲット。virt で boot→console 自動起動→/dev/fb 描画→
       クリーン終了を確認、`test_os.sh` に console_init ケース追加
 
-スタブ環境 (virt) でのフェーズ9 はこれで一巡 — S1/S2/S5/S6/S7 が
-完動、S3/S4 はスタブ完了。残りは実機ハードウェア作業のみ:
-- S3 実: SPI1 + ILI9488 実ドライバ (`devfs.tc` の `fb_dump` 差し替え)
-- S4 実: ILI9488 ハードウェア垂直スクロール
-- S5 実: GPIO マトリクススキャナ (`devfs.tc` の DEV_KBD read 差し替え)
-- S2 pico2 RTC は DS3231 over I2C1 で実装済 (`kernel/rtc_ds3231.tc`)。
-  実機での read/write 検証が残件。
-GPIO 割り当ては `docs/pico2_hardware.md`「GPIO 割り当て一覧」。実機
-ドライバは結線済の周辺から順に検証していく。
+フェーズ9 の S1〜S7 はコード上は全て実装完了 (2026-05-20)。pico2 の
+実ハードウェアドライバ (S2 DS3231 / S3+S4 ILI9488 / S5 キーボード
+マトリクス) も実装済だが、**いずれも実機未検証** — qemu virt に
+対応ハードウェアが無いため `make test` には載らない。残件は実機での
+検証:
+- S2: `cat /dev/rtc` / `echo ... > /dev/rtc` で DS3231 read/write。
+- S3/S4: `fbtest` でディスプレイ描画 + スクロール目視。
+- S5: `kbdump` でキー入力確認。`keyboard_matrix.tc` の `KBD_KEYMAP`
+  を実機の物理配列に合わせて編集。
+GPIO 割り当ては `docs/pico2_hardware.md`「GPIO 割り当て一覧」。
 
 ## 技術的リスクと対策
 
