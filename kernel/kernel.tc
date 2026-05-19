@@ -10,6 +10,9 @@ import "mtfs.tc";
 import "fatfs.tc";
 import "vfs.tc";
 import "loader.tc";
+// /dev/fb backend: a UART-dump stub (qemu virt has no SPI display).
+// Defines fb_backend_write, which devfs.tc forward-declares.
+import "dev_backend_virt.tc";
 
 // Assembly-defined functions
 fn csr_read_mie() -> u32;

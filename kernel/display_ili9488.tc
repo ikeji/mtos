@@ -1,0 +1,230 @@
+// kernel/display_ili9488.tc — ILI9488 SPI display backend for /dev/fb
+// on the Pico 2 (RP2350). Phase 9 S3 + S4.
+//
+// Drives a 320x480 ILI9488 panel over the RP2350 SPI1 hardware block
+// in 4-wire mode (see docs/pico2_hardware.md GPIO table):
+//   GP8  DC   (0 = command, 1 = data)   GP9  CS  (active low)
+//   GP10 SCK  GP11 MOSI  GP12 MISO      GP13 RST GP14 BL (backlight)
+//
+// Provides fb_backend_write, which devfs.tc forward-declares and calls
+// for every /dev/fb framed blit. The framed-write protocol is the
+// header [x][y][w][h][mode] (5x u16 LE) + payload:
+//   mode 0 — w*h RGB565 pixels      mode 1 — one RGB565 fill colour
+//   mode 2 — VSCRSADD scroll line
+//
+// ILI9488 over 4-wire SPI cannot do 16 bpp — it needs 18-bit pixel
+// writes (3 bytes/pixel, COLMOD 0x66), so RGB565 is expanded per pixel.
+//
+// Hardware-only: qemu virt has no ILI9488, so this path is not
+// exercised by `make test` — the virt kernel links dev_backend_virt.tc.
+
+// SIO timer (kernel_pico2.tc) — used for the power-on delays.
+fn read_mtime() -> u32;
+
+// ===== RP2350 register addresses =====
+var LCD_RESETS_CLR:  u32 = 0x40023000u32;   // RESETS, atomic-clear alias
+var LCD_RESETS_DONE: u32 = 0x40020008u32;   // RESETS_DONE
+var LCD_RESETS_SPI1: u32 = 0x80000u32;      // RESETS bit 19 = SPI1
+var LCD_IO_BANK0:    u32 = 0x40028000u32;
+var LCD_PADS_SET:    u32 = 0x4003A000u32;
+var LCD_PADS_CLR:    u32 = 0x4003B000u32;
+var LCD_SIO:         u32 = 0xD0000000u32;
+var LCD_SPI1:        u32 = 0x40088000u32;
+
+// SIO GPIO bit masks for the four SIO-driven control lines.
+var LCD_DC:  u32 = 0x100u32;     // GP8
+var LCD_CS:  u32 = 0x200u32;     // GP9
+var LCD_RST: u32 = 0x2000u32;    // GP13
+var LCD_BL:  u32 = 0x4000u32;    // GP14
+
+// SIO MTIME tick rate on the Pico 2 (~131.5 MHz — see kernel_pico2.tc).
+var LCD_MTIME_PER_MS: u32 = 131500u32;
+
+var g_lcd_inited: i32 = 0;
+
+// Busy-wait `ms` milliseconds against the SIO timer.
+fn lcd_delay_ms(ms: i32) -> void {
+    var start: u32 = read_mtime();
+    var want:  u32 = (ms as u32) * LCD_MTIME_PER_MS;
+    while (read_mtime() - start) < want { }
+    return;
+}
+
+// Drive one of the SIO control lines high (hi != 0) or low.
+fn lcd_gpio(mask: u32, hi: i32) -> void {
+    if hi != 0 {
+        poke32(LCD_SIO + 0x18u32, mask);    // GPIO_OUT_SET
+    } else {
+        poke32(LCD_SIO + 0x20u32, mask);    // GPIO_OUT_CLR
+    }
+    return;
+}
+
+// Shift one byte out over SPI1. The RX byte is read back and discarded
+// to keep the PL022 RX FIFO drained (same pattern as block_sd.tc).
+fn lcd_spi(b: i32) -> void {
+    while (peek32(LCD_SPI1 + 0x0Cu32) & 0x2u32) == 0u32 { }    // TNF
+    poke32(LCD_SPI1 + 0x08u32, (b & 0xFF) as u32);
+    while (peek32(LCD_SPI1 + 0x0Cu32) & 0x4u32) == 0u32 { }    // RNE
+    var dummy: u32 = peek32(LCD_SPI1 + 0x08u32);
+    return;
+}
+
+// Send a command byte (DC = 0) / a data byte (DC = 1).
+fn lcd_cmd(c: i32) -> void { lcd_gpio(LCD_DC, 0); lcd_spi(c); return; }
+fn lcd_dat(d: i32) -> void { lcd_gpio(LCD_DC, 1); lcd_spi(d); return; }
+
+// Read a little-endian u16 from a raw address.
+fn fb_rd16(addr: u32) -> i32 {
+    return (peek8(addr) as i32) | ((peek8(addr + 1u32) as i32) << 8);
+}
+
+// Bring up SPI1 + the ILI9488. Idempotent; runs on the first blit.
+fn lcd_init() -> void {
+    if g_lcd_inited != 0 { return; }
+
+    // 1. SPI1 out of reset.
+    poke32(LCD_RESETS_CLR, LCD_RESETS_SPI1);
+    while (peek32(LCD_RESETS_DONE) & LCD_RESETS_SPI1) == 0u32 { }
+
+    // 2. funcsel: GP10/11/12 = SPI1 (1); GP8/9/13/14 = SIO (5).
+    //    The GPn ctrl register is at IO_BANK0 + 8*n + 4.
+    poke32(LCD_IO_BANK0 + 0x44u32, 5u32);   // GP8  DC
+    poke32(LCD_IO_BANK0 + 0x4Cu32, 5u32);   // GP9  CS
+    poke32(LCD_IO_BANK0 + 0x54u32, 1u32);   // GP10 SCK
+    poke32(LCD_IO_BANK0 + 0x5Cu32, 1u32);   // GP11 MOSI
+    poke32(LCD_IO_BANK0 + 0x64u32, 1u32);   // GP12 MISO
+    poke32(LCD_IO_BANK0 + 0x6Cu32, 5u32);   // GP13 RST
+    poke32(LCD_IO_BANK0 + 0x74u32, 5u32);   // GP14 BL
+
+    // 3. Pads: clear ISO (bit 8) on GP8..GP14. Pad reg = PADS + 4 + 4*n.
+    poke32(LCD_PADS_CLR + 0x24u32, 0x100u32);   // GP8
+    poke32(LCD_PADS_CLR + 0x28u32, 0x100u32);   // GP9
+    poke32(LCD_PADS_CLR + 0x2Cu32, 0x100u32);   // GP10
+    poke32(LCD_PADS_CLR + 0x30u32, 0x100u32);   // GP11
+    poke32(LCD_PADS_CLR + 0x34u32, 0x100u32);   // GP12
+    poke32(LCD_PADS_CLR + 0x38u32, 0x100u32);   // GP13
+    poke32(LCD_PADS_CLR + 0x3Cu32, 0x100u32);   // GP14
+
+    // 4. Idle the control lines, then enable their outputs: CS + RST
+    //    high (idle), DC + BL low.
+    poke32(LCD_SIO + 0x18u32, LCD_CS | LCD_RST);    // OUT_SET
+    poke32(LCD_SIO + 0x20u32, LCD_DC | LCD_BL);     // OUT_CLR
+    poke32(LCD_SIO + 0x38u32, LCD_DC | LCD_CS | LCD_RST | LCD_BL);  // OE_SET
+
+    // 5. SPI1 @ ~6 MHz (clk_peri / CPSR), 8-bit, SPI mode 0.
+    poke32(LCD_SPI1 + 0x10u32, 2u32);       // CPSR
+    poke32(LCD_SPI1 + 0x00u32, 0x07u32);    // CR0: 8-bit data
+    poke32(LCD_SPI1 + 0x04u32, 0x02u32);    // CR1: SSE (enable)
+
+    // 6. Backlight on; hardware reset pulse (RST low ~20 ms).
+    lcd_gpio(LCD_BL, 1);
+    lcd_gpio(LCD_RST, 1);  lcd_delay_ms(5);
+    lcd_gpio(LCD_RST, 0);  lcd_delay_ms(20);
+    lcd_gpio(LCD_RST, 1);  lcd_delay_ms(150);
+
+    // 7. CS low — a single device owns SPI1, so it is held asserted.
+    lcd_gpio(LCD_CS, 0);
+
+    // 8. ILI9488 init. Software reset, power/VCOM, MADCTL, 18-bit
+    //    pixel format, then the vertical-scroll area and display-on.
+    //    Gamma (0xE0/0xE1) is left at reset defaults — fine for a
+    //    text console; add it here if colours look off.
+    lcd_cmd(0x01);  lcd_delay_ms(120);                          // SWRESET
+    lcd_cmd(0xC0);  lcd_dat(0x17); lcd_dat(0x15);               // Power Ctl 1
+    lcd_cmd(0xC1);  lcd_dat(0x41);                              // Power Ctl 2
+    lcd_cmd(0xC5);  lcd_dat(0x00); lcd_dat(0x12); lcd_dat(0x80);// VCOM
+    lcd_cmd(0x36);  lcd_dat(0x48);             // MADCTL: portrait, BGR
+    lcd_cmd(0x3A);  lcd_dat(0x66);             // pixel format: 18 bpp
+    lcd_cmd(0xB0);  lcd_dat(0x00);             // interface mode control
+    lcd_cmd(0xB1);  lcd_dat(0xA0);             // frame rate
+    lcd_cmd(0xB4);  lcd_dat(0x02);             // display inversion control
+    lcd_cmd(0xB6);  lcd_dat(0x02); lcd_dat(0x02); lcd_dat(0x3B);// disp func
+    // Vertical scroll: full 480-line area (TFA = 0, VSA = 480, BFA = 0).
+    lcd_cmd(0x33);
+    lcd_dat(0x00); lcd_dat(0x00);
+    lcd_dat(0x01); lcd_dat(0xE0);
+    lcd_dat(0x00); lcd_dat(0x00);
+    lcd_cmd(0x11);  lcd_delay_ms(120);         // sleep out
+    lcd_cmd(0x29);                             // display on
+
+    g_lcd_inited = 1;
+    return;
+}
+
+// Set the GRAM address window to (x0,y0)-(x1,y1) and issue RAMWR, so
+// the bytes that follow are pixel data.
+fn lcd_window(x0: i32, y0: i32, x1: i32, y1: i32) -> void {
+    lcd_cmd(0x2A);                                  // CASET
+    lcd_dat((x0 >> 8) & 0xFF); lcd_dat(x0 & 0xFF);
+    lcd_dat((x1 >> 8) & 0xFF); lcd_dat(x1 & 0xFF);
+    lcd_cmd(0x2B);                                  // PASET
+    lcd_dat((y0 >> 8) & 0xFF); lcd_dat(y0 & 0xFF);
+    lcd_dat((y1 >> 8) & 0xFF); lcd_dat(y1 & 0xFF);
+    lcd_cmd(0x2C);                                  // RAMWR
+    return;
+}
+
+// Push one RGB565 colour as a single 18-bit ILI9488 pixel (3 bytes:
+// each colour component left-justified in its byte).
+fn lcd_pixel(c: i32) -> void {
+    lcd_dat(((c >> 11) & 0x1F) << 3);   // R: 5 bits -> bits 7..3
+    lcd_dat(((c >> 5)  & 0x3F) << 2);   // G: 6 bits -> bits 7..2
+    lcd_dat(( c        & 0x1F) << 3);   // B: 5 bits -> bits 7..3
+    return;
+}
+
+// mode 1: fill the rect (x,y,w,h) with one RGB565 colour.
+fn lcd_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
+    if w <= 0 || h <= 0 { return; }
+    lcd_window(x, y, x + w - 1, y + h - 1);
+    var rb: i32 = ((col >> 11) & 0x1F) << 3;
+    var gb: i32 = ((col >> 5)  & 0x3F) << 2;
+    var bb: i32 = ( col        & 0x1F) << 3;
+    var count: i32 = w * h;
+    var i: i32 = 0;
+    while i < count {
+        lcd_dat(rb); lcd_dat(gb); lcd_dat(bb);
+        i = i + 1;
+    }
+    return;
+}
+
+// mode 0: blit w*h RGB565 pixels from `pix` into the rect (x,y,w,h).
+fn lcd_blit(x: i32, y: i32, w: i32, h: i32, pix: u32) -> void {
+    if w <= 0 || h <= 0 { return; }
+    lcd_window(x, y, x + w - 1, y + h - 1);
+    var count: i32 = w * h;
+    var i: i32 = 0;
+    while i < count {
+        var o: u32 = pix + ((i * 2) as u32);
+        lcd_pixel((peek8(o) as i32) | ((peek8(o + 1u32) as i32) << 8));
+        i = i + 1;
+    }
+    return;
+}
+
+// /dev/fb backend: render one framed blit.
+export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
+    if g_lcd_inited == 0 { lcd_init(); }
+    if n < 10 { return; }
+    var x:    i32 = fb_rd16(buf_addr);
+    var y:    i32 = fb_rd16(buf_addr + 2u32);
+    var w:    i32 = fb_rd16(buf_addr + 4u32);
+    var h:    i32 = fb_rd16(buf_addr + 6u32);
+    var mode: i32 = fb_rd16(buf_addr + 8u32);
+    if mode == 0 {
+        lcd_blit(x, y, w, h, buf_addr + 10u32);
+    } else if mode == 1 {
+        if n >= 12 { lcd_fill(x, y, w, h, fb_rd16(buf_addr + 10u32)); }
+    } else if mode == 2 {
+        // hardware vertical scroll — VSCRSADD
+        if n >= 12 {
+            lcd_cmd(0x37);
+            var line: i32 = fb_rd16(buf_addr + 10u32);
+            lcd_dat((line >> 8) & 0xFF);
+            lcd_dat(line & 0xFF);
+        }
+    }
+    return;
+}

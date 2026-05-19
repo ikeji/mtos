@@ -14,13 +14,13 @@
 //                accumulated and parsed+committed at close, because a
 //                writer (e.g. /bin/echo) may split the datetime
 //                string across several write() calls.
-//   /dev/fb    — framebuffer. UART-dump bring-up driver: a write is a
-//                framed blit [x:u16][y:u16][w:u16][h:u16][mode:u16]
-//                + payload; instead of driving the ILI9488 over SPI
-//                this stub dumps a description of each request to the
-//                UART. The real SPI1 backend replaces fb_dump later
-//                (フェーズ9 S3). 1 blit = 1 write() (no framing
-//                state); read is not supported.
+//   /dev/fb    — framebuffer. A write is a framed blit
+//                [x:u16][y:u16][w:u16][h:u16][mode:u16] + payload;
+//                1 blit = 1 write() (no framing state); read is not
+//                supported. The backend (fb_backend_write) is
+//                platform-specific: a real ILI9488 over SPI1 on pico2
+//                (display_ili9488.tc), or a UART-dump stub on qemu
+//                virt (dev_backend_virt.tc).
 //   /dev/kbd   — keyboard. Bring-up stub: read pulls keystrokes from
 //                the UART RX ring (so on qemu virt the serial console
 //                is the keyboard); -2 when empty so the ecall handler
@@ -120,108 +120,12 @@ fn devfs_alloc(dev: i32, buf_hdr: u32, size: i32) -> i32 {
     return -1;
 }
 
-// ===== /dev/fb UART-dump bring-up driver =====
-// Reads a little-endian u16 from a raw address.
-fn fb_u16(addr: u32) -> i32 {
-    return (peek8(addr) as i32) | ((peek8(addr + 1u32) as i32) << 8);
-}
-
-fn fb_put_str(b: U8Array, pos: i32, s: StringLiteral) -> i32 {
-    var sl: i32 = len(s);
-    var i: i32 = 0;
-    while i < sl {
-        set(b, pos, get(s, i));
-        pos = pos + 1;
-        i = i + 1;
-    }
-    return pos;
-}
-
-fn fb_put_dec(b: U8Array, pos: i32, v: i32) -> i32 {
-    var d: U8Array = U8Array(12u32);
-    var nn: i32 = 0;
-    var x: i32 = v;
-    if x < 0 { x = 0; }
-    if x == 0 {
-        set(d, 0, '0' as u8);
-        nn = 1;
-    }
-    while x > 0 {
-        set(d, nn, (('0' as i32) + x % 10) as u8);
-        nn = nn + 1;
-        x = x / 10;
-    }
-    while nn > 0 {
-        nn = nn - 1;
-        set(b, pos, get(d, nn));
-        pos = pos + 1;
-    }
-    delete(d);
-    return pos;
-}
-
-fn fb_hex_digit(d: i32) -> u8 {
-    if d < 10 { return (('0' as i32) + d) as u8; }
-    return (('a' as i32) + d - 10) as u8;
-}
-
-// Append the two lowercase hex digits of byte `v` (0..255).
-fn fb_put_hex2(b: U8Array, pos: i32, v: i32) -> i32 {
-    set(b, pos,     fb_hex_digit((v >> 4) & 0xF));
-    set(b, pos + 1, fb_hex_digit(v & 0xF));
-    return pos + 2;
-}
-
-// Dump one framed-blit request to the UART. Stand-in for the future
-// SPI1 / ILI9488 backend — see the file header. A mode-0 blit also
-// dumps its RGB565 pixel payload as hex (`data=...`) so tests/
-// fb_render.py can reconstruct the exact image.
-fn fb_dump(buf_addr: u32, n: i32) -> void {
-    var b: U8Array = U8Array((160 + n * 2) as u32);
-    var p: i32 = 0;
-    p = fb_put_str(b, p, "FB: ");
-    if n < 10 {
-        p = fb_put_str(b, p, "runt n=");
-        p = fb_put_dec(b, p, n);
-    } else {
-        var x:    i32 = fb_u16(buf_addr);
-        var y:    i32 = fb_u16(buf_addr + 2u32);
-        var w:    i32 = fb_u16(buf_addr + 4u32);
-        var h:    i32 = fb_u16(buf_addr + 6u32);
-        var mode: i32 = fb_u16(buf_addr + 8u32);
-        p = fb_put_str(b, p, "mode="); p = fb_put_dec(b, p, mode);
-        p = fb_put_str(b, p, " x=");   p = fb_put_dec(b, p, x);
-        p = fb_put_str(b, p, " y=");   p = fb_put_dec(b, p, y);
-        p = fb_put_str(b, p, " w=");   p = fb_put_dec(b, p, w);
-        p = fb_put_str(b, p, " h=");   p = fb_put_dec(b, p, h);
-        p = fb_put_str(b, p, " n=");   p = fb_put_dec(b, p, n);
-        if mode == 0 {
-            p = fb_put_str(b, p, " px=");
-            p = fb_put_dec(b, p, w * h);
-            p = fb_put_str(b, p, " data=");
-            var pi: i32 = 10;
-            while pi < n {
-                p = fb_put_hex2(b, p, peek8(buf_addr + (pi as u32)) as i32);
-                pi = pi + 1;
-            }
-        } else if mode == 1 {
-            if n >= 12 {
-                p = fb_put_str(b, p, " color=");
-                p = fb_put_dec(b, p, fb_u16(buf_addr + 10u32));
-            }
-        } else if mode == 2 {
-            if n >= 12 {
-                p = fb_put_str(b, p, " scroll=");
-                p = fb_put_dec(b, p, fb_u16(buf_addr + 10u32));
-            }
-        }
-    }
-    set(b, p, 10u8);
-    p = p + 1;
-    do_uart_write((b as u32) + 4u32, p);
-    delete(b);
-    return;
-}
+// ===== /dev/fb backend hook =====
+// The framebuffer backend is platform-specific and resolved at link
+// time: kernel/display_ili9488.tc (pico2 — a real ILI9488 over SPI1)
+// or kernel/dev_backend_virt.tc (qemu virt — a UART-dump stub that
+// tests/fb_render.py can replay). devfs_write routes /dev/fb here.
+fn fb_backend_write(buf_addr: u32, n: i32) -> void;
 
 // Open a /dev node. Returns a devfs slot index (>= 0) used as the
 // VFS inner handle, or -1 if the path names no known device.
@@ -278,7 +182,7 @@ export fn devfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
         return do_uart_write(buf_addr, n);
     }
     if dev(e) == DEV_FB {
-        fb_dump(buf_addr, n);
+        fb_backend_write(buf_addr, n);
         return n;
     }
     if dev(e) == DEV_RTC {

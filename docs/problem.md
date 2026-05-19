@@ -76,6 +76,25 @@ incbin で rodata が巨大なほど被害が大きい。発症は「最後の t
 常に live、かつ addr は `ds_compact` Phase 3 が専用パスで書き換える
 ので workspace から外して安全。
 
+### 33. asm_pass2 の link 入力数が EXTRAS_CAP を超えると末尾を黙って落とす (bug, 緩和済 2026-05-20)
+
+**症状**: カーネルに `.tc` モジュールを 1 個足したら virt カーネルが
+boot で無出力ハング、pico2 カーネルから埋め込み mtfs image が消えた。
+`.lab` を見ると最後の入力 (`crt0_data` / `mtfs_image`) が link から
+丸ごと脱落していた。
+
+**原因**: `asm_common.tc::EXTRAS_CAP` は asm_pass2 の link 入力
+(prelude + user 以降の `--add` 入力) の上限。これが **16** で、
+カーネルの link はちょうど 16 個 (ぎりぎり) だった。モジュールを
+1 個追加すると 17 個になり、`asm_add_extra_input` が 17 個目で
+`-1` を返す — が呼び出し側がそれを無視するため、末尾入力 (bss の
+`.space __arena` を持つ `crt0_data`) が黙って捨てられる。bss=0 の
+カーネルは最初の kmalloc で即死し無出力。
+
+**緩和**: `EXTRAS_CAP` を 16 → 48 に引き上げ。**根本的には**
+`asm_add_extra_input` の `-1` を呼び出し側が検出して link を
+中断・エラーにすべき (今は silent drop)。上限超過は今後も起こりうる。
+
 ### K7. pico2 で phase 7 コンパイラを完走させる ✅ **解決 (2026-04-29)**
 
 完成: pico2 実機上で OS 自身のコンパイラパイプラインが

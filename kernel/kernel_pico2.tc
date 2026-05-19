@@ -11,6 +11,9 @@ import "loader.tc";
 // /dev/rtc backend: DS3231 over I2C1. Defines rtc_read_secs /
 // rtc_set_secs, which rtc.tc forward-declares.
 import "rtc_ds3231.tc";
+// /dev/fb backend: ILI9488 over SPI1. Defines fb_backend_write,
+// which devfs.tc forward-declares.
+import "display_ili9488.tc";
 
 fn csr_read_mie() -> u32;
 fn csr_write_mie(val: u32) -> void;

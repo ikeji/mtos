@@ -398,9 +398,12 @@ export fn asm_set_user_data_start(v: i32)    -> void { g_user_data_start   = v; 
 // invocations: an asm_pass1 output set (.idx + per-section .bin +
 // .reloc) appended after `user` in the linker's input order. Section
 // bytes concatenate in input order; relocs accumulate with per-input
-// text-section shifts. Cap of 16 covers compile-gen2.sh's worst case
-// (sh.tc-class user code + libtc + several import .s files).
-var EXTRAS_CAP: i32 = 16;
+// text-section shifts. The kernel link is the worst case (kernel.tc /
+// kernel_pico2.tc pull in ~14 modules + crt0 + crt0_data); 48 leaves
+// generous headroom. Overflowing this silently drops the trailing
+// inputs (asm_add_extra_input returns -1), so keep it ahead of the
+// real input count.
+var EXTRAS_CAP: i32 = 48;
 var g_n_extras: i32 = 0;
 var g_extra_idx:        StringArray = 0 as StringArray;
 var g_extra_text_bin:   StringArray = 0 as StringArray;
