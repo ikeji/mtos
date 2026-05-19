@@ -46,17 +46,45 @@ fn put_u32_pad(buf_addr: u32, pos: i32, v: u32, width: i32) -> i32 {
     return pos;
 }
 
-// Render the current clock as "YYYY-MM-DD HH:MM:SS\n" into buf_addr
-// (caller must provide >= 20 bytes). Returns the byte count written.
-export fn rtc_format(buf_addr: u32) -> i32 {
-    var secs: u32 = rtc_read_secs();
+// ===== Calendar <-> Unix-seconds conversion =====
+//
+// Howard Hinnant's days_from_civil / civil_from_days for the proleptic
+// Gregorian calendar. Exported so a calendar-register RTC backend
+// (e.g. kernel/rtc_ds3231.tc) can convert between the chip's BCD
+// Y/M/D H:M:S fields and the seconds-since-epoch that the
+// rtc_read_secs / rtc_set_secs interface uses.
+
+// (year, month, day, hh, mm, ss) -> seconds since the Unix epoch.
+export fn rtc_civil_to_secs(y: u32, mon: u32, d: u32,
+                            hh: u32, mm: u32, ss: u32) -> u32 {
+    var yy: u32 = y;
+    if mon <= 2u32 { yy = y - 1u32; }
+    var era: u32 = yy / 400u32;
+    var yoe: u32 = yy - era * 400u32;
+    var mpv: u32 = mon + 9u32;
+    if mon > 2u32 { mpv = mon - 3u32; }
+    var doy: u32 = (153u32 * mpv + 2u32) / 5u32 + d - 1u32;
+    var doe: u32 = yoe * 365u32 + yoe / 4u32 - yoe / 100u32 + doy;
+    var days: u32 = era * 146097u32 + doe - 719468u32;
+    return days * 86400u32 + hh * 3600u32 + mm * 60u32 + ss;
+}
+
+// secs -> (year, month, day, hh, mm, ss), stashed in g_cv_* and read
+// back via the rtc_cv_* accessors (TC has no multi-value return).
+var g_cv_y:   u32 = 0u32;
+var g_cv_mon: u32 = 0u32;
+var g_cv_d:   u32 = 0u32;
+var g_cv_hh:  u32 = 0u32;
+var g_cv_mm:  u32 = 0u32;
+var g_cv_ss:  u32 = 0u32;
+
+export fn rtc_secs_to_civil(secs: u32) -> void {
     var days: u32 = secs / 86400u32;
     var sod:  u32 = secs - days * 86400u32;
-    var hh:   u32 = sod / 3600u32;
-    var mm:   u32 = (sod - hh * 3600u32) / 60u32;
-    var ss:   u32 = sod - hh * 3600u32 - mm * 60u32;
+    g_cv_hh = sod / 3600u32;
+    g_cv_mm = (sod - g_cv_hh * 3600u32) / 60u32;
+    g_cv_ss = sod - g_cv_hh * 3600u32 - g_cv_mm * 60u32;
 
-    // civil_from_days: days-since-epoch -> (year, month, day)
     var z:   u32 = days + 719468u32;
     var era: u32 = z / 146097u32;
     var doe: u32 = z - era * 146097u32;
@@ -64,23 +92,38 @@ export fn rtc_format(buf_addr: u32) -> i32 {
     var y:   u32 = yoe + era * 400u32;
     var doy: u32 = doe - (365u32 * yoe + yoe / 4u32 - yoe / 100u32);
     var mp:  u32 = (5u32 * doy + 2u32) / 153u32;
-    var d:   u32 = doy - (153u32 * mp + 2u32) / 5u32 + 1u32;
+    g_cv_d = doy - (153u32 * mp + 2u32) / 5u32 + 1u32;
     var mon: u32 = mp + 3u32;
     if mp >= 10u32 { mon = mp - 9u32; }
+    g_cv_mon = mon;
     if mon <= 2u32 { y = y + 1u32; }
+    g_cv_y = y;
+    return;
+}
 
+export fn rtc_cv_year()  -> u32 { return g_cv_y; }
+export fn rtc_cv_month() -> u32 { return g_cv_mon; }
+export fn rtc_cv_day()   -> u32 { return g_cv_d; }
+export fn rtc_cv_hour()  -> u32 { return g_cv_hh; }
+export fn rtc_cv_min()   -> u32 { return g_cv_mm; }
+export fn rtc_cv_sec()   -> u32 { return g_cv_ss; }
+
+// Render the current clock as "YYYY-MM-DD HH:MM:SS\n" into buf_addr
+// (caller must provide >= 20 bytes). Returns the byte count written.
+export fn rtc_format(buf_addr: u32) -> i32 {
+    rtc_secs_to_civil(rtc_read_secs());
     var p: i32 = 0;
-    p = put_u32_pad(buf_addr, p, y, 4);
+    p = put_u32_pad(buf_addr, p, rtc_cv_year(), 4);
     poke8(buf_addr + (p as u32), '-' as u8); p = p + 1;
-    p = put_u32_pad(buf_addr, p, mon, 2);
+    p = put_u32_pad(buf_addr, p, rtc_cv_month(), 2);
     poke8(buf_addr + (p as u32), '-' as u8); p = p + 1;
-    p = put_u32_pad(buf_addr, p, d, 2);
+    p = put_u32_pad(buf_addr, p, rtc_cv_day(), 2);
     poke8(buf_addr + (p as u32), ' ' as u8); p = p + 1;
-    p = put_u32_pad(buf_addr, p, hh, 2);
+    p = put_u32_pad(buf_addr, p, rtc_cv_hour(), 2);
     poke8(buf_addr + (p as u32), ':' as u8); p = p + 1;
-    p = put_u32_pad(buf_addr, p, mm, 2);
+    p = put_u32_pad(buf_addr, p, rtc_cv_min(), 2);
     poke8(buf_addr + (p as u32), ':' as u8); p = p + 1;
-    p = put_u32_pad(buf_addr, p, ss, 2);
+    p = put_u32_pad(buf_addr, p, rtc_cv_sec(), 2);
     poke8(buf_addr + (p as u32), 10u8); p = p + 1;
     return p;
 }
@@ -129,16 +172,5 @@ export fn rtc_parse_set(buf_addr: u32, n: i32) -> i32 {
     if d < 1u32 || d > 31u32 { return -1; }
     if hh > 23u32 || mm > 59u32 || ss > 59u32 { return -1; }
 
-    // days_from_civil: (year, month, day) -> days-since-epoch
-    var yy: u32 = y;
-    if mon <= 2u32 { yy = y - 1u32; }
-    var era: u32 = yy / 400u32;
-    var yoe: u32 = yy - era * 400u32;
-    var mpv: u32 = mon + 9u32;
-    if mon > 2u32 { mpv = mon - 3u32; }
-    var doy: u32 = (153u32 * mpv + 2u32) / 5u32 + d - 1u32;
-    var doe: u32 = yoe * 365u32 + yoe / 4u32 - yoe / 100u32 + doy;
-    var days: u32 = era * 146097u32 + doe - 719468u32;
-    var secs: u32 = days * 86400u32 + hh * 3600u32 + mm * 60u32 + ss;
-    return rtc_set_secs(secs);
+    return rtc_set_secs(rtc_civil_to_secs(y, mon, d, hh, mm, ss));
 }

@@ -260,13 +260,16 @@ GUI を作る場合も**カーネル側のプランは変わらない**。
 
 ### S2. `/dev/rtc`
 
-- 新規 `kernel/rtc.tc` (または `devfs.tc` に内包)。
-- platform 別 read: virt = goldfish-rtc (MMIO 既知アドレス)、
-  pico2 = AON timer。
-- `devfs.tc` — `/dev/rtc` read = datetime 整形、write = 解析して
-  セット。
-- テスト: virt の goldfish-rtc で read/write 検証。`/dev` の write
-  経路の最初の実証も兼ねる。
+- [x] `kernel/rtc.tc` — datetime 整形/解析 + civil↔Unix 変換
+  (Hinnant)。platform は `rtc_read_secs` / `rtc_set_secs` を提供。
+- [x] virt backend = goldfish-rtc (`kernel.tc`、MMIO 0x101000)。
+- [x] `devfs.tc` `/dev/rtc` — read = datetime 整形、write = 解析
+  してセット。virt の goldfish-rtc で read/write 検証済
+  (test_os.sh fs_virtio)。
+- [x] pico2 backend = DS3231 over I2C1 (`kernel/rtc_ds3231.tc`、
+  2026-05-20)。RP2350 I2C1 ハードウェアブロック (GP2/3) で DS3231
+  の BCD カレンダーレジスタを読み書き。**実機未検証** — qemu virt に
+  DS3231 が無いため `make test` には載らない。
 - リスク: 低〜中 (datetime 整形/解析) / 依存: S1
 
 ### S3. ディスプレイドライバ + `/dev/fb` (mode 0/1)

@@ -623,9 +623,13 @@ self-host loop が成立した。
       virt で動作確認、`test_os.sh` の fs_virtio に devfs ケース追加
 - [x] **S2**: `/dev/rtc` — read で "YYYY-MM-DD HH:MM:SS"、write で
       時刻設定 (2026-05-16、commit fa34500)。`kernel/rtc.tc` が秒
-      <-> カレンダー変換、virt は goldfish-rtc (0x101000) で実装、
-      pico2 は AON timer スタブ。virt で read/write ラウンドトリップ
-      を確認、fs_virtio に rtc ケース追加
+      <-> カレンダー変換、virt は goldfish-rtc (0x101000) で実装。
+      virt で read/write ラウンドトリップを確認、fs_virtio に rtc
+      ケース追加。
+  - [x] pico2 backend = DS3231 over I2C1 (2026-05-20、
+        `kernel/rtc_ds3231.tc`)。RP2350 I2C1 ハードウェアブロック
+        (GP2/3) で DS3231 の BCD カレンダーレジスタを読み書き。
+        実機未検証 (qemu virt に DS3231 が無い)
 - [ ] **S3**: ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb`
       (framed write、mode 0 ピクセル / mode 1 単色)
   - [x] `/dev/fb` UART ダンプ用ブリングアップドライバ + `fbtest`
@@ -691,8 +695,10 @@ self-host loop が成立した。
 - S3 実: SPI1 + ILI9488 実ドライバ (`devfs.tc` の `fb_dump` 差し替え)
 - S4 実: ILI9488 ハードウェア垂直スクロール
 - S5 実: GPIO マトリクススキャナ (`devfs.tc` の DEV_KBD read 差し替え)
-- `/dev/rtc` の pico2 AON timer 実装 (現状スタブ)
-ハード結線は `docs/pico2_hardware.md` に追記してから着手する。
+- S2 pico2 RTC は DS3231 over I2C1 で実装済 (`kernel/rtc_ds3231.tc`)。
+  実機での read/write 検証が残件。
+GPIO 割り当ては `docs/pico2_hardware.md`「GPIO 割り当て一覧」。実機
+ドライバは結線済の周辺から順に検証していく。
 
 ## 技術的リスクと対策
 

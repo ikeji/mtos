@@ -83,8 +83,8 @@ UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 
 |---|---|---|---|
 | GP0 | UART0 TX | UART0 — kernel ログ出力 | 実装済み |
 | GP1 | UART0 RX | UART0 — host → kernel 入力 | 実装済み |
-| GP2 | RTC I2C SDA | I2C1 SDA | 結線済み (ドライバ未) |
-| GP3 | RTC I2C SCL | I2C1 SCL | 結線済み (ドライバ未) |
+| GP2 | RTC I2C SDA | I2C1 SDA | ドライバ実装済 (実機未検証) |
+| GP3 | RTC I2C SCL | I2C1 SCL | ドライバ実装済 (実機未検証) |
 | GP4 | SD MISO | SPI0 RX | 実装済み |
 | GP5 | SD CS | GPIO 出力 (手動 CS) | 実装済み |
 | GP6 | SD SCK | SPI0 SCK | 実装済み |
@@ -114,8 +114,9 @@ UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 
 - **SD カード = SPI0** (GP4–7)、**LCD = SPI1** (GP10–12) と別バスに
   分離した (`docs/task/io_devices.md` の SPI バス構成方針どおり)。CS は
   どちらもハードウェア CS を使わず GPIO 出力で手動駆動する。
-- **RTC は外付け I2C チップ** (GP2/3、I2C1)。AON タイマではなく外付け
-  RTC を `/dev/rtc` のバックエンドにする。
+- **RTC は外付け DS3231** (GP2/3、I2C1、アドレス 0x68)。
+  `kernel/rtc_ds3231.tc` が RP2350 I2C1 ハードウェアブロックで
+  DS3231 の BCD カレンダーレジスタを読み書きし `/dev/rtc` を駆動する。
 - **キーボードは論理 12 列 × 5 行 = 60 キー**。物理線は行 5 本
   (GP16–20) + 列 6 本 (GP21–26) の計 11 本だけ。**左半分と右半分で
   ダイオードの向きが逆**になっており、2 フェーズでスキャンする:
