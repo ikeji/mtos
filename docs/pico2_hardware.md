@@ -74,6 +74,48 @@ SWD と UART を 1 デバイスでまとめられる + openocd 経由で flash �
 UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 付属
 の 3 ピンケーブルはコネクタ向きで自然にクロスする配線になっている。
 
+### GPIO 割り当て一覧 (2026-05-20 結線完了)
+
+開発基板の全 GPIO 割り当て。GP30 以降と GP47 は 48-GPIO 版 RP2350
+(QFN-80) にのみ存在する。
+
+| GPIO | 用途 | ブロック / 駆動 | 状態 |
+|---|---|---|---|
+| GP0 | UART0 TX | UART0 — kernel ログ出力 | 実装済み |
+| GP1 | UART0 RX | UART0 — host → kernel 入力 | 実装済み |
+| GP2 | RTC I2C SDA | I2C1 SDA | 結線済み (ドライバ未) |
+| GP3 | RTC I2C SCL | I2C1 SCL | 結線済み (ドライバ未) |
+| GP4 | SD MISO | SPI0 RX | 実装済み |
+| GP5 | SD CS | GPIO 出力 (手動 CS) | 実装済み |
+| GP6 | SD SCK | SPI0 SCK | 実装済み |
+| GP7 | SD MOSI | SPI0 TX | 実装済み |
+| GP8 | LCD DC (データ/コマンド選択) | GPIO 出力 | 結線済み (ドライバ未) |
+| GP9 | LCD CS | GPIO 出力 (手動 CS) | 結線済み (ドライバ未) |
+| GP10 | LCD SCK | SPI1 SCK | 結線済み (ドライバ未) |
+| GP11 | LCD MOSI | SPI1 TX | 結線済み (ドライバ未) |
+| GP12 | LCD MISO | SPI1 RX | 結線済み (ドライバ未) |
+| GP13 | LCD RST | GPIO 出力 | 結線済み (ドライバ未) |
+| GP14 | LCD BL (バックライト) | GPIO 出力 | 結線済み (ドライバ未) |
+| GP15 | — | 未使用 | — |
+| GP16–19 | キーボード ROW0–3 | GPIO (マトリクス行) | 結線済み (ドライバ未) |
+| GP20–31 | キーボード COL0–11 | GPIO (マトリクス列) | 結線済み (ドライバ未) |
+| GP32–46 | — | 未使用 | — |
+| GP47 | PSRAM CS | QMI チップセレクト | 結線済み |
+
+- **SD カード = SPI0** (GP4–7)、**LCD = SPI1** (GP10–12) と別バスに
+  分離した (`docs/task/io_devices.md` の SPI バス構成方針どおり)。CS は
+  どちらもハードウェア CS を使わず GPIO 出力で手動駆動する。
+- **RTC は外付け I2C チップ** (GP2/3、I2C1)。AON タイマではなく外付け
+  RTC を `/dev/rtc` のバックエンドにする。
+- **キーボードは 4 行 × 12 列マトリクス** (最大 48 キー)。行を駆動し
+  列を読むスキャン方式。
+- **PSRAM** は RP2350 の QMI 経由、CS = GP47。
+- LCD / RTC / キーボードのドライバは未実装 — フェーズ 9 の S2 (RTC) /
+  S3 (LCD) / S5 (キーボード)。実装計画は `docs/task/io_devices.md`。
+
+GP0/GP1/GP4–7 の詳細は以下のサブセクション (UART は「Pico 2 側」、
+SD は「SD カード ピン配線」) を参照。
+
 ### SD カード (SPI0、実装済み 2026-04-29)
 
 実装は `kernel/block_sd.tc` (CMD0/CMD8/ACMD41/CMD58 init + CMD17/CMD24

@@ -235,10 +235,11 @@ GUI を作る場合も**カーネル側のプランは変わらない**。
 
 ### S0. ハード設計・結線 (全ハードステップの前提)
 
-- ピン割り当てを決める: SPI1 (SCK/MOSI/CS) + ILI9488 の D/C・RESET、
-  GPIO マトリクスの行/列、RTC (AON timer or 外付け I2C)。
-- 物理結線。`docs/pico2_hardware.md` に追記。
-- openocd で GPIO トグル等の結線確認。
+- [x] ピン割り当て決定 + 物理結線 (2026-05-20)。RTC = I2C1 (GP2/3)、
+  LCD = SPI1 (GP10–12) + DC/CS/RST/BL (GP8/9/13/14)、キーボード =
+  4 行 × 12 列マトリクス (GP16–19 / GP20–31)。全 GPIO 割り当て表は
+  `docs/pico2_hardware.md` の「GPIO 割り当て一覧」。
+- [ ] openocd で GPIO トグル等の結線確認。
 - リスク: 低 / 依存: なし
 
 ### S1. `/dev` ルーティング + `/dev/uart`
