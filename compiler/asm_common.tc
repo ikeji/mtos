@@ -398,11 +398,18 @@ export fn asm_set_user_data_start(v: i32)    -> void { g_user_data_start   = v; 
 // invocations: an asm_pass1 output set (.idx + per-section .bin +
 // .reloc) appended after `user` in the linker's input order. Section
 // bytes concatenate in input order; relocs accumulate with per-input
-// text-section shifts. The kernel link is the worst case (kernel.tc /
-// kernel_pico2.tc pull in ~14 modules + crt0 + crt0_data); 48 leaves
-// generous headroom. Overflowing this silently drops the trailing
-// inputs (asm_add_extra_input returns -1), so keep it ahead of the
-// real input count.
+// text-section shifts.
+//
+// **Fixed (with loud error)**, not growable. The cap is enforced by
+// asm_pass2_lib.tc::run_link, which checks asm_add_extra_input's
+// return and exits nonzero with a stderr message on overflow — the
+// silent-drop fallout that bit problem.md #33. The kernel link is
+// the current worst case (kernel.tc / kernel_pico2.tc pull in ~14
+// modules + crt0 + crt0_data, well inside 48). Growable would
+// arguably be a cleaner fit since the count is set by callers, not
+// by architecture; for now the loud error keeps overflow visible and
+// the constant easy to bump. See docs/design_decisions.md §5 for
+// the fixed-vs-growable criterion.
 var EXTRAS_CAP: i32 = 48;
 var g_n_extras: i32 = 0;
 var g_extra_idx:        StringArray = 0 as StringArray;

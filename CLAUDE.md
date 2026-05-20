@@ -168,7 +168,8 @@ docs/       仕様・設計ドキュメント
   design_decisions.md 意図的に残している挙動の設計判断集
                      (struct 合成 fn の private 化 + export 前方宣言
                      による opt-out、String/StringLiteral 分離、
-                     peek/poke の no-bounds-check、2D array 非対応)
+                     peek/poke の no-bounds-check、2D array 非対応、
+                     固定キャップ vs 伸長の使い分け基準)
   problem.md         既知の未解決バグ / limitation / ergonomics リスト
   sources.md         ソースファイル一覧
   task/              タスク計画・デバッグノート
