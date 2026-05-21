@@ -52,7 +52,12 @@ var g_src_starts: I32Array = 0 as I32Array;
 var g_src_paths: U32Array = 0 as U32Array;
 var g_src_secs:  I32Array = 0 as I32Array;
 var g_n_src_paths: i32 = 0;
-var SRC_PATHS_CAP: i32 = 64;
+// Number of `src raw` entries scales with the link's input count
+// (3 per .s file + extras like deferred .incbin). Phase 9 kernel
+// build hit 67 entries when 64 was the cap and silently dropped the
+// trailing dx.img embed — bss-style kernel boot fail. Per
+// design_decisions.md §5: input-dependent ⇒ growable.
+var g_src_paths_cap: i32 = 0;
 
 // Directory portion of the .lab path (everything up to and including
 // the last '/'). When `src raw <basename>` is parsed (no '/' in the
@@ -636,23 +641,41 @@ fn apply_pending_at(win: U8Array, w_off: i32, sec_base: i32, chunk_off: i32) -> 
     return;
 }
 
+fn src_paths_grow() -> void {
+    var new_cap: i32 = g_src_paths_cap * 2;
+    if new_cap < 64 { new_cap = 64; }
+    var new_paths:  U32Array = U32Array((new_cap) as u32);
+    var new_secs:   I32Array = I32Array((new_cap) as u32);
+    var new_starts: I32Array = I32Array((new_cap) as u32);
+    var i: i32 = 0;
+    while i < g_n_src_paths {
+        set(new_paths,  i, get(g_src_paths,  i));
+        set(new_secs,   i, get(g_src_secs,   i));
+        set(new_starts, i, get(g_src_starts, i));
+        i = i + 1;
+    }
+    if g_src_paths_cap > 0 {
+        delete(g_src_paths);
+        delete(g_src_secs);
+        delete(g_src_starts);
+    }
+    g_src_paths     = new_paths;
+    g_src_secs      = new_secs;
+    g_src_starts    = new_starts;
+    g_src_paths_cap = new_cap;
+    return;
+}
+
 fn record_src_path(p: String, sec: i32, start_off: i32) -> void {
-    if g_src_paths as u32 == 0u32 {
-        g_src_paths  = U32Array((SRC_PATHS_CAP) as u32);
-        g_src_secs   = I32Array((SRC_PATHS_CAP) as u32);
-        g_src_starts = I32Array((SRC_PATHS_CAP) as u32);
-        g_n_src_paths = 0;
-    }
-    if g_n_src_paths < SRC_PATHS_CAP {
-        // Resolve basename → <lab_dir>/<basename>. Absolute paths
-        // (starting with '/') and bare names with no lab_dir set
-        // pass through unchanged so older .lab files still work.
-        var resolved: String = resolve_lab_relative(p);
-        set(g_src_paths,  g_n_src_paths, resolved as u32);
-        set(g_src_secs,   g_n_src_paths, sec);
-        set(g_src_starts, g_n_src_paths, start_off);
-        g_n_src_paths = g_n_src_paths + 1;
-    }
+    if g_n_src_paths >= g_src_paths_cap { src_paths_grow(); }
+    // Resolve basename → <lab_dir>/<basename>. Absolute paths
+    // (starting with '/') and bare names with no lab_dir set
+    // pass through unchanged so older .lab files still work.
+    var resolved: String = resolve_lab_relative(p);
+    set(g_src_paths,  g_n_src_paths, resolved as u32);
+    set(g_src_secs,   g_n_src_paths, sec);
+    set(g_src_starts, g_n_src_paths, start_off);
+    g_n_src_paths = g_n_src_paths + 1;
     return;
 }
 
