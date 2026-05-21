@@ -95,20 +95,24 @@ _start:
     and  t2, t2, t1
     bne  t2, t1, 2b
 
-    # GPIO0/1 → UART
-    li   t0, 0x40028004
-    li   t1, 2
+    # GP30/31 → UART0 (funcsel 11 = UART0 TX/RX on the QFN-80 RP2350B —
+    # pico-sdk: GPIO30_CTRL_FUNCSEL_VALUE_UART0_TX = 0x0b, GPIO31..._RX = 0x0b).
+    # The 2026-05-21 board moved UART off GP0/1; see docs/pico2_hardware.md.
+    # GPn CTRL = IO_BANK0 + 8*n + 4 → GP30 = 0x400280F4, GP31 = 0x400280FC.
+    li   t0, 0x400280F4
+    li   t1, 11
     sw   t1, 0(t0)
-    li   t0, 0x4002800C
+    li   t0, 0x400280FC
     sw   t1, 0(t0)
 
-    # PAD ISO clear + GPIO1 IE
+    # PAD ISO clear on GP30/31, IE on GP31 (RX). PADS_BANK0 reg for GPn
+    # is at base + 4 + 4*n → GP30 pad = 0x7C, GP31 pad = 0x80.
     li   t1, 0x100
-    li   t0, 0x4003B004
+    li   t0, 0x4003B07C
     sw   t1, 0(t0)
-    li   t0, 0x4003B008
+    li   t0, 0x4003B080
     sw   t1, 0(t0)
-    li   t0, 0x4003A008
+    li   t0, 0x4003A080
     li   t1, 0x40
     sw   t1, 0(t0)
 
