@@ -18,6 +18,54 @@
 
 ## 後回し
 
+### 35. pico2 console から sh を spawn_fds で起動すると render 経路が動かない (bug、2026-05-23)
+
+`console` を sh から起動すると console 自身は OK だが、内側 sh が pipe
+に書いた bytes が console の `sys_read` から見えるとっても限定的な
+シーケンスでしか届かない。
+
+検証で分かったこと:
+
+- LCD bit-bang `fb_fill` / `blit_glyph` 単独: ✓ 動作 (fbtest + console
+  直接描画テストで確認)。
+- `do_spawn_fds + pipe + render` を `/bin/hello` (`sys_write(1, "A", 1)`
+  × 5) でテスト: ✓ "AAAAA" が pipe 経由 console 経由 LCD に描画される。
+- 同パイプラインを `/bin/sh` でやると失敗。内側 sh の `puts("SH: ready\n")`
+  は実行され、ecall (sys_write 1) も return しているのに、console の
+  `sys_read(pr)` が返らない (-2 を吐き続ける)。
+- kernel 側 vfs_write / pipe_write を instrument すると、sh の n=10 write
+  が `pipe_write rv=10` で成功し、g_pipes[0].count が 10 になる。直後の
+  console の pipe_read もちゃんと 10 を一度だけ拾う。が、その後 sh が
+  `puts("sh$ ")` を出した n=4 の write は count に反映されるのに、
+  console 側がそれ以降の sys_read で永遠に count=0 (-2 yield ループ)。
+- 上の挙動が直前に console.tc に `eputs("CONS: before sys_read\n")`
+  を挟むと、`CONS: before loop` までは出るが `CONS: before sys_read`
+  が出ない (console がそこで stall)。
+
+仮説:
+
+- 内側 sh が `read_line` で `/dev/kbd` を初めて読みに行く時、
+  kernel-mode の `kbd_backend_read → kbd_init` で MMIO 系を初期化する
+  間に何か trap / yield が壊れて console が走らなくなる、または、
+  console と sh のスケジューリングと bit-bang LCD の長時間カーネル滞在
+  (lcd_init が初回 ~500 ms 連続) が組み合わさってタイマー割り込みが
+  落ちる。
+- 別の角度: TC の `var p: Pipe = get(g_pipes, idx)` が struct の値コピー
+  を作ってる可能性。値コピーなら setter (`count(p, ...)`) の書き戻しが
+  array に反映されない。ただし qemu virt の test_os は console_init を
+  pass しているので、純粋な値コピーバグなら qemu でも壊れるはず。
+- 一度成功するのに二度目以降は届かない、という挙動から「pipe state が
+  どこかで巻き戻る」「scheduler 切り替え時にレジスタ復元が壊れる」も
+  候補。
+
+回避策: 今のところなし。`make test` には影響しない (qemu では動作)。
+新基板の LCD ハードウェアが動作することは確認できたので、フェーズ9
+S7 (console + matrix keyboard) はこれが解けるまで保留。
+
+参考: 2026-05-22 〜 23 の調査セッション。
+`kernel/tasks/console/console.tc`, `kernel/vfs.tc::pipe_write/read`,
+`kernel/kernel_common.tc::sched_yield_read` あたり。
+
 ### 5. Gen2 typecheck のエラーメッセージ: 段階 2 (AST line info) のみ残 (ergonomics)
 
 段階 1 (関数名 + 引数型 + 直前 comment) は実装済。
