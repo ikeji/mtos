@@ -157,9 +157,12 @@ fn lcd_init() -> void {
     lcd_gpio(LCD_CS_MASK, 0);
 
     // 6. ILI9488 init. Software reset, power/VCOM, MADCTL, 18-bit
-    //    pixel format, then the vertical-scroll area and display-on.
-    //    Gamma (0xE0/0xE1) is left at reset defaults — fine for a
-    //    text console; add it here if colours look off.
+    //    pixel format, gamma, then the vertical-scroll area and
+    //    display-on. The 0xE0/0xE1 gamma tables are the values ILI
+    //    publishes as the recommended starting point in the 9488
+    //    application note (Adafruit / Waveshare ILI9488 demos use the
+    //    same numbers). Skipping them leaves the reset default gamma,
+    //    which biases the panel toward red and crushes greens.
     lcd_cmd(0x01);  lcd_delay_ms(120);                          // SWRESET
     lcd_cmd(0xC0);  lcd_dat(0x17); lcd_dat(0x15);               // Power Ctl 1
     lcd_cmd(0xC1);  lcd_dat(0x41);                              // Power Ctl 2
@@ -170,6 +173,18 @@ fn lcd_init() -> void {
     lcd_cmd(0xB1);  lcd_dat(0xA0);             // frame rate
     lcd_cmd(0xB4);  lcd_dat(0x02);             // display inversion control
     lcd_cmd(0xB6);  lcd_dat(0x02); lcd_dat(0x02); lcd_dat(0x3B);// disp func
+    // Positive gamma (0xE0): 15 bytes per ILI9488 reference init.
+    lcd_cmd(0xE0);
+    lcd_dat(0x00); lcd_dat(0x03); lcd_dat(0x09); lcd_dat(0x08);
+    lcd_dat(0x16); lcd_dat(0x0A); lcd_dat(0x3F); lcd_dat(0x78);
+    lcd_dat(0x4C); lcd_dat(0x09); lcd_dat(0x0A); lcd_dat(0x08);
+    lcd_dat(0x16); lcd_dat(0x1A); lcd_dat(0x0F);
+    // Negative gamma (0xE1): 15 bytes, paired with the positive curve.
+    lcd_cmd(0xE1);
+    lcd_dat(0x00); lcd_dat(0x16); lcd_dat(0x19); lcd_dat(0x03);
+    lcd_dat(0x0F); lcd_dat(0x05); lcd_dat(0x32); lcd_dat(0x45);
+    lcd_dat(0x46); lcd_dat(0x04); lcd_dat(0x0E); lcd_dat(0x0D);
+    lcd_dat(0x35); lcd_dat(0x37); lcd_dat(0x0F);
     // Vertical scroll: full 480-line area (TFA = 0, VSA = 480, BFA = 0).
     lcd_cmd(0x33);
     lcd_dat(0x00); lcd_dat(0x00);
