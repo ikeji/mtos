@@ -1,59 +1,97 @@
-// kernel/block_sd.tc — SD card SPI0 block backend for Pico 2.
+// kernel/block_sd.tc — SD card block backend for Pico 2 (2026-05-21 board).
 //
-// Drop-in replacement for block_fat_stub.tc on the pico2 target:
-// exports fat_block_init / fat_block_read / fat_block_write with the
-// same signatures fatfs.tc expects, talking to a Catalex-style SD
-// breakout over SPI0 + GP4-7 (see docs/pico2_hardware.md).
+// The 2026-05-21 board wired SD signals across GP34-37, but in the order
+// MISO/CS/SCK/MOSI — which does NOT match RP2350's SPI0 hardware funcsel
+// pin layout on those pins (SPI0 is SCK/MOSI/MISO/CS at GP34/35/36/37).
+// So we drive the bus with software bit-bang via SIO instead of using
+// the PL022 SPI peripheral. Expect roughly 1–2 MB/s vs the previous
+// 6 MHz hardware SPI; sufficient for fatfs mount + small-file IO.
 //
-// Init flow: CMD0 → CMD8 → ACMD41 → CMD58 (OCR → SDHC bit) → bump
-// SPI clock to ~6 MHz. After init, fat_block_read/write use CMD17 /
-// CMD24 against block-addressed (SDHC) or byte-addressed (SDSC) LBAs.
+// Pins (all funcsel 5 = SIOB_PROC, high-GPIO group):
+//   GP34 = MISO (input, IE+PUE)
+//   GP35 = CS   (output, idle high)
+//   GP36 = SCK  (output, idle low — SPI mode 0)
+//   GP37 = MOSI (output)
+//
+// Protocol: same CMD0 → CMD8 → ACMD41 → CMD58 init as the SPI0 path.
 
 // Drain the kernel UART RX ring from inside SD busy-waits. Without
 // this, fat_block_write spends ~10 ms in a single ecall with
 // hardware-cleared mstatus.MIE, the timer trap can't fire, and the
-// PL011 32-byte RX FIFO overflows under sustained input. See K11 in
-// docs/problem.md. uart_rx_drain itself is just a non-blocking PL011
-// FIFO drain into a kernel ring buffer — cheap to call frequently.
+// PL011 32-byte RX FIFO overflows under sustained input (K11). The
+// drain is a non-blocking PL011 status read + at most one byte copy
+// into the kernel ring — ~10 cycles when idle.
 fn uart_rx_drain() -> void;
 
 // ----- MMIO -----
-var SD_RESETS_CLR:    u32 = 0x40023000u32;
-var SD_RESETS_DONE:   u32 = 0x40020008u32;
-var SD_IO_BANK0:      u32 = 0x40028000u32;
-var SD_PADS_CLR:      u32 = 0x4003B000u32;
-var SD_PADS_SET:      u32 = 0x4003A000u32;
-var SD_SIO:           u32 = 0xD0000000u32;
-var SD_SPI0:          u32 = 0x40080000u32;
-var SD_RESETS_BIT:    u32 = 0x40000u32;  // RP2350 RESETS bit 18 = SPI0
+var SD_IO_BANK0:    u32 = 0x40028000u32;
+var SD_PADS_CLR:    u32 = 0x4003B000u32;  // PADS_BANK0 atomic CLR alias
+var SD_PADS_SET:    u32 = 0x4003A000u32;  // PADS_BANK0 atomic SET alias
+var SD_SIO:         u32 = 0xD0000000u32;
+
+// High-GPIO SIO offsets (GP32-47).
+var SD_HI_IN:       u32 = 0x008u32;
+var SD_HI_OUT_SET:  u32 = 0x01Cu32;
+var SD_HI_OUT_CLR:  u32 = 0x024u32;
+var SD_HI_OE_SET:   u32 = 0x03Cu32;
+
+// Per-GPIO masks (n - 32).
+var SD_MISO_MASK:   u32 = 0x04u32;  // GP34
+var SD_CS_MASK:     u32 = 0x08u32;  // GP35
+var SD_SCK_MASK:    u32 = 0x10u32;  // GP36
+var SD_MOSI_MASK:   u32 = 0x20u32;  // GP37
+
+// IO_BANK0 GPIO_CTRL offsets (= 4 + 8*n).
+var SD_CTRL_MISO:   u32 = 0x114u32;  // GP34
+var SD_CTRL_CS:     u32 = 0x11Cu32;  // GP35
+var SD_CTRL_SCK:    u32 = 0x124u32;  // GP36
+var SD_CTRL_MOSI:   u32 = 0x12Cu32;  // GP37
+
+// PADS_BANK0 offsets (= 4 + 4*n).
+var SD_PAD_MISO:    u32 = 0x08Cu32;  // GP34
+var SD_PAD_CS:      u32 = 0x090u32;  // GP35
+var SD_PAD_SCK:     u32 = 0x094u32;  // GP36
+var SD_PAD_MOSI:    u32 = 0x098u32;  // GP37
 
 // ----- module state -----
 var g_sd_sdhc:        i32 = 0;     // 1 = SDHC, 0 = SDSC
 var g_sd_inited:      i32 = 0;
 
-// ----- low level -----
+// ----- low level bit-bang -----
 
-fn sd_spi_xfer(b: u8) -> u8 {
-    while (peek32(SD_SPI0 + 0x0Cu32) & 0x2u32) == 0u32 { }
-    poke32(SD_SPI0 + 0x08u32, b as u32);
-    while (peek32(SD_SPI0 + 0x0Cu32) & 0x4u32) == 0u32 { }
-    var v: u8 = peek32(SD_SPI0 + 0x08u32) as u8;
-    // Drain UART RX every SPI byte. Any SD path (block_read /
-    // block_write / sd_busy_spin / fatfs FAT walk / cluster alloc)
-    // funnels through here, so a single drain hook covers them all.
-    // Without this, fatfs_open during do_spawn (~10 ms of FAT + dir
-    // traffic in M-mode with mstatus.MIE=0) overruns the PL011 FIFO
-    // before mr even starts — that was the actual K11 wedge for
-    // 128 byte uploads, not the data-phase write loop. The drain is
-    // a non-blocking PL011 status read + at most one byte copy
-    // into the kernel ring; ~10 cycles when idle, swamped by the
-    // SPI transfer itself (~10 us at 6 MHz with kernel overhead).
-    uart_rx_drain();
-    return v;
+fn sd_sck_high() -> void { poke32(SD_SIO + SD_HI_OUT_SET, SD_SCK_MASK); return; }
+fn sd_sck_low()  -> void { poke32(SD_SIO + SD_HI_OUT_CLR, SD_SCK_MASK); return; }
+fn sd_mosi_high() -> void { poke32(SD_SIO + SD_HI_OUT_SET, SD_MOSI_MASK); return; }
+fn sd_mosi_low()  -> void { poke32(SD_SIO + SD_HI_OUT_CLR, SD_MOSI_MASK); return; }
+fn sd_cs_low()  -> void { poke32(SD_SIO + SD_HI_OUT_CLR, SD_CS_MASK); return; }
+fn sd_cs_high() -> void { poke32(SD_SIO + SD_HI_OUT_SET, SD_CS_MASK); return; }
+
+fn sd_miso_read() -> u32 {
+    return peek32(SD_SIO + SD_HI_IN) & SD_MISO_MASK;
 }
 
-fn sd_cs_low()  -> void { poke32(SD_SIO + 0x20u32, 0x20u32); return; }
-fn sd_cs_high() -> void { poke32(SD_SIO + 0x18u32, 0x20u32); return; }
+// Exchange one byte MSB-first, SPI mode 0 (CPOL=0, CPHA=0).
+fn sd_spi_xfer(b: u8) -> u8 {
+    var out: u32 = b as u32;
+    var rx: u32 = 0u32;
+    var i: i32 = 0;
+    while i < 8 {
+        if (out & 0x80u32) == 0u32 { sd_mosi_low(); } else { sd_mosi_high(); }
+        out = out << 1u32;
+        sd_sck_high();
+        rx = rx << 1u32;
+        if sd_miso_read() != 0u32 { rx = rx | 1u32; }
+        sd_sck_low();
+        i = i + 1;
+    }
+    // Drain UART RX every SPI byte. Any SD path (block_read /
+    // block_write / sd_busy_spin / fatfs FAT walk / cluster alloc)
+    // funnels through here, so a single drain hook covers them all
+    // — the K11 workaround applies to bit-bang too.
+    uart_rx_drain();
+    return (rx & 0xFFu32) as u8;
+}
+
 fn sd_cs_high_clk() -> void { sd_cs_high(); sd_spi_xfer(0xFFu8); return; }
 
 // Send a 6-byte SD command frame, return R1.
@@ -87,40 +125,33 @@ fn sd_busy_spin(n: i32) -> void {
 export fn fat_block_init() -> i32 {
     if g_sd_inited == 1 { return 0; }
 
-    // 1. Take SPI0 out of reset.
-    poke32(SD_RESETS_CLR, SD_RESETS_BIT);
-    while (peek32(SD_RESETS_DONE) & SD_RESETS_BIT) == 0u32 { }
+    // 1. Pre-drive CS, MOSI high (idle) and SCK low.
+    poke32(SD_SIO + SD_HI_OUT_SET, SD_CS_MASK | SD_MOSI_MASK);
+    poke32(SD_SIO + SD_HI_OUT_CLR, SD_SCK_MASK);
 
-    // 2. Pre-drive CS high before turning OE on.
-    poke32(SD_SIO + 0x18u32, 0x20u32);
+    // 2. Funcsel = 5 (SIOB_PROC) on all four pins.
+    poke32(SD_IO_BANK0 + SD_CTRL_MISO, 5u32);
+    poke32(SD_IO_BANK0 + SD_CTRL_CS,   5u32);
+    poke32(SD_IO_BANK0 + SD_CTRL_SCK,  5u32);
+    poke32(SD_IO_BANK0 + SD_CTRL_MOSI, 5u32);
 
-    // 3. GPIO funcsel: GP4/6/7 = SPI0, GP5 = SIO (CS).
-    poke32(SD_IO_BANK0 + 0x024u32, 1u32);
-    poke32(SD_IO_BANK0 + 0x02Cu32, 5u32);
-    poke32(SD_IO_BANK0 + 0x034u32, 1u32);
-    poke32(SD_IO_BANK0 + 0x03Cu32, 1u32);
+    // 3. Pads: clear ISO on all four; IE+PUE on MISO only.
+    //    PADS_BANK0 GPn = base + 4 + 4*n. GP34 = 0x8C, …, GP37 = 0x98.
+    poke32(SD_PADS_CLR + SD_PAD_MISO, 0x100u32);
+    poke32(SD_PADS_CLR + SD_PAD_CS,   0x100u32);
+    poke32(SD_PADS_CLR + SD_PAD_SCK,  0x100u32);
+    poke32(SD_PADS_CLR + SD_PAD_MOSI, 0x100u32);
+    poke32(SD_PADS_SET + SD_PAD_MISO, 0x48u32);  // IE | PUE
 
-    // 4. Pads: clear ISO on GP4-7, IE+PUE on MISO.
-    poke32(SD_PADS_CLR + 0x14u32, 0x100u32);
-    poke32(SD_PADS_CLR + 0x18u32, 0x100u32);
-    poke32(SD_PADS_CLR + 0x1Cu32, 0x100u32);
-    poke32(SD_PADS_CLR + 0x20u32, 0x100u32);
-    poke32(SD_PADS_SET + 0x14u32, 0x48u32);
+    // 4. OE: CS, SCK, MOSI as outputs; MISO stays input.
+    poke32(SD_SIO + SD_HI_OE_SET, SD_CS_MASK | SD_SCK_MASK | SD_MOSI_MASK);
 
-    // 5. CS as SIO output.
-    poke32(SD_SIO + 0x38u32, 0x20u32);
-
-    // 6. SPI0 @ 400 kHz init clock.
-    poke32(SD_SPI0 + 0x10u32, 30u32);
-    poke32(SD_SPI0 + 0x00u32, 0x07u32);
-    poke32(SD_SPI0 + 0x04u32, 0x02u32);
-
-    // 7. 80 init clocks with CS=H.
+    // 5. 80 init clocks with CS=H.
     sd_cs_high();
     var ic: i32 = 0;
     while ic < 10 { sd_spi_xfer(0xFFu8); ic = ic + 1; }
 
-    // 8. CMD0 → idle state.
+    // 6. CMD0 → idle state.
     var r1: u8 = 0xFFu8;
     var attempt: i32 = 0;
     while attempt < 5 {
@@ -132,7 +163,7 @@ export fn fat_block_init() -> i32 {
     }
     if r1 != 0x01u8 { return -1; }
 
-    // 9. CMD8: SDHC voltage check.
+    // 7. CMD8: SDHC voltage check.
     sd_cs_low();
     sd_spi_xfer(0xFFu8);
     sd_spi_xfer(0x48u8);
@@ -162,7 +193,7 @@ export fn fat_block_init() -> i32 {
         }
     }
 
-    // 10. ACMD41 init loop.
+    // 8. ACMD41 init loop.
     var arg41: u32 = 0u32;
     if v2 == 1 { arg41 = 0x40000000u32; }
     var done: i32 = 0;
@@ -178,12 +209,11 @@ export fn fat_block_init() -> i32 {
     }
     if done == 0 { return -2; }
 
-    // 10b. CMD59 disable CRC checking (some cards leave it on after CMD8).
-    // Argument 0 → CRC off. CRC for CMD59(0) is 0x91.
+    // 8b. CMD59 disable CRC checking (some cards leave it on after CMD8).
     sd_cmd(59, 0u32, 0x91u8);
     sd_cs_high_clk();
 
-    // 11. CMD58: read OCR, detect SDHC.
+    // 9. CMD58: read OCR, detect SDHC.
     g_sd_sdhc = 0;
     if v2 == 1 {
         sd_cs_low();
@@ -203,9 +233,6 @@ export fn fat_block_init() -> i32 {
         sd_cs_high_clk();
         if (o0 as u32 & 0x40u32) != 0u32 { g_sd_sdhc = 1; }
     }
-
-    // 12. Bump SPI clock. CPSR=2 → clk_peri / 2 (= 6 MHz on XOSC).
-    poke32(SD_SPI0 + 0x10u32, 2u32);
 
     g_sd_inited = 1;
     return 0;
@@ -261,12 +288,8 @@ export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
     sd_spi_xfer(0xFFu8);  // CRC dummy
     sd_spi_xfer(0xFFu8);
 
-    // Data response: token format `xxx0sssY` (lower 5 bits = `0sss1`).
-    // 0x05 = accepted, 0x0B = CRC error, 0x0D = write error. Some cards
-    // delay the token by an extra clock or two; poll up to 8 bytes for
-    // a non-FF response before giving up. We strictly require the
-    // accepted code (0x05) — accepting anything else risks treating a
-    // dropped block as written, which silently corrupts the FS later.
+    // Data response. 0x05 accepted; anything else aborts (avoid silent
+    // corruption — see comment in the SPI0-era driver).
     var resp: u8 = 0xFFu8;
     var rp: i32 = 0;
     while rp < 8 {
@@ -279,9 +302,7 @@ export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
         return -1;
     }
 
-    // Wait while card is busy (MISO held low while writing). SD CMD24
-    // sector-write completion is typically 1-10 ms at SPI 6 MHz; the
-    // sd_spi_xfer hook keeps the PL011 RX FIFO drained while we wait.
+    // Wait while card is busy (MISO held low).
     var w: i32 = 0;
     while w < 1000000 {
         var bb: u8 = sd_spi_xfer(0xFFu8);
