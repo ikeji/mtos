@@ -51,10 +51,14 @@ SWD と UART を 1 デバイスでまとめられる + openocd 経由で flash �
 
 ### Pico 2 側
 
+2026-05-21 の新基板からは UART を GP30/31 に移してある。SD/RTC/LCD/
+キーボードのピンも従来の Pico 2 (A 系) 配置から大きく変わったので、
+下の「GPIO 割り当て一覧」を参照。
+
 | 機能 | Pico 2 | 備考 |
 |---|---|---|
-| UART0 TX | GP0 | コードから kernel が出すログ |
-| UART0 RX | GP1 | host → kernel の入力 (sh のコマンド等) |
+| UART0 TX | GP30 | funcsel 11 (UART0_TX) — kernel ログ出力 |
+| UART0 RX | GP31 | funcsel 11 (UART0_RX) — host → kernel 入力 |
 | GND | GND ピン | Debug Probe の GND と共通 |
 | SWCLK | SWCLK | 短辺 3 ピンコネクタの中央 |
 | SWDIO | SWDIO | 短辺 3 ピンコネクタの片端 |
@@ -67,78 +71,99 @@ SWD と UART を 1 デバイスでまとめられる + openocd 経由で flash �
 | `D` 列 SC (SWCLK) | Pico 2 SWCLK |
 | `D` 列 SD (SWDIO) | Pico 2 SWDIO |
 | `D` 列 GND | Pico 2 SWGND |
-| `U` 列 TX | Pico 2 GP1 (RX) ← クロス接続 |
-| `U` 列 RX | Pico 2 GP0 (TX) ← クロス接続 |
+| `U` 列 TX | Pico 2 GP31 (RX) ← クロス接続 |
+| `U` 列 RX | Pico 2 GP30 (TX) ← クロス接続 |
 | `U` 列 GND | Pico 2 GND |
 
 UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 付属
 の 3 ピンケーブルはコネクタ向きで自然にクロスする配線になっている。
 
-### GPIO 割り当て一覧 (2026-05-20 結線完了)
+### GPIO 割り当て一覧 (2026-05-21 新基板)
 
-開発基板の全 GPIO 割り当て。GP30 以降と GP47 は 48-GPIO 版 RP2350
-(QFN-80) にのみ存在する。
+2026-05-21 の新基板 (48-GPIO 版 RP2350B、QFN-80) で全 48 ピンを使い
+切る構成に再設計した。**SPI0 / SPI1 のハードウェア関数順と物理配線
+の順序が一致しないため、SD と LCD は bit-bang SPI で駆動**する
+(`kernel/block_sd.tc` と `kernel/display_ili9488.tc` 参照)。RTC は
+GP32/33 に I2C0 のハードウェア関数がそのまま出ているのでハードウェア
+I2C0 を使う。
 
 | GPIO | 用途 | ブロック / 駆動 | 状態 |
 |---|---|---|---|
-| GP0 | UART0 TX | UART0 — kernel ログ出力 | 実装済み |
-| GP1 | UART0 RX | UART0 — host → kernel 入力 | 実装済み |
-| GP2 | RTC I2C SDA | I2C1 SDA | ドライバ実装済 (実機未検証) |
-| GP3 | RTC I2C SCL | I2C1 SCL | ドライバ実装済 (実機未検証) |
-| GP4 | SD MISO | SPI0 RX | 実装済み |
-| GP5 | SD CS | GPIO 出力 (手動 CS) | 実装済み |
-| GP6 | SD SCK | SPI0 SCK | 実装済み |
-| GP7 | SD MOSI | SPI0 TX | 実装済み |
-| GP8 | LCD DC (データ/コマンド選択) | GPIO 出力 | ドライバ実装済 (実機未検証) |
-| GP9 | LCD CS | GPIO 出力 (手動 CS) | ドライバ実装済 (実機未検証) |
-| GP10 | LCD SCK | SPI1 SCK | ドライバ実装済 (実機未検証) |
-| GP11 | LCD MOSI | SPI1 TX | ドライバ実装済 (実機未検証) |
-| GP12 | LCD MISO | SPI1 RX | ドライバ実装済 (実機未検証) |
-| GP13 | LCD RST | GPIO 出力 | ドライバ実装済 (実機未検証) |
-| GP14 | LCD BL (バックライト) | GPIO 出力 | ドライバ実装済 (実機未検証) |
-| GP15 | — | 未使用 | — |
-| GP16–20 | キーボード ROW0–4 | GPIO (マトリクス行 × 5) | ドライバ実装済 (実機未検証) |
-| GP21–26 | キーボード COL0–5 | GPIO (マトリクス列 × 6、左右兼用) | ドライバ実装済 (実機未検証) |
-| GP27 | スピーカー SPK− | PWM (差動駆動) | 結線済み (ドライバ未) |
-| GP28 | スピーカー SPK+ | PWM (差動駆動) | 結線済み (ドライバ未) |
-| GP29 | タッチ CLK | SPI クロック (bit-bang / PIO) | 結線済み (ドライバ未) |
-| GP30 | タッチ CS | GPIO 出力 (手動 CS) | 結線済み (ドライバ未) |
-| GP31 | タッチ DO (タッチ → MCU) | SPI MISO | 結線済み (ドライバ未) |
-| GP32 | タッチ DI (MCU → タッチ) | SPI MOSI | 結線済み (ドライバ未) |
-| GP33 | タッチ INT (ペンダウン割り込み) | GPIO 入力 | 結線済み (ドライバ未) |
-| GP34 | — | 未使用 | — |
-| GP35–44 | AUX0–9 | 拡張用 (未割り当て) | 結線済み (用途未定) |
-| GP45–46 | — | 未使用 | — |
-| GP47 | PSRAM CS | QMI チップセレクト | 結線済み |
+| GP0 | — | 未使用 | — |
+| GP1 | キーボード ROW1 | SIO bit-bang | 実装済 (実機未検証) |
+| GP2 | キーボード ROW0 | SIO bit-bang | 実装済 (実機未検証) |
+| GP3 | キーボード ROW3 | SIO bit-bang | 実装済 (実機未検証) |
+| GP4 | キーボード ROW2 | SIO bit-bang | 実装済 (実機未検証) |
+| GP5 | キーボード COL0 | SIO bit-bang | 実装済 (実機未検証) |
+| GP6 | キーボード ROW4 | SIO bit-bang | 実装済 (実機未検証) |
+| GP7 | キーボード COL2 | SIO bit-bang | 実装済 (実機未検証) |
+| GP8 | キーボード COL1 | SIO bit-bang | 実装済 (実機未検証) |
+| GP9 | キーボード COL4 | SIO bit-bang | 実装済 (実機未検証) |
+| GP10 | キーボード COL3 | SIO bit-bang | 実装済 (実機未検証) |
+| GP11 | スピーカー SPK− | PWM (差動駆動) | 結線済み (ドライバ未) |
+| GP12 | キーボード COL5 | SIO bit-bang | 実装済 (実機未検証) |
+| GP13 | タッチ CLK | SPI bit-bang / PIO | 結線済み (ドライバ未) |
+| GP14 | スピーカー SPK+ | PWM (差動駆動) | 結線済み (ドライバ未) |
+| GP15 | タッチ CS | GPIO 出力 (手動 CS) | 結線済み (ドライバ未) |
+| GP16 | タッチ DO (パネル → MCU) | SPI MISO bit-bang | 結線済み (ドライバ未) |
+| GP17 | タッチ DI (MCU → パネル) | SPI MOSI bit-bang | 結線済み (ドライバ未) |
+| GP18 | — | 未使用 | — |
+| GP19 | タッチ INT (ペンダウン) | GPIO 入力 | 結線済み (ドライバ未) |
+| GP20 | AUX1 | 拡張用 | — |
+| GP21 | AUX0 | 拡張用 | — |
+| GP22 | AUX3 | 拡張用 | — |
+| GP23 | AUX2 | 拡張用 | — |
+| GP24 | AUX5 | 拡張用 | — |
+| GP25 | AUX4 | 拡張用 | — |
+| GP26 | AUX7 | 拡張用 | — |
+| GP27 | AUX6 | 拡張用 | — |
+| GP28 | AUX9 | 拡張用 | — |
+| GP29 | AUX8 | 拡張用 | — |
+| GP30 | UART0 TX | UART0 funcsel 11 | 実装済み |
+| GP31 | UART0 RX | UART0 funcsel 11 | 実装済み |
+| GP32 | RTC SDA | I2C0 SDA funcsel 3 | 実装済 (実機未検証) |
+| GP33 | RTC SCL | I2C0 SCL funcsel 3 | 実装済 (実機未検証) |
+| GP34 | SD MISO | SIO bit-bang | 実装済 (実機未検証) |
+| GP35 | SD CS | SIO 出力 (手動 CS) | 実装済 (実機未検証) |
+| GP36 | SD SCK | SIO bit-bang | 実装済 (実機未検証) |
+| GP37 | SD MOSI | SIO bit-bang | 実装済 (実機未検証) |
+| GP38 | LCD DC | SIO 出力 | 実装済 (実機未検証) |
+| GP39 | LCD CS | SIO 出力 (手動 CS) | 実装済 (実機未検証) |
+| GP40 | LCD SCK | SIO bit-bang | 実装済 (実機未検証) |
+| GP41 | LCD MOSI | SIO bit-bang | 実装済 (実機未検証) |
+| GP42 | LCD MISO | SIO bit-bang (未使用) | 実装済 (実機未検証) |
+| GP43 | LCD RST | SIO 出力 | 実装済 (実機未検証) |
+| GP44 | LCD BL (バックライト) | SIO 出力 | 実装済 (実機未検証) |
+| GP45 | — | 未使用 | — |
+| GP46 | — | 未使用 | — |
+| GP47 | — | 未使用 | — |
 
-- **SD カード = SPI0** (GP4–7)、**LCD = SPI1** (GP10–12) と別バスに
-  分離した (`docs/task/io_devices.md` の SPI バス構成方針どおり)。CS は
-  どちらもハードウェア CS を使わず GPIO 出力で手動駆動する。
-- **RTC は外付け DS3231** (GP2/3、I2C1、アドレス 0x68)。
-  `kernel/rtc_ds3231.tc` が RP2350 I2C1 ハードウェアブロックで
+- **SD カード = bit-bang SPI** (GP34-37)、**LCD = bit-bang SPI**
+  (GP40-43)。RP2350 の SPI0/SPI1 funcsel 1 ピン順 (SCLK/TX/RX/SS_N)
+  が基板の物理ラベル (MISO/CS/SCK/MOSI) と一致しないため、ハードウェア
+  ペリフェラルを使わず SIO で軟件駆動する。SD は ~1-2 MB/s 程度、
+  LCD は書き込み専用なので速度低下が体感に出にくい。
+- **RTC は外付け DS3231** (GP32/33、I2C0、アドレス 0x68)。
+  `kernel/rtc_ds3231.tc` が RP2350 I2C0 ハードウェアブロックで
   DS3231 の BCD カレンダーレジスタを読み書きし `/dev/rtc` を駆動する。
-- **キーボードは論理 12 列 × 5 行 = 60 キー**。物理線は行 5 本
-  (GP16–20) + 列 6 本 (GP21–26) の計 11 本だけ。**左半分と右半分で
-  ダイオードの向きが逆**になっており、2 フェーズでスキャンする:
+- **キーボードは論理 12 列 × 5 行 = 60 キー**。物理線は行 5 本 + 列 6
+  本の計 11 本だけ。新基板では行/列の GPIO 番号がスクランブルされて
+  いる (ROW0=GP2 / ROW1=GP1 / ROW2=GP4 / ROW3=GP3 / ROW4=GP6 と、
+  COL0=GP5 / COL1=GP8 / COL2=GP7 / COL3=GP10 / COL4=GP9 / COL5=GP12)。
+  ドライバ `kernel/keyboard_matrix.tc` は GP 番号を配列で持ち、マスク
+  を init 時に動的に組み立てる。**左半分と右半分でダイオードの向きが
+  逆**になっており、2 フェーズでスキャンする:
   - フェーズ A: 行を駆動し列を読む → 一方の半分 (例: 左 6 列) を検出。
   - フェーズ B: 列を駆動し行を読む → ダイオードが逆向きの残り半分
     (右 6 列) を検出。
-  これで 6 本の物理列線が左右 12 論理列を兼ねる。各フェーズは 5×6 の
-  サブマトリクスを読み、合計 60 キー。ドライバはフェーズごとに駆動/
-  読みの役割を入れ替えてスキャンする。
-- **スピーカー** は SPK−/SPK+ の差動 PWM 駆動 (GP27/28)。
-- **タッチパネルは独立 SPI** (GP29–33、XPT2046 系想定)。SPI0/SPI1 は
-  SD・LCD で埋まっているため bit-bang か PIO で駆動する。INT (GP33) は
-  ペンダウン検出。
-- **AUX0–9** (GP35–44) は拡張用に引き出した未割り当てピン。
-- **PSRAM** は RP2350 の QMI 経由、CS = GP47。
-- RTC / LCD / キーボードのドライバは実装済 (`rtc_ds3231.tc` /
-  `display_ili9488.tc` / `keyboard_matrix.tc`) だが**実機未検証**。
-  スピーカー・タッチのドライバは未実装。実装計画と検証手順は
-  `docs/task/io_devices.md`。
-
-GP0/GP1/GP4–7 の詳細は以下のサブセクション (UART は「Pico 2 側」、
-SD は「SD カード ピン配線」) を参照。
+- **スピーカー** は SPK−/SPK+ の差動 PWM 駆動 (GP11/14、未割当)。
+- **タッチパネルは独立 SPI** (GP13/15/16/17/19、XPT2046 系想定)。
+  bit-bang か PIO で駆動する。INT (GP19) はペンダウン検出。
+- **AUX0–9** (GP20-29) は拡張用に引き出した未割り当てピン。
+- **PSRAM** は搭載なし。
+- RTC / LCD / キーボード / SD のドライバは新ピン配置で更新済だが
+  **実機未検証** (SD は flash-backed MTFS まで boot 成功を 2026-05-22
+  に確認)。スピーカー・タッチのドライバは未実装。
 
 ### SD カード (SPI0、実装済み 2026-04-29)
 
