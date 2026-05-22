@@ -73,12 +73,52 @@ mret) に何らかの pico2 特有の問題**。
   の出力が消える。
 - kernel 側はバイト数まで正しく数えて返している。
 
-打ち切り: pico2 self-hosting (フェーズ8 まで) と LCD/SD/RTC は動いてる
-ので、console + matrix keyboard はこの問題が解けるまで保留。
+2026-05-23 GDB attach での更なる切り分け:
+
+openocd-rpi の RISC-V gdb server (port 3333) + gdb-multiarch で
+hang 中のチップを halt + register dump:
+
+- PC が `kbd_settle` (link 0x59db0 〜) の `while i < 200` ループ内に
+  繰り返し landing。register `t1 = 200` がループ上限と一致。
+- mscratch (現タスク frame) = 0x2001b170 で安定。
+- frame[40] (a0) = 0、frame[44] (a1) = 0x2001988c (buf addr)、
+  frame[48] (a2) = 1、frame[68] (a7) = **63 = sys_read**。
+  つまり「fd=0 から 1 byte を読もうとしている sys_read」が ecall で
+  カーネルに入り、kbd_backend_read 経由 kbd_settle に到達している。
+- **g_current = 0** (`*(int*)0x20001894` 経由で確認)。slot 0 = 外側
+  sh (kern.conf seed 1 番目)。
+
+つまり外側 sh が fd=0 を read しに行き、vfs_read の per-task stdin
+redirect (`task_get_stdin_fd(sched_current_idx())`) が **3 (= /dev/kbd
+の vfs fd) を返した** ことになる。本来 console の `do_spawn_fds(...)`
+で stdin=kbd の redirect が反映されるべきは新規 spawn する内側 sh
+(slot 2) であって、既存の slot 0 ではない。
+
+つまり真の原因は:
+
+- (仮説 A) `set_last_stdio` の global が外側 sh の `stdin_fd` を上書き
+  している (`slot_capture_last(idx)` が間違った idx に書き込み、ま
+  たは spawn 後に外側 sh の slot が再利用されている)
+- (仮説 B) TC の struct setter `stdin_fd(t, val)` が値コピーで持ち回
+  され、本来 slot 2 を書き換えるべきものが slot 0 を書き換えている
+  (struct in array の参照セマンティクスがコンテキスト依存で壊れる)
+- (仮説 C) `sys_wait` が外側 sh を STATE_WAITING にしたつもりで実は
+  反映されておらず、scheduler が外側 sh を READY として選び続けて
+  いる。これだと外側 sh の fd 0 read が走ってしまうが stdin_fd は
+  本来 0 のはずなので UART を読むはず — kbd には行かない。よって
+  これは追加バグの可能性
+
+仮説 A or B が有力。打ち切り: pico2 self-hosting (フェーズ8 まで)
+と LCD/SD/RTC は動いてるので、console + matrix keyboard はこの問題
+が解けるまで保留。
 
 参考: 2026-05-22 〜 23 の調査セッション。
 `kernel/tasks/console/console.tc`, `kernel/vfs.tc::pipe_write/read`,
-`kernel/kernel_common.tc::sched_yield_read` あたり。
+`kernel/kernel_common.tc::sched_yield_read` / `sys_wait_handler` /
+`set_last_stdio` / `slot_capture_last` あたり。GDB session 例:
+`openocd ... -f target/rp2350-riscv.cfg -c init` + `gdb-multiarch
+-batch -ex 'target remote :3333' -ex 'monitor halt' -ex
+'monitor mdw 0x20001894 1'`。
 
 ### 5. Gen2 typecheck のエラーメッセージ: 段階 2 (AST line info) のみ残 (ergonomics)
 
