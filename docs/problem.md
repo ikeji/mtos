@@ -42,25 +42,39 @@
   を挟むと、`CONS: before loop` までは出るが `CONS: before sys_read`
   が出ない (console がそこで stall)。
 
-仮説:
+2026-05-23 追加調査で更に絞り込み:
 
-- 内側 sh が `read_line` で `/dev/kbd` を初めて読みに行く時、
-  kernel-mode の `kbd_backend_read → kbd_init` で MMIO 系を初期化する
-  間に何か trap / yield が壊れて console が走らなくなる、または、
-  console と sh のスケジューリングと bit-bang LCD の長時間カーネル滞在
-  (lcd_init が初回 ~500 ms 連続) が組み合わさってタイマー割り込みが
-  落ちる。
-- 別の角度: TC の `var p: Pipe = get(g_pipes, idx)` が struct の値コピー
-  を作ってる可能性。値コピーなら setter (`count(p, ...)`) の書き戻しが
-  array に反映されない。ただし qemu virt の test_os は console_init を
-  pass しているので、純粋な値コピーバグなら qemu でも壊れるはず。
-- 一度成功するのに二度目以降は届かない、という挙動から「pipe state が
-  どこかで巻き戻る」「scheduler 切り替え時にレジスタ復元が壊れる」も
-  候補。
+- `/dev/kbd` を no-op stub (kbd_backend_read が常に 0 を返す) にしても
+  症状変わらず → matrix scan / kbd_init は犯人ではない。
+- `/dev/fb` を no-op stub にしても症状変わらず → LCD bit-bang / lcd_init
+  も犯人ではない (long kernel-mode 滞在説は否定)。
+- kernel 側 vfs_write / vfs_read / pipe_write / pipe_read に MMIO debug
+  を挟むと、`PIPEW rv=10` で pipe 0 の count = 10 まで進み、直後の
+  `PIPER rv=10` で console もちゃんと pipe_read から 10 を受け取る。
+  pipe そのものは正常。値コピー説は否定。
+- それなのに console 側の TC コード (sys_read の return 直後の eputs)
+  が UART に出力されない。たとえば `putchar('L')` の方が更に上にあると
+  'L' は UART に出るのに、その後 `var r = sys_read(...);` の直後の
+  `sys_write(2, mark, 2)` で書こうとした `@\n` が出ない。
+- 重要な観測: `vfs_read` の `if t == FS_PIPE { ... return pipe_read(...); }`
+  を `var rv = pipe_read(...); kputs_dbg(...); return rv;` に書き換える
+  と、console 側で値が**全く返ってこない**ような挙動になる。つまり
+  TC コンパイラが return value 周りで何かを壊している (callee-saved
+  reg 経由で `rv` を持ち回す部分が、間に挟んだ関数呼び出しで壊れる?)。
 
-回避策: 今のところなし。`make test` には影響しない (qemu では動作)。
-新基板の LCD ハードウェアが動作することは確認できたので、フェーズ9
-S7 (console + matrix keyboard) はこれが解けるまで保留。
+つまり pipe + scheduler + drivers は健全で、**最後の砦は user-task 側
+の TC コード生成か、ecall の return-value 復元 (frame[40] の sw a0 +
+mret) に何らかの pico2 特有の問題**。
+
+結論:
+
+- qemu virt では同じ TC コードが test_os console で pass する。
+- pico2 では console は最初の数 byte は届くが、それ以降 user code 側
+  の出力が消える。
+- kernel 側はバイト数まで正しく数えて返している。
+
+打ち切り: pico2 self-hosting (フェーズ8 まで) と LCD/SD/RTC は動いてる
+ので、console + matrix keyboard はこの問題が解けるまで保留。
 
 参考: 2026-05-22 〜 23 の調査セッション。
 `kernel/tasks/console/console.tc`, `kernel/vfs.tc::pipe_write/read`,
