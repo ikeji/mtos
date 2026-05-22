@@ -95,10 +95,13 @@ fn kbd_col_gp(c: i32) -> i32 {
 }
 
 fn kbd_setup_pin(gp: i32) -> void {
-    // funcsel 5 = SIOB_PROC; clear ISO; IE + pull-up so undriven idles high.
+    // funcsel 5 = SIOB_PROC. Clear ISO + PDE (PDE resets to 1, so PUE
+    // alone would conflict and the line would float mid-rail). Set
+    // IE + PUE so undriven lines idle high — the matrix scan reads a
+    // pressed key as the driven partner pulling its read line low.
     poke32(KBD_IO_BANK0 + ((8 * gp + 4) as u32), 5u32);
-    poke32(KBD_PADS_CLR + ((4 + 4 * gp) as u32), 0x100u32);
-    poke32(KBD_PADS_SET + ((4 + 4 * gp) as u32), 0x48u32);
+    poke32(KBD_PADS_CLR + ((4 + 4 * gp) as u32), 0x104u32);  // ISO | PDE
+    poke32(KBD_PADS_SET + ((4 + 4 * gp) as u32), 0x48u32);   // IE | PUE
     return;
 }
 

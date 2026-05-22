@@ -135,13 +135,15 @@ export fn fat_block_init() -> i32 {
     poke32(SD_IO_BANK0 + SD_CTRL_SCK,  5u32);
     poke32(SD_IO_BANK0 + SD_CTRL_MOSI, 5u32);
 
-    // 3. Pads: clear ISO on all four; IE+PUE on MISO only.
+    // 3. Pads: clear ISO + PDE on all four (PDE resets to 1, so just
+    //    setting PUE on top of it would give both pulls — line floats
+    //    around mid-rail). Then IE + PUE on MISO so it idles high.
     //    PADS_BANK0 GPn = base + 4 + 4*n. GP34 = 0x8C, …, GP37 = 0x98.
-    poke32(SD_PADS_CLR + SD_PAD_MISO, 0x100u32);
-    poke32(SD_PADS_CLR + SD_PAD_CS,   0x100u32);
-    poke32(SD_PADS_CLR + SD_PAD_SCK,  0x100u32);
-    poke32(SD_PADS_CLR + SD_PAD_MOSI, 0x100u32);
-    poke32(SD_PADS_SET + SD_PAD_MISO, 0x48u32);  // IE | PUE
+    poke32(SD_PADS_CLR + SD_PAD_MISO, 0x104u32);  // ISO | PDE
+    poke32(SD_PADS_CLR + SD_PAD_CS,   0x104u32);
+    poke32(SD_PADS_CLR + SD_PAD_SCK,  0x104u32);
+    poke32(SD_PADS_CLR + SD_PAD_MOSI, 0x104u32);
+    poke32(SD_PADS_SET + SD_PAD_MISO, 0x48u32);   // IE | PUE
 
     // 4. OE: CS, SCK, MOSI as outputs; MISO stays input.
     poke32(SD_SIO + SD_HI_OE_SET, SD_CS_MASK | SD_SCK_MASK | SD_MOSI_MASK);
