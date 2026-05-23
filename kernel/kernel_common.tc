@@ -1233,6 +1233,7 @@ export fn sched_wait(target: i32) -> u32 {
 // waiting for UART input. mepc is NOT advanced by the caller,
 // so the ecall re-executes when this task is rescheduled.
 export fn sched_yield_read() -> void {
+    var from_slot: i32 = g_current;
     var i: i32 = 0;
     while i < g_num_tasks {
         var next: i32 = (g_current + 1 + i) % g_num_tasks;
@@ -1244,11 +1245,21 @@ export fn sched_yield_read() -> void {
         }
         i = i + 1;
     }
-    // Note: do NOT call rearm_timer() here. The timer is rearmed by
-    // the trap_handler's timer interrupt branch. Calling it here would
-    // push mtimecmp forward on every -2 yield iteration, preventing
-    // the timer from ever firing (and thus preventing sleeping tasks
-    // from being woken).
+    // When a switch actually happened, give the new task a fresh
+    // quantum by pushing mtimecmp forward. Otherwise mtimecmp can
+    // already be past mtime (from M-mode time accumulated across the
+    // previous task's syscalls with MIE=0), so the moment we mret to
+    // the picked task with MIE=1, the pending timer interrupt fires
+    // immediately and bounces us right back. Net result: the picked
+    // task runs zero instructions and the original task hogs the CPU.
+    // This was the docs/problem.md #35 reproducer (sh on /dev/kbd
+    // starves /bin/console).
+    //
+    // Only rearm when a switch actually happened — otherwise repeated
+    // -2 retries of the same task would push mtimecmp forward on every
+    // retry and the timer would never fire (breaking sleeping-task
+    // wakeup, since trap_handler's wake loop only runs on timer).
+    if g_current != from_slot { rearm_timer(); }
     return;
 }
 
