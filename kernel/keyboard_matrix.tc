@@ -61,16 +61,38 @@ var g_cur_hi:  u32 = 0u32;
 var g_prev_lo: u32 = 0u32;
 var g_prev_hi: u32 = 0u32;
 
-// scancode -> ASCII. PLACEHOLDER LAYOUT — edit this for the physical
-// key positions of your board. scancode = row*12 + col; the string is
-// row-major. '.' marks an as-yet-unassigned key; the three control
-// keys (backspace / enter) are patched in by kbd_init below.
-var KBD_KEYMAP: StringLiteral =
-    "1234567890-=" +
-    "qwertyuiop[]" +
-    "asdfghjkl;'`" +
-    "zxcvbnm,./..." +
-    "            ";
+// scancode -> ASCII. scancode = row * 12 + logical_col, where logical
+// columns are wired to physical positions in this order (see the
+// 2026-05-21 board's diode-reversed matrix scan):
+//
+//     logical_col:   0   1   2   3   4   5   6   7   8   9  10  11
+//     physical_col: 12  11  10   9   8   7   1   2   3   4   5   6
+//
+// So per row, the leftmost 6 physical keys are logical 6-11 and the
+// rightmost 6 are logical 5-0 (i.e. right half reversed). We just
+// write each row in logical-col order below.
+//
+// Physical layout (12 cols × 5 rows):
+//   ESC  1   2   3   4   5   6   7   8   9   0   BS
+//   TAB  q   w   e   r   t   y   u   i   o   p   '
+//   CTL  a   s   d   f   g   h   j   k   l   :   ENT
+//   SFT  z   x   c   v   b   n   m   ,   .   /   SFT
+//   FN   sp  sp  sp  sp  sp  sp  sp  sp  sp  sp  FN
+//
+// Returned as a function literal because `var X: StringLiteral = "..."`
+// in TC emits `.word 0` for X (the literal pointer is dropped in
+// codegen) and `+` between StringLiterals does pointer arithmetic, not
+// string concat — both produce a pointer that lands in random kernel
+// .rodata and pressing a key returns bytes from "Raspberry Pi" etc.
+// Using a single literal inside a fn keeps the literal alive in
+// .rodata and the pointer-to-it is the fn's return value.
+//
+// Underscores are placeholders for keys that need a non-printable byte
+// (BS / ESC / TAB / ENT) or are modifiers with no input byte (CTL /
+// SFT / FN, patched to 0 below so kbd_backend_read skips them).
+fn kbd_keymap() -> StringLiteral {
+    return "_09876_12345'poiuy_qwert_:lkjh_asdfg_/.,mn_zxcvb_     _     ";
+}
 var g_keymap: U8Array = 0 as U8Array;
 
 // Short busy-wait so a driven line settles before it is sampled.
@@ -124,15 +146,28 @@ fn kbd_init() -> void {
         g_kbd_cols_mask = g_kbd_cols_mask | (1u32 << (gp2 as u32));
         c = c + 1;
     }
-    // Build the runtime keymap from KBD_KEYMAP, then patch controls.
+    // Build the runtime keymap from kbd_keymap(), then patch controls.
+    var src: StringLiteral = kbd_keymap();
     g_keymap = U8Array(60u32);
     var i: i32 = 0;
     while i < 60 {
-        set(g_keymap, i, get(KBD_KEYMAP, i));
+        set(g_keymap, i, get(src, i));
         i = i + 1;
     }
-    set(g_keymap, 46, 8u8);     // backspace  (edit to taste)
-    set(g_keymap, 47, 10u8);    // enter      (edit to taste)
+    // Patch in the control bytes and modifier no-ops. Each row's
+    // physical col 1 → logical 6 (index row*12+6), and physical col 12
+    // → logical 0 (index row*12+0). Modifier keys (CTL/SFT/FN) get 0
+    // so kbd_backend_read skips them entirely instead of emitting a
+    // bogus printable char.
+    set(g_keymap,  0,  8u8);    // row 0 logical 0  — BS  (phys col 12)
+    set(g_keymap,  6, 27u8);    // row 0 logical 6  — ESC (phys col 1)
+    set(g_keymap, 18,  9u8);    // row 1 logical 6  — TAB (phys col 1)
+    set(g_keymap, 24, 10u8);    // row 2 logical 0  — ENT (phys col 12)
+    set(g_keymap, 30,  0u8);    // row 2 logical 6  — CTL (phys col 1)
+    set(g_keymap, 36,  0u8);    // row 3 logical 0  — SFT (phys col 12)
+    set(g_keymap, 42,  0u8);    // row 3 logical 6  — SFT (phys col 1)
+    set(g_keymap, 48,  0u8);    // row 4 logical 0  — FN  (phys col 12)
+    set(g_keymap, 54,  0u8);    // row 4 logical 6  — FN  (phys col 1)
     g_kbd_inited = 1;
     return;
 }
