@@ -384,6 +384,18 @@ fn kdbg_trap(cause: u32, epc: u32, slot: i32) -> void {
     return;
 }
 
+// DIAG helper for keyboard_matrix.tc: print "[sc=N=c]" for each
+// rising-edge keypress. Helps map physical keys to scancodes when
+// the placeholder KBD_KEYMAP doesn't match a given board.
+export fn kdbg_kbd_sc(sc: i32, ch: u8) -> void {
+    kdbg_chr('[' as u8);
+    kdbg_chr('s' as u8); kdbg_chr('c' as u8); kdbg_chr('=' as u8);
+    kdbg_dec(sc);
+    kdbg_chr('=' as u8); kdbg_chr(ch);
+    kdbg_chr(']' as u8); kdbg_chr(10u8);
+    return;
+}
+
 // Print "[w slot:len]" when a task writes to a redirected stdout
 // (task fd 1 → tmpfs/mtfs fd ≥ 3). Exported so vfs.tc can trace
 // redirected writes without poking kernel_common internals.

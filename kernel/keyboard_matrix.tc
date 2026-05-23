@@ -22,6 +22,9 @@
 // We keep per-row and per-col arrays of GPIO numbers (not contiguous
 // ranges) and build the row/col masks from them at init time.
 
+// DIAG: dump scancode → ASCII to UART so we can rebuild the keymap.
+fn kdbg_kbd_sc(sc: i32, ch: u8) -> void;
+
 // ===== RP2350 register addresses =====
 var KBD_IO_BANK0: u32 = 0x40028000u32;
 var KBD_PADS_SET: u32 = 0x4003A000u32;
@@ -218,6 +221,9 @@ fn kbd_backend_read(buf_addr: u32, n: i32) -> i32 {
         if kbd_bit(g_cur_lo, g_cur_hi, sc) != 0
             && kbd_bit(g_prev_lo, g_prev_hi, sc) == 0 {
             var ch: u8 = get(g_keymap, sc);
+            // DIAG: dump scancode → ASCII so callers can rebuild
+            // KBD_KEYMAP for their physical board layout.
+            kdbg_kbd_sc(sc, ch);
             if ch != 0u8 {
                 poke8(buf_addr + (emitted as u32), ch);
                 emitted = emitted + 1;
