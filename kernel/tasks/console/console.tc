@@ -31,6 +31,11 @@
 
 import "../libtc/libtc.tc";
 
+// Single-shot raw read (vs libtc's sys_read, which loops do_read until
+// the full requested count is fulfilled — that would block console
+// forever when sh writes 14 bytes and we ask for 64).
+fn do_read(fd: i32, buf: u32, len: i32) -> i32;
+
 var FG: i32 = 65535;        // RGB565 white
 
 // Cell geometry — 8x16 hankaku. Screen size, COLS/ROWS and the
@@ -408,15 +413,21 @@ fn main(argv: StringArray) -> i32 {
     // RGB565 glyph payload (16*16*2 = 512) = 522 bytes.
     var frame: U8Array = U8Array(522u32);
     var buf:   U8Array = U8Array(64u32);
+    // The buf data area starts 4 bytes past the U8Array header. We pass
+    // it raw to do_read (the syscall stub) instead of going through
+    // libtc's sys_read — sys_read loops until the full requested count
+    // is fulfilled, which would block forever on a slow pipe (sh's
+    // initial 14-byte prompt vs. our 64-byte buffer).
+    var buf_data: u32 = (buf as u32) + 4u32;
     var running: i32 = 1;
     while running == 1 {
-        var r: i32 = sys_read(pr, buf, 64);
+        var r: i32 = do_read(pr, buf_data, 64);
         if r <= 0 {
             running = 0;
         } else {
             var i: i32 = 0;
             while i < r {
-                render(fb, frame, get(buf, i) as i32);
+                render(fb, frame, peek8(buf_data + (i as u32)) as i32);
                 i = i + 1;
             }
         }
