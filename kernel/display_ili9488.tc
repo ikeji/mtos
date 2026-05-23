@@ -90,6 +90,12 @@ var PIO_SM0_EXECCTRL:  u32 = 0x0CCu32;
 var PIO_SM0_SHIFTCTRL: u32 = 0x0D0u32;
 var PIO_SM0_INSTR:     u32 = 0x0D8u32;
 var PIO_SM0_PINCTRL:   u32 = 0x0DCu32;
+// RP2350 added a GPIOBASE register to PIO2 that selects whether its
+// 32 internal pins map to GPIO 0-31 (GPIOBASE=0, default) or GPIO
+// 16-47 (GPIOBASE=1). The pico-sdk header puts it at offset 0x168.
+// (0x180 looked promising in an earlier GDB probe because writes
+// stuck there — but that's actually IRQ1_INTF, not GPIOBASE.)
+var PIO_GPIOBASE:      u32 = 0x168u32;
 
 // RP2350 RESETS block. The chip powers up with every non-essential
 // peripheral held in reset; PIO2 is no exception. We have to clear its
@@ -132,6 +138,12 @@ fn pio_lcd_init() -> void {
     poke32(RESETS_BASE + RESETS_RESET_CLR, RESETS_PIO2_BIT);
     while (peek32(RESETS_BASE + RESETS_DONE) & RESETS_PIO2_BIT) == 0u32 { }
 
+    // Select the high GPIO window (GP16-47) for PIO2. Without this our
+    // internal pins 24/25 land on GP24/25 (low half) instead of the
+    // LCD's GP40/41. SM ends up running, OE gets set, but on the wrong
+    // pads and the panel sees zero clock.
+    poke32(PIO2_BASE + PIO_GPIOBASE, 1u32);
+
     // Disable SM0 while we reload.
     poke32(PIO2_BASE + PIO_CTRL, 0u32);
 
@@ -146,7 +158,7 @@ fn pio_lcd_init() -> void {
     // MHz, well within everything's tolerance. Once we've confirmed
     // the wiring + PIO config are sound we can crank it down to
     // INT=4 (18.75 MHz, near the panel's 20 MHz spec ceiling).
-    poke32(PIO2_BASE + PIO_SM0_CLKDIV, 16u32 << 16u32);
+    poke32(PIO2_BASE + PIO_SM0_CLKDIV, 64u32 << 16u32);
 
     // EXECCTRL: WRAP_TOP=1 (bits 16:12), WRAP_BOTTOM=0 (bits 11:7).
     poke32(PIO2_BASE + PIO_SM0_EXECCTRL, 1u32 << 12u32);

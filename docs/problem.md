@@ -18,6 +18,53 @@
 
 ## 後回し
 
+### 37. PIO2 で LCD SPI を駆動できない (bug、2026-05-24)
+
+`kernel/display_ili9488.tc` の SCK (GP40) / MOSI (GP41) bit-bang を
+PIO2 SM0 にオフロードする実装を入れたが、LCD に画像が出ない (画面
+真っ白)。`g_lcd_use_pio` フラグで切替可、デフォルトは 0 (bit-bang) で
+退避。実装は in-tree に残してある。
+
+PIO 側で確認できたこと (`/tmp/pio_*.sh` の GDB probe より):
+
+- PIO2 は RESETS から開放できる (RESETS_RESET[13] clear → RESET_DONE[13])
+- SM0 起動できる、CTRL = 1 が読み戻せる
+- INSTR_MEM は write-only (読むと 0)。SM0_INSTR (現在 PC の命令) は
+  0x6001 で我々の OUT 命令を実行中なのは確認できる
+- TX FIFO に push したバイトは drain される (FSTAT.TXEMPTY が立つ)
+- `SET PINS 1` を SM0_INSTR 経由で実行すると DBG_PADOUT bit 25 が
+  立つ — PIO の中で MOSI は driven high
+- だが GP41 STATUS register (= 0x40028148) は **全 0** で何も pad に
+  届いていない。OUTFROMPERI / OEFROMPERI とも 0
+
+つまり PIO2 の内部 pin 25 → GP41 のルーティングが成立していない。
+原因の最有力候補は GPIOBASE register が設定できていないこと:
+
+- RP2350 PIO2 には pin 0-31 を GPIO 0-31 か GPIO 16-47 のどちらに
+  マップするかを決める GPIOBASE 1-bit register がある。GP40/41 を
+  使うには GPIOBASE = 1 必須。
+- pico-sdk header では offset 0x168。だがそこへの書き込みが (GDB から
+  も kernel からも) 効かず読み戻すと 0 のまま。0x180 への書き込みは
+  効くが、これは IRQ1_INTF register であって GPIOBASE ではない。
+- 0x168 が固定 0 を返すという挙動は ACCESSCTRL のロック、OTP ヒューズ
+  設定、もしくはこのチップ variant が GPIOBASE をサポートしていない
+  可能性。
+
+未確認候補:
+
+- ACCESSCTRL_PIO2 (0x400600BC) の secure/nonsecure / master gate
+- BOOT ROM が PIO2 を lock している可能性 — datasheet 確認
+- 実は別のレジスタ (例えば SYSCFG 側) でマッピングを切替えるかも
+- 板上のチップが RP2350A (高 GPIO 無し) で、bit-bang は他経路で動いて
+  いる、というウルトラ稀ケース (要 die marking 確認)
+
+回避策: bit-bang 動作中。SPI 実効 ~1 MHz で十分実用域。PIO 化すると
+理論 ~20x 高速化 (clkdiv=4 で 18.75 MHz)。スクロールは現状 diff
+redraw + per-cell fill 戦略で実用範囲内。
+
+参考: `kernel/display_ili9488.tc` の `pio_lcd_init`、in-tree。GDB
+session 例は session log 参照。
+
 ### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる (bug、2026-05-23)
 
 グローバル変数を文字列リテラルで初期化する構文が壊れている:
