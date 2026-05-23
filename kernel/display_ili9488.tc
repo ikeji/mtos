@@ -111,6 +111,11 @@ var FSTAT_TXFULL_SM0:  u32 = 0x10000000u32;  // bit 28
 var FSTAT_TXEMPTY_SM0: u32 = 0x01000000u32;  // bit 24
 
 var g_pio_lcd_inited: i32 = 0;
+// 1 → drive SCK/MOSI from PIO2, 0 → fall back to the original SIO
+// bit-bang. Useful kill-switch while bringing PIO up: if the screen
+// stays white with PIO on but is fine with PIO off, we know the LCD +
+// init sequence is healthy and the bug is in our PIO config.
+var g_lcd_use_pio:    i32 = 0;
 // Track DC state to avoid wait_idle + GPIO write on every byte when DC
 // doesn't actually change (e.g. while streaming pixel data after the
 // initial RAMWR command).
@@ -134,8 +139,14 @@ fn pio_lcd_init() -> void {
     poke32(PIO2_BASE + PIO_INSTR_MEM0,         0x6001u32);  // out pins,1 side 0
     poke32(PIO2_BASE + PIO_INSTR_MEM0 + 4u32,  0xB042u32);  // nop          side 1
 
-    // CLKDIV: INT = 4 in bits 31:16, FRAC = 0.
-    poke32(PIO2_BASE + PIO_SM0_CLKDIV, 4u32 << 16u32);
+    // CLKDIV: INT in bits 31:16, FRAC in bits 15:8. SM clock =
+    // clk_sys / (INT + FRAC/256); SPI clock = SM clock / 2 (two SM
+    // cycles per bit). The previous bit-bang ran ~1 MHz effective;
+    // start the PIO conservatively at INT=16 → SM 9.4 MHz → SPI 4.7
+    // MHz, well within everything's tolerance. Once we've confirmed
+    // the wiring + PIO config are sound we can crank it down to
+    // INT=4 (18.75 MHz, near the panel's 20 MHz spec ceiling).
+    poke32(PIO2_BASE + PIO_SM0_CLKDIV, 16u32 << 16u32);
 
     // EXECCTRL: WRAP_TOP=1 (bits 16:12), WRAP_BOTTOM=0 (bits 11:7).
     poke32(PIO2_BASE + PIO_SM0_EXECCTRL, 1u32 << 12u32);
@@ -222,36 +233,56 @@ fn lcd_gpio(mask: u32, hi: i32) -> void {
     return;
 }
 
-// Shift one byte out via PIO2 SM0 (write-only SPI). The PIO state
-// machine runs SPI mode 0 at 18.75 MHz, autopulling 8-bit words from
-// its TX FIFO; we just push the byte and the SM does the bit-banging
-// in hardware. Returns as soon as the FIFO has accepted the byte —
-// the byte may still be in flight on the wire.
-fn lcd_spi(b: i32) -> void {
-    pio_spi_byte(b);
+// Bit-bang fallback: 8 GPIO-toggle loop, SPI mode 0.
+fn lcd_spi_bitbang(b: i32) -> void {
+    var out: u32 = (b & 0xFF) as u32;
+    var i: i32 = 0;
+    while i < 8 {
+        if (out & 0x80u32) == 0u32 {
+            poke32(LCD_SIO + LCD_HI_OUT_CLR, LCD_MOSI_MASK);
+        } else {
+            poke32(LCD_SIO + LCD_HI_OUT_SET, LCD_MOSI_MASK);
+        }
+        out = out << 1u32;
+        poke32(LCD_SIO + LCD_HI_OUT_SET, LCD_SCK_MASK);
+        poke32(LCD_SIO + LCD_HI_OUT_CLR, LCD_SCK_MASK);
+        i = i + 1;
+    }
     return;
 }
 
-// Send a command byte (DC = 0) / a data byte (DC = 1). DC is a normal
-// SIO-driven GPIO, so we must wait for the PIO to finish flushing the
-// previous batch before flipping DC — otherwise the trailing bytes of
-// the previous command would be sent under the new DC level.
-fn lcd_cmd(c: i32) -> void {
-    if g_lcd_dc_is_data != 0 {
-        pio_spi_wait_idle();
-        lcd_gpio(LCD_DC_MASK, 0);
-        g_lcd_dc_is_data = 0;
+// Shift one byte out via either PIO2 SM0 or the bit-bang fallback.
+// g_lcd_use_pio gates the switch so we can sanity-check the LCD with
+// the known-good bit-bang path while debugging PIO.
+fn lcd_spi(b: i32) -> void {
+    if g_lcd_use_pio != 0 {
+        pio_spi_byte(b);
+    } else {
+        lcd_spi_bitbang(b);
     }
-    pio_spi_byte(c);
+    return;
+}
+
+// Send a command byte (DC = 0) / a data byte (DC = 1). When PIO is
+// active we have to wait for the SM to drain before flipping DC so
+// the trailing bytes of the previous command don't land under the
+// new DC level. Bit-bang is synchronous so no wait is needed.
+fn lcd_cmd(c: i32) -> void {
+    if g_lcd_use_pio != 0 && g_lcd_dc_is_data != 0 {
+        pio_spi_wait_idle();
+    }
+    lcd_gpio(LCD_DC_MASK, 0);
+    g_lcd_dc_is_data = 0;
+    lcd_spi(c);
     return;
 }
 fn lcd_dat(d: i32) -> void {
-    if g_lcd_dc_is_data != 1 {
+    if g_lcd_use_pio != 0 && g_lcd_dc_is_data != 1 {
         pio_spi_wait_idle();
-        lcd_gpio(LCD_DC_MASK, 1);
-        g_lcd_dc_is_data = 1;
     }
-    pio_spi_byte(d);
+    lcd_gpio(LCD_DC_MASK, 1);
+    g_lcd_dc_is_data = 1;
+    lcd_spi(d);
     return;
 }
 
@@ -300,10 +331,12 @@ fn lcd_init() -> void {
     // 5. CS low — a single device owns the bus, so it is held asserted.
     lcd_gpio(LCD_CS_MASK, 0);
 
-    // 5b. Hand SCK + MOSI over to PIO2 SM0. Until this point they were
-    //     SIO outputs driven low (step 3); pio_lcd_init re-funcsels
-    //     them to PIO2 and configures the SPI state machine.
-    pio_lcd_init();
+    // 5b. Optionally hand SCK + MOSI over to PIO2 SM0. Until this
+    //     point they were SIO outputs driven low (step 3); pio_lcd_init
+    //     re-funcsels them to PIO2 and configures the SPI state
+    //     machine. When g_lcd_use_pio = 0, we leave them on SIO and
+    //     fall back to the original bit-bang in lcd_spi.
+    if g_lcd_use_pio != 0 { pio_lcd_init(); }
 
     // 6. ILI9488 init. Software reset, power/VCOM, MADCTL, 18-bit
     //    pixel format, gamma, then the vertical-scroll area and
