@@ -35,6 +35,11 @@ import "../libtc/libtc.tc";
 // the full requested count is fulfilled — that would block console
 // forever when sh writes 14 bytes and we ask for 64).
 fn do_read(fd: i32, buf: u32, len: i32) -> i32;
+// Non-blocking variant — returns -2 instead of blocking when the pipe
+// has no data yet. Lets us poll + sleep instead of running a sibling
+// blinker task just to drive the cursor heartbeat.
+fn do_read_nb(fd: i32, buf: u32, len: i32) -> i32;
+fn do_nanosleep(ms: i32) -> i32;
 
 var FG: i32 = 65535;        // RGB565 white
 
@@ -369,16 +374,16 @@ fn draw_cp(fb: i32, frame: U8Array, cp: i32) -> void {
     return;
 }
 
-// Cursor: a 2-pixel-tall white underline at the bottom of the cell.
-// /bin/blinker writes one 0x05 byte to the pipe every 500 ms so this
-// state can flip even when no key has been typed and the pipe has no
-// real shell output.
+// Cursor: a 4-pixel-tall white underline at the bottom of the cell.
+// 2 px was too thin to spot on the panel; 4 px reads as a clear bar
+// without covering enough of the glyph to be confusing.
 var g_cur_on: i32 = 0;
+var CUR_H:    i32 = 4;
 
 fn draw_cursor(fb: i32, frame: U8Array) -> void {
     if g_row < 0 || g_row >= ROWS { return; }
     if g_col < 0 || g_col >= COLS { return; }
-    fb_fill(fb, frame, g_col * CW, phys_y(g_row) + CH - 2, CW, 2, FG);
+    fb_fill(fb, frame, g_col * CW, phys_y(g_row) + CH - CUR_H, CW, CUR_H, FG);
     g_cur_col = g_col;
     g_cur_row = g_row;
     g_cur_on = 1;
@@ -389,10 +394,11 @@ fn erase_cursor(fb: i32, frame: U8Array) -> void {
     if g_cur_on == 0 { return; }
     if g_cur_row < 0 || g_cur_row >= ROWS { return; }
     if g_cur_col < 0 || g_cur_col >= COLS { return; }
-    fb_fill(fb, frame, g_cur_col * CW, phys_y(g_cur_row) + CH - 2, CW, 2, 0);
-    // Bottom 2 pixels of any glyph in this cell are now black even if
-    // the glyph itself had ink there. Mark the cell dirty so the next
-    // redraw (e.g. after a scroll) repaints the glyph cleanly.
+    fb_fill(fb, frame, g_cur_col * CW, phys_y(g_cur_row) + CH - CUR_H,
+            CW, CUR_H, 0);
+    // Bottom CUR_H pixels of any glyph in this cell are now black even
+    // if the glyph itself had ink there. Mark the cell dirty so the
+    // next redraw (e.g. after a scroll) repaints the glyph cleanly.
     if g_sw_scroll != 0 && (g_grid_prev as u32) != 0u32 {
         set(g_grid_prev, g_cur_row * COLS + g_cur_col, 0 - 2);
     }
@@ -488,16 +494,7 @@ fn main(argv: StringArray) -> i32 {
     var pr: i32 = peek32(pb as u32 + 4u32) as i32;
     var pw: i32 = peek32(pb as u32 + 8u32) as i32;
 
-    // Cursor heartbeat: blinker writes one 0x05 byte to pw every 500 ms
-    // so we can toggle the cursor even when the pipe has no shell
-    // bytes. Spawn it FIRST so that sh's spawn_fds reclaims pw's vfs
-    // owner; otherwise blinker would keep pw open past sh's exit and
-    // console would never see EOF.
-    do_spawn_fds("/bin/blinker", 0u32, 0, pw);
-
-    // sh: stdin = /dev/kbd, stdout = pipe write end. This vfs_set_owner
-    // transfers pw back to sh, so sh's exit closes pw → blinker's next
-    // write fails → blinker exits → console reads EOF and cleans up.
+    // sh: stdin = /dev/kbd, stdout = pipe write end.
     var slot: i32 = do_spawn_fds("/bin/sh", 0u32, kbd, pw);
     delete(pb);
     if slot < 0 {
@@ -537,42 +534,36 @@ fn main(argv: StringArray) -> i32 {
     // is fulfilled, which would block forever on a slow pipe (sh's
     // initial 14-byte prompt vs. our 64-byte buffer).
     var buf_data: u32 = (buf as u32) + 4u32;
+    // Poll-and-blink: do_read_nb returns -2 immediately when the pipe
+    // is empty, so we sleep 250 ms and toggle the cursor between polls
+    // instead of relying on a sibling task to write heartbeat bytes.
+    // 250 ms × 2 toggles = ~2 Hz blink with at most one 250 ms latency
+    // before sh output shows up on screen.
     var running: i32 = 1;
     while running == 1 {
-        var r: i32 = do_read(pr, buf_data, 64);
-        if r <= 0 {
+        var r: i32 = do_read_nb(pr, buf_data, 64);
+        if r > 0 {
+            erase_cursor(fb, frame);
+            var i: i32 = 0;
+            while i < r {
+                render(fb, frame, peek8(buf_data + (i as u32)) as i32);
+                i = i + 1;
+            }
+            draw_cursor(fb, frame);
+        } else if r == 0 {
+            // Writer closed → EOF, time to wind down.
             running = 0;
-        } else {
-            // Decide if this batch is just a blinker pulse (no shell
-            // bytes mixed in). Cheap inline scan: any byte != 0x05 means
-            // we have to render — and we then erase the cursor first so
-            // the new glyphs land on a clean cell.
-            var has_real: i32 = 0;
-            var k: i32 = 0;
-            while k < r {
-                if peek8(buf_data + (k as u32)) != 5u8 { has_real = 1; }
-                k = k + 1;
-            }
-
-            if has_real != 0 {
+        } else if r == (0 - 2) {
+            // No data right now — toggle cursor and sleep.
+            if g_cur_on != 0 {
                 erase_cursor(fb, frame);
-                var i: i32 = 0;
-                while i < r {
-                    var b: u8 = peek8(buf_data + (i as u32));
-                    if b != 5u8 {
-                        render(fb, frame, b as i32);
-                    }
-                    i = i + 1;
-                }
-                draw_cursor(fb, frame);
             } else {
-                // Pure blink pulse — just toggle the cursor in place.
-                if g_cur_on != 0 {
-                    erase_cursor(fb, frame);
-                } else {
-                    draw_cursor(fb, frame);
-                }
+                draw_cursor(fb, frame);
             }
+            do_nanosleep(250);
+        } else {
+            // Any other negative is a hard error.
+            running = 0;
         }
     }
 
