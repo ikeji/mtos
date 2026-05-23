@@ -18,6 +18,29 @@
 
 ## 後回し
 
+### 38. ILI9488 SPI で 12-bit / 3-bit pixel format が動かない (limitation、2026-05-24)
+
+データシート 5.2.34 (Interface Pixel Format) では DBI[2:0] = 001
+(3 bpp / 8 color) と 011 (12 bpp / RGB444) が定義されているが、
+この基板の ILI9488 は両モードでフリーズ → reset 後砂嵐になる。
+
+試行内容:
+- `lcd_cmd(0x3A); lcd_dat(0x33)` (12-bit RGB444、2 px/3 byte 詰め): フリーズ
+- `lcd_cmd(0x3A); lcd_dat(0x11)` (3-bit 8-color、8 px/3 byte 詰め): フリーズ
+
+3-bit モードが動けば SPI 帯域 8× 削減 (460 KB → 58 KB / 全画面) で
+スクロールが体感劇的に速くなるはずだった。
+
+原因: ILI9488 を名乗る互換 IC はオリジナル ITM/Sitronix の機能を全部
+実装していないことが多く、SPI 経由では事実上 18-bit (0x66) のみ。
+データシートと挙動が乖離している典型例。
+
+回避策: 18-bit で運用継続。bit-bang 約 1 MHz 実効、scroll は diff
+redraw でカバー (#37 PIO 化が動けば 5-10× 高速化見込み)。
+
+未確認: 16-bit (0x55) は試していない。多くの ILI9488 互換が 16-bit
+を受けるので 33% SPI 削減できる可能性あり。やってみるなら次回。
+
 ### 37. PIO2 で LCD SPI を駆動できない (bug、2026-05-24)
 
 `kernel/display_ili9488.tc` の SCK (GP40) / MOSI (GP41) bit-bang を
