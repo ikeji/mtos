@@ -129,7 +129,9 @@ fn fb_fill(fb: i32, frame: U8Array, x: i32, y: i32,
 
 // Emit a mode-3 MADCTL set. Rotates / mirrors the ILI9488 framebuffer
 // so the X axis covers the wider edge in landscape. Portrait default
-// is 0x48; 0x28 is a 90° rotation that puts the 480-pixel edge along X.
+// is 0x48; 0xE8 (MY|MX|MV|BGR) is a 90° rotation that puts the
+// 480-pixel edge along X AND flips both axes — gives the orientation
+// where the board's USB-C points the same way as the text top.
 fn fb_madctl(fb: i32, frame: U8Array, val: i32) -> void {
     put_u16(frame, 0,  0);
     put_u16(frame, 2,  0);
@@ -482,7 +484,11 @@ fn main(argv: StringArray) -> i32 {
     // power-on portrait orientation and pixel writes past x=319 get
     // clipped to nothing — text would render only in the left
     // half-screen and look like portrait.
-    if g_sw_scroll != 0 { fb_madctl(fb, frame, 0x28); }
+    //
+    // 0xE8 (MY|MX|MV|BGR) is the 90° rotation that also flips both
+    // axes, i.e. text reads with the board's USB-C side at the top.
+    // Use 0x28 to flip the picture 180° on this board.
+    if g_sw_scroll != 0 { fb_madctl(fb, frame, 0xE8); }
 
     // The ILI9488 powers up with random GRAM contents (appears greenish
     // on the panel). lcd_init doesn't clear it, so paint the whole
