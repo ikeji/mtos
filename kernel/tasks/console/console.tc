@@ -43,6 +43,20 @@ fn do_nanosleep(ms: i32) -> i32;
 
 var FG: i32 = 65535;        // RGB565 white
 
+// Win95-ish desktop palette (RGB565 from the canonical 8-bit values):
+//   teal  #008080 → 0x0410 (desktop background)
+//   grey  #C0C0C0 → 0xC618 (window chrome / taskbar)
+//   navy  #000080 → 0x0010 (active title bar)
+//   white #FFFFFF → 0xFFFF (3D highlight, title text)
+//   black #000000 → 0x0000 (3D shadow, content area, DOS-style)
+var COLOR_DESKTOP:  i32 = 0x0410;
+var COLOR_FRAME:    i32 = 0xC618;
+var COLOR_TITLE_BG: i32 = 0x0010;
+var COLOR_TITLE_FG: i32 = 65535;
+var COLOR_HILIGHT:  i32 = 65535;
+var COLOR_SHADOW:   i32 = 0x0000;
+var COLOR_CONTENT:  i32 = 0x0000;
+
 // Cell geometry — 8x16 hankaku. Screen size, COLS/ROWS and the
 // orientation are decided in main() from argv.
 var CW:   i32 = 8;
@@ -51,6 +65,13 @@ var SCREEN_W: i32 = 320;
 var SCREEN_H: i32 = 480;
 var COLS: i32 = 40;
 var ROWS: i32 = 30;
+
+// Pixel origin for cell (0, 0). 0 in fullscreen modes; nonzero when
+// a Win95-style window decorates the screen and the console content
+// is inset into the window's client area.
+var g_content_x: i32 = 0;
+var g_content_y: i32 = 0;
+var g_have_chrome: i32 = 0;
 
 var g_col: i32 = 0;
 var g_row: i32 = 0;
@@ -157,20 +178,23 @@ fn fb_madctl(fb: i32, frame: U8Array, val: i32) -> void {
 
 // Physical y (pixels) of cell-row `row`, folded through the scroll
 // ring. g_scroll and row*CH are both multiples of CH, so the result
-// is too — a 16px glyph never straddles the FB_H wrap.
+// is too — a 16px glyph never straddles the FB_H wrap. g_content_y
+// shifts the whole grid down so the content area sits below the
+// window's title bar; 0 in fullscreen modes.
 fn phys_y(row: i32) -> i32 {
-    return (g_scroll + row * CH) % FB_H;
+    return (g_scroll + g_content_y + row * CH) % FB_H;
 }
 
-// Build and send one mode-0 glyph blit. The glyph is gw x 16; each
-// row's pixel bitmap is read from `bpr` font bytes at goff (1 byte =
-// 8 px hankaku, 2 bytes big-endian = 16 px zenkaku). Set bits paint
-// FG, clear bits paint black — so the blit also clears the cell
-// background. One write per glyph (vs. the old per-run mode-1 fills).
-fn blit_glyph(fb: i32, frame: U8Array, col: i32, row: i32,
-              gw: i32, goff: i32, bpr: i32) -> void {
-    put_u16(frame, 0, col * CW);
-    put_u16(frame, 2, phys_y(row));
+// Build and send one mode-0 glyph blit at raw pixel coords (px, py).
+// gw x 16 pixels; each row's bitmap is read from `bpr` font bytes at
+// goff (1 byte = 8 px hankaku, 2 bytes big-endian = 16 px zenkaku).
+// Set bits paint `fg`, clear bits paint `bg` — useful for blue-on-
+// title-bar text vs the default white-on-black content text.
+fn blit_glyph_color(fb: i32, frame: U8Array, px: i32, py: i32,
+                    gw: i32, goff: i32, bpr: i32,
+                    fg: i32, bg: i32) -> void {
+    put_u16(frame, 0, px);
+    put_u16(frame, 2, py);
     put_u16(frame, 4, gw);
     put_u16(frame, 6, 16);
     put_u16(frame, 8, 0);
@@ -180,14 +204,22 @@ fn blit_glyph(fb: i32, frame: U8Array, col: i32, row: i32,
         if bpr == 2 { bits = (bits << 8) | fbyte(goff + y * 2 + 1); }
         var x: i32 = 0;
         while x < gw {
-            var px: i32 = 0;
-            if (bits & (1 << (gw - 1 - x))) != 0 { px = FG; }
-            put_u16(frame, 10 + (y * gw + x) * 2, px);
+            var p: i32 = bg;
+            if (bits & (1 << (gw - 1 - x))) != 0 { p = fg; }
+            put_u16(frame, 10 + (y * gw + x) * 2, p);
             x = x + 1;
         }
         y = y + 1;
     }
     sys_write(fb, frame, 10 + gw * 16 * 2);
+    return;
+}
+
+// Cell-coords wrapper for the content area: white-on-content-bg text.
+fn blit_glyph(fb: i32, frame: U8Array, col: i32, row: i32,
+              gw: i32, goff: i32, bpr: i32) -> void {
+    blit_glyph_color(fb, frame, g_content_x + col * CW, phys_y(row),
+                     gw, goff, bpr, FG, COLOR_CONTENT);
     return;
 }
 
@@ -244,6 +276,90 @@ fn draw_zenkaku(fb: i32, frame: U8Array, col: i32, row: i32, kuten: i32) -> void
     return;
 }
 
+// ===== Win95 chrome: window + title bar + taskbar =====
+
+// Paint each printable byte of `s` as an 8x16 hankaku glyph starting
+// at raw pixel (px, py), in (fg) on (bg). Used for the title-bar
+// label and the Start button caption — neither lives on the cell
+// grid, so they go through blit_glyph_color rather than blit_glyph.
+fn draw_text_at(fb: i32, frame: U8Array, px: i32, py: i32,
+                s: StringLiteral, fg: i32, bg: i32) -> void {
+    var n: i32 = len(s);
+    var i: i32 = 0;
+    while i < n {
+        var c: i32 = get(s, i) as i32;
+        if c >= 32 && c < 256 {
+            blit_glyph_color(fb, frame, px + i * 8, py, 8,
+                             OFF_HAN + c * 16, 1, fg, bg);
+        }
+        i = i + 1;
+    }
+    return;
+}
+
+// Paint a 1-px raised (button-up) or sunken (button-down) 3D bevel
+// around the rectangle (x, y, w, h).
+fn draw_3d_bevel(fb: i32, frame: U8Array,
+                 x: i32, y: i32, w: i32, h: i32, raised: i32) -> void {
+    var hl: i32 = COLOR_HILIGHT;
+    var sh: i32 = COLOR_SHADOW;
+    if raised == 0 { hl = COLOR_SHADOW; sh = COLOR_HILIGHT; }
+    fb_fill(fb, frame, x,         y,         w, 1, hl);
+    fb_fill(fb, frame, x,         y,         1, h, hl);
+    fb_fill(fb, frame, x,         y + h - 1, w, 1, sh);
+    fb_fill(fb, frame, x + w - 1, y,         1, h, sh);
+    return;
+}
+
+// Paint the whole desktop: teal background, a "MS-DOS Prompt" window
+// hosting the cell grid, and a Start-button taskbar across the bottom.
+// Geometry is fixed for the 480x320 landscape framebuffer.
+fn draw_chrome(fb: i32, frame: U8Array) -> void {
+    // 1. Desktop background.
+    fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, COLOR_DESKTOP);
+
+    // 2. Window 4..476 × 4..292. Raised grey frame.
+    var wx: i32 = 4;
+    var wy: i32 = 4;
+    var ww: i32 = SCREEN_W - 8;          // 472
+    var wh: i32 = SCREEN_H - 4 - 24 - 4; // 288 (taskbar 24, gap 4 above)
+    fb_fill(fb, frame, wx, wy, ww, wh, COLOR_FRAME);
+    draw_3d_bevel(fb, frame, wx, wy, ww, wh, 1);
+
+    // 3. Title bar (8..472 × 8..24, navy fill).
+    var tx: i32 = wx + 4;
+    var ty: i32 = wy + 4;
+    var tw: i32 = ww - 8;                // 464
+    var th: i32 = 16;
+    fb_fill(fb, frame, tx, ty, tw, th, COLOR_TITLE_BG);
+    draw_text_at(fb, frame, tx + 4, ty,
+                 "MS-DOS Prompt", COLOR_TITLE_FG, COLOR_TITLE_BG);
+
+    // 4. Content area (8..472 × 24..280, 58 cols × 16 rows of 8x16).
+    fb_fill(fb, frame, g_content_x, g_content_y,
+            COLS * CW, ROWS * CH, COLOR_CONTENT);
+
+    // 5. Taskbar across the bottom (0..480 × 296..320). Top edge is a
+    //    1-px white highlight; the rest is plain frame grey.
+    var bx: i32 = 0;
+    var by: i32 = SCREEN_H - 24;
+    var bw: i32 = SCREEN_W;
+    var bh: i32 = 24;
+    fb_fill(fb, frame, bx, by, bw, bh, COLOR_FRAME);
+    fb_fill(fb, frame, bx, by, bw, 1,  COLOR_HILIGHT);
+
+    // 6. Start button (4..60 × 300..320), raised, captioned "Start".
+    var sbx: i32 = 4;
+    var sby: i32 = by + 4;
+    var sbw: i32 = 56;
+    var sbh: i32 = 16;
+    fb_fill(fb, frame, sbx, sby, sbw, sbh, COLOR_FRAME);
+    draw_3d_bevel(fb, frame, sbx, sby, sbw, sbh, 1);
+    draw_text_at(fb, frame, sbx + 8, sby,
+                 "Start", COLOR_SHADOW, COLOR_FRAME);
+    return;
+}
+
 // ===== Software scroll (landscape) =====
 
 // Re-blit only the cells where the logical grid has drifted away from
@@ -272,13 +388,15 @@ fn redraw(fb: i32, frame: U8Array) -> void {
                         if kt != 0 {
                             draw_zenkaku(fb, frame, c, r, kt);
                         } else {
-                            fb_fill(fb, frame, c * CW, phys_y(r), CW, CH, 0);
+                            fb_fill(fb, frame, g_content_x + c * CW,
+                                    phys_y(r), CW, CH, COLOR_CONTENT);
                         }
                     }
                 } else if cp != (0 - 1) {
                     // 0 = empty cell; -1 = trailing half of a zenkaku
                     // that was painted by its left cell, leave alone.
-                    fb_fill(fb, frame, c * CW, phys_y(r), CW, CH, 0);
+                    fb_fill(fb, frame, g_content_x + c * CW, phys_y(r),
+                            CW, CH, COLOR_CONTENT);
                 }
                 set(g_grid_prev, idx, cp);
             }
@@ -383,7 +501,8 @@ var CUR_H:    i32 = 4;
 fn draw_cursor(fb: i32, frame: U8Array) -> void {
     if g_row < 0 || g_row >= ROWS { return; }
     if g_col < 0 || g_col >= COLS { return; }
-    fb_fill(fb, frame, g_col * CW, phys_y(g_row) + CH - CUR_H, CW, CUR_H, FG);
+    fb_fill(fb, frame, g_content_x + g_col * CW,
+            phys_y(g_row) + CH - CUR_H, CW, CUR_H, FG);
     g_cur_col = g_col;
     g_cur_row = g_row;
     g_cur_on = 1;
@@ -394,8 +513,8 @@ fn erase_cursor(fb: i32, frame: U8Array) -> void {
     if g_cur_on == 0 { return; }
     if g_cur_row < 0 || g_cur_row >= ROWS { return; }
     if g_cur_col < 0 || g_cur_col >= COLS { return; }
-    fb_fill(fb, frame, g_cur_col * CW, phys_y(g_cur_row) + CH - CUR_H,
-            CW, CUR_H, 0);
+    fb_fill(fb, frame, g_content_x + g_cur_col * CW,
+            phys_y(g_cur_row) + CH - CUR_H, CW, CUR_H, COLOR_CONTENT);
     // Bottom CUR_H pixels of any glyph in this cell are now black even
     // if the glyph itself had ink there. Mark the cell dirty so the
     // next redraw (e.g. after a scroll) repaints the glyph cleanly.
@@ -457,13 +576,23 @@ fn main(argv: StringArray) -> i32 {
     }
     if land != 0 {
         SCREEN_W = 480;  SCREEN_H = 320;  g_sw_scroll = 1;
-        eputs("CONSOLE: landscape, software scroll\n");
+        // Landscape gets the Win95 desktop chrome. Content area runs
+        // 58 cols × 16 rows inside a window sitting above a taskbar.
+        g_have_chrome = 1;
+        g_content_x = 8;
+        g_content_y = 24;
+        COLS = 58;
+        ROWS = 16;
+        eputs("CONSOLE: landscape, software scroll, chrome\n");
     } else {
         SCREEN_W = 320;  SCREEN_H = 480;  g_sw_scroll = 0;
+        g_have_chrome = 0;
+        g_content_x = 0;
+        g_content_y = 0;
+        COLS = SCREEN_W / CW;
+        ROWS = SCREEN_H / CH;
         eputs("CONSOLE: portrait, hardware scroll\n");
     }
-    COLS = SCREEN_W / CW;
-    ROWS = SCREEN_H / CH;
     FB_H = SCREEN_H;
     if g_sw_scroll != 0 {
         g_grid      = I32Array((COLS * ROWS) as u32);
@@ -521,10 +650,15 @@ fn main(argv: StringArray) -> i32 {
     // Use 0x28 to flip the picture 180° on this board.
     if g_sw_scroll != 0 { fb_madctl(fb, frame, 0xE8); }
 
-    // The ILI9488 powers up with random GRAM contents (appears greenish
-    // on the panel). lcd_init doesn't clear it, so paint the whole
-    // visible area black before letting sh start drawing.
-    fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, 0);
+    // Paint the desktop. Landscape gets the Win95 chrome (desktop +
+    // window + title + taskbar + Start button) and the content area
+    // is sized to fit inside the window. Portrait clears the whole
+    // panel to black.
+    if g_have_chrome != 0 {
+        draw_chrome(fb, frame);
+    } else {
+        fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, COLOR_CONTENT);
+    }
     // Initial cursor — sh will write the first prompt straight after
     // we enter the read loop, but the cursor sits at (0,0) until then.
     draw_cursor(fb, frame);
