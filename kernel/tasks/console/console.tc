@@ -49,6 +49,10 @@ var ROWS: i32 = 30;
 
 var g_col: i32 = 0;
 var g_row: i32 = 0;
+// Previous cursor cell so erase_cursor can blank the right spot
+// regardless of newline / scroll movement that happened in between.
+var g_cur_col: i32 = 0;
+var g_cur_row: i32 = 0;
 
 // Scrolling. Two modes, picked by orientation in main():
 //
@@ -119,6 +123,20 @@ fn fb_fill(fb: i32, frame: U8Array, x: i32, y: i32,
     put_u16(frame, 6,  h);
     put_u16(frame, 8,  1);
     put_u16(frame, 10, col);
+    sys_write(fb, frame, 12);
+    return;
+}
+
+// Emit a mode-3 MADCTL set. Rotates / mirrors the ILI9488 framebuffer
+// so the X axis covers the wider edge in landscape. Portrait default
+// is 0x48; 0x28 is a 90° rotation that puts the 480-pixel edge along X.
+fn fb_madctl(fb: i32, frame: U8Array, val: i32) -> void {
+    put_u16(frame, 0,  0);
+    put_u16(frame, 2,  0);
+    put_u16(frame, 4,  0);
+    put_u16(frame, 6,  0);
+    put_u16(frame, 8,  3);
+    put_u16(frame, 10, val);
     sys_write(fb, frame, 12);
     return;
 }
@@ -314,6 +332,31 @@ fn draw_cp(fb: i32, frame: U8Array, cp: i32) -> void {
     return;
 }
 
+// Cursor: a 2-pixel-tall white underline at the bottom of the cell.
+// /bin/blinker writes one 0x05 byte to the pipe every 500 ms so this
+// state can flip even when no key has been typed and the pipe has no
+// real shell output.
+var g_cur_on: i32 = 0;
+
+fn draw_cursor(fb: i32, frame: U8Array) -> void {
+    if g_row < 0 || g_row >= ROWS { return; }
+    if g_col < 0 || g_col >= COLS { return; }
+    fb_fill(fb, frame, g_col * CW, phys_y(g_row) + CH - 2, CW, 2, FG);
+    g_cur_col = g_col;
+    g_cur_row = g_row;
+    g_cur_on = 1;
+    return;
+}
+
+fn erase_cursor(fb: i32, frame: U8Array) -> void {
+    if g_cur_on == 0 { return; }
+    if g_cur_row < 0 || g_cur_row >= ROWS { return; }
+    if g_cur_col < 0 || g_cur_col >= COLS { return; }
+    fb_fill(fb, frame, g_cur_col * CW, phys_y(g_cur_row) + CH - 2, CW, 2, 0);
+    g_cur_on = 0;
+    return;
+}
+
 // Feed one byte through the UTF-8 decoder; render completed
 // codepoints. ASCII passes straight through.
 fn render(fb: i32, frame: U8Array, b: i32) -> void {
@@ -398,7 +441,16 @@ fn main(argv: StringArray) -> i32 {
     var pr: i32 = peek32(pb as u32 + 4u32) as i32;
     var pw: i32 = peek32(pb as u32 + 8u32) as i32;
 
-    // sh: stdin = /dev/kbd, stdout = pipe write end.
+    // Cursor heartbeat: blinker writes one 0x05 byte to pw every 500 ms
+    // so we can toggle the cursor even when the pipe has no shell
+    // bytes. Spawn it FIRST so that sh's spawn_fds reclaims pw's vfs
+    // owner; otherwise blinker would keep pw open past sh's exit and
+    // console would never see EOF.
+    do_spawn_fds("/bin/blinker", 0u32, 0, pw);
+
+    // sh: stdin = /dev/kbd, stdout = pipe write end. This vfs_set_owner
+    // transfers pw back to sh, so sh's exit closes pw → blinker's next
+    // write fails → blinker exits → console reads EOF and cleans up.
     var slot: i32 = do_spawn_fds("/bin/sh", 0u32, kbd, pw);
     delete(pb);
     if slot < 0 {
@@ -414,10 +466,20 @@ fn main(argv: StringArray) -> i32 {
     var frame: U8Array = U8Array(522u32);
     var buf:   U8Array = U8Array(64u32);
 
+    // Landscape: rotate the ILI9488 framebuffer so the 480-pixel edge
+    // runs along X. Without this MADCTL change the panel stays in its
+    // power-on portrait orientation and pixel writes past x=319 get
+    // clipped to nothing — text would render only in the left
+    // half-screen and look like portrait.
+    if g_sw_scroll != 0 { fb_madctl(fb, frame, 0x28); }
+
     // The ILI9488 powers up with random GRAM contents (appears greenish
     // on the panel). lcd_init doesn't clear it, so paint the whole
     // visible area black before letting sh start drawing.
     fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, 0);
+    // Initial cursor — sh will write the first prompt straight after
+    // we enter the read loop, but the cursor sits at (0,0) until then.
+    draw_cursor(fb, frame);
     // The buf data area starts 4 bytes past the U8Array header. We pass
     // it raw to do_read (the syscall stub) instead of going through
     // libtc's sys_read — sys_read loops until the full requested count
@@ -430,10 +492,35 @@ fn main(argv: StringArray) -> i32 {
         if r <= 0 {
             running = 0;
         } else {
-            var i: i32 = 0;
-            while i < r {
-                render(fb, frame, peek8(buf_data + (i as u32)) as i32);
-                i = i + 1;
+            // Decide if this batch is just a blinker pulse (no shell
+            // bytes mixed in). Cheap inline scan: any byte != 0x05 means
+            // we have to render — and we then erase the cursor first so
+            // the new glyphs land on a clean cell.
+            var has_real: i32 = 0;
+            var k: i32 = 0;
+            while k < r {
+                if peek8(buf_data + (k as u32)) != 5u8 { has_real = 1; }
+                k = k + 1;
+            }
+
+            if has_real != 0 {
+                erase_cursor(fb, frame);
+                var i: i32 = 0;
+                while i < r {
+                    var b: u8 = peek8(buf_data + (i as u32));
+                    if b != 5u8 {
+                        render(fb, frame, b as i32);
+                    }
+                    i = i + 1;
+                }
+                draw_cursor(fb, frame);
+            } else {
+                // Pure blink pulse — just toggle the cursor in place.
+                if g_cur_on != 0 {
+                    erase_cursor(fb, frame);
+                } else {
+                    draw_cursor(fb, frame);
+                }
             }
         }
     }

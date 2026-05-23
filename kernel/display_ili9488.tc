@@ -270,6 +270,14 @@ export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
             lcd_dat((line >> 8) & 0xFF);
             lcd_dat(line & 0xFF);
         }
+    } else if mode == 3 {
+        // Set MADCTL (memory access control: rotation / mirroring).
+        // The low 8 bits of buf+10 select the ILI9488 MADCTL value.
+        // Portrait (default) = 0x48, landscape = 0x28 / 0xE8 etc.
+        if n >= 12 {
+            lcd_cmd(0x36);
+            lcd_dat(fb_rd16(buf_addr + 10u32) & 0xFF);
+        }
     }
     return;
 }
