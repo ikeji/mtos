@@ -464,10 +464,26 @@ build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-dem
     kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
+# console UF2: disk-console.img の /etc/kern.conf で /bin/console を
+# seed する (portrait, hardware scroll)。Pico 2 LCD コンソールを
+# 起動時から立ち上げる経路。`make run-pico2-console` で実機起動。
+build/kernel/pico2_kernel_console.uf2: PICO2_DISK := build/kernel/disk-console.img
+build/kernel/pico2_kernel_console.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-console.img \
+    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+	$(PICO2_KERNEL_RECIPE)
+
+# console-land UF2: 横向き (`/bin/console -l`)、software scroll。
+build/kernel/pico2_kernel_console_land.uf2: PICO2_DISK := build/kernel/disk-console-land.img
+build/kernel/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-console-land.img \
+    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+	$(PICO2_KERNEL_RECIPE)
+
 virt-kernel:  build/kernel/virt_kernel.bin
 pico2-kernel: build/kernel/pico2_kernel.uf2
 pico2-kernel-extra: build/kernel/pico2_kernel_extra.uf2
 pico2-kernel-demo: build/kernel/pico2_kernel_demo.uf2
+pico2-kernel-console: build/kernel/pico2_kernel_console.uf2
+pico2-kernel-console-land: build/kernel/pico2_kernel_console_land.uf2
 
 # ----- FAT32 disk image (second virtio-blk drive) -----
 # mkfs.fat may live in /sbin (not in PATH by default)
@@ -506,7 +522,7 @@ run-extra: build/kernel/virt_kernel.bin build/kernel/disk-extra.img build/kernel
 
 # Pico 2 counterparts. Make builds the UF2, then run_pico2_interactive.sh
 # flashes and opens the UART console.
-.PHONY: run-pico2 run-pico2-extra
+.PHONY: run-pico2 run-pico2-extra run-pico2-console run-pico2-console-land
 run-pico2: build/kernel/pico2_kernel.uf2
 	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
 	UF2=build/kernel/pico2_kernel.uf2 ./kernel/run_pico2_interactive.sh --no-build
@@ -514,6 +530,14 @@ run-pico2: build/kernel/pico2_kernel.uf2
 run-pico2-extra: build/kernel/pico2_kernel_extra.uf2
 	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
 	UF2=build/kernel/pico2_kernel_extra.uf2 ./kernel/run_pico2_interactive.sh --no-build
+
+run-pico2-console: build/kernel/pico2_kernel_console.uf2
+	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
+	UF2=build/kernel/pico2_kernel_console.uf2 ./kernel/run_pico2_interactive.sh --no-build
+
+run-pico2-console-land: build/kernel/pico2_kernel_console_land.uf2
+	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
+	UF2=build/kernel/pico2_kernel_console_land.uf2 ./kernel/run_pico2_interactive.sh --no-build
 
 # ===== test_asm prebuilt binaries (Phase D) =====
 
@@ -589,4 +613,6 @@ update-golden-and-run-test: $(BUILD_DEPS)
 
 .PHONY: all clean test full-test update-golden update-golden-and-run-test \
         gen2-tools gen3-tools virt-kernel pico2-kernel pico2-kernel-extra \
-        test-asm-bins run run-extra run-pico2 run-pico2-extra
+        pico2-kernel-demo pico2-kernel-console pico2-kernel-console-land \
+        test-asm-bins run run-extra run-pico2 run-pico2-extra \
+        run-pico2-console run-pico2-console-land
