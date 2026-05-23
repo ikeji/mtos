@@ -209,6 +209,16 @@ do_uptime_us:
     ecall
     ret
 
+# do_read_nb(fd, buf, len) → i32 — non-blocking read. Same as do_read
+# but returns -2 immediately when no data is available, instead of
+# yielding inside the kernel until something arrives. Use when the
+# caller wants to do other work (e.g. blink a cursor) while idle.
+    .globl do_read_nb__i32__u32__i32
+do_read_nb__i32__u32__i32:
+    li   a7, 271
+    ecall
+    ret
+
 # peek/poke builtins
     .globl peek8__u32
 peek8__u32:

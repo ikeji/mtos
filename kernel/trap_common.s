@@ -105,6 +105,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_rmdir
     li   t1, 270
     beq  t0, t1, _ecall_uptime_us
+    li   t1, 271
+    beq  t0, t1, _ecall_read_nb
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -178,6 +180,20 @@ _ecall_read_yield:
     call sched_yield_read
     mv   sp, s0
     j    _trap_restore
+
+# ===== sys_read_nb (a7 = 271) =====
+# Same shape as _ecall_read but passes -2 (would-block) through to
+# the caller instead of yielding. Lets /bin/console poll the sh-output
+# pipe and toggle a blinking cursor between attempts without needing
+# a sibling task to inject heartbeat bytes.
+_ecall_read_nb:
+    call _ecall_enter
+    lw   a0, 40(s0)
+    lw   a1, 44(s0)
+    lw   a2, 48(s0)
+    call vfs_read__i32__u32__i32
+    sw   a0, 40(s0)
+    j    _ecall_leave_advance
 
 _ecall_openat:
     call _ecall_enter
