@@ -18,6 +18,38 @@
 
 ## 後回し
 
+### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる (bug、2026-05-23)
+
+グローバル変数を文字列リテラルで初期化する構文が壊れている:
+
+```tc
+var KBD_KEYMAP: StringLiteral = "abcdef";   // ← X は 0 (NULL)
+```
+
+AST には `(str "abcdef")` が正しく載っているが、codegen が無視して
+`X: .word 0` を吐く。実行時 `get(X, i)` は `peek8(0 + 4 + i)` →
+低位カーネルデータの不定値を返す。
+
+加えて `"abc" + "def"` は **ポインタ加算** (= 「add」命令) を emit
+するだけ。コンパイル時 string concat はない。文字列リテラルを行
+分割して書きたい場合は単一リテラルとして連結するしかない (TC は
+C 風の隣接リテラル concat も未実装)。
+
+回避策: literal を関数経由で参照する。
+
+```tc
+fn keymap() -> StringLiteral { return "abcdef"; }
+// 使う側:
+var b: u8 = get(keymap(), i);
+```
+
+関数の return path だと literal が .rodata に正しく置かれ、ポインタ
+も returnable。実機で確認済 (commit XXX、`kernel/keyboard_matrix.tc`
+の KBD_KEYMAP)。
+
+根本治療: codegen の var_decl + str init 経路を直す。`compiler/codegen.tc`
+の cg_var_decl まわり。
+
 ### 5. Gen2 typecheck のエラーメッセージ: 段階 2 (AST line info) のみ残 (ergonomics)
 
 段階 1 (関数名 + 引数型 + 直前 comment) は実装済。
