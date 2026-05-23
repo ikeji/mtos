@@ -178,9 +178,16 @@ fn pio_lcd_init() -> void {
 }
 
 // Push one byte to PIO2 SM0's TX FIFO. Blocks until the FIFO has room.
+// The byte is left-justified into bits 31:24 of the 32-bit FIFO entry:
+// our PIO program shifts the OSR LEFT (out from the high end), and
+// autopull only pulls when 8 bits have been shifted out. If we wrote
+// the byte at the low end, the first 8 OUTs would all read zero from
+// the high 24 bits and the actual data would never reach MOSI — the
+// LCD then sees an all-zero command stream and stays at power-on
+// (white-ish) GRAM contents.
 fn pio_spi_byte(b: i32) -> void {
     while (peek32(PIO2_BASE + PIO_FSTAT) & FSTAT_TXFULL_SM0) != 0u32 { }
-    poke32(PIO2_BASE + PIO_TXF0, (b & 0xFF) as u32);
+    poke32(PIO2_BASE + PIO_TXF0, ((b & 0xFF) << 24) as u32);
     return;
 }
 
