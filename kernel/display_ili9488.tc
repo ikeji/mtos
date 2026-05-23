@@ -91,6 +91,15 @@ var PIO_SM0_SHIFTCTRL: u32 = 0x0D0u32;
 var PIO_SM0_INSTR:     u32 = 0x0D8u32;
 var PIO_SM0_PINCTRL:   u32 = 0x0DCu32;
 
+// RP2350 RESETS block. The chip powers up with every non-essential
+// peripheral held in reset; PIO2 is no exception. We have to clear its
+// reset bit (RESETS.RESET[13]) and wait for RESETS.RESET_DONE[13] to
+// go high before any PIO2 register accesses do anything visible.
+var RESETS_BASE:       u32 = 0x40020000u32;
+var RESETS_RESET_CLR:  u32 = 0x3000u32;     // atomic CLR alias
+var RESETS_DONE:       u32 = 0x008u32;
+var RESETS_PIO2_BIT:   u32 = 0x2000u32;     // bit 13
+
 // PIO2 sees GPIO 16-47 as its pin 0-31.
 var PIO2_PIN_SCK:  i32 = 24;   // GP40
 var PIO2_PIN_MOSI: i32 = 25;   // GP41
@@ -109,6 +118,14 @@ var g_lcd_dc_is_data:  i32 = 0 - 1;
 
 fn pio_lcd_init() -> void {
     if g_pio_lcd_inited != 0 { return; }
+
+    // Release PIO2 from reset and wait until the peripheral confirms
+    // it is out of reset. Otherwise our INSTR_MEM / CTRL writes below
+    // silently no-op and the SM never starts — which presents as a
+    // completely blank (white-ish) LCD because no SPI clock is ever
+    // generated and the panel never sees its init commands.
+    poke32(RESETS_BASE + RESETS_RESET_CLR, RESETS_PIO2_BIT);
+    while (peek32(RESETS_BASE + RESETS_DONE) & RESETS_PIO2_BIT) == 0u32 { }
 
     // Disable SM0 while we reload.
     poke32(PIO2_BASE + PIO_CTRL, 0u32);
