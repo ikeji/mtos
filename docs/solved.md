@@ -136,6 +136,63 @@ while i < n_in_sec {
 
 ## カーネル / OS
 
+### 35. pico2 console + sh starvation: sched_yield_read で mtimecmp を rearm — 完了 (2026-05-23)
+
+`kern.conf` で `/bin/console` を seed すると LCD に最初の数バイトしか
+描画されず、それ以降 sh の出力 (pipe 経由) が console まで届かない。
+qemu virt の `test_os` console テストは pass、pico2 実機だけで再現。
+
+**切り分け**:
+- LCD bit-bang / SPI 単独: OK (fbtest + render isolation で確認)
+- `/bin/hello` (5 回 write して exit) を pipe 経由 spawn_fds: OK
+- `/bin/echo` (引数無しで即 exit) を spawn_fds: OK
+- `/bin/sh` を spawn_fds: 失敗 — console は post-spawn 後 3〜6 個の
+  sys_write しか出せず以降スタベーション
+
+debug counter (`g_dbg_tick` を trap_handler timer 分岐に、`g_dbg_yield`
+を sched_yield_read に) で観測すると 15 秒間 timer 12,750 回 +
+sched_yield_read 12,600 回 — ほぼ 1:1。1 quantum あたり sh の sys_read
+が 1 回しか入っていない (理論上は 760µs / 40µs = 19 回入るはず)。
+
+**根本原因**: M-mode 時間の累積 + pending MTIP の即発火。
+
+1. sh の `sys_read(/dev/kbd)` は kbd_backend_read (~40µs GPIO scan) を
+   M-mode で実行。`MIE=0` の間 mtime が進んでも timer 割込みは発火しない。
+2. console 側も `eputs` で UART を 1 バイト 87µs busy-wait するから
+   sys_write 1 回 ~260µs (3 byte) ぶん M-mode 滞在。
+3. sh と console の M-mode 滞在時間の合計が 760µs (= TIMER_INTERVAL)
+   を超えると mtime が mtimecmp を追い越し MTIP が pending。
+4. sh の -2 yield で `sched_yield_read` が console を選び `mret` した
+   瞬間 MIE=1 に戻る → pending MTIP が即発火 → trap_handler timer
+   分岐が「console から」のつもりで sh に再 switch → console は 0
+   命令しか走らない → 無限ループ。
+5. `/bin/hello` は短命 (5 write + delay で exit) のため pending MTIP
+   が貯まる前に終わり、console が 1 タスク化して問題顕在化せず。
+
+**修正** (commit 895ec6a): `sched_yield_read` で `g_current != from_slot`
+の時だけ `rearm_timer()` を呼ぶ。実際にタスクを切り替えた瞬間
+`mtimecmp = mtime + 100000` で上書きされ pending MTIP がクリアされる
+ので、選ばれたタスクは新鮮な quantum を確保できる。
+
+「実際に切り替わった時だけ」rearm するのが要点: 同一タスクの -2 retry
+で毎回 rearm すると mtimecmp が永遠に push され、sleeping task の
+wake_time に mtime が追い付かなくなって `do_nanosleep` が機能しなく
+なる。switch 限定なら yield 連打しても mtimecmp は固定で、sleep も
+正常に動く。
+
+**検証**: 修正前は post-spawn 3〜6 sys_write で停止 → 修正後は M1..M5 +
+render 全段 (rnd → dcp1 cp=N → dcp_ge32 → dcp_lt256 → dh1 → dh2 →
+dcp_end → rnd_end) 完走、LCD に "1234" 描画。`make test` 148 件 pass、
+pico2 実機の sh-only / console-init 両構成で boot 確認。
+
+問題.md #35 の「仮説 A: stdin_fd 上書き」「仮説 B: struct setter
+値コピー」はいずれも誤誘導だった (struct setter は実体 (heap U32Array)
+を共有するので値コピー問題は起きない、stdin_fd 上書きは観測されなかった
+)。GDB attach で `PC が kbd_settle に landing` していたのは sh が
+M-mode で何度も sys_read を retry していた症状そのもの。
+
+参考: `kernel/kernel_common.tc::sched_yield_read`、commit 895ec6a。
+
 ### K19. bucket carve によるヒープ断片化 → two-ended allocator — 完了 (2026-05-15)
 
 approach A (compile-gen2.sh / kernel build の prelude cat 結合を撤廃し
