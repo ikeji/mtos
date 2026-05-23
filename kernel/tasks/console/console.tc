@@ -232,11 +232,13 @@ fn draw_zenkaku(fb: i32, frame: U8Array, col: i32, row: i32, kuten: i32) -> void
 
 // ===== Software scroll (landscape) =====
 
-// Re-blit the whole screen from g_grid: clear to black, then draw
-// every recorded glyph. Cells holding 0 (blank) or -1 (the trailing
-// half of a zenkaku) fail the cp >= 32 test and are skipped.
+// Re-blit the whole screen from g_grid. Glyph cells repaint themselves
+// (blit_glyph paints FG-on-black, so the cell background is implicit);
+// empty cells get an 8x16 mode-1 black fill. We deliberately do NOT
+// fb_fill the whole framebuffer up front — that was painting every
+// pixel twice (once black, once the glyph), which roughly doubled
+// scroll latency and was the largest visible cost in landscape mode.
 fn redraw(fb: i32, frame: U8Array) -> void {
-    fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, 0);
     var r: i32 = 0;
     while r < ROWS {
         var c: i32 = 0;
@@ -247,8 +249,17 @@ fn redraw(fb: i32, frame: U8Array) -> void {
                     draw_hankaku(fb, frame, c, r, cp);
                 } else {
                     var kt: i32 = u2k_lookup(cp);
-                    if kt != 0 { draw_zenkaku(fb, frame, c, r, kt); }
+                    if kt != 0 {
+                        draw_zenkaku(fb, frame, c, r, kt);
+                    } else {
+                        // No glyph available — keep the cell blank.
+                        fb_fill(fb, frame, c * CW, phys_y(r), CW, CH, 0);
+                    }
                 }
+            } else if cp != (0 - 1) {
+                // 0 = empty cell; -1 = trailing half of a zenkaku that
+                // was painted by its left cell, leave it alone.
+                fb_fill(fb, frame, c * CW, phys_y(r), CW, CH, 0);
             }
             c = c + 1;
         }

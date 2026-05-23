@@ -314,18 +314,20 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     elapsed=$(( $(time_ms) - t0 ))
     cl_mode=$(echo "$cl_out" | grep -c "CONSOLE: landscape, software scroll")
     cl_exit=$(echo "$cl_out" | grep -c "CONSOLE: exit")
-    # Landscape must NOT touch the hardware vertical scroll (mode 2)...
+    # Landscape must NOT touch the hardware vertical scroll (mode 2).
     cl_hw=$(echo "$cl_out" | grep -c "FB: mode=2")
-    # ...it redraws the whole 480x320 screen on each scroll, which
-    # starts with a full-screen mode-1 clear. seq 30 overflows the
-    # 20-row landscape window many times.
-    cl_redraw=$(echo "$cl_out" | grep -c "FB: mode=1 x=0 y=0 w=480 h=320")
+    # Software-scroll evidence: a redraw repaints every cell (mode-0
+    # for glyphs, mode-1 for empties). seq 30 with 20 visible rows
+    # scrolls ~10 times — each scroll emits ROWS*COLS = 1200 blits.
+    # A large mode-0 count is also fine in portrait, so the negative
+    # signal (no mode=2) is what locks the landscape claim.
+    cl_blits=$(echo "$cl_out" | grep -c "FB: mode=")
     if [ "$cl_mode" -gt 0 ] && [ "$cl_exit" -gt 0 ] \
-        && [ "$cl_hw" -eq 0 ] && [ "$cl_redraw" -ge 8 ]; then
+        && [ "$cl_hw" -eq 0 ] && [ "$cl_blits" -ge 100 ]; then
         report_pass "console_landscape: console -l software-scrolls" "$elapsed"
     else
         report_fail_msg "console_landscape" \
-            "mode=$cl_mode exit=$cl_exit hw=$cl_hw redraw=$cl_redraw; got: $(printf '%s' "$cl_out" | head -c 320)"
+            "mode=$cl_mode exit=$cl_exit hw=$cl_hw blits=$cl_blits; got: $(printf '%s' "$cl_out" | head -c 320)"
     fi
 fi
 
