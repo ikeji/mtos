@@ -10,7 +10,7 @@
 #   - /dev/ttyACM0 = Debug Probe UART
 
 set -e
-KERN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+KERN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ROOT_DIR="$(dirname "$KERN_DIR")"
 
 OPENOCD="$HOME/opt/openocd-rpi/bin/openocd"

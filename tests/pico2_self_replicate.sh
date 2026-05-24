@@ -42,7 +42,7 @@ cp "$ROOT/build/kernel/disk-extra.img" "$TMP/disk-extra.img"
 # basename to the .lab, asm_pass3 resolves relative to the .lab's
 # dir — so we also have to drop a sibling `dx.img` next to the lab
 # in compile-gen2's intermediate dir (see HOST_LAB_DIR below).
-"$ROOT/kernel/bin2s_incbin.sh" "$TMP/disk-extra.img" _mtfs_image dx.img > "$TMP/wrap.s" 2>/dev/null
+"$ROOT/kernel/scripts/bin2s_incbin.sh" "$TMP/disk-extra.img" _mtfs_image dx.img > "$TMP/wrap.s" 2>/dev/null
 cat "$ROOT/kernel/platform/pico2/platform_pico2.s" "$ROOT/kernel/src/trap_common.s" > "$TMP/host_crt0.s"
 cat "$ROOT/kernel/platform/pico2/crt0_pico2_data.s" "$TMP/wrap.s" > "$TMP/host_data.s"
 # Where compile-gen2.sh keeps its intermediates for this .tc.

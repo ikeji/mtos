@@ -247,8 +247,8 @@ build/kernel/jpfont_inc.s:
 else
 build/kernel/jpfont.dat: $(FONT_BMP) tests/genjpfont.py | build/kernel
 	@python3 tests/genjpfont.py $(FONT_BMP) $@
-build/kernel/jpfont_inc.s: build/kernel/jpfont.dat kernel/bin2s_incbin.sh | build/kernel
-	@kernel/bin2s_incbin.sh build/kernel/jpfont.dat jpfont build/kernel/jpfont.dat > $@
+build/kernel/jpfont_inc.s: build/kernel/jpfont.dat kernel/scripts/bin2s_incbin.sh | build/kernel
+	@kernel/scripts/bin2s_incbin.sh build/kernel/jpfont.dat jpfont build/kernel/jpfont.dat > $@
 endif
 
 TASK_EXTRA_S_console := build/kernel/jpfont_inc.s
@@ -323,7 +323,7 @@ EXTRA_SRC_DEPS := compiler/src/string_buffer.tc compiler/src/source_reader.tc \
     kernel/platform/pico2/platform_pico2.tc \
     kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s kernel/platform/pico2/crt0_pico2_data.s
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass1.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass3.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_platform.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass1.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass3.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_platform.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/scripts/bin2s_incbin.sh build/kernel/disk.img | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -437,7 +437,7 @@ define PICO2_KERNEL_RECIPE
 	_labdir=build/intermediate/gen2/kernel_pico2 && \
 	mkdir -p "$$_labdir" && \
 	cp $(PICO2_DISK) "$$_labdir/dx.img" && \
-	kernel/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
+	kernel/scripts/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
 	CRT0="kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s" \
 	    CRT0_DATA="kernel/platform/pico2/crt0_pico2_data.s $$_tmp/mtfs_image.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
@@ -451,12 +451,12 @@ define PICO2_KERNEL_RECIPE
 endef
 
 build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
-    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 build/kernel/pico2_kernel_extra.uf2: PICO2_DISK := build/kernel/disk-extra.img
 build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-extra.img \
-    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # demo UF2: disk-demo.img の /etc/kern.conf で hello + hello2 + sh を
@@ -464,7 +464,7 @@ build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-ex
 # 動くことを確認できる。
 build/kernel/pico2_kernel_demo.uf2: PICO2_DISK := build/kernel/disk-demo.img
 build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-demo.img \
-    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # console UF2: disk-console.img の /etc/kern.conf で /bin/console を
@@ -472,13 +472,13 @@ build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-dem
 # 起動時から立ち上げる経路。`make run-pico2-console` で実機起動。
 build/kernel/pico2_kernel_console.uf2: PICO2_DISK := build/kernel/disk-console.img
 build/kernel/pico2_kernel_console.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-console.img \
-    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # console-land UF2: 横向き (`/bin/console -l`)、software scroll。
 build/kernel/pico2_kernel_console_land.uf2: PICO2_DISK := build/kernel/disk-console-land.img
 build/kernel/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-console-land.img \
-    kernel/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 virt-kernel:  build/kernel/virt_kernel.bin
@@ -528,19 +528,19 @@ run-extra: build/kernel/virt_kernel.bin build/kernel/disk-extra.img build/kernel
 .PHONY: run-pico2 run-pico2-extra run-pico2-console run-pico2-console-land
 run-pico2: build/kernel/pico2_kernel.uf2
 	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
-	UF2=build/kernel/pico2_kernel.uf2 ./kernel/run_pico2_interactive.sh --no-build
+	UF2=build/kernel/pico2_kernel.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
 
 run-pico2-extra: build/kernel/pico2_kernel_extra.uf2
 	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
-	UF2=build/kernel/pico2_kernel_extra.uf2 ./kernel/run_pico2_interactive.sh --no-build
+	UF2=build/kernel/pico2_kernel_extra.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
 
 run-pico2-console: build/kernel/pico2_kernel_console.uf2
 	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
-	UF2=build/kernel/pico2_kernel_console.uf2 ./kernel/run_pico2_interactive.sh --no-build
+	UF2=build/kernel/pico2_kernel_console.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
 
 run-pico2-console-land: build/kernel/pico2_kernel_console_land.uf2
 	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
-	UF2=build/kernel/pico2_kernel_console_land.uf2 ./kernel/run_pico2_interactive.sh --no-build
+	UF2=build/kernel/pico2_kernel_console_land.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
 
 # ===== test_asm prebuilt binaries (Phase D) =====
 

@@ -84,7 +84,7 @@ if [ ! -s "$KERNEL_BIN" ] || [ ! -s "$KERNEL_DISK" ]; then
     if command -v qemu-system-riscv32 >/dev/null 2>&1; then
         KERN_CONFIG="$ROOT_DIR/tests/fixtures/kern_demo.conf" \
         GEN2_DIR="$_GEN2_TMP" \
-            "$ROOT_DIR/kernel/build.sh" --target virt \
+            "$ROOT_DIR/kernel/scripts/build.sh" --target virt \
             -o "$TMP/kernel_virt" --disk-out "$TMP/disk.img" 2>/dev/null
         KERNEL_BIN="$TMP/kernel_virt"
         KERNEL_DISK="$TMP/disk.img"

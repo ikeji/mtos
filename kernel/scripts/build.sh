@@ -8,7 +8,7 @@
 #   pico2  → UF2 for RP2350 (preemptive kernel)
 
 set -e
-KERN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+KERN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ROOT_DIR="$(dirname "$KERN_DIR")"
 
 TARGET=""

@@ -36,7 +36,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 # ----- Step 1: Build kernel -----
 t0=$(time_ms)
-GEN2_DIR="$GEN2_DIR" "$ROOT_DIR/kernel/build.sh" --target pico2 \
+GEN2_DIR="$GEN2_DIR" "$ROOT_DIR/kernel/scripts/build.sh" --target pico2 \
     -o "$TMP/kernel_pico2.uf2" 2>&1 | sed 's/^/    /' >&2
 if [ ! -s "$TMP/kernel_pico2.uf2" ]; then
     report_fail_msg "pico2-sd: build" "kernel.uf2 not produced"

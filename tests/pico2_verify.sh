@@ -52,7 +52,7 @@ echo "[build] pico2 kernel"
 EXTRA_TASKS="parse sigscan tcheck codegen bc2asm cat" \
 PRELUDE_OUT_DIR="$REFS" \
 GEN2_DIR="$GEN2_DIR" \
-    "$ROOT_DIR/kernel/build.sh" --target pico2 \
+    "$ROOT_DIR/kernel/scripts/build.sh" --target pico2 \
     -o "$TMP/kernel_pico2.uf2" 2>&1 | tail -2 >&2
 if [ ! -s "$TMP/kernel_pico2.uf2" ] || [ ! -s "$REFS/prelude.s" ]; then
     echo "FAIL: kernel/build.sh did not produce UF2 or prelude.s" >&2; exit 1

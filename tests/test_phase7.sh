@@ -42,7 +42,7 @@ echo "=== phase 7 compiler-on-OS ==="
 echo "Building kernel with EXTRA_TASKS=parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat"
 EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat" \
 GEN2_DIR="$GEN2_DIR" \
-    "$ROOT_DIR/kernel/build.sh" --target virt \
+    "$ROOT_DIR/kernel/scripts/build.sh" --target virt \
     -o "$TMP/kernel_virt" --disk-out "$TMP/disk.img" 2>&1 | tail -5
 
 if [ ! -s "$TMP/kernel_virt" ] || [ ! -s "$TMP/disk.img" ]; then
