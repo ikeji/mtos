@@ -50,11 +50,11 @@ build/gen2/%: compiler/src/%.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.s
 	./compiler/scripts/compile-gen1.sh -o $@ $<
 	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
-# Phase 8: bin2uf2 host tool ported to TC. Built from tools/bin2uf2.tc
+# Phase 8: bin2uf2 host tool ported to TC. Built from kernel/tools-src/bin2uf2.tc
 # the same way Gen2 tools are. Produces an RV32 ELF run via
 # qemu-riscv32 — replaces the python3 tools/bin2uf2.py invocation in
 # the kernel build path.
-build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
+build/gen2/bin2uf2: kernel/tools-src/bin2uf2.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
 	./compiler/scripts/compile-gen1.sh -o $@ $<
 	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
@@ -63,7 +63,7 @@ build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) compiler/scripts/collect_impo
 # (including its 4-byte-per-real-inode tail truncation so existing
 # md5 fixtures still match). Uses statx (291) for path stat — qemu
 # RISC-V user mode doesn't implement fstat (80) or newfstatat (79).
-build/gen2/mkfs: tools/mkfs.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
+build/gen2/mkfs: kernel/tools-src/mkfs.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
 	./compiler/scripts/compile-gen1.sh -o $@ $<
 	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
