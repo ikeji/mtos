@@ -425,11 +425,12 @@ fn draw_chrome(fb: i32, frame: U8Array) -> void {
     return;
 }
 
-// Refresh just the MM:SS digits inside the clock sunken area. Called
+// Refresh just the HH:MM digits inside the clock sunken area. Called
 // from the cursor-blink path (every 250 ms) and after each batch of
-// rendered output — we don't have an RTC handle here yet, so the
-// source is uptime, formatted as MM:SS (rolls over every hour at the
-// low-32-bit mtime wrap; fine for a mostly-cosmetic clock).
+// rendered output; the kernel's /dev/rtc snapshots "YYYY-MM-DD
+// HH:MM:SS\n" on open and the read drains it, so we open + read +
+// close once per second. A short-circuit on (last_hh, last_mm) keeps
+// the actual fb_fill / glyph blits down to once per minute.
 fn draw_2digits(fb: i32, frame: U8Array, x: i32, y: i32, n: i32) -> void {
     var d1: i32 = (n / 10) % 10;
     var d2: i32 = n % 10;
@@ -440,17 +441,41 @@ fn draw_2digits(fb: i32, frame: U8Array, x: i32, y: i32, n: i32) -> void {
     return;
 }
 
+var g_clock_tick: i32 = 0;
+var g_last_hh:    i32 = 0 - 1;
+var g_last_mm:    i32 = 0 - 1;
+
 fn draw_clock(fb: i32, frame: U8Array) -> void {
     if g_have_chrome == 0 { return; }
-    var us: u32 = do_uptime_us();
-    var s: u32  = us / 1000000u32;
-    var mins: i32 = ((s / 60u32) % 60u32) as i32;
-    var secs: i32 =  (s % 60u32) as i32;
-    draw_2digits(fb, frame, g_clock_x,      g_clock_y, mins);
+    // ~1 Hz poll. draw_clock fires at the 250 ms blink rate plus on
+    // every byte batch from sh; without this gate the RTC would be
+    // opened 4-10× per second for no visible gain.
+    g_clock_tick = g_clock_tick + 1;
+    if g_clock_tick < 4 { return; }
+    g_clock_tick = 0;
+
+    var rfd: i32 = do_openat(0, "/dev/rtc", 0);
+    if rfd < 0 { return; }
+    var buf: U8Array = U8Array(24u32);
+    var n: i32 = sys_read(rfd, buf, 20);
+    do_close(rfd);
+    // "YYYY-MM-DD HH:MM:SS\n" — HH at offsets 11/12, MM at 14/15.
+    if n < 16 { delete(buf); return; }
+    var hh: i32 = ((get(buf, 11) as i32) - 48) * 10
+                +  (get(buf, 12) as i32) - 48;
+    var mm: i32 = ((get(buf, 14) as i32) - 48) * 10
+                +  (get(buf, 15) as i32) - 48;
+    delete(buf);
+
+    if hh == g_last_hh && mm == g_last_mm { return; }
+    g_last_hh = hh;
+    g_last_mm = mm;
+
+    draw_2digits(fb, frame, g_clock_x,      g_clock_y, hh);
     blit_glyph_color(fb, frame, g_clock_x + 16, g_clock_y, 8,
-                     OFF_HAN + 58 * 16, 1,        // ':'
+                     OFF_HAN + 58 * 16, 1,             // ':'
                      COLOR_SHADOW, COLOR_FRAME);
-    draw_2digits(fb, frame, g_clock_x + 24, g_clock_y, secs);
+    draw_2digits(fb, frame, g_clock_x + 24, g_clock_y, mm);
     return;
 }
 
