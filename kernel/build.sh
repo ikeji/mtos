@@ -179,7 +179,7 @@ for task in $TASKS; do
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$GEN2_DIR" \
     EXTRA_S="$_extra_s" \
-        "$ROOT_DIR/compile-gen2.sh" -o "$TMP/$task.bin" \
+        "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$TMP/$task.bin" \
         "$KERN_DIR/tasks/$task/$task.tc" 2>/dev/null
     if [ ! -s "$TMP/$task.bin" ]; then
         echo "Error: $task task compilation failed" >&2
@@ -370,7 +370,7 @@ CRT0_DATA="$DATA_S ${MTFS_S:-}" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \
 UNIFIED_PRELUDE="${KERN_UNIFIED_PRELUDE:-1}" \
-    "$ROOT_DIR/compile-gen2.sh" -o "$TMP/kernel.bin" \
+    "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$TMP/kernel.bin" \
     "$KERNEL_TC" 2>/dev/null
 
 if [ ! -s "$TMP/kernel.bin" ]; then

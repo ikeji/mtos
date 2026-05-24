@@ -21,7 +21,7 @@ trap "rm -rf '$TMP'" EXIT
 if [ "${FULL_TEST:-0}" = "1" ]; then
     t0=$(time_ms)
     GEN2_DIR="$_GEN2_TMP" \
-        "$ROOT_DIR/compile-gen2.sh" -o "$TMP/test_kmalloc" \
+        "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$TMP/test_kmalloc" \
         "$SCRIPT_DIR/test_kmalloc.tc" 2>/dev/null
     if [ -x "$TMP/test_kmalloc" ]; then
         out=$("$QEMU" "$TMP/test_kmalloc" 2>/dev/null)
@@ -45,7 +45,7 @@ if [ "${FULL_TEST:-0}" = "1" ] && command -v qemu-system-riscv32 >/dev/null 2>&1
     CRT0="$VIRT_CRT0" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$_GEN2_TMP" \
-        "$ROOT_DIR/compile-gen2.sh" -o "$TMP/test_kernel1" \
+        "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$TMP/test_kernel1" \
         "$SCRIPT_DIR/test_kernel1.tc" 2>/dev/null
     if [ -s "$TMP/test_kernel1" ]; then
         k1_out=$(timeout 5 qemu-system-riscv32 -smp 1 -nographic \

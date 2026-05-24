@@ -38,8 +38,8 @@ if command -v "$QEMU" >/dev/null 2>&1 && command -v "$RISCV_CC" >/dev/null 2>&1;
         mkdir -p "$SHARED_GEN2_DIR"
         for t in parse sigscan tcheck codegen bc2asm bcrun asm_pass2 asm_pass3; do
             if [ ! -x "$SHARED_GEN2_DIR/$t" ]; then
-                "$ROOT_DIR/compile-gen1.sh" -o "$SHARED_GEN2_DIR/$t" \
-                    "$ROOT_DIR/compiler/$t.tc" 2>/dev/null
+                "$ROOT_DIR/compiler/scripts/compile-gen1.sh" -o "$SHARED_GEN2_DIR/$t" \
+                    "$ROOT_DIR/compiler/src/$t.tc" 2>/dev/null
             fi
         done
     fi

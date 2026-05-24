@@ -40,32 +40,32 @@ build/gen1/bc2asm: compiler/bootstrap/bc2asm.c | build/gen1
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Gen2 ツールを compile-gen1.sh で build。transitive import 追跡は
-# recipe 末尾で `tools/tc_deps_to_d.sh` が .d を書き出し、top Makefile
+# recipe 末尾で `compiler/scripts/tc_deps_to_d.sh` が .d を書き出し、top Makefile
 # が `-include` で取り込む (Phase B)。2 回目以降の make test はこの .d
 # で「触っていない .tc 経由のツール」を正しくスキップできる。
 build/gen2:
 	mkdir -p $@
 
-build/gen2/%: compiler/src/%.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh | build/gen2
-	./compile-gen1.sh -o $@ $<
-	./tools/tc_deps_to_d.sh $@ $< > $@.d
+build/gen2/%: compiler/src/%.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh | build/gen2
+	./compiler/scripts/compile-gen1.sh -o $@ $<
+	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
 # Phase 8: bin2uf2 host tool ported to TC. Built from tools/bin2uf2.tc
 # the same way Gen2 tools are. Produces an RV32 ELF run via
 # qemu-riscv32 — replaces the python3 tools/bin2uf2.py invocation in
 # the kernel build path.
-build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
-	./compile-gen1.sh -o $@ $<
-	./tools/tc_deps_to_d.sh $@ $< > $@.d
+build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
+	./compiler/scripts/compile-gen1.sh -o $@ $<
+	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
 # Phase 8: mkfs host tool ported to TC. Reads a directory tree and
 # emits a flat MyTinyFS image, byte-exact with tools/mkfs.py
 # (including its 4-byte-per-real-inode tail truncation so existing
 # md5 fixtures still match). Uses statx (291) for path stat — qemu
 # RISC-V user mode doesn't implement fstat (80) or newfstatat (79).
-build/gen2/mkfs: tools/mkfs.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
-	./compile-gen1.sh -o $@ $<
-	./tools/tc_deps_to_d.sh $@ $< > $@.d
+build/gen2/mkfs: tools/mkfs.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
+	./compiler/scripts/compile-gen1.sh -o $@ $<
+	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
 gen2-tools: $(GEN2_TOOLS)
 
@@ -85,9 +85,9 @@ GEN3_TOOLS = $(addprefix build/gen3/,$(GEN3_NAMES))
 build/gen3:
 	mkdir -p $@
 
-build/gen3/%: compiler/%.tc $(GEN2_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh | build/gen3
-	GEN2_DIR=build/gen2 ./compile-gen2.sh -o $@ $< 2>/dev/null
-	./tools/tc_deps_to_d.sh $@ $< > $@.d
+build/gen3/%: compiler/src/%.tc $(GEN2_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh | build/gen3
+	GEN2_DIR=build/gen2 ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
+	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
 gen3-tools: $(GEN3_TOOLS)
 
@@ -106,8 +106,8 @@ KERNEL_S_SOURCES  := kernel/platform_virt.s kernel/platform_pico2.s \
                      kernel/crt0_pico2_data.s \
                      kernel/tasks/task_crt0.s kernel/tasks/task_data.s
 
-RUNTIME_DEPS := $(shell tools/collect_imports.sh compiler/src/runtime.tc 2>/dev/null)
-LIBTC_DEPS   := $(shell tools/collect_imports.sh kernel/tasks/libtc/libtc.tc 2>/dev/null)
+RUNTIME_DEPS := $(shell compiler/scripts/collect_imports.sh compiler/src/runtime.tc 2>/dev/null)
+LIBTC_DEPS   := $(shell compiler/scripts/collect_imports.sh kernel/tasks/libtc/libtc.tc 2>/dev/null)
 
 # task の定義は kernel/tasks/*/task.mk から include。各 task.mk が
 # GUEST_TASKS += <name> または EXTRA_GUEST_TASKS += <name> と
@@ -190,7 +190,7 @@ build/kernel/tasks:
 # .bin が存在しないので無条件にビルドされ、.d が生成される。
 build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
     kernel/tasks/task_crt0.s kernel/tasks/task_data.s build/kernel/task_sizes.sh \
-    compile-gen2.sh | build/kernel/tasks
+    compiler/scripts/compile-gen2.sh | build/kernel/tasks
 	@echo "Building task: $*" >&2
 	@_tmp=$$(mktemp -d) && \
 	. build/kernel/task_sizes.sh && \
@@ -202,9 +202,9 @@ build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    EXTRA_S="$(TASK_EXTRA_S_$*)" \
-	    ./compile-gen2.sh -o $@ kernel/tasks/$*/$*.tc 2>/dev/null && \
+	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/tasks/$*/$*.tc 2>/dev/null && \
 	rm -rf "$$_tmp"
-	@tools/tc_deps_to_d.sh $@ kernel/tasks/$*/$*.tc > $@.d
+	@compiler/scripts/tc_deps_to_d.sh $@ kernel/tasks/$*/$*.tc > $@.d
 
 GUEST_TASK_BINS  := $(foreach t,$(GUEST_TASKS),build/kernel/tasks/$(t).bin)
 EXTRA_TASK_BINS  := $(foreach t,$(EXTRA_GUEST_TASKS),build/kernel/tasks/$(t).bin)
@@ -411,7 +411,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 # pico2: ディスクイメージを XIP flash に埋め込む
 
 KERNEL_COMPILE_DEPS := $(KERNEL_TC_SOURCES) $(KERNEL_S_SOURCES) \
-    $(SHARED_S) $(GEN2_TOOLS) compile-gen2.sh
+    $(SHARED_S) $(GEN2_TOOLS) compiler/scripts/compile-gen2.sh
 
 build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	@echo "Building kernel: virt" >&2
@@ -419,7 +419,7 @@ build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	    CRT0_DATA=kernel/crt0_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
-	    ./compile-gen2.sh -o $@ kernel/kernel.tc 2>/dev/null
+	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/kernel.tc 2>/dev/null
 
 PICO2_DISK = build/kernel/disk.img
 # Recipe shared by pico2_kernel.uf2 and pico2_kernel_extra.uf2.
@@ -439,7 +439,7 @@ define PICO2_KERNEL_RECIPE
 	    CRT0_DATA="kernel/crt0_pico2_data.s $$_tmp/mtfs_image.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
-	    ./compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/kernel_pico2.tc 2>/dev/null && \
+	    ./compiler/scripts/compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/kernel_pico2.tc 2>/dev/null && \
 	_ksz=$$(wc -c < "$$_tmp/kernel.bin") && \
 	_dsz=$$(wc -c < $(PICO2_DISK)) && \
 	printf '  kernel.bin: %s bytes, disk: %s bytes\n' "$$_ksz" "$$_dsz" >&2 && \
@@ -544,21 +544,21 @@ run-pico2-console-land: build/kernel/pico2_kernel_console_land.uf2
 build/test/asm:
 	mkdir -p $@
 
-TEST_ASM_DEPS := tests/virt_crt0.s $(RUNTIME_DEPS) $(GEN2_TOOLS) compile-gen2.sh
+TEST_ASM_DEPS := tests/virt_crt0.s $(RUNTIME_DEPS) $(GEN2_TOOLS) compiler/scripts/compile-gen2.sh
 
 build/test/asm/hello2_virt.bin: tests/hello2.tc $(TEST_ASM_DEPS) | build/test/asm
 	CRT0=tests/virt_crt0.s ASM_PROLOGUE='; raw' GEN2_DIR=build/gen2 \
-	    ./compile-gen2.sh -o $@ $< 2>/dev/null
+	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
 build/test/asm/test_timer.bin: tests/test_timer.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
 	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
 	    GEN2_DIR=build/gen2 UNIFIED_PRELUDE=0 \
-	    ./compile-gen2.sh -o $@ $< 2>/dev/null
+	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
 build/test/asm/test_echo.bin: tests/test_echo.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
 	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
 	    GEN2_DIR=build/gen2 \
-	    ./compile-gen2.sh -o $@ $< 2>/dev/null
+	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
 TEST_ASM_BINS := build/test/asm/hello2_virt.bin \
                  build/test/asm/test_timer.bin \
@@ -580,7 +580,7 @@ BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin \
 TEST_SCRIPTS := $(wildcard tests/*.sh)
 TEST_INPUTS  := $(wildcard tests/*.tc) $(wildcard tests/import/*.tc)
 TEST_GOLDEN  := $(wildcard tests/golden/*) $(wildcard tests/golden/tc/*)
-TEST_SUPPORT := tc_run.sh tc_run_all.sh compile-gen1.sh compile-gen2.sh compile-gen3.sh
+TEST_SUPPORT := tc_run.sh tc_run_all.sh compiler/scripts/compile-gen1.sh compiler/scripts/compile-gen2.sh compiler/scripts/compile-gen3.sh
 
 ALL_TEST_DEPS := $(BUILD_DEPS) $(TEST_SCRIPTS) $(TEST_INPUTS) $(TEST_GOLDEN) $(TEST_SUPPORT)
 

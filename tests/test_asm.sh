@@ -126,7 +126,7 @@ else
     CRT0="$VIRT_CRT0" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$_GEN2_TMP" \
-        "$ROOT_DIR/compile-gen2.sh" -o "$BIN" "$HELLO_TC" 2>/dev/null
+        "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$BIN" "$HELLO_TC" 2>/dev/null
 fi
 compile_elapsed=$(( $(time_ms) - t0 ))
 
@@ -168,7 +168,7 @@ else
     CRT0_DATA="$ROOT_DIR/compiler/runtime/linux/crt0_tc_data.s" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$_GEN2_TMP" \
-        "$ROOT_DIR/compile-gen2.sh" -o "$TIMER_BIN" "$TIMER_TC" 2>/dev/null
+        "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$TIMER_BIN" "$TIMER_TC" 2>/dev/null
 fi
 compile_elapsed=$(( $(time_ms) - t0 ))
 
@@ -207,7 +207,7 @@ else
     CRT0_DATA="$ROOT_DIR/compiler/runtime/linux/crt0_tc_data.s" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$_GEN2_TMP" \
-        "$ROOT_DIR/compile-gen2.sh" -o "$ECHO_BIN" "$ECHO_TC" 2>/dev/null
+        "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$ECHO_BIN" "$ECHO_TC" 2>/dev/null
 fi
 compile_elapsed=$(( $(time_ms) - t0 ))
 

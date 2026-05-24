@@ -7,7 +7,7 @@
 # Resolves imports automatically. Each file compiled separately, linked with GCC.
 
 set -e
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CODEGEN="$ROOT_DIR/build/gen1/codegen"
 BC2ASM="$ROOT_DIR/build/gen1/bc2asm"
 RISCV_CC="riscv64-unknown-elf-gcc"

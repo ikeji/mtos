@@ -15,7 +15,7 @@
 #           qemu-riscv32
 
 set -e
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PARSE="$ROOT_DIR/build/gen1/parse"
 QEMU="${QEMU:-qemu-riscv32}"
 CRT0="$ROOT_DIR/compiler/runtime/linux/crt0_tc.s"

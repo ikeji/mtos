@@ -58,7 +58,7 @@ CRT0="$TMP/host_crt0.s" CRT0_DATA="$TMP/host_data.s" ASM_PROLOGUE="; raw" \
     CACHED_S_DIR="$ROOT/build/kernel/shared" \
     PRELUDE_NAME="p" \
     INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt" \
-    "$ROOT/compile-gen2.sh" -o "$TMP/host_k.bin" \
+    "$ROOT/compiler/scripts/compile-gen2.sh" -o "$TMP/host_k.bin" \
     "$ROOT/kernel/kernel_pico2.tc" 2>/dev/null
 # Phase 8: TC port runs via qemu-riscv32 instead of python3.
 qemu-riscv32 "$ROOT/build/gen2/bin2uf2" "$TMP/host_k.bin" "$TMP/host_k.uf2" >/dev/null
