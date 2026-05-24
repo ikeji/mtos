@@ -344,7 +344,7 @@ fn draw_close_button(fb: i32, frame: U8Array, x: i32, y: i32) -> void {
     return;
 }
 
-// Paint the whole desktop: teal background, an "MS-DOS Prompt" window
+// Paint the whole desktop: teal background, an "MTOS Prompt" window
 // hosting the cell grid, and a Start-button + app-button + clock
 // taskbar across the bottom. Geometry is fixed for 480x320 landscape.
 fn draw_chrome(fb: i32, frame: U8Array) -> void {
@@ -369,7 +369,7 @@ fn draw_chrome(fb: i32, frame: U8Array) -> void {
     fb_fill(fb, frame, tx, ty, tw, th, COLOR_TITLE_BG);
     draw_titlebar_icon(fb, frame, tx + 2, ty + 2);
     draw_text_at(fb, frame, tx + 20, ty + 1,
-                 "MS-DOS Prompt", COLOR_TITLE_FG, COLOR_TITLE_BG);
+                 "MTOS Prompt", COLOR_TITLE_FG, COLOR_TITLE_BG);
     draw_close_button(fb, frame, tx + tw - 18, ty + 1);
 
     // 4. Content area (16..463 × 40..279, 56 cols × 15 rows of 8x16).
@@ -410,7 +410,7 @@ fn draw_chrome(fb: i32, frame: U8Array) -> void {
     draw_3d_bevel(fb, frame, abx, aby, abw, abh, 0);    // sunken
     draw_titlebar_icon(fb, frame, abx + 4, aby + 3);
     draw_text_at(fb, frame, abx + 22, aby + 2,
-                 "MS-DOS Prompt", COLOR_SHADOW, COLOR_FRAME);
+                 "MTOS Prompt", COLOR_SHADOW, COLOR_FRAME);
 
     // 8. Clock placeholder at the far right of the taskbar. We blit
     //    "00:00" here so the slot is visible immediately; the real
