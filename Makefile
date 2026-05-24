@@ -104,7 +104,7 @@ KERNEL_TC_SOURCES := $(wildcard kernel/*.tc)
 KERNEL_S_SOURCES  := kernel/platform_virt.s kernel/platform_pico2.s \
                      kernel/trap_common.s kernel/crt0_data.s \
                      kernel/crt0_pico2_data.s \
-                     kernel/tasks/task_crt0.s kernel/tasks/task_data.s
+                     compiler/runtime/mtos/task_crt0.s compiler/runtime/mtos/task_data.s
 
 RUNTIME_DEPS := $(shell compiler/scripts/collect_imports.sh compiler/src/runtime.tc 2>/dev/null)
 LIBTC_DEPS   := $(shell compiler/scripts/collect_imports.sh kernel/tasks/libtc/libtc.tc 2>/dev/null)
@@ -189,7 +189,7 @@ build/kernel/tasks:
 # .tc ファイル依存は .d ファイル (tc_deps_to_d.sh) が提供する。初回は
 # .bin が存在しないので無条件にビルドされ、.d が生成される。
 build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
-    kernel/tasks/task_crt0.s kernel/tasks/task_data.s build/kernel/task_sizes.sh \
+    compiler/runtime/mtos/task_crt0.s compiler/runtime/mtos/task_data.s build/kernel/task_sizes.sh \
     compiler/scripts/compile-gen2.sh | build/kernel/tasks
 	@echo "Building task: $*" >&2
 	@_tmp=$$(mktemp -d) && \
@@ -197,8 +197,8 @@ build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
 	_arena=$$(task_arena_size $*) && \
 	_stack=$$(task_stack_size $*) && \
 	printf '    .text\n    .word %s\n    .word %s\n' "$$_arena" "$$_stack" > "$$_tmp/hdr.s" && \
-	CRT0="$$_tmp/hdr.s kernel/tasks/task_crt0.s" \
-	    CRT0_DATA=kernel/tasks/task_data.s \
+	CRT0="$$_tmp/hdr.s compiler/runtime/mtos/task_crt0.s" \
+	    CRT0_DATA=compiler/runtime/mtos/task_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    EXTRA_S="$(TASK_EXTRA_S_$*)" \
@@ -218,8 +218,8 @@ ALL_TASK_BINS    := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
 # バイナリとは独立したターゲット。
 
 DISK_STATIC_DEPS := tests/phase7_hello.tc tests/phase7_min.tc \
-    tests/phase7_hello_world.tc kernel/tasks/task_crt0.s \
-    kernel/tasks/task_data.s build/gen2/mkfs
+    tests/phase7_hello_world.tc compiler/runtime/mtos/task_crt0.s \
+    compiler/runtime/mtos/task_data.s build/gen2/mkfs
 
 # disk.img は kernel/kern.conf があれば /etc/kern.conf としてステージする
 # (なければカーネル側のハードコード init にフォールバック)。
@@ -292,9 +292,9 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img b
 	{ cp tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
-	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
+	  cat compiler/runtime/mtos/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
-	cp kernel/tasks/task_data.s "$$_r/prelude_tail.s" && \
+	cp compiler/runtime/mtos/task_data.s "$$_r/prelude_tail.s" && \
 	$(PRELUDE_PRE_ENCODE) && \
 	printf '(imports)\n' > "$$_r/empty_imports.txt" && \
 	printf '(imports\n' > "$$_r/imports_open.txt" && \
@@ -355,9 +355,9 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp tests/fixtures/pico2_run_sb.sh "$$_r/pico2_run_sb.sh" 2>/dev/null || true; } && \
 	{ cp tests/fixtures/pico2_md5_test.sh "$$_r/pico2_md5_test.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
-	  cat kernel/tasks/task_crt0.s; cat build/kernel/shared/runtime.s; \
+	  cat compiler/runtime/mtos/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
-	cp kernel/tasks/task_data.s "$$_r/prelude_tail.s" && \
+	cp compiler/runtime/mtos/task_data.s "$$_r/prelude_tail.s" && \
 	$(PRELUDE_PRE_ENCODE) && \
 	printf '(imports)\n' > "$$_r/empty_imports.txt" && \
 	printf '(imports\n' > "$$_r/imports_open.txt" && \
@@ -377,8 +377,8 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	cp kernel/platform_pico2.s "$$_r/src/platform_pico2.s" && \
 	cp kernel/trap_common.s "$$_r/src/trap_common.s" && \
 	cp kernel/crt0_pico2_data.s "$$_r/src/crt0_pico2_data.s" && \
-	cp kernel/tasks/task_crt0.s "$$_r/src/task_crt0.s" && \
-	cp kernel/tasks/task_data.s "$$_r/src/task_data.s" && \
+	cp compiler/runtime/mtos/task_crt0.s "$$_r/src/task_crt0.s" && \
+	cp compiler/runtime/mtos/task_data.s "$$_r/src/task_data.s" && \
 	printf '; raw\n' > "$$_r/src/raw.s" && \
 	for spec in parse:$(TASK_ARENA_parse):$(TASK_STACK_parse) \
 	            sigscan:$(TASK_ARENA_sigscan):$(TASK_STACK_sigscan) \

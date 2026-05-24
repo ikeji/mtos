@@ -78,8 +78,8 @@ else
     echo "KEEP_TMP set: leaving $TMP after build" >&2
 fi
 
-TASK_CRT0="$KERN_DIR/tasks/task_crt0.s"
-TASK_DATA="$KERN_DIR/tasks/task_data.s"
+TASK_CRT0="$ROOT_DIR/compiler/runtime/mtos/task_crt0.s"
+TASK_DATA="$ROOT_DIR/compiler/runtime/mtos/task_data.s"
 
 # ===== Per-task arena / stack sizes (K3) =====
 #
