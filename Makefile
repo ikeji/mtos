@@ -46,7 +46,7 @@ build/gen1/bc2asm: compiler/bootstrap/bc2asm.c | build/gen1
 build/gen2:
 	mkdir -p $@
 
-build/gen2/%: compiler/%.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh | build/gen2
+build/gen2/%: compiler/src/%.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh | build/gen2
 	./compile-gen1.sh -o $@ $<
 	./tools/tc_deps_to_d.sh $@ $< > $@.d
 
@@ -106,7 +106,7 @@ KERNEL_S_SOURCES  := kernel/platform_virt.s kernel/platform_pico2.s \
                      kernel/crt0_pico2_data.s \
                      kernel/tasks/task_crt0.s kernel/tasks/task_data.s
 
-RUNTIME_DEPS := $(shell tools/collect_imports.sh compiler/runtime.tc 2>/dev/null)
+RUNTIME_DEPS := $(shell tools/collect_imports.sh compiler/src/runtime.tc 2>/dev/null)
 LIBTC_DEPS   := $(shell tools/collect_imports.sh kernel/tasks/libtc/libtc.tc 2>/dev/null)
 
 # task の定義は kernel/tasks/*/task.mk から include。各 task.mk が
@@ -154,7 +154,7 @@ build/kernel/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
 build/kernel/shared:
 	mkdir -p $@
 
-build/kernel/shared/runtime.s: compiler/runtime.tc $(RUNTIME_DEPS) $(GEN2_TOOLS) | build/kernel/shared
+build/kernel/shared/runtime.s: compiler/src/runtime.tc $(RUNTIME_DEPS) $(GEN2_TOOLS) | build/kernel/shared
 	@echo "Pre-compiling runtime.tc" >&2
 	@_ast=$$(mktemp) && _th=$$(mktemp) && \
 	build/gen1/parse $< > "$$_ast" && \
@@ -311,11 +311,11 @@ build/kernel/disk-demo.img:         tests/fixtures/kern_demo.conf
 build/kernel/disk-console.img:      tests/fixtures/kern_console.conf
 build/kernel/disk-console-land.img: tests/fixtures/kern_console_land.conf
 
-EXTRA_SRC_DEPS := compiler/string_buffer.tc compiler/source_reader.tc \
-    compiler/strlib.tc compiler/ast_node.tc compiler/asm_common.tc \
-    compiler/parse.tc compiler/sigscan.tc compiler/tcheck.tc \
-    compiler/codegen.tc compiler/bc2asm.tc compiler/asm_pass2.tc \
-    compiler/asm_pass3.tc compiler/runtime.tc \
+EXTRA_SRC_DEPS := compiler/src/string_buffer.tc compiler/src/source_reader.tc \
+    compiler/src/strlib.tc compiler/src/ast_node.tc compiler/src/asm_common.tc \
+    compiler/src/parse.tc compiler/src/sigscan.tc compiler/src/tcheck.tc \
+    compiler/src/codegen.tc compiler/src/bc2asm.tc compiler/src/asm_pass2.tc \
+    compiler/src/asm_pass3.tc compiler/src/runtime.tc \
     kernel/tasks/libtc/libtc.tc \
     kernel/kernel_common.tc kernel/block_flash.tc kernel/block_sd.tc \
     kernel/tmpfs.tc kernel/fatfs.tc kernel/mtfs.tc kernel/procfs.tc \
@@ -550,13 +550,13 @@ build/test/asm/hello2_virt.bin: tests/hello2.tc $(TEST_ASM_DEPS) | build/test/as
 	CRT0=tests/virt_crt0.s ASM_PROLOGUE='; raw' GEN2_DIR=build/gen2 \
 	    ./compile-gen2.sh -o $@ $< 2>/dev/null
 
-build/test/asm/test_timer.bin: tests/test_timer.tc $(TEST_ASM_DEPS) compiler/crt0_tc_data.s | build/test/asm
-	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/crt0_tc_data.s ASM_PROLOGUE='; raw' \
+build/test/asm/test_timer.bin: tests/test_timer.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
+	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
 	    GEN2_DIR=build/gen2 UNIFIED_PRELUDE=0 \
 	    ./compile-gen2.sh -o $@ $< 2>/dev/null
 
-build/test/asm/test_echo.bin: tests/test_echo.tc $(TEST_ASM_DEPS) compiler/crt0_tc_data.s | build/test/asm
-	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/crt0_tc_data.s ASM_PROLOGUE='; raw' \
+build/test/asm/test_echo.bin: tests/test_echo.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
+	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
 	    GEN2_DIR=build/gen2 \
 	    ./compile-gen2.sh -o $@ $< 2>/dev/null
 

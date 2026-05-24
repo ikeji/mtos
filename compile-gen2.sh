@@ -41,9 +41,9 @@ set -o pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSE="$ROOT_DIR/build/gen1/parse"
 QEMU="${QEMU:-qemu-riscv32}"
-CRT0="${CRT0:-$ROOT_DIR/compiler/crt0_tc.s}"
-CRT0_DATA="${CRT0_DATA:-$ROOT_DIR/compiler/crt0_tc_data.s}"
-RUNTIME_TC="${RUNTIME_TC:-$ROOT_DIR/compiler/runtime.tc}"
+CRT0="${CRT0:-$ROOT_DIR/compiler/runtime/linux/crt0_tc.s}"
+CRT0_DATA="${CRT0_DATA:-$ROOT_DIR/compiler/runtime/linux/crt0_tc_data.s}"
+RUNTIME_TC="${RUNTIME_TC:-$ROOT_DIR/compiler/src/runtime.tc}"
 # Optional directive lines prepended to asm input (e.g. "; raw" for Pico 2 / virt).
 ASM_PROLOGUE="${ASM_PROLOGUE:-}"
 

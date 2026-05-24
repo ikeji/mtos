@@ -8,7 +8,7 @@ if [ -z "$SCRIPT_DIR" ]; then
 fi
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 GOLDEN_DIR="$SCRIPT_DIR/golden"
-TC_DIR="$ROOT_DIR/compiler"
+TC_DIR="$ROOT_DIR/compiler/src"
 COMPILER_DIR="$ROOT_DIR/compiler/bootstrap"
 
 GEN1_DIR="$ROOT_DIR/build/gen1"

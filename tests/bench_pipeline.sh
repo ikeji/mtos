@@ -49,7 +49,7 @@ fi
 
 # Default inputs cover both ends of the size spectrum.
 if [ $# -eq 0 ]; then
-    set -- "$ROOT_DIR/tests/phase7_hello_world.tc" "$ROOT_DIR/compiler/bc2asm.tc"
+    set -- "$ROOT_DIR/tests/phase7_hello_world.tc" "$ROOT_DIR/compiler/src/bc2asm.tc"
 fi
 
 TMP=$(mktemp -d)
@@ -151,7 +151,7 @@ for input in "$@"; do
     fi
 
     # Compile runtime + each import to .s for the link bundle.
-    compile_one "$ROOT_DIR/compiler/runtime.tc" "$work/runtime.s" "$work/imports.th"
+    compile_one "$ROOT_DIR/compiler/src/runtime.tc" "$work/runtime.s" "$work/imports.th"
     LINK_S=("$work/runtime.s")
     for imp in "${IMPORT_FILES[@]}"; do
         ib=$(basename "$imp" .tc)
@@ -200,10 +200,10 @@ for input in "$@"; do
     # + crt0_data, matching compile-gen2.sh's recipe.
     {
         printf '; raw\n'
-        cat "$ROOT_DIR/compiler/crt0_tc.s"
+        cat "$ROOT_DIR/compiler/runtime/linux/crt0_tc.s"
         for s in "${LINK_S[@]}"; do cat "$s"; done
         cat "$work/in.s"
-        cat "$ROOT_DIR/compiler/crt0_tc_data.s"
+        cat "$ROOT_DIR/compiler/runtime/linux/crt0_tc_data.s"
     } > "$work/full.s"
 
     # Stage 6: asm_pass1 (full.s → .idx + per-section .bin + .reloc).

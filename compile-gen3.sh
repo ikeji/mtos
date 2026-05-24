@@ -18,9 +18,9 @@ set -e
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSE="$ROOT_DIR/build/gen1/parse"
 QEMU="${QEMU:-qemu-riscv32}"
-CRT0="$ROOT_DIR/compiler/crt0_tc.s"
-CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s"
-RUNTIME_TC="$ROOT_DIR/compiler/runtime.tc"
+CRT0="$ROOT_DIR/compiler/runtime/linux/crt0_tc.s"
+CRT0_DATA="$ROOT_DIR/compiler/runtime/linux/crt0_tc_data.s"
+RUNTIME_TC="$ROOT_DIR/compiler/src/runtime.tc"
 
 OUTFILE="a.out"
 TC_FILE=""

@@ -146,7 +146,7 @@ precompile_shared() {
 }
 
 echo "Pre-compiling runtime.tc (shared)" >&2
-precompile_shared "$ROOT_DIR/compiler/runtime.tc" "$CACHE_DIR/runtime.s"
+precompile_shared "$ROOT_DIR/compiler/src/runtime.tc" "$CACHE_DIR/runtime.s"
 if [ ! -s "$CACHE_DIR/runtime.s" ]; then
     echo "Error: runtime.tc pre-compile failed" >&2
     exit 1

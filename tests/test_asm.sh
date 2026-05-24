@@ -41,7 +41,7 @@ trap 'rm -rf "$TMP"' EXIT
 # tcheck/codegen/bc2asm work (3 programs × ~1.5 s runtime build each).
 CACHE_DIR="$TMP/sc"
 mkdir -p "$CACHE_DIR"
-RUNTIME_TC="$ROOT_DIR/compiler/runtime.tc"
+RUNTIME_TC="$ROOT_DIR/compiler/src/runtime.tc"
 "$PARSE" "$RUNTIME_TC" > "$TMP/runtime.ast"
 "$QEMU" "$_GEN2_TMP/sigscan" < "$TMP/runtime.ast" > "$TMP/runtime.th" 2>/dev/null
 {
@@ -165,7 +165,7 @@ if [ -s "$PREBUILT_DIR/test_timer.bin" ]; then
     cp "$PREBUILT_DIR/test_timer.bin" "$TIMER_BIN"
 else
     CRT0="$VIRT_CRT0" \
-    CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
+    CRT0_DATA="$ROOT_DIR/compiler/runtime/linux/crt0_tc_data.s" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$_GEN2_TMP" \
         "$ROOT_DIR/compile-gen2.sh" -o "$TIMER_BIN" "$TIMER_TC" 2>/dev/null
@@ -204,7 +204,7 @@ if [ -s "$PREBUILT_DIR/test_echo.bin" ]; then
     cp "$PREBUILT_DIR/test_echo.bin" "$ECHO_BIN"
 else
     CRT0="$VIRT_CRT0" \
-    CRT0_DATA="$ROOT_DIR/compiler/crt0_tc_data.s" \
+    CRT0_DATA="$ROOT_DIR/compiler/runtime/linux/crt0_tc_data.s" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$_GEN2_TMP" \
         "$ROOT_DIR/compile-gen2.sh" -o "$ECHO_BIN" "$ECHO_TC" 2>/dev/null
