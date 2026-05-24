@@ -45,15 +45,15 @@ fi
 
 case "$TARGET" in
     virt)
-        PLATFORM_S="$KERN_DIR/platform_virt.s"
-        DATA_S="$KERN_DIR/crt0_data.s"
-        KERNEL_TC="$KERN_DIR/kernel.tc"
+        PLATFORM_S="$KERN_DIR/platform/virt/platform_virt.s"
+        DATA_S="$KERN_DIR/platform/virt/crt0_data.s"
+        KERNEL_TC="$KERN_DIR/src/kernel.tc"
         : "${OUTFILE:=kernel_virt.bin}"
         ;;
     pico2)
-        PLATFORM_S="$KERN_DIR/platform_pico2.s"
-        DATA_S="$KERN_DIR/crt0_pico2_data.s"
-        KERNEL_TC="$KERN_DIR/kernel_pico2.tc"
+        PLATFORM_S="$KERN_DIR/platform/pico2/platform_pico2.s"
+        DATA_S="$KERN_DIR/platform/pico2/crt0_pico2_data.s"
+        KERNEL_TC="$KERN_DIR/src/kernel_pico2.tc"
         : "${OUTFILE:=kernel_pico2.uf2}"
         ;;
     *)
@@ -365,7 +365,7 @@ echo "Building kernel: $TARGET" >&2
 # byte-exact against KERN_UNIFIED_PRELUDE=0 for both virt and pico2
 # kernels at the time of switchover. Override =0 only when bisecting
 # asm_pass1 changes.
-CRT0="$PLATFORM_S $KERN_DIR/trap_common.s" \
+CRT0="$PLATFORM_S $KERN_DIR/src/trap_common.s" \
 CRT0_DATA="$DATA_S ${MTFS_S:-}" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \

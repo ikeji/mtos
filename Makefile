@@ -100,10 +100,10 @@ gen3-tools: $(GEN3_TOOLS)
 # ディスクイメージは 2 種 (標準 / extra)。カーネルバイナリは
 # ディスクと独立 (virt)。.NOTPARALLEL: で serial 実行を強制。
 
-KERNEL_TC_SOURCES := $(wildcard kernel/*.tc)
-KERNEL_S_SOURCES  := kernel/platform_virt.s kernel/platform_pico2.s \
-                     kernel/trap_common.s kernel/crt0_data.s \
-                     kernel/crt0_pico2_data.s \
+KERNEL_TC_SOURCES := $(wildcard kernel/src/*.tc) $(wildcard kernel/platform/virt/*.tc) $(wildcard kernel/platform/pico2/*.tc)
+KERNEL_S_SOURCES  := kernel/platform/virt/platform_virt.s kernel/platform/pico2/platform_pico2.s \
+                     kernel/src/trap_common.s kernel/platform/virt/crt0_data.s \
+                     kernel/platform/pico2/crt0_pico2_data.s \
                      compiler/runtime/mtos/task_crt0.s compiler/runtime/mtos/task_data.s
 
 RUNTIME_DEPS := $(shell compiler/scripts/collect_imports.sh compiler/src/runtime.tc 2>/dev/null)
@@ -317,11 +317,11 @@ EXTRA_SRC_DEPS := compiler/src/string_buffer.tc compiler/src/source_reader.tc \
     compiler/src/codegen.tc compiler/src/bc2asm.tc compiler/src/asm_pass2.tc \
     compiler/src/asm_pass3.tc compiler/src/runtime.tc \
     kernel/tasks/libtc/libtc.tc \
-    kernel/kernel_common.tc kernel/block_flash.tc kernel/block_sd.tc \
-    kernel/tmpfs.tc kernel/fatfs.tc kernel/mtfs.tc kernel/procfs.tc \
-    kernel/vfs.tc kernel/loader.tc kernel/kernel_pico2.tc \
-    kernel/platform_pico2.tc \
-    kernel/platform_pico2.s kernel/trap_common.s kernel/crt0_pico2_data.s
+    kernel/src/kernel_common.tc kernel/platform/pico2/block_flash.tc kernel/platform/pico2/block_sd.tc \
+    kernel/src/tmpfs.tc kernel/src/fatfs.tc kernel/src/mtfs.tc kernel/src/procfs.tc \
+    kernel/src/vfs.tc kernel/src/loader.tc kernel/src/kernel_pico2.tc \
+    kernel/platform/pico2/platform_pico2.tc \
+    kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s kernel/platform/pico2/crt0_pico2_data.s
 
 build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 tests/fixtures/msh_smoke.sh tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass1.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass3.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_platform.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/bin2s_incbin.sh build/kernel/disk.img | build/kernel
 	@echo "Building disk image (extra): $@" >&2
@@ -368,15 +368,18 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	fi && \
 	mkdir -p "$$_r/src" && \
 	for s in string_buffer.tc source_reader.tc strlib.tc ast_node.tc asm_common.tc asm_dead_strip.tc parse.tc sigscan.tc tcheck.tc codegen.tc bc2asm.tc asm_pass1.tc asm_pass2.tc asm_pass2_lib.tc asm_pass3.tc asm_pass3_lib.tc runtime.tc; do \
-	    cp compiler/$$s "$$_r/src/$$s" || exit 1; \
+	    cp compiler/src/$$s "$$_r/src/$$s" || exit 1; \
 	done && \
 	cp kernel/tasks/libtc/libtc.tc "$$_r/src/libtc.tc" && \
-	for s in kernel_common.tc platform_pico2.tc block_flash.tc block_sd.tc tmpfs.tc fatfs.tc mtfs.tc procfs.tc vfs.tc loader.tc kernel_pico2.tc; do \
-	    cp kernel/$$s "$$_r/src/$$s" || exit 1; \
+	for s in kernel_common.tc tmpfs.tc fatfs.tc mtfs.tc procfs.tc vfs.tc loader.tc kernel_pico2.tc; do \
+	    cp kernel/src/$$s "$$_r/src/$$s" || exit 1; \
 	done && \
-	cp kernel/platform_pico2.s "$$_r/src/platform_pico2.s" && \
-	cp kernel/trap_common.s "$$_r/src/trap_common.s" && \
-	cp kernel/crt0_pico2_data.s "$$_r/src/crt0_pico2_data.s" && \
+	for s in platform_pico2.tc block_flash.tc block_sd.tc; do \
+	    cp kernel/platform/pico2/$$s "$$_r/src/$$s" || exit 1; \
+	done && \
+	cp kernel/platform/pico2/platform_pico2.s "$$_r/src/platform_pico2.s" && \
+	cp kernel/src/trap_common.s "$$_r/src/trap_common.s" && \
+	cp kernel/platform/pico2/crt0_pico2_data.s "$$_r/src/crt0_pico2_data.s" && \
 	cp compiler/runtime/mtos/task_crt0.s "$$_r/src/task_crt0.s" && \
 	cp compiler/runtime/mtos/task_data.s "$$_r/src/task_data.s" && \
 	printf '; raw\n' > "$$_r/src/raw.s" && \
@@ -415,11 +418,11 @@ KERNEL_COMPILE_DEPS := $(KERNEL_TC_SOURCES) $(KERNEL_S_SOURCES) \
 
 build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	@echo "Building kernel: virt" >&2
-	@CRT0="kernel/platform_virt.s kernel/trap_common.s" \
-	    CRT0_DATA=kernel/crt0_data.s \
+	@CRT0="kernel/platform/virt/platform_virt.s kernel/src/trap_common.s" \
+	    CRT0_DATA=kernel/platform/virt/crt0_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
-	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/kernel.tc 2>/dev/null
+	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/src/kernel.tc 2>/dev/null
 
 PICO2_DISK = build/kernel/disk.img
 # Recipe shared by pico2_kernel.uf2 and pico2_kernel_extra.uf2.
@@ -435,11 +438,11 @@ define PICO2_KERNEL_RECIPE
 	mkdir -p "$$_labdir" && \
 	cp $(PICO2_DISK) "$$_labdir/dx.img" && \
 	kernel/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
-	CRT0="kernel/platform_pico2.s kernel/trap_common.s" \
-	    CRT0_DATA="kernel/crt0_pico2_data.s $$_tmp/mtfs_image.s" \
+	CRT0="kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s" \
+	    CRT0_DATA="kernel/platform/pico2/crt0_pico2_data.s $$_tmp/mtfs_image.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
-	    ./compiler/scripts/compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/kernel_pico2.tc 2>/dev/null && \
+	    ./compiler/scripts/compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/src/kernel_pico2.tc 2>/dev/null && \
 	_ksz=$$(wc -c < "$$_tmp/kernel.bin") && \
 	_dsz=$$(wc -c < $(PICO2_DISK)) && \
 	printf '  kernel.bin: %s bytes, disk: %s bytes\n' "$$_ksz" "$$_dsz" >&2 && \

@@ -43,8 +43,8 @@ cp "$ROOT/build/kernel/disk-extra.img" "$TMP/disk-extra.img"
 # dir — so we also have to drop a sibling `dx.img` next to the lab
 # in compile-gen2's intermediate dir (see HOST_LAB_DIR below).
 "$ROOT/kernel/bin2s_incbin.sh" "$TMP/disk-extra.img" _mtfs_image dx.img > "$TMP/wrap.s" 2>/dev/null
-cat "$ROOT/kernel/platform_pico2.s" "$ROOT/kernel/trap_common.s" > "$TMP/host_crt0.s"
-cat "$ROOT/kernel/crt0_pico2_data.s" "$TMP/wrap.s" > "$TMP/host_data.s"
+cat "$ROOT/kernel/platform/pico2/platform_pico2.s" "$ROOT/kernel/src/trap_common.s" > "$TMP/host_crt0.s"
+cat "$ROOT/kernel/platform/pico2/crt0_pico2_data.s" "$TMP/wrap.s" > "$TMP/host_data.s"
 # Where compile-gen2.sh keeps its intermediates for this .tc.
 HOST_LAB_DIR="$ROOT/build/intermediate/gen2/kernel_pico2"
 mkdir -p "$HOST_LAB_DIR"
@@ -59,7 +59,7 @@ CRT0="$TMP/host_crt0.s" CRT0_DATA="$TMP/host_data.s" ASM_PROLOGUE="; raw" \
     PRELUDE_NAME="p" \
     INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt" \
     "$ROOT/compiler/scripts/compile-gen2.sh" -o "$TMP/host_k.bin" \
-    "$ROOT/kernel/kernel_pico2.tc" 2>/dev/null
+    "$ROOT/kernel/src/kernel_pico2.tc" 2>/dev/null
 # Phase 8: TC port runs via qemu-riscv32 instead of python3.
 qemu-riscv32 "$ROOT/build/gen2/bin2uf2" "$TMP/host_k.bin" "$TMP/host_k.uf2" >/dev/null
 HOST_BIN_MD5=$(md5sum "$TMP/host_k.bin" | awk '{print $1}')

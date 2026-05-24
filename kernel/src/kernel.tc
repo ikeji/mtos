@@ -3,16 +3,16 @@
 // Two tasks run concurrently, switched by timer interrupt.
 
 import "kernel_common.tc";
-import "platform_virt.tc";
-import "block_virtio.tc";
-import "block_fat_virtio.tc";
+import "../platform/virt/platform_virt.tc";
+import "../platform/virt/block_virtio.tc";
+import "../platform/virt/block_fat_virtio.tc";
 import "mtfs.tc";
 import "fatfs.tc";
 import "vfs.tc";
 import "loader.tc";
 // /dev/fb backend: a UART-dump stub (qemu virt has no SPI display).
 // Defines fb_backend_write, which devfs.tc forward-declares.
-import "dev_backend_virt.tc";
+import "../platform/virt/dev_backend_virt.tc";
 
 // Assembly-defined functions
 fn csr_read_mie() -> u32;
