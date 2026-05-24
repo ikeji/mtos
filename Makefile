@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -I bootstrap
+CFLAGS = -Wall -Wextra -g -I compiler/bootstrap
 
-SRCS = bootstrap/lexer.c bootstrap/ast.c bootstrap/parser.c bootstrap/typecheck.c bootstrap/interp.c bootstrap/codegen.c
+SRCS = compiler/bootstrap/lexer.c compiler/bootstrap/ast.c compiler/bootstrap/parser.c compiler/bootstrap/typecheck.c compiler/bootstrap/interp.c compiler/bootstrap/codegen.c
 OBJS = $(SRCS:.c=.o)
 
 # Gen1 ツール (C 製、build/gen1/ 固定。repo 直下には置かない)
@@ -18,23 +18,23 @@ all: $(GEN1_TOOLS)
 build/gen1:
 	mkdir -p $@
 
-build/gen1/parse: $(OBJS) bootstrap/parse_main.o | build/gen1
+build/gen1/parse: $(OBJS) compiler/bootstrap/parse_main.o | build/gen1
 	$(CC) -o $@ $^
 
-build/gen1/typecheck: $(OBJS) bootstrap/typecheck_main.o | build/gen1
+build/gen1/typecheck: $(OBJS) compiler/bootstrap/typecheck_main.o | build/gen1
 	$(CC) -o $@ $^
 
-build/gen1/interp: $(OBJS) bootstrap/interp_main.o | build/gen1
+build/gen1/interp: $(OBJS) compiler/bootstrap/interp_main.o | build/gen1
 	$(CC) -o $@ $^
 
-build/gen1/codegen: $(OBJS) bootstrap/codegen_main.o | build/gen1
+build/gen1/codegen: $(OBJS) compiler/bootstrap/codegen_main.o | build/gen1
 	$(CC) -o $@ $^
 
-build/gen1/bcrun: bootstrap/bcrun.c | build/gen1
-	$(CC) $(CFLAGS) -o $@ bootstrap/bcrun.c
+build/gen1/bcrun: compiler/bootstrap/bcrun.c | build/gen1
+	$(CC) $(CFLAGS) -o $@ compiler/bootstrap/bcrun.c
 
-build/gen1/bc2asm: bootstrap/bc2asm.c | build/gen1
-	$(CC) $(CFLAGS) -o $@ bootstrap/bc2asm.c
+build/gen1/bc2asm: compiler/bootstrap/bc2asm.c | build/gen1
+	$(CC) $(CFLAGS) -o $@ compiler/bootstrap/bc2asm.c
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -54,7 +54,7 @@ build/gen2/%: compiler/%.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps
 # the same way Gen2 tools are. Produces an RV32 ELF run via
 # qemu-riscv32 — replaces the python3 tools/bin2uf2.py invocation in
 # the kernel build path.
-build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh bootstrap/crt0.s bootstrap/runtime_syscall.c | build/gen2
+build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
 	./compile-gen1.sh -o $@ $<
 	./tools/tc_deps_to_d.sh $@ $< > $@.d
 
@@ -63,7 +63,7 @@ build/gen2/bin2uf2: tools/bin2uf2.tc $(GEN1_TOOLS) tools/collect_imports.sh tool
 # (including its 4-byte-per-real-inode tail truncation so existing
 # md5 fixtures still match). Uses statx (291) for path stat — qemu
 # RISC-V user mode doesn't implement fstat (80) or newfstatat (79).
-build/gen2/mkfs: tools/mkfs.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh bootstrap/crt0.s bootstrap/runtime_syscall.c | build/gen2
+build/gen2/mkfs: tools/mkfs.tc $(GEN1_TOOLS) tools/collect_imports.sh tools/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
 	./compile-gen1.sh -o $@ $<
 	./tools/tc_deps_to_d.sh $@ $< > $@.d
 
@@ -567,7 +567,7 @@ TEST_ASM_BINS := build/test/asm/hello2_virt.bin \
 test-asm-bins: $(TEST_ASM_BINS)
 
 clean:
-	rm -f $(OBJS) bootstrap/parse_main.o bootstrap/typecheck_main.o bootstrap/interp_main.o bootstrap/codegen_main.o
+	rm -f $(OBJS) compiler/bootstrap/parse_main.o compiler/bootstrap/typecheck_main.o compiler/bootstrap/interp_main.o compiler/bootstrap/codegen_main.o
 	rm -rf build
 
 # ===== test stamp files =====

@@ -9,7 +9,7 @@ fi
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 GOLDEN_DIR="$SCRIPT_DIR/golden"
 TC_DIR="$ROOT_DIR/compiler"
-COMPILER_DIR="$ROOT_DIR/bootstrap"
+COMPILER_DIR="$ROOT_DIR/compiler/bootstrap"
 
 GEN1_DIR="$ROOT_DIR/build/gen1"
 INTERP="$GEN1_DIR/interp"
