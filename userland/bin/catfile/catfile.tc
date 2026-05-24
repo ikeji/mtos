@@ -1,0 +1,47 @@
+// catfile.tc — guest task: read a file via VFS syscalls
+//
+// Exercises sys_openat(56) + sys_read(63) + sys_write(64) + sys_close(57)
+// from the task side (ecall path), complementing kernel.tc cat_hello_txt
+// which exercises the kernel-side VFS path directly.
+//
+// With argc >= 2 the path comes from argv[1] (e.g. sh typing
+// "catfile /hello.txt"). When the shell passes no argument — or the
+// launcher task on pico2 execs /bin/catfile without argv — we fall
+// back to "/hello.txt" so the existing kernel bring-up tests keep
+// working unchanged.
+
+import "../../lib/libtc/libtc.tc";
+
+fn main(argv: StringArray) -> i32 {
+    var fd: i32 = -1;
+    if len(argv) >= 2 {
+        fd = do_openat(0, get(argv, 1), 0);
+    } else {
+        fd = do_openat(0, "/hello.txt", 0);
+    }
+    if fd < 0 {
+        puts("CAT: open failed\n");
+        return 1;
+    }
+
+    var buf: U8Array = U8Array(64);
+    var n: i32 = sys_read(fd, buf, 64);
+    if n > 0 {
+        // Prefix includes argc so tests can tell default-path runs
+        // apart from runs that received an explicit argv[1]. We emit
+        // the digit by hand rather than calling print_i32 because
+        // print_i32 always appends a newline.
+        puts("CAT[");
+        var d: U8Array = U8Array(1);
+        set(d, 0, (48 + len(argv)) as u8);
+        sys_write(1, d, 1);
+        delete(d);
+        puts("]:");
+        sys_write(1, buf, n);
+    } else {
+        puts("CAT: read failed\n");
+    }
+    delete(buf);
+    do_close(fd);
+    return 0;
+}

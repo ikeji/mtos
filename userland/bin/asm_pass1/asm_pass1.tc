@@ -1,0 +1,394 @@
+// asm_pass1.tc — pre-encode driver (idx + per-section .bin + reloc).
+//
+// Phase C/D/E of the 3-binary asm split. Replaces what
+// kernel/build.sh + the OS-side flow used to do as separate
+// invocations (asm_pass2 stdin → .lab pipe, asm_pass3 --text-bin
+// etc., legacy asm_pass2 emit-idx) with a single pre-encode tool.
+//
+// CLI:
+//   asm_pass1 src.s \
+//       --idx-out    out.idx \
+//       --text-bin   out.text.bin \
+//       --rodata-bin out.rodata.bin \
+//       --data-bin   out.data.bin \
+//       --reloc-out  out.reloc
+//
+// 2-walk implementation (no temp .lab):
+//   walk 1: pass=1 over the source — accumulate labels, advance
+//           section cursors, queue forward-ref entries. After the
+//           walk, finalize the label hash + drain forward refs and
+//           dump the .idx (labels carry intra offsets at this
+//           point; the link step adds sec_base when needed).
+//   walk 2: pass=2 over the same source — emit each section's
+//           bytes to its dedicated .bin fd. Section directives
+//           (`.text` / `.rodata` / `.data` / `.bss`) inside the
+//           source flip g_current_section; the driver detects the
+//           flip after each line and switches g_target_section +
+//           g_out_fd accordingly so emit_stream lands bytes in the
+//           right .bin. asm_set_emit_undef_relocs(1) routes any
+//           cross-input label ref through asm_emit_reloc into the
+//           .reloc fd; the link step fills in the patch addresses
+//           at asm_pass2 / asm_pass3 --lab time.
+
+import "asm_common.tc";
+import "source_reader.tc";
+import "string_buffer.tc";
+
+fn do_openat(dirfd: i32, path: String,        flags: i32) -> i32;
+fn do_openat(dirfd: i32, path: StringLiteral, flags: i32) -> i32;
+fn do_close(fd: i32) -> i32;
+
+// km_dump_peak — printed at exit so bench_pipeline.sh / OS-side
+// memory tests can read the per-stage peak from `[kmem peak=N]`.
+// No-op stub on host bootstrap (bootstrap/runtime_syscall.c).
+fn km_dump_peak() -> void;
+
+fn arg_eq(s: String, pat: StringLiteral) -> i32 {
+    var ns: i32 = len(s);
+    var np: i32 = len(pat);
+    if ns != np { return 0; }
+    var i: i32 = 0;
+    while i < np {
+        if get(s, i) != get(pat, i) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn err(s: StringLiteral) -> void {
+    sys_write(2, s as u32 as U8Array, len(s));
+    return;
+}
+
+// Pick the per-section .bin fd matching `sec`. Returns 0 if no fd
+// is wired for that section (e.g. asm_pass1 always wires text /
+// rodata / data; bss is never emitted to a .bin since it has no
+// bytes, only sec_size for memsz).
+fn pick_bin_fd(sec: i32) -> i32 {
+    if sec == 0 { return asm_get_text_bin_fd(); }
+    if sec == 1 { return asm_get_rodata_bin_fd(); }
+    if sec == 2 { return asm_get_data_bin_fd(); }
+    return 0;
+}
+
+// Walk 1: pass=1 over `src`. Returns the source byte count (which
+// goes into the .idx as `src_bytes`).
+fn pass1_walk(src: String) -> i32 {
+    var fd: i32 = do_openat(0 - 100, src, 0);
+    if fd < 0 { return -1; }
+    var reader: SourceReader = SourceReader_new(fd);
+    var line: U8Array = U8Array(4092);
+    var lineno: i32 = 0;
+    var total_bytes: i32 = 0;
+    while at_eof(reader) == false {
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(reader) == false {
+            var c: u8 = next(reader);
+            if llen >= 4092 {
+                var eb: StringBuffer = StringBuffer_new();
+                asm_err_begin(eb);
+                emit_string(eb, "line too long (max 4092 bytes)");
+                asm_err_end(eb);
+            }
+            set(line, llen, c);
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        total_bytes = total_bytes + llen;
+        if llen == 0 { } else {
+            lineno = lineno + 1;
+            if asm_parse_meta_directive(line, llen) == 1 {
+                // discard meta directives in pass 1
+            } else {
+                asm_run_line(line, llen, lineno);
+            }
+        }
+    }
+    delete(line);
+    close(reader);
+    do_close(fd);
+    return total_bytes;
+}
+
+// Walk 2: pass=2 over `src`. emit_stream + the encoder gates land
+// bytes whenever g_current_section == g_target_section, so we keep
+// the two in sync after every line. Each time the source switches
+// section (.text / .rodata / .data / .bss), flush the running
+// buffer to the old fd, repoint g_target_section + g_out_fd at the
+// new section's bin, and persist g_section_emitted per section so
+// reloc records keep using cumulative offsets across re-entries
+// into the same section.
+fn pass2_walk(src: String) -> i32 {
+    var fd: i32 = do_openat(0 - 100, src, 0);
+    if fd < 0 { return -1; }
+    var reader: SourceReader = SourceReader_new(fd);
+    var line: U8Array = U8Array(4092);
+    var lineno: i32 = 0;
+
+    // Per-section running emit count. asm_set_target_section() resets
+    // g_section_emitted to 0; we save/restore here so reloc offsets
+    // (emitted relative to g_section_emitted) stay cumulative within
+    // each section across the source's section directives.
+    var sec_emitted: I32Array = I32Array(4);
+    set(sec_emitted, 0, 0); set(sec_emitted, 1, 0);
+    set(sec_emitted, 2, 0); set(sec_emitted, 3, 0);
+
+    // Initial section is text (asm_init_pass1 / pass 2 cursor reset
+    // both leave g_current_section at 0). Wire g_target_section +
+    // g_out_fd to match.
+    asm_set_target_section(0);
+    asm_set_out_fd(asm_get_text_bin_fd());
+    var prev_section: i32 = 0;
+
+    while at_eof(reader) == false {
+        var llen: i32 = 0;
+        var eol: i32 = 0;
+        while eol == 0 && at_eof(reader) == false {
+            var c: u8 = next(reader);
+            if llen >= 4092 {
+                var eb: StringBuffer = StringBuffer_new();
+                asm_err_begin(eb);
+                emit_string(eb, "line too long (max 4092 bytes)");
+                asm_err_end(eb);
+            }
+            set(line, llen, c);
+            llen = llen + 1;
+            if c == 10u8 { eol = 1; }
+        }
+        if llen == 0 { } else {
+            lineno = lineno + 1;
+            if asm_parse_meta_directive(line, llen) == 1 {
+                // Meta directives don't touch sections / cursors.
+            } else {
+                asm_run_line(line, llen, lineno);
+                if asm_current_section() != prev_section {
+                    // Section just switched. Flush the previous fd,
+                    // then save its running emit count + repoint at
+                    // the new section (text/rodata/data) or leave
+                    // g_target_section unchanged for bss — bss bytes
+                    // are memsz-only, so the existing emit gates
+                    // (`.space` checks g_current_section ==
+                    // g_target_section) skip the zero-fill loop when
+                    // the two diverge.
+                    asm_flush_output();
+                    if prev_section < 3 {
+                        set(sec_emitted, prev_section, asm_get_section_emitted());
+                    }
+                    var new_sec: i32 = asm_current_section();
+                    if new_sec < 3 {
+                        var new_fd: i32 = pick_bin_fd(new_sec);
+                        if new_fd > 0 {
+                            asm_set_out_fd(new_fd);
+                        }
+                        asm_set_target_section(new_sec);
+                        // Restore per-section emit count so the next
+                        // reloc emitted in `new_sec` records offsets
+                        // relative to the section's accumulated size,
+                        // not 0.
+                        asm_set_section_emitted(get(sec_emitted, new_sec));
+                    }
+                    prev_section = new_sec;
+                }
+            }
+        }
+    }
+    asm_flush_output();
+    delete(line);
+    delete(sec_emitted);
+    close(reader);
+    do_close(fd);
+    return 0;
+}
+
+// Build a String for the per-invocation streaming temp file path
+// (".rfs" for refs, ".dfs" for def) by appending the new extension
+// to idx_out (e.g. "prelude.idx" → "prelude.idx.rfs"). asm_dump_idx_state /
+// asm_resolve_deferred_refs re-open these to splice / drain the bytes.
+// Caller owns the buffer (kmalloc'd, returned as String); we never
+// free it — asm_pass1 exits soon after.
+fn derive_side_path(idx_out: String, c1: u8, c2: u8, c3: u8) -> String {
+    var n: i32 = len(idx_out);
+    var out_len: i32 = n + 4;
+    var buf: U8Array = U8Array((out_len + 1) as u32);
+    var i: i32 = 0;
+    while i < n {
+        set(buf, i, get(idx_out, i) as u8);
+        i = i + 1;
+    }
+    set(buf, n + 0, '.' as u8);
+    set(buf, n + 1, c1);
+    set(buf, n + 2, c2);
+    set(buf, n + 3, c3);
+    set(buf, n + 4, 0u8);
+    poke32(buf as u32, out_len as u32);
+    return buf as u32 as String;
+}
+fn derive_refs_path(idx_out: String) -> String {
+    return derive_side_path(idx_out, 'r' as u8, 'f' as u8, 's' as u8);
+}
+fn derive_def_path(idx_out: String) -> String {
+    return derive_side_path(idx_out, 'd' as u8, 'f' as u8, 's' as u8);
+}
+
+fn run_pre_encode(src: String,
+                  idx_out: String,
+                  text_bin: String, rodata_bin: String, data_bin: String,
+                  reloc_out: String) -> i32 {
+    // ---------- Walk 1: label collection + .idx emit ----------
+    asm_init_pass1();
+    asm_set_pass(1);
+
+    // Stream `ref <owner> <target>` lines straight to a temp file so
+    // we never buffer the full edge list in memory. asm_dump_idx_state
+    // splices the file in at the correct slot in the idx layout.
+    // Skipping the temp file (no idx_out) is fine — record_ref then
+    // just discards the edges since g_refs_out_fd == 0.
+    var refs_tmp_path: String = 0 as String;
+    var def_tmp_path:  String = 0 as String;
+    if idx_out as u32 != 0u32 {
+        refs_tmp_path = derive_refs_path(idx_out);
+        var refs_fd: i32 = do_openat(0 - 100, refs_tmp_path, 577);
+        if refs_fd >= 0 {
+            asm_set_refs_out(refs_fd, refs_tmp_path);
+        }
+        // Stream forward-ref `def <owner> <name>` lines to disk
+        // alongside refs. Without this, parse self-build's ~6 K
+        // forward refs would grow the in-memory def queue to
+        // ~130 KB name pool + ~96 KB parallel arrays, exceeding
+        // the asm_pass1 task arena on pico2.
+        def_tmp_path = derive_def_path(idx_out);
+        var def_fd: i32 = do_openat(0 - 100, def_tmp_path, 577);
+        if def_fd >= 0 {
+            asm_set_def_out(def_fd, def_tmp_path);
+        }
+    }
+
+    // Ref collection is the link step's side input — asm_pass2
+    // reads `ref <owner> <target>` lines from the idx to resolve
+    // forward refs that crossed input boundaries.
+    asm_set_collecting_refs(1);
+    var total_bytes: i32 = pass1_walk(src);
+    if total_bytes < 0 {
+        err("asm_pass1: cannot open source\n");
+        return -1;
+    }
+    asm_set_collecting_refs(0);
+
+    // Finalize the label hash so resolve_deferred_refs can drain
+    // intra-file forward refs in O(N). Truly cross-input refs stay
+    // in the deferred queue and surface as `ref` lines in the idx.
+    asm_finalize_labels();
+
+    // Flush + close the def write fd so asm_resolve_deferred_refs
+    // can re-open the file for read and drain forward refs.
+    var def_fd_close: i32 = asm_get_def_out_fd();
+    asm_flush_def_out();
+    if def_fd_close > 0 { do_close(def_fd_close); }
+
+    asm_resolve_deferred_refs();
+
+    // Drain the streaming refs buffer to disk and close the write
+    // fd so the splice in asm_dump_idx_state sees a fully-flushed
+    // file. asm_flush_refs_out also clears g_refs_out_fd to disable
+    // further writes during pass2.
+    var refs_fd_close: i32 = asm_get_refs_out_fd();
+    asm_flush_refs_out();
+    if refs_fd_close > 0 { do_close(refs_fd_close); }
+
+    asm_set_src_bytes(total_bytes);
+
+    if idx_out as u32 != 0u32 {
+        var idx_fd: i32 = do_openat(0 - 100, idx_out, 577);
+        if idx_fd < 0 { err("asm_pass1: cannot open idx output\n"); return -1; }
+        asm_dump_idx_state(idx_fd);
+        do_close(idx_fd);
+    }
+
+    // The .idx is written; pass 2 doesn't read the deferred queue
+    // (it was used to build the idx). Free ~28 KB so pass 2 fits in
+    // the asm_pass1 task arena on pico2.
+    asm_release_ref_state();
+
+    // ---------- Walk 2: per-section bin emit + relocs ----------
+    // Compute final section bases + turn intra label addresses
+    // into absolutes so emit32 can resolve `target - pc` for any
+    // locally-defined label ref. Cross-input refs go through
+    // asm_emit_reloc instead (asm_set_emit_undef_relocs).
+    asm_compute_sec_bases();
+    asm_fixup_labels();
+
+    asm_set_pass(2);
+    asm_pass2_reset_cursors();
+    asm_enable_stream_mode();
+
+    var t_fd: i32 = do_openat(0 - 100, text_bin,   577);
+    var r_fd: i32 = do_openat(0 - 100, rodata_bin, 577);
+    var d_fd: i32 = do_openat(0 - 100, data_bin,   577);
+    var l_fd: i32 = do_openat(0 - 100, reloc_out,  577);
+    if t_fd < 0 || r_fd < 0 || d_fd < 0 || l_fd < 0 {
+        err("asm_pass1: cannot open bin/reloc output\n");
+        return -1;
+    }
+    asm_set_text_bin_fd(t_fd);
+    asm_set_rodata_bin_fd(r_fd);
+    asm_set_data_bin_fd(d_fd);
+    asm_set_reloc_fd(l_fd);
+    asm_set_emit_undef_relocs(1);
+
+    var rc: i32 = pass2_walk(src);
+
+    asm_set_emit_undef_relocs(0);
+    do_close(t_fd); do_close(r_fd); do_close(d_fd); do_close(l_fd);
+    asm_set_text_bin_fd(0);
+    asm_set_rodata_bin_fd(0);
+    asm_set_data_bin_fd(0);
+    asm_set_reloc_fd(0);
+
+    if rc != 0 { err("asm_pass1: pass 2 walk failed\n"); return rc; }
+    km_dump_peak();
+    return 0;
+}
+
+fn main() -> i32 {
+    err("asm_pass1: requires arguments — see source for CLI shape\n");
+    return 1;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var src:          String = 0 as String;
+    var idx_out:      String = 0 as String;
+    var text_bin:     String = 0 as String;
+    var rodata_bin:   String = 0 as String;
+    var data_bin:     String = 0 as String;
+    var reloc_out:    String = 0 as String;
+    if argv as u32 != 0u32 {
+        var argc: i32 = len(argv);
+        var i: i32 = 1;
+        while i < argc {
+            var a: String = get(argv, i);
+            if arg_eq(a, "--idx-out") != 0 && i + 1 < argc {
+                idx_out = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--text-bin") != 0 && i + 1 < argc {
+                text_bin = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--rodata-bin") != 0 && i + 1 < argc {
+                rodata_bin = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--data-bin") != 0 && i + 1 < argc {
+                data_bin = get(argv, i + 1); i = i + 2;
+            } else if arg_eq(a, "--reloc-out") != 0 && i + 1 < argc {
+                reloc_out = get(argv, i + 1); i = i + 2;
+            } else {
+                if src as u32 == 0u32 { src = a; }
+                i = i + 1;
+            }
+        }
+    }
+    if src as u32 == 0u32 ||
+       text_bin as u32 == 0u32 || rodata_bin as u32 == 0u32 ||
+       data_bin as u32 == 0u32 || reloc_out as u32 == 0u32 {
+        err("usage: asm_pass1 src.s [--idx-out P] --text-bin P --rodata-bin P --data-bin P --reloc-out P\n");
+        return 1;
+    }
+    return run_pre_encode(src, idx_out,
+                          text_bin, rodata_bin, data_bin, reloc_out);
+}

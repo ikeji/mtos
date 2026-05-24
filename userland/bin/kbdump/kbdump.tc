@@ -1,0 +1,46 @@
+// kbdump.tc — /dev/kbd bring-up exerciser.
+//
+// Opens /dev/kbd and reads keystrokes one byte at a time until a
+// newline, then echoes the collected line with a "KBD:" prefix.
+// With the current stub /dev/kbd is backed by the UART RX ring, so
+// on qemu virt this reads a line typed at the serial console
+// (フェーズ9 S5 swaps in the GPIO-matrix scanner). Reading one byte
+// at a time and stopping at '\n' means kbdump consumes exactly its
+// line and leaves the rest of the input for the shell.
+
+import "../../lib/libtc/libtc.tc";
+
+fn main() -> i32 {
+    var fd: i32 = do_openat(0, "/dev/kbd", 0);
+    if fd < 0 {
+        puts("KBDTEST: open failed\n");
+        return 1;
+    }
+    var line: U8Array = U8Array(64u32);
+    var ch:   U8Array = U8Array(1u32);
+    var n: i32 = 0;
+    var done: i32 = 0;
+    while done == 0 && n < 63 {
+        var r: i32 = sys_read(fd, ch, 1);
+        if r == 1 {
+            var c: u8 = get(ch, 0);
+            if c == '\n' as u8 {
+                done = 1;
+            } else {
+                set(line, n, c);
+                n = n + 1;
+            }
+        } else {
+            // 0 = EOF, negative = error (-2 yields are retried by the
+            // kernel and never surface here).
+            done = 1;
+        }
+    }
+    do_close(fd);
+    puts("KBD:");
+    sys_write(1, line, n);
+    puts("\n");
+    delete(ch);
+    delete(line);
+    return 0;
+}

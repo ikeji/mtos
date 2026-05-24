@@ -1,0 +1,105 @@
+// wc.tc — word / line / byte count.
+//
+// `wc <file>` or `wc < stream`: print "<lines> <words> <bytes>".
+// With a filename arg, appends " <filename>" to the line. If no args,
+// counts stdin.
+
+import "../../lib/libtc/libtc.tc";
+
+
+// (print moved to libtc/libtc.tc)
+
+fn count_fd(fd: i32, lines: U8Array, words: U8Array, bytes: U8Array) -> void {
+    var buf: U8Array = U8Array(4096);
+    var in_word: i32 = 0;
+    var l: i32 = 0;
+    var w: i32 = 0;
+    var b: i32 = 0;
+    var done: i32 = 0;
+    while done == 0 {
+        var n: i32 = sys_read(fd, buf, 4096);
+        if n <= 0 { done = 1; }
+        else {
+            var i: i32 = 0;
+            while i < n {
+                var c: u8 = get(buf, i);
+                b = b + 1;
+                if c == 10u8 { l = l + 1; }
+                if c == 32u8 || c == 9u8 || c == 10u8 || c == 13u8 {
+                    in_word = 0;
+                } else if in_word == 0 {
+                    in_word = 1;
+                    w = w + 1;
+                }
+                i = i + 1;
+            }
+        }
+    }
+    delete(buf);
+    // Return counts via 4-byte writes to out arrays (used as "boxes").
+    poke32(lines as u32 + 4u32, l as u32);
+    poke32(words as u32 + 4u32, w as u32);
+    poke32(bytes as u32 + 4u32, b as u32);
+    return;
+}
+
+fn print_line(l: i32, w: i32, b: i32, name: String, has_name: bool) -> void {
+    print(l);
+    var sp: U8Array = U8Array(1);
+    set(sp, 0, 32u8);
+    sys_write(1, sp, 1);
+    print(w);
+    sys_write(1, sp, 1);
+    print(b);
+    if has_name {
+        sys_write(1, sp, 1);
+        var nl: i32 = len(name);
+        var buf: U8Array = U8Array(nl as u32);
+        var i: i32 = 0;
+        while i < nl {
+            set(buf, i, get(name, i));
+            i = i + 1;
+        }
+        sys_write(1, buf, nl);
+        delete(buf);
+    }
+    var nl2: U8Array = U8Array(1);
+    set(nl2, 0, 10u8);
+    sys_write(1, nl2, 1);
+    delete(nl2);
+    delete(sp);
+    return;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var nargs: i32 = len(argv);
+    var lines: U8Array = U8Array(4);
+    var words: U8Array = U8Array(4);
+    var bytes: U8Array = U8Array(4);
+    if nargs < 2 {
+        count_fd(0, lines, words, bytes);
+        var l: i32 = peek32(lines as u32 + 4u32) as i32;
+        var w: i32 = peek32(words as u32 + 4u32) as i32;
+        var b: i32 = peek32(bytes as u32 + 4u32) as i32;
+        print_line(l, w, b, "" as String, false);
+    } else {
+        var i: i32 = 1;
+        while i < nargs {
+            var name: String = get(argv, i);
+            var fd: i32 = do_openat(0, name, 0);
+            if fd < 0 {
+                puts("wc: open failed\n");
+            } else {
+                count_fd(fd, lines, words, bytes);
+                do_close(fd);
+                var l: i32 = peek32(lines as u32 + 4u32) as i32;
+                var w: i32 = peek32(words as u32 + 4u32) as i32;
+                var b: i32 = peek32(bytes as u32 + 4u32) as i32;
+                print_line(l, w, b, name, true);
+            }
+            i = i + 1;
+        }
+    }
+    delete(lines); delete(words); delete(bytes);
+    return 0;
+}

@@ -1,0 +1,996 @@
+// vi.tc — minimal vi-style editor.
+//
+// Usage:  vi <path>    — opens <path> (creates empty buffer on
+//                          O_CREAT miss so a new file just works).
+//
+// Modes:
+//   Normal  — entered on start + on ESC
+//   Insert  — entered by i / a / A / I / o / O; ESC exits
+//   Cmdline — entered by ':'; Enter runs the command
+//
+// Normal-mode keys:
+//   h j k l  — move cursor left / down / up / right
+//   0 $      — line start / line end
+//   x        — delete the char under cursor
+//   dd       — delete current line  (two 'd' keys in a row)
+//   gg / G   — jump to first / last line
+//   ZZ       — write + quit (same as :wq)
+//   i        — insert before cursor
+//   I        — insert at line start
+//   a        — append (insert after cursor)
+//   A        — append at line end
+//   o        — open a new line below and enter insert
+//   O        — open a new line above and enter insert
+//   u        — undo the last edit (single-level, toggles with redo)
+//
+// Insert-mode: any printable byte is inserted at cursor. Backspace
+// deletes the previous byte. Tab is inserted literally. Enter inserts
+// a newline. Ctrl+J enters TUT-code mode for Japanese input;
+// ESC exits TUT mode back to insert mode.
+//
+// TUT-code: two-stroke input for kana and kanji (773 characters).
+//   Kana: consonant + vowel (e.g. RK=あ, EK=か, FL=ん)
+//   Kanji: any two keys from 40-key layout (e.g. KF=一, JD=二)
+//   Voiced: consonant+L+vowel (e.g. ELK=が), T+L+T+vowel=ぱ行
+//
+// Cmdline-mode (after ':'):
+//   w        — write buffer back to the file
+//   q        — quit if no unsaved changes
+//   q!       — force quit, discard changes
+//   wq  x    — write + quit
+//
+// Screen rendering uses plain ANSI codes (ESC[2J, ESC[H, ESC[R;CH) so
+// a raw serial terminal or a Debug-Probe CDC-ACM viewer that passes
+// bytes unchanged can display the editor. qemu with `-nographic
+// -serial mon:stdio` + `stty raw` on the host works; so does a
+// minicom session on pico2 / debug-probe. Inside `make run`'s default
+// line-buffered stdio the cursor won't update per-keystroke — that's
+// a terminal limitation, not a vi bug.
+
+import "../../lib/libtc/libtc.tc";
+
+fn _tut_grid_addr() -> u32;        // tut_data.s: 40×40 kanji/kana grid
+fn peek16(addr: u32) -> u16;       // task_crt0.s builtin
+
+var BUF_CAP: i32 = 16384;      // max file size in bytes
+var CMD_CAP: i32 = 128;        // max cmdline length
+
+// Fixed screen geometry: we don't query the terminal (would require
+// reading the ESC[6n response back through stdin), so pick the
+// classic 80x24 and keep the bottom row for the status line.
+var SCREEN_ROWS: i32 = 24;
+var TEXT_ROWS:   i32 = 23;    // SCREEN_ROWS - 1 (status line)
+
+// ===== global editor state =====
+
+var g_buf: U8Array = 0 as U8Array;   // file content
+var g_len: i32 = 0;                  // bytes currently in g_buf
+var g_cur: i32 = 0;                  // cursor byte offset [0..g_len]
+var g_mode: i32 = 0;                 // 0=normal, 1=insert, 2=cmdline
+var g_path: U8Array = 0 as U8Array;  // NUL-terminated file path
+var g_path_len: i32 = 0;
+var g_modified: i32 = 0;
+var g_running: i32 = 1;
+var g_cmdbuf: U8Array = 0 as U8Array;
+var g_cmdlen: i32 = 0;
+var g_msg: U8Array = 0 as U8Array;   // status line (NUL-terminated)
+var g_msg_len: i32 = 0;
+var g_pending_d: i32 = 0;            // first 'd' of 'dd' seen
+var g_pending_g: i32 = 0;            // first 'g' of 'gg' seen
+var g_pending_Z: i32 = 0;            // first 'Z' of 'ZZ' seen
+
+// 1-based logical row of the first visible line (vertical scroll).
+// scroll_to_cursor() adjusts this before each render so g_cur's row
+// is always on screen.
+var g_top_line: i32 = 1;
+
+// Single-level undo (classic vi, not vim's tree): save_undo snapshots
+// the full buffer right before a mutation, and u swaps g_buf <->
+// g_undo_buf so pressing u twice restores the pre-undo state.
+var g_undo_buf:   U8Array = 0 as U8Array;
+var g_undo_len:   i32 = 0;
+var g_undo_cur:   i32 = 0;
+var g_undo_valid: i32 = 0;
+
+// TUT-code input state: 0=off, 1=waiting for first key,
+// 2=got first key, 3=voiced (after L), 4=semi-voiced (T+L+T)
+var g_tut: i32 = 0;
+var g_tut_k1: i32 = 0;              // first key position (0-39)
+var g_tut_kmap: U8Array = 0 as U8Array;  // ASCII→key position+1 (128 bytes)
+var g_tut_vo: U8Array = 0 as U8Array;    // voiced/small table (50 bytes)
+
+// ===== terminal helpers =====
+
+// (putchar, print moved to libtc/libtc.tc; emit_int / putc renamed.)
+fn puts_n(buf: U8Array, n: i32) -> void {
+    if n > 0 { sys_write(1, buf, n); }
+    return;
+}
+
+// ===== UTF-8 helpers =====
+
+// Byte count for a UTF-8 lead byte (1–4).
+fn utf8_len(c: u8) -> i32 {
+    if c < 128u8 { return 1; }
+    if c < 0xC0u8 { return 1; }   // continuation byte — treat as 1
+    if c < 0xE0u8 { return 2; }
+    if c < 0xF0u8 { return 3; }
+    return 4;
+}
+
+// True if c is a UTF-8 continuation byte (10xxxxxx).
+fn is_cont(c: u8) -> bool {
+    return c >= 0x80u8 && c < 0xC0u8;
+}
+
+// Decode a UTF-8 codepoint starting at g_buf[off].
+fn utf8_decode_at(off: i32) -> i32 {
+    var c0: i32 = get(g_buf, off) as i32;
+    if c0 < 128 { return c0; }
+    var n: i32 = utf8_len(c0 as u8);
+    if off + n > g_len { return 0xFFFD; }  // truncated
+    if n == 2 {
+        return ((c0 & 0x1F) << 6)
+             | (get(g_buf, off + 1) as i32 & 0x3F);
+    }
+    if n == 3 {
+        return ((c0 & 0x0F) << 12)
+             | ((get(g_buf, off + 1) as i32 & 0x3F) << 6)
+             | (get(g_buf, off + 2) as i32 & 0x3F);
+    }
+    return ((c0 & 0x07) << 18)
+         | ((get(g_buf, off + 1) as i32 & 0x3F) << 12)
+         | ((get(g_buf, off + 2) as i32 & 0x3F) << 6)
+         | (get(g_buf, off + 3) as i32 & 0x3F);
+}
+
+// Display width of a Unicode codepoint (1 or 2).
+fn char_width(cp: i32) -> i32 {
+    if cp >= 0x1100 && cp <= 0x115F { return 2; }
+    if cp >= 0x2E80 && cp <= 0x9FFF { return 2; }
+    if cp >= 0xF900 && cp <= 0xFAFF { return 2; }
+    if cp >= 0xFE10 && cp <= 0xFE6F { return 2; }
+    if cp >= 0xFF01 && cp <= 0xFF60 { return 2; }
+    if cp >= 0xFFE0 && cp <= 0xFFE6 { return 2; }
+    return 1;
+}
+
+// Display columns from g_buf[from] to g_buf[to] (same line, 0-based).
+fn display_col(from: i32, to: i32) -> i32 {
+    var col: i32 = 0;
+    var i: i32 = from;
+    while i < to && i < g_len {
+        var c: u8 = get(g_buf, i);
+        if c == 10u8 { return col; }
+        if !is_cont(c) {
+            col = col + char_width(utf8_decode_at(i));
+        }
+        i = i + 1;
+    }
+    return col;
+}
+
+// Find byte offset in line starting at ls for target display column.
+fn byte_at_dcol(ls: i32, target: i32) -> i32 {
+    var col: i32 = 0;
+    var i: i32 = ls;
+    while i < g_len && get(g_buf, i) != 10u8 {
+        var c: u8 = get(g_buf, i);
+        if !is_cont(c) {
+            var w: i32 = char_width(utf8_decode_at(i));
+            if col + w > target { return i; }
+            col = col + w;
+        }
+        i = i + 1;
+    }
+    return i;
+}
+
+// Clear screen + home cursor. TC string literals don't interpret
+// \xHH escapes, so we emit the ESC bytes raw (ESC [ 2 J ESC [ H).
+fn clear_screen() -> void {
+    putchar(27u8); putchar('[' as u8); putchar('2' as u8); putchar('J' as u8);
+    putchar(27u8); putchar('[' as u8); putchar('H' as u8);
+    return;
+}
+
+// Move cursor to row (1-based), col (1-based).
+fn goto_xy(row: i32, col: i32) -> void {
+    putchar(27u8);                      // ESC
+    putchar('[' as u8);
+    print(row);
+    putchar(';' as u8);
+    print(col);
+    putchar('H' as u8);
+    return;
+}
+
+// ===== buffer navigation =====
+
+// Find the byte offset of the start of the line containing `off`.
+fn line_start_at(off: i32) -> i32 {
+    var i: i32 = off;
+    while i > 0 && get(g_buf, i - 1) != 10u8 { i = i - 1; }
+    return i;
+}
+
+// Find the byte offset of the end of the line (exclusive of the LF).
+fn line_end_at(off: i32) -> i32 {
+    var i: i32 = off;
+    while i < g_len && get(g_buf, i) != 10u8 { i = i + 1; }
+    return i;
+}
+
+// Byte offset of the start of the 1-based logical line `target`.
+// target <= 1 returns 0; past-last returns g_len.
+fn line_start_of(target: i32) -> i32 {
+    if target <= 1 { return 0; }
+    var row: i32 = 1;
+    var i: i32 = 0;
+    while i < g_len {
+        if get(g_buf, i) == 10u8 {
+            row = row + 1;
+            if row == target { return i + 1; }
+        }
+        i = i + 1;
+    }
+    return g_len;
+}
+
+// 1-based logical row of byte offset `off`.
+fn row_of(off: i32) -> i32 {
+    var row: i32 = 1;
+    var i: i32 = 0;
+    while i < off {
+        if get(g_buf, i) == 10u8 { row = row + 1; }
+        i = i + 1;
+    }
+    return row;
+}
+
+// Adjust g_top_line so g_cur is inside the visible [top, top+TEXT_ROWS-1]
+// window. Called at the top of render().
+fn scroll_to_cursor() -> void {
+    var cur_row: i32 = row_of(g_cur);
+    if cur_row < g_top_line { g_top_line = cur_row; }
+    if cur_row >= g_top_line + TEXT_ROWS {
+        g_top_line = cur_row - TEXT_ROWS + 1;
+    }
+    if g_top_line < 1 { g_top_line = 1; }
+    return;
+}
+
+// Row + col (both 1-based) for a given byte offset.
+// col counts display columns (CJK = 2, ASCII = 1).
+fn row_col(off: i32, out_row_col: U8Array) -> void {
+    var row: i32 = 1;
+    var col: i32 = 1;
+    var i: i32 = 0;
+    while i < off {
+        var c: u8 = get(g_buf, i);
+        if c == 10u8 {
+            row = row + 1;
+            col = 1;
+        } else if !is_cont(c) {
+            col = col + char_width(utf8_decode_at(i));
+        }
+        i = i + 1;
+    }
+    // Pack: bytes 0..3 = row (u32 LE), 4..7 = col.
+    set(out_row_col, 0, (row & 0xff) as u8);
+    set(out_row_col, 1, ((row >> 8) & 0xff) as u8);
+    set(out_row_col, 2, ((row >> 16) & 0xff) as u8);
+    set(out_row_col, 3, ((row >> 24) & 0xff) as u8);
+    set(out_row_col, 4, (col & 0xff) as u8);
+    set(out_row_col, 5, ((col >> 8) & 0xff) as u8);
+    set(out_row_col, 6, ((col >> 16) & 0xff) as u8);
+    set(out_row_col, 7, ((col >> 24) & 0xff) as u8);
+    return;
+}
+
+// ===== editing primitives =====
+
+// Snapshot the buffer into g_undo_buf so the next 'u' can restore it.
+// Called once per edit unit (before 'x' / 'dd', on entering insert
+// mode). Mutations *inside* insert mode don't re-snapshot — the
+// insert-mode entry already captured the pre-edit state, so 'u' rolls
+// the entire insert-mode session back as one unit.
+fn save_undo() -> void {
+    if g_undo_buf as u32 == 0u32 { return; }
+    var i: i32 = 0;
+    while i < g_len {
+        set(g_undo_buf, i, get(g_buf, i));
+        i = i + 1;
+    }
+    g_undo_len = g_len;
+    g_undo_cur = g_cur;
+    g_undo_valid = 1;
+    return;
+}
+
+// Swap g_buf with g_undo_buf (and the len / cur tracking). The swap
+// is a pointer shuffle rather than a byte copy, so redo via a second
+// 'u' comes for free.
+fn do_undo() -> void {
+    if g_undo_valid == 0 {
+        set_msg("Nothing to undo");
+        return;
+    }
+    var tmp_buf: U8Array = g_buf;
+    g_buf = g_undo_buf;
+    g_undo_buf = tmp_buf;
+    var tmp_len: i32 = g_len;   g_len = g_undo_len;   g_undo_len = tmp_len;
+    var tmp_cur: i32 = g_cur;   g_cur = g_undo_cur;   g_undo_cur = tmp_cur;
+    g_modified = 1;
+    return;
+}
+
+// Insert one byte at g_cur. No-op at capacity.
+fn insert_byte(c: u8) -> void {
+    if g_len >= BUF_CAP { return; }
+    var i: i32 = g_len;
+    while i > g_cur {
+        set(g_buf, i, get(g_buf, i - 1));
+        i = i - 1;
+    }
+    set(g_buf, g_cur, c);
+    g_len = g_len + 1;
+    g_cur = g_cur + 1;
+    g_modified = 1;
+    return;
+}
+
+// Delete the character at g_cur (full UTF-8 sequence, no-op at end).
+fn delete_byte_at_cur() -> void {
+    if g_cur >= g_len { return; }
+    var n: i32 = utf8_len(get(g_buf, g_cur));
+    if g_cur + n > g_len { n = g_len - g_cur; }
+    var i: i32 = g_cur;
+    while i + n < g_len {
+        set(g_buf, i, get(g_buf, i + n));
+        i = i + 1;
+    }
+    g_len = g_len - n;
+    g_modified = 1;
+    return;
+}
+
+// Delete the character *before* the cursor (full UTF-8 sequence).
+// Returns true if anything was deleted.
+fn delete_byte_before_cur() -> bool {
+    if g_cur == 0 { return false; }
+    // Find start of previous character by skipping continuation bytes.
+    var start: i32 = g_cur - 1;
+    while start > 0 && is_cont(get(g_buf, start)) {
+        start = start - 1;
+    }
+    var n: i32 = g_cur - start;
+    var i: i32 = start;
+    while i + n < g_len {
+        set(g_buf, i, get(g_buf, i + n));
+        i = i + 1;
+    }
+    g_len = g_len - n;
+    g_cur = start;
+    g_modified = 1;
+    return true;
+}
+
+// Delete the entire line the cursor is on (including the trailing LF
+// if one exists).
+fn delete_line() -> void {
+    var ls: i32 = line_start_at(g_cur);
+    var le: i32 = line_end_at(ls);
+    if le < g_len { le = le + 1; }   // include trailing '\n'
+    var span: i32 = le - ls;
+    if span == 0 { return; }
+    var i: i32 = ls;
+    while i + span < g_len {
+        set(g_buf, i, get(g_buf, i + span));
+        i = i + 1;
+    }
+    g_len = g_len - span;
+    g_cur = ls;
+    if g_cur > g_len { g_cur = g_len; }
+    // Clamp to start of the next line (or EOF).
+    g_modified = 1;
+    return;
+}
+
+// ===== cursor motion =====
+
+fn move_left() -> void {
+    if g_cur == 0 { return; }
+    if get(g_buf, g_cur - 1) == 10u8 { return; }
+    // Skip back over continuation bytes to the lead byte.
+    g_cur = g_cur - 1;
+    while g_cur > 0 && is_cont(get(g_buf, g_cur)) {
+        g_cur = g_cur - 1;
+    }
+    return;
+}
+
+fn move_right() -> void {
+    if g_cur >= g_len { return; }
+    if get(g_buf, g_cur) == 10u8 { return; }
+    // Advance past the full UTF-8 character.
+    var n: i32 = utf8_len(get(g_buf, g_cur));
+    g_cur = g_cur + n;
+    if g_cur > g_len { g_cur = g_len; }
+    return;
+}
+
+fn move_up() -> void {
+    var ls: i32 = line_start_at(g_cur);
+    if ls == 0 { return; }
+    var dcol: i32 = display_col(ls, g_cur);
+    var prev_start: i32 = line_start_at(ls - 1);
+    g_cur = byte_at_dcol(prev_start, dcol);
+    return;
+}
+
+fn move_down() -> void {
+    var ls: i32 = line_start_at(g_cur);
+    var le: i32 = line_end_at(ls);
+    if le >= g_len { return; }
+    var dcol: i32 = display_col(ls, g_cur);
+    var next_start: i32 = le + 1;
+    g_cur = byte_at_dcol(next_start, dcol);
+    return;
+}
+
+fn move_line_start() -> void {
+    g_cur = line_start_at(g_cur);
+    return;
+}
+
+fn move_line_end() -> void {
+    g_cur = line_end_at(line_start_at(g_cur));
+    return;
+}
+
+fn move_bof() -> void {
+    g_cur = 0;
+    return;
+}
+
+fn move_eof() -> void {
+    g_cur = g_len;
+    // Move to start of last line instead of past the final LF.
+    if g_cur > 0 && get(g_buf, g_cur - 1) == 10u8 { g_cur = g_cur - 1; }
+    g_cur = line_start_at(g_cur);
+    return;
+}
+
+// ===== TUT-code input =====
+
+fn tut_set5(tbl: U8Array, row: i32,
+            a: i32, b: i32, c: i32, d: i32, e: i32) -> void {
+    var base: i32 = row * 5;
+    set(tbl, base, a as u8);
+    set(tbl, base + 1, b as u8);
+    set(tbl, base + 2, c as u8);
+    set(tbl, base + 3, d as u8);
+    set(tbl, base + 4, e as u8);
+    return;
+}
+
+// Insert a Unicode codepoint as UTF-8 bytes.
+fn insert_codepoint(cp: i32) -> void {
+    if cp < 0x80 {
+        insert_byte(cp as u8);
+    } else if cp < 0x800 {
+        insert_byte((0xC0 | (cp >> 6)) as u8);
+        insert_byte((0x80 | (cp & 0x3F)) as u8);
+    } else {
+        insert_byte((0xE0 | (cp >> 12)) as u8);
+        insert_byte((0x80 | ((cp >> 6) & 0x3F)) as u8);
+        insert_byte((0x80 | (cp & 0x3F)) as u8);
+    }
+    return;
+}
+
+// --- Key position mapping and lookup ---
+
+// Convert ASCII char to TUT key position (0-39), or -1 if invalid.
+// Layout: 1234567890 qwertyuiop asdfghjkl; zxcvbnm,./
+fn tut_keypos(c: u8) -> i32 {
+    var ci: i32 = c as i32;
+    if ci < 128 { return (get(g_tut_kmap, ci) as i32) - 1; }
+    return -1;
+}
+
+// Map key position back to TUT consonant row (0-9), or -1.
+fn tut_pos_to_row(pos: i32) -> i32 {
+    if pos == 13 { return 0; }
+    if pos == 12 { return 1; }
+    if pos == 21 { return 2; }
+    if pos == 22 { return 3; }
+    if pos == 23 { return 4; }
+    if pos == 14 { return 5; }
+    if pos == 11 { return 6; }
+    if pos == 10 { return 7; }
+    if pos == 24 { return 8; }
+    if pos == 20 { return 9; }
+    return -1;
+}
+
+// Map key position to TUT vowel column (0-4), or -1.
+fn tut_pos_to_col(pos: i32) -> i32 {
+    if pos == 27 { return 0; }
+    if pos == 17 { return 1; }
+    if pos == 16 { return 2; }
+    if pos == 25 { return 3; }
+    if pos == 26 { return 4; }
+    return -1;
+}
+
+// Look up the 40×40 grid in .rodata (tut_data.s). Returns codepoint or 0.
+fn tut_grid_lookup(k1: i32, k2: i32) -> i32 {
+    var off: u32 = ((k1 * 40 + k2) * 2) as u32;
+    return peek16(_tut_grid_addr() + off) as i32;
+}
+
+fn tut_init() -> void {
+    // Key position map (ASCII → pos+1, 0 = invalid)
+    g_tut_kmap = U8Array(128);
+    var keys: StringLiteral = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";
+    var i: i32 = 0;
+    while i < 40 {
+        set(g_tut_kmap, get(keys, i) as i32, (i + 1) as u8);
+        i = i + 1;
+    }
+
+    // Kanji/kana grid is in .rodata (tut_data.s), no init needed.
+
+    // Voiced/small kana table (for 3-stroke input via L prefix)
+    g_tut_vo = U8Array(50);
+    tut_set5(g_tut_vo, 0, 0x41,0x43,0x45,0x47,0x49); // R ぁ行 (small)
+    tut_set5(g_tut_vo, 1, 0x4C,0x4E,0x50,0x52,0x54); // E が行
+    tut_set5(g_tut_vo, 2, 0x56,0x58,0x5A,0x5C,0x5E); // S ざ行
+    tut_set5(g_tut_vo, 3, 0x60,0x62,0x63,0x67,0x69); // D だ行 (u=っ)
+    tut_set5(g_tut_vo, 4,    0,   0,   0,   0,   0); // F (none)
+    tut_set5(g_tut_vo, 5, 0x70,0x73,0x76,0x79,0x7C); // T ば行
+    tut_set5(g_tut_vo, 6,    0,   0,   0,   0,   0); // W (none)
+    tut_set5(g_tut_vo, 7, 0x83,   0,0x85,   0,0x87); // Q ゃ行 (small)
+    tut_set5(g_tut_vo, 8,    0,   0,   0,   0,   0); // G (none)
+    tut_set5(g_tut_vo, 9, 0x8E,   0,   0,   0,   0); // A ゎ (small)
+    return;
+}
+
+fn handle_tut(c: u8) -> void {
+    // ESC: exit TUT mode, stay in insert mode
+    if c == 27u8 { g_tut = 0; return; }
+    // Ctrl+J: also exit TUT mode
+    if c == 10u8 { g_tut = 0; return; }
+    // Backspace: delete previous character normally
+    if c == 8u8 || c == 127u8 { delete_byte_before_cur(); return; }
+    // Enter: insert newline
+    if c == '\r' as u8 { insert_byte('\n' as u8); return; }
+
+    if g_tut == 1 {
+        // Waiting for first key — accept any key in the 40-key layout
+        var pos: i32 = tut_keypos(c);
+        if pos >= 0 { g_tut_k1 = pos; g_tut = 2; }
+        return;
+    }
+
+    if g_tut == 2 {
+        // Got first key, waiting for second key
+        var p2: i32 = tut_keypos(c);
+        if p2 < 0 { g_tut = 1; return; }
+        // Look up the 2-stroke grid (kana + kanji)
+        var cp: i32 = tut_grid_lookup(g_tut_k1, p2);
+        if cp != 0 {
+            insert_codepoint(cp);
+            g_tut = 1;
+            return;
+        }
+        // Grid miss: if second key is 'l' (pos 28), try voiced mode
+        if p2 == 28 {
+            var row: i32 = tut_pos_to_row(g_tut_k1);
+            if row >= 0 { g_tut = 3; return; }
+        }
+        // Treat second key as new first key
+        g_tut_k1 = p2;
+        return;
+    }
+
+    if g_tut == 3 {
+        // Consonant + L: voiced/small kana
+        var row: i32 = tut_pos_to_row(g_tut_k1);
+        // Semi-voiced: T(pos 14)+L then T → state 4
+        if row == 5 && tut_keypos(c) == 14 {
+            g_tut = 4;
+            return;
+        }
+        var p2: i32 = tut_keypos(c);
+        if p2 >= 0 {
+            var col: i32 = tut_pos_to_col(p2);
+            if col >= 0 {
+                var off: i32 = get(g_tut_vo, row * 5 + col) as i32;
+                if off != 0 { insert_codepoint(0x3000 + off); }
+            }
+        }
+        g_tut = 1;
+        return;
+    }
+
+    if g_tut == 4 {
+        // T+L+T + vowel → ぱ行 (0x3071 + col*3)
+        var p2: i32 = tut_keypos(c);
+        if p2 >= 0 {
+            var col: i32 = tut_pos_to_col(p2);
+            if col >= 0 { insert_codepoint(0x3071 + col * 3); }
+        }
+        g_tut = 1;
+        return;
+    }
+
+    return;
+}
+
+// ===== file I/O =====
+
+fn set_msg(s: StringLiteral) -> void {
+    if g_msg as u32 != 0u32 { delete(g_msg); }
+    var sl: i32 = len(s);
+    g_msg = U8Array((sl + 1) as u32);
+    var i: i32 = 0;
+    while i < sl {
+        set(g_msg, i, get(s, i));
+        i = i + 1;
+    }
+    set(g_msg, sl, 0u8);
+    g_msg_len = sl;
+    return;
+}
+
+fn load_file() -> void {
+    var fd: i32 = do_openat(0, g_path as String, 0);
+    if fd < 0 {
+        g_len = 0;
+        set_msg("[new file]");
+        return;
+    }
+    var n: i32 = sys_read(fd, g_buf, BUF_CAP);
+    if n < 0 { do_close(fd); g_len = 0; return; }
+    g_len = n;
+    // If we filled the buffer, the file may be larger. Try to read one
+    // more byte: >0 means truncation, 0 means the file fit exactly.
+    if n == BUF_CAP {
+        var probe: U8Array = U8Array(1u32);
+        var extra: i32 = sys_read(fd, probe, 1);
+        delete(probe);
+        if extra > 0 {
+            set_msg("[read, truncated: file exceeds 16KB]");
+        } else {
+            set_msg("[read]");
+        }
+    } else {
+        set_msg("[read]");
+    }
+    do_close(fd);
+    return;
+}
+
+// O_WRONLY | O_CREAT | O_TRUNC — tmpfs opens these correctly today.
+// Returns true on success, false on failure.
+fn save_file() -> bool {
+    var flags: i32 = 1 | 0x40 | 0x200;
+    var fd: i32 = do_openat(0, g_path as String, flags);
+    if fd < 0 {
+        set_msg("write failed: open");
+        return false;
+    }
+    var n: i32 = sys_write(fd, g_buf, g_len);
+    do_close(fd);
+    if n < g_len {
+        set_msg("write failed: short write");
+        return false;
+    }
+    g_modified = 0;
+    set_msg("[written]");
+    return true;
+}
+
+// ===== rendering =====
+
+// Write g_buf[start..start+n] to stdout one byte at a time. Lines in
+// TC source get slurped off of a U8Array via offset, but sys_write
+// always writes from the data pointer at buf+4 offset 0 — it has no
+// offset argument — so a per-byte loop is the shortest path that
+// doesn't require an intermediate copy.
+fn write_range(start: i32, n: i32) -> void {
+    var i: i32 = 0;
+    while i < n {
+        putchar(get(g_buf, start + i));
+        i = i + 1;
+    }
+    return;
+}
+
+fn render() -> void {
+    clear_screen();
+    scroll_to_cursor();
+
+    // Visible byte range: lines [g_top_line .. g_top_line + TEXT_ROWS).
+    var vstart: i32 = line_start_of(g_top_line);
+    var vend:   i32 = line_start_of(g_top_line + TEXT_ROWS);
+    write_range(vstart, vend - vstart);
+
+    // Pad to status line: if the visible region ended before filling
+    // TEXT_ROWS (short file), emit LFs so the status line lands on the
+    // bottom row and cursor positioning stays predictable.
+    var visible_rows: i32 = 0;
+    var k: i32 = vstart;
+    while k < vend {
+        if get(g_buf, k) == 10u8 { visible_rows = visible_rows + 1; }
+        k = k + 1;
+    }
+    if vend > vstart && get(g_buf, vend - 1) != 10u8 {
+        visible_rows = visible_rows + 1;
+        putchar(13u8); putchar(10u8);
+    }
+    while visible_rows < TEXT_ROWS {
+        putchar(13u8); putchar(10u8);
+        visible_rows = visible_rows + 1;
+    }
+
+    // Status line on row SCREEN_ROWS.
+    puts("-- ");
+    if g_mode == 1 {
+        if g_tut > 0 { puts("INSERT TUT"); }
+        else { puts("INSERT"); }
+    }
+    else if g_mode == 2 {
+        puts(":");
+        if g_cmdlen > 0 { puts_n(g_cmdbuf, g_cmdlen); }
+    }
+    else { puts("NORMAL"); }
+    puts(" -- ");
+    if g_msg as u32 != 0u32 && g_msg_len > 0 {
+        puts_n(g_msg, g_msg_len);
+    }
+
+    // In normal / insert mode, position the cursor. Screen row is the
+    // cursor's logical row minus g_top_line, +1 for 1-based ANSI.
+    if g_mode != 2 {
+        var rc: U8Array = U8Array(8);
+        row_col(g_cur, rc);
+        var logical_row: i32 = (get(rc, 0) as i32)
+                             | ((get(rc, 1) as i32) << 8)
+                             | ((get(rc, 2) as i32) << 16)
+                             | ((get(rc, 3) as i32) << 24);
+        var col: i32 = (get(rc, 4) as i32)
+                     | ((get(rc, 5) as i32) << 8)
+                     | ((get(rc, 6) as i32) << 16)
+                     | ((get(rc, 7) as i32) << 24);
+        var screen_row: i32 = logical_row - g_top_line + 1;
+        if screen_row < 1 { screen_row = 1; }
+        if screen_row > TEXT_ROWS { screen_row = TEXT_ROWS; }
+        goto_xy(screen_row, col);
+        delete(rc);
+    }
+    return;
+}
+
+// ===== command handling =====
+
+fn cmd_eq(s: StringLiteral) -> bool {
+    var sl: i32 = len(s);
+    if g_cmdlen != sl { return false; }
+    var i: i32 = 0;
+    while i < sl {
+        if get(g_cmdbuf, i) != get(s, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn run_cmd() -> void {
+    if cmd_eq("w") {
+        save_file();
+    } else if cmd_eq("q") {
+        if g_modified == 1 {
+            set_msg("unsaved changes (use :q!)");
+        } else {
+            g_running = 0;
+        }
+    } else if cmd_eq("q!") {
+        g_running = 0;
+    } else if cmd_eq("wq") || cmd_eq("x") {
+        if save_file() { g_running = 0; }
+    } else {
+        set_msg("unknown command");
+    }
+    return;
+}
+
+// ===== main key dispatch =====
+
+fn handle_normal(c: u8) -> void {
+    // Most commands reset the pending multi-key state; only 'dd' / 'gg'
+    // advance it. Mirror vi's "any other key aborts the operator".
+    if g_pending_d == 1 && c == 'd' as u8 {
+        save_undo();
+        delete_line();
+        g_pending_d = 0;
+        return;
+    }
+    if g_pending_g == 1 && c == 'g' as u8 {
+        move_bof();
+        g_pending_g = 0;
+        return;
+    }
+    if g_pending_Z == 1 && c == 'Z' as u8 {
+        if save_file() { g_running = 0; }
+        g_pending_Z = 0;
+        return;
+    }
+    g_pending_d = 0;
+    g_pending_g = 0;
+    g_pending_Z = 0;
+
+    if c == 'h' as u8 { move_left(); }
+    else if c == 'l' as u8 { move_right(); }
+    else if c == 'j' as u8 { move_down(); }
+    else if c == 'k' as u8 { move_up(); }
+    else if c == '0' as u8 { move_line_start(); }
+    else if c == '$' as u8 { move_line_end(); }
+    else if c == 'G' as u8 { move_eof(); }
+    else if c == 'g' as u8 { g_pending_g = 1; }
+    else if c == 'x' as u8 { save_undo(); delete_byte_at_cur(); }
+    else if c == 'd' as u8 { g_pending_d = 1; }
+    else if c == 'Z' as u8 { g_pending_Z = 1; }
+    else if c == 'u' as u8 { do_undo(); }
+    else if c == 'i' as u8 { save_undo(); g_mode = 1; }
+    else if c == 'I' as u8 { save_undo(); move_line_start(); g_mode = 1; }
+    else if c == 'a' as u8 {
+        save_undo();
+        if g_cur < g_len && get(g_buf, g_cur) != 10u8 {
+            var n: i32 = utf8_len(get(g_buf, g_cur));
+            g_cur = g_cur + n;
+            if g_cur > g_len { g_cur = g_len; }
+        }
+        g_mode = 1;
+    }
+    else if c == 'A' as u8 { save_undo(); move_line_end(); g_mode = 1; }
+    else if c == 'o' as u8 {
+        save_undo();
+        move_line_end();
+        insert_byte(10u8);
+        g_mode = 1;
+    }
+    else if c == 'O' as u8 {
+        save_undo();
+        move_line_start();
+        insert_byte(10u8);
+        g_cur = g_cur - 1;    // stay on the new empty line
+        g_mode = 1;
+    }
+    else if c == ':' as u8 {
+        g_mode = 2;
+        g_cmdlen = 0;
+    }
+    // Unknown keys are silently ignored, matching vi convention.
+    return;
+}
+
+fn handle_insert(c: u8) -> void {
+    if c == 27u8 {
+        // ESC → if TUT active, exit TUT only; else exit insert mode.
+        if g_tut > 0 { g_tut = 0; return; }
+        g_mode = 0;
+        if g_cur > 0 {
+            var ls: i32 = line_start_at(g_cur);
+            if g_cur > ls {
+                g_cur = g_cur - 1;
+                while g_cur > ls && is_cont(get(g_buf, g_cur)) {
+                    g_cur = g_cur - 1;
+                }
+            }
+        }
+        return;
+    }
+    // TUT mode active: route all keys to TUT handler.
+    if g_tut > 0 {
+        handle_tut(c);
+        return;
+    }
+    // Ctrl+J: enter TUT mode.
+    if c == 10u8 {
+        g_tut = 1;
+        return;
+    }
+    if c == 8u8 || c == 127u8 {
+        delete_byte_before_cur();
+        return;
+    }
+    if c == '\r' as u8 { c = '\n' as u8; }
+    // Accept LF (from CR), TAB and any printable byte.
+    if c == 10u8 || c == 9u8 || c >= 32u8 { insert_byte(c); }
+    return;
+}
+
+fn handle_cmdline(c: u8) -> void {
+    if c == 27u8 {
+        // ESC cancels the command and returns to normal.
+        g_mode = 0;
+        g_cmdlen = 0;
+        return;
+    }
+    if c == '\r' as u8 || c == '\n' as u8 {
+        run_cmd();
+        g_mode = 0;
+        g_cmdlen = 0;
+        return;
+    }
+    if c == 8u8 || c == 127u8 {
+        if g_cmdlen > 0 { g_cmdlen = g_cmdlen - 1; }
+        return;
+    }
+    if c >= 32u8 && c < 127u8 && g_cmdlen < CMD_CAP - 1 {
+        set(g_cmdbuf, g_cmdlen, c);
+        g_cmdlen = g_cmdlen + 1;
+    }
+    return;
+}
+
+// ===== main =====
+
+fn main(argv: StringArray) -> i32 {
+    if len(argv) < 2 {
+        puts("usage: vi <file>\n");
+        return 1;
+    }
+    var arg: String = get(argv, 1);
+    g_path_len = len(arg);
+    // g_path stores the path in String layout (count header = content
+    // length) so it can be handed straight to do_openat without an
+    // extra copy. +1 byte of spare capacity is kept for safety.
+    g_path = U8Array((g_path_len + 1) as u32);
+    var i: i32 = 0;
+    while i < g_path_len {
+        set(g_path, i, get(arg, i));
+        i = i + 1;
+    }
+    set(g_path, g_path_len, 0u8);
+    poke32(g_path as u32, g_path_len as u32);
+
+    g_buf = U8Array(BUF_CAP as u32);
+    g_undo_buf = U8Array(BUF_CAP as u32);
+    g_cmdbuf = U8Array(CMD_CAP as u32);
+    tut_init();
+    load_file();
+
+    var one: U8Array = U8Array(1);
+    render();
+    while g_running == 1 {
+        var n: i32 = sys_read(0, one, 1);
+        if n <= 0 {
+            // Treat read error/EOF as implicit quit — avoids pinning
+            // a detached serial console forever.
+            g_running = 0;
+        } else {
+            var c: u8 = get(one, 0);
+            if g_mode == 0 { handle_normal(c); }
+            else if g_mode == 1 { handle_insert(c); }
+            else { handle_cmdline(c); }
+            render();
+        }
+    }
+    delete(one);
+
+    // Leave the terminal in a sane state for the next shell prompt.
+    clear_screen();
+
+    delete(g_buf);
+    delete(g_undo_buf);
+    delete(g_cmdbuf);
+    delete(g_tut_kmap);
+    delete(g_tut_vo);
+    delete(g_path);
+    if g_msg as u32 != 0u32 { delete(g_msg); }
+    return 0;
+}

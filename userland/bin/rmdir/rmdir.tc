@@ -1,0 +1,29 @@
+// rmdir.tc — remove empty directories
+//
+// Usage: rmdir <dir> [dir2 ...]
+// Calls sys_rmdir (ecall 40) for each argument. The kernel refuses
+// non-empty dirs, files, and the FAT root.
+
+import "../../lib/libtc/libtc.tc";
+
+fn main(argv: StringArray) -> i32 {
+    var argc: i32 = len(argv);
+    if argc < 2 {
+        eputs("rmdir: missing operand\n");
+        return 1;
+    }
+    var ret: i32 = 0;
+    var i: i32 = 1;
+    while i < argc {
+        var s: String = get(argv, i);
+        var r: i32 = do_rmdir(s);
+        if r != 0 {
+            eputs("rmdir: failed to remove: ");
+            sys_write(2, s);
+            eputs("\n");
+            ret = 1;
+        }
+        i = i + 1;
+    }
+    return ret;
+}

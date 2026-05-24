@@ -107,14 +107,14 @@ KERNEL_S_SOURCES  := kernel/platform/virt/platform_virt.s kernel/platform/pico2/
                      compiler/runtime/mtos/task_crt0.s compiler/runtime/mtos/task_data.s
 
 RUNTIME_DEPS := $(shell compiler/scripts/collect_imports.sh compiler/src/runtime.tc 2>/dev/null)
-LIBTC_DEPS   := $(shell compiler/scripts/collect_imports.sh kernel/tasks/libtc/libtc.tc 2>/dev/null)
+LIBTC_DEPS   := $(shell compiler/scripts/collect_imports.sh userland/lib/libtc/libtc.tc 2>/dev/null)
 
-# task の定義は kernel/tasks/*/task.mk から include。各 task.mk が
+# task の定義は userland/bin/*/task.mk から include。各 task.mk が
 # GUEST_TASKS += <name> または EXTRA_GUEST_TASKS += <name> と
 # TASK_ARENA_<name> / TASK_STACK_<name> を宣言。
 GUEST_TASKS :=
 EXTRA_GUEST_TASKS :=
--include $(wildcard kernel/tasks/*/task.mk)
+-include $(wildcard userland/bin/*/task.mk)
 # DROP_TASKS allows shaving disk-extra.img to fit pico2's 4 MiB
 # flash when the kernel itself grew (e.g. dumper + bin2uf2). The
 # default empty list keeps every task; CI / day-to-day builds are
@@ -123,7 +123,7 @@ GUEST_TASKS       := $(filter-out $(DROP_TASKS),$(GUEST_TASKS))
 EXTRA_GUEST_TASKS := $(filter-out $(DROP_TASKS),$(EXTRA_GUEST_TASKS))
 ALL_TASK_NAMES := $(GUEST_TASKS) $(EXTRA_GUEST_TASKS)
 
-TASK_MK_FILES := $(wildcard kernel/tasks/*/task.mk)
+TASK_MK_FILES := $(wildcard userland/bin/*/task.mk)
 QEMU_USER := qemu-riscv32
 
 build/kernel:
@@ -136,7 +136,7 @@ close_paren := )
 # kernel/build.sh (後方互換) と per-task ビルドレシピが source する。
 build/kernel/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
 	@printf '%s\n' \
-	    '# auto-generated from kernel/tasks/*/task.mk' \
+	    '# auto-generated from userland/bin/*/task.mk' \
 	    'TASKS="$(GUEST_TASKS)"' \
 	    'task_arena_size() { case "$$1" in' \
 	    $(foreach t,$(ALL_TASK_NAMES),'  $(t)$(close_paren) echo $(TASK_ARENA_$(t)) ;;') \
@@ -165,7 +165,7 @@ build/kernel/shared/runtime.s: compiler/src/runtime.tc $(RUNTIME_DEPS) $(GEN2_TO
 	    | $(QEMU_USER) build/gen2/bc2asm > $@ && \
 	rm -f "$$_ast" "$$_th"
 
-build/kernel/shared/libtc.s: kernel/tasks/libtc/libtc.tc $(LIBTC_DEPS) $(GEN2_TOOLS) | build/kernel/shared
+build/kernel/shared/libtc.s: userland/lib/libtc/libtc.tc $(LIBTC_DEPS) $(GEN2_TOOLS) | build/kernel/shared
 	@echo "Pre-compiling libtc.tc" >&2
 	@_ast=$$(mktemp) && _th=$$(mktemp) && \
 	build/gen1/parse $< > "$$_ast" && \
@@ -202,9 +202,9 @@ build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    EXTRA_S="$(TASK_EXTRA_S_$*)" \
-	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/tasks/$*/$*.tc 2>/dev/null && \
+	    ./compiler/scripts/compile-gen2.sh -o $@ userland/bin/$*/$*.tc 2>/dev/null && \
 	rm -rf "$$_tmp"
-	@compiler/scripts/tc_deps_to_d.sh $@ kernel/tasks/$*/$*.tc > $@.d
+	@compiler/scripts/tc_deps_to_d.sh $@ userland/bin/$*/$*.tc > $@.d
 
 GUEST_TASK_BINS  := $(foreach t,$(GUEST_TASKS),build/kernel/tasks/$(t).bin)
 EXTRA_TASK_BINS  := $(foreach t,$(EXTRA_GUEST_TASKS),build/kernel/tasks/$(t).bin)
@@ -316,7 +316,7 @@ EXTRA_SRC_DEPS := compiler/src/string_buffer.tc compiler/src/source_reader.tc \
     compiler/src/parse.tc compiler/src/sigscan.tc compiler/src/tcheck.tc \
     compiler/src/codegen.tc compiler/src/bc2asm.tc compiler/src/asm_pass2.tc \
     compiler/src/asm_pass3.tc compiler/src/runtime.tc \
-    kernel/tasks/libtc/libtc.tc \
+    userland/lib/libtc/libtc.tc \
     kernel/src/kernel_common.tc kernel/platform/pico2/block_flash.tc kernel/platform/pico2/block_sd.tc \
     kernel/src/tmpfs.tc kernel/src/fatfs.tc kernel/src/mtfs.tc kernel/src/procfs.tc \
     kernel/src/vfs.tc kernel/src/loader.tc kernel/src/kernel_pico2.tc \
@@ -370,7 +370,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	for s in string_buffer.tc source_reader.tc strlib.tc ast_node.tc asm_common.tc asm_dead_strip.tc parse.tc sigscan.tc tcheck.tc codegen.tc bc2asm.tc asm_pass1.tc asm_pass2.tc asm_pass2_lib.tc asm_pass3.tc asm_pass3_lib.tc runtime.tc; do \
 	    cp compiler/src/$$s "$$_r/src/$$s" || exit 1; \
 	done && \
-	cp kernel/tasks/libtc/libtc.tc "$$_r/src/libtc.tc" && \
+	cp userland/lib/libtc/libtc.tc "$$_r/src/libtc.tc" && \
 	for s in kernel_common.tc tmpfs.tc fatfs.tc mtfs.tc procfs.tc vfs.tc loader.tc kernel_pico2.tc; do \
 	    cp kernel/src/$$s "$$_r/src/$$s" || exit 1; \
 	done && \

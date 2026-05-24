@@ -1,0 +1,34 @@
+// launcher.tc — demo guest task that execs / spawns other binaries.
+//
+// Exercises two syscall paths end-to-end:
+//   1. sys_exec via do_exec("/bin/catfile") — replaces the current
+//      image, so the launcher itself prints nothing on the happy path.
+//   2. sys_spawn + sys_wait (now re-enabled for pico2 via the 480 KB
+//      kernel arena in crt0_pico2_data.s). We spawn /bin/hello2 as a
+//      smoke test of the dynamic allocator path before exec'ing the
+//      final target. If the spawn fails we print a diagnostic and
+//      fall through to the legacy exec path so regressions stay
+//      visible on UART.
+
+import "../../lib/libtc/libtc.tc";
+
+fn main() -> i32 {
+    // Step 1: dynamic spawn + wait. Validates that pico2's sys_spawn
+    // path can kmalloc a task_ram / task_stack / frame_buf from the
+    // kernel arena for a child binary declared via the K3 header.
+    var slot: i32 = do_spawn("/bin/hello2", 0, 0 as String, 0 as String);
+    if slot < 0 {
+        puts("LAUNCHER: spawn failed\n");
+    } else {
+        puts("LAUNCHER: spawned slot ok\n");
+        do_wait(slot);
+        puts("LAUNCHER: wait returned\n");
+    }
+
+    // Step 2: exec /bin/catfile as before. catfile reads /hello.txt
+    // via the mtfs XIP backend and prints it to stdout, so the pico2
+    // test still sees its CAT:hello, mtfs line.
+    do_exec("/bin/catfile", 0, 0 as String, 0 as String);
+    puts("LAUNCHER: exec failed\n");
+    return 1;
+}

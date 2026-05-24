@@ -1,0 +1,1454 @@
+// bc2asm.tc — RISC-V 32-bit assembly generator from .bc bytecode
+// Target: RV32IM, GAS syntax
+
+import "string_buffer.tc";
+import "source_reader.tc";
+import "strlib.tc";
+
+// ===== Opcodes =====
+var OP_PUSH_INT: i32 = 1;
+var OP_PUSH_STR: i32 = 2;
+var OP_LOAD: i32 = 3;
+var OP_STORE: i32 = 4;
+var OP_CALL: i32 = 5;
+var OP_RETURN: i32 = 6;
+var OP_RETURN_VOID: i32 = 7;
+var OP_POP: i32 = 8;
+var OP_ADD: i32 = 9;
+var OP_SUB: i32 = 10;
+var OP_MUL: i32 = 11;
+var OP_DIV: i32 = 12;
+var OP_MOD: i32 = 13;
+var OP_AND: i32 = 14;
+var OP_OR: i32 = 15;
+var OP_XOR: i32 = 16;
+var OP_SHL: i32 = 17;
+var OP_SHR: i32 = 18;
+var OP_EQ: i32 = 19;
+var OP_NE: i32 = 20;
+var OP_LT: i32 = 21;
+var OP_LE: i32 = 22;
+var OP_GT: i32 = 23;
+var OP_GE: i32 = 24;
+var OP_NEG: i32 = 25;
+var OP_LNOT: i32 = 26;
+var OP_CAST: i32 = 27;
+var OP_JUMP: i32 = 28;
+var OP_JUMP_IF: i32 = 29;
+var OP_JUMP_IFNOT: i32 = 30;
+var OP_SHR_U: i32 = 31;
+var OP_LT_U: i32 = 32;
+var OP_LE_U: i32 = 33;
+var OP_GT_U: i32 = 34;
+var OP_GE_U: i32 = 35;
+var OP_DIV_U: i32 = 36;
+var OP_MOD_U: i32 = 37;
+
+// ===== Global state =====
+// Streams stdin via SourceReader (R7). Previously this was a 524 KB
+// flat U8Array buffer (src + g_in_pos + g_in_len); now the 4 KB
+// SourceReader buffer is enough since parse_bc only ever reads
+// forward. Frees 520 KB.
+var g_reader: SourceReader = 0 as SourceReader;
+var g_stab_pos: i32 = 0;
+var g_nfuncs: i32 = 0;
+var g_nparams: i32 = 0;
+var g_nlocals: i32 = 0;
+var g_ninstrs: i32 = 0;
+var g_nglobals: i32 = 0;
+var g_nstrings: i32 = 0;
+
+// Diagnostic peaks; updated at every .endfn (per-fn) and dumped to
+// stderr at exit alongside km_dump_peak. Helps size the fixed buffers
+// in main(). After #60 settles these numbers are stable across
+// compiler/*.tc inputs.
+var g_max_stab: i32 = 0;
+var g_max_instr: i32 = 0;
+var g_max_param: i32 = 0;
+var g_max_local: i32 = 0;
+
+// String literal labels include the first function's mangled name so
+// multiple .tc files linked into one asm.tc invocation don't collide on
+// the per-file-local literal index. asm.tc does last-wins label
+// resolution, so before this fix kernel.tc's __tc_strobj0 would silently
+// replace runtime.tc's __tc_strobj0 (see docs/problem.md #21).
+//
+// Stored in a dedicated 64-byte buffer (rather than a strtab pointer)
+// so the per-function emission refactor (#60) can roll the strtab
+// cursor back after each .endfn without losing this label-prefix.
+var g_unit_name: U8Array = 0 as U8Array;
+var g_unit_name_len: i32 = 0;
+
+// ===== Common emit helpers =====
+fn e4(ob: StringBuffer) -> void { emit_string(ob, "    "); return; }
+fn ecomma(ob: StringBuffer) -> void { emit_string(ob, ", "); return; }
+fn eNspnl(n: i32, ob: StringBuffer) -> void {
+    emit_int(ob, n); emit_string(ob, "(sp)\n"); return;
+}
+fn eNs0nl(n: i32, ob: StringBuffer) -> void {
+    emit_int(ob, n); emit_string(ob, "(s0)\n"); return;
+}
+fn eNt0nl(n: i32, ob: StringBuffer) -> void {
+    emit_int(ob, n); emit_string(ob, "(t0)\n"); return;
+}
+fn eregsp(ob: StringBuffer) -> void { emit_string(ob, "sp, "); return; }
+fn eregs0(ob: StringBuffer) -> void { emit_string(ob, "s0, "); return; }
+fn eregt0(ob: StringBuffer) -> void { emit_string(ob, "t0, "); return; }
+fn eregt1(ob: StringBuffer) -> void { emit_string(ob, "t1, "); return; }
+fn eregra(ob: StringBuffer) -> void { emit_string(ob, "ra, "); return; }
+fn e_addi(ob: StringBuffer) -> void { emit_string(ob, "    addi "); return; }
+fn e_sw(ob: StringBuffer) -> void { emit_string(ob, "    sw   "); return; }
+fn e_lw(ob: StringBuffer) -> void { emit_string(ob, "    lw   "); return; }
+fn e_li(ob: StringBuffer) -> void { emit_string(ob, "    li   "); return; }
+fn e_la(ob: StringBuffer) -> void { emit_string(ob, "    la   "); return; }
+// push_t0 / pop_t0 / pop_t1_t0
+fn asm_push_t0(ob: StringBuffer) -> void {
+    // addi sp, sp, -4
+    e_addi(ob); eregsp(ob); eregsp(ob); emit_string(ob, "-4");emit_nl(ob);
+    // sw t0, 0(sp)
+    e_sw(ob); eregt0(ob); eNspnl(0,ob);
+    return;
+}
+fn asm_pop_t0(ob: StringBuffer) -> void {
+    // lw t0, 0(sp)
+    e_lw(ob); eregt0(ob); eNspnl(0,ob);
+    // addi sp, sp, 4
+    e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_nl(ob);
+    return;
+}
+fn asm_pop_t1_t0(ob: StringBuffer) -> void {
+    // lw t1, 0(sp)   — t1 = right operand
+    e_lw(ob); eregt1(ob); eNspnl(0,ob);
+    // lw t0, 4(sp)   — t0 = left operand
+    e_lw(ob); eregt0(ob); eNspnl(4,ob);
+    // addi sp, sp, 8
+    e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '8');emit_nl(ob);
+    return;
+}
+// Epilogue: mv t0,s0; lw ra,-4(t0); lw s0,-8(t0); addi sp,t0,0; ret
+fn asm_epilogue(ob: StringBuffer) -> void {
+    // mv t0, s0
+    e4(ob);emit_string(ob, "mv   ");
+    eregt0(ob);emit_string(ob, "s0");emit_nl(ob);
+    // lw ra, -4(t0)
+    e_lw(ob); eregra(ob); eNt0nl(0-4,ob);
+    // lw s0, -8(t0)
+    e_lw(ob); eregs0(ob); eNt0nl(0-8,ob);
+    // addi sp, t0, 0
+    e_addi(ob); eregsp(ob);
+    emit_string(ob, "t0, "); // "t0, "
+    emit_char(ob, '0');emit_nl(ob);
+    // ret
+    e4(ob);emit_string(ob, "ret");emit_nl(ob);
+    return;
+}
+// "__<first_fn>_strobj<idx>" — discriminate literal labels per .tc file
+// so asm.tc's last-wins label resolution doesn't silently alias two
+// files' literals (problem.md #21). g_unit_name is filled in on the
+// first .fn directive (parse_bc::handle_fn_directive); using a
+// dedicated buffer instead of a strtab slice lets the per-fn rollback
+// in #60 reclaim strtab without losing this prefix.
+fn e_strobj(idx: i32, ob: StringBuffer) -> void {
+    emit_char(ob, '_'); emit_char(ob, '_');
+    emit_n(ob, g_unit_name, 0, g_unit_name_len);
+    emit_string(ob, "_strobj"); emit_int(ob, idx);
+    return;
+}
+// "  .L_FNAME_pcN:\n"  (uses mangled function name for globally unique labels)
+fn asm_pc_label(strtab: U8Array, nm_ss: i32, nm_sl: i32, pc: i32, ob: StringBuffer) -> void {
+    emit_string(ob, "  .L_");
+    emit_n(ob, strtab, nm_ss, nm_sl);emit_string(ob, "_pc");emit_int(ob, pc);emit_char(ob, ':');emit_nl(ob);
+    return;
+}
+// ".L_FNAME_pcN" (without newline, used in jump targets)
+fn e_pcref(strtab: U8Array, nm_ss: i32, nm_sl: i32, pc: i32, ob: StringBuffer) -> void {
+    emit_string(ob, ".L_");
+    emit_n(ob, strtab, nm_ss, nm_sl);emit_string(ob, "_pc");emit_int(ob, pc);
+    return;
+}
+// "    j    .L_FNAME_pcN\n"
+fn asm_jump(strtab: U8Array, nm_ss: i32, nm_sl: i32, target: i32, ob: StringBuffer) -> void {
+    e4(ob);emit_string(ob, "j    ");
+    e_pcref(strtab,nm_ss,nm_sl,target,ob);emit_nl(ob);
+    return;
+}
+// Emit conditional jump using inverted-branch + j pattern to avoid
+// B-type ±4KB range limit. cond_ne=1 means "jump if true" (jump_if),
+// cond_ne=0 means "jump if false" (jump_ifnot).
+fn asm_branch(strtab: U8Array, nm_ss: i32, nm_sl: i32, cond_ne: i32, target: i32, ob: StringBuffer) -> void {
+    // Invert condition for short skip branch
+    e4(ob);
+    if cond_ne == 1 {
+        // jump_if: jump when t0!=0 → skip j when t0==0
+        emit_string(ob, "beqz ");
+    } else {
+        // jump_ifnot: jump when t0==0 → skip j when t0!=0
+        emit_string(ob, "bnez ");
+    }
+    emit_string(ob, "t0");ecomma(ob);
+    // 0f (forward numeric label)
+    emit_string(ob, "0f");
+    emit_nl(ob);
+    // j target
+    e4(ob);
+    emit_string(ob, "j    ");
+    e_pcref(strtab,nm_ss,nm_sl,target,ob);emit_nl(ob);
+    // 0:
+    emit_string(ob, "0:");emit_nl(ob);
+    return;
+}
+// Return length of base name (before first "__" separator in mangled name)
+fn base_name_len(strtab: U8Array, ss: i32, sl: i32) -> i32 {
+    var i: i32 = 0;
+    while i + 1 < sl {
+        if get(strtab,(ss+i))==95u8 && get(strtab,(ss+i+1))==95u8 { return i; }
+        i = i + 1;
+    }
+    return sl;
+}
+// peek*/poke* are 1-instruction wrappers around lw/lh/lbu/sw/sh/sb,
+// each defined in crt0_tc.s as a 2-instruction stub (lw + ret). The
+// emit cost per call is jal/ret + the load/store. Inlining them at
+// bc2asm time replaces `call peek32__u32` with a single `lw a0,
+// 0(a0)` (similarly for the others), saving the call/ret jump and
+// the leaf frame on every peek/poke. asm_pass3's full.s self-build
+// makes ~600 such calls per source pass; eliminating them ~halves
+// the per-line dispatch overhead in tight runtime loops (kmalloc,
+// String accessors, label table reads).
+fn name_eq(strtab: U8Array, ss: i32, sl: i32, pat: StringLiteral) -> bool {
+    var pl: i32 = len(pat);
+    if sl != pl { return false; }
+    var i: i32 = 0;
+    while i < pl {
+        if get(strtab, (ss + i)) != get(pat, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Helper: emit a typed get inline.
+//   stride_log2: 0=byte, 1=halfword, 2=word
+//   load_op: "lbu" / "lb" / "lhu" / "lh" / "lw"
+// Computes a0 = mem[a0 + (a1 << stride_log2) + 4]. The +4 skips
+// the count prefix that count-prefixed arrays / Strings carry.
+// Prepends a bound check identical in shape to emit_inline_set —
+// see that function's comment for the rationale (K14 footgun).
+fn emit_inline_get(stride_log2: i32, load_op: StringLiteral, ob: StringBuffer) -> void {
+    e4(ob); emit_string(ob, "lw   t0, 0(a0)"); emit_nl(ob);
+    e4(ob); emit_string(ob, "bltu a1, t0, 0f"); emit_nl(ob);
+    e4(ob); emit_string(ob, "mv   a0, a1"); emit_nl(ob);
+    e4(ob); emit_string(ob, "mv   a1, t0"); emit_nl(ob);
+    e4(ob); emit_string(ob, "j    __array_oob_get__i32__i32"); emit_nl(ob);
+    emit_string(ob, "0:"); emit_nl(ob);
+    if stride_log2 != 0 {
+        e4(ob); emit_string(ob, "slli a1, a1, ");
+        emit_int(ob, stride_log2); emit_nl(ob);
+    }
+    e4(ob); emit_string(ob, "add  a0, a0, a1"); emit_nl(ob);
+    e4(ob); emit_string(ob, load_op);
+    emit_string(ob, " a0, 4(a0)"); emit_nl(ob);
+    return;
+}
+// Helper: emit a typed set inline. Similar to get but uses a2 as
+// the value and a store opcode (sb/sh/sw).
+//
+// Prepends a 2-insn bound check before the actual store:
+//
+//   lw    t0, 0(a0)             # load count (array header)
+//   bltu  a1, t0, 0f            # if i < n, skip OOB
+//   mv    a0, a1                # OOB path: a0 = i
+//   mv    a1, t0                #           a1 = n
+//   j     __array_oob_set...    # noreturn (eprint + do_exit)
+//   0:
+//   ...original 3-insn store...
+//
+// The hot path costs +2 insns (lw + bltu). The OOB path sets up
+// args and jumps to the runtime stub — terminal so register
+// preservation doesn't matter. Until 2026-05-11 this check was
+// completely missing; the silent overflow that resulted is the
+// root cause documented in K14 (docs/solved.md).
+fn emit_inline_set(stride_log2: i32, store_op: StringLiteral, ob: StringBuffer) -> void {
+    // Bound check before the shift clobbers a1.
+    e4(ob); emit_string(ob, "lw   t0, 0(a0)"); emit_nl(ob);
+    e4(ob); emit_string(ob, "bltu a1, t0, 0f"); emit_nl(ob);
+    e4(ob); emit_string(ob, "mv   a0, a1"); emit_nl(ob);
+    e4(ob); emit_string(ob, "mv   a1, t0"); emit_nl(ob);
+    e4(ob); emit_string(ob, "j    __array_oob_set__i32__i32"); emit_nl(ob);
+    emit_string(ob, "0:"); emit_nl(ob);
+    if stride_log2 != 0 {
+        e4(ob); emit_string(ob, "slli a1, a1, ");
+        emit_int(ob, stride_log2); emit_nl(ob);
+    }
+    e4(ob); emit_string(ob, "add  a0, a0, a1"); emit_nl(ob);
+    e4(ob); emit_string(ob, store_op);
+    emit_string(ob, " a2, 4(a0)"); emit_nl(ob);
+    return;
+}
+
+// Try to emit an inline body for known builtins. Returns 1 if
+// inlined (caller skips the `call` emit), 0 to fall through.
+fn try_inline_builtin(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: StringBuffer) -> i32 {
+    // peek* (single u32 arg → result in a0): rd = mem[a0]
+    if name_eq(strtab, nm_ss, nm_sl, "peek8__u32") {
+        e4(ob); emit_string(ob, "lbu  a0, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "peek16__u32") {
+        e4(ob); emit_string(ob, "lhu  a0, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "peek32__u32") {
+        e4(ob); emit_string(ob, "lw   a0, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    // poke* (u32 addr + value → void, value in a1): mem[a0] = a1
+    if name_eq(strtab, nm_ss, nm_sl, "poke8__u32__u8") {
+        e4(ob); emit_string(ob, "sb   a1, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "poke16__u32__u16") {
+        e4(ob); emit_string(ob, "sh   a1, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "poke32__u32__u32") {
+        e4(ob); emit_string(ob, "sw   a1, 0(a0)"); emit_nl(ob);
+        return 1;
+    }
+
+    // get(<typed-array>, i32) — same shape (arr in a0, idx in a1),
+    // result in a0. Stride and load opcode vary by element type.
+    // Address: arr + (i << stride_log2) + 4 (count-prefix skip).
+    if name_eq(strtab, nm_ss, nm_sl, "get__U8Array__i32") {
+        emit_inline_get(0, "lbu ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__I8Array__i32") {
+        emit_inline_get(0, "lb  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__U16Array__i32") {
+        emit_inline_get(1, "lhu ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__I16Array__i32") {
+        emit_inline_get(1, "lh  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__U32Array__i32") {
+        emit_inline_get(2, "lw  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__I32Array__i32") {
+        emit_inline_get(2, "lw  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__StringArray__i32") {
+        emit_inline_get(2, "lw  ", ob); return 1;
+    }
+    // String / StringLiteral get returns u8 (single byte at +4+i).
+    if name_eq(strtab, nm_ss, nm_sl, "get__String__i32") {
+        emit_inline_get(0, "lbu ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "get__StringLiteral__i32") {
+        emit_inline_get(0, "lbu ", ob); return 1;
+    }
+
+    // set(<typed-array>, i32, <val>) — arr a0, idx a1, val a2.
+    if name_eq(strtab, nm_ss, nm_sl, "set__U8Array__i32__u8") {
+        emit_inline_set(0, "sb  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__I8Array__i32__i8") {
+        emit_inline_set(0, "sb  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__U16Array__i32__u16") {
+        emit_inline_set(1, "sh  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__I16Array__i32__i16") {
+        emit_inline_set(1, "sh  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__U32Array__i32__u32") {
+        emit_inline_set(2, "sw  ", ob); return 1;
+    }
+    if name_eq(strtab, nm_ss, nm_sl, "set__I32Array__i32__i32") {
+        emit_inline_set(2, "sw  ", ob); return 1;
+    }
+
+    // len() carries an explicit null check in runtime.tc (returns 0
+    // when the arg is null), so a 1-instr inline would change
+    // semantics on null-array access. Keep the call.
+
+    return 0;
+}
+
+// "    call NAME\n"  (all calls use full mangled name directly).
+// peek/poke are inlined to a single lw/lbu/lhu/sw/sb/sh; everything
+// else gets the normal `call NAME` emit.
+fn asm_call_fn(strtab: U8Array, nm_ss: i32, nm_sl: i32, ob: StringBuffer) -> void {
+    if try_inline_builtin(strtab, nm_ss, nm_sl, ob) != 0 { return; }
+    e4(ob);emit_string(ob, "call ");
+    emit_n(ob, strtab, nm_ss, nm_sl);
+    emit_nl(ob);
+    return;
+}
+// "    seqz t0, t0\n"
+fn asm_seqz_t0(ob: StringBuffer) -> void {
+    e4(ob);emit_string(ob, "seqz ");
+    eregt0(ob);emit_string(ob, "t0");emit_nl(ob);
+    return;
+}
+// "    snez t0, t0\n"
+fn asm_snez_t0(ob: StringBuffer) -> void {
+    e4(ob);emit_string(ob, "snez ");
+    eregt0(ob);emit_string(ob, "t0");emit_nl(ob);
+    return;
+}
+// "    xori t0, t0, 1\n"
+fn asm_xori_t0_1(ob: StringBuffer) -> void {
+    e4(ob);emit_string(ob, "xori ");
+    eregt0(ob);eregt0(ob);emit_char(ob, '1');emit_nl(ob);
+    return;
+}
+// "    sub  t0, t0, t1\n"
+fn asm_sub_t0_t0_t1(ob: StringBuffer) -> void {
+    e4(ob);emit_string(ob, "sub  ");
+    eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+    return;
+}
+// "    slt  t0, A, B\n" (A and B are 't0' or 't1')
+fn asm_slt(swap: i32, ob: StringBuffer) -> void {
+    // swap=0: slt t0, t0, t1   (t0 < t1)
+    // swap=1: slt t0, t1, t0   (t1 < t0 i.e. t0 > t1)
+    e4(ob);emit_string(ob, "slt  ");
+    eregt0(ob);
+    if swap == 0 { eregt0(ob);emit_string(ob, "t1");emit_nl(ob); }
+    else         { eregt1(ob);emit_string(ob, "t0");emit_nl(ob); }
+    return;
+}
+// "    sltu t0, A, B\n" — unsigned variant of asm_slt
+fn asm_sltu(swap: i32, ob: StringBuffer) -> void {
+    e4(ob);emit_string(ob, "sltu ");
+    eregt0(ob);
+    if swap == 0 { eregt0(ob);emit_string(ob, "t1");emit_nl(ob); }
+    else         { eregt1(ob);emit_string(ob, "t0");emit_nl(ob); }
+    return;
+}
+
+// ===== String table =====
+fn stab_eq(strtab: U8Array, ss1: i32, sl1: i32, ss2: i32, sl2: i32) -> bool {
+    if sl1 != sl2 { return false; }
+    var i: i32 = 0;
+    while i < sl1 {
+        if get(strtab,(ss1+i))!=get(strtab,(ss2+i)) { return false; }
+        i=i+1;
+    }
+    return true;
+}
+
+// ===== Input utilities =====
+// All read from the streaming SourceReader in g_reader. Token bytes
+// are still materialized into `strtab` at g_stab_pos so the rest of
+// parse_bc can do its random-access work on `strtab` slices via
+// streq / int_from_stab etc.
+fn is_ws(c: u8) -> bool { return c==' '||c==9u8||c==13u8||c==10u8; }
+fn skip_spaces() -> void {
+    while at_eof(g_reader) == false {
+        var c: u8 = peek(g_reader);
+        if c==' '||c==9u8 { next(g_reader); }
+        else { return; }
+    }
+    return;
+}
+fn skip_line() -> void {
+    while at_eof(g_reader) == false && peek(g_reader) != 10u8 {
+        next(g_reader);
+    }
+    if at_eof(g_reader) == false { next(g_reader); }
+    return;
+}
+fn next_tok(strtab: U8Array) -> i32 {
+    skip_spaces();
+    var start: i32 = g_stab_pos;
+    while at_eof(g_reader) == false && !is_ws(peek(g_reader)) {
+        set(strtab, g_stab_pos, next(g_reader));
+        g_stab_pos = g_stab_pos + 1;
+    }
+    return start;
+}
+fn tok_len(start: i32) -> i32 { return g_stab_pos - start; }
+fn discard_tok(start: i32) -> void { g_stab_pos = start; return; }
+fn int_from_stab(strtab: U8Array, ss: i32, sl: i32) -> i32 {
+    var neg: i32=0; var i: i32=0;
+    if sl>0&&get(strtab,ss)=='-' { neg=1; i=1; }
+    var r: i32=0;
+    while i<sl {
+        var c: u8=get(strtab,(ss+i));
+        if c>='0'&&c<='9' { r=r*10+(c as i32-48); }
+        i=i+1;
+    }
+    if neg==1 { return 0-r; }
+    return r;
+}
+fn read_strlit(strtab: U8Array) -> i32 {
+    var start: i32=g_stab_pos;
+    if at_eof(g_reader) == false && peek(g_reader)=='"' { next(g_reader); }
+    var done: i32=0;
+    while done==0 && at_eof(g_reader) == false {
+        var c: u8 = next(g_reader);
+        var handled: i32=0;
+        if c=='"' { done=1; handled=1; }
+        if handled==0 && c=='\\' {
+            var e: u8 = next(g_reader);
+            var out: u8=e;
+            if e=='n' { out=10u8; }
+            if e=='r' { out=13u8; }
+            if e=='t' { out=9u8; }
+            if e=='x' {
+                var h1: u8 = next(g_reader);
+                var h2: u8 = next(g_reader);
+                var v1: i32=0; var v2: i32=0;
+                if h1>='0'&&h1<='9' { v1=h1 as i32-48; }
+                if h1>='A'&&h1<='F' { v1=h1 as i32-55; }
+                if h1>='a'&&h1<='f' { v1=h1 as i32-87; }
+                if h2>='0'&&h2<='9' { v2=h2 as i32-48; }
+                if h2>='A'&&h2<='F' { v2=h2 as i32-55; }
+                if h2>='a'&&h2<='f' { v2=h2 as i32-87; }
+                out=(v1*16+v2) as u8;
+            }
+            set(strtab,g_stab_pos,out); g_stab_pos=g_stab_pos+1; handled=1;
+        }
+        if handled==0 { set(strtab,g_stab_pos,c); g_stab_pos=g_stab_pos+1; }
+    }
+    return start;
+}
+
+// ===== Opcode classifier =====
+// streq (strlib.tc) handles length check + byte compare in one
+// call. Dropped the old hand-rolled a==.. && b==.. ladder and the
+// TODO that asked for exactly this helper (R3).
+fn classify_op(strtab: U8Array, ss: i32, sl: i32) -> i32 {
+    if streq(strtab, ss, sl, "or")          { return OP_OR; }
+    if streq(strtab, ss, sl, "eq")          { return OP_EQ; }
+    if streq(strtab, ss, sl, "ne")          { return OP_NE; }
+    if streq(strtab, ss, sl, "lt")          { return OP_LT; }
+    if streq(strtab, ss, sl, "le")          { return OP_LE; }
+    if streq(strtab, ss, sl, "gt")          { return OP_GT; }
+    if streq(strtab, ss, sl, "ge")          { return OP_GE; }
+    if streq(strtab, ss, sl, "add")         { return OP_ADD; }
+    if streq(strtab, ss, sl, "sub")         { return OP_SUB; }
+    if streq(strtab, ss, sl, "mul")         { return OP_MUL; }
+    if streq(strtab, ss, sl, "div")         { return OP_DIV; }
+    if streq(strtab, ss, sl, "mod")         { return OP_MOD; }
+    if streq(strtab, ss, sl, "and")         { return OP_AND; }
+    if streq(strtab, ss, sl, "xor")         { return OP_XOR; }
+    if streq(strtab, ss, sl, "shl")         { return OP_SHL; }
+    if streq(strtab, ss, sl, "shr")         { return OP_SHR; }
+    if streq(strtab, ss, sl, "pop")         { return OP_POP; }
+    if streq(strtab, ss, sl, "neg")         { return OP_NEG; }
+    if streq(strtab, ss, sl, "lnot")        { return OP_LNOT; }
+    if streq(strtab, ss, sl, "cast")        { return OP_CAST; }
+    if streq(strtab, ss, sl, "load")        { return OP_LOAD; }
+    if streq(strtab, ss, sl, "jump")        { return OP_JUMP; }
+    if streq(strtab, ss, sl, "call")        { return OP_CALL; }
+    if streq(strtab, ss, sl, "lt_u")        { return OP_LT_U; }
+    if streq(strtab, ss, sl, "le_u")        { return OP_LE_U; }
+    if streq(strtab, ss, sl, "gt_u")        { return OP_GT_U; }
+    if streq(strtab, ss, sl, "ge_u")        { return OP_GE_U; }
+    if streq(strtab, ss, sl, "store")       { return OP_STORE; }
+    if streq(strtab, ss, sl, "shr_u")       { return OP_SHR_U; }
+    if streq(strtab, ss, sl, "div_u")       { return OP_DIV_U; }
+    if streq(strtab, ss, sl, "mod_u")       { return OP_MOD_U; }
+    if streq(strtab, ss, sl, "return")      { return OP_RETURN; }
+    if streq(strtab, ss, sl, "jump_if")     { return OP_JUMP_IF; }
+    if streq(strtab, ss, sl, "push_int")    { return OP_PUSH_INT; }
+    if streq(strtab, ss, sl, "push_str")    { return OP_PUSH_STR; }
+    if streq(strtab, ss, sl, "jump_ifnot")  { return OP_JUMP_IFNOT; }
+    if streq(strtab, ss, sl, "return_void") { return OP_RETURN_VOID; }
+    return -1;
+}
+
+// ===== String reference =====
+// Slice into the per-function strtab used for .string literals (and,
+// reused by B3, for function param / local names).
+struct StrRef {
+    ss: i32,
+    sl: i32,
+}
+
+// ===== Global variable =====
+// One entry per `.global` directive. Only the name tokens and the
+// initial value are consulted by emit_data_and_rodata; the .global
+// type token is read-and-discarded during parsing, so we don't carry
+// it through.
+struct GlobalVar {
+    name_ss: i32,
+    name_sl: i32,
+    init:    i32,
+}
+
+// ===== Function table =====
+// One BcFunc per `.fn` directive in the input bytecode. Previously a
+// flat I32Array(10 * N) with hand-indexed accessors and two wasted
+// slots (indices 2 and 3 were never set). R5 collapses this into a
+// struct + BcFuncArray and drops the unused fields.
+struct BcFunc {
+    name_ss:    i32,
+    name_sl:    i32,
+    param_base: i32,  // index into params_pool where this fn's params start
+    nparam:     i32,
+    local_base: i32,
+    nlocal:     i32,
+    instr_base: i32,  // index into instrs where this fn's instructions start
+    ninstr:     i32,
+}
+fn ins_op(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+0)); }
+fn ins_ival(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+1)); }
+fn ins_ss(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+2)); }
+fn ins_sl(instrs: I32Array, base: i32, pc: i32) -> i32 { return get(instrs,((base+pc)*4+3)); }
+fn ins_set(instrs: I32Array, base: i32, pc: i32, f: i32, v: i32) -> void {
+    set(instrs,((base+pc)*4+f),v); return;
+}
+
+// Parse a `__LNN` label number from the input stream. Skips leading
+// non-digit chars (for the `__L` prefix) and accumulates digits
+// until the stop char. Stops without consuming the stop byte.
+fn parse_lnum_stream(stop: u8) -> i32 {
+    var r: i32 = 0;
+    while at_eof(g_reader) == false {
+        var c: u8 = peek(g_reader);
+        if c == stop || is_ws(c) { return r; }
+        next(g_reader);
+        if c >= '0' && c <= '9' { r = r * 10 + (c as i32 - 48); }
+    }
+    return r;
+}
+
+// ===== Parse + emit bytecode (#60: per-function streaming) =====
+//
+// Reads the .bc input one directive at a time. .string and .global
+// directives accumulate into string_lits / global_vars / global_inits
+// (small fixed tables); they are emitted in bulk after .endbc. .fn /
+// .endfn pairs are emitted **immediately** as they arrive, using the
+// single-slot fns / params_pool / locals_pool / instrs buffers — at
+// the .endfn boundary we call emit_fn(0, ob) and reset the per-fn
+// state so the next .fn can reuse the same kmalloc'd memory.
+//
+// The strtab cursor (g_stab_pos) follows the same per-fn rollback
+// pattern: on the first .fn we record strtab_save; after each
+// .endfn we restore g_stab_pos to that snapshot, freeing the bytes
+// the function used for its name / params / locals / call targets.
+// .string and .global content lives BELOW strtab_save and stays put.
+//
+// The first function's mangled name is also copied into g_unit_name
+// (a separate 64-byte buffer) the first time we hit .fn, so the
+// `__<unit>_strobj<N>` label prefix used by e_strobj survives the
+// rollback.
+fn parse_bc(strtab: U8Array,
+            string_lits: StrRefArray, globals: GlobalVarArray,
+            fns: BcFuncArray, params_pool: StrRefArray, locals_pool: StrRefArray,
+            instrs: I32Array, label_pcs: I32Array, ob: StringBuffer) -> void {
+    // strtab_save is set on the FIRST .fn directive — everything
+    // before it (.string / .global) is permanent, everything after
+    // gets reclaimed at each .endfn.
+    var strtab_save: i32 = 0 - 1;
+    var cur_fn: i32=-1; var done: i32=0;
+    while done==0 && at_eof(g_reader) == false {
+        skip_spaces();
+        if at_eof(g_reader) { done=1; }
+        if done==0 {
+            var c: u8 = peek(g_reader);
+            if c==10u8||c==13u8 { next(g_reader); }
+            if c!=10u8&&c!=13u8&&c==';' { skip_line(); }
+            if c!=10u8&&c!=13u8&&c!=';'&&c=='.' {
+                next(g_reader);
+                var dir_ss: i32=next_tok(strtab);
+                var dir_sl: i32=tok_len(dir_ss);
+                var d0: u8=0u8; var d1: u8=0u8;
+                if dir_sl>0 { d0=get(strtab,dir_ss); }
+                if dir_sl>1 { d1=get(strtab,(dir_ss+1)); }
+                if d0=='s'&&d1=='t' { // string
+                    discard_tok(dir_ss);
+                    var idx_ss: i32=next_tok(strtab);
+                    var idx: i32=int_from_stab(strtab,idx_ss,tok_len(idx_ss));
+                    discard_tok(idx_ss); skip_spaces();
+                    var slit_ss: i32=read_strlit(strtab);
+                    var slit_sl: i32=g_stab_pos-slit_ss;
+                    set(string_lits, idx, StrRef(slit_ss, slit_sl));
+                    if idx+1>g_nstrings { g_nstrings=idx+1; }
+                    skip_line();
+                    // If we've already started fn-streaming, advance
+                    // strtab_save so the next .endfn rollback won't
+                    // clobber this literal — .strings can appear mid-
+                    // file, between .fn / .endfn blocks.
+                    if strtab_save >= 0 { strtab_save = g_stab_pos; }
+                }
+                if d0=='g'&&d1=='l' { // global
+                    discard_tok(dir_ss);
+                    var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);
+                    var iv_ss: i32=next_tok(strtab); var iv_sl: i32=tok_len(iv_ss);
+                    var iv: i32=int_from_stab(strtab,iv_ss,iv_sl); discard_tok(iv_ss);
+                    var gi: i32=g_nglobals;
+                    set(globals, gi, GlobalVar(nm_ss, nm_sl, iv));
+                    g_nglobals=g_nglobals+1; skip_line();
+                    // Same protection as .string above: globals can be
+                    // interleaved with fns (real example:
+                    // ast_node.tc::g_nc lives after the AstNode getters).
+                    // Without this advance, the next .endfn rollback
+                    // would overwrite the global's name in strtab.
+                    if strtab_save >= 0 { strtab_save = g_stab_pos; }
+                }
+                if d0=='f'&&d1=='n' { // fn
+                    discard_tok(dir_ss);
+                    // First .fn: snapshot the strtab cursor. Any
+                    // bytes added from here on (fn name, params,
+                    // locals, instruction operands) are reclaimable
+                    // once .endfn fires.
+                    if strtab_save < 0 { strtab_save = g_stab_pos; }
+                    var nm_ss: i32=next_tok(strtab);
+                    // Build mangled name: append __TYPE for each arg type (last token = rettype, skip it)
+                    var prev_under: i32=g_stab_pos;
+                    skip_spaces();
+                    while at_eof(g_reader) == false && peek(g_reader)!=10u8 {
+                        prev_under=g_stab_pos;
+                        set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
+                        set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
+                        next_tok(strtab);
+                        skip_spaces();
+                    }
+                    g_stab_pos=prev_under; // remove last __ + rettype token
+                    var nm_sl: i32=g_stab_pos-nm_ss;
+                    // Single-slot fns: cur_fn is always 0. We reuse
+                    // the slot between functions; per-fn state is
+                    // valid from .fn through .endfn.
+                    cur_fn = 0;
+                    set(fns, cur_fn, BcFunc(nm_ss, nm_sl,
+                                            g_nparams, 0,
+                                            g_nlocals, 0,
+                                            g_ninstrs, 0));
+                    // Stash the first function's mangled name in
+                    // g_unit_name so e_strobj can use it after the
+                    // strtab rollback wipes the original bytes.
+                    if g_unit_name_len == 0 {
+                        var ui: i32 = 0;
+                        while ui < nm_sl && ui < 64 {
+                            set(g_unit_name, ui, get(strtab, (nm_ss + ui)));
+                            ui = ui + 1;
+                        }
+                        g_unit_name_len = ui;
+                    }
+                    g_nfuncs=g_nfuncs+1; skip_line();
+                }
+                if d0=='p'&&d1=='a' { // param
+                    discard_tok(dir_ss);
+                    var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);
+                    var pr: StrRef = get(params_pool, g_nparams);
+                    ss(pr, nm_ss); sl(pr, nm_sl);
+                    g_nparams=g_nparams+1;
+                    if cur_fn>=0 {
+                        var cf: BcFunc = get(fns, cur_fn);
+                        nparam(cf, nparam(cf) + 1);
+                    }
+                    skip_line();
+                }
+                if d0=='l'&&d1=='o' { // local
+                    discard_tok(dir_ss);
+                    var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);
+                    var ty_ss: i32=next_tok(strtab); discard_tok(ty_ss);
+                    var lr: StrRef = get(locals_pool, g_nlocals);
+                    ss(lr, nm_ss); sl(lr, nm_sl);
+                    g_nlocals=g_nlocals+1;
+                    if cur_fn>=0 {
+                        var cf: BcFunc = get(fns, cur_fn);
+                        nlocal(cf, nlocal(cf) + 1);
+                    }
+                    skip_line();
+                }
+                var d3b: u8=0u8;
+                if dir_sl>3 { d3b=get(strtab,(dir_ss+3)); }
+                if d0=='e'&&d3b=='b' { // endbc
+                    discard_tok(dir_ss); done=1;
+                }
+                if d0=='e'&&d3b!='b' { // endfn
+                    discard_tok(dir_ss);
+                    if cur_fn>=0 {
+                        // Resolve forward jumps inside this fn:
+                        // ival was set to a label number; rewrite it
+                        // to the resolved pc from label_pcs.
+                        var ib: i32=instr_base(get(fns, cur_fn));
+                        var ni: i32=ninstr(get(fns, cur_fn));
+                        var ii: i32=0;
+                        while ii<ni {
+                            var op2: i32=ins_op(instrs,ib,ii);
+                            if op2==OP_JUMP||op2==OP_JUMP_IF||op2==OP_JUMP_IFNOT {
+                                var lnum2: i32=ins_ival(instrs,ib,ii);
+                                ins_set(instrs,ib,ii,1,get(label_pcs,lnum2));
+                            }
+                            ii=ii+1;
+                        }
+                        // Emit this function immediately and reset
+                        // per-fn state so the next .fn can reuse
+                        // strtab / params_pool / locals_pool / instrs
+                        // / label_pcs from offset 0.
+                        emit_fn(strtab, fns, params_pool, locals_pool,
+                                instrs, string_lits, cur_fn, ob);
+                        // Track peak per-fn usage before the reset.
+                        if g_stab_pos > g_max_stab { g_max_stab = g_stab_pos; }
+                        if g_ninstrs > g_max_instr { g_max_instr = g_ninstrs; }
+                        if g_nparams > g_max_param { g_max_param = g_nparams; }
+                        if g_nlocals > g_max_local { g_max_local = g_nlocals; }
+                        g_stab_pos = strtab_save;
+                        g_nparams = 0;
+                        g_nlocals = 0;
+                        g_ninstrs = 0;
+                    }
+                    cur_fn=-1; skip_line();
+                }
+                if d0!='s'&&d0!='g'&&d0!='f'&&d0!='p'&&d0!='l'&&d0!='e' {
+                    discard_tok(dir_ss); skip_line();
+                }
+            }
+            if c!=10u8&&c!=13u8&&c!=';'&&c!='.'&&c=='_' { // label
+                // Labels look like __LNN:. parse_lnum_stream walks
+                // until ':' or whitespace and accumulates digits
+                // along the way (the prefix chars are non-digits so
+                // they're skipped automatically).
+                var lnum3: i32 = parse_lnum_stream(':' as u8);
+                if at_eof(g_reader) == false && peek(g_reader) == ':' {
+                    next(g_reader);
+                    if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-instr_base(get(fns, cur_fn))); }
+                }
+                skip_line();
+            }
+            if c!=10u8&&c!=13u8&&c!=';'&&c!='.'&&c!='_' { // instruction
+                var op_ss: i32=next_tok(strtab);
+                var op_sl: i32=tok_len(op_ss);
+                var op3: i32=classify_op(strtab,op_ss,op_sl);
+                discard_tok(op_ss);
+                if op3>=0&&cur_fn>=0 {
+                    var ib3: i32=instr_base(get(fns, cur_fn));
+                    var iidx: i32=ninstr(get(fns, cur_fn));
+                    ins_set(instrs,ib3,iidx,0,op3);
+                    ins_set(instrs,ib3,iidx,1,0);
+                    ins_set(instrs,ib3,iidx,2,0);
+                    ins_set(instrs,ib3,iidx,3,0);
+                    if op3==OP_PUSH_INT {
+                        var v_ss: i32=next_tok(strtab);
+                        ins_set(instrs,ib3,iidx,1,int_from_stab(strtab,v_ss,tok_len(v_ss)));
+                        discard_tok(v_ss);
+                    }
+                    if op3==OP_PUSH_STR {
+                        var v_ss: i32=next_tok(strtab);
+                        ins_set(instrs,ib3,iidx,1,int_from_stab(strtab,v_ss,tok_len(v_ss)));
+                        discard_tok(v_ss);
+                    }
+                    if op3==OP_LOAD||op3==OP_STORE {
+                        var nm_ss: i32=next_tok(strtab); var nm_sl: i32=tok_len(nm_ss);
+                        ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
+                    }
+                    if op3==OP_CALL {
+                        var nm_ss: i32=next_tok(strtab);
+                        var mangle_end: i32=g_stab_pos;
+                        var na: i32=0;
+                        skip_spaces();
+                        while at_eof(g_reader) == false && peek(g_reader)!=10u8 {
+                            set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
+                            set(strtab,g_stab_pos,95u8); g_stab_pos=g_stab_pos+1;
+                            next_tok(strtab);
+                            mangle_end=g_stab_pos;
+                            na=na+1;
+                            skip_spaces();
+                        }
+                        var nm_sl: i32=mangle_end-nm_ss;
+                        ins_set(instrs,ib3,iidx,1,na);
+                        ins_set(instrs,ib3,iidx,2,nm_ss); ins_set(instrs,ib3,iidx,3,nm_sl);
+                    }
+                    if op3==OP_CAST {
+                        var ty_ss: i32=next_tok(strtab); var ty_sl: i32=tok_len(ty_ss);
+                        ins_set(instrs,ib3,iidx,2,ty_ss); ins_set(instrs,ib3,iidx,3,ty_sl);
+                    }
+                    if op3==OP_JUMP||op3==OP_JUMP_IF||op3==OP_JUMP_IFNOT {
+                        skip_spaces();
+                        // Jump target is __LNN — parse_lnum_stream
+                        // walks until whitespace.
+                        ins_set(instrs,ib3,iidx,1,parse_lnum_stream(' ' as u8));
+                    }
+                    ninstr(get(fns, cur_fn), iidx + 1);
+                    g_ninstrs=g_ninstrs+1;
+                }
+                skip_line();
+            }
+        }
+    }
+    return;
+}
+
+// ===== Variable lookup =====
+fn is_local(strtab: U8Array, fns: BcFuncArray, params_pool: StrRefArray, locals_pool: StrRefArray,
+            fi: i32, nm_ss: i32, nm_sl: i32) -> i32 {
+    var pb: i32=param_base(get(fns, fi)); var np: i32=nparam(get(fns, fi));
+    var lb: i32=local_base(get(fns, fi)); var nl: i32=nlocal(get(fns, fi));
+    var i: i32=0;
+    while i<np {
+        if stab_eq(strtab,ss(get(params_pool, pb+i)),sl(get(params_pool, pb+i)),nm_ss,nm_sl) { return 1; }
+        i=i+1;
+    }
+    i=0;
+    while i<nl {
+        if stab_eq(strtab,ss(get(locals_pool, lb+i)),sl(get(locals_pool, lb+i)),nm_ss,nm_sl) { return 1; }
+        i=i+1;
+    }
+    return 0;
+}
+fn var_offset(strtab: U8Array, fns: BcFuncArray, params_pool: StrRefArray, locals_pool: StrRefArray,
+              fi: i32, nm_ss: i32, nm_sl: i32) -> i32 {
+    var pb: i32=param_base(get(fns, fi)); var np: i32=nparam(get(fns, fi));
+    var lb: i32=local_base(get(fns, fi)); var nl: i32=nlocal(get(fns, fi));
+    var i: i32=0;
+    while i<np {
+        if stab_eq(strtab,ss(get(params_pool, pb+i)),sl(get(params_pool, pb+i)),nm_ss,nm_sl) {
+            return 0-12-4*i;
+        }
+        i=i+1;
+    }
+    i=0;
+    while i<nl {
+        if stab_eq(strtab,ss(get(locals_pool, lb+i)),sl(get(locals_pool, lb+i)),nm_ss,nm_sl) {
+            return 0-12-4*np-4*i;
+        }
+        i=i+1;
+    }
+    return 0;
+}
+
+// ===== is_jump_target =====
+fn is_jump_target(instrs: I32Array, ibase: i32, ni: i32, pc: i32) -> i32 {
+    var j: i32=0;
+    while j<ni {
+        var op: i32=ins_op(instrs,ibase,j);
+        if op==OP_JUMP||op==OP_JUMP_IF||op==OP_JUMP_IFNOT {
+            if ins_ival(instrs,ibase,j)==pc { return 1; }
+        }
+        j=j+1;
+    }
+    return 0;
+}
+
+// ===== Emit string literal content (GAS .string escaping) =====
+fn emit_strdata(strtab: U8Array, ss: i32, sl: i32, ob: StringBuffer) -> void {
+    emit_char(ob, '"');
+    var i: i32=0;
+    while i<sl {
+        var c: u8=get(strtab,(ss+i));
+        var handled: i32=0;
+        if c=='"'  { emit_string(ob, "\\\""); handled=1; }
+        if handled==0&&c=='\\'  { emit_string(ob, "\\\\"); handled=1; }
+        if handled==0&&c==10u8  { emit_string(ob, "\\n"); handled=1; }
+        if handled==0&&c==13u8  { emit_string(ob, "\\r"); handled=1; }
+        if handled==0&&c==9u8   { emit_string(ob, "\\t"); handled=1; }
+        if handled==0&&(c<' '||c==127u8) {
+            emit_char(ob, '\\');
+            emit_char(ob, (48+(c as i32>>6&7)) as u8);
+            emit_char(ob, (48+(c as i32>>3&7)) as u8);
+            emit_char(ob, (48+(c as i32&7)) as u8);
+            handled=1;
+        }
+        if handled==0 { emit_char(ob, c); }
+        i=i+1;
+    }
+    emit_char(ob, '"');
+    return;
+}
+
+// ===== Eval stack depth =====
+fn max_eval_depth(fns: BcFuncArray, instrs: I32Array, fi: i32) -> i32 {
+    var ibase: i32 = instr_base(get(fns, fi));
+    var ni: i32 = ninstr(get(fns, fi));
+    var depth: i32 = 0;
+    var max_d: i32 = 0;
+    var i: i32 = 0;
+    while i < ni {
+        var op: i32 = ins_op(instrs, ibase, i);
+        if op == OP_PUSH_INT || op == OP_PUSH_STR || op == OP_LOAD {
+            depth = depth + 1;
+        }
+        if op == OP_STORE || op == OP_POP || op == OP_RETURN ||
+           op == OP_JUMP_IF || op == OP_JUMP_IFNOT {
+            depth = depth - 1;
+        }
+        if op >= OP_ADD && op <= OP_GE { depth = depth - 1; }
+        if op == OP_SHR_U { depth = depth - 1; }
+        if op >= OP_LT_U && op <= OP_GE_U { depth = depth - 1; }
+        if op == OP_DIV_U || op == OP_MOD_U { depth = depth - 1; }
+        if op == OP_CALL {
+            var nargs: i32 = ins_ival(instrs, ibase, i);
+            depth = depth - (nargs - 1);
+        }
+        if depth > max_d { max_d = depth; }
+        if depth < 0 { depth = 0; }
+        i = i + 1;
+    }
+    return max_d;
+}
+
+// ===== Emit one function =====
+fn emit_fn(strtab: U8Array, fns: BcFuncArray, params_pool: StrRefArray, locals_pool: StrRefArray,
+           instrs: I32Array, string_lits: StrRefArray, fi: i32, ob: StringBuffer) -> void {
+    var nm_ss: i32=name_ss(get(fns, fi));
+    var nm_sl: i32=name_sl(get(fns, fi));
+    var np: i32=nparam(get(fns, fi));
+    var nl: i32=nlocal(get(fns, fi));
+    var ibase: i32=instr_base(get(fns, fi));
+    var ni: i32=ninstr(get(fns, fi));
+    var eval_slots: i32 = max_eval_depth(fns, instrs, fi);
+    var nvars: i32=np+nl;
+    var frame_size: i32=8+4*nvars+4*eval_slots;
+    var pad: i32=frame_size%16;
+    if pad!=0 { frame_size=frame_size+(16-pad); }
+
+    // "    .globl NAME\n"
+    e4(ob);
+    emit_string(ob, ".globl "); emit_n(ob, strtab,nm_ss,nm_sl); emit_nl(ob);
+    // "    .type  NAME, @function\n"
+    e4(ob);
+    emit_string(ob, ".type  ");
+    emit_n(ob, strtab,nm_ss,nm_sl);
+    emit_string(ob, ", @function");emit_nl(ob);
+    // "NAME:\n"
+    emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_nl(ob);
+
+    // Prologue
+    // "    # prologue: frame_size=X, params=Y, locals=Z\n"
+    e4(ob); emit_string(ob, "# prologue: frame_size=");emit_int(ob, frame_size);
+    emit_string(ob, ", params=");emit_int(ob, np);
+    emit_string(ob, ", locals=");emit_int(ob, nl);
+    emit_string(ob, ", eval_depth=");emit_int(ob, eval_slots);emit_nl(ob);
+    // "    addi sp, sp, -FRAME_SIZE\n"
+    e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '-'); emit_int(ob, frame_size); emit_nl(ob);
+    // "    sw   ra, (frame_size-4)(sp)\n"
+    e_sw(ob); eregra(ob); eNspnl(frame_size-4,ob);
+    // "    sw   s0, (frame_size-8)(sp)\n"
+    e_sw(ob); eregs0(ob); eNspnl(frame_size-8,ob);
+    // "    addi s0, sp, frame_size\n"
+    e_addi(ob); eregs0(ob); eregsp(ob); emit_int(ob, frame_size); emit_nl(ob);
+    // Save params from a0-a7 to frame slots
+    var pi: i32=0;
+    while pi<np && pi<8 {
+        // "    sw   aI, (-12-4*pi)(s0)\n"
+        e_sw(ob);
+        emit_char(ob, 'a'); emit_char(ob, (48+pi) as u8); ecomma(ob);
+        eNs0nl(0-12-4*pi,ob);
+        pi=pi+1;
+    }
+    // Load overflow args from caller's stack (above our frame)
+    // arg8 at s0+0, arg9 at s0+4, etc.
+    var oi: i32=8;
+    while oi<np {
+        // "    lw   t0, 4*(oi-8)(s0)\n"
+        emit_string(ob, "    lw   t0");ecomma(ob);
+        emit_int(ob, 4*(oi-8));
+        emit_string(ob, "(s0)");
+        emit_nl(ob);
+        // "    sw   t0, (-12-4*oi)(s0)\n"
+        e_sw(ob);
+        emit_string(ob, "t0");ecomma(ob);
+        eNs0nl(0-12-4*oi,ob);
+        oi=oi+1;
+    }
+    // Zero-initialize locals
+    var li: i32=0;
+    while li<nl {
+        // "    sw   zero, (-12-4*np-4*li)(s0)\n"
+        e_sw(ob);
+        emit_string(ob, "zero"); // "zero"
+        ecomma(ob);
+        eNs0nl(0-12-4*np-4*li,ob);
+        li=li+1;
+    }
+
+    // Instruction loop
+    var pc: i32=0;
+    while pc<ni {
+        if is_jump_target(instrs,ibase,ni,pc)==1 { asm_pc_label(strtab,nm_ss,nm_sl,pc,ob); }
+        var op: i32=ins_op(instrs,ibase,pc);
+        var ival: i32=ins_ival(instrs,ibase,pc);
+        var sss: i32=ins_ss(instrs,ibase,pc);
+        var ssl: i32=ins_sl(instrs,ibase,pc);
+
+        if op==OP_PUSH_INT {
+            // "    li   t0, N\n"
+            e_li(ob); eregt0(ob); emit_int(ob, ival); emit_nl(ob);
+            asm_push_t0(ob);
+        }
+        if op==OP_PUSH_STR {
+            // la t0, __<first_fn>_strobjN
+            e_la(ob); eregt0(ob);
+            e_strobj(ival, ob); emit_nl(ob);
+            asm_push_t0(ob);
+        }
+        if op==OP_LOAD {
+            if is_local(strtab,fns,params_pool,locals_pool,fi,sss,ssl)==1 {
+                var off: i32=var_offset(strtab,fns,params_pool,locals_pool,fi,sss,ssl);
+                e_lw(ob); eregt0(ob); eNs0nl(off,ob);
+            } else {
+                // "    la   t1, NAME\n"
+                e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_nl(ob);
+                // "    lw   t0, 0(t1)\n"
+                e_lw(ob); eregt0(ob);
+                emit_string(ob, "0(t1)");emit_nl(ob);
+            }
+            asm_push_t0(ob);
+        }
+        if op==OP_STORE {
+            asm_pop_t0(ob);
+            if is_local(strtab,fns,params_pool,locals_pool,fi,sss,ssl)==1 {
+                var off: i32=var_offset(strtab,fns,params_pool,locals_pool,fi,sss,ssl);
+                e_sw(ob); eregt0(ob); eNs0nl(off,ob);
+            } else {
+                // "    la   t1, NAME\n"
+                e_la(ob); eregt1(ob); emit_n(ob, strtab,sss,ssl); emit_nl(ob);
+                // "    sw   t0, 0(t1)\n"
+                e_sw(ob); eregt0(ob);
+                emit_string(ob, "0(t1)");emit_nl(ob);
+            }
+        }
+        if op==OP_CALL {
+            var nargs: i32=ival;
+            var nreg: i32=nargs; if nreg>8 { nreg=8; }
+            var noverflow: i32=nargs-nreg;
+            // Allocate space below expression stack for overflow args copy
+            if noverflow>0 {
+                e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 0-4*noverflow); emit_nl(ob);
+                // Copy overflow args to new area (no overlap guaranteed)
+                var ci: i32=8;
+                while ci<nargs {
+                    e_lw(ob); eregt0(ob); eNspnl(4*noverflow+4*(nargs-1-ci),ob);
+                    e_sw(ob); eregt0(ob); eNspnl(4*(ci-8),ob);
+                    ci=ci+1;
+                }
+            }
+            // Load register args (arg0-arg7) into a0-a7
+            var ai: i32=0;
+            while ai<nreg {
+                e_lw(ob);
+                emit_char(ob, 'a'); emit_char(ob, (48+ai) as u8); ecomma(ob);
+                eNspnl(4*noverflow+4*(nargs-1-ai),ob);
+                ai=ai+1;
+            }
+            asm_call_fn(strtab,sss,ssl,ob);
+            // Pop overflow args + expression stack
+            if noverflow>0 {
+                e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*noverflow+4*nargs); emit_nl(ob);
+            } else {
+                if nargs>0 {
+                    e_addi(ob); eregsp(ob); eregsp(ob); emit_int(ob, 4*nargs); emit_nl(ob);
+                }
+            }
+            // push return value (a0) onto expression stack
+            e_addi(ob); eregsp(ob); eregsp(ob); emit_string(ob, "-4");emit_nl(ob);
+            e_sw(ob);
+            emit_string(ob, "a0"); ecomma(ob); eNspnl(0,ob);
+        }
+        if op==OP_RETURN {
+            asm_pop_t0(ob);
+            // mv a0, t0
+            e4(ob);emit_string(ob, "mv   a0"); ecomma(ob);
+            emit_string(ob, "t0");emit_nl(ob);
+            asm_epilogue(ob);
+        }
+        if op==OP_RETURN_VOID {
+            asm_epilogue(ob);
+        }
+        if op==OP_POP {
+            e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_nl(ob);
+        }
+        // Binary arithmetic/bitwise ops
+        if op==OP_ADD { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "add  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_SUB { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "sub  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_MUL { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "mul  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_DIV { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "div  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_MOD { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "rem  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_DIV_U { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "divu ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_MOD_U { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "remu ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_AND { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "and  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_OR { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "or   ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_XOR { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "xor  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_SHL { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "sll  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_SHR { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "sra  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        if op==OP_SHR_U { asm_pop_t1_t0(ob);
+            e4(ob);emit_string(ob, "srl  ");
+            eregt0(ob);eregt0(ob);emit_string(ob, "t1");emit_nl(ob);
+            asm_push_t0(ob); }
+        // Comparisons
+        if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
+        if op==OP_NE { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_snez_t0(ob); asm_push_t0(ob); }
+        if op==OP_LT { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_push_t0(ob); }           // slt t0,t0,t1
+        if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
+        if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
+        if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
+        if op==OP_LT_U { asm_pop_t1_t0(ob); asm_sltu(0,ob); asm_push_t0(ob); }             // sltu t0,t0,t1
+        if op==OP_LE_U { asm_pop_t1_t0(ob); asm_sltu(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
+        if op==OP_GT_U { asm_pop_t1_t0(ob); asm_sltu(1,ob); asm_push_t0(ob); }             // sltu t0,t1,t0
+        if op==OP_GE_U { asm_pop_t1_t0(ob); asm_sltu(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
+        if op==OP_NEG {
+            asm_pop_t0(ob);
+            e4(ob);emit_string(ob, "neg  ");
+            eregt0(ob);emit_string(ob, "t0");emit_nl(ob);
+            asm_push_t0(ob);
+        }
+        if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
+        if op==OP_CAST {
+            asm_pop_t0(ob);
+            var ta: u8=0u8; var tb: u8=0u8;
+            if ssl>0 { ta=get(strtab,sss); }
+            if ssl>1 { tb=get(strtab,(sss+1)); }
+            if ta=='u'&&tb=='8' { // u8: andi t0,t0,0xff
+                e4(ob);emit_string(ob, "andi ");
+                eregt0(ob);eregt0(ob);
+                emit_string(ob, "0xff");emit_nl(ob);
+            }
+            if ta=='u'&&tb=='1' { // u16: slli 16; srli 16
+                e4(ob);emit_string(ob, "slli ");
+                eregt0(ob);eregt0(ob);emit_string(ob, "16");emit_nl(ob);
+                e4(ob);emit_string(ob, "srli ");
+                eregt0(ob);eregt0(ob);emit_string(ob, "16");emit_nl(ob);
+            }
+            if ta=='i'&&tb=='8' { // i8: slli 24; srai 24
+                e4(ob);emit_string(ob, "slli ");
+                eregt0(ob);eregt0(ob);emit_string(ob, "24");emit_nl(ob);
+                e4(ob);emit_string(ob, "srai ");
+                eregt0(ob);eregt0(ob);emit_string(ob, "24");emit_nl(ob);
+            }
+            if ta=='i'&&tb=='1' { // i16: slli 16; srai 16
+                e4(ob);emit_string(ob, "slli ");
+                eregt0(ob);eregt0(ob);emit_string(ob, "16");emit_nl(ob);
+                e4(ob);emit_string(ob, "srai ");
+                eregt0(ob);eregt0(ob);emit_string(ob, "16");emit_nl(ob);
+            }
+            if ta=='b' { // bool: snez t0,t0
+                asm_snez_t0(ob);
+            }
+            // u32, i32: no-op
+            asm_push_t0(ob);
+        }
+        if op==OP_JUMP { asm_jump(strtab,nm_ss,nm_sl,ival,ob); }
+        if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(strtab,nm_ss,nm_sl,1,ival,ob); }
+        if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(strtab,nm_ss,nm_sl,0,ival,ob); }
+
+        pc=pc+1;
+    }
+
+    // "    # end of NAME\n\n"
+    e4(ob); emit_string(ob, "# end of ");
+    emit_n(ob, strtab,nm_ss,nm_sl); emit_nl(ob);
+    emit_nl(ob);
+    return;
+}
+
+// ===== Emit full program =====
+// Emit only the post-.text sections (.data globals + .rodata string
+// literals). The .text section is emitted **during** parse_bc as each
+// .fn / .endfn pair is parsed, so this function only handles what's
+// left after the per-function streaming loop finishes.
+fn emit_data_and_rodata(strtab: U8Array, string_lits: StrRefArray,
+                        globals: GlobalVarArray,
+                        ob: StringBuffer) -> void {
+    // .data: globals (after .text for asm.tc compatibility)
+    if g_nglobals > 0 {
+        e4(ob);
+        emit_string(ob, ".data");emit_nl(ob);
+        var gi: i32=0;
+        while gi<g_nglobals {
+            var g: GlobalVar = get(globals, gi);
+            var nm_ss: i32 = name_ss(g);
+            var nm_sl: i32 = name_sl(g);
+            var initval: i32 = init(g);
+            // "    .globl NAME\n"
+            e4(ob);
+            emit_string(ob, ".globl "); emit_n(ob, strtab,nm_ss,nm_sl); emit_nl(ob);
+            // "NAME:\n    .word INITVAL\n"
+            emit_n(ob, strtab,nm_ss,nm_sl); emit_char(ob, ':');emit_nl(ob);
+            e4(ob);
+            emit_string(ob, ".word "); emit_int(ob, initval); emit_nl(ob);
+            gi=gi+1;
+        }
+        emit_nl(ob);
+    }
+    // .rodata: string literals (after .data)
+    if g_nstrings > 0 {
+        e4(ob);
+        emit_string(ob, ".section .rodata");emit_nl(ob);
+        var si: i32=0;
+        while si<g_nstrings {
+            var r: StrRef = get(string_lits, si);
+            var rs: i32 = ss(r);
+            var rl: i32 = sl(r);
+            e4(ob);emit_string(ob, ".align 4");emit_nl(ob);
+            e_strobj(si, ob); emit_char(ob, ':');emit_nl(ob);
+            e4(ob);emit_string(ob, ".word ");emit_int(ob, rl);emit_nl(ob);
+            e4(ob);emit_string(ob, ".string ");
+            emit_strdata(strtab,rs,rl,ob); emit_nl(ob);
+            si=si+1;
+        }
+        emit_nl(ob);
+    }
+    return;
+}
+
+fn km_dump_peak() -> void;
+
+// Push a decimal i32 into buf at pos and return the new position.
+// Used by the diagnostic peak dump in main().
+fn bc_dump_dec(buf: U8Array, pos: i32, v: i32) -> i32 {
+    if v < 0 {
+        set(buf, pos, '-' as u8);
+        return bc_dump_dec(buf, pos + 1, 0 - v);
+    }
+    if v == 0 { set(buf, pos, '0' as u8); return pos + 1; }
+    var digits: i32 = 0;
+    var tmp: i32 = v;
+    while tmp > 0 { digits = digits + 1; tmp = tmp / 10; }
+    var pow: i32 = 1;
+    var i: i32 = 1;
+    while i < digits { pow = pow * 10; i = i + 1; }
+    var p: i32 = pos;
+    while pow > 0 {
+        set(buf, p, (48 + (v / pow) % 10) as u8);
+        pow = pow / 10;
+        p = p + 1;
+    }
+    return p;
+}
+
+fn main() -> i32 {
+    // Buffer sizes after the per-function streaming refactor (#60).
+    // Sized from the diagnostic counters dumped at exit ("[bc in=...
+    // sp=... pa=... lo=...]") across compiler/*.tc, with ~25%
+    // headroom:
+    //
+    //   strtab       max sp 12252 (bc2asm.tc)        → 16384  (16 KB)
+    //   string_lits  ≤ 256 literals × 2 i32          → 512    (2 KB)
+    //   global_vars  ≤ 256 globals × 4 i32           → 1024   (4 KB)
+    //   global_inits ≤ 256 i32                       → 256    (1 KB)
+    //   fns          single live BcFunc              → 1       slot
+    //   params_pool  21 max × 4 i32 (bcrun::vm_run)  → 128    (512 B)
+    //   locals_pool  bcrun::vm_run uses many         → 512    (2 KB)
+    //   instrs       bc2asm.tc max in=1705 × 4 fields → 8192 (32 KB)
+    //   label_pcs    ≤ 256 labels per fn             → 1024   (4 KB)
+    //
+    // Total static ≈ 30 KB, down from the previous 1.4 MB peak
+    // (instrs alone was 1 MB). emit_fn fires from inside parse_bc on
+    // every .endfn, so the buffers above only need to hold one
+    // function at a time.
+    //
+    // 2026-04-30: instrs 16384 → 8192 (-32 KB) for the 100 KB target.
+    // Sized off bc2asm.tc max in=1705 (the realistic worst case per
+    // docs/scaling.md, since bcrun.tc is no longer compilable).
+    // instrs is stride-4 (op, ival, ss, sl per instruction) so 8192
+    // = 2048 instructions, ~20% over the worst case.
+    var strtab:       U8Array  = U8Array(16384);
+    var ob:           StringBuffer = StringBuffer_new(1);
+    var string_lits:  StrRefArray    = StrRefArray(256u32);
+    var globals:      GlobalVarArray = GlobalVarArray(256u32);
+    var fns:          BcFuncArray = BcFuncArray(1);
+    // Pools were stride-4 I32Array (only 2 slots ever used) before.
+    // StrRefArray holds the (ss, sl) slices explicitly. Pre-build
+    // every slot once so per-function set() mutates existing StrRef
+    // objects instead of allocating a new one each time — otherwise
+    // 300+ fns * 32+128 slots would churn the kmalloc bucket-0 pool.
+    var params_pool:  StrRefArray = StrRefArray(32u32);
+    var locals_pool:  StrRefArray = StrRefArray(128u32);
+    var ppi: i32 = 0;
+    while ppi < 32 { set(params_pool, ppi, StrRef(0, 0)); ppi = ppi + 1; }
+    var lpi: i32 = 0;
+    while lpi < 128 { set(locals_pool, lpi, StrRef(0, 0)); lpi = lpi + 1; }
+    var instrs:       I32Array = I32Array(8192);
+    var label_pcs:    I32Array = I32Array(2048);
+
+    g_unit_name = U8Array(64);
+    g_unit_name_len = 0;
+
+    // Stream stdin through SourceReader (R7). Replaces the old 524 KB
+    // up-front buffer + manual chunked read loop.
+    g_reader = SourceReader_new(0);
+
+    // .text: emit the section header up front; parse_bc emits the
+    // body of each function as it reaches the corresponding .endfn.
+    e4(ob); emit_string(ob, ".text"); emit_nl(ob);
+    e4(ob); emit_string(ob, ".align 2"); emit_nl(ob);
+    emit_nl(ob);
+
+    parse_bc(strtab, string_lits, globals,
+             fns, params_pool, locals_pool, instrs, label_pcs, ob);
+
+    close(g_reader);
+
+    // .data + .rodata at the end (asm.tc reorders so position is
+    // semantically irrelevant, but matching the legacy order keeps
+    // diffs clean for the test_split.sh harness).
+    emit_data_and_rodata(strtab, string_lits, globals, ob);
+    write(ob, 1);
+
+    // Per-fn peaks for diagnostics, written byte-at-a-time to stderr.
+    var dbuf: U8Array = U8Array(96);
+    var dp: i32 = 0;
+    set(dbuf, dp, '[' as u8); dp = dp + 1;
+    set(dbuf, dp, 'b' as u8); dp = dp + 1;
+    set(dbuf, dp, 'c' as u8); dp = dp + 1;
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'i' as u8); dp = dp + 1;
+    set(dbuf, dp, 'n' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = bc_dump_dec(dbuf, dp, g_max_instr);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 's' as u8); dp = dp + 1;
+    set(dbuf, dp, 'p' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = bc_dump_dec(dbuf, dp, g_max_stab);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'p' as u8); dp = dp + 1;
+    set(dbuf, dp, 'a' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = bc_dump_dec(dbuf, dp, g_max_param);
+    set(dbuf, dp, ' ' as u8); dp = dp + 1;
+    set(dbuf, dp, 'l' as u8); dp = dp + 1;
+    set(dbuf, dp, 'o' as u8); dp = dp + 1;
+    set(dbuf, dp, '=' as u8); dp = dp + 1;
+    dp = bc_dump_dec(dbuf, dp, g_max_local);
+    set(dbuf, dp, ']' as u8); dp = dp + 1;
+    set(dbuf, dp, 10u8); dp = dp + 1;
+    sys_write(2, dbuf, dp);
+
+    km_dump_peak();
+    return 0;
+}

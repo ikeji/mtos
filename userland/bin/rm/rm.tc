@@ -1,0 +1,141 @@
+// rm.tc — remove files and (with -r) directories
+//
+// Usage: rm [-f] [-r|-R] <path> [path2 ...]
+//   -f          silently ignore missing files
+//   -r / -R     recursively descend into directories before removing
+//
+// Without -r, rm refuses to touch directories (fatfs_delete enforces
+// this kernel-side as a safety net).
+
+import "../../lib/libtc/libtc.tc";
+
+fn is_dash_flag(s: String) -> bool {
+    if len(s) < 2 { return false; }
+    if get(s, 0) != '-' as u8 { return false; }
+    return true;
+}
+
+// Build "parent/child" as a fresh String. Caller must delete().
+fn join_path(parent: String, child: String) -> String {
+    var pl: i32 = len(parent);
+    var cl: i32 = len(child);
+    var total: i32 = pl + 1 + cl;
+    var buf: U8Array = U8Array((total + 1) as u32);
+    var i: i32 = 0;
+    while i < pl {
+        set(buf, i, get(parent, i));
+        i = i + 1;
+    }
+    set(buf, pl, '/' as u8);
+    i = 0;
+    while i < cl {
+        set(buf, pl + 1 + i, get(child, i));
+        i = i + 1;
+    }
+    set(buf, total, 0u8);
+    poke32(buf as u32, total as u32);
+    return buf as String;
+}
+
+// Recursively remove path. If path is a file: unlink. If a directory:
+// recurse into each child (each one again classified file-vs-dir by
+// do_readdir result), then rmdir the now-empty directory. Returns 0
+// on success, non-zero if any leaf removal failed.
+fn rm_recursive(path: String) -> i32 {
+    var rbuf: U8Array = U8Array(4092u32);
+    var n: i32 = do_readdir(path, rbuf as u32 + 4u32, 4092);
+    if n < 0 {
+        delete(rbuf);
+        return do_unlink(path);
+    }
+    // path is a directory. Count NUL-delimited child names.
+    var cnt: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        if get(rbuf, i) == 0u8 { cnt = cnt + 1; }
+        i = i + 1;
+    }
+    var ret: i32 = 0;
+    if cnt > 0 {
+        var children: StringArray = StringArray(cnt as u32);
+        var idx: i32 = 0;
+        var start: i32 = 0;
+        i = 0;
+        while i < n {
+            if get(rbuf, i) == 0u8 {
+                set(children, idx, string_from_bytes(rbuf, start, i - start));
+                idx = idx + 1;
+                start = i + 1;
+            }
+            i = i + 1;
+        }
+        delete(rbuf);
+        i = 0;
+        while i < cnt {
+            var child: String = get(children, i);
+            var child_path: String = join_path(path, child);
+            if rm_recursive(child_path) != 0 { ret = 1; }
+            delete(child_path);
+            i = i + 1;
+        }
+        i = 0;
+        while i < cnt {
+            delete(get(children, i));
+            i = i + 1;
+        }
+        delete(children);
+    } else {
+        delete(rbuf);
+    }
+    if do_rmdir(path) != 0 { ret = 1; }
+    return ret;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var argc: i32 = len(argv);
+    if argc < 2 {
+        eputs("rm: missing operand\n");
+        return 1;
+    }
+    var force: i32 = 0;
+    var recursive: i32 = 0;
+    var start: i32 = 1;
+    while start < argc {
+        var a: String = get(argv, start);
+        if is_dash_flag(a) == false { break; }
+        var j: i32 = 1;
+        var alen: i32 = len(a);
+        while j < alen {
+            var c: u8 = get(a, j);
+            if c == 'f' as u8 { force = 1; }
+            if c == 'r' as u8 { recursive = 1; }
+            if c == 'R' as u8 { recursive = 1; }
+            j = j + 1;
+        }
+        start = start + 1;
+    }
+    if start >= argc {
+        if force != 0 { return 0; }
+        eputs("rm: missing operand\n");
+        return 1;
+    }
+    var ret: i32 = 0;
+    var i: i32 = start;
+    while i < argc {
+        var s: String = get(argv, i);
+        var r: i32 = 0;
+        if recursive != 0 {
+            r = rm_recursive(s);
+        } else {
+            r = do_unlink(s);
+        }
+        if r != 0 && force == 0 {
+            eputs("rm: cannot remove: ");
+            sys_write(2, s);
+            eputs("\n");
+            ret = 1;
+        }
+        i = i + 1;
+    }
+    return ret;
+}

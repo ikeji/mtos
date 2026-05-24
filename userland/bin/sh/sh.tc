@@ -1,0 +1,880 @@
+// sh.tc — human-friendly interactive shell with sys_spawn + sys_wait.
+//
+// On each iteration: print "sh$ ", read a line from stdin (fd 0 →
+// UART) with echo-back so the user can see what they type, tokenize
+// on whitespace, classify tokens into (argv, in_path, out_path),
+// then spawn "/bin/<argv[0]>" via do_spawn with all four pieces.
+// The redirect operators are the standard `<` and `>`; the token
+// following each is consumed as the redirected path. do_wait blocks
+// until the child finishes. The loop exits on the built-in command
+// "quit".
+//
+// do_uart_read has no concept of EOF, so we cannot rely on closing
+// stdin to terminate the shell — a "quit" line is required.
+//
+// Echo-back: each received byte is written back to stdout so a raw
+// serial console (where the host terminal isn't doing local echo)
+// still shows the typed command. Backspace (0x08 / 0x7F) erases the
+// previous character. For programmatic drivers that don't want this,
+// use msh instead.
+
+import "../../lib/libtc/libtc.tc";
+
+
+// CMD_MAX sized for self_replicate step 2: asm_pass2 with 13 inputs
+// (`--add <idx>` × 13 + `--lab-out`) on /sd/pico2_self_step2.sh
+// works out to ~250 chars; 1024 leaves comfortable headroom.
+// PATH_MAX stays at 70 because individual paths still fit.
+var CMD_MAX:  i32 = 1024;
+// "/bin/" (5) + path bytes + NUL ≤ 70. argv[0] alone, no command line.
+var PATH_MAX: i32 = 70;
+var HIST_MAX: i32 = 8;
+
+// Redirect results produced by parse_redir. Globals because TC
+// functions return a single value and we need three outputs (argv
+// + in_path + out_path). Cleared after each do_spawn. Stored as
+// String so the count header is the content length and the values
+// can be passed straight to do_openat / sys_write.
+var g_in_path:  String = 0 as String;
+var g_out_path: String = 0 as String;
+
+// Echo one byte back to stdout so the user sees what they typed.
+// Kept as a separate function so read_line stays readable.
+fn echo_byte(c: u8) -> void {
+    var one: U8Array = U8Array(1);
+    set(one, 0, c);
+    sys_write(1, one, 1);
+    delete(one);
+    return;
+}
+
+// Echo a backspace-space-backspace sequence to erase one char visually.
+fn echo_bs() -> void {
+    var three: U8Array = U8Array(3);
+    set(three, 0, 8u8);           // \b
+    set(three, 1, ' ' as u8);
+    set(three, 2, 8u8);           // \b
+    sys_write(1, three, 3);
+    delete(three);
+    return;
+}
+
+// --- History --------------------------------------------------------
+//
+// Ring buffer of the last HIST_MAX commands. Each entry is a U8Array
+// holding the raw command bytes (NUL-terminated). hist_head points
+// one past the most recent entry; hist_count is clamped to HIST_MAX.
+
+var g_hist: StringArray = 0 as StringArray;
+var g_hist_head:  i32 = 0;
+var g_hist_count: i32 = 0;
+
+fn hist_init() -> void {
+    g_hist = StringArray(HIST_MAX as u32);
+    // Slots default to null String, which hist_recall / hist_push
+    // treat as "empty". No per-slot init needed.
+    return;
+}
+
+fn hist_push(buf: U8Array, n: i32) -> void {
+    if n == 0 { return; }
+    var slot: i32 = g_hist_head % HIST_MAX;
+    var old: String = get(g_hist, slot);
+    if old as u32 != 0u32 { delete(old); }
+    set(g_hist, slot, string_from_bytes(buf, 0, n));
+    g_hist_head = g_hist_head + 1;
+    if g_hist_count < HIST_MAX { g_hist_count = g_hist_count + 1; }
+    return;
+}
+
+// Erase `count` chars from the terminal and clear buf positions.
+fn erase_line(buf: U8Array, count: i32) -> void {
+    var i: i32 = 0;
+    while i < count { echo_bs(); i = i + 1; }
+    return;
+}
+
+// Copy history entry at index `idx` (0 = most recent) into buf.
+// Returns the new pos.
+fn hist_recall(buf: U8Array, cur_pos: i32, idx: i32) -> i32 {
+    erase_line(buf, cur_pos);
+    if idx < 0 || idx >= g_hist_count { set(buf, 0, 0u8); return 0; }
+    var slot: i32 = (g_hist_head - 1 - idx + HIST_MAX * 256) % HIST_MAX;
+    var entry: String = get(g_hist, slot);
+    if entry as u32 == 0u32 { set(buf, 0, 0u8); return 0; }
+    var elen: i32 = len(entry);
+    var i: i32 = 0;
+    while i < elen && i < CMD_MAX - 1 {
+        set(buf, i, get(entry, i));
+        echo_byte(get(entry, i));
+        i = i + 1;
+    }
+    set(buf, i, 0u8);
+    return i;
+}
+
+// --- Tab completion -------------------------------------------------
+//
+// On TAB, look at the current whitespace-separated token and try to
+// complete it against a directory listing:
+//   * first token on the line → /bin entries (command names)
+//   * token containing '/'    → readdir of the parent, match basename
+//   * other tokens            → readdir of "/" (no CWD concept)
+// Exactly one match: the remaining bytes are typed in (echoed to the
+// user as if they pressed them). Multiple matches: all candidates are
+// printed on a new line, the prompt and current buffer are re-echoed
+// so editing can continue.
+//
+// Keep the helpers local to sh.tc; they're not useful elsewhere.
+
+fn tab_is_path_char(c: u8) -> bool {
+    if c >= 'a' as u8 && c <= 'z' as u8 { return true; }
+    if c >= 'A' as u8 && c <= 'Z' as u8 { return true; }
+    if c >= '0' as u8 && c <= '9' as u8 { return true; }
+    if c == '_' as u8 || c == '.' as u8 ||
+       c == '/' as u8 || c == '-' as u8 { return true; }
+    return false;
+}
+
+// Walk backwards from pos to find the start of the current token.
+fn tab_token_start(buf: U8Array, pos: i32) -> i32 {
+    var i: i32 = pos;
+    while i > 0 && tab_is_path_char(get(buf, i - 1)) {
+        i = i - 1;
+    }
+    return i;
+}
+
+// True iff the token at tok_start is in command position: either the
+// first token on the line (only whitespace before) or the token
+// immediately after a `|` pipe operator.
+fn tab_is_first_token(buf: U8Array, tok_start: i32) -> bool {
+    var i: i32 = tok_start;
+    while i > 0 && (get(buf, i - 1) == ' ' as u8 || get(buf, i - 1) == 9u8) {
+        i = i - 1;
+    }
+    if i == 0 { return true; }
+    if get(buf, i - 1) == '|' as u8 { return true; }
+    return false;
+}
+
+// Find the offset of the last '/' in buf[start..end]. Returns -1
+// when the range contains no slash.
+fn tab_last_slash(buf: U8Array, start: i32, end: i32) -> i32 {
+    var i: i32 = end - 1;
+    while i >= start {
+        if get(buf, i) == '/' as u8 { return i; }
+        i = i - 1;
+    }
+    return -1;
+}
+
+// Echo one byte via sh's existing helper (fd=1). Wrapped here so
+// the many spots below stay terse.
+fn tab_echo_str(s: StringLiteral) -> void {
+    var sl: i32 = len(s);
+    var i: i32 = 0;
+    while i < sl { echo_byte(get(s, i)); i = i + 1; }
+    return;
+}
+
+// Perform tab completion and return the new end-of-buffer position.
+// The caller keeps pos at the end of buf; we inject the completion
+// bytes into buf and echo them so sh's outer state stays consistent.
+fn complete(buf: U8Array, pos: i32) -> i32 {
+    var tok_start: i32 = tab_token_start(buf, pos);
+    var base_start: i32 = tok_start;
+    // dir holds the path to enumerate (NUL-terminated, <= 128 chars).
+    var dir: U8Array = U8Array(128);
+    var dir_len: i32 = 0;
+    if tab_is_first_token(buf, tok_start) {
+        // command completion → /bin
+        var s: StringLiteral = "/bin";
+        var sl: i32 = len(s);
+        var i: i32 = 0;
+        while i < sl { set(dir, i, get(s, i)); i = i + 1; }
+        dir_len = sl;
+    } else {
+        // Non-first tokens must be absolute paths — the shell has no
+        // CWD concept, so `ls tmp` fails even if "tmp" exists at "/".
+        // Require a leading '/' before attempting path completion to
+        // avoid completing the user into an unrunnable command.
+        if get(buf, tok_start) != '/' as u8 {
+            delete(dir);
+            return pos;
+        }
+        var slash_idx: i32 = tab_last_slash(buf, tok_start, pos);
+        // dir = buf[tok_start..slash_idx] (no trailing /), except
+        // for the root ("/xxx" → dir "/").
+        var start: i32 = tok_start;
+        var end: i32 = slash_idx;
+        if end == start {
+            // Path starts with '/', dir is "/"
+            set(dir, 0, '/' as u8);
+            dir_len = 1;
+        } else {
+            var k: i32 = 0;
+            while start + k < end {
+                set(dir, k, get(buf, start + k));
+                k = k + 1;
+            }
+            dir_len = end - start;
+        }
+        base_start = slash_idx + 1;
+    }
+    set(dir, dir_len, 0u8);
+    // Patch dir's count header to the content length so do_readdir
+    // (which consumes a String-layout path) reads the right size.
+    poke32(dir as u32, dir_len as u32);
+    var base_len: i32 = pos - base_start;
+
+    // 4092 keeps total alloc at one page (count header 4B + 4092 data =
+    // 4096); U8Array(4096) would round up to two pages and OOM on the
+    // second tab after history pushes fragment the free list.
+    var dirbuf: U8Array = U8Array(4092);
+    var n: i32 = do_readdir(dir as String,
+                            dirbuf as u32 + 4u32, 4092);
+    if n <= 0 { delete(dir); delete(dirbuf); return pos; }
+
+    // First pass: count matches + remember the first one.
+    var match_count: i32 = 0;
+    var first_start: i32 = 0;
+    var first_len: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        var ns: i32 = i;
+        while i < n && get(dirbuf, i) != 0u8 { i = i + 1; }
+        var nl: i32 = i - ns;
+        if i < n { i = i + 1; }
+        if nl < base_len {
+            // too short; skip
+        } else {
+            var matches: i32 = 1;
+            var j: i32 = 0;
+            while j < base_len {
+                if get(dirbuf, ns + j) != get(buf, base_start + j) {
+                    matches = 0;
+                    j = base_len;
+                }
+                j = j + 1;
+            }
+            if matches == 1 {
+                if match_count == 0 {
+                    first_start = ns;
+                    first_len = nl;
+                }
+                match_count = match_count + 1;
+            }
+        }
+    }
+
+    if match_count == 1 {
+        // Unique: inject the remaining bytes.
+        var extra: i32 = first_len - base_len;
+        var k: i32 = 0;
+        while k < extra && pos < CMD_MAX - 1 {
+            var c: u8 = get(dirbuf, first_start + base_len + k);
+            set(buf, pos, c);
+            pos = pos + 1;
+            echo_byte(c);
+            k = k + 1;
+        }
+        // If the completed entry is a directory, append '/' so the user
+        // can keep typing the next path component without re-tabbing.
+        // Probe by opening as a regular file — mtfs/tmpfs/procfs all
+        // reject directories, so open-failure ⇒ directory.
+        if pos < CMD_MAX - 1 {
+            var cp: U8Array = U8Array(256u32);
+            var cpos: i32 = 0;
+            var ci: i32 = 0;
+            while ci < dir_len {
+                set(cp, cpos, get(dir, ci));
+                cpos = cpos + 1;
+                ci = ci + 1;
+            }
+            if cpos == 0 || get(cp, cpos - 1) != '/' as u8 {
+                set(cp, cpos, '/' as u8);
+                cpos = cpos + 1;
+            }
+            var nl: i32 = pos - base_start;
+            var nk: i32 = 0;
+            while nk < nl {
+                set(cp, cpos, get(buf, base_start + nk));
+                cpos = cpos + 1;
+                nk = nk + 1;
+            }
+            set(cp, cpos, 0u8);
+            poke32(cp as u32, cpos as u32);
+            var fd: i32 = do_openat(0, cp as String, 0);
+            delete(cp);
+            if fd < 0 {
+                set(buf, pos, '/' as u8);
+                pos = pos + 1;
+                echo_byte('/' as u8);
+            } else {
+                do_close(fd);
+            }
+        }
+    } else if match_count > 1 {
+        // Compute the longest common prefix among all matches.
+        var common_len: i32 = first_len;
+        var ii: i32 = 0;
+        while ii < n {
+            var ns: i32 = ii;
+            while ii < n && get(dirbuf, ii) != 0u8 { ii = ii + 1; }
+            var nl: i32 = ii - ns;
+            if ii < n { ii = ii + 1; }
+            if nl >= base_len {
+                var mm: i32 = 1;
+                var jj: i32 = 0;
+                while jj < base_len {
+                    if get(dirbuf, ns + jj) != get(buf, base_start + jj) {
+                        mm = 0;
+                        jj = base_len;
+                    }
+                    jj = jj + 1;
+                }
+                if mm == 1 {
+                    // Shrink common_len to match this candidate.
+                    if nl < common_len { common_len = nl; }
+                    var cc: i32 = base_len;
+                    while cc < common_len {
+                        if get(dirbuf, ns + cc) != get(dirbuf, first_start + cc) {
+                            common_len = cc;
+                        }
+                        cc = cc + 1;
+                    }
+                }
+            }
+        }
+        // Insert the common prefix extension.
+        var extra: i32 = common_len - base_len;
+        var k: i32 = 0;
+        while k < extra && pos < CMD_MAX - 1 {
+            var c: u8 = get(dirbuf, first_start + base_len + k);
+            set(buf, pos, c);
+            pos = pos + 1;
+            echo_byte(c);
+            k = k + 1;
+        }
+        // If there is still ambiguity (common prefix didn't uniquely
+        // resolve), show all candidates on a new line.
+        if common_len < first_len {
+            echo_byte(13u8);
+            echo_byte(10u8);
+            ii = 0;
+            while ii < n {
+                var ns2: i32 = ii;
+                while ii < n && get(dirbuf, ii) != 0u8 { ii = ii + 1; }
+                var nl2: i32 = ii - ns2;
+                if ii < n { ii = ii + 1; }
+                if nl2 >= base_len {
+                    var mm2: i32 = 1;
+                    var jj2: i32 = 0;
+                    while jj2 < base_len {
+                        if get(dirbuf, ns2 + jj2) != get(buf, base_start + jj2) {
+                            mm2 = 0;
+                            jj2 = base_len;
+                        }
+                        jj2 = jj2 + 1;
+                    }
+                    if mm2 == 1 {
+                        var kk: i32 = 0;
+                        while kk < nl2 {
+                            echo_byte(get(dirbuf, ns2 + kk));
+                            kk = kk + 1;
+                        }
+                        echo_byte(' ' as u8);
+                    }
+                }
+            }
+            echo_byte(13u8);
+            echo_byte(10u8);
+            tab_echo_str("sh$ ");
+            var pp: i32 = 0;
+            while pp < pos {
+                echo_byte(get(buf, pp));
+                pp = pp + 1;
+            }
+        }
+    }
+    delete(dirbuf);
+    delete(dir);
+    return pos;
+}
+
+// Read characters from stdin until LF / CR. Returns the number of
+// command bytes stored in buf (not counting the NUL terminator).
+// Echoes each accepted byte to stdout, converts line termination to
+// CRLF for dumb terminals, and supports backspace erase. buf must
+// have room for CMD_MAX bytes including NUL.
+fn read_byte(one: U8Array) -> i32 {
+    var n: i32 = sys_read(0, one, 1);
+    if n <= 0 { return -1; }
+    return get(one, 0) as i32;
+}
+
+fn read_line(buf: U8Array) -> i32 {
+    var one: U8Array = U8Array(1);
+    var pos: i32 = 0;
+    var done: i32 = 0;
+    var hist_idx: i32 = -1;
+    while done == 0 {
+        var n: i32 = sys_read(0, one, 1);
+        if n <= 0 {
+            done = 1;
+        } else {
+            var c: u8 = get(one, 0);
+            if c == '\n' as u8 || c == '\r' as u8 {
+                echo_byte(13u8);
+                echo_byte(10u8);
+                done = 1;
+            } else if c == 8u8 || c == 127u8 {
+                if pos > 0 {
+                    pos = pos - 1;
+                    echo_bs();
+                }
+            } else if c == 9u8 {
+                set(buf, pos, 0u8);
+                pos = complete(buf, pos);
+            } else if c == 27u8 {
+                // ESC — expect CSI sequence: '[' then A/B/C/D
+                var c2: i32 = read_byte(one);
+                if c2 == '[' as i32 {
+                    var c3: i32 = read_byte(one);
+                    if c3 == 'A' as i32 {
+                        // Up arrow: older history
+                        if hist_idx + 1 < g_hist_count {
+                            hist_idx = hist_idx + 1;
+                            pos = hist_recall(buf, pos, hist_idx);
+                        }
+                    } else if c3 == 'B' as i32 {
+                        // Down arrow: newer history
+                        if hist_idx > 0 {
+                            hist_idx = hist_idx - 1;
+                            pos = hist_recall(buf, pos, hist_idx);
+                        } else if hist_idx == 0 {
+                            hist_idx = -1;
+                            erase_line(buf, pos);
+                            pos = 0;
+                        }
+                    }
+                    // C/D (left/right) ignored for now
+                }
+            } else if c < 32u8 {
+                // Skip other C0 controls
+            } else if pos < CMD_MAX - 1 {
+                // Printable ASCII and high-bit bytes (UTF-8
+                // continuation / lead bytes of multibyte text) are
+                // stored verbatim so e.g. Japanese passes through.
+                set(buf, pos, c);
+                pos = pos + 1;
+                echo_byte(c);
+            }
+        }
+    }
+    delete(one);
+    set(buf, pos, 0u8);
+    return pos;
+}
+
+// Compare a NUL-terminated byte sequence in buf against a string
+// literal. Returns true iff they match exactly.
+// (eq moved to libtc/libtc.tc)
+
+// Count tokens in buf[0..n], treating runs of spaces as separators.
+fn count_tokens(buf: U8Array, n: i32) -> i32 {
+    var count: i32 = 0;
+    var in_tok: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        var c: u8 = get(buf, i);
+        if c == ' ' as u8 {
+            in_tok = 0;
+        } else {
+            if in_tok == 0 {
+                count = count + 1;
+                in_tok = 1;
+            }
+        }
+        i = i + 1;
+    }
+    return count;
+}
+
+// Scan cmd[0..n] into:
+//   - g_in_path  (String, 0 if no `<`)
+//   - g_out_path (String, 0 if no `>`)
+//   - a returned StringArray of argv tokens (excluding the redirect
+//     operators and their operands)
+//
+// A single pass over the buffer: we walk tokens twice, once to count
+// argv / locate redirect operands, and once to fill the returned
+// argv. Tokens `<` / `>` are single-char.
+fn parse_redir(cmd: U8Array, n: i32) -> StringArray {
+    // Pass 1: classify tokens.
+    var argc: i32 = 0;
+    var in_start:  i32 = -1;
+    var in_len:    i32 = 0;
+    var out_start: i32 = -1;
+    var out_len:   i32 = 0;
+    var want_in:  i32 = 0;
+    var want_out: i32 = 0;
+
+    var i: i32 = 0;
+    while i < n {
+        while i < n && get(cmd, i) == ' ' as u8 { i = i + 1; }
+        if i < n {
+            var start: i32 = i;
+            while i < n && get(cmd, i) != ' ' as u8 { i = i + 1; }
+            var tlen: i32 = i - start;
+
+            if want_in == 1 {
+                in_start = start;
+                in_len   = tlen;
+                want_in = 0;
+            } else if want_out == 1 {
+                out_start = start;
+                out_len   = tlen;
+                want_out = 0;
+            } else if tlen == 1 && get(cmd, start) == '<' as u8 {
+                want_in = 1;
+            } else if tlen == 1 && get(cmd, start) == '>' as u8 {
+                want_out = 1;
+            } else {
+                argc = argc + 1;
+            }
+        }
+    }
+
+    if in_start >= 0 {
+        g_in_path = string_from_bytes(cmd, in_start, in_len);
+    } else {
+        g_in_path = 0 as U8Array;
+    }
+    if out_start >= 0 {
+        g_out_path = string_from_bytes(cmd, out_start, out_len);
+    } else {
+        g_out_path = 0 as String;
+    }
+
+    // Pass 2: fill argv (only the non-redirect tokens).
+    var argv: StringArray = StringArray(argc as u32);
+    var idx: i32 = 0;
+    want_in = 0;
+    want_out = 0;
+    i = 0;
+    while i < n {
+        while i < n && get(cmd, i) == ' ' as u8 { i = i + 1; }
+        if i < n {
+            var start2: i32 = i;
+            while i < n && get(cmd, i) != ' ' as u8 { i = i + 1; }
+            var tlen2: i32 = i - start2;
+
+            if want_in == 1 {
+                want_in = 0;
+            } else if want_out == 1 {
+                want_out = 0;
+            } else if tlen2 == 1 && get(cmd, start2) == '<' as u8 {
+                want_in = 1;
+            } else if tlen2 == 1 && get(cmd, start2) == '>' as u8 {
+                want_out = 1;
+            } else {
+                set(argv, idx, string_from_bytes(cmd, start2, tlen2));
+                idx = idx + 1;
+            }
+        }
+    }
+    return argv;
+}
+
+// Free every String element in sa then the array itself. Called
+// after do_spawn so the shell's arena does not accumulate argv
+// allocations across iterations (the kernel has already cloned the
+// contents for the child by this point).
+fn free_argv(sa: StringArray) -> void {
+    var n: i32 = len(sa);
+    var i: i32 = 0;
+    while i < n {
+        delete(get(sa, i));
+        i = i + 1;
+    }
+    delete(sa);
+    return;
+}
+
+// Write the path to execute into `path` in String layout: bytes at
+// offsets 0..n with the count header poked in afterwards so callers
+// can hand `path as u32` straight to do_spawn / do_exec. Returns
+// true on success. If argv[0] starts with '/' we treat it as an
+// absolute path (used by phase 7 to run freshly compiled binaries
+// out of /tmp). Otherwise we prepend "/bin/".
+fn build_path(path: U8Array, argv: StringArray) -> bool {
+    if len(argv) == 0 { return false; }
+    var head: String = get(argv, 0);
+    var hlen: i32 = len(head);
+    if hlen == 0 { return false; }
+    // Use poke8 so we can write past the current count header — the
+    // previous iteration's build_path shrank `path`'s count to the
+    // last path's length, which would make set() trip its bounds
+    // check for any longer path this time around.
+    var base: u32 = path as u32 + 4u32;
+    var total: i32 = 0;
+    if get(head, 0) == '/' as u8 {
+        if hlen + 1 > PATH_MAX { return false; }
+        var i: i32 = 0;
+        while i < hlen {
+            poke8(base + (i as u32), get(head, i));
+            i = i + 1;
+        }
+        poke8(base + (hlen as u32), 0u8);
+        total = hlen;
+    } else {
+        if hlen + 5 + 1 > PATH_MAX { return false; }
+        poke8(base,          '/' as u8);
+        poke8(base + 1u32,   'b' as u8);
+        poke8(base + 2u32,   'i' as u8);
+        poke8(base + 3u32,   'n' as u8);
+        poke8(base + 4u32,   '/' as u8);
+        var i: i32 = 0;
+        while i < hlen {
+            poke8(base + ((5 + i) as u32), get(head, i));
+            i = i + 1;
+        }
+        poke8(base + ((5 + hlen) as u32), 0u8);
+        total = 5 + hlen;
+    }
+    poke32(path as u32, total as u32);
+    return true;
+}
+
+// --- Pipe support ---------------------------------------------------
+//
+// `cmd1 | cmd2` is implemented via tmpfs intermediate files:
+//   cmd1 > /tmp/_p0  (spawn + wait)
+//   cmd2 < /tmp/_p0  (spawn + wait)
+// Multi-stage: cmd1 | cmd2 | cmd3 chains /tmp/_p0, /tmp/_p1, ...
+// Sequential execution (not streaming). Max 4 pipes (5 segments).
+
+// Scan for standalone `|` tokens in cmd[0..n-1]. Record their byte
+// offsets in pipe_pos (up to len(pipe_pos) entries). Returns the
+// number of `|` tokens found.
+fn count_pipes(cmd: U8Array, n: i32, pipe_pos: I32Array) -> i32 {
+    var count: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        while i < n && get(cmd, i) == ' ' as u8 { i = i + 1; }
+        if i < n {
+            var start: i32 = i;
+            while i < n && get(cmd, i) != ' ' as u8 { i = i + 1; }
+            var tlen: i32 = i - start;
+            if tlen == 1 && get(cmd, start) == '|' as u8 {
+                if count < len(pipe_pos) {
+                    set(pipe_pos, count, start);
+                }
+                count = count + 1;
+            }
+        }
+    }
+    return count;
+}
+
+// Open a file path from g_in_path / g_out_path and return the VFS fd.
+// Returns 0 if the path is NULL. flags: 0 = read, 577 = write+create+trunc.
+fn open_redir_path(p: String, flags: i32) -> i32 {
+    if p as u32 == 0u32 { return 0; }
+    return do_openat(0, p, flags);
+}
+
+fn main() -> i32 {
+    puts("SH: ready\n");
+    hist_init();
+
+    var cmd:  U8Array = U8Array(CMD_MAX  as u32);
+    var path: U8Array = U8Array(PATH_MAX as u32);
+
+    var running: i32 = 1;
+    while running == 1 {
+        puts("sh$ ");
+        var n: i32 = read_line(cmd);
+        if n == 0 {
+            // empty line, prompt again
+        } else {
+            hist_push(cmd, n);
+            if eq(cmd, n, "quit") {
+                running = 0;
+            } else {
+                var pipe_pos: I32Array = I32Array(4);
+                var num_pipes: i32 = count_pipes(cmd, n, pipe_pos);
+
+                if num_pipes == 0 {
+                    // No pipes: single command (existing path)
+                    delete(pipe_pos);
+                    var argv: StringArray = parse_redir(cmd, n);
+                    if !build_path(path, argv) {
+                        puts("sh: empty command\n");
+                        free_argv(argv);
+                        if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
+                        if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
+                    } else {
+                        var slot: i32 = do_spawn(path as String, argv as u32,
+                                                 g_in_path, g_out_path);
+                        free_argv(argv);
+                        if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
+                        if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
+                        if slot < 0 {
+                            puts("sh: spawn failed\n");
+                        } else {
+                            do_wait(slot);
+                        }
+                    }
+                } else if num_pipes > 4 {
+                    puts("sh: too many pipes\n");
+                    delete(pipe_pos);
+                } else {
+                    // Pipeline via kernel pipe syscall. All segments
+                    // are spawned first (concurrent execution), then
+                    // waited on in order.
+                    var seg_buf: U8Array = U8Array(CMD_MAX as u32);
+                    var slots: I32Array = I32Array(5);
+                    var pipe_rfds: I32Array = I32Array(4);
+                    var pipe_wfds: I32Array = I32Array(4);
+                    var pipe_buf: U8Array = U8Array(8);
+                    var ok: i32 = 1;
+
+                    // Create all pipes up front
+                    var pi: i32 = 0;
+                    while pi < num_pipes && ok == 1 {
+                        if do_pipe(pipe_buf as u32 + 4u32) != 0 {
+                            puts("sh: pipe failed\n");
+                            ok = 0;
+                        } else {
+                            set(pipe_rfds, pi, peek32(pipe_buf as u32 + 4u32) as i32);
+                            set(pipe_wfds, pi, peek32(pipe_buf as u32 + 8u32) as i32);
+                        }
+                        pi = pi + 1;
+                    }
+
+                    // Spawn all segments concurrently
+                    var seg_idx: i32 = 0;
+                    var seg_start: i32 = 0;
+                    var num_spawned: i32 = 0;
+                    while seg_idx <= num_pipes && ok == 1 {
+                        var seg_end: i32 = n;
+                        if seg_idx < num_pipes {
+                            seg_end = get(pipe_pos, seg_idx);
+                        }
+                        var slen: i32 = 0;
+                        var j: i32 = seg_start;
+                        while j < seg_end {
+                            set(seg_buf, slen, get(cmd, j));
+                            slen = slen + 1;
+                            j = j + 1;
+                        }
+
+                        var argv: StringArray = parse_redir(seg_buf, slen);
+
+                        if !build_path(path, argv) {
+                            puts("sh: empty command in pipe\n");
+                            free_argv(argv);
+                            if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
+                            if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
+                            ok = 0;
+                        } else {
+                            // Determine fd redirects for this segment
+                            var in_fd:  i32 = 0;
+                            var out_fd: i32 = 0;
+                            if seg_idx > 0 {
+                                in_fd = get(pipe_rfds, seg_idx - 1);
+                            }
+                            if seg_idx < num_pipes {
+                                out_fd = get(pipe_wfds, seg_idx);
+                            }
+                            // Explicit < on first segment. A failed
+                            // open aborts the whole pipeline — keeping
+                            // the pipe-fd input would silently hide the
+                            // missing redirect source.
+                            var redir_ok: i32 = 1;
+                            if g_in_path as u32 != 0u32 {
+                                var ffd: i32 = open_redir_path(g_in_path, 0);
+                                if ffd < 0 {
+                                    eputs("sh: ");
+                                    sys_write(2, g_in_path);
+                                    eputs(": open failed\n");
+                                    redir_ok = 0;
+                                } else {
+                                    in_fd = ffd;
+                                }
+                                delete(g_in_path); g_in_path = 0 as String;
+                            }
+                            // Explicit > on last segment
+                            if redir_ok == 1 && g_out_path as u32 != 0u32 {
+                                var ffd: i32 = open_redir_path(g_out_path, 577);
+                                if ffd < 0 {
+                                    eputs("sh: ");
+                                    sys_write(2, g_out_path);
+                                    eputs(": open failed\n");
+                                    redir_ok = 0;
+                                } else {
+                                    out_fd = ffd;
+                                }
+                                delete(g_out_path); g_out_path = 0 as String;
+                            }
+
+                            if redir_ok == 0 {
+                                free_argv(argv);
+                                ok = 0;
+                            } else {
+                                var slot: i32 = do_spawn_fds(path as String,
+                                                              argv as u32,
+                                                              in_fd, out_fd);
+                                free_argv(argv);
+                                if slot < 0 {
+                                    puts("sh: pipe spawn failed\n");
+                                    ok = 0;
+                                } else {
+                                    set(slots, seg_idx, slot);
+                                    num_spawned = num_spawned + 1;
+                                }
+                            }
+                        }
+
+                        if seg_idx < num_pipes {
+                            seg_start = get(pipe_pos, seg_idx) + 1;
+                        }
+                        seg_idx = seg_idx + 1;
+                    }
+
+                    // Do NOT close the pipe fds here. do_spawn_fds
+                    // passes fd *numbers* (no dup) and transfers each
+                    // fd's ownership to the child it was handed to
+                    // (vfs_set_owner). Closing them in the shell would
+                    // tear the pipe entry out from under the child
+                    // before it even runs. slot_free_allocs closes
+                    // them at each child's exit instead — and the
+                    // writer child's close of its write end is exactly
+                    // what gives the reader child its EOF.
+
+                    // Wait for all spawned segments
+                    var wi: i32 = 0;
+                    while wi < num_spawned {
+                        do_wait(get(slots, wi));
+                        wi = wi + 1;
+                    }
+
+                    delete(pipe_buf);
+                    delete(pipe_wfds);
+                    delete(pipe_rfds);
+                    delete(slots);
+                    delete(seg_buf);
+                    delete(pipe_pos);
+                }
+            }
+        }
+    }
+
+    puts("SH: bye\n");
+    delete(cmd);
+    delete(path);
+    return 0;
+}

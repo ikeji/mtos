@@ -1,0 +1,173 @@
+// bin2uf2.tc — convert a raw kernel.bin to RP2350-RISC-V UF2.
+//
+// Reads bytes from stdin (or argv[1] if given) in 256-byte chunks
+// and writes them as 512-byte UF2 blocks to stdout (or argv[2] if
+// given). UF2 block layout matches tools/bin2uf2.py — magic words,
+// family id 0xE48BFF5A, base addr 0x10000000.
+//
+// Usage:
+//   bin2uf2 < kernel.bin > kernel.uf2          (stdin/stdout)
+//   bin2uf2 /sd/kernel.bin /sd/kernel.uf2      (file args)
+//
+// Optional argv[3] = base address as hex (default 0x10000000).
+
+import "../../lib/libtc/libtc.tc";
+
+var UF2_MAGIC_START0: u32 = 0x0A324655u32;  // "UF2\n"
+var UF2_MAGIC_START1: u32 = 0x9E5D5157u32;
+var UF2_MAGIC_END:    u32 = 0x0AB16F30u32;
+var UF2_FLAG_FAMILY:  u32 = 0x00002000u32;
+var RP2350_FAMILY_ID: u32 = 0xE48BFF5Au32;
+var PAYLOAD_SIZE:     i32 = 256;
+var BLOCK_SIZE:       i32 = 512;
+
+fn write_le32(buf: U8Array, off: i32, v: u32) -> void {
+    set(buf, off,     (v        & 0xFFu32) as u8);
+    set(buf, off + 1, ((v >>  8u32) & 0xFFu32) as u8);
+    set(buf, off + 2, ((v >> 16u32) & 0xFFu32) as u8);
+    set(buf, off + 3, ((v >> 24u32) & 0xFFu32) as u8);
+    return;
+}
+
+fn parse_hex(s: String) -> u32 {
+    var n: i32 = len(s);
+    var v: u32 = 0u32;
+    var i: i32 = 0;
+    if n >= 2 && get(s, 0) == '0' as u8
+        && (get(s, 1) == 'x' as u8 || get(s, 1) == 'X' as u8) {
+        i = 2;
+    }
+    while i < n {
+        var c: u8 = get(s, i);
+        var d: u32 = 0u32;
+        if c >= '0' as u8 && c <= '9' as u8 { d = (c as u32) - 48u32; }
+        else if c >= 'a' as u8 && c <= 'f' as u8 { d = (c as u32) - 87u32; }
+        else if c >= 'A' as u8 && c <= 'F' as u8 { d = (c as u32) - 55u32; }
+        else { return 0u32; }
+        v = v * 16u32 + d;
+        i = i + 1;
+    }
+    return v;
+}
+
+// Read up to `want` bytes from `fd` into `buf[0..want]`, returning the
+// actual byte count. Falls back to short reads transparently — fatfs
+// occasionally hands back fewer bytes than requested.
+fn read_full(fd: i32, buf: U8Array, want: i32) -> i32 {
+    var got: i32 = 0;
+    var done: i32 = 0;
+    while got < want && done == 0 {
+        var tmp: U8Array = U8Array((want - got) as u32);
+        var n: i32 = sys_read(fd, tmp, want - got);
+        if n <= 0 { done = 1; }
+        else {
+            var i: i32 = 0;
+            while i < n {
+                set(buf, got + i, get(tmp, i));
+                i = i + 1;
+            }
+            got = got + n;
+        }
+        delete(tmp);
+    }
+    return got;
+}
+
+// First pass: count blocks. Either size from fatfs_size (faster on
+// /sd) or by streaming through the input. We can't know without
+// streaming the input twice or relying on the file system; fatfs has
+// no rewind so we do it via two opens when path is given. For the
+// stdin path, we stream into a growing buffer and emit at the end.
+//
+// To keep memory tiny (16 KB arena fits the in-tree task budget), the
+// implementation:
+//   - file-arg path: do_openat twice — once to count bytes (could
+//     be a stat-like syscall but we don't have one), once to emit
+//   - stdin path: same approach won't work; we fall back to writing
+//     blocks with placeholder block_no/num_blocks and patching the
+//     header bytes at end. (Not implemented yet — file-arg only for v1.)
+
+fn run_file_path(in_path: String, out_path: String, base_addr: u32) -> i32 {
+    // First pass: count total bytes to compute num_blocks.
+    var fd_in: i32 = do_openat(0 - 100, in_path, 0);
+    if fd_in < 0 {
+        eputs("bin2uf2: cannot open input\n");
+        return 1;
+    }
+    var scratch: U8Array = U8Array((PAYLOAD_SIZE) as u32);
+    var total_bytes: i32 = 0;
+    var done_count: i32 = 0;
+    while done_count == 0 {
+        var n: i32 = sys_read(fd_in, scratch, PAYLOAD_SIZE);
+        if n <= 0 { done_count = 1; }
+        else { total_bytes = total_bytes + n; }
+    }
+    do_close(fd_in);
+
+    var n_blocks: i32 = (total_bytes + PAYLOAD_SIZE - 1) / PAYLOAD_SIZE;
+
+    // Second pass: emit blocks.
+    fd_in = do_openat(0 - 100, in_path, 0);
+    if fd_in < 0 {
+        eputs("bin2uf2: cannot reopen input\n");
+        delete(scratch);
+        return 1;
+    }
+    var fd_out: i32 = do_openat(0 - 100, out_path, 577);  // O_CREAT|O_TRUNC|O_WRONLY
+    if fd_out < 0 {
+        eputs("bin2uf2: cannot open output\n");
+        do_close(fd_in);
+        delete(scratch);
+        return 1;
+    }
+    var block: U8Array = U8Array((BLOCK_SIZE) as u32);
+    var i: i32 = 0;
+    while i < n_blocks {
+        // Header.
+        write_le32(block, 0,  UF2_MAGIC_START0);
+        write_le32(block, 4,  UF2_MAGIC_START1);
+        write_le32(block, 8,  UF2_FLAG_FAMILY);
+        write_le32(block, 12, base_addr + (i as u32) * (PAYLOAD_SIZE as u32));
+        write_le32(block, 16, PAYLOAD_SIZE as u32);
+        write_le32(block, 20, i as u32);
+        write_le32(block, 24, n_blocks as u32);
+        write_le32(block, 28, RP2350_FAMILY_ID);
+        // Payload (read up to 256 bytes; pad with 0).
+        var got: i32 = read_full(fd_in, scratch, PAYLOAD_SIZE);
+        var k: i32 = 0;
+        while k < got {
+            set(block, 32 + k, get(scratch, k));
+            k = k + 1;
+        }
+        while k < PAYLOAD_SIZE {
+            set(block, 32 + k, 0u8);
+            k = k + 1;
+        }
+        // Pad bytes 32+256 .. 508 (= 220 bytes).
+        var p: i32 = 32 + PAYLOAD_SIZE;
+        while p < BLOCK_SIZE - 4 {
+            set(block, p, 0u8);
+            p = p + 1;
+        }
+        // Magic end.
+        write_le32(block, BLOCK_SIZE - 4, UF2_MAGIC_END);
+        sys_write(fd_out, block, BLOCK_SIZE);
+        i = i + 1;
+    }
+    do_close(fd_in);
+    do_close(fd_out);
+    delete(scratch);
+    delete(block);
+    return 0;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var nargs: i32 = len(argv);
+    if nargs < 3 {
+        eputs("usage: bin2uf2 input.bin output.uf2 [base_hex]\n");
+        return 1;
+    }
+    var base: u32 = 0x10000000u32;
+    if nargs >= 4 { base = parse_hex(get(argv, 3)); }
+    return run_file_path(get(argv, 1), get(argv, 2), base);
+}

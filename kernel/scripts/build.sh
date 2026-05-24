@@ -153,7 +153,7 @@ if [ ! -s "$CACHE_DIR/runtime.s" ]; then
 fi
 
 echo "Pre-compiling libtc.tc (shared)" >&2
-precompile_shared "$KERN_DIR/tasks/libtc/libtc.tc" "$CACHE_DIR/libtc.s"
+precompile_shared "$ROOT_DIR/userland/lib/libtc/libtc.tc" "$CACHE_DIR/libtc.s"
 if [ ! -s "$CACHE_DIR/libtc.s" ]; then
     echo "Error: libtc.tc pre-compile failed" >&2
     exit 1
@@ -171,8 +171,8 @@ for task in $TASKS; do
     cat "$TMP/${task}_hdr.s" "$TASK_CRT0" > "$TMP/${task}_crt0.s"
     # Collect per-task extra .s files (e.g. vi/tut_data.s)
     _extra_s=""
-    for _es in "$KERN_DIR/tasks/$task"/*.s; do
-        [ -f "$_es" ] && [ "$_es" != "$KERN_DIR/tasks/$task/$task.s" ] && _extra_s="$_extra_s $_es"
+    for _es in "$ROOT_DIR/userland/bin/$task"/*.s; do
+        [ -f "$_es" ] && [ "$_es" != "$ROOT_DIR/userland/bin/$task/$task.s" ] && _extra_s="$_extra_s $_es"
     done
     CRT0="$TMP/${task}_crt0.s" \
     CRT0_DATA="$TASK_DATA" \
@@ -180,7 +180,7 @@ for task in $TASKS; do
     GEN2_DIR="$GEN2_DIR" \
     EXTRA_S="$_extra_s" \
         "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$TMP/$task.bin" \
-        "$KERN_DIR/tasks/$task/$task.tc" 2>/dev/null
+        "$ROOT_DIR/userland/bin/$task/$task.tc" 2>/dev/null
     if [ ! -s "$TMP/$task.bin" ]; then
         echo "Error: $task task compilation failed" >&2
         exit 1

@@ -1,0 +1,52 @@
+// du.tc — print byte count per file. Usage: `du <file> [file…]`.
+//
+// Reads each file to EOF and prints "<bytes>\t<path>". Simple byte
+// count, no block accounting or recursion yet.
+
+import "../../lib/libtc/libtc.tc";
+
+
+// (print moved to libtc/libtc.tc)
+
+fn count_bytes(fd: i32) -> i32 {
+    var buf: U8Array = U8Array(4096);
+    var total: i32 = 0;
+    var done: i32 = 0;
+    while done == 0 {
+        var n: i32 = sys_read(fd, buf, 4096);
+        if n <= 0 { done = 1; }
+        else { total = total + n; }
+    }
+    delete(buf);
+    return total;
+}
+
+fn main(argv: StringArray) -> i32 {
+    if len(argv) < 2 {
+        puts("du: usage: du <file> [file...]\n");
+        return 1;
+    }
+    var i: i32 = 1;
+    while i < len(argv) {
+        var name: String = get(argv, i);
+        var fd: i32 = do_openat(0, name, 0);
+        if fd < 0 {
+            puts("du: open failed\n");
+        } else {
+            var bytes: i32 = count_bytes(fd);
+            do_close(fd);
+            print(bytes);
+            var tab: U8Array = U8Array(1);
+            set(tab, 0, 9u8);
+            sys_write(1, tab, 1);
+            delete(tab);
+            sys_write(1, name);
+            var nl: U8Array = U8Array(1);
+            set(nl, 0, 10u8);
+            sys_write(1, nl, 1);
+            delete(nl);
+        }
+        i = i + 1;
+    }
+    return 0;
+}

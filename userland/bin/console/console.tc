@@ -1,0 +1,839 @@
+// console.tc — /bin/console: userspace terminal emulator + getty.
+//
+// Hosts an interactive shell on the local display + keyboard instead
+// of the UART:
+//
+//   /dev/kbd ──> sh stdin       sh stdout ──> pipe ──> console
+//                                                        │
+//                                            terminal render
+//                                                        │
+//                                                     /dev/fb
+//
+// console opens /dev/kbd and /dev/fb, creates one pipe, and spawns
+// /bin/sh with stdin = /dev/kbd and stdout = the pipe write end. It
+// reads the pipe and renders sh's output to /dev/fb. sh reads its own
+// stdin directly, so console only ever waits on the pipe — no
+// select/poll needed.
+//
+// Font: the build links the PC-98 font (jpfont_inc.s — a .incbin of
+// jpfont.dat, built from font.bmp by genjpfont.py) into this binary.
+// console renders 8x16 hankaku + 16x16 zenkaku glyphs, UTF-8 decoded,
+// so Japanese displays. The blob is read in place via peek8 (no RAM
+// copy; works from XIP flash too). font.bmp is mandatory — the build
+// fails without it. Each glyph reaches /dev/fb as a single mode-0
+// pixel blit.
+//
+// Orientation (argv): default is portrait (320x480), which scrolls
+// with the ILI9488 hardware vertical scroll. `console -l` selects
+// landscape (480x320) — rotated 90°, the hardware scroll axis is now
+// horizontal and useless for text, so console scrolls in software:
+// it keeps a codepoint grid and re-blits the screen on each scroll.
+
+import "../../lib/libtc/libtc.tc";
+
+// Single-shot raw read (vs libtc's sys_read, which loops do_read until
+// the full requested count is fulfilled — that would block console
+// forever when sh writes 14 bytes and we ask for 64).
+fn do_read(fd: i32, buf: u32, len: i32) -> i32;
+// Non-blocking variant — returns -2 instead of blocking when the pipe
+// has no data yet. Lets us poll + sleep instead of running a sibling
+// blinker task just to drive the cursor heartbeat.
+fn do_read_nb(fd: i32, buf: u32, len: i32) -> i32;
+fn do_nanosleep(ms: i32) -> i32;
+
+var FG: i32 = 65535;        // RGB565 white
+
+// Win95-ish desktop palette (RGB565 from the canonical 8-bit values):
+//   teal  #008080 → 0x0410 (desktop background)
+//   grey  #C0C0C0 → 0xC618 (window chrome / taskbar)
+//   navy  #000080 → 0x0010 (active title bar)
+//   white #FFFFFF → 0xFFFF (3D highlight, title text)
+//   black #000000 → 0x0000 (3D shadow, content area, DOS-style)
+var COLOR_DESKTOP:  i32 = 0x0410;
+var COLOR_FRAME:    i32 = 0xC618;
+var COLOR_TITLE_BG: i32 = 0x0010;
+var COLOR_TITLE_FG: i32 = 65535;
+var COLOR_HILIGHT:  i32 = 65535;
+var COLOR_SHADOW:   i32 = 0x0000;
+var COLOR_CONTENT:  i32 = 0x0000;
+
+// Cell geometry — 8x16 hankaku. Screen size, COLS/ROWS and the
+// orientation are decided in main() from argv.
+var CW:   i32 = 8;
+var CH:   i32 = 16;
+var SCREEN_W: i32 = 320;
+var SCREEN_H: i32 = 480;
+var COLS: i32 = 40;
+var ROWS: i32 = 30;
+
+// Pixel origin for cell (0, 0). 0 in fullscreen modes; nonzero when
+// a Win95-style window decorates the screen and the console content
+// is inset into the window's client area.
+var g_content_x: i32 = 0;
+var g_content_y: i32 = 0;
+var g_have_chrome: i32 = 0;
+// Top-left of the clock area inside the taskbar. Populated by
+// draw_chrome and read by draw_clock to refresh the HH:MM display
+// without redrawing the rest of the taskbar.
+var g_clock_x: i32 = 0;
+var g_clock_y: i32 = 0;
+
+var g_col: i32 = 0;
+var g_row: i32 = 0;
+// Previous cursor cell so erase_cursor can blank the right spot
+// regardless of newline / scroll movement that happened in between.
+var g_cur_col: i32 = 0;
+var g_cur_row: i32 = 0;
+
+// Scrolling. Two modes, picked by orientation in main():
+//
+//  - Hardware (portrait): the ILI9488 vertical scroll only works on
+//    the physical 480-line axis, which is vertical in portrait. The
+//    framebuffer is a ring of FB_H lines; cell-row r lives at physical
+//    y (g_scroll + r*CH) mod FB_H (phys_y). A scroll just clears the
+//    oldest line and bumps VSCRSADD (mode 2) — O(1), no re-blit.
+//
+//  - Software (landscape): rotated 90°, the 480 axis is horizontal so
+//    hardware vscroll cannot move text. console keeps a codepoint grid
+//    (g_grid, COLS*ROWS cells) and on overflow shifts it up and
+//    re-blits the whole screen. g_scroll stays 0 in this mode.
+var FB_H:      i32 = 480;
+var g_scroll:  i32 = 0;
+var g_sw_scroll: i32 = 0;          // 1 = software scroll (landscape)
+var g_grid:      I32Array = 0 as I32Array;   // codepoint grid, sw mode only
+// g_grid_prev shadows what we last painted to /dev/fb. redraw() only
+// re-blits a cell where g_grid != g_grid_prev — typical sh output has
+// long stretches of trailing empties, so the shifted-up grid still
+// matches prev on most cells and we can skip the bulk of the blits.
+// Sentinel -2 in g_grid_prev means "pixel state damaged, force redraw"
+// (used after erase_cursor scribbled black across a glyph's bottom).
+var g_grid_prev: I32Array = 0 as I32Array;
+
+// jpfont.dat is embedded in this binary via .incbin (jpfont_inc.s,
+// generated by the build from font.bmp). jpfont_addr / jpfont_size_value
+// are defined there. The blob is accessed in place via peek8 — no RAM
+// copy, so it also works from XIP flash on pico2. Layout: "JPF1" + u32
+// u2k_count + hankaku[256][16] + zenkaku[94*94][32] +
+// u2k[u2k_count]{u16 unicode, u16 kuten}.
+fn jpfont_addr() -> u32;
+fn jpfont_size_value() -> u32;
+var g_font_addr: u32 = 0u32;
+var g_u2k:  i32 = 0;
+var OFF_HAN: i32 = 8;
+var OFF_ZEN: i32 = 4104;       // 8 + 256*16
+var OFF_U2K: i32 = 286856;     // 4104 + 94*94*32
+
+// UTF-8 decode state.
+var g_un:  i32 = 0;            // continuation bytes still expected
+var g_ucp: i32 = 0;            // codepoint being assembled
+
+// Read byte `off` of the embedded jpfont blob.
+fn fbyte(off: i32) -> i32 {
+    return peek8(g_font_addr + (off as u32)) as i32;
+}
+
+// Store a little-endian u16 at byte offset `pos`.
+fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
+    set(b, pos,     (v & 0xFF) as u8);
+    set(b, pos + 1, ((v >> 8) & 0xFF) as u8);
+    return;
+}
+
+// Emit a mode-2 blit: set the hardware vertical-scroll start line
+// (ILI9488 VSCRSADD) to `line`.
+fn fb_scroll(fb: i32, frame: U8Array, line: i32) -> void {
+    put_u16(frame, 0,  0);
+    put_u16(frame, 2,  0);
+    put_u16(frame, 4,  0);
+    put_u16(frame, 6,  0);
+    put_u16(frame, 8,  2);
+    put_u16(frame, 10, line);
+    sys_write(fb, frame, 12);
+    return;
+}
+
+// Emit a mode-1 rectangle fill of colour `col` (RGB565).
+fn fb_fill(fb: i32, frame: U8Array, x: i32, y: i32,
+           w: i32, h: i32, col: i32) -> void {
+    put_u16(frame, 0,  x);
+    put_u16(frame, 2,  y);
+    put_u16(frame, 4,  w);
+    put_u16(frame, 6,  h);
+    put_u16(frame, 8,  1);
+    put_u16(frame, 10, col);
+    sys_write(fb, frame, 12);
+    return;
+}
+
+// Emit a mode-3 MADCTL set. Rotates / mirrors the ILI9488 framebuffer
+// so the X axis covers the wider edge in landscape. Portrait default
+// is 0x48; 0xE8 (MY|MX|MV|BGR) is a 90° rotation that puts the
+// 480-pixel edge along X AND flips both axes — gives the orientation
+// where the board's USB-C points the same way as the text top.
+fn fb_madctl(fb: i32, frame: U8Array, val: i32) -> void {
+    put_u16(frame, 0,  0);
+    put_u16(frame, 2,  0);
+    put_u16(frame, 4,  0);
+    put_u16(frame, 6,  0);
+    put_u16(frame, 8,  3);
+    put_u16(frame, 10, val);
+    sys_write(fb, frame, 12);
+    return;
+}
+
+// Physical y (pixels) of cell-row `row`, folded through the scroll
+// ring. g_scroll and row*CH are both multiples of CH, so the result
+// is too — a 16px glyph never straddles the FB_H wrap. g_content_y
+// shifts the whole grid down so the content area sits below the
+// window's title bar; 0 in fullscreen modes.
+fn phys_y(row: i32) -> i32 {
+    return (g_scroll + g_content_y + row * CH) % FB_H;
+}
+
+// Build and send one mode-0 glyph blit at raw pixel coords (px, py).
+// gw x 16 pixels; each row's bitmap is read from `bpr` font bytes at
+// goff (1 byte = 8 px hankaku, 2 bytes big-endian = 16 px zenkaku).
+// Set bits paint `fg`, clear bits paint `bg` — useful for blue-on-
+// title-bar text vs the default white-on-black content text.
+fn blit_glyph_color(fb: i32, frame: U8Array, px: i32, py: i32,
+                    gw: i32, goff: i32, bpr: i32,
+                    fg: i32, bg: i32) -> void {
+    put_u16(frame, 0, px);
+    put_u16(frame, 2, py);
+    put_u16(frame, 4, gw);
+    put_u16(frame, 6, 16);
+    put_u16(frame, 8, 0);
+    var y: i32 = 0;
+    while y < 16 {
+        var bits: i32 = fbyte(goff + y * bpr);
+        if bpr == 2 { bits = (bits << 8) | fbyte(goff + y * 2 + 1); }
+        var x: i32 = 0;
+        while x < gw {
+            var p: i32 = bg;
+            if (bits & (1 << (gw - 1 - x))) != 0 { p = fg; }
+            put_u16(frame, 10 + (y * gw + x) * 2, p);
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+    sys_write(fb, frame, 10 + gw * 16 * 2);
+    return;
+}
+
+// Cell-coords wrapper for the content area: white-on-content-bg text.
+fn blit_glyph(fb: i32, frame: U8Array, col: i32, row: i32,
+              gw: i32, goff: i32, bpr: i32) -> void {
+    blit_glyph_color(fb, frame, g_content_x + col * CW, phys_y(row),
+                     gw, goff, bpr, FG, COLOR_CONTENT);
+    return;
+}
+
+// ===== JP font (embedded jpfont blob) =====
+
+// Point g_font_addr at the .incbin'd font and read its header.
+// Returns 0 on success, 1 if the embedded blob is corrupt.
+fn jp_load() -> i32 {
+    g_font_addr = jpfont_addr();
+    if fbyte(0) != 'J' as i32 || fbyte(1) != 'P' as i32
+        || fbyte(2) != 'F' as i32 || fbyte(3) != '1' as i32 {
+        eputs("CONSOLE: jpfont blob corrupt\n");
+        return 1;
+    }
+    g_u2k = fbyte(4) | (fbyte(5) << 8) | (fbyte(6) << 16) | (fbyte(7) << 24);
+    // The linked blob size must match what the header implies —
+    // catches a truncated or mismatched .incbin link.
+    if (jpfont_size_value() as i32) != OFF_U2K + g_u2k * 4 {
+        eputs("CONSOLE: jpfont size mismatch\n");
+        return 1;
+    }
+    eputs("CONSOLE: jpfont loaded\n");
+    return 0;
+}
+
+// Binary-search the Unicode->kuten table. Returns (ku<<8)|ten, or 0.
+fn u2k_lookup(cp: i32) -> i32 {
+    var lo: i32 = 0;
+    var hi: i32 = g_u2k - 1;
+    while lo <= hi {
+        var mid: i32 = (lo + hi) / 2;
+        var off: i32 = OFF_U2K + mid * 4;
+        var ucp: i32 = fbyte(off) | (fbyte(off + 1) << 8);
+        if ucp == cp {
+            return fbyte(off + 2) | (fbyte(off + 3) << 8);
+        }
+        if ucp < cp { lo = mid + 1; } else { hi = mid - 1; }
+    }
+    return 0;
+}
+
+// 8x16 hankaku glyph (1 byte per row) at cell (col,row).
+fn draw_hankaku(fb: i32, frame: U8Array, col: i32, row: i32, code: i32) -> void {
+    blit_glyph(fb, frame, col, row, 8, OFF_HAN + code * 16, 1);
+    return;
+}
+
+// 16x16 zenkaku glyph (2 bytes per row, big-endian) at cell (col,row).
+fn draw_zenkaku(fb: i32, frame: U8Array, col: i32, row: i32, kuten: i32) -> void {
+    var ku:  i32 = kuten >> 8;
+    var ten: i32 = kuten & 0xFF;
+    blit_glyph(fb, frame, col, row, 16,
+               OFF_ZEN + ((ku - 1) * 94 + (ten - 1)) * 32, 2);
+    return;
+}
+
+// ===== Win95 chrome: window + title bar + taskbar =====
+
+// Paint each printable byte of `s` as an 8x16 hankaku glyph starting
+// at raw pixel (px, py), in (fg) on (bg). Used for the title-bar
+// label and the Start button caption — neither lives on the cell
+// grid, so they go through blit_glyph_color rather than blit_glyph.
+fn draw_text_at(fb: i32, frame: U8Array, px: i32, py: i32,
+                s: StringLiteral, fg: i32, bg: i32) -> void {
+    var n: i32 = len(s);
+    var i: i32 = 0;
+    while i < n {
+        var c: i32 = get(s, i) as i32;
+        if c >= 32 && c < 256 {
+            blit_glyph_color(fb, frame, px + i * 8, py, 8,
+                             OFF_HAN + c * 16, 1, fg, bg);
+        }
+        i = i + 1;
+    }
+    return;
+}
+
+// Paint a 1-px raised (button-up) or sunken (button-down) 3D bevel
+// around the rectangle (x, y, w, h).
+fn draw_3d_bevel(fb: i32, frame: U8Array,
+                 x: i32, y: i32, w: i32, h: i32, raised: i32) -> void {
+    var hl: i32 = COLOR_HILIGHT;
+    var sh: i32 = COLOR_SHADOW;
+    if raised == 0 { hl = COLOR_SHADOW; sh = COLOR_HILIGHT; }
+    fb_fill(fb, frame, x,         y,         w, 1, hl);
+    fb_fill(fb, frame, x,         y,         1, h, hl);
+    fb_fill(fb, frame, x,         y + h - 1, w, 1, sh);
+    fb_fill(fb, frame, x + w - 1, y,         1, h, sh);
+    return;
+}
+
+// Paint a small chunky icon as a 14x14 raised tile sitting in the
+// title bar's left margin. Two diagonal lines form a stylised glyph
+// (a >-prompt). Cheap and recognisably "DOS prompt" at this scale.
+fn draw_titlebar_icon(fb: i32, frame: U8Array, x: i32, y: i32) -> void {
+    fb_fill(fb, frame, x, y, 14, 14, COLOR_FRAME);
+    draw_3d_bevel(fb, frame, x, y, 14, 14, 1);
+    // Crude > arrow inside.
+    fb_fill(fb, frame, x + 3, y + 4, 2, 2, COLOR_SHADOW);
+    fb_fill(fb, frame, x + 5, y + 6, 2, 2, COLOR_SHADOW);
+    fb_fill(fb, frame, x + 3, y + 8, 2, 2, COLOR_SHADOW);
+    fb_fill(fb, frame, x + 7, y + 10, 4, 2, COLOR_SHADOW);
+    return;
+}
+
+// 16x16 raised close button with an "x" centred. Visual only — we
+// don't currently dispatch clicks on it.
+fn draw_close_button(fb: i32, frame: U8Array, x: i32, y: i32) -> void {
+    fb_fill(fb, frame, x, y, 16, 16, COLOR_FRAME);
+    draw_3d_bevel(fb, frame, x, y, 16, 16, 1);
+    // Diagonal-ish x using 4 pixels off the corners.
+    fb_fill(fb, frame, x + 4,  y + 4,  2, 2, COLOR_SHADOW);
+    fb_fill(fb, frame, x + 6,  y + 6,  4, 4, COLOR_SHADOW);
+    fb_fill(fb, frame, x + 10, y + 10, 2, 2, COLOR_SHADOW);
+    fb_fill(fb, frame, x + 10, y + 4,  2, 2, COLOR_SHADOW);
+    fb_fill(fb, frame, x + 4,  y + 10, 2, 2, COLOR_SHADOW);
+    return;
+}
+
+// Paint the whole desktop: teal background, an "MTOS Prompt" window
+// hosting the cell grid, and a Start-button + app-button + clock
+// taskbar across the bottom. Geometry is fixed for 480x320 landscape.
+fn draw_chrome(fb: i32, frame: U8Array) -> void {
+    // 1. Desktop background.
+    fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, COLOR_DESKTOP);
+
+    // 2. Window 12..467 × 14..285. Raised grey frame, 4 px desktop
+    //    margin on the sides + 14 / 6 top / above-taskbar.
+    var wx: i32 = 12;
+    var wy: i32 = 14;
+    var ww: i32 = SCREEN_W - 24;              // 456
+    var wh: i32 = SCREEN_H - 14 - 28 - 6;     // 272
+    fb_fill(fb, frame, wx, wy, ww, wh, COLOR_FRAME);
+    draw_3d_bevel(fb, frame, wx, wy, ww, wh, 1);
+
+    // 3. Title bar 16..463 × 16..33 (18 px), with icon (left), the
+    //    title text in white-on-navy, and a close button (right).
+    var tx: i32 = wx + 4;
+    var ty: i32 = wy + 2;
+    var tw: i32 = ww - 8;                     // 448
+    var th: i32 = 18;
+    fb_fill(fb, frame, tx, ty, tw, th, COLOR_TITLE_BG);
+    draw_titlebar_icon(fb, frame, tx + 2, ty + 2);
+    draw_text_at(fb, frame, tx + 20, ty + 1,
+                 "MTOS Prompt", COLOR_TITLE_FG, COLOR_TITLE_BG);
+    draw_close_button(fb, frame, tx + tw - 18, ty + 1);
+
+    // 4. Content area (16..463 × 40..279, 56 cols × 15 rows of 8x16).
+    //    g_content_y picks up the 4-px gap below the title bar that
+    //    keeps the prompt from kissing the navy line.
+    fb_fill(fb, frame, g_content_x, g_content_y,
+            COLS * CW, ROWS * CH, COLOR_CONTENT);
+
+    // 5. Taskbar across the bottom (0..480 × 292..320, 28 px tall).
+    //    Top edge is a 1-px white highlight; the rest is plain frame
+    //    grey.
+    var bx: i32 = 0;
+    var by: i32 = SCREEN_H - 28;
+    var bw: i32 = SCREEN_W;
+    var bh: i32 = 28;
+    fb_fill(fb, frame, bx, by, bw, bh, COLOR_FRAME);
+    fb_fill(fb, frame, bx, by, bw, 1,  COLOR_HILIGHT);
+
+    // 6. Start button at left of the taskbar. Wider than v1 so the
+    //    "Start" caption clears the bevel on both sides.
+    var sbx: i32 = 4;
+    var sby: i32 = by + 4;
+    var sbw: i32 = 68;
+    var sbh: i32 = 20;
+    fb_fill(fb, frame, sbx, sby, sbw, sbh, COLOR_FRAME);
+    draw_3d_bevel(fb, frame, sbx, sby, sbw, sbh, 1);
+    draw_text_at(fb, frame, sbx + 14, sby + 2,
+                 "Start", COLOR_SHADOW, COLOR_FRAME);
+
+    // 7. App button for the currently running window. We only have
+    //    the one DOS prompt for now; in Win95 the active window's
+    //    button is drawn sunken to signal "focused / restored".
+    var abx: i32 = sbx + sbw + 4;
+    var aby: i32 = sby;
+    var abw: i32 = 132;
+    var abh: i32 = sbh;
+    fb_fill(fb, frame, abx, aby, abw, abh, COLOR_FRAME);
+    draw_3d_bevel(fb, frame, abx, aby, abw, abh, 0);    // sunken
+    draw_titlebar_icon(fb, frame, abx + 4, aby + 3);
+    draw_text_at(fb, frame, abx + 22, aby + 2,
+                 "MTOS Prompt", COLOR_SHADOW, COLOR_FRAME);
+
+    // 8. Clock placeholder at the far right of the taskbar. We blit
+    //    "00:00" here so the slot is visible immediately; the real
+    //    HH:MM is drawn periodically by draw_clock() from the read
+    //    loop.
+    g_clock_x = SCREEN_W - 48;
+    g_clock_y = sby + 2;
+    fb_fill(fb, frame, g_clock_x - 4, sby, 48, sbh, COLOR_FRAME);
+    draw_3d_bevel(fb, frame, g_clock_x - 4, sby, 48, sbh, 0);
+    draw_text_at(fb, frame, g_clock_x, g_clock_y,
+                 "00:00", COLOR_SHADOW, COLOR_FRAME);
+    return;
+}
+
+// Refresh just the HH:MM digits inside the clock sunken area. Called
+// from the cursor-blink path (every 250 ms) and after each batch of
+// rendered output; the kernel's /dev/rtc snapshots "YYYY-MM-DD
+// HH:MM:SS\n" on open and the read drains it, so we open + read +
+// close once per second. A short-circuit on (last_hh, last_mm) keeps
+// the actual fb_fill / glyph blits down to once per minute.
+fn draw_2digits(fb: i32, frame: U8Array, x: i32, y: i32, n: i32) -> void {
+    var d1: i32 = (n / 10) % 10;
+    var d2: i32 = n % 10;
+    blit_glyph_color(fb, frame, x,     y, 8, OFF_HAN + (48 + d1) * 16, 1,
+                     COLOR_SHADOW, COLOR_FRAME);
+    blit_glyph_color(fb, frame, x + 8, y, 8, OFF_HAN + (48 + d2) * 16, 1,
+                     COLOR_SHADOW, COLOR_FRAME);
+    return;
+}
+
+var g_clock_tick: i32 = 0;
+var g_last_hh:    i32 = 0 - 1;
+var g_last_mm:    i32 = 0 - 1;
+
+fn draw_clock(fb: i32, frame: U8Array) -> void {
+    if g_have_chrome == 0 { return; }
+    // ~1 Hz poll. draw_clock fires at the 250 ms blink rate plus on
+    // every byte batch from sh; without this gate the RTC would be
+    // opened 4-10× per second for no visible gain.
+    g_clock_tick = g_clock_tick + 1;
+    if g_clock_tick < 4 { return; }
+    g_clock_tick = 0;
+
+    var rfd: i32 = do_openat(0, "/dev/rtc", 0);
+    if rfd < 0 { return; }
+    var buf: U8Array = U8Array(24u32);
+    var n: i32 = sys_read(rfd, buf, 20);
+    do_close(rfd);
+    // "YYYY-MM-DD HH:MM:SS\n" — HH at offsets 11/12, MM at 14/15.
+    if n < 16 { delete(buf); return; }
+    var hh: i32 = ((get(buf, 11) as i32) - 48) * 10
+                +  (get(buf, 12) as i32) - 48;
+    var mm: i32 = ((get(buf, 14) as i32) - 48) * 10
+                +  (get(buf, 15) as i32) - 48;
+    delete(buf);
+
+    if hh == g_last_hh && mm == g_last_mm { return; }
+    g_last_hh = hh;
+    g_last_mm = mm;
+
+    draw_2digits(fb, frame, g_clock_x,      g_clock_y, hh);
+    blit_glyph_color(fb, frame, g_clock_x + 16, g_clock_y, 8,
+                     OFF_HAN + 58 * 16, 1,             // ':'
+                     COLOR_SHADOW, COLOR_FRAME);
+    draw_2digits(fb, frame, g_clock_x + 24, g_clock_y, mm);
+    return;
+}
+
+// ===== Software scroll (landscape) =====
+
+// Re-blit only the cells where the logical grid has drifted away from
+// what /dev/fb currently shows. Cells unchanged since the last redraw
+// (very common for trailing empties on terse shell output) are skipped
+// entirely — that's the bulk of the SPI cost on a software scroll.
+//
+// Glyph cells repaint themselves (blit_glyph paints FG-on-black, so
+// the cell background is implicit); empty cells get an 8x16 mode-1
+// black fill. The upfront whole-screen fb_fill is gone — it would
+// touch every pixel before we even consult the diff.
+fn redraw(fb: i32, frame: U8Array) -> void {
+    var r: i32 = 0;
+    while r < ROWS {
+        var c: i32 = 0;
+        while c < COLS {
+            var idx: i32 = r * COLS + c;
+            var cp:   i32 = get(g_grid, idx);
+            var prev: i32 = get(g_grid_prev, idx);
+            if cp != prev {
+                if cp >= 32 {
+                    if cp < 256 {
+                        draw_hankaku(fb, frame, c, r, cp);
+                    } else {
+                        var kt: i32 = u2k_lookup(cp);
+                        if kt != 0 {
+                            draw_zenkaku(fb, frame, c, r, kt);
+                        } else {
+                            fb_fill(fb, frame, g_content_x + c * CW,
+                                    phys_y(r), CW, CH, COLOR_CONTENT);
+                        }
+                    }
+                } else if cp != (0 - 1) {
+                    // 0 = empty cell; -1 = trailing half of a zenkaku
+                    // that was painted by its left cell, leave alone.
+                    fb_fill(fb, frame, g_content_x + c * CW, phys_y(r),
+                            CW, CH, COLOR_CONTENT);
+                }
+                set(g_grid_prev, idx, cp);
+            }
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+    return;
+}
+
+// Software scroll: shift the codepoint grid up one row, blank the new
+// bottom row, and re-blit the whole screen. Used in landscape, where
+// the hardware vertical scroll cannot move text.
+fn sw_scroll(fb: i32, frame: U8Array) -> void {
+    var r: i32 = 0;
+    while r < ROWS - 1 {
+        var c: i32 = 0;
+        while c < COLS {
+            set(g_grid, r * COLS + c, get(g_grid, (r + 1) * COLS + c));
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+    var bc: i32 = 0;
+    while bc < COLS {
+        set(g_grid, (ROWS - 1) * COLS + bc, 0);
+        bc = bc + 1;
+    }
+    redraw(fb, frame);
+    return;
+}
+
+// ===== Terminal state machine =====
+
+fn newline() -> void {
+    g_col = 0;
+    g_row = g_row + 1;
+    return;
+}
+
+// Render one decoded Unicode codepoint.
+fn draw_cp(fb: i32, frame: U8Array, cp: i32) -> void {
+    if cp == 10 {
+        newline();
+    } else if cp == 13 {
+        g_col = 0;
+    } else if cp == 8 {
+        if g_col > 0 { g_col = g_col - 1; }
+    } else if cp >= 32 {
+        if cp < 256 {
+            draw_hankaku(fb, frame, g_col, g_row, cp);
+            if g_sw_scroll != 0 {
+                // Direct paint — grid and grid_prev stay in sync so
+                // the next redraw skips this cell unless a scroll
+                // moves something else into it.
+                var ix: i32 = g_row * COLS + g_col;
+                set(g_grid,      ix, cp);
+                set(g_grid_prev, ix, cp);
+            }
+            g_col = g_col + 1;
+        } else {
+            var kt: i32 = u2k_lookup(cp);
+            if kt != 0 {
+                if g_col + 1 >= COLS { newline(); }
+                draw_zenkaku(fb, frame, g_col, g_row, kt);
+                if g_sw_scroll != 0 {
+                    // cp at the left cell, -1 marks the trailing cell.
+                    var iz: i32 = g_row * COLS + g_col;
+                    set(g_grid,      iz,     cp);
+                    set(g_grid,      iz + 1, 0 - 1);
+                    set(g_grid_prev, iz,     cp);
+                    set(g_grid_prev, iz + 1, 0 - 1);
+                }
+                g_col = g_col + 2;
+            }
+        }
+        if g_col >= COLS { newline(); }
+    }
+    if g_row >= ROWS {
+        // Cursor fell off the bottom.
+        g_row = ROWS - 1;
+        if g_sw_scroll != 0 {
+            sw_scroll(fb, frame);
+        } else {
+            // Hardware scroll: clear the oldest physical line at
+            // y = g_scroll, advance VSCRSADD past it — phys_y(ROWS-1)
+            // now folds back onto that freed strip.
+            fb_fill(fb, frame, 0, g_scroll, SCREEN_W, CH, 0);
+            g_scroll = (g_scroll + CH) % FB_H;
+            fb_scroll(fb, frame, g_scroll);
+        }
+    }
+    return;
+}
+
+// Cursor: a 4-pixel-tall white underline at the bottom of the cell.
+// 2 px was too thin to spot on the panel; 4 px reads as a clear bar
+// without covering enough of the glyph to be confusing.
+var g_cur_on: i32 = 0;
+var CUR_H:    i32 = 4;
+
+fn draw_cursor(fb: i32, frame: U8Array) -> void {
+    if g_row < 0 || g_row >= ROWS { return; }
+    if g_col < 0 || g_col >= COLS { return; }
+    fb_fill(fb, frame, g_content_x + g_col * CW,
+            phys_y(g_row) + CH - CUR_H, CW, CUR_H, FG);
+    g_cur_col = g_col;
+    g_cur_row = g_row;
+    g_cur_on = 1;
+    return;
+}
+
+fn erase_cursor(fb: i32, frame: U8Array) -> void {
+    if g_cur_on == 0 { return; }
+    if g_cur_row < 0 || g_cur_row >= ROWS { return; }
+    if g_cur_col < 0 || g_cur_col >= COLS { return; }
+    fb_fill(fb, frame, g_content_x + g_cur_col * CW,
+            phys_y(g_cur_row) + CH - CUR_H, CW, CUR_H, COLOR_CONTENT);
+    // Bottom CUR_H pixels of any glyph in this cell are now black even
+    // if the glyph itself had ink there. Mark the cell dirty so the
+    // next redraw (e.g. after a scroll) repaints the glyph cleanly.
+    if g_sw_scroll != 0 && (g_grid_prev as u32) != 0u32 {
+        set(g_grid_prev, g_cur_row * COLS + g_cur_col, 0 - 2);
+    }
+    g_cur_on = 0;
+    return;
+}
+
+// Feed one byte through the UTF-8 decoder; render completed
+// codepoints. ASCII passes straight through.
+fn render(fb: i32, frame: U8Array, b: i32) -> void {
+    var cp: i32 = 0 - 1;
+    if g_un > 0 {
+        if (b & 192) == 128 {
+            g_ucp = (g_ucp << 6) | (b & 63);
+            g_un = g_un - 1;
+            if g_un == 0 { cp = g_ucp; }
+        } else {
+            g_un = 0;            // malformed — restart on this byte
+        }
+    }
+    if g_un == 0 && cp < 0 {
+        if b < 128 {
+            cp = b;
+        } else if (b & 224) == 192 {
+            g_ucp = b & 31;  g_un = 1;
+        } else if (b & 240) == 224 {
+            g_ucp = b & 15;  g_un = 2;
+        } else if (b & 248) == 240 {
+            g_ucp = b & 7;   g_un = 3;
+        }
+    }
+    if cp >= 0 {
+        draw_cp(fb, frame, cp);
+    }
+    return;
+}
+
+fn main(argv: StringArray) -> i32 {
+    eputs("CONSOLE: ready\n");
+    if jp_load() != 0 { return 1; }
+
+    // Orientation: `-l` in argv selects landscape (panel rotated 90°),
+    // which scrolls in software. Default is portrait + hardware scroll.
+    // kern.conf init tasks get no argv (a2 == 0) → portrait.
+    var land: i32 = 0;
+    if (argv as u32) != 0u32 {
+        var ai: i32 = 1;
+        while ai < len(argv) {
+            var a: String = get(argv, ai);
+            if len(a) == 2 && get(a, 0) == ('-' as u8)
+                && get(a, 1) == ('l' as u8) {
+                land = 1;
+            }
+            ai = ai + 1;
+        }
+    }
+    if land != 0 {
+        SCREEN_W = 480;  SCREEN_H = 320;  g_sw_scroll = 1;
+        // Landscape gets the Win95 desktop chrome. Content area runs
+        // 56 cols × 15 rows inside a window sitting above a taskbar:
+        //   window  12..467 × 14..285  (456 × 272)
+        //   title   16..463 × 16..33   (448 × 18, navy)
+        //   content 16..463 × 40..279  (448 × 240 = 56 × 15)
+        //   taskbar  0..479 × 292..319 (480 × 28)
+        g_have_chrome = 1;
+        g_content_x = 16;
+        g_content_y = 40;
+        COLS = 56;
+        ROWS = 15;
+        eputs("CONSOLE: landscape, software scroll, chrome\n");
+    } else {
+        SCREEN_W = 320;  SCREEN_H = 480;  g_sw_scroll = 0;
+        g_have_chrome = 0;
+        g_content_x = 0;
+        g_content_y = 0;
+        COLS = SCREEN_W / CW;
+        ROWS = SCREEN_H / CH;
+        eputs("CONSOLE: portrait, hardware scroll\n");
+    }
+    FB_H = SCREEN_H;
+    if g_sw_scroll != 0 {
+        g_grid      = I32Array((COLS * ROWS) as u32);
+        g_grid_prev = I32Array((COLS * ROWS) as u32);
+        var gi: i32 = 0;
+        while gi < COLS * ROWS {
+            set(g_grid,      gi, 0);
+            // 0 also matches the initial fb_fill(black) we issue
+            // right after — both arrays describe an empty screen.
+            set(g_grid_prev, gi, 0);
+            gi = gi + 1;
+        }
+    }
+
+    var kbd: i32 = do_openat(0, "/dev/kbd", 0);
+    var fb:  i32 = do_openat(0, "/dev/fb", 1);
+    if kbd < 0 || fb < 0 {
+        eputs("CONSOLE: device open failed\n");
+        return 1;
+    }
+
+    var pb: U8Array = U8Array(8u32);
+    if do_pipe(pb as u32 + 4u32) != 0 {
+        eputs("CONSOLE: pipe failed\n");
+        delete(pb);
+        return 1;
+    }
+    var pr: i32 = peek32(pb as u32 + 4u32) as i32;
+    var pw: i32 = peek32(pb as u32 + 8u32) as i32;
+
+    // sh: stdin = /dev/kbd, stdout = pipe write end.
+    var slot: i32 = do_spawn_fds("/bin/sh", 0u32, kbd, pw);
+    delete(pb);
+    if slot < 0 {
+        eputs("CONSOLE: sh spawn failed\n");
+        return 1;
+    }
+    // Do NOT close kbd / pw here: spawn_fds passes fd numbers (no
+    // dup); sh owns them now and slot_free_allocs closes them when
+    // sh exits — that close of the pipe write end is our EOF.
+
+    // /dev/fb framed-write buffer: 10-byte header + up to a 16x16
+    // RGB565 glyph payload (16*16*2 = 512) = 522 bytes.
+    var frame: U8Array = U8Array(522u32);
+    var buf:   U8Array = U8Array(64u32);
+
+    // Landscape: rotate the ILI9488 framebuffer so the 480-pixel edge
+    // runs along X. Without this MADCTL change the panel stays in its
+    // power-on portrait orientation and pixel writes past x=319 get
+    // clipped to nothing — text would render only in the left
+    // half-screen and look like portrait.
+    //
+    // 0xE8 (MY|MX|MV|BGR) is the 90° rotation that also flips both
+    // axes, i.e. text reads with the board's USB-C side at the top.
+    // Use 0x28 to flip the picture 180° on this board.
+    if g_sw_scroll != 0 { fb_madctl(fb, frame, 0xE8); }
+
+    // Paint the desktop. Landscape gets the Win95 chrome (desktop +
+    // window + title + taskbar + Start button) and the content area
+    // is sized to fit inside the window. Portrait clears the whole
+    // panel to black.
+    if g_have_chrome != 0 {
+        draw_chrome(fb, frame);
+    } else {
+        fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, COLOR_CONTENT);
+    }
+    // Initial cursor — sh will write the first prompt straight after
+    // we enter the read loop, but the cursor sits at (0,0) until then.
+    draw_cursor(fb, frame);
+    // The buf data area starts 4 bytes past the U8Array header. We pass
+    // it raw to do_read (the syscall stub) instead of going through
+    // libtc's sys_read — sys_read loops until the full requested count
+    // is fulfilled, which would block forever on a slow pipe (sh's
+    // initial 14-byte prompt vs. our 64-byte buffer).
+    var buf_data: u32 = (buf as u32) + 4u32;
+    // Poll-and-blink: do_read_nb returns -2 immediately when the pipe
+    // is empty, so we sleep 250 ms and toggle the cursor between polls
+    // instead of relying on a sibling task to write heartbeat bytes.
+    // 250 ms × 2 toggles = ~2 Hz blink with at most one 250 ms latency
+    // before sh output shows up on screen.
+    var running: i32 = 1;
+    while running == 1 {
+        var r: i32 = do_read_nb(pr, buf_data, 64);
+        if r > 0 {
+            erase_cursor(fb, frame);
+            var i: i32 = 0;
+            while i < r {
+                render(fb, frame, peek8(buf_data + (i as u32)) as i32);
+                i = i + 1;
+            }
+            draw_cursor(fb, frame);
+            draw_clock(fb, frame);
+        } else if r == 0 {
+            // Writer closed → EOF, time to wind down.
+            running = 0;
+        } else if r == (0 - 2) {
+            // No data right now — toggle cursor, refresh the clock,
+            // and sleep until the next blink.
+            if g_cur_on != 0 {
+                erase_cursor(fb, frame);
+            } else {
+                draw_cursor(fb, frame);
+            }
+            draw_clock(fb, frame);
+            do_nanosleep(250);
+        } else {
+            // Any other negative is a hard error.
+            running = 0;
+        }
+    }
+
+    do_wait(slot);
+    do_close(pr);
+    do_close(fb);
+    delete(frame);
+    delete(buf);
+    if (g_grid as u32) != 0u32 { delete(g_grid); }
+    if (g_grid_prev as u32) != 0u32 { delete(g_grid_prev); }
+    eputs("CONSOLE: exit\n");
+    return 0;
+}
