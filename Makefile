@@ -540,27 +540,19 @@ BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin \
               build/kernel/disk-console.img build/kernel/disk-console-land.img \
               $(TEST_ASM_BINS)
 
-TEST_SCRIPTS := $(wildcard tests/*.sh) $(wildcard compiler/tests/*.sh) $(wildcard kernel/tests/*.sh)
-TEST_INPUTS  := $(wildcard compiler/tests/*.tc) $(wildcard compiler/tests/import/*.tc)
-TEST_GOLDEN  := $(wildcard compiler/tests/golden/*) $(wildcard compiler/tests/golden/tc/*)
-TEST_SUPPORT := tc_run.sh tc_run_all.sh compiler/scripts/compile-gen1.sh compiler/scripts/compile-gen2.sh compiler/scripts/compile-gen3.sh
+# `make test` はサブプロジェクト Makefile に委譲。集約は sub-Makefile
+# の "Results: N passed, M failed" 行で確認できる。stamp file は使わない
+# (sub-Makefile が個別にキャッシュ判定する)。
+.PHONY: test full-test
+test:
+	$(MAKE) -C compiler test
+	$(MAKE) -C kernel   test
+	$(MAKE) -C userland test
 
-ALL_TEST_DEPS := $(BUILD_DEPS) $(TEST_SCRIPTS) $(TEST_INPUTS) $(TEST_GOLDEN) $(TEST_SUPPORT)
-
-build/tests:
-	mkdir -p $@
-
-build/tests/test.ok: $(ALL_TEST_DEPS) | build/tests
-	./tests/test_all.sh
-	@touch $@
-
-build/tests/full-test.ok: $(ALL_TEST_DEPS) | build/tests
-	FULL_TEST=1 ./tests/test_all.sh
-	@touch $@
-
-test: build/tests/test.ok
-
-full-test: build/tests/full-test.ok integration-test
+# full-test: 上 + integration + FULL_TEST=1 系。
+full-test: test integration-test
+	FULL_TEST=1 $(MAKE) -C compiler test
+	FULL_TEST=1 $(MAKE) -C kernel test
 
 # integration-test: 3 サブプロジェクトの境界をまたぐテスト。
 # - test_phase7.sh: phase 7 self-host on qemu virt

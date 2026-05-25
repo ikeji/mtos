@@ -3,7 +3,7 @@
 # FULL_TEST=1: also runs kmalloc and kernel1 (cooperative) tests
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../compiler/tests/test_common.sh"
 
 echo "=== OS Component Tests ==="
 

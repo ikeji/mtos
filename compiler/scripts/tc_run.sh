@@ -13,7 +13,7 @@
 # The optional [stdin] argument is passed as the program's standard input.
 # Prefix with '@' to read from a file: @tests/input.txt
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 METHOD="${1:-}"
 TC_FILE="${2:-}"
 STDIN_ARG="${3:-}"

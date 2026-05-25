@@ -4,7 +4,7 @@
 # Tests: Gen1 output vs golden files (AST, BC, ASM, execution)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
+source "$SCRIPT_DIR/test_common.sh"
 require_tools parse codegen bcrun bc2asm
 
 echo "=== Golden Tests: Example Files (Gen1 C tools vs golden) ==="

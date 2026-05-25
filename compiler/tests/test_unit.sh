@@ -4,7 +4,7 @@
 # Tests: output contains-checks, execution output/exit-code checks
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
+source "$SCRIPT_DIR/test_common.sh"
 require_tools parse typecheck codegen bcrun bc2asm interp
 
 echo "=== Unit Tests (Gen1 tools: parse/typecheck/codegen/interp/bcrun/rv32) ==="

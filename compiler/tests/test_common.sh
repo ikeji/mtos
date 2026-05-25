@@ -7,7 +7,7 @@
 # → ROOT_DIR is one level up). SCRIPT_DIR is the caller's directory and
 # may live anywhere under ROOT_DIR (e.g. compiler/tests, kernel/tests).
 _COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(dirname "$_COMMON_DIR")"
+ROOT_DIR="$(dirname "$(dirname "$_COMMON_DIR")")"
 if [ -z "$SCRIPT_DIR" ]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 fi

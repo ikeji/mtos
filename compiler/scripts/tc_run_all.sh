@@ -5,7 +5,7 @@
 #
 #   [stdin]  string passed as program stdin; prefix '@' to read from file
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TC_RUN="$ROOT_DIR/tc_run.sh"
 
 TC_FILE="${1:-}"

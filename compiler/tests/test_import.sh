@@ -2,7 +2,7 @@
 # test_import.sh — tests for multi-file import support
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
+source "$SCRIPT_DIR/test_common.sh"
 require_tools codegen bc2asm
 
 IMPORT_DIR="$SCRIPT_DIR/import"

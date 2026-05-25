@@ -6,7 +6,7 @@
 # Each .tc file is compiled independently (parse → typecheck → codegen → bc2asm).
 # The resulting .s files are linked together with crt0.s and runtime.
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CODEGEN="$ROOT_DIR/build/gen1/codegen"
 BC2ASM="$ROOT_DIR/build/gen1/bc2asm"
 COMPILER_DIR="$ROOT_DIR/compiler/bootstrap"
