@@ -1,5 +1,6 @@
 *.o
 .claude/
+kernel/kernel_pico2.uf2
 # Per-subproject build outputs (post Phase 4c-1)
 /build/
 /compiler/build/
