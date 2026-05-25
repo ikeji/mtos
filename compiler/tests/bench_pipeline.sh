@@ -25,7 +25,7 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 TOOLS_DIR="${TOOLS_DIR:-$ROOT_DIR/build/gen3}"
 GEN2_DIR="${GEN2_DIR:-$ROOT_DIR/build/gen2}"
@@ -49,7 +49,7 @@ fi
 
 # Default inputs cover both ends of the size spectrum.
 if [ $# -eq 0 ]; then
-    set -- "$ROOT_DIR/tests/phase7_hello_world.tc" "$ROOT_DIR/compiler/src/bc2asm.tc"
+    set -- "$ROOT_DIR/integration/inputs/phase7_hello_world.tc" "$ROOT_DIR/compiler/src/bc2asm.tc"
 fi
 
 TMP=$(mktemp -d)

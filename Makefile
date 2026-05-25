@@ -600,7 +600,20 @@ build/tests/full-test.ok: $(ALL_TEST_DEPS) | build/tests
 
 test: build/tests/test.ok
 
-full-test: build/tests/full-test.ok
+full-test: build/tests/full-test.ok integration-test
+
+# integration-test: 3 サブプロジェクトの境界をまたぐテスト。
+# - test_phase7.sh: phase 7 self-host on qemu virt
+# - 他の integration スクリプト (pico2_*, phase3_verify, qemu_mr_scale)
+#   は実機 / 特殊 fixture が必要なので手動で実行
+.PHONY: integration-test
+integration-test:
+	@echo "=== integration: test_phase7.sh ===" >&2
+	@if [ -z "$$GEN2_DIR" ]; then \
+	    GEN2_DIR=$(CURDIR)/build/gen2 ./integration/test_phase7.sh; \
+	else \
+	    ./integration/test_phase7.sh; \
+	fi
 
 update-golden: all
 	./compiler/tests/update_golden.sh
