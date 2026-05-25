@@ -7,11 +7,11 @@ MTOS で動くユーザータスク (40 個)。
 - `lib/libtc/libtc.tc` — 共通ユーザライブラリ (puts/eputs/print + syscall stub)
 - `bin/<task>/` — 各タスク (40 個)
   - coreutils: sh, msh, ls, cat, echo, wc, head, cp, du, grep, rm, mkdir,
-    rmdir, rot13, md5sum
+    rmdir, md5sum
   - apps: vi, neofetch, console, fbtest, count, seq
   - phase 7 / test: hello, hello2, catfile, launcher, tmpdemo
   - UART / SD: mx, mr, muxon, muxoff, sdprobe, kbdump
-  - tools: tcc, bin2uf2
+  - tools: bin2uf2
   - compiler-on-MTOS (symlinks): parse, sigscan, tcheck, codegen, bc2asm,
     asm_pass{1,2,3} → `../../../compiler/src/<name>.tc`
 

@@ -102,9 +102,9 @@ compiler/   サブプロジェクト 1: TinyC コンパイラ
 userland/   サブプロジェクト 2: MTOS ユーザータスク
   lib/libtc/   共通ユーザライブラリ (puts/eputs/print/syscall stub forward decl)
   bin/<task>/  各タスク (40 個) + task.mk (GUEST_TASKS / EXTRA_GUEST_TASKS 宣言)
-    sh, msh, ls, cat, echo, wc, head, cp, du, grep, rm, mkdir, rmdir, rot13,
+    sh, msh, ls, cat, echo, wc, head, cp, du, grep, rm, mkdir, rmdir,
     md5sum, vi, neofetch, console, fbtest, count, seq, mx, mr, muxon, muxoff,
-    sdprobe, kbdump, tcc, bin2uf2, launcher, hello, hello2, catfile, tmpdemo
+    sdprobe, kbdump, bin2uf2, launcher, hello, hello2, catfile, tmpdemo
     parse/, sigscan/, tcheck/, codegen/, bc2asm/, asm_pass{1,2,3}/
       → compiler/src/<name>.tc への symlink (compiler-on-MTOS)。
         EXTRA_GUEST_TASKS なので default ビルドには含まれない
@@ -437,7 +437,7 @@ Phase 3 で 3 サブプロジェクトに物理分離済。各 Makefile が test
   → bss の順に物理的に並べ替える。asm_pass1 が label table を `.lab` 中間
   ファイルに吐き、asm_pass2 が `.lab` + `.s` を読んでエンコードする
   (docs/lab_format.md 参照)。
-- 共通ロジックは `compiler/asm_common.tc` にあり、pass1/pass2 の両方が import
+- 共通ロジックは `compiler/src/asm_common.tc` にあり、pass1/pass2 の両方が import
   する。
 - ラベルアドレスは常にコード先頭からのオフセット（PIC）。`la`/`jal`/分岐は
   PC 相対で unchanged、`.word symbol` はオフセット値を埋め込む。
@@ -505,8 +505,8 @@ GEN2_DIR=/path/to/gen2 ./kernel/scripts/build.sh --target pico2 -o kernel.uf2
 2. ゲストタスク (`userland/bin/*/task.mk` が GUEST_TASKS に積む: hello,
    hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head, cp, du,
    grep, rm, mkdir, rmdir, neofetch, vi, console, fbtest, launcher,
-   count, seq, mx, mr, muxon, muxoff, sdprobe, kbdump, tcc, md5sum,
-   bin2uf2, rot13) を raw バイナリにコンパイル。各タスクには
+   count, seq, mx, mr, muxon, muxoff, sdprobe, kbdump, md5sum,
+   bin2uf2) を raw バイナリにコンパイル。各タスクには
    `task_arena_size()` / `task_stack_size()` の値を `.word` 2 本の
    header として prepend する (K3 案C)。`EXTRA_TASKS="parse sigscan
    tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat"` を渡すと
@@ -549,7 +549,7 @@ a7=40 rmdir, a7=56 openat, a7=57 close, a7=63 read, a7=64 write,
 a7=87 unlink, a7=89 readdir, a7=93 exit, a7=101 nanosleep,
 a7=219 spawn_fds, a7=220 clone/spawn, a7=221 execve, a7=222 pipe,
 a7=250 mux_enable, a7=260 wait4)。mkdir / rmdir は path 1 引数のみ
-(`/sd/` 専用、kernel/fatfs.tc)。
+(`/sd/` 専用、kernel/src/fatfs.tc)。
 **path 引数は NUL 終端 C-string ではなく String layout (4 バイト count
 + bytes) を直接渡す**: `do_openat(dirfd, path: String, flags)` のように
 `task_crt0.s` の stub は String / StringLiteral 2 種の mangled name を

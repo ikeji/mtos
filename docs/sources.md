@@ -166,7 +166,6 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 | `grep/` | 部分文字列検索 |
 | `rm/` | ファイル削除 (`-r` / `-f` 対応) |
 | `mkdir/`, `rmdir/` | ディレクトリ作成 / 削除 (ecall 34/40、`/sd/` 専用) |
-| `rot13/` | ROT13 変換 |
 | `md5sum/` | MD5 ハッシュ |
 
 **アプリ系**:
@@ -197,7 +196,6 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 | `sdprobe/` | SD SPI smoke test |
 | `kbdump/` | キーボード スキャンマトリクス dump |
 | `fbtest/` | /dev/fb (フレームバッファ) smoke test |
-| `tcc/` | OS 内 phase 7 driver (parse → asm_pass3 を sequential spawn) |
 | `bin2uf2/` | raw bin → UF2 コンバータ (UF2 family_id 0xE48BFF5A) |
 
 **Compiler-on-MTOS (symlink for `compiler/src/*.tc`)**:
@@ -213,7 +211,7 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 | `asm_pass2/asm_pass2.tc` | `compiler/src/asm_pass2.tc` |
 | `asm_pass3/asm_pass3.tc` | `compiler/src/asm_pass3.tc` |
 
-これらは `EXTRA_GUEST_TASKS` に登録されており、`make -C kernel pico2-kernel-extra` 等で
+これらは `EXTRA_GUEST_TASKS` に登録されており、`make -C kernel pico2-extra` 等で
 disk-extra.img に組み込まれる。
 
 ---
@@ -291,7 +289,7 @@ qemu-riscv32 経由で呼ぶ。
 
 | ファイル | 説明 |
 |---|---|
-| `mkfs.tc` | mtfs ディスクイメージ生成 (Python `tools/mkfs.py` の TC port) |
+| `mkfs.tc` | mtfs ディスクイメージ生成 (旧 Python `mkfs.py` から TC port、2026-05-06) |
 | `bin2uf2.tc` | raw bin → UF2 (family_id 0xe48bff5a) コンバータ |
 
 ### テスト (`kernel/tests/`)
