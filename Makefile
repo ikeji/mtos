@@ -217,8 +217,8 @@ ALL_TASK_BINS    := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
 # virt カーネルはディスクを実行時に virtio-blk で読むので、カーネル
 # バイナリとは独立したターゲット。
 
-DISK_STATIC_DEPS := tests/phase7_hello.tc tests/phase7_min.tc \
-    tests/phase7_hello_world.tc compiler/runtime/mtos/task_crt0.s \
+DISK_STATIC_DEPS := integration/inputs/phase7_hello.tc integration/inputs/phase7_min.tc \
+    integration/inputs/phase7_hello_world.tc compiler/runtime/mtos/task_crt0.s \
     compiler/runtime/mtos/task_data.s build/gen2/mkfs
 
 # disk.img は kernel/kern.conf があれば /etc/kern.conf としてステージする
@@ -285,12 +285,12 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img b
 	    cp build/kernel/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
 	done && \
 	printf 'hello, mtfs\n' > "$$_r/hello.txt" && \
-	{ cp tests/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
-	{ cp tests/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
-	{ cp tests/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
+	{ cp integration/inputs/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
+	{ cp integration/inputs/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
+	{ cp integration/inputs/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
 	{ cp kernel/tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
 	{ cp kernel/tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
 	  cat compiler/runtime/mtos/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
@@ -306,7 +306,7 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img b
 	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
-build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh
+build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh
 build/kernel/disk-demo.img:         kernel/tests/fixtures/kern_demo.conf
 build/kernel/disk-console.img:      kernel/tests/fixtures/kern_console.conf
 build/kernel/disk-console-land.img: kernel/tests/fixtures/kern_console_land.conf
@@ -323,7 +323,7 @@ EXTRA_SRC_DEPS := compiler/src/string_buffer.tc compiler/src/source_reader.tc \
     kernel/platform/pico2/platform_pico2.tc \
     kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s kernel/platform/pico2/crt0_pico2_data.s
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh tests/fixtures/pico2_bench_idx.sh tests/fixtures/pico2_compile_sb.sh tests/fixtures/pico2_compile_parse.sh tests/fixtures/pico2_compile_sigscan.sh tests/fixtures/pico2_compile_tcheck.sh tests/fixtures/pico2_compile_codegen.sh tests/fixtures/pico2_compile_bc2asm.sh tests/fixtures/pico2_compile_asm_pass1.sh tests/fixtures/pico2_compile_asm_pass2.sh tests/fixtures/pico2_compile_asm_pass3.sh tests/fixtures/pico2_compile_runtime.sh tests/fixtures/pico2_compile_libtc.sh tests/fixtures/pico2_compile_kern.sh tests/fixtures/pico2_compile_platform.sh tests/fixtures/pico2_compile_kern2.sh tests/fixtures/pico2_run_parse.sh tests/fixtures/pico2_md5_test.sh tests/fixtures/pico2_cleanup_sd.sh tests/fixtures/pico2_dir_grow_test.sh tests/fixtures/pico2_dir_grow_test2.sh kernel/scripts/bin2s_incbin.sh build/kernel/disk.img | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh integration/fixtures/pico2_compile_sb.sh integration/fixtures/pico2_compile_parse.sh integration/fixtures/pico2_compile_sigscan.sh integration/fixtures/pico2_compile_tcheck.sh integration/fixtures/pico2_compile_codegen.sh integration/fixtures/pico2_compile_bc2asm.sh integration/fixtures/pico2_compile_asm_pass1.sh integration/fixtures/pico2_compile_asm_pass2.sh integration/fixtures/pico2_compile_asm_pass3.sh integration/fixtures/pico2_compile_runtime.sh integration/fixtures/pico2_compile_libtc.sh integration/fixtures/pico2_compile_kern.sh integration/fixtures/pico2_compile_platform.sh integration/fixtures/pico2_compile_kern2.sh integration/fixtures/pico2_run_parse.sh integration/fixtures/pico2_md5_test.sh integration/fixtures/pico2_cleanup_sd.sh integration/fixtures/pico2_dir_grow_test.sh integration/fixtures/pico2_dir_grow_test2.sh kernel/scripts/bin2s_incbin.sh build/kernel/disk.img | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -331,29 +331,29 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	    cp build/kernel/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
 	done && \
 	printf 'hello, mtfs\n' > "$$_r/hello.txt" && \
-	{ cp tests/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
-	{ cp tests/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
-	{ cp tests/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
+	{ cp integration/inputs/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
+	{ cp integration/inputs/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
+	{ cp integration/inputs/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
 	{ cp kernel/tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
 	{ cp kernel/tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_sb.sh "$$_r/pico2_compile_sb.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_parse.sh "$$_r/pico2_compile_parse.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_sigscan.sh "$$_r/pico2_compile_sigscan.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_tcheck.sh "$$_r/pico2_compile_tcheck.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_codegen.sh "$$_r/pico2_compile_codegen.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_bc2asm.sh "$$_r/pico2_compile_bc2asm.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_asm_pass1.sh "$$_r/pico2_compile_asm_pass1.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_asm_pass2.sh "$$_r/pico2_compile_asm_pass2.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_asm_pass3.sh "$$_r/pico2_compile_asm_pass3.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_runtime.sh "$$_r/pico2_compile_runtime.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_libtc.sh "$$_r/pico2_compile_libtc.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_kern.sh "$$_r/pico2_compile_kern.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_platform.sh "$$_r/pico2_compile_platform.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_kern2.sh "$$_r/pico2_compile_kern2.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_run_parse.sh "$$_r/pico2_run_parse.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_run_sb.sh "$$_r/pico2_run_sb.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_md5_test.sh "$$_r/pico2_md5_test.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_sb.sh "$$_r/pico2_compile_sb.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_parse.sh "$$_r/pico2_compile_parse.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_sigscan.sh "$$_r/pico2_compile_sigscan.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_tcheck.sh "$$_r/pico2_compile_tcheck.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_codegen.sh "$$_r/pico2_compile_codegen.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_bc2asm.sh "$$_r/pico2_compile_bc2asm.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_asm_pass1.sh "$$_r/pico2_compile_asm_pass1.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_asm_pass2.sh "$$_r/pico2_compile_asm_pass2.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_asm_pass3.sh "$$_r/pico2_compile_asm_pass3.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_runtime.sh "$$_r/pico2_compile_runtime.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_libtc.sh "$$_r/pico2_compile_libtc.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_kern.sh "$$_r/pico2_compile_kern.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_platform.sh "$$_r/pico2_compile_platform.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_kern2.sh "$$_r/pico2_compile_kern2.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_run_parse.sh "$$_r/pico2_run_parse.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_run_sb.sh "$$_r/pico2_run_sb.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_md5_test.sh "$$_r/pico2_md5_test.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
 	  cat compiler/runtime/mtos/task_crt0.s; cat build/kernel/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
@@ -397,15 +397,15 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	    printf '; raw\n    .text\n    .word %d\n    .word %d\n' $$ar $$sk \
 	        > "$$_r/src/hdr_$$nm.s"; \
 	done && \
-	{ cp tests/fixtures/pico2_cleanup_sd.sh "$$_r/pico2_cleanup_sd.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_dir_grow_test.sh "$$_r/pico2_dir_grow_test.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_dir_grow_test2.sh "$$_r/pico2_dir_grow_test2.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_dumper_test.sh "$$_r/pico2_dumper_test.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_self_step1.sh "$$_r/pico2_self_step1.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_self_step2.sh "$$_r/pico2_self_step2.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_self_step3.sh "$$_r/pico2_self_step3.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_self_step4.sh "$$_r/pico2_self_step4.sh" 2>/dev/null || true; } && \
-	{ cp tests/fixtures/pico2_compile_compilers.sh "$$_r/pico2_compile_compilers.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_cleanup_sd.sh "$$_r/pico2_cleanup_sd.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_dir_grow_test.sh "$$_r/pico2_dir_grow_test.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_dir_grow_test2.sh "$$_r/pico2_dir_grow_test2.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_dumper_test.sh "$$_r/pico2_dumper_test.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_self_step1.sh "$$_r/pico2_self_step1.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_self_step2.sh "$$_r/pico2_self_step2.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_self_step3.sh "$$_r/pico2_self_step3.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_self_step4.sh "$$_r/pico2_self_step4.sh" 2>/dev/null || true; } && \
+	{ cp integration/fixtures/pico2_compile_compilers.sh "$$_r/pico2_compile_compilers.sh" 2>/dev/null || true; } && \
 	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
@@ -580,7 +580,7 @@ BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin \
               build/kernel/disk-console.img build/kernel/disk-console-land.img \
               $(TEST_ASM_BINS)
 
-TEST_SCRIPTS := $(wildcard tests/*.sh)
+TEST_SCRIPTS := $(wildcard tests/*.sh) $(wildcard compiler/tests/*.sh) $(wildcard kernel/tests/*.sh)
 TEST_INPUTS  := $(wildcard compiler/tests/*.tc) $(wildcard compiler/tests/import/*.tc)
 TEST_GOLDEN  := $(wildcard compiler/tests/golden/*) $(wildcard compiler/tests/golden/tc/*)
 TEST_SUPPORT := tc_run.sh tc_run_all.sh compiler/scripts/compile-gen1.sh compiler/scripts/compile-gen2.sh compiler/scripts/compile-gen3.sh

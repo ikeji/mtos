@@ -37,7 +37,7 @@ REFS = "/tmp/phase3_refs"
 LOGS = "/tmp/phase3_logs"
 
 # Source for the compile pipeline smoke test.
-INPUT_TC = os.path.join(ROOT, "tests/phase7_hello_world.tc")
+INPUT_TC = os.path.join(ROOT, "integration/inputs/phase7_hello_world.tc")
 
 
 def run(cmd, **kw):

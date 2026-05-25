@@ -25,7 +25,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
 UART_PORT="${UART_PORT:-/dev/ttyACM0}"
-INPUT_TC="${INPUT_TC:-$ROOT_DIR/tests/phase7_hello_world.tc}"
+INPUT_TC="${INPUT_TC:-$ROOT_DIR/integration/inputs/phase7_hello_world.tc}"
 
 if [ -z "$GEN2_DIR" ]; then
     echo "SKIP: GEN2_DIR not set" >&2; exit 0
