@@ -1,9 +1,10 @@
 *.o
-# Gen1 bootstrap binaries now live in build/gen1/ (covered by /build/).
 .claude/
-kernel/kernel_pico2.uf2
+# Per-subproject build outputs (post Phase 4c-1)
 /build/
-tests/__pycache__/
+/compiler/build/
+/userland/build/
+/kernel/build/
 # Scratch dir — holds the user-supplied Japanese font.bmp and its
 # reference conversion scripts. font.bmp is never committed.
 /tmp/
